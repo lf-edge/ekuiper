@@ -36,6 +36,87 @@ func TestParser_ParseStatement(t *testing.T) {
 		err  string
 	}{
 		{
+			s: "SELECT arr[x:4] FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							OP: ast.SUBSET,
+							LHS: &ast.FieldRef{
+								Name:       "arr",
+								StreamName: ast.DefaultStream,
+							},
+							RHS: &ast.ColonExpr{
+								Start: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "x",
+								},
+								End: &ast.IntegerLiteral{
+									Val: 4,
+								},
+							},
+						},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: "SELECT arr[1:x] FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							OP: ast.SUBSET,
+							LHS: &ast.FieldRef{
+								Name:       "arr",
+								StreamName: ast.DefaultStream,
+							},
+							RHS: &ast.ColonExpr{
+								Start: &ast.IntegerLiteral{
+									Val: 1,
+								},
+								End: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "x",
+								},
+							},
+						},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: "SELECT arr[x] FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							OP: ast.SUBSET,
+							LHS: &ast.FieldRef{
+								Name:       "arr",
+								StreamName: ast.DefaultStream,
+							},
+							RHS: &ast.IndexExpr{
+								Index: &ast.FieldRef{
+									Name:       "x",
+									StreamName: ast.DefaultStream,
+								},
+							},
+						},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
 			s: "SELECT arr[x+1:y] FROM tbl",
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
