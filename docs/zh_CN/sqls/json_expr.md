@@ -22,7 +22,7 @@
             {"first": "Alice", "last": "Murphy", "age": 33},
 		    {"first": "Brian", "last": "Craig", "age": 44}
         ]
-    }
+    },
    "ops": {
    	"functionA": {"numArgs": 2},
     "functionB": {"numArgs": 3},
@@ -153,6 +153,22 @@ SELECT children[:-1] FROM demo
 
 {
     "children": ["Sara","Alex"]
+}
+```
+
+
+
+```
+SELECT children[x:y] FROM demo
+
+{
+    "children": ["Sara","Alex","Jack"],
+}
+
+SELECT children[x+1:y] FROM demo
+
+{
+    "children": ["Alex","Jack"],
 }
 ```
 
