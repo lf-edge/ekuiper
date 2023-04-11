@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -769,7 +769,16 @@ func (p *Parser) parseColonExpr(start ast.Expr) (ast.Expr, error) {
 	} else if tok == ast.RBRACKET {
 		return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: math.MinInt32}}, nil
 	}
-	return nil, fmt.Errorf("Found %q, expected right bracket.", lit)
+	p.unscan()
+	end, err := p.ParseExpr()
+	if err != nil {
+		return nil, fmt.Errorf("The end index %s is invalid in bracket expression.", lit)
+	}
+	if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.RBRACKET {
+		return &ast.ColonExpr{Start: start, End: end}, nil
+	} else {
+		return nil, fmt.Errorf("Found %q, expected right bracket.", lit1)
+	}
 }
 
 func (p *Parser) scanIgnoreWhiteSpaceWithNegativeNum() (ast.Token, string) {

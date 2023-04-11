@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,29 @@ package topotest
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"testing"
 )
 
 func TestSingleSQL(t *testing.T) {
 	//Reset
-	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable"}
+	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable", "demoArr"}
 	HandleStream(false, streamList, t)
 	//Data setup
 	var tests = []RuleTest{
+		{
+			Name: `TestSingleSQLRule0`,
+			Sql:  `SELECT arr[x:y+1] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": []interface{}{
+						float64(2), float64(3),
+					},
+				}},
+			},
+		},
 		{
 			Name: `TestSingleSQLRule1`,
 			Sql:  `SELECT *, upper(color) FROM demo`,
@@ -574,6 +586,37 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
+			},
+		},
+		{
+			Name: `TestSingleSQLRule17`,
+			Sql:  `SELECT arr[x:4] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": []interface{}{
+						float64(2), float64(3), float64(4),
+					},
+				}},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule16`,
+			Sql:  `SELECT arr[1:y] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": []interface{}{
+						float64(2),
+					},
+				}},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule15`,
+			Sql:  `SELECT arr[1] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": float64(2),
+				}},
 			},
 		},
 		{
