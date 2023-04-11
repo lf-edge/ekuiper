@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -205,13 +205,16 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 			return
 		}()
+		exitCh := make(chan struct{})
 		// send data
-		sc := NewSyncCache(ctx, in, errCh, stats, tt.sconf, 100)
+		sc := NewSyncCacheWithExitChanel(ctx, in, errCh, stats, tt.sconf, 100, exitCh)
 		for i := 0; i < tt.stopPt; i++ {
 			in <- tt.dataIn[i]
 			time.Sleep(1 * time.Millisecond)
 		}
 		cancel()
+		// wait cleanup job done
+		<-exitCh
 
 		// send the second half data
 		ctx, cancel = context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
