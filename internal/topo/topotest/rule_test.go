@@ -589,6 +589,37 @@ func TestSingleSQL(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestSingleSQLRule17`,
+			Sql:  `SELECT arr[x:4] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": []interface{}{
+						float64(2), float64(3), float64(4),
+					},
+				}},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule16`,
+			Sql:  `SELECT arr[1:y] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": []interface{}{
+						float64(2),
+					},
+				}},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule15`,
+			Sql:  `SELECT arr[1] as col1 FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{{
+					"col1": float64(2),
+				}},
+			},
+		},
+		{
 			Name: `TestLagAlias`,
 			Sql:  "SELECT lag(size) as lastSize, lag(had_changed(true,size)), size, lastSize/size as changeRate FROM demo WHERE size > 2",
 			R: [][]map[string]interface{}{
