@@ -51,25 +51,6 @@
       }
     },
     {
-      "name": "deliveryGuarantee",
-      "default": "AT_LEAST_ONCE",
-      "optional": false,
-      "control": "select",
-      "values": [
-        "AT_MOST_ONCE",
-        "AT_LEAST_ONCE"
-      ],
-      "type": "string",
-      "hint": {
-        "en_US": "delivery guarantee of Kafka",
-        "zh_CN": "Kafka 的消息交付可靠性保障"
-      },
-      "label": {
-        "en_US": "delivery guarantee",
-        "zh_CN": "消息交付"
-      }
-    },
-    {
       "name": "saslAuthType",
       "default": "none",
       "optional": false,

@@ -33,29 +33,24 @@ type kafkaSink struct {
 }
 
 const (
-	AT_MOST_ONCE  = "AT_MOST_ONCE"
-	AT_LEAST_ONCE = "AT_LEAST_ONCE"
-
 	SASL_NONE  = "none"
 	SASL_PLAIN = "plain"
 	SASL_SCRAM = "scram"
 )
 
 type sinkConf struct {
-	Brokers           string `json:"brokers"`
-	Topic             string `json:"topic"`
-	DeliveryGuarantee string `json:"deliveryGuarantee"`
-	SaslAuthType      string `json:"saslAuthType"`
-	SaslUserName      string `json:"saslUserName"`
-	SaslPassword      string `json:"saslPassword"`
+	Brokers      string `json:"brokers"`
+	Topic        string `json:"topic"`
+	SaslAuthType string `json:"saslAuthType"`
+	SaslUserName string `json:"saslUserName"`
+	SaslPassword string `json:"saslPassword"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	c := &sinkConf{
-		Brokers:           "localhost:9092",
-		Topic:             "",
-		DeliveryGuarantee: AT_LEAST_ONCE,
-		SaslAuthType:      SASL_NONE,
+		Brokers:      "localhost:9092",
+		Topic:        "",
+		SaslAuthType: SASL_NONE,
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -65,9 +60,6 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	}
 	if c.Topic == "" {
 		return fmt.Errorf("topic can not be empty")
-	}
-	if !(c.DeliveryGuarantee == AT_MOST_ONCE || c.DeliveryGuarantee == AT_LEAST_ONCE) {
-		return fmt.Errorf("deliveryGuarantee incorrect")
 	}
 	if !(c.SaslAuthType == SASL_NONE || c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) {
 		return fmt.Errorf("saslAuthType incorrect")
@@ -82,18 +74,10 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 
 func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debug("Opening kafka sink")
-	var maxAttempts int
+
 	var err error
 	var mechanism sasl.Mechanism
-	//delivery guarantee
-	switch m.c.DeliveryGuarantee {
-	case AT_MOST_ONCE:
-		maxAttempts = 1
-	case AT_LEAST_ONCE:
-		maxAttempts = 10
-	default:
-		maxAttempts = 10
-	}
+
 	//sasl authentication type
 	switch m.c.SaslAuthType {
 	case SASL_PLAIN:
@@ -116,7 +100,7 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		Balancer:               &kafkago.LeastBytes{},
 		Async:                  false,
 		AllowAutoTopicCreation: true,
-		MaxAttempts:            maxAttempts,
+		MaxAttempts:            10,
 		RequiredAcks:           -1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
@@ -179,10 +163,6 @@ retry:
 			}
 
 		case kafkago.WriteErrors:
-			if m.c.DeliveryGuarantee == AT_MOST_ONCE {
-				return err
-			}
-
 			var remaining []kafkago.Message
 			for i, m := range messages {
 				switch err := err[i].(type) {

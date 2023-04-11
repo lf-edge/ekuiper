@@ -51,7 +51,6 @@ $(PLUGINS_CUSTOM):
 |-------------------|------|----------------------|
 | brokers           | 否    | broker地址列表 ,用 "," 分割 |
 | topic             | 否    | kafka 主题             |
-| deliveryGuarantee | 否    | 消息交付保证级别             |
 | saslAuthType      | 否    | sasl 认证类型            |
 | saslUserName      | 是    | sasl 用户名             |
 | saslPassword      | 是    | sasl 密码              |
@@ -74,7 +73,6 @@ $(PLUGINS_CUSTOM):
       "kafka":{
         "brokers": "127.0.0.1:9092,127.0.0.2:9092",
         "topic": "test_topic",
-        "deliveryGuarantee": "AT_LEAST_ONCE",
         "saslAuthType": "none"
       }
     }

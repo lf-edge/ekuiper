@@ -52,7 +52,6 @@ Restart the eKuiper server to activate the plugin.
 |-------------------|----------|-----------------------------------------|
 | brokers           | false    | The broker address list ,split with "," |
 | topic             | false    | The topic of the Kafka                  |
-| deliveryGuarantee | false    | The Kafka delivery guarantee            |
 | saslAuthType      | false    | The Kafka sasl authType                 |
 | saslUserName      | true     | The sasl user name                      |
 | saslPassword      | true     | The sasl password                       |
@@ -75,7 +74,6 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
       "kafka":{
         "brokers": "127.0.0.1:9092,127.0.0.2:9092",
         "topic": "test_topic",
-        "deliveryGuarantee": "AT_LEAST_ONCE",
         "saslAuthType": "none"
       }
     }
