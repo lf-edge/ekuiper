@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@ package main
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 func main() {
-	db, err := sql.Open("sqlite3", "file:/tmp/test.db")
+	db, err := sql.Open("sqlite", "file:/tmp/test.db")
 	if err != nil {
 		panic(err)
 	}

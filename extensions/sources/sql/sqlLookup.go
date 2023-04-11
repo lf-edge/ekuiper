@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package main
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/xo/dburl"
@@ -35,7 +37,7 @@ type sqlLookupSource struct {
 // Open establish a connection to the database
 func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Opening sql lookup source")
-	db, err := dburl.Open(s.url)
+	db, err := util.Open(s.url)
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v", s.url, err)
 	}

@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,14 +18,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
+	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/xo/dburl"
-	"reflect"
-	"strings"
 )
 
 type sqlConfig struct {
@@ -110,7 +111,7 @@ func (m *sqlSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
 	logger.Debugf("Opening sql sink")
 
-	db, err := dburl.Open(m.conf.Url)
+	db, err := util.Open(m.conf.Url)
 	if err != nil {
 		logger.Errorf("support build tags are %v", driver.KnownBuildTags())
 		return err

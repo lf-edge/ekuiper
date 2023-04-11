@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"time"
+
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
+	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/xo/dburl"
-	"time"
 )
 
 type sqlConConfig struct {
@@ -64,7 +66,7 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 	m.Query = generator
 	m.conf = cfg
 
-	db, err := dburl.Open(m.conf.Url)
+	db, err := util.Open(m.conf.Url)
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.Url, err, driver2.KnownBuildTags())
 	}
