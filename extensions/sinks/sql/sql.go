@@ -22,10 +22,10 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
-	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/dbutil"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
@@ -86,6 +86,9 @@ type sqlSink struct {
 	conf *sqlConfig
 	//The db connection instance
 	db *sql.DB
+
+	driver string
+	dsn    string
 }
 
 func (m *sqlSink) Configure(props map[string]interface{}) error {
@@ -104,14 +107,19 @@ func (m *sqlSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("keyField is required when rowkindField is set")
 	}
 	m.conf = cfg
+	sqlDriver, dsn, err := dbutil.ParseDBUrl(m.conf.Url)
+	if err != nil {
+		return err
+	}
+	m.driver = sqlDriver
+	m.dsn = dsn
 	return nil
 }
 
 func (m *sqlSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
 	logger.Debugf("Opening sql sink")
-
-	db, err := util.Open(m.conf.Url)
+	db, err := dbutil.FetchDBToOneNode(dbutil.GlobalPool, m.driver, m.dsn)
 	if err != nil {
 		logger.Errorf("support build tags are %v", driver.KnownBuildTags())
 		return err
@@ -264,7 +272,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 
 func (m *sqlSink) Close(_ api.StreamContext) error {
 	if m.db != nil {
-		return m.db.Close()
+		return dbutil.ReturnDBFromOneNode(dbutil.GlobalPool, m.driver, m.dsn)
 	}
 	return nil
 }
