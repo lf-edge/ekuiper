@@ -151,9 +151,7 @@ type KuiperConf struct {
 		InitTimeout int    `yaml:"initTimeout"`
 	}
 	State struct {
-		Backend      string `yaml:"backend"`
-		Keyprefix    string `yaml:"keyprefix"`
-		Keyseperator string `yaml:"keyseperator"`
+		Backend string `yaml:"backend"`
 	}
 }
 

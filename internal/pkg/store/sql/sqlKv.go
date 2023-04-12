@@ -117,6 +117,20 @@ func (kv *sqlKvStore) GetKeyedState(key string) (interface{}, error) {
 	return value, err
 }
 
+func (kv *sqlKvStore) SetKeyedState(key string, value interface{}) error {
+	err := kv.database.Apply(func(db *sql.DB) error {
+		query := fmt.Sprintf("REPLACE INTO '%s'(key,val) values(?,?);", kv.table)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(key, value)
+		stmt.Close()
+		return err
+	})
+	return err
+}
+
 func (kv *sqlKvStore) Delete(key string) error {
 	return kv.database.Apply(func(db *sql.DB) error {
 		query := fmt.Sprintf("SELECT key FROM '%s' WHERE key='%s';", kv.table, key)

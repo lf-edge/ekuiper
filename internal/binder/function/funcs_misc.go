@@ -627,6 +627,127 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+	builtins["get_keyed_state"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) != 2 && len(args) != 3 {
+				return fmt.Errorf("the args must be two or three"), false
+			}
+			key, ok := args[0].(string)
+			if !ok {
+				return fmt.Errorf("key %v is not a string", args[0]), false
+			}
+
+			value, err := keyedstate.GetKeyedState(key)
+			if err != nil {
+				if len(args) == 3 {
+					return args[2], true
+				} else {
+					return nil, false
+				}
+			}
+
+			if v, ok := args[1].(string); ok {
+				switch v {
+				case "bigint":
+					if v1, ok1 := value.(string); ok1 {
+						if temp, err := strconv.Atoi(v1); err == nil {
+							return temp, true
+						} else {
+							return err, false
+						}
+					} else if v1, ok1 := value.(float64); ok1 {
+						return int(v1), true
+					} else if v1, ok1 := value.(int); ok1 {
+						return v1, true
+					} else if v1, ok1 := value.(bool); ok1 {
+						if v1 {
+							return 1, true
+						} else {
+							return 0, true
+						}
+					} else {
+						return fmt.Errorf("not supported type conversion"), false
+					}
+				case "float":
+					if v1, ok1 := value.(string); ok1 {
+						if temp, err := strconv.ParseFloat(v1, 64); err == nil {
+							return temp, true
+						} else {
+							return err, false
+						}
+					} else if v1, ok1 := value.(float64); ok1 {
+						return v1, true
+					} else if v1, ok1 := value.(int); ok1 {
+						return float64(v1), true
+					} else if v1, ok1 := value.(bool); ok1 {
+						if v1 {
+							return 1.0, true
+						} else {
+							return 0.0, true
+						}
+					} else {
+						return fmt.Errorf("not supported type conversion"), false
+					}
+				case "string":
+					r, e := cast.ToString(value, cast.CONVERT_ALL)
+					if e != nil {
+						return fmt.Errorf("not supported type conversion, got error %v", e), false
+					} else {
+						return r, true
+					}
+				case "boolean":
+					if v1, ok1 := value.(string); ok1 {
+						if temp, err := strconv.ParseBool(v1); err == nil {
+							return temp, true
+						} else {
+							return err, false
+						}
+					} else if v1, ok1 := value.(float64); ok1 {
+						if v1 == 0.0 {
+							return false, true
+						} else {
+							return true, true
+						}
+					} else if v1, ok1 := value.(int); ok1 {
+						if v1 == 0 {
+							return false, true
+						} else {
+							return true, true
+						}
+					} else if v1, ok1 := args[0].(bool); ok1 {
+						return v1, true
+					} else {
+						return fmt.Errorf("not supported type conversion"), false
+					}
+				case "datetime":
+					dt, err := cast.InterfaceToTime(value, "")
+					if err != nil {
+						return err, false
+					} else {
+						return dt, true
+					}
+				default:
+					return fmt.Errorf("unknow type, only support bigint, float, string, boolean and datetime"), false
+				}
+			} else {
+				return fmt.Errorf("expect string type for the 2nd parameter"), false
+			}
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) != 2 && len(args) != 3 {
+				return fmt.Errorf("the args must be two or three")
+			}
+			if !ast.IsStringArg(args[0]) {
+				return ProduceErrInfo(0, "string")
+			}
+			if !ast.IsStringArg(args[1]) {
+				return ProduceErrInfo(0, "string")
+			}
+			return nil
+		},
+	}
+
 }
 
 func round(num float64) int {

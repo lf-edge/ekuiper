@@ -62,6 +62,13 @@ func TestSqlKvAll(t *testing.T) {
 	common.TestKvAll(length, ks, t)
 }
 
+func TestSqlKvGetKeyedState(t *testing.T) {
+	ks, db, abs := setupSqlKv()
+	defer cleanSqlKv(db, abs)
+
+	common.TestKvGetKeyedState(ks, t)
+}
+
 func deleteIfExists(abs string) error {
 	absPath := path.Join(abs, SDbName)
 	if f, _ := os.Stat(absPath); f != nil {

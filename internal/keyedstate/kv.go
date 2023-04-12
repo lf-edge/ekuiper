@@ -22,31 +22,25 @@ import (
 var manager *Manager
 
 type Manager struct {
-	keyPrefix    string
-	keySeparator string
-	kv           kv2.KeyValue
+	kv kv2.KeyValue
 }
 
-func InitManager(keyPrefix, keySeparator string) {
-	kv, _ := store.GetKV(keyPrefix)
+func InitManager() {
+	kv, _ := store.GetKV("keyed_state")
 	manager = &Manager{
-		keyPrefix:    keyPrefix,
-		keySeparator: keySeparator,
-		kv:           kv,
+		kv: kv,
 	}
 	return
 }
 
-func GetKeyedState(groupName string, keys []string) map[string]interface{} {
-	result := map[string]interface{}{}
-	for _, key := range keys {
-		redisKey := manager.keySeparator + groupName + manager.keySeparator + key
-		value, err := manager.kv.GetKeyedState(redisKey)
-		if err != nil {
-			result[key] = err.Error()
-		} else {
-			result[key] = value
-		}
-	}
-	return result
+func GetKeyedState(key string) (interface{}, error) {
+	return manager.kv.GetKeyedState(key)
+}
+
+func SetKeyedState(key string, value interface{}) error {
+	return manager.kv.SetKeyedState(key, value)
+}
+
+func ClearKeyedState() error {
+	return manager.kv.Drop()
 }

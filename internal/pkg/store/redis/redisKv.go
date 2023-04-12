@@ -80,11 +80,15 @@ func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
 }
 
 func (kv redisKvStore) GetKeyedState(key string) (interface{}, error) {
-	val, err := kv.database.Get(context.Background(), kv.tableKey(key)).Result()
+	val, err := kv.database.Get(context.Background(), key).Result()
 	if err != nil {
 		return false, err
 	}
 	return val, nil
+}
+
+func (kv redisKvStore) SetKeyedState(key string, value interface{}) error {
+	return kv.database.Set(context.Background(), key, value, 0).Err()
 }
 
 func (kv redisKvStore) Delete(key string) error {

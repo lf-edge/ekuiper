@@ -102,3 +102,6 @@ portable:
   pythonBin: python
   # control init timeout in ms. If the init time is longer than this value, the plugin will be terminated.
   initTimeout: 5000
+
+state:
+  backend: redis
