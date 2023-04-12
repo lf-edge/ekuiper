@@ -205,15 +205,16 @@ func TestRun(t *testing.T) {
 			t.Fatal(err)
 			return
 		}()
+		exitCh := make(chan struct{})
 		// send data
-		sc := NewSyncCache(ctx, in, errCh, stats, tt.sconf, 100)
+		sc := NewSyncCacheWithExitChanel(ctx, in, errCh, stats, tt.sconf, 100, exitCh)
 		for i := 0; i < tt.stopPt; i++ {
 			in <- tt.dataIn[i]
 			time.Sleep(1 * time.Millisecond)
 		}
 		cancel()
 		// wait cleanup job done
-		time.Sleep(1 * time.Second)
+		<-exitCh
 
 		// send the second half data
 		ctx, cancel = context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
