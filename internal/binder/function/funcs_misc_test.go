@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"testing"
 )
@@ -220,6 +221,55 @@ func TestFromJson(t *testing.T) {
 					"key2": "foo",
 				},
 			},
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestDelay(t *testing.T) {
+	f, ok := builtins["delay"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
+	err := f.val(fctx, []ast.Expr{&ast.StringLiteral{Val: "abc"}})
+	if err == nil {
+		t.Fatal("expect error")
+	}
+	err = f.val(fctx, []ast.Expr{&ast.StringLiteral{Val: "1s"}, &ast.StringLiteral{Val: "1s"}})
+	if err == nil {
+		t.Fatal("expect error")
+	}
+	err = f.val(fctx, []ast.Expr{&ast.IntegerLiteral{Val: 1000}, &ast.StringLiteral{Val: "1s"}})
+	if err != nil {
+		t.Fatal("expect no error")
+	}
+
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				10,
+				"bar",
+			},
+			result: "bar",
+		}, { // 1
+			args: []interface{}{
+				"bar",
+				"bar",
+			},
+			result: fmt.Errorf("cannot convert string(bar) to int"),
 		},
 	}
 	for i, tt := range tests {
