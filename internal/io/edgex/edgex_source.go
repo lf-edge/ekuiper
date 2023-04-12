@@ -20,10 +20,10 @@ package edgex
 import (
 	"encoding/json"
 	"fmt"
-	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos/requests"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/fxamacker/cbor/v2"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -85,6 +85,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	messages := make(chan interface{}, es.buflen)
 	topics := []api.TopicChannel{{Topic: es.topic, Messages: messages}}
 	subErrs := make(chan error, len(topics))
+
 	if e := es.cli.Subscribe(ctx, topics, subErrs, nil); e != nil {
 		log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 		errCh <- e
@@ -208,73 +209,73 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 	logger.Debugf("name %s with type %s", r.ResourceName, r.ValueType)
 	v := r.Value
 	switch t {
-	case v2.ValueTypeBool:
+	case v3.ValueTypeBool:
 		if r, err := strconv.ParseBool(v); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case v2.ValueTypeInt8, v2.ValueTypeInt16, v2.ValueTypeInt32, v2.ValueTypeInt64, v2.ValueTypeUint8, v2.ValueTypeUint16, v2.ValueTypeUint32:
+	case v3.ValueTypeInt8, v3.ValueTypeInt16, v3.ValueTypeInt32, v3.ValueTypeInt64, v3.ValueTypeUint8, v3.ValueTypeUint16, v3.ValueTypeUint32:
 		if r, err := strconv.Atoi(v); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case v2.ValueTypeUint64:
+	case v3.ValueTypeUint64:
 		if u64, err := strconv.ParseUint(v, 10, 64); err != nil {
 			return nil, err
 		} else {
 			return u64, nil
 		}
-	case v2.ValueTypeFloat32:
+	case v3.ValueTypeFloat32:
 		if r, err := strconv.ParseFloat(v, 32); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case v2.ValueTypeFloat64:
+	case v3.ValueTypeFloat64:
 		if r, err := strconv.ParseFloat(v, 64); err != nil {
 			return nil, err
 		} else {
 			return r, nil
 		}
-	case v2.ValueTypeString:
+	case v3.ValueTypeString:
 		return v, nil
-	case v2.ValueTypeBoolArray:
+	case v3.ValueTypeBoolArray:
 		var val []bool
 		if e := json.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
-	case v2.ValueTypeInt8Array, v2.ValueTypeInt16Array, v2.ValueTypeInt32Array, v2.ValueTypeInt64Array, v2.ValueTypeUint8Array, v2.ValueTypeUint16Array, v2.ValueTypeUint32Array:
+	case v3.ValueTypeInt8Array, v3.ValueTypeInt16Array, v3.ValueTypeInt32Array, v3.ValueTypeInt64Array, v3.ValueTypeUint8Array, v3.ValueTypeUint16Array, v3.ValueTypeUint32Array:
 		var val []int
 		if e := json.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
-	case v2.ValueTypeUint64Array:
+	case v3.ValueTypeUint64Array:
 		var val []uint64
 		if e := json.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
-	case v2.ValueTypeFloat32Array:
+	case v3.ValueTypeFloat32Array:
 		return convertFloatArray(v, 32)
-	case v2.ValueTypeFloat64Array:
+	case v3.ValueTypeFloat64Array:
 		return convertFloatArray(v, 64)
-	case v2.ValueTypeStringArray:
+	case v3.ValueTypeStringArray:
 		var val []string
 		if e := json.Unmarshal([]byte(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
-	case v2.ValueTypeBinary:
+	case v3.ValueTypeBinary:
 		return r.BinaryValue, nil
-	case v2.ValueTypeObject:
+	case v3.ValueTypeObject:
 		return r.ObjectValue, nil
 	default:
 		logger.Warnf("Not supported type %s, and processed as string value", t)

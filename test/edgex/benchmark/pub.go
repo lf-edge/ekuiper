@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
-	"github.com/edgexfoundry/go-mod-messaging/v2/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"log"
 	"os"
 	"strconv"
@@ -34,12 +34,12 @@ import (
 )
 
 var msgConfig1 = types.MessageBusConfig{
-	PublishHost: types.HostInfo{
+	Broker: types.HostInfo{
 		Host:     "172.31.1.144",
-		Port:     5563,
-		Protocol: "tcp",
+		Port:     6379,
+		Protocol: "redis",
 	},
-	Type: messaging.ZeroMQ,
+	Type: messaging.Redis,
 }
 
 type data struct {
@@ -60,7 +60,7 @@ var mockup = []data{
 	{temperature: 55, humidity: 60},
 }
 
-func pubEventClientZeroMq(count int, wg *sync.WaitGroup) {
+func pubEventClientRedis(count int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	if msgClient, err := messaging.NewMessageClient(msgConfig1); err != nil {
 		log.Fatal(err)
@@ -75,13 +75,13 @@ func pubEventClientZeroMq(count int, wg *sync.WaitGroup) {
 				}
 
 				testEvent := dtos.NewEvent("demoProfile", "demo", "demoSource")
-				err := testEvent.AddSimpleReading("Temperature", v2.ValueTypeInt32, int32(mockup[index].temperature))
+				err := testEvent.AddSimpleReading("Temperature", v3.ValueTypeInt32, int32(mockup[index].temperature))
 				if err != nil {
 					fmt.Errorf("Add reading error for Temperature: %v\n", int32(mockup[index].temperature))
 				}
 				testEvent.Readings[0].DeviceName = "Temperature device"
 
-				err = testEvent.AddSimpleReading("Humidity", v2.ValueTypeInt32, int32(mockup[index].humidity))
+				err = testEvent.AddSimpleReading("Humidity", v3.ValueTypeInt32, int32(mockup[index].humidity))
 				if err != nil {
 					fmt.Errorf("Add reading error for Humidity: %v\n", int32(mockup[index].temperature))
 				}
@@ -122,7 +122,7 @@ func main() {
 	var wg sync.WaitGroup
 	for i := 0; i < 1; i++ {
 		wg.Add(1)
-		go pubEventClientZeroMq(count, &wg)
+		go pubEventClientRedis(count, &wg)
 	}
 	wg.Wait()
 	t := time.Now()

@@ -20,10 +20,10 @@ package edgex
 import (
 	"encoding/json"
 	"fmt"
-	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/models"
-	"github.com/edgexfoundry/go-mod-messaging/v2/pkg/types"
+	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"math"
 	"reflect"
@@ -33,29 +33,29 @@ import (
 var (
 	es      = &EdgexSource{}
 	typeMap = map[string]string{
-		"b1":  v2.ValueTypeBool,
-		"i1":  v2.ValueTypeInt8,
-		"i2":  v2.ValueTypeInt16,
-		"i3":  v2.ValueTypeInt32,
-		"i4":  v2.ValueTypeInt64,
-		"i5":  v2.ValueTypeUint8,
-		"i6":  v2.ValueTypeUint16,
-		"i7":  v2.ValueTypeUint32,
-		"s1":  v2.ValueTypeString,
-		"f1":  v2.ValueTypeFloat32,
-		"f2":  v2.ValueTypeFloat64,
-		"i8":  v2.ValueTypeUint64,
-		"ba":  v2.ValueTypeBoolArray,
-		"ia1": v2.ValueTypeInt8Array,
-		"ia2": v2.ValueTypeInt16Array,
-		"ia3": v2.ValueTypeInt32Array,
-		"ia4": v2.ValueTypeInt64Array,
-		"ia5": v2.ValueTypeUint8Array,
-		"ia6": v2.ValueTypeUint16Array,
-		"ia7": v2.ValueTypeUint32Array,
-		"ia8": v2.ValueTypeUint64Array,
-		"fa1": v2.ValueTypeFloat32Array,
-		"fa2": v2.ValueTypeFloat64Array,
+		"b1":  v3.ValueTypeBool,
+		"i1":  v3.ValueTypeInt8,
+		"i2":  v3.ValueTypeInt16,
+		"i3":  v3.ValueTypeInt32,
+		"i4":  v3.ValueTypeInt64,
+		"i5":  v3.ValueTypeUint8,
+		"i6":  v3.ValueTypeUint16,
+		"i7":  v3.ValueTypeUint32,
+		"s1":  v3.ValueTypeString,
+		"f1":  v3.ValueTypeFloat32,
+		"f2":  v3.ValueTypeFloat64,
+		"i8":  v3.ValueTypeUint64,
+		"ba":  v3.ValueTypeBoolArray,
+		"ia1": v3.ValueTypeInt8Array,
+		"ia2": v3.ValueTypeInt16Array,
+		"ia3": v3.ValueTypeInt32Array,
+		"ia4": v3.ValueTypeInt64Array,
+		"ia5": v3.ValueTypeUint8Array,
+		"ia6": v3.ValueTypeUint16Array,
+		"ia7": v3.ValueTypeUint32Array,
+		"ia8": v3.ValueTypeUint64Array,
+		"fa1": v3.ValueTypeFloat32Array,
+		"fa2": v3.ValueTypeFloat64Array,
 	}
 )
 
@@ -314,12 +314,12 @@ func TestWrongValue(t *testing.T) {
 }
 
 func TestPrintConf(t *testing.T) {
-	expMbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
+	expMbconf := types.MessageBusConfig{Broker: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
 		"proa":     "proa",
 		"Password": "fafsadfsadf=",
 		"Prob":     "Prob",
 	}}
-	mbconf := types.MessageBusConfig{SubscribeHost: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
+	mbconf := types.MessageBusConfig{Broker: types.HostInfo{Protocol: "tcp", Host: "127.0.0.1", Port: 6625}, Type: "mbus", Optional: map[string]string{
 		"proa":     "proa",
 		"Password": "fafsadfsadf=",
 		"Prob":     "Prob",
@@ -331,7 +331,7 @@ func TestPrintConf(t *testing.T) {
 
 func TestGetValue_Binary(t *testing.T) {
 	ev := []byte("Hello World")
-	r1 := dtos.BaseReading{ResourceName: "bin", ValueType: v2.ValueTypeBinary, BinaryReading: dtos.BinaryReading{MediaType: "application/text", BinaryValue: ev}}
+	r1 := dtos.BaseReading{ResourceName: "bin", ValueType: v3.ValueTypeBinary, BinaryReading: dtos.BinaryReading{MediaType: "application/text", BinaryValue: ev}}
 	if v, e := es.getValue(r1, conf.Log); e != nil {
 		t.Errorf("%s", e)
 	} else if !reflect.DeepEqual(ev, v) {

@@ -26,12 +26,12 @@ default:
 #    SkipCertVerify: true/false
 
 #Override the global configurations
-zmq_conf: #Conf_key
-  protocol: tcp
+redis_conf: #Conf_key
+  protocol: redis
   server: localhost
-  port: 5563
+  port: 6379
   topic: events
-  type: zero
+  type: redis
   messageType: event
 
 application_conf: #Conf_key
