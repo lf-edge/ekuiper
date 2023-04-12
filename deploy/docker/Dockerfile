@@ -1,4 +1,4 @@
-# Copyright 2021 EMQ Technologies Co., Ltd.
+# Copyright 2021-2023 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ ARG KUIPER_USER="kuiper"
 ARG KUIPER_USER_ID="1001"
 
 # (root) Add packages and "kuiper" user
-RUN apk add sed libzmq
+RUN apk add sed
 
 WORKDIR ${KUIPER_HOME}
 
