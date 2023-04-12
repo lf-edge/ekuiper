@@ -29,6 +29,7 @@
 - [Tdengine sink](./plugin/tdengine.md)： 写入 Tdengine 。
 - [Image sink](./plugin/image.md)： 写入一个图像文件。仅用于处理二进制结果。
 - [Zero MQ sink](./plugin/zmq.md)：输出到 Zero MQ 。
+- [Kafka sink](./plugin/kafka.md)：输出到 Kafka 。
 
 ## 更新
 

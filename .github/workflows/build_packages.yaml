@@ -182,6 +182,7 @@ jobs:
           - sinks/influx2
           - sinks/tdengine
           - sinks/zmq
+          - sinks/kafka
           - sinks/sql
           - sources/random
           - sources/zmq
