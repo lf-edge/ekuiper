@@ -55,8 +55,7 @@ func (dp *dbPool) getOrCreate(dsn string) (*sql.DB, error) {
 		return nil, err
 	}
 	conf.Log.Debugf("create new database instance: %v", dsn)
-	// TODO: expose max connections by configuration
-	newDb.SetMaxOpenConns(3)
+	newDb.SetMaxOpenConns(conf.Config.Sink.SinkSQLConf.MaxConnections)
 	dp.pool[dsn] = newDb
 	dp.connections[dsn] = 1
 	return newDb, nil
