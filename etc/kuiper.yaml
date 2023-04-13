@@ -29,6 +29,10 @@ basic:
   pluginHosts: https://packages.emqx.net
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: true
+  sql:
+    # maxConnections indicates the max connections for the certain database instance group by driver and dsn sharing between the sources/sinks
+    # 0 indicates unlimited
+    maxConnections: 0
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
