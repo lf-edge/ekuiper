@@ -20,13 +20,9 @@ import (
 )
 
 func TestDriverPool(t *testing.T) {
-	inTest.Store(true)
 	driver := "mysql"
 	dsn := "mock"
-	defer func() {
-		inTest.Store(false)
-	}()
-	testPool := newDriverPool()
+	testPool := newTestingDriverPool()
 
 	expCount := 3
 	wg := sync.WaitGroup{}
