@@ -146,7 +146,20 @@
 			},
 			{
 				"name": "optional",
-				"default": [{
+				"optional": true,
+				"control": "list",
+				"type": "object",
+				"connection_related": true,
+				"hint": {
+					"en_US": "If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are string type, so values for these configurations should be string - such as KeepAlive: \"5000\".",
+					"zh_CN": "如果使用了 MQTT 消息总线，还可以指定别的一些可选配置项。请注意，所有在可选的配置项里指定的值都必须为**字符类型**，因此这里出现的所有的配置应该是字符类型的 - 例如 KeepAlive: \"5000\"。"
+				},
+				"label": {
+					"en_US": "Optional",
+					"zh_CN": "选项"
+				},
+				"default": {
+					"ClientId": {
 						"name": "ClientId",
 						"default": "",
 						"optional": true,
@@ -161,7 +174,7 @@
 							"zh_CN": "MQTT 客户端 ID"
 						}
 					},
-					{
+					"Username": {
 						"name": "Username",
 						"default": "",
 						"optional": true,
@@ -176,7 +189,7 @@
 							"zh_CN": "MQTT 用户名"
 						}
 					},
-					{
+					"Password": {
 						"name": "Password",
 						"default": "",
 						"optional": true,
@@ -191,13 +204,12 @@
 							"zh_CN": "MQTT 密码"
 						}
 					},
-					{
+					"Qos": {
 						"name": "Qos",
 						"default": "",
 						"optional": true,
-						"control": "select",
+						"control": "text",
 						"type": "string",
-						"values": [0, 1, 2],
 						"hint": {
 							"en_US": "MQTT QoS",
 							"zh_CN": "MQTT 服务质量"
@@ -207,7 +219,7 @@
 							"zh_CN": "MQTT 服务质量"
 						}
 					},
-					{
+					"KeepAlive": {
 						"name": "KeepAlive",
 						"default": "",
 						"optional": true,
@@ -222,7 +234,7 @@
 							"zh_CN": "MQTT keepalive"
 						}
 					},
-					{
+					"Retained": {
 						"name": "Retained",
 						"default": "",
 						"optional": true,
@@ -237,7 +249,7 @@
 							"zh_CN": "MQTT retained"
 						}
 					},
-					{
+					"ConnectionPayload": {
 						"name": "ConnectionPayload",
 						"default": "",
 						"optional": true,
@@ -252,7 +264,7 @@
 							"zh_CN": "MQTT connection payload"
 						}
 					},
-					{
+					"CertFile": {
 						"name": "CertFile",
 						"default": "",
 						"optional": true,
@@ -267,7 +279,7 @@
 							"zh_CN": "MQTT cert file"
 						}
 					},
-					{
+					"KeyFile": {
 						"name": "KeyFile",
 						"default": "",
 						"optional": true,
@@ -282,7 +294,7 @@
 							"zh_CN": "MQTT key file"
 						}
 					},
-					{
+					"CertPEMBlock": {
 						"name": "CertPEMBlock",
 						"default": "",
 						"optional": true,
@@ -297,7 +309,7 @@
 							"zh_CN": "MQTT cert PEM block"
 						}
 					},
-					{
+					"KeyPEMBlock": {
 						"name": "KeyPEMBlock",
 						"default": "",
 						"optional": true,
@@ -312,7 +324,7 @@
 							"zh_CN": "MQTT key PEM block"
 						}
 					},
-					{
+					"SkipCertVerify": {
 						"name": "SkipCertVerify",
 						"default": "",
 						"optional": true,
@@ -327,18 +339,6 @@
 							"zh_CN": "MQTT skip cert verify"
 						}
 					}
-				],
-				"optional": true,
-				"control": "list",
-				"connection_related": true,
-				"type": "list_object",
-				"hint": {
-					"en_US": "If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are string type, so values for these configurations should be string - such as KeepAlive: \"5000\".",
-					"zh_CN": "如果使用了 MQTT 消息总线，还可以指定别的一些可选配置项。请注意，所有在可选的配置项里指定的值都必须为**字符类型**，因此这里出现的所有的配置应该是字符类型的 - 例如 KeepAlive: \"5000\"。"
-				},
-				"label": {
-					"en_US": "Optional",
-					"zh_CN": "选项"
 				}
 			}
 		]
