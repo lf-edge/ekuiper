@@ -209,7 +209,7 @@
       "name": "oauth",
       "optional": true,
       "control": "list",
-      "type": "list_object",
+      "type": "object",
       "hint": {
         "en_US": "Configure the oauth authentication flow.",
         "zh_CN": "配置 OAuth 验证流程。"
@@ -218,12 +218,12 @@
         "en_US": "OAuth",
         "zh_CN": "OAuth"
       },
-      "default":[
-        {
+      "default":{
+        "access": {
           "name": "access",
           "optional": true,
           "control": "list",
-          "type": "list_object",
+          "type": "object",
           "hint": {
             "en_US": "Configure how to fetch the access token.",
             "zh_CN": "配置如何获取访问令牌。"
@@ -232,8 +232,8 @@
             "en_US": "Access token request",
             "zh_CN": "访问令牌请求"
           },
-          "default": [
-            {
+          "default": {
+            "url": {
               "name": "url",
               "default": "",
               "optional": true,
@@ -248,7 +248,7 @@
                 "zh_CN": "访问令牌 URL"
               }
             },
-            {
+            "body": {
               "name": "body",
               "default": "",
               "optional": true,
@@ -263,7 +263,7 @@
                 "zh_CN": "访问令牌请求的正文"
               }
             },
-            {
+            "expire": {
               "name": "expire",
               "default": "",
               "optional": true,
@@ -278,13 +278,13 @@
                 "zh_CN": "过期时间"
               }
             }
-          ]
+          }
         },
-        {
+        "refresh":{
           "name": "refresh",
           "optional": true,
           "control": "list",
-          "type": "list_object",
+          "type": "object",
           "hint": {
             "en_US": "Configure how to refresh token after expiration.",
             "zh_CN": "配置令牌过期后如何更新令牌。"
@@ -293,8 +293,8 @@
             "en_US": "Refresh token request",
             "zh_CN": "更新令牌请求"
           },
-          "default": [
-            {
+          "default": {
+            "url":{
               "name": "url",
               "default": "",
               "optional": true,
@@ -309,11 +309,11 @@
                 "zh_CN": "更新令牌 URL"
               }
             },
-            {
+            "headers":{
               "name": "headers",
               "optional": true,
               "control": "list",
-              "type": "list_object",
+              "type": "object",
               "hint": {
                 "en_US": "The HTTP request headers that you want to send along with the HTTP refresh request.",
                 "zh_CN": "需要与刷新 Token HTTP 请求一起发送的 HTTP 请求标头。"
@@ -323,7 +323,7 @@
                 "zh_CN": "刷新令牌请求标头"
               }
             },
-            {
+            "body":{
               "name": "body",
               "default": "",
               "optional": true,
@@ -338,9 +338,9 @@
                 "zh_CN": "刷新令牌请求的正文"
               }
             }
-          ]
+          }
         }
-      ]
+      }
     }
   ],
   "node": {

@@ -35,7 +35,7 @@ func TestGetConf_Apply(t *testing.T) {
 		"incremental":        false,
 		"insecureSkipVerify": true,
 		"headers": map[string]interface{}{
-			"Accept": "application/json",
+			"accept": "application/json",
 		},
 	}
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
@@ -61,7 +61,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		"incremental":        true,
 		"insecureSkipVerify": true,
 		"headers": map[string]interface{}{
-			"Accept": "application/json",
+			"accept": "application/json",
 		},
 	}
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
@@ -84,7 +84,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		BodyType:           "json",
 		InsecureSkipVerify: true,
 		Headers: map[string]interface{}{
-			"Accept": "application/json",
+			"accept": "application/json",
 		},
 	}
 
