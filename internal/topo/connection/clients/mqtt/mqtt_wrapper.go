@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,13 +67,14 @@ func NewMqttClientWrapper(props map[string]interface{}) (clients.ClientWrapper, 
 		topicSubscriptions: make(map[string]*mqttSubscriptionInfo),
 		subscribers:        make(map[string]clients.SubscribedTopics),
 		refCnt:             1,
+		// set default connected to true, because we only return the client when it is create
+		connected: true,
 	}
-
 	err = client.Connect(cliWpr.onConnectHandler, cliWpr.onConnectLost)
 	if err != nil {
 		return nil, err
 	}
-
+	conf.Log.Infof("new mqtt client created")
 	return cliWpr, nil
 }
 
