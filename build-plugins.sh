@@ -26,11 +26,6 @@ OS=$(sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g')
 
 pre(){
     mkdir -p _plugins/$OS/$PLUGIN_TYPE
-    if [  $(cat etc/$PLUGIN_TYPE/$PLUGIN_NAME.json | jq -r ".libs") != 'null' ]; then
-        for lib in $(cat etc/$PLUGIN_TYPE/$PLUGIN_NAME.json | jq -r ".libs[]"); do
-            go get $lib;
-        done
-    fi
 }
 
 post(){
