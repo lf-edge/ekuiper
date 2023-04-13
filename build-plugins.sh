@@ -45,6 +45,10 @@ post(){
 
 build(){
     case $PLUGIN_NAME in
+        zmq )
+          sudo apt-get update
+          sudo apt-get install -y pkg-config zmq
+          ;;
         influx )
             go build -trimpath --buildmode=plugin -tags plugins -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME.go
             ;;
