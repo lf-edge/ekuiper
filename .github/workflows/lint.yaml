@@ -1,12 +1,5 @@
 name: Lint
 on:
-  push:
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - 'tools/check/revive.toml'
-      - '.github/workflows/lint.yaml'
   pull_request:
     types: [opened, edited, synchronize, reopened]
     paths:
