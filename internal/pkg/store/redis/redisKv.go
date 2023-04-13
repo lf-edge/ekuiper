@@ -64,7 +64,7 @@ func (kv redisKvStore) Set(key string, value interface{}) error {
 	if nil != err {
 		return err
 	}
-	return kv.database.SetNX(context.Background(), kv.tableKey(key), b, 0).Err()
+	return kv.database.Set(context.Background(), kv.tableKey(key), b, 0).Err()
 }
 
 func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
