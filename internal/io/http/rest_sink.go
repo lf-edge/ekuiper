@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -64,8 +65,15 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 
 	resp, err := ms.Send(ctx, decodedData, item, logger)
 	if err != nil {
-		return fmt.Errorf(`rest sink fails to send out the data: %s | method=%s path="%s" request_body="%s"`,
-			err,
+		e := err.Error()
+		if urlErr, ok := err.(*url.Error); ok {
+			// consider timeout and temporary error as recoverable
+			if urlErr.Timeout() || urlErr.Temporary() {
+				e = errorx.IOErr
+			}
+		}
+		return fmt.Errorf(`%s: rest sink fails to send out the data: method=%s path="%s" request_body="%s"`,
+			e,
 			ms.config.Method,
 			ms.config.Url,
 			decodedData,
@@ -75,7 +83,7 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
 		if err != nil {
 			return fmt.Errorf(`%s: http error. | method=%s path="%s" status=%d request_body="%s" response_body="%s"`,
-				errorx.IOErr,
+				err,
 				ms.config.Method,
 				ms.config.Url,
 				resp.StatusCode,

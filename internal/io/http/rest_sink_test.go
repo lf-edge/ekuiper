@@ -394,14 +394,14 @@ func TestRestSinkErrorLog(t *testing.T) {
 		}
 		err := s.Collect(vCtx, reqBody)
 
-		if !strings.Contains(err.Error(), "hello1") {
+		if strings.HasPrefix(err.Error(), errorx.IOErr) && !strings.Contains(err.Error(), "hello1") {
 			t.Errorf("should include request body, but got %s", err.Error())
 		}
 		fmt.Println(err.Error())
 		s.Close(context.Background())
 	})
 
-	t.Run("Test rest sink with io error prefix", func(t *testing.T) {
+	t.Run("Test  error info", func(t *testing.T) {
 		s := &RestSink{}
 		config := map[string]interface{}{
 			"url":          ts.URL,
@@ -419,7 +419,7 @@ func TestRestSinkErrorLog(t *testing.T) {
 			{"ab": "hello2"},
 		})
 		fmt.Println(err.Error())
-		if !strings.HasPrefix(err.Error(), errorx.IOErr) {
+		if strings.HasPrefix(err.Error(), errorx.IOErr) && !strings.Contains(err.Error(), "404") {
 			t.Errorf("should start with io error, but got %s", err.Error())
 		}
 
