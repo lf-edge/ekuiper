@@ -1,4 +1,4 @@
-# Copyright 2021 EMQ Technologies Co., Ltd.
+# Copyright 2021-2023 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ FROM debian:stretch
 ARG GO_VERSION
 
 RUN apt update \
-    && apt install -y make wget git curl procps zip libucl-dev zlib1g-dev pkg-config libczmq-dev build-essential debhelper jq zip
+    && apt install -y make wget git curl procps zip libucl-dev zlib1g-dev build-essential debhelper jq zip
 
 RUN case $(dpkg --print-architecture) in \
         arm|armhf|armv7) \

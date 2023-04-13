@@ -30,6 +30,7 @@ require (
 	github.com/pebbe/zmq4 v1.2.9
 	github.com/posener/order v0.0.1
 	github.com/prestodb/presto-go-client v0.0.0-20220921130148-c3f935ff1cf9
+	github.com/segmentio/kafka-go v0.4.39
 	github.com/sijms/go-ora/v2 v2.5.33
 	github.com/snowflakedb/gosnowflake v1.6.18
 	github.com/taosdata/driver-go/v2 v2.0.4
@@ -176,6 +177,8 @@ require (
 	github.com/twmb/murmur3 v1.1.6 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/uber-go/tally v3.5.3+incompatible // indirect
+	github.com/xdg/scram v1.0.5 // indirect
+	github.com/xdg/stringprep v1.0.3 // indirect
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
 	gitlab.com/nyarla/go-crypt v0.0.0-20160106005555-d9a5dc2b789b // indirect
 	go.opencensus.io v0.24.0 // indirect

@@ -3509,7 +3509,7 @@
 				"zh_CN": "窗口开始时间"
 			}
 		}
-	}, {
+	},{
 		"name": "window_end",
 		"example": "window_end()",
 		"hint": {
@@ -3530,6 +3530,58 @@
 			"label": {
 				"en_US": "Window End Time",
 				"zh_CN": "窗口结束时间"
+			}
+		}
+	},{
+		"name": "delay",
+		"example": "delay(time, returnVar)",
+		"hint": {
+			"en_US": "Delay the execution of the rule for a specified time.",
+			"zh_CN": "延迟执行规则一段时间。"
+		},
+		"args": [
+			{
+				"name": "time",
+				"optional": false,
+				"control": "field",
+				"type": "number",
+				"hint": {
+					"en_US": "The delay time in milliseconds, could be a literal or a field.",
+					"zh_CN": "延迟时间，单位为毫秒。可为字面量或者字段。"
+				},
+				"label": {
+					"en_US": "Delay Time",
+					"zh_CN": "延迟时间"
+				}
+			},
+			{
+				"name": "returnVar",
+				"optional": false,
+				"control": "field",
+				"type": "any",
+				"hint": {
+					"en_US": "The value to return after the delay.",
+					"zh_CN": "延迟后返回的值。"
+				},
+				"label": {
+					"en_US": "Return Value",
+					"zh_CN": "返回值"
+				}
+			}
+		],
+		"return": {
+			"type": "any",
+			"hint": {
+				"en_US": "delay return value",
+				"zh_CN": "延迟返回值"
+			}
+		},
+		"node": {
+			"category": "function",
+			"icon": "iconPath",
+			"label": {
+				"en_US": "Delay",
+				"zh_CN": "延迟执行"
 			}
 		}
 	}]

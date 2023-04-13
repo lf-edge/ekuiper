@@ -55,12 +55,6 @@ edgex:
     optional:
       KeepAlive: "50"
 
-  zeroMsgBus: #connection key
-    protocol: tcp
-    server: localhost
-    port: 5571
-    type: zero
-
   natsMsgBus: #connection key
     protocol: tcp
     server: edgex-nats-server

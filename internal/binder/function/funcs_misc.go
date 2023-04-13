@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func registerMiscFunc() {
@@ -606,7 +607,26 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
-
+	builtins["delay"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			d, err := cast.ToInt(args[0], cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return err, false
+			}
+			time.Sleep(time.Duration(d) * time.Millisecond)
+			return args[1], true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err
+			}
+			if ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
+				return ProduceErrInfo(0, "number - float or int")
+			}
+			return nil
+		},
+	}
 }
 
 func round(num float64) int {

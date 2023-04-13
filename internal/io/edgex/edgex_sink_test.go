@@ -20,8 +20,8 @@ package edgex
 import (
 	"encoding/json"
 	"fmt"
-	v2 "github.com/edgexfoundry/go-mod-core-contracts/v2/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v2/dtos"
+	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -59,7 +59,7 @@ func compareEvent(expected, actual *dtos.Event) bool {
 
 func compareReading(expected, actual dtos.BaseReading) bool {
 	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && expected.ResourceName == actual.ResourceName && expected.Value == actual.Value && expected.ValueType == actual.ValueType {
-		if expected.ValueType == v2.ValueTypeObject {
+		if expected.ValueType == v3.ValueTypeObject {
 			if !reflect.DeepEqual(expected.ObjectValue, actual.ObjectValue) {
 				return false
 			}
@@ -220,7 +220,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "12",
 						Origin:        14,
-						ValueType:     v2.ValueTypeInt64,
+						ValueType:     v3.ValueTypeInt64,
 						SimpleReading: dtos.SimpleReading{Value: "100"},
 					},
 					{
@@ -229,7 +229,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "22",
 						Origin:        24,
-						ValueType:     v2.ValueTypeFloat64,
+						ValueType:     v3.ValueTypeFloat64,
 						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
 					},
 				},
@@ -264,7 +264,7 @@ func TestProduceEvents(t1 *testing.T) {
 						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
 						DeviceName:    "demo",
 						ProfileName:   "demoProfile",
-						ValueType:     v2.ValueTypeFloat64,
+						ValueType:     v3.ValueTypeFloat64,
 					},
 				},
 			},
@@ -288,14 +288,14 @@ func TestProduceEvents(t1 *testing.T) {
 						SimpleReading: dtos.SimpleReading{Value: "5.000000e+01"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v2.ValueTypeFloat64,
+						ValueType:     v3.ValueTypeFloat64,
 					},
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "1.000000e+02"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v2.ValueTypeFloat64,
+						ValueType:     v3.ValueTypeFloat64,
 					},
 				},
 			},
@@ -319,28 +319,28 @@ func TestProduceEvents(t1 *testing.T) {
 						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v2.ValueTypeString,
+						ValueType:     v3.ValueTypeString,
 					},
 					{
 						ResourceName:  "h1",
 						SimpleReading: dtos.SimpleReading{Value: "true"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v2.ValueTypeBool,
+						ValueType:     v3.ValueTypeBool,
 					},
 					{
 						ResourceName:  "sa",
 						SimpleReading: dtos.SimpleReading{Value: "[1, 2, 3, 4]"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v2.ValueTypeStringArray,
+						ValueType:     v3.ValueTypeStringArray,
 					},
 					{
 						ResourceName:  "fa",
 						SimpleReading: dtos.SimpleReading{Value: "[1.100000e+00, 2.200000e+00, 3.300000e+00, 4.400000e+00]"},
 						DeviceName:    "ekuiper",
 						ProfileName:   "ekuiperProfile",
-						ValueType:     v2.ValueTypeFloat64Array,
+						ValueType:     v3.ValueTypeFloat64Array,
 					},
 				},
 			},
@@ -399,7 +399,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:   "demoProfile",
 						ResourceName:  "meta1",
 						SimpleReading: dtos.SimpleReading{Value: "newmeta"},
-						ValueType:     v2.ValueTypeString,
+						ValueType:     v3.ValueTypeString,
 					},
 					{
 						ResourceName:  "sa",
@@ -408,7 +408,7 @@ func TestProduceEvents(t1 *testing.T) {
 						DeviceName:    "test device name1",
 						Id:            "12",
 						Origin:        14,
-						ValueType:     v2.ValueTypeBinary,
+						ValueType:     v3.ValueTypeBinary,
 					},
 				},
 			},
@@ -438,7 +438,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:  "ekuiperProfile",
 						Id:           "12",
 						Origin:       14,
-						ValueType:    v2.ValueTypeObject,
+						ValueType:    v3.ValueTypeObject,
 						ObjectReading: dtos.ObjectReading{ObjectValue: map[string]interface{}{
 							"a": float64(1),
 							"b": "sttt",
@@ -465,7 +465,7 @@ func TestProduceEvents(t1 *testing.T) {
 						ProfileName:  "ekuiperProfile",
 						Id:           "",
 						Origin:       0,
-						ValueType:    v2.ValueTypeObject,
+						ValueType:    v3.ValueTypeObject,
 						ObjectReading: dtos.ObjectReading{ObjectValue: map[string]interface{}{
 							"a": float64(1),
 							"b": "sttt",
@@ -533,7 +533,7 @@ func TestEdgeXTemplate_Apply(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "",
 						Origin:        0,
-						ValueType:     v2.ValueTypeString,
+						ValueType:     v3.ValueTypeString,
 						SimpleReading: dtos.SimpleReading{Value: "w1"},
 					},
 					{
@@ -542,7 +542,7 @@ func TestEdgeXTemplate_Apply(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "",
 						Origin:        0,
-						ValueType:     v2.ValueTypeString,
+						ValueType:     v3.ValueTypeString,
 						SimpleReading: dtos.SimpleReading{Value: "100"},
 					},
 				},
@@ -566,7 +566,7 @@ func TestEdgeXTemplate_Apply(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "",
 						Origin:        0,
-						ValueType:     v2.ValueTypeFloat64,
+						ValueType:     v3.ValueTypeFloat64,
 						SimpleReading: dtos.SimpleReading{Value: "2.400000e+01"},
 					},
 					{
@@ -575,7 +575,7 @@ func TestEdgeXTemplate_Apply(t1 *testing.T) {
 						ProfileName:   "ekuiperProfile",
 						Id:            "",
 						Origin:        0,
-						ValueType:     v2.ValueTypeString,
+						ValueType:     v3.ValueTypeString,
 						SimpleReading: dtos.SimpleReading{Value: "c"},
 					},
 				},
