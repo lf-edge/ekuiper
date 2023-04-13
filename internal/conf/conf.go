@@ -112,6 +112,10 @@ func (sc *SourceConf) Validate() error {
 	return e
 }
 
+type SQLConf struct {
+	MaxConnections int `yaml:"maxConnections"`
+}
+
 type KuiperConf struct {
 	Basic struct {
 		Debug          bool     `yaml:"debug"`
@@ -129,6 +133,7 @@ type KuiperConf struct {
 		PluginHosts    string   `yaml:"pluginHosts"`
 		Authentication bool     `yaml:"authentication"`
 		IgnoreCase     bool     `yaml:"ignoreCase"`
+		SQLConf        *SQLConf `yaml:"sql"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf

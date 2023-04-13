@@ -37,6 +37,9 @@ type sqlsource struct {
 	Query sqlgen.SqlQueryGenerator
 	//The db connection instance
 	db *sql.DB
+
+	driver string
+	dsn    string
 }
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
@@ -66,7 +69,13 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 	m.Query = generator
 	m.conf = cfg
 
-	db, err := util.Open(m.conf.Url)
+	driver, dsn, err := util.ParseDBUrl(m.conf.Url)
+	if err != nil {
+		return err
+	}
+	m.driver = driver
+	m.dsn = dsn
+	db, err := util.FetchDBToOneNode(util.GlobalPool, driver, dsn)
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.Url, err, driver2.KnownBuildTags())
 	}
@@ -137,7 +146,7 @@ func (m *sqlsource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("Closing sql stream to %v", m.conf)
 	if m.db != nil {
-		_ = m.db.Close()
+		return util.ReturnDBFromOneNode(util.GlobalPool, m.driver, m.dsn)
 	}
 
 	return nil
