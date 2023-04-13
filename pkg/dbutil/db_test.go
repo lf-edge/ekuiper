@@ -20,10 +20,10 @@ import (
 )
 
 func TestDriverPool(t *testing.T) {
-	t.Skip("temp skip")
 	driver := "mysql"
-	dsn := "mock"
+	dsn := "root@127.0.0.1:4000/mock"
 	testPool := newDriverPool()
+	testPool.isTesting = true
 
 	expCount := 3
 	wg := sync.WaitGroup{}

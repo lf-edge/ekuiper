@@ -16,14 +16,16 @@ package dbutil
 
 import (
 	"database/sql"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/xo/dburl"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/xo/dburl"
 )
 
 type dbPool struct {
-	driver string
+	isTesting bool
+	driver    string
 
 	sync.RWMutex
 	pool        map[string]*sql.DB
@@ -48,7 +50,7 @@ func (dp *dbPool) getOrCreate(dsn string) (*sql.DB, error) {
 		dp.connections[dsn] = dp.connections[dsn] + 1
 		return db, nil
 	}
-	newDb, err := openDB(dp.driver, dsn)
+	newDb, err := openDB(dp.driver, dsn, dp.isTesting)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +60,19 @@ func (dp *dbPool) getOrCreate(dsn string) (*sql.DB, error) {
 	return newDb, nil
 }
 
-func openDB(driver, dsn string) (*sql.DB, error) {
-	return sql.Open(driver, dsn)
+func openDB(driver, dsn string, isTesting bool) (*sql.DB, error) {
+	if isTesting {
+		return nil, nil
+	}
+	db, err := sql.Open(driver, dsn)
+	if err != nil {
+		return nil, err
+	}
+	c := conf.Config
+	if c != nil && c.Sink != nil && c.Sink.SinkSQLConf != nil && c.Sink.SinkSQLConf.MaxConnections > 0 {
+		db.SetMaxOpenConns(c.Sink.SinkSQLConf.MaxConnections)
+	}
+	return db, nil
 }
 
 func (dp *dbPool) closeOneConn(dsn string) error {
@@ -79,10 +92,15 @@ func (dp *dbPool) closeOneConn(dsn string) error {
 	// remove db instance from map in order to avoid memory leak
 	delete(dp.pool, dsn)
 	delete(dp.connections, dsn)
+	if dp.isTesting {
+		return nil
+	}
 	return db.Close()
 }
 
 type driverPool struct {
+	isTesting bool
+
 	sync.RWMutex
 	pool map[string]*dbPool
 }
@@ -95,6 +113,7 @@ func (dp *driverPool) getOrCreate(driver string) *dbPool {
 		return db
 	}
 	newDB := &dbPool{
+		isTesting:   dp.isTesting,
 		driver:      driver,
 		pool:        map[string]*sql.DB{},
 		connections: map[string]int{},
