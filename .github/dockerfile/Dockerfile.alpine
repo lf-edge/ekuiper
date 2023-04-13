@@ -1,4 +1,4 @@
-# Copyright 2022-2023 EMQ Technologies Co., Ltd.
+# Copyright 2022 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 ARG GO_VERSION
 FROM golang:$GO_VERSION-alpine AS builder
 
-RUN apk add gcc make git libc-dev zip curl jq bash binutils-gold
+RUN apk add gcc make git libc-dev zip curl jq bash binutils-gold pkgconfig zeromq-dev
 
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
