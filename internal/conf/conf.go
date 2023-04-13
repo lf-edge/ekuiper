@@ -150,9 +150,6 @@ type KuiperConf struct {
 		PythonBin   string `yaml:"pythonBin"`
 		InitTimeout int    `yaml:"initTimeout"`
 	}
-	State struct {
-		Backend string `yaml:"backend"`
-	}
 }
 
 func InitConf() {

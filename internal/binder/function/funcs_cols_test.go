@@ -304,33 +304,3 @@ func TestExecIgnoreNull(t *testing.T) {
 		}
 	}
 }
-
-func TestKeyedStateValidation(t *testing.T) {
-	f, ok := builtins["get_keyed_state"]
-	if !ok {
-		t.Fatal("builtin not found")
-	}
-	var tests = []struct {
-		args []ast.Expr
-		err  error
-	}{
-		{
-			args: []ast.Expr{
-				&ast.StringLiteral{Val: "foo"},
-			},
-			err: fmt.Errorf("expect more than one arg but got 1"),
-		}, {
-			args: []ast.Expr{
-				&ast.StringLiteral{Val: "foo"},
-				&ast.StringLiteral{Val: "bar"},
-			},
-			err: nil,
-		},
-	}
-	for i, tt := range tests {
-		err := f.val(nil, tt.args)
-		if !reflect.DeepEqual(err, tt.err) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, err, tt.err)
-		}
-	}
-}

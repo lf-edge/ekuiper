@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -630,7 +631,7 @@ func registerMiscFunc() {
 	builtins["get_keyed_state"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if len(args) != 2 && len(args) != 3 {
+			if len(args) != 3 {
 				return fmt.Errorf("the args must be two or three"), false
 			}
 			key, ok := args[0].(string)
@@ -640,11 +641,7 @@ func registerMiscFunc() {
 
 			value, err := keyedstate.GetKeyedState(key)
 			if err != nil {
-				if len(args) == 3 {
-					return args[2], true
-				} else {
-					return nil, false
-				}
+				return args[2], true
 			}
 
 			if v, ok := args[1].(string); ok {
@@ -735,8 +732,8 @@ func registerMiscFunc() {
 			}
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
-			if len(args) != 2 && len(args) != 3 {
-				return fmt.Errorf("the args must be two or three")
+			if len(args) != 3 {
+				return fmt.Errorf("the args must be three")
 			}
 			if !ast.IsStringArg(args[0]) {
 				return ProduceErrInfo(0, "string")
