@@ -236,7 +236,7 @@
       "name": "optional",
       "optional": true,
       "control": "list",
-      "type": "list_object",
+      "type": "object",
       "connection_related": true,
       "hint": {
         "en_US": "If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in optional are string type, so values for these configurations should be string - such as KeepAlive: \"5000\".",
@@ -246,8 +246,8 @@
         "en_US": "Optional",
         "zh_CN": "选项"
       },
-      "default": [
-        {
+      "default": {
+        "ClientId": {
           "name": "ClientId",
           "default": "",
           "optional": true,
@@ -261,7 +261,8 @@
             "en_US": "MQTT clientID",
             "zh_CN": "MQTT 客户端 ID"
           }
-        }, {
+        },
+        "Username": {
           "name": "Username",
           "default": "",
           "optional": true,
@@ -275,7 +276,8 @@
             "en_US": "MQTT username",
             "zh_CN": "MQTT 用户名"
           }
-        }, {
+        },
+        "Password": {
           "name": "Password",
           "default": "",
           "optional": true,
@@ -289,7 +291,8 @@
             "en_US": "MQTT password",
             "zh_CN": "MQTT 密码"
           }
-        }, {
+        },
+        "Qos": {
           "name": "Qos",
           "default": "",
           "optional": true,
@@ -303,7 +306,8 @@
             "en_US": "MQTT QoS",
             "zh_CN": "MQTT 服务质量"
           }
-        }, {
+        },
+        "KeepAlive": {
           "name": "KeepAlive",
           "default": "",
           "optional": true,
@@ -317,7 +321,8 @@
             "en_US": "MQTT keepalive",
             "zh_CN": "MQTT keepalive"
           }
-        }, {
+        },
+        "Retained": {
           "name": "Retained",
           "default": "",
           "optional": true,
@@ -331,7 +336,8 @@
             "en_US": "MQTT retained",
             "zh_CN": "MQTT retained"
           }
-        }, {
+        },
+        "ConnectionPayload": {
           "name": "ConnectionPayload",
           "default": "",
           "optional": true,
@@ -345,7 +351,8 @@
             "en_US": "MQTT connection payload",
             "zh_CN": "MQTT connection payload"
           }
-        }, {
+        },
+        "CertFile": {
           "name": "CertFile",
           "default": "",
           "optional": true,
@@ -359,7 +366,8 @@
             "en_US": "MQTT cert file",
             "zh_CN": "MQTT cert file"
           }
-        }, {
+        },
+        "KeyFile": {
           "name": "KeyFile",
           "default": "",
           "optional": true,
@@ -373,7 +381,8 @@
             "en_US": "MQTT key file",
             "zh_CN": "MQTT key file"
           }
-        }, {
+        },
+        "CertPEMBlock": {
           "name": "CertPEMBlock",
           "default": "",
           "optional": true,
@@ -387,7 +396,8 @@
             "en_US": "MQTT cert PEM block",
             "zh_CN": "MQTT cert PEM block"
           }
-        }, {
+        },
+        "KeyPEMBlock": {
           "name": "KeyPEMBlock",
           "default": "",
           "optional": true,
@@ -401,7 +411,8 @@
             "en_US": "MQTT key PEM block",
             "zh_CN": "MQTT key PEM block"
           }
-        }, {
+        },
+        "SkipCertVerify": {
           "name": "SkipCertVerify",
           "default": "",
           "optional": true,
@@ -416,7 +427,7 @@
             "zh_CN": "MQTT skip cert verify"
           }
         }
-      ]
+      }
     }
   ],
   "node": {
