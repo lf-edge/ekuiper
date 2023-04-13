@@ -39,17 +39,12 @@ type tlsConf struct {
 }
 
 type SinkConf struct {
-	MemoryCacheThreshold int          `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
-	MaxDiskCache         int          `json:"maxDiskCache" yaml:"maxDiskCache"`
-	BufferPageSize       int          `json:"bufferPageSize" yaml:"bufferPageSize"`
-	EnableCache          bool         `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       int          `json:"resendInterval" yaml:"resendInterval"`
-	CleanCacheAtStop     bool         `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
-	SinkSQLConf          *SinkSQLConf `json:"sinkSQLConf" yaml:"sinkSQLConf"`
-}
-
-type SinkSQLConf struct {
-	MaxConnections int `json:"maxConnections" yaml:"maxConnections"`
+	MemoryCacheThreshold int  `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
+	MaxDiskCache         int  `json:"maxDiskCache" yaml:"maxDiskCache"`
+	BufferPageSize       int  `json:"bufferPageSize" yaml:"bufferPageSize"`
+	EnableCache          bool `json:"enableCache" yaml:"enableCache"`
+	ResendInterval       int  `json:"resendInterval" yaml:"resendInterval"`
+	CleanCacheAtStop     bool `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.
@@ -117,6 +112,10 @@ func (sc *SourceConf) Validate() error {
 	return e
 }
 
+type SQLConf struct {
+	MaxConnections int `yaml:"maxConnections"`
+}
+
 type KuiperConf struct {
 	Basic struct {
 		Debug          bool     `yaml:"debug"`
@@ -134,6 +133,7 @@ type KuiperConf struct {
 		PluginHosts    string   `yaml:"pluginHosts"`
 		Authentication bool     `yaml:"authentication"`
 		IgnoreCase     bool     `yaml:"ignoreCase"`
+		SQLConf        *SQLConf `yaml:"sql"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf

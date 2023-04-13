@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dbutil
+package util
 
 import (
 	"database/sql"
@@ -22,6 +22,28 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/xo/dburl"
 )
+
+var GlobalPool *driverPool
+
+func init() {
+	// GlobalPool maintained the *sql.DB group by the driver and DSN.
+	// Multiple sql sources/sinks can directly fetch the `*sql.DB` from the GlobalPool and return it back when they don't need it anymore.
+	// As multiple sql sources/sinks share the same `*sql.DB`, we can directly control the total count of connections by using `SetMaxOpenConns`
+	GlobalPool = newDriverPool()
+}
+
+type driverPool struct {
+	isTesting bool
+
+	sync.RWMutex
+	pool map[string]*dbPool
+}
+
+func newDriverPool() *driverPool {
+	return &driverPool{
+		pool: map[string]*dbPool{},
+	}
+}
 
 type dbPool struct {
 	isTesting bool
@@ -69,8 +91,8 @@ func openDB(driver, dsn string, isTesting bool) (*sql.DB, error) {
 		return nil, err
 	}
 	c := conf.Config
-	if c != nil && c.Sink != nil && c.Sink.SinkSQLConf != nil && c.Sink.SinkSQLConf.MaxConnections > 0 {
-		db.SetMaxOpenConns(c.Sink.SinkSQLConf.MaxConnections)
+	if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
+		db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
 	}
 	return db, nil
 }
@@ -98,13 +120,6 @@ func (dp *dbPool) closeOneConn(dsn string) error {
 	return db.Close()
 }
 
-type driverPool struct {
-	isTesting bool
-
-	sync.RWMutex
-	pool map[string]*dbPool
-}
-
 func (dp *driverPool) getOrCreate(driver string) *dbPool {
 	dp.Lock()
 	defer dp.Unlock()
@@ -129,23 +144,13 @@ func (dp *driverPool) get(driver string) (*dbPool, bool) {
 	return dbPool, ok
 }
 
-func newDriverPool() *driverPool {
-	return &driverPool{
-		pool: map[string]*dbPool{},
-	}
-}
-
-var GlobalPool *driverPool
-
-func init() {
-	GlobalPool = newDriverPool()
-}
-
 func ParseDBUrl(urlstr string) (string, string, error) {
 	u, err := dburl.Parse(urlstr)
 	if err != nil {
 		return "", "", err
 	}
+	// Open returns *sql.DB from urlstr
+	// As we use modernc.org/sqlite with `sqlite` as driver name and dburl use `sqlite3` as driver name, we need to fix it before open sql.DB
 	if strings.ToLower(u.Driver) == "sqlite3" {
 		u.Driver = "sqlite"
 	}
