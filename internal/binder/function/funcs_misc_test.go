@@ -299,17 +299,24 @@ func TestKeyedStateValidation(t *testing.T) {
 			args: []ast.Expr{
 				&ast.StringLiteral{Val: "foo"},
 			},
-			err: fmt.Errorf("the args must be three"),
+			err: fmt.Errorf("Expect 3 arguments but found 1."),
 		}, {
 			args: []ast.Expr{
 				&ast.StringLiteral{Val: "foo"},
 				&ast.StringLiteral{Val: "bar"},
 			},
-			err: fmt.Errorf("the args must be three"),
+			err: fmt.Errorf("Expect 3 arguments but found 2."),
 		}, {
 			args: []ast.Expr{
 				&ast.StringLiteral{Val: "foo"},
 				&ast.StringLiteral{Val: "bar"},
+				&ast.StringLiteral{Val: "barz"},
+			},
+			err: fmt.Errorf("expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime"),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.StringLiteral{Val: "bigint"},
 				&ast.StringLiteral{Val: "barz"},
 			},
 			err: nil,
@@ -324,7 +331,7 @@ func TestKeyedStateValidation(t *testing.T) {
 }
 
 func TestKeyedStateExec(t *testing.T) {
-	keyedstate.InitManager()
+	keyedstate.InitKeyedStateKV()
 
 	f, ok := builtins["get_keyed_state"]
 	if !ok {

@@ -91,7 +91,7 @@ func StartUp(Version, LoadFileType string) {
 	if err != nil {
 		panic(err)
 	}
-	keyedstate.InitManager()
+	keyedstate.InitKeyedStateKV()
 
 	meta2.InitYamlConfigManager()
 	ruleProcessor = processor.NewRuleProcessor()

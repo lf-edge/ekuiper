@@ -26,7 +26,7 @@ func init() {
 
 func TestGetKeyedState(t *testing.T) {
 	// env set up
-	InitManager()
+	InitKeyedStateKV()
 
 	type args struct {
 		groupName string

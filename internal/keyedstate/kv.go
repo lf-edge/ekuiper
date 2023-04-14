@@ -19,28 +19,24 @@ import (
 	kv2 "github.com/lf-edge/ekuiper/pkg/kv"
 )
 
-var manager *Manager
+var kv kv2.KeyValue
 
 type Manager struct {
 	kv kv2.KeyValue
 }
 
-func InitManager() {
-	kv, _ := store.GetKV("keyed_state")
-	manager = &Manager{
-		kv: kv,
-	}
-	return
+func InitKeyedStateKV() {
+	kv, _ = store.GetKV("keyed_state")
 }
 
 func GetKeyedState(key string) (interface{}, error) {
-	return manager.kv.GetKeyedState(key)
+	return kv.GetKeyedState(key)
 }
 
 func SetKeyedState(key string, value interface{}) error {
-	return manager.kv.SetKeyedState(key, value)
+	return kv.SetKeyedState(key, value)
 }
 
 func ClearKeyedState() error {
-	return manager.kv.Drop()
+	return kv.Drop()
 }
