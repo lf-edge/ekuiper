@@ -16,6 +16,7 @@
 			"zh_CN": "示例插件，演示如何使用Tensorflow lite模型对图像进行标记推断。"
 		}
 	},
+	"name": "labelImage",
 	"functions": [{
 		"name": "labelImage",
 		"example": "labelImage(col1)",
