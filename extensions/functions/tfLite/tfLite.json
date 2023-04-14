@@ -16,6 +16,7 @@
 			"zh_CN": "通用的 TensorFlow Lite 插件，可以动态推断任何 tflite 模型。"
 		}
 	},
+	"name": "tfLite",
 	"functions": [{
 		"name": "tfLite",
 		"example": "tfLite(model,para1, para2,...)",
