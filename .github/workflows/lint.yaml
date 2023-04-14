@@ -24,6 +24,11 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
 
+      - name: Check licenses
+        run: |
+          go install github.com/google/go-licenses@latest
+          $(go env GOPATH)/bin/go-licenses check . --disallowed_types forbidden,restricted,unknown
+
       - name: Run Revive Action
         uses: docker://morphy/revive-action:v2
         with:
