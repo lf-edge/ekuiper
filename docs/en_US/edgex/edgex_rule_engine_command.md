@@ -161,7 +161,11 @@ actuate `Random-Boolean-Device`, it is time to build the eKuiper rules.
 Again, the 1st rule is to monitor for events coming from the `Random-UnsignedInteger-Device` device (one of the default
 virtual device managed devices), and if a `uint8` reading value is found larger than `20` in the event, then send the
 command to `Random-Boolean-Device` device to start generating random numbers (specifically - set random generation bool
-to true). Given the URL and parameters to the command, below is the curl command to declare the first rule in eKuiper.
+to true). 
+
+#### Option 1: Use Rest API
+
+Given the URL and parameters to the command, below is the curl command to declare the first rule in eKuiper.
 
 ``` bash
 curl -X POST \
@@ -186,12 +190,58 @@ curl -X POST \
 }'
 ```
 
+#### Option 2: Use Messaging
+
+See [core-command](https://docs.edgexfoundry.org/3.0/microservices/core/command/Ch-Command/#commands-via-messaging) for details. Take the first rule as an example to describe how to configure it:
+
+1. Set the MESSAGEQUEUE_EXTERNAL_ENABLED environment variable to true to enable the external messagebus of core-command.
+Set the MESSAGEQUEUE_EXTERNAL_URL environment variable to the address and port number of the external messagebus.
+2. Create the rule using the following configuration:
+```shell
+{
+  "sql": "SELECT uint8 FROM demo WHERE uint8 > 20",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://mqtt-server:1883",
+        "topic": "edgex/command/request/Random-Boolean-Device/WriteBoolValue/set",
+        "dataTemplate": "{\"ApiVersion\": \"v2\", \"contentType\": \"application/json\", \"CorrelationID\": \"14a42ea6-c394-41c3-8bcd-a29b9f5e6840\", \"RequestId\": \"e6e8a2f4-eb14-4649-9e2b-175247911380\", \"Payload\": \"eyJCb29sIjogInRydWUiLCAiRW5hYmxlUmFuZG9taXphdGlvbl9Cb29sIjogInRydWUifQ==\"}"
+      }
+    },
+    {
+      "log":{}
+    }
+  ]
+}
+```
+The payload is the base64-encoding json struct:
+```shell
+{"Bool":"true", "EnableRandomization_Bool": "true"}
+```
+3. Receive command response message from external MQTT broker on topic ```edgex/command/response/#```
+```shell
+{
+  "ReceivedTopic": "edgex/device/command/response/device-virtual/Random-Boolean-Device/WriteBoolValue/set",
+  "CorrelationID": "14a42ea6-c394-41c3-8bcd-a29b9f5e6840",
+  "ApiVersion": "v2",
+  "RequestID": "e6e8a2f4-eb14-4649-9e2b-175247911380",
+  "ErrorCode": 0,
+  "Payload": null,
+  "ContentType": "application/json",
+  "QueryParams": {}
+}
+```
+
 ### The second rule
 
 The 2nd rule is to monitor for events coming from the `Random-Integer-Device` device (another of the default virtual
 device managed devices), and if the average for `int8` reading values (within 20 seconds) is larger than 0, then send a
 command to `Random-Boolean-Device` device to stop generating random numbers (specifically - set random generation bool
-to false). Here is the curl request to setup the second rule in eKuiper. The same command URL is used as the same device
+to false). 
+
+#### Option 1: Use Rest API
+
+Here is the curl request to setup the second rule in eKuiper. The same command URL is used as the same device
 action (`Random-Boolean-Device's PUT bool command`) is being actuated, but with different parameters.
 
 ``` bash
@@ -215,6 +265,26 @@ curl -X POST \
     }
   ]
 }'
+```
+
+#### Option 2: Use Messaging
+The procedure is the same as the previous step. Use the following configuration to create a rule:
+```shell
+{
+  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE int8 != nil GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://mqtt-server:1883",
+        "topic": "edgex/command/request/Random-Boolean-Device/WriteBoolValue/set",
+        "dataTemplate": "{\"ApiVersion\": \"v2\", \"contentType\": \"application/json\", \"CorrelationID\": \"14a42ea6-c394-41c3-8bcd-a29b9f5e6840\", \"RequestId\": \"e6e8a2f4-eb14-4649-9e2b-175247911380\", \"Payload\": \"eyJCb29sIjogImZhbHNlIiwgIkVuYWJsZVJhbmRvbWl6YXRpb25fQm9vbCI6ICJmYWxzZSJ9\"}"
+      }
+    },
+    {
+      "log":{}
+    }
+  ]
+}
 ```
 
 ## Watch the eKuiper Logs

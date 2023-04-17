@@ -130,8 +130,11 @@ curl -X PUT \
 
 #### 第一条规则
 
-第一条规则是监视`Random-UnsignedInteger-Device`设备的规则，如果`uint8`值大于“ 20”，则向`Random-Boolean-Device`设备发送命令，并开启布尔值的随机生成 。 以下是规则定义，请注意：
+第一条规则是监视`Random-UnsignedInteger-Device`设备的规则，如果`uint8`值大于“ 20”，则向`Random-Boolean-Device`设备发送命令，并开启布尔值的随机生成 。 
 
+##### 使用 Rest API
+
+以下是规则定义，请注意：
 - 当uint8的值大于20时将触发该动作。由于uint8的值不用于向`Random-Boolean-Device`发送控制命令，因此在`rest`操作的`dataTemplate`属性中不使用`uint8`值。
 
 ```shell
@@ -157,11 +160,53 @@ curl -X POST \
 }'
 ```
 
+##### 使用 Messaging
+
+具体信息请详见[core-command](https://docs.edgexfoundry.org/3.0/microservices/core/command/Ch-Command/#commands-via-messaging)。这里以第一条规则为例，简单介绍一下如何配置：
+
+1. 将MESSAGEQUEUE_EXTERNAL_ENABLED环境变量设为true，开启core-command的external messagebus；
+将MESSAGEQUEUE_EXTERNAL_URL环境变量设为external messagebus的地址和端口号。
+2. 使用如下配置创建规则：
+```shell
+{
+  "sql": "SELECT uint8 FROM demo WHERE uint8 > 20",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://mqtt-server:1883",
+        "topic": "edgex/command/request/Random-Boolean-Device/WriteBoolValue/set",
+        "dataTemplate": "{\"ApiVersion\": \"v2\", \"contentType\": \"application/json\", \"CorrelationID\": \"14a42ea6-c394-41c3-8bcd-a29b9f5e6840\", \"RequestId\": \"e6e8a2f4-eb14-4649-9e2b-175247911380\", \"Payload\": \"eyJCb29sIjogInRydWUiLCAiRW5hYmxlUmFuZG9taXphdGlvbl9Cb29sIjogInRydWUifQ==\"}"
+      }
+    },
+    {
+      "log":{}
+    }
+  ]
+}
+```
+其中payload是```{"Bool":"true", "EnableRandomization_Bool": "true"}```的base64编码。
+3. 发送成功后，可以在```edgex/command/response/#```topic里收到如下response：
+```shell
+{
+  "ReceivedTopic": "edgex/device/command/response/device-virtual/Random-Boolean-Device/WriteBoolValue/set",
+  "CorrelationID": "14a42ea6-c394-41c3-8bcd-a29b9f5e6840",
+  "ApiVersion": "v2",
+  "RequestID": "e6e8a2f4-eb14-4649-9e2b-175247911380",
+  "ErrorCode": 0,
+  "Payload": null,
+  "ContentType": "application/json",
+  "QueryParams": {}
+}
+
+```
+
 #### 第二条规则
 
-第二条规则监视`Random-Integer-Device`设备，如果每20秒 `int8`的平均值大于0，则向`Random-Boolean-Device` 设备服务发送命令以关闭 布尔值的随机生成。
+第二条规则监视`Random-Integer-Device`设备，如果每20秒 `int8`的平均值大于0，则向`Random-Boolean-Device` 设备服务发送命令以关闭布尔值的随机生成。
 
 - uint8的平均值每20秒计算一次，如果平均值大于0，则向 `Random-Boolean-Device` 服务发送控制命令。
+
+##### 使用 Rest API
 
 ```shell
 curl -X POST \
@@ -184,6 +229,27 @@ curl -X POST \
     }
   ]
 }'
+```
+
+##### 使用 Messaging
+
+具体步骤同上，使用如下配置创建规则：
+```shell
+{
+  "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE int8 != nil GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
+  "actions": [
+    {
+      "mqtt": {
+        "server": "tcp://mqtt-server:1883",
+        "topic": "edgex/command/request/Random-Boolean-Device/WriteBoolValue/set",
+        "dataTemplate": "{\"ApiVersion\": \"v2\", \"contentType\": \"application/json\", \"CorrelationID\": \"14a42ea6-c394-41c3-8bcd-a29b9f5e6840\", \"RequestId\": \"e6e8a2f4-eb14-4649-9e2b-175247911380\", \"Payload\": \"eyJCb29sIjogImZhbHNlIiwgIkVuYWJsZVJhbmRvbWl6YXRpb25fQm9vbCI6ICJmYWxzZSJ9\"}"
+      }
+    },
+    {
+      "log":{}
+    }
+  ]
+}
 ```
 
 现在创建了两个规则，您可以查看edgex-kuiper的日志以获取规则执行结果。
