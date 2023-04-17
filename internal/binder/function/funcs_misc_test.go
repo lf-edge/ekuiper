@@ -17,6 +17,8 @@ package function
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/keyedstate"
+	"github.com/lf-edge/ekuiper/internal/testx"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -24,6 +26,10 @@ import (
 	"reflect"
 	"testing"
 )
+
+func init() {
+	testx.InitEnv()
+}
 
 func TestToMap(t *testing.T) {
 	f, ok := builtins["object_construct"]
@@ -278,4 +284,95 @@ func TestDelay(t *testing.T) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 		}
 	}
+}
+
+func TestKeyedStateValidation(t *testing.T) {
+	f, ok := builtins["get_keyed_state"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	var tests = []struct {
+		args []ast.Expr
+		err  error
+	}{
+		{
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+			},
+			err: fmt.Errorf("Expect 3 arguments but found 1."),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.StringLiteral{Val: "bar"},
+			},
+			err: fmt.Errorf("Expect 3 arguments but found 2."),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.StringLiteral{Val: "bar"},
+				&ast.StringLiteral{Val: "barz"},
+			},
+			err: fmt.Errorf("expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime"),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.StringLiteral{Val: "bigint"},
+				&ast.StringLiteral{Val: "barz"},
+			},
+			err: nil,
+		},
+	}
+	for i, tt := range tests {
+		err := f.val(nil, tt.args)
+		if !reflect.DeepEqual(err, tt.err) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, err, tt.err)
+		}
+	}
+}
+
+func TestKeyedStateExec(t *testing.T) {
+	keyedstate.InitKeyedStateKV()
+
+	f, ok := builtins["get_keyed_state"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
+	var tests = []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				"foo",
+			},
+			result: fmt.Errorf("the args must be two or three"),
+		}, { // 1
+			args: []interface{}{
+				"foo",
+				"bigint",
+				"baz",
+				"bar",
+			},
+			result: fmt.Errorf("the args must be two or three"),
+		}, { // 2
+			args: []interface{}{
+				"foo",
+				"float",
+				20.0,
+			},
+			result: 20.0,
+		},
+	}
+
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+	_ = keyedstate.ClearKeyedState()
 }

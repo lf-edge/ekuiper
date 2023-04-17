@@ -59,6 +59,20 @@ func TestKvGet(ks kv.KeyValue, t *testing.T) {
 	}
 }
 
+func TestKvGetKeyedState(ks kv.KeyValue, t *testing.T) {
+	if err := ks.SetKeyedState("foo", "bar"); nil != err {
+		t.Error(err)
+	}
+
+	if v, err := ks.GetKeyedState("foo"); err != nil {
+		t.Errorf("Should find the foo key")
+	} else {
+		if !reflect.DeepEqual("bar", v) {
+			t.Error("expect:bar", "get:", v)
+		}
+	}
+}
+
 func TestKvKeys(length int, ks kv.KeyValue, t *testing.T) {
 
 	expected := make([]string, 0)

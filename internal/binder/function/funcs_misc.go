@@ -24,13 +24,13 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"io"
 	"math"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -39,100 +39,17 @@ func registerMiscFunc() {
 	builtins["cast"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, ok := args[1].(string); ok {
-				switch v {
-				case "bigint":
-					if v1, ok1 := args[0].(int); ok1 {
-						return v1, true
-					} else if v1, ok1 := args[0].(float64); ok1 {
-						return int(v1), true
-					} else if v1, ok1 := args[0].(string); ok1 {
-						if temp, err := strconv.Atoi(v1); err == nil {
-							return temp, true
-						} else {
-							return err, false
-						}
-					} else if v1, ok1 := args[0].(bool); ok1 {
-						if v1 {
-							return 1, true
-						} else {
-							return 0, true
-						}
-					} else {
-						return fmt.Errorf("Not supported type conversion."), false
-					}
-				case "float":
-					if v1, ok1 := args[0].(int); ok1 {
-						return float64(v1), true
-					} else if v1, ok1 := args[0].(float64); ok1 {
-						return v1, true
-					} else if v1, ok1 := args[0].(string); ok1 {
-						if temp, err := strconv.ParseFloat(v1, 64); err == nil {
-							return temp, true
-						} else {
-							return err, false
-						}
-					} else if v1, ok1 := args[0].(bool); ok1 {
-						if v1 {
-							return 1.0, true
-						} else {
-							return 0.0, true
-						}
-					} else {
-						return fmt.Errorf("Not supported type conversion."), false
-					}
-				case "string":
-					r, e := cast.ToString(args[0], cast.CONVERT_ALL)
-					if e != nil {
-						return fmt.Errorf("Not supported type conversion, got error %v.", e), false
-					} else {
-						return r, true
-					}
-				case "boolean":
-					if v1, ok1 := args[0].(int); ok1 {
-						if v1 == 0 {
-							return false, true
-						} else {
-							return true, true
-						}
-					} else if v1, ok1 := args[0].(float64); ok1 {
-						if v1 == 0.0 {
-							return false, true
-						} else {
-							return true, true
-						}
-					} else if v1, ok1 := args[0].(string); ok1 {
-						if temp, err := strconv.ParseBool(v1); err == nil {
-							return temp, true
-						} else {
-							return err, false
-						}
-					} else if v1, ok1 := args[0].(bool); ok1 {
-						return v1, true
-					} else {
-						return fmt.Errorf("Not supported type conversion."), false
-					}
-				case "datetime":
-					dt, err := cast.InterfaceToTime(args[0], "")
-					if err != nil {
-						return err, false
-					} else {
-						return dt, true
-					}
-				default:
-					return fmt.Errorf("Unknow type, only support bigint, float, string, boolean and datetime."), false
-				}
-			} else {
-				return fmt.Errorf("Expect string type for the 2nd parameter."), false
-			}
+			value := args[0]
+			newType := args[1]
+			return cast.ToType(value, newType)
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			if err := ValidateLen(2, len(args)); err != nil {
 				return err
 			}
 			a := args[1]
-			if !ast.IsStringArg(a) {
-				return ProduceErrInfo(1, "string")
+			if ast.IsNumericArg(a) || ast.IsTimeArg(a) || ast.IsBooleanArg(a) {
+				return ProduceErrInfo(0, "string")
 			}
 			if av, ok := a.(*ast.StringLiteral); ok {
 				if !(av.Val == "bigint" || av.Val == "float" || av.Val == "string" || av.Val == "boolean" || av.Val == "datetime") {
@@ -627,6 +544,41 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
+	builtins["get_keyed_state"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) != 3 {
+				return fmt.Errorf("the args must be two or three"), false
+			}
+			key, ok := args[0].(string)
+			if !ok {
+				return fmt.Errorf("key %v is not a string", args[0]), false
+			}
+
+			value, err := keyedstate.GetKeyedState(key)
+			if err != nil {
+				return args[2], true
+			}
+
+			return cast.ToType(value, args[1])
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(3, len(args)); err != nil {
+				return err
+			}
+			a := args[1]
+			if ast.IsNumericArg(a) || ast.IsTimeArg(a) || ast.IsBooleanArg(a) {
+				return ProduceErrInfo(0, "string")
+			}
+			if av, ok := a.(*ast.StringLiteral); ok {
+				if !(av.Val == "bigint" || av.Val == "float" || av.Val == "string" || av.Val == "boolean" || av.Val == "datetime") {
+					return fmt.Errorf("expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime")
+				}
+			}
+			return nil
+		},
+	}
+
 }
 
 func round(num float64) int {

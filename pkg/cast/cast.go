@@ -789,6 +789,13 @@ func ToBool(input interface{}, sn Strictness) (bool, error) {
 		if sn == CONVERT_ALL {
 			return strconv.ParseBool(b)
 		}
+	case float64:
+		if sn == CONVERT_ALL {
+			if b != 0 {
+				return true, nil
+			}
+			return false, nil
+		}
 	}
 	return false, fmt.Errorf("cannot convert %[1]T(%[1]v) to bool", input)
 }
@@ -1100,4 +1107,53 @@ func ConvertSlice(v interface{}) []interface{} {
 		}
 	}
 	return tempArr
+}
+
+// ToType cast value into newType type
+// newType support bigint, float, string, boolean, datetime
+func ToType(value interface{}, newType interface{}) (interface{}, bool) {
+	if v, ok := newType.(string); ok {
+		switch v {
+		case "bigint":
+			r, e := ToInt(value, CONVERT_ALL)
+			if e != nil {
+				return fmt.Errorf("not supported type conversion, got error %v", e), false
+			} else {
+				return r, true
+			}
+		case "float":
+			r, e := ToFloat64(value, CONVERT_ALL)
+			if e != nil {
+				return fmt.Errorf("not supported type conversion, got error %v", e), false
+			} else {
+				return r, true
+			}
+		case "string":
+			r, e := ToString(value, CONVERT_ALL)
+			if e != nil {
+				return fmt.Errorf("not supported type conversion, got error %v", e), false
+			} else {
+				return r, true
+			}
+		case "boolean":
+			r, e := ToBool(value, CONVERT_ALL)
+			if e != nil {
+				return fmt.Errorf("not supported type conversion, got error %v", e), false
+			} else {
+				return r, true
+			}
+		case "datetime":
+			dt, err := InterfaceToTime(value, "")
+			if err != nil {
+				return err, false
+			} else {
+				return dt, true
+			}
+		default:
+			return fmt.Errorf("unknow type, only support bigint, float, string, boolean and datetime"), false
+		}
+	} else {
+		return fmt.Errorf("expect string type for type parameter"), false
+	}
+
 }
