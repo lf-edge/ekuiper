@@ -280,6 +280,22 @@
 			]
 		},
 		{
+			"title": "案例",
+			"path": "example/howto",
+			"children": [
+				{
+					"title": "数据合并",
+					"path": "example/data_merge/overview",
+					"children": [
+						{
+							"title": "合并单流多设备数据",
+							"path": "example/data_merge/merge_single_stream"
+						}
+					]
+				}
+			]
+		},
+		{
 			"title": "管理指南",
 			"children": [
 				{
@@ -953,6 +969,22 @@
 						{
 							"title": "Running AI Model with TensorFlow Lite Function Plugin",
 							"path": "guide/ai/tensorflow_lite"
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "Example",
+			"path": "example/howto",
+			"children": [
+				{
+					"title": "Data Merging",
+					"path": "example/data_merge/overview",
+					"children": [
+						{
+							"title": "Merge multiple devices' data in single stream",
+							"path": "example/data_merge/merge_single_stream"
 						}
 					]
 				}
