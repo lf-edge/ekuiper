@@ -46,6 +46,12 @@ func TestSqlKvGet(t *testing.T) {
 	common.TestKvGet(ks, t)
 }
 
+func TestSqlKvSetGet(t *testing.T) {
+	ks, db, abs := setupSqlKv()
+	defer cleanSqlKv(db, abs)
+	common.TestKvSetGet(ks, t)
+}
+
 func TestSqlKvKeys(t *testing.T) {
 	ks, db, abs := setupSqlKv()
 	defer cleanSqlKv(db, abs)

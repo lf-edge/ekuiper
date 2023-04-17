@@ -37,6 +37,12 @@ func TestRedisKvSet(t *testing.T) {
 	common.TestKvSet(ks, t)
 }
 
+func TestRedisKvSetGet(t *testing.T) {
+	ks, db, minRedis := setupRedisKv()
+	defer cleanRedisKv(db, minRedis)
+	common.TestKvSetGet(ks, t)
+}
+
 func TestRedisKvGet(t *testing.T) {
 	ks, db, minRedis := setupRedisKv()
 	defer cleanRedisKv(db, minRedis)
