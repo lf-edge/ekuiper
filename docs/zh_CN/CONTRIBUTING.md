@@ -42,7 +42,7 @@ $ git checkout -b <my-branch> upstream/master
 
 以 GoLand 为例，开发者可以对代码进行调试。
 
-1. 调试整个程序。确保 [Makefile](../../Makefile) build_prepare 部分提到的所有目录都在你的eKuiper根路径中创建。添加你的断点。打开 `cmd/kuiperd/main.go` 。在主函数中，你会发现标尺上有一个绿色的三角形，点击它并选择调试。然后创建你的流/规则，让它运行到你的断点，调试器会在那里暂停。
+1. 调试整个程序。确保 [Makefile](https://github.com/lf-edge/ekuiper/blob/master/Makefile) build_prepare 部分提到的所有目录都在你的eKuiper根路径中创建。添加你的断点。打开 `cmd/kuiperd/main.go` 。在主函数中，你会发现标尺上有一个绿色的三角形，点击它并选择调试。然后创建你的流/规则，让它运行到你的断点，调试器会在那里暂停。
 2. 要调试一小部分代码，我们建议写一个单元测试并调试它。你可以到任何一个测试文件中，找到同样的绿色三角形，在调试模式下运行。例如，`pkg/cast/cast_test.go` TestMapConvert_Funcs 可以作为调试运行。
 
 #### 调试 edgex 代码

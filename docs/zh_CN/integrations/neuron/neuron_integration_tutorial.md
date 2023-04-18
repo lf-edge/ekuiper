@@ -39,7 +39,7 @@ Neuron 与 eKuiper 的连接经历了几个阶段：
 
 Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方案。本文以 Docker 方案为例，采用 [docker compose](https://docs.docker.com/compose/) 方式，一键完成边缘端两个组件的快速部署。
 
-1. 复制 [docker-compose.yml](./docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 Neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。如果要使用 eKuiper alpine 版本，需要在 compose 文件的 eKuiper 部分添加 `user: root:root` 赋予写入 ipc 文件的权限，否则连接将无法建立。
+1. 复制 [docker-compose.yml](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/integrations/neuron/docker-compose.yml) 文件到部署的机器上。其内容如下，包含了 Neuron，eKuiper 以及 eKuiper 的管理界面 eKuiper manager（可选）。其中，eKuiper 和 Neuron 共享了名为 nng-ipc 的 volume ，用于二者通信。如果要使用 eKuiper alpine 版本，需要在 compose 文件的 eKuiper 部分添加 `user: root:root` 赋予写入 ipc 文件的权限，否则连接将无法建立。
 
    ```yaml
    version: '3.4'

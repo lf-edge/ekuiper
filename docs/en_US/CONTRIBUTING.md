@@ -43,7 +43,7 @@ $ git checkout -b <my-branch> upstream/master
 
 Take GoLand as an example, developers can debug the code: 
 
-1. Debug the whole program. Make sure all directories mentioned in [Makefile](../../Makefile) build_prepare sections are created in your eKuiper root path. Add your breakpoints. Open `cmd/kuiperd/main.go`. In the main function, you'll find a green triangle in the ruler, click it and select debug. Then create your stream/rule that would run through your breakpoint, the debugger will pause there.
+1. Debug the whole program. Make sure all directories mentioned in [Makefile](https://github.com/lf-edge/ekuiper/blob/master/Makefile) build_prepare sections are created in your eKuiper root path. Add your breakpoints. Open `cmd/kuiperd/main.go`. In the main function, you'll find a green triangle in the ruler, click it and select debug. Then create your stream/rule that would run through your breakpoint, the debugger will pause there.
 2. To debug a small portion of code, we recommend writing a unit test and debug it. You can go to any test file and find the same green triangle to run in debug mode. For example, `pkg/cast/cast_test.go` TestMapConvert_Funcs can run as debug.
 
 #### Debug edgex code

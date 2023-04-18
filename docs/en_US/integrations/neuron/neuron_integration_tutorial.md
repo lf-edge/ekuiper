@@ -39,7 +39,7 @@ Before getting started, the following environment needs to be prepared.
 
 Both Neuron and eKuiper support binary installation packages and Docker containerized deployment solutions. In this article, we take Docker solution as an example and use [docker compose](https://docs.docker.com/compose/) to quickly deploy two components on the edge with one click.
 
-1. Copy [docker-compose.yml](. /docker-compose.yml) file to the deployment machine. The contents are as follows, containing Neuron, eKuiper, and the eKuiper manager (optional). In particular, eKuiper and neuron share a volume called nng-ipc, which is used for communication between the two. If using eKuiper alpine version, add `user: root:root` into the eKuiper section to grant the write access to the ipc file, otherwise, the connection cannot be established.
+1. Copy [docker-compose.yml](https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/integrations/neuron/docker-compose.yml) file to the deployment machine. The contents are as follows, containing Neuron, eKuiper, and the eKuiper manager (optional). In particular, eKuiper and neuron share a volume called nng-ipc, which is used for communication between the two. If using eKuiper alpine version, add `user: root:root` into the eKuiper section to grant the write access to the ipc file, otherwise, the connection cannot be established.
 
    ```yaml
    version: '3.4'
