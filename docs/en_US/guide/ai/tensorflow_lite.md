@@ -20,7 +20,7 @@ In this tutorial we will use the [sin](https://github.com/mattn/go-tflite/tree/m
 
 ### eKuiper Start up
 
-This tutorial uses the eKuiper Docker image `lfedge/ekuiper:1.8.0-slim` and the eKuiper manager Docker image `emqx/ekuiper-manager:1.8.0` released by the team to demonstrate. Please refer to [here]( https://hub.docker.com/r/emqx/ekuiper-manager) on how to use them.
+This tutorial uses the eKuiper Docker image `lfedge/ekuiper:1.8.0-slim` and the eKuiper manager Docker image `emqx/ekuiper-manager:1.8.0` released by the team to demonstrate. Please refer to [here](https://hub.docker.com/r/emqx/ekuiper-manager) on how to use them.
 
 ### TensorFlow Lite Plugin Download
 
