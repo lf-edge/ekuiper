@@ -687,6 +687,8 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			t.Errorf("statement parse error %s", err)
 			break
 		}
+		resolverVisitor := xsql.ResolverVisitor{Stmt: stmt}
+		stmt = resolverVisitor.GetOptimizedStmt()
 
 		if table, ok := stmt.Sources[0].(*ast.Table); !ok {
 			t.Errorf("statement source is not a table")

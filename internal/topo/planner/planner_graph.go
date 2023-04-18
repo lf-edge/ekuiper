@@ -408,6 +408,8 @@ func parseJoin(props map[string]interface{}) (*operator.JoinOp, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid join statement error: %v", err)
 	}
+	resolverVisitor := xsql.ResolverVisitor{Stmt: p}
+	p = resolverVisitor.GetOptimizedStmt()
 	return &operator.JoinOp{Joins: p.Joins, From: p.Sources[0].(*ast.Table)}, nil
 }
 
