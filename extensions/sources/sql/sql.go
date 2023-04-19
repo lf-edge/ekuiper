@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/xo/dburl"
 )
 
 type sqlConConfig struct {
@@ -37,9 +36,6 @@ type sqlsource struct {
 	Query sqlgen.SqlQueryGenerator
 	//The db connection instance
 	db *sql.DB
-
-	driver string
-	dsn    string
 }
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
@@ -56,26 +52,18 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 		return fmt.Errorf("property interval is required")
 	}
 
-	Db, err := dburl.Parse(cfg.Url)
+	driver, err := util.ParseDriver(cfg.Url)
 	if err != nil {
 		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
 	}
-
-	generator, err := sqlgen.GetQueryGenerator(Db, props)
+	generator, err := sqlgen.GetQueryGenerator(driver, props)
 	if err != nil {
 		return fmt.Errorf("GetQueryGenerator %s fail with error: %v", cfg.Url, err)
 	}
 
 	m.Query = generator
 	m.conf = cfg
-
-	driver, dsn, err := util.ParseDBUrl(m.conf.Url)
-	if err != nil {
-		return err
-	}
-	m.driver = driver
-	m.dsn = dsn
-	db, err := util.FetchDBToOneNode(util.GlobalPool, driver, dsn)
+	db, err := util.FetchDBToOneNode(util.GlobalPool, m.conf.Url)
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.Url, err, driver2.KnownBuildTags())
 	}
@@ -146,7 +134,7 @@ func (m *sqlsource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("Closing sql stream to %v", m.conf)
 	if m.db != nil {
-		return util.ReturnDBFromOneNode(util.GlobalPool, m.driver, m.dsn)
+		return util.ReturnDBFromOneNode(util.GlobalPool, m.conf.Url)
 	}
 
 	return nil

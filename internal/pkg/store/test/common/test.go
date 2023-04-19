@@ -26,9 +26,51 @@ func TestKvSetnx(ks kv.KeyValue, t *testing.T) {
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
 	}
+	var val string
+	_, _ = ks.Get("foo", &val)
+	if val != "bar" {
+		t.Error("expect:bar", "get:", val)
+	}
 
 	if err := ks.Setnx("foo", "bar1"); nil == err {
 		t.Errorf("Can't overwrite an existing intem: %v", err)
+	}
+}
+
+func TestKvSetGet(ks kv.KeyValue, t *testing.T) {
+	var val string
+	//SetNX
+	if err := ks.Setnx("foo", "bar"); nil != err {
+		t.Error(err)
+	}
+	_, _ = ks.Get("foo", &val)
+	if val != "bar" {
+		t.Error("expect:bar", "get:", val)
+	}
+
+	if err := ks.Setnx("foo", "bar1"); nil == err {
+		t.Errorf("Can't overwrite an existing intem: %v", err)
+	}
+	_, _ = ks.Get("foo", &val)
+	if val != "bar" {
+		t.Error("expect:bar", "get:", val)
+	}
+
+	//Set
+	if err := ks.Set("foo", "bar"); nil != err {
+		t.Error(err)
+	}
+	_, _ = ks.Get("foo", &val)
+	if val != "bar" {
+		t.Error("expect:bar", "get:", val)
+	}
+
+	if err := ks.Set("foo", "bar1"); nil != err {
+		t.Errorf("Set should overwrite an existing record")
+	}
+	_, _ = ks.Get("foo", &val)
+	if val != "bar1" {
+		t.Error("expect:bar", "get:", val)
 	}
 }
 
@@ -56,6 +98,20 @@ func TestKvGet(ks kv.KeyValue, t *testing.T) {
 		}
 	} else {
 		t.Errorf("Should find the foo key")
+	}
+}
+
+func TestKvGetKeyedState(ks kv.KeyValue, t *testing.T) {
+	if err := ks.SetKeyedState("foo", "bar"); nil != err {
+		t.Error(err)
+	}
+
+	if v, err := ks.GetKeyedState("foo"); err != nil {
+		t.Errorf("Should find the foo key")
+	} else {
+		if !reflect.DeepEqual("bar", v) {
+			t.Error("expect:bar", "get:", v)
+		}
 	}
 }
 

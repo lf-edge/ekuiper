@@ -20,9 +20,8 @@ import (
 )
 
 func TestDriverPool(t *testing.T) {
-	driver := "mysql"
-	dsn := "root@127.0.0.1:4000/mock"
-	testPool := newDriverPool()
+	url := "mock"
+	testPool := newDBPool()
 	testPool.isTesting = true
 
 	expCount := 3
@@ -33,14 +32,14 @@ func TestDriverPool(t *testing.T) {
 			defer func() {
 				wg.Done()
 			}()
-			_, err := FetchDBToOneNode(testPool, driver, dsn)
+			_, err := FetchDBToOneNode(testPool, url)
 			if err != nil {
 				t.Errorf("meet unexpected err:%v", err)
 			}
 		}()
 	}
 	wg.Wait()
-	count := getDBConnCount(testPool, driver, dsn)
+	count := getDBConnCount(testPool, url)
 	if expCount != count {
 		t.Errorf("expect conn count:%v, got:%v", expCount, count)
 	}
@@ -51,14 +50,14 @@ func TestDriverPool(t *testing.T) {
 			defer func() {
 				wg.Done()
 			}()
-			err := ReturnDBFromOneNode(testPool, driver, dsn)
+			err := ReturnDBFromOneNode(testPool, url)
 			if err != nil {
 				t.Errorf("meet unexpected err:%v", err)
 			}
 		}()
 	}
 	wg.Wait()
-	count = getDBConnCount(testPool, driver, dsn)
+	count = getDBConnCount(testPool, url)
 	if count != 0 {
 		t.Errorf("expect conn count:%v, got:%v", 0, count)
 	}

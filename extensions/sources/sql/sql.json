@@ -62,8 +62,8 @@
       },
       {
         "name": "internalSqlQueryCfg",
-        "default": [
-          {
+        "default": {
+          "table":{
             "name": "table",
             "default": "tableName",
             "optional": false,
@@ -78,7 +78,7 @@
               "zh_CN": "表名"
             }
           },
-          {
+          "indexField": {
             "name": "indexField",
             "default": "",
             "optional": true,
@@ -93,7 +93,7 @@
               "zh_CN": "索引字段名"
             }
           },
-          {
+          "indexValue": {
             "name": "indexValue",
             "default": "",
             "optional": true,
@@ -108,7 +108,7 @@
               "zh_CN": "索引字段初始值"
             }
           },
-          {
+          "limit": {
             "name": "limit",
             "default": 10,
             "optional": true,
@@ -123,7 +123,7 @@
               "zh_CN": "查询条数限制"
             }
           },
-          {
+          "indexFieldType": {
             "name": "indexFieldType",
             "default": "",
             "optional": true,
@@ -139,7 +139,7 @@
               "zh_CN": "索引字段格式"
             }
           },
-          {
+          "dateTimeFormat": {
             "name": "dateTimeFormat",
             "default": "",
             "optional": true,
@@ -154,10 +154,10 @@
               "zh_CN": "时间格式"
             }
           }
-        ],
+        },
         "optional": true,
         "control": "list",
-        "type": "list_object",
+        "type": "object",
         "hint": {
           "en_US": "basic configuration for the query",
           "zh_CN": "查询基础配置"
@@ -169,8 +169,8 @@
       },
       {
         "name": "templateSqlQueryCfg",
-        "default": [
-          {
+        "default": {
+          "TemplateSql": {
             "name": "TemplateSql",
             "default": "",
             "optional": false,
@@ -185,7 +185,7 @@
               "zh_CN": "查询语句模版"
             }
           },
-          {
+          "indexField": {
             "name": "indexField",
             "default": "",
             "optional": true,
@@ -200,7 +200,7 @@
               "zh_CN": "索引字段名"
             }
           },
-          {
+          "indexValue": {
             "name": "indexValue",
             "default": "",
             "optional": true,
@@ -215,7 +215,7 @@
               "zh_CN": "索引字段初始值"
             }
           },
-          {
+          "indexFieldType":{
             "name": "indexFieldType",
             "default": "",
             "optional": true,
@@ -231,7 +231,7 @@
               "zh_CN": "索引字段格式"
             }
           },
-          {
+          "dateTimeFormat": {
             "name": "dateTimeFormat",
             "default": "",
             "optional": true,
@@ -246,10 +246,10 @@
               "zh_CN": "时间格式"
             }
           }
-        ],
+        },
         "optional": true,
         "control": "list",
-        "type": "list_object",
+        "type": "object",
         "hint": {
           "en_US": "Query Template",
           "zh_CN": "查询模版"
@@ -261,8 +261,8 @@
       },
       {
         "name": "lookup",
-        "default": [
-          {
+        "default": {
+          "cache": {
             "name": "cache",
             "default": true,
             "optional": false,
@@ -277,7 +277,7 @@
               "zh_CN": "开启查询缓存"
             }
           },
-          {
+          "cacheTtl": {
             "name": "cacheTtl",
             "default": "600",
             "optional": true,
@@ -292,7 +292,7 @@
               "zh_CN": "缓存时间"
             }
           },
-          {
+          "cacheMissingKey": {
             "name": "cacheMissingKey",
             "default": true,
             "optional": false,
@@ -307,10 +307,10 @@
               "zh_CN": "缓存未命中的 Key"
             }
           }
-        ],
+        },
         "optional": true,
         "control": "list",
-        "type": "list_object",
+        "type": "object",
         "hint": {
           "en_US": "Lookup table configuration, only effective when using as a lookup table",
           "zh_CN": "查询表配置，仅在作为查询表使用时生效"

@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -278,20 +278,33 @@ func extractNamesFromProperties(jsonMap map[string]interface{}) ([]string, error
 func extractNamesFromElement(jsonMap map[string]interface{}) []string {
 	result := make([]string, 0)
 	list := jsonMap["default"]
-	if interfaceList, isList := list.([]interface{}); isList {
-		for _, element := range interfaceList {
-			if m, isMap := element.(map[string]interface{}); isMap {
-				re := extractNamesFromElement(m)
-				result = append(result, re...)
+	switch lt := list.(type) {
+	case []interface{}:
+		if len(lt) != 0 {
+			for _, element := range lt {
+				if m, isMap := element.(map[string]interface{}); isMap {
+					re := extractNamesFromElement(m)
+					result = append(result, re...)
+				}
 			}
+			return result
 		}
-	} else {
-		n := jsonMap["name"]
-		if s, isString := n.(string); isString {
-			result = append(result, s)
+	case map[string]interface{}:
+		if len(lt) != 0 {
+			for _, element := range lt {
+				if m, isMap := element.(map[string]interface{}); isMap {
+					re := extractNamesFromElement(m)
+					result = append(result, re...)
+				}
+			}
+			return result
 		}
 	}
-
+	// If not a list/map, or an empty list/map, then it's a single element
+	n := jsonMap["name"]
+	if s, isString := n.(string); isString {
+		result = append(result, s)
+	}
 	return result
 }
 

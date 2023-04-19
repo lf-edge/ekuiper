@@ -23,68 +23,70 @@ import (
 	"github.com/xo/dburl"
 )
 
-var GlobalPool *driverPool
+var GlobalPool *dbPool
 
 func init() {
 	// GlobalPool maintained the *sql.DB group by the driver and DSN.
 	// Multiple sql sources/sinks can directly fetch the `*sql.DB` from the GlobalPool and return it back when they don't need it anymore.
 	// As multiple sql sources/sinks share the same `*sql.DB`, we can directly control the total count of connections by using `SetMaxOpenConns`
-	GlobalPool = newDriverPool()
-}
-
-type driverPool struct {
-	isTesting bool
-
-	sync.RWMutex
-	pool map[string]*dbPool
-}
-
-func newDriverPool() *driverPool {
-	return &driverPool{
-		pool: map[string]*dbPool{},
-	}
+	GlobalPool = newDBPool()
 }
 
 type dbPool struct {
 	isTesting bool
-	driver    string
 
 	sync.RWMutex
-	pool        map[string]*sql.DB
+	// url -> *sql.DB
+	pool map[string]*sql.DB
+	// url -> connection count
 	connections map[string]int
 }
 
-func (dp *dbPool) getDBConnCount(dsn string) int {
+func newDBPool() *dbPool {
+	return &dbPool{
+		pool:        map[string]*sql.DB{},
+		connections: map[string]int{},
+	}
+}
+
+func (dp *dbPool) getDBConnCount(url string) int {
 	dp.RLock()
 	defer dp.RUnlock()
-	count, ok := dp.connections[dsn]
+	count, ok := dp.connections[url]
 	if ok {
 		return count
 	}
 	return 0
 }
 
-func (dp *dbPool) getOrCreate(dsn string) (*sql.DB, error) {
+func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
 	dp.Lock()
 	defer dp.Unlock()
-	db, ok := dp.pool[dsn]
+	db, ok := dp.pool[url]
 	if ok {
-		dp.connections[dsn] = dp.connections[dsn] + 1
+		dp.connections[url] = dp.connections[url] + 1
 		return db, nil
 	}
-	newDb, err := openDB(dp.driver, dsn, dp.isTesting)
+	newDb, err := openDB(url, dp.isTesting)
 	if err != nil {
 		return nil, err
 	}
-	conf.Log.Debugf("create new database instance: %v", dsn)
-	dp.pool[dsn] = newDb
-	dp.connections[dsn] = 1
+	conf.Log.Debugf("create new database instance: %v", url)
+	dp.pool[url] = newDb
+	dp.connections[url] = 1
 	return newDb, nil
 }
 
-func openDB(driver, dsn string, isTesting bool) (*sql.DB, error) {
+func openDB(url string, isTesting bool) (*sql.DB, error) {
 	if isTesting {
 		return nil, nil
+	}
+	if strings.HasPrefix(strings.ToLower(url), "dm://") {
+		return openDMDB(url)
+	}
+	driver, dsn, err := ParseDBUrl(url)
+	if err != nil {
+		return nil, err
 	}
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
@@ -97,51 +99,39 @@ func openDB(driver, dsn string, isTesting bool) (*sql.DB, error) {
 	return db, nil
 }
 
-func (dp *dbPool) closeOneConn(dsn string) error {
+func openDMDB(url string) (*sql.DB, error) {
+	db, err := sql.Open("dm", url)
+	if err != nil {
+		return nil, err
+	}
+	c := conf.Config
+	if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
+		db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
+	}
+	return db, nil
+}
+
+func (dp *dbPool) closeOneConn(url string) error {
 	dp.Lock()
 	defer dp.Unlock()
-	connCount, ok := dp.connections[dsn]
+	connCount, ok := dp.connections[url]
 	if !ok {
 		return nil
 	}
 	connCount--
 	if connCount > 0 {
-		dp.connections[dsn] = connCount
+		dp.connections[url] = connCount
 		return nil
 	}
-	conf.Log.Debugf("drop database instance: %v", dsn)
-	db := dp.pool[dsn]
+	conf.Log.Debugf("drop database instance: %v", url)
+	db := dp.pool[url]
 	// remove db instance from map in order to avoid memory leak
-	delete(dp.pool, dsn)
-	delete(dp.connections, dsn)
+	delete(dp.pool, url)
+	delete(dp.connections, url)
 	if dp.isTesting {
 		return nil
 	}
 	return db.Close()
-}
-
-func (dp *driverPool) getOrCreate(driver string) *dbPool {
-	dp.Lock()
-	defer dp.Unlock()
-	db, ok := dp.pool[driver]
-	if ok {
-		return db
-	}
-	newDB := &dbPool{
-		isTesting:   dp.isTesting,
-		driver:      driver,
-		pool:        map[string]*sql.DB{},
-		connections: map[string]int{},
-	}
-	dp.pool[driver] = newDB
-	return newDB
-}
-
-func (dp *driverPool) get(driver string) (*dbPool, bool) {
-	dp.RLock()
-	defer dp.RUnlock()
-	dbPool, ok := dp.pool[driver]
-	return dbPool, ok
 }
 
 func ParseDBUrl(urlstr string) (string, string, error) {
@@ -157,20 +147,25 @@ func ParseDBUrl(urlstr string) (string, string, error) {
 	return u.Driver, u.DSN, nil
 }
 
-func FetchDBToOneNode(driverPool *driverPool, driver, dsn string) (*sql.DB, error) {
-	dbPool := driverPool.getOrCreate(driver)
-	return dbPool.getOrCreate(dsn)
+func FetchDBToOneNode(pool *dbPool, url string) (*sql.DB, error) {
+	return pool.getOrCreate(url)
 }
 
-func ReturnDBFromOneNode(driverPool *driverPool, driver, dsn string) error {
-	dbPool, ok := driverPool.get(driver)
-	if !ok {
-		return nil
+func ReturnDBFromOneNode(pool *dbPool, url string) error {
+	return pool.closeOneConn(url)
+}
+
+func ParseDriver(url string) (string, error) {
+	if strings.HasPrefix(strings.ToLower(url), "dm://") {
+		return "dm", nil
 	}
-	return dbPool.closeOneConn(dsn)
+	u, err := dburl.Parse(url)
+	if err != nil {
+		return "", err
+	}
+	return u.Driver, nil
 }
 
-func getDBConnCount(driverPool *driverPool, driver, dsn string) int {
-	dbPool := driverPool.getOrCreate(driver)
-	return dbPool.getDBConnCount(dsn)
+func getDBConnCount(pool *dbPool, url string) int {
+	return pool.getDBConnCount(url)
 }

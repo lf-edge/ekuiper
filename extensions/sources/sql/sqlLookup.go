@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/xo/dburl"
 )
 
 type sqlLookupConfig struct {
@@ -32,15 +31,12 @@ type sqlLookupSource struct {
 	url   string
 	table string
 	db    *sql.DB
-
-	driver string
-	dsn    string
 }
 
 // Open establish a connection to the database
 func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Opening sql lookup source")
-	db, err := util.FetchDBToOneNode(util.GlobalPool, s.driver, s.dsn)
+	db, err := util.FetchDBToOneNode(util.GlobalPool, s.url)
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v", s.url, err)
 	}
@@ -57,18 +53,8 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 	if cfg.Url == "" {
 		return fmt.Errorf("property Url is required")
 	}
-	_, err = dburl.Parse(cfg.Url)
-	if err != nil {
-		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
-	}
 	s.url = cfg.Url
 	s.table = datasource
-	driver, dsn, err := util.ParseDBUrl(s.url)
-	if err != nil {
-		return err
-	}
-	s.driver = driver
-	s.dsn = dsn
 	return nil
 }
 
@@ -128,7 +114,7 @@ func (s *sqlLookupSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Closing sql lookup source")
 	defer func() { s.db = nil }()
 	if s.db != nil {
-		return util.ReturnDBFromOneNode(util.GlobalPool, s.driver, s.dsn)
+		return util.ReturnDBFromOneNode(util.GlobalPool, s.url)
 	}
 	return nil
 }

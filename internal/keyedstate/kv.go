@@ -12,24 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package keyedstate
 
 import (
-	"database/sql"
-	"strings"
-
-	"github.com/xo/dburl"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	kv2 "github.com/lf-edge/ekuiper/pkg/kv"
 )
 
-// Open returns *sql.DB from urlstr
-// As we use modernc.org/sqlite with `sqlite` as driver name and dburl use `sqlite3` as driver name, we need to fix it before open sql.DB
-func Open(urlstr string) (*sql.DB, error) {
-	u, err := dburl.Parse(urlstr)
-	if err != nil {
-		return nil, err
-	}
-	if strings.ToLower(u.Driver) == "sqlite3" {
-		u.Driver = "sqlite"
-	}
-	return sql.Open(u.Driver, u.DSN)
+var kv kv2.KeyValue
+
+type Manager struct {
+	kv kv2.KeyValue
+}
+
+func InitKeyedStateKV() {
+	kv, _ = store.GetKV("keyed_state")
+}
+
+func GetKeyedState(key string) (interface{}, error) {
+	return kv.GetKeyedState(key)
+}
+
+func SetKeyedState(key string, value interface{}) error {
+	return kv.SetKeyedState(key, value)
+}
+
+func ClearKeyedState() error {
+	return kv.Drop()
 }

@@ -44,6 +44,12 @@ func (t *sqlConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]int
 	if err != nil {
 		return keys, "", err
 	}
+	// The columns in sql needs quotes for DM database driver
+	if strings.HasPrefix(t.Url, "dm://") {
+		for i, key := range keys {
+			keys[i] = fmt.Sprintf(`"%v"`, key)
+		}
+	}
 	sqlStr := "(" + strings.Join(vals, ",") + ")"
 	return keys, sqlStr, nil
 }
@@ -86,9 +92,6 @@ type sqlSink struct {
 	conf *sqlConfig
 	//The db connection instance
 	db *sql.DB
-
-	driver string
-	dsn    string
 }
 
 func (m *sqlSink) Configure(props map[string]interface{}) error {
@@ -107,19 +110,13 @@ func (m *sqlSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("keyField is required when rowkindField is set")
 	}
 	m.conf = cfg
-	sqlDriver, dsn, err := util.ParseDBUrl(m.conf.Url)
-	if err != nil {
-		return err
-	}
-	m.driver = sqlDriver
-	m.dsn = dsn
 	return nil
 }
 
 func (m *sqlSink) Open(ctx api.StreamContext) (err error) {
 	logger := ctx.GetLogger()
 	logger.Debugf("Opening sql sink")
-	db, err := util.FetchDBToOneNode(util.GlobalPool, m.driver, m.dsn)
+	db, err := util.FetchDBToOneNode(util.GlobalPool, m.conf.Url)
 	if err != nil {
 		logger.Errorf("support build tags are %v", driver.KnownBuildTags())
 		return err
@@ -272,7 +269,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 
 func (m *sqlSink) Close(_ api.StreamContext) error {
 	if m.db != nil {
-		return util.ReturnDBFromOneNode(util.GlobalPool, m.driver, m.dsn)
+		return util.ReturnDBFromOneNode(util.GlobalPool, m.conf.Url)
 	}
 	return nil
 }
