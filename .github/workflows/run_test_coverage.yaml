@@ -8,6 +8,9 @@ on:
   push:
     tags:
       - "*"
+    ## For update codecov.io
+    branches:
+      - master**
   pull_request:
   release:
     types:

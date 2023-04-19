@@ -1,0 +1,9 @@
+codecov:
+  disable_default_path_fixes: true
+
+fixes:
+  - "github.com/lf-edge/ekuiper::"
+
+ignore:
+  - "**/main.go"
+  - "main.go"
