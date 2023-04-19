@@ -210,6 +210,10 @@ jobs:
             plugin: functions/tfLite
           - os: [alpine,"alpine"]
             plugin: sinks/tdengine
+          - os: [ alpine,"alpine" ]
+            plugin: sinks/zmq
+          - os: [ alpine,"alpine" ]
+            plugin: sources/zmq
 
     steps:
     - uses: actions/checkout@v3
@@ -272,9 +276,6 @@ jobs:
             ${ip_address}:9081/plugins/${plugin_type} \
             -X POST \
             -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\"}"
-        fi
-        if [ "${plugin_name}" = "zmq" ]; then
-           exit 0
         fi
         docker logs ${container_id}
         [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
