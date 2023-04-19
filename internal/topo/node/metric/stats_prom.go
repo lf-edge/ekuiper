@@ -103,6 +103,6 @@ func (sm *PrometheusStatManager) Clean(ruleId string) {
 
 // SetOutData
 // TODO to implement
-func (sm *PrometheusStatManager) SetOutData(data string) {
-	panic("not implemented")
+func (sm *PrometheusStatManager) SetOutData(_ string) {
+	return
 }

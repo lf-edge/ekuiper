@@ -16,6 +16,7 @@ package metric
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"time"
 )
@@ -57,6 +58,7 @@ type DefaultStatManager struct {
 	lastException     string
 	lastExceptionTime time.Time
 	outData           string
+	sampleRate        int64
 	//configs
 	opType     string //"source", "op", "sink"
 	prefix     string
@@ -81,6 +83,7 @@ func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
 	}
 
 	ds := DefaultStatManager{
+		sampleRate: conf.Config.Basic.MetricsSampleRate,
 		opType:     opType,
 		prefix:     prefix,
 		opId:       ctx.GetOpId(),
@@ -122,7 +125,9 @@ func (sm *DefaultStatManager) SetBufferLength(l int64) {
 }
 
 func (sm *DefaultStatManager) SetOutData(data string) {
-	sm.outData = data
+	if sm.totalRecordsIn%sm.sampleRate == 0 {
+		sm.outData = data
+	}
 }
 
 func (sm *DefaultStatManager) GetMetrics() []interface{} {
