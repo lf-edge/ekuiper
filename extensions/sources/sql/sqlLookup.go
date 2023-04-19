@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/xo/dburl"
 )
 
 type sqlLookupConfig struct {
@@ -53,10 +52,6 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 	}
 	if cfg.Url == "" {
 		return fmt.Errorf("property Url is required")
-	}
-	_, err = dburl.Parse(cfg.Url)
-	if err != nil {
-		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
 	}
 	s.url = cfg.Url
 	s.table = datasource

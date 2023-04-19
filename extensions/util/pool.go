@@ -81,11 +81,26 @@ func openDB(url string, isTesting bool) (*sql.DB, error) {
 	if isTesting {
 		return nil, nil
 	}
+	if strings.HasPrefix(strings.ToLower(url), "dm://") {
+		return openDMDB(url)
+	}
 	driver, dsn, err := ParseDBUrl(url)
 	if err != nil {
 		return nil, err
 	}
 	db, err := sql.Open(driver, dsn)
+	if err != nil {
+		return nil, err
+	}
+	c := conf.Config
+	if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
+		db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
+	}
+	return db, nil
+}
+
+func openDMDB(url string) (*sql.DB, error) {
+	db, err := sql.Open("dm", url)
 	if err != nil {
 		return nil, err
 	}
@@ -142,4 +157,15 @@ func ReturnDBFromOneNode(pool *dbPool, url string) error {
 
 func getDBConnCount(pool *dbPool, url string) int {
 	return pool.getDBConnCount(url)
+}
+
+func ParseDriver(url string) (string, error) {
+	if strings.HasPrefix(strings.ToLower(url), "dm://") {
+		return "dm", nil
+	}
+	u, err := dburl.Parse(url)
+	if err != nil {
+		return "", err
+	}
+	return u.Driver, nil
 }

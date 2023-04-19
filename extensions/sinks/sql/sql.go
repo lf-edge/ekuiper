@@ -44,6 +44,11 @@ func (t *sqlConfig) buildInsertSql(ctx api.StreamContext, mapData map[string]int
 	if err != nil {
 		return keys, "", err
 	}
+	if strings.HasPrefix(strings.ToLower(t.Url), "dm://") {
+		for i, key := range keys {
+			keys[i] = fmt.Sprintf(`"%v"`, key)
+		}
+	}
 	sqlStr := "(" + strings.Join(vals, ",") + ")"
 	return keys, sqlStr, nil
 }
