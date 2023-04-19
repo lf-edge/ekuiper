@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/xo/dburl"
 )
 
 type sqlConConfig struct {
@@ -53,12 +52,12 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 		return fmt.Errorf("property interval is required")
 	}
 
-	Db, err := dburl.Parse(cfg.Url)
+	driver, err := util.ParseDriver(cfg.Url)
 	if err != nil {
 		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
 	}
 
-	generator, err := sqlgen.GetQueryGenerator(Db, props)
+	generator, err := sqlgen.GetQueryGenerator(driver, props)
 	if err != nil {
 		return fmt.Errorf("GetQueryGenerator %s fail with error: %v", cfg.Url, err)
 	}

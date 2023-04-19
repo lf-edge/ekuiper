@@ -17,7 +17,6 @@ package sqlgen
 import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/xo/dburl"
 )
 
 type SqlQueryGenerator interface {
@@ -102,7 +101,7 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 	return nil
 }
 
-func GetQueryGenerator(u *dburl.URL, props map[string]interface{}) (SqlQueryGenerator, error) {
+func GetQueryGenerator(driver string, props map[string]interface{}) (SqlQueryGenerator, error) {
 	cfg := &sqlConfig{}
 	err := cfg.Init(props)
 	if err != nil {
@@ -118,7 +117,7 @@ func GetQueryGenerator(u *dburl.URL, props map[string]interface{}) (SqlQueryGene
 		}
 	}
 
-	switch u.Driver {
+	switch driver {
 	case "sqlserver":
 		return NewSqlServerQuery(cfg.InternalSqlQueryCfg), nil
 	default:
