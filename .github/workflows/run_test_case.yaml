@@ -38,7 +38,7 @@ jobs:
       run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: run test case
       run: |
-        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash > /dev/null && source $HOME/.wasmedge/env
+        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash && source $HOME/.wasmedge/env
         mkdir -p plugins/wasm
         set -e -u -x
         mkdir -p data

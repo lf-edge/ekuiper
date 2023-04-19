@@ -56,8 +56,9 @@ jobs:
         go tool cover -func coverage.out -o coverage.out
     - uses: actions/upload-artifact@v3
       with:
-        name: coverage.out
-        path: coverage.out
+        name: coverprofile
+        path: | 
+          *.out
 
   codecov:
     runs-on: ubuntu-latest
