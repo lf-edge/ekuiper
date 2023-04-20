@@ -210,10 +210,6 @@ jobs:
             plugin: functions/tfLite
           - os: [alpine,"alpine"]
             plugin: sinks/tdengine
-          - os: [ alpine,"alpine" ]
-            plugin: sinks/zmq
-          - os: [ alpine,"alpine" ]
-            plugin: sources/zmq
 
     steps:
     - uses: actions/checkout@v3
@@ -251,7 +247,7 @@ jobs:
         plugin_type=$(echo ${PLUGIN%%/*})
         plugin_name=$(echo ${PLUGIN##*/})
 
-        container_id=$(docker run -d -v $(pwd)/_plugins:/var/plugins docker.io/lfedge/ekuiper-${{ matrix.os[0] }})
+        container_id=$(docker run -u 0 -d -v $(pwd)/_plugins:/var/plugins docker.io/lfedge/ekuiper-${{ matrix.os[0] }})
         ip_address=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $container_id)
         os=$(docker exec -i ${container_id} sh -c "sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g'" )
         sleep 5
