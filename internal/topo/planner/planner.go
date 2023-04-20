@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -230,6 +230,10 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		ds                  ast.Dimensions
 	)
 
+	if err := checkSRFINConditions(stmt.Condition); err != nil {
+		return nil, err
+	}
+
 	streamStmts, analyticFuncs, err := decorateStmt(stmt, store)
 	if err != nil {
 		return nil, err
@@ -371,17 +375,68 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-
 	if stmt.Fields != nil {
-		p = ProjectPlan{
-			fields:      stmt.Fields,
-			isAggregate: xsql.IsAggStatement(stmt),
-			sendMeta:    opt.SendMetaToSink,
-		}.Init()
-		p.SetChildren(children)
+		srfMapping, err := extractSRFFromFileds(stmt)
+		if err != nil {
+			return nil, err
+		}
+		if len(srfMapping) > 0 {
+			psp := ProjectSetPlan{
+				SrfMapping:  srfMapping,
+				ProjectPlan: &ProjectPlan{},
+			}
+			psp.fields = stmt.Fields
+			psp.isAggregate = xsql.IsAggStatement(stmt)
+			psp.sendMeta = opt.SendMetaToSink
+			p = psp.Init()
+			p.SetChildren(children)
+		} else {
+			p = ProjectPlan{
+				fields:      stmt.Fields,
+				isAggregate: xsql.IsAggStatement(stmt),
+				sendMeta:    opt.SendMetaToSink,
+			}.Init()
+			p.SetChildren(children)
+		}
 	}
-
 	return optimize(p)
+}
+
+func checkSRFINConditions(condition ast.Expr) error {
+	var err error
+	ast.WalkFunc(condition, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			if f.FuncType == ast.FuncTypeSrf {
+				err = fmt.Errorf("set-returning-function is not supported in where conditions")
+				return false
+			}
+		}
+		return true
+	})
+	return err
+}
+
+// extractSRFFromFileds extracts the set-returning-functions in the select field.
+func extractSRFFromFileds(stmt *ast.SelectStatement) (map[string]struct{}, error) {
+	srfCount := 0
+	nonSrfCount := 0
+	srfMapping := make(map[string]struct{}, 0)
+	for _, field := range stmt.Fields {
+		if c, ok := field.Expr.(*ast.Call); ok && c.FuncType == ast.FuncTypeSrf {
+			srfCount++
+			srfMapping[c.Name] = struct{}{}
+		} else {
+			nonSrfCount++
+		}
+	}
+	if srfCount > 1 {
+		return nil, fmt.Errorf("select multi set-returning-functions are not supported for now")
+	}
+	if srfCount == 1 && nonSrfCount > 0 {
+		return nil, fmt.Errorf("select set-returning-function with other types are not supported for now")
+	}
+	return srfMapping, nil
 }
 
 func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.UnaryOperator {

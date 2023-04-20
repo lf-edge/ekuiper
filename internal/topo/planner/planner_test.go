@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@ package planner
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/gdexlab/go-render/render"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 func init() {
@@ -96,6 +97,64 @@ func Test_createLogicalPlan(t *testing.T) {
 		p   LogicalPlan
 		err string
 	}{
+		{
+			sql: "select * from src1 where unnest(myarray)",
+			err: "set-returning-function is not supported in where conditions",
+		},
+		{
+			sql: "select unnest(myarray) from src1",
+			p: ProjectSetPlan{
+				ProjectPlan: &ProjectPlan{
+					baseLogicalPlan: baseLogicalPlan{
+						children: []LogicalPlan{
+							DataSourcePlan{
+								baseLogicalPlan: baseLogicalPlan{},
+								name:            "src1",
+								streamFields: map[string]*ast.JsonStreamField{
+									"myarray": {
+										Type: "array",
+										Items: &ast.JsonStreamField{
+											Type: "string",
+										},
+									},
+								},
+								streamStmt: streams["src1"],
+								metaFields: []string{},
+							}.Init(),
+						},
+					},
+					fields: []ast.Field{
+						{
+							Name: "unnest",
+							Expr: &ast.Call{
+								Name:     "unnest",
+								FuncType: ast.FuncTypeSrf,
+								Args: []ast.Expr{
+									&ast.FieldRef{
+										StreamName: "src1",
+										Name:       "myarray",
+									},
+								},
+							},
+						},
+					},
+				},
+				SrfMapping: map[string]struct{}{
+					"unnest": {},
+				},
+			}.Init(),
+			err: "",
+		},
+		{
+			sql: "select unnest(myarray),id1 from src1",
+			p:   nil,
+			err: "select set-returning-function with other types are not supported for now",
+		},
+		{
+			sql: "select unnest(myarray), unnest(myarray) from src1",
+			p:   nil,
+			err: "select multi set-returning-functions are not supported for now",
+		},
 		{ // 0
 			sql: `SELECT myarray[temp] FROM src1`,
 			p: ProjectPlan{
