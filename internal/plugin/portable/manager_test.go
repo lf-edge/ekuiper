@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ func TestManager_Install(t *testing.T) {
 		}, { // 1
 			n:   "zipMissJson",
 			u:   endpoint + "/functions/misc.zip",
-			err: errors.New("fail to install plugin: missing or invalid json file zipMissJson.json"),
+			err: errors.New("fail to install plugin: missing or invalid json file zipMissJson.json, found 1 files in total"),
 		}, { // 2
 			n:   "urlerror",
 			u:   endpoint + "/sinks/nozip",
@@ -70,7 +70,7 @@ func TestManager_Install(t *testing.T) {
 		}, { // 4
 			n:   "wrongname",
 			u:   endpoint + "/portables/mirror.zip",
-			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json"),
+			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json, found 9 files in total"),
 		}, { // 5
 			n: "mirror2",
 			u: endpoint + "/portables/mirror.zip",
