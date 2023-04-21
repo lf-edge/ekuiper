@@ -48,9 +48,10 @@ Get_Dist_Name
 
 case $DISTRO in \
     Debian|Ubuntu|Raspbian ) \
-	apt update \
-	&& apt upgrade \
-        && apt install -y libzmq3-dev 2> /dev/null \
+	      apt-get update \
+          && apt-get install -y libczmq-dev 2> /dev/null \
+          && apt-get clean \
+          && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     ;; \
     Alpine ) \
         apk add libzmq \
@@ -59,5 +60,5 @@ case $DISTRO in \
         yum install -y zeromq 2> /dev/null \
     ;; \
 esac
-    
+
 echo "install success";
