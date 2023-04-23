@@ -102,7 +102,7 @@ func isSRFExists(node ast.Node) bool {
 	ast.WalkFunc(node, func(n ast.Node) bool {
 		switch f := n.(type) {
 		// skip checking Fields
-		case *ast.Fields:
+		case ast.Fields:
 			return false
 		case *ast.Call:
 			if f.FuncType == ast.FuncTypeSrf {
