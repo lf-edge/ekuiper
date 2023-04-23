@@ -1,4 +1,4 @@
-// Copyright erfenjiao, 630166475@qq.com.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/second-state/WasmEdge-go/wasmedge"
-
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 type WasmFunc struct {
@@ -71,6 +70,114 @@ func (f *WasmFunc) IsAggregate() bool {
 	return false
 }
 
+func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...interface{}) []interface{} {
+	rvals := []interface{}{}
+
+	for _, val := range vals {
+		switch t := val.(type) {
+		case wasmedge.FuncRef:
+			rvals = append(rvals, val)
+		case wasmedge.ExternRef:
+			rvals = append(rvals, val)
+		case wasmedge.V128:
+			rvals = append(rvals, val)
+		case int32:
+			rvals = append(rvals, val)
+		case uint32:
+			rvals = append(rvals, val)
+		case int64:
+			rvals = append(rvals, val)
+		case uint64:
+			rvals = append(rvals, val)
+		case int:
+			rvals = append(rvals, val)
+		case uint:
+			rvals = append(rvals, val)
+		case float32:
+			rvals = append(rvals, val)
+		case float64:
+			rvals = append(rvals, val)
+		case string:
+			// Call malloc function
+			sval := []byte(val.(string))
+			mallocsize := uint32(len(sval))
+			var rets []interface{}
+			var err error = nil
+			if modname == nil {
+				rets, err = vm.Execute("malloc", mallocsize+1)
+			} else {
+				rets, err = vm.ExecuteRegistered(*modname, "malloc", mallocsize)
+			}
+			if err != nil {
+				panic("toWasmEdgeValueSlideBindgen(): malloc failed")
+			}
+			if len(rets) <= 0 {
+				panic("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
+			}
+			argaddr := rets[0]
+			rvals = append(rvals, argaddr)
+			// Set bytes
+			var mod *wasmedge.Module = nil
+			var mem *wasmedge.Memory = nil
+			if modname == nil {
+				mod = vm.GetActiveModule()
+			} else {
+				store := vm.GetStore()
+				mod = store.FindModule(*modname)
+			}
+			if mod != nil {
+				memnames := mod.ListMemory()
+				if len(memnames) <= 0 {
+					panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
+				}
+				mem = mod.FindMemory(memnames[0])
+				mem.SetData(sval, uint(rets[0].(int32)), uint(mallocsize))
+				mem.SetData([]byte{0}, uint(rets[0].(int32)+int32(mallocsize)), 1)
+			}
+		case []byte:
+			// Call malloc function
+			mallocsize := uint32(len(val.([]byte)))
+			var rets []interface{}
+			var err error = nil
+			if modname == nil {
+				rets, err = vm.Execute("malloc", mallocsize)
+			} else {
+				rets, err = vm.ExecuteRegistered(*modname, "malloc", mallocsize)
+			}
+			if err != nil {
+				panic("toWasmEdgeValueSlideBindgen(): malloc failed")
+			}
+			if len(rets) <= 0 {
+				panic("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
+			}
+			argaddr := rets[0]
+			argsize := mallocsize
+			rvals = append(rvals, argaddr, argsize)
+			// Set bytes
+			var mod *wasmedge.Module = nil
+			var mem *wasmedge.Memory = nil
+			if modname == nil {
+				mod = vm.GetActiveModule()
+			} else {
+				store := vm.GetStore()
+				mod = store.FindModule(*modname)
+			}
+			if mod != nil {
+				memnames := mod.ListMemory()
+				if len(memnames) <= 0 {
+					panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
+				}
+				mem = mod.FindMemory(memnames[0])
+				mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
+			}
+		default:
+			errorString := fmt.Sprintf("Wrong argument of toWasmEdgeValueSlideBindgen(): %T not supported", t)
+			panic(errorString)
+		}
+	}
+	return rvals
+}
+
 func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	funcname := f.symbolName
 
@@ -99,66 +206,20 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		fmt.Errorf(err.Error())
 	}
 	// step 4: Execute WASM functions.Parameters(1)
-	var Args []float64
-	for _, num := range args {
-		x, ok := (num).(float64)
-		if !ok {
-			fmt.Println("Type tranform not to float64!!")
-		}
-		Args = append(Args, x)
-	}
+	Args := toWasmEdgeValueSlideBindgen(vm, nil, args...)
 
-	Len := len(args)
 	var res []interface{}
-	switch Len {
-	case 0:
-		res, err = vm.Execute(funcname)
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
+	res, err = vm.Execute(funcname, Args...)
+	if err != nil {
+		log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+	} else {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
-	case 1:
-		res, err = vm.Execute(funcname, uint32(Args[0]))
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
-	case 2:
-		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]))
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
-	case 3:
-		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]), uint32(Args[2]))
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
+		fmt.Println(res[0])
 	}
+	exitcode := wasi.WasiGetExitCode()
+	if exitcode != 0 {
+		fmt.Println("Go: Running wasm failed, exit code:", exitcode)
+	}
+	vm.Release()
 	return res
 }
