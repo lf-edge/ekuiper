@@ -128,6 +128,7 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 							}
 							delete(m.fws, k)
 							// The file will be created when the next item comes
+							v.Written = false
 						}
 					}
 					m.mux.Unlock()
@@ -155,11 +156,15 @@ func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 		ctx.GetLogger().Debugf("file sink transform data %s", v)
 		m.mux.Lock()
 		defer m.mux.Unlock()
-		_, e := fw.Writer.Write(v)
-		if e != nil {
-			return e
+		if fw.Written {
+			_, e := fw.Writer.Write(fw.Hook.Line())
+			if e != nil {
+				return e
+			}
+		} else {
+			fw.Written = true
 		}
-		_, e = fw.Writer.Write(fw.Hook.Line())
+		_, e := fw.Writer.Write(v)
 		if e != nil {
 			return e
 		}
@@ -172,6 +177,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 				}
 				delete(m.fws, fn)
 				fw.Count = 0
+				fw.Written = false
 			}
 		}
 	} else {

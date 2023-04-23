@@ -30,6 +30,8 @@ type fileWriter struct {
 	Hook   writerHooks
 	Start  time.Time
 	Count  int
+	// Whether the file has written any data. It is only used to determine if new line is needed when writing data.
+	Written bool
 }
 
 func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string) (_ *fileWriter, ge error) {
@@ -61,15 +63,9 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 		fws.Hook = linesHooks
 	}
 	fws.Writer = bufio.NewWriter(f)
-	n, err := fws.Writer.Write(fws.Hook.Header())
+	_, err = fws.Writer.Write(fws.Hook.Header())
 	if err != nil {
 		return nil, err
-	}
-	if n > 0 {
-		_, e := fws.Writer.Write(fws.Hook.Line())
-		if e != nil {
-			return nil, err
-		}
 	}
 	return fws, nil
 }
