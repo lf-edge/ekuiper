@@ -38,7 +38,20 @@ func Validate(stmt *ast.SelectStatement) error {
 	if err := validateMultiSRFForbidden("select", stmt.Fields); err != nil {
 		return err
 	}
-	return validateSRFForbidden("where", stmt.Condition)
+	if err := validateSRFForbidden("where", stmt.Condition); err != nil {
+		return err
+	}
+	if err := validateSRFForbidden("join", stmt.Joins); err != nil {
+		return err
+	}
+
+	if err := validateSRFForbidden("groupby", stmt.Dimensions); err != nil {
+		return err
+	}
+	if err := validateSRFForbidden("having", stmt.Having); err != nil {
+		return err
+	}
+	return validateSRFForbidden("orderby", stmt.SortFields)
 }
 
 func validateSRFNestedForbidden(clause string, node ast.Node) error {

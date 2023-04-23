@@ -31,6 +31,22 @@ func TestParser_ParserSRFStatement(t *testing.T) {
 		err  string
 	}{
 		{
+			s:   "select a from demo order by unnest(b)",
+			err: "orderby clause shouldn't has set-returning-functions",
+		},
+		{
+			s:   "select abc from demo left join demo on unnest(demo.a) = b GROUP BY ID, TUMBLINGWINDOW(ss, 10)",
+			err: "join clause shouldn't has set-returning-functions",
+		},
+		{
+			s:   "select a from demo group by id having unnest(a)",
+			err: "having clause shouldn't has set-returning-functions",
+		},
+		{
+			s:   "select a from demo group by unnest(a)",
+			err: "groupby clause shouldn't has set-returning-functions",
+		},
+		{
 			s:   "select a,b from demo where unnest(a)",
 			err: "where clause shouldn't has set-returning-functions",
 		},
