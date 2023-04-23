@@ -38,20 +38,7 @@ func Validate(stmt *ast.SelectStatement) error {
 	if err := validateMultiSRFForbidden("select", stmt.Fields); err != nil {
 		return err
 	}
-	if err := validateSRFForbidden("where", stmt.Condition); err != nil {
-		return err
-	}
-	if err := validateSRFForbidden("join", stmt.Joins); err != nil {
-		return err
-	}
-
-	if err := validateSRFForbidden("groupby", stmt.Dimensions); err != nil {
-		return err
-	}
-	if err := validateSRFForbidden("having", stmt.Having); err != nil {
-		return err
-	}
-	return validateSRFForbidden("orderby", stmt.SortFields)
+	return validateSRFForbidden(stmt)
 }
 
 func validateSRFNestedForbidden(clause string, node ast.Node) error {
@@ -84,9 +71,9 @@ func validateMultiSRFForbidden(clause string, node ast.Node) error {
 	return nil
 }
 
-func validateSRFForbidden(clause string, node ast.Node) error {
+func validateSRFForbidden(node ast.Node) error {
 	if isSRFExists(node) {
-		return fmt.Errorf("%s clause shouldn't has set-returning-functions", clause)
+		return fmt.Errorf("select statement shouldn't has srf except fields")
 	}
 	return nil
 }
@@ -114,6 +101,9 @@ func isSRFExists(node ast.Node) bool {
 	exists := false
 	ast.WalkFunc(node, func(n ast.Node) bool {
 		switch f := n.(type) {
+		// skip checking Fields
+		case *ast.Fields:
+			return false
 		case *ast.Call:
 			if f.FuncType == ast.FuncTypeSrf {
 				exists = true
