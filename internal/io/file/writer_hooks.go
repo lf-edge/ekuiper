@@ -14,6 +14,8 @@
 
 package file
 
+import "bytes"
+
 type writerHooks interface {
 	Header() []byte
 	Line() []byte
@@ -27,7 +29,7 @@ func (j *jsonWriterHooks) Header() []byte {
 }
 
 func (j *jsonWriterHooks) Line() []byte {
-	return nil
+	return []byte(",")
 }
 
 func (j *jsonWriterHooks) Footer() []byte {
@@ -57,7 +59,10 @@ type csvWriterHooks struct {
 }
 
 func (c *csvWriterHooks) Header() []byte {
-	return c.header
+	if c.header != nil {
+		return bytes.Join([][]byte{c.header, c.Line()}, nil)
+	}
+	return nil
 }
 
 func (c *csvWriterHooks) Line() []byte {
