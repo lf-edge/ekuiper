@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 )
 
 var defaultOption = &api.RuleOption{
@@ -233,4 +234,89 @@ func TestMultipleAccess(t *testing.T) {
 	if rs.triggered != 1 {
 		t.Errorf("triggered mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", 1, rs.triggered)
 	}
+}
+
+// Test rule state message
+func TestRuleState_Start(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	// Test rule not triggered
+	r := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: defaultOption,
+	}
+	const ruleStopped = "Stopped: canceled manually."
+	const ruleStarted = "Running"
+	t.Run("test rule loaded but not started", func(t *testing.T) {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleStopped {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
+			return
+		}
+	})
+	t.Run("test rule started", func(t *testing.T) {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		err = rs.Start()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleStarted {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
+			return
+		}
+	})
+	t.Run("test rule loaded and stopped", func(t *testing.T) {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		err = rs.Start()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		err = rs.Close()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleStopped {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
+			return
+		}
+	})
 }

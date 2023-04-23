@@ -269,7 +269,7 @@ func (rs *RuleState) GetState() (string, error) {
 	defer rs.RUnlock()
 	result := ""
 	if rs.Topology == nil {
-		result = "Stopped: canceled manually or by error."
+		result = "Stopped: fail to create the topo."
 	} else {
 		c := (*rs.Topology).GetContext()
 		if c != nil {
@@ -285,7 +285,7 @@ func (rs *RuleState) GetState() (string, error) {
 				result = fmt.Sprintf("Stopped: %v.", err)
 			}
 		} else {
-			result = "Stopped: no context found."
+			result = "Stopped: canceled manually."
 		}
 	}
 	return result, nil
