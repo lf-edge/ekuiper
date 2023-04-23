@@ -17,6 +17,9 @@ package file
 import (
 	"bufio"
 	"fmt"
+	"github.com/klauspost/compress/flate"
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zlib"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"io"
@@ -25,16 +28,18 @@ import (
 )
 
 type fileWriter struct {
-	File   *os.File
-	Writer io.Writer
-	Hook   writerHooks
-	Start  time.Time
-	Count  int
+	File       *os.File
+	Writer     io.Writer
+	Hook       writerHooks
+	Start      time.Time
+	Count      int
+	Compress   string
+	fileBuffer *bufio.Writer
 	// Whether the file has written any data. It is only used to determine if new line is needed when writing data.
 	Written bool
 }
 
-func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string) (_ *fileWriter, ge error) {
+func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string,compressAlgorithm string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
 	fws := &fileWriter{Start: conf.GetNow()}
 	var (
@@ -62,7 +67,27 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 	case LINES_TYPE:
 		fws.Hook = linesHooks
 	}
-	fws.Writer = bufio.NewWriter(f)
+
+	fws.Compress = compressAlgorithm
+
+	switch compressAlgorithm {
+	case "flate":
+		fws.fileBuffer = bufio.NewWriter(f)
+		flateWriter, err := flate.NewWriter(fws.fileBuffer, flate.DefaultCompression)
+		if err != nil {
+			return nil, err
+		}
+		fws.Writer = flateWriter
+	case "gzip":
+		fws.fileBuffer = bufio.NewWriter(f)
+		fws.Writer = gzip.NewWriter(fws.fileBuffer)
+	case "zlib":
+		fws.fileBuffer = bufio.NewWriter(f)
+		fws.Writer = zlib.NewWriter(fws.fileBuffer)
+	default:
+		fws.Writer = bufio.NewWriter(f)
+	}
+
 	_, err = fws.Writer.Write(fws.Hook.Header())
 	if err != nil {
 		return nil, err
@@ -71,16 +96,29 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 }
 
 func (fw *fileWriter) Close(ctx api.StreamContext) error {
+	var err error
 	if fw.File != nil {
 		ctx.GetLogger().Debugf("File sync before close")
 		_, e := fw.Writer.Write(fw.Hook.Footer())
 		if e != nil {
 			ctx.GetLogger().Errorf("file sink fails to write footer with error %s.", e)
 		}
-		err := fw.Writer.(*bufio.Writer).Flush()
-		if err != nil {
-			ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
+		if fw.Compress!="" && fw.Compress!=NONE_COMPRESS {
+			e := fw.Writer.(io.Closer).Close()
+			if e!=nil {
+				ctx.GetLogger().Errorf("file sink fails to close compress writer with error %s.", err)
+			}
+			err = fw.fileBuffer.Flush()
+			if err != nil {
+				ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
+			}
+		} else {
+			err = fw.Writer.(*bufio.Writer).Flush()
+			if err != nil {
+				ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
+			}
 		}
+
 		err = fw.File.Sync()
 		if err != nil {
 			ctx.GetLogger().Errorf("file sink fails to sync with error %s.", err)

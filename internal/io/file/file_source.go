@@ -20,6 +20,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/klauspost/compress/flate"
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zlib"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -45,13 +48,14 @@ type FileSourceConfig struct {
 	IgnoreStartLines int      `json:"ignoreStartLines"`
 	IgnoreEndLines   int      `json:"ignoreEndLines"`
 	Delimiter        string   `json:"delimiter"`
+	CompressAlgorithm string `json:"compressAlgorithm"`
 }
 
 // FileSource The BATCH to load data from file at once
 type FileSource struct {
-	file   string
-	isDir  bool
-	config *FileSourceConfig
+	file     string
+	isDir    bool
+	config            *FileSourceConfig
 }
 
 func (fs *FileSource) Close(ctx api.StreamContext) error {
@@ -127,6 +131,10 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 	}
 	if cfg.Delimiter == "" {
 		cfg.Delimiter = ","
+	}
+
+	if cfg.CompressAlgorithm!=ZLIB && cfg.CompressAlgorithm!=GZIP && cfg.CompressAlgorithm!=FLATE && cfg.CompressAlgorithm!=NONE_COMPRESS && cfg.CompressAlgorithm!="" {
+		return fmt.Errorf("compressAlgorithm must be one of none, zlib, gzip or flate")
 	}
 	fs.config = cfg
 	return nil
@@ -340,16 +348,38 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 		ctx.GetLogger().Error(err)
 		return nil, err
 	}
+	var reader io.ReadCloser
+
+	switch fs.config.CompressAlgorithm {
+	case "flate":
+		reader = flate.NewReader(f)
+	case "gzip":
+		newReader, err := gzip.NewReader(f)
+		if err != nil {
+			return nil, err
+		}
+		reader = newReader
+	case "zlib":
+		r, err := zlib.NewReader(f)
+		if err != nil {
+			return nil, err
+		}
+		reader = r
+	default:
+		reader = f
+	}
+
 	if fs.config.IgnoreStartLines > 0 || fs.config.IgnoreEndLines > 0 {
 		r, w := io.Pipe()
 		go func() {
 			defer func() {
 				ctx.GetLogger().Debugf("Close pipe files %s", file)
 				w.Close()
-				f.Close()
+				reader.Close()
 			}()
-			scanner := bufio.NewScanner(f)
+			scanner := bufio.NewScanner(reader)
 			scanner.Split(bufio.ScanLines)
+
 			ln := 0
 			// This is a queue to store the lines that should be ignored
 			tempLines := make([]string, 0, fs.config.IgnoreEndLines)
@@ -390,5 +420,5 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 		}()
 		return r, nil
 	}
-	return f, nil
+	return reader, nil
 }
