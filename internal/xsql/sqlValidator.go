@@ -38,11 +38,7 @@ func Validate(stmt *ast.SelectStatement) error {
 	if err := validateMultiSRFForbidden("select", stmt.Fields); err != nil {
 		return err
 	}
-	if err := validateSRFForbidden("where", stmt.Condition); err != nil {
-		return err
-	}
-
-	return nil
+	return validateSRFForbidden("where", stmt.Condition)
 }
 
 func validateSRFNestedForbidden(clause string, node ast.Node) error {
