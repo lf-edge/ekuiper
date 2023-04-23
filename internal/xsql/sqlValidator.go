@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,5 +31,87 @@ func Validate(stmt *ast.SelectStatement) error {
 			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause.")
 		}
 	}
+
+	if err := validateSRFNestedForbidden("select", stmt.Fields); err != nil {
+		return err
+	}
+	if err := validateMultiSRFForbidden("select", stmt.Fields); err != nil {
+		return err
+	}
+	if err := validateSRFForbidden("where", stmt.Condition); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func validateSRFNestedForbidden(clause string, node ast.Node) error {
+	if isSRFNested(node) {
+		return fmt.Errorf("%s clause shouldn't has nested set-returning-functions", clause)
+	}
+	return nil
+}
+
+func validateMultiSRFForbidden(clause string, node ast.Node) error {
+	firstSRF := false
+	nextSRF := false
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			if f.FuncType == ast.FuncTypeSrf {
+				if !firstSRF {
+					firstSRF = true
+				} else {
+					nextSRF = true
+					return false
+				}
+			}
+		}
+		return true
+	})
+	if nextSRF {
+		return fmt.Errorf("%s clause shouldn't has multi set-returning-functions", clause)
+	}
+	return nil
+}
+
+func validateSRFForbidden(clause string, node ast.Node) error {
+	if isSRFExists(node) {
+		return fmt.Errorf("%s clause shouldn't has set-returning-functions", clause)
+	}
+	return nil
+}
+
+func isSRFNested(node ast.Node) bool {
+	srfNested := false
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			for _, arg := range f.Args {
+				exists := isSRFExists(arg)
+				if exists {
+					srfNested = true
+					return false
+				}
+			}
+			return true
+		}
+		return true
+	})
+	return srfNested
+}
+
+func isSRFExists(node ast.Node) bool {
+	exists := false
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			if f.FuncType == ast.FuncTypeSrf {
+				exists = true
+				return false
+			}
+		}
+		return true
+	})
+	return exists
 }
