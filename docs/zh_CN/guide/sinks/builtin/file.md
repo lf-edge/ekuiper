@@ -9,10 +9,10 @@
 | path               | 否    | 保存结果的文件路径，例如  `/tmp/result.txt`。可设置动态文件名，请点击[动态参数](../overview.md#动态属性)参考语法。   |
 | fileType           | 是    | 文件类型，支持 json， csv 或者 lines，其中默认值为 lines。更多信息请参考[文件类型](#文件类型)。                  |
 | hasHeader          | 是    | 指定是否生成文件头。当前仅在文件类型为 csv 时生效。文件头由收到的第一条数据推断得来，推断的 key 采用字母排序。                   |
-| rollingInterval    | true | 定义 [rolling 策略](#rolling-策略)的属性之一。滚动到新文件的最小时间间隔（以毫秒为单位）。检查频率由checkInterval 控制。 |
-| checkInterval      | true | 定义 [rolling 策略](#rolling-策略)的属性之一。检查基于时间的滚动策略的间隔（以毫秒为单位），用于控制检查文件是否应该翻转的频率。    |
-| rollingCount       | true | 定义 [rolling 策略](#rolling-策略)的属性之一。文件翻转前的最大消息计数。                                |
-| rollingNamePattern | true | 定义 [rolling 策略](#rolling-策略)的属性之一。指定滚动文件创建时如何放置时间戳。时间戳可为“前缀”，“后缀”或“无”。         |
+| rollingInterval    | 是    | 定义 [rolling 策略](#rolling-策略)的属性之一。滚动到新文件的最小时间间隔（以毫秒为单位）。检查频率由checkInterval 控制。 |
+| checkInterval      | 是    | 定义 [rolling 策略](#rolling-策略)的属性之一。检查基于时间的滚动策略的间隔（以毫秒为单位），用于控制检查文件是否应该翻转的频率。    |
+| rollingCount       | 是    | 定义 [rolling 策略](#rolling-策略)的属性之一。文件翻转前的最大消息计数。                                |
+| rollingNamePattern | 是    | 定义 [rolling 策略](#rolling-策略)的属性之一。指定滚动文件创建时如何放置时间戳。时间戳可为“前缀”，“后缀”或“无”。         |
 | interval (已弃用)     | 是    | 写入分析结果的时间间隔（毫秒）。 默认值为1000，这表示每隔一秒钟写入一次分析结果。                                    |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。其中，`format` 属性用于定义文件中数据的格式。某些文件类型只能与特定格式一起使用，详情请参阅[文件类型](#文件类型)。
