@@ -71,17 +71,17 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 	fws.Compress = compressAlgorithm
 
 	switch compressAlgorithm {
-	case "flate":
+	case FLATE:
 		fws.fileBuffer = bufio.NewWriter(f)
 		flateWriter, err := flate.NewWriter(fws.fileBuffer, flate.DefaultCompression)
 		if err != nil {
 			return nil, err
 		}
 		fws.Writer = flateWriter
-	case "gzip":
+	case GZIP:
 		fws.fileBuffer = bufio.NewWriter(f)
 		fws.Writer = gzip.NewWriter(fws.fileBuffer)
-	case "zlib":
+	case ZLIB:
 		fws.fileBuffer = bufio.NewWriter(f)
 		fws.Writer = zlib.NewWriter(fws.fileBuffer)
 	default:
