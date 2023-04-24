@@ -16,9 +16,9 @@ package runtime
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"go.nanomsg.org/mangos/v3"
 )
@@ -81,14 +81,13 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 		ctx.GetLogger().Info("clean up source")
 		err1 := dataCh.Close()
 		err2 := ins.StopSymbol(ctx, c)
-		e := make(errorx.MultiError)
 		if err1 != nil {
-			e["dataCh"] = err1
+			err1 = fmt.Errorf("%s:%v", "dataCh", err1)
 		}
-		if err != nil {
-			e["symbol"] = err2
+		if err2 != nil {
+			err2 = fmt.Errorf("%s:%v", "symbol", err2)
 		}
-		return e.GetError()
+		return errors.Join(err1, err2)
 	}
 
 	for {

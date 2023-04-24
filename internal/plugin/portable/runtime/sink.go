@@ -15,6 +15,7 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -76,14 +77,13 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 		ctx.GetLogger().Info("clean up sink")
 		err1 := dataCh.Close()
 		err2 := ins.StopSymbol(ctx, c)
-		e := make(errorx.MultiError)
 		if err1 != nil {
-			e["dataCh"] = err1
+			err1 = fmt.Errorf("%s:%v", "dataCh", err1)
 		}
-		if err != nil {
-			e["symbol"] = err2
+		if err2 != nil {
+			err2 = fmt.Errorf("%s:%v", "symbol", err2)
 		}
-		return e.GetError()
+		return errors.Join(err1, err2)
 	}
 	ps.dataCh = dataCh
 	return nil

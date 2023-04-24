@@ -15,10 +15,10 @@
 package conf
 
 import (
+	"errors"
 	"fmt"
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -49,48 +49,48 @@ type SinkConf struct {
 
 // Validate the configuration and reset to the default value for invalid values.
 func (sc *SinkConf) Validate() error {
-	e := make(errorx.MultiError)
+	var errs error
 	if sc.MemoryCacheThreshold < 0 {
 		sc.MemoryCacheThreshold = 1024
 		Log.Warnf("memoryCacheThreshold is less than 0, set to 1024")
-		e["memoryCacheThreshold"] = fmt.Errorf("memoryCacheThreshold must be positive")
+		errs = errors.Join(errs, errors.New("memoryCacheThreshold:memoryCacheThreshold must be positive"))
 	}
 	if sc.MaxDiskCache < 0 {
 		sc.MaxDiskCache = 1024000
 		Log.Warnf("maxDiskCache is less than 0, set to 1024000")
-		e["maxDiskCache"] = fmt.Errorf("maxDiskCache must be positive")
+		errs = errors.Join(errs, errors.New("maxDiskCache:maxDiskCache must be positive"))
 	}
 	if sc.BufferPageSize <= 0 {
 		sc.BufferPageSize = 256
 		Log.Warnf("bufferPageSize is less than or equal to 0, set to 256")
-		e["bufferPageSize"] = fmt.Errorf("bufferPageSize must be positive")
+		errs = errors.Join(errs, errors.New("bufferPageSize:bufferPageSize must be positive"))
 	}
 	if sc.ResendInterval < 0 {
 		sc.ResendInterval = 0
 		Log.Warnf("resendInterval is less than 0, set to 0")
-		e["resendInterval"] = fmt.Errorf("resendInterval must be positive")
+		errs = errors.Join(errs, errors.New("resendInterval:resendInterval must be positive"))
 	}
 	if sc.BufferPageSize > sc.MemoryCacheThreshold {
 		sc.MemoryCacheThreshold = sc.BufferPageSize
 		Log.Warnf("memoryCacheThreshold is less than bufferPageSize, set to %d", sc.BufferPageSize)
-		e["memoryCacheThresholdTooSmall"] = fmt.Errorf("memoryCacheThreshold must be greater than or equal to bufferPageSize")
+		errs = errors.Join(errs, errors.New("memoryCacheThresholdTooSmall:memoryCacheThreshold must be greater than or equal to bufferPageSize"))
 	}
 	if sc.MemoryCacheThreshold%sc.BufferPageSize != 0 {
 		sc.MemoryCacheThreshold = sc.BufferPageSize * (sc.MemoryCacheThreshold/sc.BufferPageSize + 1)
 		Log.Warnf("memoryCacheThreshold is not a multiple of bufferPageSize, set to %d", sc.MemoryCacheThreshold)
-		e["memoryCacheThresholdNotMultiple"] = fmt.Errorf("memoryCacheThreshold must be a multiple of bufferPageSize")
+		errs = errors.Join(errs, errors.New("memoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize"))
 	}
 	if sc.BufferPageSize > sc.MaxDiskCache {
 		sc.MaxDiskCache = sc.BufferPageSize
 		Log.Warnf("maxDiskCache is less than bufferPageSize, set to %d", sc.BufferPageSize)
-		e["maxDiskCacheTooSmall"] = fmt.Errorf("maxDiskCache must be greater than bufferPageSize")
+		errs = errors.Join(errs, errors.New("maxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize"))
 	}
 	if sc.MaxDiskCache%sc.BufferPageSize != 0 {
 		sc.MaxDiskCache = sc.BufferPageSize * (sc.MaxDiskCache/sc.BufferPageSize + 1)
 		Log.Warnf("maxDiskCache is not a multiple of bufferPageSize, set to %d", sc.MaxDiskCache)
-		e["maxDiskCacheNotMultiple"] = fmt.Errorf("maxDiskCache must be a multiple of bufferPageSize")
+		errs = errors.Join(errs, errors.New("maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"))
 	}
-	return e.GetError()
+	return errs
 }
 
 type SourceConf struct {
@@ -100,16 +100,16 @@ type SourceConf struct {
 }
 
 func (sc *SourceConf) Validate() error {
-	e := make(errorx.MultiError)
+	var errs error
 	if sc.HttpServerIp == "" {
 		sc.HttpServerIp = "0.0.0.0"
 	}
 	if sc.HttpServerPort <= 0 || sc.HttpServerPort > 65535 {
 		Log.Warnf("invalid source.httpServerPort configuration %d, set to 10081", sc.HttpServerPort)
-		e["invalidHttpServerPort"] = fmt.Errorf("httpServerPort must between 0 and 65535")
+		errs = errors.Join(errs, errors.New("invalidHttpServerPort:httpServerPort must between 0 and 65535"))
 		sc.HttpServerPort = 10081
 	}
-	return e
+	return errs
 }
 
 type SQLConf struct {
@@ -248,55 +248,55 @@ func InitConf() {
 }
 
 func ValidateRuleOption(option *api.RuleOption) error {
-	e := make(errorx.MultiError)
+	var errs error
 	if option.CheckpointInterval < 0 {
 		option.CheckpointInterval = 0
 		Log.Warnf("checkpointInterval is negative, set to 0")
-		e["invalidCheckpointInterval"] = fmt.Errorf("checkpointInterval must be greater than 0")
+		errs = errors.Join(errs, errors.New("invalidCheckpointInterval:checkpointInterval must be greater than 0"))
 	}
 	if option.Concurrency < 0 {
 		option.Concurrency = 1
 		Log.Warnf("concurrency is negative, set to 1")
-		e["invalidConcurrency"] = fmt.Errorf("concurrency must be greater than 0")
+		errs = errors.Join(errs, errors.New("invalidConcurrency:concurrency must be greater than 0"))
 	}
 	if option.BufferLength < 0 {
 		option.BufferLength = 1024
 		Log.Warnf("bufferLength is negative, set to 1024")
-		e["invalidBufferLength"] = fmt.Errorf("bufferLength must be greater than 0")
+		errs = errors.Join(errs, errors.New("invalidBufferLength:bufferLength must be greater than 0"))
 	}
 	if option.LateTol < 0 {
 		option.LateTol = 1000
 		Log.Warnf("lateTol is negative, set to 1000")
-		e["invalidLateTol"] = fmt.Errorf("lateTol must be greater than 0")
+		errs = errors.Join(errs, errors.New("invalidLateTol:lateTol must be greater than 0"))
 	}
 	if option.Restart != nil {
 		if option.Restart.Multiplier <= 0 {
 			option.Restart.Multiplier = 2
 			Log.Warnf("restart multiplier is negative, set to 2")
-			e["invalidRestartMultiplier"] = fmt.Errorf("restart multiplier must be greater than 0")
+			errs = errors.Join(errs, errors.New("invalidRestartMultiplier:restart multiplier must be greater than 0"))
 		}
 		if option.Restart.Attempts < 0 {
 			option.Restart.Attempts = 0
 			Log.Warnf("restart attempts is negative, set to 0")
-			e["invalidRestartAttempts"] = fmt.Errorf("restart attempts must be greater than 0")
+			errs = errors.Join(errs, errors.New("invalidRestartAttempts:restart attempts must be greater than 0"))
 		}
 		if option.Restart.Delay <= 0 {
 			option.Restart.Delay = 1000
 			Log.Warnf("restart delay is negative, set to 1000")
-			e["invalidRestartDelay"] = fmt.Errorf("restart delay must be greater than 0")
+			errs = errors.Join(errs, errors.New("invalidRestartDelay:restart delay must be greater than 0"))
 		}
 		if option.Restart.MaxDelay <= 0 {
 			option.Restart.MaxDelay = option.Restart.Delay
 			Log.Warnf("restart maxDelay is negative, set to %d", option.Restart.Delay)
-			e["invalidRestartMaxDelay"] = fmt.Errorf("restart maxDelay must be greater than 0")
+			errs = errors.Join(errs, errors.New("invalidRestartMaxDelay:restart maxDelay must be greater than 0"))
 		}
 		if option.Restart.JitterFactor <= 0 || option.Restart.JitterFactor >= 1 {
 			option.Restart.JitterFactor = 0.1
 			Log.Warnf("restart jitterFactor must between 0 and 1, set to 0.1")
-			e["invalidRestartJitterFactor"] = fmt.Errorf("restart jitterFactor must between [0, 1)")
+			errs = errors.Join(errs, errors.New("invalidRestartJitterFactor:restart jitterFactor must between [0, 1)"))
 		}
 	}
-	return e.GetError()
+	return errs
 }
 
 func init() {
