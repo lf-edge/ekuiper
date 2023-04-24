@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -379,9 +379,38 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			sendMeta:    opt.SendMetaToSink,
 		}.Init()
 		p.SetChildren(children)
+		children = []LogicalPlan{p}
+	}
+
+	srfMapping := extractSRFMapping(stmt)
+	if len(srfMapping) > 0 {
+		p = ProjectSetPlan{
+			SrfMapping: srfMapping,
+		}.Init()
+		p.SetChildren(children)
 	}
 
 	return optimize(p)
+}
+
+// extractSRFMapping extracts the set-returning-function in the field
+func extractSRFMapping(stmt *ast.SelectStatement) map[string]struct{} {
+	m := make(map[string]struct{})
+	for _, field := range stmt.Fields {
+		var curExpr ast.Expr
+		var name string
+		if len(field.AName) > 0 {
+			curExpr = field.Expr.(*ast.FieldRef).AliasRef.Expression
+			name = field.AName
+		} else {
+			curExpr = field.Expr
+			name = field.Name
+		}
+		if f, ok := curExpr.(*ast.Call); ok && f.FuncType == ast.FuncTypeSrf {
+			m[name] = struct{}{}
+		}
+	}
+	return m
 }
 
 func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.UnaryOperator {

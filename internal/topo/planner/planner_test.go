@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -96,6 +96,121 @@ func Test_createLogicalPlan(t *testing.T) {
 		p   LogicalPlan
 		err string
 	}{
+		{
+			sql: "select unnest(myarray) as col from src1",
+			p: ProjectSetPlan{
+				SrfMapping: map[string]struct{}{
+					"col": {},
+				},
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						ProjectPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: map[string]*ast.JsonStreamField{
+											"myarray": {
+												Type: "array",
+												Items: &ast.JsonStreamField{
+													Type: "string",
+												},
+											},
+										},
+										streamStmt: streams["src1"],
+										metaFields: []string{},
+									}.Init(),
+								},
+							},
+							fields: []ast.Field{
+								{
+									Name:  "unnest",
+									AName: "col",
+									Expr: func() *ast.FieldRef {
+										fr := &ast.FieldRef{
+											StreamName: ast.AliasStream,
+											Name:       "col",
+											AliasRef: &ast.AliasRef{
+												Expression: &ast.Call{
+													Name:     "unnest",
+													FuncType: ast.FuncTypeSrf,
+													Args: []ast.Expr{
+														&ast.FieldRef{
+															StreamName: "src1",
+															Name:       "myarray",
+														},
+													},
+												},
+											},
+										}
+										fr.SetRefSource([]ast.StreamName{"src1"})
+										return fr
+									}(),
+								},
+							},
+						}.Init(),
+					},
+				},
+			}.Init(),
+		},
+		{ // 0
+			sql: "SELECT unnest(myarray), name from src1",
+			p: ProjectSetPlan{
+				SrfMapping: map[string]struct{}{
+					"unnest": {},
+				},
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						ProjectPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: map[string]*ast.JsonStreamField{
+											"myarray": {
+												Type: "array",
+												Items: &ast.JsonStreamField{
+													Type: "string",
+												},
+											},
+											"name": {
+												Type: "string",
+											},
+										},
+										streamStmt: streams["src1"],
+										metaFields: []string{},
+									}.Init(),
+								},
+							},
+							fields: []ast.Field{
+								{
+									Expr: &ast.Call{
+										Name:     "unnest",
+										FuncType: ast.FuncTypeSrf,
+										Args: []ast.Expr{
+											&ast.FieldRef{
+												StreamName: "src1",
+												Name:       "myarray",
+											},
+										},
+									},
+									Name: "unnest",
+								},
+								{
+									Name: "name",
+									Expr: &ast.FieldRef{
+										StreamName: "src1",
+										Name:       "name",
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+			}.Init(),
+		},
 		{ // 0
 			sql: `SELECT myarray[temp] FROM src1`,
 			p: ProjectPlan{
