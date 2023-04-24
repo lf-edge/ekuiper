@@ -118,6 +118,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		err error
 	)
 	switch t := lp.(type) {
+	case *ProjectSetPlan:
+		op = node.NewProjectSetNode(fmt.Sprintf("%d_projectSet", newIndex), options, t.SrfMapping)
 	case *DataSourcePlan:
 		isSchemaless := t.isSchemaless
 		switch t.streamStmt.StreamType {

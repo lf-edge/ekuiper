@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,6 +46,8 @@ type ReadonlyRow interface {
 
 type Row interface {
 	ReadonlyRow
+	// Del Only for some ops like functionOp * and Alias
+	Del(col string)
 	// Set Only for some ops like functionOp *
 	Set(col string, value interface{})
 	// ToMap converts the row to a map to export to other systems *
@@ -123,6 +125,17 @@ func (d *AffiliateRow) Set(col string, value interface{}) {
 		d.CalCols = make(map[string]interface{})
 	}
 	d.CalCols[col] = value
+}
+
+func (d *AffiliateRow) Del(col string) {
+	d.lock.Lock()
+	defer d.lock.Unlock()
+	if d.CalCols != nil {
+		delete(d.CalCols, col)
+	}
+	if d.AliasMap != nil {
+		delete(d.AliasMap, col)
+	}
 }
 
 func (d *AffiliateRow) Clone() AffiliateRow {

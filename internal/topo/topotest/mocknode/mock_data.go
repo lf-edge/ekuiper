@@ -1009,6 +1009,18 @@ var TestData = map[string][]*xsql.Tuple{
 				"arr": []int{1, 2, 3, 4, 5},
 				"x":   1,
 				"y":   2,
+				"arr2": []interface{}{
+					map[string]interface{}{
+						"a": 1,
+						"b": 2,
+					},
+					map[string]interface{}{
+						"a": 3,
+						"b": 4,
+					},
+				},
+				"a":    6,
+				"arr3": []interface{}{1, 2, 3},
 			},
 			Timestamp: 1541152487501,
 		},
