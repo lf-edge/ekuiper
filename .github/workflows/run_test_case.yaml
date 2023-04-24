@@ -59,7 +59,7 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-        go test --tags="edgex script test" ./...
+        go test --tags="edgex script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./...
     - name: run plugins test case
       run: |
         mkdir -p data/test/uploads
@@ -74,3 +74,31 @@ jobs:
       with:
         name: stream.log
         path: log/stream.log
+    - uses: actions/upload-artifact@v3
+      with:
+        name: coverprofile
+        path: |
+          *.out
+
+  codecov:
+    runs-on: ubuntu-latest
+    needs:
+      - run_test_case
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: coverprofile
+      - name: Get cover files
+        id: files
+        run: |
+          files="$(find -maxdepth 1 -name '*.out' -exec readlink -f '{}' ';' | tr '\n' ',' | sed 's/,$//g')"
+          echo "files=$files" >> $GITHUB_OUTPUT
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ steps.files.outputs.files }} # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: coverprofile
