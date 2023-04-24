@@ -107,11 +107,6 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("compressAlgorithm must be one of none, zlib, gzip or flate")
 	}
 
-	//todo; check whether rolling enabled when compress enabled , if not , error
-	//if (c.Compress!="" && c.Compress!="none") && (c.RollingNamePattern == "" || c.RollingNamePattern == "none")  {
-	//	return fmt.Errorf("when compress enabled, rollingNamePattern must be one of prefix, suffix")
-	//}
-
 	m.c = c
 	m.fws = make(map[string]*fileWriter)
 	return nil
