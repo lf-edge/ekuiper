@@ -39,7 +39,7 @@ type sinkConf struct {
 	HasHeader          bool     `json:"hasHeader"`
 	Delimiter          string   `json:"delimiter"`
 	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
-	Compress           string   `json:"compress"`
+	Compression string `json:"compression"`
 }
 
 type fileSink struct {
@@ -103,7 +103,7 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 			c.Delimiter = ","
 		}
 	}
-	if c.Compress != ZLIB && c.Compress != GZIP && c.Compress != FLATE && c.Compress != NONE_COMPRESS && c.Compress != "" {
+	if c.Compression != ZLIB && c.Compression != GZIP && c.Compression != FLATE && c.Compression != NONE_COMPRESS && c.Compression != "" {
 		return fmt.Errorf("compressAlgorithm must be one of none, zlib, gzip or flate")
 	}
 
@@ -246,7 +246,7 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 				nfn = fmt.Sprintf("%s-%d%s", strings.TrimSuffix(fn, ext), conf.GetNowInMilli(), ext)
 			}
 		}
-		fws, e = createFileWriter(ctx, nfn, m.c.FileType, headers, m.c.Compress)
+		fws, e = createFileWriter(ctx, nfn, m.c.FileType, headers, m.c.Compression)
 		if e != nil {
 			return nil, e
 		}

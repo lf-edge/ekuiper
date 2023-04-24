@@ -96,21 +96,21 @@ func TestConfigure(t *testing.T) {
 		err = m.Configure(map[string]interface{}{
 			"interval":           500,
 			"path":               "test",
-			"compress":           v,
+			"compression":           v,
 			"rollingNamePattern": "suffix",
 		})
 		if err != nil {
 			t.Errorf("Configure() error = %v, wantErr nil", err)
 		}
-		if m.c.Compress != v {
-			t.Errorf("Configure() Compress = %v, want %v", m.c.Compress, v)
+		if m.c.Compression != v {
+			t.Errorf("Configure() Compression = %v, want %v", m.c.Compression, v)
 		}
 	}
 
 	err = m.Configure(map[string]interface{}{
 		"interval": 500,
 		"path":     "test",
-		"compress": "not_exist_algorithm",
+		"compression": "not_exist_algorithm",
 	})
 	if err == nil {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
@@ -256,7 +256,7 @@ func TestFileSink_Collect(t *testing.T) {
 				"hasHeader":          true,
 				"format":             f,
 				"rollingNamePattern": "none",
-				"compress":           tt.compress,
+				"compression":           tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -453,7 +453,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				"checkInterval":      500,
 				"rollingCount":       0,
 				"rollingNamePattern": "suffix",
-				"compress":           tt.compress,
+				"compression":           tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -608,7 +608,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 				"rollingNamePattern": "none",
 				"hasHeader":          true,
 				"format":             "delimited",
-				"compress":           tt.compress,
+				"compression":           tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -769,7 +769,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 				"hasHeader":          true,
 				"format":             f,
 				"rollingNamePattern": "none",
-				"compress":           tt.compress,
+				"compression":           tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -819,7 +819,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			filename := filepath.Base(tmpfile.Name())
 			p := map[string]interface{}{
 				"path":     filepath.Join(dir),
-				"compress": tt.compress,
+				"compression": tt.compress,
 				"fileType": tt.ft,
 			}
 
