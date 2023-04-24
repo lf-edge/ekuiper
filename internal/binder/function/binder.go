@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 package function
 
 import (
+	"errors"
+	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 var ( // init once and read only
@@ -51,17 +52,17 @@ func applyFactory(f binder.FactoryEntry) {
 }
 
 func Function(name string) (api.Function, error) {
-	e := make(errorx.MultiError)
+	var errs error
 	for i, sf := range funcFactories {
 		r, err := sf.Function(name)
 		if err != nil {
-			e[funcFactoriesNames[i]] = err
+			errs = errors.Join(errs, fmt.Errorf("%s:%v", funcFactoriesNames[i], err))
 		}
 		if r != nil {
-			return r, e.GetError()
+			return r, errs
 		}
 	}
-	return nil, e.GetError()
+	return nil, errs
 }
 
 func GetFunctionPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {

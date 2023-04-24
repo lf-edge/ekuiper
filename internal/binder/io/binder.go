@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,11 @@
 package io
 
 import (
+	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 var ( // init once and read only
@@ -56,17 +56,17 @@ func applyFactory(f binder.FactoryEntry) {
 }
 
 func Source(name string) (api.Source, error) {
-	e := make(errorx.MultiError)
+	var errs error
 	for i, sf := range sourceFactories {
 		r, err := sf.Source(name)
 		if err != nil {
-			e[sourceFactoriesNames[i]] = err
+			errs = errors.Join(errs, fmt.Errorf("%s:%v", sourceFactoriesNames[i], err))
 		}
 		if r != nil {
-			return r, e.GetError()
+			return r, errs
 		}
 	}
-	return nil, e.GetError()
+	return nil, errs
 }
 
 func GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
@@ -81,17 +81,17 @@ func GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 }
 
 func Sink(name string) (api.Sink, error) {
-	e := make(errorx.MultiError)
+	var errs error
 	for i, sf := range sinkFactories {
 		r, err := sf.Sink(name)
 		if err != nil {
-			e[sinkFactoriesNames[i]] = err
+			errs = errors.Join(errs, fmt.Errorf("%s:%v", sinkFactoriesNames[i], err))
 		}
 		if r != nil {
-			return r, e.GetError()
+			return r, errs
 		}
 	}
-	return nil, e.GetError()
+	return nil, errs
 }
 
 func GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
@@ -106,19 +106,18 @@ func GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
 }
 
 func LookupSource(name string) (api.LookupSource, error) {
-	e := make(errorx.MultiError)
+	var errs error
 	for i, sf := range sourceFactories {
 		r, err := sf.LookupSource(name)
 		if err != nil {
-			e[sourceFactoriesNames[i]] = err
+			errs = errors.Join(errs, fmt.Errorf("%s:%v", sourceFactoriesNames[i], err))
 		}
 		if r != nil {
-			return r, e.GetError()
+			return r, errs
 		}
 	}
-	err := e.GetError()
-	if err == nil {
-		err = fmt.Errorf("lookup source type %s not found", name)
+	if errs == nil {
+		errs = fmt.Errorf("lookup source type %s not found", name)
 	}
-	return nil, err
+	return nil, errs
 }
