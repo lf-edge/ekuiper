@@ -47,8 +47,8 @@ type FileSourceConfig struct {
 	Columns           []string `json:"columns"`
 	IgnoreStartLines  int      `json:"ignoreStartLines"`
 	IgnoreEndLines    int      `json:"ignoreEndLines"`
-	Delimiter string `json:"delimiter"`
-	Compress  string `json:"compress"`
+	Delimiter     string `json:"delimiter"`
+	Decompression string `json:"decompression"`
 }
 
 // FileSource The BATCH to load data from file at once
@@ -133,7 +133,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 		cfg.Delimiter = ","
 	}
 
-	if cfg.Compress != ZLIB && cfg.Compress != GZIP && cfg.Compress != FLATE && cfg.Compress != NONE_COMPRESS && cfg.Compress != "" {
+	if cfg.Decompression != ZLIB && cfg.Decompression != GZIP && cfg.Decompression != FLATE && cfg.Decompression != NONE_COMPRESS && cfg.Decompression != "" {
 		return fmt.Errorf("compressAlgorithm must be one of none, zlib, gzip or flate")
 	}
 	fs.config = cfg
@@ -350,7 +350,7 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 	}
 	var reader io.ReadCloser
 
-	switch fs.config.Compress {
+	switch fs.config.Decompression {
 	case "flate":
 		reader = flate.NewReader(f)
 	case "gzip":

@@ -819,7 +819,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			filename := filepath.Base(tmpfile.Name())
 			p := map[string]interface{}{
 				"path":     filepath.Join(dir),
-				"compression": tt.compress,
+				"decompression": tt.compress,
 				"fileType": tt.ft,
 			}
 
