@@ -36,26 +36,26 @@ import (
 )
 
 type FileSourceConfig struct {
-	FileType         FileType `json:"fileType"`
-	Path             string   `json:"path"`
-	Interval         int      `json:"interval"`
-	IsTable          bool     `json:"isTable"`
-	SendInterval     int      `json:"sendInterval"`
-	ActionAfterRead  int      `json:"actionAfterRead"`
-	MoveTo           string   `json:"moveTo"`
-	HasHeader        bool     `json:"hasHeader"`
-	Columns          []string `json:"columns"`
-	IgnoreStartLines int      `json:"ignoreStartLines"`
-	IgnoreEndLines   int      `json:"ignoreEndLines"`
-	Delimiter        string   `json:"delimiter"`
-	CompressAlgorithm string `json:"compressAlgorithm"`
+	FileType          FileType `json:"fileType"`
+	Path              string   `json:"path"`
+	Interval          int      `json:"interval"`
+	IsTable           bool     `json:"isTable"`
+	SendInterval      int      `json:"sendInterval"`
+	ActionAfterRead   int      `json:"actionAfterRead"`
+	MoveTo            string   `json:"moveTo"`
+	HasHeader         bool     `json:"hasHeader"`
+	Columns           []string `json:"columns"`
+	IgnoreStartLines  int      `json:"ignoreStartLines"`
+	IgnoreEndLines    int      `json:"ignoreEndLines"`
+	Delimiter string `json:"delimiter"`
+	Compress  string `json:"compress"`
 }
 
 // FileSource The BATCH to load data from file at once
 type FileSource struct {
-	file     string
-	isDir    bool
-	config            *FileSourceConfig
+	file   string
+	isDir  bool
+	config *FileSourceConfig
 }
 
 func (fs *FileSource) Close(ctx api.StreamContext) error {
@@ -133,7 +133,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 		cfg.Delimiter = ","
 	}
 
-	if cfg.CompressAlgorithm!=ZLIB && cfg.CompressAlgorithm!=GZIP && cfg.CompressAlgorithm!=FLATE && cfg.CompressAlgorithm!=NONE_COMPRESS && cfg.CompressAlgorithm!="" {
+	if cfg.Compress != ZLIB && cfg.Compress != GZIP && cfg.Compress != FLATE && cfg.Compress != NONE_COMPRESS && cfg.Compress != "" {
 		return fmt.Errorf("compressAlgorithm must be one of none, zlib, gzip or flate")
 	}
 	fs.config = cfg
@@ -350,7 +350,7 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 	}
 	var reader io.ReadCloser
 
-	switch fs.config.CompressAlgorithm {
+	switch fs.config.Compress {
 	case "flate":
 		reader = flate.NewReader(f)
 	case "gzip":

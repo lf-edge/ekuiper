@@ -39,7 +39,7 @@ type fileWriter struct {
 	Written bool
 }
 
-func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string,compressAlgorithm string) (_ *fileWriter, ge error) {
+func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
 	fws := &fileWriter{Start: conf.GetNow()}
 	var (
@@ -103,9 +103,9 @@ func (fw *fileWriter) Close(ctx api.StreamContext) error {
 		if e != nil {
 			ctx.GetLogger().Errorf("file sink fails to write footer with error %s.", e)
 		}
-		if fw.Compress!="" && fw.Compress!=NONE_COMPRESS {
+		if fw.Compress != "" && fw.Compress != NONE_COMPRESS {
 			e := fw.Writer.(io.Closer).Close()
-			if e!=nil {
+			if e != nil {
 				ctx.GetLogger().Errorf("file sink fails to close compress writer with error %s.", err)
 			}
 			err = fw.fileBuffer.Flush()

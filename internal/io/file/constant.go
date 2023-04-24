@@ -23,9 +23,9 @@ const (
 )
 
 const (
-	ZLIB  = "zlib"
-	GZIP  = "gzip"
-	FLATE = "flate"
+	ZLIB          = "zlib"
+	GZIP          = "gzip"
+	FLATE         = "flate"
 	NONE_COMPRESS = "none"
 )
 
