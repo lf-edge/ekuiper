@@ -418,3 +418,76 @@ func TestConfig(t *testing.T) {
 		}
 	}
 }
+
+func TestSinkNode_reset(t *testing.T) {
+	mockSink := mocknode.NewMockSink()
+	s := NewSinkNodeWithSink("mockSink", mockSink, nil)
+	s.reset()
+	if s.statManagers != nil {
+		t.Errorf("reset() failed")
+	}
+}
+
+func Test_getSink(t *testing.T) {
+	_, err := getSink("mock", map[string]interface{}{"sendSingle": true, "omitIfEmpty": true})
+	if err == nil {
+		t.Errorf("getSink() failed")
+	}
+}
+
+func Test_itemToMap(t *testing.T) {
+	type args struct {
+		item interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want []map[string]interface{}
+	}{
+		{
+			name: "test1",
+			args: args{
+				item: errors.New("test"),
+			},
+			want: []map[string]interface{}{
+				{"error": "test"},
+			},
+		},
+		{
+			name: "test2",
+			args: args{
+				item: "test2",
+			},
+			want: []map[string]interface{}{
+				{"error": fmt.Sprintf("result is not a map slice but found %#v", "test2")},
+			},
+		},
+		{
+			name: "test3",
+			args: args{
+				item: xsql.Row(&xsql.Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil}),
+			},
+			want: []map[string]interface{}{
+				{"a": 1, "b": "2"},
+			},
+		},
+		{
+			name: "test4",
+			args: args{
+				item: xsql.Collection(&xsql.WindowTuples{Content: []xsql.TupleRow{
+					&xsql.Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
+				}}),
+			},
+			want: []map[string]interface{}{
+				{"a": 1, "b": "2"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := itemToMap(tt.args.item); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("itemToMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
