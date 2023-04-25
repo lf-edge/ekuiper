@@ -34,3 +34,11 @@ var fileTypes = map[FileType]struct{}{
 	CSV_TYPE:   {},
 	LINES_TYPE: {},
 }
+
+var compressionTypes = map[string]struct{}{
+	ZLIB: {},
+	GZIP: {},
+	FLATE: {},
+	NONE_COMPRESS: {},
+
+}
