@@ -123,7 +123,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 				"hasHeader":          true,
 				"format":             f,
 				"rollingNamePattern": "none",
-				"compression":           tt.compress,
+				"compression":        tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -172,9 +172,9 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			dir := filepath.Dir(tmpfile.Name())
 			filename := filepath.Base(tmpfile.Name())
 			p := map[string]interface{}{
-				"path":     filepath.Join(dir),
+				"path":          filepath.Join(dir),
 				"decompression": tt.compress,
-				"fileType": tt.ft,
+				"fileType":      tt.ft,
 			}
 
 			err = r.Configure(filename, p)

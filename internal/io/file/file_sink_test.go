@@ -94,7 +94,7 @@ func TestConfigure(t *testing.T) {
 		err = m.Configure(map[string]interface{}{
 			"interval":           500,
 			"path":               "test",
-			"compression":           v,
+			"compression":        v,
 			"rollingNamePattern": "suffix",
 		})
 		if err != nil {
@@ -106,8 +106,8 @@ func TestConfigure(t *testing.T) {
 	}
 
 	err = m.Configure(map[string]interface{}{
-		"interval": 500,
-		"path":     "test",
+		"interval":    500,
+		"path":        "test",
 		"compression": "not_exist_algorithm",
 	})
 	if err == nil {
@@ -227,82 +227,82 @@ func TestFileSink_Collect(t *testing.T) {
 		},
 
 		{
-			name:    "lines",
-			ft:      LINES_TYPE,
-			fname:   "test_lines",
-			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: NONE_COMPRESS,
 		}, {
-			name:    "json",
-			ft:      JSON_TYPE,
-			fname:   "test_json",
-			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: NONE_COMPRESS,
 		}, {
-			name:    "csv",
-			ft:      CSV_TYPE,
-			fname:   "test_csv",
-			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "csv",
+			ft:       CSV_TYPE,
+			fname:    "test_csv",
+			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: NONE_COMPRESS,
 		},
 
 		{
-			name:    "lines",
-			ft:      LINES_TYPE,
-			fname:   "test_lines",
-			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
 		}, {
-			name:    "json",
-			ft:      JSON_TYPE,
-			fname:   "test_json",
-			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: GZIP,
 		}, {
-			name:    "csv",
-			ft:      CSV_TYPE,
-			fname:   "test_csv",
-			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "csv",
+			ft:       CSV_TYPE,
+			fname:    "test_csv",
+			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
 		},
 
 		{
-			name:    "lines",
-			ft:      LINES_TYPE,
-			fname:   "test_lines",
-			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: FLATE,
 		}, {
-			name:    "json",
-			ft:      JSON_TYPE,
-			fname:   "test_json",
-			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: FLATE,
 		}, {
-			name:    "csv",
-			ft:      CSV_TYPE,
-			fname:   "test_csv",
-			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "csv",
+			ft:       CSV_TYPE,
+			fname:    "test_csv",
+			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: FLATE,
 		},
 
 		{
-			name:    "lines",
-			ft:      LINES_TYPE,
-			fname:   "test_lines",
-			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: ZLIB,
 		}, {
-			name:    "json",
-			ft:      JSON_TYPE,
-			fname:   "test_json",
-			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: ZLIB,
 		}, {
-			name:    "csv",
-			ft:      CSV_TYPE,
-			fname:   "test_csv",
-			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			name:     "csv",
+			ft:       CSV_TYPE,
+			fname:    "test_csv",
+			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: ZLIB,
 		},
 	}
@@ -334,7 +334,7 @@ func TestFileSink_Collect(t *testing.T) {
 				"hasHeader":          true,
 				"format":             f,
 				"rollingNamePattern": "none",
-				"compression":           tt.compress,
+				"compression":        tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -524,7 +524,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				"checkInterval":      500,
 				"rollingCount":       0,
 				"rollingNamePattern": "suffix",
-				"compression":           tt.compress,
+				"compression":        tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -679,7 +679,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 				"rollingNamePattern": "none",
 				"hasHeader":          true,
 				"format":             "delimited",
-				"compression":           tt.compress,
+				"compression":        tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -730,5 +730,3 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 		})
 	}
 }
-
-

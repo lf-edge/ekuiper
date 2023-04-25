@@ -36,9 +36,8 @@ var fileTypes = map[FileType]struct{}{
 }
 
 var compressionTypes = map[string]struct{}{
-	ZLIB: {},
-	GZIP: {},
-	FLATE: {},
+	ZLIB:          {},
+	GZIP:          {},
+	FLATE:         {},
 	NONE_COMPRESS: {},
-
 }

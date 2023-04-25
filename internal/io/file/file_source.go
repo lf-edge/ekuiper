@@ -36,19 +36,19 @@ import (
 )
 
 type FileSourceConfig struct {
-	FileType          FileType `json:"fileType"`
-	Path              string   `json:"path"`
-	Interval          int      `json:"interval"`
-	IsTable           bool     `json:"isTable"`
-	SendInterval      int      `json:"sendInterval"`
-	ActionAfterRead   int      `json:"actionAfterRead"`
-	MoveTo            string   `json:"moveTo"`
-	HasHeader         bool     `json:"hasHeader"`
-	Columns           []string `json:"columns"`
-	IgnoreStartLines  int      `json:"ignoreStartLines"`
-	IgnoreEndLines    int      `json:"ignoreEndLines"`
-	Delimiter     string `json:"delimiter"`
-	Decompression string `json:"decompression"`
+	FileType         FileType `json:"fileType"`
+	Path             string   `json:"path"`
+	Interval         int      `json:"interval"`
+	IsTable          bool     `json:"isTable"`
+	SendInterval     int      `json:"sendInterval"`
+	ActionAfterRead  int      `json:"actionAfterRead"`
+	MoveTo           string   `json:"moveTo"`
+	HasHeader        bool     `json:"hasHeader"`
+	Columns          []string `json:"columns"`
+	IgnoreStartLines int      `json:"ignoreStartLines"`
+	IgnoreEndLines   int      `json:"ignoreEndLines"`
+	Delimiter        string   `json:"delimiter"`
+	Decompression    string   `json:"decompression"`
 }
 
 // FileSource The BATCH to load data from file at once
@@ -133,7 +133,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 		cfg.Delimiter = ","
 	}
 
-	if _, ok := compressionTypes[cfg.Decompression]; !ok && cfg.Decompression!="" {
+	if _, ok := compressionTypes[cfg.Decompression]; !ok && cfg.Decompression != "" {
 		return fmt.Errorf("decompression must be one of none, zlib, gzip or flate")
 	}
 
