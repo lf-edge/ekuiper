@@ -25,7 +25,7 @@ type ProjectSetOperator struct {
 	SrfMapping map[string]struct{}
 }
 
-func (ps *ProjectSetOperator) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
+func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	// for now we only support 1 srf function in the field
 	srfName := ""
 	for k := range ps.SrfMapping {
@@ -60,6 +60,6 @@ func (ps *ProjectSetOperator) Apply(ctx api.StreamContext, data interface{}, fv 
 		}
 		return newData
 	default:
-		return []interface{}{fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)}
+		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
 }
