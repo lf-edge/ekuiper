@@ -56,7 +56,8 @@ func TestSharedInmemoryNode(t *testing.T) {
 		t.Error(err)
 	}
 	go func() {
-		src.Open(ctx, consumer, errorChannel)
+		cc := ctx.WithMeta("rule", fmt.Sprintf("test"), &state.MemoryStore{})
+		src.Open(cc, consumer, errorChannel)
 	}()
 
 	//if _, contains := pubTopics[id]; !contains {
