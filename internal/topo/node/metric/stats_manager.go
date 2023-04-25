@@ -38,6 +38,7 @@ type StatManager interface {
 	ProcessTimeStart()
 	ProcessTimeEnd()
 	SetBufferLength(l int64)
+	SetProcessTimeStart(t time.Time)
 	GetMetrics() []interface{}
 	// Clean remove all metrics history
 	Clean(ruleId string)
@@ -113,6 +114,11 @@ func (sm *DefaultStatManager) ProcessTimeEnd() {
 
 func (sm *DefaultStatManager) SetBufferLength(l int64) {
 	sm.bufferLength = l
+}
+
+func (sm *DefaultStatManager) SetProcessTimeStart(t time.Time) {
+	sm.processTimeStart = t
+	sm.lastInvocation = t
 }
 
 func (sm *DefaultStatManager) GetMetrics() []interface{} {

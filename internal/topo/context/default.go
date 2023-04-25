@@ -18,18 +18,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"regexp"
+	"sync"
+	"text/template"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/sirupsen/logrus"
-	"regexp"
-	"sync"
-	"text/template"
-	"time"
 )
 
 const LoggerKey = "$$logger"
+const RcvTime = "$$rcvTime"
 
 type DefaultContext struct {
 	ruleId     string

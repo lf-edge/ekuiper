@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@ package main
 import (
 	"context"
 	"fmt"
+	cctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	zmq "github.com/pebbe/zmq4"
+	"time"
 )
 
 type zmqSource struct {
@@ -74,6 +76,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			if s.topic != "" {
 				meta["topic"] = string(msgs[0])
 			}
+			ctx.PutState(cctx.RcvTime, time.Now())
 			result, e := ctx.Decode(m)
 			if e != nil {
 				logger.Errorf("Invalid data format, cannot decode %v with error %s", m, e)

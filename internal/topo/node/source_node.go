@@ -16,6 +16,9 @@ package node
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -26,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"sync"
 )
 
 type SourceNode struct {
@@ -149,7 +151,11 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 									continue
 								}
 								stats.IncTotalRecordsIn()
-								stats.ProcessTimeStart()
+								if t, _ := ctx.GetState(context.RcvTime); t == nil {
+									stats.ProcessTimeStart()
+								} else {
+									stats.SetProcessTimeStart(t.(time.Time))
+								}
 								tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: conf.GetNowInMilli(), Metadata: data.Meta()}
 								var processedData interface{}
 								if m.preprocessOp != nil {

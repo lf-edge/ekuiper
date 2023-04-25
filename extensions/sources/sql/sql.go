@@ -22,6 +22,7 @@ import (
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/extensions/util"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
@@ -111,7 +112,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 					errCh <- err
 					return
 				}
-
+				ctx.PutState(context.RcvTime, time.Now())
 				scanIntoMap(data, columns, cols)
 				m.Query.UpdateMaxIndexValue(data)
 				consumer <- api.NewDefaultSourceTuple(data, nil)
