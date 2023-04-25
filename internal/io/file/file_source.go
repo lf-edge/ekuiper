@@ -133,7 +133,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 		cfg.Delimiter = ","
 	}
 
-	if _, ok := compressionTypes[cfg.Decompression]; !ok {
+	if _, ok := compressionTypes[cfg.Decompression]; !ok && cfg.Decompression!="" {
 		return fmt.Errorf("decompression must be one of none, zlib, gzip or flate")
 	}
 
