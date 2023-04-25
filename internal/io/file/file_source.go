@@ -133,7 +133,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 	}
 
 	if _, ok := compressionTypes[cfg.Decompression]; !ok && cfg.Decompression != "" {
-		return fmt.Errorf("decompression must be one of gzip")
+		return fmt.Errorf("decompression must be one of gzip, zstd")
 	}
 
 	fs.config = cfg
