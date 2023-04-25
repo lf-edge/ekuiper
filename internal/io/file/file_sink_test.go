@@ -225,6 +225,86 @@ func TestFileSink_Collect(t *testing.T) {
 			fname:   "test_csv",
 			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 		},
+
+		{
+			name:    "lines",
+			ft:      LINES_TYPE,
+			fname:   "test_lines",
+			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: NONE_COMPRESS,
+		}, {
+			name:    "json",
+			ft:      JSON_TYPE,
+			fname:   "test_json",
+			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: NONE_COMPRESS,
+		}, {
+			name:    "csv",
+			ft:      CSV_TYPE,
+			fname:   "test_csv",
+			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: NONE_COMPRESS,
+		},
+
+		{
+			name:    "lines",
+			ft:      LINES_TYPE,
+			fname:   "test_lines",
+			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: GZIP,
+		}, {
+			name:    "json",
+			ft:      JSON_TYPE,
+			fname:   "test_json",
+			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: GZIP,
+		}, {
+			name:    "csv",
+			ft:      CSV_TYPE,
+			fname:   "test_csv",
+			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: GZIP,
+		},
+
+		{
+			name:    "lines",
+			ft:      LINES_TYPE,
+			fname:   "test_lines",
+			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: FLATE,
+		}, {
+			name:    "json",
+			ft:      JSON_TYPE,
+			fname:   "test_json",
+			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: FLATE,
+		}, {
+			name:    "csv",
+			ft:      CSV_TYPE,
+			fname:   "test_csv",
+			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: FLATE,
+		},
+
+		{
+			name:    "lines",
+			ft:      LINES_TYPE,
+			fname:   "test_lines",
+			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: ZLIB,
+		}, {
+			name:    "json",
+			ft:      JSON_TYPE,
+			fname:   "test_json",
+			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: ZLIB,
+		}, {
+			name:    "csv",
+			ft:      CSV_TYPE,
+			fname:   "test_csv",
+			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: ZLIB,
+		},
 	}
 
 	// Create a stream context for testing
@@ -289,14 +369,7 @@ func TestFileSink_Collect(t *testing.T) {
 				if err != nil {
 					t.Errorf("%v", err)
 				}
-				getCompressor, _ := compressor.GetCompressor(tt.compress)
-				compressData, err := getCompressor.Compress(tt.content)
-				if err != nil {
-					t.Errorf("%v", err)
-				}
-				fmt.Println(contents)
-				fmt.Println(decompress)
-				fmt.Println(compressData)
+
 				if !reflect.DeepEqual(decompress, tt.content) {
 					t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.content, string(contents))
 				}
