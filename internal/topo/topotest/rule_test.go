@@ -620,6 +620,84 @@ func TestSingleSQL(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestSingleSQLRule18`,
+			Sql:  `SELECT unnest(arr2) FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+					},
+				},
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+					},
+				},
+			},
+		},
+		// The mapping schema created by unnest function will cover the original column if they have the same column name
+		{
+			Name: `TestSingleSQLRule19`,
+			Sql:  `SELECT unnest(arr2),a FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+					},
+				},
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+					},
+				},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule20`,
+			Sql:  `SELECT unnest(arr3) as col FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"col": float64(1),
+					},
+				},
+				{
+					{
+						"col": float64(2),
+					},
+				},
+				{
+					{
+						"col": float64(3),
+					},
+				},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule21`,
+			Sql:  `SELECT unnest(arr2),x FROM demoArr`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+						"x": float64(1),
+					},
+				},
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+						"x": float64(1),
+					},
+				},
+			},
+		},
+		{
 			Name: `TestLagAlias`,
 			Sql:  "SELECT lag(size) as lastSize, lag(had_changed(true,size)), size, lastSize/size as changeRate FROM demo WHERE size > 2",
 			R: [][]map[string]interface{}{
