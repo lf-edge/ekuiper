@@ -34,20 +34,6 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			fname:   "test_json",
 			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
 		},
-		{
-			name:     "lines",
-			ft:       LINES_TYPE,
-			fname:    "test_lines",
-			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
-			compress: NONE_COMPRESS,
-		},
-		{
-			name:     "json",
-			ft:       JSON_TYPE,
-			fname:    "test_json",
-			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
-			compress: NONE_COMPRESS,
-		},
 
 		{
 			name:     "lines",
@@ -151,7 +137,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if tt.compress != "" && tt.compress != NONE_COMPRESS {
+			if tt.compress != "" {
 				decompressor, _ := compressor.GetDecompressor(tt.compress)
 				decompress, err := decompressor.Decompress(contents)
 				if err != nil {

@@ -103,7 +103,7 @@ func (fw *fileWriter) Close(ctx api.StreamContext) error {
 		if e != nil {
 			ctx.GetLogger().Errorf("file sink fails to write footer with error %s.", e)
 		}
-		if fw.Compress != "" && fw.Compress != NONE_COMPRESS {
+		if fw.Compress != "" {
 			e := fw.Writer.(io.Closer).Close()
 			if e != nil {
 				ctx.GetLogger().Errorf("file sink fails to close compress writer with error %s.", err)

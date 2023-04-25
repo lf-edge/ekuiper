@@ -23,10 +23,9 @@ const (
 )
 
 const (
-	ZLIB          = "zlib"
-	GZIP          = "gzip"
-	FLATE         = "flate"
-	NONE_COMPRESS = "none"
+	ZLIB  = "zlib"
+	GZIP  = "gzip"
+	FLATE = "flate"
 )
 
 var fileTypes = map[FileType]struct{}{
@@ -36,8 +35,7 @@ var fileTypes = map[FileType]struct{}{
 }
 
 var compressionTypes = map[string]struct{}{
-	ZLIB:          {},
-	GZIP:          {},
-	FLATE:         {},
-	NONE_COMPRESS: {},
+	ZLIB:  {},
+	GZIP:  {},
+	FLATE: {},
 }
