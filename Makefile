@@ -65,6 +65,10 @@ build_with_edgex_and_script: build_prepare
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
+.PHONY: pkg_with_edgex
+pkg_with_edgex: build_with_edgex
+	@make real_pkg
+
 .PHONY: build_core
 build_core: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags core -o kuiperd cmd/kuiperd/main.go
@@ -72,9 +76,13 @@ build_core: build_prepare
 	@mv ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
-.PHONY: pkg_with_edgex
-pkg_with_edgex: build_with_edgex
-	@make real_pkg
+.PHONY: pkg_core
+pkg_core: build_core
+	@mkdir -p $(PACKAGES_PATH)
+	@cd $(BUILD_PATH) && zip -rq $(PACKAGE_NAME)-core.zip $(PACKAGE_NAME)
+	@cd $(BUILD_PATH) && tar -czf $(PACKAGE_NAME)-core.tar.gz $(PACKAGE_NAME)
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)-core.zip $(BUILD_PATH)/$(PACKAGE_NAME)-core.tar.gz $(PACKAGES_PATH)
+	@echo "Package core success"
 
 .PHONY: real_pkg
 real_pkg:
