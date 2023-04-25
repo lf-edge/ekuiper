@@ -50,6 +50,22 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: GZIP,
 		},
+
+		{
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: ZSTD,
+		},
+
+		{
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: ZSTD,
+		},
 	}
 
 	// Create a stream context for testing

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zstd"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -356,6 +357,12 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 			return nil, err
 		}
 		reader = newReader
+	case ZSTD:
+		newReader, err := zstd.NewReader(f)
+		if err != nil {
+			return nil, err
+		}
+		reader = newReader.IOReadCloser()
 	default:
 		reader = f
 	}

@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zstd"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"io"
@@ -72,6 +73,13 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 	case GZIP:
 		fws.fileBuffer = bufio.NewWriter(f)
 		fws.Writer = gzip.NewWriter(fws.fileBuffer)
+	case ZSTD:
+		fws.fileBuffer = bufio.NewWriter(f)
+		enc, err := zstd.NewWriter(fws.fileBuffer)
+		if err != nil {
+			return nil, err
+		}
+		fws.Writer = enc
 	default:
 		fws.Writer = bufio.NewWriter(f)
 	}

@@ -90,19 +90,32 @@ func TestConfigure(t *testing.T) {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
 	}
 
-	for _, v := range []string{"gzip", ""} {
+	for k := range compressionTypes {
 		err = m.Configure(map[string]interface{}{
 			"interval":           500,
 			"path":               "test",
-			"compression":        v,
+			"compression":        k,
 			"rollingNamePattern": "suffix",
 		})
 		if err != nil {
 			t.Errorf("Configure() error = %v, wantErr nil", err)
 		}
-		if m.c.Compression != v {
-			t.Errorf("Configure() Compression = %v, want %v", m.c.Compression, v)
+		if m.c.Compression != k {
+			t.Errorf("Configure() Compression = %v, want %v", m.c.Compression, k)
 		}
+	}
+
+	err = m.Configure(map[string]interface{}{
+		"interval":           500,
+		"path":               "test",
+		"compression":        "",
+		"rollingNamePattern": "suffix",
+	})
+	if err != nil {
+		t.Errorf("Configure() error = %v, wantErr nil", err)
+	}
+	if m.c.Compression != "" {
+		t.Errorf("Configure() Compression = %v, want %v", m.c.Compression, "")
 	}
 
 	err = m.Configure(map[string]interface{}{
@@ -244,6 +257,26 @@ func TestFileSink_Collect(t *testing.T) {
 			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
 		},
+
+		{
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: ZSTD,
+		}, {
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: ZSTD,
+		}, {
+			name:     "csv",
+			ft:       CSV_TYPE,
+			fname:    "test_csv",
+			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: ZSTD,
+		},
 	}
 
 	// Create a stream context for testing
@@ -383,6 +416,26 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 			},
 			compress: GZIP,
 		},
+
+		{
+			name:  "lines",
+			ft:    LINES_TYPE,
+			fname: "test_lines_zstd.log",
+			contents: [2][]byte{
+				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
+				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
+			},
+			compress: ZSTD,
+		}, {
+			name:  "json",
+			ft:    JSON_TYPE,
+			fname: "test_json_zstd.log",
+			contents: [2][]byte{
+				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
+				[]byte("[{\"key\":\"value3\",\"ts\":1810},{\"key\":\"value4\",\"ts\":2260}]"),
+			},
+			compress: ZSTD,
+		},
 	}
 
 	// Create a stream context for testing
@@ -501,6 +554,18 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 				[]byte("key,ts\nvalue2,1360"),
 			},
 			compress: GZIP,
+		},
+
+		{
+			name:  "csv",
+			ft:    CSV_TYPE,
+			fname: "test_csv_zstd_{{.ts}}.dd",
+			contents: [3][]byte{
+				[]byte("key,ts\nvalue0,460"),
+				[]byte("key,ts\nvalue1,910"),
+				[]byte("key,ts\nvalue2,1360"),
+			},
+			compress: ZSTD,
 		},
 	}
 	// Create a stream context for testing

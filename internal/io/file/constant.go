@@ -24,6 +24,7 @@ const (
 
 const (
 	GZIP = "gzip"
+	ZSTD = "zstd"
 )
 
 var fileTypes = map[FileType]struct{}{
@@ -34,4 +35,5 @@ var fileTypes = map[FileType]struct{}{
 
 var compressionTypes = map[string]struct{}{
 	GZIP: {},
+	ZSTD: {},
 }
