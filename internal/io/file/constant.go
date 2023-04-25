@@ -22,8 +22,18 @@ const (
 	LINES_TYPE FileType = "lines"
 )
 
+const (
+	GZIP = "gzip"
+	ZSTD = "zstd"
+)
+
 var fileTypes = map[FileType]struct{}{
 	JSON_TYPE:  {},
 	CSV_TYPE:   {},
 	LINES_TYPE: {},
+}
+
+var compressionTypes = map[string]struct{}{
+	GZIP: {},
+	ZSTD: {},
 }

@@ -16,6 +16,7 @@ package file
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
@@ -85,6 +86,43 @@ func TestConfigure(t *testing.T) {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
 	}
 	err = m.Configure(map[string]interface{}{"RollingNamePattern": 0})
+	if err == nil {
+		t.Errorf("Configure() error = %v, wantErr not nil", err)
+	}
+
+	for k := range compressionTypes {
+		err = m.Configure(map[string]interface{}{
+			"interval":           500,
+			"path":               "test",
+			"compression":        k,
+			"rollingNamePattern": "suffix",
+		})
+		if err != nil {
+			t.Errorf("Configure() error = %v, wantErr nil", err)
+		}
+		if m.c.Compression != k {
+			t.Errorf("Configure() Compression = %v, want %v", m.c.Compression, k)
+		}
+	}
+
+	err = m.Configure(map[string]interface{}{
+		"interval":           500,
+		"path":               "test",
+		"compression":        "",
+		"rollingNamePattern": "suffix",
+	})
+	if err != nil {
+		t.Errorf("Configure() error = %v, wantErr nil", err)
+	}
+	if m.c.Compression != "" {
+		t.Errorf("Configure() Compression = %v, want %v", m.c.Compression, "")
+	}
+
+	err = m.Configure(map[string]interface{}{
+		"interval":    500,
+		"path":        "test",
+		"compression": "not_exist_algorithm",
+	})
 	if err == nil {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
 	}
@@ -178,10 +216,11 @@ func TestFileSink_Configure(t *testing.T) {
 // Test single file writing and flush by close
 func TestFileSink_Collect(t *testing.T) {
 	tests := []struct {
-		name    string
-		ft      FileType
-		fname   string
-		content []byte
+		name     string
+		ft       FileType
+		fname    string
+		content  []byte
+		compress string
 	}{
 		{
 			name:    "lines",
@@ -198,6 +237,45 @@ func TestFileSink_Collect(t *testing.T) {
 			ft:      CSV_TYPE,
 			fname:   "test_csv",
 			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+		},
+		{
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: GZIP,
+		}, {
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: GZIP,
+		}, {
+			name:     "csv",
+			ft:       CSV_TYPE,
+			fname:    "test_csv",
+			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: GZIP,
+		},
+
+		{
+			name:     "lines",
+			ft:       LINES_TYPE,
+			fname:    "test_lines",
+			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: ZSTD,
+		}, {
+			name:     "json",
+			ft:       JSON_TYPE,
+			fname:    "test_json",
+			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
+			compress: ZSTD,
+		}, {
+			name:     "csv",
+			ft:       CSV_TYPE,
+			fname:    "test_csv",
+			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress: ZSTD,
 		},
 	}
 
@@ -228,6 +306,7 @@ func TestFileSink_Collect(t *testing.T) {
 				"hasHeader":          true,
 				"format":             f,
 				"rollingNamePattern": "none",
+				"compression":        tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -256,9 +335,22 @@ func TestFileSink_Collect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(contents, tt.content) {
-				t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.content, string(contents))
+			if tt.compress != "" {
+				decompressor, _ := compressor.GetDecompressor(tt.compress)
+				decompress, err := decompressor.Decompress(contents)
+				if err != nil {
+					t.Errorf("%v", err)
+				}
+
+				if !reflect.DeepEqual(decompress, tt.content) {
+					t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.content, string(contents))
+				}
+			} else {
+				if !reflect.DeepEqual(contents, tt.content) {
+					t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.content, string(contents))
+				}
 			}
+
 		})
 	}
 }
@@ -285,6 +377,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 		ft       FileType
 		fname    string
 		contents [2][]byte
+		compress string
 	}{
 		{
 			name:  "lines",
@@ -302,6 +395,46 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
 				[]byte("[{\"key\":\"value3\",\"ts\":1810},{\"key\":\"value4\",\"ts\":2260}]"),
 			},
+		},
+
+		{
+			name:  "lines",
+			ft:    LINES_TYPE,
+			fname: "test_lines_gzip.log",
+			contents: [2][]byte{
+				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
+				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
+			},
+			compress: GZIP,
+		}, {
+			name:  "json",
+			ft:    JSON_TYPE,
+			fname: "test_json_gzip.log",
+			contents: [2][]byte{
+				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
+				[]byte("[{\"key\":\"value3\",\"ts\":1810},{\"key\":\"value4\",\"ts\":2260}]"),
+			},
+			compress: GZIP,
+		},
+
+		{
+			name:  "lines",
+			ft:    LINES_TYPE,
+			fname: "test_lines_zstd.log",
+			contents: [2][]byte{
+				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
+				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
+			},
+			compress: ZSTD,
+		}, {
+			name:  "json",
+			ft:    JSON_TYPE,
+			fname: "test_json_zstd.log",
+			contents: [2][]byte{
+				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
+				[]byte("[{\"key\":\"value3\",\"ts\":1810},{\"key\":\"value4\",\"ts\":2260}]"),
+			},
+			compress: ZSTD,
 		},
 	}
 
@@ -323,6 +456,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				"checkInterval":      500,
 				"rollingCount":       0,
 				"rollingNamePattern": "suffix",
+				"compression":        tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -348,10 +482,24 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 			// Should write to 2 files
 			for i := 0; i < 2; i++ {
 				// Read the contents of the temporary file and check if they match the collected items
-				fn := fmt.Sprintf("test_%s-%d.log", tt.ft, 460+1350*i)
+				var fn string
+				if tt.compress != "" {
+					fn = fmt.Sprintf("test_%s_%s-%d.log", tt.ft, tt.compress, 460+1350*i)
+				} else {
+					fn = fmt.Sprintf("test_%s-%d.log", tt.ft, 460+1350*i)
+				}
+
+				var contents []byte
 				contents, err := os.ReadFile(fn)
 				if err != nil {
 					t.Fatal(err)
+				}
+				if tt.compress != "" {
+					decompressor, _ := compressor.GetDecompressor(tt.compress)
+					contents, err = decompressor.Decompress(contents)
+					if err != nil {
+						t.Errorf("%v", err)
+					}
 				}
 				if !reflect.DeepEqual(contents, tt.contents[i]) {
 					t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.contents[i], string(contents))
@@ -383,6 +531,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 		ft       FileType
 		fname    string
 		contents [3][]byte
+		compress string
 	}{
 		{
 			name:  "csv",
@@ -393,6 +542,30 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 				[]byte("key,ts\nvalue1,910"),
 				[]byte("key,ts\nvalue2,1360"),
 			},
+		},
+
+		{
+			name:  "csv",
+			ft:    CSV_TYPE,
+			fname: "test_csv_gzip_{{.ts}}.dd",
+			contents: [3][]byte{
+				[]byte("key,ts\nvalue0,460"),
+				[]byte("key,ts\nvalue1,910"),
+				[]byte("key,ts\nvalue2,1360"),
+			},
+			compress: GZIP,
+		},
+
+		{
+			name:  "csv",
+			ft:    CSV_TYPE,
+			fname: "test_csv_zstd_{{.ts}}.dd",
+			contents: [3][]byte{
+				[]byte("key,ts\nvalue0,460"),
+				[]byte("key,ts\nvalue1,910"),
+				[]byte("key,ts\nvalue2,1360"),
+			},
+			compress: ZSTD,
 		},
 	}
 	// Create a stream context for testing
@@ -414,6 +587,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 				"rollingNamePattern": "none",
 				"hasHeader":          true,
 				"format":             "delimited",
+				"compression":        tt.compress,
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -439,10 +613,23 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 			// Should write to 2 files
 			for i := 0; i < 3; i++ {
 				// Read the contents of the temporary file and check if they match the collected items
-				fn := fmt.Sprintf("test_%s_%d.dd", tt.ft, 460+450*i)
+				var fn string
+				if tt.compress != "" {
+					fn = fmt.Sprintf("test_%s_%s_%d.dd", tt.ft, tt.compress, 460+450*i)
+				} else {
+					fn = fmt.Sprintf("test_%s_%d.dd", tt.ft, 460+450*i)
+				}
+
 				contents, err := os.ReadFile(fn)
 				if err != nil {
 					t.Fatal(err)
+				}
+				if tt.compress != "" {
+					decompressor, _ := compressor.GetDecompressor(tt.compress)
+					contents, err = decompressor.Decompress(contents)
+					if err != nil {
+						t.Errorf("%v", err)
+					}
 				}
 				if !reflect.DeepEqual(contents, tt.contents[i]) {
 					t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.contents[i], string(contents))
