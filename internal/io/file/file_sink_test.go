@@ -90,7 +90,7 @@ func TestConfigure(t *testing.T) {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
 	}
 
-	for _, v := range []string{"flate", "gzip", "zlib", ""} {
+	for _, v := range []string{"gzip", ""} {
 		err = m.Configure(map[string]interface{}{
 			"interval":           500,
 			"path":               "test",
@@ -225,7 +225,6 @@ func TestFileSink_Collect(t *testing.T) {
 			fname:   "test_csv",
 			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 		},
-
 		{
 			name:     "lines",
 			ft:       LINES_TYPE,
@@ -244,46 +243,6 @@ func TestFileSink_Collect(t *testing.T) {
 			fname:    "test_csv",
 			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
-		},
-
-		{
-			name:     "lines",
-			ft:       LINES_TYPE,
-			fname:    "test_lines",
-			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
-			compress: FLATE,
-		}, {
-			name:     "json",
-			ft:       JSON_TYPE,
-			fname:    "test_json",
-			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
-			compress: FLATE,
-		}, {
-			name:     "csv",
-			ft:       CSV_TYPE,
-			fname:    "test_csv",
-			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
-			compress: FLATE,
-		},
-
-		{
-			name:     "lines",
-			ft:       LINES_TYPE,
-			fname:    "test_lines",
-			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
-			compress: ZLIB,
-		}, {
-			name:     "json",
-			ft:       JSON_TYPE,
-			fname:    "test_json",
-			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
-			compress: ZLIB,
-		}, {
-			name:     "csv",
-			ft:       CSV_TYPE,
-			fname:    "test_csv",
-			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
-			compress: ZLIB,
 		},
 	}
 
@@ -424,46 +383,6 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 			},
 			compress: GZIP,
 		},
-
-		{
-			name:  "lines",
-			ft:    LINES_TYPE,
-			fname: "test_lines_flate.log",
-			contents: [2][]byte{
-				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
-				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
-			},
-			compress: FLATE,
-		}, {
-			name:  "json",
-			ft:    JSON_TYPE,
-			fname: "test_json_flate.log",
-			contents: [2][]byte{
-				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
-				[]byte("[{\"key\":\"value3\",\"ts\":1810},{\"key\":\"value4\",\"ts\":2260}]"),
-			},
-			compress: FLATE,
-		},
-
-		{
-			name:  "lines",
-			ft:    LINES_TYPE,
-			fname: "test_lines_zlib.log",
-			contents: [2][]byte{
-				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
-				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
-			},
-			compress: ZLIB,
-		}, {
-			name:  "json",
-			ft:    JSON_TYPE,
-			fname: "test_json_zlib.log",
-			contents: [2][]byte{
-				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
-				[]byte("[{\"key\":\"value3\",\"ts\":1810},{\"key\":\"value4\",\"ts\":2260}]"),
-			},
-			compress: ZLIB,
-		},
 	}
 
 	// Create a stream context for testing
@@ -582,30 +501,6 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 				[]byte("key,ts\nvalue2,1360"),
 			},
 			compress: GZIP,
-		},
-
-		{
-			name:  "csv",
-			ft:    CSV_TYPE,
-			fname: "test_csv_zlib_{{.ts}}.dd",
-			contents: [3][]byte{
-				[]byte("key,ts\nvalue0,460"),
-				[]byte("key,ts\nvalue1,910"),
-				[]byte("key,ts\nvalue2,1360"),
-			},
-			compress: ZLIB,
-		},
-
-		{
-			name:  "csv",
-			ft:    CSV_TYPE,
-			fname: "test_csv_flate_{{.ts}}.dd",
-			contents: [3][]byte{
-				[]byte("key,ts\nvalue0,460"),
-				[]byte("key,ts\nvalue1,910"),
-				[]byte("key,ts\nvalue2,1360"),
-			},
-			compress: FLATE,
 		},
 	}
 	// Create a stream context for testing

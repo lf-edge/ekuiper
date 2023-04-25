@@ -17,9 +17,7 @@ package file
 import (
 	"bufio"
 	"fmt"
-	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zlib"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"io"
@@ -71,19 +69,9 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 	fws.Compress = compressAlgorithm
 
 	switch compressAlgorithm {
-	case FLATE:
-		fws.fileBuffer = bufio.NewWriter(f)
-		flateWriter, err := flate.NewWriter(fws.fileBuffer, flate.DefaultCompression)
-		if err != nil {
-			return nil, err
-		}
-		fws.Writer = flateWriter
 	case GZIP:
 		fws.fileBuffer = bufio.NewWriter(f)
 		fws.Writer = gzip.NewWriter(fws.fileBuffer)
-	case ZLIB:
-		fws.fileBuffer = bufio.NewWriter(f)
-		fws.Writer = zlib.NewWriter(fws.fileBuffer)
 	default:
 		fws.Writer = bufio.NewWriter(f)
 	}

@@ -20,9 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zlib"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -134,7 +132,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 	}
 
 	if _, ok := compressionTypes[cfg.Decompression]; !ok && cfg.Decompression != "" {
-		return fmt.Errorf("decompression must be one of none, zlib, gzip or flate")
+		return fmt.Errorf("decompression must be one of gzip")
 	}
 
 	fs.config = cfg
@@ -352,20 +350,12 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 	var reader io.ReadCloser
 
 	switch fs.config.Decompression {
-	case "flate":
-		reader = flate.NewReader(f)
-	case "gzip":
+	case GZIP:
 		newReader, err := gzip.NewReader(f)
 		if err != nil {
 			return nil, err
 		}
 		reader = newReader
-	case "zlib":
-		r, err := zlib.NewReader(f)
-		if err != nil {
-			return nil, err
-		}
-		reader = r
 	default:
 		reader = f
 	}

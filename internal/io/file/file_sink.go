@@ -105,7 +105,7 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 	}
 
 	if _, ok := compressionTypes[c.Compression]; !ok && c.Compression != "" {
-		return fmt.Errorf("compression must be one of none, zlib, gzip or flate")
+		return fmt.Errorf("compression must be one of gzip")
 	}
 
 	m.c = c
