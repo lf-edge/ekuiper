@@ -39,7 +39,7 @@ type sinkConf struct {
 	HasHeader          bool     `json:"hasHeader"`
 	Delimiter          string   `json:"delimiter"`
 	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
-	Compression string `json:"compression"`
+	Compression        string   `json:"compression"`
 }
 
 type fileSink struct {
