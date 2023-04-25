@@ -23,6 +23,7 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -141,6 +142,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 }
 
 func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+	ctx.PutState(context.RcvTime, time.Now())
 	err := fs.Load(ctx, consumer)
 	if err != nil {
 		select {
@@ -158,6 +160,7 @@ func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			select {
 			case <-ticker.C:
 				logger.Debugf("Load file source again at %v", conf.GetNowInMilli())
+				ctx.PutState(context.RcvTime, time.Now())
 				err := fs.Load(ctx, consumer)
 				if err != nil {
 					errCh <- err
