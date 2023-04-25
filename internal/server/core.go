@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build core
-// +build core
 
 package server
 
@@ -43,7 +42,8 @@ func portablePluginStatusExport() map[string]string {
 	return nil
 }
 
-func portablePluginImport(plugins map[string]string) {
+func portablePluginImport(plugins map[string]string) map[string]string {
+	return nil
 }
 
 func serviceReset() {
@@ -57,7 +57,8 @@ func serviceStatusExport() map[string]string {
 	return nil
 }
 
-func serviceImport(services map[string]string) {
+func serviceImport(services map[string]string) map[string]string {
+	return nil
 }
 
 func schemaReset() {
@@ -88,7 +89,7 @@ func portablePluginPartialImport(plugins map[string]string) map[string]string {
 }
 
 func servicePartialImport(services map[string]string) map[string]string {
-	return serviceManager.ImportPartialServices(services)
+	return nil
 }
 
 func getSchemaInstallScript(s string) (string, string) {
