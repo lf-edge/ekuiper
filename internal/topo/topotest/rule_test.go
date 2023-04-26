@@ -28,6 +28,17 @@ func TestSRFSQL(t *testing.T) {
 	HandleStream(false, streamList, t)
 	var tests = []RuleTest{
 		{
+			Name: "TestSingleSQLRule25",
+			Sql:  "SELECT unnest(a) from demoArr group by SESSIONWINDOW(ss, 2, 1);",
+			R: [][]map[string]interface{}{
+				{
+					{
+						"error": "the argument for the unnest function should be array",
+					},
+				},
+			},
+		},
+		{
 			Name: "TestSingleSQLRule24",
 			Sql:  "Select unnest(a) from demoArr;",
 			R: [][]map[string]interface{}{
