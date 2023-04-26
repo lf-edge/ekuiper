@@ -243,8 +243,10 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	}
 	defer r.Close()
 	var pi *PluginInfo
+	var filesNumber = 0
 	// Parse json file
 	for _, file := range r.File {
+		filesNumber++
 		if file.Name == jsonName {
 			jf, err := file.Open()
 			if err != nil {
@@ -263,7 +265,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		}
 	}
 	if pi == nil {
-		return fmt.Errorf("missing or invalid json file %s", jsonName)
+		return fmt.Errorf("missing or invalid json file %s, found %d files in total", jsonName, filesNumber)
 	}
 	if err = pi.Validate(name); err != nil {
 		return err
