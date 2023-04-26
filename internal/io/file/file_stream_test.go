@@ -1,3 +1,17 @@
+// Copyright 2023 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package file
 
 import (
@@ -12,6 +26,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestFileSinkCompress_Collect(t *testing.T) {
@@ -158,8 +173,8 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 				"file": filepath.Join(dir, filename),
 			}
 			exp := []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"key": "value1"}, meta),
-				api.NewDefaultSourceTuple(map[string]interface{}{"key": "value2"}, meta),
+				api.NewDefaultSourceTuple(map[string]interface{}{"key": "value1"}, meta, time.Now()),
+				api.NewDefaultSourceTuple(map[string]interface{}{"key": "value2"}, meta, time.Now()),
 			}
 			mock.TestSourceOpen(r, exp, t)
 

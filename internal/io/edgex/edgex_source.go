@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type EdgexSource struct {

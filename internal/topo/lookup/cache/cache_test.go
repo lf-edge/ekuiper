@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ func TestExpiration(t *testing.T) {
 	defer c.Close()
 	clock := conf.Clock.(*clock.Mock)
 	expects := [][]api.SourceTuple{
-		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 1}, nil)},
-		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 2}, nil), api.NewDefaultSourceTuple(map[string]interface{}{"a": 3}, nil)},
+		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 1}, nil, time.Now())},
+		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 2}, nil, time.Now()), api.NewDefaultSourceTuple(map[string]interface{}{"a": 3}, nil, time.Now())},
 		{},
 	}
 	c.Set("a", expects[0])
@@ -86,8 +86,8 @@ func TestNoExpiration(t *testing.T) {
 	defer c.Close()
 	clock := conf.Clock.(*clock.Mock)
 	expects := [][]api.SourceTuple{
-		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 1}, nil)},
-		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 2}, nil), api.NewDefaultSourceTuple(map[string]interface{}{"a": 3}, nil)},
+		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 1}, nil, time.Now())},
+		{api.NewDefaultSourceTuple(map[string]interface{}{"a": 2}, nil, time.Now()), api.NewDefaultSourceTuple(map[string]interface{}{"a": 3}, nil, time.Now())},
 		{},
 	}
 	c.Set("a", expects[0])

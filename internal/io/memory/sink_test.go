@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestUpdate(t *testing.T) {
@@ -58,22 +59,22 @@ func TestUpdate(t *testing.T) {
 	}
 	expects := []api.SourceTuple{
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "insert", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "insert", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}, time.Now()),
 			Rowkind:            "insert",
 			Keyval:             "1",
 		},
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "insert", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "insert", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}, time.Now()),
 			Rowkind:            "insert",
 			Keyval:             "2",
 		},
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "update", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "update", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}, time.Now()),
 			Rowkind:            "update",
 			Keyval:             "1",
 		},
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "delete", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "delete", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}, time.Now()),
 			Rowkind:            "delete",
 			Keyval:             "2",
 		},
