@@ -51,7 +51,7 @@ jobs:
         --env KUIPER_SOURCE='/ekuiper' \
         --platform ${{ matrix.arch }} \
         ghcr.io/lf-edge/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }} \
-        bash -euc "make pkg && .github/scripts/test.sh"
+        bash -euc "make pkg && make pkg_core && .github/scripts/test.sh"
     - name: build
       if: matrix.os == 'centos'
       run: |

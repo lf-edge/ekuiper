@@ -46,6 +46,8 @@ default:
   ignoreStartLines: 0
   # How many lines to be ignored in the end. Notice that, empty line will be ignored and not be calculated.
   ignoreEndLines: 0
+  # Decompress the file with the specified compression method. Support `gzip`, `zstd` method now.                                                                                                                                                                                                                                           |
+  decompression: ""
 ```
 
 ### File Types

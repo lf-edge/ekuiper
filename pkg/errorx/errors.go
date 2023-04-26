@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 // limitations under the License.
 
 package errorx
-
-import "fmt"
 
 type ErrorCode int
 
@@ -46,27 +44,4 @@ func (e *Error) Error() string {
 
 func (e *Error) Code() ErrorCode {
 	return e.code
-}
-
-type MultiError map[string]error
-
-func (e MultiError) Error() string {
-	var s string
-	switch len(e) {
-	case 0, 1:
-		s = ""
-	default:
-		s = "Get multiple errors: \n"
-	}
-	for k, v := range e {
-		s = fmt.Sprintf("%s%s:%s", s, k, v.Error())
-	}
-	return s
-}
-
-func (e MultiError) GetError() error {
-	if len(e) > 0 {
-		return e
-	}
-	return nil
 }

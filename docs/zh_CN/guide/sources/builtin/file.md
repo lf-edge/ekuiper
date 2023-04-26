@@ -44,6 +44,8 @@ default:
   ignoreStartLines: 0
   # 忽略结尾多少行的内容。最后的空行不计算在内。
   ignoreEndLines: 0
+  # 使用指定的压缩方法解压缩文件。现在支持`gzip`、`zstd` 方法。                                                                                                                                                                                                                                         |
+  decompression: ""
 ```
 
 ### 文件源

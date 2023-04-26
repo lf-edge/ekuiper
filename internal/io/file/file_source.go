@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zstd"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -45,6 +47,7 @@ type FileSourceConfig struct {
 	IgnoreStartLines int      `json:"ignoreStartLines"`
 	IgnoreEndLines   int      `json:"ignoreEndLines"`
 	Delimiter        string   `json:"delimiter"`
+	Decompression    string   `json:"decompression"`
 }
 
 // FileSource The BATCH to load data from file at once
@@ -128,6 +131,11 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 	if cfg.Delimiter == "" {
 		cfg.Delimiter = ","
 	}
+
+	if _, ok := compressionTypes[cfg.Decompression]; !ok && cfg.Decompression != "" {
+		return fmt.Errorf("decompression must be one of gzip, zstd")
+	}
+
 	fs.config = cfg
 	return nil
 }
@@ -340,16 +348,36 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 		ctx.GetLogger().Error(err)
 		return nil, err
 	}
+	var reader io.ReadCloser
+
+	switch fs.config.Decompression {
+	case GZIP:
+		newReader, err := gzip.NewReader(f)
+		if err != nil {
+			return nil, err
+		}
+		reader = newReader
+	case ZSTD:
+		newReader, err := zstd.NewReader(f)
+		if err != nil {
+			return nil, err
+		}
+		reader = newReader.IOReadCloser()
+	default:
+		reader = f
+	}
+
 	if fs.config.IgnoreStartLines > 0 || fs.config.IgnoreEndLines > 0 {
 		r, w := io.Pipe()
 		go func() {
 			defer func() {
 				ctx.GetLogger().Debugf("Close pipe files %s", file)
 				w.Close()
-				f.Close()
+				reader.Close()
 			}()
-			scanner := bufio.NewScanner(f)
+			scanner := bufio.NewScanner(reader)
 			scanner.Split(bufio.ScanLines)
+
 			ln := 0
 			// This is a queue to store the lines that should be ignored
 			tempLines := make([]string, 0, fs.config.IgnoreEndLines)
@@ -390,5 +418,5 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 		}()
 		return r, nil
 	}
-	return f, nil
+	return reader, nil
 }

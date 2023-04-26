@@ -39,6 +39,7 @@ type sinkConf struct {
 	HasHeader          bool     `json:"hasHeader"`
 	Delimiter          string   `json:"delimiter"`
 	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
+	Compression        string   `json:"compression"`
 }
 
 type fileSink struct {
@@ -102,6 +103,11 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 			c.Delimiter = ","
 		}
 	}
+
+	if _, ok := compressionTypes[c.Compression]; !ok && c.Compression != "" {
+		return fmt.Errorf("compression must be one of gzip, zstd")
+	}
+
 	m.c = c
 	m.fws = make(map[string]*fileWriter)
 	return nil
@@ -241,7 +247,7 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 				nfn = fmt.Sprintf("%s-%d%s", strings.TrimSuffix(fn, ext), conf.GetNowInMilli(), ext)
 			}
 		}
-		fws, e = createFileWriter(ctx, nfn, m.c.FileType, headers)
+		fws, e = createFileWriter(ctx, nfn, m.c.FileType, headers, m.c.Compression)
 		if e != nil {
 			return nil, e
 		}

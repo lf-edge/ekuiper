@@ -28,7 +28,7 @@ require (
 	github.com/pebbe/zmq4 v1.2.9
 	github.com/prometheus/client_golang v1.14.0
 	github.com/redis/go-redis/v9 v9.0.3
-	github.com/second-state/WasmEdge-go v0.11.2
+	github.com/second-state/WasmEdge-go v0.12.0-alpha.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/ugorji/go/codec v1.2.10
 	github.com/urfave/cli v1.22.12

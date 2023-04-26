@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -306,7 +306,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 								}
 							}
 						}
-					case ast.FuncTypeScalar:
+					case ast.FuncTypeScalar, ast.FuncTypeSrf:
 						args = make([]interface{}, len(expr.Args))
 						for i, arg := range expr.Args {
 							args[i] = v.Eval(arg)

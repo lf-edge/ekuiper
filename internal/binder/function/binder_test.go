@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/mock"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"testing"
 )
 
@@ -91,5 +93,69 @@ func TestBinding(t *testing.T) {
 				t.Errorf("%s is aggregate: expect %v but got %v", tt.name, tt.isAgg, isAgg)
 			}
 		}
+	}
+}
+
+func TestFunction(t *testing.T) {
+	m1 := mock.NewMockFactory()
+	m2 := mock.NewMockFactory()
+	e1 := binder.FactoryEntry{
+		Name:    "mock1",
+		Factory: m1,
+	}
+	e2 := binder.FactoryEntry{
+		Name:    "mock2",
+		Factory: m2,
+	}
+	err := Initialize([]binder.FactoryEntry{e1, e2})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		isFunc  bool
+		wantErr bool
+		errs    error
+	}{
+		{
+			name: "mockFunc1",
+			args: args{
+				name: "mock",
+			},
+			isFunc:  true,
+			wantErr: false,
+			errs:    nil,
+		},
+		{
+			name: "mockFunc2",
+			args: args{
+				name: "echo",
+			},
+			isFunc:  false,
+			wantErr: true,
+			errs:    errors.Join(fmt.Errorf("%s:%v", "mock1", errorx.NotFoundErr), fmt.Errorf("%s:%v", "mock2", errorx.NotFoundErr)),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			function, err := Function(tt.args.name)
+			if (function != nil) != tt.isFunc {
+				t.Errorf("Function() function = %v, isFunc %v", function, tt.isFunc)
+			}
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Function() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err != nil {
+				if errors.Is(err, tt.errs) {
+					t.Errorf("Function() error = %v, wantErr %v", err.Error(), tt.errs.Error())
+				}
+			}
+		})
 	}
 }
