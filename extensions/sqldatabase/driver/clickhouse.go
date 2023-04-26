@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,5 +17,5 @@
 package driver
 
 import (
-	_ "github.com/ClickHouse/clickhouse-go" // ClickHouse driver
+	_ "github.com/ClickHouse/clickhouse-go/v2" // ClickHouse driver
 )

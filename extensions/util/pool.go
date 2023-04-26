@@ -69,9 +69,10 @@ func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
 	}
 	newDb, err := openDB(url, dp.isTesting)
 	if err != nil {
+		conf.Log.Errorf("create new database instance %v failed, err:%v", url, err)
 		return nil, err
 	}
-	conf.Log.Debugf("create new database instance: %v", url)
+	conf.Log.Infof("create new database instance: %v", url)
 	dp.pool[url] = newDb
 	dp.connections[url] = 1
 	return newDb, nil
@@ -123,7 +124,7 @@ func (dp *dbPool) closeOneConn(url string) error {
 		dp.connections[url] = connCount
 		return nil
 	}
-	conf.Log.Debugf("drop database instance: %v", url)
+	conf.Log.Infof("drop database instance: %v", url)
 	db := dp.pool[url]
 	// remove db instance from map in order to avoid memory leak
 	delete(dp.pool, url)
