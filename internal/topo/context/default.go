@@ -31,7 +31,6 @@ import (
 )
 
 const LoggerKey = "$$logger"
-const RcvTime = "$$rcvTime"
 
 type DefaultContext struct {
 	ruleId     string

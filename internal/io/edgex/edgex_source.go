@@ -104,7 +104,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 					return
 				}
-
+				rcvTime := time.Now()
 				env, ok := msg.(*types.MessageEnvelope)
 				if !ok {
 					log.Errorf("can not convert interface data to mqtt message.")
@@ -190,7 +190,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					meta["correlationid"] = env.CorrelationID
 
 					select {
-					case consumer <- api.NewDefaultSourceTuple(result, meta):
+					case consumer <- api.NewDefaultSourceTuple(result, meta, rcvTime):
 						log.Debugf("send data to device node")
 					case <-ctx.Done():
 						return

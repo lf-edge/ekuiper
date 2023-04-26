@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 type conf struct {
@@ -92,12 +93,13 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 			}
 			return nil, err
 		}
+		rcvTime := time.Now()
 		m := make(map[string]interface{})
 		err = json.Unmarshal([]byte(res), &m)
 		if err != nil {
 			return nil, err
 		}
-		return []api.SourceTuple{api.NewDefaultSourceTuple(m, nil)}, nil
+		return []api.SourceTuple{api.NewDefaultSourceTuple(m, nil, rcvTime)}, nil
 	} else {
 		res, err := s.cli.LRange(ctx, v, 0, -1).Result()
 		if err != nil {
@@ -108,12 +110,13 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 		}
 		ret := make([]api.SourceTuple, 0, len(res))
 		for _, r := range res {
+			rcvTime := time.Now()
 			m := make(map[string]interface{})
 			err = json.Unmarshal([]byte(r), &m)
 			if err != nil {
 				return nil, err
 			}
-			ret = append(ret, api.NewDefaultSourceTuple(m, nil))
+			ret = append(ret, api.NewDefaultSourceTuple(m, nil, rcvTime))
 		}
 		return ret, nil
 	}

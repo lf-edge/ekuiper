@@ -16,19 +16,17 @@ package mqtt
 
 import (
 	"fmt"
-	"path"
-	"strconv"
-	"time"
-
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"path"
+	"strconv"
+	"time"
 )
 
 type MQTTSource struct {
@@ -139,7 +137,6 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 					log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 					return nil
 				}
-				ctx.PutState(context.RcvTime, time.Now())
 				t = getTuple(ctx, ms, env)
 			}
 			select {
@@ -159,6 +156,7 @@ func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.Source
 			Error: fmt.Errorf("can not convert interface data to mqtt message %v.", env),
 		}
 	}
+	rcvTime := time.Now()
 	payload := msg.Payload()
 	var err error
 	if ms.decompressor != nil {
@@ -186,7 +184,7 @@ func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.Source
 			ctx.GetLogger().Errorf(v)
 		}
 	}
-	return api.NewDefaultSourceTuple(result, meta)
+	return api.NewDefaultSourceTuple(result, meta, rcvTime)
 }
 
 func (ms *MQTTSource) Close(ctx api.StreamContext) error {

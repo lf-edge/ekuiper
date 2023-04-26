@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -101,8 +100,7 @@ func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				continue
 			}
 			logger.Debugf("Send out data %v", next)
-			ctx.PutState(context.RcvTime, time.Now())
-			consumer <- api.NewDefaultSourceTuple(next, nil)
+			consumer <- api.NewDefaultSourceTuple(next, nil, time.Now())
 		case <-ctx.Done():
 			return
 		}

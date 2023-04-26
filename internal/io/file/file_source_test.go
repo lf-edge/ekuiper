@@ -34,9 +34,9 @@ func TestJsonFile(t *testing.T) {
 		"file": filepath.Join(path, "test", "test.json"),
 	}
 	exp := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta, time.Now()),
 	}
 	p := map[string]interface{}{
 		"path": filepath.Join(path, "test"),
@@ -57,12 +57,12 @@ func TestJsonFolder(t *testing.T) {
 	}
 	moveToFolder := filepath.Join(path, "test", "moveTo")
 	exp := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John Doe", "height": 1.82}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Jane Doe", "height": 1.65}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "Will Doe", "height": 1.76}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f2.json")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(4), "name": "Dude Doe", "height": 1.92}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(5), "name": "Jane Doe", "height": 1.72}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(6), "name": "John Smith", "height": 2.22}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John Doe", "height": 1.82}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Jane Doe", "height": 1.65}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "Will Doe", "height": 1.76}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f2.json")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(4), "name": "Dude Doe", "height": 1.92}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(5), "name": "Jane Doe", "height": 1.72}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(6), "name": "John Smith", "height": 2.22}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}, time.Now()),
 	}
 	p := map[string]interface{}{
 		"path":            filepath.Join(path, "test"),
@@ -113,10 +113,10 @@ func TestCSVFolder(t *testing.T) {
 	}
 	// Start testing
 	exp := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"@": "#", "id": "1", "ts": "1670170500", "value": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "a.csv")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"@": "#", "id": "2", "ts": "1670170900", "value": "176"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "a.csv")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": "33", "ts": "1670270500", "humidity": "89"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "b.csv")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": "44", "ts": "1670270900", "humidity": "76"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "b.csv")}),
+		api.NewDefaultSourceTuple(map[string]interface{}{"@": "#", "id": "1", "ts": "1670170500", "value": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "a.csv")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"@": "#", "id": "2", "ts": "1670170900", "value": "176"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "a.csv")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": "33", "ts": "1670270500", "humidity": "89"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "b.csv")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": "44", "ts": "1670270900", "humidity": "76"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "b.csv")}, time.Now()),
 	}
 	p := map[string]interface{}{
 		"fileType":         "csv",
@@ -176,9 +176,9 @@ func TestCSVFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	exp := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"ns": "@", "id": "id", "ts": "ts", "number": "value"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"ns": "#", "id": "1", "ts": "1670170500", "number": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"ns": "#", "id": "2", "ts": "1670170900", "number": "176"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}),
+		api.NewDefaultSourceTuple(map[string]interface{}{"ns": "@", "id": "id", "ts": "ts", "number": "value"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"ns": "#", "id": "1", "ts": "1670170500", "number": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"ns": "#", "id": "2", "ts": "1670170900", "number": "176"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, time.Now()),
 	}
 	p := map[string]interface{}{
 		"fileType":         "csv",
@@ -206,9 +206,9 @@ func TestJsonLines(t *testing.T) {
 		"file": filepath.Join(path, "test", "test.lines"),
 	}
 	exp := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta),
-		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta, time.Now()),
+		api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta, time.Now()),
 	}
 	p := map[string]interface{}{
 		"path":     filepath.Join(path, "test"),

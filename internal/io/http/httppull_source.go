@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -81,7 +80,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 				logger.Warnf("Found error %s when trying to reach %v ", e, hps)
 			} else {
 				logger.Debugf("rest sink got response %v", resp)
-				ctx.PutState(context.RcvTime, time.Now())
+				rcvTime := time.Now()
 				result, _, e := hps.parseResponse(ctx, resp, true, &omd5)
 				if e != nil {
 					logger.Errorf("Parse response error %v", e)
@@ -93,7 +92,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 				}
 				meta := make(map[string]interface{})
 				select {
-				case consumer <- api.NewDefaultSourceTuple(result, meta):
+				case consumer <- api.NewDefaultSourceTuple(result, meta, rcvTime):
 					logger.Debugf("send data to device node")
 				case <-ctx.Done():
 					return

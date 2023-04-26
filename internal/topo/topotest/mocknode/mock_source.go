@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -58,8 +57,7 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 		case <-next:
 			m.Lock()
 			m.offset = i + 1
-			ctx.PutState(context.RcvTime, time.Now())
-			consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"})
+			consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"}, time.Now())
 			log.Debugf("%d: mock source %s is sending data %d:%s", cast.TimeToUnixMilli(mockClock.Now()), ctx.GetOpId(), i, d)
 			m.Unlock()
 		case <-ctx.Done():

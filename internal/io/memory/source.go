@@ -16,14 +16,11 @@ package memory
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
-	"time"
-
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"regexp"
+	"strings"
 )
 
 type source struct {
@@ -40,7 +37,6 @@ func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ 
 			if !opened {
 				return
 			}
-			ctx.PutState(context.RcvTime, time.Now())
 			consumer <- v
 		case <-ctx.Done():
 			return

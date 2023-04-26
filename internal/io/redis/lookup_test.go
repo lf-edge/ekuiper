@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
+	"time"
 )
 
 var (
@@ -69,12 +70,12 @@ func TestSingle(t *testing.T) {
 		{
 			value: 1,
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John", "address": float64(34), "mobile": "334433"}, nil),
+				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John", "address": float64(34), "mobile": "334433"}, nil, time.Now()),
 			},
 		}, {
 			value: 2,
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Susan", "address": float64(22), "mobile": "666433"}, nil),
+				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Susan", "address": float64(22), "mobile": "666433"}, nil, time.Now()),
 			},
 		}, {
 			value:  3,
@@ -115,13 +116,13 @@ func TestList(t *testing.T) {
 		{
 			value: "group1",
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Susan"}, nil),
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John"}, nil),
+				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Susan"}, nil, time.Now()),
+				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John"}, nil, time.Now()),
 			},
 		}, {
 			value: "group2",
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "Nancy"}, nil),
+				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "Nancy"}, nil, time.Now()),
 			},
 		}, {
 			value:  "group4",

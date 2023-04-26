@@ -56,8 +56,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 		t.Error(err)
 	}
 	go func() {
-		cc := ctx.WithMeta("rule", fmt.Sprintf("test"), &state.MemoryStore{})
-		src.Open(cc, consumer, errorChannel)
+		src.Open(ctx, consumer, errorChannel)
 	}()
 
 	//if _, contains := pubTopics[id]; !contains {
@@ -77,7 +76,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	for {
 		select {
 		case res := <-consumer:
-			expected := api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": "test_id"})
+			expected := api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": "test_id"}, time.Now())
 			if !reflect.DeepEqual(expected, res) {
 				t.Errorf("result %s should be equal to %s", res, expected)
 			}

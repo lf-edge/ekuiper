@@ -18,12 +18,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
-
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"go.nanomsg.org/mangos/v3"
+	"time"
 )
 
 // Error handling: wrap all error in a function to handle
@@ -116,8 +114,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 			infra.DrainError(ctx, fmt.Errorf("cannot receive from mangos Socket: %s", err.Error()), errCh)
 			return
 		}
-		ctx.PutState(context.RcvTime, time.Now())
-		result := &api.DefaultSourceTuple{}
+		result := &api.DefaultSourceTuple{Time: time.Now()}
 		e := json.Unmarshal(msg, result)
 		if e != nil {
 			ctx.GetLogger().Errorf("Invalid data format, cannot decode %s to json format with error %s", string(msg), e)

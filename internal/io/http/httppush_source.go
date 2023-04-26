@@ -16,17 +16,14 @@ package http
 
 import (
 	"fmt"
-	"net/http"
-	"strings"
-	"time"
-
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"net/http"
+	"strings"
 )
 
 type PushConf struct {
@@ -84,7 +81,6 @@ func (hps *PushSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 			if !opened {
 				return
 			}
-			ctx.PutState(context.RcvTime, time.Now())
 			consumer <- v
 		case <-ctx.Done():
 			return

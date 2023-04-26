@@ -23,7 +23,6 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -142,7 +141,6 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 }
 
 func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
-	ctx.PutState(context.RcvTime, time.Now())
 	err := fs.Load(ctx, consumer)
 	if err != nil {
 		select {
@@ -160,7 +158,6 @@ func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			select {
 			case <-ticker.C:
 				logger.Debugf("Load file source again at %v", conf.GetNowInMilli())
-				ctx.PutState(context.RcvTime, time.Now())
 				err := fs.Load(ctx, consumer)
 				if err != nil {
 					errCh <- err
@@ -174,6 +171,7 @@ func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 }
 
 func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
+	rcvTime := time.Now()
 	if fs.isDir {
 		ctx.GetLogger().Debugf("Monitor dir %s", fs.file)
 		entries, err := os.ReadDir(fs.file)
@@ -200,7 +198,7 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	// Send EOF if retain size not set if used in table
 	if fs.config.IsTable {
 		select {
-		case consumer <- api.NewDefaultSourceTuple(nil, nil):
+		case consumer <- api.NewDefaultSourceTuple(nil, nil, rcvTime):
 			// do nothing
 		case <-ctx.Done():
 			return nil
@@ -246,6 +244,7 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 
 func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
 	ctx.GetLogger().Debug("Start to load")
+	rcvTime := time.Now()
 	switch fs.config.FileType {
 	case JSON_TYPE:
 		r := json.NewDecoder(file)
@@ -257,7 +256,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 		ctx.GetLogger().Debug("Sending tuples")
 		for _, m := range resultMap {
 			select {
-			case consumer <- api.NewDefaultSourceTuple(m, meta):
+			case consumer <- api.NewDefaultSourceTuple(m, meta, rcvTime):
 			case <-ctx.Done():
 				return nil
 			}
@@ -308,7 +307,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 				}
 			}
 			select {
-			case consumer <- api.NewDefaultSourceTuple(m, meta):
+			case consumer <- api.NewDefaultSourceTuple(m, meta, rcvTime):
 			case <-ctx.Done():
 				return nil
 			}
@@ -327,7 +326,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 					Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", scanner.Text(), err),
 				}
 			} else {
-				tuple = api.NewDefaultSourceTuple(m, meta)
+				tuple = api.NewDefaultSourceTuple(m, meta, rcvTime)
 			}
 			select {
 			case consumer <- tuple:
