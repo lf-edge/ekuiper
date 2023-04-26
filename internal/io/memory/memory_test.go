@@ -77,7 +77,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 		select {
 		case res := <-consumer:
 			expected := api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": "test_id"}, time.Now())
-			if !reflect.DeepEqual(expected, res) {
+			if !reflect.DeepEqual(expected.Message(), res.Message()) || !reflect.DeepEqual(expected.Meta(), res.Meta()) {
 				t.Errorf("result %s should be equal to %s", res, expected)
 			}
 			return
@@ -400,7 +400,9 @@ func TestMultipleTopics(t *testing.T) {
 	for res := range consumer {
 		results = append(results, res)
 	}
-	if !reflect.DeepEqual(expected, results) {
-		t.Errorf("Expect\t %v\n but got\t\t\t\t %v", render.AsCode(expected), render.AsCode(results))
+	for i, r := range results {
+		if !reflect.DeepEqual(r.Message(), expected[i].Message()) || !reflect.DeepEqual(r.Meta(), expected[i].Meta()) {
+			t.Errorf("Expect\t %v\n but got\t\t\t\t %v", render.AsCode(expected[i]), render.AsCode(r))
+		}
 	}
 }

@@ -79,7 +79,9 @@ func TestUpdate(t *testing.T) {
 			Keyval:             "2",
 		},
 	}
-	if !reflect.DeepEqual(actual, expects) {
-		t.Errorf("expect %v but got %v", expects, actual)
+	for i, d := range actual {
+		if !reflect.DeepEqual(d.Message(), expects[i].Message()) || !reflect.DeepEqual(d.Meta(), expects[i].Meta()) {
+			t.Errorf("expect %v but got %v", expects[i], d)
+		}
 	}
 }

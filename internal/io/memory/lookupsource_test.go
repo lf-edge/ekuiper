@@ -66,8 +66,10 @@ func TestUpdateLookup(t *testing.T) {
 		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}, time.Now()),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("expect %v but got %v", expected, result)
+	for i, r := range result {
+		if !reflect.DeepEqual(r.Message(), expected[i].Message()) || !reflect.DeepEqual(r.Meta(), expected[i].Meta()) {
+			t.Errorf("expect %v but got %v", expected[i], r)
+		}
 	}
 	err = ls.Close(ctx)
 	if err != nil {
@@ -121,8 +123,10 @@ func TestLookup(t *testing.T) {
 			result[0], result[1] = result[1], result[0]
 		}
 	}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("expect %v but got %v", expected, result)
+	for i, r := range result {
+		if !reflect.DeepEqual(r.Message(), expected[i].Message()) || !reflect.DeepEqual(r.Meta(), expected[i].Meta()) {
+			t.Errorf("expect %v but got %v", expected[i], r)
+		}
 	}
 	err = ls.Close(ctx)
 	if err != nil {

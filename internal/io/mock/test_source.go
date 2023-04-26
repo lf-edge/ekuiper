@@ -70,7 +70,9 @@ outerloop:
 		return
 	}
 	cancel()
-	if !reflect.DeepEqual(exp, result) {
-		t.Errorf("result mismatch:\n  exp=%s\n  got=%s\n\n", exp, result)
+	for i, v := range result {
+		if !reflect.DeepEqual(exp[i].Message(), v.Message()) || !reflect.DeepEqual(exp[i].Meta(), v.Meta()) {
+			t.Errorf("result mismatch:\n  exp=%s\n  got=%s\n\n", exp[i], v)
+		}
 	}
 }

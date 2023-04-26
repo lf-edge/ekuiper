@@ -31,15 +31,15 @@ func TestTable(t *testing.T) {
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil, time.Now()),
 	}
-	if !reflect.DeepEqual(v, exp) {
-		t.Errorf("read a 1 expect %v, but got %v", exp, v)
+	if !deepEqual(v, exp) {
+		t.Errorf("read 1 expect %v, but got %v", exp, v)
 		return
 	}
 	v, _ = tb.Read([]string{"b"}, []interface{}{"0"})
 	exp = []api.SourceTuple{
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil, time.Now()),
 	}
-	if !reflect.DeepEqual(v, exp) {
+	if !deepEqual(v, exp) {
 		t.Errorf("read b 0 expect %v, but got %v", exp, v)
 		return
 	}
@@ -58,7 +58,7 @@ func TestTable(t *testing.T) {
 		if v[0].Message()["a"] != 2 {
 			v[0], v[1] = v[1], v[0]
 		}
-		if !reflect.DeepEqual(v, exp) {
+		if !deepEqual(v, exp) {
 			t.Errorf("read 1 again expect %v, but got %v", exp, v)
 			return
 		}
@@ -68,7 +68,7 @@ func TestTable(t *testing.T) {
 	exp = []api.SourceTuple{
 		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil, time.Now()),
 	}
-	if !reflect.DeepEqual(v, exp) {
+	if !deepEqual(v, exp) {
 		t.Errorf("read a,b expect %v, but got %v", exp, v)
 		return
 	}
@@ -129,4 +129,13 @@ func TestDb(t *testing.T) {
 		t.Errorf("table t1 a should have 1 instances but got %d", tc.count)
 		return
 	}
+}
+
+func deepEqual(a []api.SourceTuple, b []api.SourceTuple) bool {
+	for i, val := range a {
+		if !reflect.DeepEqual(val.Message(), b[i].Message()) || !reflect.DeepEqual(val.Meta(), b[i].Meta()) {
+			return false
+		}
+	}
+	return true
 }

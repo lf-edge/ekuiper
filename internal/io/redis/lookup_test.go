@@ -88,9 +88,11 @@ func TestSingle(t *testing.T) {
 			t.Errorf("Test %d: %v", i, err)
 			continue
 		}
-		if !reflect.DeepEqual(actual, tt.result) {
-			t.Errorf("Test %d: expected %v, actual %v", i, tt.result, actual)
-			continue
+		for i, a := range actual {
+			if !reflect.DeepEqual(a.Message(), tt.result[i].Message()) || !reflect.DeepEqual(a.Meta(), tt.result[i].Meta()) {
+				t.Errorf("Test %d: expected %v, actual %v", i, tt.result, actual)
+				continue
+			}
 		}
 	}
 }
@@ -135,9 +137,11 @@ func TestList(t *testing.T) {
 			t.Errorf("Test %d: %v", i, err)
 			continue
 		}
-		if !reflect.DeepEqual(actual, tt.result) {
-			t.Errorf("Test %d: expected %v, actual %v", i, tt.result, actual)
-			continue
+		for i, a := range actual {
+			if !reflect.DeepEqual(a.Message(), tt.result[i].Message()) || !reflect.DeepEqual(a.Meta(), tt.result[i].Meta()) {
+				t.Errorf("Test %d: expected %v, actual %v", i, tt.result, actual)
+				continue
+			}
 		}
 	}
 }
