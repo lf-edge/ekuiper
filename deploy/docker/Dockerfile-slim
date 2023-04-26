@@ -21,7 +21,7 @@ WORKDIR /go/kuiper
 
 RUN make build_with_edgex_and_script
 
-FROM debian:buster-20211011 
+FROM debian:buster-slim
 
 COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
 COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
