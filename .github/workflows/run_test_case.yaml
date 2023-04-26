@@ -60,7 +60,6 @@ jobs:
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
         go test --tags="edgex script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.out $(go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/topo/topotest/plugin")
-        go test --tags="edgex script test" ./internal/topo/topotest/...
     - name: run plugins test case
       run: |
         mkdir -p data/test/uploads
