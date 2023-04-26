@@ -72,11 +72,7 @@ func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
 		conf.Log.Errorf("create new database instance %v failed, err:%v", url, err)
 		return nil, err
 	}
-	if err := newDb.Ping(); err != nil {
-		conf.Log.Errorf("ping new database instance %v failed, err:%v", url, err)
-		return nil, err
-	}
-	conf.Log.Infof("create new database instance: %v, success ping", url)
+	conf.Log.Infof("create new database instance: %v", url)
 	dp.pool[url] = newDb
 	dp.connections[url] = 1
 	return newDb, nil
