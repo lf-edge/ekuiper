@@ -17,6 +17,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -105,7 +106,7 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 			return nil, err
 		}
 		scanIntoMap(data, columns, cols)
-		result = append(result, api.NewDefaultSourceTuple(data, nil))
+		result = append(result, api.NewDefaultSourceTuple(data, nil, time.Now()))
 	}
 	return result, nil
 }
