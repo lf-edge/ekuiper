@@ -26,7 +26,7 @@ func registerSetReturningFunc() {
 			arg := args[0]
 			argArray, ok := arg.([]interface{})
 			if !ok {
-				return nil, false
+				return arg, true
 			}
 			return argArray, true
 		},

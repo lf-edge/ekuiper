@@ -69,7 +69,7 @@ func (ps *ProjectSetOperator) handleSRFRow(srfName string, row xsql.CloneAbleRow
 	}
 	aValues, ok := aValue.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("the result from the %v function should be array", srfName)
+		return nil, fmt.Errorf("the argument for the %v function should be array", srfName)
 	}
 	for _, v := range aValues {
 		newTupleRow := row.Clone()
