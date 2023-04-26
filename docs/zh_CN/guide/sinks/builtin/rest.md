@@ -14,7 +14,7 @@
 | privateKeyPath     | 是    | 私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。                                                                                                                                                              |
 | rootCaPath         | 是    | 根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。                                                                                                                                                   |
 | insecureSkipVerify | 是    | 控制是否跳过证书认证。如果被设置为 `true`，那么跳过证书认证；否则进行证书验证。缺省为 `true`。                                                                                                                                                              |
-| oAuth              | true | 定义类 OAuth 的认证流程。其他的认证方式如 apikey 可以直接在 headers 设置密钥，不需要使用这个配置。 详情请见[OAuth 配置](../../sources/builtin/http_pull.md#OAuth)。                                                                                             |
+| oAuth              | 是    | 定义类 OAuth 的认证流程。其他的认证方式如 apikey 可以直接在 headers 设置密钥，不需要使用这个配置。 详情请见[OAuth 配置](../../sources/builtin/http_pull.md#OAuth)。                                                                                             |
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 ::: v-pre
