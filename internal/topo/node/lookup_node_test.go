@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string,
 			m.data = []api.SourceTuple{api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": 1000,
 				"newB": 1000,
-			}, nil)}
+			}, nil, time.Now())}
 		}
 	}
 	a1, ok := values[0].(int)
@@ -63,28 +63,28 @@ func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string,
 			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, time.Now()))
 		}
 		c = a1 % 3
 		if c != 0 {
 			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, time.Now()))
 		}
 		c = a1 % 5
 		if c != 0 {
 			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, time.Now()))
 		}
 		c = a1 % 7
 		if c != 0 {
 			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, time.Now()))
 		}
 		return result, nil
 	} else {
@@ -92,7 +92,7 @@ func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string,
 			api.NewDefaultSourceTuple(map[string]interface{}{
 				"newA": 0,
 				"newB": 0,
-			}, nil),
+			}, nil, time.Now()),
 		}, nil
 	}
 }

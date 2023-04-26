@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ func TestBuffer(t *testing.T) {
 	go func(done chan struct{}) {
 		for i := 0; i < 100; i++ {
 			select {
-			case b.In <- api.NewDefaultSourceTuple(map[string]interface{}{"a": 5}, nil):
+			case b.In <- api.NewDefaultSourceTuple(map[string]interface{}{"a": 5}, nil, time.Now()):
 				fmt.Printf("feed in %d\n", i)
 			default:
 				t.Errorf("message %d dropped, should not drop message", i)
