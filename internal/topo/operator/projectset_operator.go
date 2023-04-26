@@ -32,34 +32,57 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 		srfName = k
 		break
 	}
+	r := make([]interface{}, 0)
 	switch input := data.(type) {
 	case error:
-		return []interface{}{input}
+		return input
 	case xsql.TupleRow:
-		aValue, ok := input.Value(srfName, "")
-		if !ok {
-			return fmt.Errorf("can't find the result from the %v function", srfName)
+		newTuples, err := ps.handleSRFRow(srfName, input)
+		if err != nil {
+			return err
 		}
-		aValues, ok := aValue.([]interface{})
-		if !ok {
-			return fmt.Errorf("the result from the %v function should be array", srfName)
+		for _, tuple := range newTuples {
+			r = append(r, tuple)
 		}
-		newData := make([]interface{}, 0)
-		for _, v := range aValues {
-			newTupleRow := input.Clone()
-			// clear original column value
-			newTupleRow.Del(srfName)
-			if mv, ok := v.(map[string]interface{}); ok {
-				for k, v := range mv {
-					newTupleRow.Set(k, v)
-				}
-			} else {
-				newTupleRow.Set(srfName, v)
-			}
-			newData = append(newData, newTupleRow)
+		return r
+	case xsql.Collection:
+		collections, err := input.RangeProjectSet(func(_ int, r xsql.CloneAbleRow) ([]xsql.CloneAbleRow, error) {
+			return ps.handleSRFRow(srfName, r)
+		})
+		if err != nil {
+			return err
 		}
-		return newData
+		for _, c := range collections {
+			r = append(r, c)
+		}
+		return r
 	default:
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
+}
+
+func (ps *ProjectSetOperator) handleSRFRow(srfName string, row xsql.CloneAbleRow) ([]xsql.CloneAbleRow, error) {
+	newData := make([]xsql.CloneAbleRow, 0)
+	aValue, ok := row.Value(srfName, "")
+	if !ok {
+		return nil, fmt.Errorf("can't find the result from the %v function", srfName)
+	}
+	aValues, ok := aValue.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("the result from the %v function should be array", srfName)
+	}
+	for _, v := range aValues {
+		newTupleRow := row.Clone()
+		// clear original column value
+		newTupleRow.Del(srfName)
+		if mv, ok := v.(map[string]interface{}); ok {
+			for k, v := range mv {
+				newTupleRow.Set(k, v)
+			}
+		} else {
+			newTupleRow.Set(srfName, v)
+		}
+		newData = append(newData, newTupleRow)
+	}
+	return newData, nil
 }
