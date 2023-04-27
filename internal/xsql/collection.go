@@ -34,10 +34,14 @@ type SortingData interface {
 	Index(i int) Row
 }
 
+// ProjectSetCollection indicates the collection which handle the ProjectSet Operator
+type ProjectSetCollection interface {
+	RangeProjectSet(handleSrf func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) (Collection, error)
+}
+
 // Collection A collection of rows as a table. It is used for window, join, group by, etc.
 type Collection interface {
 	SortingData
-	RangeProjectSet(f func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) ([]Collection, error)
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
 	GroupRange(func(i int, aggRow CollectionRow) (bool, error)) error
 	// Range through each row. For grouped collection, each row is an aggregation of groups
@@ -158,20 +162,19 @@ func (w *WindowTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	return nil
 }
 
-func (w *WindowTuples) RangeProjectSet(f func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) ([]Collection, error) {
-	newCollections := make([]Collection, 0)
+func (w *WindowTuples) RangeProjectSet(f func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) (Collection, error) {
+	allTuples := make([]TupleRow, 0)
 	for i, oldTupleRow := range w.Content {
-		newTuples, err := f(i, oldTupleRow.Clone())
+		newTuples, err := f(i, oldTupleRow)
 		if err != nil {
 			return nil, err
 		}
 		for _, newTuple := range newTuples {
-			ns := w.Clone().(*WindowTuples)
-			ns.Content = []TupleRow{newTuple.(TupleRow)}
-			newCollections = append(newCollections, ns)
+			allTuples = append(allTuples, newTuple.(TupleRow))
 		}
 	}
-	return newCollections, nil
+	w.Content = allTuples
+	return w, nil
 }
 
 func (w *WindowTuples) RangeSet(f func(i int, r Row) (bool, error)) error {
@@ -341,20 +344,19 @@ func (s *JoinTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	return nil
 }
 
-func (s *JoinTuples) RangeProjectSet(f func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) ([]Collection, error) {
-	newCollections := make([]Collection, 0)
+func (s *JoinTuples) RangeProjectSet(f func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) (Collection, error) {
+	allTuples := make([]*JoinTuple, 0)
 	for i, oldJoinTuple := range s.Content {
-		newTuples, err := f(i, oldJoinTuple.Clone())
+		newTuples, err := f(i, oldJoinTuple)
 		if err != nil {
 			return nil, err
 		}
-		for _, newJoinTuple := range newTuples {
-			ns := s.Clone().(*JoinTuples)
-			ns.Content = []*JoinTuple{newJoinTuple.(*JoinTuple)}
-			newCollections = append(newCollections, ns)
+		for _, newTuple := range newTuples {
+			allTuples = append(allTuples, newTuple.(*JoinTuple))
 		}
 	}
-	return newCollections, nil
+	s.Content = allTuples
+	return s, nil
 }
 
 func (s *JoinTuples) RangeSet(f func(i int, r Row) (bool, error)) error {
@@ -484,20 +486,19 @@ func (s *GroupedTuplesSet) Range(f func(i int, r ReadonlyRow) (bool, error)) err
 	return nil
 }
 
-func (s *GroupedTuplesSet) RangeProjectSet(f func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) ([]Collection, error) {
-	newCollections := make([]Collection, 0)
+func (s *GroupedTuplesSet) RangeProjectSet(f func(i int, r CloneAbleRow) ([]CloneAbleRow, error)) (Collection, error) {
+	allTuples := make([]*GroupedTuples, 0)
 	for i, groupTuples := range s.Groups {
 		newTuples, err := f(i, groupTuples.Clone())
 		if err != nil {
 			return nil, err
 		}
 		for _, newTuple := range newTuples {
-			ns := s.Clone().(*GroupedTuplesSet)
-			ns.Groups = []*GroupedTuples{newTuple.(*GroupedTuples)}
-			newCollections = append(newCollections, ns)
+			allTuples = append(allTuples, newTuple.(*GroupedTuples))
 		}
 	}
-	return newCollections, nil
+	s.Groups = allTuples
+	return s, nil
 }
 
 func (s *GroupedTuplesSet) RangeSet(f func(i int, r Row) (bool, error)) error {

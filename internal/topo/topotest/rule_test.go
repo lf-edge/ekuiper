@@ -58,14 +58,10 @@ func TestSRFSQL(t *testing.T) {
 						"col":  float64(1),
 						"size": float64(1),
 					},
-				},
-				{
 					{
 						"col":  float64(2),
 						"size": float64(1),
 					},
-				},
-				{
 					{
 						"col":  float64(3),
 						"size": float64(1),
@@ -82,14 +78,10 @@ func TestSRFSQL(t *testing.T) {
 						"col": float64(1),
 						"y":   float64(2),
 					},
-				},
-				{
 					{
 						"col": float64(2),
 						"y":   float64(2),
 					},
-				},
-				{
 					{
 						"col": float64(3),
 						"y":   float64(2),
@@ -106,14 +98,10 @@ func TestSRFSQL(t *testing.T) {
 						"col": float64(1),
 						"a":   float64(6),
 					},
-				},
-				{
 					{
 						"col": float64(2),
 						"a":   float64(6),
 					},
-				},
-				{
 					{
 						"col": float64(3),
 						"a":   float64(6),

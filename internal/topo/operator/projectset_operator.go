@@ -25,6 +25,12 @@ type ProjectSetOperator struct {
 	SrfMapping map[string]struct{}
 }
 
+// Apply implement UnOperation
+// ProjectSetOperator will extract the results from the set-returning-function into multi rows by aligning other columns
+// For tuple, ProjectSetOperator will do the following transform:
+// {"a":[1,2],"b":3} => {"a":1,"b":3},{"a":2,"b":3}
+// For Collection, ProjectSetOperator will do the following transform:
+// [{"a":[1,2],"b":3},{"a":[1,2],"b":4}] = > [{"a":"1","b":3},{"a":"2","b":3},{"a":"1","b":4},{"a":"2","b":4}]
 func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	// for now we only support 1 srf function in the field
 	srfName := ""
@@ -45,17 +51,14 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 			r = append(r, tuple)
 		}
 		return r
-	case xsql.Collection:
-		collections, err := input.RangeProjectSet(func(_ int, r xsql.CloneAbleRow) ([]xsql.CloneAbleRow, error) {
+	case xsql.ProjectSetCollection:
+		c, err := input.RangeProjectSet(func(_ int, r xsql.CloneAbleRow) ([]xsql.CloneAbleRow, error) {
 			return ps.handleSRFRow(srfName, r)
 		})
 		if err != nil {
 			return err
 		}
-		for _, c := range collections {
-			r = append(r, c)
-		}
-		return r
+		return c
 	default:
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
