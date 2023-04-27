@@ -61,6 +61,7 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 
 func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debug("Start to lookup tuple")
+	rcvTime := conf.GetNow()
 	query := "SELECT "
 	if len(fields) == 0 {
 		query += "*"
@@ -97,7 +98,6 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	}
 	var result []api.SourceTuple
 	for rows.Next() {
-		rcvTime := conf.GetNow()
 		data := make(map[string]interface{})
 		columns := make([]interface{}, len(cols))
 		prepareValues(columns, types, cols)
