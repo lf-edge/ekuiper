@@ -110,12 +110,12 @@ func RemovePub(topic string) {
 }
 
 func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
-	doProduce(ctx, topic, api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}))
+	doProduce(ctx, topic, api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, conf.GetNow()))
 }
 
 func ProduceUpdatable(ctx api.StreamContext, topic string, data map[string]interface{}, rowkind string, keyval interface{}) {
 	doProduce(ctx, topic, &UpdatableTuple{
-		DefaultSourceTuple: api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": topic}),
+		DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, conf.GetNow()),
 		Rowkind:            rowkind,
 		Keyval:             keyval,
 	})
