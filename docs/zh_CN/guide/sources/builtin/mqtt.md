@@ -16,6 +16,8 @@ default:
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
   kubeedgeVersion: "1.0"
   kubeedgeModelFile: "mqtt_model.json"
+  # 使用指定的压缩方法解压缩。现在支持`gzip`、`zstd` 。                                                                                                                                                                                                                                         
+  # decompression: ""
 
 
 #重载全局配置
@@ -43,6 +45,10 @@ MQTT 连接用户名。
 ### password
 
 MQTT 连接密码。
+
+### decompression
+
+使用指定的压缩方法解压缩。现在支持`gzip`、`zstd`。                                                                                                                                                                                                                  
 
 ### protocolVersion
 

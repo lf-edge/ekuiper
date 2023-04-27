@@ -17,6 +17,8 @@ default:
   #rootCaPath: /var/kuiper/xyz-rootca.pem
   #insecureSkipVerify: true
   #connectionSelector: mqtt.mqtt_conf1
+  # Decompress the payload with the specified compression method. Support `gzip`, `zstd` method now.                                                                                                                                                                                                                                          
+  # decompression: ""
 
 
 #Override the global configurations
@@ -45,6 +47,10 @@ The username for MQTT connection.
 ### password
 
 The password for MQTT connection.
+
+### decompression
+
+Decompress the payload with the specified compression method. Support `gzip`, `zstd` method now.
 
 ### protocolVersion
 
