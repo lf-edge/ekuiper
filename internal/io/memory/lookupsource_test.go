@@ -16,6 +16,7 @@ package memory
 
 import (
 	gocontext "context"
+	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -62,8 +63,9 @@ func TestUpdateLookup(t *testing.T) {
 			}
 		}
 	}()
+	mc := conf.Clock.(*clock.Mock)
 	expected := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}, mc.Now()),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
 	if !reflect.DeepEqual(result, expected) {
@@ -109,9 +111,10 @@ func TestLookup(t *testing.T) {
 			}
 		}
 	}()
+	mc := conf.Clock.(*clock.Mock)
 	expected := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test2"}),
-		api.NewDefaultSourceTuple(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test2"}),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
 	if len(result) != 2 {

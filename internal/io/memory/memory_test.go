@@ -16,6 +16,7 @@ package memory
 
 import (
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"github.com/gdexlab/go-render/render"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
@@ -76,7 +77,8 @@ func TestSharedInmemoryNode(t *testing.T) {
 	for {
 		select {
 		case res := <-consumer:
-			expected := api.NewDefaultSourceTuple(data, map[string]interface{}{"topic": "test_id"})
+			mc := conf.Clock.(*clock.Mock)
+			expected := api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": "test_id"}, mc.Now())
 			if !reflect.DeepEqual(expected, res) {
 				t.Errorf("result %s should be equal to %s", res, expected)
 			}
@@ -400,7 +402,9 @@ func TestMultipleTopics(t *testing.T) {
 	for res := range consumer {
 		results = append(results, res)
 	}
-	if !reflect.DeepEqual(expected, results) {
-		t.Errorf("Expect\t %v\n but got\t\t\t\t %v", render.AsCode(expected), render.AsCode(results))
+	for i, r := range results {
+		if !reflect.DeepEqual(r.Message(), expected[i].Message()) || !reflect.DeepEqual(r.Meta(), expected[i].Meta()) {
+			t.Errorf("Expect\t %v\n but got\t\t\t\t %v", render.AsCode(expected[i]), render.AsCode(r))
+		}
 	}
 }

@@ -16,6 +16,7 @@ package memory
 
 import (
 	"fmt"
+	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -56,24 +57,25 @@ func TestUpdate(t *testing.T) {
 		fmt.Println(d)
 		actual = append(actual, d)
 	}
+	mc := conf.Clock.(*clock.Mock)
 	expects := []api.SourceTuple{
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "insert", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": "1", "verb": "insert", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}, mc.Now()),
 			Rowkind:            "insert",
 			Keyval:             "1",
 		},
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "insert", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": "2", "verb": "insert", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}, mc.Now()),
 			Rowkind:            "insert",
 			Keyval:             "2",
 		},
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "1", "verb": "update", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": "1", "verb": "update", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}, mc.Now()),
 			Rowkind:            "update",
 			Keyval:             "1",
 		},
 		&pubsub.UpdatableTuple{
-			DefaultSourceTuple: api.NewDefaultSourceTuple(map[string]interface{}{"id": "2", "verb": "delete", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}),
+			DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": "2", "verb": "delete", "name": "test2"}, map[string]interface{}{"topic": "testupdate"}, mc.Now()),
 			Rowkind:            "delete",
 			Keyval:             "2",
 		},

@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/extensions/util"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
@@ -96,6 +97,7 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	}
 	var result []api.SourceTuple
 	for rows.Next() {
+		rcvTime := conf.GetNow()
 		data := make(map[string]interface{})
 		columns := make([]interface{}, len(cols))
 		prepareValues(columns, types, cols)
@@ -105,7 +107,7 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 			return nil, err
 		}
 		scanIntoMap(data, columns, cols)
-		result = append(result, api.NewDefaultSourceTuple(data, nil))
+		result = append(result, api.NewDefaultSourceTupleWithTime(data, nil, rcvTime))
 	}
 	return result, nil
 }

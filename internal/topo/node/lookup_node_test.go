@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,14 +45,15 @@ func (m *mockLookupSrc) Configure(_ string, _ map[string]interface{}) error {
 
 // Lookup accept int value as the first array value
 func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string, values []interface{}) ([]api.SourceTuple, error) {
+	mc := conf.Clock.(*clock.Mock)
 	if len(fields) > 0 { // if fields is not empty, the value will be kept
 		if m.data != nil {
 			return m.data, nil
 		} else {
-			m.data = []api.SourceTuple{api.NewDefaultSourceTuple(map[string]interface{}{
+			m.data = []api.SourceTuple{api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": 1000,
 				"newB": 1000,
-			}, nil)}
+			}, nil, mc.Now())}
 		}
 	}
 	a1, ok := values[0].(int)
@@ -60,39 +61,39 @@ func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string,
 		var result []api.SourceTuple
 		c := a1 % 2
 		if c != 0 {
-			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, mc.Now()))
 		}
 		c = a1 % 3
 		if c != 0 {
-			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, mc.Now()))
 		}
 		c = a1 % 5
 		if c != 0 {
-			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, mc.Now()))
 		}
 		c = a1 % 7
 		if c != 0 {
-			result = append(result, api.NewDefaultSourceTuple(map[string]interface{}{
+			result = append(result, api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": c,
 				"newB": c * 2,
-			}, nil))
+			}, nil, mc.Now()))
 		}
 		return result, nil
 	} else {
 		return []api.SourceTuple{
-			api.NewDefaultSourceTuple(map[string]interface{}{
+			api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": 0,
 				"newB": 0,
-			}, nil),
+			}, nil, mc.Now()),
 		}, nil
 	}
 }

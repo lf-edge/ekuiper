@@ -15,20 +15,23 @@
 package store
 
 import (
+	"github.com/benbjohnson/clock"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
 )
 
 func TestTable(t *testing.T) {
+	mc := conf.Clock.(*clock.Mock)
 	tb := createTable("topicT", "a")
-	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "0"}, nil))
-	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil))
-	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 3, "b": "4"}, nil))
-	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
+	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "0"}, nil, mc.Now()))
+	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": "0"}, nil, mc.Now()))
+	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3, "b": "4"}, nil, mc.Now()))
+	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()))
 	v, _ := tb.Read([]string{"a"}, []interface{}{1})
 	exp := []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()),
 	}
 	if !reflect.DeepEqual(v, exp) {
 		t.Errorf("read a 1 expect %v, but got %v", exp, v)
@@ -36,19 +39,19 @@ func TestTable(t *testing.T) {
 	}
 	v, _ = tb.Read([]string{"b"}, []interface{}{"0"})
 	exp = []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": "0"}, nil, mc.Now()),
 	}
 	if !reflect.DeepEqual(v, exp) {
 		t.Errorf("read b 0 expect %v, but got %v", exp, v)
 		return
 	}
-	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 5, "b": "0"}, nil))
+	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 5, "b": "0"}, nil, mc.Now()))
 	tb.delete(3)
-	tb.add(api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil))
+	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()))
 	v, _ = tb.Read([]string{"b"}, []interface{}{"0"})
 	exp = []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 2, "b": "0"}, nil),
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 5, "b": "0"}, nil),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": "0"}, nil, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 5, "b": "0"}, nil, mc.Now()),
 	}
 	if len(v) != 2 {
 		t.Errorf("read 1 again expect %v, but got %v", exp, v)
@@ -65,7 +68,7 @@ func TestTable(t *testing.T) {
 
 	v, _ = tb.Read([]string{"a", "b"}, []interface{}{1, "1"})
 	exp = []api.SourceTuple{
-		api.NewDefaultSourceTuple(map[string]interface{}{"a": 1, "b": "1"}, nil),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()),
 	}
 	if !reflect.DeepEqual(v, exp) {
 		t.Errorf("read a,b expect %v, but got %v", exp, v)

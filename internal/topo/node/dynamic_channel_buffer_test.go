@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@ package node
 
 import (
 	"fmt"
+	"github.com/benbjohnson/clock"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"testing"
 	"time"
@@ -25,10 +27,11 @@ func TestBuffer(t *testing.T) {
 	b := NewDynamicChannelBuffer()
 	b.SetLimit(100)
 	stopSign := make(chan struct{})
+	mc := conf.Clock.(*clock.Mock)
 	go func(done chan struct{}) {
 		for i := 0; i < 100; i++ {
 			select {
-			case b.In <- api.NewDefaultSourceTuple(map[string]interface{}{"a": 5}, nil):
+			case b.In <- api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 5}, nil, mc.Now()):
 				fmt.Printf("feed in %d\n", i)
 			default:
 				t.Errorf("message %d dropped, should not drop message", i)

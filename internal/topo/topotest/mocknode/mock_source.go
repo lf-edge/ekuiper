@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 		case <-next:
 			m.Lock()
 			m.offset = i + 1
-			consumer <- api.NewDefaultSourceTuple(d.Message, xsql.Metadata{"topic": "mock"})
+			consumer <- api.NewDefaultSourceTupleWithTime(d.Message, xsql.Metadata{"topic": "mock"}, mockClock.Now())
 			log.Debugf("%d: mock source %s is sending data %d:%s", cast.TimeToUnixMilli(mockClock.Now()), ctx.GetOpId(), i, d)
 			m.Unlock()
 		case <-ctx.Done():

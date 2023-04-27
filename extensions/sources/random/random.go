@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,12 +18,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 const dedupStateKey = "input"
@@ -93,13 +95,14 @@ func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	for {
 		select {
 		case <-t.C:
+			rcvTime := conf.GetNow()
 			next := randomize(s.conf.Pattern, s.conf.Seed)
 			if s.conf.Deduplicate != 0 && s.isDup(ctx, next) {
 				logger.Debugf("find duplicate")
 				continue
 			}
 			logger.Debugf("Send out data %v", next)
-			consumer <- api.NewDefaultSourceTuple(next, nil)
+			consumer <- api.NewDefaultSourceTupleWithTime(next, nil, rcvTime)
 		case <-ctx.Done():
 			return
 		}

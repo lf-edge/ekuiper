@@ -18,6 +18,7 @@ package redis
 
 import (
 	"github.com/alicebob/miniredis/v2"
+	"github.com/benbjohnson/clock"
 	econf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -62,6 +63,7 @@ func TestSingle(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	mc := econf.Clock.(*clock.Mock)
 	var tests = []struct {
 		value  int
 		result []api.SourceTuple
@@ -69,12 +71,12 @@ func TestSingle(t *testing.T) {
 		{
 			value: 1,
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John", "address": float64(34), "mobile": "334433"}, nil),
+				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John", "address": float64(34), "mobile": "334433"}, nil, mc.Now()),
 			},
 		}, {
 			value: 2,
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Susan", "address": float64(22), "mobile": "666433"}, nil),
+				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Susan", "address": float64(22), "mobile": "666433"}, nil, mc.Now()),
 			},
 		}, {
 			value:  3,
@@ -87,7 +89,7 @@ func TestSingle(t *testing.T) {
 			t.Errorf("Test %d: %v", i, err)
 			continue
 		}
-		if !reflect.DeepEqual(actual, tt.result) {
+		if !deepEqual(actual, tt.result) {
 			t.Errorf("Test %d: expected %v, actual %v", i, tt.result, actual)
 			continue
 		}
@@ -108,6 +110,7 @@ func TestList(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	mc := econf.Clock.(*clock.Mock)
 	var tests = []struct {
 		value  string
 		result []api.SourceTuple
@@ -115,13 +118,13 @@ func TestList(t *testing.T) {
 		{
 			value: "group1",
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(2), "name": "Susan"}, nil),
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(1), "name": "John"}, nil),
+				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Susan"}, nil, mc.Now()),
+				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John"}, nil, mc.Now()),
 			},
 		}, {
 			value: "group2",
 			result: []api.SourceTuple{
-				api.NewDefaultSourceTuple(map[string]interface{}{"id": float64(3), "name": "Nancy"}, nil),
+				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "Nancy"}, nil, mc.Now()),
 			},
 		}, {
 			value:  "group4",
@@ -134,9 +137,18 @@ func TestList(t *testing.T) {
 			t.Errorf("Test %d: %v", i, err)
 			continue
 		}
-		if !reflect.DeepEqual(actual, tt.result) {
+		if !deepEqual(actual, tt.result) {
 			t.Errorf("Test %d: expected %v, actual %v", i, tt.result, actual)
 			continue
 		}
 	}
+}
+
+func deepEqual(a []api.SourceTuple, b []api.SourceTuple) bool {
+	for i, val := range a {
+		if !reflect.DeepEqual(val.Message(), b[i].Message()) || !reflect.DeepEqual(val.Meta(), b[i].Meta()) {
+			return false
+		}
+	}
+	return true
 }
