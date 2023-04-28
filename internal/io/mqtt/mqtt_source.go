@@ -16,6 +16,9 @@ package mqtt
 
 import (
 	"fmt"
+	"path"
+	"strconv"
+
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -24,8 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"path"
-	"strconv"
 )
 
 type MQTTSource struct {
@@ -149,6 +150,7 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 }
 
 func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.SourceTuple {
+	rcvTime := conf.GetNow()
 	msg, ok := env.(pahoMqtt.Message)
 	if !ok { // should never happen
 		return &xsql.ErrorSourceTuple{
@@ -182,7 +184,7 @@ func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.Source
 			ctx.GetLogger().Errorf(v)
 		}
 	}
-	return api.NewDefaultSourceTuple(result, meta)
+	return api.NewDefaultSourceTupleWithTime(result, meta, rcvTime)
 }
 
 func (ms *MQTTSource) Close(ctx api.StreamContext) error {

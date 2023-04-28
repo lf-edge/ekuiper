@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,22 +17,33 @@ package api
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 type SourceTuple interface {
 	Message() map[string]interface{}
 	Meta() map[string]interface{}
+	Timestamp() time.Time
 }
 
 type DefaultSourceTuple struct {
 	Mess map[string]interface{} `json:"message"`
 	M    map[string]interface{} `json:"meta"`
+	Time time.Time              `json:"timestamp"`
 }
 
 func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]interface{}) *DefaultSourceTuple {
 	return &DefaultSourceTuple{
 		Mess: message,
 		M:    meta,
+		Time: time.Now(),
+	}
+}
+func NewDefaultSourceTupleWithTime(message map[string]interface{}, meta map[string]interface{}, timestamp time.Time) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		Mess: message,
+		M:    meta,
+		Time: timestamp,
 	}
 }
 
@@ -41,6 +52,10 @@ func (t *DefaultSourceTuple) Message() map[string]interface{} {
 }
 func (t *DefaultSourceTuple) Meta() map[string]interface{} {
 	return t.M
+}
+
+func (t *DefaultSourceTuple) Timestamp() time.Time {
+	return t.Time
 }
 
 type Logger interface {

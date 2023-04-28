@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	cnf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/redis/go-redis/v9"
@@ -79,6 +80,7 @@ func (s *lookupSource) Open(ctx api.StreamContext) error {
 }
 
 func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
+	rcvTime := cnf.GetNow()
 	ctx.GetLogger().Debugf("Lookup redis %v", keys)
 	if len(keys) != 1 {
 		return nil, fmt.Errorf("redis lookup only support one key, but got %v", keys)
@@ -97,7 +99,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 		if err != nil {
 			return nil, err
 		}
-		return []api.SourceTuple{api.NewDefaultSourceTuple(m, nil)}, nil
+		return []api.SourceTuple{api.NewDefaultSourceTupleWithTime(m, nil, rcvTime)}, nil
 	} else {
 		res, err := s.cli.LRange(ctx, v, 0, -1).Result()
 		if err != nil {
@@ -113,7 +115,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 			if err != nil {
 				return nil, err
 			}
-			ret = append(ret, api.NewDefaultSourceTuple(m, nil))
+			ret = append(ret, api.NewDefaultSourceTupleWithTime(m, nil, rcvTime))
 		}
 		return ret, nil
 	}

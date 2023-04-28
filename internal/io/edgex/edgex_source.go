@@ -25,6 +25,7 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/fxamacker/cbor/v2"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -100,6 +101,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 			case e1 := <-subErrs:
 				log.Errorf("Subscription to edgex messagebus received error %v.\n", e1)
 			case msg, ok := <-messages:
+				rcvTime := conf.GetNow()
 				if !ok { // the source is closed
 					log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 					return
@@ -190,7 +192,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					meta["correlationid"] = env.CorrelationID
 
 					select {
-					case consumer <- api.NewDefaultSourceTuple(result, meta):
+					case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
 						log.Debugf("send data to device node")
 					case <-ctx.Done():
 						return

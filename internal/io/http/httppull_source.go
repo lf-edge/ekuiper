@@ -15,8 +15,9 @@
 package http
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/infra"
 	"time"
+
+	"github.com/lf-edge/ekuiper/pkg/infra"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -70,6 +71,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 	for {
 		select {
 		case <-ticker.C:
+			rcvTime := conf.GetNow()
 			headers, err := hps.parseHeaders(ctx, hps.tokens)
 			if err != nil {
 				continue
@@ -90,7 +92,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 				}
 				meta := make(map[string]interface{})
 				select {
-				case consumer <- api.NewDefaultSourceTuple(result, meta):
+				case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
 					logger.Debugf("send data to device node")
 				case <-ctx.Done():
 					return

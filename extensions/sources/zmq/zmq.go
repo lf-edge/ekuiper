@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	zmq "github.com/pebbe/zmq4"
 )
@@ -62,6 +64,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			id, err := s.subscriber.GetIdentity()
 			errCh <- fmt.Errorf("zmq source getting message %s error: %v", id, err)
 		} else {
+			rcvTime := conf.GetNow()
 			logger.Debugf("zmq source receive %v", msgs)
 			var m []byte
 			for i, msg := range msgs {
@@ -78,7 +81,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			if e != nil {
 				logger.Errorf("Invalid data format, cannot decode %v with error %s", m, e)
 			} else {
-				consumer <- api.NewDefaultSourceTuple(result, meta)
+				consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime)
 			}
 		}
 		select {

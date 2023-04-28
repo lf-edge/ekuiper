@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
-	"os"
-	"time"
 )
 
 const RTSP_DEFAULT_INTERVAL = 10000
@@ -71,6 +73,7 @@ func (rps *VideoPullSource) initTimerPull(ctx api.StreamContext, consumer chan<-
 	for {
 		select {
 		case <-ticker.C:
+			rcvTime := conf.GetNow()
 			buf := rps.readFrameAsJpeg(ctx)
 			result, e := ctx.Decode(buf.Bytes())
 			meta := make(map[string]interface{})
@@ -80,7 +83,7 @@ func (rps *VideoPullSource) initTimerPull(ctx api.StreamContext, consumer chan<-
 			}
 
 			select {
-			case consumer <- api.NewDefaultSourceTuple(result, meta):
+			case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
 				logger.Debugf("send data to device node")
 			case <-ctx.Done():
 				return

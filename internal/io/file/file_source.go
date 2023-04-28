@@ -171,6 +171,7 @@ func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 }
 
 func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
+	rcvTime := conf.GetNow()
 	if fs.isDir {
 		ctx.GetLogger().Debugf("Monitor dir %s", fs.file)
 		entries, err := os.ReadDir(fs.file)
@@ -197,7 +198,7 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	// Send EOF if retain size not set if used in table
 	if fs.config.IsTable {
 		select {
-		case consumer <- api.NewDefaultSourceTuple(nil, nil):
+		case consumer <- api.NewDefaultSourceTupleWithTime(nil, nil, rcvTime):
 			// do nothing
 		case <-ctx.Done():
 			return nil
@@ -243,6 +244,7 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 
 func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
 	ctx.GetLogger().Debug("Start to load")
+	rcvTime := conf.GetNow()
 	switch fs.config.FileType {
 	case JSON_TYPE:
 		r := json.NewDecoder(file)
@@ -254,7 +256,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 		ctx.GetLogger().Debug("Sending tuples")
 		for _, m := range resultMap {
 			select {
-			case consumer <- api.NewDefaultSourceTuple(m, meta):
+			case consumer <- api.NewDefaultSourceTupleWithTime(m, meta, rcvTime):
 			case <-ctx.Done():
 				return nil
 			}
@@ -305,7 +307,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 				}
 			}
 			select {
-			case consumer <- api.NewDefaultSourceTuple(m, meta):
+			case consumer <- api.NewDefaultSourceTupleWithTime(m, meta, rcvTime):
 			case <-ctx.Done():
 				return nil
 			}
@@ -324,7 +326,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 					Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", scanner.Text(), err),
 				}
 			} else {
-				tuple = api.NewDefaultSourceTuple(m, meta)
+				tuple = api.NewDefaultSourceTupleWithTime(m, meta, rcvTime)
 			}
 			select {
 			case consumer <- tuple:
