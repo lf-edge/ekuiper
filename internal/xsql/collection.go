@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -167,7 +167,7 @@ func (w *WindowTuples) RangeSet(f func(i int, r Row) (bool, error)) error {
 		if !b {
 			break
 		}
-		w.Content[i] = rc
+		w.Content[i] = rc.(TupleRow)
 	}
 	return nil
 }
@@ -248,7 +248,7 @@ func (w *WindowTuples) ToMap() map[string]interface{} {
 func (w *WindowTuples) Clone() Collection {
 	ts := make([]TupleRow, len(w.Content))
 	for i, t := range w.Content {
-		ts[i] = t.Clone()
+		ts[i] = t.Clone().(TupleRow)
 	}
 	c := &WindowTuples{
 		Content:      ts,
@@ -284,7 +284,7 @@ func (w *WindowTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters 
 	for i, t := range w.Content {
 		tc := t.Clone()
 		tc.Pick(allWildcard, cols, wildcardEmitters)
-		w.Content[i] = tc
+		w.Content[i] = tc.(TupleRow)
 	}
 }
 

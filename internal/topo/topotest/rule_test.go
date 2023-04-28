@@ -22,6 +22,195 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
+func TestSRFSQL(t *testing.T) {
+	//Reset
+	streamList := []string{"demo", "demoArr"}
+	HandleStream(false, streamList, t)
+	var tests = []RuleTest{
+		{
+			Name: "TestSingleSQLRule25",
+			Sql:  "SELECT unnest(a) from demoArr group by SESSIONWINDOW(ss, 2, 1);",
+			R: [][]map[string]interface{}{
+				{
+					{
+						"error": "the argument for the unnest function should be array",
+					},
+				},
+			},
+		},
+		{
+			Name: "TestSingleSQLRule24",
+			Sql:  "Select unnest(a) from demoArr;",
+			R: [][]map[string]interface{}{
+				{
+					{
+						"error": "the argument for the unnest function should be array",
+					},
+				},
+			},
+		},
+		{
+			Name: "TestSingleSQLRule21",
+			Sql:  `SELECT unnest(demoArr.arr3) as col, demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1);`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"col":  float64(1),
+						"size": float64(1),
+					},
+					{
+						"col":  float64(2),
+						"size": float64(1),
+					},
+					{
+						"col":  float64(3),
+						"size": float64(1),
+					},
+				},
+			},
+		},
+		{
+			Name: "TestSingleSQLRule22",
+			Sql:  `SELECT unnest(arr3) as col,y From demoArr group by y, SESSIONWINDOW(ss, 2, 1);`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"col": float64(1),
+						"y":   float64(2),
+					},
+					{
+						"col": float64(2),
+						"y":   float64(2),
+					},
+					{
+						"col": float64(3),
+						"y":   float64(2),
+					},
+				},
+			},
+		},
+		{
+			Name: "TestSingleSQLRule23",
+			Sql:  "SELECT unnest(arr3) as col,a from demoArr group by SESSIONWINDOW(ss, 2, 1);",
+			R: [][]map[string]interface{}{
+				{
+					{
+						"col": float64(1),
+						"a":   float64(6),
+					},
+					{
+						"col": float64(2),
+						"a":   float64(6),
+					},
+					{
+						"col": float64(3),
+						"a":   float64(6),
+					},
+				},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule18`,
+			Sql:  `SELECT unnest(arr2) FROM demoArr where x=1`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+					},
+				},
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+					},
+				},
+			},
+		},
+		// The mapping schema created by unnest function will cover the original column if they have the same column name
+		{
+			Name: `TestSingleSQLRule19`,
+			Sql:  `SELECT unnest(arr2),a FROM demoArr where x=1`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+					},
+				},
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+					},
+				},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule20`,
+			Sql:  `SELECT unnest(arr3) as col FROM demoArr where x=1`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"col": float64(1),
+					},
+				},
+				{
+					{
+						"col": float64(2),
+					},
+				},
+				{
+					{
+						"col": float64(3),
+					},
+				},
+			},
+		},
+		{
+			Name: `TestSingleSQLRule21`,
+			Sql:  `SELECT unnest(arr2),x FROM demoArr where x=1`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+						"x": float64(1),
+					},
+				},
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+						"x": float64(1),
+					},
+				},
+			},
+		},
+	}
+	//Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+		}, {
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		}, {
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}
+
 func TestSingleSQL(t *testing.T) {
 	//Reset
 	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable", "demoArr"}
@@ -30,7 +219,7 @@ func TestSingleSQL(t *testing.T) {
 	var tests = []RuleTest{
 		{
 			Name: `TestSingleSQLRule0`,
-			Sql:  `SELECT arr[x:y+1] as col1 FROM demoArr`,
+			Sql:  `SELECT arr[x:y+1] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
 					"col1": []interface{}{
@@ -590,7 +779,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestSingleSQLRule17`,
-			Sql:  `SELECT arr[x:4] as col1 FROM demoArr`,
+			Sql:  `SELECT arr[x:4] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
 					"col1": []interface{}{
@@ -601,7 +790,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestSingleSQLRule16`,
-			Sql:  `SELECT arr[1:y] as col1 FROM demoArr`,
+			Sql:  `SELECT arr[1:y] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
 					"col1": []interface{}{
@@ -612,89 +801,11 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestSingleSQLRule15`,
-			Sql:  `SELECT arr[1] as col1 FROM demoArr`,
+			Sql:  `SELECT arr[1] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
 					"col1": float64(2),
 				}},
-			},
-		},
-		{
-			Name: `TestSingleSQLRule18`,
-			Sql:  `SELECT unnest(arr2) FROM demoArr`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"a": float64(1),
-						"b": float64(2),
-					},
-				},
-				{
-					{
-						"a": float64(3),
-						"b": float64(4),
-					},
-				},
-			},
-		},
-		// The mapping schema created by unnest function will cover the original column if they have the same column name
-		{
-			Name: `TestSingleSQLRule19`,
-			Sql:  `SELECT unnest(arr2),a FROM demoArr`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"a": float64(1),
-						"b": float64(2),
-					},
-				},
-				{
-					{
-						"a": float64(3),
-						"b": float64(4),
-					},
-				},
-			},
-		},
-		{
-			Name: `TestSingleSQLRule20`,
-			Sql:  `SELECT unnest(arr3) as col FROM demoArr`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"col": float64(1),
-					},
-				},
-				{
-					{
-						"col": float64(2),
-					},
-				},
-				{
-					{
-						"col": float64(3),
-					},
-				},
-			},
-		},
-		{
-			Name: `TestSingleSQLRule21`,
-			Sql:  `SELECT unnest(arr2),x FROM demoArr`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"a": float64(1),
-						"b": float64(2),
-						"x": float64(1),
-					},
-				},
-				{
-					{
-						"a": float64(3),
-						"b": float64(4),
-						"x": float64(1),
-					},
-				},
 			},
 		},
 		{

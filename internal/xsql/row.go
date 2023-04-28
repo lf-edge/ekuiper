@@ -57,13 +57,17 @@ type Row interface {
 	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool)
 }
 
+type CloneAbleRow interface {
+	Row
+	// Clone when broadcast to make sure each row are dealt single threaded
+	Clone() CloneAbleRow
+}
+
 // TupleRow is a mutable row. Function with * could modify the row.
 type TupleRow interface {
-	Row
+	CloneAbleRow
 	// GetEmitter returns the emitter of the row
 	GetEmitter() string
-	// Clone when broadcast to make sure each row are dealt single threaded
-	Clone() TupleRow
 }
 
 // CollectionRow is the aggregation row of a non-grouped collection. Thinks of it as a single group.
@@ -345,7 +349,7 @@ func (t *Tuple) All(string) (Message, bool) {
 	return t.ToMap(), true
 }
 
-func (t *Tuple) Clone() TupleRow {
+func (t *Tuple) Clone() CloneAbleRow {
 	return &Tuple{
 		Emitter:      t.Emitter,
 		Timestamp:    t.Timestamp,
@@ -495,10 +499,10 @@ func (jt *JoinTuple) All(stream string) (Message, bool) {
 	return nil, false
 }
 
-func (jt *JoinTuple) Clone() TupleRow {
+func (jt *JoinTuple) Clone() CloneAbleRow {
 	ts := make([]TupleRow, len(jt.Tuples))
 	for i, t := range jt.Tuples {
-		ts[i] = t.Clone()
+		ts[i] = t.Clone().(TupleRow)
 	}
 	c := &JoinTuple{
 		Tuples:       ts,
@@ -531,7 +535,7 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 				if _, ok := wildcardEmitters[tuple.GetEmitter()]; ok {
 					continue
 				}
-				nt := tuple.Clone()
+				nt := tuple.Clone().(TupleRow)
 				nt.Pick(allWildcard, cols, wildcardEmitters)
 				jt.Tuples[i] = nt
 			}
@@ -582,7 +586,7 @@ func (s *GroupedTuples) ToMap() map[string]interface{} {
 	return s.cachedMap
 }
 
-func (s *GroupedTuples) Clone() CollectionRow {
+func (s *GroupedTuples) Clone() CloneAbleRow {
 	ts := make([]TupleRow, len(s.Content))
 	for i, t := range s.Content {
 		ts[i] = t
@@ -597,7 +601,7 @@ func (s *GroupedTuples) Clone() CollectionRow {
 
 func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
 	cols = s.AffiliateRow.Pick(cols)
-	sc := s.Content[0].Clone()
+	sc := s.Content[0].Clone().(TupleRow)
 	sc.Pick(allWildcard, cols, wildcardEmitters)
 	s.Content[0] = sc
 }

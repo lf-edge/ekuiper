@@ -138,7 +138,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				o.Broadcast(val)
 				stats.IncTotalExceptions(val.Error())
 				continue
-			case []interface{}:
+			case []xsql.TupleRow:
 				stats.ProcessTimeEnd()
 				for _, v := range val {
 					o.Broadcast(v)

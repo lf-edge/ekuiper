@@ -1022,7 +1022,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"a":    6,
 				"arr3": []interface{}{1, 2, 3},
 			},
-			Timestamp: 1541152487501,
+			Timestamp: 1541152489253,
 		},
 	},
 }
