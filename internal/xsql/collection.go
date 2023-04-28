@@ -40,7 +40,7 @@ type Collection interface {
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
 	GroupRange(func(i int, aggRow CollectionRow) (bool, error)) error
 	// Range through each row. For grouped collection, each row is an aggregation of groups
-	Range(func(i int, r CloneAbleRow) (bool, error)) error
+	Range(func(i int, r ReadonlyRow) (bool, error)) error
 	// RangeSet range through each row by cloneing the row
 	RangeSet(func(i int, r Row) (bool, error)) error
 	Filter(indexes []int) Collection
@@ -144,7 +144,7 @@ func (w *WindowTuples) GetWindowRange() *WindowRange {
 	return w.WindowRange
 }
 
-func (w *WindowTuples) Range(f func(i int, r CloneAbleRow) (bool, error)) error {
+func (w *WindowTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	for i, r := range w.Content {
 		b, e := f(i, r)
 		if e != nil {
@@ -311,7 +311,7 @@ func (s *JoinTuples) GetWindowRange() *WindowRange {
 	return s.WindowRange
 }
 
-func (s *JoinTuples) Range(f func(i int, r CloneAbleRow) (bool, error)) error {
+func (s *JoinTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	for i, r := range s.Content {
 		b, e := f(i, r)
 		if e != nil {
@@ -438,7 +438,7 @@ func (s *GroupedTuplesSet) GetWindowRange() *WindowRange {
 	return s.WindowRange
 }
 
-func (s *GroupedTuplesSet) Range(f func(i int, r CloneAbleRow) (bool, error)) error {
+func (s *GroupedTuplesSet) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	for i, r := range s.Groups {
 		b, e := f(i, r)
 		if e != nil {

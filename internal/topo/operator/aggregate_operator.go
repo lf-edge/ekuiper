@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 		case xsql.SingleCollection:
 			wr := input.GetWindowRange()
 			result := make(map[string]*xsql.GroupedTuples)
-			err := input.Range(func(i int, ir xsql.CloneAbleRow) (bool, error) {
+			err := input.Range(func(i int, ir xsql.ReadonlyRow) (bool, error) {
 				var name string
 				tr := ir.(xsql.TupleRow)
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tr, &xsql.WindowRangeValuer{WindowRange: wr}, fv)}

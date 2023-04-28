@@ -23,9 +23,6 @@ import (
 
 type ProjectSetOperator struct {
 	SrfMapping map[string]struct{}
-	srfName    string
-
-	collectionRows []xsql.CloneAbleRow
 }
 
 // Apply implement UnOperation
@@ -35,51 +32,18 @@ type ProjectSetOperator struct {
 // For Collection, ProjectSetOperator will do the following transform:
 // [{"a":[1,2],"b":3},{"a":[1,2],"b":4}] = > [{"a":"1","b":3},{"a":"2","b":3},{"a":"1","b":4},{"a":"2","b":4}]
 func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
-	// for now we only support 1 srf function in the field
-	srfName := ""
-	for k := range ps.SrfMapping {
-		srfName = k
-		break
-	}
-	ps.srfName = srfName
-	ps.collectionRows = make([]xsql.CloneAbleRow, 0)
-	r := make([]interface{}, 0)
 	switch input := data.(type) {
 	case error:
 		return input
 	case xsql.TupleRow:
-		newTuples, err := ps.handleSRFRow(srfName, input)
+		results, err := ps.handleSRFRow(input)
 		if err != nil {
 			return err
 		}
-		for _, tuple := range newTuples {
-			r = append(r, tuple)
-		}
-		return r
+		return results.rows
 	case xsql.Collection:
-		err := input.Range(ps.handleSRFRowForCollection)
-		if err != nil {
+		if err := ps.handleSRFRowForCollection(input); err != nil {
 			return err
-		}
-		switch ts := input.(type) {
-		case *xsql.JoinTuples:
-			newTuples := make([]*xsql.JoinTuple, 0)
-			for _, tuple := range ps.collectionRows {
-				newTuples = append(newTuples, tuple.(*xsql.JoinTuple))
-			}
-			ts.Content = newTuples
-		case *xsql.GroupedTuplesSet:
-			newTuples := make([]*xsql.GroupedTuples, 0)
-			for _, tuple := range ps.collectionRows {
-				newTuples = append(newTuples, tuple.(*xsql.GroupedTuples))
-			}
-			ts.Groups = newTuples
-		case *xsql.WindowTuples:
-			newTuples := make([]xsql.TupleRow, 0)
-			for _, tuple := range ps.collectionRows {
-				newTuples = append(newTuples, tuple.(xsql.TupleRow))
-			}
-			ts.Content = newTuples
 		}
 		return input
 	default:
@@ -87,17 +51,51 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 	}
 }
 
-func (ps *ProjectSetOperator) handleSRFRowForCollection(i int, r xsql.CloneAbleRow) (bool, error) {
-	rows, err := ps.handleSRFRow(ps.srfName, r)
-	if err != nil {
-		return false, err
+func (ps *ProjectSetOperator) handleSRFRowForCollection(data xsql.Collection) error {
+	switch collection := data.(type) {
+	case *xsql.JoinTuples:
+		newContent := make([]*xsql.JoinTuple, 0)
+		for _, c := range collection.Content {
+			rs, err := ps.handleSRFRow(c)
+			if err != nil {
+				return err
+			}
+			newContent = append(newContent, rs.joinTuples...)
+		}
+		collection.Content = newContent
+	case *xsql.GroupedTuplesSet:
+		newGroups := make([]*xsql.GroupedTuples, 0)
+		for _, c := range collection.Groups {
+			rs, err := ps.handleSRFRow(c)
+			if err != nil {
+				return err
+			}
+			newGroups = append(newGroups, rs.groupTuples...)
+		}
+		collection.Groups = newGroups
+	case *xsql.WindowTuples:
+		newContent := make([]xsql.TupleRow, 0)
+		for _, c := range collection.Content {
+			rs, err := ps.handleSRFRow(c)
+			if err != nil {
+				return err
+			}
+			newContent = append(newContent, rs.rows...)
+		}
+		collection.Content = newContent
+	default:
+		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", data)
 	}
-	ps.collectionRows = append(ps.collectionRows, rows...)
-	return true, nil
+	return nil
 }
 
-func (ps *ProjectSetOperator) handleSRFRow(srfName string, row xsql.CloneAbleRow) ([]xsql.CloneAbleRow, error) {
-	newData := make([]xsql.CloneAbleRow, 0)
+func (ps *ProjectSetOperator) handleSRFRow(row xsql.CloneAbleRow) (*resultWrapper, error) {
+	// for now we only support 1 srf function in the field
+	srfName := ""
+	for k := range ps.SrfMapping {
+		srfName = k
+		break
+	}
 	aValue, ok := row.Value(srfName, "")
 	if !ok {
 		return nil, fmt.Errorf("can't find the result from the %v function", srfName)
@@ -106,7 +104,8 @@ func (ps *ProjectSetOperator) handleSRFRow(srfName string, row xsql.CloneAbleRow
 	if !ok {
 		return nil, fmt.Errorf("the argument for the %v function should be array", srfName)
 	}
-	for _, v := range aValues {
+	res := newResultWrapper(len(aValues), row)
+	for i, v := range aValues {
 		newTupleRow := row.Clone()
 		// clear original column value
 		newTupleRow.Del(srfName)
@@ -117,7 +116,37 @@ func (ps *ProjectSetOperator) handleSRFRow(srfName string, row xsql.CloneAbleRow
 		} else {
 			newTupleRow.Set(srfName, v)
 		}
-		newData = append(newData, newTupleRow)
+		res.appendTuple(i, newTupleRow)
 	}
-	return newData, nil
+	return res, nil
+}
+
+type resultWrapper struct {
+	joinTuples  []*xsql.JoinTuple
+	groupTuples []*xsql.GroupedTuples
+	rows        []xsql.TupleRow
+}
+
+func newResultWrapper(len int, row xsql.CloneAbleRow) *resultWrapper {
+	r := &resultWrapper{}
+	switch row.(type) {
+	case *xsql.JoinTuple:
+		r.joinTuples = make([]*xsql.JoinTuple, len)
+	case *xsql.GroupedTuples:
+		r.groupTuples = make([]*xsql.GroupedTuples, len)
+	case xsql.TupleRow:
+		r.rows = make([]xsql.TupleRow, len)
+	}
+	return r
+}
+
+func (r *resultWrapper) appendTuple(index int, newRow xsql.CloneAbleRow) {
+	switch row := newRow.(type) {
+	case *xsql.JoinTuple:
+		r.joinTuples[index] = row
+	case *xsql.GroupedTuples:
+		r.groupTuples[index] = row
+	case xsql.TupleRow:
+		r.rows[index] = row
+	}
 }

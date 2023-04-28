@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						log.Debugf("Lookup Node receive window input %s", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
-						err := d.Range(func(i int, r xsql.CloneAbleRow) (bool, error) {
+						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 							tr, ok := r.(xsql.TupleRow)
 							if !ok {
 								return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
