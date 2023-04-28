@@ -257,6 +257,17 @@ Multiple column function can only be used in the `SELECT` clause of a query.
 |--------------|----------------------------------------------|-------------------------------------------------------------------------------------------------------------|
 | changed_cols | changed_cols(prefix, ignoreNull, colA, colB) | Return the changed columns whose name are prefixed. Check [changed_cols](#changedcols-function) for detail. |
 
+## Multiple Row Functions 
+
+A multiple row function is a function that returns multiple rows.
+
+Multiple row function can only be used in the `SELECT` clause of a query.
+
+| Function | Example       | Description                                                                                                                                                                                                                    |
+|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| unnest   | unnest(array) | The argument column must be an array. This function will expand the array into multiple rows as returned result. If the item in the array is map[string]interface object, then it will be built as columns in the result rows. |
+
+
 ## Functions to detect changes
 
 ### Changed_col function
