@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql
 			}
 		}
 		var newTuples []xsql.TupleRow
-		_ = p.output.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
+		_ = p.output.Range(func(i int, r xsql.CloneAbleRow) (bool, error) {
 			if p.retainSize > 0 && p.output.Len() == p.retainSize && i == 0 {
 				return true, nil
 			}

@@ -23,6 +23,9 @@ import (
 
 type ProjectSetOperator struct {
 	SrfMapping map[string]struct{}
+	srfName    string
+
+	collectionRows []xsql.CloneAbleRow
 }
 
 // Apply implement UnOperation
@@ -38,6 +41,8 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 		srfName = k
 		break
 	}
+	ps.srfName = srfName
+	ps.collectionRows = make([]xsql.CloneAbleRow, 0)
 	r := make([]interface{}, 0)
 	switch input := data.(type) {
 	case error:
@@ -51,17 +56,44 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 			r = append(r, tuple)
 		}
 		return r
-	case xsql.ProjectSetCollection:
-		c, err := input.RangeProjectSet(func(_ int, r xsql.CloneAbleRow) ([]xsql.CloneAbleRow, error) {
-			return ps.handleSRFRow(srfName, r)
-		})
+	case xsql.Collection:
+		err := input.Range(ps.handleSRFRowForCollection)
 		if err != nil {
 			return err
 		}
-		return c
+		switch ts := input.(type) {
+		case *xsql.JoinTuples:
+			newTuples := make([]*xsql.JoinTuple, 0)
+			for _, tuple := range ps.collectionRows {
+				newTuples = append(newTuples, tuple.(*xsql.JoinTuple))
+			}
+			ts.Content = newTuples
+		case *xsql.GroupedTuplesSet:
+			newTuples := make([]*xsql.GroupedTuples, 0)
+			for _, tuple := range ps.collectionRows {
+				newTuples = append(newTuples, tuple.(*xsql.GroupedTuples))
+			}
+			ts.Groups = newTuples
+		case *xsql.WindowTuples:
+			newTuples := make([]xsql.TupleRow, 0)
+			for _, tuple := range ps.collectionRows {
+				newTuples = append(newTuples, tuple.(xsql.TupleRow))
+			}
+			ts.Content = newTuples
+		}
+		return input
 	default:
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
+}
+
+func (ps *ProjectSetOperator) handleSRFRowForCollection(i int, r xsql.CloneAbleRow) (bool, error) {
+	rows, err := ps.handleSRFRow(ps.srfName, r)
+	if err != nil {
+		return false, err
+	}
+	ps.collectionRows = append(ps.collectionRows, rows...)
+	return true, nil
 }
 
 func (ps *ProjectSetOperator) handleSRFRow(srfName string, row xsql.CloneAbleRow) ([]xsql.CloneAbleRow, error) {
