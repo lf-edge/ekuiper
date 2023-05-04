@@ -207,6 +207,8 @@ type StreamContext interface {
 	// Decode is set in the source according to the format.
 	// It decodes byte array into map or map slice.
 	Decode(data []byte) (map[string]interface{}, error)
+
+	DecodeIntoList(data []byte) ([]map[string]interface{}, error)
 }
 
 type Operator interface {

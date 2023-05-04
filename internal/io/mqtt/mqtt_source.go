@@ -122,39 +122,45 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 		return e
 	} else {
 		log.Infof("Successfully subscribed to topic %s.", ms.tpc)
-		var t api.SourceTuple
+		var tuples []api.SourceTuple
 		for {
 			select {
 			case <-ctx.Done():
 				log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 				return nil
 			case e1 := <-err:
-				t = &xsql.ErrorSourceTuple{
-					Error: fmt.Errorf("the subscription to mqtt topic %s have error %s.\n", ms.tpc, e1.Error()),
+				tuples = []api.SourceTuple{
+					&xsql.ErrorSourceTuple{
+						Error: fmt.Errorf("the subscription to mqtt topic %s have error %s.\n", ms.tpc, e1.Error()),
+					},
 				}
 			case env, ok := <-messages:
 				if !ok { // the source is closed
 					log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 					return nil
 				}
-				t = getTuple(ctx, ms, env)
+				tuples = getTuple(ctx, ms, env)
 			}
-			select {
-			case consumer <- t:
-				log.Debugf("send data to source node")
-			case <-ctx.Done():
-				return nil
+			for _, t := range tuples {
+				select {
+				case consumer <- t:
+					log.Debugf("send data to source node")
+				case <-ctx.Done():
+					return nil
+				}
 			}
 		}
 	}
 }
 
-func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.SourceTuple {
+func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.SourceTuple {
 	rcvTime := conf.GetNow()
 	msg, ok := env.(pahoMqtt.Message)
 	if !ok { // should never happen
-		return &xsql.ErrorSourceTuple{
-			Error: fmt.Errorf("can not convert interface data to mqtt message %v.", env),
+		return []api.SourceTuple{
+			&xsql.ErrorSourceTuple{
+				Error: fmt.Errorf("can not convert interface data to mqtt message %v.", env),
+			},
 		}
 	}
 	payload := msg.Payload()
@@ -162,29 +168,37 @@ func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) api.Source
 	if ms.decompressor != nil {
 		payload, err = ms.decompressor.Decompress(payload)
 		if err != nil {
-			return &xsql.ErrorSourceTuple{
-				Error: fmt.Errorf("can not decompress mqtt message %v.", err),
+			return []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: fmt.Errorf("can not decompress mqtt message %v.", err),
+				},
 			}
 		}
 	}
-	result, e := ctx.Decode(payload)
+	results, e := ctx.DecodeIntoList(payload)
 	//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 	if e != nil {
-		return &xsql.ErrorSourceTuple{
-			Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", string(msg.Payload()), e),
+		return []api.SourceTuple{
+			&xsql.ErrorSourceTuple{
+				Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", string(msg.Payload()), e),
+			},
 		}
 	}
 	meta := make(map[string]interface{})
 	meta["topic"] = msg.Topic()
 	meta["messageid"] = strconv.Itoa(int(msg.MessageID()))
 
-	if nil != ms.model {
-		sliErr := ms.model.checkType(result, msg.Topic())
-		for _, v := range sliErr {
-			ctx.GetLogger().Errorf(v)
+	tuples := make([]api.SourceTuple, 0, len(results))
+	for _, result := range results {
+		if nil != ms.model {
+			sliErr := ms.model.checkType(result, msg.Topic())
+			for _, v := range sliErr {
+				ctx.GetLogger().Errorf(v)
+			}
 		}
+		tuples = append(tuples, api.NewDefaultSourceTupleWithTime(result, meta, rcvTime))
 	}
-	return api.NewDefaultSourceTupleWithTime(result, meta, rcvTime)
+	return tuples
 }
 
 func (ms *MQTTSource) Close(ctx api.StreamContext) error {
