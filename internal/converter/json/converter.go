@@ -34,14 +34,14 @@ func (c *Converter) Encode(d interface{}) ([]byte, error) {
 
 func (c *Converter) Decode(b []byte) (interface{}, error) {
 	r1 := make(map[string]interface{})
-	err1 := json.Unmarshal(b, &r1)
-	if err1 == nil {
+	err := json.Unmarshal(b, &r1)
+	if err == nil {
 		return r1, nil
 	}
 	r2 := make([]map[string]interface{}, 0)
-	err2 := json.Unmarshal(b, &r2)
-	if err2 == nil {
+	err = json.Unmarshal(b, &r2)
+	if err == nil {
 		return r2, nil
 	}
-	return nil, err2
+	return nil, err
 }

@@ -139,7 +139,7 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 					log.Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
 					return nil
 				}
-				tuples = getTuple(ctx, ms, env)
+				tuples = getTuples(ctx, ms, env)
 			}
 			for _, t := range tuples {
 				select {
@@ -153,7 +153,7 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 	}
 }
 
-func getTuple(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.SourceTuple {
+func getTuples(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.SourceTuple {
 	rcvTime := conf.GetNow()
 	msg, ok := env.(pahoMqtt.Message)
 	if !ok { // should never happen

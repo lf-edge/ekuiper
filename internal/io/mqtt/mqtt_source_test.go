@@ -52,7 +52,7 @@ func TestGetTupleWithZlibCompressor(t *testing.T) {
 		topic:   "test/topic",
 	}
 	// Call getTuple with the mock MQTT message
-	results := getTuple(ctx, ms, msg)
+	results := getTuples(ctx, ms, msg)
 	for _, result := range results {
 		// Check if the result is a valid SourceTuple and has the correct content
 		if st, ok := result.(api.SourceTuple); ok {
