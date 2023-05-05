@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"time"
 )
 
 var (
@@ -121,16 +122,23 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 		referred := false
 		i.Lock()
 		delete(i.commands, ctrl.Meta)
-		referred = len(i.commands) > 0
 		i.Unlock()
 		ctx.GetLogger().Infof("stopped symbol %s", ctrl.SymbolName)
 		if !referred {
-			err := GetPluginInsManager().Kill(i.name)
-			if err != nil {
-				ctx.GetLogger().Infof("fail to stop plugin %s: %v", i.name, err)
-				return err
-			}
-			ctx.GetLogger().Infof("stop plugin %s", i.name)
+			go func() {
+				// delay to kill the plugin process
+				time.Sleep(1 * time.Second)
+				i.RLock()
+				defer i.RUnlock()
+				if len(i.commands) == 0 {
+					err := GetPluginInsManager().Kill(i.name)
+					if err != nil {
+						ctx.GetLogger().Errorf("fail to stop plugin %s: %v", i.name, err)
+						return
+					}
+					ctx.GetLogger().Infof("stop plugin %s", i.name)
+				}
+			}()
 		}
 	}
 	return err
