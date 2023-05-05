@@ -33,7 +33,7 @@ func TestMessageDecode(t *testing.T) {
 		payload []byte
 		format  string
 		result  map[string]interface{}
-		results []map[string]interface{}
+		results []interface{}
 	}{
 		{
 			payload: []byte(fmt.Sprintf(`{"format":"jpg","content":"%s"}`, b64img)),
@@ -46,11 +46,11 @@ func TestMessageDecode(t *testing.T) {
 		{
 			payload: []byte(`[{"a":1},{"a":2}]`),
 			format:  "json",
-			results: []map[string]interface{}{
-				{
+			results: []interface{}{
+				map[string]interface{}{
 					"a": float64(1),
 				},
-				{
+				map[string]interface{}{
 					"a": float64(2),
 				},
 			},

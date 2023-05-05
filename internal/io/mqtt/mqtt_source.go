@@ -190,13 +190,15 @@ func getTuples(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.Sou
 
 	tuples := make([]api.SourceTuple, 0, len(results))
 	for _, result := range results {
-		if nil != ms.model {
-			sliErr := ms.model.checkType(result, msg.Topic())
-			for _, v := range sliErr {
-				ctx.GetLogger().Errorf(v)
+		if r, ok := result.(map[string]interface{}); ok {
+			if nil != ms.model {
+				sliErr := ms.model.checkType(r, msg.Topic())
+				for _, v := range sliErr {
+					ctx.GetLogger().Errorf(v)
+				}
 			}
+			tuples = append(tuples, api.NewDefaultSourceTupleWithTime(r, meta, rcvTime))
 		}
-		tuples = append(tuples, api.NewDefaultSourceTupleWithTime(result, meta, rcvTime))
 	}
 	return tuples
 }

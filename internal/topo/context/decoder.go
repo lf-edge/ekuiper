@@ -38,7 +38,7 @@ func (c *DefaultContext) Decode(data []byte) (map[string]interface{}, error) {
 	return nil, fmt.Errorf("no decoder configured")
 }
 
-func (c *DefaultContext) DecodeIntoList(data []byte) ([]map[string]interface{}, error) {
+func (c *DefaultContext) DecodeIntoList(data []byte) ([]interface{}, error) {
 	v := c.Value(DecodeKey)
 	f, ok := v.(message.Converter)
 	if ok {
@@ -48,9 +48,9 @@ func (c *DefaultContext) DecodeIntoList(data []byte) ([]map[string]interface{}, 
 		}
 		typeErr := fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported but got: %v", t)
 		if result, ok := t.(map[string]interface{}); ok {
-			return []map[string]interface{}{result}, nil
+			return []interface{}{result}, nil
 		}
-		if result, ok := t.([]map[string]interface{}); ok {
+		if result, ok := t.([]interface{}); ok {
 			return result, nil
 		}
 		return nil, typeErr
