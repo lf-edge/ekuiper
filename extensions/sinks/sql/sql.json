@@ -89,6 +89,21 @@
 			"en_US": "Rowkind Field",
 			"zh_CN": "动作字段"
 		}
+	},
+	{
+		"name": "keyField",
+		"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Specify which field is the primary key. If rowKindField is set this field is required.",
+			"zh_CN": "指定哪个字段为主键字段。如果设置了 rowKindField 则本属性必填。"
+		},
+		"label": {
+			"en_US": "Key Field",
+			"zh_CN": "Key 字段"
+		}
 	}
  ],
 	"node": {
