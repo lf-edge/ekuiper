@@ -15,7 +15,6 @@
 package ast
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -55,9 +54,9 @@ func TestPrintFieldType(t *testing.T) {
 		},
 		printed: `string`,
 	}}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	t.Logf("The test bucket size is %d.", len(tests))
 	for i, tt := range tests {
-		//fmt.Printf("Parsing SQL %q.\n",tt.s)
+		// t.Logf("Parsing SQL %q.",tt.s)
 		result, _ := doPrintFieldTypeForJson(tt.ft)
 		if !reflect.DeepEqual(tt.printed, result) {
 			t.Errorf("%d. \nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.printed, result)
@@ -128,7 +127,7 @@ func TestToJsonFields(t *testing.T) {
 			},
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	t.Logf("The test bucket size is %d.", len(tests))
 	for i, tt := range tests {
 		result := tt.input.ToJsonSchema()
 		if !reflect.DeepEqual(tt.output, result) {

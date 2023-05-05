@@ -67,7 +67,7 @@ func TestToTypedSlice(t *testing.T) {
 			e: "cannot convert []interface {}([<nil> bbb ddd]) to string slice for the 0 element: <nil>",
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	t.Logf("The test bucket size is %d.", len(tests))
 	for i, tt := range tests {
 		result, err := ToTypedSlice(tt.s, func(input interface{}, ssn Strictness) (interface{}, error) {
 			if input == nil {
