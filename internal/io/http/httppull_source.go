@@ -93,7 +93,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 				meta := make(map[string]interface{})
 				for _, result := range results {
 					select {
-					case consumer <- api.NewDefaultSourceTupleWithTime(result.(map[string]interface{}), meta, rcvTime):
+					case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
 						logger.Debugf("send data to device node")
 					case <-ctx.Done():
 						return

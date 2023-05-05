@@ -327,7 +327,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 				}}
 			} else {
 				for _, t := range m {
-					tuples = append(tuples, api.NewDefaultSourceTupleWithTime(t.(map[string]interface{}), meta, rcvTime))
+					tuples = append(tuples, api.NewDefaultSourceTupleWithTime(t, meta, rcvTime))
 				}
 			}
 			for _, tuple := range tuples {
