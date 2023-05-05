@@ -96,6 +96,21 @@
 			}
 		},
 		{
+			"name": "fields",
+			"default": [],
+			"optional": true,
+			"control": "list",
+			"type": "list_string",
+			"hint": {
+				"en_US": "key set of redis",
+				"zh_CN": "redis 键字段集合"
+			},
+			"label": {
+				"en_US": "key set of redis",
+				"zh_CN": "redis 键字段集合"
+			}
+		},
+		{
 			"name": "dataType",
 			"default": "string",
 			"optional": false,

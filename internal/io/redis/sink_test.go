@@ -111,6 +111,93 @@ func TestSink(t *testing.T) {
 	}
 }
 
+func TestSinkMultipleFields(t *testing.T) {
+	s := &RedisSink{}
+	err := s.Configure(map[string]interface{}{
+		"addr": addr,
+		"key":  "test",
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	contextLogger := econf.Log.WithField("rule", "test")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	err = s.Open(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var tests = []struct {
+		c      map[string]interface{}
+		d      interface{}
+		kvPair map[string]interface{}
+	}{
+		{
+			c:      map[string]interface{}{"fields": []interface{}{"id", "name", "address", "mobile"}},
+			d:      map[string]interface{}{"id": 1, "name": "John", "address": 34, "mobile": "334433"},
+			kvPair: map[string]interface{}{"id": "1", "name": "John", "address": "34", "mobile": "334433"},
+		},
+		{
+			c:      map[string]interface{}{"fields": []interface{}{"address", "mobile"}},
+			d:      map[string]interface{}{"id": 1, "name": "John", "address": 39, "mobile": "4433"},
+			kvPair: map[string]interface{}{"address": "39", "mobile": "4433"},
+		},
+		{
+			c: map[string]interface{}{"fields": []interface{}{"id", "name"}, "datatype": "string"},
+			d: []map[string]interface{}{
+				{"id": 24, "name": "Susan"},
+				{"id": 25, "name": "Bob"},
+				{"id": 26, "name": "John"},
+			},
+			kvPair: map[string]interface{}{"id": "26", "name": "John"},
+		},
+		{
+			c: map[string]interface{}{"datatype": "list", "fields": []interface{}{"listId", "listName"}},
+			d: map[string]interface{}{
+				"listId": 4, "listName": "Susan",
+			},
+			kvPair: map[string]interface{}{"listId": "4", "listName": "Susan"},
+		},
+		{
+			c: map[string]interface{}{"datatype": "list", "fields": []interface{}{"listId", "listName"}},
+			d: []map[string]interface{}{
+				{"listId": 4, "listName": "Susan"},
+				{"listId": 5, "listName": "Bob"},
+				{"listId": 6, "listName": "John"},
+			},
+			kvPair: map[string]interface{}{"listId": "6", "listName": "John"},
+		},
+	}
+	for i, tt := range tests {
+		cast.MapToStruct(tt.c, s.c)
+		err = s.Collect(ctx, tt.d)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		var (
+			r   string
+			err error
+		)
+		for k, v := range tt.kvPair {
+			switch tt.c["datatype"] {
+			case "list":
+				r, err = mr.Lpop(k)
+			default:
+				r, err = mr.Get(k)
+			}
+			if err != nil {
+				t.Errorf("case %d err %v", i, err)
+				return
+			}
+			if !reflect.DeepEqual(r, v) {
+				t.Errorf("case %d expect %v, but got %v", i, v, r)
+			}
+		}
+	}
+}
+
 func TestUpdateString(t *testing.T) {
 	s := &RedisSink{}
 	err := s.Configure(map[string]interface{}{

@@ -39,6 +39,7 @@ type config struct {
 	Field string `json:"field,omitempty"`
 	// key define
 	Key          string        `json:"key,omitempty"`
+	Fields       []string      `json:"fields,omitempty"`
 	DataType     string        `json:"dataType,omitempty"`
 	Expiration   time.Duration `json:"expiration,omitempty"`
 	RowkindField string        `json:"rowkindField"`
@@ -56,8 +57,8 @@ func (r *RedisSink) Configure(props map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	if c.Key == "" && c.Field == "" {
-		return errors.New("redis sink must have key or field")
+	if c.Key == "" && c.Field == "" && len(c.Fields) == 0 {
+		return errors.New("redis sink must have key, field or fields")
 	}
 	if c.DataType != "string" && c.DataType != "list" {
 		return errors.New("redis sink only support string or list data type")
@@ -125,25 +126,38 @@ func (r *RedisSink) Close(ctx api.StreamContext) error {
 
 func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val string) error {
 	logger := ctx.GetLogger()
-	if val == "" {
-		jsonBytes, err := json.Marshal(data)
-		if err != nil {
-			return err
+	// prepare key value pairs
+	values := make(map[string]string)
+	if len(r.c.Fields) > 0 {
+		for _, field := range r.c.Fields {
+			if val, ok := data[field]; ok {
+				v, _ := cast.ToString(val, cast.CONVERT_ALL)
+				values[field] = v
+			}
 		}
-		val = string(jsonBytes)
+	} else {
+		if val == "" {
+			jsonBytes, err := json.Marshal(data)
+			if err != nil {
+				return err
+			}
+			val = string(jsonBytes)
+		}
+		key := r.c.Key
+		var err error
+		if r.c.Field != "" {
+			keyval, ok := data[r.c.Field]
+			if !ok {
+				return fmt.Errorf("field %s does not exist in data %v", r.c.Field, data)
+			}
+			key, err = cast.ToString(keyval, cast.CONVERT_ALL)
+			if err != nil {
+				return fmt.Errorf("key must be string or convertible to string, but got %v", keyval)
+			}
+		}
+		values[key] = val
 	}
-	key := r.c.Key
-	var err error
-	if r.c.Field != "" {
-		keyval, ok := data[r.c.Field]
-		if !ok {
-			return fmt.Errorf("field %s does not exist in data %v", r.c.Field, data)
-		}
-		key, err = cast.ToString(keyval, cast.CONVERT_ALL)
-		if err != nil {
-			return fmt.Errorf("key must be string or convertible to string, but got %v", keyval)
-		}
-	}
+	//get action type
 	rowkind := ast.RowkindUpsert
 	if r.c.RowkindField != "" {
 		c, ok := data[r.c.RowkindField]
@@ -157,39 +171,43 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 			}
 		}
 	}
-	switch rowkind {
-	case ast.RowkindInsert, ast.RowkindUpdate, ast.RowkindUpsert:
-		if r.c.DataType == "list" {
-			err = r.cli.LPush(ctx, key, val).Err()
-			if err != nil {
-				return fmt.Errorf("lpush %s:%s error, %v", key, val, err)
+	//set key value pairs
+	for key, val := range values {
+		var err error
+		switch rowkind {
+		case ast.RowkindInsert, ast.RowkindUpdate, ast.RowkindUpsert:
+			if r.c.DataType == "list" {
+				err = r.cli.LPush(ctx, key, val).Err()
+				if err != nil {
+					return fmt.Errorf("lpush %s:%s error, %v", key, val, err)
+				}
+				logger.Debugf("push redis list success, key:%s data: %v", key, val)
+			} else {
+				err = r.cli.Set(ctx, key, val, r.c.Expiration*time.Second).Err()
+				if err != nil {
+					return fmt.Errorf("set %s:%s error, %v", key, val, err)
+				}
+				logger.Debugf("set redis string success, key:%s data: %s", key, val)
 			}
-			logger.Debugf("push redis list success, key:%s data: %v", key, val)
-		} else {
-			err = r.cli.Set(ctx, key, val, r.c.Expiration*time.Second).Err()
-			if err != nil {
-				return fmt.Errorf("set %s:%s error, %v", key, val, err)
+		case ast.RowkindDelete:
+			if r.c.DataType == "list" {
+				err = r.cli.LPop(ctx, key).Err()
+				if err != nil {
+					return fmt.Errorf("lpop %s error, %v", key, err)
+				}
+				logger.Debugf("pop redis list success, key:%s data: %v", key, val)
+			} else {
+				err = r.cli.Del(ctx, key).Err()
+				if err != nil {
+					logger.Error(err)
+					return err
+				}
+				logger.Debugf("delete redis string success, key:%s data: %s", key, val)
 			}
-			logger.Debugf("set redis string success, key:%s data: %s", key, val)
+		default:
+			// never happen
+			logger.Errorf("unexpected rowkind %s", rowkind)
 		}
-	case ast.RowkindDelete:
-		if r.c.DataType == "list" {
-			err = r.cli.LPop(ctx, key).Err()
-			if err != nil {
-				return fmt.Errorf("lpop %s error, %v", key, err)
-			}
-			logger.Debugf("pop redis list success, key:%s data: %v", key, val)
-		} else {
-			err = r.cli.Del(ctx, key).Err()
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-			logger.Debugf("delete redis string success, key:%s data: %s", key, val)
-		}
-	default:
-		// never happen
-		logger.Errorf("unexpected rowkind %s", rowkind)
 	}
 	return nil
 }
