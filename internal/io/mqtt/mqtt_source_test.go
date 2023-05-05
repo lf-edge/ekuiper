@@ -52,18 +52,19 @@ func TestGetTupleWithZlibCompressor(t *testing.T) {
 		topic:   "test/topic",
 	}
 	// Call getTuple with the mock MQTT message
-	result := getTuple(ctx, ms, msg)
-
-	// Check if the result is a valid SourceTuple and has the correct content
-	if st, ok := result.(api.SourceTuple); ok {
-		if !reflect.DeepEqual(st.Message(), map[string]interface{}{"key": "value"}) {
-			t.Errorf("Expected message to be %v, but got %v", map[string]interface{}{"key": "value"}, st.Message())
+	results := getTuples(ctx, ms, msg)
+	for _, result := range results {
+		// Check if the result is a valid SourceTuple and has the correct content
+		if st, ok := result.(api.SourceTuple); ok {
+			if !reflect.DeepEqual(st.Message(), map[string]interface{}{"key": "value"}) {
+				t.Errorf("Expected message to be %v, but got %v", map[string]interface{}{"key": "value"}, st.Message())
+			}
+			if !reflect.DeepEqual(st.Meta(), map[string]interface{}{"topic": "test/topic", "messageid": "1"}) {
+				t.Errorf("Expected metadata to be %v, but got %v", map[string]interface{}{"topic": "test/topic", "messageid": "1"}, st.Meta())
+			}
+		} else {
+			t.Errorf("Expected result to be a SourceTuple, but got %T", result)
 		}
-		if !reflect.DeepEqual(st.Meta(), map[string]interface{}{"topic": "test/topic", "messageid": "1"}) {
-			t.Errorf("Expected metadata to be %v, but got %v", map[string]interface{}{"topic": "test/topic", "messageid": "1"}, st.Meta())
-		}
-	} else {
-		t.Errorf("Expected result to be a SourceTuple, but got %T", result)
 	}
 }
 

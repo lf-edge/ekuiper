@@ -33,6 +33,7 @@ func TestMessageDecode(t *testing.T) {
 		payload []byte
 		format  string
 		result  map[string]interface{}
+		results []interface{}
 	}{
 		{
 			payload: []byte(fmt.Sprintf(`{"format":"jpg","content":"%s"}`, b64img)),
@@ -42,6 +43,18 @@ func TestMessageDecode(t *testing.T) {
 				"content": b64img,
 			},
 		},
+		{
+			payload: []byte(`[{"a":1},{"a":2}]`),
+			format:  "json",
+			results: []interface{}{
+				map[string]interface{}{
+					"a": float64(1),
+				},
+				map[string]interface{}{
+					"a": float64(2),
+				},
+			},
+		},
 	}
 	conv, _ := GetConverter()
 	for i, tt := range tests {
@@ -49,8 +62,14 @@ func TestMessageDecode(t *testing.T) {
 		if err != nil {
 			t.Errorf("%d decode error: %v", i, err)
 		}
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
+		if len(tt.results) > 0 {
+			if !reflect.DeepEqual(tt.results, result) {
+				t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
+			}
+		} else {
+			if !reflect.DeepEqual(tt.result, result) {
+				t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
+			}
 		}
 	}
 }

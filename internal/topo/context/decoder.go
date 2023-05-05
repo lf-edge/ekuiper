@@ -37,3 +37,33 @@ func (c *DefaultContext) Decode(data []byte) (map[string]interface{}, error) {
 	}
 	return nil, fmt.Errorf("no decoder configured")
 }
+
+func (c *DefaultContext) DecodeIntoList(data []byte) ([]map[string]interface{}, error) {
+	v := c.Value(DecodeKey)
+	f, ok := v.(message.Converter)
+	if ok {
+		t, err := f.Decode(data)
+		if err != nil {
+			return nil, fmt.Errorf("decode failed: %v", err)
+		}
+		typeErr := fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported but got: %v", t)
+		switch r := t.(type) {
+		case map[string]interface{}:
+			return []map[string]interface{}{r}, nil
+		case []map[string]interface{}:
+			return r, nil
+		case []interface{}:
+			rs := make([]map[string]interface{}, len(r))
+			for i, v := range r {
+				if vc, ok := v.(map[string]interface{}); ok {
+					rs[i] = vc
+				} else {
+					return nil, typeErr
+				}
+			}
+			return rs, nil
+		}
+		return nil, typeErr
+	}
+	return nil, fmt.Errorf("no decoder configured")
+}

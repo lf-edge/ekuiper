@@ -33,7 +33,10 @@ func (c *Converter) Encode(d interface{}) ([]byte, error) {
 }
 
 func (c *Converter) Decode(b []byte) (interface{}, error) {
-	result := make(map[string]interface{})
-	e := json.Unmarshal(b, &result)
-	return result, e
+	var r0 interface{}
+	err := json.Unmarshal(b, &r0)
+	if err != nil {
+		return nil, err
+	}
+	return r0, nil
 }
