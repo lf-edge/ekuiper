@@ -4,8 +4,8 @@
 
 ## 发现 bug ？
 
-- **通过在 GitHub 的[问题](https://github.com/lf-edge/ekuiper/issues)下搜索，确保该错误尚未被报告**。
-- 如果你找不到解决该问题的公开问题，[开一个新问题](https://github.com/lf-edge/ekuiper/issues/new)。请确保**标题和清晰的描述**，尽可能多的相关信息，以及**代码样本**或**可执行的测试案例**，以明确问题。
+- **通过在 GitHub 的 [Issues](https://github.com/lf-edge/ekuiper/issues)下搜索，确保该错误尚未被报告**。
+- 如果你找不到解决该问题的公开问题，[开一个新的 Issue](https://github.com/lf-edge/ekuiper/issues/new)。请确保**标题和清晰的描述**，尽可能多的相关信息，以及**代码样本**或**可执行的测试案例**，以明确问题。
 
 ## 代码和文档贡献
 
@@ -165,9 +165,9 @@ eKuiper 项目利用 Github actions 来运行单元测试和 FVT（功能验证�
 
 所有贡献给eKuiper的代码都将在Apache License V2下授权。你需要确保你添加的每个新文件都有正确的许可证头。
 
-### Signoff
+### Sign-off
 
-Signoff 是为了证明提交的来源。它是提交给这个项目的必要条件。如果你设置了
+Sign-off 是为了证明提交的来源。它是提交给这个项目的必要条件。如果你设置了
 你的`user.name`和`user.email`的 git 配置，你可以用`git commit -s`自动签署你的提交。每次提交都必须签名。
 
 ### 同步
@@ -220,20 +220,20 @@ git rebase -i upstream/master
 例子1:
 
 ```
-feat: 添加编译文件
+feat: add Fuji release compose files
 ```
 
 ```
-fix(script): 纠正运行脚本以使用正确的端口
+fix(script): correct run script to use the right ports
 
-以前的设备服务使用了错误的端口号。这个提交修正了端口号，使用最新的端口号。
+Previously device services used wrong port numbers. This commit fixes the port numbers to use the latest port numbers.
 
-关闭。#123, #245, #992
+Closes: #123, #245, #992
 ```
 
 #### Revert
 
-如果该提交是为了恢复之前的提交，它应该以 `revert: `开头，然后是被恢复的提交的标题。在正文中，应该说："这是对提交 hash 的恢复"，其中的 hash 是被恢复的提交的 SHA 值。
+如果该提交是为了恢复之前的提交，它应该以 `revert:` 开头，然后是被恢复的提交的标题。在正文中，应该说：`This reverts commit <hash>.`，其中的 hash 是被恢复的提交的 SHA 值。
 
 #### 类型
 
@@ -271,7 +271,7 @@ fix(script): 纠正运行脚本以使用正确的端口
 
 页脚应该包含任何关于**突破性变化的信息，同时也是引用此提交**关闭的 GitHub 问题的地方。
 
-**Breaking Changes** 应该以 "BREAKING CHANGE: "开头，并加上一个空格或两个换行。提交信息的其余部分就用于此了。
+**Breaking Changes** 应该以 `BREAKING CHANGE:` 开头，并加上一个空格或两个换行。提交信息的其余部分就用于此了。
 
 ## 社区推广
 
