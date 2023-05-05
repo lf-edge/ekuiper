@@ -40,7 +40,7 @@ Combine data from the same group of sensors (temperature and humidity) for subse
 ```json
 {
   "temperature": 27.23,
-   "humidity": 79.66,
+  "humidity": 79.66,
   "ts": 1681786070368
 }
 ```
