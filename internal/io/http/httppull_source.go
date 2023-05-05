@@ -81,21 +81,23 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 				logger.Warnf("Found error %s when trying to reach %v ", e, hps)
 			} else {
 				logger.Debugf("rest sink got response %v", resp)
-				result, _, e := hps.parseResponse(ctx, resp, true, &omd5)
+				results, _, e := hps.parseResponse(ctx, resp, true, &omd5)
 				if e != nil {
 					logger.Errorf("Parse response error %v", e)
 					continue
 				}
-				if result == nil {
+				if results == nil {
 					logger.Debugf("no data to send for incremental")
 					continue
 				}
 				meta := make(map[string]interface{})
-				select {
-				case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
-					logger.Debugf("send data to device node")
-				case <-ctx.Done():
-					return
+				for _, result := range results {
+					select {
+					case consumer <- api.NewDefaultSourceTupleWithTime(result.(map[string]interface{}), meta, rcvTime):
+						logger.Debugf("send data to device node")
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
 		case <-ctx.Done():

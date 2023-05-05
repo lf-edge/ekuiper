@@ -77,11 +77,13 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			if s.topic != "" {
 				meta["topic"] = string(msgs[0])
 			}
-			result, e := ctx.Decode(m)
+			results, e := ctx.DecodeIntoList(m)
 			if e != nil {
 				logger.Errorf("Invalid data format, cannot decode %v with error %s", m, e)
 			} else {
-				consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime)
+				for _, result := range results {
+					consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime)
+				}
 			}
 		}
 		select {
