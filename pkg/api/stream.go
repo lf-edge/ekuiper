@@ -208,7 +208,7 @@ type StreamContext interface {
 	// It decodes byte array into map or map slice.
 	Decode(data []byte) (map[string]interface{}, error)
 
-	DecodeIntoList(data []byte) ([]interface{}, error)
+	DecodeIntoList(data []byte) ([]map[string]interface{}, error)
 }
 
 type Operator interface {
