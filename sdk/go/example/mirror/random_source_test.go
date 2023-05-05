@@ -15,7 +15,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"reflect"
@@ -60,7 +59,7 @@ func TestConfigure(t *testing.T) {
 			err: "source `random` property `pattern` is required",
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	t.Logf("The test bucket size is %d.", len(tests))
 	for i, tt := range tests {
 		r := &randomSource{}
 		err := r.Configure("new", tt.p)
