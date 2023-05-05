@@ -46,11 +46,11 @@ func (c *DefaultContext) DecodeIntoList(data []byte) ([]interface{}, error) {
 		if err != nil {
 			return nil, fmt.Errorf("decode failed: %v", err)
 		}
-		if result, ok := t.(map[string]interface{}); ok {
-			return []interface{}{result}, nil
-		}
-		if result, ok := t.([]interface{}); ok {
-			return result, nil
+		switch r := t.(type) {
+		case map[string]interface{}:
+			return []interface{}{r}, nil
+		case []interface{}:
+			return r, nil
 		}
 		return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported but got: %v", t)
 	}
