@@ -134,17 +134,12 @@ func TestSinkMultipleFields(t *testing.T) {
 		kvPair map[string]interface{}
 	}{
 		{
-			c:      map[string]interface{}{"fields": []interface{}{"id", "name", "address", "mobile"}},
+			c:      map[string]interface{}{"keyType": "multiple"},
 			d:      map[string]interface{}{"id": 1, "name": "John", "address": 34, "mobile": "334433"},
 			kvPair: map[string]interface{}{"id": "1", "name": "John", "address": "34", "mobile": "334433"},
 		},
 		{
-			c:      map[string]interface{}{"fields": []interface{}{"address", "mobile"}},
-			d:      map[string]interface{}{"id": 1, "name": "John", "address": 39, "mobile": "4433"},
-			kvPair: map[string]interface{}{"address": "39", "mobile": "4433"},
-		},
-		{
-			c: map[string]interface{}{"fields": []interface{}{"id", "name"}, "datatype": "string"},
+			c: map[string]interface{}{"keyType": "multiple", "datatype": "string"},
 			d: []map[string]interface{}{
 				{"id": 24, "name": "Susan"},
 				{"id": 25, "name": "Bob"},
@@ -153,14 +148,14 @@ func TestSinkMultipleFields(t *testing.T) {
 			kvPair: map[string]interface{}{"id": "26", "name": "John"},
 		},
 		{
-			c: map[string]interface{}{"datatype": "list", "fields": []interface{}{"listId", "listName"}},
+			c: map[string]interface{}{"datatype": "list", "keyType": "multiple"},
 			d: map[string]interface{}{
 				"listId": 4, "listName": "Susan",
 			},
 			kvPair: map[string]interface{}{"listId": "4", "listName": "Susan"},
 		},
 		{
-			c: map[string]interface{}{"datatype": "list", "fields": []interface{}{"listId", "listName"}},
+			c: map[string]interface{}{"datatype": "list", "keyType": "multiple"},
 			d: []map[string]interface{}{
 				{"listId": 4, "listName": "Susan"},
 				{"listId": 5, "listName": "Bob"},
@@ -357,5 +352,54 @@ func TestUpdateList(t *testing.T) {
 				t.Errorf("case %d expect %v, but got %v", i, tt.v, r)
 			}
 		}
+	}
+}
+
+func TestRedisSink_Configure(t *testing.T) {
+
+	type args struct {
+		props map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "missing key and field and default keyType is single",
+			args: args{map[string]interface{}{
+				"addr":     addr,
+				"datatype": "list",
+			}},
+			wantErr: true,
+		},
+		{
+			name: "missing key and field and keyType is multiple",
+			args: args{map[string]interface{}{
+				"addr":     addr,
+				"datatype": "list",
+				"keyType":  "multiple",
+			}},
+			wantErr: false,
+		},
+		{
+			name: "data type do not support",
+			args: args{map[string]interface{}{
+				"addr":     addr,
+				"datatype": "stream",
+				"keyType":  "multiple",
+			}},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &RedisSink{
+				c: nil,
+			}
+			if err := r.Configure(tt.args.props); (err != nil) != tt.wantErr {
+				t.Errorf("Configure() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

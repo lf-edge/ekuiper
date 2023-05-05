@@ -96,18 +96,22 @@
 			}
 		},
 		{
-			"name": "fields",
-			"default": [],
+			"name": "keyType",
 			"optional": true,
-			"control": "list",
-			"type": "list_string",
+			"control": "select",
+			"default": "single",
+			"type": "string",
+			"values": [
+				"single",
+				"multiple"
+			],
 			"hint": {
-				"en_US": "key set of redis",
-				"zh_CN": "redis 键字段集合"
+				"en_US": "Store the payload as single or multiple",
+				"zh_CN": "以整体形式或者拆分形式保存结果到 redis。"
 			},
 			"label": {
-				"en_US": "key set of redis",
-				"zh_CN": "redis 键字段集合"
+				"en_US": "Store single or multiple",
+				"zh_CN": "整体或者拆分保存"
 			}
 		},
 		{

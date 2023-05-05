@@ -39,7 +39,7 @@ type config struct {
 	Field string `json:"field,omitempty"`
 	// key define
 	Key          string        `json:"key,omitempty"`
-	Fields       []string      `json:"fields,omitempty"`
+	KeyType      string        `json:"keyType,omitempty"`
 	DataType     string        `json:"dataType,omitempty"`
 	Expiration   time.Duration `json:"expiration,omitempty"`
 	RowkindField string        `json:"rowkindField"`
@@ -52,13 +52,13 @@ type RedisSink struct {
 }
 
 func (r *RedisSink) Configure(props map[string]interface{}) error {
-	c := &config{DataType: "string", Expiration: -1}
+	c := &config{DataType: "string", Expiration: -1, KeyType: "single"}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
 		return err
 	}
-	if c.Key == "" && c.Field == "" && len(c.Fields) == 0 {
-		return errors.New("redis sink must have key, field or fields")
+	if c.KeyType == "single" && c.Key == "" && c.Field == "" {
+		return errors.New("redis sink must have key or field when KeyType is single")
 	}
 	if c.DataType != "string" && c.DataType != "list" {
 		return errors.New("redis sink only support string or list data type")
@@ -128,12 +128,10 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 	logger := ctx.GetLogger()
 	// prepare key value pairs
 	values := make(map[string]string)
-	if len(r.c.Fields) > 0 {
-		for _, field := range r.c.Fields {
-			if val, ok := data[field]; ok {
-				v, _ := cast.ToString(val, cast.CONVERT_ALL)
-				values[field] = v
-			}
+	if r.c.KeyType == "multiple" {
+		for key, val := range data {
+			v, _ := cast.ToString(val, cast.CONVERT_ALL)
+			values[key] = v
 		}
 	} else {
 		if val == "" {
