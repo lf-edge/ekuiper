@@ -75,18 +75,19 @@ func (rps *VideoPullSource) initTimerPull(ctx api.StreamContext, consumer chan<-
 		case <-ticker.C:
 			rcvTime := conf.GetNow()
 			buf := rps.readFrameAsJpeg(ctx)
-			result, e := ctx.Decode(buf.Bytes())
+			results, e := ctx.DecodeIntoList(buf.Bytes())
 			meta := make(map[string]interface{})
 			if e != nil {
 				logger.Errorf("Invalid data format, cannot decode %s with error %s", string(buf.Bytes()), e)
 				return
 			}
-
-			select {
-			case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
-				logger.Debugf("send data to device node")
-			case <-ctx.Done():
-				return
+			for _, result := range results {
+				select {
+				case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
+					logger.Debugf("send data to device node")
+				case <-ctx.Done():
+					return
+				}
 			}
 		case <-ctx.Done():
 			return

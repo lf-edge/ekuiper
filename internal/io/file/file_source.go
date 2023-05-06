@@ -319,19 +319,23 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 		scanner := bufio.NewScanner(file)
 		scanner.Split(bufio.ScanLines)
 		for scanner.Scan() {
-			var tuple api.SourceTuple
-			m, err := ctx.Decode(scanner.Bytes())
+			var tuples []api.SourceTuple
+			m, err := ctx.DecodeIntoList(scanner.Bytes())
 			if err != nil {
-				tuple = &xsql.ErrorSourceTuple{
+				tuples = []api.SourceTuple{&xsql.ErrorSourceTuple{
 					Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", scanner.Text(), err),
-				}
+				}}
 			} else {
-				tuple = api.NewDefaultSourceTupleWithTime(m, meta, rcvTime)
+				for _, t := range m {
+					tuples = append(tuples, api.NewDefaultSourceTupleWithTime(t, meta, rcvTime))
+				}
 			}
-			select {
-			case consumer <- tuple:
-			case <-ctx.Done():
-				return nil
+			for _, tuple := range tuples {
+				select {
+				case consumer <- tuple:
+				case <-ctx.Done():
+					return nil
+				}
 			}
 			if fs.config.SendInterval > 0 {
 				time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))

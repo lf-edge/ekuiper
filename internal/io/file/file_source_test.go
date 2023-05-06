@@ -216,6 +216,8 @@ func TestJsonLines(t *testing.T) {
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(4), "name": "John Smith"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(5), "name": "John Smith"}, meta, mc.Now()),
 	}
 	p := map[string]interface{}{
 		"path":     filepath.Join(path, "test"),

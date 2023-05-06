@@ -236,10 +236,11 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 func (cc *ClientConf) auth(ctx api.StreamContext) error {
 	if resp, e := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, true, []byte(cc.accessConf.Body)); e == nil {
 		conf.Log.Infof("try to get access token got response %v", resp)
-		cc.tokens, _, e = cc.parseResponse(ctx, resp, true, nil)
+		tokens, _, e := cc.parseResponse(ctx, resp, true, nil)
 		if e != nil {
 			return fmt.Errorf("Cannot parse access token response to json: %v", e)
 		}
+		cc.tokens = tokens[0]
 		ctx.GetLogger().Infof("Got access token %v", cc.tokens)
 		expireIn, err := ctx.ParseTemplate(cc.accessConf.Expire, cc.tokens)
 		if err != nil {
@@ -276,13 +277,13 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 			return fmt.Errorf("fail to get refresh token: %v", ee)
 		}
 		nt, _, err := cc.parseResponse(ctx, rr, true, nil)
-		for k, v := range nt {
+		if err != nil {
+			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
+		}
+		for k, v := range nt[0] {
 			if v != nil {
 				cc.tokens[k] = v
 			}
-		}
-		if err != nil {
-			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
 		return nil
 	} else if cc.accessConf != nil {
@@ -316,7 +317,7 @@ func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data interface{}) (map
 }
 
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
-func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, returnBody bool, omd5 *string) (map[string]interface{}, []byte, error) {
+func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, returnBody bool, omd5 *string) ([]map[string]interface{}, []byte, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		c, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -350,20 +351,22 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		}
 		return nil, nil, nil
 	case "body":
-		payload, err := decode(ctx, c)
+		payloads, err := decode(ctx, c)
 		if err != nil {
 			return nil, c, err
 		}
-		ro := &bodyResp{}
-		err = cast.MapToStruct(payload, ro)
-		if err != nil {
-			return nil, c, fmt.Errorf("invalid body response: %v", err)
-		}
-		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return nil, c, fmt.Errorf("http status code is not 200: %v", payload)
+		for _, payload := range payloads {
+			ro := &bodyResp{}
+			err = cast.MapToStruct(payload, ro)
+			if err != nil {
+				return nil, c, fmt.Errorf("invalid body response: %v", err)
+			}
+			if ro.Code < 200 || ro.Code > 299 {
+				return nil, c, fmt.Errorf("http status code is not 200: %v", ro.Code)
+			}
 		}
 		if returnBody {
-			return payload, c, nil
+			return payloads, c, nil
 		}
 		return nil, nil, nil
 	default:
@@ -377,12 +380,31 @@ func getMD5Hash(text []byte) string {
 }
 
 // TODO remove this function after all the sources are migrated to use the new API
-func decode(ctx api.StreamContext, data []byte) (map[string]interface{}, error) {
-	r, err := ctx.Decode(data)
+func decode(ctx api.StreamContext, data []byte) ([]map[string]interface{}, error) {
+	r, err := ctx.DecodeIntoList(data)
 	if err == nil {
 		return r, nil
 	}
-	r = make(map[string]interface{})
-	err = json.Unmarshal(data, &r)
-	return r, nil
+	var r1 interface{}
+	err = json.Unmarshal(data, &r1)
+	if err != nil {
+		return nil, err
+	}
+	switch rt := r1.(type) {
+	case map[string]interface{}:
+		return []map[string]interface{}{rt}, nil
+	case []map[string]interface{}:
+		return rt, nil
+	case []interface{}:
+		r2 := make([]map[string]interface{}, len(rt))
+		for i, m := range rt {
+			if rm, ok := m.(map[string]interface{}); ok {
+				r2[i] = rm
+			} else {
+				return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
+			}
+		}
+		return r2, nil
+	}
+	return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
 }

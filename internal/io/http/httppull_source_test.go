@@ -139,6 +139,44 @@ func mockAuthServer() *httptest.Server {
 		i++
 		jsonOut(w, nil, out)
 	}).Methods(http.MethodGet)
+
+	router.HandleFunc("/data3", func(w http.ResponseWriter, r *http.Request) {
+		out := []*struct {
+			Code int `json:"code"`
+			Data struct {
+				DeviceId    string  `json:"device_id"`
+				Temperature float64 `json:"temperature"`
+				Humidity    float64 `json:"humidity"`
+			} `json:"data"`
+		}{
+			{
+				Code: 200,
+				Data: struct {
+					DeviceId    string  `json:"device_id"`
+					Temperature float64 `json:"temperature"`
+					Humidity    float64 `json:"humidity"`
+				}{
+					DeviceId:    "d1",
+					Temperature: 25.5,
+					Humidity:    60.0,
+				},
+			},
+			{
+				Code: 200,
+				Data: struct {
+					DeviceId    string  `json:"device_id"`
+					Temperature float64 `json:"temperature"`
+					Humidity    float64 `json:"humidity"`
+				}{
+					DeviceId:    "d2",
+					Temperature: 25.5,
+					Humidity:    60.0,
+				},
+			},
+		}
+		jsonOut(w, nil, out)
+	}).Methods(http.MethodGet)
+
 	server := httptest.NewUnstartedServer(router)
 	server.Listener.Close()
 	server.Listener = l
@@ -822,6 +860,28 @@ func TestPullIncremental(t *testing.T) {
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device0", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device2", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
+	}
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestPullJsonList(t *testing.T) {
+	r := &PullSource{}
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+	err := r.Configure("data3", map[string]interface{}{
+		"url":          "http://localhost:52345/",
+		"interval":     100,
+		"responseType": "body",
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	mc := conf.Clock.(*clock.Mock)
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d2", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 	}
 	mock.TestSourceOpen(r, exp, t)
 }
