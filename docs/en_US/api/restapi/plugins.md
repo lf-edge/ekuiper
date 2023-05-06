@@ -22,7 +22,7 @@ Request Sample when the file locates in a http server
 }
 ```
 
-Request Sample for files locates in the same machine of the Kuiepr server.
+Request Sample for files locates in the same machine of the eKuiper server.
 
 ```json
 {

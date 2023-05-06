@@ -215,7 +215,7 @@ git rebase -i upstream/master
 
 提交信息的任何一行都不能超过100个字符，这样可以使信息在 GitHub 以及各种 git 工具中更容易阅读。
 
-如果有的话，footer 应该包含一个 [对问题的关闭引用](https://help.github.com/articles/closing-issues-via-commit-messages/)。
+如果有的话，footer 应该包含一个 [对 Issue 的关闭引用](https://help.github.com/articles/closing-issues-via-commit-messages/)。
 
 例子1:
 
@@ -239,7 +239,7 @@ Closes: #123, #245, #992
 
 必须是以下类型之一:
 
-- **feat**。为用户提供的新功能，而不是构建脚本的新功能
+- **feat**: 为用户提供的新功能，而不是构建脚本的新功能
 - **fix**: 为用户提供的错误修复，而不是对构建脚本的修复
 - **docs**: 只对文档进行修改
 - **style**: 格式化，缺少分号，等等；没有生产代码的变化
@@ -280,7 +280,7 @@ Closes: #123, #245, #992
 
 推广贡献包括但不限于。
 
-- 将 eKuiepr 整合到你的开源项目中。
+- 将 eKuiper 整合到你的开源项目中。
 - 组织关于本项目的研讨会或聚会
 - 在 issues、slack 或 maillist 上回答关于本项目的问题
 - 撰写项目的使用教程
