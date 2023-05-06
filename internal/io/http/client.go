@@ -355,14 +355,14 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		if err != nil {
 			return nil, c, err
 		}
-		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return nil, c, fmt.Errorf("http status code is not 200: %v", resp.StatusCode)
-		}
 		for _, payload := range payloads {
 			ro := &bodyResp{}
 			err = cast.MapToStruct(payload, ro)
 			if err != nil {
 				return nil, c, fmt.Errorf("invalid body response: %v", err)
+			}
+			if ro.Code < 200 || ro.Code > 299 {
+				return nil, c, fmt.Errorf("http status code is not 200: %v", ro.Code)
 			}
 		}
 		if returnBody {
