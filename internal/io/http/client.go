@@ -390,13 +390,19 @@ func decode(ctx api.StreamContext, data []byte) ([]map[string]interface{}, error
 	if err != nil {
 		return nil, err
 	}
-	if r2, ok := r1.(map[string]interface{}); ok {
-		return []map[string]interface{}{r2}, nil
-	}
-	if rlist, ok := r1.([]interface{}); ok {
-		r2 := make([]map[string]interface{}, len(rlist))
-		for i, m := range rlist {
-			r2[i] = m.(map[string]interface{})
+	switch rt := r1.(type) {
+	case map[string]interface{}:
+		return []map[string]interface{}{rt}, nil
+	case []map[string]interface{}:
+		return rt, nil
+	case []interface{}:
+		r2 := make([]map[string]interface{}, len(rt))
+		for i, m := range rt {
+			if rm, ok := m.(map[string]interface{}); ok {
+				r2[i] = rm
+			} else {
+				return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
+			}
 		}
 		return r2, nil
 	}
