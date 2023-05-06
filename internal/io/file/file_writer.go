@@ -48,7 +48,7 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 	if _, err = os.Stat(fn); os.IsNotExist(err) {
 		_, err = os.Create(fn)
 	}
-	f, err = os.OpenFile(fn, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	f, err = os.OpenFile(fn, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModeAppend)
 	if err != nil {
 		return nil, fmt.Errorf("fail to open file sink for %s: %v", fn, err)
 	}

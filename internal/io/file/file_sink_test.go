@@ -638,3 +638,95 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 		})
 	}
 }
+
+func TestFileSinkReopen(t *testing.T) {
+	// Remove existing files
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if filepath.Ext(path) == ".log" {
+			fmt.Println("Deleting file:", path)
+			return os.Remove(path)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	conf.IsTesting = true
+	tmpfile, err := os.CreateTemp("", "reopen.log")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	// Create a stream context for testing
+	contextLogger := conf.Log.WithField("rule", "testRollingCount")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	tf, _ := transform.GenTransform("", "json", "", "")
+	vCtx := context.WithValue(ctx, context.TransKey, tf)
+
+	sink := &fileSink{}
+	err = sink.Configure(map[string]interface{}{
+		"path":               tmpfile.Name(),
+		"fileType":           LINES_TYPE,
+		"format":             "json",
+		"rollingNamePattern": "none",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sink.Open(vCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Test collecting a map item
+	m := map[string]interface{}{"key": "value1"}
+	if err := sink.Collect(vCtx, m); err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	sink.Close(vCtx)
+
+	exp := []byte(`{"key":"value1"}`)
+	contents, err := os.ReadFile(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(contents, exp) {
+		t.Errorf("\nexpected\t %q \nbut got\t\t %q", string(exp), string(contents))
+	}
+
+	sink = &fileSink{}
+	err = sink.Configure(map[string]interface{}{
+		"path":               tmpfile.Name(),
+		"fileType":           LINES_TYPE,
+		"hasHeader":          true,
+		"format":             "json",
+		"rollingNamePattern": "none",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sink.Open(vCtx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Test collecting another map item
+	m = map[string]interface{}{"key": "value2"}
+	if err := sink.Collect(vCtx, m); err != nil {
+		t.Errorf("unexpected error: %s", err)
+	}
+	if err = sink.Close(vCtx); err != nil {
+		t.Errorf("unexpected close error: %s", err)
+	}
+
+	exp = []byte(`{"key":"value2"}`)
+	contents, err = os.ReadFile(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(contents, exp) {
+		t.Errorf("\nexpected\t %q \nbut got\t\t %q", string(exp), string(contents))
+	}
+}
