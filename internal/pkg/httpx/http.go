@@ -129,7 +129,6 @@ func convertToMap(v interface{}, sendSingle bool) (map[string]interface{}, error
 	default:
 		return nil, fmt.Errorf("invalid content: %v", v)
 	}
-	return nil, fmt.Errorf("invalid content: %v", v)
 }
 
 func IsValidUrl(uri string) bool {
