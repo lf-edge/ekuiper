@@ -664,7 +664,7 @@ func TestFileSinkReopen(t *testing.T) {
 	// Create a stream context for testing
 	contextLogger := conf.Log.WithField("rule", "testRollingCount")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	tf, _ := transform.GenTransform("", "json", "", "")
+	tf, _ := transform.GenTransform("", "json", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	sink := &fileSink{}
