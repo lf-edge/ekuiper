@@ -286,7 +286,7 @@ promoting it to the open source community and the world.
 
 The promotion contributions include but not limit to:
 
-- Integrate of eKuiepr to your open source project
+- Integrate of eKuiper to your open source project
 - Organize workshops or meetups about the project
 - Answer questions about the project on issues, slack or maillist
 - Write tutorials for how project can be used
