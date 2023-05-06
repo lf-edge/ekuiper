@@ -18,6 +18,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/schema"
@@ -26,7 +31,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"strings"
 )
 
 var (
@@ -74,7 +78,7 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 		if err != nil {
 			err = fmt.Errorf("Create %s fails: %v.", stt, err)
 		} else {
-			r = fmt.Sprintf("%s %s is created.", strings.Title(stt), s.Name)
+			r = fmt.Sprintf("%s %s is created.", cases.Title(language.Und).String(stt), s.Name)
 			log.Printf("%s", r)
 		}
 		result = append(result, r)
@@ -191,7 +195,7 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 		if err != nil {
 			return "", fmt.Errorf("Replace %s fails: %v.", stt, err)
 		} else {
-			info := fmt.Sprintf("%s %s is replaced.", strings.Title(stt), s.Name)
+			info := fmt.Sprintf("%s %s is replaced.", cases.Title(language.Und).String(stt), s.Name)
 			log.Printf("%s", info)
 			return info, nil
 		}
@@ -425,7 +429,7 @@ func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (string, er
 	if err != nil {
 		return "", err
 	} else {
-		return fmt.Sprintf("%s %s is dropped.", strings.Title(ast.StreamTypeMap[st]), name), nil
+		return fmt.Sprintf("%s %s is dropped.", cases.Title(language.Und).String(ast.StreamTypeMap[st]), name), nil
 	}
 }
 
