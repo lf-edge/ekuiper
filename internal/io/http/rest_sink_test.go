@@ -167,7 +167,7 @@ func TestRestSink_Apply(t *testing.T) {
 			}},
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	t.Logf("The test bucket size is %d.", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestRestSink_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
@@ -186,7 +186,7 @@ func TestRestSink_Apply(t *testing.T) {
 			ContentType: r.Header.Get("Content-Type"),
 		})
 		contextLogger.Debugf(string(body))
-		fmt.Fprintf(w, string(body))
+		fmt.Fprint(w, string(body))
 	}))
 	tf, _ := transform.GenTransform("", "json", "", "")
 	defer ts.Close()
@@ -346,7 +346,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 			ContentType: r.Header.Get("Content-Type"),
 		})
 		contextLogger.Debugf(string(body))
-		fmt.Fprintf(w, string(body))
+		fmt.Fprint(w, string(body))
 	}))
 	defer ts.Close()
 	for i, tt := range tests {
