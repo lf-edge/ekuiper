@@ -48,19 +48,11 @@ func (f *WasmFunc) Validate(args []interface{}) error {
 }
 
 func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	res := f.ExecWasmFunc(args)
-
-	fr := &FuncReply{}
-	fr.Result = res
-	fr.State = true
-	if !fr.State {
-		if fr.Result != nil {
-			return fmt.Errorf("%s", fr.Result), false
-		} else {
-			return nil, false
-		}
+	res, err := f.ExecWasmFunc(args)
+	if err != nil {
+		return err, false
 	}
-	return fr.Result, fr.State
+	return res, true
 }
 
 func (f *WasmFunc) IsAggregate() bool {
@@ -70,7 +62,7 @@ func (f *WasmFunc) IsAggregate() bool {
 	return false
 }
 
-func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...interface{}) []interface{} {
+func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...interface{}) ([]interface{}, error) {
 	rvals := []interface{}{}
 
 	for _, val := range vals {
@@ -109,10 +101,10 @@ func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...inter
 				rets, err = vm.ExecuteRegistered(*modname, "malloc", mallocsize)
 			}
 			if err != nil {
-				panic("toWasmEdgeValueSlideBindgen(): malloc failed")
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc failed with error %v", err)
 			}
 			if len(rets) <= 0 {
-				panic("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
 			}
 			argaddr := rets[0]
 			rvals = append(rvals, argaddr)
@@ -128,7 +120,7 @@ func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...inter
 			if mod != nil {
 				memnames := mod.ListMemory()
 				if len(memnames) <= 0 {
-					panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
+					return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): memory instance not found")
 				}
 				mem = mod.FindMemory(memnames[0])
 				mem.SetData(sval, uint(rets[0].(int32)), uint(mallocsize))
@@ -145,10 +137,10 @@ func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...inter
 				rets, err = vm.ExecuteRegistered(*modname, "malloc", mallocsize)
 			}
 			if err != nil {
-				panic("toWasmEdgeValueSlideBindgen(): malloc failed")
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc failed")
 			}
 			if len(rets) <= 0 {
-				panic("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
 			}
 			argaddr := rets[0]
 			argsize := mallocsize
@@ -165,20 +157,19 @@ func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...inter
 			if mod != nil {
 				memnames := mod.ListMemory()
 				if len(memnames) <= 0 {
-					panic("toWasmEdgeValueSlideBindgen(): memory instance not found")
+					return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): memory instance not found")
 				}
 				mem = mod.FindMemory(memnames[0])
 				mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
 			}
 		default:
-			errorString := fmt.Sprintf("Wrong argument of toWasmEdgeValueSlideBindgen(): %T not supported", t)
-			panic(errorString)
+			return nil, fmt.Errorf("wrong argument of toWasmEdgeValueSlideBindgen(): %T not supported", t)
 		}
 	}
-	return rvals
+	return rvals, nil
 }
 
-func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
+func (f *WasmFunc) ExecWasmFunc(args []interface{}) ([]interface{}, error) {
 	funcname := f.symbolName
 
 	WasmFile := f.reg.WasmFile
@@ -191,27 +182,31 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	err := vm.LoadWasmFile(WasmFile)
 	if err != nil {
 		fmt.Print("[wasm][ExecWasmFunc] Load WASM from file FAILED: ")
-		fmt.Errorf(err.Error())
+		return nil, err
 	}
 	// step 2: Validate the WASM module
 	err = vm.Validate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Validate FAILED: ")
-		fmt.Errorf(err.Error())
+		return nil, err
 	}
 	// step 3: Instantiate the WASM moudle
 	err = vm.Instantiate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Instantiate FAILED: ")
-		fmt.Errorf(err.Error())
+		return nil, err
 	}
 	// step 4: Execute WASM functions.Parameters(1)
-	Args := toWasmEdgeValueSlideBindgen(vm, nil, args...)
+	Args, err := toWasmEdgeValueSlideBindgen(vm, nil, args...)
+	if err != nil {
+		return nil, err
+	}
 
 	var res []interface{}
 	res, err = vm.Execute(funcname, Args...)
 	if err != nil {
 		log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		return nil, err
 	} else {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
 		fmt.Println(res[0])
@@ -221,5 +216,5 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 		fmt.Println("Go: Running wasm failed, exit code:", exitcode)
 	}
 	vm.Release()
-	return res
+	return res, nil
 }
