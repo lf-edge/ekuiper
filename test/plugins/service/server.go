@@ -39,8 +39,8 @@ func alert(w http.ResponseWriter, req *http.Request) {
 var count = 0
 
 type Sensor struct {
-	Temperature int `json: "temperature""`
-	Humidity    int `json: "humidity"`
+	Temperature int `json:"temperature"`
+	Humidity    int `json:"humidity"`
 }
 
 var s = &Sensor{}
