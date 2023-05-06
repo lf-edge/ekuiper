@@ -17,14 +17,14 @@ package compressor
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
 func BenchmarkCompressor(b *testing.B) {
 	compressors := []string{ZLIB, GZIP, FLATE, ZSTD}
 
-	data, err := ioutil.ReadFile("test.json")
+	data, err := os.ReadFile("test.json")
 	if err != nil {
 		b.Fatalf("failed to read test file: %v", err)
 	}
@@ -55,7 +55,7 @@ func BenchmarkCompressor(b *testing.B) {
 func BenchmarkDecompressor(b *testing.B) {
 	compressors := []string{ZLIB, GZIP, FLATE, ZSTD}
 
-	data, err := ioutil.ReadFile("test.json")
+	data, err := os.ReadFile("test.json")
 	if err != nil {
 		b.Fatalf("failed to read test file: %v", err)
 	}
@@ -92,7 +92,7 @@ func BenchmarkDecompressor(b *testing.B) {
 
 func TestCompressionRatio(t *testing.T) {
 	// Load JSON file
-	data, err := ioutil.ReadFile("test.json")
+	data, err := os.ReadFile("test.json")
 	if err != nil {
 		t.Fatalf("failed to read test file: %v", err)
 	}

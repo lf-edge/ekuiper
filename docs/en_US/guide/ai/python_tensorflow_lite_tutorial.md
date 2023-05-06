@@ -229,9 +229,10 @@ package main
 
 import (
 	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"io/ioutil"
+	"os"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
@@ -249,7 +250,7 @@ func main() {
 	}
 	for _, image := range images {
 		fmt.Println("Publishing " + image)
-		payload, err := ioutil.ReadFile(image)
+		payload, err := os.ReadFile(image)
 		if err != nil {
 			fmt.Println(err)
 			continue
