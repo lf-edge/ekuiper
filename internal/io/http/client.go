@@ -277,13 +277,13 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 			return fmt.Errorf("fail to get refresh token: %v", ee)
 		}
 		nt, _, err := cc.parseResponse(ctx, rr, true, nil)
+		if err != nil {
+			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
+		}
 		for k, v := range nt[0] {
 			if v != nil {
 				cc.tokens[k] = v
 			}
-		}
-		if err != nil {
-			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
 		return nil
 	} else if cc.accessConf != nil {
