@@ -351,20 +351,22 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		}
 		return nil, nil, nil
 	case "body":
-		payload, err := decode(ctx, c)
+		payloads, err := decode(ctx, c)
 		if err != nil {
 			return nil, c, err
 		}
-		ro := &bodyResp{}
-		err = cast.MapToStruct(payload, ro)
-		if err != nil {
-			return nil, c, fmt.Errorf("invalid body response: %v", err)
-		}
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			return nil, c, fmt.Errorf("http status code is not 200: %v", payload)
+			return nil, c, fmt.Errorf("http status code is not 200: %v", resp.StatusCode)
+		}
+		for _, payload := range payloads {
+			ro := &bodyResp{}
+			err = cast.MapToStruct(payload, ro)
+			if err != nil {
+				return nil, c, fmt.Errorf("invalid body response: %v", err)
+			}
 		}
 		if returnBody {
-			return payload, c, nil
+			return payloads, c, nil
 		}
 		return nil, nil, nil
 	default:
