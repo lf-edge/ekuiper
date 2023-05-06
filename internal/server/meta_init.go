@@ -311,7 +311,7 @@ func getLanguage(r *http.Request) string {
 	if 0 == len(language) {
 		language = "en_US"
 	} else {
-		strings.ReplaceAll(language, "-", "_")
+		language = strings.ReplaceAll(language, "-", "_")
 	}
 	return language
 }
