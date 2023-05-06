@@ -383,6 +383,15 @@ func TestRedisSink_Configure(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "key type do not support",
+			args: args{map[string]interface{}{
+				"addr":     addr,
+				"datatype": "list",
+				"keyType":  "ttt",
+			}},
+			wantErr: true,
+		},
+		{
 			name: "data type do not support",
 			args: args{map[string]interface{}{
 				"addr":     addr,

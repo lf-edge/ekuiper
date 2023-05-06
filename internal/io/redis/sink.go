@@ -60,6 +60,9 @@ func (r *RedisSink) Configure(props map[string]interface{}) error {
 	if c.KeyType == "single" && c.Key == "" && c.Field == "" {
 		return errors.New("redis sink must have key or field when KeyType is single")
 	}
+	if c.KeyType != "single" && c.KeyType != "multiple" {
+		return errors.New("KeyType only support single or multiple")
+	}
 	if c.DataType != "string" && c.DataType != "list" {
 		return errors.New("redis sink only support string or list data type")
 	}
