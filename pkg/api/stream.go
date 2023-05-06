@@ -201,7 +201,9 @@ type StreamContext interface {
 	ParseTemplate(template string, data interface{}) (string, error)
 	// ParseJsonPath parse the jsonPath string with the given data
 	ParseJsonPath(jsonPath string, data interface{}) (interface{}, error)
-	// TransformOutput Transform output according to the properties including dataTemplate, sendSingle
+	// TransformOutput Transform output according to the properties including dataTemplate, sendSingle, fields
+	// TransformOutput first transform data through the dataTemplate property，and then select data based on the fields property
+	// It is recommended that you do not configure both the dataTemplate property and the fields property.
 	// The second parameter is whether the data is transformed or just return as its json format.
 	TransformOutput(data interface{}) ([]byte, bool, error)
 	// Decode is set in the source according to the format.

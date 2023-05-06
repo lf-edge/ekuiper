@@ -87,7 +87,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test2")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
-	tf, _ := transform.GenTransform("", "json", "", "")
+	tf, _ := transform.GenTransform("", "json", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	for _, tt := range tests {

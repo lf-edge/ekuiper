@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,10 +27,11 @@ import (
 
 type TransFunc func(interface{}) ([]byte, bool, error)
 
-func GenTransform(dt string, format string, schemaId string, delimiter string) (TransFunc, error) {
+func GenTransform(dt string, format string, schemaId string, delimiter string, fields []string) (TransFunc, error) {
 	var (
 		tp  *template.Template = nil
 		c   message.Converter
+		out message.Converter
 		err error
 	)
 	switch format {
@@ -39,11 +40,13 @@ func GenTransform(dt string, format string, schemaId string, delimiter string) (
 		if err != nil {
 			return nil, err
 		}
+		out, _ = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, SCHEMAID: schemaId})
 	case message.FormatDelimited:
 		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, DELIMITER: delimiter})
 		if err != nil {
 			return nil, err
 		}
+		out, _ = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, DELIMITER: delimiter})
 	}
 
 	if dt != "" {
@@ -70,10 +73,13 @@ func GenTransform(dt string, format string, schemaId string, delimiter string) (
 		switch format {
 		case message.FormatJson:
 			if transformed {
-				return bs, transformed, nil
+				return selectJson(bs, fields, transformed)
 			}
 			j, err := json.Marshal(d)
-			return j, false, err
+			if err != nil {
+				return nil, false, fmt.Errorf("fail to encode data %v for error %v", d, err)
+			}
+			return selectJson(j, fields, transformed)
 		case message.FormatProtobuf, message.FormatCustom, message.FormatDelimited:
 			if transformed {
 				m := make(map[string]interface{})
@@ -84,7 +90,18 @@ func GenTransform(dt string, format string, schemaId string, delimiter string) (
 				d = m
 			}
 			b, err := c.Encode(d)
-			return b, transformed, err
+			if err != nil {
+				return nil, false, fmt.Errorf("fail to encode data %v for error %v", d, err)
+			}
+			mm, ok := d.(map[string]interface{})
+			if !ok {
+				return b, false, fmt.Errorf("expect map[string]interface{} but got %T", mm)
+			}
+			outBytes, err := out.Encode(selectMap(mm, fields))
+			if err != nil {
+				return b, false, fmt.Errorf("fail to encode data %v for error %v", d, err)
+			}
+			return outBytes, true, nil
 		default: // should not happen
 			return nil, false, fmt.Errorf("unsupported format %v", format)
 		}
@@ -93,4 +110,63 @@ func GenTransform(dt string, format string, schemaId string, delimiter string) (
 
 func GenTp(dt string) (*template.Template, error) {
 	return template.New("sink").Funcs(conf.FuncMap).Parse(dt)
+}
+
+// selectJson select fields from json bytes
+func selectJson(bytes []byte, fields []string, transformed bool) ([]byte, bool, error) {
+	if len(fields) == 0 {
+		return bytes, transformed, nil
+	}
+	var m interface{}
+	err := json.Unmarshal(bytes, &m)
+	if err != nil {
+		return bytes, transformed, err
+	}
+	switch m.(type) {
+	case []interface{}:
+		mm := m.([]interface{})
+		outputs := make([]map[string]interface{}, len(mm))
+		for i, v := range mm {
+			if out, ok := v.(map[string]interface{}); !ok {
+				return bytes, transformed, fmt.Errorf("fail to decode json, unsupported type %v", mm)
+			} else {
+				outputs[i] = selectMap(out, fields)
+			}
+		}
+		jsonBytes, err := json.Marshal(outputs)
+		return jsonBytes, true, err
+	case []map[string]interface{}:
+		mm := m.([]map[string]interface{})
+		outputs := make([]map[string]interface{}, len(mm))
+		for i, v := range mm {
+			outputs[i] = selectMap(v, fields)
+		}
+		jsonBytes, err := json.Marshal(outputs)
+		return jsonBytes, true, err
+	case map[string]interface{}:
+		mm := m.(map[string]interface{})
+		jsonBytes, err := json.Marshal(selectMap(mm, fields))
+		return jsonBytes, true, err
+	default:
+		return bytes, transformed, fmt.Errorf("fail to decode json, unsupported type %v", m)
+	}
+}
+
+// selectMap select fields from input map
+func selectMap(input map[string]interface{}, fields []string) map[string]interface{} {
+	if len(fields) == 0 {
+		return input
+	}
+	output := make(map[string]interface{})
+	for _, field := range fields {
+		if v, ok := input[field]; ok {
+			output[field] = v
+		}
+	}
+	// if no field is selected, return the whole map
+	if len(output) == 0 {
+		return input
+	}
+	return output
+
 }

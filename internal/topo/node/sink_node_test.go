@@ -490,3 +490,67 @@ func Test_itemToMap(t *testing.T) {
 		})
 	}
 }
+
+func TestSinkFields_Apply(t *testing.T) {
+	conf.InitConf()
+	transform.RegisterAdditionalFuncs()
+	var tests = []struct {
+		dt        string
+		format    string
+		schemaId  string
+		delimiter string
+		fields    []string
+		data      interface{}
+		result    [][]byte
+	}{
+		{
+			format: "json",
+			fields: []string{"a", "b"},
+			data:   map[string]interface{}{"a": "1", "b": "2", "c": "3"},
+			result: [][]byte{[]byte(`{"a":"1","b":"2"}`)},
+		},
+		{
+			format: "json",
+			fields: []string{"a", "b"},
+			data:   []map[string]interface{}{{"a": "1", "b": "2", "c": "3"}},
+			result: [][]byte{[]byte(`[{"a":"1","b":"2"}]`)},
+		},
+		{
+			format:    "delimited",
+			delimiter: ",",
+			fields:    []string{"a", "b"},
+			data:      map[string]interface{}{"a": "1", "b": "2", "c": "3"},
+			result:    [][]byte{[]byte(`1,2`)},
+		},
+		{
+			format:   "json",
+			schemaId: "",
+			fields:   []string{"ax", "bx"},
+			dt:       `{"ax": {{.a}}, "bx": {{.b}}}`,
+			data:     map[string]interface{}{"a": "1", "b": "2", "c": "3"},
+			result:   [][]byte{[]byte(`{"ax":1,"bx":2}`)},
+		},
+		{
+			format:   "json",
+			schemaId: "",
+			fields:   []string{"a", "b"},
+			dt:       `{"ax": {{.a}}, "bx": {{.b}}}`,
+			data:     map[string]interface{}{"a": "1", "b": "2", "c": "3"},
+			result:   [][]byte{[]byte(`{"ax":1,"bx":2}`)},
+		},
+	}
+	contextLogger := conf.Log.WithField("rule", "TestSinkFields_Apply")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	for i, tt := range tests {
+		tf, _ := transform.GenTransform(tt.dt, tt.format, tt.schemaId, tt.delimiter, tt.fields)
+		vCtx := context.WithValue(ctx, context.TransKey, tf)
+		mockSink := mocknode.NewMockSink()
+		mockSink.Collect(vCtx, tt.data)
+		time.Sleep(1 * time.Second)
+		results := mockSink.GetResults()
+		if !reflect.DeepEqual(tt.result, results) {
+			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
+		}
+	}
+}

@@ -40,6 +40,7 @@ type sinkConf struct {
 	Delimiter          string   `json:"delimiter"`
 	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
 	Compression        string   `json:"compression"`
+	Fields             []string `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
 }
 
 type fileSink struct {
@@ -233,6 +234,22 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 						i++
 					}
 				}
+			}
+			if len(m.c.Fields) > 0 {
+				head := make([]string, 0)
+				fieldMap := make(map[string]struct{})
+				for _, h := range header {
+					fieldMap[h] = struct{}{}
+				}
+				for _, f := range m.c.Fields {
+					if _, ok := fieldMap[f]; ok {
+						head = append(head, f)
+					}
+				}
+				if len(head) == 0 {
+					return nil, fmt.Errorf("no field matched")
+				}
+				header = head
 			}
 			sort.Strings(header)
 			headers = strings.Join(header, m.c.Delimiter)

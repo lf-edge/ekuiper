@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ import (
 	_ "github.com/influxdata/influxdb1-client/v2"
 	client "github.com/influxdata/influxdb1-client/v2"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"strings"
 	"time"
 )
 
@@ -47,7 +46,7 @@ type influxSink struct {
 	databaseName string
 	tagKey       string
 	tagValue     string
-	fields       string
+	fields       []string
 	cli          client.Client
 	fieldMap     map[string]interface{}
 	hasTransform bool
@@ -90,8 +89,12 @@ func (m *influxSink) Configure(props map[string]interface{}) error {
 		}
 	}
 	if i, ok := props["fields"]; ok {
-		if i, ok := i.(string); ok {
-			m.fields = i
+		if i, ok := i.([]interface{}); ok {
+			for _, v := range i {
+				if v, ok := v.(string); ok {
+					m.fields = append(m.fields, v)
+				}
+			}
 		}
 	}
 	if i, ok := props["dataTemplate"]; ok {
@@ -119,7 +122,7 @@ func (m *influxSink) Open(ctx api.StreamContext) (err error) {
 
 func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
-	if m.hasTransform {
+	if m.hasTransform || len(m.fields) > 0 {
 		jsonBytes, _, err := ctx.TransformOutput(data)
 		if err != nil {
 			return err
@@ -153,13 +156,7 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 		return err
 	}
 	tags := map[string]string{m.tagKey: m.tagValue}
-	fields := strings.Split(m.fields, ",")
-	m.fieldMap = make(map[string]interface{}, 100)
-	for _, field := range fields {
-		if output[field] != nil {
-			m.fieldMap[field] = output[field]
-		}
-	}
+	m.fieldMap = output
 
 	pt, err := client.NewPoint(m.measurement, tags, m.fieldMap, time.Now())
 	if err != nil {

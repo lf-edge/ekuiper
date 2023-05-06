@@ -31,7 +31,6 @@ Restart the eKuiper server to activate the plugin.
 | databasename  | true     | The database of the InfluxDB                      |
 | tagkey        | true     | The tag key of the InfluxDB                       |
 | tagvalue      | true     | The tag value of the InfluxDB                     |
-| fields        | true     | The column of the InfluxDB,split with ","         |
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
@@ -55,7 +54,7 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
        "databasename": "databasename",
        "tagkey": "tagkey",
        "tagvalue": "tagvalue",
-       "fields": "humidity,temperature,pressure"
+       "fields": ["humidity", "temperature", "pressure"]
       }
     }
   ]
