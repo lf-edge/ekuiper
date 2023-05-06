@@ -96,7 +96,7 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 		registry.Store(QueryRuleId, rs)
 		msg := fmt.Sprintf("Query was submit successfully.")
 		logger.Println(msg)
-		*reply = fmt.Sprintf(msg)
+		*reply = fmt.Sprint(msg)
 	}
 	return nil
 }
