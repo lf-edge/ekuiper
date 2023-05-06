@@ -88,7 +88,7 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
 	var val string
 	if r.c.DataTemplate != "" { // The result is a string
-		v, _, err := ctx.TransformOutput(data)
+		v, _, err := ctx.TransformOutput(data, true)
 		if err != nil {
 			logger.Error(err)
 			return err

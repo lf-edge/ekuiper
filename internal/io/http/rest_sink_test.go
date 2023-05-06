@@ -355,7 +355,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 		tt.config["url"] = ts.URL
 		s.Configure(tt.config)
 		s.Open(ctx)
-		vCtx := context.WithValue(ctx, context.TransKey, transform.TransFunc(func(d interface{}) ([]byte, bool, error) {
+		vCtx := context.WithValue(ctx, context.TransKey, transform.TransFunc(func(d interface{}, s bool) ([]byte, bool, error) {
 			return d.([]byte), true, nil
 		}))
 		for _, d := range tt.data {

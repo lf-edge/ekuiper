@@ -72,7 +72,7 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 		return err
 	}
 	if s.hasTransform {
-		jsonBytes, _, err := ctx.TransformOutput(data)
+		jsonBytes, _, err := ctx.TransformOutput(data, true)
 		if err != nil {
 			return err
 		}

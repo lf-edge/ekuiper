@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ func (m *zmqSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	var v []byte
 	var err error
-	v, _, err = ctx.TransformOutput(item)
+	v, _, err = ctx.TransformOutput(item, true)
 	if err != nil {
 		logger.Debug("zmq sink receive non byte data %v", item)
 		return err

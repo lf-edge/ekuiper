@@ -536,7 +536,7 @@ func TestSinkFields_Apply(t *testing.T) {
 			fields:   []string{"a", "b"},
 			dt:       `{"ax": {{.a}}, "bx": {{.b}}}`,
 			data:     map[string]interface{}{"a": "1", "b": "2", "c": "3"},
-			result:   [][]byte{[]byte(`{"ax":1,"bx":2}`)},
+			result:   [][]byte{[]byte(`{"a":nil,"b":nil}`)},
 		},
 	}
 	contextLogger := conf.Log.WithField("rule", "TestSinkFields_Apply")

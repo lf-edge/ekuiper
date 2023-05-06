@@ -159,7 +159,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if err != nil {
 		return err
 	}
-	if v, _, err := ctx.TransformOutput(item); err == nil {
+	if v, _, err := ctx.TransformOutput(item, true); err == nil {
 		ctx.GetLogger().Debugf("file sink transform data %s", v)
 		m.mux.Lock()
 		defer m.mux.Unlock()
@@ -217,39 +217,27 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 		var headers string
 		if m.c.FileType == CSV_TYPE && m.c.HasHeader {
 			var header []string
-			switch v := item.(type) {
-			case map[string]interface{}:
-				header = make([]string, len(v))
-				i := 0
-				for k := range item.(map[string]interface{}) {
-					header[i] = k
-					i++
-				}
-			case []map[string]interface{}:
-				if len(v) > 0 {
-					header = make([]string, len(v[0]))
+			if len(m.c.Fields) > 0 {
+				header = m.c.Fields
+			} else {
+				switch v := item.(type) {
+				case map[string]interface{}:
+					header = make([]string, len(v))
 					i := 0
-					for k := range v[0] {
+					for k := range item.(map[string]interface{}) {
 						header[i] = k
 						i++
 					}
-				}
-			}
-			if len(m.c.Fields) > 0 {
-				head := make([]string, 0)
-				fieldMap := make(map[string]struct{})
-				for _, h := range header {
-					fieldMap[h] = struct{}{}
-				}
-				for _, f := range m.c.Fields {
-					if _, ok := fieldMap[f]; ok {
-						head = append(head, f)
+				case []map[string]interface{}:
+					if len(v) > 0 {
+						header = make([]string, len(v[0]))
+						i := 0
+						for k := range v[0] {
+							header[i] = k
+							i++
+						}
 					}
 				}
-				if len(head) == 0 {
-					return nil, fmt.Errorf("no field matched")
-				}
-				header = head
 			}
 			sort.Strings(header)
 			headers = strings.Join(header, m.c.Delimiter)

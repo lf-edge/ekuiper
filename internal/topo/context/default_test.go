@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -226,7 +226,7 @@ func TestParseTemplate(t *testing.T) {
 }
 
 func TestTransition(t *testing.T) {
-	var mockFunc transform.TransFunc = func(d interface{}) ([]byte, bool, error) {
+	var mockFunc transform.TransFunc = func(d interface{}, s bool) ([]byte, bool, error) {
 		return []byte(fmt.Sprintf("%v", d)), true, nil
 	}
 	var tests = []struct {
@@ -249,7 +249,7 @@ func TestTransition(t *testing.T) {
 	ctx := Background().WithMeta("testTransRule", "op1", &state.MemoryStore{}).(*DefaultContext)
 	nc := WithValue(ctx, TransKey, mockFunc)
 	for i, tt := range tests {
-		r, _, _ := nc.TransformOutput(tt.data)
+		r, _, _ := nc.TransformOutput(tt.data, true)
 		if !reflect.DeepEqual(tt.r, r) {
 			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, string(tt.r), string(r))
 		}

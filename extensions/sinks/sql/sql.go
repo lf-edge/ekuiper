@@ -141,7 +141,7 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
 func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("sql sink receive %s", item)
 	if m.conf.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item)
+		jsonBytes, _, err := ctx.TransformOutput(item, false)
 		if err != nil {
 			return err
 		}

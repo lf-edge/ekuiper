@@ -115,7 +115,7 @@ func (m *influxSink2) Open(ctx api.StreamContext) (err error) {
 func (m *influxSink2) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
 	if m.hasTransform || len(m.fields) > 0 {
-		jsonBytes, _, err := ctx.TransformOutput(data)
+		jsonBytes, _, err := ctx.TransformOutput(data, true)
 		if err != nil {
 			return err
 		}
