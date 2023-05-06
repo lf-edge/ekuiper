@@ -31,7 +31,6 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 	var (
 		tp  *template.Template = nil
 		c   message.Converter
-		out message.Converter
 		err error
 	)
 	switch format {
@@ -40,13 +39,11 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 		if err != nil {
 			return nil, err
 		}
-		out, _ = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, SCHEMAID: schemaId})
 	case message.FormatDelimited:
 		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, DELIMITER: delimiter})
 		if err != nil {
 			return nil, err
 		}
-		out, _ = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, DELIMITER: delimiter})
 	}
 
 	if dt != "" {
@@ -133,7 +130,7 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 			if !ok {
 				return nil, false, fmt.Errorf("expect map[string]interface{} but got %T", mm)
 			}
-			outBytes, err := out.Encode(selectMap(mm, fields))
+			outBytes, err := c.Encode(selectMap(mm, fields))
 			if err != nil {
 				return nil, false, fmt.Errorf("fail to encode data %v for error %v", d, err)
 			}
