@@ -19,10 +19,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/processor"
 	"io"
 	"net/http"
 	"os"
@@ -30,11 +26,17 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -318,7 +320,7 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 			content, err = streamProcessor.ShowStream(st)
 		}
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(ast.StreamTypeMap[st])), logger)
+			handleError(w, err, fmt.Sprintf("%s command error", cases.Title(language.Und).String(ast.StreamTypeMap[st])), logger)
 			return
 		}
 		jsonResponse(content, w, logger)
@@ -330,7 +332,7 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 		}
 		content, err := streamProcessor.ExecStreamSql(v.Sql)
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(ast.StreamTypeMap[st])), logger)
+			handleError(w, err, fmt.Sprintf("%s command error", cases.Title(language.Und).String(ast.StreamTypeMap[st])), logger)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
@@ -367,7 +369,7 @@ func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamTy
 		}
 		content, err := streamProcessor.ExecReplaceStream(name, v.Sql, st)
 		if err != nil {
-			handleError(w, err, fmt.Sprintf("%s command error", strings.Title(ast.StreamTypeMap[st])), logger)
+			handleError(w, err, fmt.Sprintf("%s command error", cases.Title(language.Und).String(ast.StreamTypeMap[st])), logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
