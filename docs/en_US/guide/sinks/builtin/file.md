@@ -1,6 +1,6 @@
 # File Sink
 
-The sink saves the analysis result to a specified file. The [file source](../../sources/builtin/file.md) is the opposite
+The sink saves the analysis result to a specified file. It will override if the specified file existed. The [file source](../../sources/builtin/file.md) is the opposite
 connector that can read the file sink’s output.
 
 ## Properties
