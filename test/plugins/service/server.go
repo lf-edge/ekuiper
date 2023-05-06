@@ -22,7 +22,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"time"
 )
 
 func alert(w http.ResponseWriter, req *http.Request) {
@@ -57,7 +56,6 @@ func pullSrv(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if count%2 == 0 {
-		rand.Seed(time.Now().UnixNano())
 		s.Temperature = rand.Intn(100)
 		s.Humidity = rand.Intn(100)
 	}
