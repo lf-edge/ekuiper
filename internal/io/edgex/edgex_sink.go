@@ -113,7 +113,7 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 
 func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{}) (*dtos.Event, error) {
 	if ems.c.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item)
+		jsonBytes, _, err := ctx.TransformOutput(item, true)
 		if err != nil {
 			return nil, err
 		}
