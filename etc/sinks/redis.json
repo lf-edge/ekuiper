@@ -96,6 +96,25 @@
 			}
 		},
 		{
+			"name": "keyType",
+			"optional": true,
+			"control": "select",
+			"default": "single",
+			"type": "string",
+			"values": [
+				"single",
+				"multiple"
+			],
+			"hint": {
+				"en_US": "Store the payload as single or multiple",
+				"zh_CN": "以整体形式或者拆分形式保存结果到 redis。"
+			},
+			"label": {
+				"en_US": "Store single or multiple",
+				"zh_CN": "整体或者拆分保存"
+			}
+		},
+		{
 			"name": "dataType",
 			"default": "string",
 			"optional": false,
