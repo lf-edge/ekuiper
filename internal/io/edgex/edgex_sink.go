@@ -126,9 +126,9 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{
 		}
 		item = tm
 	} else if len(ems.c.Fields) > 0 {
-		tm, err := transform.SelectMap(item, ems.c.fields)
+		tm, err := transform.SelectMap(item, ems.c.Fields)
 		if err != nil {
-			return fmt.Errorf("fail to select fields %v for data %v", m.fields, data)
+			return nil, fmt.Errorf("fail to select fields %v for data %v", ems.c.Fields, item)
 		}
 		item = tm
 	}
