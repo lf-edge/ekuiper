@@ -25,6 +25,8 @@ import (
 	"text/template"
 )
 
+// TransFunc is the function to transform data
+// The second parameter indicates whether to select fields based on the fields property
 type TransFunc func(interface{}, bool) ([]byte, bool, error)
 
 func GenTransform(dt string, format string, schemaId string, delimiter string, fields []string) (TransFunc, error) {
@@ -41,6 +43,11 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 		}
 	case message.FormatDelimited:
 		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, DELIMITER: delimiter})
+		if err != nil {
+			return nil, err
+		}
+	case message.FormatJson:
+		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format})
 		if err != nil {
 			return nil, err
 		}
@@ -67,77 +74,31 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 			bs = output.Bytes()
 			transformed = true
 		}
-		switch format {
-		case message.FormatJson:
+
+		if !s || len(fields) == 0 {
 			if transformed {
-				if !s || len(fields) == 0 {
-					return bs, true, nil
-				}
-				err = json.Unmarshal(bs, &d)
+				return bs, true, nil
 			}
-			if !s || len(fields) == 0 {
-				j, err := json.Marshal(d)
-				if err != nil {
-					return nil, false, fmt.Errorf("fail to encode data %v for error %v", d, err)
-				}
-				return j, true, nil
-			}
-			switch d.(type) {
-			case []interface{}:
-				m := d.([]interface{})
-				outputs := make([]map[string]interface{}, len(m))
-				for i, v := range m {
-					if out, ok := v.(map[string]interface{}); !ok {
-						return nil, false, fmt.Errorf("fail to decode json, unsupported type %v", m)
-					} else {
-						outputs[i] = selectMap(out, fields)
-					}
-				}
-				jsonBytes, err := json.Marshal(outputs)
-				return jsonBytes, true, err
-			case []map[string]interface{}:
-				m := d.([]map[string]interface{})
-				outputs := make([]map[string]interface{}, len(m))
-				for i, v := range m {
-					outputs[i] = selectMap(v, fields)
-				}
-				jsonBytes, err := json.Marshal(outputs)
-				return jsonBytes, true, err
-			case map[string]interface{}:
-				m := d.(map[string]interface{})
-				jsonBytes, err := json.Marshal(selectMap(m, fields))
-				return jsonBytes, true, err
-			default:
-				return nil, false, fmt.Errorf("fail to decode json, unsupported type %v", d)
-			}
-		case message.FormatProtobuf, message.FormatCustom, message.FormatDelimited:
-			if transformed {
-				m := make(map[string]interface{})
-				err := json.Unmarshal(bs, &m)
-				if err != nil {
-					return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
-				}
-				d = m
-			}
-			if !s || len(fields) == 0 {
-				b, err := c.Encode(d)
-				if err != nil {
-					return nil, false, fmt.Errorf("fail to encode data %v for error %v", d, err)
-				}
-				return b, true, nil
-			}
-			mm, ok := d.(map[string]interface{})
-			if !ok {
-				return nil, false, fmt.Errorf("expect map[string]interface{} but got %T", mm)
-			}
-			outBytes, err := c.Encode(selectMap(mm, fields))
-			if err != nil {
-				return nil, false, fmt.Errorf("fail to encode data %v for error %v", d, err)
-			}
-			return outBytes, true, nil
-		default: // should not happen
-			return nil, false, fmt.Errorf("unsupported format %v", format)
+			outBytes, err := c.Encode(d)
+			return outBytes, false, err
 		}
+
+		if transformed {
+			m := make(map[string]interface{})
+			err := json.Unmarshal(bs, &m)
+			if err != nil {
+				return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
+			}
+			d = m
+		}
+
+		m, err := SelectMap(d, fields)
+		if err != nil {
+			return nil, false, fmt.Errorf("fail to select fields %v for error %v", fields, err)
+		}
+		d = m
+		outBytes, err := c.Encode(d)
+		return outBytes, true, err
 	}, nil
 }
 
@@ -145,16 +106,44 @@ func GenTp(dt string) (*template.Template, error) {
 	return template.New("sink").Funcs(conf.FuncMap).Parse(dt)
 }
 
-// selectMap select fields from input map
-func selectMap(input map[string]interface{}, fields []string) map[string]interface{} {
+// SelectMap select fields from input map or array of map
+func SelectMap(input interface{}, fields []string) (interface{}, error) {
 	if len(fields) == 0 {
-		return input
+		return input, fmt.Errorf("fields cannot be empty")
 	}
-	output := make(map[string]interface{}, len(fields))
-	for _, field := range fields {
-		output[field] = input[field]
+	outputs := make([]map[string]interface{}, 0)
+	switch input.(type) {
+	case map[string]interface{}:
+		output := make(map[string]interface{})
+		for _, field := range fields {
+			output[field] = input.(map[string]interface{})[field]
+		}
+		return output, nil
+	case []interface{}:
+		for _, v := range input.([]interface{}) {
+			output := make(map[string]interface{})
+			if out, ok := v.(map[string]interface{}); !ok {
+				return input, fmt.Errorf("unsupported type %v", input)
+			} else {
+				for _, field := range fields {
+					output[field] = out[field]
+				}
+				outputs = append(outputs, output)
+			}
+		}
+		return outputs, nil
+	case []map[string]interface{}:
+		for _, v := range input.([]map[string]interface{}) {
+			output := make(map[string]interface{})
+			for _, field := range fields {
+				output[field] = v[field]
+			}
+			outputs = append(outputs, output)
+		}
+		return outputs, nil
+	default:
+		return input, fmt.Errorf("unsupported type %v", input)
 	}
 
-	return output
-
+	return input, nil
 }

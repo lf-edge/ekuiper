@@ -19,15 +19,15 @@ import (
 	"testing"
 )
 
-func Test_selectMap(t *testing.T) {
+func Test_SelectMap(t *testing.T) {
 	type args struct {
-		input  map[string]interface{}
+		input  interface{}
 		fields []string
 	}
 	tests := []struct {
 		name string
 		args args
-		want map[string]interface{}
+		want interface{}
 	}{
 		{
 			name: "test1",
@@ -47,24 +47,66 @@ func Test_selectMap(t *testing.T) {
 		{
 			name: "test2",
 			args: args{
-				input: map[string]interface{}{
+				input: []map[string]interface{}{
+					{
+						"a": 1,
+						"b": 2,
+						"c": 3,
+					},
+				},
+				fields: []string{"a", "b"},
+			},
+			want: []map[string]interface{}{
+				{
+					"a": 1,
+					"b": 2,
+				},
+			},
+		},
+		{
+			name: "test3",
+			args: args{
+				input: []interface{}{
+					map[string]interface{}{
+						"a": 1,
+						"b": 2,
+						"c": 3,
+					},
+				},
+				fields: []string{"a", "b"},
+			},
+			want: []map[string]interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+			},
+		},
+		{
+			name: "test4",
+			args: args{
+				input: []map[string]interface{}{
+					{
+						"a": 1,
+						"b": 2,
+						"c": 3,
+					},
+				},
+				fields: nil,
+			},
+			want: []map[string]interface{}{
+				{
 					"a": 1,
 					"b": 2,
 					"c": 3,
 				},
-				fields: nil,
-			},
-			want: map[string]interface{}{
-				"a": 1,
-				"b": 2,
-				"c": 3,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := selectMap(tt.args.input, tt.args.fields); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("selectMap() = %v, want %v", got, tt.want)
+			if got, _ := SelectMap(tt.args.input, tt.args.fields); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SelectMap() = %v, want %v", got, tt.want)
 			}
 		})
 	}

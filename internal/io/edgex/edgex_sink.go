@@ -42,6 +42,7 @@ type SinkConf struct {
 	SourceName   string      `json:"sourceName"`
 	Metadata     string      `json:"metadata"`
 	DataTemplate string      `json:"dataTemplate"`
+	Fields       string      `json:"fields"`
 }
 
 type EdgexMsgBusSink struct {
@@ -121,6 +122,12 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{
 		err = json.Unmarshal(jsonBytes, &tm)
 		if err != nil {
 			return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		item = tm
+	} else if len(ems.c.Fields) {
+		tm, err := transform.SelectMap(item, m.fields)
+		if err != nil {
+			return fmt.Errorf("fail to select fields %v for data %v", m.fields, data)
 		}
 		item = tm
 	}

@@ -34,6 +34,7 @@ import (
 	"fmt"
 	_ "github.com/influxdata/influxdb1-client/v2"
 	client "github.com/influxdata/influxdb1-client/v2"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"time"
 )
@@ -122,7 +123,7 @@ func (m *influxSink) Open(ctx api.StreamContext) (err error) {
 
 func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
-	if m.hasTransform || len(m.fields) > 0 {
+	if m.hasTransform {
 		jsonBytes, _, err := ctx.TransformOutput(data, true)
 		if err != nil {
 			return err
@@ -133,6 +134,12 @@ func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		data = m
+	} else if len(m.fields) > 0 {
+		d, err := transform.SelectMap(data, m.fields)
+		if err != nil {
+			return fmt.Errorf("fail to select fields %v for data %v", m.fields, data)
+		}
+		data = d
 	}
 	var output map[string]interface{}
 	switch v := data.(type) {
