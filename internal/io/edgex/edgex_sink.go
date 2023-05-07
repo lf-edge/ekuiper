@@ -26,6 +26,7 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -124,8 +125,8 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{
 			return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		item = tm
-	} else if len(ems.c.Fields) {
-		tm, err := transform.SelectMap(item, m.fields)
+	} else if len(ems.c.Fields) > 0 {
+		tm, err := transform.SelectMap(item, ems.c.fields)
 		if err != nil {
 			return fmt.Errorf("fail to select fields %v for data %v", m.fields, data)
 		}
