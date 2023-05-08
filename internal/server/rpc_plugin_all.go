@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !core || (rpc && portable && plugin && !wasmedge)
+//go:build rpc && portable && plugin && wasmedge
 
 package server
 
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
-
 	"github.com/lf-edge/ekuiper/internal/plugin"
+	"strings"
 )
 
 func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
 	if pt == plugin.PORTABLE {
 		return portableManager.Register(p)
+	} else if pt == plugin.WASM {
+		return wasmManager.Register(p)
 	} else {
 		return nativeManager.Register(pt, p)
 	}
@@ -35,6 +36,8 @@ func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {
 func (t *Server) doDelete(pt plugin.PluginType, name string, stopRun bool) error {
 	if pt == plugin.PORTABLE {
 		return portableManager.Delete(name)
+	} else if pt == plugin.WASM {
+		return wasmManager.Delete(name)
 	} else {
 		return nativeManager.Delete(pt, name, stopRun)
 	}
@@ -47,6 +50,8 @@ func (t *Server) doDesc(pt plugin.PluginType, name string) (interface{}, error) 
 	)
 	if pt == plugin.PORTABLE {
 		result, ok = portableManager.GetPluginInfo(name)
+	} else if pt == plugin.WASM {
+		result, ok = wasmManager.GetPluginInfo(name)
 	} else {
 		result, ok = nativeManager.GetPluginInfo(pt, name)
 	}
@@ -59,6 +64,13 @@ func (t *Server) doDesc(pt plugin.PluginType, name string) (interface{}, error) 
 func (t *Server) doShow(pt plugin.PluginType) (string, error) {
 	var result string
 	if pt == plugin.PORTABLE {
+		l := portableManager.List()
+		jb, err := json.Marshal(l)
+		if err != nil {
+			return "", err
+		}
+		return string(jb), nil
+	} else if pt == plugin.WASM {
 		l := portableManager.List()
 		jb, err := json.Marshal(l)
 		if err != nil {

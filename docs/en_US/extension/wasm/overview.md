@@ -104,6 +104,13 @@ fibonacci.json
   "wasmEngine": "wasmedge"
 }
 ```
+## Build eKuiper
+
+The official released eKuiper do not have wasm support, users need build eKuiper by himself
+
+```shell
+make build_with_wasm
+```
 
 Install the plugin:
 
