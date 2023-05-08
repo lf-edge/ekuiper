@@ -150,7 +150,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT temperature, Humidity, meta(*) AS metadt FROM demo WHERE temperature = 72&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT Temperature as temperature, Humidity, meta(*) AS metadt FROM demo WHERE Temperature = 72&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;edgex&quot;: {&#xd;
