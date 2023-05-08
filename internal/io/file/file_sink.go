@@ -40,6 +40,7 @@ type sinkConf struct {
 	Delimiter          string   `json:"delimiter"`
 	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
 	Compression        string   `json:"compression"`
+	Fields             []string `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
 }
 
 type fileSink struct {
@@ -158,7 +159,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if err != nil {
 		return err
 	}
-	if v, _, err := ctx.TransformOutput(item); err == nil {
+	if v, _, err := ctx.TransformOutput(item, true); err == nil {
 		ctx.GetLogger().Debugf("file sink transform data %s", v)
 		m.mux.Lock()
 		defer m.mux.Unlock()
@@ -216,21 +217,25 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 		var headers string
 		if m.c.FileType == CSV_TYPE && m.c.HasHeader {
 			var header []string
-			switch v := item.(type) {
-			case map[string]interface{}:
-				header = make([]string, len(v))
-				i := 0
-				for k := range item.(map[string]interface{}) {
-					header[i] = k
-					i++
-				}
-			case []map[string]interface{}:
-				if len(v) > 0 {
-					header = make([]string, len(v[0]))
+			if len(m.c.Fields) > 0 {
+				header = m.c.Fields
+			} else {
+				switch v := item.(type) {
+				case map[string]interface{}:
+					header = make([]string, len(v))
 					i := 0
-					for k := range v[0] {
+					for k := range item.(map[string]interface{}) {
 						header[i] = k
 						i++
+					}
+				case []map[string]interface{}:
+					if len(v) > 0 {
+						header = make([]string, len(v[0]))
+						i := 0
+						for k := range v[0] {
+							header[i] = k
+							i++
+						}
 					}
 				}
 			}

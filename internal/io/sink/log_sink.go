@@ -27,7 +27,7 @@ import (
 func NewLogSink() api.Sink {
 	return collector.Func(func(ctx api.StreamContext, data interface{}) error {
 		log := ctx.GetLogger()
-		if v, _, err := ctx.TransformOutput(data); err == nil {
+		if v, _, err := ctx.TransformOutput(data, true); err == nil {
 			log.Infof("sink result for rule %s: %s", ctx.GetRuleId(), v)
 			return nil
 		} else {
@@ -48,7 +48,7 @@ func NewLogSinkToMemory() api.Sink {
 	QR.Results = make([]string, 0, 10)
 	return collector.Func(func(ctx api.StreamContext, data interface{}) error {
 		var result string
-		if v, _, err := ctx.TransformOutput(data); err == nil {
+		if v, _, err := ctx.TransformOutput(data, true); err == nil {
 			result = string(v)
 		} else {
 			return fmt.Errorf("transform data error: %v", err)

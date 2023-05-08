@@ -283,7 +283,7 @@ func TestFileSink_Collect(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test2")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
-	tf, _ := transform.GenTransform("", "json", "", "")
+	tf, _ := transform.GenTransform("", "json", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	for _, tt := range tests {
@@ -307,6 +307,7 @@ func TestFileSink_Collect(t *testing.T) {
 				"format":             f,
 				"rollingNamePattern": "none",
 				"compression":        tt.compress,
+				"fields":             []string{"key"},
 			})
 			if err != nil {
 				t.Fatal(err)
@@ -442,7 +443,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testRolling")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
-	tf, _ := transform.GenTransform("", "json", "", "")
+	tf, _ := transform.GenTransform("", "json", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	for _, tt := range tests {
@@ -572,7 +573,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testRollingCount")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
-	tf, _ := transform.GenTransform("", "delimited", "", ",")
+	tf, _ := transform.GenTransform("", "delimited", "", ",", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	for _, tt := range tests {
@@ -663,7 +664,7 @@ func TestFileSinkReopen(t *testing.T) {
 	// Create a stream context for testing
 	contextLogger := conf.Log.WithField("rule", "testRollingCount")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	tf, _ := transform.GenTransform("", "json", "", "")
+	tf, _ := transform.GenTransform("", "json", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	sink := &fileSink{}

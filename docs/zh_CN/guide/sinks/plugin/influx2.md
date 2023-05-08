@@ -60,7 +60,6 @@ $(PLUGINS_CUSTOM):
 | token       | 否    | InfluxDB访问Token    |
 | tagKey      | 是    | InfluxDB的标签键       |
 | tagValue    | 是    | InfluxDB的标签值       |
-| fields      | 是    | InfluxDB的列名,用","隔开 |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
@@ -84,7 +83,7 @@ $(PLUGINS_CUSTOM):
        "bucket": "bucketName",
        "tagKey": "tagKey",
        "tagValue": "tagValue",
-       "fields": "humidity,temperature,pressure"
+       "fields": ["humidity", "temperature", "pressure"]
       }
     }
   ]

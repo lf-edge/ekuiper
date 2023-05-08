@@ -91,7 +91,7 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 
 func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("Receive %+v", item)
-	if val, _, err := ctx.TransformOutput(item); err == nil {
+	if val, _, err := ctx.TransformOutput(item, true); err == nil {
 		ctx.GetLogger().Debugf("Send %s", val)
 		e := ps.dataCh.Send(val)
 		if e != nil {

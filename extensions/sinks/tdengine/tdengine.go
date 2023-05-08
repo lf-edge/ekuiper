@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -200,7 +200,7 @@ func (m *taosSink) Open(ctx api.StreamContext) (err error) {
 func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("tdengine sink receive %s", item)
 	if m.conf.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item)
+		jsonBytes, _, err := ctx.TransformOutput(item, false)
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import (
 const TransKey = "$$trans"
 
 // TransformOutput Lazy transform output to bytes
-func (c *DefaultContext) TransformOutput(data interface{}) ([]byte, bool, error) {
+func (c *DefaultContext) TransformOutput(data interface{}, selected bool) ([]byte, bool, error) {
 	v := c.Value(TransKey)
 	f, ok := v.(transform.TransFunc)
 	if ok {
-		return f(data)
+		return f(data, selected)
 	}
 	return nil, false, fmt.Errorf("no transform configured")
 }

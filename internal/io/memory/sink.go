@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -25,10 +26,11 @@ import (
 )
 
 type config struct {
-	Topic        string `json:"topic"`
-	DataTemplate string `json:"dataTemplate"`
-	RowkindField string `json:"rowkindField"`
-	KeyField     string `json:"keyField"`
+	Topic        string   `json:"topic"`
+	DataTemplate string   `json:"dataTemplate"`
+	RowkindField string   `json:"rowkindField"`
+	KeyField     string   `json:"keyField"`
+	Fields       []string `json:"fields"`
 }
 
 type sink struct {
@@ -36,6 +38,7 @@ type sink struct {
 	hasTransform bool
 	keyField     string
 	rowkindField string
+	fields       []string
 }
 
 func (s *sink) Open(ctx api.StreamContext) error {
@@ -57,6 +60,7 @@ func (s *sink) Configure(props map[string]interface{}) error {
 	if cfg.DataTemplate != "" {
 		s.hasTransform = true
 	}
+	s.fields = cfg.Fields
 	s.rowkindField = cfg.RowkindField
 	s.keyField = cfg.KeyField
 	if s.rowkindField != "" && s.keyField == "" {
@@ -72,7 +76,7 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 		return err
 	}
 	if s.hasTransform {
-		jsonBytes, _, err := ctx.TransformOutput(data)
+		jsonBytes, _, err := ctx.TransformOutput(data, true)
 		if err != nil {
 			return err
 		}
@@ -80,6 +84,12 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 		err = json.Unmarshal(jsonBytes, &m)
 		if err != nil {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		data = m
+	} else if len(s.fields) > 0 {
+		m, err := transform.SelectMap(data, s.fields)
+		if err != nil {
+			return fmt.Errorf("fail to select fields %v for data %v", s.fields, data)
 		}
 		data = m
 	}

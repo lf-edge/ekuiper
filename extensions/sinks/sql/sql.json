@@ -60,20 +60,6 @@
 			"en_US": "Table Data from Stream Field",
 			"zh_CN": "表数据来源"
 		}
-	}, {
-		"name": "fields",
-		"default": [],
-		"optional": true,
-		"control": "list",
-		"type": "list_string",
-		"hint": {
-			"en_US": "Field of table",
-			"zh_CN": "表字段"
-		},
-		"label": {
-			"en_US": "Table field",
-			"zh_CN": "表字段"
-		}
 	},
 	{
 		"name": "rowkindField",

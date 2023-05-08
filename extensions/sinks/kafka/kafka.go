@@ -1,4 +1,4 @@
-// Copyright 2023 carlclone@gmail.com
+// Copyright 2023-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -117,14 +117,14 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	switch d := item.(type) {
 	case []map[string]interface{}:
 		for _, el := range d {
-			decodedBytes, _, err := ctx.TransformOutput(el)
+			decodedBytes, _, err := ctx.TransformOutput(el, true)
 			if err != nil {
 				return fmt.Errorf("kafka sink transform data error: %v", err)
 			}
 			messages = append(messages, kafkago.Message{Value: decodedBytes})
 		}
 	case map[string]interface{}:
-		decodedBytes, _, err := ctx.TransformOutput(d)
+		decodedBytes, _, err := ctx.TransformOutput(d, true)
 		if err != nil {
 			return fmt.Errorf("kafka sink transform data error: %v", err)
 		}

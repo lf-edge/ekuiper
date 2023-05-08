@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -44,6 +45,7 @@ type config struct {
 	Expiration   time.Duration `json:"expiration,omitempty"`
 	RowkindField string        `json:"rowkindField"`
 	DataTemplate string        `json:"dataTemplate"`
+	Fields       []string      `json:"fields"`
 }
 
 type RedisSink struct {
@@ -88,7 +90,7 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
 	var val string
 	if r.c.DataTemplate != "" { // The result is a string
-		v, _, err := ctx.TransformOutput(data)
+		v, _, err := ctx.TransformOutput(data, true)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -100,6 +102,12 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 		}
 		data = m
 		val = string(v)
+	} else if len(r.c.Fields) > 0 {
+		m, err := transform.SelectMap(data, r.c.Fields)
+		if err != nil {
+			return fmt.Errorf("fail to select fields %v for data %v", r.c.Fields, data)
+		}
+		data = m
 	}
 	switch d := data.(type) {
 	case []map[string]interface{}:

@@ -117,20 +117,6 @@
 			"en_US": "Tag value",
 			"zh_CN": "标签值"
 		}
-	}, {
-		"name": "fields",
-		"default": "humidity,temperature,pressure",
-		"optional": true,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "The column of the InfluxDB",
-			"zh_CN": "InfluxDB 的列名"
-		},
-		"label": {
-			"en_US": "Column",
-			"zh_CN": "列名"
-		}
 	}],
 	"node": {
 		"category": "sink",

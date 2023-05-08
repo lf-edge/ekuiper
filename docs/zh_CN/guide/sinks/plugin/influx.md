@@ -21,16 +21,15 @@
 
 ## 属性
 
-| 属性名称         | 会否可选 | 说明                 |
-|--------------|------|--------------------|
-| addr         | 是    | InfluxDB的地址        |
-| measurement  | 是    | InfluxDb的测量（如表名）   |
-| username     | 否    | InfluxDB登陆用户名      |
-| password     | 否    | InfluxDB登陆密码       |
-| databasename | 是    | InfluxDB的数据库       |
-| tagkey       | 是    | InfluxDB的标签键       |
-| tagvalue     | 是    | InfluxDB的标签值       |
-| fields       | 是    | InfluxDB的列名,用","隔开 |
+| 属性名称         | 会否可选 | 说明               |
+|--------------|------|------------------|
+| addr         | 是    | InfluxDB的地址      |
+| measurement  | 是    | InfluxDb的测量（如表名） |
+| username     | 否    | InfluxDB登陆用户名    |
+| password     | 否    | InfluxDB登陆密码     |
+| databasename | 是    | InfluxDB的数据库     |
+| tagkey       | 是    | InfluxDB的标签键     |
+| tagvalue     | 是    | InfluxDB的标签值     |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
@@ -54,7 +53,7 @@
        "databasename": "databasename",
        "tagkey": "tagkey",
        "tagvalue": "tagvalue",
-       "fields": "humidity,temperature,pressure"
+       "fields": ["humidity", "temperature", "pressure"]
       }
     }
   ]

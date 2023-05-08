@@ -110,21 +110,6 @@
       }
     },
     {
-      "name": "fields",
-      "default": [],
-      "optional": true,
-      "control": "list",
-      "type": "list_string",
-      "hint": {
-        "en_US": "Field of table",
-        "zh_CN": "表字段"
-      },
-      "label": {
-        "en_US": "Table field",
-        "zh_CN": "表字段"
-      }
-    },
-    {
       "name": "provideTs",
       "default": false,
       "optional": false,

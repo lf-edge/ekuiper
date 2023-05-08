@@ -26,6 +26,7 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -42,6 +43,7 @@ type SinkConf struct {
 	SourceName   string      `json:"sourceName"`
 	Metadata     string      `json:"metadata"`
 	DataTemplate string      `json:"dataTemplate"`
+	Fields       []string    `json:"fields"`
 }
 
 type EdgexMsgBusSink struct {
@@ -113,7 +115,7 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 
 func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{}) (*dtos.Event, error) {
 	if ems.c.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item)
+		jsonBytes, _, err := ctx.TransformOutput(item, true)
 		if err != nil {
 			return nil, err
 		}
@@ -121,6 +123,12 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{
 		err = json.Unmarshal(jsonBytes, &tm)
 		if err != nil {
 			return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		item = tm
+	} else if len(ems.c.Fields) > 0 {
+		tm, err := transform.SelectMap(item, ems.c.Fields)
+		if err != nil {
+			return nil, fmt.Errorf("fail to select fields %v for data %v", ems.c.Fields, item)
 		}
 		item = tm
 	}
