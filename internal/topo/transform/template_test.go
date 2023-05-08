@@ -15,6 +15,7 @@
 package transform
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -76,7 +77,7 @@ func Test_SelectMap(t *testing.T) {
 				fields: []string{"a", "b"},
 			},
 			want: []map[string]interface{}{
-				map[string]interface{}{
+				{
 					"a": 1,
 					"b": 2,
 				},
@@ -102,11 +103,31 @@ func Test_SelectMap(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test5",
+			args: args{
+				input:  []byte(`{"a": 1, "b": 2, "c": 3}`),
+				fields: nil,
+			},
+			want: []byte(`{"a": 1, "b": 2, "c": 3}`),
+		},
+		{
+			name: "test6",
+			args: args{
+				input:  []byte(`{"a": 1, "b": 2, "c": 3}`),
+				fields: []string{"d"},
+			},
+			want: map[string]interface{}{
+				"d": nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got, _ := SelectMap(tt.args.input, tt.args.fields); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SelectMap() = %v, want %v", got, tt.want)
+				fmt.Println(reflect.TypeOf(got), reflect.TypeOf(tt.want))
+
 			}
 		})
 	}

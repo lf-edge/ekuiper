@@ -86,22 +86,21 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 			}
 			outBytes, err := json.Marshal(d)
 			return outBytes, false, err
-		} else if len(fields) > 0 {
+		} else {
 			// Consider that if only the dataTemplate is needed, and the data after trans cannot be converted into map[string]interface
+			var m interface{}
+			var err error
 			if transformed {
-				m := make(map[string]interface{})
-				err := json.Unmarshal(bs, &m)
-				if err != nil {
-					return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
-				}
+				m, err = SelectMap(bs, fields)
+			} else {
+				m, err = SelectMap(d, fields)
+			}
+			if err != nil && err.Error() != "fields cannot be empty" {
+				return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
+			} else if err == nil {
 				d = m
+				selected = true
 			}
-			m, err := SelectMap(d, fields)
-			if err != nil {
-				return nil, false, fmt.Errorf("fail to select fields %v for error %v", fields, err)
-			}
-			d = m
-			selected = true
 		}
 
 		switch format {
@@ -120,6 +119,7 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 				}
 				d = m
 			}
+			// TODO: if headers are defined by user, find a way to keep the order
 			outBytes, err := c.Encode(d)
 			return outBytes, transformed || selected, err
 		default: // should not happen
@@ -138,6 +138,16 @@ func SelectMap(input interface{}, fields []string) (interface{}, error) {
 	if len(fields) == 0 {
 		return input, fmt.Errorf("fields cannot be empty")
 	}
+
+	if _, ok := input.([]byte); ok {
+		var m map[string]interface{}
+		err := json.Unmarshal(input.([]byte), &m)
+		if err != nil {
+			return input, fmt.Errorf("fail to decode data %s for error %v", string(input.([]byte)), err)
+		}
+		input = m
+	}
+
 	outputs := make([]map[string]interface{}, 0)
 	switch input.(type) {
 	case map[string]interface{}:
