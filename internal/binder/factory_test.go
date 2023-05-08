@@ -15,22 +15,12 @@
 package binder
 
 import (
-	"github.com/lf-edge/ekuiper/internal/binder/mock"
 	"reflect"
 	"sort"
 	"testing"
-)
 
-func TestEntry(t *testing.T) {
-	m := mock.NewMockFactory()
-	e := &FactoryEntry{
-		Name:    "mock",
-		Factory: m,
-	}
-	if e == nil {
-		t.Errorf("cannot instantiate FactoryEntry")
-	}
-}
+	"github.com/lf-edge/ekuiper/internal/binder/mock"
+)
 
 func TestEntriesSort(t *testing.T) {
 	m := mock.NewMockFactory()

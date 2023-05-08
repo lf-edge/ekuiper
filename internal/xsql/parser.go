@@ -16,15 +16,17 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/golang-collections/collections/stack"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"io"
 	"math"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/golang-collections/collections/stack"
+
+	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type Parser struct {
@@ -1391,8 +1393,6 @@ func (p *Parser) parseStreamArrayType() (ast.FieldType, error) {
 		} else {
 			return nil, fmt.Errorf("found %q, expect stream data types.", lit1)
 		}
-	} else {
-
 	}
 	return nil, nil
 }

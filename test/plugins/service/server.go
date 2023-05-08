@@ -22,7 +22,6 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"time"
 )
 
 func alert(w http.ResponseWriter, req *http.Request) {
@@ -40,8 +39,8 @@ func alert(w http.ResponseWriter, req *http.Request) {
 var count = 0
 
 type Sensor struct {
-	Temperature int `json: "temperature""`
-	Humidity    int `json: "humidity"`
+	Temperature int `json:"temperature"`
+	Humidity    int `json:"humidity"`
 }
 
 var s = &Sensor{}
@@ -57,7 +56,6 @@ func pullSrv(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if count%2 == 0 {
-		rand.Seed(time.Now().UnixNano())
 		s.Temperature = rand.Intn(100)
 		s.Humidity = rand.Intn(100)
 	}

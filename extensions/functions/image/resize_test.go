@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,14 @@
 package main
 
 import (
+	"os"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"io/ioutil"
-	"reflect"
-	"testing"
 )
 
 func TestResize(t *testing.T) {
@@ -39,12 +40,12 @@ func TestResize(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		payload, err := ioutil.ReadFile(tt.image)
+		payload, err := os.ReadFile(tt.image)
 		if err != nil {
 			t.Errorf("Failed to read image file %s", tt.image)
 			continue
 		}
-		resized, err := ioutil.ReadFile(tt.result)
+		resized, err := os.ReadFile(tt.result)
 		if err != nil {
 			t.Errorf("Failed to read result image file %s", tt.result)
 			continue
