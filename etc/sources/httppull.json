@@ -188,7 +188,7 @@
 			}
 		}, {
 			"name": "headers",
-			"default": {"Accept": "application/json"},
+			"default": {},
 			"optional": true,
 			"control": "list",
 			"type": "object",
