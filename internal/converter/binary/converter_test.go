@@ -26,7 +26,7 @@ func TestMessageDecode(t *testing.T) {
 	if err != nil {
 		t.Errorf("Cannot read image: %v", err)
 	}
-	var tests = []struct {
+	tests := []struct {
 		payload []byte
 		result  map[string]interface{}
 	}{

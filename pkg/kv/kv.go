@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@
 package kv
 
 type KeyValue interface {
-	// Set key to hold string value if key does not exist otherwise return an error
+	// Setnx sets key to hold string value if key does not exist otherwise return an error
 	Setnx(key string, value interface{}) error
 	// Set key to hold the string value. If key already holds a value, it is overwritten
 	Set(key string, value interface{}) error
 	Get(key string, val interface{}) (bool, error)
 	GetKeyedState(key string) (interface{}, error)
 	SetKeyedState(key string, value interface{}) error
-	//Must return *common.Error with NOT_FOUND error
+	// Delete must return *common.Error with NOT_FOUND error
 	Delete(key string) error
 	Keys() (keys []string, err error)
 	All() (all map[string]string, err error)

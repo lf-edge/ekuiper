@@ -16,9 +16,11 @@ package graph
 
 import "fmt"
 
-type IoInputType uint8
-type IoRowType uint8
-type IoCollectionType uint8
+type (
+	IoInputType      uint8
+	IoRowType        uint8
+	IoCollectionType uint8
+)
 
 const (
 	IOINPUT_TYPE_SAME       IoInputType = iota

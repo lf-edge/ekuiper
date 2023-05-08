@@ -16,10 +16,11 @@ package sink
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/topo/collector"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"sync"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/topo/collector"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 // NewLogSink log action, no properties now
