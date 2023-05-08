@@ -16,16 +16,18 @@ package memory
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/benbjohnson/clock"
 	"github.com/gdexlab/go-render/render"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestSharedInmemoryNode(t *testing.T) {
@@ -84,6 +86,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 			}
 			return
 		default:
+			time.Sleep(1 * time.Millisecond)
 		}
 	}
 }
