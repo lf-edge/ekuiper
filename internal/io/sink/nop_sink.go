@@ -23,7 +23,7 @@ type NopSink struct {
 }
 
 func (ns *NopSink) Configure(ps map[string]interface{}) error {
-	var log = false
+	var log bool
 	l, ok := ps["log"]
 	if ok {
 		log = l.(bool)

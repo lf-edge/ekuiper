@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	zmq "github.com/pebbe/zmq4"
 	"os"
 	"time"
+
+	zmq "github.com/pebbe/zmq4"
 )
 
 type zmqPub struct {

@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@ package json
 
 import (
 	"encoding/json"
+
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-type Converter struct {
-}
+type Converter struct{}
 
 var converter = &Converter{}
 

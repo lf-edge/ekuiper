@@ -39,6 +39,7 @@ func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]inter
 		Time: time.Now(),
 	}
 }
+
 func NewDefaultSourceTupleWithTime(message map[string]interface{}, meta map[string]interface{}, timestamp time.Time) *DefaultSourceTuple {
 	return &DefaultSourceTuple{
 		Mess: message,
@@ -50,6 +51,7 @@ func NewDefaultSourceTupleWithTime(message map[string]interface{}, meta map[stri
 func (t *DefaultSourceTuple) Message() map[string]interface{} {
 	return t.Mess
 }
+
 func (t *DefaultSourceTuple) Meta() map[string]interface{} {
 	return t.M
 }
@@ -75,7 +77,8 @@ type Logger interface {
 
 type Store interface {
 	SaveState(checkpointId int64, opId string, state map[string]interface{}) error
-	SaveCheckpoint(checkpointId int64) error //Save the whole checkpoint state into storage
+	// SaveCheckpoint saves the whole checkpoint state into storage
+	SaveCheckpoint(checkpointId int64) error
 	GetOpState(opId string) (*sync.Map, error)
 	Clean() error
 }
@@ -88,7 +91,7 @@ type Source interface {
 	// Open Should be sync function for normal case. The container will run it in go func
 	Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
 	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
-	//read from the yaml
+	// read from the yaml
 	Configure(datasource string, props map[string]interface{}) error
 	Closable
 }
@@ -97,7 +100,7 @@ type LookupSource interface {
 	// Open creates the connection to the external data source
 	Open(ctx StreamContext) error
 	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
-	//read from the yaml
+	// read from the yaml
 	Configure(datasource string, props map[string]interface{}) error
 	// Lookup receive lookup values to construct the query and return query results
 	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
@@ -160,7 +163,8 @@ type GraphNode struct {
 	Type     string                 `json:"type"`
 	NodeType string                 `json:"nodeType"`
 	Props    map[string]interface{} `json:"props"`
-	UI       map[string]interface{} `json:"ui"` //placeholder for ui properties
+	// UI is a placeholder for ui properties
+	UI map[string]interface{} `json:"ui"`
 }
 
 type RuleGraph struct {
@@ -231,7 +235,7 @@ type Function interface {
 	// Validate The argument is a list of xsql.Expr
 	Validate(args []interface{}) error
 	// Exec Execute the function, return the result and if execution is successful.
-	//If execution fails, return the error and false.
+	// If execution fails, return the error and false.
 	Exec(args []interface{}, ctx FunctionContext) (interface{}, bool)
 	// IsAggregate If this function is an aggregate function. Each parameter of an aggregate function will be a slice
 	IsAggregate() bool

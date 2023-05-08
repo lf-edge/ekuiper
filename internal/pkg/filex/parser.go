@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ func ReadJsonUnmarshal(path string, ret interface{}) error {
 	}
 	return nil
 }
+
 func WriteYamlMarshal(path string, data interface{}) error {
 	y, err := yaml.Marshal(data)
 	if nil != err {

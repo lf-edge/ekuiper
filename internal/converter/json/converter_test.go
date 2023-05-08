@@ -29,7 +29,7 @@ func TestMessageDecode(t *testing.T) {
 		t.Errorf("Cannot read image: %v", err)
 	}
 	b64img := base64.StdEncoding.EncodeToString(image)
-	var tests = []struct {
+	tests := []struct {
 		payload []byte
 		format  string
 		result  map[string]interface{}
