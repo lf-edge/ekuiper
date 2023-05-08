@@ -16,10 +16,12 @@ package protobuf
 
 import (
 	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"
+
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
@@ -299,8 +301,6 @@ func (fc *FieldConverter) decodeSubMessage(input interface{}, ft *desc.MessageDe
 			return nil, err
 		}
 		return fc.DecodeMessage(message, ft), nil
-	case *dynamic.Message:
-		return fc.DecodeMessage(v, ft), nil
 	default:
 		return nil, fmt.Errorf("cannot decode %[1]T(%[1]v) to map", input)
 	}
