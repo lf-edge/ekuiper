@@ -21,8 +21,8 @@ type (
 
 const (
 	REST    protocol = "rest"
-	GRPC             = "grpc"
-	MSGPACK          = "msgpack-rpc"
+	GRPC    protocol = "grpc"
+	MSGPACK protocol = "msgpack-rpc"
 )
 
 const (
