@@ -188,23 +188,7 @@
 			}
 		}, {
 			"name": "headers",
-			"default": {
-				"Accept": {
-					"name": "Accept",
-					"default": "application/json",
-					"optional": true,
-					"control": "text",
-					"type": "string",
-					"hint": {
-						"en_US": "Accept format",
-						"zh_CN": "Accept format"
-					},
-					"label": {
-						"en_US": "Accept format",
-						"zh_CN": "Accept format"
-					}
-				}
-			},
+			"default": {},
 			"optional": true,
 			"control": "list",
 			"type": "object",
