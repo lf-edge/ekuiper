@@ -17,6 +17,11 @@ package topotest
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -29,10 +34,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strings"
-	"testing"
-	"time"
 )
 
 func init() {
@@ -191,7 +192,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 				}
 				mockClock.Set(cast.TimeFromUnixMilli(n))
 				conf.Log.Debugf("Clock set to %d", conf.GetNowInMilli())
-				time.Sleep(1)
+				time.Sleep(1 * time.Millisecond)
 			}
 			select {
 			case err := <-errCh:
