@@ -31,12 +31,14 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
+	"github.com/ugorji/go/codec"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"github.com/ugorji/go/codec"
-	"google.golang.org/grpc"
 )
 
 // NewExecutor
@@ -122,7 +124,7 @@ func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params
 		)
 		go infra.SafeRun(func() error {
 			defer cancel()
-			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithInsecure(), grpc.WithBlock())
+			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 			return e
 		})
 
