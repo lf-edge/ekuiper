@@ -34,10 +34,10 @@ basic:
   # Maximum file storage hours
   maxAge: 168
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
-  ignoreCase: true
+  ignoreCase: false
 ```
 
-配置项 **ignoreCase** 用于指定 SQL 处理中是否大小写无关。默认情况下，为了与标准 SQL 兼容，其值为 true 。从而使得输入数据的列名大小写可以与 SQL 中的定义不同。如果 SQL 语句中，流定义以及输入数据中可以保证列名大小写完全一致，则建议设置该值为 false 以获得更优的性能。
+配置项 **ignoreCase** 用于指定 SQL 处理中是否大小写无关。若为 true，则输入数据的列名大小写可以与 SQL 中的定义不同。如果 SQL 语句中，流定义以及输入数据中可以保证列名大小写完全一致，则建议设置该值为 false 以获得更优的性能。在 1.10 版本之前，其默认值为 true ， 以兼容标准 SQL ；在 1.10 及之后版本中，默认值改为 false ，以获得更优的性能 。
 
 ## 系统日志
 用户将名为 KuiperSyslogKey 的环境变量的值设置为 true 时，日志将打印到系统日志中。

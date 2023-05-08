@@ -845,21 +845,21 @@ var TestData = map[string][]*xsql.Tuple{
 		{
 			Emitter: "helloStr",
 			Message: map[string]interface{}{
-				"Name": "world",
+				"name": "world",
 			},
 			Timestamp: 1541152486013,
 		},
 		{
 			Emitter: "helloStr",
 			Message: map[string]interface{}{
-				"Name": "golang",
+				"name": "golang",
 			},
 			Timestamp: 1541152487013,
 		},
 		{
 			Emitter: "helloStr",
 			Message: map[string]interface{}{
-				"Name": "peacock",
+				"name": "peacock",
 			},
 			Timestamp: 1541152488013,
 		},
