@@ -155,7 +155,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;sql&quot;: &quot;SELECT temperature,humidity, raw, meta(id) AS eid, meta(temperature-&gt;Origin) AS torigin, meta(Humidity-&gt;DeviceName) AS hdevice, meta(raw-&gt;mediaType) as rawMedia FROM demo WHERE meta(deviceName)=\&quot;demo2\&quot;&quot;,&#xd;
+  &quot;sql&quot;: &quot;SELECT Temperature as temperature, Humidity as humidity, raw, meta(id) AS eid, meta(Temperature-&gt;origin) AS torigin, meta(Humidity-&gt;deviceName) AS hdevice, meta(raw-&gt;mediaType) as rawMedia FROM demo WHERE meta(deviceName)=\&quot;demo2\&quot;&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
@@ -426,7 +426,7 @@
             <stringProp name="mqtt.conn_attampt_max">0</stringProp>
             <stringProp name="mqtt.reconn_attampt_max">0</stringProp>
             <stringProp name="mqtt.ws_path"></stringProp>
-            <stringProp name="mqtt.conn_clean_session">true</stringProp>
+            <boolProp name="mqtt.conn_clean_session">true</boolProp>
           </net.xmeter.samplers.ConnectSampler>
           <hashTree/>
         </hashTree>

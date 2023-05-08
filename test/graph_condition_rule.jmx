@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022 EMQ Technologies Co., Ltd.
+  ~ Copyright 2022-2023 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -275,7 +275,7 @@
               <boolProp name="mqtt.add_timestamp">false</boolProp>
               <stringProp name="mqtt.message_type">String</stringProp>
               <stringProp name="mqtt.message_type_fixed_length">1024</stringProp>
-              <stringProp name="mqtt.message_to_sent">{&quot;temperature&quot;: ${temperature}, &quot;Humidity&quot; : ${humidity}}</stringProp>
+              <stringProp name="mqtt.message_to_sent">{&quot;temperature&quot;: ${temperature}, &quot;humidity&quot; : ${humidity}}</stringProp>
               <boolProp name="mqtt.retained_message">false</boolProp>
             </net.xmeter.samplers.PubSampler>
             <hashTree/>
