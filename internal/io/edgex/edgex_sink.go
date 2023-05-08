@@ -43,7 +43,7 @@ type SinkConf struct {
 	SourceName   string      `json:"sourceName"`
 	Metadata     string      `json:"metadata"`
 	DataTemplate string      `json:"dataTemplate"`
-	Fields       string      `json:"fields"`
+	Fields       []string    `json:"fields"`
 }
 
 type EdgexMsgBusSink struct {
