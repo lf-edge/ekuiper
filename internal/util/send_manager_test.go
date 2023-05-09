@@ -73,3 +73,13 @@ func TestSendManager(t *testing.T) {
 		}
 	}
 }
+
+func TestSendEmpty(t *testing.T) {
+	sm, err := NewSendManager(1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sm.outputCh = make(chan []interface{})
+	// test shouldn't be blocked
+	sm.send()
+}
