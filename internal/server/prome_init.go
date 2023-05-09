@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,15 +20,17 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func init() {
-	p := promeComp{}
+	p := &promeComp{}
 	servers["prometheus"] = p
 	components["prometheus"] = p
 }
@@ -37,11 +39,11 @@ type promeComp struct {
 	s *http.Server
 }
 
-func (p promeComp) register() {
+func (p *promeComp) register() {
 	// Do nothing
 }
 
-func (p promeComp) rest(r *mux.Router) {
+func (p *promeComp) rest(r *mux.Router) {
 	portPrometheus := conf.Config.Basic.PrometheusPort
 	portRest := conf.Config.Basic.RestPort
 	if portPrometheus == portRest {
@@ -52,7 +54,7 @@ func (p promeComp) rest(r *mux.Router) {
 	}
 }
 
-func (p promeComp) serve() {
+func (p *promeComp) serve() {
 	if conf.Config.Basic.Prometheus {
 		//Start prometheus service
 		portPrometheus := conf.Config.Basic.PrometheusPort
@@ -83,7 +85,7 @@ func (p promeComp) serve() {
 	}
 }
 
-func (p promeComp) close() {
+func (p *promeComp) close() {
 	if p.s != nil {
 		if err := p.s.Shutdown(context.TODO()); err != nil {
 			logger.Errorf("prometheus server shutdown error: %v", err)
