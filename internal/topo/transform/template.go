@@ -18,11 +18,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"text/template"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"text/template"
 )
 
 // TransFunc is the function to transform data
@@ -181,6 +182,4 @@ func SelectMap(input interface{}, fields []string) (interface{}, error) {
 	default:
 		return input, fmt.Errorf("unsupported type %v", input)
 	}
-
-	return input, nil
 }
