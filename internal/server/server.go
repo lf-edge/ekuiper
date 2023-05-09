@@ -200,13 +200,13 @@ func initRuleset() error {
 		defer os.Create(signalFile)
 		content, err := os.ReadFile(filepath.Join(loc, "init.json"))
 		if err != nil {
-			conf.Log.Infof("fail to read init file: %v", err)
+			conf.Log.Errorf("fail to read init file: %v", err)
 			return nil
 		}
 		conf.Log.Infof("start to initialize ruleset")
 		_, counts, err := rulesetProcessor.Import(content)
 		if err != nil {
-			conf.Log.Infof("fail to import ruleset: %v", err)
+			conf.Log.Errorf("fail to import ruleset: %v", err)
 			return nil
 		}
 		conf.Log.Infof("initialzie %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
