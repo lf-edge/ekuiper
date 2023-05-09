@@ -22,17 +22,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/sink"
-	"github.com/lf-edge/ekuiper/internal/pkg/model"
-	"github.com/lf-edge/ekuiper/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/pkg/infra"
 	"io"
 	"net/http"
 	"net/rpc"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/sink"
+	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 const QueryRuleId = "internal-ekuiper_query_rule"
@@ -359,7 +360,9 @@ func (t *Server) ExportConfiguration(arg *model.ExportDataDesc, reply *string) e
 	} else {
 		jsonBytes, err = ruleMigrationProcessor.ConfigurationPartialExport(rules)
 	}
-	jsonBytes, err = configurationExport()
+	if err != nil {
+		return err
+	}
 	_, err = io.Copy(f, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return fmt.Errorf("fail to save to file %s:%v", file, err)

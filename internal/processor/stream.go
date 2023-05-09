@@ -132,15 +132,15 @@ func (p *StreamProcessor) RecoverLookupTable() error {
 				parser := xsql.NewParser(strings.NewReader(vs.Statement))
 				stmt, e := xsql.Language.Parse(parser)
 				if e != nil {
-					log.Error(err)
+					log.Error(e)
 				}
 				switch s := stmt.(type) {
 				case *ast.StreamStmt:
 					log.Infof("Starting lookup table %s", s.Name)
 					e = lookup.CreateInstance(string(s.Name), s.Options.TYPE, s.Options)
-					if err != nil {
-						log.Errorf("%s", err.Error())
-						return err
+					if e != nil {
+						log.Errorf("%s", e.Error())
+						return e
 					}
 				default:
 					log.Errorf("Invalid lookup table statement: %s", vs.Statement)

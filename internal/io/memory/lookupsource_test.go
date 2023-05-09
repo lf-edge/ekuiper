@@ -16,14 +16,16 @@ package memory
 
 import (
 	gocontext "context"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestUpdateLookup(t *testing.T) {
@@ -68,6 +70,10 @@ func TestUpdateLookup(t *testing.T) {
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}, mc.Now()),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("expect %v but got %v", expected, result)
 	}
@@ -116,7 +122,7 @@ func TestLookup(t *testing.T) {
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
 	}
-	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
+	result, _ := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
 	if len(result) != 2 {
 		t.Errorf("expect %v but got %v", expected, result)
 	} else {

@@ -17,13 +17,15 @@ package file
 import (
 	"bufio"
 	"fmt"
-	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zstd"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"io"
 	"os"
 	"time"
+
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zstd"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type fileWriter struct {
@@ -46,7 +48,9 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 		err error
 	)
 	if _, err = os.Stat(fn); os.IsNotExist(err) {
-		_, err = os.Create(fn)
+		if _, err := os.Create(fn); err != nil {
+			return nil, fmt.Errorf("fail to create file %s: %v", fn, err)
+		}
 	}
 	f, err = os.OpenFile(fn, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, os.ModeAppend)
 	if err != nil {

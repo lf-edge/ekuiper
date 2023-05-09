@@ -32,6 +32,9 @@ func BenchmarkCompressor(b *testing.B) {
 	for _, c := range compressors {
 		b.Run(c, func(b *testing.B) {
 			wc, err := GetCompressor(c)
+			if err != nil {
+				b.Fatal(err)
+			}
 			firstCompressedData, err := wc.Compress(data)
 			if err != nil {
 				b.Fatal(err)

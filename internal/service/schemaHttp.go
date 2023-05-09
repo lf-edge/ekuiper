@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,16 @@ package service
 
 import (
 	"fmt"
-	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/dynamic"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"net/http"
 	"regexp"
 	"strings"
+
+	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/dynamic"
+	"google.golang.org/protobuf/reflect/protoreflect"
+
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type httpConnMeta struct {
@@ -180,6 +182,9 @@ func (d *wrappedProtoDescriptor) ConvertHttpMapping(method string, params []inte
 			} else {
 				return nil, fmt.Errorf("invalid body field %s, must be a message", ho.BodyField)
 			}
+		}
+		if err != nil {
+			return nil, err
 		}
 	} else { // If options are not set, use the default setting
 		hcm.Method = "POST"

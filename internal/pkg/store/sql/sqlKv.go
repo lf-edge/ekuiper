@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
+	"strings"
+
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"strings"
 )
 
 type sqlKvStore struct {
@@ -48,11 +49,14 @@ func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
 func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
 	return kv.database.Apply(func(db *sql.DB) error {
 		b, err := kvEncoding.Encode(value)
-		if nil != err {
+		if err != nil {
 			return err
 		}
 		query := fmt.Sprintf("INSERT INTO '%s'(key,val) values(?,?);", kv.table)
 		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
 		_, err = stmt.Exec(key, b)
 		stmt.Close()
 		if err != nil {

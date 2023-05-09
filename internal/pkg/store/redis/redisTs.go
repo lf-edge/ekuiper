@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,9 +22,11 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
-	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
-	"github.com/redis/go-redis/v9"
 	"strconv"
+
+	"github.com/redis/go-redis/v9"
+
+	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 )
 
 const (
@@ -82,12 +84,12 @@ func (t *ts) Set(key int64, value interface{}) (bool, error) {
 }
 
 func (t *ts) Get(key int64, value interface{}) (bool, error) {
-	reply, err := t.db.ZRevRangeByScore(context.Background(), t.key, &redis.ZRangeBy{Min: strconv.FormatInt(key, 10), Max: strconv.FormatInt(key, 10)}).Result()
+	reply, _ := t.db.ZRevRangeByScore(context.Background(), t.key, &redis.ZRangeBy{Min: strconv.FormatInt(key, 10), Max: strconv.FormatInt(key, 10)}).Result()
 	if len(reply) == 0 {
 		return false, fmt.Errorf("record under %s key and %d score not found", t.key, key)
 	}
 	dec := gob.NewDecoder(bytes.NewBuffer([]byte(reply[0])))
-	err = dec.Decode(value)
+	err := dec.Decode(value)
 	if err != nil {
 		return false, err
 	}
@@ -116,12 +118,12 @@ func (t *ts) Drop() error {
 
 func getLast(db *redis.Client, key string, value interface{}) (int64, error) {
 	var last int64 = 0
-	reply, err := db.ZRevRangeWithScores(context.Background(), key, 0, 0).Result()
+	reply, _ := db.ZRevRangeWithScores(context.Background(), key, 0, 0).Result()
 	if len(reply) > 0 {
 		if value != nil {
 			v := reply[0].Member.(string)
 			dec := gob.NewDecoder(bytes.NewBuffer([]byte(v)))
-			if err = dec.Decode(value); err != nil {
+			if err := dec.Decode(value); err != nil {
 				return 0, err
 			}
 		}

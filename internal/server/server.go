@@ -18,6 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"sort"
+	"syscall"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/binder/meta"
@@ -29,13 +37,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"net/http"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"sort"
-	"syscall"
-	"time"
 )
 
 var (
@@ -204,6 +205,10 @@ func initRuleset() error {
 		}
 		conf.Log.Infof("start to initialize ruleset")
 		_, counts, err := rulesetProcessor.Import(content)
+		if err != nil {
+			conf.Log.Infof("fail to import ruleset: %v", err)
+			return nil
+		}
 		conf.Log.Infof("initialzie %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
 	}
 	return nil

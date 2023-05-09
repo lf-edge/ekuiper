@@ -17,8 +17,6 @@ package service
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -26,6 +24,9 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 )
 
 var m *Manager
@@ -360,6 +361,10 @@ func TestManage(t *testing.T) {
 
 	// Install the dynamic zip
 	url, err := urlFromFilePath(outPath)
+	if err != nil {
+		t.Errorf("Create URL from file path %s: %v", outPath, err)
+		return
+	}
 	err = m.Create(&ServiceCreationRequest{
 		Name: "dynamic",
 		File: url.String(),
@@ -391,7 +396,7 @@ func TestManage(t *testing.T) {
 	expectedFunctions := []string{"ListShelves", "CreateShelf", "GetShelf", "DeleteShelf", "ListBooks", "createBook", "GetBook", "DeleteBook", "GetMessage", "SearchMessage", "UpdateMessage", "PatchMessage", "helloFromGrpc", "ComputeFromGrpc", "getFeatureFromGrpc", "objectDetectFromGrpc", "getStatusFromGrpc", "notUsedRpc", "helloFromRest", "ComputeFromRest", "getFeatureFromRest", "objectDetectFromRest", "getStatusFromRest", "restEncodedJson", "helloFromMsgpack", "ComputeFromMsgpack", "getFeatureFromMsgpack", "objectDetectFromMsgpack", "getStatusFromMsgpack", "notUsedMsgpack", "SayHello2"}
 	sort.Strings(expectedFunctions)
 
-	functions, err := m.ListFunctions()
+	functions, _ := m.ListFunctions()
 	sort.Strings(functions)
 	if !reflect.DeepEqual(expectedFunctions, functions) {
 		t.Errorf("Get all installed functions faile \nexpect\t\t%v, \nbut got\t\t%v", expectedFunctions, functions)
