@@ -22,32 +22,33 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/sink"
-	"github.com/lf-edge/ekuiper/internal/pkg/model"
-	"github.com/lf-edge/ekuiper/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/pkg/infra"
 	"io"
 	"net/http"
 	"net/rpc"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/sink"
+	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 const QueryRuleId = "internal-ekuiper_query_rule"
 
 func init() {
-	servers["rpc"] = rpcComp{}
+	servers["rpc"] = &rpcComp{}
 }
 
 type rpcComp struct {
 	s *http.Server
 }
 
-func (r rpcComp) register() {}
+func (r *rpcComp) register() {}
 
-func (r rpcComp) serve() {
+func (r *rpcComp) serve() {
 	// Start rpc service
 	server := new(Server)
 	portRpc := conf.Config.Basic.Port
@@ -73,7 +74,7 @@ func (r rpcComp) serve() {
 	initQuery()
 }
 
-func (r rpcComp) close() {
+func (r *rpcComp) close() {
 	if r.s != nil {
 		if err := r.s.Shutdown(context.TODO()); err != nil {
 			logger.Errorf("rpc server shutdown error: %v", err)
