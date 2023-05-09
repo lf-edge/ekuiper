@@ -26,7 +26,6 @@ type SendManager struct {
 	bufferCh       chan interface{}
 	buffer         []interface{}
 	outputCh       chan []interface{}
-	notifyCh       chan interface{}
 }
 
 func NewSendManager(batchSize, lingerInterval int) (*SendManager, error) {
@@ -40,7 +39,6 @@ func NewSendManager(batchSize, lingerInterval int) (*SendManager, error) {
 	sm.buffer = make([]interface{}, 0, batchSize)
 	sm.bufferCh = make(chan interface{})
 	sm.outputCh = make(chan []interface{}, 16)
-	sm.notifyCh = make(chan interface{}, 16)
 	return sm, nil
 }
 
@@ -102,12 +100,4 @@ func (sm *SendManager) send() {
 
 func (sm *SendManager) GetOutputChan() <-chan []interface{} {
 	return sm.outputCh
-}
-
-func (sm *SendManager) SendNotify(notify interface{}) {
-	sm.notifyCh <- notify
-}
-
-func (sm *SendManager) GetNotifyChan() <-chan interface{} {
-	return sm.notifyCh
 }
