@@ -18,6 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"sort"
+	"syscall"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/binder/meta"
@@ -29,13 +37,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"net/http"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"sort"
-	"syscall"
-	"time"
 )
 
 var (
@@ -168,7 +169,7 @@ func StartUp(Version, LoadFileType string) {
 	}
 	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s:%d. \n", Version, conf.Config.Basic.Port, restHttpType, conf.Config.Basic.RestIp, conf.Config.Basic.RestPort)
 	logger.Info(msg)
-	fmt.Printf(msg)
+	fmt.Print(msg)
 
 	//Stop the services
 	sigint := make(chan os.Signal, 1)
