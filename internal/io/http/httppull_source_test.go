@@ -18,11 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/benbjohnson/clock"
-	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mock"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -30,12 +25,19 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/benbjohnson/clock"
+	"github.com/gorilla/mux"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/mock"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func jsonOut(w http.ResponseWriter, err error, out interface{}) {
+func jsonOut(w http.ResponseWriter, _ error, out interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	err = enc.Encode(out)
+	err := enc.Encode(out)
 	// Problems encoding
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

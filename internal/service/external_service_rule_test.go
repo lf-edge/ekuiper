@@ -18,14 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/gorilla/mux"
-	kconf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
-	"google.golang.org/grpc"
 	"io"
 	"net"
 	"net/http"
@@ -33,6 +25,16 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/golang/protobuf/ptypes/wrappers"
+	"github.com/gorilla/mux"
+	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
+	"google.golang.org/grpc"
+
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type RestHelloRequest struct {
@@ -517,10 +519,10 @@ func TestRestService(t *testing.T) {
 	}, 0)
 }
 
-func jsonOut(w http.ResponseWriter, err error, out interface{}) {
+func jsonOut(w http.ResponseWriter, _ error, out interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	err = enc.Encode(out)
+	err := enc.Encode(out)
 	// Problems encoding
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
