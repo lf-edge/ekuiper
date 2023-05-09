@@ -238,8 +238,8 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 						}
 					}
 				}
+				sort.Strings(header)
 			}
-			sort.Strings(header)
 			headers = strings.Join(header, m.c.Delimiter)
 		}
 		nfn := fn

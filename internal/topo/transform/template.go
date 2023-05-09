@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
+	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 	"text/template"
@@ -50,6 +51,7 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 		if err != nil {
 			return nil, err
 		}
+		c.(*delimited.Converter).SetColumns(fields)
 	case message.FormatJson:
 		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format})
 		if err != nil {
@@ -119,7 +121,6 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 				}
 				d = m
 			}
-			// TODO: if headers are defined by user, find a way to keep the order
 			outBytes, err := c.Encode(d)
 			return outBytes, transformed || selected, err
 		default: // should not happen
