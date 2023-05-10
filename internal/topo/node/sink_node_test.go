@@ -42,7 +42,7 @@ func init() {
 func TestSinkTemplate_Apply(t *testing.T) {
 	conf.InitConf()
 	transform.RegisterAdditionalFuncs()
-	var tests = []struct {
+	tests := []struct {
 		config map[string]interface{}
 		data   []map[string]interface{}
 		result [][]byte
@@ -139,7 +139,7 @@ func TestSinkTemplate_Apply(t *testing.T) {
 
 func TestOmitEmpty_Apply(t *testing.T) {
 	conf.InitConf()
-	var tests = []struct {
+	tests := []struct {
 		config map[string]interface{}
 		data   []map[string]interface{}
 		result [][]byte
@@ -244,12 +244,12 @@ func TestFormat_Apply(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//Copy init.proto
+	// Copy init.proto
 	bytesRead, err := os.ReadFile("../../schema/test/test1.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "test1.proto"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "test1.proto"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +265,7 @@ func TestFormat_Apply(t *testing.T) {
 		t.Fatal(err)
 	}
 	transform.RegisterAdditionalFuncs()
-	var tests = []struct {
+	tests := []struct {
 		name   string
 		config map[string]interface{}
 		data   []map[string]interface{}
@@ -317,7 +317,7 @@ func TestFormat_Apply(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		config map[string]interface{}
 		sconf  *SinkConf
 		err    error
@@ -494,7 +494,7 @@ func Test_itemToMap(t *testing.T) {
 func TestSinkFields_Apply(t *testing.T) {
 	conf.InitConf()
 	transform.RegisterAdditionalFuncs()
-	var tests = []struct {
+	tests := []struct {
 		dt        string
 		format    string
 		schemaId  string

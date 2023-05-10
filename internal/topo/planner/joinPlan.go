@@ -28,18 +28,18 @@ func (p JoinPlan) Init() *JoinPlan {
 }
 
 func (p *JoinPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
-	//TODO multiple join support
-	//Assume only one join
+	// TODO multiple join support
+	// Assume only one join
 	j := p.joins[0]
 	switch j.JoinType {
 	case ast.INNER_JOIN:
 		a := combine(condition, j.Expr)
 		multipleSourcesCondition, singleSourceCondition := extractCondition(a)
 		rest, _ := p.baseLogicalPlan.PushDownPredicate(singleSourceCondition)
-		j.Expr = combine(multipleSourcesCondition, rest) //always swallow all conditions
+		j.Expr = combine(multipleSourcesCondition, rest) // always swallow all conditions
 		p.joins[0] = j
 		return nil, p
-	default: //TODO fine grain handling for left/right join
+	default: // TODO fine grain handling for left/right join
 		multipleSourcesCondition, singleSourceCondition := extractCondition(condition)
 		rest, _ := p.baseLogicalPlan.PushDownPredicate(singleSourceCondition)
 		// never swallow anything
@@ -67,7 +67,7 @@ func extractCondition(condition ast.Expr) (unpushable ast.Expr, pushable ast.Exp
 		return
 	}
 
-	//default case: all condition are unpushable
+	// default case: all condition are unpushable
 	return condition, nil
 }
 

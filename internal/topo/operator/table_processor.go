@@ -23,7 +23,7 @@ import (
 )
 
 type TableProcessor struct {
-	//Pruned stream fields. Could be streamField(with data type info) or string
+	// Pruned stream fields. Could be streamField(with data type info) or string
 	defaultFieldProcessor
 
 	checkSchema  bool

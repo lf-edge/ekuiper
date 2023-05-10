@@ -220,7 +220,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.Plu
 			return
 		}
 		prettyName := strings.ToUpper(osrelease["PRETTY_NAME"])
-		var os = "debian"
+		os := "debian"
 		if strings.Contains(prettyName, "ALPINE") {
 			os = "alpine"
 		}
@@ -236,9 +236,11 @@ func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.Plu
 	}
 }
 
-var NativeSourcePlugin = []string{"random", "zmq", "sql", "video"}
-var NativeSinkPlugin = []string{"image", "influx", "influx2", "tdengine", "zmq", "kafka", "sql"}
-var NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage", "tfLite"}
+var (
+	NativeSourcePlugin   = []string{"random", "zmq", "sql", "video"}
+	NativeSinkPlugin     = []string{"image", "influx", "influx2", "tdengine", "zmq", "kafka", "sql"}
+	NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage", "tfLite"}
+)
 
 func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (result map[string]string, err error) {
 	ptype := "sources"
@@ -260,7 +262,7 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (result map[st
 	for _, host := range hostsArr {
 		host := strings.Trim(host, " ")
 		tmp := []string{host, "kuiper-plugins", version, os, ptype}
-		//The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
+		// The url is similar to http://host:port/kuiper-plugins/0.9.1/debian/sinks/
 		url := strings.Join(tmp, "/")
 
 		for _, p := range plugins {

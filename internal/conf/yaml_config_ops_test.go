@@ -44,11 +44,9 @@ func TestConfigKeys_LoadConnectionEdgex(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestConfigKeys_Ops(t *testing.T) {
-
 	httpCfg, err := NewConfigOperatorFromSourceYaml("httppull")
 	if err != nil {
 		t.Error(err)
@@ -80,7 +78,6 @@ func TestConfigKeys_Ops(t *testing.T) {
 	if err := isDelData(delData, httpCfg.CopyConfContent()[`new`]); nil != err {
 		t.Error(err)
 	}
-
 }
 
 func TestConfigKeys_GetPluginName(t *testing.T) {
@@ -131,12 +128,11 @@ func TestConfigKeys_CopyReadOnlyConfContent(t *testing.T) {
 
 func TestConfigKeys_GetConfKeys(t *testing.T) {
 	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
-
 	if err != nil {
 		t.Error(err)
 	}
 	keys := mqttCfg.GetConfKeys()
-	//currently only etcCfg, no dataCfg
+	// currently only etcCfg, no dataCfg
 	source := []string{"default", "demo_conf"}
 	if keys == nil {
 		t.Errorf("Not Equal")
@@ -151,7 +147,6 @@ func TestConfigKeys_GetConfKeys(t *testing.T) {
 			t.Errorf("Not equal, got %v, want %v", key, source[i])
 		}
 	}
-
 }
 
 func TestConfigKeys_GetReadOnlyConfKeys(t *testing.T) {
@@ -174,7 +169,6 @@ func TestConfigKeys_GetReadOnlyConfKeys(t *testing.T) {
 			t.Errorf("Not equal, got %v, want %v", key, source[i])
 		}
 	}
-
 }
 
 func TestConfigKeys_GetUpdatableConfKeys(t *testing.T) {
@@ -240,7 +234,6 @@ func TestConfigKeys_AddConfKeyField(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestSourceConfigKeysOps_SaveCfgToFile(t *testing.T) {
@@ -340,6 +333,7 @@ func isDelData(js string, cf map[string]interface{}) error {
 	}
 	return nil
 }
+
 func isAddData(js string, cf map[string]interface{}) error {
 	var addNode map[string]interface{}
 	if err := json.Unmarshal([]byte(js), &addNode); nil != err {

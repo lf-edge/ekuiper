@@ -27,8 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-type imageResize struct {
-}
+type imageResize struct{}
 
 func (f *imageResize) Validate(args []interface{}) error {
 	if len(args) < 3 {

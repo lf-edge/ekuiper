@@ -20,7 +20,7 @@ import (
 )
 
 func TestManager(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		name  string
 		found bool
 	}{

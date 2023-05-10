@@ -168,7 +168,7 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 		}
 		values[key] = val
 	}
-	//get action type
+	// get action type
 	rowkind := ast.RowkindUpsert
 	if r.c.RowkindField != "" {
 		c, ok := data[r.c.RowkindField]
@@ -182,7 +182,7 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 			}
 		}
 	}
-	//set key value pairs
+	// set key value pairs
 	for key, val := range values {
 		var err error
 		switch rowkind {

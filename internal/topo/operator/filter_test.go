@@ -28,7 +28,7 @@ import (
 )
 
 func TestFilterPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -303,7 +303,6 @@ func TestFilterPlan_Apply(t *testing.T) {
 		},
 
 		{
-
 			sql: "SELECT abc FROM tbl WHERE json->abc IN json->intArraySet",
 			data: &xsql.Tuple{
 				Emitter: "tbl",

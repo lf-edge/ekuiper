@@ -130,7 +130,7 @@ func init() {
 }
 
 func TestLookup(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input  interface{} // a tuple or a window
 		output *xsql.JoinTuples
 	}{

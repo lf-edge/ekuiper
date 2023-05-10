@@ -24,7 +24,7 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		p  *LookupPlan
 		v  bool
 		c  ast.Expr

@@ -47,12 +47,12 @@ func pubEventClientRedis() {
 		if ec := msgClient.Connect(); ec != nil {
 			log.Fatal(ec)
 		} else {
-			//r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			// r := rand.New(rand.NewSource(time.Now().UnixNano()))
 			for i := 0; i < 10; i++ {
-				//temp := r.Intn(100)
-				//humd := r.Intn(100)
+				// temp := r.Intn(100)
+				// humd := r.Intn(100)
 
-				var testEvent = dtos.NewEvent("demoProfile", "demo", "demoSource")
+				testEvent := dtos.NewEvent("demoProfile", "demo", "demoSource")
 				testEvent.Origin = 123
 				err := testEvent.AddSimpleReading("Temperature", common.ValueTypeInt64, int64(i*8))
 				if err != nil {
@@ -142,7 +142,7 @@ func pubArrayMessage() {
 }
 
 func pubToMQTT(host string) {
-	var msgConfig2 = types.MessageBusConfig{
+	msgConfig2 := types.MessageBusConfig{
 		Broker: types.HostInfo{
 			Host:     host,
 			Port:     1883,
@@ -249,7 +249,7 @@ func main() {
 		}
 	} else if len(os.Args) == 3 {
 		if v := os.Args[1]; v == "mqtt" {
-			//The 2nd parameter is MQTT broker server address
+			// The 2nd parameter is MQTT broker server address
 			pubToMQTT(os.Args[2])
 		}
 	}

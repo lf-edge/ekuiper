@@ -33,7 +33,7 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		psm := &PrometheusStatManager{
 			DefaultStatManager: dsm,
 		}
-		//assign prometheus
+		// assign prometheus
 		mg := GetPrometheusMetrics().GetMetricsGroup(dsm.opType)
 		strInId := strconv.Itoa(dsm.instanceId)
 		mg.TotalRecordsIn.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
@@ -56,7 +56,7 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 
 type PrometheusStatManager struct {
 	DefaultStatManager
-	//prometheus metrics
+	// prometheus metrics
 	pTotalRecordsIn  prometheus.Counter
 	pTotalRecordsOut prometheus.Counter
 	pTotalExceptions prometheus.Counter

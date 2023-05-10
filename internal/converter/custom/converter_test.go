@@ -49,12 +49,12 @@ func TestCustomConverter(t *testing.T) {
 		}
 	}()
 	// build the so file into data/test prior to running the test
-	//Copy the helloworld.so
+	// Copy the helloworld.so
 	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "myFormat.so"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

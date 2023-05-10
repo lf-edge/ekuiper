@@ -89,7 +89,7 @@ func (t *sqlConfig) getKeyValues(ctx api.StreamContext, mapData map[string]inter
 
 type sqlSink struct {
 	conf *sqlConfig
-	//The db connection instance
+	// The db connection instance
 	db *sql.DB
 }
 

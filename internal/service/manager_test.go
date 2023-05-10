@@ -45,7 +45,7 @@ func init() {
 }
 
 func TestInitByFiles(t *testing.T) {
-	//expects
+	// expects
 	name := "sample"
 	info := &serviceInfo{
 		About: &about{
@@ -343,7 +343,7 @@ func TestManage(t *testing.T) {
 	}
 	// Create the zip file
 	baseFolder := filepath.Join(m.etcDir, "toadd")
-	os.MkdirAll(filepath.Join(m.etcDir, "temp"), 0755)
+	os.MkdirAll(filepath.Join(m.etcDir, "temp"), 0o755)
 	outPath := filepath.Join(m.etcDir, "temp", "dynamic.zip")
 	outFile, err := os.Create(outPath)
 	if err != nil {

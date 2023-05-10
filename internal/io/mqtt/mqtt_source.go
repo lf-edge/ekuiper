@@ -177,7 +177,7 @@ func getTuples(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.Sou
 		}
 	}
 	results, e := ctx.DecodeIntoList(payload)
-	//The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
+	// The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 	if e != nil {
 		return []api.SourceTuple{
 			&xsql.ErrorSourceTuple{

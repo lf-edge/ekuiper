@@ -58,7 +58,6 @@ type EdgexMsgBusSink struct {
 }
 
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
-
 	c := &SinkConf{
 		MessageType: MessageTypeEvent,
 		ContentType: "application/json",
@@ -146,7 +145,7 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{
 	}
 	m1 := ems.getMeta(m)
 	event := m1.createEvent()
-	//Override the devicename if user specified the value
+	// Override the devicename if user specified the value
 	if event.DeviceName == "" {
 		event.DeviceName = ems.c.DeviceName
 	}
@@ -468,7 +467,7 @@ func (ems *EdgexMsgBusSink) getMeta(result []map[string]interface{}) *meta {
 	if ems.c.Metadata == "" {
 		return newMetaFromMap(nil)
 	}
-	//Try to get the meta field
+	// Try to get the meta field
 	for _, v := range result {
 		if m, ok := v[ems.c.Metadata]; ok {
 			if m1, ok1 := m.(map[string]interface{}); ok1 {

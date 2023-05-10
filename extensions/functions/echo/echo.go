@@ -20,8 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-type echo struct {
-}
+type echo struct{}
 
 func (f *echo) Validate(args []interface{}) error {
 	if len(args) != 1 {

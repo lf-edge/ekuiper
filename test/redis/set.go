@@ -37,17 +37,16 @@ func setClient(host, key string) {
 	if err != nil {
 		panic(err)
 	}
-
 }
 
 func main() {
 	if len(os.Args) == 4 {
 		if v := os.Args[1]; v == "set" {
-			//The 2nd parameter is MQTT broker server address
+			// The 2nd parameter is MQTT broker server address
 			setClient(os.Args[2], os.Args[3])
 		}
 		if v := os.Args[1]; v == "get" {
-			//The 2nd parameter is MQTT broker server address
+			// The 2nd parameter is MQTT broker server address
 			getClient(os.Args[2], os.Args[3])
 		}
 	}

@@ -80,19 +80,19 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	store := wasmedge.NewStore()
 	vm := wasmedge.NewVMWithConfigAndStore(conf1, store)
 	wasi := vm.GetImportModule(wasmedge.WASI)
-	//step 1: Load WASM file
+	// step 1: Load WASM file
 	err := vm.LoadWasmFile(WasmFile)
 	if err != nil {
 		fmt.Print("[wasm][ExecWasmFunc] Load WASM from file FAILED: ")
 		fmt.Errorf(err.Error())
 	}
-	//step 2: Validate the WASM module
+	// step 2: Validate the WASM module
 	err = vm.Validate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Validate FAILED: ")
 		fmt.Errorf(err.Error())
 	}
-	//step 3: Instantiate the WASM moudle
+	// step 3: Instantiate the WASM moudle
 	err = vm.Instantiate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Instantiate FAILED: ")

@@ -164,7 +164,7 @@ func TestLifecycle(t *testing.T) {
 			t.Errorf("Get store for rule %s error: %s", ruleId, err)
 			return
 		}
-		//Save for all checkpoints
+		// Save for all checkpoints
 		for i, cid := range checkpointIds {
 			for j, opId := range opIds {
 				err := store.SaveState(cid, opId, map[string]interface{}{
@@ -192,7 +192,7 @@ func TestLifecycle(t *testing.T) {
 		if !reflect.DeepEqual(r, result) {
 			t.Errorf("%d.Save checkpoint\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, r, result)
 		}
-		//Save additional state but not serialized in checkpoint
+		// Save additional state but not serialized in checkpoint
 		err = store.SaveState(10000, opIds[1], map[string]interface{}{
 			"op": opIds[1],
 			"oi": 1,
@@ -220,7 +220,7 @@ func TestLifecycle(t *testing.T) {
 		if !reflect.DeepEqual(rm, result) {
 			t.Errorf("%d.Save state\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, r, result)
 		}
-		//simulate restore
+		// simulate restore
 		store = nil
 		store, err = getKVStore(ruleId)
 		if err != nil {

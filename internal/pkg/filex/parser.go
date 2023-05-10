@@ -38,7 +38,7 @@ func WriteYamlMarshal(path string, data interface{}) error {
 	if nil != err {
 		return err
 	}
-	return os.WriteFile(path, y, 0666)
+	return os.WriteFile(path, y, 0o666)
 }
 
 func ReadYamlUnmarshal(path string, ret interface{}) error {

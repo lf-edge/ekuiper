@@ -150,7 +150,6 @@ func TestManager_Register(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func TestManager_List(t *testing.T) {

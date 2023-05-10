@@ -134,9 +134,9 @@ func connect(ctx api.StreamContext, url string, info *conninfo) error {
 			pubsub.ProduceError(ctx, TopicPrefix+url, fmt.Errorf("neuron connection detached"))
 		}
 	})
-	//sock.SetOption(mangos.OptionWriteQLen, 100)
-	//sock.SetOption(mangos.OptionReadQLen, 100)
-	//sock.SetOption(mangos.OptionBestEffort, false)
+	// sock.SetOption(mangos.OptionWriteQLen, 100)
+	// sock.SetOption(mangos.OptionReadQLen, 100)
+	// sock.SetOption(mangos.OptionBestEffort, false)
 	if err = info.sock.DialOptions(url, map[string]interface{}{
 		mangos.OptionDialAsynch:       true, // will not report error and keep connecting
 		mangos.OptionMaxReconnectTime: 5 * time.Second,

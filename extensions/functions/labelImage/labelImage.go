@@ -93,7 +93,7 @@ func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interfac
 
 		f.interpreter = interpreter
 		// TODO If created, the interpreter will be kept through the whole life of kuiper. Refactor this later.
-		//defer interpreter.Delete()
+		// defer interpreter.Delete()
 	})
 
 	if f.interpreter == nil {

@@ -95,7 +95,7 @@ func createRule(name, ruleJson string) (string, error) {
 	if r.Triggered {
 		go func() {
 			panicOrError := infra.SafeRun(func() error {
-				//Start the rule which runs async
+				// Start the rule which runs async
 				return rs.Start()
 			})
 			if panicOrError != nil {
@@ -130,7 +130,7 @@ func recoverRule(r *api.Rule) string {
 		return fmt.Sprintf("Rule %s was stopped.", r.Id)
 	} else {
 		panicOrError := infra.SafeRun(func() error {
-			//Start the rule which runs async
+			// Start the rule which runs async
 			return rs.Start()
 		})
 		if panicOrError != nil {

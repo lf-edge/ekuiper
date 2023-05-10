@@ -23,9 +23,8 @@ import (
 
 type inferer func(schemaFileName string, SchemaMessageName string) (ast.StreamFields, error)
 
-var ( // init once and read only
-	inferes = map[string]inferer{}
-)
+// init once and read only
+var inferes = map[string]inferer{}
 
 func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, error) {
 	r := strings.Split(schemaId, ".")

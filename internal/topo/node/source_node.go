@@ -107,7 +107,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			for i := 0; i < m.concurrency; i++ { // workers
 				go func(instance int) {
 					poe := infra.SafeRun(func() error {
-						//Do open source instances
+						// Do open source instances
 						var (
 							si     *sourceInstance
 							buffer *DynamicChannelBuffer
@@ -163,7 +163,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 									processedData = tuple
 								}
 								stats.ProcessTimeEnd()
-								//blocking
+								// blocking
 								switch val := processedData.(type) {
 								case nil:
 									continue

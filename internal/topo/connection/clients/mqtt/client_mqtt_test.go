@@ -20,7 +20,6 @@ import (
 )
 
 func TestMQTTClient_CfgValidate(t *testing.T) {
-
 	type args struct {
 		props map[string]interface{}
 	}
@@ -134,5 +133,4 @@ func TestMQTTClient_CfgResult(t *testing.T) {
 	if !reflect.DeepEqual(uint(4), ms.pVersion) {
 		t.Errorf("result mismatch:\n\n got=%#v\n\n", ms.pVersion)
 	}
-
 }

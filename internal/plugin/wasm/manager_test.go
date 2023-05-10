@@ -58,17 +58,16 @@ func TestManager_Install(t *testing.T) {
 			File: tt.u,
 		}
 		err := manager.Register(p)
-		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) { //not same
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) { // not same
 			fmt.Println("err: ", err)
-			//t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
-		} else { //same
+			// t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
+		} else { // same
 			err := checkFileForMirror(manager.pluginDir, true)
 			if err != nil {
 				t.Errorf("%d: error : %s\n\n", i, err)
 			}
 		}
 	}
-
 }
 
 func TestManager_Read(t *testing.T) {
@@ -81,16 +80,16 @@ func TestManager_Read(t *testing.T) {
 			PluginMeta: runtime.PluginMeta{
 				Name:    "fibonacci",
 				Version: "v1.0.0",
-				//WasmFile:   "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
+				// WasmFile:   "/home/erfenjiao/ekuiper/plugins/wasm/fibonacci/fibonacci.wasm",
 				WasmFile:   requiredFiles[0],
 				WasmEngine: "wasmedge",
 			},
 			Functions: []string{"fib"},
 		},
 	}
-	//fmt.Println("[TestManager_Read] List: ")
-	//result := manager.List()
-	//fmt.Println("[TestManager_Read] result: ", result)
+	// fmt.Println("[TestManager_Read] List: ")
+	// result := manager.List()
+	// fmt.Println("[TestManager_Read] result: ", result)
 	pi, ok := manager.GetPluginInfo("fibonacci")
 	if !ok {
 		t.Error("can't find plugin fibonacci")

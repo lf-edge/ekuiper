@@ -30,8 +30,7 @@ import (
  **  1: separator, a string literal for word separator
  **/
 
-type accumulateWordCountFunc struct {
-}
+type accumulateWordCountFunc struct{}
 
 func (f *accumulateWordCountFunc) Validate(args []interface{}) error {
 	if len(args) != 2 {

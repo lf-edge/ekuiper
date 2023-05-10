@@ -180,7 +180,6 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"key": "value2"}, meta, mc.Now()),
 			}
 			mock.TestSourceOpen(r, exp, t)
-
 		})
 	}
 }

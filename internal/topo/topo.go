@@ -127,8 +127,7 @@ func (s *Topo) prepareContext() {
 }
 
 func (s *Topo) Open() <-chan error {
-
-	//if stream has opened, do nothing
+	// if stream has opened, do nothing
 	if s.ctx != nil && s.ctx.Err() == nil {
 		s.ctx.GetLogger().Infoln("rule is already running, do nothing")
 		return s.drain
@@ -151,7 +150,7 @@ func (s *Topo) Open() <-chan error {
 				snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
 			}
 
-			//apply operators, if err bail
+			// apply operators, if err bail
 			for _, op := range s.ops {
 				op.Exec(s.ctx.WithMeta(s.name, op.GetName(), s.store), s.drain)
 			}

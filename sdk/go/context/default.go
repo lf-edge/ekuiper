@@ -30,7 +30,7 @@ type DefaultContext struct {
 	opId       string
 	instanceId int
 	ctx        context.Context
-	//Only initialized after withMeta set
+	// Only initialized after withMeta set
 	logger api.Logger
 }
 

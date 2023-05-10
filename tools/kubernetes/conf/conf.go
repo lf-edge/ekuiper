@@ -48,18 +48,23 @@ var gConf config
 func GetConf() *config {
 	return &gConf
 }
+
 func (c *config) GetIntervalTime() int {
 	return c.IntervalTime
 }
+
 func (c *config) GetIp() string {
 	return c.Ip
 }
+
 func (c *config) GetPort() int {
 	return c.Port
 }
+
 func (c *config) GetLogPath() string {
 	return c.LogPath
 }
+
 func (c *config) GetCommandDir() string {
 	return c.CommandDir
 }
@@ -106,7 +111,7 @@ func (c *config) initConfig() bool {
 		return false
 	}
 	if _, err = os.Stat(c.LogPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(path.Dir(c.LogPath), 0755); nil != err {
+		if err = os.MkdirAll(path.Dir(c.LogPath), 0o755); nil != err {
 			fmt.Println("mak logdir err : ", err)
 			return false
 		}
@@ -135,7 +140,7 @@ func (c *config) initLog() bool {
 		FullTimestamp: true,
 	})
 	if c.FileLog {
-		logFile, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		logFile, err := os.OpenFile(c.LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
 			fmt.Println("Failed to init log file settings..." + err.Error())
 			Log.Infof("Failed to log to file, using default stderr.")
@@ -233,5 +238,5 @@ func SaveFileMarshal(path string, content interface{}) error {
 	if nil != err {
 		return err
 	}
-	return os.WriteFile(path, data, 0666)
+	return os.WriteFile(path, data, 0o666)
 }

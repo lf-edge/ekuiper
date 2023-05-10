@@ -30,11 +30,9 @@ import (
 
 //// Package vars and funcs
 
-var (
-	pool = &sourcePool{
-		registry: make(map[string]*sourceSingleton),
-	}
-)
+var pool = &sourcePool{
+	registry: make(map[string]*sourceSingleton),
+}
 
 // node is readonly
 func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {

@@ -25,7 +25,7 @@ import (
 )
 
 func TestParser_ParserSRFStatement(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s    string
 		stmt *ast.SelectStatement
 		err  string

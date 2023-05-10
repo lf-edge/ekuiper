@@ -62,7 +62,6 @@ func TestGetKeyedState(t *testing.T) {
 					t.Errorf("expect: %v, get: %v", tt.want, got)
 				}
 			}
-
 		})
 	}
 

@@ -169,7 +169,7 @@ func InitConf() {
 			LateTol:            1000,
 			Concurrency:        1,
 			BufferLength:       1024,
-			CheckpointInterval: 300000, //5 minutes
+			CheckpointInterval: 300000, // 5 minutes
 			SendError:          true,
 			Restart: &api.RestartStrategy{
 				Attempts:     0,

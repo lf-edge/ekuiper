@@ -41,7 +41,7 @@ func TestUpdate(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var data = []map[string]interface{}{
+	data := []map[string]interface{}{
 		{"id": "1", "verb": "insert", "name": "test1"},
 		{"id": "2", "verb": "insert", "name": "test2"},
 		{"id": "1", "verb": "update", "name": "test1"},

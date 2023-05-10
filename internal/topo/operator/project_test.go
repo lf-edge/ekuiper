@@ -66,12 +66,12 @@ func parseResult(opResult interface{}, aggregate bool) (result []map[string]inte
 }
 
 func TestProjectPlan_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.Tuple
 		result []map[string]interface{}
 	}{
-		{ //0
+		{ // 0
 			sql: "SELECT a FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
@@ -91,7 +91,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		{ //1
+		{ // 1
 			sql: "SELECT b FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
@@ -101,7 +101,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		{ //2
+		{ // 2
 			sql: "SELECT ts FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
@@ -114,8 +114,8 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"ts": cast.TimeFromUnixMilli(1568854573431),
 			}},
 		},
-		//Schemaless may return a message without selecting column
-		{ //3
+		// Schemaless may return a message without selecting column
+		{ // 3
 			sql: "SELECT ts FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
@@ -126,7 +126,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		{ //4
+		{ // 4
 			sql: "SELECT A FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
@@ -138,7 +138,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"A": "val_a",
 			}},
 		},
-		//5
+		// 5
 		{
 			sql: `SELECT "value" FROM test`,
 			data: &xsql.Tuple{
@@ -149,7 +149,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"kuiper_field_0": "value",
 			}},
 		},
-		//6
+		// 6
 		{
 			sql: `SELECT 3.4 FROM test`,
 			data: &xsql.Tuple{
@@ -160,7 +160,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"kuiper_field_0": 3.4,
 			}},
 		},
-		//7
+		// 7
 		{
 			sql: `SELECT 5 FROM test`,
 			data: &xsql.Tuple{
@@ -171,7 +171,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"kuiper_field_0": 5,
 			}},
 		},
-		//8
+		// 8
 		{
 			sql: `SELECT a, "value" AS b FROM test`,
 			data: &xsql.Tuple{
@@ -185,7 +185,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"b": "value",
 			}},
 		},
-		//9
+		// 9
 		{
 			sql: `SELECT a, "value" AS b, 3.14 as Pi, 0 as Zero FROM test`,
 			data: &xsql.Tuple{
@@ -201,7 +201,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"Zero": 0,
 			}},
 		},
-		//10
+		// 10
 		{
 			sql: `SELECT a->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -214,7 +214,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"ab": "hello",
 			}},
 		},
-		//11
+		// 11
 		{
 			sql: `SELECT a->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -225,7 +225,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		//12
+		// 12
 		{
 			sql: `SELECT a->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -236,7 +236,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		//13
+		// 13
 		{
 			sql: `SELECT a->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -247,7 +247,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		//14
+		// 14
 		{
 			sql: `SELECT a[0]->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -263,7 +263,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"ab": "hello1",
 			}},
 		},
-		//15
+		// 15
 		{
 			sql: `SELECT a[0]->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -279,7 +279,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"ab": "hello1",
 			}},
 		},
-		//16
+		// 16
 		{
 			sql: `SELECT a[2:4] AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -301,7 +301,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//17
+		// 17
 		{
 			sql: `SELECT a[2:] AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -324,7 +324,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//18
+		// 18
 		{
 			sql: `SELECT a[2:] AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -341,7 +341,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//19
+		// 19
 		{
 			sql: `SELECT a[:4] AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -358,7 +358,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//20
+		// 20
 		{
 			sql: `SELECT a[:4] AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -375,7 +375,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//21
+		// 21
 		{
 			sql: `SELECT a->b[:4] AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -392,7 +392,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//22
+		// 22
 		{
 			sql: `SELECT a->b[0:1] AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -409,7 +409,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//23
+		// 23
 		{
 			sql: `SELECT a->c->d AS f1 FROM test`,
 			data: &xsql.Tuple{
@@ -427,7 +427,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"f1": 35.2,
 			}},
 		},
-		//24
+		// 24
 		{
 			sql: `SELECT a->c->d AS f1 FROM test`,
 			data: &xsql.Tuple{
@@ -443,7 +443,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		//25
+		// 25
 		{
 			sql: `SELECT a->c->d AS f1 FROM test`,
 			data: &xsql.Tuple{
@@ -456,8 +456,8 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		//26
-		//The int type is not supported yet, the json parser returns float64 for int values
+		// 26
+		// The int type is not supported yet, the json parser returns float64 for int values
 		{
 			sql: `SELECT a->c->d AS f1 FROM test`,
 			data: &xsql.Tuple{
@@ -475,7 +475,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"f1": float64(35),
 			}},
 		},
-		//27
+		// 27
 		{
 			sql: "SELECT a FROM test",
 			data: &xsql.Tuple{
@@ -486,7 +486,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				{},
 			},
 		},
-		//28
+		// 28
 		{
 			sql: "SELECT * FROM test",
 			data: &xsql.Tuple{
@@ -497,7 +497,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				{},
 			},
 		},
-		//29
+		// 29
 		{
 			sql: `SELECT * FROM test`,
 			data: &xsql.Tuple{
@@ -520,7 +520,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				},
 			}},
 		},
-		//30
+		// 30
 		{
 			sql: `SELECT * FROM test`,
 			data: &xsql.Tuple{
@@ -535,7 +535,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"b": 3.14,
 			}},
 		},
-		//31
+		// 31
 		{
 			sql: `SELECT 3*4 AS f1 FROM test`,
 			data: &xsql.Tuple{
@@ -546,7 +546,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"f1": int64(12),
 			}},
 		},
-		//32
+		// 32
 		{
 			sql: `SELECT 4.5*2 AS f1 FROM test`,
 			data: &xsql.Tuple{
@@ -557,7 +557,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"f1": float64(9),
 			}},
 		},
-		//33
+		// 33
 		{
 			sql: "SELECT `a.b.c` FROM test",
 			data: &xsql.Tuple{
@@ -570,7 +570,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"a.b.c": "val_a",
 			}},
 		},
-		//34
+		// 34
 		{
 			sql: `SELECT CASE a WHEN 10 THEN "true" END AS b FROM test`,
 			data: &xsql.Tuple{
@@ -583,7 +583,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"b": "true",
 			}},
 		},
-		//35
+		// 35
 		{
 			sql: `SELECT a->b AS ab, *, abs(f1) FROM test`,
 			data: &xsql.Tuple{
@@ -633,11 +633,11 @@ func TestProjectPlan_Apply1(t *testing.T) {
 }
 
 func TestProjectPlan_MultiInput(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result []map[string]interface{}
-	}{ //0
+	}{ // 0
 		{
 			sql: "SELECT * FROM tbl WHERE abc*2+3 > 12 AND abc < 20",
 			data: &xsql.Tuple{
@@ -650,7 +650,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"abc": int64(6),
 			}},
 		},
-		//1
+		// 1
 		{
 			sql: "SELECT abc FROM tbl WHERE abc*2+3 > 12 OR def = \"hello\"",
 			data: &xsql.Tuple{
@@ -664,16 +664,19 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"abc": int64(34),
 			}},
 		},
-		//2
+		// 2
 		{
 			sql: "SELECT id1 FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -686,16 +689,19 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id1": 3,
 			}},
 		},
-		//3
+		// 3
 		{
 			sql: "SELECT id1 FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id2": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -707,16 +713,19 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id1": 3,
 			}},
 		},
-		//4
+		// 4
 		{
 			sql: "SELECT * FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -732,16 +741,19 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"f1":  "v1",
 			}},
 		},
-		//5
+		// 5
 		{
 			sql: "SELECT * FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id2": 2, "f2": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -757,16 +769,19 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"f1":  "v1",
 			}},
 		},
-		//6
+		// 6
 		{
 			sql: "SELECT src1.* FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -782,7 +797,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"f1":  "v1",
 			}},
 		},
-		//7
+		// 7
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -814,7 +829,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id1": 3,
 			}},
 		},
-		//8
+		// 8
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -844,14 +859,15 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id1": 2,
 			}, {}},
 		},
-		//9
+		// 9
 		{
 			sql: "SELECT abc FROM tbl group by abc",
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "tbl",
+							&xsql.Tuple{
+								Emitter: "tbl",
 								Message: xsql.Message{
 									"abc": int64(6),
 									"def": "hello",
@@ -865,14 +881,15 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"abc": int64(6),
 			}},
 		},
-		//10
+		// 10
 		{
 			sql: "SELECT abc FROM tbl group by abc",
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "tbl",
+							&xsql.Tuple{
+								Emitter: "tbl",
 								Message: xsql.Message{
 									"def": "hello",
 								},
@@ -883,24 +900,27 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 			},
 			result: []map[string]interface{}{{}},
 		},
-		//11
+		// 11
 		{
 			sql: "SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1",
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": "v1"},
 							},
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 3, "f1": "v1"},
 							},
 						},
 					},
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
 							},
 						},
@@ -913,24 +933,27 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id1": 2,
 			}},
 		},
-		//12
+		// 12
 		{
 			sql: "SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1",
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": "v1"},
 							},
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 3, "f1": "v1"},
 							},
 						},
 					},
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id2": 2, "f1": "v2"},
 							},
 						},
@@ -941,7 +964,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id1": 1,
 			}, {}},
 		},
-		//13
+		// 13
 		{
 			sql: "SELECT src2.id2 FROM src1 left join src2 on src1.id1 = src2.id2 GROUP BY src2.f2, TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.GroupedTuplesSet{
@@ -983,7 +1006,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"id2": 4,
 			}, {}},
 		},
-		//14
+		// 14
 		{
 			sql: "SELECT src1.*, f2 FROM src1 left join src2 GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -1020,7 +1043,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"f1":  "v1",
 			}},
 		},
-		//15
+		// 15
 		{
 			sql: "SELECT * FROM src1 left join src2 GROUP BY TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -1057,24 +1080,27 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"f1": "v1",
 			}},
 		},
-		//16
+		// 16
 		{
 			sql: "SELECT src1.* FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10), f1",
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": "v1"},
 							},
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 3, "f1": "v1"},
 							},
 						},
 					},
 					{
 						Content: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "src1",
+							&xsql.Tuple{
+								Emitter: "src1",
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
 							},
 						},
@@ -1089,7 +1115,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"f1":  "v2",
 			}},
 		},
-		//17
+		// 17
 		{
 			sql: "SELECT src2.id2, src1.* FROM src1 left join src2 on src1.id1 = src2.id2 GROUP BY src2.f2, TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.GroupedTuplesSet{
@@ -1138,7 +1164,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 				"f1":  "v1",
 			}},
 		},
-		//18
+		// 18
 		{
 			sql: "SELECT src2.id2, src1.* FROM src1 left join src2 on src1.id1 = src2.id2 GROUP BY src2.f2, TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.GroupedTuplesSet{
@@ -1211,12 +1237,12 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 }
 
 func TestProjectPlan_Funcs(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result []map[string]interface{}
 	}{
-		//0
+		// 0
 		{
 			sql: "SELECT round(a) as r FROM test",
 			data: &xsql.Tuple{
@@ -1229,16 +1255,19 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				"r": float64(48),
 			}},
 		},
-		//1
+		// 1
 		{
 			sql: "SELECT round(a) as r FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53.1},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27.4},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123.7},
 					},
 				},
@@ -1252,16 +1281,19 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				"r": float64(123124),
 			}},
 		},
-		//2
+		// 2
 		{
 			sql: "SELECT round(a) as r FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53.1},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27.4},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123.7},
 					},
 				},
@@ -1275,7 +1307,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				"r": float64(123124),
 			}},
 		},
-		//3
+		// 3
 		{
 			sql: "SELECT round(a) as r FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -1308,7 +1340,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				"r": float64(89),
 			}},
 		},
-		//4
+		// 4
 		{
 			sql: "SELECT CONCAT(test.id, test.a, test1.b) as concat FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -1341,7 +1373,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				"concat": "388.886",
 			}},
 		},
-		//5
+		// 5
 		{
 			sql: "SELECT count(a) as r FROM test",
 			data: &xsql.Tuple{
@@ -1354,7 +1386,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 				"r": 1,
 			}},
 		},
-		//6
+		// 6
 		{
 			sql: "SELECT meta(test.device) as d FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -1413,12 +1445,12 @@ func TestProjectPlan_Funcs(t *testing.T) {
 }
 
 func TestProjectPlan_AggFuncs(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result []map[string]interface{}
 	}{
-		{ //0
+		{ // 0
 			sql: "SELECT count(*) as c, round(a) as r, window_start() as ws, window_end() as we FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
@@ -1470,7 +1502,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"we": int64(1541152487013),
 			}},
 		},
-		//1
+		// 1
 		{
 			sql: "SELECT count(a) as c, avg(a) as a, sum(a) as s, min(a) as min, max(a) as max FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -1523,7 +1555,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"max": 89.03,
 			}},
 		},
-		//2
+		// 2
 		{
 			sql: "SELECT avg(a) FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -1580,7 +1612,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"avg": 51.815,
 			}},
 		},
-		//3
+		// 3
 		{
 			sql: "SELECT max(a) FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -1631,7 +1663,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"max": 89.03,
 			}},
 		},
-		//4
+		// 4
 		{
 			sql: "SELECT min(a), window_start(), window_end() FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -1664,7 +1696,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"window_end":   int64(1541152487013),
 			}},
 		},
-		//5
+		// 5
 		{
 			sql: "SELECT count(*) as all, count(a) as c, avg(a) as a, sum(a) as s, min(a) as min, max(a) as max FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.JoinTuples{
@@ -1699,16 +1731,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"max": 177.51,
 			}},
 		},
-		//6
+		// 6
 		{
 			sql: "SELECT sum(a), window_start() as ws, window_end() FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123},
 					},
 				},
@@ -1720,16 +1755,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"window_end": int64(1541152487013),
 			}},
 		},
-		//7
+		// 7
 		{
 			sql: "SELECT sum(a) as s FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53, "s": 123203},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123},
 					},
 				},
@@ -1739,16 +1777,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"s": int64(123203),
 			}},
 		},
-		//8
+		// 8
 		{
 			sql: "SELECT sum(a) FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123},
 					},
 				},
@@ -1757,16 +1798,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"sum": int64(123203),
 			}},
 		},
-		//9
+		// 9
 		{
 			sql: "SELECT count(*) as all, count(a) as c, avg(a) as a, sum(a) as s, min(a) as min, max(a) as max  FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"s": 123123},
 					},
 				},
@@ -1780,7 +1824,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"max": int64(53),
 			}},
 		},
-		//10
+		// 10
 		{
 			sql: "SELECT count(*), meta(test1.device) FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -1827,7 +1871,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"meta":  "devicec",
 			}},
 		},
-		//11
+		// 11
 		{
 			sql: "SELECT count(*) as c, meta(test1.device) as d FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -1874,7 +1918,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"d": "devicec",
 			}},
 		},
-		//12
+		// 12
 		{
 			sql: "SELECT * FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -1929,7 +1973,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"r":     89,
 			}},
 		},
-		//13
+		// 13
 		{
 			sql: "SELECT collect(a) as r1 FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -1972,16 +2016,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"r1": []interface{}{122.33, 177.51},
 			}, {"r1": []interface{}{89.03, 14.6}}},
 		},
-		//14
+		// 14
 		{
 			sql: "SELECT collect(*)[1] as c1 FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53, "s": 123203},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123},
 					},
 				},
@@ -1994,16 +2041,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				},
 			}},
 		},
-		//15
+		// 15
 		{
 			sql: "SELECT collect(*)[1]->a as c1 FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53, "s": 123203},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123},
 					},
 				},
@@ -2013,16 +2063,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"c1": 27,
 			}},
 		},
-		//16
+		// 16
 		{
 			sql: "SELECT collect(*)[1]->sl[0] as c1 FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53, "sl": []string{"hello", "world"}},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27, "sl": []string{"new", "horizon"}},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123, "sl": []string{"south", "africa"}},
 					},
 				},
@@ -2032,7 +2085,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"c1": "new",
 			}},
 		},
-		//17
+		// 17
 		{
 			sql: "SELECT deduplicate(id, true) as r1 FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -2075,24 +2128,29 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				{
 					"r1": []interface{}{
 						xsql.Message{"a": 122.33, "c": 2, "color": "w2", "id": 1, "r": 122},
-						xsql.Message{"a": 177.51, "color": "w2", "id": 5}},
+						xsql.Message{"a": 177.51, "color": "w2", "id": 5},
+					},
 				}, {
 					"r1": []interface{}{
 						xsql.Message{"a": 89.03, "c": 2, "color": "w1", "id": 2, "r": 89},
-						xsql.Message{"a": 14.6, "color": "w1", "id": 4}},
+						xsql.Message{"a": 14.6, "color": "w1", "id": 4},
+					},
 				},
 			},
 		},
-		//18
+		// 18
 		{
 			sql: "SELECT deduplicate(a, false)->a as c1 FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53, "s": 123203},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123},
 					},
 				},
@@ -2102,16 +2160,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"c1": 123123,
 			}},
 		},
-		//19
+		// 19
 		{
 			sql: "SELECT deduplicate(a, false) as c1 FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53, "s": 123203},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53},
 					},
 				},
@@ -2119,16 +2180,19 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 
 			result: []map[string]interface{}{{}},
 		},
-		//20
+		// 20
 		{
 			sql: "SELECT deduplicate(a, false) as c1 FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53, "s": 123203},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 27},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53},
 					},
 				},
@@ -2136,7 +2200,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 
 			result: []map[string]interface{}{{}},
 		},
-		//21  when got column after group by operation, return the first tuple's column
+		// 21  when got column after group by operation, return the first tuple's column
 		{
 			sql: "SELECT A.module, A.topic , max(A.value), B.topic as var2, max(B.value) as max2, C.topic as var3, max(C.value) as max3 FROM A FULL JOIN B on A.module=B.module FULL JOIN C on A.module=C.module GROUP BY A.module, TUMBLINGWINDOW(ss, 10)",
 			data: &xsql.GroupedTuplesSet{
@@ -2188,18 +2252,18 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 }
 
 func TestProjectPlanError(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
 	}{
-		//0
+		// 0
 		{
 			sql:    "SELECT a FROM test",
 			data:   errors.New("an error from upstream"),
 			result: errors.New("an error from upstream"),
 		},
-		//1
+		// 1
 		{
 			sql: "SELECT a * 5 FROM test",
 			data: &xsql.Tuple{
@@ -2210,7 +2274,7 @@ func TestProjectPlanError(t *testing.T) {
 			},
 			result: errors.New("run Select error: invalid operation string(val_a) * int64(5)"),
 		},
-		//2
+		// 2
 		{
 			sql: `SELECT a[0]->b AS ab FROM test`,
 			data: &xsql.Tuple{
@@ -2221,7 +2285,7 @@ func TestProjectPlanError(t *testing.T) {
 			},
 			result: errors.New("run Select error: invalid operation string(common string) [] *xsql.BracketEvalResult(&{0 0})"),
 		},
-		//3
+		// 3
 		{
 			sql: `SELECT round(a) as r FROM test`,
 			data: &xsql.Tuple{
@@ -2232,7 +2296,7 @@ func TestProjectPlanError(t *testing.T) {
 			},
 			result: errors.New("run Select error: call func round error: cannot convert string(common string) to float64"),
 		},
-		//4
+		// 4
 		{
 			sql: `SELECT round(a) as r FROM test`,
 			data: &xsql.Tuple{
@@ -2243,7 +2307,7 @@ func TestProjectPlanError(t *testing.T) {
 			},
 			result: errors.New("run Select error: call func round error: cannot convert <nil>(<nil>) to float64"),
 		},
-		//5
+		// 5
 		{
 			sql: "SELECT avg(a) as avg FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",
 			data: &xsql.GroupedTuplesSet{
@@ -2296,16 +2360,19 @@ func TestProjectPlanError(t *testing.T) {
 			},
 			result: errors.New("run Select error: call func avg error: requires float64 but found string(dde)"),
 		},
-		//6
+		// 6
 		{
 			sql: "SELECT sum(a) as sum FROM test GROUP BY TumblingWindow(ss, 10)",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 53},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": "ddd"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"a": 123123},
 					},
 				},
@@ -2313,7 +2380,7 @@ func TestProjectPlanError(t *testing.T) {
 
 			result: errors.New("run Select error: call func sum error: requires int but found string(ddd)"),
 		},
-		//7
+		// 7
 		{
 			sql: `SELECT a[0]->b AS ab FROM test`,
 			data: &xsql.Tuple{

@@ -39,7 +39,7 @@ type DefaultContext struct {
 	instanceId int
 	ctx        context.Context
 	err        error
-	//Only initialized after withMeta set
+	// Only initialized after withMeta set
 	store    api.Store
 	state    *sync.Map
 	snapshot map[string]interface{}

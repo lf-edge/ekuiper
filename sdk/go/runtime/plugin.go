@@ -51,9 +51,11 @@ func initVars(args []string, conf *PluginConfig) {
 	}
 }
 
-type NewSourceFunc func() api.Source
-type NewFunctionFunc func() api.Function
-type NewSinkFunc func() api.Sink
+type (
+	NewSourceFunc   func() api.Source
+	NewFunctionFunc func() api.Function
+	NewSinkFunc     func() api.Sink
+)
 
 // PluginConfig construct once and then read only
 type PluginConfig struct {
@@ -175,7 +177,7 @@ func Start(args []string, conf *PluginConfig) {
 		}
 		os.Exit(1)
 	}()
-	//Stop the whole plugin
+	// Stop the whole plugin
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
 	<-sigint

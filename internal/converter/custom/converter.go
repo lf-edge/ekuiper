@@ -24,8 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-type Converter struct {
-}
+type Converter struct{}
 
 var converter = &Converter{}
 

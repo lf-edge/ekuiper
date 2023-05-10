@@ -1029,7 +1029,7 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 		Streams: map[string]string{},
 		Tables:  map[string]string{},
 	}
-	//replace streams
+	// replace streams
 	for k, v := range all.Streams {
 		_, e := streamProcessor.ExecReplaceStream(k, v, ast.TypeStream)
 		if e != nil {

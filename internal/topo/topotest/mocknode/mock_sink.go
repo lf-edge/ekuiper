@@ -49,7 +49,7 @@ func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (m *MockSink) Close(ctx api.StreamContext) error {
-	//do nothing
+	// do nothing
 	return nil
 }
 

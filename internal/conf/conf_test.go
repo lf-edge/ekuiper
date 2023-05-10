@@ -22,7 +22,7 @@ import (
 )
 
 func TestSourceConfValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s   *SourceConf
 		e   *SourceConf
 		err string
@@ -83,7 +83,7 @@ func TestSourceConfValidate(t *testing.T) {
 }
 
 func TestRuleOptionValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s   *api.RuleOption
 		e   *api.RuleOption
 		err string
@@ -97,7 +97,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     0,
@@ -111,7 +111,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     0,
@@ -127,7 +127,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     3,
@@ -141,7 +141,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     3,
@@ -157,7 +157,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     3,
@@ -171,7 +171,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     3,
@@ -187,7 +187,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     -2,
@@ -201,7 +201,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, //5 minutes
+				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
 				Restart: &api.RestartStrategy{
 					Attempts:     0,

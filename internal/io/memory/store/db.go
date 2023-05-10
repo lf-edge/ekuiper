@@ -176,8 +176,6 @@ func (t *Table) Read(keys []string, values []interface{}) ([]api.SourceTuple, er
 	return result, nil
 }
 
-var (
-	db = &database{
-		tables: make(map[string]*tableCount),
-	}
-)
+var db = &database{
+	tables: make(map[string]*tableCount),
+}

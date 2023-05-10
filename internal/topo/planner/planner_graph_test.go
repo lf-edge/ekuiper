@@ -25,7 +25,7 @@ import (
 )
 
 func TestPlannerGraphValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		graph string
 		err   string
 	}{

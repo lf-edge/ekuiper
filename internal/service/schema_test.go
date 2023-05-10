@@ -49,7 +49,7 @@ func TestConvertParams(t *testing.T) {
 		tresult []byte
 		err     string
 	}{
-		{ //0
+		{ // 0
 			method: "SayHello",
 			params: []interface{}{
 				"world",
@@ -60,7 +60,7 @@ func TestConvertParams(t *testing.T) {
 			jresult: []byte(`{"name":"world"}`),
 			tresult: []byte(`name:"world"`),
 		},
-		{ //1
+		{ // 1
 			method: "SayHello",
 			params: []interface{}{
 				map[string]interface{}{
@@ -73,7 +73,7 @@ func TestConvertParams(t *testing.T) {
 			jresult: []byte(`{"name":"world"}`),
 			tresult: []byte(`name:"world"`),
 		},
-		{ //2
+		{ // 2
 			method: "SayHello",
 			params: []interface{}{
 				map[string]interface{}{
@@ -82,7 +82,7 @@ func TestConvertParams(t *testing.T) {
 			},
 			err: "invalid type for string type field 'name': cannot convert map[string]interface {}(map[arbitrary:world]) to string",
 		},
-		{ //3
+		{ // 3
 			method: "Compute",
 			params: []interface{}{
 				"rid", "uuid", "outlet", "path", []byte("data"), "extra",
@@ -93,7 +93,7 @@ func TestConvertParams(t *testing.T) {
 			jresult: []byte(`{"rid":"rid","uuid":"uuid","outlet":"outlet","path":"path","data":"ZGF0YQ==","extra":"extra"}`),
 			tresult: []byte(`rid:"rid" uuid:"uuid" outlet:"outlet" path:"path" data:"data" extra:"extra"`),
 		},
-		{ //4
+		{ // 4
 			method: "get_feature",
 			params: []interface{}{
 				[]byte("golang"),
@@ -204,7 +204,7 @@ func TestConvertReturns(t *testing.T) {
 		},
 		{
 			method: "get_feature",
-			ireturn: map[string]interface{}{"feature": []interface{}{ //TODO check msgpack result
+			ireturn: map[string]interface{}{"feature": []interface{}{ // TODO check msgpack result
 				map[string]interface{}{
 					"box":      map[string]interface{}{"x": int32(55), "y": int32(65), "w": int32(33), "h": int32(69)},
 					"features": []float32{0.031646, -0.800592, -1.101858, -0.354359, 0.656587},

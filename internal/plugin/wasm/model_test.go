@@ -24,11 +24,11 @@ import (
 )
 
 func TestValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		p   *PluginInfo
 		err string
 	}{
-		{ //0 true
+		{ // 0 true
 			p: &PluginInfo{
 				PluginMeta: runtime.PluginMeta{
 					Name:       "fibonacci",
@@ -72,7 +72,7 @@ func TestValidate(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		err := tt.p.Validate("fibonacci")
-		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) { //not same
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) { // not same
 			t.Errorf("%d error mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.err, err.Error())
 		}
 		fmt.Println("err: ", err)

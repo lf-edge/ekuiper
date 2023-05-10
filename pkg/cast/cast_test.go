@@ -49,7 +49,7 @@ func TestMapConvert_Funcs(t *testing.T) {
 }
 
 func TestToTypedSlice(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s interface{}
 		r interface{}
 		e string

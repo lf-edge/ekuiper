@@ -53,7 +53,6 @@ func createPaths() {
 			}
 		}
 	}
-
 }
 
 func TestYamlConfigMeta_Ops(t *testing.T) {
@@ -67,7 +66,7 @@ func TestYamlConfigMeta_Ops(t *testing.T) {
 		t.Error(err)
 	}
 
-	//Exist ConfigKey , fail
+	// Exist ConfigKey , fail
 	err = AddSourceConfKey(plgName, "new", "en_US", []byte(addData))
 	if err != nil {
 		t.Error("should overwrite exist config key")

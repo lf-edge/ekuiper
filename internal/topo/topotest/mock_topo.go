@@ -81,7 +81,7 @@ func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
 				conf.Log.Printf("%s:%v", k, values[i])
 			}
 		}
-		//do not find
+		// do not find
 		if index < len(values) {
 			return fmt.Errorf("metrics mismatch for %s:\n\nexp=%#v(%T)\n\ngot=%#v(%T)\n\n", k, v, v, values[index], values[index])
 		} else {

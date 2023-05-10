@@ -53,7 +53,6 @@ type MQTTClient struct {
 }
 
 func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
-
 	cfg := MQTTConnectionConfig{}
 
 	err := cast.MapToStruct(props, &cfg)

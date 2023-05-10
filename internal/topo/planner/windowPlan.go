@@ -21,8 +21,8 @@ type WindowPlan struct {
 	condition   ast.Expr
 	wtype       ast.WindowType
 	length      int
-	interval    int //If interval is not set, it is equals to Length
-	limit       int //If limit is not positive, there will be no limit
+	interval    int // If interval is not set, it is equals to Length
+	limit       int // If limit is not positive, there will be no limit
 	isEventTime bool
 }
 
@@ -43,7 +43,7 @@ func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 		// return nil, p
 		return condition, p
 	} else {
-		//Presume window condition are only one table related.
+		// Presume window condition are only one table related.
 		// TODO window condition validation
 		a := combine(condition, p.condition)
 		p.condition, _ = p.baseLogicalPlan.PushDownPredicate(a)

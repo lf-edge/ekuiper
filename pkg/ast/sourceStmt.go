@@ -40,7 +40,7 @@ type StreamStmt struct {
 	Name         StreamName
 	StreamFields StreamFields
 	Options      *Options
-	StreamType   StreamType //default to TypeStream
+	StreamType   StreamType // default to TypeStream
 
 	Statement
 }
@@ -84,6 +84,7 @@ func (sf *StreamFields) UnmarshalFromMap(data map[string]*JsonStreamField) error
 	*sf = t
 	return nil
 }
+
 func (sf *StreamFields) ToJsonSchema() map[string]*JsonStreamField {
 	return convertSchema(*sf)
 }

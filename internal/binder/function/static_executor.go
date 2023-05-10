@@ -70,6 +70,4 @@ func (f *funcExecutor) GetFuncType(name string) ast.FuncType {
 	return fs.fType
 }
 
-var (
-	staticFuncExecutor = &funcExecutor{}
-)
+var staticFuncExecutor = &funcExecutor{}

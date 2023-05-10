@@ -39,27 +39,33 @@ func str2Map(s string) map[string]interface{} {
 }
 
 func TestLeftJoinPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.WindowTuples
 		result interface{}
 	}{
-		{ //0
+		{ // 0
 			sql: "SELECT id1 FROM src1 left join src2 on id1 = id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -92,19 +98,25 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -134,19 +146,25 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.ts = src2.ts",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1", "ts": cast.TimeFromUnixMilli(1568854515000)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2", "ts": cast.TimeFromUnixMilli(1568854525000)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3", "ts": cast.TimeFromUnixMilli(1568854535000)},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1", "ts": cast.TimeFromUnixMilli(1568854515000)},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2", "ts": cast.TimeFromUnixMilli(1568854525000)},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3", "ts": cast.TimeFromUnixMilli(1568854545000)},
 					},
 				},
@@ -177,19 +195,25 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 5, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 6, "f2": "w3"},
 					},
 				},
@@ -201,18 +225,24 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 As s1 left join src2 as s2 on s1.id1 = s2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "s1",
+					&xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "s1",
+					}, &xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "s1",
+					}, &xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
-					&xsql.Tuple{Emitter: "s2",
+					&xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "s2",
+					}, &xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "s2",
+					}, &xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -244,13 +274,16 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -276,11 +309,14 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 				},
@@ -310,11 +346,14 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 				},
@@ -344,9 +383,11 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -357,9 +398,11 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -371,13 +414,16 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id2 = src2.id1",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f2": "w1"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
 					},
 				},
@@ -404,19 +450,25 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1*2 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -448,19 +500,25 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2*2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -491,19 +549,25 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.f1->cid = src2.f2->cid",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": str2Map(`{"cid" : 1, "name" : "tom1"}`)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": str2Map(`{"cid" : 2, "name" : "mike1"}`)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": str2Map(`{"cid" : 3, "name" : "alice1"}`)},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": str2Map(`{"cid" : 1, "name" : "tom2"}`)},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": str2Map(`{"cid" : 2, "name" : "mike2"}`)},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": str2Map(`{"cid" : 4, "name" : "alice2"}`)},
 					},
 				},
@@ -535,12 +599,14 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1, mqtt(src1.topic) AS a, mqtt(src2.topic) as b FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter:  "src1",
 						Message:  xsql.Message{"id1": 1, "f1": "v1"},
 						Metadata: xsql.Metadata{"topic": "devices/type1/device001"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter:  "src2",
 						Message:  xsql.Message{"id2": 1, "f2": "w1"},
 						Metadata: xsql.Metadata{"topic": "devices/type2/device001"},
 					},
@@ -561,23 +627,31 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v4"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 4, "f1": "v5"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 3, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 3, "f2": "w3"},
 					},
 				},
@@ -632,19 +706,25 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w3"},
 					},
 				},
@@ -703,7 +783,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 }
 
 func TestInnerJoinPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.WindowTuples
 		result interface{}
@@ -712,19 +792,25 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -750,19 +836,25 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -782,18 +874,24 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 As s1 inner join src2 as s2 on s1.id1 = s2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "s1",
+					&xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "s1",
+					}, &xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "s1",
+					}, &xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
-					&xsql.Tuple{Emitter: "s2",
+					&xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "s2",
+					}, &xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "s2",
+					}, &xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -820,13 +918,16 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -853,16 +954,20 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v2"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -901,11 +1006,14 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 				},
@@ -917,11 +1025,14 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 				},
@@ -933,9 +1044,11 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -947,9 +1060,11 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -961,19 +1076,25 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1*2 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1000,19 +1121,25 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.id1 = src2.id2*2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1033,19 +1160,25 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 inner join src2 on src1.f1->cid = src2.f2->cid",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": str2Map(`{"cid" : 1, "name" : "tom1"}`)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": str2Map(`{"cid" : 2, "name" : "mike1"}`)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": str2Map(`{"cid" : 3, "name" : "alice1"}`)},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": str2Map(`{"cid" : 1, "name" : "tom2"}`)},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": str2Map(`{"cid" : 2, "name" : "mike2"}`)},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": str2Map(`{"cid" : 4, "name" : "alice2"}`)},
 					},
 				},
@@ -1071,18 +1204,24 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 As s1 inner join src2 as s2 on s1.id1 = s2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "s1",
+					&xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "s1",
+					}, &xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "s1",
+					}, &xsql.Tuple{
+						Emitter: "s1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
-					&xsql.Tuple{Emitter: "s2",
+					&xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "s2",
+					}, &xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "s2",
+					}, &xsql.Tuple{
+						Emitter: "s2",
 						Message: xsql.Message{"id2": 2, "f2": "w3"},
 					},
 				},
@@ -1136,7 +1275,7 @@ func TestInnerJoinPlan_Apply(t *testing.T) {
 }
 
 func TestRightJoinPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.WindowTuples
 		result interface{}
@@ -1145,19 +1284,25 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 right join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1190,19 +1335,25 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 right join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1240,13 +1391,16 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 right join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -1272,11 +1426,14 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 right join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v3"},
 					},
 				},
@@ -1287,11 +1444,14 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 right join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1343,7 +1503,7 @@ func TestRightJoinPlan_Apply(t *testing.T) {
 }
 
 func TestFullJoinPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.WindowTuples
 		result interface{}
@@ -1352,21 +1512,28 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w4"},
 					},
 				},
@@ -1412,19 +1579,25 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1464,11 +1637,14 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 				},
@@ -1500,19 +1676,25 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 5, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 6, "f2": "w3"},
 					},
 				},
@@ -1557,11 +1739,14 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1613,7 +1798,7 @@ func TestFullJoinPlan_Apply(t *testing.T) {
 }
 
 func TestCrossJoinPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.WindowTuples
 		result interface{}
@@ -1622,19 +1807,25 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 cross join src2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
 					},
 				},
@@ -1705,13 +1896,16 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 cross join src2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -1736,9 +1930,11 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 cross join src2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -1749,9 +1945,11 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src2 cross join src1",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w2"},
 					},
 				},
@@ -1783,7 +1981,7 @@ func TestCrossJoinPlan_Apply(t *testing.T) {
 }
 
 func TestCrossJoinPlanError(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -1796,21 +1994,28 @@ func TestCrossJoinPlanError(t *testing.T) {
 			sql: "SELECT id1 FROM src1 full join src2 on src1.id1 = src2.id2",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v3"},
 					},
 
-					&xsql.Tuple{Emitter: "src2",
+					&xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 1, "f2": "w1"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": "3", "f2": "w2"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 4, "f2": "w3"},
-					}, &xsql.Tuple{Emitter: "src2",
+					}, &xsql.Tuple{
+						Emitter: "src2",
 						Message: xsql.Message{"id2": 2, "f2": "w4"},
 					},
 				},

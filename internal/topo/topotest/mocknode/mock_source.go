@@ -51,8 +51,8 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 			diff = TIMELEAP
 		}
 		next := mockClock.After(time.Duration(diff) * time.Millisecond)
-		//Mock timer, only send out the data once the mock time goes to the timestamp.
-		//Another mechanism must be imposed to move forward the mock time.
+		// Mock timer, only send out the data once the mock time goes to the timestamp.
+		// Another mechanism must be imposed to move forward the mock time.
 		select {
 		case <-next:
 			m.Lock()

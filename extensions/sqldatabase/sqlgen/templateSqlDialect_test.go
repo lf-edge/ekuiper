@@ -141,7 +141,7 @@ func TestTemplateQuery_DateTime(t *testing.T) {
 
 	s, _ := NewTemplateSqlQuery(sqlcfg.TemplateSqlQueryCfg)
 
-	//query
+	// query
 	firstSqlStr, _ := s.SqlQueryStatement()
 
 	want := "select * from table where responseTime > `2008-10-25 14:56:59.123`"
@@ -150,7 +150,7 @@ func TestTemplateQuery_DateTime(t *testing.T) {
 		t.Errorf("SqlQueryStatement() = %v, want %v", firstSqlStr, want)
 	}
 
-	//query result
+	// query result
 	s.UpdateMaxIndexValue(map[string]interface{}{
 		"responseTime": getDatetimeFromstring("2008-10-29 14:56:59"),
 	})

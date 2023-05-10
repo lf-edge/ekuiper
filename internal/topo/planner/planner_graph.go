@@ -468,7 +468,7 @@ func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
 		length = n.Size
 		interval = n.Interval
 	} else {
-		var unit = 1
+		unit := 1
 		switch strings.ToLower(n.Unit) {
 		case "dd":
 			unit = 24 * 3600 * 1000

@@ -103,7 +103,7 @@ func TestCSVFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	testFolder := filepath.Join(path, "test", "csvTemp")
-	err = os.MkdirAll(testFolder, 0755)
+	err = os.MkdirAll(testFolder, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -22,8 +22,10 @@ import (
 	"strings"
 )
 
-const EtcOsRelease string = "/etc/os-release"
-const UsrLibOsRelease string = "/usr/lib/os-release"
+const (
+	EtcOsRelease    string = "/etc/os-release"
+	UsrLibOsRelease string = "/usr/lib/os-release"
+)
 
 // Read and return os-release, trying EtcOsRelease, followed by UsrLibOsRelease.
 // err will contain an error message if neither file exists or failed to parse
@@ -96,7 +98,6 @@ func parseString(content string) (lines []string, err error) {
 		lines = append(lines, scanner.Text())
 	}
 	return lines, scanner.Err()
-
 }
 
 func parseLine(line string) (key string, value string, err error) {

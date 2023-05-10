@@ -22,7 +22,7 @@ import (
 )
 
 func TestDecode(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		t          PluginType
 		j          string
 		name       string

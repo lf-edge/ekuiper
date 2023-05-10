@@ -53,7 +53,7 @@ func TestCreate(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	var tests = []struct {
+	tests := []struct {
 		r *api.Rule
 		e error
 	}{
@@ -70,7 +70,8 @@ func TestCreate(t *testing.T) {
 				Options: defaultOption,
 			},
 			e: nil,
-		}, {
+		},
+		{
 			r: &api.Rule{
 				Triggered: false,
 				Id:        "test",
@@ -132,7 +133,7 @@ func TestUpdate(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		r *api.Rule
 		e error
 	}{

@@ -40,7 +40,7 @@ func TestSink(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		c map[string]interface{}
 		d interface{}
 		k string
@@ -129,7 +129,7 @@ func TestSinkMultipleFields(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		c      map[string]interface{}
 		d      interface{}
 		kvPair map[string]interface{}
@@ -212,7 +212,7 @@ func TestUpdateString(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		d interface{}
 		k string
 		v interface{}
@@ -290,7 +290,7 @@ func TestUpdateList(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		d interface{}
 		k string
 		v []string
@@ -357,7 +357,6 @@ func TestUpdateList(t *testing.T) {
 }
 
 func TestRedisSink_Configure(t *testing.T) {
-
 	type args struct {
 		props map[string]interface{}
 	}

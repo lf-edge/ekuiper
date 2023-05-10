@@ -35,7 +35,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestExec(t *testing.T) {
-	var tests = []mock.FuncTest{
+	tests := []mock.FuncTest{
 		{
 			Args:   []interface{}{"abc"},
 			Result: "abc",

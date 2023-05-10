@@ -25,7 +25,7 @@ import (
 )
 
 func TestParser_ParseTree(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s    string
 		stmt ast.Statement
 		err  string
@@ -213,5 +213,4 @@ func TestParser_ParseTree(t *testing.T) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
 		}
 	}
-
 }

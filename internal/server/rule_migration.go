@@ -78,7 +78,7 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 		if err != nil {
 			return
 		}
-		//streams
+		// streams
 		streamsFromStmt := xsql.GetStreams(stmt)
 		for _, s := range streamsFromStmt {
 			streamStmt, err := xsql.GetDataSource(store, s)
@@ -86,16 +86,16 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 				continue
 			}
 			if streamStmt.StreamType == ast.TypeStream {
-				//get streams
+				// get streams
 				de.streams = append(de.streams, string(streamStmt.Name))
 			} else if streamStmt.StreamType == ast.TypeTable {
-				//get tables
+				// get tables
 				de.tables = append(de.tables, string(streamStmt.Name))
 			}
 
-			//get source type
+			// get source type
 			de.sources = append(de.sources, streamStmt.Options.TYPE)
-			//get config key
+			// get config key
 			_, ok := de.sourceConfigKeys[streamStmt.Options.TYPE]
 			if ok {
 				de.sourceConfigKeys[streamStmt.Options.TYPE] = append(de.sourceConfigKeys[streamStmt.Options.TYPE], streamStmt.Options.CONF_KEY)
@@ -105,13 +105,13 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 				de.sourceConfigKeys[streamStmt.Options.TYPE] = confKeys
 			}
 
-			//get schema id
+			// get schema id
 			if streamStmt.Options.SCHEMAID != "" {
 				r := strings.Split(streamStmt.Options.SCHEMAID, ".")
 				de.schemas = append(de.schemas, streamStmt.Options.FORMAT+"_"+r[0])
 			}
 		}
-		//actions
+		// actions
 		for _, m := range rule.Actions {
 			for name, action := range m {
 				props, _ := action.(map[string]interface{})
@@ -147,10 +147,9 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 			return true
 		})
 
-		//Rules
+		// Rules
 		de.rules = append(de.rules, rule.Id)
 	} else {
-
 		for _, gn := range ruleGraph.Nodes {
 			switch gn.Type {
 			case "source":
@@ -162,7 +161,7 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 				sourceOption.TYPE = gn.NodeType
 
 				de.sources = append(de.sources, sourceOption.TYPE)
-				//get config key
+				// get config key
 				_, ok := de.sourceConfigKeys[sourceOption.TYPE]
 				if ok {
 					de.sourceConfigKeys[sourceOption.TYPE] = append(de.sourceConfigKeys[sourceOption.TYPE], sourceOption.CONF_KEY)
@@ -171,7 +170,7 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 					confKeys = append(confKeys, sourceOption.CONF_KEY)
 					de.sourceConfigKeys[sourceOption.TYPE] = confKeys
 				}
-				//get schema id
+				// get schema id
 				if sourceOption.SCHEMAID != "" {
 					r := strings.Split(sourceOption.SCHEMAID, ".")
 					de.schemas = append(de.schemas, sourceOption.FORMAT+"_"+r[0])
@@ -368,10 +367,10 @@ func (p *RuleMigrationProcessor) exportTables(tables []string) map[string]string
 }
 
 func (p *RuleMigrationProcessor) exportSelected(de *dependencies, config *Configuration) {
-	//get the stream and table
+	// get the stream and table
 	config.Streams = p.exportStreams(de.streams)
 	config.Tables = p.exportTables(de.tables)
-	//get the sources
+	// get the sources
 	for _, v := range de.sources {
 		t, srcName, srcInfo := io.GetSourcePlugin(v)
 		if t == plugin.NATIVE_EXTENSION {
@@ -415,7 +414,7 @@ func (p *RuleMigrationProcessor) exportSelected(de *dependencies, config *Config
 	config.SinkConfig = configSet.Sinks
 	config.ConnectionConfig = configSet.Connections
 
-	//get schema
+	// get schema
 	for _, v := range de.schemas {
 		schName, schInfo := getSchemaInstallScript(v)
 		config.Schema[schName] = schInfo
@@ -468,7 +467,6 @@ func parseFilter(props map[string]interface{}) (ast.Expr, error) {
 	} else {
 		return exp, nil
 	}
-
 }
 
 func parseHaving(props map[string]interface{}) (ast.Expr, error) {
@@ -566,5 +564,4 @@ func parseJoin(props map[string]interface{}) (*ast.SelectStatement, error) {
 	} else {
 		return p, nil
 	}
-
 }

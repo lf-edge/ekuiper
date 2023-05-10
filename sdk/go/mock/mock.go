@@ -69,12 +69,11 @@ func (c *mockContext) GetInstanceId() int {
 }
 
 func (c *mockContext) GetRootPath() string {
-	//loc, _ := conf.GetLoc("")
+	// loc, _ := conf.GetLoc("")
 	return "root path"
 }
 
 func (c *mockContext) SetError(err error) {
-
 }
 
 func (c *mockContext) WithMeta(ruleId string, opId string) api.StreamContext {

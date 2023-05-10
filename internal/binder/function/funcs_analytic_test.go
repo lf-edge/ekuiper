@@ -31,7 +31,7 @@ func TestChangedColValidation(t *testing.T) {
 	if !ok {
 		t.Fatal("builtin not found")
 	}
-	var tests = []struct {
+	tests := []struct {
 		args []ast.Expr
 		err  error
 	}{
@@ -77,7 +77,7 @@ func TestChangedColExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -148,7 +148,7 @@ func TestChangedColPartition(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -219,7 +219,7 @@ func TestChangedColPartitionWithWhen(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -302,7 +302,7 @@ func TestHadChangedValidation(t *testing.T) {
 	if !ok {
 		t.Fatal("builtin not found")
 	}
-	var tests = []struct {
+	tests := []struct {
 		args []ast.Expr
 		err  error
 	}{
@@ -355,7 +355,7 @@ func TestHadChangedExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -458,7 +458,7 @@ func TestHadChangedExecAllowNull(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -570,7 +570,7 @@ func TestHadChangedPartition(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -673,7 +673,7 @@ func TestHadChangedPartitionWithWhen(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -785,7 +785,7 @@ func TestLagExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -847,7 +847,7 @@ func TestLagPartition(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -909,7 +909,7 @@ func TestLagExecWithWhen(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -971,7 +971,7 @@ func TestLagPartitionWithWhen(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -1033,7 +1033,7 @@ func TestLagExecIndexWithDefaultValue(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -1105,7 +1105,7 @@ func TestLagExecIndex(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -1172,7 +1172,7 @@ func TestLatestExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -1234,7 +1234,7 @@ func TestLatestExecWithWhen(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -1296,7 +1296,7 @@ func TestLatestPartition(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{

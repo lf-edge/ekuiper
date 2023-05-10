@@ -26,12 +26,12 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conf     map[string]interface{}
 		expected *taosConfig
 		error    string
 	}{
-		{ //0
+		{ // 0
 			conf: map[string]interface{}{
 				"host":        "e0d9d8089bef",
 				"port":        6030,
@@ -53,7 +53,7 @@ func TestConfig(t *testing.T) {
 				Fields:      nil,
 			},
 		},
-		{ //1
+		{ // 1
 			conf: map[string]interface{}{
 				"ip":          "e0d9d8089bef",
 				"port":        6030,
@@ -77,7 +77,7 @@ func TestConfig(t *testing.T) {
 				Fields:      nil,
 			},
 		},
-		{ //2
+		{ // 2
 			conf: map[string]interface{}{
 				"port":        6030,
 				"database":    "dab",
@@ -102,7 +102,7 @@ func TestConfig(t *testing.T) {
 				TagFields:   []string{"a", "b"},
 			},
 		},
-		{ //3
+		{ // 3
 			conf: map[string]interface{}{
 				"port":     6030,
 				"database": "dab",
@@ -111,7 +111,7 @@ func TestConfig(t *testing.T) {
 			},
 			error: "property TsFieldName is required",
 		},
-		{ //4
+		{ // 4
 			conf: map[string]interface{}{
 				"port":        6030,
 				"database":    "dab",
@@ -137,7 +137,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestBuildSql(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conf     *taosConfig
 		data     map[string]interface{}
 		expected string

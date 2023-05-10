@@ -42,15 +42,19 @@ type modelVersion interface {
 func modelFactory(_ string) modelVersion {
 	return new(deviceModel)
 }
+
 func (p *property) getName() string {
 	return p.Name
 }
+
 func (p *property) getDataType() string {
 	return p.DataType
 }
+
 func (d *device) getName() string {
 	return d.Name
 }
+
 func (d *device) findDataType(name string) string {
 	for _, v := range d.Properties {
 		if strings.EqualFold(v.getName(), name) {
@@ -59,6 +63,7 @@ func (d *device) findDataType(name string) string {
 	}
 	return ""
 }
+
 func (dm *deviceModel) findDataType(deviceId, dataName string) string {
 	for _, v := range dm.Devices {
 		if strings.EqualFold(v.getName(), deviceId) {
@@ -67,18 +72,21 @@ func (dm *deviceModel) findDataType(deviceId, dataName string) string {
 	}
 	return ""
 }
+
 func boolToInt(b bool) int {
 	if b {
 		return 1
 	}
 	return 0
 }
+
 func intToBool(i int) bool {
 	if 0 == i {
 		return false
 	}
 	return true
 }
+
 func changeType(modelType string, data interface{}) (interface{}, string) {
 	var err error
 	dt := reflect.TypeOf(data)
@@ -145,6 +153,7 @@ func changeType(modelType string, data interface{}) (interface{}, string) {
 	}
 	return data, ""
 }
+
 func topicToDeviceid(topic string) string {
 	sliStr := strings.Split(topic, `/`)
 	if 4 > len(sliStr) {
@@ -152,6 +161,7 @@ func topicToDeviceid(topic string) string {
 	}
 	return sliStr[3]
 }
+
 func (dm *deviceModel) checkType(m map[string]interface{}, topic string) []string {
 	var sliErr []string
 	strErr := ""

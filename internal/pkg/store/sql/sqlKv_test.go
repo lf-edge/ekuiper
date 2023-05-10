@@ -26,8 +26,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
-const SDbName = "sqliteKV.db"
-const STable = "test"
+const (
+	SDbName = "sqliteKV.db"
+	STable  = "test"
+)
 
 func TestSqlKvSetnx(t *testing.T) {
 	ks, db, abs := setupSqlKv()

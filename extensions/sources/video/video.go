@@ -27,8 +27,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-const RTSP_DEFAULT_INTERVAL = 10000
-const FRAMENUMBER = 5
+const (
+	RTSP_DEFAULT_INTERVAL = 10000
+	FRAMENUMBER           = 5
+)
 
 type VideoPullSource struct {
 	url      string
@@ -36,7 +38,6 @@ type VideoPullSource struct {
 }
 
 func (rps *VideoPullSource) Configure(_ string, props map[string]interface{}) error {
-
 	if u, ok := props["url"]; ok {
 		if p, ok := u.(string); ok {
 			rps.url = p

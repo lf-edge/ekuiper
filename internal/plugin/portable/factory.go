@@ -34,7 +34,7 @@ func (m *Manager) Source(name string) (api.Source, error) {
 func (m *Manager) SourcePluginInfo(name string) (plugin.EXTENSION_TYPE, string, string) {
 	pluginName, ok := m.reg.GetSymbol(plugin.SOURCE, name)
 	if ok {
-		var installScript = ""
+		installScript := ""
 		m.plgInstallDb.Get(pluginName, &installScript)
 		return plugin.PORTABLE_EXTENSION, pluginName, installScript
 	} else {
@@ -58,7 +58,7 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 func (m *Manager) SinkPluginInfo(name string) (plugin.EXTENSION_TYPE, string, string) {
 	pluginName, ok := m.reg.GetSymbol(plugin.SINK, name)
 	if ok {
-		var installScript = ""
+		installScript := ""
 		m.plgInstallDb.Get(pluginName, &installScript)
 		return plugin.PORTABLE_EXTENSION, pluginName, installScript
 	} else {
@@ -98,7 +98,7 @@ func (m *Manager) HasFunctionSet(funcName string) bool {
 func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
 	pluginName, ok := m.reg.GetSymbol(plugin.FUNCTION, funcName)
 	if ok {
-		var installScript = ""
+		installScript := ""
 		m.plgInstallDb.Get(pluginName, &installScript)
 		return plugin.PORTABLE_EXTENSION, pluginName, installScript
 	} else {

@@ -27,7 +27,7 @@ import (
 )
 
 func TestTableProcessor_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		stmt   *ast.StreamStmt
 		data   []byte
 		result interface{}

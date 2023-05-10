@@ -105,7 +105,7 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 		cf[key] = aux
 	}
 
-	//note: config keys in data directory will overwrite those in etc directory with same name
+	// note: config keys in data directory will overwrite those in etc directory with same name
 	for key, kvs := range c.dataCfg {
 		aux := make(map[string]interface{})
 		for k, v := range kvs {

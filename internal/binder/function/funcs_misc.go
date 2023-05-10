@@ -580,7 +580,6 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
-
 }
 
 func round(num float64) int {

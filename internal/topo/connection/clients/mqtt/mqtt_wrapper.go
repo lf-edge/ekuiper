@@ -39,11 +39,11 @@ type mqttClientWrapper struct {
 	cli *MQTTClient
 
 	subLock sync.RWMutex
-	//topic: subscriber
-	//multiple go routine can sub same topic
+	// topic: subscriber
+	// multiple go routine can sub same topic
 	topicSubscriptions map[string]*mqttSubscriptionInfo
 
-	//consumerId: SubscribedTopics
+	// consumerId: SubscribedTopics
 	subscribers map[string]clients.SubscribedTopics
 
 	conSelector string

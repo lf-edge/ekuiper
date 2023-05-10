@@ -31,7 +31,7 @@ import (
 )
 
 func TestMiscFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.Tuple
 		result []map[string]interface{}
@@ -281,8 +281,9 @@ func TestMiscFunc_Apply1(t *testing.T) {
 		}
 	}
 }
+
 func TestMqttFunc_Apply2(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.JoinTuples
 		result []map[string]interface{}
@@ -331,7 +332,7 @@ func TestMqttFunc_Apply2(t *testing.T) {
 }
 
 func TestMetaFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -441,7 +442,7 @@ func TestMetaFunc_Apply1(t *testing.T) {
 }
 
 func TestJsonPathFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -855,7 +856,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 }
 
 func TestChangedFuncs_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   []interface{}
 		result [][]map[string]interface{}
@@ -986,7 +987,7 @@ func TestChangedFuncs_Apply1(t *testing.T) {
 }
 
 func TestLagFuncs_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   []interface{}
 		result [][]map[string]interface{}

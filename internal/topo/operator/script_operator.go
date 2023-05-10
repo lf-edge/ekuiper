@@ -75,7 +75,6 @@ func (p *ScriptOp) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Functi
 			case map[string]interface{}:
 				if !p.isAgg {
 					return fmt.Errorf("script node is not aggregate but exec result is aggregated: %v", val.Export())
-
 				}
 				return &xsql.Tuple{Message: nm}
 			case []map[string]interface{}:

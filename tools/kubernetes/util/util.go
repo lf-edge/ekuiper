@@ -88,6 +88,7 @@ type (
 func (f *historyFile) setName(name string) {
 	f.Name = name
 }
+
 func (f *historyFile) setLoadTime(loadTime int64) {
 	f.LoadTime = loadTime
 }
@@ -95,6 +96,7 @@ func (f *historyFile) setLoadTime(loadTime int64) {
 func (s *server) getLogs() []string {
 	return s.logs
 }
+
 func (s *server) printLogs() {
 	for _, v := range s.logs {
 		kconf.Log.Info(v)

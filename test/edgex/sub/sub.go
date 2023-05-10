@@ -28,7 +28,7 @@ import (
 )
 
 func subEventsFromMQTT(host string) {
-	var msgConfig1 = types.MessageBusConfig{
+	msgConfig1 := types.MessageBusConfig{
 		Broker: types.HostInfo{
 			Host:     host,
 			Port:     1883,
@@ -43,15 +43,15 @@ func subEventsFromMQTT(host string) {
 		if ec := msgClient.Connect(); ec != nil {
 			conf.Log.Fatal(ec)
 		} else {
-			//log.Infof("The connection to edgex messagebus is established successfully.")
+			// log.Infof("The connection to edgex messagebus is established successfully.")
 			messages := make(chan types.MessageEnvelope)
 			topics := []types.TopicChannel{{Topic: "result", Messages: messages}}
 			err := make(chan error)
 			if e := msgClient.Subscribe(topics, err); e != nil {
-				//log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
+				// log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 				conf.Log.Fatal(e)
 			} else {
-				var count = 0
+				count := 0
 				for {
 					select {
 					case e1 := <-err:
@@ -71,7 +71,7 @@ func subEventsFromMQTT(host string) {
 }
 
 func subEventsFromRedis(host string) {
-	var msgConfig1 = types.MessageBusConfig{
+	msgConfig1 := types.MessageBusConfig{
 		Broker: types.HostInfo{
 			Host:     host,
 			Port:     6379,
@@ -86,15 +86,15 @@ func subEventsFromRedis(host string) {
 		if ec := msgClient.Connect(); ec != nil {
 			conf.Log.Fatal(ec)
 		} else {
-			//log.Infof("The connection to edgex messagebus is established successfully.")
+			// log.Infof("The connection to edgex messagebus is established successfully.")
 			messages := make(chan types.MessageEnvelope)
 			topics := []types.TopicChannel{{Topic: "result", Messages: messages}}
 			err := make(chan error)
 			if e := msgClient.Subscribe(topics, err); e != nil {
-				//log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
+				// log.Errorf("Failed to subscribe to edgex messagebus topic %s.\n", e)
 				conf.Log.Fatal(e)
 			} else {
-				var count = 0
+				count := 0
 				for {
 					select {
 					case e1 := <-err:

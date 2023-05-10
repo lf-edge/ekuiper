@@ -35,7 +35,7 @@ func TestBindings(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		name           string
 		isSource       bool
 		isLookupSource bool

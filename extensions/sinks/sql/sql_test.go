@@ -61,7 +61,7 @@ func TestSingle(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var data = []map[string]interface{}{
+	data := []map[string]interface{}{
 		{"id": 1, "name": "John", "address": "343", "mobile": "334433"},
 		{"id": 2, "name": "Susan", "address": "34", "mobile": "334433"},
 		{"id": 3, "name": "Susan", "address": "34", "mobile": "334433"},
@@ -126,7 +126,7 @@ func TestBatch(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var data = []map[string]interface{}{
+	data := []map[string]interface{}{
 		{"id": 1, "name": "John", "address": "343", "mobile": "334433"},
 		{"id": 2, "name": "Susan", "address": "34", "mobile": "334433"},
 		{"id": 3, "name": "Susan", "address": "34", "mobile": "334433"},
@@ -190,7 +190,7 @@ func TestUpdate(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var test = []struct {
+	test := []struct {
 		d []map[string]interface{}
 		b bool
 		r []map[string]interface{}

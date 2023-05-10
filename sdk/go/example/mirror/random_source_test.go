@@ -23,7 +23,7 @@ import (
 )
 
 func TestConfigure(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		p   map[string]interface{}
 		err string
 	}{

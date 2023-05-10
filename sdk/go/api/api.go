@@ -38,6 +38,7 @@ func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]inter
 func (t *DefaultSourceTuple) Message() map[string]interface{} {
 	return t.Mess
 }
+
 func (t *DefaultSourceTuple) Meta() map[string]interface{} {
 	return t.M
 }
@@ -51,21 +52,21 @@ type Source interface {
 }
 
 type Function interface {
-	//The argument is a list of xsql.Expr
+	// The argument is a list of xsql.Expr
 	Validate(args []interface{}) error
-	//Execute the function, return the result and if execution is successful.
-	//If execution fails, return the error and false.
+	// Execute the function, return the result and if execution is successful.
+	// If execution fails, return the error and false.
 	Exec(args []interface{}, ctx FunctionContext) (interface{}, bool)
-	//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
+	// If this function is an aggregate function. Each parameter of an aggregate function will be a slice
 	IsAggregate() bool
 }
 
 type Sink interface {
-	//Should be sync function for normal case. The container will run it in go func
+	// Should be sync function for normal case. The container will run it in go func
 	Open(ctx StreamContext) error
-	//Called during initialization. Configure the sink with the properties from rule action definition
+	// Called during initialization. Configure the sink with the properties from rule action definition
 	Configure(props map[string]interface{}) error
-	//Called when each row of data has transferred to this sink
+	// Called when each row of data has transferred to this sink
 	Collect(ctx StreamContext, data interface{}) error
 	Closable
 }

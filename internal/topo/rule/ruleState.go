@@ -155,9 +155,7 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 	err := infra.SafeRun(func() error {
 		count := 0
 		d := option.Delay
-		var (
-			er error
-		)
+		var er error
 		ticker := time.NewTicker(time.Duration(d) * time.Millisecond)
 		defer ticker.Stop()
 		for {

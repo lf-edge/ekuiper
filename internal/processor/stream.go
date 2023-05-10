@@ -33,9 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
-var (
-	log = conf.Log
-)
+var log = conf.Log
 
 type StreamProcessor struct {
 	db             kv.KeyValue
@@ -71,7 +69,7 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 		return nil, err
 	}
 	switch s := stmt.(type) {
-	case *ast.StreamStmt: //Table is also StreamStmt
+	case *ast.StreamStmt: // Table is also StreamStmt
 		var r string
 		err = p.execSave(s, statement, false)
 		stt := ast.StreamTypeMap[s.StreamType]
@@ -300,7 +298,6 @@ func (p *StreamProcessor) execDescribe(stmt ast.NameNode, st ast.StreamType) (st
 	default:
 		return "%s", fmt.Errorf("Error resolving the %s %s, the data in db may be corrupted.", ast.StreamTypeMap[st], stmt.GetName())
 	}
-
 }
 
 func printOptions(opts *ast.Options, buff *bytes.Buffer) {
@@ -468,9 +465,7 @@ func (p *StreamProcessor) GetAll() (result map[string]map[string]string, e error
 		e = err
 		return
 	}
-	var (
-		vs = &xsql.StreamInfo{}
-	)
+	vs := &xsql.StreamInfo{}
 	result = map[string]map[string]string{
 		"streams": make(map[string]string),
 		"tables":  make(map[string]string),

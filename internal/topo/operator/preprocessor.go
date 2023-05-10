@@ -30,10 +30,10 @@ import (
 // 2. schema validate and convert, when strict_validation is on and field type is not binary
 // Do not convert types
 type Preprocessor struct {
-	//Pruned stream fields. Could be streamField(with data type info) or string
+	// Pruned stream fields. Could be streamField(with data type info) or string
 	defaultFieldProcessor
-	//allMeta        bool
-	//metaFields     []string //only needed if not allMeta
+	// allMeta        bool
+	// metaFields     []string //only needed if not allMeta
 	isEventTime    bool
 	timestampField string
 	checkSchema    bool
@@ -42,7 +42,8 @@ type Preprocessor struct {
 
 func NewPreprocessor(isSchemaless bool, fields map[string]*ast.JsonStreamField, _ bool, _ []string, iet bool, timestampField string, timestampFormat string, isBinary bool, strictValidation bool) (*Preprocessor, error) {
 	p := &Preprocessor{
-		isEventTime: iet, timestampField: timestampField, isBinary: isBinary}
+		isEventTime: iet, timestampField: timestampField, isBinary: isBinary,
+	}
 	conf.Log.Infof("preprocessor isSchemaless %v, strictValidation %v, isBinary %v", isSchemaless, strictValidation, strictValidation)
 	if !isSchemaless && (strictValidation || isBinary) {
 		p.checkSchema = true

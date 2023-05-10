@@ -31,13 +31,15 @@ const (
 	KuiperSyslogKey = "KuiperSyslogKey"
 )
 
-var LoadFileType = "relative"
-var AbsoluteMapping = map[string]string{
-	etcDir:     "/etc/kuiper",
-	dataDir:    "/var/lib/kuiper/data",
-	logDir:     "/var/log/kuiper",
-	pluginsDir: "/var/lib/kuiper/plugins",
-}
+var (
+	LoadFileType    = "relative"
+	AbsoluteMapping = map[string]string{
+		etcDir:     "/etc/kuiper",
+		dataDir:    "/var/lib/kuiper/data",
+		logDir:     "/var/log/kuiper",
+		pluginsDir: "/var/lib/kuiper/plugins",
+	}
+)
 
 func GetConfLoc() (string, error) {
 	return GetLoc(etcDir)
@@ -51,7 +53,7 @@ func GetDataLoc() (string, error) {
 		}
 		d := path.Join(dataDir, "test")
 		if _, err := os.Stat(d); os.IsNotExist(err) {
-			err = os.MkdirAll(d, 0755)
+			err = os.MkdirAll(d, 0o755)
 			if err != nil {
 				return "", err
 			}
@@ -113,11 +115,11 @@ func relativePath(subdir string) (dir string, err error) {
 				lastdir = dir
 				continue
 			}
-			//Log.Printf("Trying to load file from %s", confDir)
+			// Log.Printf("Trying to load file from %s", confDir)
 			return confDir, nil
 		}
 	} else {
-		//Log.Printf("Trying to load file from %s", confDir)
+		// Log.Printf("Trying to load file from %s", confDir)
 		return confDir, nil
 	}
 

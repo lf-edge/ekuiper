@@ -124,9 +124,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, el map[string]interface{})
 		NodeName:  n,
 		GroupName: g,
 	}
-	var (
-		ok bool
-	)
+	var ok bool
 	if len(s.c.Tags) == 0 {
 		if conf.IsTesting {
 			var keys []string

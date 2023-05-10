@@ -26,7 +26,7 @@ import (
 )
 
 func TestMathAndConversionFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.Tuple
 		result []map[string]interface{}

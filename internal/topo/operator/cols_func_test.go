@@ -29,7 +29,7 @@ import (
 )
 
 func TestChangedColsFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   []interface{}
 		result [][]map[string]interface{}

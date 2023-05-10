@@ -29,7 +29,7 @@ func RedisStorageConSelectorApply(connectionSelector string, conf *KuiperConf) e
 		return err
 	}
 
-	//this should be edgeX redis config
+	// this should be edgeX redis config
 	kvs, err := sel.ReadCfgFromYaml()
 	if err != nil {
 		return err

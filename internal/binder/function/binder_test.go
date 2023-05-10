@@ -36,7 +36,7 @@ func TestBinding(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		name      string
 		isFunc    bool
 		isFuncset bool

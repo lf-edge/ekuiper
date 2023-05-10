@@ -213,11 +213,11 @@ func TestRestService(t *testing.T) {
 	server.Start()
 
 	defer server.Close()
-	//Reset
+	// Reset
 	streamList := []string{"helloStr", "commands", "fakeBin", "shelves", "demo", "mes"}
 	topotest.HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []topotest.RuleTest{
+	// Data setup
+	tests := []topotest.RuleTest{
 		{
 			Name: `TestRestRule1`,
 			Sql:  `SELECT helloFromRest(name) as wc FROM helloStr`,
@@ -591,11 +591,11 @@ func TestMsgpackService(t *testing.T) {
 	// Comment out because the bug in the msgpack rpc
 	// defer serv.Stop()
 
-	//Reset
+	// Reset
 	streamList := []string{"helloStr", "commands", "fakeBin"}
 	topotest.HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []topotest.RuleTest{
+	// Data setup
+	tests := []topotest.RuleTest{
 		{
 			Name: `TestRestRule1`,
 			Sql:  `SELECT helloFromMsgpack(name) as wc FROM helloStr`,
@@ -655,7 +655,7 @@ func TestMsgpackService(t *testing.T) {
 			Sql:  `SELECT getFeatureFromMsgpack(self)->feature[0]->box->h FROM fakeBin`,
 			R: [][]map[string]interface{}{
 				{{
-					"kuiper_field_0": float64(106), //Convert by the testing tool
+					"kuiper_field_0": float64(106), // Convert by the testing tool
 				}},
 				{{
 					"kuiper_field_0": float64(107),
@@ -772,11 +772,11 @@ func TestGrpcService(t *testing.T) {
 	}()
 	defer s.Stop()
 
-	//Reset
+	// Reset
 	streamList := []string{"helloStr", "commands", "fakeBin"}
 	topotest.HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []topotest.RuleTest{
+	// Data setup
+	tests := []topotest.RuleTest{
 		{
 			Name: `TestRestRule1`,
 			Sql:  `SELECT helloFromGrpc(name) as wc FROM helloStr`,
@@ -836,7 +836,7 @@ func TestGrpcService(t *testing.T) {
 			Sql:  `SELECT getFeatureFromGrpc(self)->feature[0]->box->h FROM fakeBin`,
 			R: [][]map[string]interface{}{
 				{{
-					"kuiper_field_0": float64(106), //Convert by the testing tool
+					"kuiper_field_0": float64(106), // Convert by the testing tool
 				}},
 				{{
 					"kuiper_field_0": float64(107),

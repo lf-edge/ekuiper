@@ -59,8 +59,6 @@ func (i *Info) Validate() error {
 	return nil
 }
 
-var (
-	schemaExt = map[def.SchemaType]string{
-		def.PROTOBUF: ".proto",
-	}
-)
+var schemaExt = map[def.SchemaType]string{
+	def.PROTOBUF: ".proto",
+}

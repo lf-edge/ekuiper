@@ -113,7 +113,7 @@ func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 func randomize(p map[string]interface{}, seed int) map[string]interface{} {
 	r := make(map[string]interface{})
 	for k, v := range p {
-		//TODO other data types
+		// TODO other data types
 		vf, ok := v.(float64)
 		if !ok {
 			break

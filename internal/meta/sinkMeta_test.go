@@ -39,5 +39,4 @@ func TestHintWhenModifySink(t *testing.T) {
 	}
 
 	fmt.Printf("%+v", showMeta)
-
 }

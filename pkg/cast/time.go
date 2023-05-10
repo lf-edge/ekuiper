@@ -59,8 +59,10 @@ import (
 //	}
 //)
 
-const JSISO = "2006-01-02T15:04:05.000Z07:00"
-const ISO8601 = "2006-01-02T15:04:05"
+const (
+	JSISO   = "2006-01-02T15:04:05.000Z07:00"
+	ISO8601 = "2006-01-02T15:04:05"
+)
 
 func TimeToUnixMilli(time time.Time) int64 {
 	return time.UnixNano() / 1e6
@@ -79,7 +81,7 @@ func InterfaceToUnixMilli(i interface{}, format string) (int64, error) {
 	case string:
 		var ti time.Time
 		var err error
-		var f = JSISO
+		f := JSISO
 		if format != "" {
 			f, err = convertFormat(format)
 			if err != nil {
@@ -109,7 +111,7 @@ func InterfaceToTime(i interface{}, format string) (time.Time, error) {
 	case string:
 		var ti time.Time
 		var err error
-		var f = JSISO
+		f := JSISO
 		if format != "" {
 			f, err = convertFormat(format)
 			if err != nil {
@@ -180,7 +182,7 @@ func convertFormat(f string) (string, error) {
 			default:
 				return "", fmt.Errorf("invalid time format %s for Y/y", f)
 			}
-		case 'G': //era
+		case 'G': // era
 			out += "AD"
 		case 'M': // M MM MMM MMMM month of year
 			j := 1
@@ -206,7 +208,6 @@ func convertFormat(f string) (string, error) {
 				if formatRune[i+j] != r {
 					break
 				}
-
 			}
 			i = i + j - 1
 			switch j {
@@ -237,7 +238,6 @@ func convertFormat(f string) (string, error) {
 				if formatRune[i+j] != r {
 					break
 				}
-
 			}
 			i = i + j - 1
 			switch j {
@@ -268,7 +268,6 @@ func convertFormat(f string) (string, error) {
 				if formatRune[i+j] != r {
 					break
 				}
-
 			}
 			i = i + j - 1
 			switch j {
@@ -283,7 +282,6 @@ func convertFormat(f string) (string, error) {
 				if formatRune[i+j] != r {
 					break
 				}
-
 			}
 			i = i + j - 1
 			switch j {

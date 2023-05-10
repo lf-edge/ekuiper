@@ -79,7 +79,7 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	var err error
 	var mechanism sasl.Mechanism
 
-	//sasl authentication type
+	// sasl authentication type
 	switch m.c.SaslAuthType {
 	case SASL_PLAIN:
 		mechanism = plain.Mechanism{

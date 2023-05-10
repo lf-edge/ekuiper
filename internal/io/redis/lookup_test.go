@@ -66,7 +66,7 @@ func TestSingle(t *testing.T) {
 		return
 	}
 	mc := econf.Clock.(*clock.Mock)
-	var tests = []struct {
+	tests := []struct {
 		value  int
 		result []api.SourceTuple
 	}{
@@ -113,7 +113,7 @@ func TestList(t *testing.T) {
 		return
 	}
 	mc := econf.Clock.(*clock.Mock)
-	var tests = []struct {
+	tests := []struct {
 		value  string
 		result []api.SourceTuple
 	}{

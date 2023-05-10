@@ -20,8 +20,8 @@ import (
 )
 
 type BarrierHandler interface {
-	Process(data *BufferOrEvent, ctx api.StreamContext) bool //If data is barrier return true, else return false
-	SetOutput(chan<- *BufferOrEvent)                         //It is using for block a channel
+	Process(data *BufferOrEvent, ctx api.StreamContext) bool // If data is barrier return true, else return false
+	SetOutput(chan<- *BufferOrEvent)                         // It is using for block a channel
 }
 
 // For qos 1, simple track barriers
@@ -49,7 +49,7 @@ func (h *BarrierTracker) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 }
 
 func (h *BarrierTracker) SetOutput(_ chan<- *BufferOrEvent) {
-	//do nothing, does not need it
+	// do nothing, does not need it
 }
 
 func (h *BarrierTracker) processBarrier(b *Barrier, ctx api.StreamContext) {
@@ -108,7 +108,7 @@ func (h *BarrierAligner) Process(data *BufferOrEvent, ctx api.StreamContext) boo
 		h.processBarrier(d, ctx)
 		return true
 	default:
-		//If blocking, save to buffer
+		// If blocking, save to buffer
 		if h.inputCount > 1 && len(h.blockedChannels) > 0 {
 			if _, ok := h.blockedChannels[data.Channel]; ok {
 				h.buffer = append(h.buffer, data)
@@ -137,7 +137,7 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 			h.onBarrier(b.OpId, ctx)
 		} else if b.CheckpointId > h.currentCheckpointId {
 			logger.Infof("Received checkpoint barrier for checkpoint %d before complete current checkpoint %d. Skipping current checkpoint.", b.CheckpointId, h.currentCheckpointId)
-			//TODO Abort checkpoint
+			// TODO Abort checkpoint
 
 			h.releaseBlocksAndResetBarriers()
 			h.beginNewAlignment(b, ctx)

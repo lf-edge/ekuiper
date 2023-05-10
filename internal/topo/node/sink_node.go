@@ -50,13 +50,13 @@ type SinkConf struct {
 
 type SinkNode struct {
 	*defaultSinkNode
-	//static
+	// static
 	sinkType string
 	mutex    sync.RWMutex
-	//configs (also static for sinks)
+	// configs (also static for sinks)
 	options map[string]interface{}
 	isMock  bool
-	//states varies after restart
+	// states varies after restart
 	sinks []api.Sink
 }
 
@@ -64,7 +64,7 @@ func NewSinkNode(name string, sinkType string, props map[string]interface{}) *Si
 	bufferLength := 1024
 	if c, ok := props["bufferLength"]; ok {
 		if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
-			//invalid property bufferLength
+			// invalid property bufferLength
 		} else {
 			bufferLength = t
 		}
@@ -371,7 +371,6 @@ func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, st
 			return nil
 		}
 	}
-
 }
 
 func getSink(name string, action map[string]interface{}) (api.Sink, error) {

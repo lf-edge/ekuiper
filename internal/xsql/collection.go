@@ -85,8 +85,10 @@ type WindowTuples struct {
 	isAgg     bool
 }
 
-var _ MergedCollection = &WindowTuples{}
-var _ SingleCollection = &WindowTuples{}
+var (
+	_ MergedCollection = &WindowTuples{}
+	_ SingleCollection = &WindowTuples{}
+)
 
 // Window Tuples is also an aggregate row
 var _ CollectionRow = &WindowTuples{}
@@ -100,8 +102,10 @@ type JoinTuples struct {
 	isAgg     bool
 }
 
-var _ SingleCollection = &JoinTuples{}
-var _ CollectionRow = &JoinTuples{}
+var (
+	_ SingleCollection = &JoinTuples{}
+	_ CollectionRow    = &JoinTuples{}
+)
 
 type GroupedTuplesSet struct {
 	Groups []*GroupedTuples

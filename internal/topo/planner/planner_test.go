@@ -88,12 +88,10 @@ func Test_createLogicalPlan(t *testing.T) {
 		streams[n] = streamStmt
 	}
 
-	var (
-		//boolTrue = true
-		boolFalse = false
-	)
+	// boolTrue = true
+	boolFalse := false
 
-	var tests = []struct {
+	tests := []struct {
 		sql string
 		p   LogicalPlan
 		err string
@@ -257,7 +255,8 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 1 optimize where to data source
+		},
+		{ // 1 optimize where to data source
 			sql: `SELECT temp FROM src1 WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -303,12 +302,14 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "temp", StreamName: "src1"},
 						Name:  "temp",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 2 condition that cannot be optimized
+		},
+		{ // 2 condition that cannot be optimized
 			sql: `SELECT id1 FROM src1 INNER JOIN src2 on src1.id1 = src2.id2 WHERE src1.temp > 20 OR src2.hum > 60 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -389,12 +390,14 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 3 optimize window filter
+		},
+		{ // 3 optimize window filter
 			sql: `SELECT id1 FROM src1 WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10) FILTER( WHERE temp > 2)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -451,12 +454,14 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 4. do not optimize count window
+		},
+		{ // 4. do not optimize count window
 			sql: `SELECT * FROM src1 WHERE temp > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -525,12 +530,14 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 5. optimize join on
+		},
+		{ // 5. optimize join on
 			sql: `SELECT id1 FROM src1 INNER JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -630,12 +637,14 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 6. optimize outter join on
+		},
+		{ // 6. optimize outter join on
 			sql: `SELECT id1 FROM src1 FULL JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -732,16 +741,19 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 7 window error for table
+		},
+		{ // 7 window error for table
 			sql: `SELECT value FROM tableInPlanner WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p:   nil,
 			err: "cannot run window for TABLE sources",
-		}, { // 8 join table without window
+		},
+		{ // 8 join table without window
 			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and hum < 60 WHERE src1.id1 > 111`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -833,12 +845,14 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 9 join table with window
+		},
+		{ // 9 join table with window
 			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and tableInPlanner.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -852,7 +866,6 @@ func Test_createLogicalPlan(t *testing.T) {
 												WindowPlan{
 													baseLogicalPlan: baseLogicalPlan{
 														children: []LogicalPlan{
-
 															DataSourcePlan{
 																name: "src1",
 																streamFields: map[string]*ast.JsonStreamField{
@@ -939,12 +952,14 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 10 meta
+		},
+		{ // 10 meta
 			sql: `SELECT temp, meta(id) AS eid,meta(Humidity->Device) AS hdevice FROM src1 WHERE meta(device)="demo2"`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -1016,7 +1031,8 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 11 join with same name field and aliased
+		},
+		{ // 11 join with same name field and aliased
 			sql: `SELECT src2.hum AS hum1, tableInPlanner.hum AS hum2 FROM src2 INNER JOIN tableInPlanner on id2 = id WHERE hum1 > hum2`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -1128,7 +1144,8 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 12 meta with more fields
+		},
+		{ // 12 meta with more fields
 			sql: `SELECT temp, meta(*) as m FROM src1 WHERE meta(device)="demo2"`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -1187,7 +1204,8 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 13 analytic function plan
+		},
+		{ // 13 analytic function plan
 			sql: `SELECT latest(lag(name)), id1 FROM src1 WHERE lag(temp) > temp`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -1526,7 +1544,8 @@ func Test_createLogicalPlan(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 17. do not optimize sliding window
+		},
+		{ // 17. do not optimize sliding window
 			sql: `SELECT * FROM src1 WHERE temp > 20 GROUP BY SLIDINGWINDOW(ss, 10) HAVING COUNT(*) > 2`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -1595,7 +1614,8 @@ func Test_createLogicalPlan(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -1676,12 +1696,10 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 		streams[n] = streamStmt
 	}
 
-	var (
-		//boolTrue = true
-		boolFalse = false
-	)
+	// boolTrue = true
+	boolFalse := false
 
-	var tests = []struct {
+	tests := []struct {
 		sql string
 		p   LogicalPlan
 		err string
@@ -1756,7 +1774,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "temp", StreamName: "src1"},
 						Name:  "temp",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -1836,7 +1855,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: ast.DefaultStream},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -1893,7 +1913,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: "src1"},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -1952,7 +1973,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -2051,7 +2073,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: ast.DefaultStream},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -2147,7 +2170,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: ast.DefaultStream},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -2246,7 +2270,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: ast.DefaultStream},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -2348,7 +2373,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "id1", StreamName: ast.DefaultStream},
 						Name:  "id1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				isAggregate: false,
 				sendMeta:    false,
@@ -2640,7 +2666,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 		}
 		streams[n] = streamStmt
 	}
-	var tests = []struct {
+	tests := []struct {
 		sql string
 		p   LogicalPlan
 		err string

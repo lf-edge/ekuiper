@@ -286,7 +286,7 @@ func (fc *FieldConverter) DecodeField(src interface{}, field *desc.FieldDescript
 }
 
 func (fc *FieldConverter) decodeSubMessage(input interface{}, ft *desc.MessageDescriptor, sn cast.Strictness) (interface{}, error) {
-	var m = map[string]interface{}{}
+	m := map[string]interface{}{}
 	switch v := input.(type) {
 	case map[interface{}]interface{}:
 		for k, val := range v {

@@ -38,7 +38,6 @@ func init() {
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
-
 }
 
 func Test_rootHandler(t *testing.T) {
@@ -56,7 +55,6 @@ func Test_rootHandler(t *testing.T) {
 }
 
 func Test_sourcesManageHandler(t *testing.T) {
-
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
 
@@ -66,7 +64,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t %v\nBut got\t%v", 200, w.Result().StatusCode)
 	}
 
-	//get scan table
+	// get scan table
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams?kind=scan", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 
@@ -76,7 +74,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t %v\nBut got\t%v", 200, w.Result().StatusCode)
 	}
 
-	//get lookup table
+	// get lookup table
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams?kind=lookup", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 
@@ -86,7 +84,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t %v\nBut got\t%v", 200, w.Result().StatusCode)
 	}
 
-	//create table
+	// create table
 	buf := bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"memory\", KEY=\"id\", KIND=\"lookup\")"}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams?kind=lookup", buf)
 	w = httptest.NewRecorder()
@@ -97,7 +95,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 	returnVal, _ = io.ReadAll(w.Result().Body)
 	fmt.Printf("returnVal %s\n", string(returnVal))
 
-	//create stream
+	// create stream
 	buf = bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
 	w = httptest.NewRecorder()
@@ -108,7 +106,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 
 	fmt.Printf("returnVal %s\n", string(returnVal))
 
-	//get stream
+	// get stream
 	r := mux.NewRouter()
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 
@@ -126,7 +124,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", exp, res)
 	}
 
-	//get table
+	// get table
 	r = mux.NewRouter()
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 
@@ -145,7 +143,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", exp, res)
 	}
 
-	//put table
+	// put table
 	buf = bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"memory\", KEY=\"id\", KIND=\"lookup\")"}`))
 	r = mux.NewRouter()
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
@@ -158,7 +156,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w.Result().StatusCode)
 	}
 
-	//put stream
+	// put stream
 	buf = bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"httppull\")"}`))
 	r = mux.NewRouter()
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
@@ -171,7 +169,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w.Result().StatusCode)
 	}
 
-	//drop table
+	// drop table
 	r = mux.NewRouter()
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 
@@ -183,7 +181,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w.Result().StatusCode)
 	}
 
-	//drop stream
+	// drop stream
 	r = mux.NewRouter()
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 
@@ -197,7 +195,7 @@ func Test_sourcesManageHandler(t *testing.T) {
 }
 
 func Test_rulesManageHandler(t *testing.T) {
-	//Start rules
+	// Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
 	} else {
@@ -209,7 +207,7 @@ func Test_rulesManageHandler(t *testing.T) {
 				logger.Error(err)
 				continue
 			}
-			//err = server.StartRule(rule, &reply)
+			// err = server.StartRule(rule, &reply)
 			reply = recoverRule(rule)
 			if 0 != len(reply) {
 				logger.Info(reply)
@@ -233,7 +231,7 @@ func Test_rulesManageHandler(t *testing.T) {
 	w1 := httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 
-	//create rule with trigger false
+	// create rule with trigger false
 	ruleJson := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
 
 	buf2 := bytes.NewBuffer([]byte(ruleJson))
@@ -248,7 +246,7 @@ func Test_rulesManageHandler(t *testing.T) {
 
 	_, _ = io.ReadAll(w3.Result().Body)
 
-	//update rule, will set rule to triggered
+	// update rule, will set rule to triggered
 	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
@@ -260,7 +258,7 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
 	}
 
-	//update wron rule
+	// update wron rule
 	ruleJson = `{"id": "rule1","sql": "select * from alert1","actions": [{"nop": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
@@ -272,7 +270,7 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
 	}
 
-	//get rule
+	// get rule
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
@@ -283,13 +281,13 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
 	}
 
-	//get rule status
+	// get rule status
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/status", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
-	//get rule topo
+	// get rule topo
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/topo", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
@@ -300,7 +298,7 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
 	}
 
-	//start rule
+	// start rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/start", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
@@ -311,7 +309,7 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
 	}
 
-	//stop rule
+	// stop rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/stop", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
@@ -322,7 +320,7 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
 	}
 
-	//restart rule
+	// restart rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/restart", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
@@ -333,12 +331,12 @@ func Test_rulesManageHandler(t *testing.T) {
 		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
 	}
 
-	//delete rule
+	// delete rule
 	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 
-	//drop stream
+	// drop stream
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)

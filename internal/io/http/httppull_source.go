@@ -66,7 +66,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 	logger.Infof("Starting HTTP pull source with interval %d", hps.config.Interval)
 	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.config.Interval))
 	defer ticker.Stop()
-	var omd5 = ""
+	omd5 := ""
 	for {
 		select {
 		case <-ticker.C:

@@ -47,7 +47,6 @@ func TestGetMqttSourceMeta(t *testing.T) {
 	if len(fields) == 0 {
 		t.Errorf("default fields %v", fields)
 	}
-
 }
 
 func TestGetSqlSourceMeta(t *testing.T) {

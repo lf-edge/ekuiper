@@ -25,9 +25,11 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-type NewSourceFunc func() api.Source
-type NewLookupSourceFunc func() api.LookupSource
-type NewSinkFunc func() api.Sink
+type (
+	NewSourceFunc       func() api.Source
+	NewLookupSourceFunc func() api.LookupSource
+	NewSinkFunc         func() api.Sink
+)
 
 var (
 	sources = map[string]NewSourceFunc{

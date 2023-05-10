@@ -27,7 +27,7 @@ import (
 )
 
 func TestScriptOp(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		script string
 		isAgg  bool
 		data   interface{}

@@ -25,7 +25,6 @@ import (
 )
 
 func TestEdgex_CfgValidate(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		expConf types.MessageBusConfig

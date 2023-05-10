@@ -53,7 +53,7 @@ func TestPluginInstance(t *testing.T) {
 		return
 	}
 	ins := NewPluginIns("test", ch, nil)
-	var tests = []struct {
+	tests := []struct {
 		c  *Control
 		sj string
 		ej string

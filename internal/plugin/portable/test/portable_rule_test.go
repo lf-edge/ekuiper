@@ -54,7 +54,7 @@ func init() {
 func TestSourceAndFunc(t *testing.T) {
 	streamList := []string{"ext", "extpy"}
 	topotest.HandleStream(false, streamList, t)
-	var tests = []struct {
+	tests := []struct {
 		Name string
 		Rule string
 		R    [][]map[string]interface{}

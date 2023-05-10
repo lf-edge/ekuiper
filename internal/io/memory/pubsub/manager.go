@@ -162,7 +162,6 @@ func ProduceError(ctx api.StreamContext, topic string, err error) {
 			logger.Errorf("memory source topic %s drop message to %s", topic, name)
 		}
 	}
-
 }
 
 func addPubConsumer(topic string, sourceId string, ch chan api.SourceTuple) {

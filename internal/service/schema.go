@@ -64,7 +64,7 @@ type multiplexDescriptor interface {
 	httpMapping
 }
 
-var ( //Do not call these directly, use the get methods
+var ( // Do not call these directly, use the get methods
 	protoParser *protoparse.Parser
 	// A buffer of descriptor for schemas
 	reg = &sync.Map{}

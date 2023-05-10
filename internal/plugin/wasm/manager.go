@@ -53,7 +53,7 @@ func InitManager() (*Manager, error) {
 		fmt.Println("[internal][plugin][wasm] cannot find etc folder: ", err)
 		return nil, fmt.Errorf("cannot find etc folder: %s", err)
 	}
-	//fmt.Println("[internal][plugin][wasm][InitManager] etcDir: ", etcDir)
+	// fmt.Println("[internal][plugin][wasm][InitManager] etcDir: ", etcDir)
 	registry := &registry{
 		RWMutex:   sync.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
@@ -69,7 +69,7 @@ func InitManager() (*Manager, error) {
 	}
 	err = m.syncRegistry()
 	if err != nil {
-		//fmt.Println("[internal][plugin][wasm][InitManager] syncRegistry err: ", err)
+		// fmt.Println("[internal][plugin][wasm][InitManager] syncRegistry err: ", err)
 		return nil, err
 	}
 	manager = m
@@ -163,20 +163,19 @@ func (m *Manager) Register(p plugin.Plugin) error {
 		return fmt.Errorf("invalid name %s: duplicate", name)
 	}
 	zipPath := path.Join(m.pluginDir, name+".zip")
-	//clean up: delete zip file and unzip files in error
+	// clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
-	//download
+	// download
 	err := httpx.DownloadFile(zipPath, uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
-	//unzip and copy to destination
+	// unzip and copy to destination
 	err = m.install(name, zipPath, shellParas)
-	if err != nil { //Revert for any errors
+	if err != nil { // Revert for any errors
 		return fmt.Errorf("fail to install plugin: %s", err)
 	}
 	return nil
-
 }
 
 func (m *Manager) doRegistry(name string, pi *PluginInfo, isInit bool) error {
@@ -218,7 +217,7 @@ func (m *Manager) GetPluginInfo(pluginName string) (*PluginInfo, bool) {
 func (m *Manager) install(name, src string, shellParas []string) (resultErr error) {
 	var (
 		jsonName = name + ".json"
-		//wasmName     = name + ".wasm"
+		// wasmName     = name + ".wasm"
 		pluginTarget = filepath.Join(m.pluginDir, name)
 		// The map of install files. Used to check if all required files are installed and for reverting
 		installedMap  = make(map[string]string)
@@ -274,7 +273,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	// file copying
 	d := filepath.Clean(pluginTarget)
 	if _, err := os.Stat(d); os.IsNotExist(err) {
-		err = os.MkdirAll(d, 0755)
+		err = os.MkdirAll(d, 0o755)
 		if err != nil {
 			return err
 		}
@@ -309,7 +308,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	}
 
 	if needInstall {
-		//run install script if there is
+		// run install script if there is
 		spath := path.Join(pluginTarget, "install.sh")
 		shellParas = append(shellParas, spath)
 		if 1 != len(shellParas) {

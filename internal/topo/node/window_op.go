@@ -34,7 +34,7 @@ import (
 type WindowConfig struct {
 	Type     ast.WindowType
 	Length   int
-	Interval int //If interval is not set, it is equals to Length
+	Interval int // If interval is not set, it is equals to Length
 }
 
 type WindowOperator struct {
@@ -42,18 +42,20 @@ type WindowOperator struct {
 	window             *WindowConfig
 	interval           int
 	isEventTime        bool
-	watermarkGenerator *WatermarkGenerator //For event time only
+	watermarkGenerator *WatermarkGenerator // For event time only
 
 	statManager metric.StatManager
-	ticker      *clock.Ticker //For processing time only
+	ticker      *clock.Ticker // For processing time only
 	// states
 	triggerTime int64
 	msgCount    int
 }
 
-const WINDOW_INPUTS_KEY = "$$windowInputs"
-const TRIGGER_TIME_KEY = "$$triggerTime"
-const MSG_COUNT_KEY = "$$msgCount"
+const (
+	WINDOW_INPUTS_KEY = "$$windowInputs"
+	TRIGGER_TIME_KEY  = "$$triggerTime"
+	MSG_COUNT_KEY     = "$$msgCount"
+)
 
 func init() {
 	gob.Register([]*xsql.Tuple{})
@@ -74,11 +76,11 @@ func NewWindowOp(name string, w WindowConfig, streams []string, options *api.Rul
 	o.isEventTime = options.IsEventTime
 	o.window = &w
 	if o.window.Interval == 0 && o.window.Type == ast.COUNT_WINDOW {
-		//if no interval value is set and it's count window, then set interval to length value.
+		// if no interval value is set and it's count window, then set interval to length value.
 		o.window.Interval = o.window.Length
 	}
 	if options.IsEventTime {
-		//Create watermark generator
+		// Create watermark generator
 		if w, err := NewWatermarkGenerator(o.window, options.LateTol, streams, o.input); err != nil {
 			return nil, err
 		} else {
@@ -207,7 +209,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 
 	if firstTicker != nil {
 		firstC = firstTicker.C
-		//resume previous window
+		// resume previous window
 		if len(inputs) > 0 && o.triggerTime > 0 {
 			nextTick := conf.GetNowInMilli() + int64(o.interval)
 			next := o.triggerTime
@@ -408,8 +410,8 @@ func (o *WindowOperator) tick(ctx api.StreamContext, inputs []*xsql.Tuple, n int
 
 type TupleList struct {
 	tuples []*xsql.Tuple
-	index  int //Current index
-	size   int //The size for count window
+	index  int // Current index
+	size   int // The size for count window
 }
 
 func NewTupleList(tuples []*xsql.Tuple, windowSize int) (TupleList, error) {
@@ -472,21 +474,21 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		Content: make([]xsql.TupleRow, 0),
 	}
 	i := 0
-	//Sync table
+	// Sync table
 	for _, tuple := range inputs {
 		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 			diff := triggerTime - tuple.Timestamp
 			if diff > int64(o.window.Length)+delta {
 				log.Debugf("diff: %d, length: %d, delta: %d", diff, o.window.Length, delta)
 				log.Debugf("tuple %s emitted at %d expired", tuple, tuple.Timestamp)
-				//Expired tuple, remove it by not adding back to inputs
+				// Expired tuple, remove it by not adding back to inputs
 				continue
 			}
-			//Added back all inputs for non expired events
+			// Added back all inputs for non expired events
 			inputs[i] = tuple
 			i++
 		} else if tuple.Timestamp > triggerTime {
-			//Only added back early arrived events
+			// Only added back early arrived events
 			inputs[i] = tuple
 			i++
 		}
@@ -524,7 +526,7 @@ func (o *WindowOperator) calDelta(triggerTime int64, log api.Logger) int64 {
 	var delta int64
 	lastTriggerTime := o.triggerTime
 	if lastTriggerTime <= 0 {
-		delta = math.MaxInt16 //max int, all events for the initial window
+		delta = math.MaxInt16 // max int, all events for the initial window
 	} else {
 		if !o.isEventTime && o.window.Interval > 0 {
 			delta = triggerTime - lastTriggerTime - int64(o.window.Interval)

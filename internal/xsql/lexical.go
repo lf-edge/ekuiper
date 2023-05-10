@@ -35,7 +35,7 @@ func NewScanner(r io.Reader) *Scanner {
 func (s *Scanner) Scan() (tok ast.Token, lit string) {
 	ch := s.read()
 	if isWhiteSpace(ch) {
-		//s.unread()
+		// s.unread()
 		return s.ScanWhiteSpace()
 	} else if isLetter(ch) {
 		s.unread()

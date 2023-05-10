@@ -22,8 +22,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
-type funcExe func(ctx api.FunctionContext, args []interface{}) (interface{}, bool)
-type funcVal func(ctx api.FunctionContext, args []ast.Expr) error
+type (
+	funcExe func(ctx api.FunctionContext, args []interface{}) (interface{}, bool)
+	funcVal func(ctx api.FunctionContext, args []ast.Expr) error
+)
 
 type builtinFunc struct {
 	fType ast.FuncType

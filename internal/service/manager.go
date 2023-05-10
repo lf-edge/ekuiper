@@ -36,7 +36,7 @@ import (
 var (
 	once      sync.Once
 	mutex     sync.Mutex
-	singleton *Manager //Do not call this directly, use GetServiceManager
+	singleton *Manager // Do not call this directly, use GetServiceManager
 )
 
 type Manager struct {
@@ -139,7 +139,7 @@ func (m *Manager) initFile(baseName string) error {
 	if err != nil {
 		return fmt.Errorf("parse services file %s failed: %v", baseName, err)
 	}
-	//TODO validate serviceConf
+	// TODO validate serviceConf
 	serviceName := baseName[0 : len(baseName)-5]
 	info := &serviceInfo{
 		About:      serviceConf.About,
@@ -204,7 +204,7 @@ func (m *Manager) HasFunctionSet(_ string) bool {
 func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
 	funcContainer, ok := m.getFunction(funcName)
 	if ok {
-		var installScript = ""
+		installScript := ""
 		m.serviceInstallKV.Get(funcContainer.ServiceName, &installScript)
 		return plugin.SERVICE_EXTENSION, funcContainer.ServiceName, installScript
 	} else {
@@ -348,19 +348,19 @@ func (m *Manager) Create(r *ServiceCreationRequest) error {
 		return fmt.Errorf("invalid file path %s", uri)
 	}
 	zipPath := path.Join(m.etcDir, name+".zip")
-	//clean up: delete zip file and unzip files in error
+	// clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
-	//download
+	// download
 	err := httpx.DownloadFile(zipPath, uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
-	//unzip and copy to destination
+	// unzip and copy to destination
 	err = m.unzip(name, zipPath)
 	if err != nil {
 		return err
 	}
-	//save the install script
+	// save the install script
 	m.serviceInstallKV.Set(name, r.InstallScript())
 	// init file to serviceKV
 	return m.initFile(name + ".json")

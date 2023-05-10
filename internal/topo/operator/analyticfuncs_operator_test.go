@@ -29,7 +29,7 @@ import (
 )
 
 func TestAnalyticFuncs(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		funcs  []*ast.Call
 		data   []interface{}
 		result []map[string]interface{}

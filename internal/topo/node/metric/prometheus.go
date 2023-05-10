@@ -55,7 +55,7 @@ func newPrometheusMetrics() *PrometheusMetrics {
 	)
 	var vecs []*MetricGroup
 	for _, prefix := range prefixes {
-		//prometheus initialization
+		// prometheus initialization
 		totalRecordsIn := prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: prefix + "_" + RecordsInTotal,
 			Help: "Total number of messages received by the operation of " + prefix,

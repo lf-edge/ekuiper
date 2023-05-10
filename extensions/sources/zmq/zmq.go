@@ -95,7 +95,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			}
 			return
 		default:
-			//do nothing
+			// do nothing
 		}
 	}
 }

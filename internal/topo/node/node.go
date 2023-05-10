@@ -168,8 +168,8 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 		b, ok := data.(*checkpoint.BufferOrEvent)
 		if ok {
 			logger.Debugf("data is BufferOrEvent, start barrier handler")
-			//if it is barrier return true and ignore the further processing
-			//if it is blocked(align handler), return true and then write back to the channel later
+			// if it is barrier return true and ignore the further processing
+			// if it is blocked(align handler), return true and then write back to the channel later
 			if o.barrierHandler.Process(b, o.ctx) {
 				return nil, true
 			} else {
@@ -181,7 +181,6 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 }
 
 func SinkOpen(sinkType string, config map[string]interface{}) error {
-
 	sink, err := getSink(sinkType, config)
 	if err != nil {
 		return err
@@ -235,5 +234,4 @@ func SourceOpen(sourceType string, config map[string]interface{}) error {
 	}
 
 	return nil
-
 }

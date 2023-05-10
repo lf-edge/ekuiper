@@ -28,7 +28,7 @@ import (
 )
 
 func TestAggregatePlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result *xsql.GroupedTuplesSet

@@ -20,8 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-type countPlusOneFunc struct {
-}
+type countPlusOneFunc struct{}
 
 func (f *countPlusOneFunc) Validate(args []interface{}) error {
 	if len(args) != 1 {

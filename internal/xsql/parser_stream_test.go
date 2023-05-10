@@ -25,7 +25,7 @@ import (
 )
 
 func TestParser_ParseCreateStream(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s    string
 		stmt *ast.StreamStmt
 		err  string
@@ -199,7 +199,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 
 		{
 			s: `CREATE STREAM demo (NAME string)
-				 WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="true1");`, //Invalid STRICT_VALIDATION value
+				 WITH (DATASOURCE="users", FORMAT="JSON", KEY="USERID", STRICT_VALIDATION="true1");`, // Invalid STRICT_VALIDATION value
 			stmt: nil,
 			err:  `found "true1", expect TRUE/FALSE value in STRICT_VALIDATION option.`,
 		},
@@ -303,7 +303,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			//TODO The error string should be more accurate
+			// TODO The error string should be more accurate
 			err: `found "DATASOURCE", expect stream options.`,
 		},
 		{
@@ -346,7 +346,8 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					TYPE:       "MQTT",
 				},
 			},
-		}, {
+		},
+		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
 					FIRST_NAME STRING,
@@ -366,7 +367,8 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					FORMAT:     "JSON",
 				},
 			},
-		}, {
+		},
+		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
 					FIRST_NAME STRING,
@@ -386,7 +388,8 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					FORMAT:     "JSON",
 				},
 			},
-		}, {
+		},
+		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
 					FIRST_NAME STRING,
@@ -399,7 +402,8 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				Options:      nil,
 			},
 			err: "'binary' format stream can have only one field",
-		}, {
+		},
+		{
 			s: `CREATE STREAM demo (
 					image BYTEA
 				) WITH (DATASOURCE="users", FORMAT="BINARY");`,
@@ -413,7 +417,8 @@ func TestParser_ParseCreateStream(t *testing.T) {
 					FORMAT:     "BINARY",
 				},
 			},
-		}, {
+		},
+		{
 			s: `CREATE STREAM demo (
 				) WITH (DATASOURCE="users", FORMAT="DELIMITED", Delimiter=" ");`,
 			stmt: &ast.StreamStmt{
@@ -437,5 +442,4 @@ func TestParser_ParseCreateStream(t *testing.T) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
 		}
 	}
-
 }

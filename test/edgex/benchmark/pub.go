@@ -100,7 +100,7 @@ func pubEventClientRedis(count int, wg *sync.WaitGroup) {
 				if e := msgClient.Publish(env, "events"); e != nil {
 					log.Fatal(e)
 				} else {
-					//fmt.Printf("%d - %s\n", index, string(data))
+					// fmt.Printf("%d - %s\n", index, string(data))
 				}
 				time.Sleep(100 * time.Nanosecond)
 			}

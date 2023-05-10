@@ -26,8 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-type thumbnail struct {
-}
+type thumbnail struct{}
 
 func (f *thumbnail) Validate(args []interface{}) error {
 	if len(args) != 3 {

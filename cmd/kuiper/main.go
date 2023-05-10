@@ -61,7 +61,7 @@ func main() {
 	app := cli.NewApp()
 	app.Version = Version
 
-	//nflag := []cli.Flag { cli.StringFlag{
+	// nflag := []cli.Flag { cli.StringFlag{
 	//		Name: "name, n",
 	//		Usage: "the name of stream",
 	//	}}
@@ -367,7 +367,7 @@ func main() {
 				{
 					Name:  "stream",
 					Usage: "describe stream $stream_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						streamProcess(client, "")
 						return nil
@@ -376,7 +376,7 @@ func main() {
 				{
 					Name:  "table",
 					Usage: "describe table $table_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						streamProcess(client, "")
 						return nil
@@ -404,7 +404,7 @@ func main() {
 				{
 					Name:  "plugin",
 					Usage: "describe plugin $plugin_type $plugin_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						ptype, err := getPluginType(c.Args()[0])
 						if err != nil {
@@ -436,7 +436,7 @@ func main() {
 				{
 					Name:  "udf",
 					Usage: "describe udf $udf_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect udf name.\n")
@@ -524,7 +524,7 @@ func main() {
 				{
 					Name:  "stream",
 					Usage: "drop stream $stream_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						streamProcess(client, "")
 						return nil
@@ -533,7 +533,7 @@ func main() {
 				{
 					Name:  "table",
 					Usage: "drop table $table_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						streamProcess(client, "")
 						return nil
@@ -542,7 +542,7 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "drop rule $rule_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect rule name.\n")
@@ -718,7 +718,8 @@ func main() {
 						}
 						return nil
 					},
-				}, {
+				},
+				{
 					Name:  "services",
 					Usage: "show services",
 					Action: func(c *cli.Context) error {
@@ -731,7 +732,8 @@ func main() {
 						}
 						return nil
 					},
-				}, {
+				},
+				{
 					Name:  "service_funcs",
 					Usage: "show service_funcs",
 					Action: func(c *cli.Context) error {
@@ -744,7 +746,8 @@ func main() {
 						}
 						return nil
 					},
-				}, {
+				},
+				{
 					Name:  "schemas",
 					Usage: "show schemas $schema_type",
 					Action: func(c *cli.Context) error {
@@ -773,7 +776,7 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "getstatus rule $rule_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect rule name.\n")
@@ -793,7 +796,7 @@ func main() {
 				{
 					Name:  "import",
 					Usage: "getstatus import",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						var reply string
 						err = client.Call("Server.GetStatusImport", 0, &reply)
@@ -815,7 +818,7 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "getstopo rule $rule_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect rule name.\n")
@@ -842,7 +845,7 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "start rule $rule_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect rule name.\n")
@@ -869,7 +872,7 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "stop rule $rule_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect rule name.\n")
@@ -896,7 +899,7 @@ func main() {
 				{
 					Name:  "rule",
 					Usage: "restart rule $rule_name",
-					//Flags: nflag,
+					// Flags: nflag,
 					Action: func(c *cli.Context) error {
 						if len(c.Args()) != 1 {
 							fmt.Printf("Expect rule name.\n")
@@ -1149,7 +1152,7 @@ func main() {
 
 	app.Action = func(c *cli.Context) error {
 		cli.ShowSubcommandHelp(c)
-		//cli.ShowVersion(c)
+		// cli.ShowVersion(c)
 
 		return nil
 	}
