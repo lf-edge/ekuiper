@@ -6,7 +6,7 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
-      - 'tools/check/revive.toml'
+      - 'tools/check/.golangci.yaml'
       - '.github/workflows/lint.yaml'
 
 jobs:
@@ -29,10 +29,7 @@ jobs:
           go install github.com/google/go-licenses@latest
           $(go env GOPATH)/bin/go-licenses check ./... --disallowed_types forbidden,restricted,unknown --ignore modernc.org/mathutil
 
-      - name: Run Revive Action
-        uses: docker://morphy/revive-action:v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
         with:
-          config: tools/check/revive.toml
-
-      - name: Check formatting
-        run: test -z $(gofmt -l .) || (gofmt -l . && exit 1)
+          version: latest

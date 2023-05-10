@@ -143,9 +143,9 @@ tidy:
 	@echo "go mod tidy"
 	go mod tidy && git diff go.mod go.sum
 
-lint:tools/check/bin/revive
+lint:tools/check/bin/golangci-lint
 	@echo "linting"
-	@tools/check/bin/revive -formatter friendly -config tools/check/revive.toml ./...
+	@tools/check/bin/golangci-lint run -c tools/check/.golangci.yaml ./...
 
-tools/check/bin/revive:
-	GOBIN=$(shell pwd)/tools/check/bin $(GO) install github.com/mgechev/revive@v1.2.1
+tools/check/bin/golangci-lint:
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell pwd)/tools/check/bin
