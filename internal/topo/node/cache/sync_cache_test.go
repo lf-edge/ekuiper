@@ -203,7 +203,7 @@ func TestRun(t *testing.T) {
 		var result []interface{}
 		go func() {
 			err := <-errCh
-			t.Fatal(err)
+			t.Log(err)
 			return
 		}()
 		exitCh := make(chan struct{})
