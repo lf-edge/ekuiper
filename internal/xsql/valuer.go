@@ -16,13 +16,14 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"math"
 	"reflect"
 	"regexp"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 var implicitValueFuncs = map[string]bool{
@@ -518,11 +519,6 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 			return fmt.Errorf("LIKE operator left operand expects string, but found %v", lhs)
 		}
 		var result bool
-		switch rr := rhs.(type) {
-		case string:
-		case *regexp.Regexp: // literal
-			result = rr.MatchString(ls)
-		}
 		rs, ok := rhs.(*regexp.Regexp)
 		if !ok {
 			return fmt.Errorf("LIKE operator right operand expects string, but found %v", rhs)

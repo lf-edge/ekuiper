@@ -15,12 +15,14 @@
 package cache
 
 import (
-	"github.com/benbjohnson/clock"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/benbjohnson/clock"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestExpiration(t *testing.T) {
@@ -60,7 +62,7 @@ func TestExpiration(t *testing.T) {
 	}
 
 	clock.Add(10 * time.Second)
-	r1, ok = c.Get("a")
+	_, ok = c.Get("a")
 	if ok {
 		t.Error("a should not exist after expiration")
 		return
@@ -74,7 +76,7 @@ func TestExpiration(t *testing.T) {
 		t.Errorf("expect %v but get %v", expects[1], r2)
 	}
 	clock.Add(10 * time.Second)
-	r2, ok = c.Get("b")
+	_, ok = c.Get("b")
 	if ok {
 		t.Error("b should not exist after expiration")
 		return

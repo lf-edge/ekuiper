@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"io"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 type RulesetProcessor struct {
@@ -175,7 +176,6 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 		}
 		counts[1]++
 	}
-	var rules []string
 	// restore rules
 	for k, v := range all.Rules {
 		_, e := rs.r.ExecCreateWithValidation(k, v)
@@ -185,7 +185,6 @@ func (rs *RulesetProcessor) ImportRuleSet(all Ruleset) Ruleset {
 			ruleSetRsp.Rules[k] = e.Error()
 			continue
 		}
-		rules = append(rules, k)
 		counts[2]++
 	}
 	return ruleSetRsp

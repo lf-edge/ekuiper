@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ func GetSinkConf(sinkType string, action map[string]interface{}) map[string]inte
 		conf.Log.Warnf("fail to parse yaml for sink %s. Return error %v", sinkType, err)
 		return action
 	}
-	props := make(map[string]interface{})
+	var props map[string]interface{}
 	cfg := yamlOps.CopyConfContent()
 	if len(cfg) == 0 {
 		conf.Log.Warnf("fail to parse yaml for sink %s. Return an empty configuration", sinkType)
