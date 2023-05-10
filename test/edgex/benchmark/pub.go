@@ -22,15 +22,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
-	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"log"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 )
 
 var msgConfig1 = types.MessageBusConfig{

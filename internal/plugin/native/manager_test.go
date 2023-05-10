@@ -17,11 +17,6 @@ package native
 import (
 	"errors"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,6 +24,12 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func init() {

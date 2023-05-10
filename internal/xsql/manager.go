@@ -16,8 +16,9 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 var (

@@ -17,11 +17,13 @@
 package redis
 
 import (
+	"testing"
+
 	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
+
 	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
 	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
-	"github.com/redis/go-redis/v9"
-	"testing"
 )
 
 func TestRedisTsSet(t *testing.T) {

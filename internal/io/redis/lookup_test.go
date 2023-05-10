@@ -17,13 +17,15 @@
 package redis
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/alicebob/miniredis/v2"
 	"github.com/benbjohnson/clock"
+
 	econf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"testing"
 )
 
 var (

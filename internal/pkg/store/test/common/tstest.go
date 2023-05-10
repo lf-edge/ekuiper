@@ -15,9 +15,10 @@
 package common
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 var (

@@ -16,9 +16,10 @@ package common
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 func TestKvSetnx(ks kv.KeyValue, t *testing.T) {

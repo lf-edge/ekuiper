@@ -16,9 +16,11 @@ package main
 
 import (
 	"fmt"
+
+	zmq "github.com/pebbe/zmq4"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	zmq "github.com/pebbe/zmq4"
 )
 
 type zmqSink struct {

@@ -15,10 +15,11 @@
 package meta
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func init() {

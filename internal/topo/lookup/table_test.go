@@ -15,9 +15,10 @@
 package lookup
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"sync"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestTable(t *testing.T) {

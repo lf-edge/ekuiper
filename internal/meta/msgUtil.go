@@ -19,8 +19,9 @@ import (
 	"os"
 	"path"
 
-	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"gopkg.in/ini.v1"
+
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
 )
 
 var gUimsg map[string]*ini.File

@@ -16,12 +16,13 @@ package store
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/sql"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"path"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/sql"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type StoreCreator func(conf definition.Config, name string) (definition.StoreBuilder, definition.TsBuilder, error)

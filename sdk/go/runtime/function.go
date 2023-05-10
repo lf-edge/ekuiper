@@ -18,10 +18,11 @@ import (
 	context2 "context"
 	"encoding/json"
 	"fmt"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
 	"github.com/lf-edge/ekuiper/sdk/go/context"
-	"sync"
 )
 
 type funcRuntime struct {

@@ -20,15 +20,17 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"runtime"
+	"strings"
+
 	"github.com/gorilla/mux"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"net/http"
-	"runtime"
-	"strings"
 )
 
 var nativeManager *native.Manager

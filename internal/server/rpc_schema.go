@@ -20,6 +20,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/schema"

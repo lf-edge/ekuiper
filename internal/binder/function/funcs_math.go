@@ -16,11 +16,12 @@ package function
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"math"
-	"math/rand"
 )
 
 func registerMathFunc() {

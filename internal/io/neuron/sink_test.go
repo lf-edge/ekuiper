@@ -15,10 +15,11 @@
 package neuron
 
 import (
-	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/io/mock"
 )
 
 func sinkTest(t *testing.T) {

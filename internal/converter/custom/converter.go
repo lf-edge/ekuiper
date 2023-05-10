@@ -16,6 +16,7 @@ package custom
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter/static"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"

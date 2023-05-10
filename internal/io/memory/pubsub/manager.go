@@ -15,11 +15,12 @@
 package pubsub
 
 import (
+	"regexp"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"regexp"
-	"sync"
 )
 
 const IdProperty = "topic"

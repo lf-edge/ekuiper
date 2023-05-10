@@ -17,10 +17,11 @@ package xsql
 import (
 	"bufio"
 	"bytes"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"strconv"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 type Scanner struct {

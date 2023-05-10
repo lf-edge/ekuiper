@@ -17,9 +17,10 @@ package xsql
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func Test_MessageValTest(t *testing.T) {

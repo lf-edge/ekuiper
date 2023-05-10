@@ -16,9 +16,10 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"strings"
 )
 
 /**

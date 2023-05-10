@@ -17,10 +17,11 @@ package store
 import (
 	"context"
 	"fmt"
+	"regexp"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"regexp"
 )
 
 // Reg registers a topic to save it to memory store

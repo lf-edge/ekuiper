@@ -16,15 +16,16 @@ package wasm_test
 
 import (
 	"fmt"
+	"reflect"
+	"sync"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"sync"
-	"testing"
 )
 
 // EDIT HERE: Define the plugins that you want to test.

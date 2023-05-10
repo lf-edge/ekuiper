@@ -15,8 +15,9 @@
 package xsql
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"sort"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 /*

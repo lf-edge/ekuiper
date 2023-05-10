@@ -23,6 +23,7 @@ import (
 	"sync"
 
 	"github.com/golang-jwt/jwt"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 

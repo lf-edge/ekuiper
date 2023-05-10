@@ -16,9 +16,10 @@ package xsql
 
 import (
 	"fmt"
+	"sort"
+
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"sort"
 )
 
 // MultiSorter implements the Sort interface, sorting the changes within.

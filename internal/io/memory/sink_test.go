@@ -16,13 +16,15 @@ package memory
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"testing"
 )
 
 func TestUpdate(t *testing.T) {

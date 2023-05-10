@@ -16,6 +16,7 @@ package portable
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 )
 

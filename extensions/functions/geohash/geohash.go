@@ -16,8 +16,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
+
 	"github.com/mmcloughlin/geohash"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type geohashEncode struct {

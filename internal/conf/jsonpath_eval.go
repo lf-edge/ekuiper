@@ -18,10 +18,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
+
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
 )
 
 var builder = gval.Full(jsonpath.PlaceholderExtension())

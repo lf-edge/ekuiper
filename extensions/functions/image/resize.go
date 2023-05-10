@@ -17,12 +17,14 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/nfnt/resize"
 	"image"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+
+	"github.com/nfnt/resize"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type imageResize struct {

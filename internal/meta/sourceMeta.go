@@ -16,7 +16,6 @@ package meta
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"os"
 	"path"
 	"strings"
@@ -24,6 +23,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 type (

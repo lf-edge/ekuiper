@@ -16,10 +16,11 @@ package delimited
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type Converter struct {

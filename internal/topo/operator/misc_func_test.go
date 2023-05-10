@@ -16,6 +16,11 @@ package operator
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -23,10 +28,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestMiscFunc_Apply1(t *testing.T) {

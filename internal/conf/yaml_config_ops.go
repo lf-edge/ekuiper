@@ -17,11 +17,12 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"path"
 	"reflect"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 // ConfKeysOperator define interface to query/add/update/delete the configs in memory

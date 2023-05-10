@@ -15,9 +15,10 @@
 package processor
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestRuleActionParse_Apply(t *testing.T) {

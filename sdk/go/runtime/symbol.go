@@ -19,6 +19,7 @@ package runtime
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
 	"github.com/lf-edge/ekuiper/sdk/go/context"

@@ -16,10 +16,11 @@ package wasm
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestValidate(t *testing.T) {

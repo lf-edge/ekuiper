@@ -19,6 +19,7 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"fmt"
+
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 )
 

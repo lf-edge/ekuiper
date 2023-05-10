@@ -16,13 +16,14 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"math"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 // Ensure the parser can parse strings into Statement ASTs.

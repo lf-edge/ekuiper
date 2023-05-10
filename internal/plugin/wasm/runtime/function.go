@@ -16,10 +16,12 @@ package runtime
 
 import (
 	"fmt"
+	"log"
+
+	"github.com/second-state/WasmEdge-go/wasmedge"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/second-state/WasmEdge-go/wasmedge"
-	"log"
 )
 
 type WasmFunc struct {

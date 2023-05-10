@@ -19,12 +19,14 @@ package edgex
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"strings"
-	"sync"
 )
 
 type messageHandler func(stopChan chan struct{}, msgChan chan types.MessageEnvelope)

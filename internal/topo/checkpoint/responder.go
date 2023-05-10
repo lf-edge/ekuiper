@@ -16,6 +16,7 @@ package checkpoint
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 

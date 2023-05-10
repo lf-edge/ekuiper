@@ -17,12 +17,13 @@ package state
 import (
 	"encoding/gob"
 	"fmt"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	ts "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
-	"sync"
 )
 
 func init() {

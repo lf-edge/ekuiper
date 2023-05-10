@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 

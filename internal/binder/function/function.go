@@ -15,10 +15,11 @@
 package function
 
 import (
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"strings"
 )
 
 type funcExe func(ctx api.FunctionContext, args []interface{}) (interface{}, bool)

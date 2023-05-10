@@ -18,14 +18,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"sync"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"sort"
-	"sync"
-	"time"
 )
 
 // Rule storage includes kv and in memory registry

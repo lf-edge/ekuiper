@@ -17,11 +17,13 @@
 package metric
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/prometheus/client_golang/prometheus"
 	"strconv"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager, error) {

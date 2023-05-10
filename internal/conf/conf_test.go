@@ -15,9 +15,10 @@ package conf
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestSourceConfValidate(t *testing.T) {

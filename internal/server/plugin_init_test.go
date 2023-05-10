@@ -19,9 +19,10 @@ package server
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/plugin"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/plugin"
 )
 
 func Test_fetchPluginList(t *testing.T) {

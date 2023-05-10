@@ -16,12 +16,13 @@ package converter
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/converter/binary"
 	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"strings"
 )
 
 // Instantiator The format, schema information are passed in by stream options

@@ -16,9 +16,11 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/mattn/go-tflite"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/mattn/go-tflite"
 )
 
 type Tffunc struct {

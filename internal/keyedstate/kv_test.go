@@ -15,9 +15,10 @@
 package keyedstate
 
 import (
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func init() {

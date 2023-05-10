@@ -20,10 +20,11 @@ import (
 	"os"
 	"time"
 
+	ffmpeg "github.com/u2takey/ffmpeg-go"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
 const RTSP_DEFAULT_INTERVAL = 10000

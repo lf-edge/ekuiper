@@ -16,15 +16,17 @@ package neuron
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/benbjohnson/clock"
+	_ "go.nanomsg.org/mangos/v3/transport/ipc"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	_ "go.nanomsg.org/mangos/v3/transport/ipc"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestRun(t *testing.T) {

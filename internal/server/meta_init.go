@@ -20,14 +20,15 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/mux"
+
 	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/topo/node"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func init() {

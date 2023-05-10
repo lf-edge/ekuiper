@@ -17,6 +17,11 @@ package test
 import (
 	"context"
 	"fmt"
+	"log"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
@@ -28,10 +33,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"log"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func init() {

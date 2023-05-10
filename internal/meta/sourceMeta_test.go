@@ -16,9 +16,10 @@ package meta
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"path"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func TestGetMqttSourceMeta(t *testing.T) {

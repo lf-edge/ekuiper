@@ -17,10 +17,11 @@ package function
 import (
 	"fmt"
 
+	"github.com/montanaflynn/stats"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/montanaflynn/stats"
 )
 
 func registerAggFunc() {

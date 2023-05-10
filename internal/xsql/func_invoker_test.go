@@ -15,10 +15,11 @@
 package xsql
 
 import (
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"testing"
 )
 
 func TestInvoke(t *testing.T) {

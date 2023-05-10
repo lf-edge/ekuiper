@@ -18,11 +18,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/go/api"
-	"github.com/mitchellh/mapstructure"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 const dedupStateKey = "input"

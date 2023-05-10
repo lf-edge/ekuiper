@@ -15,11 +15,12 @@
 package portable
 
 import (
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"reflect"
 	"sync"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 )
 
 func TestConcurrent(t *testing.T) {

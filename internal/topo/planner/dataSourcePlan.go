@@ -16,10 +16,11 @@ package planner
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"sort"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type DataSourcePlan struct {

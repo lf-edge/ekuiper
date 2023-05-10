@@ -17,10 +17,11 @@ package io
 import (
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/mock"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"testing"
 )
 
 func TestBindings(t *testing.T) {

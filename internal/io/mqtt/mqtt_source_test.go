@@ -17,14 +17,15 @@ package mqtt
 import (
 	"bytes"
 	"compress/zlib"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
-	"testing"
 )
 
 // TestGetTupleWithZlibCompressor is a unit test for getTuple with zlib compressor

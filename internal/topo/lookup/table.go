@@ -16,14 +16,15 @@ package lookup
 
 import (
 	"fmt"
+	"sync"
+	"sync/atomic"
+
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"sync"
-	"sync/atomic"
 )
 
 // Table is a lookup table runtime instance. It will run once the table is created.

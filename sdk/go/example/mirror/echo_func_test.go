@@ -15,8 +15,9 @@
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/sdk/go/mock"
 )
 
 func TestValidate(t *testing.T) {

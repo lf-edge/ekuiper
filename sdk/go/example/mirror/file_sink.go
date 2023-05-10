@@ -18,10 +18,11 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 type fileSink struct {

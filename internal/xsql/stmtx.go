@@ -17,10 +17,11 @@ package xsql
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"strings"
 )
 
 func GetStreams(stmt *ast.SelectStatement) (result []string) {

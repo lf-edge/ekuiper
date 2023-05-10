@@ -15,10 +15,11 @@
 package xsql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 // The original message map may be big. Make sure it is immutable so that never make a copy of it.

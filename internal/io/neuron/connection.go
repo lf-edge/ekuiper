@@ -21,18 +21,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.nanomsg.org/mangos/v3"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
+	// introduce ipc/tpc
+	_ "go.nanomsg.org/mangos/v3/transport/ipc"
+	_ "go.nanomsg.org/mangos/v3/transport/tcp"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"go.nanomsg.org/mangos/v3"
-	"go.nanomsg.org/mangos/v3/protocol/pair"
-
-	// introduce ipc/tpc
-	_ "go.nanomsg.org/mangos/v3/transport/ipc"
-	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 )
 
 const (

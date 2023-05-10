@@ -16,11 +16,12 @@ package memory
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"regexp"
-	"strings"
 )
 
 type source struct {

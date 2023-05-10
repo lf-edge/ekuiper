@@ -17,12 +17,14 @@
 package redis
 
 import (
-	"github.com/alicebob/miniredis/v2"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
-	"github.com/lf-edge/ekuiper/pkg/kv"
-	"github.com/redis/go-redis/v9"
 	"strconv"
 	"testing"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/redis/go-redis/v9"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 func TestRedisKvSetnx(t *testing.T) {

@@ -16,14 +16,16 @@ package custom
 
 import (
 	"fmt"
-	"github.com/gdexlab/go-render/render"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/gdexlab/go-render/render"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func init() {

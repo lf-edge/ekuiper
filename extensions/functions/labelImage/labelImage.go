@@ -18,9 +18,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	tflite "github.com/mattn/go-tflite"
-	"github.com/nfnt/resize"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
@@ -28,6 +25,11 @@ import (
 	"path"
 	"sort"
 	"sync"
+
+	tflite "github.com/mattn/go-tflite"
+	"github.com/nfnt/resize"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type labelImage struct {

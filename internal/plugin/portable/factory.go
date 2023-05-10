@@ -15,11 +15,12 @@
 package portable
 
 import (
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"sync"
 )
 
 func (m *Manager) Source(name string) (api.Source, error) {

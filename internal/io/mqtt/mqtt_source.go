@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
+
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"

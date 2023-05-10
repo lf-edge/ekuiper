@@ -17,9 +17,10 @@ package httpserver
 import (
 	"bytes"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 var body = []byte(`{

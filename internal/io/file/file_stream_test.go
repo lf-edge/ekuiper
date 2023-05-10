@@ -15,7 +15,13 @@
 package file
 
 import (
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
@@ -23,10 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"os"
-	"path/filepath"
-	"reflect"
-	"testing"
 )
 
 func TestFileSinkCompress_Collect(t *testing.T) {

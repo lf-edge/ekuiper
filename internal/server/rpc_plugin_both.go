@@ -19,8 +19,9 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/plugin"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/internal/plugin"
 )
 
 func (t *Server) doRegister(pt plugin.PluginType, p plugin.Plugin) error {

@@ -16,10 +16,11 @@ package node
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/xsql"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/xsql"
 )
 
 var fivet = []*xsql.Tuple{

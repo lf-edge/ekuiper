@@ -17,12 +17,13 @@ package node
 import (
 	"context"
 	"fmt"
+	"math"
+	"sort"
+
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"math"
-	"sort"
 )
 
 type WatermarkTuple struct {

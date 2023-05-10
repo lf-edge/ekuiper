@@ -15,14 +15,15 @@
 package sql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/sql/sqlite"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/sql/sqlite"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 const SDbName = "sqliteKV.db"

@@ -15,11 +15,12 @@
 package redis
 
 import (
+	"reflect"
+	"testing"
+
 	econf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"testing"
 )
 
 func TestSink(t *testing.T) {

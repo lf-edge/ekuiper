@@ -15,9 +15,10 @@
 package conf
 
 import (
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"strings"
 )
 
 func GetSourceConf(sourceType string, options *ast.Options) map[string]interface{} {

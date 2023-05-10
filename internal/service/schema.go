@@ -22,13 +22,13 @@ import (
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/jhump/protoreflect/dynamic"
+	// introduce annotations
+	_ "google.golang.org/genproto/googleapis/api/annotations"
+
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-
-	// introduce annotations
-	_ "google.golang.org/genproto/googleapis/api/annotations"
 )
 
 type descriptor interface {

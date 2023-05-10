@@ -17,11 +17,12 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"strings"
-	"sync"
 )
 
 type configManager struct {

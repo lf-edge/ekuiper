@@ -16,9 +16,10 @@ package http
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/io/mock"
 )
 
 func TestHeaderConf(t *testing.T) {

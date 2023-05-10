@@ -20,14 +20,16 @@ package edgex
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"reflect"
+	"testing"
+
 	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"math"
-	"reflect"
-	"testing"
 )
 
 var (

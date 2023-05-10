@@ -16,15 +16,16 @@ package wasm
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func init() {

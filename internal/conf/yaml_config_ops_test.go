@@ -17,11 +17,12 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 func TestConfigKeys_LoadSourceFile(t *testing.T) {

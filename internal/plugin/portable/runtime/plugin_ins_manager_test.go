@@ -16,13 +16,15 @@ package runtime
 
 import (
 	"fmt"
+	"sync"
+	"testing"
+
+	"go.nanomsg.org/mangos/v3"
+	"go.nanomsg.org/mangos/v3/protocol/req"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
-	"go.nanomsg.org/mangos/v3"
-	"go.nanomsg.org/mangos/v3/protocol/req"
-	"sync"
-	"testing"
 )
 
 // Plugin manager involves process, only covered in the integration test

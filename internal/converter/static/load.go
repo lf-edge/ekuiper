@@ -16,9 +16,10 @@ package static
 
 import (
 	"fmt"
+	"plugin"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"plugin"
 )
 
 func LoadStaticConverter(soFile string, messageName string) (message.Converter, error) {

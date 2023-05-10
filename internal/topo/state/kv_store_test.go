@@ -16,15 +16,16 @@ package state
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"log"
 	"os"
 	"path"
 	"reflect"
 	"sync"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func TestLifecycle(t *testing.T) {

@@ -16,13 +16,15 @@ package mqtt
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"strings"
-	"sync"
 )
 
 type mqttSubscriptionInfo struct {

@@ -16,10 +16,11 @@ package memory
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/io/memory/store"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"regexp"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/internal/io/memory/store"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 // lookupsource is a lookup source that reads data from memory

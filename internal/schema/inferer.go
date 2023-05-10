@@ -16,8 +16,9 @@ package schema
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 type inferer func(schemaFileName string, SchemaMessageName string) (ast.StreamFields, error)

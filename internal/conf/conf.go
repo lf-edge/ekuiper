@@ -17,13 +17,15 @@ package conf
 import (
 	"errors"
 	"fmt"
-	"github.com/lestrrat-go/file-rotatelogs"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path"
 	"time"
+
+	"github.com/lestrrat-go/file-rotatelogs"
+	"github.com/sirupsen/logrus"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 const ConfFileName = "kuiper.yaml"

@@ -18,9 +18,10 @@ package server
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/plugin"
-	"strings"
 )
 
 func (t *Server) RegisterPlugin(arg *model.PluginDesc, reply *string) error {

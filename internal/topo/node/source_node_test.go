@@ -15,11 +15,12 @@
 package node
 
 import (
+	"reflect"
+	"testing"
+
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"testing"
 )
 
 func TestGetConf_Apply(t *testing.T) {

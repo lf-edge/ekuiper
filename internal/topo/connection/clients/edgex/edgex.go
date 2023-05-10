@@ -19,11 +19,13 @@ package edgex
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"strings"
 )
 
 type EdgexClient struct {

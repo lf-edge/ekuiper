@@ -16,11 +16,12 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func TestCollectionAgg(t *testing.T) {

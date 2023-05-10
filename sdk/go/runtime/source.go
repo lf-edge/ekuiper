@@ -17,6 +17,7 @@ package runtime
 import (
 	context2 "context"
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
 )

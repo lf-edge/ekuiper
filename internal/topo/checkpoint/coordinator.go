@@ -15,12 +15,14 @@
 package checkpoint
 
 import (
+	"sync"
+
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"sync"
 )
 
 type pendingCheckpoint struct {

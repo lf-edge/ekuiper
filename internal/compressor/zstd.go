@@ -16,6 +16,7 @@ package compressor
 
 import (
 	"bytes"
+
 	"github.com/klauspost/compress/zstd"
 )
 

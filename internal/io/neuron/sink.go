@@ -17,11 +17,12 @@ package neuron
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"sort"
 )
 
 type sink struct {

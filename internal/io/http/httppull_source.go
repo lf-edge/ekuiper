@@ -17,11 +17,10 @@ package http
 import (
 	"time"
 
-	"github.com/lf-edge/ekuiper/pkg/infra"
-
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 type PullSource struct {

@@ -16,6 +16,7 @@ package compressor
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 

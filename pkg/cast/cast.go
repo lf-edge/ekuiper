@@ -17,10 +17,11 @@ package cast
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"reflect"
 	"strconv"
 	"sync"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type Strictness int8

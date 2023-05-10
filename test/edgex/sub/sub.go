@@ -19,10 +19,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"os"
 )
 
 func subEventsFromMQTT(host string) {

@@ -18,15 +18,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lf-edge/ekuiper/sdk/go/api"
-	"github.com/lf-edge/ekuiper/sdk/go/context"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 	"go.nanomsg.org/mangos/v3/protocol/push"
 	"go.nanomsg.org/mangos/v3/protocol/req"
-
 	// introduce ipc
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/lf-edge/ekuiper/sdk/go/context"
 )
 
 // Options Initialized in plugin.go Start according to the config
