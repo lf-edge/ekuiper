@@ -198,6 +198,22 @@ func TestFileSink_Configure(t *testing.T) {
 				"rollingCount":    0,
 			},
 		},
+		{
+			name: "fields",
+			c: &sinkConf{
+				CheckInterval:   &defaultCheckInterval,
+				Path:            "cache",
+				FileType:        LINES_TYPE,
+				RollingInterval: 500,
+				RollingCount:    0,
+				Fields:          []string{"c", "a", "b"},
+			},
+			p: map[string]interface{}{
+				"rollingInterval": 500,
+				"rollingCount":    0,
+				"fields":          []string{"c", "a", "b"},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -352,6 +368,86 @@ func TestFileSink_Collect(t *testing.T) {
 				}
 			}
 
+		})
+	}
+}
+
+// Test file collect by fields
+func TestFileSinkFields_Collect(t *testing.T) {
+	tests := []struct {
+		name      string
+		ft        FileType
+		fname     string
+		format    string
+		delimiter string
+		fields    []string
+		content   []byte
+	}{
+		{
+			name:      "test1",
+			ft:        CSV_TYPE,
+			fname:     "test_csv",
+			format:    "delimited",
+			delimiter: ",",
+			fields:    []string{"temperature", "humidity"},
+			content:   []byte("temperature,humidity\n31.2,40"),
+		},
+		{
+			name:      "test2",
+			ft:        CSV_TYPE,
+			fname:     "test_csv",
+			format:    "delimited",
+			delimiter: ",",
+			content:   []byte("humidity,temperature\n40,31.2"),
+		},
+	}
+	// Create a stream context for testing
+	contextLogger := conf.Log.WithField("rule", "testFields")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tf, _ := transform.GenTransform("", tt.format, "", tt.delimiter, tt.fields)
+			vCtx := context.WithValue(ctx, context.TransKey, tf)
+			// Create a temporary file for testing
+			tmpfile, err := os.CreateTemp("", tt.fname)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(tmpfile.Name())
+			// Create a file sink with the temporary file path
+			sink := &fileSink{}
+			err = sink.Configure(map[string]interface{}{
+				"path":               tmpfile.Name(),
+				"fileType":           tt.ft,
+				"hasHeader":          true,
+				"format":             tt.format,
+				"rollingNamePattern": "none",
+				"fields":             tt.fields,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = sink.Open(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Test collecting a map item
+			m := map[string]interface{}{"humidity": 40, "temperature": 31.2}
+			if err := sink.Collect(vCtx, m); err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+			if err = sink.Close(ctx); err != nil {
+				t.Errorf("unexpected close error: %s", err)
+			}
+			// Read the contents of the temporary file and check if they match the collected items
+			contents, err := os.ReadFile(tmpfile.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(contents, tt.content) {
+				t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.content, string(contents))
+			}
 		})
 	}
 }

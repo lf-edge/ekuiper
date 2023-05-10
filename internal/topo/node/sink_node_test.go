@@ -523,6 +523,13 @@ func TestSinkFields_Apply(t *testing.T) {
 			result:    [][]byte{[]byte(`1,2`)},
 		},
 		{
+			format:    "delimited",
+			delimiter: ",",
+			fields:    []string{"b", "c", "a"},
+			data:      map[string]interface{}{"a": "1", "b": "2", "c": "3"},
+			result:    [][]byte{[]byte(`2,3,1`)},
+		},
+		{
 			format:   "json",
 			schemaId: "",
 			fields:   []string{"ax", "bx"},
