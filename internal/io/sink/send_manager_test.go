@@ -26,6 +26,7 @@ import (
 
 func TestSendManager(t *testing.T) {
 	testcases := []struct {
+		sendCount      int
 		batchSize      int
 		lingerInterval int
 		err            string
@@ -37,12 +38,20 @@ func TestSendManager(t *testing.T) {
 			err:            "either batchSize or lingerInterval should be larger than 0",
 		},
 		{
+			sendCount:      3,
 			batchSize:      3,
 			lingerInterval: 0,
 			expectItems:    3,
 		},
 		{
+			sendCount:      10,
 			batchSize:      10,
+			lingerInterval: 100,
+			expectItems:    4,
+		},
+		{
+			sendCount:      10,
+			batchSize:      0,
 			lingerInterval: 100,
 			expectItems:    4,
 		},
@@ -61,7 +70,7 @@ func TestSendManager(t *testing.T) {
 			defer cancel()
 			go sm.Run(ctx)
 			go func() {
-				for i := 0; i < tc.batchSize; i++ {
+				for i := 0; i < tc.sendCount; i++ {
 					sm.RecvData(map[string]interface{}{})
 					mc.Add(30 * time.Millisecond)
 				}

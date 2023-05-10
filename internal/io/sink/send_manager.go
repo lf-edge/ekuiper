@@ -38,6 +38,9 @@ func NewSendManager(batchSize, lingerInterval int) (*SendManager, error) {
 		batchSize:      batchSize,
 		lingerInterval: lingerInterval,
 	}
+	if batchSize == 0 {
+		batchSize = 1024
+	}
 	sm.buffer = make([]map[string]interface{}, batchSize)
 	sm.bufferCh = make(chan map[string]interface{})
 	sm.outputCh = make(chan []map[string]interface{}, 16)
@@ -66,6 +69,9 @@ func (sm *SendManager) runWithTicker(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case d := <-sm.bufferCh:
+			sm.buffer[sm.currIndex] = d
+			sm.currIndex++
 		case <-ticker.C:
 			sm.send()
 		}
