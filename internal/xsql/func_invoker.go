@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package xsql
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -43,10 +44,6 @@ func validateFuncs(funcName string, args []ast.Expr) error {
 }
 
 func ExecFunc(funcName string, f api.Function, args []interface{}, fctx api.FunctionContext) (interface{}, bool) {
-	var targs []interface{}
-	for _, arg := range args {
-		targs = append(targs, arg)
-	}
 	if mf, ok := f.(MultiFunc); ok {
 		return mf.ExecWithName(args, fctx, funcName)
 	} else {

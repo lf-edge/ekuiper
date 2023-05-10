@@ -16,17 +16,18 @@ package cache
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"os"
-	"path/filepath"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestPage(t *testing.T) {
@@ -207,7 +208,7 @@ func TestRun(t *testing.T) {
 		}()
 		exitCh := make(chan struct{})
 		// send data
-		sc := NewSyncCacheWithExitChanel(ctx, in, errCh, stats, tt.sconf, 100, exitCh)
+		_ = NewSyncCacheWithExitChanel(ctx, in, errCh, stats, tt.sconf, 100, exitCh)
 		for i := 0; i < tt.stopPt; i++ {
 			in <- tt.dataIn[i]
 			time.Sleep(1 * time.Millisecond)
@@ -218,7 +219,7 @@ func TestRun(t *testing.T) {
 
 		// send the second half data
 		ctx, cancel = context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
-		sc = NewSyncCache(ctx, in, errCh, stats, tt.sconf, 100)
+		sc := NewSyncCache(ctx, in, errCh, stats, tt.sconf, 100)
 		for i := tt.stopPt; i < len(tt.dataIn); i++ {
 			in <- tt.dataIn[i]
 			time.Sleep(1 * time.Millisecond)

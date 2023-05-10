@@ -15,15 +15,16 @@
 package cache
 
 import (
+	"path"
+	"strconv"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"path"
-	"strconv"
-	"time"
 )
 
 type AckResult bool
@@ -366,12 +367,12 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 	if !c.cacheConf.CleanCacheAtStop {
 		// Save 0 when init and save 1 when close. Wait for close for newly started sink node
 		var set int
-		ok, err := c.store.Get("storeSig", &set)
+		ok, _ := c.store.Get("storeSig", &set)
 		if ok && set == 0 { // may be saving
 			var i = 0
 			for ; i < 100; i++ {
 				time.Sleep(time.Millisecond * 10)
-				_, err = c.store.Get("storeSig", &set)
+				c.store.Get("storeSig", &set)
 				if set == 1 {
 					ctx.GetLogger().Infof("waiting for previous cache for %d times", i)
 					break

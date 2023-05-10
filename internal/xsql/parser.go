@@ -359,7 +359,7 @@ func (p *Parser) parseSorts() (ast.SortFields, error) {
 	if t, _ := p.scanIgnoreWhitespace(); t == ast.ORDER {
 		if t1, l1 := p.scanIgnoreWhitespace(); t1 == ast.BY {
 			for {
-				if t1, l1 = p.scanIgnoreWhitespace(); t1 == ast.IDENT {
+				if t1, _ = p.scanIgnoreWhitespace(); t1 == ast.IDENT {
 					s := ast.SortField{Ascending: true}
 
 					p.unscan()
@@ -471,9 +471,9 @@ func nameExpr(exp ast.Expr) string {
 }
 
 func (p *Parser) parseAlias() (string, error) {
-	tok, lit := p.scanIgnoreWhitespace()
+	tok, _ := p.scanIgnoreWhitespace()
 	if tok == ast.AS {
-		if tok, lit = p.scanIgnoreWhitespace(); tok != ast.IDENT {
+		if tok, lit := p.scanIgnoreWhitespace(); tok != ast.IDENT {
 			return "", fmt.Errorf("found %q, expected as alias.", lit)
 		} else {
 			return lit, nil
