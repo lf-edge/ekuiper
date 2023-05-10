@@ -45,6 +45,8 @@ func init() {
 	registerAnalyticFunc()
 	registerColsFunc()
 	registerSetReturningFunc()
+	registerArrayFunc()
+	registerObjectFunc()
 }
 
 //var funcWithAsteriskSupportMap = map[string]string{
