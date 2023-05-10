@@ -97,3 +97,40 @@ func TestSendEmpty(t *testing.T) {
 	// test shouldn't be blocked
 	sm.send()
 }
+
+func TestCancelRun(t *testing.T) {
+	testcases := []struct {
+		batchSize      int
+		lingerInterval int
+	}{
+		{
+			batchSize:      0,
+			lingerInterval: 1,
+		},
+		{
+			batchSize:      3,
+			lingerInterval: 0,
+		},
+		{
+			batchSize:      10,
+			lingerInterval: 100,
+		},
+	}
+	for _, tc := range testcases {
+		sm, err := NewSendManager(tc.batchSize, tc.lingerInterval)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		c := make(chan struct{})
+		go func() {
+			sm.Run(ctx)
+			c <- struct{}{}
+		}()
+		cancel()
+		<-c
+		if !sm.finished {
+			t.Fatal("send manager should be finished")
+		}
+	}
+}

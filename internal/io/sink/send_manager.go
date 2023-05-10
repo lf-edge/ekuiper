@@ -28,6 +28,7 @@ type SendManager struct {
 	buffer         []map[string]interface{}
 	outputCh       chan []map[string]interface{}
 	currIndex      int
+	finished       bool
 }
 
 func NewSendManager(batchSize, lingerInterval int) (*SendManager, error) {
@@ -52,6 +53,7 @@ func (sm *SendManager) RecvData(d map[string]interface{}) {
 }
 
 func (sm *SendManager) Run(ctx context.Context) {
+	defer sm.finish()
 	switch {
 	case sm.batchSize > 0 && sm.lingerInterval > 0:
 		sm.runWithTickerAndBatchSize(ctx)
@@ -126,4 +128,8 @@ func (sm *SendManager) send() {
 
 func (sm *SendManager) GetOutputChan() <-chan []map[string]interface{} {
 	return sm.outputCh
+}
+
+func (sm *SendManager) finish() {
+	sm.finished = true
 }
