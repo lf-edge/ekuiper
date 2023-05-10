@@ -44,20 +44,21 @@ func TestSendManager(t *testing.T) {
 			expectItems:    3,
 		},
 		{
-			sendCount:      10,
+			sendCount:      4,
 			batchSize:      10,
 			lingerInterval: 100,
 			expectItems:    4,
 		},
 		{
-			sendCount:      10,
+			sendCount:      4,
 			batchSize:      0,
 			lingerInterval: 100,
 			expectItems:    4,
 		},
 	}
 	mc := conf.Clock.(*clock.Mock)
-	for _, tc := range testcases {
+	for i, tc := range testcases {
+		mc.Set(mc.Now())
 		testF := func() error {
 			sm, err := NewSendManager(tc.batchSize, tc.lingerInterval)
 			if len(tc.err) > 0 {
@@ -69,16 +70,13 @@ func TestSendManager(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			go sm.Run(ctx)
-			go func() {
-				for i := 0; i < tc.sendCount; i++ {
-					sm.RecvData(map[string]interface{}{})
-					mc.Add(30 * time.Millisecond)
-				}
-			}()
-			mc.Add(time.Duration(tc.lingerInterval) * time.Millisecond)
+			for i := 0; i < tc.sendCount; i++ {
+				sm.RecvData(map[string]interface{}{})
+				mc.Add(30 * time.Millisecond)
+			}
 			r := <-sm.GetOutputChan()
 			if len(r) != tc.expectItems {
-				return fmt.Errorf("expect %v output data, actual %v", tc.expectItems, len(r))
+				return fmt.Errorf("testcase %v expect %v output data, actual %v", i, tc.expectItems, len(r))
 			}
 			return nil
 		}
