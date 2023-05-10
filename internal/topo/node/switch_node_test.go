@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@ package node
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func TestTuple(t *testing.T) {
@@ -177,9 +178,10 @@ func TestTuple(t *testing.T) {
 		for i, input := range inputs {
 			select {
 			case sn.input <- input:
-				fmt.Println("send input", i)
+				t.Logf("send input %d", i)
 			case <-time.After(time.Second):
-				t.Fatalf("Timeout sending input %d", i)
+				errCh <- fmt.Errorf("Timeout sending input %d", i)
+				return
 			}
 		}
 	}()
@@ -371,9 +373,10 @@ func TestCollection(t *testing.T) {
 		for i, input := range inputs {
 			select {
 			case sn.input <- input:
-				fmt.Println("send input", i)
+				t.Logf("send input %d", i)
 			case <-time.After(time.Second):
-				t.Fatalf("Timeout sending input %d", i)
+				errCh <- fmt.Errorf("Timeout sending input %d", i)
+				return
 			}
 		}
 	}()
