@@ -17,6 +17,7 @@ package planner
 import (
 	"errors"
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo"
@@ -198,7 +199,10 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping}, fmt.Sprintf("%d_projectset", newIndex), options)
 	default:
-		return nil, 0, fmt.Errorf("unknown logical plan %v", t)
+		err = fmt.Errorf("unknown logical plan %v", t)
+	}
+	if err != nil {
+		return nil, 0, err
 	}
 	if uop, ok := op.(*node.UnaryOperator); ok {
 		uop.SetConcurrency(options.Concurrency)

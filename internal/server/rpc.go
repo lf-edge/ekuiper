@@ -360,7 +360,9 @@ func (t *Server) ExportConfiguration(arg *model.ExportDataDesc, reply *string) e
 	} else {
 		jsonBytes, err = ruleMigrationProcessor.ConfigurationPartialExport(rules)
 	}
-	jsonBytes, err = configurationExport()
+	if err != nil {
+		return err
+	}
 	_, err = io.Copy(f, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return fmt.Errorf("fail to save to file %s:%v", file, err)

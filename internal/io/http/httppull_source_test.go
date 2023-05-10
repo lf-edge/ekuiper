@@ -18,11 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/benbjohnson/clock"
-	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mock"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -30,12 +25,19 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/benbjohnson/clock"
+	"github.com/gorilla/mux"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/mock"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func jsonOut(w http.ResponseWriter, err error, out interface{}) {
+func jsonOut(w http.ResponseWriter, out interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	err = enc.Encode(out)
+	err := enc.Encode(out)
 	// Problems encoding
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -75,7 +77,7 @@ func mockAuthServer() *httptest.Server {
 			ClientId:     "test",
 			Expires:      36000,
 		}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodPost)
 	router.HandleFunc("/refresh", func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
@@ -97,7 +99,7 @@ func mockAuthServer() *httptest.Server {
 			ClientId:     "test",
 			Expires:      36000,
 		}
-		jsonOut(w, nil, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodPost)
 	router.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
@@ -113,7 +115,7 @@ func mockAuthServer() *httptest.Server {
 			Temperature: 25.5,
 			Humidity:    60.0,
 		}
-		jsonOut(w, nil, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodGet)
 	// Return same data for 3 times
 	router.HandleFunc("/data2", func(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +139,7 @@ func mockAuthServer() *httptest.Server {
 			},
 		}
 		i++
-		jsonOut(w, nil, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodGet)
 
 	router.HandleFunc("/data3", func(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +176,7 @@ func mockAuthServer() *httptest.Server {
 				},
 			},
 		}
-		jsonOut(w, nil, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodGet)
 
 	server := httptest.NewUnstartedServer(router)

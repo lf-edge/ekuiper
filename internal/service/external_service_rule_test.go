@@ -18,14 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/golang/protobuf/ptypes/wrappers"
-	"github.com/gorilla/mux"
-	kconf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
-	"google.golang.org/grpc"
 	"io"
 	"net"
 	"net/http"
@@ -33,6 +25,16 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/golang/protobuf/ptypes/wrappers"
+	"github.com/gorilla/mux"
+	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
+	"google.golang.org/grpc"
+
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type RestHelloRequest struct {
@@ -109,7 +111,7 @@ func TestRestService(t *testing.T) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 		out := &RestHelloReply{Message: body.Name}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodPost)
 	router.HandleFunc("/object_detection", func(w http.ResponseWriter, r *http.Request) {
 		req := &ObjectDetectRequest{}
@@ -127,7 +129,7 @@ func TestRestService(t *testing.T) {
 			Result: req.Command + " success",
 			Type:   "S",
 		}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodPost)
 	router.HandleFunc("/getStatus", func(w http.ResponseWriter, r *http.Request) {
 		result := count%2 == 0
@@ -153,7 +155,7 @@ func TestRestService(t *testing.T) {
 		}
 		idint, _ := strconv.Atoi(req.Id)
 		out := ShelfMessageOut{Id: int64(idint), Theme: req.Theme}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodPost)
 	router.HandleFunc("/bookshelf/v1/shelves/{shelf}/books/{book}", func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -164,7 +166,7 @@ func TestRestService(t *testing.T) {
 		}
 		idint, _ := strconv.Atoi(book)
 		out := BookMessage{Id: int64(idint), Author: "NA", Title: "title_" + book}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodGet)
 	router.HandleFunc("/messaging/v1/messages/{name}", func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -174,7 +176,7 @@ func TestRestService(t *testing.T) {
 			http.Error(w, "empty request", http.StatusBadRequest)
 		}
 		out := MessageMessage{Text: name + " content"}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodGet)
 	router.HandleFunc("/messaging/v1/messages/filter/{name}", func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -186,7 +188,7 @@ func TestRestService(t *testing.T) {
 			http.Error(w, "empty request", http.StatusBadRequest)
 		}
 		out := MessageMessage{Text: name + rev + sub}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodGet)
 	router.HandleFunc("/messaging/v1/messages/{name}", func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
@@ -201,7 +203,7 @@ func TestRestService(t *testing.T) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 		out := MessageMessage{Text: body.Text}
-		jsonOut(w, err, out)
+		jsonOut(w, out)
 	}).Methods(http.MethodPut, http.MethodPatch)
 	server := httptest.NewUnstartedServer(router)
 	server.Listener.Close()
@@ -517,10 +519,10 @@ func TestRestService(t *testing.T) {
 	}, 0)
 }
 
-func jsonOut(w http.ResponseWriter, err error, out interface{}) {
+func jsonOut(w http.ResponseWriter, out interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	err = enc.Encode(out)
+	err := enc.Encode(out)
 	// Problems encoding
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
