@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package sink
 
 import (
 	"context"
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/benbjohnson/clock"
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func TestSendManager(t *testing.T) {
@@ -41,9 +44,10 @@ func TestSendManager(t *testing.T) {
 		{
 			batchSize:      10,
 			lingerInterval: 100,
-			expectItems:    3,
+			expectItems:    4,
 		},
 	}
+	mc := conf.Clock.(*clock.Mock)
 	for _, tc := range testcases {
 		testF := func() error {
 			sm, err := NewSendManager(tc.batchSize, tc.lingerInterval)
@@ -58,10 +62,11 @@ func TestSendManager(t *testing.T) {
 			go sm.Run(ctx)
 			go func() {
 				for i := 0; i < tc.batchSize; i++ {
-					time.Sleep(30 * time.Millisecond)
-					sm.RecvData(i)
+					sm.RecvData(map[string]interface{}{})
+					mc.Add(30 * time.Millisecond)
 				}
 			}()
+			mc.Add(time.Duration(tc.lingerInterval) * time.Millisecond)
 			r := <-sm.GetOutputChan()
 			if len(r) != tc.expectItems {
 				return fmt.Errorf("expect %v output data, actual %v", tc.expectItems, len(r))
@@ -79,7 +84,7 @@ func TestSendEmpty(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sm.outputCh = make(chan []interface{})
+	sm.outputCh = make(chan []map[string]interface{})
 	// test shouldn't be blocked
 	sm.send()
 }

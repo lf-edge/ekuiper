@@ -12,20 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package sink
 
 import (
 	"context"
 	"fmt"
-	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 type SendManager struct {
 	lingerInterval int
 	batchSize      int
-	bufferCh       chan interface{}
-	buffer         []interface{}
-	outputCh       chan []interface{}
+	bufferCh       chan map[string]interface{}
+	buffer         []map[string]interface{}
+	outputCh       chan []map[string]interface{}
+	currIndex      int
 }
 
 func NewSendManager(batchSize, lingerInterval int) (*SendManager, error) {
@@ -36,48 +38,66 @@ func NewSendManager(batchSize, lingerInterval int) (*SendManager, error) {
 		batchSize:      batchSize,
 		lingerInterval: lingerInterval,
 	}
-	sm.buffer = make([]interface{}, 0, batchSize)
-	sm.bufferCh = make(chan interface{})
-	sm.outputCh = make(chan []interface{}, 16)
+	sm.buffer = make([]map[string]interface{}, batchSize)
+	sm.bufferCh = make(chan map[string]interface{})
+	sm.outputCh = make(chan []map[string]interface{}, 16)
 	return sm, nil
 }
 
-func (sm *SendManager) RecvData(d interface{}) {
+func (sm *SendManager) RecvData(d map[string]interface{}) {
 	sm.bufferCh <- d
 }
 
 func (sm *SendManager) Run(ctx context.Context) {
-	if sm.lingerInterval > 0 {
+	switch {
+	case sm.batchSize > 0 && sm.lingerInterval > 0:
+		sm.runWithTickerAndBatchSize(ctx)
+	case sm.batchSize > 0 && sm.lingerInterval == 0:
+		sm.runWithBatchSize(ctx)
+	case sm.batchSize == 0 && sm.lingerInterval > 0:
 		sm.runWithTicker(ctx)
-	} else {
-		sm.runWithoutTicker(ctx)
 	}
 }
 
-func (sm *SendManager) runWithoutTicker(ctx context.Context) {
+func (sm *SendManager) runWithTicker(ctx context.Context) {
+	ticker := conf.GetTicker(sm.lingerInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			sm.send()
+		}
+	}
+}
+
+func (sm *SendManager) runWithBatchSize(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case d := <-sm.bufferCh:
-			sm.buffer = append(sm.buffer, d)
-			if len(sm.buffer) >= sm.batchSize {
+			sm.buffer[sm.currIndex] = d
+			sm.currIndex++
+			if sm.currIndex >= sm.batchSize {
 				sm.send()
 			}
 		}
 	}
 }
 
-func (sm *SendManager) runWithTicker(ctx context.Context) {
-	ticker := time.NewTicker(time.Duration(sm.lingerInterval) * time.Millisecond)
+func (sm *SendManager) runWithTickerAndBatchSize(ctx context.Context) {
+	ticker := conf.GetTicker(sm.lingerInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case d := <-sm.bufferCh:
-			sm.buffer = append(sm.buffer, d)
-			if len(sm.buffer) >= sm.batchSize {
+			sm.buffer[sm.currIndex] = d
+			sm.currIndex++
+			if sm.currIndex >= sm.batchSize {
 				sm.send()
 			}
 		case <-ticker.C:
@@ -87,17 +107,17 @@ func (sm *SendManager) runWithTicker(ctx context.Context) {
 }
 
 func (sm *SendManager) send() {
-	if len(sm.buffer) < 1 {
+	if sm.currIndex < 1 {
 		return
 	}
-	list := make([]interface{}, len(sm.buffer))
-	for i, item := range sm.buffer {
-		list[i] = item
+	list := make([]map[string]interface{}, sm.currIndex)
+	for i := 0; i < sm.currIndex; i++ {
+		list[i] = sm.buffer[i]
 	}
-	sm.buffer = make([]interface{}, 0, sm.batchSize)
+	sm.currIndex = 0
 	sm.outputCh <- list
 }
 
-func (sm *SendManager) GetOutputChan() <-chan []interface{} {
+func (sm *SendManager) GetOutputChan() <-chan []map[string]interface{} {
 	return sm.outputCh
 }
