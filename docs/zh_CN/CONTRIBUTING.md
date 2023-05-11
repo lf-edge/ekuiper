@@ -33,9 +33,28 @@ $ git fetch upstream
 $ git checkout -b <my-branch> upstream/master
 ```
 
+### 包引入规范
+
+合理的包引入顺序可以增强代码的整洁性和规范性。本项目使用 gci 自动检查包引入的顺序，优先级为 `标准包` > `第三方外部包` > `项目本地包`，如：
+
+```go
+import (
+    "fmt"
+
+    "github.com/sirupsen/logrus"
+
+    "github.com/lf-edge/ekuiper/pkg/api"
+)
+```
+
+在项目根目录下，可以运行 `gci write --skip-generated -s standard -s default -s "prefix(github.com/lf-edge/ekuiper)" .` 命令自动重新排序包引入顺序。
+
+或者如果你使用 GoLand，可以在 `Settings > Editor > Code Style > Go > Imports` 下勾选 `Group` 和 `Group stdlib imports` 以及相应的子选项来开启自动引入排序。
+
 ### 代码惯例
 
 - 在提交代码变更之前，使用 `go fmt` 来格式化你的代码。
+- 使用 `make lint` 来运行静态代码分析以确保没有基本的格式或规范问题。
 - 配置文件中的配置键使用 camel 大小写格式。
 
 ### 调试你的代码
