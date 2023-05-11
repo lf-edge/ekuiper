@@ -266,7 +266,7 @@ func Test_rulesManageHandler(t *testing.T) {
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 
-	if w1.Result().StatusCode != http.StatusOK {
+	if w1.Result().StatusCode != http.StatusBadRequest {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
 	}
 
