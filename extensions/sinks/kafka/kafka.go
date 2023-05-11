@@ -16,14 +16,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"strings"
+
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
-	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 type kafkaSink struct {
@@ -77,7 +79,7 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	var err error
 	var mechanism sasl.Mechanism
 
-	//sasl authentication type
+	// sasl authentication type
 	switch m.c.SaslAuthType {
 	case SASL_PLAIN:
 		mechanism = plain.Mechanism{

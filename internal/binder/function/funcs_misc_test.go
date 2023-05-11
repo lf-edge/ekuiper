@@ -16,6 +16,9 @@ package function
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -23,8 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
-	"testing"
 )
 
 func init() {
@@ -40,7 +41,7 @@ func TestToMap(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -78,6 +79,7 @@ func TestToMap(t *testing.T) {
 		}
 	}
 }
+
 func TestCoalesceExec(t *testing.T) {
 	f, ok := builtins["coalesce"]
 	if !ok {
@@ -87,7 +89,7 @@ func TestCoalesceExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -149,7 +151,7 @@ func TestToJson(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -190,7 +192,7 @@ func TestFromJson(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -260,7 +262,7 @@ func TestDelay(t *testing.T) {
 		t.Fatal("expect no error")
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -291,7 +293,7 @@ func TestKeyedStateValidation(t *testing.T) {
 	if !ok {
 		t.Fatal("builtin not found")
 	}
-	var tests = []struct {
+	tests := []struct {
 		args []ast.Expr
 		err  error
 	}{
@@ -341,7 +343,7 @@ func TestKeyedStateExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{

@@ -16,13 +16,14 @@ package operator
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 type TableProcessor struct {
-	//Pruned stream fields. Could be streamField(with data type info) or string
+	// Pruned stream fields. Could be streamField(with data type info) or string
 	defaultFieldProcessor
 
 	checkSchema  bool

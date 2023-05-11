@@ -16,14 +16,15 @@ package planner
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		p  *LookupPlan
 		v  bool
 		c  ast.Expr

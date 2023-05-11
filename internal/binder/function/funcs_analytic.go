@@ -16,11 +16,12 @@ package function
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strconv"
 )
 
 // registerAnalyticFunc registers the analytic functions

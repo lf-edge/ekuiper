@@ -17,13 +17,15 @@ package conf
 import (
 	"errors"
 	"fmt"
-	"github.com/lestrrat-go/file-rotatelogs"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path"
 	"time"
+
+	"github.com/lestrrat-go/file-rotatelogs"
+	"github.com/sirupsen/logrus"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 const ConfFileName = "kuiper.yaml"
@@ -167,7 +169,7 @@ func InitConf() {
 			LateTol:            1000,
 			Concurrency:        1,
 			BufferLength:       1024,
-			CheckpointInterval: 300000, //5 minutes
+			CheckpointInterval: 300000, // 5 minutes
 			SendError:          true,
 			Restart: &api.RestartStrategy{
 				Attempts:     0,

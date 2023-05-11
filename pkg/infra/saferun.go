@@ -17,9 +17,10 @@ package infra
 import (
 	"errors"
 	"fmt"
+	"runtime/debug"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"runtime/debug"
 )
 
 // SafeRun will catch and return the panic error together with other errors

@@ -15,14 +15,15 @@
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/go/api"
-	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/lf-edge/ekuiper/sdk/go/mock"
 )
 
 func TestConfigure(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		p   map[string]interface{}
 		err string
 	}{

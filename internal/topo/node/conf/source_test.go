@@ -15,9 +15,10 @@
 package conf
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestGetSourceConf(t *testing.T) {

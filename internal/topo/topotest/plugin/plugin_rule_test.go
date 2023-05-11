@@ -18,6 +18,10 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
@@ -27,9 +31,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/topotest"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"os"
-	"testing"
-	"time"
 )
 
 func init() {
@@ -56,12 +57,12 @@ var CACHE_FILE = "cache"
 // The .so files must be in the plugins folder
 func TestExtensions(t *testing.T) {
 	log := conf.Log
-	//Reset
+	// Reset
 	streamList := []string{"ext", "ext2"}
 	topotest.HandleStream(false, streamList, t)
 	os.Remove(CACHE_FILE)
 	os.Create(CACHE_FILE)
-	var tests = []struct {
+	tests := []struct {
 		name      string
 		rj        string
 		minLength int
@@ -174,11 +175,11 @@ func getResults() []string {
 }
 
 func TestFuncState(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"text"}
 	topotest.HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []topotest.RuleTest{
+	// Data setup
+	tests := []topotest.RuleTest{
 		{
 			Name: `TestFuncStateRule1`,
 			Sql:  `SELECT accumulateWordCount(slogan, " ") as wc FROM text`,
@@ -234,7 +235,7 @@ func TestFuncState(t *testing.T) {
 func TestFuncStateCheckpoint(t *testing.T) {
 	streamList := []string{"text"}
 	topotest.HandleStream(false, streamList, t)
-	var tests = []topotest.RuleCheckpointTest{
+	tests := []topotest.RuleCheckpointTest{
 		{
 			RuleTest: topotest.RuleTest{
 				Name: `TestFuncStateCheckpointRule1`,

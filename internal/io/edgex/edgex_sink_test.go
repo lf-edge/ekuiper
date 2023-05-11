@@ -20,15 +20,17 @@ package edgex
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"testing"
+
 	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"testing"
 )
 
 var (
@@ -70,7 +72,7 @@ func compareReading(expected, actual dtos.BaseReading) bool {
 }
 
 func TestConfigure(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conf     map[string]interface{}
 		expected *SinkConf
 		error    string
@@ -187,7 +189,7 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestProduceEvents(t1 *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input    string
 		conf     map[string]interface{}
 		expected *dtos.Event
@@ -364,7 +366,7 @@ func TestProduceEvents(t1 *testing.T) {
 			error: "",
 		},
 		{ // 5
-			input: `[{"sa":["1","2",3,"4"]}]`, //invalid array, return nil
+			input: `[{"sa":["1","2",3,"4"]}]`, // invalid array, return nil
 			expected: &dtos.Event{
 				DeviceName:  "ekuiper",
 				ProfileName: "ekuiperProfile",
@@ -413,7 +415,8 @@ func TestProduceEvents(t1 *testing.T) {
 				},
 			},
 			error: "",
-		}, { // 7
+		},
+		{ // 7
 			input: `[
 						{"meta":{
 							"correlationid":"","deviceName":"demo","id":"","origin":3,
@@ -447,7 +450,8 @@ func TestProduceEvents(t1 *testing.T) {
 				},
 			},
 			error: "",
-		}, { // 8
+		},
+		{ // 8
 			input: `[
 						{"obj":{"a":1,"b":"sttt"}}
 					]`,
@@ -500,7 +504,7 @@ func TestProduceEvents(t1 *testing.T) {
 }
 
 func TestEdgeXTemplate_Apply(t1 *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input    string
 		conf     map[string]interface{}
 		expected *dtos.Event

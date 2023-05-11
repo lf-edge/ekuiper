@@ -16,10 +16,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/mattn/go-tflite"
 	"path/filepath"
 	"sync"
+
+	"github.com/mattn/go-tflite"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 var ipManager *interpreterManager

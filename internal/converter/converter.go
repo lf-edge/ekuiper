@@ -16,31 +16,31 @@ package converter
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/converter/binary"
 	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"strings"
 )
 
 // Instantiator The format, schema information are passed in by stream options
 // The columns information is defined in the source side, like file source
 type Instantiator func(schemaFileName string, SchemaMessageName string, delimiter string) (message.Converter, error)
 
-var ( // init once and read only
-	converters = map[string]Instantiator{
-		message.FormatJson: func(_ string, _ string, _ string) (message.Converter, error) {
-			return json.GetConverter()
-		},
-		message.FormatBinary: func(_ string, _ string, _ string) (message.Converter, error) {
-			return binary.GetConverter()
-		},
-		message.FormatDelimited: func(_ string, _ string, delimiter string) (message.Converter, error) {
-			return delimited.NewConverter(delimiter)
-		},
-	}
-)
+// init once and read only
+var converters = map[string]Instantiator{
+	message.FormatJson: func(_ string, _ string, _ string) (message.Converter, error) {
+		return json.GetConverter()
+	},
+	message.FormatBinary: func(_ string, _ string, _ string) (message.Converter, error) {
+		return binary.GetConverter()
+	},
+	message.FormatDelimited: func(_ string, _ string, delimiter string) (message.Converter, error) {
+		return delimited.NewConverter(delimiter)
+	},
+}
 
 func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
 	t := strings.ToLower(options.FORMAT)

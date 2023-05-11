@@ -251,6 +251,7 @@ func (fr *FieldRef) node() {}
 func (fr *FieldRef) IsColumn() bool {
 	return fr.StreamName != AliasStream && fr.StreamName != ""
 }
+
 func (fr *FieldRef) IsAlias() bool {
 	return fr.StreamName == AliasStream
 }

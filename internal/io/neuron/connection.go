@@ -21,18 +21,18 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.nanomsg.org/mangos/v3"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
+	// introduce ipc/tpc
+	_ "go.nanomsg.org/mangos/v3/transport/ipc"
+	_ "go.nanomsg.org/mangos/v3/transport/tcp"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"go.nanomsg.org/mangos/v3"
-	"go.nanomsg.org/mangos/v3/protocol/pair"
-
-	// introduce ipc/tpc
-	_ "go.nanomsg.org/mangos/v3/transport/ipc"
-	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 )
 
 const (
@@ -134,9 +134,9 @@ func connect(ctx api.StreamContext, url string, info *conninfo) error {
 			pubsub.ProduceError(ctx, TopicPrefix+url, fmt.Errorf("neuron connection detached"))
 		}
 	})
-	//sock.SetOption(mangos.OptionWriteQLen, 100)
-	//sock.SetOption(mangos.OptionReadQLen, 100)
-	//sock.SetOption(mangos.OptionBestEffort, false)
+	// sock.SetOption(mangos.OptionWriteQLen, 100)
+	// sock.SetOption(mangos.OptionReadQLen, 100)
+	// sock.SetOption(mangos.OptionBestEffort, false)
 	if err = info.sock.DialOptions(url, map[string]interface{}{
 		mangos.OptionDialAsynch:       true, // will not report error and keep connecting
 		mangos.OptionMaxReconnectTime: 5 * time.Second,

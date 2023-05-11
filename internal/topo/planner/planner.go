@@ -223,7 +223,6 @@ func getMockSource(sources []*node.SourceNode, name string) *node.SourceNode {
 }
 
 func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
-
 	dimensions := stmt.Dimensions
 	var (
 		p        LogicalPlan
@@ -285,7 +284,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			if w.Interval != nil {
 				wp.interval = w.Interval.Val
 			} else if w.WindowType == ast.COUNT_WINDOW {
-				//if no interval value is set, and it's count window, then set interval to length value.
+				// if no interval value is set, and it's count window, then set interval to length value.
 				wp.interval = w.Length.Val
 			}
 			if w.Filter != nil {

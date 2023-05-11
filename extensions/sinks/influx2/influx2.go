@@ -29,11 +29,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"time"
+
 	_ "github.com/influxdata/influxdb-client-go/v2"
 	client "github.com/influxdata/influxdb-client-go/v2"
+
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"time"
 )
 
 type influxSink2 struct {

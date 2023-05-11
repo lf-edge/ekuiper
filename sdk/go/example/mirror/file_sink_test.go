@@ -16,10 +16,11 @@ package main
 
 import (
 	"bufio"
-	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/sdk/go/mock"
 )
 
 var CACHE_FILE = "cache"

@@ -81,7 +81,6 @@ func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
 }
 
 func TestInternalQuery(t *testing.T) {
-
 	s := NewSqlServerQuery(&InternalSqlQueryCfg{
 		Table:      "table",
 		Limit:      10,

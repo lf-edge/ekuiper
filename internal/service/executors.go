@@ -200,7 +200,8 @@ func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 		}
 		h.conn = &http.Client{
 			Transport: tr,
-			Timeout:   time.Duration(h.timeout) * time.Millisecond}
+			Timeout:   time.Duration(h.timeout) * time.Millisecond,
+		}
 	}
 
 	hm, err := h.descriptor.ConvertHttpMapping(name, params)

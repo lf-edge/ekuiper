@@ -16,13 +16,14 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/mattn/go-tflite"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/mattn/go-tflite"
 )
 
-type Tffunc struct {
-}
+type Tffunc struct{}
 
 // Validate the arguments.
 // args[0]: string, model name which maps to a path

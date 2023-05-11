@@ -16,13 +16,14 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"math"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 // Ensure the parser can parse strings into Statement ASTs.
@@ -30,7 +31,7 @@ func TestParser_ParseStatement(t *testing.T) {
 	re1, _ := regexp.Compile("^foo$")
 	re2, _ := regexp.Compile("^fo.o.*$")
 	re3, _ := regexp.Compile("^foo\\\\%$")
-	var tests = []struct {
+	tests := []struct {
 		s    string
 		stmt *ast.SelectStatement
 		err  string
@@ -158,7 +159,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -170,7 +172,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "select", StreamName: ast.DefaultStream},
 						Name:  "select",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -182,7 +185,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 			},
@@ -195,7 +199,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 			},
@@ -207,7 +212,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "join"}},
 			},
@@ -220,7 +226,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 			},
@@ -233,7 +240,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1/#"}},
 			},
@@ -246,7 +254,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1/#", Alias: "t2"}},
 			},
@@ -259,7 +268,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "/topic/sensor1/#"}},
 			},
@@ -272,7 +282,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "/topic/sensor1/#/"}},
 			},
@@ -285,7 +296,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "/topic/sensor1/+/temp1/"}},
 			},
@@ -298,7 +310,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1/+/temp"}},
 			},
@@ -311,7 +324,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -632,7 +646,8 @@ func TestParser_ParseStatement(t *testing.T) {
 				Fields: []ast.Field{
 					{AName: "", Name: "field0", Expr: &ast.FieldRef{Name: "field0", StreamName: ast.DefaultStream}},
 					{AName: "field1", Name: "", Expr: &ast.StringLiteral{Val: "abc"}},
-					{AName: "", Name: "field2", Expr: &ast.FieldRef{Name: "field2", StreamName: ast.DefaultStream}}},
+					{AName: "", Name: "field2", Expr: &ast.FieldRef{Name: "field2", StreamName: ast.DefaultStream}},
+				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
 		},
@@ -721,7 +736,7 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
-			s: `SELECT field2 FROM tbl WHERE field2 !   = 5 `, //Add space char in expression
+			s: `SELECT field2 FROM tbl WHERE field2 !   = 5 `, // Add space char in expression
 			stmt: &ast.SelectStatement{
 				Fields:  []ast.Field{{AName: "", Name: "field2", Expr: &ast.FieldRef{Name: "field2", StreamName: ast.DefaultStream}}},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
@@ -1329,9 +1344,10 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
-				Dimensions: ast.Dimensions{ast.Dimension{
-					Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, &ast.IntegerLiteral{Val: 1}}},
-				},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, &ast.IntegerLiteral{Val: 1}}},
+					},
 				},
 			},
 		},
@@ -1345,9 +1361,10 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "s1"}},
 				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
-				Dimensions: ast.Dimensions{ast.Dimension{
-					Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{&ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"}, &ast.IntegerLiteral{Val: 1}}},
-				},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{&ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"}, &ast.IntegerLiteral{Val: 1}}},
+					},
 				},
 			},
 		},
@@ -1363,9 +1380,11 @@ func TestParser_ParseStatement(t *testing.T) {
 				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
 				Dimensions: ast.Dimensions{
 					ast.Dimension{
-						Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{
-							&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
-							&ast.IntegerLiteral{Val: 1}},
+						Expr: &ast.Call{
+							Name: "lpad", Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								&ast.IntegerLiteral{Val: 1},
+							},
 						},
 					},
 				},
@@ -1384,9 +1403,11 @@ func TestParser_ParseStatement(t *testing.T) {
 				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
 				Dimensions: ast.Dimensions{
 					ast.Dimension{
-						Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{
-							&ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"},
-							&ast.IntegerLiteral{Val: 1}},
+						Expr: &ast.Call{
+							Name: "lpad", Args: []ast.Expr{
+								&ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"},
+								&ast.IntegerLiteral{Val: 1},
+							},
 						},
 					},
 				},
@@ -1405,9 +1426,11 @@ func TestParser_ParseStatement(t *testing.T) {
 				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
 				Dimensions: ast.Dimensions{
 					ast.Dimension{
-						Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{
-							&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
-							&ast.IntegerLiteral{Val: 1}},
+						Expr: &ast.Call{
+							Name: "lpad", Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								&ast.IntegerLiteral{Val: 1},
+							},
 						},
 					},
 				},
@@ -1422,7 +1445,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
@@ -1436,7 +1460,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}, {Uname: "name2", Name: "name2", Ascending: true, FieldExpr: &ast.FieldRef{Name: "name2", StreamName: ast.DefaultStream}}},
@@ -1450,16 +1475,19 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				Dimensions: ast.Dimensions{
 					ast.Dimension{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}},
 					ast.Dimension{Expr: &ast.FieldRef{Name: "name2", StreamName: ast.DefaultStream}},
 					ast.Dimension{
-						Expr: &ast.Call{Name: "power", Args: []ast.Expr{
-							&ast.FieldRef{Name: "name3", StreamName: ast.DefaultStream},
-							&ast.NumberLiteral{Val: 1.8}},
+						Expr: &ast.Call{
+							Name: "power", Args: []ast.Expr{
+								&ast.FieldRef{Name: "name3", StreamName: ast.DefaultStream},
+								&ast.NumberLiteral{Val: 1.8},
+							},
 						},
 					},
 				},
@@ -1487,7 +1515,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1500,7 +1529,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1513,7 +1543,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1558,7 +1589,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 
-		//The negative value expression support.
+		// The negative value expression support.
 		{
 			s: `SELECT -3 AS t1 FROM tbl`,
 			stmt: &ast.SelectStatement{
@@ -1566,7 +1597,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.IntegerLiteral{Val: -3},
 						Name:  "",
-						AName: "t1"},
+						AName: "t1",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1579,7 +1611,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.IntegerLiteral{Val: -3},
 						Name:  "",
-						AName: "t1"},
+						AName: "t1",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1592,7 +1625,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.NumberLiteral{Val: -.3},
 						Name:  "",
-						AName: "t1"},
+						AName: "t1",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1605,7 +1639,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.NumberLiteral{Val: -3.3},
 						Name:  "",
-						AName: "t1"},
+						AName: "t1",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1633,7 +1668,8 @@ func TestParser_ParseStatement(t *testing.T) {
 							Args: nil,
 						},
 						Name:  "tstamp",
-						AName: "tp"},
+						AName: "tp",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -1649,7 +1685,8 @@ func TestParser_ParseStatement(t *testing.T) {
 							Args: nil,
 						},
 						Name:  "rule_id",
-						AName: "rule_id"},
+						AName: "rule_id",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -1667,7 +1704,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "space var", StreamName: ast.DefaultStream},
 						Name:  "space var",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1679,11 +1717,13 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "中文 Chinese", StreamName: ast.DefaultStream},
 						Name:  "中文 Chinese",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
-		}, {
+		},
+		{
 			s: "SELECT CASE temperature WHEN 25 THEN \"bingo\" WHEN 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1711,7 +1751,8 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
-		}, {
+		},
+		{
 			s: "SELECT CASE temperature WHEN 25 THEN \"bingo\" WHEN 30 THEN \"high\" END as label, humidity FROM tbl",
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1739,11 +1780,13 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
-		}, {
+		},
+		{
 			s:    "SELECT CASE temperature ELSE \"low\" END as label, humidity FROM tbl",
 			stmt: nil,
 			err:  "invalid CASE expression, WHEN expected before ELSE",
-		}, {
+		},
+		{
 			s: "SELECT CASE WHEN temperature > 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1772,11 +1815,13 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
-		}, {
+		},
+		{
 			s:    "SELECT CASE WHEN 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
 			stmt: nil,
 			err:  "invalid CASE expression, WHEN expression must be a bool condition",
-		}, {
+		},
+		{
 			s: `SELECT count(*)-10 FROM demo`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1824,7 +1869,8 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
-		}, {
+		},
+		{
 			s: `SELECT changed_cols("",true,a,b,c) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1861,7 +1907,8 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
-		}, {
+		},
+		{
 			s: `SELECT changed_cols("",true,a,*,c) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1897,7 +1944,8 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
-		}, {
+		},
+		{
 			s:   `SELECT a FROM tbl WHERE changed_cols("",true,a,b,c) > 3`,
 			err: "function changed_cols can only be used inside the select clause",
 		},
@@ -1912,7 +1960,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources:   []ast.Source{&ast.Table{Name: "tbl"}},
 				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "A"}, &ast.StringLiteral{Val: "B"}, &ast.StringLiteral{Val: "C"}}}},
@@ -1944,7 +1993,8 @@ func TestParser_ParseStatement(t *testing.T) {
 							},
 						},
 						Name:  "lag",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -1964,7 +2014,8 @@ func TestParser_ParseStatement(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Condition: &ast.BinaryExpr{
 					LHS: &ast.Call{
@@ -2004,7 +2055,8 @@ func TestParser_ParseStatement(t *testing.T) {
 							},
 						},
 						Name:  "lag",
-						AName: "ll"},
+						AName: "ll",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -2032,7 +2084,8 @@ func TestParser_ParseStatement(t *testing.T) {
 							},
 						},
 						Name:  "lag",
-						AName: "ll"},
+						AName: "ll",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -2060,7 +2113,8 @@ func TestParser_ParseStatement(t *testing.T) {
 							},
 						},
 						Name:  "lag",
-						AName: "ll"},
+						AName: "ll",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -2083,7 +2137,8 @@ func TestParser_ParseStatement(t *testing.T) {
 							},
 						},
 						Name:  "lag",
-						AName: "ll"},
+						AName: "ll",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
@@ -2177,7 +2232,7 @@ func TestParser_ParseStatement(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		//fmt.Printf("Parsing SQL %q.\n", tt.s)
+		// fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
@@ -2188,7 +2243,7 @@ func TestParser_ParseStatement(t *testing.T) {
 }
 
 func TestParser_ParseWindowsExpr(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s    string
 		stmt *ast.SelectStatement
 		err  string
@@ -2200,7 +2255,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
 						Name:  "f1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				Dimensions: ast.Dimensions{
@@ -2222,7 +2278,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
 						Name:  "f1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				Dimensions: ast.Dimensions{
@@ -2244,7 +2301,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
 						Name:  "f1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				Dimensions: ast.Dimensions{
@@ -2266,7 +2324,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
 						Name:  "f1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				Dimensions: ast.Dimensions{
@@ -2300,7 +2359,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
 						Name:  "f1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				Dimensions: ast.Dimensions{
@@ -2321,7 +2381,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
 						Name:  "f1",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				Dimensions: ast.Dimensions{
@@ -2348,7 +2409,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 				Dimensions: ast.Dimensions{
@@ -2374,7 +2436,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 				Dimensions: ast.Dimensions{
@@ -2403,7 +2466,8 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 				Dimensions: ast.Dimensions{
@@ -2426,7 +2490,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 				},
 			},
 		},
-		//to be supported
+		// to be supported
 		{
 			s:    `SELECT sum(f1) FILTER( where revenue > 100 ) FROM tbl GROUP BY year`,
 			stmt: nil,
@@ -2446,7 +2510,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		//fmt.Printf("Parsing SQL %q.\n", tt.s)
+		// fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
@@ -2457,7 +2521,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 }
 
 func TestParser_ParseJsonExpr(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s    string
 		stmt *ast.SelectStatement
 		err  string
@@ -2473,7 +2537,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
 						},
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2495,7 +2560,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						},
 
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2517,7 +2583,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						},
 
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2543,7 +2610,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						},
 
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2560,7 +2628,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2577,7 +2646,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2594,7 +2664,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: math.MinInt32}},
 						},
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2611,7 +2682,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}},
 						},
 						Name:  "",
-						AName: "c"},
+						AName: "c",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2628,7 +2700,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.JsonFieldRef{Name: "first"},
 						},
 						Name:  "",
-						AName: "c"},
+						AName: "c",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2641,7 +2714,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "*"},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2658,7 +2732,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.JsonFieldRef{Name: "first"},
 						},
 						Name:  "",
-						AName: "c"},
+						AName: "c",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2680,7 +2755,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							},
 						},
 						Name:  "lower",
-						AName: "c"},
+						AName: "c",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2697,7 +2773,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 				Condition: &ast.BinaryExpr{
@@ -2723,7 +2800,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
 						},
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 				Condition: &ast.BinaryExpr{
@@ -2758,7 +2836,8 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 							RHS: &ast.IndexExpr{Index: &ast.FieldRef{Name: "index", StreamName: ast.DefaultStream}},
 						},
 						Name:  "kuiper_field_0",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 			},
@@ -2777,7 +2856,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 }
 
 func TestParser_ParseJoins(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s    string
 		stmt *ast.SelectStatement
 		err  string
@@ -2789,7 +2868,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				Joins: []ast.Join{
@@ -2811,7 +2891,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
@@ -2833,7 +2914,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
@@ -2855,7 +2937,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
@@ -2877,7 +2960,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
@@ -2899,7 +2983,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
@@ -2921,7 +3006,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
@@ -2949,7 +3035,8 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
 						Name:  "name",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
 				Joins: []ast.Join{
@@ -2967,11 +3054,13 @@ func TestParser_ParseJoins(t *testing.T) {
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "*"},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 					{
 						Expr:  &ast.FieldRef{StreamName: ast.StreamName("demo2"), Name: "*"},
 						Name:  "*",
-						AName: ""},
+						AName: "",
+					},
 				},
 				Sources: []ast.Source{&ast.Table{Name: "demo"}},
 				Joins: []ast.Join{
@@ -2999,19 +3088,21 @@ func TestParser_ParseJoins(t *testing.T) {
 }
 
 func TestParser_ParseStatements(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s     string
 		stmts []ast.SelectStatement
 		err   string
 	}{
-		{s: "SELECT name FROM tbl;\nSELECT name FROM topic/sensor1\n",
+		{
+			s: "SELECT name FROM tbl;\nSELECT name FROM topic/sensor1\n",
 			stmts: []ast.SelectStatement{
 				{
 					Fields: []ast.Field{
 						{
 							Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 							Name:  "name",
-							AName: ""},
+							AName: "",
+						},
 					},
 					Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				},
@@ -3020,20 +3111,23 @@ func TestParser_ParseStatements(t *testing.T) {
 						{
 							Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 							Name:  "name",
-							AName: ""},
+							AName: "",
+						},
 					},
 					Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				},
 			},
 		},
-		{s: "SELECT name FROM tbl;\nSELECT name FROM topic/sensor1;\n--SELECT comment FROM topic/comment",
+		{
+			s: "SELECT name FROM tbl;\nSELECT name FROM topic/sensor1;\n--SELECT comment FROM topic/comment",
 			stmts: []ast.SelectStatement{
 				{
 					Fields: []ast.Field{
 						{
 							Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 							Name:  "name",
-							AName: ""},
+							AName: "",
+						},
 					},
 					Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 				},
@@ -3042,7 +3136,8 @@ func TestParser_ParseStatements(t *testing.T) {
 						{
 							Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
 							Name:  "name",
-							AName: ""},
+							AName: "",
+						},
 					},
 					Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
 				},

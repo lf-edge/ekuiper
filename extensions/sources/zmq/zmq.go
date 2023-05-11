@@ -18,9 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	zmq "github.com/pebbe/zmq4"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	zmq "github.com/pebbe/zmq4"
 )
 
 type zmqSource struct {
@@ -94,7 +95,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			}
 			return
 		default:
-			//do nothing
+			// do nothing
 		}
 	}
 }

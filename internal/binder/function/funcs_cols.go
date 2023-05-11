@@ -16,9 +16,10 @@ package function
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
 )
 
 type ResultCols map[string]interface{}

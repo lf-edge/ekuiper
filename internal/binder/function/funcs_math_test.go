@@ -16,13 +16,14 @@ package function
 
 import (
 	"fmt"
+	"math"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"math"
-	"reflect"
-	"testing"
 )
 
 func TestFuncMath(t *testing.T) {
@@ -126,7 +127,7 @@ func TestFuncMath(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args []interface{}
 		res  []interface{}
 	}{

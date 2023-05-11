@@ -16,6 +16,11 @@ package operator
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -23,14 +28,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestMiscFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.Tuple
 		result []map[string]interface{}
@@ -280,8 +281,9 @@ func TestMiscFunc_Apply1(t *testing.T) {
 		}
 	}
 }
+
 func TestMqttFunc_Apply2(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   *xsql.JoinTuples
 		result []map[string]interface{}
@@ -330,7 +332,7 @@ func TestMqttFunc_Apply2(t *testing.T) {
 }
 
 func TestMetaFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -440,7 +442,7 @@ func TestMetaFunc_Apply1(t *testing.T) {
 }
 
 func TestJsonPathFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -854,7 +856,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 }
 
 func TestChangedFuncs_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   []interface{}
 		result [][]map[string]interface{}
@@ -985,7 +987,7 @@ func TestChangedFuncs_Apply1(t *testing.T) {
 }
 
 func TestLagFuncs_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   []interface{}
 		result [][]map[string]interface{}

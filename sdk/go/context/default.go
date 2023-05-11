@@ -16,9 +16,11 @@ package context
 
 import (
 	"context"
-	"github.com/lf-edge/ekuiper/sdk/go/api"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 const LoggerKey = "$$logger"
@@ -28,7 +30,7 @@ type DefaultContext struct {
 	opId       string
 	instanceId int
 	ctx        context.Context
-	//Only initialized after withMeta set
+	// Only initialized after withMeta set
 	logger api.Logger
 }
 

@@ -15,10 +15,11 @@
 package conf
 
 import (
-	filename "github.com/keepeye/logrus-filename"
-	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
+
+	filename "github.com/keepeye/logrus-filename"
+	"github.com/sirupsen/logrus"
 )
 
 const (

@@ -20,17 +20,19 @@ package edgex
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+
 	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/fxamacker/cbor/v2"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"strconv"
-	"strings"
 )
 
 type EdgexSource struct {
@@ -164,10 +166,10 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 						}
 						r_meta := map[string]interface{}{}
 						r_meta["id"] = r.Id
-						//r_meta["created"] = r.Created
-						//r_meta["modified"] = r.Modified
+						// r_meta["created"] = r.Created
+						// r_meta["modified"] = r.Modified
 						r_meta["origin"] = r.Origin
-						//r_meta["pushed"] = r.Pushed
+						// r_meta["pushed"] = r.Pushed
 						r_meta["deviceName"] = r.DeviceName
 						r_meta["profileName"] = r.ProfileName
 						r_meta["valueType"] = r.ValueType
@@ -181,12 +183,12 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				}
 				if len(result) > 0 {
 					meta["id"] = e.Id
-					//meta["pushed"] = e.Pushed
+					// meta["pushed"] = e.Pushed
 					meta["deviceName"] = e.DeviceName
 					meta["profileName"] = e.ProfileName
 					meta["sourceName"] = e.SourceName
-					//meta["created"] = e.Created
-					//meta["modified"] = e.Modified
+					// meta["created"] = e.Created
+					// meta["modified"] = e.Modified
 					meta["origin"] = e.Origin
 					meta["tags"] = e.Tags
 					meta["correlationid"] = env.CorrelationID

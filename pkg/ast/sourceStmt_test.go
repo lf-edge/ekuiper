@@ -20,7 +20,7 @@ import (
 )
 
 func TestPrintFieldType(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		ft      FieldType
 		printed string
 	}{{
@@ -65,7 +65,7 @@ func TestPrintFieldType(t *testing.T) {
 }
 
 func TestToJsonFields(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		input  StreamFields
 		output map[string]*JsonStreamField
 	}{
@@ -118,11 +118,13 @@ func TestToJsonFields(t *testing.T) {
 				}},
 			},
 			output: map[string]*JsonStreamField{
-				"ADDRESSES": {Type: "array", Items: &JsonStreamField{
-					Type: "struct", Properties: map[string]*JsonStreamField{
-						"STREET_NAME": {Type: "string"},
-						"NUMBER":      {Type: "bigint"},
-					}},
+				"ADDRESSES": {
+					Type: "array", Items: &JsonStreamField{
+						Type: "struct", Properties: map[string]*JsonStreamField{
+							"STREET_NAME": {Type: "string"},
+							"NUMBER":      {Type: "bigint"},
+						},
+					},
 				},
 			},
 		},

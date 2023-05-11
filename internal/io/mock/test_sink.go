@@ -16,8 +16,9 @@ package mock
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"time"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func RunSinkCollect(s api.Sink, data []interface{}) error {

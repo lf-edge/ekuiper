@@ -16,12 +16,13 @@ package processor
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestIO(t *testing.T) {

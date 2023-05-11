@@ -15,9 +15,10 @@
 package mock
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 type FuncTest struct {

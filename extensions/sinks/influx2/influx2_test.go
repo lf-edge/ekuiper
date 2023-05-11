@@ -16,18 +16,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestConfig(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		conf     map[string]interface{}
 		expected *influxSink2
 		error    string
 	}{
-		{ //0
+		{ // 0
 			conf: map[string]interface{}{
 				"addr":        "http://192.168.0.3:8086",
 				"token":       "Token_test",
@@ -52,7 +53,7 @@ func TestConfig(t *testing.T) {
 				hasTransform: false,
 			},
 		},
-		{ //1
+		{ // 1
 			conf: map[string]interface{}{
 				"addr":         "http://192.168.0.3:8086",
 				"token":        "Token_test",
@@ -78,7 +79,7 @@ func TestConfig(t *testing.T) {
 				hasTransform: false,
 			},
 		},
-		{ //2
+		{ // 2
 			conf: map[string]interface{}{
 				"addr":         "http://192.168.0.3:8086",
 				"token":        "Token_test",

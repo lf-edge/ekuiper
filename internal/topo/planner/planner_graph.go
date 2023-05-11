@@ -17,6 +17,8 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/graph"
@@ -27,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"strings"
 )
 
 type genNodeFunc func(name string, props map[string]interface{}, options *api.RuleOption) (api.TopNode, error)
@@ -467,7 +468,7 @@ func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
 		length = n.Size
 		interval = n.Interval
 	} else {
-		var unit = 1
+		unit := 1
 		switch strings.ToLower(n.Unit) {
 		case "dd":
 			unit = 24 * 3600 * 1000

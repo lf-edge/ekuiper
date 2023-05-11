@@ -20,14 +20,16 @@ package edgex
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+	"reflect"
+	"testing"
+
 	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"math"
-	"reflect"
-	"testing"
 )
 
 var (
@@ -60,7 +62,7 @@ var (
 )
 
 func TestGetValue_IntFloat(t *testing.T) {
-	var testEvent = models.Event{DeviceName: "test"}
+	testEvent := models.Event{DeviceName: "test"}
 	for i := 1; i < 8; i++ {
 		name := fmt.Sprintf("i%d", i)
 		r1 := models.SimpleReading{
@@ -110,7 +112,7 @@ func almostEqual(a, b float64) bool {
 }
 
 func TestGetValue_IntFloatArr(t *testing.T) {
-	var testEvent = models.Event{DeviceName: "test"}
+	testEvent := models.Event{DeviceName: "test"}
 	for i := 1; i < 8; i++ {
 		ia := []int{i, i * 2}
 		jsonValue, _ := json.Marshal(ia)
@@ -183,7 +185,7 @@ func expectOne(t *testing.T, expected interface{}) {
 }
 
 func TestGetValue_Float(t *testing.T) {
-	var testEvent = models.Event{DeviceName: "test"}
+	testEvent := models.Event{DeviceName: "test"}
 	for i := 1; i < 3; i++ {
 		name := fmt.Sprintf("f%d", i)
 		r1 := models.SimpleReading{
@@ -278,8 +280,8 @@ func TestWrongType(t *testing.T) {
 }
 
 func TestWrongValue(t *testing.T) {
-	var testEvent = models.Event{DeviceName: "test"}
-	//100 cannot be converted to a boolean value
+	testEvent := models.Event{DeviceName: "test"}
+	// 100 cannot be converted to a boolean value
 	r1 := models.SimpleReading{
 		BaseReading: models.BaseReading{
 			ResourceName: "b1",

@@ -20,12 +20,14 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"net/http"
 )
 
 var wasmManager *wasm.Manager

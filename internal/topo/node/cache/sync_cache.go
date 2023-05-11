@@ -111,11 +111,11 @@ type SyncCache struct {
 	diskBufferPage *page
 	// status
 	diskSize     int // how many pages has been saved
-	cacheLength  int //readonly, for metrics only to save calculation
+	cacheLength  int // readonly, for metrics only to save calculation
 	diskPageTail int // init from the database
 	diskPageHead int
 	sendStatus   int // 0: idle, 1: sending and waiting for ack, 2: stopped for error
-	//serialize
+	// serialize
 	store kv.KeyValue
 
 	exitCh chan<- struct{}
@@ -369,7 +369,7 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 		var set int
 		ok, _ := c.store.Get("storeSig", &set)
 		if ok && set == 0 { // may be saving
-			var i = 0
+			i := 0
 			for ; i < 100; i++ {
 				time.Sleep(time.Millisecond * 10)
 				c.store.Get("storeSig", &set)

@@ -16,14 +16,15 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestIsAggStatement(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s   string
 		agg bool
 		err string
@@ -45,7 +46,7 @@ func TestIsAggStatement(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		//fmt.Printf("Parsing SQL %q.\n", tt.s)
+		// fmt.Printf("Parsing SQL %q.\n", tt.s)
 		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
 		isAgg := IsAggStatement(stmt)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {

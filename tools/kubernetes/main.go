@@ -15,10 +15,11 @@
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/tools/kubernetes/util"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/lf-edge/ekuiper/tools/kubernetes/util"
 )
 
 func main() {

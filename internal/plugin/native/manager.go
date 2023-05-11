@@ -132,7 +132,7 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 		baseName := filepath.Base(file.Name())
 		if strings.HasSuffix(baseName, ".so") {
 			n, v := parseName(baseName)
-			//load the plugins when ekuiper set up
+			// load the plugins when ekuiper set up
 			if !conf.IsTesting {
 				if _, err := manager.loadRuntime(t, n, path.Join(dir, baseName), ""); err != nil {
 					continue
@@ -251,7 +251,7 @@ func (rr *Manager) removePluginInstallScript(name string, t plugin2.PluginType) 
 
 func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	name, uri, shellParas := j.GetName(), j.GetFile(), j.GetShellParas()
-	//Validation
+	// Validation
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
@@ -271,9 +271,9 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	var err error
 	zipPath := path.Join(rr.pluginDir, name+".zip")
 
-	//clean up: delete zip file and unzip files in error
+	// clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
-	//download
+	// download
 	err = httpx.DownloadFile(zipPath, uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
@@ -294,12 +294,12 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 		return err
 	}
 
-	//unzip and copy to destination
+	// unzip and copy to destination
 	version, err := rr.install(t, name, zipPath, shellParas)
 	if err == nil && len(j.GetSymbols()) > 0 {
 		err = rr.funcSymbolsDb.Set(name, j.GetSymbols())
 	}
-	if err != nil { //Revert for any errors
+	if err != nil { // Revert for any errors
 		if len(j.GetSymbols()) > 0 {
 			rr.removeSymbols(j.GetSymbols())
 		} else {
@@ -429,6 +429,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 		return nil
 	}
 }
+
 func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]interface{}, bool) {
 	v, ok := rr.get(t, name)
 	if strings.HasPrefix(v, "v") {
@@ -453,7 +454,7 @@ func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]
 
 func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []string) (string, error) {
 	var filenames []string
-	var tempPath = path.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
+	tempPath := path.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
 	defer os.RemoveAll(tempPath)
 	r, err := zip.OpenReader(src)
 	if err != nil {
@@ -519,7 +520,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			if err != nil {
 				return version, err
 			}
-		} else { //unzip other files
+		} else { // unzip other files
 			err = filex.UnzipTo(file, path.Join(tempPath, fileName))
 			if err != nil {
 				return version, err
@@ -530,8 +531,8 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		err = fmt.Errorf("invalid zip file: so file or conf file is missing")
 		return version, err
 	} else if haveInstallFile {
-		//run install script if there is
-		var shell = make([]string, len(shellParas))
+		// run install script if there is
+		shell := make([]string, len(shellParas))
 		copy(shell, shellParas)
 		spath := path.Join(tempPath, "install.sh")
 		shell = append(shell, spath)
@@ -545,7 +546,6 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb
 		err := cmd.Run()
-
 		if err != nil {
 			conf.Log.Infof(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())
 			return version, err
@@ -589,7 +589,7 @@ func (rr *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string
 	_, ok := rr.GetPluginVersionBySymbol(plugin2.SOURCE, name)
 	if ok {
 		pluginName, _ := rr.GetPluginBySymbol(plugin2.SOURCE, name)
-		var installScript = ""
+		installScript := ""
 		pluginKey := plugin2.PluginTypes[plugin2.SOURCE] + "_" + pluginName
 		rr.plgInstallDb.Get(pluginKey, &installScript)
 		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
@@ -640,7 +640,7 @@ func (rr *Manager) SinkPluginInfo(name string) (plugin2.EXTENSION_TYPE, string, 
 	_, ok := rr.GetPluginVersionBySymbol(plugin2.SINK, name)
 	if ok {
 		pluginName, _ := rr.GetPluginBySymbol(plugin2.SINK, name)
-		var installScript = ""
+		installScript := ""
 		pluginKey := plugin2.PluginTypes[plugin2.SINK] + "_" + pluginName
 		rr.plgInstallDb.Get(pluginKey, &installScript)
 		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
@@ -677,7 +677,7 @@ func (rr *Manager) HasFunctionSet(name string) bool {
 func (rr *Manager) FunctionPluginInfo(funcName string) (plugin2.EXTENSION_TYPE, string, string) {
 	pluginName, ok := rr.GetPluginBySymbol(plugin2.FUNCTION, funcName)
 	if ok {
-		var installScript = ""
+		installScript := ""
 		pluginKey := plugin2.PluginTypes[plugin2.FUNCTION] + "_" + pluginName
 		rr.plgInstallDb.Get(pluginKey, &installScript)
 		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
@@ -843,7 +843,7 @@ func (rr *Manager) PluginImport(plugins map[string]string) error {
 			return err
 		}
 	}
-	//set the flag to install the plugins when eKuiper reboot
+	// set the flag to install the plugins when eKuiper reboot
 	err := rr.plgInstallDb.Set(BOOT_INSTALL, BOOT_INSTALL)
 	if err != nil {
 		return err
@@ -870,7 +870,7 @@ func (rr *Manager) PluginPartialImport(plugins map[string]string) map[string]str
 }
 
 func (rr *Manager) hasInstallFlag() bool {
-	var val = ""
+	val := ""
 	found, _ := rr.plgInstallDb.Get(BOOT_INSTALL, &val)
 	return found
 }

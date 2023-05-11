@@ -20,12 +20,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 type config struct {
@@ -166,7 +168,7 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 		}
 		values[key] = val
 	}
-	//get action type
+	// get action type
 	rowkind := ast.RowkindUpsert
 	if r.c.RowkindField != "" {
 		c, ok := data[r.c.RowkindField]
@@ -180,7 +182,7 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 			}
 		}
 	}
-	//set key value pairs
+	// set key value pairs
 	for key, val := range values {
 		var err error
 		switch rowkind {

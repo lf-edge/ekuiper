@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/jwt"
 	"net/http"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/jwt"
 )
 
 var notAuth = []string{"/", "/ping"}

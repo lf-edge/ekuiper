@@ -16,15 +16,16 @@ package wasm_test
 
 import (
 	"fmt"
+	"reflect"
+	"sync"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"sync"
-	"testing"
 )
 
 // EDIT HERE: Define the plugins that you want to test.
@@ -41,8 +42,10 @@ var FuncData = []interface{}{
 	25.0, // float
 }
 
-var i int32 = 121393
-var ResData = []int32{i}
+var (
+	i       int32 = 121393
+	ResData       = []int32{i}
+)
 
 var (
 	m       *wasm.Manager
@@ -58,7 +61,7 @@ func TestExec(t *testing.T) {
 	}
 	c := context.WithValue(context.Background(), context.LoggerKey, conf.Log)
 	ctx = c.WithMeta("rule1", "op1", &state.MemoryStore{}).WithInstance(1)
-	//ctrl := &Control{}
+	// ctrl := &Control{}
 	f, err := m.Function(testingPlugin.Functions[0])
 	if err != nil {
 		fmt.Println("[wasm_test_server.go] err:", err)

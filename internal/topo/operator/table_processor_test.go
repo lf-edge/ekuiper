@@ -17,16 +17,17 @@ package operator
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
-	"testing"
 )
 
 func TestTableProcessor_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		stmt   *ast.StreamStmt
 		data   []byte
 		result interface{}

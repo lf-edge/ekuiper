@@ -17,13 +17,14 @@
 package schema
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestInferProtobuf(t *testing.T) {
@@ -38,12 +39,12 @@ func TestInferProtobuf(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//Copy init.proto
+	// Copy init.proto
 	bytesRead, err := os.ReadFile("test/test1.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "test1.proto"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "test1.proto"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

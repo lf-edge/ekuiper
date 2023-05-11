@@ -384,9 +384,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return nil
 	case *ast.FieldRef:
-		var (
-			t, n string
-		)
+		var t, n string
 		if expr.IsAlias() {
 			if valuer, ok := v.Valuer.(AliasValuer); ok {
 				val, ok := valuer.AliasValue(expr.Name)
@@ -399,7 +397,6 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 					return r
 				}
 			}
-
 		} else if expr.StreamName == ast.DefaultStream {
 			n = expr.Name
 		} else {
@@ -418,7 +415,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			val, _ := v.Valuer.Meta(expr.Name, "")
 			return val
 		} else {
-			//The field specified with stream source
+			// The field specified with stream source
 			val, _ := v.Valuer.Meta(expr.Name, string(expr.StreamName))
 			return val
 		}

@@ -17,12 +17,13 @@ package node
 import (
 	"context"
 	"fmt"
+	"math"
+	"sort"
+
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"math"
-	"sort"
 )
 
 type WatermarkTuple struct {
@@ -45,9 +46,9 @@ type WatermarkGenerator struct {
 	window        *WindowConfig
 	lateTolerance int64
 	interval      int
-	//ticker          *clock.Ticker
+	// ticker          *clock.Ticker
 	stream chan<- interface{}
-	//state
+	// state
 	lastWatermarkTs int64
 }
 
@@ -68,7 +69,7 @@ func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream cha
 	case ast.SLIDING_WINDOW:
 		w.interval = window.Length
 	case ast.SESSION_WINDOW:
-		//Use timeout to update watermark
+		// Use timeout to update watermark
 		w.interval = window.Interval
 	default:
 		return nil, fmt.Errorf("unsupported window type %d", window.Type)
@@ -98,7 +99,7 @@ func (w *WatermarkGenerator) trigger(ctx api.StreamContext) {
 		t := &WatermarkTuple{Timestamp: watermark}
 		select {
 		case w.stream <- t:
-		default: //TODO need to set buffer
+		default: // TODO need to set buffer
 		}
 		w.lastWatermarkTs = watermark
 		ctx.PutState(WATERMARK_KEY, w.lastWatermarkTs)
@@ -215,7 +216,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					watermarkTs := d.GetTimestamp()
 					windowEndTs := nextWindowEndTs
 					ticked := false
-					//Session window needs a recalculation of window because its window end depends on the inputs
+					// Session window needs a recalculation of window because its window end depends on the inputs
 					if windowEndTs == math.MaxInt64 || o.window.Type == ast.SESSION_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 						if o.window.Type == ast.SESSION_WINDOW {
 							windowEndTs, ticked = o.watermarkGenerator.getNextSessionWindow(inputs)
@@ -226,7 +227,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					for windowEndTs <= watermarkTs && windowEndTs >= 0 {
 						log.Debugf("Window end ts %d Watermark ts %d", windowEndTs, watermarkTs)
 						log.Debugf("Current input count %d", len(inputs))
-						//scan all events and find out the event in the current window
+						// scan all events and find out the event in the current window
 						if o.window.Type == ast.SESSION_WINDOW && !lastTicked {
 							o.triggerTime = inputs[0].Timestamp
 						}

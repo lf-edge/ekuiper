@@ -17,11 +17,13 @@
 package metric
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/prometheus/client_golang/prometheus"
 	"strconv"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager, error) {
@@ -31,7 +33,7 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		psm := &PrometheusStatManager{
 			DefaultStatManager: dsm,
 		}
-		//assign prometheus
+		// assign prometheus
 		mg := GetPrometheusMetrics().GetMetricsGroup(dsm.opType)
 		strInId := strconv.Itoa(dsm.instanceId)
 		mg.TotalRecordsIn.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
@@ -54,7 +56,7 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 
 type PrometheusStatManager struct {
 	DefaultStatManager
-	//prometheus metrics
+	// prometheus metrics
 	pTotalRecordsIn  prometheus.Counter
 	pTotalRecordsOut prometheus.Counter
 	pTotalExceptions prometheus.Counter

@@ -15,12 +15,14 @@
 package checkpoint
 
 import (
+	"sync"
+
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"sync"
 )
 
 type pendingCheckpoint struct {
@@ -44,7 +46,7 @@ func (c *pendingCheckpoint) ack(opId string) bool {
 		return false
 	}
 	delete(c.notYetAckTasks, opId)
-	//TODO serialize state
+	// TODO serialize state
 	return true
 }
 
@@ -94,7 +96,7 @@ type Coordinator struct {
 	baseInterval            int
 	cleanThreshold          int
 	advanceToEndOfEventTime bool
-	ticker                  *clock.Ticker //For processing time only
+	ticker                  *clock.Ticker // For processing time only
 	signal                  chan *Signal
 	store                   api.Store
 	ctx                     api.StreamContext
@@ -126,7 +128,7 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 		r.SetBarrierHandler(handler)
 		allResponders = append(allResponders, re)
 	}
-	//5 minutes by default
+	// 5 minutes by default
 	if interval <= 0 {
 		interval = 300000
 	}
@@ -172,17 +174,17 @@ func (c *Coordinator) Activate() error {
 			for {
 				select {
 				case n := <-tc:
-					//trigger checkpoint
-					//TODO pose max attempt and min pause check for consequent pendingCheckpoints
+					// trigger checkpoint
+					// TODO pose max attempt and min pause check for consequent pendingCheckpoints
 
 					// TODO Check if all tasks are running
 
-					//Create a pending checkpoint
+					// Create a pending checkpoint
 					checkpointId := cast.TimeToUnixMilli(n)
 					checkpoint := newPendingCheckpoint(checkpointId, c.tasksToWaitFor)
 					logger.Debugf("Create checkpoint %d", checkpointId)
 					c.pendingCheckpoints.Store(checkpointId, checkpoint)
-					//Let the sources send out a barrier
+					// Let the sources send out a barrier
 					for _, r := range c.tasksToTrigger {
 						go func(t Responder) {
 							if err := t.TriggerCheckpoint(checkpointId); err != nil {
@@ -259,17 +261,17 @@ func (c *Coordinator) complete(checkpointId int64) {
 		err := c.store.SaveCheckpoint(checkpointId)
 		if err != nil {
 			logger.Infof("Cannot save checkpoint %d due to storage error: %v", checkpointId, err)
-			//TODO handle checkpoint error
+			// TODO handle checkpoint error
 			return
 		}
 		c.completedCheckpoints.add(ccp.(*pendingCheckpoint).finalize())
 		c.pendingCheckpoints.Delete(checkpointId)
-		//Drop the previous pendingCheckpoints
+		// Drop the previous pendingCheckpoints
 		c.pendingCheckpoints.Range(func(a1 interface{}, a2 interface{}) bool {
 			cid := a1.(int64)
 			cp := a2.(*pendingCheckpoint)
 			if cid < checkpointId {
-				//TODO revisit how to abort a checkpoint, discard callback
+				// TODO revisit how to abort a checkpoint, discard callback
 				cp.isDiscarded = true
 				c.pendingCheckpoints.Delete(cid)
 			}

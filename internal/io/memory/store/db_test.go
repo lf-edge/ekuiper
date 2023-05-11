@@ -15,11 +15,13 @@
 package store
 
 import (
-	"github.com/benbjohnson/clock"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
+
+	"github.com/benbjohnson/clock"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestTable(t *testing.T) {

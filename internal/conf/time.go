@@ -15,13 +15,12 @@
 package conf
 
 import (
-	"github.com/benbjohnson/clock"
 	"time"
+
+	"github.com/benbjohnson/clock"
 )
 
-var (
-	Clock clock.Clock
-)
+var Clock clock.Clock
 
 func InitClock() {
 	if IsTesting {
@@ -39,7 +38,6 @@ func GetLocalZone() int {
 		_, offset := time.Now().Local().Zone()
 		return offset
 	}
-
 }
 
 // Time related. For Mock

@@ -18,13 +18,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"strings"
+
+	_ "github.com/taosdata/driver-go/v2/taosSql"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	_ "github.com/taosdata/driver-go/v2/taosSql"
-	"reflect"
-	"strings"
 )
 
 type (

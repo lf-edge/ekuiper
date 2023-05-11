@@ -16,18 +16,20 @@ package neuron
 
 import (
 	"fmt"
-	"github.com/benbjohnson/clock"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mock"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"go.nanomsg.org/mangos/v3"
-	"go.nanomsg.org/mangos/v3/protocol/pair"
-	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 	"log"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/benbjohnson/clock"
+	"go.nanomsg.org/mangos/v3"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
+	_ "go.nanomsg.org/mangos/v3/transport/ipc"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/mock"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 var data = [][]byte{

@@ -17,13 +17,14 @@ package xsql
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func Test_MessageValTest(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		key     string
 		table   string
 		message Message
@@ -118,7 +119,7 @@ func Test_MessageValTest(t *testing.T) {
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		//fmt.Printf("Parsing SQL %q.\n", tt.s)
+		// fmt.Printf("Parsing SQL %q.\n", tt.s)
 		v, ok := tt.message.Value(tt.key, tt.table)
 		if tt.exptOk != ok {
 			t.Errorf("%d. error mismatch:\n  exp=%t\n  got=%t\n\n", i, tt.exptOk, ok)
@@ -129,7 +130,7 @@ func Test_MessageValTest(t *testing.T) {
 }
 
 func Test_StreamFieldsMarshall(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sf ast.StreamFields
 		r  string
 	}{{

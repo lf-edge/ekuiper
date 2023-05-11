@@ -16,6 +16,7 @@ package checkpoint
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -49,14 +50,14 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 	}
 	name := re.GetName()
 	logger.Debugf("Starting checkpoint %d on task %s", checkpointId, name)
-	//create
+	// create
 	barrier := &Barrier{
 		CheckpointId: checkpointId,
 		OpId:         name,
 	}
-	//broadcast barrier
+	// broadcast barrier
 	re.task.Broadcast(barrier)
-	//Save key state to the global state
+	// Save key state to the global state
 	err := sctx.Snapshot()
 	if err != nil {
 		return err

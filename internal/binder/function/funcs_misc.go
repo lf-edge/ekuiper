@@ -22,17 +22,19 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/keyedstate"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"io"
 	"math"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/keyedstate"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func registerMiscFunc() {
@@ -578,7 +580,6 @@ func registerMiscFunc() {
 			return nil
 		},
 	}
-
 }
 
 func round(num float64) int {

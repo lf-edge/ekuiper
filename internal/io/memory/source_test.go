@@ -16,13 +16,14 @@ package memory
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestTopic(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		wildcard string
 		topics   []string
 		results  []bool

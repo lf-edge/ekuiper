@@ -16,9 +16,10 @@ package delimited
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestEncode(t *testing.T) {

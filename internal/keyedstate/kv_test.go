@@ -15,9 +15,10 @@
 package keyedstate
 
 import (
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func init() {
@@ -61,7 +62,6 @@ func TestGetKeyedState(t *testing.T) {
 					t.Errorf("expect: %v, get: %v", tt.want, got)
 				}
 			}
-
 		})
 	}
 

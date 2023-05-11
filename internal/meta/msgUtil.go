@@ -19,8 +19,9 @@ import (
 	"os"
 	"path"
 
-	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"gopkg.in/ini.v1"
+
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
 )
 
 var gUimsg map[string]*ini.File
@@ -35,6 +36,7 @@ func getMsg(language, section, key string) string {
 	}
 	return ""
 }
+
 func ReadUiMsgDir() error {
 	gUimsg = make(map[string]*ini.File)
 	confDir, err := kconf.GetConfLoc()
@@ -63,7 +65,7 @@ func ReadUiMsgDir() error {
 
 func ConstructJsonArray(jsonByteItems []fileContent) bytes.Buffer {
 	var buf bytes.Buffer
-	var length = len(jsonByteItems)
+	length := len(jsonByteItems)
 	if length == 0 {
 		buf.Write([]byte("[]"))
 		return buf

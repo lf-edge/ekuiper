@@ -16,19 +16,20 @@ package operator
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
-	"strconv"
-	"testing"
 )
 
 func TestAnalyticFuncs(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		funcs  []*ast.Call
 		data   []interface{}
 		result []map[string]interface{}

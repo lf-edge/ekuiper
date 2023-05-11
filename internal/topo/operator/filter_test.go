@@ -17,17 +17,18 @@ package operator
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 func TestFilterPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -302,7 +303,6 @@ func TestFilterPlan_Apply(t *testing.T) {
 		},
 
 		{
-
 			sql: "SELECT abc FROM tbl WHERE json->abc IN json->intArraySet",
 			data: &xsql.Tuple{
 				Emitter: "tbl",

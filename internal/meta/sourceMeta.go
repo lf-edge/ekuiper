@@ -16,7 +16,6 @@ package meta
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"os"
 	"path"
 	"strings"
@@ -24,6 +23,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 type (
@@ -68,8 +68,10 @@ func newUiSource(fi *fileSource, isScan bool, isLookup bool) (*uiSource, error) 
 	return ui, nil
 }
 
-var gSourcemetaLock = sync.RWMutex{}
-var gSourcemetadata = make(map[string]*uiSource)
+var (
+	gSourcemetaLock = sync.RWMutex{}
+	gSourcemetadata = make(map[string]*uiSource)
+)
 
 func UninstallSource(name string) {
 	gSourcemetaLock.Lock()
@@ -113,7 +115,7 @@ func ReadSourceMetaFile(filePath string, isScan bool, isLookup bool) error {
 }
 
 func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker) error {
-	//load etc/sources meta data
+	// load etc/sources meta data
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
 		return err
@@ -148,7 +150,7 @@ func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker)
 		}
 	}
 
-	//load data/sources meta data
+	// load data/sources meta data
 	confDir, err = conf.GetDataLoc()
 	if nil != err {
 		return err
@@ -182,7 +184,6 @@ func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker)
 }
 
 func GetSourceMeta(sourceName, language string) (ptrSourceProperty *uiSource, err error) {
-
 	gSourcemetaLock.RLock()
 	defer gSourcemetaLock.RUnlock()
 

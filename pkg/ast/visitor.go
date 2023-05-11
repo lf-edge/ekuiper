@@ -57,7 +57,7 @@ func Walk(v Visitor, node Node) {
 			Walk(v, s)
 		}
 
-	//case *Table:
+	// case *Table:
 
 	case Joins:
 		for _, s := range n {
@@ -83,7 +83,7 @@ func Walk(v Visitor, node Node) {
 			Walk(v, sf.FieldExpr)
 		}
 
-	//case *SortField:
+	// case *SortField:
 
 	case *BinaryExpr:
 		Walk(v, n.LHS)

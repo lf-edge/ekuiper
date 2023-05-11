@@ -15,15 +15,16 @@
 package topotest
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestWindow(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"demo", "demoError", "demo1", "sessionDemo", "table1"}
 	HandleStream(false, streamList, t)
-	var tests = []RuleTest{
+	tests := []RuleTest{
 		{
 			Name: `TestWindowRule1`,
 			Sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
@@ -671,7 +672,6 @@ func TestWindow(t *testing.T) {
 				{{
 					"allSize": []interface{}{float64(6), float64(2)},
 				}, {
-
 					"allSize": []interface{}{float64(3)},
 				}},
 				{{
@@ -724,10 +724,10 @@ func TestWindow(t *testing.T) {
 }
 
 func TestEventWindow(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
 	HandleStream(false, streamList, t)
-	var tests = []RuleTest{
+	tests := []RuleTest{
 		{
 			Name: `TestEventWindowRule1`,
 			Sql:  `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
@@ -754,7 +754,8 @@ func TestEventWindow(t *testing.T) {
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
-				}}, {{
+				}},
+				{{
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
@@ -762,7 +763,8 @@ func TestEventWindow(t *testing.T) {
 					"color": "red",
 					"size":  float64(1),
 					"ts":    float64(1541152489252),
-				}}, {{
+				}},
+				{{
 					"color": "red",
 					"size":  float64(1),
 					"ts":    float64(1541152489252),
@@ -1074,7 +1076,8 @@ func TestEventWindow(t *testing.T) {
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
-				}}, {{
+				}},
+				{{
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
@@ -1082,7 +1085,8 @@ func TestEventWindow(t *testing.T) {
 					"color": "red",
 					"size":  float64(1),
 					"ts":    float64(1541152489252),
-				}}, {{
+				}},
+				{{
 					"color": "red",
 					"size":  float64(1),
 					"ts":    float64(1541152489252),
@@ -1198,7 +1202,8 @@ func TestEventWindow(t *testing.T) {
 					"color":        "yellow",
 					"window_start": float64(1541152487000),
 					"window_end":   float64(1541152489000),
-				}}, {{
+				}},
+				{{
 					"color":        "yellow",
 					"window_start": float64(1541152488000),
 					"window_end":   float64(1541152490000),
@@ -1206,7 +1211,8 @@ func TestEventWindow(t *testing.T) {
 					"color":        "red",
 					"window_start": float64(1541152488000),
 					"window_end":   float64(1541152490000),
-				}}, {{
+				}},
+				{{
 					"color":        "red",
 					"window_start": float64(1541152489000),
 					"window_end":   float64(1541152491000),
@@ -1262,10 +1268,10 @@ func TestEventWindow(t *testing.T) {
 }
 
 func TestWindowError(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"ldemo", "ldemo1"}
 	HandleStream(false, streamList, t)
-	var tests = []RuleTest{
+	tests := []RuleTest{
 		{
 			Name: `TestWindowErrorRule1`,
 			Sql:  `SELECT size * 3 FROM ldemo GROUP BY TUMBLINGWINDOW(ss, 2)`,

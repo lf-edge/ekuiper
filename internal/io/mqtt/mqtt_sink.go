@@ -16,6 +16,7 @@ package mqtt
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"

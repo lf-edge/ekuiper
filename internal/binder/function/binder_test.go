@@ -17,10 +17,11 @@ package function
 import (
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/mock"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"testing"
 )
 
 func TestBinding(t *testing.T) {
@@ -35,7 +36,7 @@ func TestBinding(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		name      string
 		isFunc    bool
 		isFuncset bool

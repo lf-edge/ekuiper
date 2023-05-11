@@ -15,13 +15,14 @@
 package processor
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestRuleActionParse_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		ruleStr string
 		result  *api.Rule
 	}{
@@ -207,7 +208,6 @@ func TestRuleActionParse_Apply(t *testing.T) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%+v\n\ngot=%+v\n\n", i, tt.result, r)
 		}
 	}
-
 }
 
 func TestAllRules(t *testing.T) {

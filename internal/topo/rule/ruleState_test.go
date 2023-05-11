@@ -17,13 +17,14 @@ package rule
 import (
 	"errors"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/processor"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/processor"
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 var defaultOption = &api.RuleOption{
@@ -52,7 +53,7 @@ func TestCreate(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	var tests = []struct {
+	tests := []struct {
 		r *api.Rule
 		e error
 	}{
@@ -69,7 +70,8 @@ func TestCreate(t *testing.T) {
 				Options: defaultOption,
 			},
 			e: nil,
-		}, {
+		},
+		{
 			r: &api.Rule{
 				Triggered: false,
 				Id:        "test",
@@ -131,7 +133,7 @@ func TestUpdate(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		r *api.Rule
 		e error
 	}{

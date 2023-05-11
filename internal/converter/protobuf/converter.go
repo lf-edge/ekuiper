@@ -16,8 +16,10 @@ package protobuf
 
 import (
 	"fmt"
+
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
+
 	"github.com/lf-edge/ekuiper/internal/converter/static"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )

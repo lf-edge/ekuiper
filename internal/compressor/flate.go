@@ -17,9 +17,11 @@ package compressor
 import (
 	"bytes"
 	"fmt"
-	"github.com/klauspost/compress/flate"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"io"
+
+	"github.com/klauspost/compress/flate"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func newFlateCompressor() (*flateCompressor, error) {

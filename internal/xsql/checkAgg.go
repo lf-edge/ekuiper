@@ -78,7 +78,7 @@ func HasAggFuncs(node ast.Node) bool {
 	if node == nil {
 		return false
 	}
-	var r = false
+	r := false
 	ast.WalkFunc(node, func(n ast.Node) bool {
 		if f, ok := n.(*ast.Call); ok {
 			if ok := function.IsAggFunc(f.Name); ok {

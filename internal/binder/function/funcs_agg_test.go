@@ -58,7 +58,7 @@ func TestAggExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args    []interface{}
 		avg     interface{}
 		max     interface{}
@@ -184,7 +184,7 @@ func TestPercentileExec(t *testing.T) {
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	var tests = []struct {
+	tests := []struct {
 		args  []interface{}
 		pCont interface{}
 		pDisc interface{}
@@ -241,9 +241,11 @@ func TestPercentileExec(t *testing.T) {
 			},
 			pCont: float64(125),
 			pDisc: float64(150),
-		}, { //5
-			args: []interface{}{[]interface{}{},
-				[]interface{}{}},
+		}, { // 5
+			args: []interface{}{
+				[]interface{}{},
+				[]interface{}{},
+			},
 			pCont: nil,
 			pDisc: nil,
 		},

@@ -15,9 +15,10 @@
 package conf
 
 import (
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"strings"
 )
 
 func GetSourceConf(sourceType string, options *ast.Options) map[string]interface{} {
@@ -38,8 +39,8 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 		} else {
 			props = def
 		}
-		//config keys in etc folder will transform to lowercase
-		//while those in data will not
+		// config keys in etc folder will transform to lowercase
+		// while those in data will not
 		if c, ok := cfg[strings.ToLower(confkey)]; ok {
 			for k, v := range c {
 				props[k] = v

@@ -38,9 +38,11 @@ func (f Fields) node() {}
 func (f Fields) Len() int {
 	return len(f)
 }
+
 func (f Fields) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
 }
+
 func (f Fields) Less(i int, j int) bool {
 	m := f[i].AName
 	if m == "" {
@@ -147,6 +149,7 @@ func (d *Dimensions) GetWindow() *Window {
 	}
 	return nil
 }
+
 func (d *Dimensions) GetGroups() Dimensions {
 	var nd Dimensions
 	for _, child := range *d {

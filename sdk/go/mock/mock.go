@@ -16,10 +16,12 @@ package mock
 
 import (
 	"context"
-	filename "github.com/keepeye/logrus-filename"
-	"github.com/lf-edge/ekuiper/sdk/go/api"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	filename "github.com/keepeye/logrus-filename"
+	"github.com/sirupsen/logrus"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 type mockContext struct {
@@ -67,12 +69,11 @@ func (c *mockContext) GetInstanceId() int {
 }
 
 func (c *mockContext) GetRootPath() string {
-	//loc, _ := conf.GetLoc("")
+	// loc, _ := conf.GetLoc("")
 	return "root path"
 }
 
 func (c *mockContext) SetError(err error) {
-
 }
 
 func (c *mockContext) WithMeta(ruleId string, opId string) api.StreamContext {

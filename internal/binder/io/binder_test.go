@@ -17,10 +17,11 @@ package io
 import (
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/mock"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"testing"
 )
 
 func TestBindings(t *testing.T) {
@@ -34,7 +35,7 @@ func TestBindings(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	var tests = []struct {
+	tests := []struct {
 		name           string
 		isSource       bool
 		isLookupSource bool

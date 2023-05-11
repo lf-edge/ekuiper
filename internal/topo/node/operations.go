@@ -16,11 +16,12 @@ package node
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"sync"
 )
 
 // UnOperation interface represents unary operations (i.e. Map, Filter, etc)
@@ -78,7 +79,7 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	if o.concurrency < 1 {
 		o.concurrency = 1
 	}
-	//reset status
+	// reset status
 	o.statManagers = nil
 
 	for i := 0; i < o.concurrency; i++ { // workers

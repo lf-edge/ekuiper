@@ -17,14 +17,15 @@ package planner
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestPlannerGraphValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		graph string
 		err   string
 	}{

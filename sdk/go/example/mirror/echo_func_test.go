@@ -15,8 +15,9 @@
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/go/mock"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/sdk/go/mock"
 )
 
 func TestValidate(t *testing.T) {
@@ -34,7 +35,7 @@ func TestValidate(t *testing.T) {
 }
 
 func TestExec(t *testing.T) {
-	var tests = []mock.FuncTest{
+	tests := []mock.FuncTest{
 		{
 			Args:   []interface{}{"abc"},
 			Result: "abc",

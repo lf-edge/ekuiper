@@ -17,12 +17,13 @@ package memory
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"strings"
 )
 
 type config struct {

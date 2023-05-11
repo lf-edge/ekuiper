@@ -16,19 +16,20 @@ package operator
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestChangedColsFunc_Apply1(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   []interface{}
 		result [][]map[string]interface{}

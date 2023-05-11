@@ -115,6 +115,7 @@ func newLanguage(fi *fileLanguage) *language {
 	ui.Chinese = fi.Chinese
 	return ui
 }
+
 func newField(fis []*fileField) (uis []field, err error) {
 	for _, fi := range fis {
 		if nil == fi {
@@ -146,6 +147,7 @@ func newField(fis []*fileField) (uis []field, err error) {
 	}
 	return uis, err
 }
+
 func newAbout(fi *fileAbout) *about {
 	if nil == fi {
 		return nil
@@ -182,7 +184,7 @@ func newUiSink(fi *fileSink) (*uiSink, error) {
 	return ui, err
 }
 
-var gSinkmetadata = make(map[string]*uiSink) //immutable
+var gSinkmetadata = make(map[string]*uiSink) // immutable
 
 func ReadSinkMetaDir(checker InstallChecker) error {
 	confDir, err := conf.GetConfLoc()
@@ -240,6 +242,7 @@ func UninstallSink(name string) {
 	}
 	delYamlConf(fmt.Sprintf(SinkCfgOperatorKeyTemplate, name))
 }
+
 func ReadSinkMetaFile(filePath string, installed bool) error {
 	finame := path.Base(filePath)
 	metadata := new(fileSink)

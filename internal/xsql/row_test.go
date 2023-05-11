@@ -16,17 +16,18 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 // Row valuer, wildcarder test
 // WindowTuples, JoinTuples, GroupTuples are collectionRow
 func TestCollectionRow(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		rowC     CollectionRow
 		value    []string
 		wildcard []string
@@ -118,7 +119,7 @@ func TestCollectionRow(t *testing.T) {
 
 func TestTupleRow(t *testing.T) {
 	// boradcast(clone) -> set -> broadcast -> set -> compare
-	var tests = []struct {
+	tests := []struct {
 		rowO TupleRow
 		// The multiple values to set or alias; The first value is set in the first broadcast. the next values are set in the second broadcast.
 		set    [][]map[string]interface{}

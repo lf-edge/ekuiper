@@ -30,7 +30,7 @@ const (
 	IDENT // main
 
 	INTEGER   // 12345
-	NUMBER    //12345.67
+	NUMBER    // 12345.67
 	STRING    // "abc"
 	BADSTRING // "abc
 

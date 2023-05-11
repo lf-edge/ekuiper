@@ -18,13 +18,13 @@
 package edgex
 
 import (
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"reflect"
 	"testing"
+
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 )
 
 func TestEdgex_CfgValidate(t *testing.T) {
-
 	tests := []struct {
 		name    string
 		expConf types.MessageBusConfig

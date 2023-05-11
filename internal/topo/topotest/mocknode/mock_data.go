@@ -300,7 +300,7 @@ var TestData = map[string][]*xsql.Tuple{
 			},
 			Timestamp: 1541152489632,
 		},
-		{ //dropped item
+		{ // dropped item
 			Emitter: "demoE",
 			Message: map[string]interface{}{
 				"color": "blue",
@@ -318,7 +318,7 @@ var TestData = map[string][]*xsql.Tuple{
 			},
 			Timestamp: 1541152490052,
 		},
-		{ //To lift the watermark and issue all windows
+		{ // To lift the watermark and issue all windows
 			Emitter: "demoE",
 			Message: map[string]interface{}{
 				"color": "yellow",
@@ -522,7 +522,7 @@ var TestData = map[string][]*xsql.Tuple{
 			},
 			Timestamp: 1541152489332,
 		},
-		{ //dropped item
+		{ // dropped item
 			Emitter: "demoErr",
 			Message: map[string]interface{}{
 				"color": "blue",
@@ -540,7 +540,7 @@ var TestData = map[string][]*xsql.Tuple{
 			},
 			Timestamp: 1541152490042,
 		},
-		{ //To lift the watermark and issue all windows
+		{ // To lift the watermark and issue all windows
 			Emitter: "demoErr",
 			Message: map[string]interface{}{
 				"color": "yellow",

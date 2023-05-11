@@ -17,8 +17,6 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,12 +25,16 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 // Initialize in the server startup
-var registry *Registry
-var schemaDb kv.KeyValue
-var schemaStatusDb kv.KeyValue
+var (
+	registry       *Registry
+	schemaDb       kv.KeyValue
+	schemaStatusDb kv.KeyValue
+)
 
 type Files struct {
 	SchemaFile string
@@ -151,7 +153,7 @@ func CreateOrUpdateSchema(info *Info) error {
 			defer file.Close()
 		}
 		if info.Content != "" {
-			err := os.WriteFile(schemaFile, []byte(info.Content), 0666)
+			err := os.WriteFile(schemaFile, []byte(info.Content), 0o666)
 			if err != nil {
 				return err
 			}
@@ -201,7 +203,6 @@ func GetSchema(schemaType def.SchemaType, name string) (*Info, error) {
 			SoPath: schemaFile.SoFile,
 		}, nil
 	}
-
 }
 
 func GetSchemaFile(schemaType def.SchemaType, name string) (*Files, error) {
@@ -276,7 +277,7 @@ func UninstallAllSchema() {
 }
 
 func hasInstallFlag() bool {
-	var val = ""
+	val := ""
 	found, _ := schemaDb.Get(BOOT_INSTALL, &val)
 	return found
 }
@@ -295,7 +296,7 @@ func ImportSchema(schema map[string]string) error {
 			return err
 		}
 	}
-	//set the flag to install the plugins when eKuiper reboot
+	// set the flag to install the plugins when eKuiper reboot
 	return schemaDb.Set(BOOT_INSTALL, BOOT_INSTALL)
 }
 

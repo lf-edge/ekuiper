@@ -16,15 +16,17 @@ package file
 
 import (
 	"fmt"
-	"github.com/benbjohnson/clock"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mock"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/benbjohnson/clock"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/mock"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestJsonFile(t *testing.T) {
@@ -101,7 +103,7 @@ func TestCSVFolder(t *testing.T) {
 		t.Fatal(err)
 	}
 	testFolder := filepath.Join(path, "test", "csvTemp")
-	err = os.MkdirAll(testFolder, 0755)
+	err = os.MkdirAll(testFolder, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

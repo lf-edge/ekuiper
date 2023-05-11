@@ -15,7 +15,13 @@
 package file
 
 import (
+	"os"
+	"path/filepath"
+	"reflect"
+	"testing"
+
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
@@ -23,10 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"os"
-	"path/filepath"
-	"reflect"
-	"testing"
 )
 
 func TestFileSinkCompress_Collect(t *testing.T) {
@@ -178,7 +180,6 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"key": "value2"}, meta, mc.Now()),
 			}
 			mock.TestSourceOpen(r, exp, t)
-
 		})
 	}
 }

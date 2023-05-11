@@ -17,9 +17,11 @@ package sqlgen
 import (
 	"bytes"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/posener/order"
 	"text/template"
+
+	"github.com/posener/order"
+
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type templateSqlQuery struct {

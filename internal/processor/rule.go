@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -156,7 +157,7 @@ func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 // GetRuleByJsonValidated called when the json is getting from trusted source like db
 func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*api.Rule, error) {
 	opt := conf.Config.Rule
-	//set default rule options
+	// set default rule options
 	rule := &api.Rule{
 		Triggered: true,
 		Options:   clone(opt),
@@ -175,7 +176,7 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	if err != nil {
 		return rule, err
 	}
-	//validation
+	// validation
 	if rule.Id == "" && id == "" {
 		return nil, fmt.Errorf("Missing rule id.")
 	}

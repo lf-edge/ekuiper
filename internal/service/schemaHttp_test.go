@@ -15,10 +15,11 @@
 package service
 
 import (
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestBookstoreConvertHttpMapping(t *testing.T) {

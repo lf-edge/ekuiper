@@ -15,10 +15,11 @@
 package xsql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"strings"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 // The original message map may be big. Make sure it is immutable so that never make a copy of it.
@@ -76,7 +77,7 @@ type CollectionRow interface {
 	Row
 	AggregateData
 	// Clone when broadcast to make sure each row are dealt single threaded
-	//Clone() CollectionRow
+	// Clone() CollectionRow
 }
 
 // AffiliateRow part of other row types do help calculation of newly added cols
@@ -209,7 +210,6 @@ func (d *AffiliateRow) Pick(cols [][]string) [][]string {
 		d.CalCols = nil
 		return cols
 	}
-
 }
 
 /*
@@ -294,8 +294,8 @@ func (m Message) Value(key, _ string) (interface{}, bool) {
 	if v, ok := m[key]; ok {
 		return v, ok
 	} else if conf.Config == nil || conf.Config.Basic.IgnoreCase {
-		//Only when with 'SELECT * FROM ...'  and 'schemaless', the key in map is not convert to lower case.
-		//So all of keys in map should be convert to lowercase and then compare them.
+		// Only when with 'SELECT * FROM ...'  and 'schemaless', the key in map is not convert to lower case.
+		// So all of keys in map should be convert to lowercase and then compare them.
 		return m.getIgnoreCase(key)
 	} else {
 		return nil, false
@@ -440,7 +440,7 @@ func (jt *JoinTuple) doGetValue(key, table string, isVal bool) (interface{}, boo
 	tuples := jt.Tuples
 	if table == "" {
 		if len(tuples) > 1 {
-			for _, tuple := range tuples { //TODO support key without modifier?
+			for _, tuple := range tuples { // TODO support key without modifier?
 				v, ok := getTupleValue(tuple, key, isVal)
 				if ok {
 					return v, ok
@@ -452,7 +452,7 @@ func (jt *JoinTuple) doGetValue(key, table string, isVal bool) (interface{}, boo
 			return getTupleValue(tuples[0], key, isVal)
 		}
 	} else {
-		//TODO should use hash here
+		// TODO should use hash here
 		for _, tuple := range tuples {
 			if tuple.GetEmitter() == table {
 				return getTupleValue(tuple, key, isVal)

@@ -22,7 +22,7 @@ import (
 )
 
 func TestSchemaInfo(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		i   *Info
 		err error
 	}{
@@ -34,7 +34,8 @@ func TestSchemaInfo(t *testing.T) {
 				SoPath:  "dd",
 			},
 			err: errors.New("unsupported type: static"),
-		}, {
+		},
+		{
 			i: &Info{
 				Type:     "static",
 				Name:     "aa",
@@ -51,14 +52,16 @@ func TestSchemaInfo(t *testing.T) {
 				SoPath:   "dd",
 			},
 			err: errors.New("name is required"),
-		}, {
+		},
+		{
 			i: &Info{
 				Type:   "protobuf",
 				Name:   "aa",
 				SoPath: "dd",
 			},
 			err: errors.New("must specify content or file"),
-		}, {
+		},
+		{
 			i: &Info{
 				Type:    "protobuf",
 				Name:    "aa",
@@ -66,21 +69,24 @@ func TestSchemaInfo(t *testing.T) {
 				SoPath:  "dd",
 			},
 			err: nil,
-		}, {
+		},
+		{
 			i: &Info{
 				Type:    "protobuf",
 				Name:    "aa",
 				Content: "bb",
 			},
 			err: nil,
-		}, {
+		},
+		{
 			i: &Info{
 				Type:   "custom",
 				Name:   "aa",
 				SoPath: "bb",
 			},
 			err: nil,
-		}, {
+		},
+		{
 			i: &Info{
 				Type:    "custom",
 				Name:    "aa",

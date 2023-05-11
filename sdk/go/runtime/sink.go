@@ -17,9 +17,11 @@ package runtime
 import (
 	context2 "context"
 	"fmt"
+
+	"go.nanomsg.org/mangos/v3"
+
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/lf-edge/ekuiper/sdk/go/connection"
-	"go.nanomsg.org/mangos/v3"
 )
 
 type sinkRuntime struct {

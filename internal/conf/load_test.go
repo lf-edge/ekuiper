@@ -22,7 +22,6 @@ import (
 )
 
 func TestEnv(t *testing.T) {
-
 	key := "KUIPER__BASIC__CONSOLELOG"
 	value := "true"
 

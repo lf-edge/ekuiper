@@ -38,12 +38,12 @@ func TestProtoRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//Copy init.proto
+	// Copy init.proto
 	bytesRead, err := os.ReadFile("test/init.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "init.proto"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "init.proto"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -185,12 +185,12 @@ func TestCustomRegistry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//Copy fake.so as init
+	// Copy fake.so as init
 	bytesRead, err := os.ReadFile("test/fake.so")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "init.so"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "init.so"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

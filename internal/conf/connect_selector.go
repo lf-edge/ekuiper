@@ -22,7 +22,6 @@ func (c *ConSelector) Init() error {
 }
 
 func (c *ConSelector) ReadCfgFromYaml() (props map[string]interface{}, err error) {
-
 	yamlOps, err := NewConfigOperatorFromConnectionYaml(c.Type)
 	if err != nil {
 		return nil, err

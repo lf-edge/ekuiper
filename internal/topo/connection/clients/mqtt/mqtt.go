@@ -17,14 +17,16 @@ package mqtt
 import (
 	"crypto/tls"
 	"fmt"
+	"strings"
+	"time"
+
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"strings"
-	"time"
 )
 
 type MQTTConnectionConfig struct {
@@ -51,7 +53,6 @@ type MQTTClient struct {
 }
 
 func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
-
 	cfg := MQTTConnectionConfig{}
 
 	err := cast.MapToStruct(props, &cfg)

@@ -21,11 +21,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/Masterminds/sprig/v3"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"strconv"
 	"text/template"
+
+	"github.com/Masterminds/sprig/v3"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func RegisterAdditionalFuncs() {

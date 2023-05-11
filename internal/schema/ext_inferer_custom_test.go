@@ -15,12 +15,13 @@
 package schema
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func init() {
@@ -45,12 +46,12 @@ func TestInferCustom(t *testing.T) {
 		}
 	}()
 	// build the so file into data/test prior to running the test
-	//Copy the helloworld.so
+	// Copy the helloworld.so
 	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "myFormat.so"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

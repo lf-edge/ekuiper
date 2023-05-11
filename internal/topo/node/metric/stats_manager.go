@@ -21,14 +21,16 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-const RecordsInTotal = "records_in_total"
-const RecordsOutTotal = "records_out_total"
-const ProcessLatencyUs = "process_latency_us"
-const LastInvocation = "last_invocation"
-const BufferLength = "buffer_length"
-const ExceptionsTotal = "exceptions_total"
-const LastException = "last_exception"
-const LastExceptionTime = "last_exception_time"
+const (
+	RecordsInTotal    = "records_in_total"
+	RecordsOutTotal   = "records_out_total"
+	ProcessLatencyUs  = "process_latency_us"
+	LastInvocation    = "last_invocation"
+	BufferLength      = "buffer_length"
+	ExceptionsTotal   = "exceptions_total"
+	LastException     = "last_exception"
+	LastExceptionTime = "last_exception_time"
+)
 
 var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
 
@@ -47,7 +49,7 @@ type StatManager interface {
 
 // DefaultStatManager The statManager is not thread safe. Make sure it is used in only one instance
 type DefaultStatManager struct {
-	//metrics
+	// metrics
 	totalRecordsIn    int64
 	totalRecordsOut   int64
 	processLatency    int64
@@ -56,7 +58,7 @@ type DefaultStatManager struct {
 	totalExceptions   int64
 	lastException     string
 	lastExceptionTime time.Time
-	//configs
+	// configs
 	opType           string //"source", "op", "sink"
 	prefix           string
 	processTimeStart time.Time

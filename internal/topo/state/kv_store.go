@@ -17,12 +17,13 @@ package state
 import (
 	"encoding/gob"
 	"fmt"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	ts "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
-	"sync"
 )
 
 func init() {
@@ -37,7 +38,7 @@ func init() {
 //	{ "checkpoint1", "checkpoint2" ... "checkpointn" : The complete or incomplete snapshot
 type KVStore struct {
 	db          ts2.Tskv
-	mapStore    *sync.Map //The current root store of a rule
+	mapStore    *sync.Map // The current root store of a rule
 	checkpoints []int64
 	max         int
 	ruleId      string
@@ -54,7 +55,7 @@ func getKVStore(ruleId string) (*KVStore, error) {
 		return nil, err
 	}
 	s := &KVStore{db: db, max: 3, mapStore: &sync.Map{}, ruleId: ruleId}
-	//read data from badger db
+	// read data from badger db
 	if err := s.restore(); err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (s *KVStore) SaveCheckpoint(checkpointId int64) error {
 			return fmt.Errorf("invalid KVStore for checkpointId %d with value %v: should be *sync.Map type", checkpointId, v)
 		} else {
 			s.checkpoints = append(s.checkpoints, checkpointId)
-			//TODO is the order promised?
+			// TODO is the order promised?
 			for len(s.checkpoints) > s.max {
 				cp := s.checkpoints[0]
 				s.checkpoints = s.checkpoints[1:]

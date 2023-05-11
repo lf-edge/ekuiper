@@ -19,9 +19,11 @@ package redis
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	"github.com/redis/go-redis/v9"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 )
 
 func NewRedisFromConf(c definition.Config) *redis.Client {

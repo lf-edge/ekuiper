@@ -16,9 +16,10 @@ package meta
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"path"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func TestHintWhenModifySink(t *testing.T) {
@@ -38,5 +39,4 @@ func TestHintWhenModifySink(t *testing.T) {
 	}
 
 	fmt.Printf("%+v", showMeta)
-
 }

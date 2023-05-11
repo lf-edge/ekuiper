@@ -17,11 +17,12 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"path"
 	"reflect"
 	"sync"
+
+	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 // ConfKeysOperator define interface to query/add/update/delete the configs in memory
@@ -104,7 +105,7 @@ func (c *ConfigKeys) CopyConfContent() map[string]map[string]interface{} {
 		cf[key] = aux
 	}
 
-	//note: config keys in data directory will overwrite those in etc directory with same name
+	// note: config keys in data directory will overwrite those in etc directory with same name
 	for key, kvs := range c.dataCfg {
 		aux := make(map[string]interface{})
 		for k, v := range kvs {

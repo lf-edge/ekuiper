@@ -354,7 +354,7 @@ func (t *Server) ExportConfiguration(arg *model.ExportDataDesc, reply *string) e
 		return err
 	}
 	var jsonBytes []byte
-	//do not specify rules, export all
+	// do not specify rules, export all
 	if len(rules) == 0 {
 		jsonBytes, err = configurationExport()
 	} else {

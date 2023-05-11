@@ -16,13 +16,14 @@ package protobuf
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestEncode(t *testing.T) {
@@ -110,12 +111,12 @@ func TestStatic(t *testing.T) {
 		}
 	}()
 	// build the so file into data/test prior to running the test
-	//Copy the helloworld.so
+	// Copy the helloworld.so
 	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "helloworld.so"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "helloworld.so"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "helloworld.so"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

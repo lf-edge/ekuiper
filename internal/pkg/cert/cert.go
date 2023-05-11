@@ -16,8 +16,8 @@ type TlsConfigurationOptions struct {
 }
 
 func GenerateTLSForClient(
-	Opts TlsConfigurationOptions) (*tls.Config, error) {
-
+	Opts TlsConfigurationOptions,
+) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: Opts.SkipCertVerify,
 	}

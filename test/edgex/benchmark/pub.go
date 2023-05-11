@@ -22,15 +22,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
-	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
-	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
-	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"log"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
+	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
+	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 )
 
 var msgConfig1 = types.MessageBusConfig{
@@ -99,7 +100,7 @@ func pubEventClientRedis(count int, wg *sync.WaitGroup) {
 				if e := msgClient.Publish(env, "events"); e != nil {
 					log.Fatal(e)
 				} else {
-					//fmt.Printf("%d - %s\n", index, string(data))
+					// fmt.Printf("%d - %s\n", index, string(data))
 				}
 				time.Sleep(100 * time.Nanosecond)
 			}

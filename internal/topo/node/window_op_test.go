@@ -16,10 +16,11 @@ package node
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/xsql"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/xsql"
 )
 
 var fivet = []*xsql.Tuple{
@@ -51,7 +52,7 @@ var fivet = []*xsql.Tuple{
 }
 
 func TestTime(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		interval int
 		end      time.Time
 	}{
@@ -111,11 +112,10 @@ func TestNewTupleList(t *testing.T) {
 	if !reflect.DeepEqual(es1, e.Error()) {
 		t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", es1, e)
 	}
-
 }
 
 func TestCountWindow(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		tuplelist     TupleList
 		expWinCount   int
 		winTupleSets  []xsql.WindowTuples
@@ -130,7 +130,6 @@ func TestCountWindow(t *testing.T) {
 			winTupleSets: []xsql.WindowTuples{
 				{
 					Content: []xsql.TupleRow{
-
 						&xsql.Tuple{
 							Message: map[string]interface{}{
 								"f1": "v1",

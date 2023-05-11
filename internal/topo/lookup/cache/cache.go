@@ -16,9 +16,10 @@ package cache
 
 import (
 	"context"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"sync"
 )
 
 type item struct {

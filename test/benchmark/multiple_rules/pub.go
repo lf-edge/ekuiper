@@ -16,8 +16,9 @@ package main
 
 import (
 	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 const (

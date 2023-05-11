@@ -3,8 +3,9 @@ package jwt
 import (
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
 	"time"
+
+	"github.com/golang-jwt/jwt"
 )
 
 const ExpireTimeMinutes = 10
@@ -19,8 +20,10 @@ const (
 	JWT_VALIDATE_ERROR ErrorType = 1
 )
 
-const JWT_VALIDATE_TEMP = "JWTVAL__ERRCODE:%d__ERRSTR:%s__TOKEN:%s"
-const JWT_OTHER_TEMP = "JWTOTH__ERRSTR:%s__TOKEN:%s"
+const (
+	JWT_VALIDATE_TEMP = "JWTVAL__ERRCODE:%d__ERRSTR:%s__TOKEN:%s"
+	JWT_OTHER_TEMP    = "JWTOTH__ERRSTR:%s__TOKEN:%s"
+)
 
 type Error struct {
 	errType   ErrorType

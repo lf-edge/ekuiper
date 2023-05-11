@@ -16,6 +16,7 @@ package wasm
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
 )
 

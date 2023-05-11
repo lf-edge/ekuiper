@@ -16,10 +16,11 @@ package planner
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"sort"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type DataSourcePlan struct {
@@ -94,7 +95,7 @@ func (p *DataSourcePlan) extract(expr ast.Expr) (ast.Expr, ast.Expr) {
 }
 
 func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
-	//init values
+	// init values
 	err := p.getProps()
 	if err != nil {
 		return err

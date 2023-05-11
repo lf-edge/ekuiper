@@ -16,16 +16,17 @@ package context
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/topo/state"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"log"
 	"os"
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/topo/state"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestState(t *testing.T) {
@@ -44,7 +45,7 @@ func TestState(t *testing.T) {
 			"key3": "world",
 		}
 	)
-	//initialization
+	// initialization
 	cStore, err := state.CreateStore(ruleId, api.AtLeastOnce)
 	if err != nil {
 		t.Errorf("Get store for rule %s error: %s", ruleId, err)
@@ -110,7 +111,7 @@ func cleanStateData() {
 }
 
 func TestParseJsonPath(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		j string
 		v []interface{} // values
 		r []interface{} // parsed results
@@ -180,7 +181,7 @@ func TestParseJsonPath(t *testing.T) {
 }
 
 func TestParseTemplate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		j string
 		v []interface{} // values
 		r []interface{} // parsed results
@@ -229,7 +230,7 @@ func TestTransition(t *testing.T) {
 	var mockFunc transform.TransFunc = func(d interface{}, s bool) ([]byte, bool, error) {
 		return []byte(fmt.Sprintf("%v", d)), true, nil
 	}
-	var tests = []struct {
+	tests := []struct {
 		data interface{}
 		r    []byte
 	}{

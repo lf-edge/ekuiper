@@ -18,8 +18,9 @@
 package redis
 
 import (
-	st "github.com/lf-edge/ekuiper/pkg/kv"
 	"github.com/redis/go-redis/v9"
+
+	st "github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 type TsBuilder struct {

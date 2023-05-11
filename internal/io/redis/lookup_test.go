@@ -17,13 +17,15 @@
 package redis
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/alicebob/miniredis/v2"
 	"github.com/benbjohnson/clock"
+
 	econf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"reflect"
-	"testing"
 )
 
 var (
@@ -64,7 +66,7 @@ func TestSingle(t *testing.T) {
 		return
 	}
 	mc := econf.Clock.(*clock.Mock)
-	var tests = []struct {
+	tests := []struct {
 		value  int
 		result []api.SourceTuple
 	}{
@@ -111,7 +113,7 @@ func TestList(t *testing.T) {
 		return
 	}
 	mc := econf.Clock.(*clock.Mock)
-	var tests = []struct {
+	tests := []struct {
 		value  string
 		result []api.SourceTuple
 	}{

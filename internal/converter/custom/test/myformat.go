@@ -17,6 +17,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/mitchellh/mapstructure"
 )
 

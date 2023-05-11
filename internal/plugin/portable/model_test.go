@@ -16,14 +16,15 @@ package portable
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestValidate(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		p   *PluginInfo
 		err string
 	}{

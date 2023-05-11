@@ -23,11 +23,14 @@ import (
 	"sync"
 
 	"github.com/golang-jwt/jwt"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
-var privateKeyRepository = make(map[string]*rsa.PrivateKey)
-var repositoryLock sync.Mutex
+var (
+	privateKeyRepository = make(map[string]*rsa.PrivateKey)
+	repositoryLock       sync.Mutex
+)
 
 const RSAKeyDir = "mgmt"
 

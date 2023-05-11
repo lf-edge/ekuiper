@@ -50,7 +50,6 @@ func TestRedisStorageConSelectorApply(t *testing.T) {
 }
 
 func TestRedisStorageConSelector(t *testing.T) {
-
 	envs := map[string]string{
 		"KUIPER__STORE__TYPE":                                "redis",
 		"KUIPER__STORE__REDIS__CONNECTIONSELECTOR":           "edgex.redisMsgBus",

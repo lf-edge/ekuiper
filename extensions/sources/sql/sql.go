@@ -35,7 +35,7 @@ type sqlConConfig struct {
 type sqlsource struct {
 	conf  *sqlConConfig
 	Query sqlgen.SqlQueryGenerator
-	//The db connection instance
+	// The db connection instance
 	db *sql.DB
 }
 

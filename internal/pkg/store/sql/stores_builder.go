@@ -16,6 +16,7 @@ package sql
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/sql/sqlite"
 )

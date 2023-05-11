@@ -21,7 +21,7 @@ import (
 )
 
 func TestDateToAndFromMilli(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		m int64
 		t time.Time
 	}{

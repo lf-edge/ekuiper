@@ -15,10 +15,11 @@
 package mock
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
 func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {

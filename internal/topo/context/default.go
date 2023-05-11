@@ -18,15 +18,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/sirupsen/logrus"
 	"regexp"
 	"sync"
 	"text/template"
 	"time"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 const LoggerKey = "$$logger"
@@ -37,7 +39,7 @@ type DefaultContext struct {
 	instanceId int
 	ctx        context.Context
 	err        error
-	//Only initialized after withMeta set
+	// Only initialized after withMeta set
 	store    api.Store
 	state    *sync.Map
 	snapshot map[string]interface{}

@@ -18,9 +18,10 @@
 package conf
 
 import (
-	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 	"log/syslog"
 	"os"
+
+	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 )
 
 func initSyslog() {

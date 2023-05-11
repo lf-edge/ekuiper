@@ -16,16 +16,18 @@ package processor
 
 import (
 	"fmt"
-	"github.com/gdexlab/go-render/render"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/gdexlab/go-render/render"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func init() {
@@ -33,7 +35,7 @@ func init() {
 }
 
 func TestStreamCreateProcessor(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s   string
 		r   []string
 		err string
@@ -122,7 +124,7 @@ func TestStreamCreateProcessor(t *testing.T) {
 }
 
 func TestTableProcessor(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		s   string
 		r   []string
 		err string
@@ -298,7 +300,7 @@ func TestInferredStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,12 +309,12 @@ func TestInferredStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//Copy test2.proto
+	// Copy test2.proto
 	bytesRead, err = os.ReadFile("../schema/test/test2.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(petcDir, "test2.proto"), bytesRead, 0755)
+	err = os.WriteFile(filepath.Join(petcDir, "test2.proto"), bytesRead, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +326,7 @@ func TestInferredStream(t *testing.T) {
 	}()
 	schema.InitRegistry()
 
-	var tests = []struct {
+	tests := []struct {
 		s   string
 		r   map[string]*ast.JsonStreamField
 		err string
@@ -376,5 +378,4 @@ func TestInferredStream(t *testing.T) {
 			t.Errorf("GetInferredJsonSchema mismatch:\nexp=%v\ngot=%v", render.AsCode(tt.r), render.AsCode(sf))
 		}
 	}
-
 }

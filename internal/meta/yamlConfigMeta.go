@@ -17,11 +17,12 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"strings"
-	"sync"
 )
 
 type configManager struct {
@@ -47,12 +48,14 @@ func InitYamlConfigManager() {
 	ConfigManager.connectionConfigStatusDb, _ = store.GetKV("connectionConfigStatus")
 }
 
-const SourceCfgOperatorKeyTemplate = "sources.%s"
-const SourceCfgOperatorKeyPrefix = "sources."
-const SinkCfgOperatorKeyTemplate = "sinks.%s"
-const SinkCfgOperatorKeyPrefix = "sinks."
-const ConnectionCfgOperatorKeyTemplate = "connections.%s"
-const ConnectionCfgOperatorKeyPrefix = "connections."
+const (
+	SourceCfgOperatorKeyTemplate     = "sources.%s"
+	SourceCfgOperatorKeyPrefix       = "sources."
+	SinkCfgOperatorKeyTemplate       = "sinks.%s"
+	SinkCfgOperatorKeyPrefix         = "sinks."
+	ConnectionCfgOperatorKeyTemplate = "connections.%s"
+	ConnectionCfgOperatorKeyPrefix   = "connections."
+)
 
 // loadConfigOperatorForSource
 // Try to load ConfigOperator for plugin xxx from /etc/sources/xxx.yaml  /data/sources/xxx.yaml
@@ -130,7 +133,6 @@ func DelConnectionConfKey(plgName, confKey, language string) error {
 }
 
 func delYamlConf(configOperatorKey string) {
-
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
@@ -529,16 +531,15 @@ func GetConfigurationStatus() YamlConfigurationSet {
 }
 
 func LoadConfigurations(configSets YamlConfigurationSet) YamlConfigurationSet {
-
 	configResponse := YamlConfigurationSet{
 		Sources:     map[string]string{},
 		Sinks:       map[string]string{},
 		Connections: map[string]string{},
 	}
 
-	var srcResources = configSets.Sources
-	var sinkResources = configSets.Sinks
-	var connectionResources = configSets.Connections
+	srcResources := configSets.Sources
+	sinkResources := configSets.Sinks
+	connectionResources := configSets.Connections
 
 	_ = ConfigManager.sourceConfigStatusDb.Clean()
 	_ = ConfigManager.sinkConfigStatusDb.Clean()
@@ -601,9 +602,9 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 		Connections: map[string]string{},
 	}
 
-	var srcResources = configSets.Sources
-	var sinkResources = configSets.Sinks
-	var connectionResources = configSets.Connections
+	srcResources := configSets.Sources
+	sinkResources := configSets.Sinks
+	connectionResources := configSets.Connections
 
 	for key, val := range srcResources {
 		configs := YamlConfigurations{}

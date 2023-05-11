@@ -19,11 +19,13 @@ package edgex
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"strings"
 )
 
 type EdgexClient struct {
@@ -42,7 +44,7 @@ type EdgexConf struct {
 
 // Modify the copied conf to print no password.
 func printConf(mbconf types.MessageBusConfig) {
-	var printableOptional = make(map[string]string)
+	printableOptional := make(map[string]string)
 	for k, v := range mbconf.Optional {
 		if strings.EqualFold(k, "password") {
 			printableOptional[k] = "*"
@@ -103,7 +105,8 @@ func (es *EdgexClient) CfgValidate(props map[string]interface{}) error {
 			Port:     c.Port,
 			Protocol: c.Protocol,
 		},
-		Type: c.Type}
+		Type: c.Type,
+	}
 	mbconf.Optional = c.Optional
 	es.mbconf = mbconf
 
@@ -145,7 +148,6 @@ func (es *EdgexClient) Subscribe(msg chan types.MessageEnvelope, topic string, e
 }
 
 func (es *EdgexClient) GetClient() (interface{}, error) {
-
 	client, err := messaging.NewMessageClient(es.mbconf)
 	if err != nil {
 		return nil, err

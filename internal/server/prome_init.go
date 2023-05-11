@@ -56,7 +56,7 @@ func (p *promeComp) rest(r *mux.Router) {
 
 func (p *promeComp) serve() {
 	if conf.Config.Basic.Prometheus {
-		//Start prometheus service
+		// Start prometheus service
 		portPrometheus := conf.Config.Basic.PrometheusPort
 		if portPrometheus <= 0 {
 			logger.Fatal("Miss configuration prometheusPort")

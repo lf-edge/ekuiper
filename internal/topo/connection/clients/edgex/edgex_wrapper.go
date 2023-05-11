@@ -19,12 +19,14 @@ package edgex
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"strings"
-	"sync"
 )
 
 type messageHandler func(stopChan chan struct{}, msgChan chan types.MessageEnvelope)
@@ -41,11 +43,11 @@ type edgexClientWrapper struct {
 	cli *EdgexClient
 
 	subLock sync.RWMutex
-	//topic: subscriber
-	//multiple go routine can sub same topic
+	// topic: subscriber
+	// multiple go routine can sub same topic
 	topicSubscriptions map[string]*edgexSubscriptionInfo
 
-	//consumerId: SubscribedTopics
+	// consumerId: SubscribedTopics
 	subscribers map[string]clients.SubscribedTopics
 
 	conSelector string
@@ -103,7 +105,7 @@ func (mc *edgexClientWrapper) newMessageHandler(topic string, sub *edgexSubscrip
 				conf.Log.Infof("message handler for topic %s stopped", topic)
 				return
 			case msgErr := <-messageErrors:
-				//broadcast to all topic subscribers only one time
+				// broadcast to all topic subscribers only one time
 				if sub != nil && !sub.hasError {
 					for _, consumer := range sub.topicConsumers {
 						select {
@@ -123,7 +125,7 @@ func (mc *edgexClientWrapper) newMessageHandler(topic string, sub *edgexSubscrip
 					conf.Log.Errorf("message handler for topic %s stopped", topic)
 					return
 				}
-				//broadcast to all topic subscribers
+				// broadcast to all topic subscribers
 				if sub != nil {
 					if sub.hasError == true {
 						sub.hasError = false

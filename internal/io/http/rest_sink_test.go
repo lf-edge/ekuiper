@@ -16,10 +16,6 @@ package http
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -27,6 +23,11 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 type request struct {
@@ -36,7 +37,7 @@ type request struct {
 }
 
 func TestRestSink_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		config map[string]interface{}
 		data   []map[string]interface{}
 		result []request
@@ -217,7 +218,7 @@ func TestRestSink_Apply(t *testing.T) {
 }
 
 func TestRestSinkTemplate_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		config map[string]interface{}
 		data   [][]byte
 		result []request
@@ -370,7 +371,7 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 
 func TestRestSinkErrorLog(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var result = `{"data":[],"extra":"Success","returncode":1,"returnmessage":""}`
+		result := `{"data":[],"extra":"Success","returncode":1,"returnmessage":""}`
 		time.Sleep(30 * time.Millisecond)
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte(result))

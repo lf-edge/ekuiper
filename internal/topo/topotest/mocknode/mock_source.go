@@ -16,13 +16,14 @@ package mocknode
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"sync"
-	"time"
 )
 
 type MockSource struct {
@@ -50,8 +51,8 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 			diff = TIMELEAP
 		}
 		next := mockClock.After(time.Duration(diff) * time.Millisecond)
-		//Mock timer, only send out the data once the mock time goes to the timestamp.
-		//Another mechanism must be imposed to move forward the mock time.
+		// Mock timer, only send out the data once the mock time goes to the timestamp.
+		// Another mechanism must be imposed to move forward the mock time.
 		select {
 		case <-next:
 			m.Lock()

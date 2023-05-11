@@ -16,9 +16,10 @@ package meta
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"path"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func TestGetMqttSourceMeta(t *testing.T) {
@@ -46,7 +47,6 @@ func TestGetMqttSourceMeta(t *testing.T) {
 	if len(fields) == 0 {
 		t.Errorf("default fields %v", fields)
 	}
-
 }
 
 func TestGetSqlSourceMeta(t *testing.T) {

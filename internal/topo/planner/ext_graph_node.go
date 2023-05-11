@@ -18,6 +18,7 @@ package planner
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/pkg/api"

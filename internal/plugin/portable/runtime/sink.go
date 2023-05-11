@@ -17,6 +17,7 @@ package runtime
 import (
 	"errors"
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )

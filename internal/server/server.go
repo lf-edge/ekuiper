@@ -77,7 +77,6 @@ func createPaths() {
 			}
 		}
 	}
-
 }
 
 func StartUp(Version, LoadFileType string) {
@@ -120,9 +119,9 @@ func StartUp(Version, LoadFileType string) {
 	initRuleset()
 
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
-	//Start lookup tables
+	// Start lookup tables
 	streamProcessor.RecoverLookupTable()
-	//Start rules
+	// Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
 	} else {
@@ -134,7 +133,7 @@ func StartUp(Version, LoadFileType string) {
 				logger.Error(err)
 				continue
 			}
-			//err = server.StartRule(rule, &reply)
+			// err = server.StartRule(rule, &reply)
 			reply = recoverRule(rule)
 			if 0 != len(reply) {
 				logger.Info(reply)
@@ -142,7 +141,7 @@ func StartUp(Version, LoadFileType string) {
 		}
 	}
 
-	//Start rest service
+	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
 	go func() {
 		var err error
@@ -162,7 +161,7 @@ func StartUp(Version, LoadFileType string) {
 		v.serve()
 	}
 
-	//Startup message
+	// Startup message
 	restHttpType := "http"
 	if conf.Config.Basic.RestTls != nil {
 		restHttpType = "https"
@@ -171,7 +170,7 @@ func StartUp(Version, LoadFileType string) {
 	logger.Info(msg)
 	fmt.Print(msg)
 
-	//Stop the services
+	// Stop the services
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 	<-sigint

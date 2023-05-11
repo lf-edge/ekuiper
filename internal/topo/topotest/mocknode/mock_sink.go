@@ -16,6 +16,7 @@ package mocknode
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -48,7 +49,7 @@ func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (m *MockSink) Close(ctx api.StreamContext) error {
-	//do nothing
+	// do nothing
 	return nil
 }
 

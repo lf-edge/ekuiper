@@ -16,12 +16,14 @@ package pubsub
 
 import (
 	"fmt"
-	"github.com/gdexlab/go-render/render"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/gdexlab/go-render/render"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestCreateAndClose(t *testing.T) {

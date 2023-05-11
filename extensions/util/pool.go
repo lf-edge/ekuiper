@@ -19,8 +19,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/xo/dburl"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 var GlobalPool *dbPool

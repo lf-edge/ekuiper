@@ -15,9 +15,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 	sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
-	"os"
 )
 
 func main() {

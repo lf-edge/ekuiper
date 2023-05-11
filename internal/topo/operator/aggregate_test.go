@@ -17,17 +17,18 @@ package operator
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 func TestAggregatePlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result *xsql.GroupedTuplesSet

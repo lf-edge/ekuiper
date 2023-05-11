@@ -16,18 +16,20 @@ package runtime
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+	"time"
+
+	"go.nanomsg.org/mangos/v3"
+	"go.nanomsg.org/mangos/v3/protocol/pull"
+	"go.nanomsg.org/mangos/v3/protocol/push"
+	"go.nanomsg.org/mangos/v3/protocol/req"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"go.nanomsg.org/mangos/v3"
-	"go.nanomsg.org/mangos/v3/protocol/pull"
-	"go.nanomsg.org/mangos/v3/protocol/push"
-	"go.nanomsg.org/mangos/v3/protocol/req"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func init() {
@@ -153,7 +155,7 @@ func TestDataIn(t *testing.T) {
 			t.Errorf("phase %d create client error %v", i, err)
 		}
 		go func() {
-			var c = 0
+			c := 0
 			for c < 3 {
 				err := client.Send(okMsg)
 				if err != nil {
@@ -164,7 +166,7 @@ func TestDataIn(t *testing.T) {
 				c++
 			}
 		}()
-		var c = 0
+		c := 0
 		for c < 3 {
 			msg, err := ch.Recv()
 			if err != nil {
@@ -202,7 +204,7 @@ func TestDataOut(t *testing.T) {
 			t.Errorf("phase %d create channel error %v", i, err)
 		}
 		go func() {
-			var c = 0
+			c := 0
 			for c < 3 {
 				err := ch.Send(okMsg)
 				if err != nil {
@@ -213,7 +215,7 @@ func TestDataOut(t *testing.T) {
 				c++
 			}
 		}()
-		var c = 0
+		c := 0
 		for c < 3 {
 			msg, err := client.Recv()
 			if err != nil {

@@ -17,10 +17,11 @@ package function
 import (
 	"fmt"
 
+	"github.com/montanaflynn/stats"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/montanaflynn/stats"
 )
 
 func registerAggFunc() {
@@ -416,6 +417,7 @@ func sliceFloatTotal(s []interface{}) (float64, error) {
 	}
 	return total, nil
 }
+
 func sliceIntMax(s []interface{}, max int64) (int64, error) {
 	for _, v := range s {
 		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
@@ -429,6 +431,7 @@ func sliceIntMax(s []interface{}, max int64) (int64, error) {
 	}
 	return max, nil
 }
+
 func sliceFloatMax(s []interface{}, max float64) (float64, error) {
 	for _, v := range s {
 		if vf, ok := v.(float64); ok {
@@ -454,6 +457,7 @@ func sliceStringMax(s []interface{}, max string) (string, error) {
 	}
 	return max, nil
 }
+
 func sliceIntMin(s []interface{}, min int64) (int64, error) {
 	for _, v := range s {
 		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
@@ -467,6 +471,7 @@ func sliceIntMin(s []interface{}, min int64) (int64, error) {
 	}
 	return min, nil
 }
+
 func sliceFloatMin(s []interface{}, min float64) (float64, error) {
 	for _, v := range s {
 		if vf, ok := v.(float64); ok {

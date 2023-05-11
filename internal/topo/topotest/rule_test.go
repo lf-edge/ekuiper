@@ -23,10 +23,10 @@ import (
 )
 
 func TestSRFSQL(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"demo", "demoArr"}
 	HandleStream(false, streamList, t)
-	var tests = []RuleTest{
+	tests := []RuleTest{
 		{
 			Name: "TestSingleSQLRule25",
 			Sql:  "SELECT unnest(a) from demoArr group by SESSIONWINDOW(ss, 2, 1);",
@@ -188,7 +188,7 @@ func TestSRFSQL(t *testing.T) {
 			},
 		},
 	}
-	//Data setup
+	// Data setup
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
 		{
@@ -212,11 +212,11 @@ func TestSRFSQL(t *testing.T) {
 }
 
 func TestSingleSQL(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable", "demoArr"}
 	HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []RuleTest{
+	// Data setup
+	tests := []RuleTest{
 		{
 			Name: `TestSingleSQLRule0`,
 			Sql:  `SELECT arr[x:y+1] as col1 FROM demoArr where x=1`,
@@ -317,7 +317,8 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule3`,
 			Sql:  `SELECT size as Int8, ts FROM demo where size > 3`,
 			R: [][]map[string]interface{}{
@@ -349,7 +350,8 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule4`,
 			Sql:  `SELECT size as Int8, ts FROM demoError where size > 3`,
 			R: [][]map[string]interface{}{
@@ -387,7 +389,8 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule5`,
 			Sql:  `SELECT meta(topic) as m, ts FROM demo`,
 			R: [][]map[string]interface{}{
@@ -426,7 +429,8 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule6`,
 			Sql:  `SELECT color, ts FROM demo where size > 3 and meta(topic)="mock"`,
 			R: [][]map[string]interface{}{
@@ -458,7 +462,8 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule7`,
 			Sql:  "SELECT `from` FROM demo1",
 			R: [][]map[string]interface{}{
@@ -492,7 +497,8 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo1_0_records_in_total":  int64(5),
 				"source_demo1_0_records_out_total": int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule8`,
 			Sql:  "SELECT * FROM demo1 where `from`=\"device1\"",
 			R: [][]map[string]interface{}{
@@ -528,7 +534,8 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo1_0_records_in_total":  int64(5),
 				"source_demo1_0_records_out_total": int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule9`,
 			Sql:  `SELECT color, CASE WHEN size < 2 THEN "S" WHEN size < 4 THEN "M" ELSE "L" END as s, ts FROM demo`,
 			R: [][]map[string]interface{}{
@@ -579,7 +586,8 @@ func TestSingleSQL(t *testing.T) {
 					"op_2_project": {"sink_mockSink"},
 				},
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule10`,
 			Sql:  "SELECT * FROM demo INNER JOIN table1 on demo.ts = table1.id",
 			R: [][]map[string]interface{}{
@@ -630,7 +638,8 @@ func TestSingleSQL(t *testing.T) {
 				"source_table1_0_records_in_total":  int64(4),
 				"source_table1_0_records_out_total": int64(1),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule11`,
 			Sql:  "SELECT device FROM demo INNER JOIN demoTable on demo.ts = demoTable.ts",
 			R: [][]map[string]interface{}{
@@ -668,7 +677,8 @@ func TestSingleSQL(t *testing.T) {
 				"source_demoTable_0_records_in_total":  int64(5),
 				"source_demoTable_0_records_out_total": int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLRule12`,
 			Sql:  "SELECT demo.ts as demoTs, table1.id as table1Id FROM demo INNER JOIN table1 on demoTs = table1Id",
 			R: [][]map[string]interface{}{
@@ -710,7 +720,8 @@ func TestSingleSQL(t *testing.T) {
 				"source_table1_0_records_in_total":  int64(4),
 				"source_table1_0_records_out_total": int64(1),
 			},
-		}, {
+		},
+		{
 			Name: `TestChanged13`,
 			Sql:  "SELECT changed_cols(\"tt_\", true, color, size) FROM demo",
 			R: [][]map[string]interface{}{
@@ -748,14 +759,16 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestAliasOrderBy14`,
 			Sql:  "SELECT color, count(*) as c FROM demo where color != \"red\" GROUP BY COUNTWINDOW(5), color Order by c DESC",
 			R: [][]map[string]interface{}{
-				{{
-					"color": "blue",
-					"c":     float64(2),
-				},
+				{
+					{
+						"color": "blue",
+						"c":     float64(2),
+					},
 					{
 						"color": "yellow",
 						"c":     float64(1),
@@ -901,11 +914,11 @@ func TestSingleSQL(t *testing.T) {
 }
 
 func TestSingleSQLError(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"ldemo"}
 	HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []RuleTest{
+	// Data setup
+	tests := []RuleTest{
 		{
 			Name: `TestSingleSQLErrorRule1`,
 			Sql:  `SELECT color, ts FROM ldemo where size >= 3`,
@@ -982,11 +995,11 @@ func TestSingleSQLError(t *testing.T) {
 }
 
 func TestSingleSQLOmitError(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"ldemo"}
 	HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []RuleTest{
+	// Data setup
+	tests := []RuleTest{
 		{
 			Name: `TestSingleSQLErrorRule1`,
 			Sql:  `SELECT color, ts FROM ldemo where size >= 3`,
@@ -1057,11 +1070,11 @@ func TestSingleSQLOmitError(t *testing.T) {
 }
 
 func TestSingleSQLTemplate(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"demo"}
 	HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []RuleTest{
+	// Data setup
+	tests := []RuleTest{
 		{
 			Name: `TestSingleSQLTemplateRule1`,
 			Sql:  `SELECT * FROM demo`,
@@ -1126,11 +1139,11 @@ func TestSingleSQLTemplate(t *testing.T) {
 }
 
 func TestNoneSingleSQLTemplate(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"demo"}
 	HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []RuleTest{
+	// Data setup
+	tests := []RuleTest{
 		{
 			Name: `TestNoneSingleSQLTemplateRule1`,
 			Sql:  `SELECT * FROM demo`,
@@ -1169,11 +1182,11 @@ func TestNoneSingleSQLTemplate(t *testing.T) {
 }
 
 func TestSingleSQLForBinary(t *testing.T) {
-	//Reset
+	// Reset
 	streamList := []string{"binDemo"}
 	HandleStream(false, streamList, t)
-	//Data setup
-	var tests = []RuleTest{
+	// Data setup
+	tests := []RuleTest{
 		{
 			Name: `TestSingleSQLRule1`,
 			Sql:  `SELECT * FROM binDemo`,
@@ -1227,7 +1240,7 @@ func TestSingleSQLForBinary(t *testing.T) {
 			mapInt := make([]map[string]interface{}, len(mapRes))
 			for i, mv := range mapRes {
 				mapInt[i] = make(map[string]interface{})
-				//assume only one key
+				// assume only one key
 				for k, v := range mv {
 					mapInt[i][k] = v
 				}

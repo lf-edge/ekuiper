@@ -19,8 +19,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"io"
 	"os"
 	"os/exec"
@@ -33,8 +31,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 var manager *Manager
@@ -204,16 +204,16 @@ func (m *Manager) Register(p plugin.Plugin) error {
 	}
 
 	zipPath := path.Join(m.pluginDir, name+".zip")
-	//clean up: delete zip file and unzip files in error
+	// clean up: delete zip file and unzip files in error
 	defer os.Remove(zipPath)
-	//download
+	// download
 	err := httpx.DownloadFile(zipPath, uri)
 	if err != nil {
 		return fmt.Errorf("fail to download file %s: %s", uri, err)
 	}
-	//unzip and copy to destination
+	// unzip and copy to destination
 	err = m.install(name, zipPath, shellParas)
-	if err != nil { //Revert for any errors
+	if err != nil { // Revert for any errors
 		return fmt.Errorf("fail to install plugin: %s", err)
 	}
 	m.storePluginInstallScript(name, p)
@@ -243,7 +243,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	}
 	defer r.Close()
 	var pi *PluginInfo
-	var filesNumber = 0
+	filesNumber := 0
 	// Parse json file
 	for _, file := range r.File {
 		filesNumber++
@@ -282,7 +282,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	// file copying
 	d := filepath.Clean(pluginTarget)
 	if _, err := os.Stat(d); os.IsNotExist(err) {
-		err = os.MkdirAll(d, 0755)
+		err = os.MkdirAll(d, 0o755)
 		if err != nil {
 			return err
 		}
@@ -317,8 +317,8 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	}
 
 	if needInstall {
-		//run install script if there is
-		var shell = make([]string, len(shellParas))
+		// run install script if there is
+		shell := make([]string, len(shellParas))
 		copy(shell, shellParas)
 		spath := path.Join(pluginTarget, "install.sh")
 		shell = append(shell, spath)

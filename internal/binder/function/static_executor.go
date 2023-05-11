@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -69,6 +70,4 @@ func (f *funcExecutor) GetFuncType(name string) ast.FuncType {
 	return fs.fType
 }
 
-var (
-	staticFuncExecutor = &funcExecutor{}
-)
+var staticFuncExecutor = &funcExecutor{}

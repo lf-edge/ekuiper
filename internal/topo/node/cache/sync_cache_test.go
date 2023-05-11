@@ -120,7 +120,7 @@ func TestPage(t *testing.T) {
 // Each flow test rule restart
 // Each flow use slightly different config like bufferPageSize
 func TestRun(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sconf   *conf.SinkConf
 		dataIn  [][]map[string]interface{}
 		dataOut [][]map[string]interface{}

@@ -17,17 +17,18 @@ package operator
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"reflect"
-	"strings"
-	"testing"
 )
 
 func TestOrderPlan_Apply(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		sql    string
 		data   interface{}
 		result interface{}
@@ -69,11 +70,14 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY id1 DESC",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -81,11 +85,14 @@ func TestOrderPlan_Apply(t *testing.T) {
 
 			result: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
 					},
 				},
@@ -96,11 +103,14 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY id1 DESC",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -108,11 +118,14 @@ func TestOrderPlan_Apply(t *testing.T) {
 			},
 			result: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"f1": "v2"},
 					},
 				},
@@ -123,11 +136,14 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT id1 FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY id1 DESC",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": "2string", "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
@@ -138,22 +154,28 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT * FROM src1 WHERE f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY f1, id1 DESC",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
 					},
 				},
 			},
 			result: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2"},
 					},
 				},
@@ -163,22 +185,28 @@ func TestOrderPlan_Apply(t *testing.T) {
 			sql: "SELECT * FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) ORDER BY ts DESC",
 			data: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1", "ts": cast.TimeFromUnixMilli(1568854515000)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2", "ts": cast.TimeFromUnixMilli(1568854525000)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1", "ts": cast.TimeFromUnixMilli(1568854535000)},
 					},
 				},
 			},
 			result: &xsql.WindowTuples{
 				Content: []xsql.TupleRow{
-					&xsql.Tuple{Emitter: "src1",
+					&xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 3, "f1": "v1", "ts": cast.TimeFromUnixMilli(1568854535000)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 2, "f1": "v2", "ts": cast.TimeFromUnixMilli(1568854525000)},
-					}, &xsql.Tuple{Emitter: "src1",
+					}, &xsql.Tuple{
+						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1", "ts": cast.TimeFromUnixMilli(1568854515000)},
 					},
 				},

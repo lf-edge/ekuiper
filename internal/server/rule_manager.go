@@ -18,14 +18,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"sync"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"sort"
-	"sync"
-	"time"
 )
 
 // Rule storage includes kv and in memory registry
@@ -94,7 +95,7 @@ func createRule(name, ruleJson string) (string, error) {
 	if r.Triggered {
 		go func() {
 			panicOrError := infra.SafeRun(func() error {
-				//Start the rule which runs async
+				// Start the rule which runs async
 				return rs.Start()
 			})
 			if panicOrError != nil {
@@ -129,7 +130,7 @@ func recoverRule(r *api.Rule) string {
 		return fmt.Sprintf("Rule %s was stopped.", r.Id)
 	} else {
 		panicOrError := infra.SafeRun(func() error {
-			//Start the rule which runs async
+			// Start the rule which runs async
 			return rs.Start()
 		})
 		if panicOrError != nil {

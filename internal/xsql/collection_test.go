@@ -16,16 +16,17 @@ package xsql
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func TestCollectionAgg(t *testing.T) {
 	// broadcast -> range func -> broadcast -> group aggregate -> map
-	var tests = []struct {
+	tests := []struct {
 		collO     Collection
 		set       [][]map[string]interface{}
 		interMaps [][]map[string]interface{}
@@ -83,7 +84,8 @@ func TestCollectionAgg(t *testing.T) {
 					},
 				},
 			},
-		}, {
+		},
+		{
 			collO: &JoinTuples{Content: []*JoinTuple{
 				{
 					Tuples: []TupleRow{
@@ -135,7 +137,8 @@ func TestCollectionAgg(t *testing.T) {
 					},
 				},
 			},
-		}, {
+		},
+		{
 			collO: &GroupedTuplesSet{Groups: []*GroupedTuples{
 				{
 					Content: []TupleRow{

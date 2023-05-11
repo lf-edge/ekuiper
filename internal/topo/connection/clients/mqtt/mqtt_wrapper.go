@@ -16,13 +16,15 @@ package mqtt
 
 import (
 	"fmt"
+	"strings"
+	"sync"
+
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"strings"
-	"sync"
 )
 
 type mqttSubscriptionInfo struct {
@@ -37,11 +39,11 @@ type mqttClientWrapper struct {
 	cli *MQTTClient
 
 	subLock sync.RWMutex
-	//topic: subscriber
-	//multiple go routine can sub same topic
+	// topic: subscriber
+	// multiple go routine can sub same topic
 	topicSubscriptions map[string]*mqttSubscriptionInfo
 
-	//consumerId: SubscribedTopics
+	// consumerId: SubscribedTopics
 	subscribers map[string]clients.SubscribedTopics
 
 	conSelector string

@@ -18,15 +18,16 @@ package operator
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
-	"reflect"
-	"testing"
 )
 
 func TestScriptOp(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		script string
 		isAgg  bool
 		data   interface{}

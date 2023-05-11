@@ -21,10 +21,12 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"strings"
+
+	"github.com/redis/go-redis/v9"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
-	"github.com/redis/go-redis/v9"
-	"strings"
 )
 
 const KvPrefix = "KV:STORE"

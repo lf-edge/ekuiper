@@ -17,10 +17,11 @@ package cast
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"reflect"
 	"strconv"
 	"sync"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type Strictness int8
@@ -828,7 +829,7 @@ func ToByteA(input interface{}, _ Strictness) ([]byte, error) {
 }
 
 func ToStringMap(input interface{}) (map[string]interface{}, error) {
-	var m = map[string]interface{}{}
+	m := map[string]interface{}{}
 
 	switch v := input.(type) {
 	case map[interface{}]interface{}:
@@ -838,7 +839,7 @@ func ToStringMap(input interface{}) (map[string]interface{}, error) {
 		return m, nil
 	case map[string]interface{}:
 		return v, nil
-	//case string:
+	// case string:
 	//	err := jsonStringToObject(v, &m)
 	//	return m, err
 	default:
@@ -1057,6 +1058,7 @@ func SyncMapToMap(sm *sync.Map) map[string]interface{} {
 	})
 	return m
 }
+
 func MapToSyncMap(m map[string]interface{}) *sync.Map {
 	sm := new(sync.Map)
 	for k, v := range m {
@@ -1155,5 +1157,4 @@ func ToType(value interface{}, newType interface{}) (interface{}, bool) {
 	} else {
 		return fmt.Errorf("expect string type for type parameter"), false
 	}
-
 }

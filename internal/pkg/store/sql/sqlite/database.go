@@ -21,11 +21,11 @@ import (
 	"path"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-
 	// introduce sqlite
 	_ "modernc.org/sqlite"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 )
 
 type Database struct {

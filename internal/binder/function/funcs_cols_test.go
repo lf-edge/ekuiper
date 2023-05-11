@@ -16,13 +16,14 @@ package function
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"reflect"
-	"testing"
 )
 
 func TestValidation(t *testing.T) {
@@ -30,7 +31,7 @@ func TestValidation(t *testing.T) {
 	if !ok {
 		t.Fatal("builtin not found")
 	}
-	var tests = []struct {
+	tests := []struct {
 		args []ast.Expr
 		err  error
 	}{
@@ -90,7 +91,7 @@ func TestExec(t *testing.T) {
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
 	var nilResult ResultCols
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{
@@ -201,7 +202,7 @@ func TestExecIgnoreNull(t *testing.T) {
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 1)
 	var nilResult ResultCols
-	var tests = []struct {
+	tests := []struct {
 		args   []interface{}
 		result interface{}
 	}{

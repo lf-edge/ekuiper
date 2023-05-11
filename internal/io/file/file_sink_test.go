@@ -16,18 +16,19 @@ package file
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/compressor"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/pkg/message"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/lf-edge/ekuiper/internal/compressor"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 // Unit test for Configure function
@@ -59,9 +60,11 @@ func TestConfigure(t *testing.T) {
 	if err == nil {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
 	}
-	err = m.Configure(map[string]interface{}{"interval": 500,
+	err = m.Configure(map[string]interface{}{
+		"interval": 500,
 		"path":     "test",
-		"fileType": "csv"})
+		"fileType": "csv",
+	})
 	if err == nil {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
 	}
@@ -243,12 +246,14 @@ func TestFileSink_Collect(t *testing.T) {
 			ft:      LINES_TYPE,
 			fname:   "test_lines",
 			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
-		}, {
+		},
+		{
 			name:    "json",
 			ft:      JSON_TYPE,
 			fname:   "test_json",
 			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
-		}, {
+		},
+		{
 			name:    "csv",
 			ft:      CSV_TYPE,
 			fname:   "test_csv",
@@ -260,13 +265,15 @@ func TestFileSink_Collect(t *testing.T) {
 			fname:    "test_lines",
 			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
-		}, {
+		},
+		{
 			name:     "json",
 			ft:       JSON_TYPE,
 			fname:    "test_json",
 			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: GZIP,
-		}, {
+		},
+		{
 			name:     "csv",
 			ft:       CSV_TYPE,
 			fname:    "test_csv",
@@ -280,13 +287,15 @@ func TestFileSink_Collect(t *testing.T) {
 			fname:    "test_lines",
 			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: ZSTD,
-		}, {
+		},
+		{
 			name:     "json",
 			ft:       JSON_TYPE,
 			fname:    "test_json",
 			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: ZSTD,
-		}, {
+		},
+		{
 			name:     "csv",
 			ft:       CSV_TYPE,
 			fname:    "test_csv",
@@ -367,7 +376,6 @@ func TestFileSink_Collect(t *testing.T) {
 					t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.content, string(contents))
 				}
 			}
-
 		})
 	}
 }
@@ -484,7 +492,8 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
 				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
 			},
-		}, {
+		},
+		{
 			name:  "json",
 			ft:    JSON_TYPE,
 			fname: "test_json.log",
@@ -503,7 +512,8 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
 			},
 			compress: GZIP,
-		}, {
+		},
+		{
 			name:  "json",
 			ft:    JSON_TYPE,
 			fname: "test_json_gzip.log",
@@ -523,7 +533,8 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				[]byte("{\"key\":\"value3\",\"ts\":1810}\n{\"key\":\"value4\",\"ts\":2260}"),
 			},
 			compress: ZSTD,
-		}, {
+		},
+		{
 			name:  "json",
 			ft:    JSON_TYPE,
 			fname: "test_json_zstd.log",

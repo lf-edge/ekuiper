@@ -20,7 +20,7 @@ import (
 )
 
 func TestAbsolutePath(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		r string
 		a string
 	}{

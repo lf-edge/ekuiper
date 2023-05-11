@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 

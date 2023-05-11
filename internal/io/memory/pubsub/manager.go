@@ -15,11 +15,12 @@
 package pubsub
 
 import (
+	"regexp"
+	"sync"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"regexp"
-	"sync"
 )
 
 const IdProperty = "topic"
@@ -161,7 +162,6 @@ func ProduceError(ctx api.StreamContext, topic string, err error) {
 			logger.Errorf("memory source topic %s drop message to %s", topic, name)
 		}
 	}
-
 }
 
 func addPubConsumer(topic string, sourceId string, ch chan api.SourceTuple) {

@@ -21,7 +21,7 @@ import (
 )
 
 func TestCall(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		cmd command
 		exp bool
 	}{

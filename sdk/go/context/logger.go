@@ -16,13 +16,12 @@ package context
 
 import (
 	filename "github.com/keepeye/logrus-filename"
-	"github.com/lf-edge/ekuiper/sdk/go/api"
 	"github.com/sirupsen/logrus"
+
+	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
-var (
-	Log *logrus.Logger
-)
+var Log *logrus.Logger
 
 func init() {
 	Log = logrus.New()
@@ -34,7 +33,7 @@ func init() {
 		DisableColors:   true,
 		FullTimestamp:   true,
 	})
-	//Log.Level = logrus.DebugLevel
+	// Log.Level = logrus.DebugLevel
 	Log.WithField("type", "plugin")
 }
 

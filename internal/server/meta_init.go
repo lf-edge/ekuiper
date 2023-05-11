@@ -20,14 +20,15 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/mux"
+
 	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/topo/node"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func init() {
@@ -36,8 +37,7 @@ func init() {
 
 var metaEndpoints []restEndpoint
 
-type metaComp struct {
-}
+type metaComp struct{}
 
 func (m metaComp) register() {
 	// do nothing
@@ -218,7 +218,6 @@ func sinkConfHandler(w http.ResponseWriter, r *http.Request) {
 
 // Add  del confkey
 func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
-
 	defer r.Body.Close()
 	var err error
 	vars := mux.Vars(r)
@@ -269,7 +268,6 @@ func sinkConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 // Add  del confkey
 func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
-
 	defer r.Body.Close()
 	var err error
 	vars := mux.Vars(r)

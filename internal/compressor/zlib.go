@@ -17,9 +17,11 @@ package compressor
 import (
 	"bytes"
 	"fmt"
-	"github.com/klauspost/compress/zlib"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"io"
+
+	"github.com/klauspost/compress/zlib"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 func newZlibCompressor() (*zlibCompressor, error) {

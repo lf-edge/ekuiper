@@ -18,9 +18,11 @@ package schema
 
 import (
 	"fmt"
+
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
+
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"

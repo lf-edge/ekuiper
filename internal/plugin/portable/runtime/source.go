@@ -19,10 +19,11 @@ import (
 	"errors"
 	"fmt"
 
+	"go.nanomsg.org/mangos/v3"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
-	"go.nanomsg.org/mangos/v3"
 )
 
 // Error handling: wrap all error in a function to handle

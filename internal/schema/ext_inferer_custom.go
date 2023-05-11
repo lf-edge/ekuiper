@@ -19,11 +19,12 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
+	"plugin"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
-	"plugin"
 )
 
 func init() {

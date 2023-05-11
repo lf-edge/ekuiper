@@ -16,6 +16,7 @@ package custom
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter/static"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
@@ -23,8 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-type Converter struct {
-}
+type Converter struct{}
 
 var converter = &Converter{}
 

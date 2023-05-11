@@ -16,13 +16,13 @@ package common
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/kv"
 	"reflect"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 func TestKvSetnx(ks kv.KeyValue, t *testing.T) {
-
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
 	}
@@ -39,7 +39,7 @@ func TestKvSetnx(ks kv.KeyValue, t *testing.T) {
 
 func TestKvSetGet(ks kv.KeyValue, t *testing.T) {
 	var val string
-	//SetNX
+	// SetNX
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
 	}
@@ -56,7 +56,7 @@ func TestKvSetGet(ks kv.KeyValue, t *testing.T) {
 		t.Error("expect:bar", "get:", val)
 	}
 
-	//Set
+	// Set
 	if err := ks.Set("foo", "bar"); nil != err {
 		t.Error(err)
 	}
@@ -75,7 +75,6 @@ func TestKvSetGet(ks kv.KeyValue, t *testing.T) {
 }
 
 func TestKvSet(ks kv.KeyValue, t *testing.T) {
-
 	if err := ks.Set("foo", "bar"); nil != err {
 		t.Error(err)
 	}
@@ -86,7 +85,6 @@ func TestKvSet(ks kv.KeyValue, t *testing.T) {
 }
 
 func TestKvGet(ks kv.KeyValue, t *testing.T) {
-
 	if err := ks.Setnx("foo", "bar"); nil != err {
 		t.Error(err)
 	}
@@ -116,7 +114,6 @@ func TestKvGetKeyedState(ks kv.KeyValue, t *testing.T) {
 }
 
 func TestKvKeys(length int, ks kv.KeyValue, t *testing.T) {
-
 	expected := make([]string, 0)
 	for i := 0; i < length; i++ {
 		key := fmt.Sprintf("key-%d", i)
@@ -140,7 +137,6 @@ func TestKvKeys(length int, ks kv.KeyValue, t *testing.T) {
 }
 
 func TestKvAll(length int, ks kv.KeyValue, t *testing.T) {
-
 	expected := make(map[string]string)
 	for i := 0; i < length; i++ {
 		key := fmt.Sprintf("key-%d", i)
