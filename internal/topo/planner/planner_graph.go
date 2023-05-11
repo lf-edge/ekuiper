@@ -111,6 +111,9 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 					return nil, err
 				}
 				srcNode, err := transformSourceNode(p, nil, rule.Options)
+				if err != nil {
+					return nil, err
+				}
 				nodeMap[nodeName] = srcNode
 				tp.AddSrc(srcNode)
 			} else {
