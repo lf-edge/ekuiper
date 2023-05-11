@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build core
+//go:build core && !plugin && !portable && !service && !schema
 
 package server
 

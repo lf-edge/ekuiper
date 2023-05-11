@@ -1,0 +1,7 @@
+{
+    "version": "v1.0.0",
+    "functions": [
+        "get_exchange_rate"
+    ],
+    "wasmEngine": "wasmedge"
+}
