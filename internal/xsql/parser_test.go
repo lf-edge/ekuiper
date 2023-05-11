@@ -210,7 +210,16 @@ func TestParser_ParseStatement(t *testing.T) {
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
-						Expr:  &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"},
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{
+								Name:       "t1",
+								StreamName: ast.DefaultStream,
+							},
+							OP: ast.ARROW,
+							RHS: &ast.JsonFieldRef{
+								Name: "name",
+							},
+						},
 						Name:  "name",
 						AName: "",
 					},
@@ -2647,10 +2656,10 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.BinaryExpr{
 								LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
-								OP:  ast.DOT,
+								OP:  ast.ARROW,
 								RHS: &ast.JsonFieldRef{Name: "first"},
 							},
-							OP:  ast.DOT,
+							OP:  ast.ARROW,
 							RHS: &ast.JsonFieldRef{Name: "test"},
 						},
 
@@ -2669,7 +2678,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.BinaryExpr{
 								LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
-								OP:  ast.DOT,
+								OP:  ast.ARROW,
 								RHS: &ast.JsonFieldRef{Name: "first"},
 							},
 							OP:  ast.ARROW,
@@ -2694,7 +2703,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 								OP:  ast.ARROW,
 								RHS: &ast.JsonFieldRef{Name: "first"},
 							},
-							OP:  ast.DOT,
+							OP:  ast.ARROW,
 							RHS: &ast.JsonFieldRef{Name: "test"},
 						},
 
@@ -2915,7 +2924,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 					{
 						Expr: &ast.BinaryExpr{
 							LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
-							OP:  ast.DOT,
+							OP:  ast.ARROW,
 							RHS: &ast.JsonFieldRef{Name: "first"},
 						},
 						Name:  "",

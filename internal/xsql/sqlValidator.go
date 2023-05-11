@@ -115,3 +115,69 @@ func isSRFExists(node ast.Node) bool {
 	})
 	return exists
 }
+
+func validateFields(stmt *ast.SelectStatement) {
+	streamName := getStreamNames(stmt)
+	for i, field := range stmt.Fields {
+		stmt.Fields[i].Expr = validateExpr(field.Expr, streamName)
+	}
+	for i, field := range stmt.SortFields {
+		stmt.SortFields[i].Expr = validateExpr(field.Expr, streamName)
+	}
+}
+
+func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
+	switch expr.(type) {
+	case *ast.BinaryExpr:
+		e := expr.(*ast.BinaryExpr)
+		exp := ast.BinaryExpr{}
+		exp.OP = e.OP
+		if e.OP == ast.DOT {
+			exp.OP = ast.ARROW
+		}
+		exp.RHS = validateExpr(e.RHS, streamName)
+		exp.LHS = validateExpr(e.LHS, streamName)
+		return &exp
+	case *ast.FieldRef:
+		sn := string(expr.(*ast.FieldRef).StreamName)
+		if sn != string(ast.DefaultStream) && !contains(streamName, string(expr.(*ast.FieldRef).StreamName)) {
+			return &ast.BinaryExpr{OP: ast.ARROW, LHS: &ast.FieldRef{Name: string(expr.(*ast.FieldRef).StreamName), StreamName: ast.DefaultStream}, RHS: &ast.JsonFieldRef{Name: expr.(*ast.FieldRef).Name}}
+		}
+		return expr
+	default:
+		return expr
+	}
+	return expr
+}
+
+func contains(streamName []string, name string) bool {
+	for _, s := range streamName {
+		if s == name {
+			return true
+		}
+	}
+	return false
+}
+
+func getStreamNames(stmt *ast.SelectStatement) (result []string) {
+	if stmt == nil {
+		return nil
+	}
+
+	for _, source := range stmt.Sources {
+		if s, ok := source.(*ast.Table); ok {
+			result = append(result, s.Name)
+			if s.Alias != "" {
+				result = append(result, s.Alias)
+			}
+		}
+	}
+
+	for _, join := range stmt.Joins {
+		result = append(result, join.Name)
+		if join.Alias != "" {
+			result = append(result, join.Alias)
+		}
+	}
+	return
+}

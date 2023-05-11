@@ -178,12 +178,13 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 	}
 	p.clause = ""
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.SEMICOLON {
+		validateFields(selects)
 		p.unscan()
 		return selects, nil
 	} else if tok != ast.EOF {
 		return nil, fmt.Errorf("found %q, expected EOF.", lit)
 	}
-
+	validateFields(selects)
 	if err := Validate(selects); err != nil {
 		return nil, err
 	}
