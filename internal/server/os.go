@@ -130,8 +130,8 @@ func parseLine(line string) (key string, value string, err error) {
 
 	// Handle double quotes
 	if strings.ContainsAny(value, `"`) {
-		first := string(value[0:1])
-		last := string(value[len(value)-1:])
+		first := value[0:1]
+		last := value[len(value)-1:]
 
 		if first == last && strings.ContainsAny(first, `"'`) {
 			value = strings.TrimPrefix(value, `'`)
