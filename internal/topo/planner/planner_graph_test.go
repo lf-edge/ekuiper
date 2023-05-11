@@ -268,7 +268,7 @@ func TestPlannerGraphValidate(t *testing.T) {
     }
   }
 }`,
-			err: "operator joinop of type join does not allow multiple inputs",
+			err: "join node joinop does not allow multiple stream inputs",
 		}, {
 			graph: `{
   "nodes": {
@@ -549,11 +549,13 @@ func TestPlannerGraphWithStream(t *testing.T) {
 					value STRING,
 					hum BIGINT
 				) WITH (TYPE="file");`,
+		"lookupT": `CREATE TABLE lookupT () WITH (DATASOURCE="alertVal", TYPE="memory", KIND="lookup", KEY="id");`,
 	}
 	types := map[string]ast.StreamType{
 		"src1":           ast.TypeStream,
 		"src2":           ast.TypeStream,
 		"tableInPlanner": ast.TypeTable,
+		"lookupT":        ast.TypeTable,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{
@@ -682,6 +684,159 @@ func TestPlannerGraphWithStream(t *testing.T) {
     }
 }`,
 			err: fmt.Errorf("table tableInPlanner is not a stream"),
+		},
+		{
+			name: "stream and table",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "lookupT":{
+        "type": "source",
+        "nodeType": "memory",
+        "props": {
+          "sourceType": "table",
+          "sourceName": "lookupT"
+        }
+      },
+      "joinop": {
+        "type": "operator",
+        "nodeType": "join",
+        "props": {
+          "from": "src1",
+          "joins": [
+            {
+              "name": "lookupT",
+              "type": "inner",
+              "on": "src1.deviceKind = lookupT.id"
+            }
+          ]
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo", "lookupT"],
+      "edges": {
+        "demo": ["joinop"],
+        "lookupT": ["joinop"],
+        "joinop": ["log"]
+      }
+    }
+}`,
+			err: nil,
+		},
+		{
+			name: "wrong join stream name",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "lookupT":{
+        "type": "source",
+        "nodeType": "memory",
+        "props": {
+          "sourceType": "table",
+          "sourceName": "lookupT"
+        }
+      },
+      "joinop": {
+        "type": "operator",
+        "nodeType": "join",
+        "props": {
+          "from": "demo",
+          "joins": [
+            {
+              "name": "lookupT",
+              "type": "inner",
+              "on": "demo.deviceKind = lookupT.id"
+            }
+          ]
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo", "lookupT"],
+      "edges": {
+        "demo": ["joinop"],
+        "lookupT": ["joinop"],
+        "joinop": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("join source demo is not a stream"),
+		},
+		{
+			name: "stream and scan table",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "lookupT":{
+        "type": "source",
+        "nodeType": "file",
+        "props": {
+          "sourceType": "table",
+          "sourceName": "tableInPlanner"
+        }
+      },
+      "joinop": {
+        "type": "operator",
+        "nodeType": "join",
+        "props": {
+          "from": "src1",
+          "joins": [
+            {
+              "name": "lookupT",
+              "type": "inner",
+              "on": "demo.deviceKind = lookupT.id"
+            }
+          ]
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo", "lookupT"],
+      "edges": {
+        "demo": ["joinop"],
+        "lookupT": ["joinop"],
+        "joinop": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("parse &{operator join map[from:src1 joins:[map[name:lookupT on:demo.deviceKind = lookupT.id type:inner]]] map[]} error: do not support scan table [tableInPlanner] yet"),
 		},
 	}
 	for _, tc := range testCases {

@@ -48,55 +48,67 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		return nil, err
 	}
 	var (
-		nodeMap = make(map[string]api.TopNode)
-		sinks   = make(map[string]bool)
-		sources = make(map[string]bool)
-		store   kv.KeyValue
+		nodeMap             = make(map[string]api.TopNode)
+		sinks               = make(map[string]bool)
+		sources             = make(map[string]bool)
+		store               kv.KeyValue
+		lookupTableChildren = make(map[string]*ast.Options)
+		scanTableEmitters   []string
+		streamEmitters      = make(map[string]struct{})
 	)
-	for nodeName, gn := range ruleGraph.Nodes {
-		switch gn.Type {
-		case "source":
-			if _, ok := ruleGraph.Topo.Edges[nodeName]; !ok {
-				return nil, fmt.Errorf("no edge defined for source node %s", nodeName)
-			}
-			sourceMeta := &api.SourceMeta{
-				SourceType: "stream",
-			}
-			err = cast.MapToStruct(gn.Props, sourceMeta)
-			if err != nil {
-				return nil, err
-			}
-			if sourceMeta.SourceType != "stream" && sourceMeta.SourceType != "table" {
-				return nil, fmt.Errorf("source type %s not supported", sourceMeta.SourceType)
-			}
-			// If source name is specified, find the created stream/table from store
-			if sourceMeta.SourceName != "" {
-				if store == nil {
-					store, err = store2.GetKV("stream")
-					if err != nil {
-						return nil, err
-					}
-				}
-				streamStmt, e := xsql.GetDataSource(store, sourceMeta.SourceName)
-				if e != nil {
-					return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", sourceMeta.SourceName)
-				}
-				if streamStmt.StreamType == ast.TypeStream && sourceMeta.SourceType == "table" {
-					return nil, fmt.Errorf("stream %s is not a table", sourceMeta.SourceName)
-				} else if streamStmt.StreamType == ast.TypeTable && sourceMeta.SourceType == "stream" {
-					return nil, fmt.Errorf("table %s is not a stream", sourceMeta.SourceName)
-				}
-				st := streamStmt.Options.TYPE
-				if st == "" {
-					st = "mqtt"
-				}
-				if st != gn.NodeType {
-					return nil, fmt.Errorf("source type %s does not match the stream type %s", gn.NodeType, st)
-				}
-				sInfo, err := convertStreamInfo(streamStmt)
+	for _, srcName := range ruleGraph.Topo.Sources {
+		gn, ok := ruleGraph.Nodes[srcName]
+		if !ok {
+			return nil, fmt.Errorf("source node %s not defined", srcName)
+		}
+		nodeName := srcName
+		if _, ok := ruleGraph.Topo.Edges[nodeName]; !ok {
+			return nil, fmt.Errorf("no edge defined for source node %s", nodeName)
+		}
+		sourceMeta := &api.SourceMeta{
+			SourceType: "stream",
+		}
+		err = cast.MapToStruct(gn.Props, sourceMeta)
+		if err != nil {
+			return nil, err
+		}
+		if sourceMeta.SourceType != "stream" && sourceMeta.SourceType != "table" {
+			return nil, fmt.Errorf("source type %s not supported", sourceMeta.SourceType)
+		}
+		// If source name is specified, find the created stream/table from store
+		if sourceMeta.SourceName != "" {
+			if store == nil {
+				store, err = store2.GetKV("stream")
 				if err != nil {
 					return nil, err
 				}
+			}
+			streamStmt, e := xsql.GetDataSource(store, sourceMeta.SourceName)
+			if e != nil {
+				return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", sourceMeta.SourceName)
+			}
+			if streamStmt.StreamType == ast.TypeStream && sourceMeta.SourceType == "table" {
+				return nil, fmt.Errorf("stream %s is not a table", sourceMeta.SourceName)
+			} else if streamStmt.StreamType == ast.TypeTable && sourceMeta.SourceType == "stream" {
+				return nil, fmt.Errorf("table %s is not a stream", sourceMeta.SourceName)
+			}
+			st := streamStmt.Options.TYPE
+			if st == "" {
+				st = "mqtt"
+			}
+			if st != gn.NodeType {
+				return nil, fmt.Errorf("source type %s does not match the stream type %s", gn.NodeType, st)
+			}
+			sInfo, err := convertStreamInfo(streamStmt)
+			if err != nil {
+				return nil, err
+			}
+			if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
+				if lookupTableChildren == nil {
+					lookupTableChildren = make(map[string]*ast.Options)
+				}
+				lookupTableChildren[string(sInfo.stmt.Name)] = sInfo.stmt.Options
+			} else {
 				// Use the plan to calculate the schema and other meta info
 				p := DataSourcePlan{
 					name:         sInfo.stmt.Name,
@@ -106,37 +118,50 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 					iet:          rule.Options.IsEventTime,
 					allMeta:      rule.Options.SendMetaToSink,
 				}.Init()
-				err = p.PruneColumns(nil)
-				if err != nil {
-					return nil, err
-				}
-				srcNode, err := transformSourceNode(p, nil, rule.Options)
-				if err != nil {
-					return nil, err
-				}
-				nodeMap[nodeName] = srcNode
-				tp.AddSrc(srcNode)
-			} else {
-				sourceOption := &ast.Options{}
-				err = cast.MapToStruct(gn.Props, sourceOption)
-				if err != nil {
-					return nil, err
-				}
-				sourceOption.TYPE = gn.NodeType
-				switch sourceMeta.SourceType {
-				case "stream":
-					pp, err := operator.NewPreprocessor(true, nil, true, nil, rule.Options.IsEventTime, sourceOption.TIMESTAMP, sourceOption.TIMESTAMP_FORMAT, strings.EqualFold(sourceOption.FORMAT, message.FormatBinary), sourceOption.STRICT_VALIDATION)
+
+				if sInfo.stmt.StreamType == ast.TypeStream {
+					err = p.PruneColumns(nil)
 					if err != nil {
 						return nil, err
 					}
-					srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options.SendError)
+					srcNode, e := transformSourceNode(p, nil, rule.Options)
+					if e != nil {
+						return nil, e
+					}
 					nodeMap[nodeName] = srcNode
 					tp.AddSrc(srcNode)
-				case "table":
-					return nil, fmt.Errorf("anonymouse table source is not supported, please create it prior to the rule")
+					streamEmitters[string(sInfo.stmt.Name)] = struct{}{}
+				} else {
+					scanTableEmitters = append(scanTableEmitters, string(sInfo.stmt.Name))
 				}
 			}
-			sources[nodeName] = true
+		} else {
+			sourceOption := &ast.Options{}
+			err = cast.MapToStruct(gn.Props, sourceOption)
+			if err != nil {
+				return nil, err
+			}
+			sourceOption.TYPE = gn.NodeType
+			switch sourceMeta.SourceType {
+			case "stream":
+				pp, err := operator.NewPreprocessor(true, nil, true, nil, rule.Options.IsEventTime, sourceOption.TIMESTAMP, sourceOption.TIMESTAMP_FORMAT, strings.EqualFold(sourceOption.FORMAT, message.FormatBinary), sourceOption.STRICT_VALIDATION)
+				if err != nil {
+					return nil, err
+				}
+				srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options.SendError)
+				nodeMap[nodeName] = srcNode
+				tp.AddSrc(srcNode)
+				streamEmitters[nodeName] = struct{}{}
+			case "table":
+				return nil, fmt.Errorf("anonymouse table source is not supported, please create it prior to the rule")
+			}
+		}
+		sources[nodeName] = true
+	}
+	for nodeName, gn := range ruleGraph.Nodes {
+		switch gn.Type {
+		case "source": // handled above,
+			continue
 		case "sink":
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; ok {
 				return nil, fmt.Errorf("sink %s has edge", nodeName)
@@ -189,12 +214,53 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				}
 				nodeMap[nodeName] = op
 			case "join":
-				jop, err := parseJoin(gn.Props)
+				stmt, err := parseJoinAst(gn.Props)
 				if err != nil {
 					return nil, err
 				}
-				op := Transform(jop, nodeName, rule.Options)
-				nodeMap[nodeName] = op
+				fromNode := stmt.Sources[0].(*ast.Table)
+				if _, ok := streamEmitters[string(fromNode.Name)]; !ok {
+					return nil, fmt.Errorf("join source %s is not a stream", fromNode.Name)
+				}
+				hasLookup := false
+				if stmt.Joins != nil {
+					if len(lookupTableChildren) > 0 {
+						var joins []ast.Join
+						for _, join := range stmt.Joins {
+							if hasLookup {
+								return nil, fmt.Errorf("parse %v error: only support to join one lookup table with one stream", gn)
+							}
+							if streamOpt, ok := lookupTableChildren[join.Name]; ok {
+								hasLookup = true
+								lookupPlan := LookupPlan{
+									joinExpr: join,
+									options:  streamOpt,
+								}
+								if !lookupPlan.validateAndExtractCondition() {
+									return nil, fmt.Errorf("join condition %s is invalid, at least one equi-join predicate is required", join.Expr)
+								}
+								op, err := node.NewLookupNode(lookupPlan.joinExpr.Name, lookupPlan.fields, lookupPlan.keys, lookupPlan.joinExpr.JoinType, lookupPlan.valvars, lookupPlan.options, rule.Options)
+								if err != nil {
+									return nil, fmt.Errorf("parse %v error: fail to create lookup node", gn)
+								}
+								nodeMap[nodeName] = op
+							} else {
+								joins = append(joins, join)
+							}
+						}
+						stmt.Joins = joins
+					}
+					// Not all joins are lookup joins, so we need to create a join plan for the remaining joins
+					if len(stmt.Joins) > 0 && !hasLookup {
+						if len(scanTableEmitters) > 0 {
+							return nil, fmt.Errorf("parse %v error: do not support scan table %s yet", gn, scanTableEmitters)
+						}
+						// TODO extract on filter
+						jop := &operator.JoinOp{Joins: stmt.Joins, From: fromNode}
+						op := Transform(jop, nodeName, rule.Options)
+						nodeMap[nodeName] = op
+					}
+				}
 			case "groupby":
 				gop, err := parseGroupBy(gn.Props)
 				if err != nil {
@@ -313,6 +379,18 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			}
 			if len(innodes) > 1 {
 				if dataInCondition.AllowMulti {
+					// special case for join which does not allow multiple streams
+					if gn.NodeType == "join" {
+						joinStreams := 0
+						for _, innode := range innodes {
+							if _, isLookup := lookupTableChildren[innode]; !isLookup {
+								joinStreams++
+							}
+							if joinStreams > 1 {
+								return nil, fmt.Errorf("join node %s does not allow multiple stream inputs", n)
+							}
+						}
+					}
 					for _, innode := range innodes {
 						_, err = graph.Fit(dataFlow[innode], dataInCondition)
 						if err != nil {
@@ -354,7 +432,9 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		for i, fromNode := range fromNodes {
 			for _, from := range fromNode {
 				if i == 0 {
-					inputs = append(inputs, nodeMap[from].(api.Emitter))
+					if src, ok := nodeMap[from].(api.Emitter); ok {
+						inputs = append(inputs, src)
+					}
 				} else {
 					switch sn := nodeMap[from].(type) {
 					case *node.SwitchNode:
@@ -444,7 +524,7 @@ func parseGroupBy(props map[string]interface{}) (*operator.AggregateOp, error) {
 	return &operator.AggregateOp{Dimensions: p.Dimensions}, nil
 }
 
-func parseJoin(props map[string]interface{}) (*operator.JoinOp, error) {
+func parseJoinAst(props map[string]interface{}) (*ast.SelectStatement, error) {
 	n := &graph.Join{}
 	err := cast.MapToStruct(props, n)
 	if err != nil {
@@ -452,13 +532,9 @@ func parseJoin(props map[string]interface{}) (*operator.JoinOp, error) {
 	}
 	stmt := "SELECT * FROM " + n.From
 	for _, join := range n.Joins {
-		stmt += " " + join.Type + " JOIN ON " + join.On
+		stmt += " " + join.Type + " JOIN " + join.Name + " ON " + join.On
 	}
-	p, err := xsql.NewParser(strings.NewReader(stmt)).Parse()
-	if err != nil {
-		return nil, fmt.Errorf("invalid join statement error: %v", err)
-	}
-	return &operator.JoinOp{Joins: p.Joins, From: p.Sources[0].(*ast.Table)}, nil
+	return xsql.NewParser(strings.NewReader(stmt)).Parse()
 }
 
 func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
