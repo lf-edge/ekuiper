@@ -15,9 +15,15 @@
 package function
 
 import (
+	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
+
+var arrayArgumentError = fmt.Errorf("first argument should be array of interface{}")
+var arrayIndexError = fmt.Errorf("index out of range")
 
 func registerArrayFunc() {
 	builtins["array_create"] = builtinFunc{
@@ -27,6 +33,101 @@ func registerArrayFunc() {
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return nil
+		},
+	}
+	builtins["array_position"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return arrayArgumentError, false
+			}
+			for i, item := range array {
+				if item == args[1] {
+					return i + 1, true
+				}
+			}
+			return 0, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+	}
+	builtins["slice"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return arrayArgumentError, false
+			}
+			index, err := cast.ToInt(args[1], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+			if index < 0 || index >= len(array) {
+				return arrayIndexError, false
+			}
+			length := len(array) - index
+			if len(args) == 3 {
+				length, err = cast.ToInt(args[2], cast.STRICT)
+				if err != nil {
+					return err, false
+				}
+				if index+length >= len(array) {
+					length = len(array) - index
+				}
+			}
+			return array[index : index+length], true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			if len(args) < 2 || len(args) > 3 {
+				return fmt.Errorf("slice must accept 2 or 3 arguments")
+			}
+			return nil
+		},
+	}
+	builtins["element_at"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return arrayArgumentError, false
+			}
+			index, err := cast.ToInt(args[1], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+			if index == 0 {
+				return fmt.Errorf("index should be larger or smaller than 0"), false
+			}
+			if index-1 >= len(array) || (-index)-1 >= len(array) {
+				return arrayIndexError, false
+			}
+			if index > 0 {
+				return array[index-1], true
+			}
+			return array[len(array)+index], true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+	}
+	builtins["array_contains"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return arrayArgumentError, false
+			}
+			for _, item := range array {
+				if item == args[1] {
+					return true, true
+				}
+			}
+			return false, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
 		},
 	}
 }

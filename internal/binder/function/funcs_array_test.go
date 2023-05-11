@@ -44,6 +44,134 @@ func TestArrayFunctions(t *testing.T) {
 				1, "2", 3,
 			},
 		},
+		{
+			name: "array_position",
+			args: []interface{}{
+				1, 2,
+			},
+			result: arrayArgumentError,
+		},
+		{
+			name: "array_position",
+			args: []interface{}{
+				[]interface{}{3, 2, 1},
+				1,
+			},
+			result: 3,
+		},
+		{
+			name: "array_position",
+			args: []interface{}{
+				[]interface{}{3, 2, 1},
+				4,
+			},
+			result: 0,
+		},
+		{
+			name: "length",
+			args: []interface{}{
+				[]interface{}{1, 2, 3},
+			},
+			result: 3,
+		},
+		{
+			name: "slice",
+			args: []interface{}{
+				1, 2, 3,
+			},
+			result: arrayArgumentError,
+		},
+		{
+			name: "slice",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 1,
+			},
+			result: []interface{}{2, 3},
+		},
+		{
+			name: "slice",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 4,
+			},
+			result: arrayIndexError,
+		},
+		{
+			name: "slice",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 1, 10,
+			},
+			result: []interface{}{2, 3},
+		},
+		{
+			name: "slice",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 1, 1,
+			},
+			result: []interface{}{2},
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				1, 2,
+			},
+			result: arrayArgumentError,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 0,
+			},
+			result: fmt.Errorf("index should be larger or smaller than 0"),
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 4,
+			},
+			result: arrayIndexError,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, -4,
+			},
+			result: arrayIndexError,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 1,
+			},
+			result: 1,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, -1,
+			},
+			result: 3,
+		},
+		{
+			name: "array_contains",
+			args: []interface{}{
+				1, 2,
+			},
+			result: arrayArgumentError,
+		},
+		{
+			name: "array_contains",
+			args: []interface{}{
+				[]interface{}{1, 2}, 2,
+			},
+			result: true,
+		},
+		{
+			name: "array_contains",
+			args: []interface{}{
+				[]interface{}{1, 2}, 3,
+			},
+			result: false,
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]
