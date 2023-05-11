@@ -61,7 +61,7 @@ func TestObjectFunctions(t *testing.T) {
 		if r, ok := result.([]string); ok {
 			sort.Strings(r)
 			if !reflect.DeepEqual(r, tt.result) {
-				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
 			}
 		} else {
 			if !reflect.DeepEqual(result, tt.result) {
