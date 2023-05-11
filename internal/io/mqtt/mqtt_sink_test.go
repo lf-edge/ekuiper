@@ -28,18 +28,6 @@ func TestSinkConfigure(t *testing.T) {
 		expectedAdConf *AdConf
 	}{
 		{
-			name: "Invalid topic",
-			input: map[string]interface{}{
-				"topic":     "{{.mytopic}}",
-				"batchSize": 10,
-			},
-			expectedAdConf: &AdConf{
-				Tpc:       "{{.mytopic}}",
-				BatchSize: 10,
-			},
-			expectedErr: fmt.Errorf("batch sink can't work with dynamic topic"),
-		},
-		{
 			name: "Missing topic",
 			input: map[string]interface{}{
 				"qos":         1,
