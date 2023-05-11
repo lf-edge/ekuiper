@@ -1411,7 +1411,7 @@ func TestParser_ParseStatement(t *testing.T) {
 						},
 					},
 				},
-				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
+				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: "s1"}}},
 			},
 		},
 
@@ -2618,6 +2618,94 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 		},
 
 		{
+			s: `SELECT demo.children->first->test FROM demo`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.BinaryExpr{
+								LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
+								OP:  ast.ARROW,
+								RHS: &ast.JsonFieldRef{Name: "first"},
+							},
+							OP:  ast.ARROW,
+							RHS: &ast.JsonFieldRef{Name: "test"},
+						},
+
+						Name:  "kuiper_field_0",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+			},
+		},
+
+		{
+			s: `SELECT demo.children.first.test FROM demo`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.BinaryExpr{
+								LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
+								OP:  ast.DOT,
+								RHS: &ast.JsonFieldRef{Name: "first"},
+							},
+							OP:  ast.DOT,
+							RHS: &ast.JsonFieldRef{Name: "test"},
+						},
+
+						Name:  "kuiper_field_0",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+			},
+		},
+
+		{
+			s: `SELECT demo.children.first->test FROM demo`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.BinaryExpr{
+								LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
+								OP:  ast.DOT,
+								RHS: &ast.JsonFieldRef{Name: "first"},
+							},
+							OP:  ast.ARROW,
+							RHS: &ast.JsonFieldRef{Name: "test"},
+						},
+
+						Name:  "kuiper_field_0",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+			},
+		},
+
+		{
+			s: `SELECT demo.children->first.test FROM demo`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.BinaryExpr{
+								LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
+								OP:  ast.ARROW,
+								RHS: &ast.JsonFieldRef{Name: "first"},
+							},
+							OP:  ast.DOT,
+							RHS: &ast.JsonFieldRef{Name: "test"},
+						},
+
+						Name:  "kuiper_field_0",
+						AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+			},
+		},
+
+		{
 			s: `SELECT children[0:1] FROM demo`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -2821,9 +2909,20 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 		},
 
 		{
-			s:    `SELECT demo.children.first AS c FROM demo`,
-			stmt: nil,
-			err:  "Too many field names. Please use -> to reference keys in struct.\n",
+			s: `SELECT demo.children.first AS c FROM demo`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "children", StreamName: "demo"},
+							OP:  ast.DOT,
+							RHS: &ast.JsonFieldRef{Name: "first"},
+						},
+						Name:  "",
+						AName: "c"},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+			},
 		},
 		{
 			s: `SELECT children[index] FROM demo`,

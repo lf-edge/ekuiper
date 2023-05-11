@@ -211,7 +211,7 @@ func (p *Parser) parseSourceLiteral() (string, string, error) {
 	var sourceSeg []string
 	var alias string
 	for {
-		// HASH, DIV & ADD token is specially support for MQTT topic name patterns.
+		//HASH, DIV & ADD token is specially support for MQTT topic name patterns.
 		if tok, lit := p.scanIgnoreWhitespace(); tok.AllowedSourceToken() {
 			sourceSeg = append(sourceSeg, lit)
 			if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.AS {
@@ -234,12 +234,15 @@ func (p *Parser) parseSourceLiteral() (string, string, error) {
 	return strings.Join(sourceSeg, ""), alias, nil
 }
 
-func (p *Parser) parseFieldNameSections() ([]string, error) {
+func (p *Parser) parseFieldNameSections(isSubField bool) ([]string, error) {
 	var fieldNameSects []string
 	for {
 		if tok, lit := p.scanIgnoreWhitespace(); tok == ast.IDENT || tok == ast.ASTERISK {
 			fieldNameSects = append(fieldNameSects, lit)
-			if tok1, _ := p.scanIgnoreWhitespace(); !tok1.AllowedSFNToken() {
+			if len(fieldNameSects) > 1 {
+				break
+			}
+			if tok1, _ := p.scanIgnoreWhitespace(); isSubField || !tok1.AllowedSFNToken() {
 				p.unscan()
 				break
 			}
@@ -250,8 +253,6 @@ func (p *Parser) parseFieldNameSections() ([]string, error) {
 	}
 	if len(fieldNameSects) == 0 {
 		return nil, fmt.Errorf("Cannot find any field name.\n")
-	} else if len(fieldNameSects) > 2 {
-		return nil, fmt.Errorf("Too many field names. Please use -> to reference keys in struct.\n")
 	}
 	return fieldNameSects, nil
 }
@@ -294,7 +295,7 @@ func (p *Parser) parseJoins() (ast.Joins, error) {
 }
 
 func (p *Parser) ParseJoin(joinType ast.JoinType) (*ast.Join, error) {
-	j := &ast.Join{JoinType: joinType}
+	var j = &ast.Join{JoinType: joinType}
 	if src, alias, err := p.parseSourceLiteral(); err != nil {
 		return nil, err
 	} else {
@@ -363,10 +364,12 @@ func (p *Parser) parseSorts() (ast.SortFields, error) {
 					s := ast.SortField{Ascending: true}
 
 					p.unscan()
-					if name, err := p.parseFieldNameSections(); err == nil {
+					if name, err := p.parseFieldNameSections(false); err == nil {
 						if len(name) == 2 {
 							s.StreamName = ast.StreamName(name[0])
 							s.Name = name[1]
+							p.unscan()
+							p.unscan()
 						} else {
 							s.Name = name[0]
 						}
@@ -471,9 +474,9 @@ func nameExpr(exp ast.Expr) string {
 }
 
 func (p *Parser) parseAlias() (string, error) {
-	tok, _ := p.scanIgnoreWhitespace()
+	tok, lit := p.scanIgnoreWhitespace()
 	if tok == ast.AS {
-		if tok, lit := p.scanIgnoreWhitespace(); tok != ast.IDENT {
+		if tok, lit = p.scanIgnoreWhitespace(); tok != ast.IDENT {
 			return "", fmt.Errorf("found %q, expected as alias.", lit)
 		} else {
 			return lit, nil
@@ -497,17 +500,17 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 		if !op.IsOperator() {
 			p.unscan()
 			return root.RHS, nil
-		} else if op == ast.ASTERISK { // Change the asterisk to Mul token.
+		} else if op == ast.ASTERISK { //Change the asterisk to Mul token.
 			op = ast.MUL
-		} else if op == ast.LBRACKET { // LBRACKET is a special token, need to unscan
+		} else if op == ast.LBRACKET { //LBRACKET is a special token, need to unscan
 			op = ast.SUBSET
 			p.unscan()
-		} else if op == ast.IN { // IN is a special token, need to unscan
+		} else if op == ast.IN { //IN is a special token, need to unscan
 			p.unscan()
 		} else if op == ast.NOT {
 			afterNot, tk1 := p.scanIgnoreWhitespace()
 			switch afterNot {
-			case ast.IN: // IN is a special token, need to unscan
+			case ast.IN: //IN is a special token, need to unscan
 				op = ast.NOTIN
 				p.unscan()
 				break
@@ -555,7 +558,7 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 		}
 
 		var rhs ast.Expr
-		if rhs, err = p.parseUnaryExpr(op == ast.ARROW); err != nil {
+		if rhs, err = p.parseUnaryExpr(op == ast.ARROW || op == ast.DOT); err != nil {
 			return nil, err
 		}
 		if op == ast.LIKE || op == ast.NOTLIKE {
@@ -633,7 +636,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		}
 		p.unscan() // Back the Lparen token
 		p.unscan() // Back the ident token
-		if n, err := p.parseFieldNameSections(); err != nil {
+		if n, err := p.parseFieldNameSections(isSubField); err != nil {
 			return nil, err
 		} else {
 			if p.inmeta() {
@@ -707,7 +710,7 @@ func (p *Parser) parseValueSetExpr() (ast.Expr, error) {
 
 		return valsetExpr, nil
 	} else {
-		// back to IN
+		//back to IN
 		p.unscan()
 	}
 
@@ -721,7 +724,7 @@ func (p *Parser) parseValueSetExpr() (ast.Expr, error) {
 func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 	tok2, lit2 := p.scanIgnoreWhiteSpaceWithNegativeNum()
 	if tok2 == ast.RBRACKET {
-		// field[]
+		//field[]
 		return &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: math.MinInt32}}, nil
 	} else if tok2 == ast.INTEGER {
 		start, err := strconv.Atoi(lit2)
@@ -729,14 +732,14 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 			return nil, fmt.Errorf("The start index %s is not an int value in bracket expression.", lit2)
 		}
 		if tok3, _ := p.scanIgnoreWhitespace(); tok3 == ast.RBRACKET {
-			// Such as field[2]
+			//Such as field[2]
 			return &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: start}}, nil
 		} else if tok3 == ast.COLON {
-			// Such as field[2:] or field[2:4]
+			//Such as field[2:] or field[2:4]
 			return p.parseColonExpr(&ast.IntegerLiteral{Val: start})
 		}
 	} else if tok2 == ast.COLON {
-		// Such as field[:3] or [:]
+		//Such as field[:3] or [:]
 		return p.parseColonExpr(&ast.IntegerLiteral{Val: 0})
 	} else {
 		p.unscan()
@@ -745,10 +748,10 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 			return nil, fmt.Errorf("The start index %s is invalid in bracket expression.", lit2)
 		}
 		if tok3, _ := p.scanIgnoreWhitespace(); tok3 == ast.RBRACKET {
-			// Such as field[2]
+			//Such as field[2]
 			return &ast.IndexExpr{Index: start}, nil
 		} else if tok3 == ast.COLON {
-			// Such as field[2:] or field[2:4]
+			//Such as field[2:] or field[2:4]
 			return p.parseColonExpr(start)
 		}
 	}
@@ -1015,6 +1018,7 @@ func validateWindow(funcName string, expectLen int, args []ast.Expr) error {
 		}
 	}
 	return nil
+
 }
 
 func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.Window, error) {
@@ -1026,7 +1030,7 @@ func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.W
 		}
 		return win, nil
 	}
-	unit := 1
+	var unit = 1
 	v := args[0].(*ast.TimeLiteral).Val
 	switch v {
 	case ast.DD:
@@ -1264,8 +1268,8 @@ func (p *Parser) parseStreamFields() (ast.StreamFields, error) {
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.LPAREN {
 		lStack.Push(lit)
 		for {
-			// For the schemaless streams
-			// create stream demo () WITH (FORMAT="JSON", DATASOURCE="demo" TYPE="edgex")
+			//For the schemaless streams
+			//create stream demo () WITH (FORMAT="JSON", DATASOURCE="demo" TYPE="edgex")
 			if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ast.RPAREN {
 				lStack.Pop()
 				if _, lit2 := p.scanIgnoreWhitespace(); strings.ToUpper(lit2) != ast.WITH {
@@ -1286,7 +1290,7 @@ func (p *Parser) parseStreamFields() (ast.StreamFields, error) {
 				tok2, lit2 := p.scanIgnoreWhitespace()
 				lit2 = strings.ToUpper(lit2)
 				if lit2 == ast.WITH {
-					// Check the stack for LPAREN; If the stack for LPAREN is not zero, then it's not correct.
+					//Check the stack for LPAREN; If the stack for LPAREN is not zero, then it's not correct.
 					if lStack.Len() > 0 {
 						return nil, fmt.Errorf("Parenthesis is not matched.")
 					}
@@ -1297,7 +1301,7 @@ func (p *Parser) parseStreamFields() (ast.StreamFields, error) {
 					}
 					p.unscan()
 					break
-				} else if tok2 == ast.RPAREN { // The nested type definition of ARRAY and Struct, such as "field ARRAY(STRUCT(f BIGINT))"
+				} else if tok2 == ast.RPAREN { //The nested type definition of ARRAY and Struct, such as "field ARRAY(STRUCT(f BIGINT))"
 					if lStack.Len() > 0 {
 						return nil, fmt.Errorf("Parenthesis is not matched.")
 					}
@@ -1344,7 +1348,7 @@ func (p *Parser) parseStreamField() (*ast.StreamField, error) {
 		}
 
 		if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.COMMA {
-			// Just consume the comma.
+			//Just consume the comma.
 		} else if tok2 == ast.RPAREN {
 			p.unscan()
 		} else {
@@ -1461,6 +1465,7 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 				} else {
 					return nil, fmt.Errorf("found %q, expect equals(=) in options.", lit2)
 				}
+
 			} else if tok1 == ast.COMMA {
 				continue
 			} else if tok1 == ast.RPAREN {
