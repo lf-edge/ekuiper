@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,27 +32,21 @@ type streamInfo struct {
 
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]streamInfo, []*ast.Call, error) {
+func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*ast.Call, error) {
 	streamsFromStmt := xsql.GetStreams(s)
-	streamStmts := make([]streamInfo, len(streamsFromStmt))
+	streamStmts := make([]*streamInfo, len(streamsFromStmt))
 	isSchemaless := false
 	for i, s := range streamsFromStmt {
 		streamStmt, err := xsql.GetDataSource(store, s)
 		if err != nil {
 			return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 		}
-		ss := streamStmt.StreamFields
-		if streamStmt.Options.SCHEMAID != "" {
-			ss, err = schema.InferFromSchemaFile(streamStmt.Options.FORMAT, streamStmt.Options.SCHEMAID)
-		}
+		si, err := convertStreamInfo(streamStmt)
 		if err != nil {
 			return nil, nil, err
 		}
-		streamStmts[i] = streamInfo{
-			stmt:   streamStmt,
-			schema: ss,
-		}
-		if ss == nil {
+		streamStmts[i] = si
+		if si.schema == nil {
 			isSchemaless = true
 		}
 	}
@@ -239,6 +233,21 @@ func allAggregate(expr ast.Expr) (r bool) {
 		return true
 	})
 	return
+}
+
+func convertStreamInfo(streamStmt *ast.StreamStmt) (*streamInfo, error) {
+	ss := streamStmt.StreamFields
+	var err error
+	if streamStmt.Options.SCHEMAID != "" {
+		ss, err = schema.InferFromSchemaFile(streamStmt.Options.FORMAT, streamStmt.Options.SCHEMAID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &streamInfo{
+		stmt:   streamStmt,
+		schema: ss,
+	}, nil
 }
 
 type fieldsMap struct {

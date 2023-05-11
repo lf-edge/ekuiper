@@ -167,6 +167,13 @@ type GraphNode struct {
 	UI map[string]interface{} `json:"ui"`
 }
 
+// SourceMeta is the meta data of a source node. It describes what existed stream/table to refer to.
+// It is part of the Props in the GraphNode and it is optional
+type SourceMeta struct {
+	SourceName string `json:"sourceName"` // the name of the stream or table
+	SourceType string `json:"sourceType"` // stream or table
+}
+
 type RuleGraph struct {
 	Nodes map[string]*GraphNode `json:"nodes"`
 	Topo  *PrintableTopo        `json:"topo"`

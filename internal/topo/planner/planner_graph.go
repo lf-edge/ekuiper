@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/binder/function"
+	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
@@ -28,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -49,6 +51,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		nodeMap = make(map[string]api.TopNode)
 		sinks   = make(map[string]bool)
 		sources = make(map[string]bool)
+		store   kv.KeyValue
 	)
 	for nodeName, gn := range ruleGraph.Nodes {
 		switch gn.Type {
@@ -56,36 +59,79 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; !ok {
 				return nil, fmt.Errorf("no edge defined for source node %s", nodeName)
 			}
-			sourceType, ok := gn.Props["source_type"]
-			if !ok {
-				sourceType = "stream"
+			sourceMeta := &api.SourceMeta{
+				SourceType: "stream",
 			}
-			st, ok := sourceType.(string)
-			if !ok {
-				return nil, fmt.Errorf("source_type %v is not string", sourceType)
-			}
-			st = strings.ToLower(st)
-			sourceOption := &ast.Options{}
-			err := cast.MapToStruct(gn.Props, sourceOption)
+			err = cast.MapToStruct(gn.Props, sourceMeta)
 			if err != nil {
 				return nil, err
 			}
-			sourceOption.TYPE = gn.NodeType
-			switch st {
-			case "stream":
-				// TODO deal with conf key
-				pp, err := operator.NewPreprocessor(true, nil, true, nil, rule.Options.IsEventTime, sourceOption.TIMESTAMP, sourceOption.TIMESTAMP_FORMAT, strings.EqualFold(sourceOption.FORMAT, message.FormatBinary), sourceOption.STRICT_VALIDATION)
+			if sourceMeta.SourceType != "stream" && sourceMeta.SourceType != "table" {
+				return nil, fmt.Errorf("source type %s not supported", sourceMeta.SourceType)
+			}
+			// If source name is specified, find the created stream/table from store
+			if sourceMeta.SourceName != "" {
+				if store == nil {
+					store, err = store2.GetKV("stream")
+					if err != nil {
+						return nil, err
+					}
+				}
+				streamStmt, e := xsql.GetDataSource(store, sourceMeta.SourceName)
+				if e != nil {
+					return nil, fmt.Errorf("fail to get stream %s, please check if stream is created", sourceMeta.SourceName)
+				}
+				if streamStmt.StreamType == ast.TypeStream && sourceMeta.SourceType == "table" {
+					return nil, fmt.Errorf("stream %s is not a table", sourceMeta.SourceName)
+				} else if streamStmt.StreamType == ast.TypeTable && sourceMeta.SourceType == "stream" {
+					return nil, fmt.Errorf("table %s is not a stream", sourceMeta.SourceName)
+				}
+				st := streamStmt.Options.TYPE
+				if st == "" {
+					st = "mqtt"
+				}
+				if st != gn.NodeType {
+					return nil, fmt.Errorf("source type %s does not match the stream type %s", gn.NodeType, st)
+				}
+				sInfo, err := convertStreamInfo(streamStmt)
 				if err != nil {
 					return nil, err
 				}
-				srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options.SendError)
+				// Use the plan to calculate the schema and other meta info
+				p := DataSourcePlan{
+					name:         sInfo.stmt.Name,
+					streamStmt:   sInfo.stmt,
+					streamFields: sInfo.schema.ToJsonSchema(),
+					isSchemaless: sInfo.schema == nil,
+					iet:          rule.Options.IsEventTime,
+					allMeta:      rule.Options.SendMetaToSink,
+				}.Init()
+				err = p.PruneColumns(nil)
+				if err != nil {
+					return nil, err
+				}
+				srcNode, err := transformSourceNode(p, nil, rule.Options)
 				nodeMap[nodeName] = srcNode
 				tp.AddSrc(srcNode)
-			case "table":
-				// TODO add table
-				return nil, fmt.Errorf("table source is not supported yet")
-			default:
-				return nil, fmt.Errorf("unknown source type %s", st)
+			} else {
+				sourceOption := &ast.Options{}
+				err = cast.MapToStruct(gn.Props, sourceOption)
+				if err != nil {
+					return nil, err
+				}
+				sourceOption.TYPE = gn.NodeType
+				switch sourceMeta.SourceType {
+				case "stream":
+					pp, err := operator.NewPreprocessor(true, nil, true, nil, rule.Options.IsEventTime, sourceOption.TIMESTAMP, sourceOption.TIMESTAMP_FORMAT, strings.EqualFold(sourceOption.FORMAT, message.FormatBinary), sourceOption.STRICT_VALIDATION)
+					if err != nil {
+						return nil, err
+					}
+					srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options.SendError)
+					nodeMap[nodeName] = srcNode
+					tp.AddSrc(srcNode)
+				case "table":
+					return nil, fmt.Errorf("anonymouse table source is not supported, please create it prior to the rule")
+				}
 			}
 			sources[nodeName] = true
 		case "sink":

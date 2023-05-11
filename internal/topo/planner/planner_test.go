@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -3101,5 +3102,46 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 		} else if !reflect.DeepEqual(tt.p, p) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
 		}
+	}
+}
+
+func TestTransformSourceNode(t *testing.T) {
+	testCases := []struct {
+		name string
+		plan *DataSourcePlan
+		node *node.SourceNode
+	}{
+		{
+			name: "normal source node",
+			plan: &DataSourcePlan{
+				name: "test",
+				streamStmt: &ast.StreamStmt{
+					StreamType: ast.TypeStream,
+					Options: &ast.Options{
+						TYPE: "file",
+					},
+				},
+				streamFields: nil,
+				allMeta:      false,
+				metaFields:   []string{},
+				iet:          false,
+				isBinary:     false,
+			},
+			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
+				TYPE: "file",
+			}, false),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			node, err := transformSourceNode(tc.plan, nil, &api.RuleOption{})
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+			if !reflect.DeepEqual(node, tc.node) {
+				t.Errorf("unexpected result: got %v, want %v", node, tc.node)
+			}
+		})
 	}
 }
