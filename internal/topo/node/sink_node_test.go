@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -44,7 +45,7 @@ func TestBatchSink(t *testing.T) {
 	mc := conf.Clock.(*clock.Mock)
 	conf.InitConf()
 	transform.RegisterAdditionalFuncs()
-	var tests = []struct {
+	tests := []struct {
 		config map[string]interface{}
 		data   []map[string]interface{}
 		result [][]byte

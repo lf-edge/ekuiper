@@ -6,7 +6,7 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
-      - 'tools/check/revive.toml'
+      - 'tools/check/.golangci.yaml'
       - '.github/workflows/lint.yaml'
 
 jobs:
@@ -29,10 +29,14 @@ jobs:
           go install github.com/google/go-licenses@latest
           $(go env GOPATH)/bin/go-licenses check ./... --disallowed_types forbidden,restricted,unknown --ignore modernc.org/mathutil
 
-      - name: Run Revive Action
-        uses: docker://morphy/revive-action:v2
-        with:
-          config: tools/check/revive.toml
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
 
-      - name: Check formatting
-        run: test -z $(gofmt -l .) || (gofmt -l . && exit 1)
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --config tools/check/.golangci.yaml

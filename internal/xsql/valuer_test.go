@@ -427,7 +427,7 @@ func TestLike(t *testing.T) {
 	}
 	sqls := []string{
 		`select a LIKE "string" as t from src`,
-		`select b LIKE "an_ther" from src`,
+		`select b LIKE "an_ther" from src`, //nolint:misspell
 		`select a NOT LIKE "string1" as t from src`,
 		`select a LIKE "str%" as t from src`,
 		`select a LIKE "str\\_ng" as t from src`,

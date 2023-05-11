@@ -159,7 +159,7 @@ func (d *AffiliateRow) Clone() AffiliateRow {
 			nd.AliasMap[k] = v
 		}
 	}
-	return *nd
+	return *nd //nolint:govet
 }
 
 func (d *AffiliateRow) IsEmpty() bool {

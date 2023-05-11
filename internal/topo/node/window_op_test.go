@@ -305,7 +305,7 @@ func TestCountWindow(t *testing.T) {
 				}
 				cw := tt.tuplelist.nextCountWindow()
 				if !reflect.DeepEqual(tt.winTupleSets[j].Content, cw.Content) {
-					t.Errorf("%d. \nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.winTupleSets[j], cw)
+					t.Errorf("%d. \nresult mismatch:\n\nexp=%#v\n\ngot=%#v", i, tt.winTupleSets[j], cw) //nolint:govet
 				}
 			}
 

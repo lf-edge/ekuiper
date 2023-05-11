@@ -17,7 +17,8 @@ package protobuf
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	// TODO: replace with `google.golang.org/protobuf/proto` pkg.
+	"github.com/golang/protobuf/proto" //nolint:staticcheck
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/dynamic"

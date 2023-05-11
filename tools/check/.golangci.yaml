@@ -1,0 +1,26 @@
+run:
+  timeout: 10m
+  skip-dirs:
+    - internal/plugin
+  build-tags:
+    - edgex
+
+linters:
+  disable-all: true
+  enable:
+    - gci
+    - gofumpt
+    - govet
+    - staticcheck
+    - misspell
+    - unconvert
+    - usestdlibvars
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/lf-edge/ekuiper)
+  staticcheck:
+    go: '1.20'
