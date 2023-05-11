@@ -37,7 +37,7 @@
 
 源引用（`.`）
 
-源引用运算符可用于通过引用源流或表来指定列。 `->` 引用选择嵌套 JSON 对象中的键。
+源引用运算符可用于通过引用源流或表来指定列。 `->` 引用选择嵌套 JSON 对象中的键。 源引用`.`也可以选择嵌套 JSON 对象中的键。
 
 ```
 SELECT demo.age FROM demo
@@ -54,8 +54,29 @@ SELECT demo.name->first FROM demo
 
 
 ```
+SELECT demo.name.first FROM demo
+{"first" : "Tom"}
+```
+
+
+
+```
+SELECT name.first AS fname FROM demo
+{"fname": "Tom"}
+```
+
+
+
+```
 SELECT name->first AS fname FROM demo
 {"fname": "Tom"}
+```
+
+
+
+```
+SELECT ops->functionA.numArgs AS num FROM demo
+{"num": 2}
 ```
 
 ### 索引表达式

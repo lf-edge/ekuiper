@@ -178,12 +178,14 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 	}
 	p.clause = ""
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.SEMICOLON {
+		validateFields(selects)
 		p.unscan()
 		return selects, nil
 	} else if tok != ast.EOF {
 		return nil, fmt.Errorf("found %q, expected EOF.", lit)
 	}
 
+	validateFields(selects)
 	if err := Validate(selects); err != nil {
 		return nil, err
 	}
@@ -234,12 +236,15 @@ func (p *Parser) parseSourceLiteral() (string, string, error) {
 	return strings.Join(sourceSeg, ""), alias, nil
 }
 
-func (p *Parser) parseFieldNameSections() ([]string, error) {
+func (p *Parser) parseFieldNameSections(isSubField bool) ([]string, error) {
 	var fieldNameSects []string
 	for {
 		if tok, lit := p.scanIgnoreWhitespace(); tok == ast.IDENT || tok == ast.ASTERISK {
 			fieldNameSects = append(fieldNameSects, lit)
-			if tok1, _ := p.scanIgnoreWhitespace(); !tok1.AllowedSFNToken() {
+			if len(fieldNameSects) > 1 {
+				break
+			}
+			if tok1, _ := p.scanIgnoreWhitespace(); isSubField || !tok1.AllowedSFNToken() {
 				p.unscan()
 				break
 			}
@@ -250,9 +255,8 @@ func (p *Parser) parseFieldNameSections() ([]string, error) {
 	}
 	if len(fieldNameSects) == 0 {
 		return nil, fmt.Errorf("Cannot find any field name.\n")
-	} else if len(fieldNameSects) > 2 {
-		return nil, fmt.Errorf("Too many field names. Please use -> to reference keys in struct.\n")
 	}
+
 	return fieldNameSects, nil
 }
 
@@ -363,10 +367,12 @@ func (p *Parser) parseSorts() (ast.SortFields, error) {
 					s := ast.SortField{Ascending: true}
 
 					p.unscan()
-					if name, err := p.parseFieldNameSections(); err == nil {
+					if name, err := p.parseFieldNameSections(false); err == nil {
 						if len(name) == 2 {
 							s.StreamName = ast.StreamName(name[0])
 							s.Name = name[1]
+							p.unscan()
+							p.unscan()
 						} else {
 							s.Name = name[0]
 						}
@@ -555,7 +561,7 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 		}
 
 		var rhs ast.Expr
-		if rhs, err = p.parseUnaryExpr(op == ast.ARROW); err != nil {
+		if rhs, err = p.parseUnaryExpr(op == ast.ARROW || op == ast.DOT); err != nil {
 			return nil, err
 		}
 		if op == ast.LIKE || op == ast.NOTLIKE {
@@ -633,7 +639,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		}
 		p.unscan() // Back the Lparen token
 		p.unscan() // Back the ident token
-		if n, err := p.parseFieldNameSections(); err != nil {
+		if n, err := p.parseFieldNameSections(isSubField); err != nil {
 			return nil, err
 		} else {
 			if p.inmeta() {
