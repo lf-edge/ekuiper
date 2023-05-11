@@ -204,7 +204,7 @@ func ToInt16(input interface{}, sn Strictness) (int16, error) {
 	case int32:
 		return int16(s), nil
 	case int16:
-		return int16(s), nil
+		return s, nil
 	case int8:
 		return int16(s), nil
 	case uint:
@@ -333,7 +333,7 @@ func ToInt64(input interface{}, sn Strictness) (int64, error) {
 		if sn == CONVERT_ALL {
 			v, err := strconv.ParseInt(s, 0, 0)
 			if err == nil {
-				return int64(v), nil
+				return v, nil
 			}
 		}
 	case bool:

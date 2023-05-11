@@ -17,7 +17,7 @@ func genToken(signKeyName, issuer, aud string) string {
 
 func Test_AUTH(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	})
 
 	handler := Auth(nextHandler)
@@ -35,7 +35,7 @@ func Test_AUTH(t *testing.T) {
 		{
 			name:     "token right",
 			args:     args{th: genToken("sample_key", "sample_key.pub", "eKuiper")},
-			req:      httptest.NewRequest("GET", "http://127.0.0.1:9081/streams", nil),
+			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/streams", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 200,
 		},
@@ -43,21 +43,21 @@ func Test_AUTH(t *testing.T) {
 		{
 			name:     "audience not right",
 			args:     args{th: genToken("sample_key", "sample_key.pub", "Neuron")},
-			req:      httptest.NewRequest("GET", "http://127.0.0.1:9081/streams", nil),
+			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/streams", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 401,
 		},
 		{
 			name:     "no token",
 			args:     args{th: ""},
-			req:      httptest.NewRequest("GET", "http://127.0.0.1:9081/streams", nil),
+			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/streams", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 401,
 		},
 		{
 			name:     "no need token path",
 			args:     args{th: ""},
-			req:      httptest.NewRequest("GET", "http://127.0.0.1:9081/ping", nil),
+			req:      httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9081/ping", nil),
 			res:      httptest.NewRecorder(),
 			wantCode: 200,
 		},

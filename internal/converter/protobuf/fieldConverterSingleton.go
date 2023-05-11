@@ -93,9 +93,9 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 			err    error
 		)
 		switch ft {
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_DOUBLE):
+		case dpb.FieldDescriptorProto_TYPE_DOUBLE:
 			result, err = cast.ToFloat64Slice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FLOAT):
+		case dpb.FieldDescriptorProto_TYPE_FLOAT:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToFloat64(input, sn)
 				if err != nil {
@@ -104,7 +104,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 					return float32(r), nil
 				}
 			}, "float", cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_INT32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SFIXED32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SINT32):
+		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToInt(input, sn)
 				if err != nil {
@@ -113,9 +113,9 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 					return int32(r), nil
 				}
 			}, "int", cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_INT64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SFIXED64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SINT64):
+		case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
 			result, err = cast.ToInt64Slice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FIXED32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_UINT32):
+		case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToUint64(input, sn)
 				if err != nil {
@@ -124,15 +124,15 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 					return uint32(r), nil
 				}
 			}, "uint", cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FIXED64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_UINT64):
+		case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
 			result, err = cast.ToUint64Slice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_BOOL):
+		case dpb.FieldDescriptorProto_TYPE_BOOL:
 			result, err = cast.ToBoolSlice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_STRING):
+		case dpb.FieldDescriptorProto_TYPE_STRING:
 			result, err = cast.ToStringSlice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_BYTES):
+		case dpb.FieldDescriptorProto_TYPE_BYTES:
 			result, err = cast.ToBytesSlice(v, cast.STRICT)
-		case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_MESSAGE):
+		case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToStringMap(v)
 				if err == nil {
@@ -156,70 +156,70 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 func (fc *FieldConverter) encodeSingleField(field *desc.FieldDescriptor, v interface{}) (interface{}, error) {
 	fn := field.GetName()
 	switch field.GetType() {
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_DOUBLE):
+	case dpb.FieldDescriptorProto_TYPE_DOUBLE:
 		r, err := cast.ToFloat64(v, cast.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FLOAT):
+	case dpb.FieldDescriptorProto_TYPE_FLOAT:
 		r, err := cast.ToFloat64(v, cast.STRICT)
 		if err == nil {
 			return float32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_INT32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SFIXED32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SINT32):
+	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
 		r, err := cast.ToInt(v, cast.STRICT)
 		if err == nil {
 			return int32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_INT64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SFIXED64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SINT64):
+	case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
 		r, err := cast.ToInt64(v, cast.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FIXED32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_UINT32):
+	case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
 		r, err := cast.ToUint64(v, cast.STRICT)
 		if err == nil {
 			return uint32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FIXED64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_UINT64):
+	case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
 		r, err := cast.ToUint64(v, cast.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_BOOL):
+	case dpb.FieldDescriptorProto_TYPE_BOOL:
 		r, err := cast.ToBool(v, cast.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for bool type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_STRING):
+	case dpb.FieldDescriptorProto_TYPE_STRING:
 		r, err := cast.ToString(v, cast.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for string type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_BYTES):
+	case dpb.FieldDescriptorProto_TYPE_BYTES:
 		r, err := cast.ToBytes(v, cast.STRICT)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for bytes type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_MESSAGE):
+	case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 		r, err := cast.ToStringMap(v)
 		if err == nil {
 			return fc.encodeMap(field.GetMessageType(), r)
@@ -238,37 +238,37 @@ func (fc *FieldConverter) DecodeField(src interface{}, field *desc.FieldDescript
 	)
 	fn := field.GetName()
 	switch field.GetType() {
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_DOUBLE), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FLOAT):
+	case dpb.FieldDescriptorProto_TYPE_DOUBLE, dpb.FieldDescriptorProto_TYPE_FLOAT:
 		if field.IsRepeated() {
 			r, e = cast.ToFloat64Slice(src, sn)
 		} else {
 			r, e = cast.ToFloat64(src, sn)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_INT32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SFIXED32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SINT32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_INT64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SFIXED64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_SINT64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FIXED32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_UINT32), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_FIXED64), dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_UINT64):
+	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64, dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32, dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
 		if field.IsRepeated() {
 			r, e = cast.ToInt64Slice(src, sn)
 		} else {
 			r, e = cast.ToInt64(src, sn)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_BOOL):
+	case dpb.FieldDescriptorProto_TYPE_BOOL:
 		if field.IsRepeated() {
 			r, e = cast.ToBoolSlice(src, sn)
 		} else {
 			r, e = cast.ToBool(src, sn)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_STRING):
+	case dpb.FieldDescriptorProto_TYPE_STRING:
 		if field.IsRepeated() {
 			r, e = cast.ToStringSlice(src, sn)
 		} else {
 			r, e = cast.ToString(src, sn)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_BYTES):
+	case dpb.FieldDescriptorProto_TYPE_BYTES:
 		if field.IsRepeated() {
 			r, e = cast.ToBytesSlice(src, sn)
 		} else {
 			r, e = cast.ToBytes(src, sn)
 		}
-	case dpb.FieldDescriptorProto_Type(dpb.FieldDescriptorProto_TYPE_MESSAGE):
+	case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 		if field.IsRepeated() {
 			r, e = cast.ToTypedSlice(src, func(input interface{}, ssn cast.Strictness) (interface{}, error) {
 				return fc.decodeSubMessage(input, field.GetMessageType(), ssn)

@@ -254,7 +254,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		} else {
 			nodeIO, ok := graph.OpIO[strings.ToLower(gn.NodeType)]
 			if !ok {
-				return nil, fmt.Errorf("can't find the io definiton for node type %s", gn.NodeType)
+				return nil, fmt.Errorf("can't find the io definition for node type %s", gn.NodeType)
 			}
 			dataInCondition := nodeIO[0]
 			indim := reversedEdges[n]
