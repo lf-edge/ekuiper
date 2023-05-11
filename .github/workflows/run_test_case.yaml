@@ -51,7 +51,8 @@ jobs:
         go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
         go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
         go build --buildmode=plugin -o data/test/helloworld.so internal/converter/protobuf/test/*.go
-        go build --buildmode=plugin -o data/test/myFormat.so internal/converter/custom/test/*.go
+        go build --buildmode=plugin -o data/myFormat.so internal/converter/custom/test/*.go
+        cp data/myFormat.so data/test/myFormat.so
         mkdir -p plugins/portable/mirror
         cd sdk/go/example/mirror
         go build -o ../../../../plugins/portable/mirror/mirror .

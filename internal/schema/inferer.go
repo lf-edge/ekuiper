@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -32,6 +33,23 @@ func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, 
 		return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
 	}
 	if c, ok := inferes[schemaType]; ok {
+		// mock result for testing
+		if conf.IsTesting {
+			return ast.StreamFields{
+				{
+					Name: "field1",
+					FieldType: &ast.BasicType{
+						Type: ast.BIGINT,
+					},
+				},
+				{
+					Name: "field2",
+					FieldType: &ast.BasicType{
+						Type: ast.STRINGS,
+					},
+				},
+			}, nil
+		}
 		return c(r[0], r[1])
 	} else {
 		return nil, fmt.Errorf("unsupported type: %s", schemaType)

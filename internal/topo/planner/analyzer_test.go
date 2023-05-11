@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -248,5 +248,174 @@ func Test_validationSchemaless(t *testing.T) {
 		if !reflect.DeepEqual(serr, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, serr, err)
 		}
+	}
+}
+
+func TestConvertStreamInfo(t *testing.T) {
+	testCases := []struct {
+		name       string
+		streamStmt *ast.StreamStmt
+		expected   ast.StreamFields
+	}{
+		{
+			name: "with match fields & schema",
+			streamStmt: &ast.StreamStmt{
+				StreamFields: []ast.StreamField{
+					{
+						Name: "field1",
+						FieldType: &ast.BasicType{
+							Type: ast.BIGINT,
+						},
+					},
+					{
+						Name: "field2",
+						FieldType: &ast.BasicType{
+							Type: ast.STRINGS,
+						},
+					},
+				},
+				Options: &ast.Options{
+					FORMAT:    "protobuf",
+					SCHEMAID:  "myschema.schema1",
+					TIMESTAMP: "ts",
+				},
+			},
+			expected: []ast.StreamField{
+				{
+					Name: "field1",
+					FieldType: &ast.BasicType{
+						Type: ast.BIGINT,
+					},
+				},
+				{
+					Name: "field2",
+					FieldType: &ast.BasicType{
+						Type: ast.STRINGS,
+					},
+				},
+			},
+		},
+		{
+			name: "with unmatch fields & schema",
+			streamStmt: &ast.StreamStmt{
+				StreamFields: []ast.StreamField{
+					{
+						Name: "field1",
+						FieldType: &ast.BasicType{
+							Type: ast.STRINGS,
+						},
+					},
+					{
+						Name: "field2",
+						FieldType: &ast.BasicType{
+							Type: ast.STRINGS,
+						},
+					},
+				},
+				Options: &ast.Options{
+					FORMAT:    "protobuf",
+					SCHEMAID:  "myschema.schema1",
+					TIMESTAMP: "ts",
+				},
+			},
+			expected: []ast.StreamField{
+				{
+					Name: "field1",
+					FieldType: &ast.BasicType{
+						Type: ast.BIGINT,
+					},
+				},
+				{
+					Name: "field2",
+					FieldType: &ast.BasicType{
+						Type: ast.STRINGS,
+					},
+				},
+			},
+		},
+		{
+			name: "without schema",
+			streamStmt: &ast.StreamStmt{
+				StreamFields: []ast.StreamField{
+					{
+						Name: "field1",
+						FieldType: &ast.BasicType{
+							Type: ast.FLOAT,
+						},
+					},
+					{
+						Name: "field2",
+						FieldType: &ast.BasicType{
+							Type: ast.STRINGS,
+						},
+					},
+				},
+				Options: &ast.Options{
+					FORMAT:    "json",
+					TIMESTAMP: "ts",
+				},
+			},
+			expected: []ast.StreamField{
+				{
+					Name: "field1",
+					FieldType: &ast.BasicType{
+						Type: ast.FLOAT,
+					},
+				},
+				{
+					Name: "field2",
+					FieldType: &ast.BasicType{
+						Type: ast.STRINGS,
+					},
+				},
+			},
+		},
+		{
+			name: "without fields",
+			streamStmt: &ast.StreamStmt{
+				Options: &ast.Options{
+					FORMAT:    "protobuf",
+					SCHEMAID:  "myschema.schema1",
+					TIMESTAMP: "ts",
+				},
+			},
+			expected: []ast.StreamField{
+				{
+					Name: "field1",
+					FieldType: &ast.BasicType{
+						Type: ast.BIGINT,
+					},
+				},
+				{
+					Name: "field2",
+					FieldType: &ast.BasicType{
+						Type: ast.STRINGS,
+					},
+				},
+			},
+		},
+		{
+			name: "schemaless",
+			streamStmt: &ast.StreamStmt{
+				Options: &ast.Options{
+					FORMAT:    "json",
+					TIMESTAMP: "ts",
+				},
+			},
+			expected: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := convertStreamInfo(tc.streamStmt)
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+			if !reflect.DeepEqual(actual.schema, tc.expected) {
+				t.Errorf("unexpected result: got %v, want %v", actual.schema, tc.expected)
+			}
+		})
 	}
 }
