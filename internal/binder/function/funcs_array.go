@@ -22,8 +22,8 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-var arrayArgumentError = fmt.Errorf("first argument should be array of interface{}")
-var arrayIndexError = fmt.Errorf("index out of range")
+var errorArrayArgumentError = fmt.Errorf("first argument should be array of interface{}")
+var errorArrayIndex = fmt.Errorf("index out of range")
 
 func registerArrayFunc() {
 	builtins["array_create"] = builtinFunc{
@@ -40,7 +40,7 @@ func registerArrayFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			array, ok := args[0].([]interface{})
 			if !ok {
-				return arrayArgumentError, false
+				return errorArrayArgumentError, false
 			}
 			for i, item := range array {
 				if item == args[1] {
@@ -58,14 +58,14 @@ func registerArrayFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			array, ok := args[0].([]interface{})
 			if !ok {
-				return arrayArgumentError, false
+				return errorArrayArgumentError, false
 			}
 			index, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
 				return err, false
 			}
 			if index < 0 || index >= len(array) {
-				return arrayIndexError, false
+				return errorArrayIndex, false
 			}
 			length := len(array) - index
 			if len(args) == 3 {
@@ -91,7 +91,7 @@ func registerArrayFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			array, ok := args[0].([]interface{})
 			if !ok {
-				return arrayArgumentError, false
+				return errorArrayArgumentError, false
 			}
 			index, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
@@ -101,7 +101,7 @@ func registerArrayFunc() {
 				return fmt.Errorf("index should be larger or smaller than 0"), false
 			}
 			if index-1 >= len(array) || (-index)-1 >= len(array) {
-				return arrayIndexError, false
+				return errorArrayIndex, false
 			}
 			if index > 0 {
 				return array[index-1], true
@@ -117,7 +117,7 @@ func registerArrayFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			array, ok := args[0].([]interface{})
 			if !ok {
-				return arrayArgumentError, false
+				return errorArrayArgumentError, false
 			}
 			for _, item := range array {
 				if item == args[1] {

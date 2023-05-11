@@ -49,7 +49,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				1, 2,
 			},
-			result: arrayArgumentError,
+			result: errorArrayArgumentError,
 		},
 		{
 			name: "array_position",
@@ -79,7 +79,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				1, 2, 3,
 			},
-			result: arrayArgumentError,
+			result: errorArrayArgumentError,
 		},
 		{
 			name: "slice",
@@ -93,7 +93,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1, 2, 3}, 4,
 			},
-			result: arrayIndexError,
+			result: errorArrayIndex,
 		},
 		{
 			name: "slice",
@@ -114,7 +114,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				1, 2,
 			},
-			result: arrayArgumentError,
+			result: errorArrayArgumentError,
 		},
 		{
 			name: "element_at",
@@ -128,14 +128,14 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1, 2, 3}, 4,
 			},
-			result: arrayIndexError,
+			result: errorArrayIndex,
 		},
 		{
 			name: "element_at",
 			args: []interface{}{
 				[]interface{}{1, 2, 3}, -4,
 			},
-			result: arrayIndexError,
+			result: errorArrayIndex,
 		},
 		{
 			name: "element_at",
@@ -156,7 +156,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				1, 2,
 			},
-			result: arrayArgumentError,
+			result: errorArrayArgumentError,
 		},
 		{
 			name: "array_contains",
