@@ -56,6 +56,12 @@ func TestSendManager(t *testing.T) {
 			lingerInterval: 100,
 			expectItems:    4,
 		},
+		{
+			sendCount:      6,
+			batchSize:      3,
+			lingerInterval: 3000,
+			expectItems:    3,
+		},
 	}
 	mc := conf.Clock.(*clock.Mock)
 	for i, tc := range testcases {
