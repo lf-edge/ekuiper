@@ -1,4 +1,4 @@
-# Run TensorFlow Lite model with eKuiper external function plugin
+# Run TensorFlow Lite model with eKuiper external function
 
 [LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) is an edge lightweight IoT data analytics / streaming
 software which can be run at all kinds of resource constrained IoT devices.
@@ -9,23 +9,23 @@ size.
 
 By integrating eKuiper and TensorFlow Lite, users can analyze the data in stream by AI with prebuilt TensorFlow models.
 In this tutorial, we will walk you through building a eKuiper external function plugin to label pictures produced by an edge
-device in stream by pre-trained image recognition TensorFlow model. By using the external functions plugins, eKuiper and external functions
+device in stream by pre-trained image recognition TensorFlow model. By using the external functions, eKuiper and external functions
 can run in totally different processes or host machines, which means eKuiper and external functions can have different lifecycles, what's more, external functions 
 can provide services to others except eKuiper.
 
 ## Prerequisite
 
 The external functions plugins will be a GRPC Server, so users should have knowledge of GRPC. This tutorial will give the example code to set up the GRPC server.
-Users can download the example code here. 
+Users can download the example code [here](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip). 
 
 Users also need have basic knowledge of Docker. 
 
-## Develop the plugin
+## Develop the external function
 
 In the example code, the GRPC Server provide ``label`` method, and users just need write an interface description file and register them into eKuiper. Then eKuiper can call the GRPC method
 just as built-in functions. The ``label`` method is powered by ``tflite_runtime`` image classification, for more detail, please check the `label.py` file in the example code.
 
-This is the proto description for the external functions plugins that provide services. The parameter of ``label`` method should be base64 encoded image. 
+This is the proto file for the external functions plugins that provide services. The parameter of ``label`` method should be base64 encoded image. 
 
 ```proto
 syntax = "proto3";
@@ -70,20 +70,21 @@ And then set up the service by following command
 Now, the GRPC server are providing services on 50051 port. 
 
 
-## Package and install the plugin
+## Package and register the external function
 
 ### Package
 
 Package a json description file and a proto file for the services in GRPC server by zip. The file structure inside the zip file should be like:
 For more detail about the file format and content, please refer to [this](../../extension/external/external_func.md).
 
-You can get the example zip file in example code in ``ekuiper_package`` folder
-
 - schemas
   - sample.proto
 - sample.json
 
-### Install
+You can get the example zip file in example code in ``ekuiper_package`` folder
+
+
+### Register the external function
 
 put the sample.zip file in /tmp directory in the same machine with eKuiper and register by cli
 
@@ -91,12 +92,11 @@ put the sample.zip file in /tmp directory in the same machine with eKuiper and r
 # bin/kuiper create service sample '{"name": "sample","file": "file:///tmp/sample.zip"}'
 ```
 
+## Run the external function 
 
-## Run the external function plugin
+Once the external function registered, we can use it in our rule. We will create a rule to receive base64 encoded image data from a mqtt topic and label the image by tflite model.
 
-Once the plugin installed, we can use it in our rule. We will create a rule to receive image byte data from a mqtt topic and label the image by tflite model.
-
-### Define the stream
+### Create the stream
 
 Define the stream by eKuiper Cli. We create a mqtt stream named demo, it subscribe to topic ``tfdemo``.
 
@@ -104,7 +104,7 @@ Define the stream by eKuiper Cli. We create a mqtt stream named demo, it subscri
 #/bin/kuiper create stream demo '() with (DATASOURCE="tfdemo")'
 ```
 
-### Define the rule
+### Create the rule
 
 Define the rule by eKuiper cli.  We will create a select query. We just read the base64 encoded images from demo stream and run the custom function ``label`` against it. The result will be the label of the image recognized by the AI.
 
@@ -135,4 +135,4 @@ kuiper > [{"label":{"results":[{"confidence":0.5789139866828918,"label":"tailed 
 
 ## Conclusion
 
-In this tutorial, we walk you through building external function plugin to leverage a pre-trained TensorFlowLite model. If you need to use other GRPC services, just follow the steps to create customized function. Enjoy the AI in edge device.
+In this tutorial, we walk you through building external function to leverage a pre-trained TensorFlowLite model. If you need to use other GRPC services, just follow the steps to create customized function. Enjoy the AI in edge device.
