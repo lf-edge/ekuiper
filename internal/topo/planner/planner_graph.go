@@ -104,9 +104,6 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				return nil, err
 			}
 			if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
-				if lookupTableChildren == nil {
-					lookupTableChildren = make(map[string]*ast.Options)
-				}
 				lookupTableChildren[string(sInfo.stmt.Name)] = sInfo.stmt.Options
 			} else {
 				// Use the plan to calculate the schema and other meta info
@@ -219,7 +216,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 					return nil, err
 				}
 				fromNode := stmt.Sources[0].(*ast.Table)
-				if _, ok := streamEmitters[string(fromNode.Name)]; !ok {
+				if _, ok := streamEmitters[fromNode.Name]; !ok {
 					return nil, fmt.Errorf("join source %s is not a stream", fromNode.Name)
 				}
 				hasLookup := false

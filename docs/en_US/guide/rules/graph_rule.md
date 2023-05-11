@@ -72,6 +72,34 @@ For sink node, the nodeType is the type of the sink like `mqtt` and `edgex`. Ple
 
 For operator node, the nodeType are newly defined. Each nodeType will have different properties.
 
+### Source Node
+
+The source node is the data source of the rule. It can be a stream or table. **User needs to define the stream/table before using it in the rule**. The `sourceType` property defines the type of the source. It can be `stream` or `table`. The `sourceName` property defines the name of the stream/table. The below example defines a source node which reads from a stream named `demoStream`. Please make sure the nodeType is the same as the type of the stream/table.
+
+```json
+  {
+      "type": "source",
+      "nodeType": "mqtt",
+      "props": {
+        "sourceType": "stream",
+        "sourceName": "demoStream"
+      }
+  }
+```
+
+Currently, users can define the source node to refer to table as well. But only lookup table can be connected to Join node, scan table is not supported. The below example defines a source node which reads from a lookup table named `demoTable`. Please make sure the nodeType is the same as the type of the stream/table.
+
+```json
+  {
+      "type": "source",
+      "nodeType": "redis",
+      "props": {
+        "sourceType": "table",
+        "sourceName": "demoTable"
+      }
+  }
+```
+
 ### Built-in Operator Node Types
 
 Currently, we supported the below node types for operator type.
@@ -195,6 +223,25 @@ Example:
           "name": "device2",
           "type": "inner",
           "on": "abs(device1.ts - device2.ts) < 200"
+        }
+      ]
+    }
+  }
+```
+
+Join operator supports to connect stream/stream join and stream/lookup table join. Stream/scan table join is not supported. If using stream/stream join, the prior node must be a window node. If using stream/lookup table join, only one join condition is supported. Below is an example of stream/lookup table join.
+
+```json
+   {
+    "type": "operator",
+    "nodeType": "join",
+    "props": {
+      "from": "demoStream",
+      "joins": [
+        {
+          "name": "demoTable",
+          "type": "inner",
+          "on": "deviceStream.id = demoTable.id"
         }
       ]
     }

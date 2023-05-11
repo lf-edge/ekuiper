@@ -71,6 +71,34 @@
 
 对于 operator 节点，nodeType 是新定义的，而且每个 nodeType 有不同的属性。
 
+### 源节点
+
+源节点是规则的数据源。它可以是一个流或表。**用户需要在规则中使用流/表之前定义它**。`sourceType`属性定义了源的类型。它可以是 "流 "或 "表"。`sourceName`属性定义了流/表的名称。下面的例子定义了一个源节点，它从一个名为 `demoStream` 的流中读取。请确保 nodeType 与流/表的类型相同。
+
+```json
+  {
+      "type": "source",
+      "nodeType": "mqtt",
+      "props": {
+        "sourceType": "stream",
+        "sourceName": "demoStream"
+      }
+  }
+```
+
+目前，用户也可以定义源节点来引用表。但只有查询表可以连接到 Join 节点，扫描表暂不支持。下面的例子定义了一个源节点，它从一个名为 `demoTable` 的查询表中读取数据。
+
+```json
+  {
+      "type": "source",
+      "nodeType": "redis",
+      "props": {
+        "sourceType": "table",
+        "sourceName": "demoTable"
+      }
+  }
+```
+
 ### 内置 operator 节点类型
 
 目前，我们支持以下节点类型的运算符类型。
@@ -193,6 +221,25 @@
           "name": "device2",
           "type": "inner",
           "on": "abs(device1.ts - device2.ts) < 200"
+        }
+      ]
+    }
+  }
+```
+
+连接运算符支持连接流/流连接和流/查询表连接。不支持流/扫描表连接。如果使用流/流连接，前面的节点必须是一个窗口节点。如果使用流/查询表连接，只支持一个连接条件。下面是一个流/查找表连接的例子。
+
+```json
+   {
+    "type": "operator",
+    "nodeType": "join",
+    "props": {
+      "from": "demoStream",
+      "joins": [
+        {
+          "name": "demoTable",
+          "type": "inner",
+          "on": "deviceStream.id = demoTable.id"
         }
       ]
     }
