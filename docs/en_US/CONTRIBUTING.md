@@ -60,6 +60,7 @@ Alternatively, if you use GoLand, you can check `Group` and `Group stdlib import
 - Use `go fmt` to format your code before commit code change. eKuiper Github Action CI pipeline reports error if it's
   not format by `go fmt`.
 - Run static code analysis with `make lint` to make sure there are no stylistic errors and common programming issues.
+  - Check [golangci-lint](https://golangci-lint.run/) for more information about lint errors.
 - Configuration key in config files uses camel case format.
 
 ### Debug your code

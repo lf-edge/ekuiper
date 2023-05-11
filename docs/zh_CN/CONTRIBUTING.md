@@ -55,6 +55,7 @@ import (
 
 - 在提交代码变更之前，使用 `go fmt` 来格式化你的代码。
 - 使用 `make lint` 来运行静态代码分析以确保没有基本的格式或规范问题。
+  - 查看 [golangci-lint](https://golangci-lint.run/) 以获得更多 lint 相关错误信息。
 - 配置文件中的配置键使用 camel 大小写格式。
 
 ### 调试你的代码
