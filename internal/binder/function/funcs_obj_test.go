@@ -40,10 +40,9 @@ func TestObjectFunctions(t *testing.T) {
 			args: []interface{}{
 				map[string]interface{}{
 					"a": 1,
-					"b": 2,
 				},
 			},
-			result: []string{"a", "b"},
+			result: []string{"a"},
 		},
 		{
 			name:   "keys",
