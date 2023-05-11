@@ -402,6 +402,7 @@ func doCollectDataInBatch(ctx api.StreamContext, sink api.Sink, sendManager *sin
 		select {
 		case <-ctx.Done():
 			ctx.GetLogger().Infof("sink node %s instance %d stops data batch collecting", ctx.GetOpId(), ctx.GetInstanceId())
+			return
 		case outData := <-sendManager.GetOutputChan():
 			if err := sendDataToSink(ctx, sink, outData, stats); err != nil {
 				ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outData, err)
