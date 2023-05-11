@@ -29,6 +29,12 @@ jobs:
           go install github.com/google/go-licenses@latest
           $(go env GOPATH)/bin/go-licenses check ./... --disallowed_types forbidden,restricted,unknown --ignore modernc.org/mathutil
 
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
