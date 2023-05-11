@@ -8,10 +8,13 @@ run:
 linters:
   disable-all: true
   enable:
-    - gofumpt
-    - staticcheck
-    - govet
     - gci
+    - gofumpt
+    - govet
+    - staticcheck
+    - misspell
+    - unconvert
+    - usestdlibvars
 
 linters-settings:
   gci:
