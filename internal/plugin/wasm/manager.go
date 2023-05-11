@@ -27,12 +27,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/second-state/WasmEdge-go/wasmedge"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
-	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 var manager *Manager

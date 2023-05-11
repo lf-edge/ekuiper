@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/second-state/WasmEdge-go/wasmedge"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 type WasmFunc struct {
