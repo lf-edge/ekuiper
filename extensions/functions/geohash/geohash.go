@@ -22,20 +22,22 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-type geohashEncode struct{}
-type geohashEncodeInt struct{}
-type geohashDecode struct{}
-type geohashDecodeInt struct{}
-type geohashBoundingBox struct{}
-type geohashBoundingBoxInt struct{}
-type geohashNeighbor struct{}
-type geohashNeighborInt struct{}
-type geohashNeighbors struct{}
-type geohashNeighborsInt struct{}
-type position struct {
-	Longitude float64
-	Latitude  float64
-}
+type (
+	geohashEncode         struct{}
+	geohashEncodeInt      struct{}
+	geohashDecode         struct{}
+	geohashDecodeInt      struct{}
+	geohashBoundingBox    struct{}
+	geohashBoundingBoxInt struct{}
+	geohashNeighbor       struct{}
+	geohashNeighborInt    struct{}
+	geohashNeighbors      struct{}
+	geohashNeighborsInt   struct{}
+	position              struct {
+		Longitude float64
+		Latitude  float64
+	}
+)
 
 var (
 	GeohashEncode         geohashEncode
