@@ -45,6 +45,11 @@ func TestObjectFunctions(t *testing.T) {
 			},
 			result: []string{"a", "b"},
 		},
+		{
+			name:   "keys",
+			args:   []interface{}{1, 2},
+			result: fmt.Errorf("the arg for keys should be map[string]interface{}"),
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]
