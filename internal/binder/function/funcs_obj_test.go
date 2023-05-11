@@ -17,6 +17,7 @@ package function
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -57,8 +58,15 @@ func TestObjectFunctions(t *testing.T) {
 			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
 		}
 		result, _ := f.exec(fctx, tt.args)
-		if !reflect.DeepEqual(result, tt.result) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		if r, ok := result.([]string); ok {
+			sort.Strings(r)
+			if !reflect.DeepEqual(r, tt.result) {
+				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
+			}
+		} else {
+			if !reflect.DeepEqual(result, tt.result) {
+				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+			}
 		}
 	}
 }
