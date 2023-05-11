@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	sinkUtil "github.com/lf-edge/ekuiper/internal/io/sink"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node/cache"
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
@@ -35,17 +36,26 @@ import (
 )
 
 type SinkConf struct {
-	Concurrency  int      `json:"concurrency"`
-	RunAsync     bool     `json:"runAsync"` // deprecated, will remove in the next release
-	Omitempty    bool     `json:"omitIfEmpty"`
-	SendSingle   bool     `json:"sendSingle"`
-	DataTemplate string   `json:"dataTemplate"`
-	Format       string   `json:"format"`
-	SchemaId     string   `json:"schemaId"`
-	Delimiter    string   `json:"delimiter"`
-	BufferLength int      `json:"bufferLength"`
-	Fields       []string `json:"fields"`
+	Concurrency    int      `json:"concurrency"`
+	RunAsync       bool     `json:"runAsync"` // deprecated, will remove in the next release
+	Omitempty      bool     `json:"omitIfEmpty"`
+	SendSingle     bool     `json:"sendSingle"`
+	DataTemplate   string   `json:"dataTemplate"`
+	Format         string   `json:"format"`
+	SchemaId       string   `json:"schemaId"`
+	Delimiter      string   `json:"delimiter"`
+	BufferLength   int      `json:"bufferLength"`
+	Fields         []string `json:"fields"`
+	BatchSize      int      `json:"batchSize"`
+	LingerInterval int      `json:"lingerInterval"`
 	conf.SinkConf
+}
+
+func (sc *SinkConf) isBatchSinkEnabled() bool {
+	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
+		return true
+	}
+	return false
 }
 
 type SinkNode struct {
@@ -155,6 +165,16 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						m.statManagers = append(m.statManagers, stats)
 						m.mutex.Unlock()
 
+						var sendManager *sinkUtil.SendManager
+						if sconf.isBatchSinkEnabled() {
+							sendManager, err = sinkUtil.NewSendManager(sconf.BatchSize, sconf.LingerInterval)
+							if err != nil {
+								return err
+							}
+							go sendManager.Run(ctx)
+							go doCollectDataInBatch(ctx, sink, sendManager, stats)
+						}
+
 						if !sconf.EnableCache {
 							for {
 								select {
@@ -169,7 +189,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 									if sconf.RunAsync {
 										conf.Log.Warnf("RunAsync is deprecated and ignored.")
 									}
-									err := doCollect(ctx, sink, data, stats, sconf)
+									err := doCollect(ctx, sink, data, sendManager, stats, sconf)
 									if err != nil {
 										logger.Warnf("sink collect error: %v", err)
 									}
@@ -210,7 +230,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 									case data := <-c.Out:
 										stats.ProcessTimeStart()
 										ack := true
-										err := doCollectMaps(ctx, sink, sconf, data, stats)
+										err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats)
 										// Only recoverable error should be cached
 										if err != nil {
 											if strings.HasPrefix(err.Error(), errorx.IOErr) { // do not log to prevent a lot of logs!
@@ -298,7 +318,7 @@ func (m *SinkNode) reset() {
 	m.statManagers = nil
 }
 
-func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats metric.StatManager, sconf *SinkConf) error {
+func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, sendManager *sinkUtil.SendManager, stats metric.StatManager, sconf *SinkConf) error {
 	stats.ProcessTimeStart()
 	defer stats.ProcessTimeEnd()
 	outs := itemToMap(item)
@@ -306,12 +326,12 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, stats met
 		ctx.GetLogger().Debugf("receive empty in sink")
 		return nil
 	}
-	return doCollectMaps(ctx, sink, sconf, outs, stats)
+	return doCollectMaps(ctx, sink, sconf, outs, sendManager, stats)
 }
 
-func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs []map[string]interface{}, stats metric.StatManager) error {
+func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs []map[string]interface{}, sendManager *sinkUtil.SendManager, stats metric.StatManager) error {
 	if !sconf.SendSingle {
-		return doCollectData(ctx, sink, outs, stats)
+		return doCollectData(ctx, sink, outs, sendManager, stats)
 	} else {
 		var err error
 		for _, d := range outs {
@@ -319,7 +339,7 @@ func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs [
 				ctx.GetLogger().Debugf("receive empty in sink")
 				continue
 			}
-			newErr := doCollectData(ctx, sink, d, stats)
+			newErr := doCollectData(ctx, sink, d, sendManager, stats)
 			if newErr != nil {
 				err = newErr
 			}
@@ -356,20 +376,48 @@ func itemToMap(item interface{}) []map[string]interface{} {
 }
 
 // doCollectData outData must be map or []map
-func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager) error {
+func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, sendManager *sinkUtil.SendManager, stats metric.StatManager) error {
+	if sendManager != nil {
+		switch v := outData.(type) {
+		case map[string]interface{}:
+			sendManager.RecvData(v)
+		case []map[string]interface{}:
+			for _, d := range v {
+				sendManager.RecvData(d)
+			}
+		}
+		return nil
+	}
 	select {
 	case <-ctx.Done():
 		ctx.GetLogger().Infof("sink node %s instance %d stops data resending", ctx.GetOpId(), ctx.GetInstanceId())
 		return nil
 	default:
-		if err := sink.Collect(ctx, outData); err != nil {
-			stats.IncTotalExceptions(err.Error())
-			return err
-		} else {
-			ctx.GetLogger().Debugf("success")
-			stats.IncTotalRecordsOut()
-			return nil
+		return sendDataToSink(ctx, sink, outData, stats)
+	}
+}
+
+func doCollectDataInBatch(ctx api.StreamContext, sink api.Sink, sendManager *sinkUtil.SendManager, stats metric.StatManager) {
+	for {
+		select {
+		case <-ctx.Done():
+			ctx.GetLogger().Infof("sink node %s instance %d stops data batch collecting", ctx.GetOpId(), ctx.GetInstanceId())
+		case outData := <-sendManager.GetOutputChan():
+			if err := sendDataToSink(ctx, sink, outData, stats); err != nil {
+				ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), outData, err)
+			}
 		}
+	}
+}
+
+func sendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager) error {
+	if err := sink.Collect(ctx, outData); err != nil {
+		stats.IncTotalExceptions(err.Error())
+		return err
+	} else {
+		ctx.GetLogger().Debugf("success")
+		stats.IncTotalRecordsOut()
+		return nil
 	}
 }
 

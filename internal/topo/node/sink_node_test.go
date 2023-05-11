@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -37,6 +38,55 @@ import (
 
 func init() {
 	testx.InitEnv()
+}
+
+func TestBatchSink(t *testing.T) {
+	mc := conf.Clock.(*clock.Mock)
+	conf.InitConf()
+	transform.RegisterAdditionalFuncs()
+	var tests = []struct {
+		config map[string]interface{}
+		data   []map[string]interface{}
+		result [][]byte
+	}{
+		{
+			config: map[string]interface{}{
+				"batchSize": 2,
+			},
+			data:   []map[string]interface{}{{"ab": "hello1"}, {"ab": "hello2"}, {"ab": "hello3"}},
+			result: [][]byte{[]byte(`[{"ab":"hello1"},{"ab":"hello2"}]`)},
+		},
+		{
+			config: map[string]interface{}{
+				"lingerInterval": 1000,
+			},
+			data:   []map[string]interface{}{{"ab": "hello1"}, {"ab": "hello2"}, {"ab": "hello3"}},
+			result: [][]byte{[]byte(`[{"ab":"hello1"},{"ab":"hello2"},{"ab":"hello3"}]`)},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	contextLogger := conf.Log.WithField("rule", "TestBatchSink")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	for i, tt := range tests {
+		mc.Set(mc.Now())
+		mockSink := mocknode.NewMockSink()
+		s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
+		s.Open(ctx, make(chan error))
+		s.input <- tt.data
+		for i := 0; i < 10; i++ {
+			mc.Add(1 * time.Second)
+			time.Sleep(1 * time.Second)
+			// wait until mockSink get results
+			if len(mockSink.GetResults()) > 0 {
+				break
+			}
+		}
+		results := mockSink.GetResults()
+		if !reflect.DeepEqual(tt.result, results) {
+			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
+		}
+	}
 }
 
 func TestSinkTemplate_Apply(t *testing.T) {
