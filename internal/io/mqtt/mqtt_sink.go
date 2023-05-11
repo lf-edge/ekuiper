@@ -16,6 +16,7 @@ package mqtt
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
@@ -27,10 +28,29 @@ import (
 
 // AdConf is the advanced configuration for the mqtt sink
 type AdConf struct {
-	Tpc         string `json:"topic"`
-	Qos         byte   `json:"qos"`
-	Retained    bool   `json:"retained"`
-	Compression string `json:"compression"`
+	Tpc            string `json:"topic"`
+	Qos            byte   `json:"qos"`
+	Retained       bool   `json:"retained"`
+	Compression    string `json:"compression"`
+	BatchSize      int    `json:"batchSize"`
+	LingerInterval int    `json:"lingerInterval"`
+}
+
+func (c *AdConf) validate() error {
+	if (c.BatchSize > 0 || c.LingerInterval > 0) && c.isDynamicTopic() {
+		return fmt.Errorf("batch sink can't work with dynamic topic")
+	}
+	return nil
+}
+
+func (c *AdConf) isDynamicTopic() bool {
+	if strings.HasPrefix(c.Tpc, "{{") && strings.HasSuffix(c.Tpc, "}}") {
+		return true
+	}
+	if strings.HasPrefix(c.Tpc, "$.") {
+		return true
+	}
+	return false
 }
 
 type MQTTSink struct {
@@ -68,7 +88,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	}
 	ms.config = ps
 	ms.adconf = adconf
-	return nil
+	return ms.adconf.validate()
 }
 
 func (ms *MQTTSink) Open(ctx api.StreamContext) error {
