@@ -148,4 +148,4 @@ lint:tools/check/bin/golangci-lint
 	@tools/check/bin/golangci-lint run -c tools/check/.golangci.yaml ./...
 
 tools/check/bin/golangci-lint:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell pwd)/tools/check/bin
+	GOBIN=$(shell pwd)/tools/check/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
