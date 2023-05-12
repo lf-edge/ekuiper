@@ -44,6 +44,99 @@ func TestArrayFunctions(t *testing.T) {
 				1, "2", 3,
 			},
 		},
+		{
+			name: "array_position",
+			args: []interface{}{
+				1, 2,
+			},
+			result: errorArrayArgumentError,
+		},
+		{
+			name: "array_position",
+			args: []interface{}{
+				[]interface{}{3, 2, 1},
+				1,
+			},
+			result: 3,
+		},
+		{
+			name: "array_position",
+			args: []interface{}{
+				[]interface{}{3, 2, 1},
+				4,
+			},
+			result: 0,
+		},
+		{
+			name: "length",
+			args: []interface{}{
+				[]interface{}{1, 2, 3},
+			},
+			result: 3,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				1, 2,
+			},
+			result: fmt.Errorf("first argument should be []interface{} or map[string]interface{}"),
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 0,
+			},
+			result: fmt.Errorf("index should be larger or smaller than 0"),
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 4,
+			},
+			result: errorArrayIndex,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, -4,
+			},
+			result: errorArrayIndex,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 1,
+			},
+			result: 1,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, -1,
+			},
+			result: 3,
+		},
+		{
+			name: "array_contains",
+			args: []interface{}{
+				1, 2,
+			},
+			result: errorArrayArgumentError,
+		},
+		{
+			name: "array_contains",
+			args: []interface{}{
+				[]interface{}{1, 2}, 2,
+			},
+			result: true,
+		},
+		{
+			name: "array_contains",
+			args: []interface{}{
+				[]interface{}{1, 2}, 3,
+			},
+			result: false,
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]

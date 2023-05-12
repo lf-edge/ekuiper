@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,9 +75,16 @@ func registerStrFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := cast.ToStringAlways(args[0])
+			switch v := args[0].(type) {
+			case []interface{}:
+				return len(v), true
+			case map[string]interface{}:
+				return len(v), true
+			default:
+			}
 			return utf8.RuneCountInString(arg0), true
 		},
-		val: ValidateOneStrArg,
+		val: ValidateOneArg,
 	}
 	builtins["lower"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
