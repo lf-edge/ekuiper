@@ -12,9 +12,16 @@ jobs:
     name: Check Commit Message
     runs-on: ubuntu-latest
     steps:
-      - name: Check Line Length
+      - name: Check Format
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^(feat|fix|docs|style|refactor|chore|perf|test|build|ci|revert)(\([^()]+\))?:\s(.+)$'
           error: 'Your commit message is not formatted, check the docs for more details: https://ekuiper.org/docs/en/latest/CONTRIBUTING.html#commit-message-guidelines'
           excludeDescription: true
+      - name: Check Length
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^.{5,50}$'
+          error: 'The maximum line length of 50 characters is exceeded.'
+          excludeDescription: true
+          excludeTitle: true
