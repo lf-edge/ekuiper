@@ -84,6 +84,8 @@ func NewPluginByType(t PluginType) Plugin {
 	switch t {
 	case FUNCTION:
 		return &FuncPlugin{}
+	case WASM:
+		return &FuncPlugin{}
 	default:
 		return &IOPlugin{}
 	}

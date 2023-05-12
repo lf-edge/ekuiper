@@ -85,7 +85,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 				t.Errorf("result %s should be equal to %s", res, expected)
 			}
 			return
-		default:
+		default: //nolint
 		}
 	}
 }

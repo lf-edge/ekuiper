@@ -254,7 +254,7 @@ func Test_rulesManageHandler(t *testing.T) {
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 
-	if w1.Result().StatusCode != 200 {
+	if w1.Result().StatusCode != http.StatusOK {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
 	}
 
@@ -266,7 +266,7 @@ func Test_rulesManageHandler(t *testing.T) {
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
 
-	if w1.Result().StatusCode != 400 {
+	if w1.Result().StatusCode != http.StatusBadRequest {
 		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
 	}
 
@@ -285,7 +285,7 @@ func Test_rulesManageHandler(t *testing.T) {
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/status", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	r.ServeHTTP(w1, req1)
-	returnVal, _ = io.ReadAll(w1.Result().Body)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 
 	// get rule topo
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/topo", bytes.NewBufferString("any"))

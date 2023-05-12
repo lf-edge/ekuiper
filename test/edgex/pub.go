@@ -223,7 +223,7 @@ func pubMetaSource() {
 					fmt.Println(string(data))
 				}
 
-				env := types.NewMessageEnvelope([]byte(data), context.Background())
+				env := types.NewMessageEnvelope(data, context.Background())
 				env.ContentType = "application/json"
 
 				if e := msgClient.Publish(env, "events"); e != nil {

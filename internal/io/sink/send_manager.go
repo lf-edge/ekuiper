@@ -72,8 +72,7 @@ func (sm *SendManager) runWithTicker(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case d := <-sm.bufferCh:
-			sm.buffer[sm.currIndex] = d
-			sm.currIndex++
+			sm.appendDataInBuffer(d, false)
 		case <-ticker.C:
 			sm.send()
 		}
@@ -86,11 +85,7 @@ func (sm *SendManager) runWithBatchSize(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case d := <-sm.bufferCh:
-			sm.buffer[sm.currIndex] = d
-			sm.currIndex++
-			if sm.currIndex >= sm.batchSize {
-				sm.send()
-			}
+			sm.appendDataInBuffer(d, true)
 		}
 	}
 }
@@ -103,11 +98,7 @@ func (sm *SendManager) runWithTickerAndBatchSize(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case d := <-sm.bufferCh:
-			sm.buffer[sm.currIndex] = d
-			sm.currIndex++
-			if sm.currIndex >= sm.batchSize {
-				sm.send()
-			}
+			sm.appendDataInBuffer(d, true)
 		case <-ticker.C:
 			sm.send()
 		}
@@ -124,6 +115,19 @@ func (sm *SendManager) send() {
 	}
 	sm.currIndex = 0
 	sm.outputCh <- list
+}
+
+func (sm *SendManager) appendDataInBuffer(d map[string]interface{}, sendData bool) {
+	if sm.currIndex >= len(sm.buffer) {
+		// The buffer should be enlarged if the data length is larger than capacity during runWithTicker
+		sm.buffer = append(sm.buffer, d)
+	} else {
+		sm.buffer[sm.currIndex] = d
+	}
+	sm.currIndex++
+	if sendData && sm.currIndex >= sm.batchSize {
+		sm.send()
+	}
 }
 
 func (sm *SendManager) GetOutputChan() <-chan []map[string]interface{} {

@@ -31,15 +31,16 @@ import (
 // EDIT HERE: Define the plugins that you want to test.
 var testingPlugin = &wasm.PluginInfo{
 	PluginMeta: runtime.PluginMeta{
-		Name:       "fibonacci",
+		Name:       "get_exchange_rate",
 		Version:    "v1",
 		WasmEngine: "wasmedge",
 	},
-	Functions: []string{"fib"},
+	Functions: []string{"get_exchange_rate"},
 }
 
 var FuncData = []interface{}{
-	25.0, // float
+	// int32(25),
+	"USD", "CNY",
 }
 
 var (

@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestPlannerGraphValidate(t *testing.T) {
@@ -265,7 +268,7 @@ func TestPlannerGraphValidate(t *testing.T) {
     }
   }
 }`,
-			err: "operator joinop of type join does not allow multiple inputs",
+			err: "join node joinop does not allow multiple stream inputs",
 		}, {
 			graph: `{
   "nodes": {
@@ -493,7 +496,7 @@ func TestPlannerGraphValidate(t *testing.T) {
 		},
 	}
 
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	t.Logf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		rg := &api.RuleGraph{}
 		err := json.Unmarshal([]byte(tt.graph), rg)
@@ -520,5 +523,354 @@ func TestPlannerGraphValidate(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		}
+	}
+}
+
+func TestPlannerGraphWithStream(t *testing.T) {
+	store, err := store.GetKV("stream")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 (
+					id1 BIGINT,
+					temp BIGINT,
+					name string,
+					myarray array(string)
+				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+		"src2": `CREATE STREAM src2 (
+					id2 BIGINT,
+					hum BIGINT
+				) WITH (DATASOURCE="src2", FORMAT="json", KEY="ts", TIMESTAMP_FORMAT="YYYY-MM-dd HH:mm:ss");`,
+		"tableInPlanner": `CREATE TABLE tableInPlanner (
+					id BIGINT,
+					name STRING,
+					value STRING,
+					hum BIGINT
+				) WITH (TYPE="file");`,
+		"lookupT": `CREATE TABLE lookupT () WITH (DATASOURCE="alertVal", TYPE="memory", KIND="lookup", KEY="id");`,
+	}
+	types := map[string]ast.StreamType{
+		"src1":           ast.TypeStream,
+		"src2":           ast.TypeStream,
+		"tableInPlanner": ast.TypeTable,
+		"lookupT":        ast.TypeTable,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+		err = store.Set(name, string(s))
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+	}
+	testCases := []struct {
+		name  string
+		graph string
+		err   error
+	}{
+		{
+			name: "test stream",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo"],
+      "edges": {
+        "demo": ["log"]
+      }
+    }
+}`,
+			err: nil,
+		},
+		{
+			name: "stream type wrong",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "file",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo"],
+      "edges": {
+        "demo": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("source type file does not match the stream type mqtt"),
+		},
+		{
+			name: "non exist stream",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "unknown"
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo"],
+      "edges": {
+        "demo": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("fail to get stream unknown, please check if stream is created"),
+		},
+		{
+			name: "wrong source type",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "tableInPlanner"
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo"],
+      "edges": {
+        "demo": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("table tableInPlanner is not a stream"),
+		},
+		{
+			name: "stream and table",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "lookupT":{
+        "type": "source",
+        "nodeType": "memory",
+        "props": {
+          "sourceType": "table",
+          "sourceName": "lookupT"
+        }
+      },
+      "joinop": {
+        "type": "operator",
+        "nodeType": "join",
+        "props": {
+          "from": "src1",
+          "joins": [
+            {
+              "name": "lookupT",
+              "type": "inner",
+              "on": "src1.deviceKind = lookupT.id"
+            }
+          ]
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo", "lookupT"],
+      "edges": {
+        "demo": ["joinop"],
+        "lookupT": ["joinop"],
+        "joinop": ["log"]
+      }
+    }
+}`,
+			err: nil,
+		},
+		{
+			name: "wrong join stream name",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "lookupT":{
+        "type": "source",
+        "nodeType": "memory",
+        "props": {
+          "sourceType": "table",
+          "sourceName": "lookupT"
+        }
+      },
+      "joinop": {
+        "type": "operator",
+        "nodeType": "join",
+        "props": {
+          "from": "demo",
+          "joins": [
+            {
+              "name": "lookupT",
+              "type": "inner",
+              "on": "demo.deviceKind = lookupT.id"
+            }
+          ]
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo", "lookupT"],
+      "edges": {
+        "demo": ["joinop"],
+        "lookupT": ["joinop"],
+        "joinop": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("join source demo is not a stream"),
+		},
+		{
+			name: "stream and scan table",
+			graph: `{
+    "nodes": {
+      "demo": {
+        "type": "source",
+        "nodeType": "mqtt",
+        "props": {
+          "sourceType": "stream",
+          "sourceName": "src1"
+        }
+      },
+      "lookupT":{
+        "type": "source",
+        "nodeType": "file",
+        "props": {
+          "sourceType": "table",
+          "sourceName": "tableInPlanner"
+        }
+      },
+      "joinop": {
+        "type": "operator",
+        "nodeType": "join",
+        "props": {
+          "from": "src1",
+          "joins": [
+            {
+              "name": "lookupT",
+              "type": "inner",
+              "on": "demo.deviceKind = lookupT.id"
+            }
+          ]
+        }
+      },
+      "log": {
+        "type": "sink",
+        "nodeType": "log",
+        "props": {}
+      }
+    },
+    "topo": {
+      "sources": ["demo", "lookupT"],
+      "edges": {
+        "demo": ["joinop"],
+        "lookupT": ["joinop"],
+        "joinop": ["log"]
+      }
+    }
+}`,
+			err: fmt.Errorf("parse &{operator join map[from:src1 joins:[map[name:lookupT on:demo.deviceKind = lookupT.id type:inner]]] map[]} error: do not support scan table [tableInPlanner] yet"),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rg := &api.RuleGraph{}
+			err := json.Unmarshal([]byte(tc.graph), rg)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			_, err = PlanByGraph(&api.Rule{
+				Triggered: false,
+				Id:        "test",
+				Graph:     rg,
+				Options: &api.RuleOption{
+					IsEventTime:        false,
+					LateTol:            1000,
+					Concurrency:        1,
+					BufferLength:       1024,
+					SendMetaToSink:     false,
+					SendError:          true,
+					Qos:                api.AtMostOnce,
+					CheckpointInterval: 300000,
+				},
+			})
+			if tc.err == nil {
+				if err != nil {
+					t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", tc.err, err)
+				}
+				return
+			}
+			if !reflect.DeepEqual(tc.err.Error(), err.Error()) {
+				t.Errorf("error mismatch:\n  exp=%s\n  got=%s\n\n", tc.err, err)
+			}
+		})
 	}
 }

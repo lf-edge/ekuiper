@@ -120,48 +120,13 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	)
 	switch t := lp.(type) {
 	case *DataSourcePlan:
-		isSchemaless := t.isSchemaless
-		switch t.streamStmt.StreamType {
-		case ast.TypeStream:
-			var (
-				pp  node.UnOperation
-				err error
-			)
-			if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || t.isBinary)) {
-				pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
-				if err != nil {
-					return nil, 0, err
-				}
-			}
-			var srcNode *node.SourceNode
-			if len(sources) == 0 {
-				sourceNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError)
-				srcNode = sourceNode
-			} else {
-				srcNode = getMockSource(sources, string(t.name))
-				if srcNode == nil {
-					return nil, 0, fmt.Errorf("can't find predefined source %s", t.name)
-				}
-			}
-			tp.AddSrc(srcNode)
-			inputs = []api.Emitter{srcNode}
-			op = srcNode
-		case ast.TypeTable:
-			pp, err := operator.NewTableProcessor(isSchemaless, string(t.name), t.streamFields, t.streamStmt.Options)
-			if err != nil {
-				return nil, 0, err
-			}
-			var srcNode *node.SourceNode
-			if len(sources) > 0 {
-				srcNode = getMockSource(sources, string(t.name))
-			}
-			if srcNode == nil {
-				srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError)
-			}
-			tp.AddSrc(srcNode)
-			inputs = []api.Emitter{srcNode}
-			op = srcNode
+		srcNode, err := transformSourceNode(t, sources, options)
+		if err != nil {
+			return nil, 0, err
 		}
+		tp.AddSrc(srcNode)
+		inputs = []api.Emitter{srcNode}
+		op = srcNode
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *WindowPlan:
@@ -211,6 +176,48 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		tp.AddOperator(inputs, onode)
 	}
 	return op, newIndex, nil
+}
+
+func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options *api.RuleOption) (*node.SourceNode, error) {
+	isSchemaless := t.isSchemaless
+	switch t.streamStmt.StreamType {
+	case ast.TypeStream:
+		var (
+			pp  node.UnOperation
+			err error
+		)
+		if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || t.isBinary)) {
+			pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
+			if err != nil {
+				return nil, err
+			}
+		}
+		var srcNode *node.SourceNode
+		if len(sources) == 0 {
+			sourceNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError)
+			srcNode = sourceNode
+		} else {
+			srcNode = getMockSource(sources, string(t.name))
+			if srcNode == nil {
+				return nil, fmt.Errorf("can't find predefined source %s", t.name)
+			}
+		}
+		return srcNode, nil
+	case ast.TypeTable:
+		pp, err := operator.NewTableProcessor(isSchemaless, string(t.name), t.streamFields, t.streamStmt.Options)
+		if err != nil {
+			return nil, err
+		}
+		var srcNode *node.SourceNode
+		if len(sources) > 0 {
+			srcNode = getMockSource(sources, string(t.name))
+		}
+		if srcNode == nil {
+			srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError)
+		}
+		return srcNode, nil
+	}
+	return nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
 }
 
 func getMockSource(sources []*node.SourceNode, name string) *node.SourceNode {

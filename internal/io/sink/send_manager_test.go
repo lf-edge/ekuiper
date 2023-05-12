@@ -56,6 +56,12 @@ func TestSendManager(t *testing.T) {
 			lingerInterval: 100,
 			expectItems:    4,
 		},
+		{
+			sendCount:      6,
+			batchSize:      3,
+			lingerInterval: 3000,
+			expectItems:    3,
+		},
 	}
 	mc := conf.Clock.(*clock.Mock)
 	for i, tc := range testcases {
@@ -131,5 +137,29 @@ func TestCancelRun(t *testing.T) {
 		if !sm.finished {
 			t.Fatal("send manager should be finished")
 		}
+	}
+}
+
+func TestEnlargeSendManagerCap(t *testing.T) {
+	sm, err := NewSendManager(0, 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := 1025
+	for i := 0; i < count; i++ {
+		go sm.RecvData(map[string]interface{}{})
+		sm.appendDataInBuffer(<-sm.bufferCh, false)
+	}
+	if len(sm.buffer) != count {
+		t.Fatal(fmt.Sprintf("sm buffer should be %v", count))
+	}
+	if sm.currIndex != count {
+		t.Fatal(fmt.Sprintf("sm index should be %v", count))
+	}
+	originCap := cap(sm.buffer)
+	originLen := len(sm.buffer)
+	sm.send()
+	if sm.currIndex != 0 || originCap != cap(sm.buffer) || originLen != len(sm.buffer) {
+		t.Fatal("sm buffer capacity shouldn't be changed after send")
 	}
 }

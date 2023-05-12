@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 
@@ -31,7 +30,7 @@ import (
 )
 
 func RegisterAdditionalFuncs() {
-	conf.FuncMap = template.FuncMap(sprig.FuncMap())
+	conf.FuncMap = sprig.FuncMap()
 	conf.FuncMap["json"] = conf.FuncMap["toJson"]
 	conf.FuncMap["base64"] = Base64Encode
 }

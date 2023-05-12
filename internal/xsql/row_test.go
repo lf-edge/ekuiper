@@ -118,7 +118,7 @@ func TestCollectionRow(t *testing.T) {
 }
 
 func TestTupleRow(t *testing.T) {
-	// boradcast(clone) -> set -> broadcast -> set -> compare
+	// broadcast(clone) -> set -> broadcast -> set -> compare
 	tests := []struct {
 		rowO TupleRow
 		// The multiple values to set or alias; The first value is set in the first broadcast. the next values are set in the second broadcast.

@@ -33,10 +33,35 @@ $ git fetch upstream
 $ git checkout -b <my-branch> upstream/master
 ```
 
+### Package Import Specification
+
+Reasonable package import order can enhance the cleanliness and standardization of the code.
+This project uses gci to automatically check the order of package imports, with priority given
+to `standard packages` > `third-party external packages` > `local project packages`, as follows:
+
+```go
+import (
+    "fmt"
+
+    "github.com/sirupsen/logrus"
+
+    "github.com/lf-edge/ekuiper/pkg/api"
+)
+```
+
+In the project root directory, you can run the command `gci write --skip-generated -s standard -s default -s "prefix(github.com/lf-edge/ekuiper)" .` to
+automatically reorder package imports.
+
+Alternatively, if you use GoLand, you can check `Group` and `Group stdlib imports` as well as their sub-options under
+`Settings > Editor > Code Style > Go > Imports` to enable automatic import sorting.
+
 ### Code conventions
 
 - Use `go fmt` to format your code before commit code change. eKuiper Github Action CI pipeline reports error if it's
   not format by `go fmt`.
+- Run static code analysis with `make lint` to make sure there are no stylistic errors and common programming issues.
+  - If you encounter lint errors related to `gofumpt`, run `gofumpt -w .` in the project root directory to solve it.
+  - Check [golangci-lint](https://golangci-lint.run/) for more information on the corresponding lint errors.
 - Configuration key in config files uses camel case format.
 
 ### Debug your code

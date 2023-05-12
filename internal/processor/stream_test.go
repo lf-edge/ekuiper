@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -280,6 +280,7 @@ func TestAll(t *testing.T) {
 func TestInferredStream(t *testing.T) {
 	// init schema
 	// Prepare test schema file
+	conf.IsTesting = false
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		t.Fatal(err)

@@ -1,4 +1,4 @@
-// Copyright erfenjiao, 630166475@qq.com.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/second-state/WasmEdge-go/wasmedge"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -43,6 +45,7 @@ type Manager struct {
 }
 
 func InitManager() (*Manager, error) {
+	wasmedge.LoadPluginDefaultPaths()
 	pluginDir, err := conf.GetPluginsLoc()
 	if err != nil {
 		fmt.Println("[internal][wasm] cannot find plugins folder:", err)
@@ -77,6 +80,8 @@ func InitManager() (*Manager, error) {
 }
 
 func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
+	wasmedge.LoadPluginDefaultPaths()
+
 	registry := &registry{
 		RWMutex:   sync.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),

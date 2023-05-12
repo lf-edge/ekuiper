@@ -255,7 +255,7 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (result map[st
 
 	if hosts == "" || ptype == "" || os == "" {
 		logger.Errorf("Invalid parameter value: hosts %s, ptype %s or os: %s should not be empty.", hosts, ptype, os)
-		return nil, fmt.Errorf("invalid configruation for plugin host in kuiper.yaml")
+		return nil, fmt.Errorf("invalid configuration for plugin host in kuiper.yaml")
 	}
 	result = make(map[string]string)
 	hostsArr := strings.Split(hosts, ",")

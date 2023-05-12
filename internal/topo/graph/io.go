@@ -136,7 +136,7 @@ var OpIO = map[string][]*IOType{
 		{Type: IOINPUT_TYPE_COLLECTION, CollectionType: IOCOLLECTION_TYPE_GROUPED},
 	},
 	"join": {
-		{Type: IOINPUT_TYPE_COLLECTION, CollectionType: IOCOLLECTION_TYPE_SINGLE, RowType: IOROW_TYPE_SINGLE},
+		{Type: IOINPUT_TYPE_ANY, CollectionType: IOCOLLECTION_TYPE_SINGLE, RowType: IOROW_TYPE_SINGLE, AllowMulti: true},
 		{Type: IOINPUT_TYPE_COLLECTION, CollectionType: IOCOLLECTION_TYPE_SINGLE, RowType: IOROW_TYPE_MERGED},
 	},
 	"orderby": {

@@ -95,6 +95,15 @@ fibonacci.json
   "wasmEngine": "wasmedge"
 }
 ```
+## 编译 eKuiper
+
+目前官方发布的 eKuiper 并不支持 wasm, 用户需要自行编译。
+
+
+```shell
+make build_with_wasm
+```
+
 安装插件：
 
 首先启动服务器

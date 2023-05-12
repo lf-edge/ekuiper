@@ -92,6 +92,15 @@ real_pkg:
 	@mv $(BUILD_PATH)/$(PACKAGE_NAME).zip $(BUILD_PATH)/$(PACKAGE_NAME).tar.gz $(PACKAGES_PATH)
 	@echo "Package build success"
 
+.PHONY: build_with_wasm
+build_with_wasm: build_prepare
+	GO111MODULE=on CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper cmd/kuiper/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "wasmedge" -o kuiperd cmd/kuiperd/main.go
+	@if [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@echo "Build successfully"
+
+
 .PHONY: docker
 docker:
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile . --load
@@ -134,9 +143,9 @@ tidy:
 	@echo "go mod tidy"
 	go mod tidy && git diff go.mod go.sum
 
-lint:tools/check/bin/revive
+lint:tools/check/bin/golangci-lint
 	@echo "linting"
-	@tools/check/bin/revive -formatter friendly -config tools/check/revive.toml ./...
+	@tools/check/bin/golangci-lint run -c tools/check/.golangci.yaml ./...
 
-tools/check/bin/revive:
-	GOBIN=$(shell pwd)/tools/check/bin $(GO) install github.com/mgechev/revive@v1.2.1
+tools/check/bin/golangci-lint:
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell pwd)/tools/check/bin

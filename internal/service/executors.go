@@ -28,7 +28,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	// TODO: replace with `google.golang.org/protobuf/proto` pkg.
+	"github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
 	"github.com/ugorji/go/codec"

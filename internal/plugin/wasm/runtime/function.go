@@ -1,4 +1,5 @@
 // Copyright erfenjiao, 630166475@qq.com.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,19 +50,11 @@ func (f *WasmFunc) Validate(args []interface{}) error {
 }
 
 func (f *WasmFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	res := f.ExecWasmFunc(args)
-
-	fr := &FuncReply{}
-	fr.Result = res
-	fr.State = true
-	if !fr.State {
-		if fr.Result != nil {
-			return fmt.Errorf("%s", fr.Result), false
-		} else {
-			return nil, false
-		}
+	res, err := f.ExecWasmFunc(args)
+	if err != nil {
+		return err, false
 	}
-	return fr.Result, fr.State
+	return res, true
 }
 
 func (f *WasmFunc) IsAggregate() bool {
@@ -71,7 +64,114 @@ func (f *WasmFunc) IsAggregate() bool {
 	return false
 }
 
-func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
+func toWasmEdgeValueSlideBindgen(vm *wasmedge.VM, modname *string, vals ...interface{}) ([]interface{}, error) {
+	rvals := []interface{}{}
+
+	for _, val := range vals {
+		switch t := val.(type) {
+		case wasmedge.FuncRef:
+			rvals = append(rvals, val)
+		case wasmedge.ExternRef:
+			rvals = append(rvals, val)
+		case wasmedge.V128:
+			rvals = append(rvals, val)
+		case int32:
+			rvals = append(rvals, val)
+		case uint32:
+			rvals = append(rvals, val)
+		case int64:
+			rvals = append(rvals, val)
+		case uint64:
+			rvals = append(rvals, val)
+		case int:
+			rvals = append(rvals, val)
+		case uint:
+			rvals = append(rvals, val)
+		case float32:
+			rvals = append(rvals, val)
+		case float64:
+			rvals = append(rvals, val)
+		case string:
+			// Call malloc function
+			sval := []byte(val.(string))
+			mallocsize := uint32(len(sval))
+			var rets []interface{}
+			var err error = nil
+			if modname == nil {
+				rets, err = vm.Execute("malloc", mallocsize+1)
+			} else {
+				rets, err = vm.ExecuteRegistered(*modname, "malloc", mallocsize)
+			}
+			if err != nil {
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc failed with error %v", err)
+			}
+			if len(rets) <= 0 {
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
+			}
+			argaddr := rets[0]
+			rvals = append(rvals, argaddr)
+			// Set bytes
+			var mod *wasmedge.Module = nil
+			var mem *wasmedge.Memory = nil
+			if modname == nil {
+				mod = vm.GetActiveModule()
+			} else {
+				store := vm.GetStore()
+				mod = store.FindModule(*modname)
+			}
+			if mod != nil {
+				memnames := mod.ListMemory()
+				if len(memnames) <= 0 {
+					return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): memory instance not found")
+				}
+				mem = mod.FindMemory(memnames[0])
+				mem.SetData(sval, uint(rets[0].(int32)), uint(mallocsize))
+				mem.SetData([]byte{0}, uint(rets[0].(int32)+int32(mallocsize)), 1)
+			}
+		case []byte:
+			// Call malloc function
+			mallocsize := uint32(len(val.([]byte)))
+			var rets []interface{}
+			var err error = nil
+			if modname == nil {
+				rets, err = vm.Execute("malloc", mallocsize)
+			} else {
+				rets, err = vm.ExecuteRegistered(*modname, "malloc", mallocsize)
+			}
+			if err != nil {
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc failed")
+			}
+			if len(rets) <= 0 {
+				return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): malloc function signature unexpected")
+			}
+			argaddr := rets[0]
+			argsize := mallocsize
+			rvals = append(rvals, argaddr, argsize)
+			// Set bytes
+			var mod *wasmedge.Module = nil
+			var mem *wasmedge.Memory = nil
+			if modname == nil {
+				mod = vm.GetActiveModule()
+			} else {
+				store := vm.GetStore()
+				mod = store.FindModule(*modname)
+			}
+			if mod != nil {
+				memnames := mod.ListMemory()
+				if len(memnames) <= 0 {
+					return nil, fmt.Errorf("toWasmEdgeValueSlideBindgen(): memory instance not found")
+				}
+				mem = mod.FindMemory(memnames[0])
+				mem.SetData(val.([]byte), uint(rets[0].(int32)), uint(mallocsize))
+			}
+		default:
+			return nil, fmt.Errorf("wrong argument of toWasmEdgeValueSlideBindgen(): %T not supported", t)
+		}
+	}
+	return rvals, nil
+}
+
+func (f *WasmFunc) ExecWasmFunc(args []interface{}) ([]interface{}, error) {
 	funcname := f.symbolName
 
 	WasmFile := f.reg.WasmFile
@@ -84,81 +184,39 @@ func (f *WasmFunc) ExecWasmFunc(args []interface{}) []interface{} {
 	err := vm.LoadWasmFile(WasmFile)
 	if err != nil {
 		fmt.Print("[wasm][ExecWasmFunc] Load WASM from file FAILED: ")
-		fmt.Errorf(err.Error())
+		return nil, err
 	}
 	// step 2: Validate the WASM module
 	err = vm.Validate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Validate FAILED: ")
-		fmt.Errorf(err.Error())
+		return nil, err
 	}
 	// step 3: Instantiate the WASM moudle
 	err = vm.Instantiate()
 	if err != nil {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Instantiate FAILED: ")
-		fmt.Errorf(err.Error())
+		return nil, err
 	}
 	// step 4: Execute WASM functions.Parameters(1)
-	var Args []float64
-	for _, num := range args {
-		x, ok := (num).(float64)
-		if !ok {
-			fmt.Println("Type tranform not to float64!!")
-		}
-		Args = append(Args, x)
+	Args, err := toWasmEdgeValueSlideBindgen(vm, nil, args...)
+	if err != nil {
+		return nil, err
 	}
 
-	Len := len(args)
 	var res []interface{}
-	switch Len {
-	case 0:
-		res, err = vm.Execute(funcname)
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
+	res, err = vm.Execute(funcname, Args...)
+	if err != nil {
+		log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
+		return nil, err
+	} else {
 		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
-	case 1:
-		res, err = vm.Execute(funcname, uint32(Args[0]))
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
-	case 2:
-		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]))
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
-	case 3:
-		res, err = vm.Execute(funcname, uint32(Args[0]), uint32(Args[1]), uint32(Args[2]))
-		if err != nil {
-			log.Fatalln("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Run function failed： ", err.Error())
-		}
-		fmt.Print("[wasm][manager-AddWasmPlugin-NewWasmPlugin] Get res: ")
-		fmt.Println(res[0].(int32))
-		exitcode := wasi.WasiGetExitCode()
-		if exitcode != 0 {
-			fmt.Println("Go: Running wasm failed, exit code:", exitcode)
-		}
-		vm.Release()
+		fmt.Println(res[0])
 	}
-	return res
+	exitcode := wasi.WasiGetExitCode()
+	if exitcode != 0 {
+		fmt.Println("Go: Running wasm failed, exit code:", exitcode)
+	}
+	vm.Release()
+	return res, nil
 }

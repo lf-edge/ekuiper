@@ -183,7 +183,7 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 		src = srcFile
 	case "http", "https":
 		// Get the data
-		timeout := time.Duration(5 * time.Minute)
+		timeout := 5 * time.Minute
 		client := &http.Client{
 			Timeout: timeout,
 			Transport: &http.Transport{
