@@ -22,6 +22,5 @@ jobs:
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: '^.{5,50}$'
-          error: 'The maximum line length of 50 characters is exceeded.'
+          error: 'The maximum commit title length of 50 characters is exceeded.'
           excludeDescription: true
-          excludeTitle: true
