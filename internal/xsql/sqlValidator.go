@@ -121,9 +121,6 @@ func validateFields(stmt *ast.SelectStatement) {
 	for i, field := range stmt.Fields {
 		stmt.Fields[i].Expr = validateExpr(field.Expr, streamName)
 	}
-	for i, field := range stmt.SortFields {
-		stmt.SortFields[i].Expr = validateExpr(field.Expr, streamName)
-	}
 }
 
 func validateExpr(expr ast.Expr, streamName []string) ast.Expr {

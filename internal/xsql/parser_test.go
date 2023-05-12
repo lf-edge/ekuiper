@@ -2887,6 +2887,68 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 		},
 
 		{
+			s: `SELECT children[:1] FROM demo WHERE abc[0] IN demo.children[2:].first`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
+							OP:  ast.SUBSET,
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
+						},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{
+						LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
+						OP:  ast.SUBSET,
+						RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
+					},
+					OP: ast.IN,
+					RHS: &ast.BinaryExpr{
+						LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("demo"), Name: "children"}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}}},
+						OP:  ast.ARROW,
+						RHS: &ast.JsonFieldRef{Name: "first"},
+					},
+				},
+			},
+		},
+
+		{
+			s: `SELECT children[:1] FROM demo WHERE abc[0] IN children[2:].first`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "children", StreamName: ast.DefaultStream},
+							OP:  ast.SUBSET,
+							RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 0}, End: &ast.IntegerLiteral{Val: 1}},
+						},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "demo"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{
+						LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
+						OP:  ast.SUBSET,
+						RHS: &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: 0}},
+					},
+					OP: ast.IN,
+					RHS: &ast.BinaryExpr{
+						LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.DefaultStream, Name: "children"}, OP: ast.SUBSET, RHS: &ast.ColonExpr{Start: &ast.IntegerLiteral{Val: 2}, End: &ast.IntegerLiteral{Val: math.MinInt32}}},
+						OP:  ast.ARROW,
+						RHS: &ast.JsonFieldRef{Name: "first"},
+					},
+				},
+			},
+		},
+
+		{
 			s: `SELECT children[:1] FROM demo WHERE abc[0] IN demo.children[2:]->first`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -2958,7 +3020,7 @@ func TestParser_ParseJsonExpr(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
-			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt.Fields[0].Expr.(*ast.BinaryExpr).RHS, stmt.Fields[0].Expr.(*ast.BinaryExpr).RHS)
+			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
 		}
 	}
 }

@@ -38,10 +38,11 @@ type Parser struct {
 		tok ast.Token
 		lit string
 	}
-	inFunc string // currently parsing function name
-	f      int    // anonymous field index number
-	fn     int    // function index number
-	clause string
+	inFunc      string // currently parsing function name
+	f           int    // anonymous field index number
+	fn          int    // function index number
+	clause      string
+	sourceNames []string // source names in the from/join clause
 }
 
 func (p *Parser) ParseCondition() (ast.Expr, error) {
@@ -150,6 +151,7 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 	} else {
 		selects.Joins = joins
 	}
+	p.sourceNames = getStreamNames(selects)
 	p.clause = "where"
 	if exp, err := p.ParseCondition(); err != nil {
 		return nil, err
@@ -563,6 +565,8 @@ func (p *Parser) ParseExpr() (ast.Expr, error) {
 		var rhs ast.Expr
 		if rhs, err = p.parseUnaryExpr(op == ast.ARROW || op == ast.DOT); err != nil {
 			return nil, err
+		} else if op == ast.DOT {
+			op = ast.ARROW
 		}
 		if op == ast.LIKE || op == ast.NOTLIKE {
 			lp := &ast.LikePattern{
@@ -644,7 +648,15 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		} else {
 			if p.inmeta() {
 				if len(n) == 2 {
-					return &ast.MetaRef{StreamName: ast.StreamName(n[0]), Name: n[1]}, nil
+					if len(p.sourceNames) > 0 && !contains(p.sourceNames, n[0]) {
+						return &ast.BinaryExpr{
+							LHS: &ast.MetaRef{StreamName: ast.DefaultStream, Name: n[0]},
+							OP:  ast.ARROW,
+							RHS: &ast.JsonFieldRef{Name: n[1]},
+						}, nil
+					} else {
+						return &ast.MetaRef{StreamName: ast.StreamName(n[0]), Name: n[1]}, nil
+					}
 				}
 				if isSubField {
 					return &ast.JsonFieldRef{Name: n[0]}, nil
@@ -652,7 +664,15 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 				return &ast.MetaRef{StreamName: ast.DefaultStream, Name: n[0]}, nil
 			} else {
 				if len(n) == 2 {
-					return &ast.FieldRef{StreamName: ast.StreamName(n[0]), Name: n[1]}, nil
+					if len(p.sourceNames) > 0 && !contains(p.sourceNames, n[0]) {
+						return &ast.BinaryExpr{
+							LHS: &ast.FieldRef{StreamName: ast.DefaultStream, Name: n[0]},
+							OP:  ast.ARROW,
+							RHS: &ast.JsonFieldRef{Name: n[1]},
+						}, nil
+					} else {
+						return &ast.FieldRef{StreamName: ast.StreamName(n[0]), Name: n[1]}, nil
+					}
 				}
 				if isSubField {
 					return &ast.JsonFieldRef{Name: n[0]}, nil
