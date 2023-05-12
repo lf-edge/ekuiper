@@ -49,7 +49,134 @@ func TestObjectFunctions(t *testing.T) {
 		{
 			name:   "keys",
 			args:   []interface{}{1, 2},
-			result: fmt.Errorf("the arg for keys should be map[string]interface{}"),
+			result: fmt.Errorf("the argument should be map[string]interface{}"),
+		},
+		{
+			name: "values",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": "c",
+					"b": "d",
+				},
+			},
+			result: []interface{}{"c", "d"},
+		},
+		{
+			name:   "values",
+			args:   []interface{}{1, 2},
+			result: fmt.Errorf("the argument should be map[string]interface{}"),
+		},
+		{
+			name: "object",
+			args: []interface{}{
+				[]interface{}{"a", "b"},
+				[]interface{}{1, 2},
+			},
+			result: map[string]interface{}{
+				"a": 1,
+				"b": 2,
+			},
+		},
+		{
+			name: "object",
+			args: []interface{}{
+				1,
+				[]interface{}{1, 2},
+			},
+			result: fmt.Errorf("first argument should be []string"),
+		},
+		{
+			name: "object",
+			args: []interface{}{
+				[]interface{}{1, 2},
+				[]interface{}{1, 2},
+			},
+			result: fmt.Errorf("first argument should be []string"),
+		},
+		{
+			name: "object",
+			args: []interface{}{
+				[]interface{}{1, 2},
+				1,
+			},
+			result: fmt.Errorf("second argument should be []interface{}"),
+		},
+		{
+			name: "object",
+			args: []interface{}{
+				[]interface{}{"a", "b"},
+				[]interface{}{1, 2, 3},
+			},
+			result: fmt.Errorf("the length of the arguments should be same"),
+		},
+		{
+			name: "zip",
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{"a", 1},
+					[]interface{}{"b", 2},
+				},
+			},
+			result: map[string]interface{}{
+				"a": 1,
+				"b": 2,
+			},
+		},
+		{
+			name: "zip",
+			args: []interface{}{
+				1,
+			},
+			result: fmt.Errorf("each argument should be [][2]interface{}"),
+		},
+		{
+			name: "zip",
+			args: []interface{}{
+				[]interface{}{
+					1, 2,
+				},
+			},
+			result: fmt.Errorf("each argument should be [][2]interface{}"),
+		},
+		{
+			name: "zip",
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{"a", 1, 3},
+					[]interface{}{"b", 2, 4},
+				},
+			},
+			result: fmt.Errorf("each argument should be [][2]interface{}"),
+		},
+		{
+			name: "zip",
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{1, 3},
+					[]interface{}{2, 4},
+				},
+			},
+			result: fmt.Errorf("the first element in the list item should be string"),
+		},
+		{
+			name: "item",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+			},
+			result: []interface{}{
+				[]interface{}{"a", 1},
+				[]interface{}{"b", 2},
+			},
+		},
+		{
+			name: "item",
+			args: []interface{}{
+				1,
+			},
+			result: fmt.Errorf("first argument should be map[string]interface{}"),
 		},
 	}
 	for i, tt := range tests {
@@ -58,12 +185,21 @@ func TestObjectFunctions(t *testing.T) {
 			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
 		}
 		result, _ := f.exec(fctx, tt.args)
-		if r, ok := result.([]string); ok {
+		switch r := result.(type) {
+		case []string:
 			sort.Strings(r)
 			if !reflect.DeepEqual(r, tt.result) {
 				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
 			}
-		} else {
+		case []interface{}:
+			rr := make([]interface{}, len(r))
+			copy(rr, r)
+			rr[0] = r[1]
+			rr[1] = r[0]
+			if !reflect.DeepEqual(r, tt.result) && !reflect.DeepEqual(rr, tt.result) {
+				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
+			}
+		default:
 			if !reflect.DeepEqual(result, tt.result) {
 				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 			}
