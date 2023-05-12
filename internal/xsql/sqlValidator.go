@@ -144,7 +144,6 @@ func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
 	default:
 		return expr
 	}
-	return expr
 }
 
 func contains(streamName []string, name string) bool {
