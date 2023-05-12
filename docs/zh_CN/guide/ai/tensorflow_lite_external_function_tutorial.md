@@ -13,14 +13,14 @@
 
 ## 先决条件
 
-外部功能插件将是一个 GRPC 服务器，因此用户应该了解 GRPC。本教程将给出设置 GRPC 服务器的示例代码。
+外部功能插件将是一个 gRPC 服务器，因此用户应该了解 gRPC。本教程将给出设置 gRPC 服务器的示例代码。
 用户可以在[这里](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip)下载示例代码。
 
 用户还需要具备 Docker 的基本知识。
 
 ## 开发外部函数
 
-在示例代码中，GRPC Server提供了 ``label`` 方法，用户只需要编写一个接口描述文件，注册到 eKuiper 中即可。然后eKuiper就可以调用 GRPC 方法,
+在示例代码中，gRPC 服务器提供了 ``label`` 方法，用户只需要编写一个接口描述文件，注册到 eKuiper 中即可。然后eKuiper就可以调用 gRPC 方法,
 就像内置函数一样。 ``label`` 方法由 ``tflite_runtime`` 图像分类提供支持，有关更多详细信息，请查看示例代码中的 `label.py` 文件。
 
 这是提供服务的外部功能的 proto 文件描述。 ``label`` 方法的参数应该是 base64 编码的图像。
@@ -51,9 +51,9 @@ message LabelReply {
 }
 ```
 
-## 构建和运行 GRPC Server
+## 构建和运行 gRPC Server
 
-我们提供Dockerfile来构建GRPC服务器，进入示例代码的根路径，运行以下命令来构建GRPC docker镜像
+我们提供 Dockerfile 来构建 gRPC 服务器，进入[示例代码](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip) pythonGRPC.zip 的根路径，运行以下命令来构建 gRPC docker 镜像
 
 ```shell
  docker build  -t test:1.1.1 -f deploy/Dockerfile-slim-python .
@@ -65,20 +65,22 @@ message LabelReply {
  docker run -d  -p 50051:50051 --name rpc-test test:1.1.1
 ```
 
-现在，GRPC 服务器在 50051 端口上提供服务。
+现在，gRPC 服务器在 50051 端口上提供服务。
 
 ## 打包并注册外部函数
 
 ### 打包
 
-将 GRPC server 中服务的 json 描述文件和 proto 文件打包成zip。 zip 文件中的文件结构应如下所示：
-有关文件格式和内容的更多详细信息，请参阅[这里](../../extension/external/external_func.md)。
+将 gRPC Server 中服务的 json 描述文件和 proto 文件打包成 zip。 zip 文件中的文件结构应如下所示：
 
 - schemas
   - sample.proto
 - sample.json
 
-您可以在示例代码文件夹 ``kuiper_package`` 中获取示例 zip 文件。
+- 有关文件格式和内容的更多详细信息，请参阅[这里](../../extension/external/external_func.md)。
+
+
+您可以在[示例代码]((https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip))的文件夹 ``kuiper_package`` 中获取示例 zip 文件。
 
 
 ### 注册外部函数
@@ -132,4 +134,4 @@ kuiper > [{"label":{"results":[{"confidence":0.5789139866828918,"label":"tailed 
 
 ## 总结
 
-在本教程中，我们将引导您构建外部函数以利用预训练的 TensorFlowLite 模型。如果您需要使用其他 GRPC 服务，只需按照创建自定义函数的步骤操作即可。在边缘设备中享受 AI吧。
+在本教程中，我们将引导您构建外部函数以利用预训练的 TensorFlowLite 模型。如果您需要使用其他 gRPC 服务，只需按照创建自定义函数的步骤操作即可。在边缘设备中享受 AI吧。

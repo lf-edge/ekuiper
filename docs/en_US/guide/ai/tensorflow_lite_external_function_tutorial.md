@@ -15,14 +15,14 @@ can provide services to others except eKuiper.
 
 ## Prerequisite
 
-The external functions plugins will be a GRPC Server, so users should have knowledge of GRPC. This tutorial will give the example code to set up the GRPC server.
+The external functions plugins will be a gRPC Server, so users should have knowledge of gRPC. This tutorial will give the example code to set up the GRPC server.
 Users can download the example code [here](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip). 
 
 Users also need have basic knowledge of Docker. 
 
 ## Develop the external function
 
-In the example code, the GRPC Server provide ``label`` method, and users just need write an interface description file and register them into eKuiper. Then eKuiper can call the GRPC method
+In the example code, the gRPC Server provide ``label`` method, and users just need write an interface description file and register them into eKuiper. Then eKuiper can call the RPC method
 just as built-in functions. The ``label`` method is powered by ``tflite_runtime`` image classification, for more detail, please check the `label.py` file in the example code.
 
 This is the proto file for the external functions plugins that provide services. The parameter of ``label`` method should be base64 encoded image. 
@@ -53,9 +53,9 @@ message LabelReply {
 }
 ```
 
-## Build and run the GRPC Server
+## Build and run the gRPC Server
 
-We provide Dockerfile to build the GRPC server, go to the root path of example code, run the following command to build the GRPC docker image
+We provide Dockerfile to build the gRPC server, go to the root path of [example code](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip) pythonGRPC.zip, run the following command to build the gRPC Server docker image
 
 ```shell
  docker build  -t test:1.1.1 -f deploy/Dockerfile-slim-python .
@@ -67,21 +67,21 @@ And then set up the service by following command
  docker run -d  -p 50051:50051 --name rpc-test test:1.1.1
 ```
 
-Now, the GRPC server are providing services on 50051 port. 
+Now, the gRPC server are providing services on 50051 port. 
 
 
 ## Package and register the external function
 
 ### Package
 
-Package a json description file and a proto file for the services in GRPC server by zip. The file structure inside the zip file should be like:
+Package a json description file and a proto file for the services in gRPC server by zip. The file structure inside the zip file should be like:
 For more detail about the file format and content, please refer to [this](../../extension/external/external_func.md).
 
 - schemas
   - sample.proto
 - sample.json
 
-You can get the example zip file in example code in ``ekuiper_package`` folder
+You can get the example zip file in [example code](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip) in ``ekuiper_package`` folder
 
 
 ### Register the external function
@@ -135,4 +135,4 @@ kuiper > [{"label":{"results":[{"confidence":0.5789139866828918,"label":"tailed 
 
 ## Conclusion
 
-In this tutorial, we walk you through building external function to leverage a pre-trained TensorFlowLite model. If you need to use other GRPC services, just follow the steps to create customized function. Enjoy the AI in edge device.
+In this tutorial, we walk you through building external function to leverage a pre-trained TensorFlowLite model. If you need to use other gRPC services, just follow the steps to create customized function. Enjoy the AI in edge device.

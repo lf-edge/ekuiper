@@ -10,38 +10,40 @@ eKuiper 命令行工具允许您管理服务，例如创建、显示、删除、
 create service $service_name $service_json
 ```
 
-Service package file should be prepared at first and put at a place that eKuiper can access.
+首先要准备打包好的服务描述信息，放在 eKuiper 可以访问的地方
 
-Example：
+示例：
 
 ```shell
 # bin/kuiper create service sample '{"name": "sample","file": "file:///tmp/sample.zip"}'
 ```
 
-This command creates a service named sample whose content is provided by `file` field in the json. 
+这个命令创建了一个名为 sample 的服务，该服务的具体描述信息放在了 file 路径指定的地方。
 
 
-## Show services and service_funcs
+## 查看服务和服务函数
 
-The command is used for describing all services and service_funcs defined in the server.
+此命令查看 eKuiper 系统中注册的所有服务
 
 ```shell
 # bin/kuiper show services
 ```
 
+此命令查看 eKuiper 系统中注册的所有服务函数
+
 ```shell
 # bin/kuiper show service_funcs
 ```
 
-## Describe a service
+## 查看服务的详细信息
 
-The command prints the detailed definition of a service.
+此命令可以查看服务的详细信息
 
 ```shell
 describe service $service_name
 ```
 
-Example：
+示例：
 
 ```shell
 # bin/kuiper describe service sample
@@ -82,15 +84,15 @@ Example：
 ```
 
 
-## Describe a service function
+## 描述服务函数详细信息
 
-The command prints the detailed information of a service function.
+此命令可以列出服务函数详细信息
 
 ```shell
 describe service_func $service_name
 ```
 
-Example：
+示例：
 
 ```shell
 # bin/kuiper describe service_func label
@@ -102,15 +104,15 @@ Example：
 ```
 
 
-## Drop a service
+## 删除服务
 
-The command drops the service.
+此命令可以删除服务
 
 ```shell
 drop service $service_name
 ```
 
-Example：
+示例：
 
 ```shell
 # bin/kuiper drop service sample
