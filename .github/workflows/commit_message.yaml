@@ -1,0 +1,20 @@
+name: Commit Message Check
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  check-commit-message:
+    name: Check Commit Message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Line Length
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^(feat|fix|docs|style|refactor|chore|perf|test|build|ci|revert)(\([^()]+\))?:\s(.+)$'
+          error: 'Your commit message is not formatted, check the docs for more details: https://ekuiper.org/docs/en/latest/CONTRIBUTING.html#commit-message-guidelines'
+          excludeDescription: true
