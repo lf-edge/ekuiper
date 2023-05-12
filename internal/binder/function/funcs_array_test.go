@@ -75,46 +75,11 @@ func TestArrayFunctions(t *testing.T) {
 			result: 3,
 		},
 		{
-			name: "slice",
-			args: []interface{}{
-				1, 2, 3,
-			},
-			result: errorArrayArgumentError,
-		},
-		{
-			name: "slice",
-			args: []interface{}{
-				[]interface{}{1, 2, 3}, 1,
-			},
-			result: []interface{}{2, 3},
-		},
-		{
-			name: "slice",
-			args: []interface{}{
-				[]interface{}{1, 2, 3}, 4,
-			},
-			result: errorArrayIndex,
-		},
-		{
-			name: "slice",
-			args: []interface{}{
-				[]interface{}{1, 2, 3}, 1, 10,
-			},
-			result: []interface{}{2, 3},
-		},
-		{
-			name: "slice",
-			args: []interface{}{
-				[]interface{}{1, 2, 3}, 1, 1,
-			},
-			result: []interface{}{2},
-		},
-		{
 			name: "element_at",
 			args: []interface{}{
 				1, 2,
 			},
-			result: errorArrayArgumentError,
+			result: fmt.Errorf("first argument should be []interface{} or map[string]interface{}"),
 		},
 		{
 			name: "element_at",

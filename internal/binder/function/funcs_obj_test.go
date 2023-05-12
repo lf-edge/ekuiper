@@ -51,6 +51,36 @@ func TestObjectFunctions(t *testing.T) {
 			args:   []interface{}{1, 2},
 			result: fmt.Errorf("the arg for keys should be map[string]interface{}"),
 		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				"a",
+			},
+			result: 1,
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				"1",
+				"a",
+			},
+			result: fmt.Errorf("first argument should be []interface{} or map[string]interface{}"),
+		},
+		{
+			name: "element_at",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				2,
+			},
+			result: fmt.Errorf("second argument should be string"),
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]

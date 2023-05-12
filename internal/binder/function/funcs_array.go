@@ -22,8 +22,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-var errorArrayArgumentError = fmt.Errorf("first argument should be array of interface{}")
-var errorArrayIndex = fmt.Errorf("index out of range")
+var (
+	errorArrayArgumentError = fmt.Errorf("first argument should be array of interface{}")
+	errorArrayIndex         = fmt.Errorf("index out of range")
+)
 
 func registerArrayFunc() {
 	builtins["array_create"] = builtinFunc{
@@ -53,60 +55,36 @@ func registerArrayFunc() {
 			return ValidateLen(2, len(args))
 		},
 	}
-	builtins["slice"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			array, ok := args[0].([]interface{})
-			if !ok {
-				return errorArrayArgumentError, false
-			}
-			index, err := cast.ToInt(args[1], cast.STRICT)
-			if err != nil {
-				return err, false
-			}
-			if index < 0 || index >= len(array) {
-				return errorArrayIndex, false
-			}
-			length := len(array) - index
-			if len(args) == 3 {
-				length, err = cast.ToInt(args[2], cast.STRICT)
-				if err != nil {
-					return err, false
-				}
-				if index+length >= len(array) {
-					length = len(array) - index
-				}
-			}
-			return array[index : index+length], true
-		},
-		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			if len(args) < 2 || len(args) > 3 {
-				return fmt.Errorf("slice must accept 2 or 3 arguments")
-			}
-			return nil
-		},
-	}
 	builtins["element_at"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			array, ok := args[0].([]interface{})
-			if !ok {
-				return errorArrayArgumentError, false
+			switch args[0].(type) {
+			case []interface{}:
+				array := args[0].([]interface{})
+				index, err := cast.ToInt(args[1], cast.STRICT)
+				if err != nil {
+					return err, false
+				}
+				if index == 0 {
+					return fmt.Errorf("index should be larger or smaller than 0"), false
+				}
+				if index-1 >= len(array) || (-index)-1 >= len(array) {
+					return errorArrayIndex, false
+				}
+				if index > 0 {
+					return array[index-1], true
+				}
+				return array[len(array)+index], true
+			case map[string]interface{}:
+				m := args[0].(map[string]interface{})
+				key, ok := args[1].(string)
+				if !ok {
+					return fmt.Errorf("second argument should be string"), false
+				}
+				return m[key], true
+			default:
+				return fmt.Errorf("first argument should be []interface{} or map[string]interface{}"), false
 			}
-			index, err := cast.ToInt(args[1], cast.STRICT)
-			if err != nil {
-				return err, false
-			}
-			if index == 0 {
-				return fmt.Errorf("index should be larger or smaller than 0"), false
-			}
-			if index-1 >= len(array) || (-index)-1 >= len(array) {
-				return errorArrayIndex, false
-			}
-			if index > 0 {
-				return array[index-1], true
-			}
-			return array[len(array)+index], true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
