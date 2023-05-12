@@ -1,4 +1,4 @@
-name: Commit Message Check
+name: Check commit message
 on:
   pull_request:
     types:
@@ -9,13 +9,19 @@ on:
 
 jobs:
   check-commit-message:
-    name: Check Commit Message
+    name: check_commit_message
     runs-on: ubuntu-latest
     steps:
+      - name: Check Type
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^(feat|fix|docs|style|refactor|chore|perf|test|build|ci|revert)(\(.*\))?:'
+          error: 'Commit type must be one of the following: feat|fix|docs|style|refactor|chore|perf|test|build|ci|revert.'
+          excludeDescription: true
       - name: Check Format
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^(feat|fix|docs|style|refactor|chore|perf|test|build|ci|revert)(\([^()]+\))?:\s(.+)$'
+          pattern: '^(\w+)(\([^()]+\))?:\s(.+)$'
           error: 'Your commit message is not formatted, check the docs for more details: https://ekuiper.org/docs/en/latest/CONTRIBUTING.html#commit-message-guidelines'
           excludeDescription: true
       - name: Check Length
