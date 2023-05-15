@@ -183,7 +183,7 @@ Currently, 'zlib', 'gzip', 'flate' and 'zstd' method are supported.
 
 | Function   | Example                   | Description                                                           |
 |------------|---------------------------|-----------------------------------------------------------------------|
-| array_position | array_postion(array, value) | Return a 1-based index of the first occurrence of val if it is found within array. If val does not exist within array, it returns 0 |
+| array_position | array_postion(array, value) | Return a 0-based index of the first occurrence of val if it is found within array. If val does not exist within array, it returns 0 |
 | element_at | element_at(array, index) | Returns element of array at index val. If val < 0, this function accesses elements from the last to the first |
 | array_contains | array_contains(array, value) | Returns true if array contains the element |
 | array_create | array_create(value1, ......) | Construct an array from literals |
