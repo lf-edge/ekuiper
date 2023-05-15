@@ -57,7 +57,7 @@ func TestArrayFunctions(t *testing.T) {
 				[]interface{}{3, 2, 1},
 				1,
 			},
-			result: 3,
+			result: 2,
 		},
 		{
 			name: "array_position",
@@ -65,7 +65,7 @@ func TestArrayFunctions(t *testing.T) {
 				[]interface{}{3, 2, 1},
 				4,
 			},
-			result: 0,
+			result: -1,
 		},
 		{
 			name: "length",
@@ -80,13 +80,6 @@ func TestArrayFunctions(t *testing.T) {
 				1, 2,
 			},
 			result: fmt.Errorf("first argument should be []interface{} or map[string]interface{}"),
-		},
-		{
-			name: "element_at",
-			args: []interface{}{
-				[]interface{}{1, 2, 3}, 0,
-			},
-			result: fmt.Errorf("index should be larger or smaller than 0"),
 		},
 		{
 			name: "element_at",
@@ -107,7 +100,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1, 2, 3}, 1,
 			},
-			result: 1,
+			result: 2,
 		},
 		{
 			name: "element_at",
