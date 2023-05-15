@@ -34,7 +34,7 @@ Following will be converted into `false`.
 
 #### Bigint
 
-If `ValueType` value of the reading is `INT8` , `INT16`, `INT32`,  `INT64`,``UINT` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` then eKuiper tries to convert to `Bigint` type. 
+If `ValueType` value of the reading is `INT8`, `INT16`, `INT32`, `INT64`, `UINT`, `UINT8`, `UINT16`, `UINT32`, `UINT64` then eKuiper tries to convert to `Bigint` type. 
 
 #### Float
 
@@ -50,11 +50,11 @@ If `ValueType` value of the reading is `String`, then eKuiper tries to convert t
 
 #### Bigint array
 
-All of `INT8` , `INT16`, `INT32`,  `INT64`,``UINT` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64`  array types in EdgeX will be converted to `Bigint` array.
+All of `INT8`, `INT16`, `INT32`, `INT64`, `UINT`, `UINT8`, `UINT16`, `UINT32`, `UINT64` array types in EdgeX will be converted to `Bigint` array.
 
 #### Float array
 
-All of `FLOAT32`, `FLOAT64`  array types in EdgeX will be converted to `Float` array.
+All of `FLOAT32`, `FLOAT64` array types in EdgeX will be converted to `Float` array.
 
 ## Global configurations
 
