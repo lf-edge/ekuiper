@@ -99,6 +99,10 @@ func NewParser(r io.Reader) *Parser {
 	return &Parser{s: NewScanner(r)}
 }
 
+func NewParserWithSources(r io.Reader, sources []string) *Parser {
+	return &Parser{s: NewScanner(r), sourceNames: sources}
+}
+
 func (p *Parser) ParseQueries() ([]ast.SelectStatement, error) {
 	var stmts []ast.SelectStatement
 
