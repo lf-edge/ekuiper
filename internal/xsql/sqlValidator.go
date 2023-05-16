@@ -116,13 +116,12 @@ func isSRFExists(node ast.Node) bool {
 	return exists
 }
 
-func validateFields(stmt *ast.SelectStatement) {
-	streamName := getStreamNames(stmt)
+func validateFields(stmt *ast.SelectStatement, streamNames []string) {
 	for i, field := range stmt.Fields {
-		stmt.Fields[i].Expr = validateExpr(field.Expr, streamName)
+		stmt.Fields[i].Expr = validateExpr(field.Expr, streamNames)
 	}
 	for i, join := range stmt.Joins {
-		stmt.Joins[i].Expr = validateExpr(join.Expr, streamName)
+		stmt.Joins[i].Expr = validateExpr(join.Expr, streamNames)
 	}
 }
 

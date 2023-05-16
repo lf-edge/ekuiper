@@ -155,7 +155,10 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 	} else {
 		selects.Joins = joins
 	}
-	p.sourceNames = getStreamNames(selects)
+	// The source names may be injected from outside to parse part of the sql
+	if p.sourceNames == nil {
+		p.sourceNames = getStreamNames(selects)
+	}
 	p.clause = "where"
 	if exp, err := p.ParseCondition(); err != nil {
 		return nil, err
@@ -184,7 +187,7 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 	}
 	p.clause = ""
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.SEMICOLON {
-		validateFields(selects)
+		validateFields(selects, p.sourceNames)
 		p.unscan()
 		return selects, nil
 	} else if tok != ast.EOF {
@@ -194,7 +197,7 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 	if err := Validate(selects); err != nil {
 		return nil, err
 	}
-	validateFields(selects)
+	validateFields(selects, p.sourceNames)
 	return selects, nil
 }
 

@@ -540,6 +540,49 @@ func TestPlannerGraphValidate(t *testing.T) {
 }`,
 			err: "parse aggfunc aggfunc with map[expr:avg(,temperature) as avg_temperature] error: found \",\", expected expression.",
 		},
+		{
+			graph: `{
+  "nodes": {
+    "abc": {
+      "type": "source",
+      "nodeType": "mqtt",
+      "props": {
+        "datasource": "demo"
+      }
+    },
+    "myfilter": {
+      "type": "operator",
+      "nodeType": "filter",
+      "props": {
+        "expr": "data.nested.temperature > 20"
+      }
+    },   
+    "mqttpv": {
+      "type": "sink",
+      "nodeType": "mqtt",
+      "props": {
+        "server": "tcp://syno.home:1883",
+        "topic": "result",
+        "sendSingle": true
+      }
+    }
+  },
+  "topo": {
+    "sources": [
+      "abc"
+    ],
+    "edges": {
+      "abc": [
+        "myfilter"
+      ],
+      "myfilter": [
+        "mqttpv"
+      ]
+    }
+  }
+}`,
+			err: "",
+		},
 	}
 
 	t.Logf("The test bucket size is %d.\n\n", len(tests))
