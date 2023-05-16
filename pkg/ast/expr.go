@@ -211,9 +211,12 @@ func (l *LikePattern) expr() {}
 func (l *LikePattern) node() {}
 
 func (l *LikePattern) Compile(likestr string) (*regexp.Regexp, error) {
-	likestr = strings.ReplaceAll(strings.ReplaceAll(likestr, `\%`, `!@#`), `\_`, `!@$`)
-	regstr := strings.ReplaceAll(strings.ReplaceAll(likestr, "%", ".*"), "_", ".")
-	regstr = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(regstr, `!@$`, `\_`), `!@#`, `\%`), `\`, `\\`)
+	regstr := strings.ReplaceAll(strings.NewReplacer(
+		`\%`, `\%`,
+		`\_`, `\_`,
+		`%`, `.*`,
+		`_`, `.`,
+	).Replace(likestr), `\`, `\\`)
 	re, err := regexp.Compile("^" + regstr + "$")
 	if err != nil {
 		return nil, err
