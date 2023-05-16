@@ -144,6 +144,8 @@ type RuleOption struct {
 	Qos                Qos              `json:"qos" yaml:"qos"`
 	CheckpointInterval int              `json:"checkpointInterval" yaml:"checkpointInterval"`
 	Restart            *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
+	Cron               string           `json:"cron" yaml:"cron"`
+	Duration           string           `json:"duration" yaml:"duration"`
 }
 
 type RestartStrategy struct {
@@ -189,6 +191,13 @@ type Rule struct {
 	Graph     *RuleGraph               `json:"graph,omitempty"`
 	Actions   []map[string]interface{} `json:"actions,omitempty"`
 	Options   *RuleOption              `json:"options,omitempty"`
+}
+
+func (r *Rule) IsScheduleRule() bool {
+	if r.Options == nil {
+		return false
+	}
+	return len(r.Options.Cron) > 0 && len(r.Options.Duration) > 0
 }
 
 type StreamContext interface {
