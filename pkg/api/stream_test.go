@@ -31,6 +31,9 @@ func TestDefaultSourceTupleResult(t *testing.T) {
 		M:    nil,
 		Time: now,
 	}, st)
+	assert.Nil(t, st.Message())
+	assert.Nil(t, st.Meta())
+	assert.Equal(t, now, st.Timestamp())
 
 	st = NewDefaultSourceTuple(nil, nil)
 
@@ -39,4 +42,7 @@ func TestDefaultSourceTupleResult(t *testing.T) {
 		M:    nil,
 		Time: st.Time,
 	}, st)
+	assert.Nil(t, st.Message())
+	assert.Nil(t, st.Meta())
+	assert.NotEqual(t, now, st.Timestamp())
 }
