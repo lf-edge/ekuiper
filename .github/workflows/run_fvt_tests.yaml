@@ -13,6 +13,9 @@ on:
     types:
       - published
 
+env:
+  DEBIAN_FRONTEND: noninteractive
+
 jobs:
   fvt_tests_with_edgex:
     runs-on: ubuntu-latest
