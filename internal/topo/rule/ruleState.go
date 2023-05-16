@@ -368,6 +368,13 @@ func (rs *RuleState) GetState() (string, error) {
 	rs.RLock()
 	defer rs.RUnlock()
 	result := bytes.NewBufferString("")
+	if rs.Rule.IsScheduleRule() {
+		if rs.cronState.isInSchedule {
+			result.WriteString("In schedule, ")
+		} else {
+			result.WriteString("Not in schedule, ")
+		}
+	}
 	if rs.Topology == nil {
 		result.WriteString("Stopped: fail to create the topo.")
 	} else {
@@ -378,22 +385,14 @@ func (rs *RuleState) GetState() (string, error) {
 			case nil:
 				result.WriteString("Running")
 			case context.Canceled:
-				result.WriteString("Stopped: canceled manually")
+				result.WriteString("Stopped: canceled manually.")
 			case context.DeadlineExceeded:
-				result.WriteString("Stopped: deadline exceed")
+				result.WriteString("Stopped: deadline exceed.")
 			default:
-				result.WriteString(fmt.Sprintf("Stopped: %v", err))
+				result.WriteString(fmt.Sprintf("Stopped: %v.", err))
 			}
 		} else {
-			result.WriteString("Stopped: canceled manually")
-			if rs.Rule.IsScheduleRule() {
-				result.WriteString(",")
-				if rs.cronState.isInSchedule {
-					result.WriteString("in schedule")
-				} else {
-					result.WriteString("not in schedule")
-				}
-			}
+			result.WriteString("Stopped: canceled manually.")
 		}
 	}
 	return result.String(), nil

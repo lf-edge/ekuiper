@@ -256,7 +256,7 @@ func TestRuleState_Start(t *testing.T) {
 		},
 		Options: defaultOption,
 	}
-	const ruleStopped = "Stopped: canceled manually"
+	const ruleStopped = "Stopped: canceled manually."
 	const ruleStarted = "Running"
 	t.Run("test rule loaded but not started", func(t *testing.T) {
 		rs, err := NewRuleState(r)
@@ -343,8 +343,8 @@ func TestScheduleRule(t *testing.T) {
 	}
 	r.Options.Cron = "mockCron"
 	r.Options.Duration = "1s"
-	const ruleStarted = "Running"
-	const ruleStopped = "Stopped: canceled manually"
+	const ruleStarted = "In schedule, Running"
+	const ruleStopped = "In schedule, Stopped: canceled manually."
 	expectRuleStart := func() {
 		rs, err := NewRuleState(r)
 		if err != nil {
