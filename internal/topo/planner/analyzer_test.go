@@ -126,7 +126,7 @@ var tests = []struct {
 	},
 	{ // 16
 		sql: `SELECT collect(*)[0] as last FROM src1 GROUP BY SlidingWindow(ss,5) HAVING last.temp > 30`,
-		r:   newErrorStruct("stream last not found"),
+		r:   newErrorStruct(""),
 	},
 }
 

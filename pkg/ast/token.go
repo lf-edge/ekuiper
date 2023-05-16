@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -278,7 +278,7 @@ func (tok Token) String() string {
 }
 
 func (tok Token) IsOperator() bool {
-	return (tok > operatorBeg && tok < operatorEnd) || tok == ASTERISK || tok == LBRACKET
+	return (tok > operatorBeg && tok < operatorEnd) || tok == ASTERISK || tok == LBRACKET || tok == DOT
 }
 
 func (tok Token) IsTimeLiteral() bool { return tok >= DD && tok <= MS }
@@ -300,7 +300,7 @@ func (tok Token) Precedence() int {
 		return 3
 	case ADD, SUB, BITWISE_OR, BITWISE_XOR:
 		return 4
-	case MUL, DIV, MOD, BITWISE_AND, SUBSET, ARROW:
+	case MUL, DIV, MOD, BITWISE_AND, SUBSET, ARROW, DOT:
 		return 5
 	}
 	return 0
