@@ -112,7 +112,7 @@ func registerObjectFunc() {
 		},
 		val: ValidateOneArg,
 	}
-	builtins["item"] = builtinFunc{
+	builtins["items"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			m, ok := args[0].(map[string]interface{})

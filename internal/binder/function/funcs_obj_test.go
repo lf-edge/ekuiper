@@ -159,7 +159,7 @@ func TestObjectFunctions(t *testing.T) {
 			result: fmt.Errorf("the first element in the list item should be string"),
 		},
 		{
-			name: "item",
+			name: "items",
 			args: []interface{}{
 				map[string]interface{}{
 					"a": 1,
@@ -172,7 +172,7 @@ func TestObjectFunctions(t *testing.T) {
 			},
 		},
 		{
-			name: "item",
+			name: "items",
 			args: []interface{}{
 				1,
 			},
