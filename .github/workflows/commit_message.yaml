@@ -1,0 +1,32 @@
+name: Check commit message
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  check-commit-message:
+    name: check_commit_message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Type
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^(feat|fix|docs|style|refactor|chore|perf|test|build|ci|revert)(\(.*\))?:'
+          error: 'Commit type must be one of the following: feat|fix|docs|style|refactor|chore|perf|test|build|ci|revert.'
+          excludeDescription: true
+      - name: Check Format
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^(\w+)(\([^()]+\))?:\s(.+)$'
+          error: 'Your commit message is not formatted, check the docs for more details: https://ekuiper.org/docs/en/latest/CONTRIBUTING.html#commit-message-guidelines'
+          excludeDescription: true
+      - name: Check Length
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^.{5,50}$'
+          error: 'The maximum commit title length of 50 characters is exceeded.'
+          excludeDescription: true

@@ -117,7 +117,8 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "",
-		}, {
+		},
+		{
 			graph: `{
   "nodes": {
     "abc": {
@@ -149,7 +150,8 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "node myfilter is not defined",
-		}, {
+		},
+		{
 			graph: `{
   "nodes": {
     "abc": {
@@ -178,7 +180,8 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "no edge defined for source node abc",
-		}, {
+		},
+		{
 			graph: `{
   "nodes": {
     "abc": {
@@ -216,7 +219,8 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "node abc output does not match node aggfunc input: input type mismatch, expect collection, got row",
-		}, {
+		},
+		{
 			graph: `{
   "nodes": {
     "abc": {
@@ -269,7 +273,8 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "join node joinop does not allow multiple stream inputs",
-		}, {
+		},
+		{
 			graph: `{
   "nodes": {
     "abc": {
@@ -341,7 +346,8 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "",
-		}, {
+		},
+		{
 			graph: `{
   "nodes": {
     "abc": {
@@ -413,7 +419,8 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "node groupop output does not match node joinop input: collection type mismatch, expect non-grouped collection, got grouped collection",
-		}, {
+		},
+		{
 			graph: `{
   "nodes": {
     "abc": {
@@ -493,6 +500,45 @@ func TestPlannerGraphValidate(t *testing.T) {
   }
 }`,
 			err: "node aggfunc output does not match node joinop input: collection type mismatch, expect non-grouped collection, got grouped collection",
+		},
+		{
+			graph: `{
+  "nodes": {
+    "abc": {
+      "type": "source",
+      "nodeType": "mqtt",
+      "props": {
+        "datasource": "demo"
+      }
+    },
+    "aggfunc": {
+      "type": "operator",
+      "nodeType": "aggfunc",
+      "props": {
+        "expr": "avg(,temperature) as avg_temperature"
+      }
+    },
+    "mqtt2": {
+      "type": "sink",
+      "nodeType": "mqtt",
+      "props": {
+        "server": "tcp://syno.home:1883",
+        "topic": "result2",
+        "sendSingle": true
+      }
+    }
+  },
+  "topo": {
+    "sources": [
+      "abc"
+    ],
+    "edges": {
+      "abc": ["aggfunc"],
+      "aggfunc": ["mqtt2"]
+    }
+  }
+}`,
+			err: "parse aggfunc aggfunc with map[expr:avg(,temperature) as avg_temperature] error: found \",\", expected expression.",
 		},
 	}
 
@@ -629,7 +675,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
       }
     }
 }`,
-			err: fmt.Errorf("source type file does not match the stream type mqtt"),
+			err: fmt.Errorf("parse source demo with map[sourceName:src1 sourceType:stream] error: source type file does not match the stream type mqtt"),
 		},
 		{
 			name: "non exist stream",
@@ -656,7 +702,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
       }
     }
 }`,
-			err: fmt.Errorf("fail to get stream unknown, please check if stream is created"),
+			err: fmt.Errorf("parse source demo with map[sourceName:unknown sourceType:stream] error: fail to get stream unknown, please check if stream is created"),
 		},
 		{
 			name: "wrong source type",
@@ -683,7 +729,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
       }
     }
 }`,
-			err: fmt.Errorf("table tableInPlanner is not a stream"),
+			err: fmt.Errorf("parse source demo with map[sourceName:tableInPlanner sourceType:stream] error: table tableInPlanner is not a stream"),
 		},
 		{
 			name: "stream and table",
@@ -785,7 +831,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
       }
     }
 }`,
-			err: fmt.Errorf("join source demo is not a stream"),
+			err: fmt.Errorf("parse join joinop with map[from:demo joins:[map[name:lookupT on:demo.deviceKind = lookupT.id type:inner]]] error: join source demo is not a stream"),
 		},
 		{
 			name: "stream and scan table",
@@ -836,7 +882,7 @@ func TestPlannerGraphWithStream(t *testing.T) {
       }
     }
 }`,
-			err: fmt.Errorf("parse &{operator join map[from:src1 joins:[map[name:lookupT on:demo.deviceKind = lookupT.id type:inner]]] map[]} error: do not support scan table [tableInPlanner] yet"),
+			err: fmt.Errorf("parse join joinop with map[from:src1 joins:[map[name:lookupT on:demo.deviceKind = lookupT.id type:inner]]] error: do not support scan table [tableInPlanner] yet"),
 		},
 	}
 	for _, tc := range testCases {
