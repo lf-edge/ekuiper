@@ -187,11 +187,10 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 		return nil, fmt.Errorf("found %q, expected EOF.", lit)
 	}
 
-	validateFields(selects)
 	if err := Validate(selects); err != nil {
 		return nil, err
 	}
-
+	validateFields(selects)
 	return selects, nil
 }
 

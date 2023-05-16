@@ -121,6 +121,9 @@ func validateFields(stmt *ast.SelectStatement) {
 	for i, field := range stmt.Fields {
 		stmt.Fields[i].Expr = validateExpr(field.Expr, streamName)
 	}
+	for i, join := range stmt.Joins {
+		stmt.Joins[i].Expr = validateExpr(join.Expr, streamName)
+	}
 }
 
 func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
@@ -137,10 +140,93 @@ func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
 		return &exp
 	case *ast.FieldRef:
 		sn := string(expr.(*ast.FieldRef).StreamName)
-		if sn != string(ast.DefaultStream) && !contains(streamName, string(expr.(*ast.FieldRef).StreamName)) {
+		if sn != string(ast.DefaultStream) && !contains(streamName, sn) {
 			return &ast.BinaryExpr{OP: ast.ARROW, LHS: &ast.FieldRef{Name: string(expr.(*ast.FieldRef).StreamName), StreamName: ast.DefaultStream}, RHS: &ast.JsonFieldRef{Name: expr.(*ast.FieldRef).Name}}
 		}
 		return expr
+	case *ast.MetaRef:
+		sn := string(expr.(*ast.MetaRef).StreamName)
+		if sn != string(ast.DefaultStream) && !contains(streamName, sn) {
+			return &ast.BinaryExpr{OP: ast.ARROW, LHS: &ast.MetaRef{Name: string(expr.(*ast.MetaRef).StreamName), StreamName: ast.DefaultStream}, RHS: &ast.JsonFieldRef{Name: expr.(*ast.MetaRef).Name}}
+		}
+		return expr
+	case *ast.BetweenExpr:
+		e := expr.(*ast.BetweenExpr)
+		e.Higher = validateExpr(e.Higher, streamName)
+		e.Lower = validateExpr(e.Lower, streamName)
+		return e
+	case *ast.ColonExpr:
+		e := expr.(*ast.ColonExpr)
+		e.Start = validateExpr(e.Start, streamName)
+		e.End = validateExpr(e.End, streamName)
+		return e
+	case *ast.CaseExpr:
+		e := expr.(*ast.CaseExpr)
+		e.Value = validateExpr(e.Value, streamName)
+		e.ElseClause = validateExpr(e.ElseClause, streamName)
+		for i, when := range e.WhenClauses {
+			e.WhenClauses[i].Expr = validateExpr(when.Expr, streamName)
+			e.WhenClauses[i].Result = validateExpr(when.Result, streamName)
+		}
+		return e
+	case *ast.Call:
+		e := expr.(*ast.Call)
+		for i, arg := range e.Args {
+			e.Args[i] = validateExpr(arg, streamName)
+		}
+		if e.Partition != nil {
+			for i, p := range e.Partition.Exprs {
+				e.Partition.Exprs[i] = validateExpr(p, streamName)
+			}
+		}
+		if e.WhenExpr != nil {
+			e.WhenExpr = validateExpr(e.WhenExpr, streamName)
+		}
+		return e
+	case *ast.ParenExpr:
+		e := expr.(*ast.ParenExpr)
+		e.Expr = validateExpr(e.Expr, streamName)
+		return e
+	case *ast.IndexExpr:
+		e := expr.(*ast.IndexExpr)
+		e.Index = validateExpr(e.Index, streamName)
+		return e
+	case *ast.ColFuncField:
+		e := expr.(*ast.ColFuncField)
+		e.Expr = validateExpr(e.Expr, streamName)
+		return e
+	case *ast.LikePattern:
+		e := expr.(*ast.LikePattern)
+		e.Expr = validateExpr(e.Expr, streamName)
+		return e
+	case *ast.ValueSetExpr:
+		e := expr.(*ast.ValueSetExpr)
+		e.ArrayExpr = validateExpr(e.ArrayExpr, streamName)
+		for i, v := range e.LiteralExprs {
+			e.LiteralExprs[i] = validateExpr(v, streamName)
+		}
+		return e
+	case *ast.PartitionExpr:
+		e := expr.(*ast.PartitionExpr)
+		for i, v := range e.Exprs {
+			e.Exprs[i] = validateExpr(v, streamName)
+		}
+		return e
+	case *ast.SortField:
+		e := expr.(*ast.SortField)
+		e.Expr = validateExpr(e.Expr, streamName)
+		e.FieldExpr = validateExpr(e.FieldExpr, streamName)
+		return e
+	case *ast.WhenClause:
+		e := expr.(*ast.WhenClause)
+		e.Expr = validateExpr(e.Expr, streamName)
+		e.Result = validateExpr(e.Result, streamName)
+		return e
+	case *ast.Window:
+		e := expr.(*ast.Window)
+		e.Filter = validateExpr(e.Filter, streamName)
+		e.Expr = validateExpr(e.Expr, streamName)
+		return e
 	default:
 		return expr
 	}
