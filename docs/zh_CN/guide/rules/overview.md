@@ -147,6 +147,8 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | qos                | int:0      | 指定流的 qos。 值为0对应最多一次； 1对应至少一次，2对应恰好一次。 如果 qos 大于0，将激活检查点机制以定期保存状态，以便可以从错误中恢复规则。                 |
 | checkpointInterval | int:300000 | 指定触发检查点的时间间隔（单位为 ms）。 仅当 qos 大于0时才有效。                                                          |
 | restartStrategy    | 结构         | 指定规则运行失败后自动重新启动规则的策略。这可以帮助从可恢复的故障中回复，而无需手动操作。请查看[规则重启策略](#规则重启策略)了解详细的配置项目。                    |
+| cron               | string: ""   | 指定规则的周期性触发策略，该周期通过[ cron 表达式](https://zh.wikipedia.org/wiki/Cron) 进行描述。 |
+| duration           | string: ""   | Specifies the running duration of the rule, only valid when cron is specified   |
 
 有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](./state_and_fault_tolerance.md)。
 
@@ -165,3 +167,11 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | jitterFactor | float: 0.1 | 添加或减去延迟的随机值系数，防止在同一时间重新启动多个规则。                            |
 
 这些选项的默认值定义于 `etc/kuiper.yaml` 配置文件，可通过修改该文件更改默认值。
+
+### 周期性规则
+
+规则支持周期性的启动、运行和暂停。在 options 中，`cron` 表达了周期性规则的启动策略，如每 1 小时启动一次，而 `duration` 则表达了每次启动规则时的运行时间，如运行 30 分钟。
+
+当 `cron` 是每 1 小时一次，而 `duration` 是 30 分钟时，那么该规则会每隔 1 小时启动一次，每次运行 30 分钟后便被暂停，等待下一次的启动运行。
+
+通过 [停止规则](../../api/restapi/rules.md#停止规则) 停止一个周期性规则时，便会将该规则从周期性调度器中移除，从而不再被调度运行。如果该周期性规则正在运行，那么该运行也会被暂停。
