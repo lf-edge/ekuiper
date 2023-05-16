@@ -61,7 +61,7 @@ func TestSafeRun(t *testing.T) {
 			fmt.Errorf("%#v", 2),
 		},
 	}
-	for _, test := range tests {
-		assert.Equal(t, test.expected, SafeRun(test.fn))
+	for _, tt := range tests {
+		assert.Equal(t, tt.expected, SafeRun(tt.fn))
 	}
 }
