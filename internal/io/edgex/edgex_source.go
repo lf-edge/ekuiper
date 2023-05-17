@@ -31,6 +31,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
@@ -101,7 +102,16 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 				log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 				return
 			case e1 := <-subErrs:
+				errTuple := &xsql.ErrorSourceTuple{
+					Error: fmt.Errorf("the subscription to edgex topic %s have error %s.\n", es.topic, e1.Error()),
+				}
 				log.Errorf("Subscription to edgex messagebus received error %v.\n", e1)
+				select {
+				case consumer <- errTuple:
+					log.Debugf("send data to device node")
+				case <-ctx.Done():
+					return
+				}
 			case msg, ok := <-messages:
 				rcvTime := conf.GetNow()
 				if !ok { // the source is closed
