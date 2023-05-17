@@ -27,9 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zstd"
-
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -356,22 +354,14 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 		ctx.GetLogger().Error(err)
 		return nil, err
 	}
-	var reader io.ReadCloser
 
-	switch fs.config.Decompression {
-	case GZIP:
-		newReader, err := gzip.NewReader(f)
+	var reader io.ReadCloser
+	if fs.config.Decompression != "" {
+		reader, err = compressor.GetDecompressReader(fs.config.Decompression, f)
 		if err != nil {
 			return nil, err
 		}
-		reader = newReader
-	case ZSTD:
-		newReader, err := zstd.NewReader(f)
-		if err != nil {
-			return nil, err
-		}
-		reader = newReader.IOReadCloser()
-	default:
+	} else {
 		reader = f
 	}
 

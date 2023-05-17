@@ -1,4 +1,4 @@
-// Copyright 2023 carlclone@gmail.com.
+// Copyright 2023-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package compressor
+package zstd
 
 import (
 	"bytes"
+	"io"
 
 	"github.com/klauspost/compress/zstd"
 )
 
-func newZstdCompressor() (*zstdCompressor, error) {
+func NewZstdCompressor() (*zstdCompressor, error) {
 	zstdWriter, err := zstd.NewWriter(nil)
 	if err != nil {
 		return nil, err
@@ -49,7 +50,7 @@ func (g *zstdCompressor) Compress(data []byte) ([]byte, error) {
 	return g.buffer.Bytes(), nil
 }
 
-func newzstdDecompressor() (*zstdDecompressor, error) {
+func NewzstdDecompressor() (*zstdDecompressor, error) {
 	r, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(0))
 	if err != nil {
 		return nil, err
@@ -63,4 +64,16 @@ type zstdDecompressor struct {
 
 func (z *zstdDecompressor) Decompress(data []byte) ([]byte, error) {
 	return z.decoder.DecodeAll(data, nil)
+}
+
+func NewReader(r io.Reader) (io.ReadCloser, error) {
+	result, err := zstd.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+	return result.IOReadCloser(), nil
+}
+
+func NewWriter(w io.Writer) (io.Writer, error) {
+	return zstd.NewWriter(w)
 }

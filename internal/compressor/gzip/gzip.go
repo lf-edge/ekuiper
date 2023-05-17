@@ -1,4 +1,4 @@
-// Copyright 2023 carlclone@gmail.com.
+// Copyright 2023-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package compressor
+package gzip
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
-func newGzipCompressor() (*gzipCompressor, error) {
+func NewGzipCompressor() (*gzipCompressor, error) {
 	return &gzipCompressor{
 		writer: gzip.NewWriter(nil),
 	}, nil
@@ -49,7 +49,7 @@ func (g *gzipCompressor) Compress(data []byte) ([]byte, error) {
 	return g.buffer.Bytes(), nil
 }
 
-func newGzipDecompressor() (*gzipDecompressor, error) {
+func NewGzipDecompressor() (*gzipDecompressor, error) {
 	return &gzipDecompressor{}, nil
 }
 
@@ -77,4 +77,12 @@ func (z *gzipDecompressor) Decompress(data []byte) ([]byte, error) {
 		}
 	}()
 	return io.ReadAll(z.reader)
+}
+
+func NewReader(r io.Reader) (io.ReadCloser, error) {
+	return gzip.NewReader(r)
+}
+
+func NewWriter(w io.Writer) (io.Writer, error) {
+	return gzip.NewWriter(w), nil
 }
