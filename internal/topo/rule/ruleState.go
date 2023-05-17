@@ -15,7 +15,6 @@
 package rule
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math"
@@ -367,35 +366,32 @@ func (rs *RuleState) Close() error {
 func (rs *RuleState) GetState() (string, error) {
 	rs.RLock()
 	defer rs.RUnlock()
-	result := bytes.NewBufferString("")
-	if rs.Rule.IsScheduleRule() {
-		if rs.cronState.isInSchedule {
-			result.WriteString("In schedule, ")
-		} else {
-			result.WriteString("Not in schedule, ")
-		}
-	}
+	result := ""
 	if rs.Topology == nil {
-		result.WriteString("Stopped: fail to create the topo.")
+		result = "Stopped: fail to create the topo."
 	} else {
 		c := (*rs.Topology).GetContext()
 		if c != nil {
 			err := c.Err()
 			switch err {
 			case nil:
-				result.WriteString("Running")
+				result = "Running"
 			case context.Canceled:
-				result.WriteString("Stopped: canceled manually.")
+				if rs.Rule.IsScheduleRule() {
+					result = "Stopped: waiting for next schedule."
+				} else {
+					result = "Stopped: canceled manually."
+				}
 			case context.DeadlineExceeded:
-				result.WriteString("Stopped: deadline exceed.")
+				result = "Stopped: deadline exceed."
 			default:
-				result.WriteString(fmt.Sprintf("Stopped: %v.", err))
+				result = fmt.Sprintf("Stopped: %v.", err)
 			}
 		} else {
-			result.WriteString("Stopped: canceled manually.")
+			result = "Stopped: canceled manually."
 		}
 	}
-	return result.String(), nil
+	return result, nil
 }
 
 func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {

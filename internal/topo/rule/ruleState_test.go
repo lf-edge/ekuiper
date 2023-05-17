@@ -343,9 +343,9 @@ func TestScheduleRule(t *testing.T) {
 	}
 	r.Options.Cron = "mockCron"
 	r.Options.Duration = "1s"
-	const ruleStarted = "In schedule, Running"
-	const ruleStopped = "In schedule, Stopped: canceled manually."
-	expectRuleStart := func() {
+	const ruleStarted = "Running"
+	const ruleStopped = "Stopped: waiting for next schedule."
+	func() {
 		rs, err := NewRuleState(r)
 		if err != nil {
 			t.Error(err)
@@ -369,10 +369,9 @@ func TestScheduleRule(t *testing.T) {
 			t.Error("cron state should be in schedule")
 			return
 		}
-	}
-	expectRuleStart()
+	}()
 
-	expectRuleStop := func() {
+	func() {
 		rs, err := NewRuleState(r)
 		if err != nil {
 			t.Error(err)
@@ -396,10 +395,9 @@ func TestScheduleRule(t *testing.T) {
 			t.Error("cron state should be in schedule")
 			return
 		}
-	}
-	expectRuleStop()
+	}()
 
-	expectRuleRegisterOnce := func() {
+	func() {
 		rs, err := NewRuleState(r)
 		if err != nil {
 			t.Error(err)
@@ -418,6 +416,5 @@ func TestScheduleRule(t *testing.T) {
 				return
 			}
 		}
-	}
-	expectRuleRegisterOnce()
+	}()
 }
