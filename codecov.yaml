@@ -1,9 +1,12 @@
-codecov:
-  disable_default_path_fixes: true
-
-fixes:
-  - "github.com/lf-edge/ekuiper::"
+coverage:
+  precision: 2
+  round: nearest
+  range: "60...75"
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
 
 ignore:
   - "**/main.go"
-  - "main.go"
