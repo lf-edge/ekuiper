@@ -61,12 +61,73 @@
         }
       },
       {
+        "name": "lookup",
+        "default": {
+          "cache": {
+            "name": "cache",
+            "default": true,
+            "optional": false,
+            "control": "radio",
+            "type": "bool",
+            "hint": {
+              "en_US": "Whether to enable cache for lookup",
+              "zh_CN": "是否开启查询缓存"
+            },
+            "label": {
+              "en_US": "Enable lookup cache",
+              "zh_CN": "开启查询缓存"
+            }
+          },
+          "cacheTtl": {
+            "name": "cacheTtl",
+            "default": 600,
+            "optional": true,
+            "control": "text",
+            "type": "int",
+            "hint": {
+              "en_US": "Cache Time To Live",
+              "zh_CN": "缓存时间"
+            },
+            "label": {
+              "en_US": "Cache TTL",
+              "zh_CN": "缓存时间"
+            }
+          },
+          "cacheMissingKey": {
+            "name": "cacheMissingKey",
+            "default": true,
+            "optional": false,
+            "control": "radio",
+            "type": "bool",
+            "hint": {
+              "en_US": "Whether to cache missing lookup of null value",
+              "zh_CN": "是否缓存未命中的空值"
+            },
+            "label": {
+              "en_US": "Cache missing key",
+              "zh_CN": "缓存未命中的 Key"
+            }
+          }
+        },
+        "optional": true,
+        "control": "list",
+        "type": "object",
+        "hint": {
+          "en_US": "Lookup table configuration, only effective when using as a lookup table",
+          "zh_CN": "查询表配置，仅在作为查询表使用时生效"
+        },
+        "label": {
+          "en_US": "Lookup table configuration",
+          "zh_CN": "查询表配置"
+        }
+      },
+      {
         "name": "internalSqlQueryCfg",
         "default": {
           "table":{
             "name": "table",
-            "default": "tableName",
-            "optional": false,
+            "default": "",
+            "optional": true,
             "control": "text",
             "type": "string",
             "hint": {
@@ -110,7 +171,7 @@
           },
           "limit": {
             "name": "limit",
-            "default": 10,
+            "default": "",
             "optional": true,
             "control": "text",
             "type": "int",
@@ -173,7 +234,7 @@
           "TemplateSql": {
             "name": "TemplateSql",
             "default": "",
-            "optional": false,
+            "optional": true,
             "control": "text",
             "type": "string",
             "hint": {
@@ -257,67 +318,6 @@
         "label": {
           "en_US": "Query Template",
           "zh_CN": "查询模版"
-        }
-      },
-      {
-        "name": "lookup",
-        "default": {
-          "cache": {
-            "name": "cache",
-            "default": true,
-            "optional": false,
-            "control": "radio",
-            "type": "bool",
-            "hint": {
-              "en_US": "Whether to enable cache for lookup",
-              "zh_CN": "是否开启查询缓存"
-            },
-            "label": {
-              "en_US": "Enable lookup cache",
-              "zh_CN": "开启查询缓存"
-            }
-          },
-          "cacheTtl": {
-            "name": "cacheTtl",
-            "default": "600",
-            "optional": true,
-            "control": "text",
-            "type": "string",
-            "hint": {
-              "en_US": "Cache Time To Live",
-              "zh_CN": "缓存时间"
-            },
-            "label": {
-              "en_US": "Cache TTL",
-              "zh_CN": "缓存时间"
-            }
-          },
-          "cacheMissingKey": {
-            "name": "cacheMissingKey",
-            "default": true,
-            "optional": false,
-            "control": "radio",
-            "type": "bool",
-            "hint": {
-              "en_US": "Whether to cache missing lookup of null value",
-              "zh_CN": "是否缓存未命中的空值"
-            },
-            "label": {
-              "en_US": "Cache missing key",
-              "zh_CN": "缓存未命中的 Key"
-            }
-          }
-        },
-        "optional": true,
-        "control": "list",
-        "type": "object",
-        "hint": {
-          "en_US": "Lookup table configuration, only effective when using as a lookup table",
-          "zh_CN": "查询表配置，仅在作为查询表使用时生效"
-        },
-        "label": {
-          "en_US": "Lookup table configuration",
-          "zh_CN": "查询表配置"
         }
       }
     ]
