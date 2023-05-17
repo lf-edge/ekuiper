@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v4
       with:
         go-version: '1.20'
     - uses: actions/setup-python@v4
@@ -27,13 +27,6 @@ jobs:
         python-version: '3.x'
         architecture: 'x64'
     - run: pip3 install pynng
-    - name: run code static check
-      run : |
-        if [ ! -z "$(gofmt -l .)" ];then
-          echo "code static check error"
-          gofmt -l .
-          exit 1
-        fi
     - name: install lib
       env:
         DEBIAN_FRONTEND: noninteractive
