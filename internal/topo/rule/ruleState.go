@@ -327,6 +327,7 @@ func (rs *RuleState) Stop() error {
 	if rs.Rule.IsScheduleRule() {
 		rs.cronState.isInSchedule = false
 		rs.cronState.cancel()
+		rs.cronState.startFailedCnt = 0
 		backgroundCron.Remove(rs.cronState.entryID)
 	}
 	return rs.stop()
@@ -357,6 +358,7 @@ func (rs *RuleState) Close() error {
 	if rs.Rule.IsScheduleRule() {
 		rs.cronState.isInSchedule = false
 		rs.cronState.cancel()
+		rs.cronState.startFailedCnt = 0
 		backgroundCron.Remove(rs.cronState.entryID)
 	}
 	close(rs.ActionCh)
