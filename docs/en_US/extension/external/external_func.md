@@ -15,7 +15,7 @@ The json configuration file includes the following two parts:
 
 - about: Used to describe the Meta-information of service, including author, detailed description, help document url, etc. For detailed usage, please refer to the example below.
 - interfaces: Used to define a set of service interfaces. Services provided by the same server often have the same service address and can be used as a service interface. Each service interface contains the following attributes:
-    - protocol: The protocol used by the service. "grpc", "rest" and "msgpack-rpc" are supported currently.
+    - protocol: The protocol used by the service. "grpc", "rest" are supported currently. The "msgpack-rpc" is not built by default, you need to build it with build tag "msgpack" by yourself. Please refer to [feature compilation](../../operation/compile/features.md#usage) for detail.
     - address: Service address, which must be url. For example, typical rpc service address: "tcp://localhost:50000" or http service address "https://localhost:8000".
     - schemaType: The type of service description file. Only "protobuf" is supported currently .
     - schemaFile: service description file, currently only proto file is supported. The rest and msgpack services also need to be described in proto.
@@ -93,7 +93,7 @@ This file defines the sample service, which contains the call information of 3 s
 
 - trueno: grpc service
 - tsrest: rest service
-- tsrpc: msgpack-rpc service
+- tsrpc: msgpack-rpc service (not built by default)
 
 The service provided by each service interface is defined by its corresponding schema file. Taking tsrest as an example, its schema file is tsrest.proto, which is defined as follows:
 
@@ -205,7 +205,7 @@ Notice that, in REST call the parameters will be parsed to json.  Proto message 
 
 ### Notification
 
-Since REST and msgpack-rpc are not natively defined by protobuf, there are some  limitations when using them.
+Since REST and msgpack-rpc are not natively defined by protobuf, there are some limitations when using them.
 
 The REST service is **POST** by default currently, and the transmission format is json. The user can change the default method through [http options](#http-options) in the defined protobuf. There are some restricitons in rest service:
 
