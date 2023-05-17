@@ -317,7 +317,7 @@ func NewAliasRef(e Expr) (*AliasRef, error) {
 	}, nil
 }
 
-// for testing only
+// MockAliasRef is for testing only.
 func MockAliasRef(e Expr, r []StreamName, a *bool) *AliasRef {
 	return &AliasRef{e, r, a}
 }
