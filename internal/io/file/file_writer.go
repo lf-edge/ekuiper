@@ -21,9 +21,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zstd"
-
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -73,21 +71,15 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 
 	fws.Compress = compressAlgorithm
 
-	switch compressAlgorithm {
-	case GZIP:
-		fws.fileBuffer = bufio.NewWriter(f)
-		fws.Writer = gzip.NewWriter(fws.fileBuffer)
-	case ZSTD:
-		fws.fileBuffer = bufio.NewWriter(f)
-		enc, err := zstd.NewWriter(fws.fileBuffer)
-		if err != nil {
-			return nil, err
-		}
-		fws.Writer = enc
-	default:
+	if compressAlgorithm == "" {
 		fws.Writer = bufio.NewWriter(f)
+	} else {
+		fws.fileBuffer = bufio.NewWriter(f)
+		fws.Writer, err = compressor.GetCompressWriter(compressAlgorithm, fws.fileBuffer)
+		if err != nil {
+			return nil, fmt.Errorf("fail to get compress writer for %s: %v", compressAlgorithm, err)
+		}
 	}
-
 	_, err = fws.Writer.Write(fws.Hook.Header())
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-// Copyright 2023 carlclone@gmail.com.
+// Copyright 2023-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package compressor
+package zlib
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
-func newZlibCompressor() (*zlibCompressor, error) {
+func NewZlibCompressor() (*zlibCompressor, error) {
 	return &zlibCompressor{
 		writer: zlib.NewWriter(nil),
 	}, nil
@@ -49,7 +49,7 @@ func (z *zlibCompressor) Compress(data []byte) ([]byte, error) {
 	return z.buffer.Bytes(), nil
 }
 
-func newZlibDecompressor() (*zlibDecompressor, error) {
+func NewZlibDecompressor() (*zlibDecompressor, error) {
 	return &zlibDecompressor{}, nil
 }
 

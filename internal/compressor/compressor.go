@@ -16,28 +16,29 @@ package compressor
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-const (
-	ZLIB  = "zlib"
-	GZIP  = "gzip"
-	FLATE = "flate"
-	ZSTD  = "zstd"
-)
+type CompressorInstantiator func(name string) (message.Compressor, error)
+
+var compressors = map[string]CompressorInstantiator{}
 
 func GetCompressor(name string) (message.Compressor, error) {
-	switch name {
-	case ZLIB:
-		return newZlibCompressor()
-	case GZIP:
-		return newGzipCompressor()
-	case FLATE:
-		return newFlateCompressor()
-	case ZSTD:
-		return newZstdCompressor()
-	default:
-		return nil, fmt.Errorf("unsupported compressor: %s", name)
+	if instantiator, ok := compressors[name]; ok {
+		return instantiator(name)
 	}
+	return nil, fmt.Errorf("unsupported compressor: %s", name)
+}
+
+type CompressWriterIns func(reader io.Writer) (io.Writer, error)
+
+var compressWriters = map[string]CompressWriterIns{}
+
+func GetCompressWriter(name string, writer io.Writer) (io.Writer, error) {
+	if instantiator, ok := compressWriters[name]; ok {
+		return instantiator(writer)
+	}
+	return nil, fmt.Errorf("unsupported compressor for file: %s", name)
 }

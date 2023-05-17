@@ -16,21 +16,29 @@ package compressor
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
+type DecompressorInstantiator func(name string) (message.Decompressor, error)
+
+var decompressors = map[string]DecompressorInstantiator{}
+
 func GetDecompressor(name string) (message.Decompressor, error) {
-	switch name {
-	case ZLIB:
-		return newZlibDecompressor()
-	case GZIP:
-		return newGzipDecompressor()
-	case FLATE:
-		return newFlateDecompressor()
-	case ZSTD:
-		return newzstdDecompressor()
-	default:
-		return nil, fmt.Errorf("unsupported decompressor: %s", name)
+	if instantiator, ok := decompressors[name]; ok {
+		return instantiator(name)
 	}
+	return nil, fmt.Errorf("unsupported decompressor: %s", name)
+}
+
+type DecompressReaderIns func(reader io.Reader) (io.ReadCloser, error)
+
+var decompressReaders = map[string]DecompressReaderIns{}
+
+func GetDecompressReader(name string, reader io.Reader) (io.ReadCloser, error) {
+	if instantiator, ok := decompressReaders[name]; ok {
+		return instantiator(reader)
+	}
+	return nil, fmt.Errorf("unsupported decompressor for file: %s", name)
 }
