@@ -12,7 +12,7 @@ json 配置文件包括以下两个部分：
 
 - about: 用于描述服务的元信息，包括作者，详细描述，帮助文档 url 等。详细用法请参考下面的范例。
 - interfaces: 用于定义一组服务接口。同一个服务器提供的服务往往具有相同的服务地址，可作为一个服务接口。每一个服务接口包含下列属性：
-    - protocol: 服务采用的协议。目前支持 "grpc", "rest" 和 "msgpack-rpc"
+    - protocol: 服务采用的协议。目前支持 "grpc", "rest"。需要注意的是， "msgpack-rpc" 服务没有编译到默认的 eKuiper 中，需要添加 build tag "msgpack" 并自行编译。详情请参考[按需编译](../../operation/compile/features.md#使用)。
     - adddress: 服务地址，必须为 url。例如，典型 rpc 服务地址："tcp://localhost:50000" 或者 http 服务地址 "https://localhost:8000"。
     - schemaType: 服务描述文件类型。目前仅支持 "protobuf"。
     - schemaFile: 服务描述文件，目前仅支持 proto 文件。rest 和 msgpack 服务也需要采用 proto 描述。

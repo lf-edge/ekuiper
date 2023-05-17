@@ -17,7 +17,7 @@
 | [扩展模板函数](../../guide/sinks/data_template.md#模版中支持的函数)                       | template   | 支持除 go 语言默认的模板函数之外的扩展函数，主要来自 sprig                           |
 | [有模式编解码](../../guide/serialization/serialization.md)                        | schema     | 支持模式注册及有模式的编解码格式，例如 protobuf                                 |
 
-## Usage
+## 使用
 
 Makefile 里已经提供了三种功能集合：标准，edgeX和核心。标准功能集合包含除了 EdgeX 之外的所有功能。edgeX 功能集合包含了所有的功能；而核心功能集合近包含最小的核心功能。可以通过以下命令，分别编译这三种功能集合：
 
