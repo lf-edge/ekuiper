@@ -193,6 +193,10 @@ Currently, 'zlib', 'gzip', 'flate' and 'zstd' method are supported.
 | Function   | Example                   | Description                                                           |
 |------------|---------------------------|-----------------------------------------------------------------------|
 | keys | keys(map[string]interface{}) | Return an array containing the keys of the map |
+| values | values(map[string]interface{}) | Return an array containing the values of the map |
+| object | object(arr1, arr2) | Construct an object from an array of keys and an array of values. keys must be an array of strings. values must be an arbitrary array of the same length as keys. |
+| zip | zip([arr1, arr2], ......) | Construct an object from an array of entries. Each entry must itself be an array of size 2: the first element is the key (and must be a string), and the second element is the value. |
+| items | items(map[string]interface{}) | Return an array containing the entries of obj. Each entry is a 2-element array; the first is the key, the second is the value. |
 
 ## Analytic Functions
 
