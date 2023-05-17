@@ -32,6 +32,7 @@ type config struct {
 	RowkindField string   `json:"rowkindField"`
 	KeyField     string   `json:"keyField"`
 	Fields       []string `json:"fields"`
+	DataField    string   `json:"dataField"`
 }
 
 type sink struct {
@@ -40,6 +41,7 @@ type sink struct {
 	keyField     string
 	rowkindField string
 	fields       []string
+	dataField    string
 }
 
 func (s *sink) Open(ctx api.StreamContext) error {
@@ -61,6 +63,7 @@ func (s *sink) Configure(props map[string]interface{}) error {
 	if cfg.DataTemplate != "" {
 		s.hasTransform = true
 	}
+	s.dataField = cfg.DataField
 	s.fields = cfg.Fields
 	s.rowkindField = cfg.RowkindField
 	s.keyField = cfg.KeyField
@@ -77,7 +80,7 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 		return err
 	}
 	if s.hasTransform {
-		jsonBytes, _, err := ctx.TransformOutput(data, true)
+		jsonBytes, _, err := ctx.TransformOutput(data)
 		if err != nil {
 			return err
 		}
@@ -87,8 +90,8 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		data = m
-	} else if len(s.fields) > 0 {
-		m, err := transform.SelectMap(data, s.fields)
+	} else {
+		m, _, err := transform.TransItem(data, s.dataField, s.fields)
 		if err != nil {
 			return fmt.Errorf("fail to select fields %v for data %v", s.fields, data)
 		}

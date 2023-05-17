@@ -80,7 +80,7 @@ func (s *sink) Open(ctx api.StreamContext) error {
 func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 	ctx.GetLogger().Debugf("receive %+v", data)
 	if s.c.Raw {
-		r, _, err := ctx.TransformOutput(data, true)
+		r, _, err := ctx.TransformOutput(data)
 		if err != nil {
 			return err
 		}

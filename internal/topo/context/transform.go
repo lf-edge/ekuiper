@@ -23,11 +23,11 @@ import (
 const TransKey = "$$trans"
 
 // TransformOutput Lazy transform output to bytes
-func (c *DefaultContext) TransformOutput(data interface{}, selected bool) ([]byte, bool, error) {
+func (c *DefaultContext) TransformOutput(data interface{}) ([]byte, bool, error) {
 	v := c.Value(TransKey)
 	f, ok := v.(transform.TransFunc)
 	if ok {
-		return f(data, selected)
+		return f(data)
 	}
 	return nil, false, fmt.Errorf("no transform configured")
 }

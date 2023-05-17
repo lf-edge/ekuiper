@@ -550,6 +550,7 @@ func TestSinkFields_Apply(t *testing.T) {
 		format    string
 		schemaId  string
 		delimiter string
+		dataField string
 		fields    []string
 		data      interface{}
 		result    [][]byte
@@ -596,12 +597,36 @@ func TestSinkFields_Apply(t *testing.T) {
 			data:     map[string]interface{}{"a": "1", "b": "2", "c": "3"},
 			result:   [][]byte{[]byte(`{"a":null,"b":null}`)},
 		},
+		{
+			format:    "json",
+			dataField: "device",
+			fields:    []string{"a", "b"},
+			data:      map[string]interface{}{"device": map[string]interface{}{"a": "1", "b": "2", "c": "3"}, "a": 11, "b": 22, "c": 33},
+			result:    [][]byte{[]byte(`{"a":"1","b":"2"}`)},
+		},
+		{
+			format:    "delimited",
+			delimiter: ",",
+			fields:    []string{"a", "b"},
+			dataField: "device",
+			data:      map[string]interface{}{"device": map[string]interface{}{"a": "1", "b": "2", "c": "3"}, "a": 11, "b": 22, "c": 33},
+			result:    [][]byte{[]byte(`1,2`)},
+		},
+		{
+			format:    "json",
+			schemaId:  "",
+			fields:    []string{"a", "b"},
+			dt:        `{"device": {"a": {{.a}}}}`,
+			dataField: "device",
+			data:      map[string]interface{}{"a": "1", "b": "2", "c": "3"},
+			result:    [][]byte{[]byte(`{"a":1,"b":null}`)},
+		},
 	}
 	contextLogger := conf.Log.WithField("rule", "TestSinkFields_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
 	for i, tt := range tests {
-		tf, _ := transform.GenTransform(tt.dt, tt.format, tt.schemaId, tt.delimiter, tt.fields)
+		tf, _ := transform.GenTransform(tt.dt, tt.format, tt.schemaId, tt.delimiter, tt.dataField, tt.fields)
 		vCtx := context.WithValue(ctx, context.TransKey, tf)
 		mockSink := mocknode.NewMockSink()
 		mockSink.Collect(vCtx, tt.data)

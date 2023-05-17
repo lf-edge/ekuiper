@@ -48,6 +48,7 @@ type config struct {
 	RowkindField string        `json:"rowkindField"`
 	DataTemplate string        `json:"dataTemplate"`
 	Fields       []string      `json:"fields"`
+	DataField    string        `json:"dataField"`
 }
 
 type RedisSink struct {
@@ -92,7 +93,7 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
 	var val string
 	if r.c.DataTemplate != "" { // The result is a string
-		v, _, err := ctx.TransformOutput(data, true)
+		v, _, err := ctx.TransformOutput(data)
 		if err != nil {
 			logger.Error(err)
 			return err
@@ -104,8 +105,8 @@ func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
 		}
 		data = m
 		val = string(v)
-	} else if len(r.c.Fields) > 0 {
-		m, err := transform.SelectMap(data, r.c.Fields)
+	} else {
+		m, _, err := transform.TransItem(data, r.c.DataField, r.c.Fields)
 		if err != nil {
 			return fmt.Errorf("fail to select fields %v for data %v", r.c.Fields, data)
 		}

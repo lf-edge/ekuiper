@@ -160,7 +160,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if err != nil {
 		return err
 	}
-	if v, _, err := ctx.TransformOutput(item, true); err == nil {
+	if v, _, err := ctx.TransformOutput(item); err == nil {
 		ctx.GetLogger().Debugf("file sink transform data %s", v)
 		m.mux.Lock()
 		defer m.mux.Unlock()

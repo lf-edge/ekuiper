@@ -119,14 +119,14 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	switch d := item.(type) {
 	case []map[string]interface{}:
 		for _, el := range d {
-			decodedBytes, _, err := ctx.TransformOutput(el, true)
+			decodedBytes, _, err := ctx.TransformOutput(el)
 			if err != nil {
 				return fmt.Errorf("kafka sink transform data error: %v", err)
 			}
 			messages = append(messages, kafkago.Message{Value: decodedBytes})
 		}
 	case map[string]interface{}:
-		decodedBytes, _, err := ctx.TransformOutput(d, true)
+		decodedBytes, _, err := ctx.TransformOutput(d)
 		if err != nil {
 			return fmt.Errorf("kafka sink transform data error: %v", err)
 		}

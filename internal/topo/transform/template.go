@@ -28,14 +28,9 @@ import (
 )
 
 // TransFunc is the function to transform data
+type TransFunc func(interface{}) ([]byte, bool, error)
 
-// The second parameter indicates whether to select fields based on the fields property.
-// If it is false, then after the dataTemplate, output the result directly.
-// If it is true, then after the dataTemplate, select the fields based on the fields property.
-
-type TransFunc func(interface{}, bool) ([]byte, bool, error)
-
-func GenTransform(dt string, format string, schemaId string, delimiter string, fields []string) (TransFunc, error) {
+func GenTransform(dt string, format string, schemaId string, delimiter string, dataField string, fields []string) (TransFunc, error) {
 	var (
 		tp  *template.Template = nil
 		c   message.Converter
@@ -67,11 +62,13 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 		}
 		tp = temp
 	}
-	return func(d interface{}, s bool) ([]byte, bool, error) {
+	return func(d interface{}) ([]byte, bool, error) {
 		var (
 			bs          []byte
 			transformed bool
 			selected    bool
+			m           interface{}
+			e           error
 		)
 		if tp != nil {
 			var output bytes.Buffer
@@ -82,28 +79,17 @@ func GenTransform(dt string, format string, schemaId string, delimiter string, f
 			bs = output.Bytes()
 			transformed = true
 		}
-		// just for sinks like tdengine and sql.
-		if !s {
-			if transformed {
-				return bs, true, nil
-			}
-			outBytes, err := json.Marshal(d)
-			return outBytes, false, err
+
+		if transformed {
+			m, selected, e = TransItem(bs, dataField, fields)
 		} else {
-			// Consider that if only the dataTemplate is needed, and the data after trans cannot be converted into map[string]interface
-			var m interface{}
-			var err error
-			if transformed {
-				m, err = SelectMap(bs, fields)
-			} else {
-				m, err = SelectMap(d, fields)
-			}
-			if err != nil && err.Error() != "fields cannot be empty" {
-				return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
-			} else if err == nil {
-				d = m
-				selected = true
-			}
+			m, selected, e = TransItem(d, dataField, fields)
+		}
+		if e != nil {
+			return nil, false, fmt.Errorf("fail to TransItem data %v for error %v", d, e)
+		}
+		if selected {
+			d = m
 		}
 
 		switch format {
@@ -134,20 +120,51 @@ func GenTp(dt string) (*template.Template, error) {
 	return template.New("sink").Funcs(conf.FuncMap).Parse(dt)
 }
 
-// SelectMap select fields from input map or array of map.
 // If you do not need to convert data to []byte, you can use this function directly. Otherwise, use TransFunc.
-func SelectMap(input interface{}, fields []string) (interface{}, error) {
-	if len(fields) == 0 {
-		return input, fmt.Errorf("fields cannot be empty")
+func TransItem(input interface{}, dataField string, fields []string) (interface{}, bool, error) {
+	if dataField == "" && len(fields) == 0 {
+		return input, false, nil
 	}
-
 	if _, ok := input.([]byte); ok {
-		var m map[string]interface{}
+		var m interface{}
 		err := json.Unmarshal(input.([]byte), &m)
 		if err != nil {
-			return input, fmt.Errorf("fail to decode data %s for error %v", string(input.([]byte)), err)
+			return input, false, fmt.Errorf("fail to decode data %s for error %v", string(input.([]byte)), err)
 		}
 		input = m
+	}
+
+	if dataField != "" {
+		switch input.(type) {
+		case map[string]interface{}:
+			input = input.(map[string]interface{})[dataField]
+		case []interface{}:
+			if len(input.([]interface{})) == 0 {
+				return nil, false, nil
+			}
+			input = input.([]interface{})[0].(map[string]interface{})[dataField]
+		case []map[string]interface{}:
+			if len(input.([]map[string]interface{})) == 0 {
+				return nil, false, nil
+			}
+			input = input.([]map[string]interface{})[0][dataField]
+		default:
+			return nil, false, fmt.Errorf("fail to decode data %v", input)
+		}
+	}
+	fmt.Println("input", input)
+	m, err := selectMap(input, fields)
+	if err != nil && err.Error() != "fields cannot be empty" {
+		return nil, false, fmt.Errorf("fail to decode data %v for error %v", input, err)
+	} else {
+		return m, true, nil
+	}
+}
+
+// selectMap select fields from input map or array of map.
+func selectMap(input interface{}, fields []string) (interface{}, error) {
+	if len(fields) == 0 {
+		return input, fmt.Errorf("fields cannot be empty")
 	}
 
 	outputs := make([]map[string]interface{}, 0)
