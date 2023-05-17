@@ -46,10 +46,10 @@ func registerArrayFunc() {
 			}
 			for i, item := range array {
 				if item == args[1] {
-					return i + 1, true
+					return i, true
 				}
 			}
-			return 0, true
+			return -1, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
@@ -65,14 +65,11 @@ func registerArrayFunc() {
 				if err != nil {
 					return err, false
 				}
-				if index == 0 {
-					return fmt.Errorf("index should be larger or smaller than 0"), false
-				}
-				if index-1 >= len(array) || (-index)-1 >= len(array) {
+				if index >= len(array) || -index > len(array) {
 					return errorArrayIndex, false
 				}
-				if index > 0 {
-					return array[index-1], true
+				if index >= 0 {
+					return array[index], true
 				}
 				return array[len(array)+index], true
 			case map[string]interface{}:

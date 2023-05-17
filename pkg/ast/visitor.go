@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -107,19 +107,25 @@ func Walk(v Visitor, node Node) {
 	case *ParenExpr:
 		Walk(v, n.Expr)
 
+	case *ArrowExpr:
+		Walk(v, n.Expr)
+
+	case *BracketExpr:
+		Walk(v, n.Expr)
+
+	case *ColonExpr:
+		Walk(v, n.Start)
+		Walk(v, n.End)
+
+	case *IndexExpr:
+		Walk(v, n.Index)
+
 	case *CaseExpr:
 		Walk(v, n.Value)
 		for _, w := range n.WhenClauses {
 			Walk(v, w)
 		}
 		Walk(v, n.ElseClause)
-
-	case *WhenClause:
-		Walk(v, n.Expr)
-		Walk(v, n.Result)
-
-	case *IndexExpr:
-		Walk(v, n.Index)
 
 	case *ColFuncField:
 		Walk(v, n.Expr)
@@ -129,6 +135,13 @@ func Walk(v Visitor, node Node) {
 			Walk(v, l)
 		}
 		Walk(v, n.ArrayExpr)
+
+	case *BetweenExpr:
+		Walk(v, n.Lower)
+		Walk(v, n.Higher)
+
+	case *LikePattern:
+		Walk(v, n.Expr)
 	}
 }
 

@@ -35,6 +35,8 @@ jobs:
           exit 1
         fi
     - name: install lib
+      env:
+        DEBIAN_FRONTEND: noninteractive
       run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: run test case
       run: |

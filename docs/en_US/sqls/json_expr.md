@@ -37,7 +37,7 @@
 
 ### Identifier 
 
-Source Dereference (`.`) The source dereference operator can be used to specify columns by dereferencing the source stream or table. The `->` dereference selects a key in a nested JSON object.
+The source dereference operator `.` can be used to specify columns by dereferencing the source stream or table, or to select a key in a nested JSON object. The `->` dereference selects a key in a nested JSON object.
 
 ```
 SELECT demo.age FROM demo
@@ -54,8 +54,29 @@ SELECT demo.name->first FROM demo
 
 
 ```
+SELECT demo.name.first FROM demo
+{"first" : "Tom"}
+```
+
+
+
+```
+SELECT name.first AS fname FROM demo
+{"fname": "Tom"}
+```
+
+
+
+```
 SELECT name->first AS fname FROM demo
 {"fname": "Tom"}
+```
+
+
+
+```
+SELECT ops->functionA.numArgs AS num FROM demo
+{"num": 2}
 ```
 
 ### Index expression

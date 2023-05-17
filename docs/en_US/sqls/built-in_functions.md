@@ -179,6 +179,25 @@ When casting to datetime type, the supported column type and casting rule are:
 
 Currently, 'zlib', 'gzip', 'flate' and 'zstd' method are supported.
 
+## Array Functions
+
+| Function   | Example                   | Description                                                                                                                          |
+|------------|---------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| array_position | array_postion(array, value) | Return a 0-based index of the first occurrence of val if it is found within array. If val does not exist within array, it returns -1 |
+| element_at | element_at(array, index) | Returns element of array at index val. If val < 0, this function accesses elements from the last to the first                        |
+| array_contains | array_contains(array, value) | Returns true if array contains the element                                                                                           |
+| array_create | array_create(value1, ......) | Construct an array from literals                                                                                                     |
+
+## Object Functions
+
+| Function   | Example                   | Description                                                           |
+|------------|---------------------------|-----------------------------------------------------------------------|
+| keys | keys(map[string]interface{}) | Return an array containing the keys of the map |
+| values | values(map[string]interface{}) | Return an array containing the values of the map |
+| object | object(arr1, arr2) | Construct an object from an array of keys and an array of values. keys must be an array of strings. values must be an arbitrary array of the same length as keys. |
+| zip | zip([arr1, arr2], ......) | Construct an object from an array of entries. Each entry must itself be an array of size 2: the first element is the key (and must be a string), and the second element is the value. |
+| items | items(map[string]interface{}) | Return an array containing the entries of obj. Each entry is a 2-element array; the first is the key, the second is the value. |
+
 ## Analytic Functions
 
 Analytic functions always use state to do analytic jobs. In streaming processing, analytic functions are evaluated first so that they are not affected by predicates in WHERE clause.
