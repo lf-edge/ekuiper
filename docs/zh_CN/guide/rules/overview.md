@@ -60,7 +60,7 @@
 
 动作部分定义了一个规则的输出行为。每个规则可以有多个动作。一个动作是一个 sink 连接器的实例。当定义动作时，键是 sink 连接器的类型名称，而值是其属性。
 
-eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 file 。用户也可以扩展更多的 sink 类型来用于规则动作中。每种水槽类型都有自己的属性集。更多细节，请查看[sink](../sinks/overview.md)。
+eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 file 。用户也可以扩展更多的 sink 类型来用于规则动作中。每种sink类型都有自己的属性集。更多细节，请查看[sink](../sinks/overview.md)。
 
 ### 图规则
 
