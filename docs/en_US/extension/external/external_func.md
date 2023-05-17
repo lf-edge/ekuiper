@@ -1,6 +1,8 @@
 # External Function
 
-External functions map existing services to eKuiper SQL functions through configuration. When running the rules that use external functions, eKuiper will convert data input and output according to the configuration, and call the corresponding service.
+## Background
+
+In some scenarios, we hope that eKuiper can create or overload some internal SQL functions through hot reload, and map it as an external service, so that it can directly call the external service. Currently, eKuiper provides the configuration method to map an existing external service to an SQL function of eKuiper. When running a rule that uses an external function, the data input and output can be converted and the corresponding external service can be called.
 
 ## Configuration
 
