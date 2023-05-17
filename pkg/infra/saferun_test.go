@@ -50,6 +50,12 @@ func TestSafeRun(t *testing.T) {
 		},
 		{
 			func() error {
+				panic(errors.New("test error"))
+			},
+			errors.New("test error"),
+		},
+		{
+			func() error {
 				panic("panic error")
 			},
 			errors.New("panic error"),
