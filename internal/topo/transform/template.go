@@ -152,7 +152,7 @@ func TransItem(input interface{}, dataField string, fields []string) (interface{
 			return nil, false, fmt.Errorf("fail to decode data %v", input)
 		}
 	}
-	fmt.Println("input", input)
+
 	m, err := selectMap(input, fields)
 	if err != nil && err.Error() != "fields cannot be empty" {
 		return nil, false, fmt.Errorf("fail to decode data %v for error %v", input, err)
