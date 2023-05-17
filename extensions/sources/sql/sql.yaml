@@ -1,20 +1,11 @@
 default:
-  interval: 10000
-  url: mysql://user:test@140.210.204.147/user?parseTime=true
-  internalSqlQueryCfg:
-    table: test
-    limit: 1
-    indexField: registerTime
-    indexValue: "2022-04-21 10:23:55"
-    indexFieldType: "DATETIME"
-    dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
+
+sqlite_config:
+  url: sqlite:/tmp/test.db
   lookup:
     cache: true
     cacheTtl: 600
     cacheMissingKey: true
-
-sqlite_config:
-  url: sqlite:/tmp/test.db
 
 sqlserver_config:
   url: sqlserver://username:password@140.210.204.147/testdb
@@ -28,17 +19,15 @@ sqlserver_config:
 # select top 10 * from Student where id > 1010 order by id ASC
 
 mysql_config:
-  interval: 10000
   url: mysql://user:test@140.210.204.147/user?parseTime=true
-  internalSqlQueryCfg:
-    table: test
-    limit: 1
-    indexField: registerTime
-    indexValue: "2022-04-21 10:23:55"
-    indexFieldType: "DATETIME"
-    dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
+  lookup:
+    cache: true
+    cacheTtl: 600
+    cacheMissingKey: true
 
 template_config:
+  interval: 10000
+  url: mysql://user:test@140.210.204.147/user?parseTime=true
   templateSqlQueryCfg:
     TemplateSql: "select * from table where entry_date > '{{.entry_date}}'"
     indexField: entry_date
