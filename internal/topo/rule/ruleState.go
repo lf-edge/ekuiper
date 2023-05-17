@@ -59,7 +59,8 @@ type cronStateCtx struct {
 	cancel  context.CancelFunc
 	entryID cron.EntryID
 	// isInSchedule indicates the current rule is in scheduled in backgroundCron
-	isInSchedule bool
+	isInSchedule   bool
+	startFailedCnt int
 }
 
 /*********
@@ -268,15 +269,14 @@ func (rs *RuleState) startScheduleRule() error {
 	var cronCtx context.Context
 	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
 	entryID, err := backgroundCron.AddFunc(rs.Rule.Options.Cron, func() {
-		err := func() error {
+		if err := func() error {
 			rs.Lock()
 			defer rs.Unlock()
-			if rs.triggered != 0 {
-				return fmt.Errorf("rule %s should be stopped before scheduled to run", rs.RuleId)
-			}
 			return rs.start()
-		}()
-		if err != nil {
+		}(); err != nil {
+			rs.Lock()
+			rs.cronState.startFailedCnt++
+			rs.Unlock()
 			conf.Log.Errorf(err.Error())
 			return
 		}
@@ -390,6 +390,9 @@ func (rs *RuleState) GetState() (string, error) {
 		} else {
 			result = "Stopped: canceled manually."
 		}
+	}
+	if rs.Rule.IsScheduleRule() && rs.cronState.startFailedCnt > 0 {
+		result = result + fmt.Sprintf(" Start failed count: %v.", rs.cronState.startFailedCnt)
 	}
 	return result, nil
 }
