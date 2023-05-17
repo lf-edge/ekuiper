@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mock"
+	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -222,7 +222,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	// try to get access token
 	if cc.accessConf != nil {
 		conf.Log.Infof("Try to get access token from %s", cc.accessConf.Url)
-		ctx := mock.NewMockContext("none", "httppull_init")
+		ctx := mockContext.NewMockContext("none", "httppull_init")
 		cc.tokens = make(map[string]interface{})
 		err := cc.auth(ctx)
 		if err != nil {
