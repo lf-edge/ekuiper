@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/io/mock"
+	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 )
 
 func TestHeaderConf(t *testing.T) {
@@ -86,7 +86,7 @@ func TestHeaderConf(t *testing.T) {
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	ctx := mock.NewMockContext("none", "httppull_init")
+	ctx := mockContext.NewMockContext("none", "httppull_init")
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("Test %d: %s", i, tt.name), func(t *testing.T) {
 			r := &ClientConf{}

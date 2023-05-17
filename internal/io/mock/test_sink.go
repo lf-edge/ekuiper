@@ -18,11 +18,12 @@ import (
 	"fmt"
 	"time"
 
+	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func RunSinkCollect(s api.Sink, data []interface{}) error {
-	ctx := NewMockContext("ruleSink", "op1")
+	ctx := mockContext.NewMockContext("ruleSink", "op1")
 	err := s.Open(ctx)
 	if err != nil {
 		return err

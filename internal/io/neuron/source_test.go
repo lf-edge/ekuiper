@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
+	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -54,7 +55,7 @@ func connectFailTest(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	ctx, cancel := mock.NewMockContext("ruleTestReconnect", "op1").WithCancel()
+	ctx, cancel := mockContext.NewMockContext("ruleTestReconnect", "op1").WithCancel()
 	consumer := make(chan api.SourceTuple)
 	errCh := make(chan error)
 	server, _ := mockNeuron(false, false, DefaultNeuronUrl)
