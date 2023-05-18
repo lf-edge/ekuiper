@@ -49,7 +49,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				1, 2,
 			},
-			result: errorArrayArgumentError,
+			result: errorArrayFirstArgumentNotArrayError,
 		},
 		{
 			name: "array_position",
@@ -114,7 +114,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				1, 2,
 			},
-			result: errorArrayArgumentError,
+			result: errorArrayFirstArgumentNotArrayError,
 		},
 		{
 			name: "array_contains",
@@ -129,6 +129,307 @@ func TestArrayFunctions(t *testing.T) {
 				[]interface{}{1, 2}, 3,
 			},
 			result: false,
+		},
+		{
+			name: "array_remove",
+			args: []interface{}{
+				[]interface{}{3, 1, 2}, 1,
+			},
+			result: []interface{}{3, 2},
+		},
+		{
+			name: "array_remove",
+			args: []interface{}{
+				[]interface{}{'a', 'b', 'c'}, 'c',
+			},
+			result: []interface{}{'a', 'b'},
+		},
+		{
+			name: "array_remove",
+			args: []interface{}{
+				[]interface{}{1, 2, 3, 4, 3}, 3,
+			},
+			result: []interface{}{1, 2, 4},
+		},
+		{
+			name: "array_remove",
+			args: []interface{}{
+				[]interface{}{3, 3, 3}, 3,
+			},
+			result: []interface{}{},
+		},
+		{
+			name: "array_last_position",
+			args: []interface{}{
+				[]interface{}{5, nil, 5}, 5,
+			},
+			result: 3,
+		},
+		{
+			name: "array_last_position",
+			args: []interface{}{
+				[]interface{}{5, nil, 5}, "hello",
+			},
+			result: 0,
+		},
+		{
+			name: "array_last_position",
+			args: []interface{}{
+				1, 2,
+			},
+			result: errorArrayFirstArgumentNotArrayError,
+		},
+		{
+			name: "array_last_position",
+			args: []interface{}{
+				[]interface{}{5, "hello", nil}, nil,
+			},
+			result: 3,
+		},
+		{
+			name: "array_contains_any",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, []interface{}{0, 2, 4},
+			},
+			result: true,
+		},
+		{
+			name: "array_contains_any",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, []interface{}{4, "hello", 6},
+			},
+			result: false,
+		},
+		{
+			name: "array_contains_any",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, []interface{}{},
+			},
+			result: false,
+		},
+		{
+			name: "array_contains_any",
+			args: []interface{}{
+				[]interface{}{1, 2, 3, 4}, 1,
+			},
+			result: errorArraySecondArgumentNotArrayError,
+		},
+		{
+			name: "array_intersect",
+			args: []interface{}{
+				[]interface{}{1, 1, 2, 3}, []interface{}{1, 3, 4},
+			},
+			result: []interface{}{1, 3},
+		},
+		{
+			name: "array_intersect",
+			args: []interface{}{
+				[]interface{}{"hello", "ekuiper", 2, 3}, []interface{}{"ekuiper", 3, 4},
+			},
+			result: []interface{}{"ekuiper", 3},
+		},
+		{
+			name: "array_intersect",
+			args: []interface{}{
+				[]interface{}{"hello", "ekuiper", 2, 3}, "ekuiper",
+			},
+			result: errorArraySecondArgumentNotArrayError,
+		},
+		{
+			name: "array_intersect",
+			args: []interface{}{
+				"1", []interface{}{1, 2, 3},
+			},
+			result: errorArrayFirstArgumentNotArrayError,
+		},
+		{
+			name: "array_union",
+			args: []interface{}{
+				[]interface{}{1, 1, 2, 3}, []interface{}{1, 3, 4},
+			},
+			result: []interface{}{1, 2, 3, 4},
+		},
+		{
+			name: "array_union",
+			args: []interface{}{
+				[]interface{}{"hello", "ekuiper", 2, 3}, []interface{}{"ekuiper", 3, 4},
+			},
+			result: []interface{}{"hello", "ekuiper", 2, 3, 4},
+		},
+		{
+			name: "array_union",
+			args: []interface{}{
+				[]interface{}{1, 1, 2, 3}, "ekuiper",
+			},
+			result: errorArraySecondArgumentNotArrayError,
+		},
+		{
+			name: "array_union",
+			args: []interface{}{
+				"1", []interface{}{1, 2, 3},
+			},
+			result: errorArrayFirstArgumentNotArrayError,
+		},
+		{
+			name: "array_max",
+			args: []interface{}{
+				[]interface{}{1},
+			},
+			result: 1,
+		},
+		{
+			name: "array_max",
+			args: []interface{}{
+				[]interface{}{1, nil, 3},
+			},
+			result: nil,
+		},
+		{
+			name: "array_max",
+			args: []interface{}{
+				[]interface{}{1, "4", 3},
+			},
+			result: errorArrayContainsNonNumOrBoolValError,
+		},
+		{
+			name: "array_max",
+			args: []interface{}{
+				[]interface{}{1.2, 4.2, 3.0},
+			},
+			result: 4.2,
+		},
+		{
+			name: "array_max",
+			args: []interface{}{
+				[]interface{}{1, 3.2, 4.1, 2},
+			},
+			result: 4.1,
+		},
+		{
+			name: "array_min",
+			args: []interface{}{
+				[]interface{}{1, nil, 3},
+			},
+			result: nil,
+		},
+		{
+			name: "array_min",
+			args: []interface{}{
+				[]interface{}{1, "0", 3},
+			},
+			result: errorArrayContainsNonNumOrBoolValError,
+		},
+		{
+			name: "array_min",
+			args: []interface{}{
+				[]interface{}{1.2, 4.2, 3.0},
+			},
+			result: 1.2,
+		},
+		{
+			name: "array_min",
+			args: []interface{}{
+				[]interface{}{1, 3.2, 4.1, 2},
+			},
+			result: 1,
+		},
+		{
+			name: "array_except",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, []interface{}{1, 3, 4},
+			},
+			result: []interface{}{2},
+		},
+		{
+			name: "array_except",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, []interface{}{4, 5, 6},
+			},
+			result: []interface{}{1, 2, 3},
+		},
+		{
+			name: "array_except",
+			args: []interface{}{
+				[]interface{}{1, 2, 1, 2, 3}, []interface{}{1, 2, 1, 1, 2, 2, 4},
+			},
+			result: []interface{}{3},
+		},
+		{
+			name: "array_except",
+			args: []interface{}{
+				[]interface{}{1, 1, 1, 1, 3}, []interface{}{4},
+			},
+			result: []interface{}{1, 3},
+		},
+		{
+			name: "repeat",
+			args: []interface{}{
+				1, 5,
+			},
+			result: []interface{}{1, 1, 1, 1, 1},
+		},
+		{
+			name: "repeat",
+			args: []interface{}{
+				1, "hellow",
+			},
+			result: errorArraySecondArgumentNotIntError,
+		},
+		{
+			name: "repeat",
+			args: []interface{}{
+				"hello", 3,
+			},
+			result: []interface{}{"hello", "hello", "hello"},
+		},
+		{
+			name: "repeat",
+			args: []interface{}{
+				"rockset", 0,
+			},
+			result: []interface{}{},
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				1, 5,
+			},
+			result: []interface{}{1, 2, 3, 4, 5},
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				"1", 10, 2,
+			},
+			result: errorArrayFirstArgumentNotIntError,
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				1, "6", 2,
+			},
+			result: errorArraySecondArgumentNotIntError,
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				1, 7, "1",
+			},
+			result: errorArrayThirdArgumentNotIntError,
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				1, 10, 2,
+			},
+			result: []interface{}{1, 3, 5, 7, 9},
+		},
+		{
+			name: "sequence",
+			args: []interface{}{
+				10, 1, -3,
+			},
+			result: []interface{}{10, 7, 4, 1},
 		},
 	}
 	for i, tt := range tests {
