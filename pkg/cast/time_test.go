@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
 package cast
 
 import (
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestDateToAndFromMilli(t *testing.T) {
+func TestTimeToAndFromMilli(t *testing.T) {
 	tests := []struct {
 		m int64
 		t time.Time
@@ -32,91 +33,190 @@ func TestDateToAndFromMilli(t *testing.T) {
 	}
 	for i, tt := range tests {
 		time := TimeFromUnixMilli(tt.m)
-		if !time.Equal(tt.t) {
-			t.Errorf("%d time from milli result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.t, time)
-		}
+		assert.Equal(t, tt.t, time, "%d time from milli result mismatch:\n\nexp=%#v\n\ngot=%#v", i, tt.t, time)
+
 		milli := TimeToUnixMilli(tt.t)
-		if tt.m != milli {
-			t.Errorf("%d time to milli result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.m, milli)
-		}
+		assert.Equal(t, tt.m, milli, "%d time to milli result mismatch:\n\nexp=%#v\n\ngot=%#v", i, tt.m, milli)
 	}
 }
 
 func TestFormatTime(t *testing.T) {
-	type args struct {
-		time time.Time
-		f    string
-	}
+	date := time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC)
 	tests := []struct {
-		name    string
-		args    args
+		format  string
 		want    string
 		wantErr bool
 	}{
 		{
-			name: "test1",
-			args: args{
-				time: time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC),
-				f:    "YYYY-MM-dd HH:mm:ssSSS",
-			},
+			format:  "YYYY-MM-dd HH:mm:ssSSS",
 			want:    "2020-01-16 02:14:24.913",
 			wantErr: false,
 		},
 		{
-			name: "test1",
-			args: args{
-				time: time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC),
-				f:    "YYYY-MM-dd T HH:mm:ss",
-			},
+			format:  "YYYY-MM-dd T HH:mm:ss",
 			want:    "2020-01-16 T 02:14:24",
 			wantErr: false,
 		},
+		{
+			format:  "YYY",
+			want:    "2020",
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := FormatTime(tt.args.time, tt.args.f)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("FormatTime() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("FormatTime() got = %v, want %v", got, tt.want)
-			}
-		})
+		got, err := FormatTime(date, tt.format)
+		if tt.wantErr {
+			assert.Error(t, err)
+			continue
+		}
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got)
+	}
+}
+
+func TestParseTime(t *testing.T) {
+	tests := []struct {
+		d       time.Time
+		t       string
+		f       string
+		wantErr bool
+	}{
+		{
+			time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC),
+			"2020-01-16 02:14:24.913",
+			"YYYY-MM-dd HH:mm:ssSSS",
+			false,
+		},
+		{
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.UTC),
+			"2020-01-16 02:14:24",
+			"YYYY-MM-dd HH:mm:ss",
+			false,
+		},
+		{
+			time.Time{},
+			"2020",
+			"YYY",
+			true,
+		},
+	}
+	for _, tt := range tests {
+		date, err := ParseTime(tt.t, tt.f)
+		if tt.wantErr {
+			assert.Error(t, err)
+			continue
+		}
+		assert.NoError(t, err)
+		assert.Equal(t, tt.d, date)
 	}
 }
 
 func TestInterfaceToTime(t *testing.T) {
-	type args struct {
-		i      interface{}
-		format string
-	}
 	tests := []struct {
-		name    string
-		args    args
+		i       interface{}
+		f       string
 		want    time.Time
 		wantErr bool
 	}{
 		{
-			name: "test string",
-			args: args{
-				i:      "2022-04-13 06:22:32.233",
-				format: "YYYY-MM-dd HH:mm:ssSSS",
-			},
-			want:    time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
-			wantErr: false,
+			"2022-04-13 06:22:32.233",
+			"YYYY-MM-dd HH:mm:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			false,
+		},
+		{
+			1649830952233,
+			"YYYY-MM-dd HH:mm:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			false,
+		},
+		{
+			int64(1649830952233),
+			"YYYY-MM-dd HH:mm:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			false,
+		},
+		{
+			float64(1649830952233),
+			"YYYY-MM-dd HH:mm:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			false,
+		},
+		{
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			"YYYY-MM-dd HH:mm:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			false,
+		},
+		{
+			struct{}{},
+			"YYYY-MM-dd HH:mm:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			true,
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := InterfaceToTime(tt.args.i, tt.args.format)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("InterfaceToTime() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("InterfaceToTime() got = %v, want %v", got, tt.want)
-			}
-		})
+		got, err := InterfaceToTime(tt.i, tt.f)
+		if tt.wantErr {
+			assert.Error(t, err)
+			continue
+		}
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got)
+	}
+}
+
+func TestInterfaceToUnixMilli(t *testing.T) {
+	tests := []struct {
+		i       interface{}
+		f       string
+		want    int64
+		wantErr bool
+	}{
+		{
+			"2022-04-13 06:22:32.233",
+			"YYYY-MM-dd HH:mm:ssSSS",
+			1649830952233,
+			false,
+		},
+		{
+			1649830952233,
+			"YYYY-MM-dd HH:mm:ssSSS",
+			1649830952233,
+			false,
+		},
+		{
+			int64(1649830952233),
+			"YYYY-MM-dd HH:mm:ssSSS",
+			1649830952233,
+			false,
+		},
+		{
+			float64(1649830952233),
+			"YYYY-MM-dd HH:mm:ssSSS",
+			1649830952233,
+			false,
+		},
+		{
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			"YYYY-MM-dd HH:mm:ssSSS",
+			1649830952233,
+			false,
+		},
+		{
+			struct{}{},
+			"YYYY-MM-dd HH:mm:ssSSS",
+			1649830952233,
+			true,
+		},
+	}
+	for _, tt := range tests {
+		got, err := InterfaceToUnixMilli(tt.i, tt.f)
+		if tt.wantErr {
+			assert.Error(t, err)
+			continue
+		}
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got)
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,377 @@ package cast
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"net"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestMapConvert_Funcs(t *testing.T) {
+func TestToStringAlways(t *testing.T) {
+	tests := []struct {
+		input any
+		want  string
+	}{
+		{
+			"test",
+			"test",
+		},
+		{
+			100,
+			"100",
+		},
+		{
+			nil,
+			"",
+		},
+	}
+	for _, tt := range tests {
+		assert.Equal(t, tt.want, ToStringAlways(tt.input))
+	}
+}
+
+func TestToString(t *testing.T) {
+	tests := []struct {
+		input any
+		sn    Strictness
+		want  string
+	}{
+		{
+			"test",
+			CONVERT_SAMEKIND,
+			"test",
+		},
+		{
+			[]byte("test"),
+			CONVERT_SAMEKIND,
+			"test",
+		},
+		{
+			true,
+			CONVERT_ALL,
+			"true",
+		},
+		{
+			nil,
+			CONVERT_ALL,
+			"",
+		},
+		{
+			100,
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			int8(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			int16(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			int32(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			int64(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			uint(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			uint8(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			uint16(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			uint32(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			uint64(100),
+			CONVERT_ALL,
+			"100",
+		},
+		{
+			float32(100.001),
+			CONVERT_ALL,
+			"100.001",
+		},
+		{
+			100.001,
+			CONVERT_ALL,
+			"100.001",
+		},
+		{
+			// Stringer test case
+			net.IPv4(0, 0, 0, 0),
+			CONVERT_ALL,
+			"0.0.0.0",
+		},
+		{
+			errors.New("test"),
+			CONVERT_ALL,
+			"test",
+		},
+	}
+	for _, tt := range tests {
+		got, err := ToString(tt.input, tt.sn)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got)
+	}
+
+	_, err := ToString(struct{}{}, STRICT)
+	assert.Error(t, err)
+}
+
+func TestToIntResult(t *testing.T) {
+	tests := []struct {
+		input any
+		want  int64
+	}{
+		{
+			100,
+			100,
+		},
+		{
+			int8(100),
+			100,
+		},
+		{
+			int16(100),
+			100,
+		},
+		{
+			int32(100),
+			100,
+		},
+		{
+			int64(100),
+			100,
+		},
+		{
+			uint(100),
+			100,
+		},
+		{
+			uint8(100),
+			100,
+		},
+		{
+			uint16(100),
+			100,
+		},
+		{
+			uint32(100),
+			100,
+		},
+		{
+			uint64(100),
+			100,
+		},
+		{
+			float32(100),
+			100,
+		},
+		{
+			float64(100),
+			100,
+		},
+		{
+			"100",
+			100,
+		},
+		{
+			false,
+			0,
+		},
+		{
+			nil,
+			0,
+		},
+	}
+	for _, tt := range tests {
+		var (
+			got any
+			err error
+		)
+		got, err = ToInt(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, int(tt.want), got)
+
+		got, err = ToInt8(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, int8(tt.want), got)
+
+		got, err = ToInt16(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, int16(tt.want), got)
+
+		got, err = ToInt32(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, int32(tt.want), got)
+
+		got, err = ToInt64(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got)
+	}
+
+	errTests := []any{
+		true,
+		nil,
+		"1",
+	}
+	for _, input := range errTests {
+		_, err := ToInt(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToInt8(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToInt16(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToInt32(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToInt64(input, STRICT)
+		assert.Error(t, err)
+	}
+}
+
+func TestToUintResult(t *testing.T) {
+	tests := []struct {
+		input any
+		want  uint64
+	}{
+		{
+			100,
+			100,
+		},
+		{
+			int8(100),
+			100,
+		},
+		{
+			int16(100),
+			100,
+		},
+		{
+			int32(100),
+			100,
+		},
+		{
+			int64(100),
+			100,
+		},
+		{
+			uint(100),
+			100,
+		},
+		{
+			uint8(100),
+			100,
+		},
+		{
+			uint16(100),
+			100,
+		},
+		{
+			uint32(100),
+			100,
+		},
+		{
+			uint64(100),
+			100,
+		},
+		{
+			float32(100),
+			100,
+		},
+		{
+			float64(100),
+			100,
+		},
+		{
+			"100",
+			100,
+		},
+		{
+			false,
+			0,
+		},
+		{
+			nil,
+			0,
+		},
+	}
+	for _, tt := range tests {
+		var (
+			got any
+			err error
+		)
+		got, err = ToUint8(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, uint8(tt.want), got)
+
+		got, err = ToUint16(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, uint16(tt.want), got)
+
+		got, err = ToUint32(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, uint32(tt.want), got)
+
+		got, err = ToUint64(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got)
+	}
+
+	errTests := []any{
+		-1,
+		int8(-1),
+		int16(-1),
+		int32(-1),
+		int64(-1),
+		float32(-1),
+		float64(-1),
+		true,
+		nil,
+		"1",
+	}
+	for _, input := range errTests {
+		_, err := ToUint8(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToUint16(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToUint32(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToUint64(input, STRICT)
+		assert.Error(t, err)
+	}
+}
+
+func TestMapConvert(t *testing.T) {
 	source := map[interface{}]interface{}{
 		"QUERY_TABLE": "VBAP",
 		"ROWCOUNT":    10,
@@ -32,7 +397,7 @@ func TestMapConvert_Funcs(t *testing.T) {
 		},
 	}
 
-	exp := map[string]interface{}{
+	assert.Equal(t, map[string]interface{}{
 		"QUERY_TABLE": "VBAP",
 		"ROWCOUNT":    10,
 		"FIELDS": []interface{}{
@@ -40,12 +405,7 @@ func TestMapConvert_Funcs(t *testing.T) {
 			map[string]interface{}{"FIELDNAME": "VBELN"},
 			map[string]interface{}{"FIELDNAME": "POSNR"},
 		},
-	}
-
-	got := ConvertMap(source)
-	if !reflect.DeepEqual(exp, got) {
-		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", exp, got)
-	}
+	}, ConvertMap(source))
 }
 
 func TestToTypedSlice(t *testing.T) {
@@ -77,19 +437,19 @@ func TestToTypedSlice(t *testing.T) {
 			}
 		}, "string", CONVERT_SAMEKIND)
 
-		if !reflect.DeepEqual(tt.e, errstring(err)) {
+		errString := func(err error) string {
+			if err != nil {
+				return err.Error()
+			}
+			return ""
+		}
+
+		if !reflect.DeepEqual(tt.e, errString(err)) {
 			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.r, result) {
 			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.r, result)
 		}
 	}
-}
-
-func errstring(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
 }
 
 func TestMapToStructStrict(t *testing.T) {
