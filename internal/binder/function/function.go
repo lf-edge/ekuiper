@@ -50,6 +50,7 @@ func init() {
 	registerSetReturningFunc()
 	registerArrayFunc()
 	registerObjectFunc()
+	registerTimeFunc()
 }
 
 //var funcWithAsteriskSupportMap = map[string]string{

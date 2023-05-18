@@ -198,6 +198,12 @@ Currently, 'zlib', 'gzip', 'flate' and 'zstd' method are supported.
 | zip | zip([arr1, arr2], ......) | Construct an object from an array of entries. Each entry must itself be an array of size 2: the first element is the key (and must be a string), and the second element is the value. |
 | items | items(map[string]interface{}) | Return an array containing the entries of obj. Each entry is a 2-element array; the first is the key, the second is the value. |
 
+## Time Functions
+
+| Function   | Example                   | Description                                                           |
+|------------|---------------------------|-----------------------------------------------------------------------|
+| current_timestamp | current_timestamp() | Returns the current timestamp in the format "2006-01-02 15:04:05"    |
+
 ## Analytic Functions
 
 Analytic functions always use state to do analytic jobs. In streaming processing, analytic functions are evaluated first so that they are not affected by predicates in WHERE clause.
