@@ -80,7 +80,7 @@ message LabelReply {
 - 有关文件格式和内容的更多详细信息，请参阅[这里](../../extension/external/external_func.md)。
 
 
-您可以在[示例代码]((https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip))的文件夹 ``kuiper_package`` 中获取示例 zip 文件。
+您可以在[示例代码](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip)的文件夹 ``kuiper_package`` 中获取示例 zip 文件。
 
 
 ### 注册外部函数
