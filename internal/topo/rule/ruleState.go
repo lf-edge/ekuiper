@@ -324,7 +324,7 @@ func (rs *RuleState) start() error {
 func (rs *RuleState) Stop() error {
 	rs.Lock()
 	defer rs.Unlock()
-	if rs.Rule.IsScheduleRule() {
+	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 		rs.cronState.isInSchedule = false
 		rs.cronState.cancel()
 		rs.cronState.startFailedCnt = 0
@@ -355,7 +355,7 @@ func (rs *RuleState) Close() error {
 		rs.Topology.Cancel()
 	}
 	rs.triggered = -1
-	if rs.Rule.IsScheduleRule() {
+	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 		rs.cronState.isInSchedule = false
 		rs.cronState.cancel()
 		rs.cronState.startFailedCnt = 0
