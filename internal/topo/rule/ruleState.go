@@ -379,7 +379,7 @@ func (rs *RuleState) GetState() (string, error) {
 			case nil:
 				result = "Running"
 			case context.Canceled:
-				if rs.Rule.IsScheduleRule() {
+				if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 					result = "Stopped: waiting for next schedule."
 				} else {
 					result = "Stopped: canceled manually."
