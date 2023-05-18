@@ -462,5 +462,4 @@ func TestScheduleRule(t *testing.T) {
 			return
 		}
 	}()
-
 }
