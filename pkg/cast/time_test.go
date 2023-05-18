@@ -125,6 +125,30 @@ func TestInterfaceToTime(t *testing.T) {
 			false,
 		},
 		{
+			"2022-04-13 6:22:32.2",
+			"YYYY-MM-dd h:m:sS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 200000000, time.UTC),
+			false,
+		},
+		{
+			"2022-04-13 6:22:32.23",
+			"YYYY-MM-dd h:m:sSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 230000000, time.UTC),
+			false,
+		},
+		{
+			"2022-04-13 Wed 06:22:32.233",
+			"YYYY-MM-dd EEE HH:m:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			false,
+		},
+		{
+			"2022-04-13 Wednesday 06:22:32.233",
+			"YYYY-MM-dd EEEE HH:m:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			false,
+		},
+		{
 			1649830952233,
 			"YYYY-MM-dd HH:mm:ssSSS",
 			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
@@ -147,6 +171,12 @@ func TestInterfaceToTime(t *testing.T) {
 			"YYYY-MM-dd HH:mm:ssSSS",
 			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
 			false,
+		},
+		{
+			"2022-04-13 06:22:32.233",
+			"YYYy-MM-dd HH:mm:ssSSS",
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			true,
 		},
 		{
 			struct{}{},
@@ -202,6 +232,12 @@ func TestInterfaceToUnixMilli(t *testing.T) {
 			"YYYY-MM-dd HH:mm:ssSSS",
 			1649830952233,
 			false,
+		},
+		{
+			"2022-04-13 06:22:32.233",
+			"YYYy-MM-dd HH:mm:ssSSS",
+			1649830952233,
+			true,
 		},
 		{
 			struct{}{},
