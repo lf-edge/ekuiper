@@ -46,6 +46,7 @@ type SinkConf struct {
 	Metadata     string      `json:"metadata"`
 	DataTemplate string      `json:"dataTemplate"`
 	Fields       []string    `json:"fields"`
+	DataField    string      `json:"dataField"`
 }
 
 type EdgexMsgBusSink struct {
@@ -116,7 +117,7 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 
 func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{}) (*dtos.Event, error) {
 	if ems.c.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item, true)
+		jsonBytes, _, err := ctx.TransformOutput(item)
 		if err != nil {
 			return nil, err
 		}
@@ -126,8 +127,8 @@ func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{
 			return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		item = tm
-	} else if len(ems.c.Fields) > 0 {
-		tm, err := transform.SelectMap(item, ems.c.Fields)
+	} else {
+		tm, _, err := transform.TransItem(item, ems.c.DataField, ems.c.Fields)
 		if err != nil {
 			return nil, fmt.Errorf("fail to select fields %v for data %v", ems.c.Fields, item)
 		}

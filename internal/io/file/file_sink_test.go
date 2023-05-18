@@ -308,7 +308,7 @@ func TestFileSink_Collect(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test2")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
-	tf, _ := transform.GenTransform("", "json", "", "", []string{})
+	tf, _ := transform.GenTransform("", "json", "", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	for _, tt := range tests {
@@ -415,7 +415,7 @@ func TestFileSinkFields_Collect(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tf, _ := transform.GenTransform("", tt.format, "", tt.delimiter, tt.fields)
+			tf, _ := transform.GenTransform("", tt.format, "", tt.delimiter, "", tt.fields)
 			vCtx := context.WithValue(ctx, context.TransKey, tf)
 			// Create a temporary file for testing
 			tmpfile, err := os.CreateTemp("", tt.fname)
@@ -550,7 +550,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testRolling")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
-	tf, _ := transform.GenTransform("", "json", "", "", []string{})
+	tf, _ := transform.GenTransform("", "json", "", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	for _, tt := range tests {
@@ -680,7 +680,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testRollingCount")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 
-	tf, _ := transform.GenTransform("", "delimited", "", ",", []string{})
+	tf, _ := transform.GenTransform("", "delimited", "", ",", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	for _, tt := range tests {
@@ -771,7 +771,7 @@ func TestFileSinkReopen(t *testing.T) {
 	// Create a stream context for testing
 	contextLogger := conf.Log.WithField("rule", "testRollingCount")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	tf, _ := transform.GenTransform("", "json", "", "", []string{})
+	tf, _ := transform.GenTransform("", "json", "", "", "", []string{})
 	vCtx := context.WithValue(ctx, context.TransKey, tf)
 
 	sink := &fileSink{}

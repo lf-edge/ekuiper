@@ -46,6 +46,7 @@ type SinkConf struct {
 	Delimiter      string   `json:"delimiter"`
 	BufferLength   int      `json:"bufferLength"`
 	Fields         []string `json:"fields"`
+	DataField      string   `json:"dataField"`
 	BatchSize      int      `json:"batchSize"`
 	LingerInterval int      `json:"lingerInterval"`
 	conf.SinkConf
@@ -121,7 +122,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				return err
 			}
 
-			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.Fields)
+			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, sconf.Fields)
 			if err != nil {
 				msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
 				logger.Warnf(msg)
@@ -303,6 +304,11 @@ func (m *SinkNode) parseConf(logger api.Logger) (*SinkConf, error) {
 	if sconf.SinkConf.EnableCache && sconf.RunAsync {
 		conf.Log.Warnf("RunAsync is deprecated and ignored.")
 		return nil, fmt.Errorf("cache is not supported for async sink, do not use enableCache and runAsync properties together")
+	}
+	if sconf.DataField == "" {
+		if v, ok := m.options["tableDataField"]; ok {
+			sconf.DataField = v.(string)
+		}
 	}
 	err = sconf.SinkConf.Validate()
 	if err != nil {

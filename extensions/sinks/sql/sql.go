@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"reflect"
 	"strings"
 
@@ -35,6 +36,7 @@ type sqlConfig struct {
 	Fields         []string `json:"fields"`
 	DataTemplate   string   `json:"dataTemplate"`
 	TableDataField string   `json:"tableDataField"`
+	DataField      string   `json:"dataField"`
 	RowkindField   string   `json:"rowkindField"`
 	KeyField       string   `json:"keyField"`
 }
@@ -99,6 +101,9 @@ func (m *sqlSink) Configure(props map[string]interface{}) error {
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
+	if cfg.DataField == "" {
+		cfg.DataField = cfg.TableDataField
+	}
 	if cfg.Url == "" {
 		return fmt.Errorf("property Url is required")
 	}
@@ -141,7 +146,7 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
 func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("sql sink receive %s", item)
 	if m.conf.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item, false)
+		jsonBytes, _, err := ctx.TransformOutput(item)
 		if err != nil {
 			return err
 		}
@@ -149,6 +154,12 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 		err = json.Unmarshal(jsonBytes, &tm)
 		if err != nil {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+		}
+		item = tm
+	} else {
+		tm, _, err := transform.TransItem(item, m.conf.DataField, m.conf.Fields)
+		if err != nil {
+			return fmt.Errorf("fail to 1 transform data %v for error %v!!!!!", item, err)
 		}
 		item = tm
 	}
@@ -163,9 +174,6 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if err != nil {
 			ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
 			return err
-		}
-		if m.conf.TableDataField != "" {
-			item = v[m.conf.TableDataField]
 		}
 	case []map[string]interface{}:
 		if len(v) == 0 {

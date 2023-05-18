@@ -46,6 +46,7 @@ type influxSink2 struct {
 	bucket       string
 	tagKey       string
 	tagValue     string
+	dataField    string
 	fields       []string
 	cli          client.Client
 	fieldMap     map[string]interface{}
@@ -71,6 +72,11 @@ func (m *influxSink2) Configure(props map[string]interface{}) error {
 	if i, ok := props["tagValue"]; ok {
 		if i, ok := i.(string); ok {
 			m.tagValue = i
+		}
+	}
+	if i, ok := props["dataField"]; ok {
+		if i, ok := i.(string); ok {
+			m.dataField = i
 		}
 	}
 	if i, ok := props["fields"]; ok {
@@ -118,7 +124,7 @@ func (m *influxSink2) Open(ctx api.StreamContext) (err error) {
 func (m *influxSink2) Collect(ctx api.StreamContext, data interface{}) error {
 	logger := ctx.GetLogger()
 	if m.hasTransform {
-		jsonBytes, _, err := ctx.TransformOutput(data, true)
+		jsonBytes, _, err := ctx.TransformOutput(data)
 		if err != nil {
 			return err
 		}
@@ -128,8 +134,8 @@ func (m *influxSink2) Collect(ctx api.StreamContext, data interface{}) error {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		data = m
-	} else if len(m.fields) > 0 {
-		d, err := transform.SelectMap(data, m.fields)
+	} else {
+		d, _, err := transform.TransItem(data, m.dataField, m.fields)
 		if err != nil {
 			return fmt.Errorf("fail to select fields %v for data %v", m.fields, data)
 		}

@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"reflect"
 	"strings"
 
@@ -45,6 +46,7 @@ type (
 		TagFields      []string `json:"tagFields"`
 		DataTemplate   string   `json:"dataTemplate"`
 		TableDataField string   `json:"tableDataField"`
+		DataField      string   `json:"dataField"`
 	}
 	taosSink struct {
 		conf *taosConfig
@@ -189,6 +191,9 @@ func (m *taosSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("property tagFields is required when sTable is set")
 	}
 	m.url = fmt.Sprintf(`%s:%s@tcp(%s:%d)/%s`, cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
+	if cfg.DataField == "" {
+		cfg.DataField = cfg.TableDataField
+	}
 	m.conf = cfg
 	return nil
 }
@@ -202,7 +207,7 @@ func (m *taosSink) Open(ctx api.StreamContext) (err error) {
 func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 	ctx.GetLogger().Debugf("tdengine sink receive %s", item)
 	if m.conf.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item, false)
+		jsonBytes, _, err := ctx.TransformOutput(item)
 		if err != nil {
 			return err
 		}
@@ -212,13 +217,12 @@ func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		item = tm
-	}
-
-	if m.conf.TableDataField != "" {
-		mapData, ok := item.(map[string]interface{})
-		if ok {
-			item = mapData[m.conf.TableDataField]
+	} else {
+		tm, _, err := transform.TransItem(item, m.conf.DataField, m.conf.Fields)
+		if err != nil {
+			return fmt.Errorf("fail to transform data %v for error %v", item, err)
 		}
+		item = tm
 	}
 
 	switch v := item.(type) {
