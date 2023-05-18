@@ -145,6 +145,8 @@ The current options includes:
 | qos                | int:0                | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors.                                                                                                |
 | checkpointInterval | int:300000           | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0.                                                                                                                                                                                                                              |
 | restartStrategy    | struct               | Specify the strategy to automatic restarting rule after failures. This can help to get over recoverable failures without manual operations. Please check [Rule Restart Strategy](#rule-restart-strategy) for detail configuration items.                                                                                                          |
+| cron | string: "" | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron) |
+| duration | string: "" | Specifies the running duration of the rule, only valid when cron is specified |
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
@@ -163,3 +165,11 @@ The restart strategy options include:
 | jitterFactor | float: 0.1           | How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.                |
 
 The default values can be changed by editing the `etc/kuiper.yaml` file. 
+
+### Scheduled Rule
+
+Rules support periodic start, run and pause. In options, `cron` expresses the starting policy of the periodic rule, such as starting every 1 hour, and `duration` expresses the running time when the rule is started each time, such as running for 30 minutes.
+
+When `cron` is every 1 hour and `duration` is 30 minutes, then the rule will be started every 1 hour, and will be suspended after 30 minutes each time, waiting for the next startup.
+
+When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a-rule), the rule will be removed from the periodic scheduler and will no longer be scheduled to run. If the rule is running, it will also be paused.

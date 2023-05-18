@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -321,4 +322,99 @@ func TestRuleState_Start(t *testing.T) {
 			return
 		}
 	})
+}
+
+func TestScheduleRule(t *testing.T) {
+	conf.IsTesting = true
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	// Test rule not triggered
+	r := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: defaultOption,
+	}
+	r.Options.Cron = "mockCron"
+	r.Options.Duration = "1s"
+	const ruleStarted = "Running"
+	const ruleStopped = "Stopped: waiting for next schedule."
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err != nil {
+			t.Error(err)
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleStarted {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStarted, state)
+			return
+		}
+		if !rs.cronState.isInSchedule {
+			t.Error("cron state should be in schedule")
+			return
+		}
+	}()
+
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err != nil {
+			t.Error(err)
+			return
+		}
+		time.Sleep(1500 * time.Millisecond)
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleStopped {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
+			return
+		}
+		if !rs.cronState.isInSchedule {
+			t.Error("cron state should be in schedule")
+			return
+		}
+	}()
+
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err == nil {
+			t.Error("rule can't be register in cron twice")
+			return
+		} else {
+			if err.Error() != "rule test is already in schedule" {
+				t.Error("error message wrong")
+				return
+			}
+		}
+	}()
 }

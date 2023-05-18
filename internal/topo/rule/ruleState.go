@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/robfig/cron/v3"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
@@ -35,6 +37,31 @@ const (
 	ActionSignalStart ActionSignal = iota
 	ActionSignalStop
 )
+
+type cronInterface interface {
+	Start()
+	AddFunc(spec string, cmd func()) (cron.EntryID, error)
+	Remove(id cron.EntryID)
+}
+
+var backgroundCron cronInterface
+
+func init() {
+	if !conf.IsTesting {
+		backgroundCron = cron.New()
+	} else {
+		backgroundCron = &MockCron{}
+	}
+	backgroundCron.Start()
+}
+
+type cronStateCtx struct {
+	cancel  context.CancelFunc
+	entryID cron.EntryID
+	// isInSchedule indicates the current rule is in scheduled in backgroundCron
+	isInSchedule   bool
+	startFailedCnt int
+}
 
 /*********
  *  RuleState is created for each rule. Each ruleState runs two loops:
@@ -56,6 +83,7 @@ type RuleState struct {
 	// temporary storage for topo graph to make sure even rule close, the graph is still available
 	topoGraph *api.PrintableTopo
 	sync.RWMutex
+	cronState cronStateCtx
 }
 
 // NewRuleState Create and initialize a rule state.
@@ -67,7 +95,7 @@ func NewRuleState(rule *api.Rule) (*RuleState, error) {
 		Rule:     rule,
 		ActionCh: make(chan ActionSignal),
 	}
-	rs.Run()
+	rs.run()
 	if tp, err := planner.Plan(rule); err != nil {
 		return rs, err
 	} else {
@@ -103,7 +131,7 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 }
 
 // Run start to run the two loops, do not access any changeable states
-func (rs *RuleState) Run() {
+func (rs *RuleState) run() {
 	var (
 		ctx    context.Context
 		cancel context.CancelFunc
@@ -220,6 +248,62 @@ func (rs *RuleState) Start() error {
 	if rs.triggered == -1 {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
+	if rs.Rule.IsScheduleRule() {
+		return rs.startScheduleRule()
+	}
+	return rs.start()
+}
+
+// startScheduleRule will register the job in the backgroundCron to run.
+// Job will do following 2 things:
+// 1. start the rule in cron if else the job is already stopped
+// 2. after the rule started, start an extract goroutine to stop the rule after specific duration
+func (rs *RuleState) startScheduleRule() error {
+	if rs.cronState.isInSchedule {
+		return fmt.Errorf("rule %s is already in schedule", rs.RuleId)
+	}
+	d, err := time.ParseDuration(rs.Rule.Options.Duration)
+	if err != nil {
+		return err
+	}
+	var cronCtx context.Context
+	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
+	entryID, err := backgroundCron.AddFunc(rs.Rule.Options.Cron, func() {
+		if err := func() error {
+			rs.Lock()
+			defer rs.Unlock()
+			return rs.start()
+		}(); err != nil {
+			rs.Lock()
+			rs.cronState.startFailedCnt++
+			rs.Unlock()
+			conf.Log.Errorf(err.Error())
+			return
+		}
+		after := time.After(d)
+		go func(ctx context.Context) {
+			select {
+			case <-after:
+				rs.Lock()
+				defer rs.Unlock()
+				if err := rs.stop(); err != nil {
+					conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
+				}
+				return
+			case <-cronCtx.Done():
+				return
+			}
+		}(cronCtx)
+	})
+	if err != nil {
+		return err
+	}
+	rs.cronState.isInSchedule = true
+	rs.cronState.entryID = entryID
+	return nil
+}
+
+func (rs *RuleState) start() error {
 	if rs.triggered != 1 {
 		// If the rule has been stopped due to error, the topology is not nil
 		if rs.Topology != nil {
@@ -240,6 +324,16 @@ func (rs *RuleState) Start() error {
 func (rs *RuleState) Stop() error {
 	rs.Lock()
 	defer rs.Unlock()
+	if rs.Rule.IsScheduleRule() {
+		rs.cronState.isInSchedule = false
+		rs.cronState.cancel()
+		rs.cronState.startFailedCnt = 0
+		backgroundCron.Remove(rs.cronState.entryID)
+	}
+	return rs.stop()
+}
+
+func (rs *RuleState) stop() error {
 	if rs.triggered == -1 {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
@@ -261,6 +355,12 @@ func (rs *RuleState) Close() error {
 		rs.Topology.Cancel()
 	}
 	rs.triggered = -1
+	if rs.Rule.IsScheduleRule() {
+		rs.cronState.isInSchedule = false
+		rs.cronState.cancel()
+		rs.cronState.startFailedCnt = 0
+		backgroundCron.Remove(rs.cronState.entryID)
+	}
 	close(rs.ActionCh)
 	return nil
 }
@@ -279,7 +379,11 @@ func (rs *RuleState) GetState() (string, error) {
 			case nil:
 				result = "Running"
 			case context.Canceled:
-				result = "Stopped: canceled manually."
+				if rs.Rule.IsScheduleRule() {
+					result = "Stopped: waiting for next schedule."
+				} else {
+					result = "Stopped: canceled manually."
+				}
 			case context.DeadlineExceeded:
 				result = "Stopped: deadline exceed."
 			default:
@@ -288,6 +392,9 @@ func (rs *RuleState) GetState() (string, error) {
 		} else {
 			result = "Stopped: canceled manually."
 		}
+	}
+	if rs.Rule.IsScheduleRule() && rs.cronState.startFailedCnt > 0 {
+		result = result + fmt.Sprintf(" Start failed count: %v.", rs.cronState.startFailedCnt)
 	}
 	return result, nil
 }
