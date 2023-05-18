@@ -274,6 +274,10 @@
 						{
 							"title": "使用 tensorflow_lite 原生插件调用 AI 模型",
 							"path": "guide/ai/tensorflow_lite"
+						},
+						{
+							"title": "使用外部函数调用 tensorflow_lite AI 模型",
+							"path": "guide/ai/tensorflow_lite_external_function_tutorial"
 						}
 					]
 				}
@@ -673,6 +677,10 @@
 							"path": "api/cli/plugins"
 						},
 						{
+							"title": "外部服务",
+							"path": "api/cli/services"
+						},
+						{
 							"title": "模式管理",
 							"path": "api/cli/schemas"
 						},
@@ -969,6 +977,10 @@
 						{
 							"title": "Running AI Model with TensorFlow Lite Function Plugin",
 							"path": "guide/ai/tensorflow_lite"
+						},
+						{
+							"title": "Running tensorflow_lite AI Model with external function",
+							"path": "guide/ai/tensorflow_lite_external_function_tutorial"
 						}
 					]
 				}
@@ -1366,6 +1378,10 @@
 						{
 							"title": "Plugins",
 							"path": "api/cli/plugins"
+						},
+						{
+							"title": "External Services",
+							"path": "api/cli/services"
 						},
 						{
 							"title": "Schemas",
