@@ -326,7 +326,9 @@ func (rs *RuleState) Stop() error {
 	defer rs.Unlock()
 	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 		rs.cronState.isInSchedule = false
-		rs.cronState.cancel()
+		if rs.cronState.cancel != nil {
+			rs.cronState.cancel()
+		}
 		rs.cronState.startFailedCnt = 0
 		backgroundCron.Remove(rs.cronState.entryID)
 	}
@@ -357,7 +359,9 @@ func (rs *RuleState) Close() error {
 	rs.triggered = -1
 	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 		rs.cronState.isInSchedule = false
-		rs.cronState.cancel()
+		if rs.cronState.cancel != nil {
+			rs.cronState.cancel()
+		}
 		rs.cronState.startFailedCnt = 0
 		backgroundCron.Remove(rs.cronState.entryID)
 	}
