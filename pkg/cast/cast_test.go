@@ -60,6 +60,11 @@ func TestToString(t *testing.T) {
 			"test",
 		},
 		{
+			"test",
+			CONVERT_ALL,
+			"test",
+		},
+		{
 			[]byte("test"),
 			CONVERT_SAMEKIND,
 			"test",
@@ -218,6 +223,10 @@ func TestToIntResult(t *testing.T) {
 			0,
 		},
 		{
+			true,
+			1,
+		},
+		{
 			nil,
 			0,
 		},
@@ -267,6 +276,110 @@ func TestToIntResult(t *testing.T) {
 		assert.Error(t, err)
 
 		_, err = ToInt64(input, STRICT)
+		assert.Error(t, err)
+	}
+}
+
+func TestToFloatResult(t *testing.T) {
+	tests := []struct {
+		input any
+		want  float64
+	}{
+		{
+			100,
+			100,
+		},
+		{
+			int8(100),
+			100,
+		},
+		{
+			int16(100),
+			100,
+		},
+		{
+			int32(100),
+			100,
+		},
+		{
+			int64(100),
+			100,
+		},
+		{
+			uint(100),
+			100,
+		},
+		{
+			uint8(100),
+			100,
+		},
+		{
+			uint16(100),
+			100,
+		},
+		{
+			uint32(100),
+			100,
+		},
+		{
+			uint64(100),
+			100,
+		},
+		{
+			float32(100),
+			100,
+		},
+		{
+			float64(100),
+			100,
+		},
+		{
+			"100",
+			100,
+		},
+		{
+			false,
+			0,
+		},
+		{
+			true,
+			1,
+		},
+	}
+	for _, tt := range tests {
+		var (
+			got any
+			err error
+		)
+		got, err = ToFloat32(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, float32(tt.want), got)
+
+		got, err = ToFloat64(tt.input, CONVERT_ALL)
+		assert.NoError(t, err)
+		assert.Equal(t, tt.want, got)
+	}
+
+	errTests := []any{
+		1,
+		int8(1),
+		int16(1),
+		int32(1),
+		int64(1),
+		uint(1),
+		uint8(1),
+		uint16(1),
+		uint32(1),
+		uint64(1),
+		true,
+		nil,
+		"1",
+	}
+	for _, input := range errTests {
+		_, err := ToFloat32(input, STRICT)
+		assert.Error(t, err)
+
+		_, err = ToFloat64(input, STRICT)
 		assert.Error(t, err)
 	}
 }
@@ -331,6 +444,10 @@ func TestToUintResult(t *testing.T) {
 		{
 			false,
 			0,
+		},
+		{
+			true,
+			1,
 		},
 		{
 			nil,
