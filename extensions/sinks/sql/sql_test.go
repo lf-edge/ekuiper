@@ -18,10 +18,12 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	econf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 )
@@ -253,6 +255,45 @@ func TestUpdate(t *testing.T) {
 		if !reflect.DeepEqual(act, tt.r) {
 			t.Errorf("Case %d Expect %v but got %v", i, tt.r, act)
 		}
+	}
+}
+
+func TestSaveSql(t *testing.T) {
+	contextLogger := econf.Log.WithField("rule", "test")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	s := &sqlSink{}
+	mdb := &sqldatabase.MockDB{}
+	s.db = mdb
+	s.conf = &sqlConfig{
+		Fields: []string{ // set fields to make sure order is always testable
+			"id", "name", "address", "mobile",
+		},
+		KeyField:     "id",
+		RowkindField: "action",
+	}
+
+	test := []struct {
+		name string
+		d    map[string]interface{}
+		s    string
+	}{
+		{
+			name: "insert",
+			d:    map[string]interface{}{"id": 1, "name": "John", "address": "343", "mobile": "334433"},
+			s:    "INSERT INTO test (id,name,address,mobile) values (1,'John','343','334433');",
+		},
+		{
+			name: "update",
+			d:    map[string]interface{}{"action": "update", "id": 1, "name": "John", "address": "343", "mobile": "334433"},
+			s:    "UPDATE test SET id=1,name='John',address='343',mobile='334433' WHERE id = 1;",
+		},
+	}
+	for _, tt := range test {
+		t.Run(tt.name, func(t *testing.T) {
+			err := s.save(ctx, "test", tt.d)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.s, mdb.LastSql())
+		})
 	}
 }
 

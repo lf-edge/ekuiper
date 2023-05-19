@@ -15,13 +15,13 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"reflect"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -92,7 +92,7 @@ func (t *sqlConfig) getKeyValues(ctx api.StreamContext, mapData map[string]inter
 type sqlSink struct {
 	conf *sqlConfig
 	// The db connection instance
-	db *sql.DB
+	db sqldatabase.DB
 }
 
 func (m *sqlSink) Configure(props map[string]interface{}) error {
@@ -322,7 +322,7 @@ func (m *sqlSink) save(ctx api.StreamContext, table string, data map[string]inte
 			sqlStr += fmt.Sprintf("%s=%s", key, vals[i])
 		}
 		if _, ok := keyval.(string); ok {
-			sqlStr += fmt.Sprintf(" WHERE %s = \"%s\";", m.conf.KeyField, keyval)
+			sqlStr += fmt.Sprintf(" WHERE %s = '%s';", m.conf.KeyField, keyval)
 		} else {
 			sqlStr += fmt.Sprintf(" WHERE %s = %v;", m.conf.KeyField, keyval)
 		}
@@ -332,7 +332,7 @@ func (m *sqlSink) save(ctx api.StreamContext, table string, data map[string]inte
 			return fmt.Errorf("field %s does not exist in data %v", m.conf.KeyField, data)
 		}
 		if _, ok := keyval.(string); ok {
-			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = \"%s\";", table, m.conf.KeyField, keyval)
+			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = '%s';", table, m.conf.KeyField, keyval)
 		} else {
 			sqlStr = fmt.Sprintf("DELETE FROM %s WHERE %s = %v;", table, m.conf.KeyField, keyval)
 		}
