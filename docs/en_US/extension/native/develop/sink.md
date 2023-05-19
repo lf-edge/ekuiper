@@ -28,7 +28,25 @@ The main task for a Sink is to implement _collect_ method. The function will be 
 
 Most of the time, the map content will be the selective fields. But if `sendError` property is enabled and there are errors happen in the rule, the map content will be like `{"error":"error message here"}`.
 
-The developer can fetch the transformed result from the context method `ctx.TransformOutput(data)`. The return values are the transformed value of `[]byte` type. Currently, it will be transformed to the json byte array be default or formatted with the set [`dataTemlate` property](../../../guide/sinks/data_template.md). If the value is transformed by dataTemplate, the second return value will be true. 
+The developer can use two methods to obtain the transformed data: `ctx.TransformOutput(data)` from the context method and `TransItem(data, dataField, fields)` from the transform package.
+- `ctx.TransformOutput(data)`：
+    - parameter
+        - `data`: the input data, with a type of interface{}.
+    - return
+        - the transformed data as a byte array ([]byte).
+        - a boolean value indicating whether the data was transformed. If it is false, it means that the result was not transformed and the original value was returned.
+        - the error message (error).
+    - process: The input data is transformed based on the dataTemplate, dataField, and fields properties, and returned as a byte array. If the [`dataTemplate` property](../../../guide/sinks/data_template.md) is set, the method first formats the input data according to the template. If neither dataField nor fields are set, the formatted data is returned as a byte array. Otherwise, the formatted data is converted to structured data, and the dataField and fields properties are used to extract the desired data. Finally, the transformed data is encoded as a byte array and returned.
+- `TransItem(data, dataField, fields)`：
+  - parameter
+      - `data`: the input data, with a type of interface{}.
+      - `dataField`: specify which data to extract, with a type of string. See details in[`dataField` property](../../../guide/sinks/overview.md#common-properties).
+      - `fields`: select the fields of the output message, with a type of []string. See details in[`fields` property](../../../guide/sinks/overview.md#common-properties).
+  - return
+      - the transformed data(interface{}).
+      - a boolean value indicating whether the data was transformed. If it is false, it means that the result was not transformed and the original value was returned.
+      - the error message (error).
+  - process: `TransItem(data, dataField, fields)` transforms the input data based on the dataField and fields properties, and returns it as structured data. If the dataField property is set, the method first extracts nested data through the dataField property. Then, if the fields property is set, the method selects the desired fields from the extracted data. Finally, the transformed data is returned.
 
 The developer can return any errors. However, to leverage the retry feature of eKuiper, the developer must return an error whose message starts with "io error".
 
