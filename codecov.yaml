@@ -10,4 +10,3 @@ coverage:
 
 ignore:
   - "**/main.go"
-  - "pkg/ast/expr.go"
