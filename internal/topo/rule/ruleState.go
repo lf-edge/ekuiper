@@ -324,9 +324,11 @@ func (rs *RuleState) start() error {
 func (rs *RuleState) Stop() error {
 	rs.Lock()
 	defer rs.Unlock()
-	if rs.Rule.IsScheduleRule() {
+	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 		rs.cronState.isInSchedule = false
-		rs.cronState.cancel()
+		if rs.cronState.cancel != nil {
+			rs.cronState.cancel()
+		}
 		rs.cronState.startFailedCnt = 0
 		backgroundCron.Remove(rs.cronState.entryID)
 	}
@@ -355,9 +357,11 @@ func (rs *RuleState) Close() error {
 		rs.Topology.Cancel()
 	}
 	rs.triggered = -1
-	if rs.Rule.IsScheduleRule() {
+	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 		rs.cronState.isInSchedule = false
-		rs.cronState.cancel()
+		if rs.cronState.cancel != nil {
+			rs.cronState.cancel()
+		}
 		rs.cronState.startFailedCnt = 0
 		backgroundCron.Remove(rs.cronState.entryID)
 	}
@@ -379,7 +383,7 @@ func (rs *RuleState) GetState() (string, error) {
 			case nil:
 				result = "Running"
 			case context.Canceled:
-				if rs.Rule.IsScheduleRule() {
+				if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 					result = "Stopped: waiting for next schedule."
 				} else {
 					result = "Stopped: canceled manually."

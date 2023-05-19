@@ -417,4 +417,49 @@ func TestScheduleRule(t *testing.T) {
 			}
 		}
 	}()
+
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.Stop(); err != nil {
+			t.Error(err)
+			return
+		}
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != "Stopped: canceled manually." {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", "Stopped: canceled manually.", state)
+			return
+		}
+		if rs.cronState.isInSchedule {
+			t.Error("cron state shouldn't be in schedule")
+			return
+		}
+	}()
+
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.Stop(); err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.Close(); err != nil {
+			t.Error(err)
+			return
+		}
+	}()
 }
