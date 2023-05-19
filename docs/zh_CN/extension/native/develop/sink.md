@@ -29,9 +29,25 @@ Sink （目标）的主要任务是实现 _collect_ 方法。 当 eKuiper 将任
 
 大多数时候，收到到的 map 的内容为规则选择的列的值。但是，如果 `sendError` 属性设置为 true 且规则有错误，则错误信息会放到 map 里，形似 `{"error":"error message here"}` 。
 
-开发者可通过 context 方法`ctx.TransformOutput(data)` 获取转换后的字节数组。默认情况下，该方法将返回 json 编码的字节数组，若 [`dataTemlate` 属性](../../../guide/sinks/data_template.md) 有设置，则返回格式化后的字符串数组，且第二个返回值设为 true，表示结果已经过变换。
-
-需要注意的是，当 [`dataTemlate` 属性](../../../guide/sinks/data_template.md) 设置时，开发者可通过 context 方法`ctx.TransformOutput(data)` 获取转换后的数据。若数据模板未设置，则该方法返回空值。
+开发者可以使用两种方法来获取转换后的数据： context 方法`ctx.TransformOutput(data)`和来自`transform`包中的`TransItem(data, dataField, fields)`。
+- `ctx.TransformOutput(data)`：
+  - 参数
+    - `data`: 传入的数据，类型为`interface{}`。
+  - 返回值
+    - 转换后的字节数组(`[]byte`)。
+    - 是否转换（`bool`）。如果为`false`，表示结果没有进行转换，而是返回了原值。
+    - 错误信息(`error`)。
+  - 转换过程：根据`dataTemplate`、`dataField`和`fields`属性对输入数据进行转换，返回字符数组。 如果设置了[`dataTemplate` 属性](../../../guide/sinks/data_template.md)，该方法首先通过`dataTemplate` 属性得到格式化后的字符数组。如果`dataField`和`fields`都未设置，则直接输出格式化后的字符数组，否则将该字符数组转为结构化数据，再根据`dataField`和`fields`属性提取所需数据，最后再将数据编码为字节数组返回。
+- `TransItem(data, dataField, fields)`：
+  - 参数
+    - `data`: 传入的数据，类型为`interface{}`。
+    - `dataField`：指定要提取哪些数据，类型为`string`，详见[`dataField` 属性](../../../guide/sinks/overview.md#公共属性)。
+    - `fields`：选择输出消息的字段，类型为`[]string`，详见[`fields` 属性](../../../guide/sinks/overview.md#公共属性)。
+  - 返回值
+    - 转换后的数据(`interface{}`)。
+    - 是否转换（`bool`）。如果为`false`，表示结果没有进行转换，而是返回了原值。
+    - 错误信息(`error`)。
+  - 转换过程：`TransItem(data, dataField, fields)`根据`dataField`和`fields`属性对输入数据进行转换，返回结构化数据。如果设置了`dataField` 属性，该方法首先通过`dataField` 属性提取内嵌的数据。接着，如果设置了`fields`属性，该方法会从提取的数据中选择想要的字段。最后，转换后的数据会被返回。
 
 该方法可以返回任何错误类型。但是，如果想要让自动重试机制生效，返回的错误消息必须以 "io error" 开头。大多数情况下，也只有 io 问题才有重试的需要。
 
