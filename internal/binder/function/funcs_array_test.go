@@ -163,12 +163,19 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{5, nil, 5}, 5,
 			},
-			result: 3,
+			result: 2,
 		},
 		{
 			name: "array_last_position",
 			args: []interface{}{
 				[]interface{}{5, nil, 5}, "hello",
+			},
+			result: -1,
+		},
+		{
+			name: "array_last_position",
+			args: []interface{}{
+				[]interface{}{5, nil, 7}, 5,
 			},
 			result: 0,
 		},
@@ -184,7 +191,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{5, "hello", nil}, nil,
 			},
-			result: 3,
+			result: 2,
 		},
 		{
 			name: "array_contains_any",
@@ -289,6 +296,13 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1, "4", 3},
 			},
+			result: "4",
+		},
+		{
+			name: "array_max",
+			args: []interface{}{
+				[]interface{}{1, "a4a", 3},
+			},
 			result: errorArrayContainsNonNumOrBoolValError,
 		},
 		{
@@ -317,7 +331,7 @@ func TestArrayFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1, "0", 3},
 			},
-			result: errorArrayContainsNonNumOrBoolValError,
+			result: "0",
 		},
 		{
 			name: "array_min",
@@ -325,6 +339,13 @@ func TestArrayFunctions(t *testing.T) {
 				[]interface{}{1.2, 4.2, 3.0},
 			},
 			result: 1.2,
+		},
+		{
+			name: "array_min",
+			args: []interface{}{
+				[]interface{}{1, "a4a", 3},
+			},
+			result: errorArrayContainsNonNumOrBoolValError,
 		},
 		{
 			name: "array_min",

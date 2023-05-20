@@ -16,7 +16,7 @@ package function
 
 import (
 	"fmt"
-	"reflect"
+	"math"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -116,16 +116,19 @@ func registerArrayFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			array, ok := args[0].([]interface{})
-			res := make([]interface{}, 0, len(array))
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
+
+			index := 0
+
 			for _, item := range array {
 				if item != args[1] {
-					res = append(res, item)
+					array[index] = item
+					index++
 				}
 			}
-			return res, true
+			return array[:index], true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
@@ -140,13 +143,15 @@ func registerArrayFunc() {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
 
+			lastPos := -1
 			for i := len(array) - 1; i >= 0; i-- {
 				if array[i] == args[1] {
-					return i + 1, true
+					lastPos = i
+					break
 				}
 			}
 
-			return 0, true
+			return lastPos, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
@@ -191,7 +196,13 @@ func registerArrayFunc() {
 			if !ok2 {
 				return errorArraySecondArgumentNotArrayError, false
 			}
-			intersection := []interface{}{}
+
+			capacity := len(array1)
+			if len(array2) > capacity {
+				capacity = len(array2)
+			}
+
+			intersection := make([]interface{}, 0, capacity)
 			set := make(map[interface{}]bool)
 
 			for _, a := range array1 {
@@ -223,7 +234,7 @@ func registerArrayFunc() {
 			if !ok2 {
 				return errorArraySecondArgumentNotArrayError, false
 			}
-			union := []interface{}{}
+			union := make([]interface{}, 0, len(array1)+len(array2))
 			set := make(map[interface{}]bool)
 
 			for _, a := range array1 {
@@ -252,39 +263,24 @@ func registerArrayFunc() {
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
-			var max interface{}
-			var maxType reflect.Type
+			var res interface{}
+			var maxVal float64 = math.Inf(-1)
 
 			for _, val := range array {
 				if val == nil {
 					return nil, true
 				}
-				v := reflect.ValueOf(val)
-				switch v.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					f, _ := cast.ToFloat64(val, cast.CONVERT_SAMEKIND)
-					if max == nil || f > reflect.ValueOf(max).Convert(reflect.TypeOf(f)).Float() {
-						max = f
-						maxType = v.Type()
-					}
-				case reflect.Float32, reflect.Float64:
-					if max == nil || v.Float() > reflect.ValueOf(max).Float() {
-						max = val
-						maxType = v.Type()
-					}
-				case reflect.Bool:
-					b := v.Bool()
-					if max == nil || (b && !reflect.ValueOf(max).Bool()) {
-						max = val
-						maxType = v.Type()
-					}
-				default:
+				f, err := cast.ToFloat64(val, cast.CONVERT_ALL)
+				if err != nil {
 					return errorArrayContainsNonNumOrBoolValError, false
 				}
 
+				if f > maxVal {
+					maxVal = f
+					res = val
+				}
 			}
-			return reflect.ValueOf(max).Convert(maxType).Interface(), true
+			return res, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
@@ -297,39 +293,25 @@ func registerArrayFunc() {
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
-			var min interface{}
-			var minType reflect.Type
+			var res interface{}
+			var min float64 = math.Inf(1)
 
 			for _, val := range array {
 				if val == nil {
 					return nil, true
 				}
-				v := reflect.ValueOf(val)
-				switch v.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					f, _ := cast.ToFloat64(val, cast.CONVERT_SAMEKIND)
-					if min == nil || f < reflect.ValueOf(min).Convert(reflect.TypeOf(f)).Float() {
-						min = f
-						minType = v.Type()
-					}
-				case reflect.Float32, reflect.Float64:
-					if min == nil || v.Float() < reflect.ValueOf(min).Float() {
-						min = val
-						minType = v.Type()
-					}
-				case reflect.Bool:
-					b := v.Bool()
-					if min == nil || (b && !reflect.ValueOf(min).Bool()) {
-						min = val
-						minType = v.Type()
-					}
-				default:
+
+				f, err := cast.ToFloat64(val, cast.CONVERT_ALL)
+				if err != nil {
 					return errorArrayContainsNonNumOrBoolValError, false
 				}
 
+				if f < min {
+					min = f
+					res = val
+				}
 			}
-			return reflect.ValueOf(min).Convert(minType).Interface(), true
+			return res, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
@@ -346,7 +328,7 @@ func registerArrayFunc() {
 			if !ok2 {
 				return errorArraySecondArgumentNotArrayError, false
 			}
-			except := []interface{}{}
+			except := make([]interface{}, 0, len(array1))
 			set := make(map[interface{}]bool)
 
 			for _, v := range array2 {
@@ -406,6 +388,10 @@ func registerArrayFunc() {
 				step, ok = args[2].(int)
 				if !ok {
 					return errorArrayThirdArgumentNotIntError, false
+				}
+
+				if step == 0 {
+					return fmt.Errorf("invalid step: should not be zero"), false
 				}
 
 			} else {
