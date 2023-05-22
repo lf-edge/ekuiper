@@ -14,7 +14,11 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"strconv"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type WindowPlan struct {
 	baseLogicalPlan
@@ -29,6 +33,15 @@ type WindowPlan struct {
 func (p WindowPlan) Init() *WindowPlan {
 	p.baseLogicalPlan.self = &p
 	return &p
+}
+
+func (p *WindowPlan) BuildExplainInfo(id int64) {
+	t := p.wtype.String()
+	info := "{\n"
+	info += "	length: " + strconv.Itoa(p.length) + "\n"
+	info += "	WindowType: " + t + "\n"
+	info += "}"
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {

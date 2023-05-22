@@ -70,6 +70,60 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sink
 	return tp, nil
 }
 
+func GetLogicalPlanForExplain(rule *api.Rule) (LogicalPlan, error) {
+	sql := rule.Sql
+
+	conf.Log.Infof("Init rule with options %+v", rule.Options)
+	stmt, err := xsql.GetStatementFromSql(sql)
+	if err != nil {
+		return nil, err
+	}
+	// validation
+	streamsFromStmt := xsql.GetStreams(stmt)
+
+	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
+		return nil, fmt.Errorf("Invalid option sendMetaToSink, it can not be applied to window")
+	}
+	store, err := store2.GetKV("stream")
+	if err != nil {
+		return nil, err
+	}
+	// Create logical plan and optimize. Logical plans are a linked list
+	lp, err := createLogicalPlan(stmt, rule.Options, store)
+	if err != nil {
+		return nil, err
+	}
+	return lp, nil
+}
+
+// BuildExplainResultFromLp generate the result of the final explain rule
+func BuildExplainResultFromLp(lp LogicalPlan) string {
+	res := ""
+	tmp := ""
+	for i := 0; i < int(lp.ID()); i++ {
+		tmp += "   "
+	}
+	// Build the explainInfo of the current layer
+	res += tmp + lp.Explain() + "\n"
+	if len(lp.Children()) != 0 {
+		for _, v := range lp.Children() {
+			res += BuildExplainResultFromLp(v)
+		}
+	}
+	return res
+}
+
+// BuildAllExplain recursively assign values to the ID of the logical plan,
+// and build the corresponding explainInfo
+func BuildAllExplain(lp LogicalPlan, id int64) {
+	if len(lp.Children()) != 0 {
+		for _, v := range lp.Children() {
+			BuildAllExplain(v, id+1)
+		}
+	}
+	lp.BuildExplainInfo(id)
+}
+
 func createTopo(rule *api.Rule, lp LogicalPlan, sources []*node.SourceNode, sinks []*node.SinkNode, streamsFromStmt []string) (*topo.Topo, error) {
 	// Create topology
 	tp, err := topo.NewWithNameAndQos(rule.Id, rule.Options.Qos, rule.Options.CheckpointInterval)

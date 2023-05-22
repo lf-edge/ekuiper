@@ -26,6 +26,12 @@ func (p FilterPlan) Init() *FilterPlan {
 	return &p
 }
 
+func (p FilterPlan) BuildExplainInfo(id int64) {
+	info := ""
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 func (p *FilterPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
 	// if no child, swallow all conditions
 	a := combine(condition, p.condition)

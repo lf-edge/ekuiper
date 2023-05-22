@@ -26,6 +26,12 @@ func (p OrderPlan) Init() *OrderPlan {
 	return &p
 }
 
+func (p OrderPlan) BuildExplainInfo(id int64) {
+	info := ""
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 func (p *OrderPlan) PruneColumns(fields []ast.Expr) error {
 	f := getFields(p.SortFields)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))

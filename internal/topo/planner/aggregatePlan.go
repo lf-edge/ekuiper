@@ -26,6 +26,12 @@ func (p AggregatePlan) Init() *AggregatePlan {
 	return &p
 }
 
+func (p AggregatePlan) BuildExplainInfo(id int64) {
+	info := ""
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 func (p *AggregatePlan) PruneColumns(fields []ast.Expr) error {
 	f := getFields(p.dimensions)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))

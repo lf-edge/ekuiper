@@ -50,6 +50,24 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 	return &p
 }
 
+func (p DataSourcePlan) BuildExplainInfo(id int64) {
+	info := "{\n"
+	info += "	streamName: " + string(p.name) + "\n"
+	info += "	fields: [ "
+	i := 0
+	for n, field := range p.fields {
+		info += "{ fieldName: " + n + ", fieldType: " + field.Type + " }"
+		if i != len(p.fields)-1 {
+			info += ", "
+		}
+		i++
+	}
+	info += " ]\n"
+	info += "}"
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 // PushDownPredicate Presume no children for data source
 func (p *DataSourcePlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
 	if p.streamStmt.StreamType == ast.TypeTable {

@@ -27,6 +27,12 @@ func (p JoinPlan) Init() *JoinPlan {
 	return &p
 }
 
+func (p JoinPlan) BuildExplainInfo(id int64) {
+	info := ""
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 func (p *JoinPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
 	// TODO multiple join support
 	// Assume only one join

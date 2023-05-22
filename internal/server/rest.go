@@ -38,6 +38,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
+	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -139,6 +140,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
@@ -568,6 +570,36 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set(ContentType, ContentTypeJSON)
 	w.Write([]byte(content))
+}
+
+func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	// fetch the rule which will be explained
+	rule, err := ruleProcessor.GetRuleById(name)
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	if rule.Sql == "" {
+		handleError(w, errors.New("only support explain sql now"), "explain rules error", logger)
+	}
+	var lp planner.LogicalPlan
+	lp, err = planner.GetLogicalPlanForExplain(rule)
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	planner.BuildAllExplain(lp, 0)
+	resp := planner.BuildExplainResultFromLp(lp)
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.Write([]byte(resp))
 }
 
 type rulesetInfo struct {

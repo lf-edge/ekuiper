@@ -35,6 +35,12 @@ func (p LookupPlan) Init() *LookupPlan {
 	return &p
 }
 
+func (p LookupPlan) BuildExplainInfo(id int64) {
+	info := ""
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 // PushDownPredicate do not deal with conditions, push down or return up
 func (p *LookupPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
 	a := combine(condition, p.conditions)

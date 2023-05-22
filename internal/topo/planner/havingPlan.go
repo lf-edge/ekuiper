@@ -21,6 +21,12 @@ type HavingPlan struct {
 	condition ast.Expr
 }
 
+func (p HavingPlan) BuildExplainInfo(id int64) {
+	info := ""
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 func (p HavingPlan) Init() *HavingPlan {
 	p.baseLogicalPlan.self = &p
 	return &p

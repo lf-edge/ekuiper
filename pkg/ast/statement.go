@@ -171,6 +171,24 @@ const (
 	COUNT_WINDOW
 )
 
+func (w WindowType) String() string {
+	switch w {
+	case NOT_WINDOW:
+		return "NOT_WINDOW"
+	case TUMBLING_WINDOW:
+		return "TUMBLING_WINDOW"
+	case HOPPING_WINDOW:
+		return "HOPPING_WINDOW"
+	case SLIDING_WINDOW:
+		return "SLIDING_WINDOW"
+	case SESSION_WINDOW:
+		return "SESSION_WINDOW"
+	case COUNT_WINDOW:
+		return "COUNT_WINDOW"
+	}
+	return ""
+}
+
 type Window struct {
 	WindowType WindowType
 	Length     *IntegerLiteral

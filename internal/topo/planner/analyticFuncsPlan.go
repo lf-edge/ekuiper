@@ -14,7 +14,11 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"reflect"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type AnalyticFuncsPlan struct {
 	baseLogicalPlan
@@ -24,6 +28,25 @@ type AnalyticFuncsPlan struct {
 func (p AnalyticFuncsPlan) Init() *AnalyticFuncsPlan {
 	p.baseLogicalPlan.self = &p
 	return &p
+}
+
+func (p AnalyticFuncsPlan) BuildExplainInfo(id int64) {
+	info := "{\n"
+	info += "	funcs: [ "
+	for i, v := range p.funcs {
+		f := "{ funcName: " + v.Name
+		if v.WhenExpr != nil {
+			f += ", whenExprName: " + reflect.TypeOf(v.WhenExpr).Name()
+		}
+		info += f + " }"
+		if i != len(p.funcs)-1 {
+			info += ", "
+		}
+	}
+	info += " ]\n"
+	info += "}"
+	p.baseLogicalPlan.ExplainInfo.Id = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 // PushDownPredicate this op must run before any filters
