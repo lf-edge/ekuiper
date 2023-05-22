@@ -17,9 +17,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"reflect"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
@@ -65,7 +66,7 @@ func (t *sqlConfig) getKeyValues(ctx api.StreamContext, mapData map[string]inter
 	if len(t.Fields) != 0 {
 		for _, k := range t.Fields {
 			keys = append(keys, k)
-			if v, ok := mapData[k]; ok {
+			if v, ok := mapData[k]; ok && v != nil {
 				if reflect.String == reflect.TypeOf(v).Kind() {
 					vals = append(vals, fmt.Sprintf("'%v'", v))
 				} else {
