@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,8 +26,9 @@ func SetupDefault() error {
 	}
 
 	c := definition.Config{
-		Type:  "sqlite",
-		Redis: definition.RedisConfig{},
+		Type:         "sqlite",
+		ExtStateType: "sqlite",
+		Redis:        definition.RedisConfig{},
 		Sqlite: definition.SqliteConfig{
 			Path: dir,
 			Name: "",
@@ -43,7 +44,8 @@ func SetupWithKuiperConfig(kconf *conf.KuiperConf) error {
 		return err
 	}
 	c := definition.Config{
-		Type: kconf.Store.Type,
+		Type:         kconf.Store.Type,
+		ExtStateType: kconf.Store.ExtStateType,
 		Redis: definition.RedisConfig{
 			Host:     kconf.Store.Redis.Host,
 			Port:     kconf.Store.Redis.Port,
@@ -69,5 +71,10 @@ func Setup(config definition.Config) error {
 		return err
 	}
 	cacheStores = s
+	s, err = newExtStateStores(config, "extState.db")
+	if err != nil {
+		return err
+	}
+	extStateStores = s
 	return nil
 }

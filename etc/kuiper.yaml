@@ -89,6 +89,7 @@ source:
 store:
   #Type of store that will be used for keeping state of the application
   type: sqlite
+  extStateType: sqlite
   redis:
     host: localhost
     port: 6379

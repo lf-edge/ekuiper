@@ -26,7 +26,7 @@ type Manager struct {
 }
 
 func InitKeyedStateKV() {
-	kv, _ = store.GetKV("keyed_state")
+	kv, _ = store.GetExtStateKV("keyed_state")
 }
 
 func GetKeyedState(key string) (interface{}, error) {

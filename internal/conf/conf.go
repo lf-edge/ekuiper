@@ -141,8 +141,9 @@ type KuiperConf struct {
 	Sink   *SinkConf
 	Source *SourceConf
 	Store  struct {
-		Type  string `yaml:"type"`
-		Redis struct {
+		Type         string `yaml:"type"`
+		ExtStateType string `yaml:"extStateType"`
+		Redis        struct {
 			Host               string `yaml:"host"`
 			Port               int    `yaml:"port"`
 			Password           string `yaml:"password"`
