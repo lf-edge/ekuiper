@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -461,5 +463,17 @@ func TestScheduleRule(t *testing.T) {
 			t.Error(err)
 			return
 		}
+	}()
+
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		rs.cronState.isInSchedule = true
+		status, err := rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, "Stopped: waiting for next schedule.", status)
 	}()
 }
