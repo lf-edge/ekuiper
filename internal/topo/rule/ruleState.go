@@ -394,7 +394,11 @@ func (rs *RuleState) GetState() (string, error) {
 				result = fmt.Sprintf("Stopped: %v.", err)
 			}
 		} else {
-			result = "Stopped: canceled manually."
+			if rs.cronState.isInSchedule {
+				result = "Stopped: waiting for next schedule."
+			} else {
+				result = "Stopped: canceled manually."
+			}
 		}
 	}
 	if rs.Rule.IsScheduleRule() && rs.cronState.startFailedCnt > 0 {
