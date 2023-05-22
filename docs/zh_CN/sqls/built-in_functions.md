@@ -139,7 +139,6 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 | encode           | encode(col1, "base64")           | 使用 encode 函数根据编码方案将负载（可能是非 JSON 数据）编码为其字符串表示形式。目前，只支持"base64" 编码类型。                     |
 | decode           | decode(col1, "base64")           | 使解码输入字符串。目前，只支持"base64" 类型。                                                             |
 | trunc            | trunc(dec, int)                  | 将第一个参数截断为第二个参数指定的小数位数。 如果第二个参数小于零，则将其设置为零。 如果第二个参数大于34，则将其设置为34。从结果中去除尾随零。              |
-| object_construct | object_construct(key1, col, ...) | 返回由参数构建的 oject/map 。参数为一系列的键值对，因此必须为偶数个。键必须为 string 类型，值可以为任意类型。如果值为空，则该键值对不会出现在最终的对象中。 |
 
 ### 转换为 datetime 类型
 
@@ -190,13 +189,14 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 ## 对象函数
 
-| 函数         | 示例                        | 说明              |
-|------------|---------------------------|-----------------|
-| keys | keys(map[string]interface{}) | 返回的给定的 map 参数中的所有 key 值 |
-| values | values(map[string]interface{}) | 返回给定的 map 参数中的所有 value 值 |
-| object | object(arr1, arr2) | 接受两个 list 参数来构造 map 对象，第一个 list 作为 map 对象的 key，第二个 list 作为 map 对象的 value。两个 list 参数长度必须相等 |
-| zip | zip([arr1, arr2], ......) | 接受一组 list 对象来构造 map 对象，每个 list 元素的长度必须为 2，每个 list 元素内的第一个元素将作为 key，第二个元素将作为 value |
-| items | items(map[string]interface{}) | 根据给定的 map 参数构造一个 list 对象，每个元素都为一个长度为 2 的 list 对象，其中第一个元素为 key，第二个元素为 value |
+| 函数               | 示例                               | 说明                                                                                        |
+|------------------|----------------------------------|-------------------------------------------------------------------------------------------|
+| keys             | keys(map[string]interface{})     | 返回的给定的 map 参数中的所有 key 值                                                                   |
+| values           | values(map[string]interface{})   | 返回给定的 map 参数中的所有 value 值                                                                  |
+| object           | object(arr1, arr2)               | 接受两个 list 参数来构造 map 对象，第一个 list 作为 map 对象的 key，第二个 list 作为 map 对象的 value。两个 list 参数长度必须相等 |
+| zip              | zip([arr1, arr2], ......)        | 接受一组 list 对象来构造 map 对象，每个 list 元素的长度必须为 2，每个 list 元素内的第一个元素将作为 key，第二个元素将作为 value         |
+| items            | items(map[string]interface{})    | 根据给定的 map 参数构造一个 list 对象，每个元素都为一个长度为 2 的 list 对象，其中第一个元素为 key，第二个元素为 value                |
+| object_construct | object_construct(key1, col, ...) | 返回由参数构建的 object/map 。参数为一系列的键值对，因此必须为偶数个。键必须为 string 类型，值可以为任意类型。如果值为空，则该键值对不会出现在最终的对象中。  |
 
 ## 分析函数
 
