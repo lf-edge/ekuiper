@@ -139,7 +139,6 @@ Examples:
 | encode           | encode(col1, "base64")           | Use the encode function to encode the payload, which potentially might be non-JSON data, into its string representation based on the encoding scheme. Currently, only "base64" encoding type is supported.                                                                                        |
 | decode           | decode(col1, "base64")           | Decode the input string with specified decoding method. Currently, only "base64" encoding type is supported.                                                                                                                                                                                      |
 | trunc            | trunc(dec, int)                  | Truncates the first argument to the number of Decimal places specified by the second argument. If the second argument is less than zero, it is set to zero. If the second argument is greater than 34, it is set to 34. Trailing zeroes are stripped from the result.                             |
-| object_construct | object_construct(key1, col, ...) | Return a struct type object/map constructed by the arguments. The arguments are series of key value pairs, thus the arguments count must be an odd number. The key must a string and the value can be of any type. If the value is null, the key/value pair will not present in the final object. |
 
 ### Cast to datetime
 
@@ -190,13 +189,14 @@ Currently, 'zlib', 'gzip', 'flate' and 'zstd' method are supported.
 
 ## Object Functions
 
-| Function   | Example                   | Description                                                           |
-|------------|---------------------------|-----------------------------------------------------------------------|
-| keys | keys(map[string]interface{}) | Return an array containing the keys of the map |
-| values | values(map[string]interface{}) | Return an array containing the values of the map |
-| object | object(arr1, arr2) | Construct an object from an array of keys and an array of values. keys must be an array of strings. values must be an arbitrary array of the same length as keys. |
-| zip | zip([arr1, arr2], ......) | Construct an object from an array of entries. Each entry must itself be an array of size 2: the first element is the key (and must be a string), and the second element is the value. |
-| items | items(map[string]interface{}) | Return an array containing the entries of obj. Each entry is a 2-element array; the first is the key, the second is the value. |
+| Function         | Example                          | Description                                                                                                                                                                                                                                                                                       |
+|------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| keys             | keys(map[string]interface{})     | Return an array containing the keys of the map                                                                                                                                                                                                                                                    |
+| values           | values(map[string]interface{})   | Return an array containing the values of the map                                                                                                                                                                                                                                                  |
+| object           | object(arr1, arr2)               | Construct an object from an array of keys and an array of values. keys must be an array of strings. values must be an arbitrary array of the same length as keys.                                                                                                                                 |
+| zip              | zip([arr1, arr2], ......)        | Construct an object from an array of entries. Each entry must itself be an array of size 2: the first element is the key (and must be a string), and the second element is the value.                                                                                                             |
+| items            | items(map[string]interface{})    | Return an array containing the entries of obj. Each entry is a 2-element array; the first is the key, the second is the value.                                                                                                                                                                    |
+| object_construct | object_construct(key1, col, ...) | Return a struct type object/map constructed by the arguments. The arguments are series of key value pairs, thus the arguments count must be an odd number. The key must a string and the value can be of any type. If the value is null, the key/value pair will not present in the final object. |
 
 ## Analytic Functions
 
