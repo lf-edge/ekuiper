@@ -321,7 +321,7 @@ Create a stream demo and have below inputs
 Rule to get the unnest values with other columns:
 
 ```text
-SQL: SELECT unnest(x), b FROM demo
+SQL: SELECT unnest(x), c FROM demo
 ___________________________________________________
 {"a":1, "b":2, "c": 5}
 {"a":3, "b":4, "c": 5}
