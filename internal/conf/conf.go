@@ -231,6 +231,9 @@ func InitConf() {
 			Log.Fatal(err)
 		}
 	}
+	if Config.Store.ExtStateType == "" {
+		Config.Store.ExtStateType = "sqlite"
+	}
 
 	if Config.Portable.PythonBin == "" {
 		Config.Portable.PythonBin = "python"
