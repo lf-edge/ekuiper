@@ -182,7 +182,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 | 函数             | 示例                           | 说明                                                    |
 |----------------|------------------------------|-------------------------------------------------------|
-| array_position | array_postion(array, value)  | 返回第二个参数在列表参数中的索引下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1        |
+| array_position | array_position(array, value) | 返回第二个参数在列表参数中的索引下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1        |
 | element_at     | element_at(array, index)     | 返回列表参数中在给定索引下的元素，索引下标从 0 开始，若该索引小于 0，则该元素从列表末向列表头进行计数 |
 | array_contains | array_contains(array, value) | 返回给定元素是否存在列表参数中，存在则返回 true，否则返回 false                 |
 | array_create   | array_create(value1, ......) | 将给定的元素参数们创建为一个列表元素                                    |
@@ -320,7 +320,7 @@ ___________________________________________________
 获取 unnest 结果与其他列的规则:
 
 ```text
-SQL: SELECT unnest(x), b FROM demo
+SQL: SELECT unnest(x), c FROM demo
 ___________________________________________________
 {"a":1, "b":2, "c": 5}
 {"a":3, "b":4, "c": 5}
