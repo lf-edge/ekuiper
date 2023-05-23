@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -98,11 +98,11 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 			result, err = cast.ToFloat64Slice(v, cast.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_FLOAT:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
-				r, err := cast.ToFloat64(input, sn)
+				r, err := cast.ToFloat32(input, sn)
 				if err != nil {
 					return 0, nil
 				} else {
-					return float32(r), nil
+					return r, nil
 				}
 			}, "float", cast.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
@@ -165,13 +165,13 @@ func (fc *FieldConverter) encodeSingleField(field *desc.FieldDescriptor, v inter
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_FLOAT:
-		r, err := cast.ToFloat64(v, cast.STRICT)
+		r, err := cast.ToFloat32(v, cast.STRICT)
 		if err == nil {
-			return float32(r), nil
+			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
-	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
+	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_ENUM:
 		r, err := cast.ToInt(v, cast.STRICT)
 		if err == nil {
 			return int32(r), nil
@@ -245,7 +245,7 @@ func (fc *FieldConverter) DecodeField(src interface{}, field *desc.FieldDescript
 		} else {
 			r, e = cast.ToFloat64(src, sn)
 		}
-	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64, dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32, dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
+	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64, dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32, dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64, dpb.FieldDescriptorProto_TYPE_ENUM:
 		if field.IsRepeated() {
 			r, e = cast.ToInt64Slice(src, sn)
 		} else {
