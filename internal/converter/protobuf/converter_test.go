@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,6 +59,44 @@ func TestEncode(t *testing.T) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.r, a) {
 			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.r, a)
+		}
+	}
+}
+
+func TestEmbedType(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test3.proto", "", "DrivingData")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		m map[string]interface{}
+		r []byte
+		e string
+	}{
+		{
+			m: map[string]interface{}{
+				"drvg_mod": int64(1),
+				"brk_pedal_sts": map[string]interface{}{
+					"valid": int64(0),
+				},
+				"average_speed": 90.56,
+			},
+			r: []byte{0x08, 0x01, 0x11, 0xa4, 0x70, 0x3d, 0x0a, 0xd7, 0xa3, 0x56, 0x40, 0x1a, 0x02, 0x08, 0x00},
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for i, tt := range tests {
+		a, err := c.Encode(tt.m)
+		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
+			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
+		} else if tt.e == "" && !reflect.DeepEqual(tt.r, a) {
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.r, a)
+		}
+		m, err := c.Decode(a)
+		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
+			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
+		} else if tt.e == "" && !reflect.DeepEqual(tt.m, m) {
+			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, m)
 		}
 	}
 }

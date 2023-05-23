@@ -1,0 +1,20 @@
+message DrivingData {
+  optional DrvgMod drvg_mod = 1;
+  optional double average_speed = 2;
+  optional BrkPedalStatus brk_pedal_sts = 3;
+
+  message BrkPedalStatus {
+    optional BrkPedalValid valid = 1;
+  }
+
+  enum BrkPedalValid {
+    BRK_PED_VALID = 0;
+    BRK_PED_INVALID = 1;
+  }
+
+  enum DrvgMod {
+    AUTO_MODE = 0;
+    ECO_MODE = 1;
+    SPORT_MODE = 2;
+  }
+}
