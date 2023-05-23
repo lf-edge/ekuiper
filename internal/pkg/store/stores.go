@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,8 +31,9 @@ var (
 	storeBuilders = map[string]StoreCreator{
 		"sqlite": sql.BuildStores,
 	}
-	globalStores *stores = nil
-	cacheStores  *stores = nil
+	globalStores   *stores = nil
+	cacheStores    *stores = nil
+	extStateStores *stores = nil
 )
 
 type stores struct {
@@ -60,6 +61,26 @@ func newStores(c definition.Config, name string) (*stores, error) {
 		}
 	} else {
 		return nil, fmt.Errorf("unknown database type: %s", databaseType)
+	}
+}
+
+func newExtStateStores(c definition.Config, name string) (*stores, error) {
+	databaseType := c.ExtStateType
+	if builder, ok := storeBuilders[databaseType]; ok {
+		kvBuilder, tsBuilder, err := builder(c, name)
+		if err != nil {
+			return nil, err
+		} else {
+			return &stores{
+				kv:        make(map[string]kv.KeyValue),
+				ts:        make(map[string]kv.Tskv),
+				mu:        sync.Mutex{},
+				kvBuilder: kvBuilder,
+				tsBuilder: tsBuilder,
+			}, nil
+		}
+	} else {
+		return nil, fmt.Errorf("unknown extStateStore type: %s", databaseType)
 	}
 }
 
@@ -174,4 +195,11 @@ func DropCacheKVForRule(rule string) error {
 	}
 	cacheStores.DropRefKVs(path.Join("sink", rule))
 	return nil
+}
+
+func GetExtStateKV(table string) (kv.KeyValue, error) {
+	if extStateStores == nil {
+		return nil, fmt.Errorf("extState stores are not initialized")
+	}
+	return extStateStores.GetKV(table)
 }

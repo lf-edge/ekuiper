@@ -180,12 +180,12 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 
 ## 列表函数
 
-| 函数         | 示例                    | 说明              |
-|------------|-----------------------|-----------------|
-| array_position | array_postion(array, value) | 返回第二个参数在列表参数中的索引下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1 |
-| element_at | element_at(array, index) | 返回列表参数中在给定索引下的元素，索引下标从 0 开始，若该索引小于 0，则该元素从列表末向列表头进行计数 |
-| array_contains | array_contains(array, value) | 返回给定元素是否存在列表参数中，存在则返回 true，否则返回 false |
-| array_create | array_create(value1, ......) | 将给定的元素参数们创建为一个列表元素 |
+| 函数             | 示例                           | 说明                                                    |
+|----------------|------------------------------|-------------------------------------------------------|
+| array_position | array_postion(array, value)  | 返回第二个参数在列表参数中的索引下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1        |
+| element_at     | element_at(array, index)     | 返回列表参数中在给定索引下的元素，索引下标从 0 开始，若该索引小于 0，则该元素从列表末向列表头进行计数 |
+| array_contains | array_contains(array, value) | 返回给定元素是否存在列表参数中，存在则返回 true，否则返回 false                 |
+| array_create   | array_create(value1, ......) | 将给定的元素参数们创建为一个列表元素                                    |
 
 ## 对象函数
 
@@ -260,7 +260,7 @@ select lag(Status) as Status, ts - lag(ts, 1, ts) OVER (WHEN had_changed(true, s
 | meta            | meta(topic)                          | 返回指定键的元数据。 键可能是：<br/>-如果 from 子句中只有一个来源，则为独立键，例如`meta(device)`<br />-用于指定流的合格键，例如 `meta(src1.device)` <br />-用于多级元数据的带有箭头的键，例如 `meta(src1.reading->device->name)`。这里假定读取是地图结构元数据。 |
 | window_start    | window_start()                       | 返回窗口的开始时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
 | window_end      | window_end()                         | 返回窗口的结束时间戳，格式为 int64。若运行时没有时间窗口，则返回默认值0。窗口的时间与规则所用的时间系统相同。若规则采用处理时间，则窗口的时间也为处理时间；若规则采用事件事件，则窗口的时间也为事件时间。                                                                          |
-| get_keyed_state | get_keyed_state(expr1, expr2, expr3) | 返回键在数据库中对应的值。第一个参数为 键 表达式，第二个参数为值类型，支持 bigint, float, string, boolean and datetime 格式，第三个参数为默认值                                                                                   |
+| get_keyed_state | get_keyed_state(expr1, expr2, expr3) | 返回键在数据库中对应的值。第一个参数为 键 表达式，第二个参数为值类型，支持 bigint, float, string, boolean and datetime 格式，第三个参数为默认值。默认数据库是sqlite，用户可以通过这个[配置](../configuration/global_configurations.md#外部状态)更改数据库。   |
 | delay           | delay(delayTime, returnVal)          | 延迟执行规则一段时间后返回第二个参数作为返回值。                                                                                                                                                          |
 
 ## 多列函数

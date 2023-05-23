@@ -164,6 +164,10 @@ GET http://localhost:9081/plugins/functions/prebuild
     * 连接信息中的 server， port 和 password 会覆盖以上定义的 host， port 和 password
     * [具体信息可参考](../guide/sources/builtin/edgex.md#connectionselector)
 
+### 外部状态
+
+还有一个名为 `extStateType` 的配置项。 这个配置的用途是用户可以预先在数据库中存储一些信息，当流处理规则需要这些信息时，他们可以通过 SQL 中的 [get_keyed_state](../sqls/built-in_functions.md#其它函数) 函数轻松获取它们。
+*注意*：`type` 和 `extStateType` 可以使用不同的存储配置。
 
 ### 配置示例
 
@@ -171,6 +175,7 @@ GET http://localhost:9081/plugins/functions/prebuild
     store:
       #Type of store that will be used for keeping state of the application
       type: sqlite
+      extStateType: redis
       redis:
         host: localhost
         port: 6379

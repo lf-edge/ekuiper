@@ -164,13 +164,21 @@ It has properties
   * only applicable to redis connection information
   * the server, port and password in connection info will overwrite the host port and password above
   * [more info](../guide/sources/builtin/edgex.md#connectionselector)
-    
+
+### External State
+
+There is also a configuration item named `extStateType`.
+The configuration's usage is user can store some information in database in advance, when stream processing rules need these information,
+they can get them easily by [get_keyed_state](../sqls/built-in_functions.md#other-functions) function in SQL.
+
+*Note*: `type` and `extStateType` can be configured differently.
 
 ### Config
 ```yaml
     store:
       #Type of store that will be used for keeping state of the application
       type: sqlite
+      extStateType: redis
       redis:
         host: localhost
         port: 6379
@@ -181,7 +189,6 @@ It has properties
         #Sqlite file name, if left empty name of db will be sqliteKV.db
         name:
 ```
-
 ## Portable plugin configurations
 
 This section configures the portable plugin runtime.
