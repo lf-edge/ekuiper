@@ -180,12 +180,23 @@ Currently, 'zlib', 'gzip', 'flate' and 'zstd' method are supported.
 
 ## Array Functions
 
-| Function       | Example                      | Description                                                                                                                          |
-|----------------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| array_position | array_position(array, value) | Return a 0-based index of the first occurrence of val if it is found within array. If val does not exist within array, it returns -1 |
-| element_at     | element_at(array, index)     | Returns element of array at index val. If val < 0, this function accesses elements from the last to the first                        |
-| array_contains | array_contains(array, value) | Returns true if array contains the element                                                                                           |
-| array_create   | array_create(value1, ......) | Construct an array from literals                                                                                                     |
+| Function            | Example                           | Description                                                                                                                                |
+|---------------------|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| array_position      | array_position(array, value)      | Return a 0-based index of the first occurrence of val if it is found within array. If val does not exist within array, it returns -1       |
+| element_at          | element_at(array, index)          | Returns element of array at index val. If val < 0, this function accesses elements from the last to the first                              |
+| array_contains      | array_contains(array, value)      | Returns true if array contains the element                                                                                                 |
+| array_create        | array_create(value1, ......)      | Construct an array from literals                                                                                                           |
+| array_remove        | array_remove(array, value)        | Returns the array with all occurrences of value removed                                                                                    |
+| array_last_position | array_last_position(array, val)   | Return a 0-based index of the last occurrence of val if it is found within array. If val does not exist within array, it returns -1        |
+| array_contain_any   | array_contain_any(array1, array2) | Returns true if array1 and array2 have any elements in common                                                                              |
+| array_intersect     | array_intersect(array1, array2)   | Returns an intersection of the two arrays, with all duplicates removed                                                                     |
+| array_union         | array_union(array1, array2)       | Returns a union of the two arrays, with all duplicates removed                                                                             |
+| array_max           | array_max(array)                  | Returns an element which is greater than or equal to all other elements of the array. If an element of the array is null, it returns null  |
+| array_min           | array_min(array)                  | Returns an element which is less than or equal to all other elements of the array. If an element of the array is null, it returns null     |
+| array_except        | array_except(array1, array2)      | Returns an array of elements in array1 but not in array2, without duplicates                                                               |
+| repeat              | repeat(val, count)                | Constructs an array of val repeated count times                                                                                            |
+| sequence            | sequence(start, stop[, step])     | Constructs an array from start to stop with each value increasing or decreasing by step. If step is not provided, it defaults to 1 if start is less than stop, or -1 if start is greater than stop. Notice that step is not allowed to be 0 |
+
 
 ## Object Functions
 
