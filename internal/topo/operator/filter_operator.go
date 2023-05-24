@@ -75,7 +75,10 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 			return err
 		}
 		r := input.Filter(sel)
-		return r
+		// Only return if any row meets the condition, otherwise filter all
+		if r.Len() > 0 {
+			return r
+		}
 	default:
 		return fmt.Errorf("run Where error: invalid input %[1]T(%[1]v)", input)
 	}

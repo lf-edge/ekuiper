@@ -374,9 +374,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 					},
 				},
 			},
-			result: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{},
-			},
+			result: nil,
 		},
 		{
 			sql: "SELECT id1 FROM src1 left join src2 on src1.id1 = src2.id2 WHERE src1.f1 = \"v1\" GROUP BY TUMBLINGWINDOW(ss, 10)",
@@ -483,9 +481,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 					},
 				},
 			},
-			result: &xsql.JoinTuples{
-				Content: []*xsql.JoinTuple{},
-			},
+			result: nil,
 		},
 		{
 			sql: "SELECT abc FROM tbl WHERE meta(topic) = \"topic1\" ",
