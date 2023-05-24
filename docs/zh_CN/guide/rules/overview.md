@@ -175,3 +175,78 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 当 `cron` 是每 1 小时一次，而 `duration` 是 30 分钟时，那么该规则会每隔 1 小时启动一次，每次运行 30 分钟后便被暂停，等待下一次的启动运行。
 
 通过 [停止规则](../../api/restapi/rules.md#停止规则) 停止一个周期性规则时，便会将该规则从周期性调度器中移除，从而不再被调度运行。如果该周期性规则正在运行，那么该运行也会被暂停。
+
+
+## 查看规则状态
+
+当一条规则被部署到 eKuiper 中后，我们可以通过规则指标来了解到当前的规则运行状态。
+
+### 查看规则状态
+
+我们可以通过 rest api 来得到所有规则的运行状态，与单条规则详细状况。
+
+获得所有规则的状态可以通过 [展示规则](../../api/restapi/rules.md#展示规则) 了解，而获取单条规则状态可以通过 [获取规则的状态](../../api/restapi/rules.md#获取规则的状态)。
+
+### 了解规则运行的状态指标
+
+对于以下规则:
+
+```json
+{
+  "id": "rule",
+  "sql": "select * from demo",
+  "actions": [
+     {
+      "mqtt": {
+        "server": "tcp://broker.emqx.io:1883",
+        "topic": "devices/+/messages",
+        "qos": 1,
+        "clientId": "demo_001",
+        "retained": false
+      }
+    }
+  ]
+}
+```
+
+我们可以通过上述 `获取规则的状态` 获取到以下内容:
+
+```json
+{
+  "status": "running",
+  "source_demo_0_records_in_total": 0,
+  "source_demo_0_records_out_total": 0,
+  ......
+  "op_2_project_0_records_in_total": 0,
+  "op_2_project_0_records_out_total": 0,
+  ......
+  "sink_mqtt_0_0_records_in_total": 0,
+  "sink_mqtt_0_0_records_out_total": 0,
+  ......
+}
+```
+
+其中 `status` 代表了 rule 当前的运行状态，`running` 代表规则正在运行。
+
+而之后的监控项则代表了规则运行过程中，各个算子的运行情况，其监控项构成则为 `算子类型_算子信息_算子索引_具体监控项`。
+
+以 `source_demo_0_records_in_total` 为例，其中 `source` 代表了读数据算子，`demo` 为对应的 stream，`0` 代表了该算子实例在并发度中的索引，而 `records_in_total` 则诠释了实际的监控项，即该算子接收了多少条记录。
+
+当我们尝试往该 stream 发送了一条数据后，再次获取该规则状态如下:
+
+```json
+{
+  "status": "running",
+  "source_demo_0_records_in_total": 1,
+  "source_demo_0_records_out_total": 1,
+  ......
+  "op_2_project_0_records_in_total": 1,
+  "op_2_project_0_records_out_total": 1,
+  ......
+  "sink_mqtt_0_0_records_in_total": 1,
+  "sink_mqtt_0_0_records_out_total": 1,
+  ......
+}
+```
+
+可以看到每个算子的 `records_in_total` 与 `records_out_total` 都由 0 变为了 1，代表了该算子接收到了一条记录，并向下一个算子传递了一条记录，最终在 `sink` 端向 sink 写入了 1 条记录。
