@@ -19,12 +19,13 @@ package server
 
 import (
 	"bytes"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/plugin"
 )
@@ -41,6 +42,7 @@ func (suite *PluginTestSuite) SetupTest() {
 	suite.m.rest(suite.r)
 	suite.m.register()
 }
+
 func (suite *PluginTestSuite) Test_fetchPluginList() {
 	version = "1.4.0"
 	type args struct {

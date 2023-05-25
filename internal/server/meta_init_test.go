@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,17 @@ package server
 import (
 	"bytes"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type MetaTestSuite struct {
@@ -131,7 +132,7 @@ func (suite *MetaTestSuite) TestSourceConfKeyHandler() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/sources/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
 	w := httptest.NewRecorder()
 	DataDir, _ := conf.GetDataLoc()
-	os.MkdirAll(path.Join(DataDir, "sources"), 0755)
+	os.MkdirAll(path.Join(DataDir, "sources"), 0o755)
 	if _, err := os.Create(path.Join(DataDir, "sources", "mqtt.yaml")); err != nil {
 		fmt.Println(err)
 	}
@@ -145,7 +146,7 @@ func (suite *MetaTestSuite) TestConnectionConfKeyHandler() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/connections/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
 	w := httptest.NewRecorder()
 	DataDir, _ := conf.GetDataLoc()
-	os.MkdirAll(path.Join(DataDir, "connections"), 0755)
+	os.MkdirAll(path.Join(DataDir, "connections"), 0o755)
 	if _, err := os.Create(path.Join(DataDir, "connections", "connection.yaml")); err != nil {
 		fmt.Println(err)
 	}
@@ -158,7 +159,7 @@ func (suite *MetaTestSuite) TestConnectionConfKeyHandler() {
 func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/sinks/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
 	DataDir, _ := conf.GetDataLoc()
-	os.MkdirAll(path.Join(DataDir, "sinks"), 0755)
+	os.MkdirAll(path.Join(DataDir, "sinks"), 0o755)
 	if _, err := os.Create(path.Join(DataDir, "sinks", "mqtt.yaml")); err != nil {
 		fmt.Println(err)
 	}

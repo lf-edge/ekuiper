@@ -18,10 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -29,9 +25,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gorilla/mux"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 func init() {
@@ -332,6 +332,10 @@ func (suite *RestTestSuite) Test_ruleSetImport() {
 func (suite *RestTestSuite) Test_dataImport() {
 	file := "rpctest/data/import_configuration.json"
 	f, err := os.Open(file)
+	if err != nil {
+		fmt.Printf("fail to open file %s: %v", file, err)
+		return
+	}
 	defer f.Close()
 	buffer := new(bytes.Buffer)
 	_, err = io.Copy(buffer, f)
@@ -368,14 +372,13 @@ func (suite *RestTestSuite) Test_dataImport() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
 }
 
 func (suite *RestTestSuite) Test_fileUpload() {
 	fileJson := `{"Name": "test.txt", "Content": "test"}`
 	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBufferString(fileJson))
 	req.Header["Content-Type"] = []string{"application/json"}
-	os.Mkdir(uploadDir, 0777)
+	os.Mkdir(uploadDir, 0o777)
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusCreated, w.Code)

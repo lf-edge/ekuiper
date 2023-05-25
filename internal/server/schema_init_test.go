@@ -16,11 +16,12 @@ package server
 
 import (
 	"bytes"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/suite"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/suite"
 )
 
 type SchemaTestSuite struct {
@@ -57,7 +58,6 @@ func (suite *SchemaTestSuite) TestSchema() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	suite.Equal(http.StatusOK, w.Code)
-
 }
 
 func TestSchemaTestSuite(t *testing.T) {

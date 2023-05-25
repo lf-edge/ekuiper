@@ -15,6 +15,10 @@
 package server
 
 import (
+	"os"
+	"testing"
+	"time"
+
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/plugin/native"
@@ -23,9 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"os"
-	"testing"
-	"time"
 )
 
 func init() {
@@ -194,7 +195,6 @@ func (suite *ServerTestSuite) TearDownTest() {
 	var reply string
 	_ = suite.s.Stream(sql, &reply)
 	_ = suite.s.DropRule("myRule", &reply)
-
 }
 
 func TestServerTestSuite(t *testing.T) {
