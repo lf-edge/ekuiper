@@ -1,0 +1,24 @@
+{
+  "streams": {
+    "test": "CREATE STREAM test () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
+  },
+  "tables": {
+  },
+  "rules": {
+    "myRule": "{\"id\": \"myRule\",\"sql\": \"SELECT * FROM test\",\"actions\": [{\"log\": {}}]}"
+  },
+  "nativePlugins":{
+  },
+  "portablePlugins":{
+  },
+  "sourceConfig":{
+  },
+  "sinkConfig":{
+  },
+  "connectionConfig":{
+  },
+  "Service":{
+  },
+  "Schema":{
+  }
+}

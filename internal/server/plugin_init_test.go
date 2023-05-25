@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,14 +18,32 @@
 package server
 
 import (
-	"fmt"
-	"reflect"
+	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/plugin"
 )
 
-func Test_fetchPluginList(t *testing.T) {
+type PluginTestSuite struct {
+	suite.Suite
+	m pluginComp
+	r *mux.Router
+}
+
+func (suite *PluginTestSuite) SetupTest() {
+	suite.m = pluginComp{}
+	suite.r = mux.NewRouter()
+	suite.m.rest(suite.r)
+	suite.m.register()
+}
+
+func (suite *PluginTestSuite) Test_fetchPluginList() {
 	version = "1.4.0"
 	type args struct {
 		t     plugin.PluginType
@@ -70,12 +88,39 @@ func Test_fetchPluginList(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotResult, gotErr := fetchPluginList(tt.args.t, tt.args.hosts, tt.args.os, tt.args.arch)
-			if !reflect.DeepEqual(gotErr, tt.wantErr) {
-				t.Errorf("fetchPluginList() gotErr = %v, want %v", gotErr, tt.wantErr)
-			}
-			fmt.Printf("%v", gotResult)
-		})
+		_, gotErr := fetchPluginList(tt.args.t, tt.args.hosts, tt.args.os, tt.args.arch)
+		assert.Equal(suite.T(), tt.wantErr, gotErr)
 	}
+}
+
+func (suite *PluginTestSuite) TestSourcesHandler() {
+	req, _ := http.NewRequest(http.MethodGet, "/plugins/sources", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *PluginTestSuite) TestSinksHandler() {
+	req, _ := http.NewRequest(http.MethodGet, "/plugins/sinks", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *PluginTestSuite) TestFunctionsHandler() {
+	req, _ := http.NewRequest(http.MethodGet, "/plugins/functions", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *PluginTestSuite) TestUdfsHandler() {
+	req, _ := http.NewRequest(http.MethodGet, "/plugins/udfs", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func TestPluginTestSuite(t *testing.T) {
+	suite.Run(t, new(PluginTestSuite))
 }

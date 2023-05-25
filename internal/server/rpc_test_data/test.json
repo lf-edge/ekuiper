@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "temperature": 20,
+    "humidity": 50
+  },
+  {
+    "id": 2,
+    "temperature": 21,
+    "humidity": 51
+  },
+  {
+    "id": 3,
+    "temperature": 22,
+    "humidity": 52
+  },
+  {
+    "id": 4,
+    "temperature": 23,
+    "humidity": 53
+  }
+]
