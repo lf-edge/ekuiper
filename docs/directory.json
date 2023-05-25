@@ -632,6 +632,10 @@
 							"path": "api/restapi/plugins"
 						},
 						{
+							"title": "源配置项管理",
+							"path": "api/restapi/configKey"
+						},
+						{
 							"title": "外部函数管理",
 							"path": "api/restapi/services"
 						},
@@ -1333,6 +1337,10 @@
 						{
 							"title": "Plugins",
 							"path": "api/restapi/plugins"
+						},
+						{
+							"title": "Source ConfigKey",
+							"path": "api/restapi/configKey"
 						},
 						{
 							"title": "External Services",
