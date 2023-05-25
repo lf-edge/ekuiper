@@ -173,3 +173,76 @@ Rules support periodic start, run and pause. In options, `cron` expresses the st
 When `cron` is every 1 hour and `duration` is 30 minutes, then the rule will be started every 1 hour, and will be suspended after 30 minutes each time, waiting for the next startup.
 
 When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a-rule), the rule will be removed from the periodic scheduler and will no longer be scheduled to run. If the rule is running, it will also be paused.
+
+## View rule status
+
+When a rule is deployed to eKuiper, we can use the rule indicator to understand the current running status of the rule.
+
+We can get the running status of all rules and the detailed status of a single rule through the rest api.
+
+The status of all rules can be obtained through [Show Rules](../../api/restapi/rules.md#show-rules), and the status of a single rule can be obtained through [get the status of a rule](../../api/restapi/rules.md#get-the-status-of-a-rule).
+
+### Understanding Status of running rules
+
+For the following rules:
+
+```json
+{
+  "id": "rule",
+  "sql": "select * from demo",
+  "actions": [
+     {
+      "mqtt": {
+        "server": "tcp://broker.emqx.io:1883",
+        "topic": "devices/+/messages",
+        "qos": 1,
+        "clientId": "demo_001",
+        "retained": false
+      }
+    }
+  ]
+}
+```
+
+We can get the status from the above `get-the-status-of-a-rule`:
+
+```json
+{
+  "status": "running",
+  "source_demo_0_records_in_total": 0,
+  "source_demo_0_records_out_total": 0,
+  ......
+  "op_2_project_0_records_in_total": 0,
+  "op_2_project_0_records_out_total": 0,
+  ......
+  "sink_mqtt_0_0_records_in_total": 0,
+  "sink_mqtt_0_0_records_out_total": 0,
+  ......
+}
+```
+
+`status` represents the current running status of the rule, and `running` represents that the rule is running.
+
+The monitoring items represent the operation status of each operator during the rule running process, and the monitoring items are composed of `operator_type information_operator concurrency_index actual_monitoring_items`.
+
+Take `source_demo_0_records_in_total` as an example, where `source` represents the operator for reading data, `demo` is the corresponding stream, `0` represents the index of the operator instance in the concurrency, and `records_in_total` interprets the actual the monitoring item, that is, how many records the operator has received.
+
+When we try to send a record to the stream, the status of the rule is obtained again as follows:
+
+```json
+{
+  "status": "running",
+  "source_demo_0_records_in_total": 1,
+  "source_demo_0_records_out_total": 1,
+  ......
+  "op_2_project_0_records_in_total": 1,
+  "op_2_project_0_records_out_total": 1,
+  ......
+  "sink_mqtt_0_0_records_in_total": 1,
+  "sink_mqtt_0_0_records_out_total": 1,
+  ......
+}
+```
+
+
+It can be seen that `records_in_total` and `records_out_total` of each operator have changed from 0 to 1, which means that the operator has received a record and passed a record to the next operator, and finally sent to the `sink` and the `sink` wrote 1 record.
