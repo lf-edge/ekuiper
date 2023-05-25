@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
@@ -178,17 +179,22 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 		if err != nil {
 			return err
 		}
+
+		var wg sync.WaitGroup
 		for _, entry := range entries {
 			if entry.IsDir() {
 				continue
 			}
-			file := filepath.Join(fs.file, entry.Name())
-			err := fs.parseFile(ctx, file, consumer)
-			if err != nil {
-				ctx.GetLogger().Errorf("parse file %s fail with error: %v", file, err)
-				continue
-			}
+			wg.Add(1)
+			go func(file string) {
+				defer wg.Done()
+				err := fs.parseFile(ctx, file, consumer)
+				if err != nil {
+					ctx.GetLogger().Errorf("Failed to parse file %s: %v", file, err)
+				}
+			}(filepath.Join(fs.file, entry.Name()))
 		}
+		wg.Wait()
 	} else {
 		err := fs.parseFile(ctx, fs.file, consumer)
 		if err != nil {
