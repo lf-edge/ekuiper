@@ -27,17 +27,16 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.x'
-        architecture: 'x64'
-    - run: pip3 install pynng
-    - name: install lib
+    - name: Install dependencies
       env:
         DEBIAN_FRONTEND: noninteractive
-      run: sudo apt-get update && sudo apt-get install libzmq3-dev -y
-    - name: run test case
       run: |
-        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash > /dev/null && source $HOME/.wasmedge/env
+        pip3 install pynng && sudo apt-get update && sudo apt-get install libzmq3-dev -y
+    - name: Build plugins
+      run: |
+        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash > /dev/null
 
-        wget -q https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/WasmEdge-plugin-wasmedge_rustls-0.1.0-alpha-ubuntu20.04_x86_64.tar
+        curl -sSfL -O https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/WasmEdge-plugin-wasmedge_rustls-0.1.0-alpha-ubuntu20.04_x86_64.tar
         tar -xf "WasmEdge-plugin-wasmedge_rustls-0.1.0-alpha-ubuntu20.04_x86_64.tar"
         mv libwasmedge_rustls.so ~/.wasmedge/plugin/
 
@@ -62,15 +61,20 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
+    - name: Run topotest case
+      run: |
+        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=github.com/lf-edge/ekuiper/internal/topo -coverprofile=topotest-plugin.out github.com/lf-edge/ekuiper/internal/topo/topotest/plugin
+    - name: Run test case
+      run: |
+        source $HOME/.wasmedge/env
         go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.out $(go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/topo/topotest/plugin")
-        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=github.com/lf-edge/ekuiper/internal/topo -coverprofile=coverage-plugin.out github.com/lf-edge/ekuiper/internal/topo/topotest/plugin
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        files: coverage.out,coverage-plugin.out
+        files: coverage.out,topotest-plugin.out
         fail_ci_if_error: true
         verbose: true
-    - name: run plugins test case
+    - name: Run plugins test case
       run: |
         mkdir -p data/test/uploads
         cp extensions/functions/dependencies/tensorflow/models/*  data/test/uploads/
