@@ -68,6 +68,9 @@ func (f *FastJsonConverter) DecodeWithSchema(b []byte, schema map[string]*ast.Js
 				return nil, err
 			}
 			subMap, err := f.decodeObject(obj, schema)
+			if err != nil {
+				return nil, err
+			}
 			ms[i] = subMap
 		}
 		return ms, nil
@@ -77,9 +80,12 @@ func (f *FastJsonConverter) DecodeWithSchema(b []byte, schema map[string]*ast.Js
 			return nil, err
 		}
 		m, err := f.decodeObject(obj, schema)
+		if err != nil {
+			return nil, err
+		}
 		return m, nil
 	}
-	return nil, fmt.Errorf("err2")
+	return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
 }
 
 func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.JsonStreamField) ([]interface{}, error) {
@@ -134,7 +140,7 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 			vs[i] = b
 		}
 	default:
-		return nil, fmt.Errorf("decodeArray err")
+		return nil, fmt.Errorf("unknown filed type:%s", field.Type)
 	}
 	return vs, nil
 }
@@ -182,7 +188,7 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 			}
 			m[key] = b
 		default:
-			return nil, fmt.Errorf("decodeObject err")
+			return nil, fmt.Errorf("unknown filed type:%s", field.Type)
 		}
 	}
 
