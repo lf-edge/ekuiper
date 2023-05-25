@@ -30,7 +30,6 @@ import (
 )
 
 type sinkConf struct {
-	Interval           *int     `json:"interval"` // deprecated, will remove in the next release
 	RollingInterval    int64    `json:"rollingInterval"`
 	RollingCount       int      `json:"rollingCount"`
 	RollingNamePattern string   `json:"rollingNamePattern"` // where to add the timestamp to the file name
@@ -60,17 +59,7 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
 	}
-	if c.Interval != nil {
-		if *c.Interval < 0 {
-			return fmt.Errorf("interval must be positive")
-		} else if c.CheckInterval == nil {
-			conf.Log.Warnf("interval is deprecated, use checkInterval instead. automatically set checkInterval to %d", c.Interval)
-			t := int64(*c.Interval)
-			c.CheckInterval = &t
-		} else {
-			conf.Log.Warnf("interval is deprecated and ignored, use checkInterval instead.")
-		}
-	} else if c.CheckInterval == nil { // set checkInterval default value if both interval and checkInerval are not set
+	if c.CheckInterval == nil { // set checkInterval default value if both interval and checkInerval are not set
 		t := (5 * time.Minute).Milliseconds()
 		c.CheckInterval = &t
 	}
