@@ -1,0 +1,11 @@
+{
+  "sql": "SELECT * from demo;",
+  "actions": [{
+    "file": {
+      "path": "../internal/server/rpctest/data/result.txt",
+      "interval": 5000,
+      "fileType": "lines",
+      "format": "json"
+    }
+  }]
+}

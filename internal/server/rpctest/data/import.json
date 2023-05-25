@@ -1,0 +1,9 @@
+{
+  "streams": {
+    "demo": "CREATE STREAM demo () WITH (DATASOURCE=\"users\", FORMAT=\"JSON\")"
+  },
+  "tables": {},
+  "rules": {
+    "myRule": "{\"id\": \"myRule\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{\"log\": {}}]}"
+  }
+}
