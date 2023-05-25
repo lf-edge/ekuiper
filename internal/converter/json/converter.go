@@ -91,7 +91,7 @@ func (f *FastJsonConverter) DecodeWithSchema(b []byte, schema map[string]*ast.Js
 func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.JsonStreamField) ([]interface{}, error) {
 	vs := make([]interface{}, len(array))
 	switch field.Type {
-	case "bigint", "float", "datetime":
+	case "bigint", "float":
 		for i, item := range array {
 			f64, err := item.Float64()
 			if err != nil {
@@ -139,6 +139,24 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 			}
 			vs[i] = b
 		}
+	case "datetime":
+		for i, item := range array {
+			switch array[i].Type() {
+			case fastjson.TypeNumber:
+				f64, err := item.Float64()
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = f64
+			case fastjson.TypeString:
+				s, err := item.StringBytes()
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = string(s)
+			}
+		}
+
 	default:
 		return nil, fmt.Errorf("unknown filed type:%s", field.Type)
 	}
@@ -149,7 +167,7 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 	m := make(map[string]interface{})
 	for key, field := range schema {
 		switch field.Type {
-		case "bigint", "float", "datetime":
+		case "bigint", "float":
 			f64v, err := obj.Get(key).Float64()
 			if err != nil {
 				return nil, err
@@ -187,10 +205,24 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				return nil, err
 			}
 			m[key] = b
+		case "datetime":
+			switch obj.Get(key).Type() {
+			case fastjson.TypeString:
+				s, err := obj.Get(key).StringBytes()
+				if err != nil {
+					return nil, err
+				}
+				m[key] = string(s)
+			case fastjson.TypeNumber:
+				f64v, err := obj.Get(key).Float64()
+				if err != nil {
+					return nil, err
+				}
+				m[key] = f64v
+			}
 		default:
 			return nil, fmt.Errorf("unknown filed type:%s", field.Type)
 		}
 	}
-
 	return m, nil
 }

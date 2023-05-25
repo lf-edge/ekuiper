@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,10 @@ import (
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestMessageDecode(t *testing.T) {
@@ -71,5 +75,124 @@ func TestMessageDecode(t *testing.T) {
 				t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
 			}
 		}
+	}
+}
+
+func TestFastJsonConverterWithSchema(t *testing.T) {
+	testcases := []struct {
+		schema  map[string]*ast.JsonStreamField
+		payload []byte
+		require map[string]interface{}
+	}{
+		{
+			payload: []byte(`{"a":1}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bigint",
+				},
+			},
+			require: map[string]interface{}{
+				"a": float64(1),
+			},
+		},
+		{
+			payload: []byte(`{"a":1}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "float",
+				},
+			},
+			require: map[string]interface{}{
+				"a": float64(1),
+			},
+		},
+		{
+			payload: []byte(`{"a":"a"}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "string",
+				},
+			},
+			require: map[string]interface{}{
+				"a": "a",
+			},
+		},
+		{
+			payload: []byte(`{"a":"a"}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bytea",
+				},
+			},
+			require: map[string]interface{}{
+				"a": "a",
+			},
+		},
+		{
+			payload: []byte(`{"a":true}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "boolean",
+				},
+			},
+			require: map[string]interface{}{
+				"a": true,
+			},
+		},
+		{
+			payload: []byte(`{"a":123}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "datetime",
+				},
+			},
+			require: map[string]interface{}{
+				"a": float64(123),
+			},
+		},
+		{
+			payload: []byte(`{"a":"123"}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "datetime",
+				},
+			},
+			require: map[string]interface{}{
+				"a": "123",
+			},
+		},
+		{
+			payload: []byte(`{"a":{"b":1}}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "struct",
+					Properties: map[string]*ast.JsonStreamField{
+						"b": {
+							Type: "bigint",
+						},
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": float64(1),
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		v, err := fastConverter.DecodeWithSchema(tc.payload, tc.schema)
+		require.NoError(t, err)
+		require.Equal(t, v, tc.require)
+	}
+
+	for _, tc := range testcases {
+		arrayPayload := []byte(fmt.Sprintf("[%s]", string(tc.payload)))
+		arrayRequire := []map[string]interface{}{
+			tc.require,
+		}
+		v, err := fastConverter.DecodeWithSchema(arrayPayload, tc.schema)
+		require.NoError(t, err)
+		require.Equal(t, v, arrayRequire)
 	}
 }
