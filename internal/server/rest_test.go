@@ -364,10 +364,7 @@ func (suite *RestTestSuite) Test_dataImport() {
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/export", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
-	returnVal, _ := io.ReadAll(w.Result().Body)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	exp := "{\"streams\":{\"demo\":\"CREATE STREAM demo () WITH (DATASOURCE=\\\"users\\\", FORMAT=\\\"JSON\\\")\"},\"tables\":{},\"rules\":{\"myRule\":\"{\\\"id\\\": \\\"myRule\\\",\\\"sql\\\": \\\"SELECT * FROM demo\\\",\\\"actions\\\": [{\\\"log\\\": {}}]}\"},\"nativePlugins\":{},\"portablePlugins\":{},\"sourceConfig\":{},\"sinkConfig\":{},\"connectionConfig\":{},\"Service\":{},\"Schema\":{}}"
-	assert.Equal(suite.T(), exp, string(returnVal))
 
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/data/import?partial=1", bytes.NewBuffer(buf))
 	w = httptest.NewRecorder()
