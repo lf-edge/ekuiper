@@ -40,6 +40,7 @@ type FileSourceConfig struct {
 	Path             string   `json:"path"`
 	Interval         int      `json:"interval"`
 	IsTable          bool     `json:"isTable"`
+	EnableBatch      bool     `json:"EnableBatch"`
 	SendInterval     int      `json:"sendInterval"`
 	ActionAfterRead  int      `json:"actionAfterRead"`
 	MoveTo           string   `json:"moveTo"`
@@ -179,29 +180,41 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 		if err != nil {
 			return err
 		}
-
-		var wg sync.WaitGroup
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
+		if fs.config.EnableBatch {
+			var wg sync.WaitGroup
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				wg.Add(1)
+				go func(file string) {
+					defer wg.Done()
+					err := fs.parseFile(ctx, file, consumer)
+					if err != nil {
+						ctx.GetLogger().Errorf("Failed to parse file %s: %v", file, err)
+					}
+				}(filepath.Join(fs.file, entry.Name()))
 			}
-			wg.Add(1)
-			go func(file string) {
-				defer wg.Done()
+			wg.Wait()
+		} else {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				file := filepath.Join(fs.file, entry.Name())
 				err := fs.parseFile(ctx, file, consumer)
 				if err != nil {
-					ctx.GetLogger().Errorf("Failed to parse file %s: %v", file, err)
+					ctx.GetLogger().Errorf("parse file %s fail with error: %v", file, err)
+					continue
 				}
-			}(filepath.Join(fs.file, entry.Name()))
+			}
 		}
-		wg.Wait()
 	} else {
 		err := fs.parseFile(ctx, fs.file, consumer)
 		if err != nil {
 			return err
 		}
 	}
-	// Send EOF if retain size not set if used in table
 	if fs.config.IsTable {
 		select {
 		case consumer <- api.NewDefaultSourceTupleWithTime(nil, nil, rcvTime):
