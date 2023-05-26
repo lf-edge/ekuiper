@@ -40,7 +40,7 @@ type FileSourceConfig struct {
 	Path             string   `json:"path"`
 	Interval         int      `json:"interval"`
 	IsTable          bool     `json:"isTable"`
-	EnableBatch      bool     `json:"EnableBatch"`
+	Parallel         bool     `json:"parallel"`
 	SendInterval     int      `json:"sendInterval"`
 	ActionAfterRead  int      `json:"actionAfterRead"`
 	MoveTo           string   `json:"moveTo"`
@@ -180,7 +180,7 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 		if err != nil {
 			return err
 		}
-		if fs.config.EnableBatch {
+		if fs.config.Parallel {
 			var wg sync.WaitGroup
 			for _, entry := range entries {
 				if entry.IsDir() {
@@ -215,6 +215,7 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			return err
 		}
 	}
+	// Send EOF if retain size not set if used in table
 	if fs.config.IsTable {
 		select {
 		case consumer <- api.NewDefaultSourceTupleWithTime(nil, nil, rcvTime):
