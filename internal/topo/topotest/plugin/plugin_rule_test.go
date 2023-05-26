@@ -17,7 +17,6 @@ package plugin
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -50,7 +49,7 @@ func init() {
 }
 
 // This cannot be run in Windows. And the plugins must be built to so before running this
-// For Windows, run it in wsl with go test -tags test internal/topo/topotest/plugin_rule_test.go internal/topo/topotest/mock_topo.go
+// For Windows, run it in wsl with go test -tags test internal/topo/topotest/plugin/plugin_rule_test.go internal/topo/topotest/mock_topo.go
 var CACHE_FILE = "cache"
 
 // Test for source, sink, func and agg func extensions
@@ -79,7 +78,7 @@ func TestExtensions(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	t.Logf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		mockclock.ResetClock(1541152486000)
 		// Create rule
