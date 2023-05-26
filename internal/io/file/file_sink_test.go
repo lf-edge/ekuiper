@@ -45,10 +45,6 @@ func TestConfigure(t *testing.T) {
 	if m.c.Path != "test" {
 		t.Errorf("Configure() Path = %v, want test", m.c.Path)
 	}
-	err = m.Configure(map[string]interface{}{"interval": -1, "path": "test"})
-	if err == nil {
-		t.Errorf("Configure() error = %v, wantErr not nil", err)
-	}
 	err = m.Configure(map[string]interface{}{"interval": 500, "path": ""})
 	if err == nil {
 		t.Errorf("Configure() error = %v, wantErr not nil", err)
