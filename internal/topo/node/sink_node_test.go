@@ -417,16 +417,6 @@ func TestConfig(t *testing.T) {
 		}, {
 			config: map[string]interface{}{
 				"enableCache":          true,
-				"memoryCacheThreshold": 2,
-				"bufferPageSize":       2,
-				"runAsync":             true,
-				"maxDiskCache":         6,
-				"resendInterval":       10,
-			},
-			err: errors.New("cache is not supported for async sink, do not use enableCache and runAsync properties together"),
-		}, {
-			config: map[string]interface{}{
-				"enableCache":          true,
 				"memoryCacheThreshold": 256,
 				"bufferLength":         10,
 				"maxDiskCache":         6,

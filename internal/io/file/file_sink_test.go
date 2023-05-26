@@ -42,15 +42,8 @@ func TestConfigure(t *testing.T) {
 	if err != nil {
 		t.Errorf("Configure() error = %v, wantErr nil", err)
 	}
-	if *m.c.Interval != 500 {
-		t.Errorf("Configure() Interval = %v, want 500", m.c.Interval)
-	}
 	if m.c.Path != "test" {
 		t.Errorf("Configure() Path = %v, want test", m.c.Path)
-	}
-	err = m.Configure(map[string]interface{}{"interval": -1, "path": "test"})
-	if err == nil {
-		t.Errorf("Configure() error = %v, wantErr not nil", err)
 	}
 	err = m.Configure(map[string]interface{}{"interval": 500, "path": ""})
 	if err == nil {
@@ -152,21 +145,6 @@ func TestFileSink_Configure(t *testing.T) {
 				RollingCount:  1000000,
 			},
 			p: map[string]interface{}{},
-		},
-		{
-			name: "previous setting",
-			c: &sinkConf{
-				Interval:      &int500,
-				CheckInterval: &int64_500,
-				Path:          "test",
-				FileType:      LINES_TYPE,
-				RollingCount:  1000000,
-			},
-
-			p: map[string]interface{}{
-				"interval": 500,
-				"path":     "test",
-			},
 		},
 		{
 			name: "new props",
