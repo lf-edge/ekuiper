@@ -213,9 +213,10 @@ json_path_query(col, jsonpath)
 json_path_query_first(col, jsonpath)
 ```
 
-请参考 [json 函数](./built-in_functions.md#JSON-函数) 获得详细信息.
+请参考 [json 函数](./functions/json_functions.md) 获得详细信息.
 
-所有这些函数共享相同的参数签名，其中，第二个参数是 jsonpath 字符串。 eKuiper 使用的 jsonpath 语法基于[JsonPath](https://goessner.net/articles/JsonPath/)
+所有这些函数共享相同的参数签名，其中，第二个参数是 jsonpath 字符串。 eKuiper 使用的 jsonpath
+语法基于[JsonPath](https://goessner.net/articles/JsonPath/)
 
 这些表达式的基本语法是将 JSON 对象的字段部分与一些元素结合使用：
 

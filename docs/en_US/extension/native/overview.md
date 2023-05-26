@@ -2,9 +2,13 @@
 
 eKuiper allows user to customize the different kinds of extensions by the native golang plugin system. 
 
-- The source extension is used for extending different stream source, such as consuming data from other message brokers. eKuiper has built-in source support for [MQTT broker](../../guide/sources/builtin/mqtt.md).
-- Sink/Action extension is used for extending pub/push data to different targets, such as database, other message system, web interfaces or file systems. Built-in action is supported in eKuiper, see [MQTT](../../guide/sinks/builtin/mqtt.md) & [log files](../../guide/sinks/builtin/log.md).
-- Functions extension allows user to extend different functions that used in SQL. Built-in functions is supported in eKuiper, see [functions](../../sqls/built-in_functions.md).
+- The source extension is used for extending different stream sources, such as consuming data from other message
+  brokers. eKuiper has built-in source support for [MQTT broker](../../guide/sources/builtin/mqtt.md).
+- Sink/Action extension is used for extending pub/push data to different targets, such as database, another message
+  system, web interfaces or file systems. Built-in action is supported in eKuiper,
+  see [MQTT](../../guide/sinks/builtin/mqtt.md) & [log files](../../guide/sinks/builtin/log.md).
+- Functions extension allows user to extend different functions that are used in SQL. Built-in functions are supported
+  in eKuiper, see [functions](../../sqls/functions/overview.md).
 
 Please read the following to learn how to implement different extensions.
 
@@ -14,10 +18,13 @@ Please read the following to learn how to implement different extensions.
 
 ## Naming
 
-We recommend plugin name to be camel case. Notice that, there are some restrictions for the names:
+We recommend plugin name to be camel case. Notice that there are some restrictions for the names:
 
-1. The name of the export symbol of the plugin should be camel case with an **upper case first letter**. It must be the same as the plugin name except the first letter. For example, plugin name _file_ must export a export symbol name _File_ .
-2. The name of _.so_ file must be the same as the export symbol name or the plugin name. For example, _MySource.so_ or _mySink.so_.
+1. The name of the export symbol of the plugin should be camel case with an **upper case first letter**. It must be the
+   same as the plugin name except the first letter. For example, plugin name _file_ must export an export symbol name
+   _File_ .
+2. The name of _.so_ file must be the same as the export symbol name or the plugin name. For example, _MySource.so_ or
+   _mySink.so_.
 
 ### Version
 
@@ -40,23 +47,32 @@ A typical environment for developing plugins is to put the plugin and Kuiper in 
 go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
 ```
 
-Notice that, the `-trimpath` build flag is required if using the prebuilte kuiper or kuiper docker image because the kuiperd is also built with the flag to improve build reproducibility.
+Notice that, the `-trimpath` build flag is required if using the prebuilt eKuiper or eKuiper docker image because the
+kuiperd is also built with the flag to improve build reproducibility.
 
 ### Plugin development
 
 The development of plugins is to implement a specific interface according to the plugin type and export the implementation with a specific name. There are two types of exported symbol supported:
 
-1. Export a constructor function: Kuiper will use the constructor function to create a new instance of the plugin implementation for each load. So each rule will have one instance of the plugin and each instance will be isolated from others. This is the recommended way.
+1. Export a constructor function: Kuiper will use the constructor function to create a new instance of the plugin
+   implementation for each load. So each rule will have one instance of the plugin, and each instance will be isolated
+   from others. This is the recommended way.
 
-2. Export an instance: Kuiper will use the instance as singleton for all plugin load. So all rules will share the same instance. For such implementation, the developer will need to handle the shared states to avoid any potential multi-thread problems. This mode is recommended where there are no shared states and the performance is critical. Especially, function extension is usually functional without internal state which is suitable for this mode.
+2. Export an instance: eKuiper will use the instance as singleton for all plugin loads. So all rules will share the same
+   instance. For such implementation, the developer will need to handle the shared states to avoid any potential
+   multi-thread problems. This mode is recommended where there are no shared states and the performance is critical.
+   Especially, a function extension is usually functional without internal state which is suitable for this mode.
 
 ## State storage
 
-eKuiper extension exposes a key value state storage interface through the context parameter, which can be used for all types of extensions, including Source/Sink/Function extensions.
+eKuiper extension exposes a key value state storage interface through the context parameter, which can be used for all
+types of extensions, including Source/Sink/Function extensions.
 
-States are key-value pairs, where the key is a string and the value is arbitrary data. Keys are scoped the to current extended instance.
+States are key-value pairs, where the key is a string, and the value is arbitrary data. Keys are scoped to the current
+extended instance.
 
-Users can access the state storage through the context object. State-related methods include putState, getState, incrCounter, getCounter and deleteState.
+Users can access the state storage through the context object. State-related methods include putState, getState,
+incrCounter, getCounter and deleteState.
 
 Below is an example of a function extension to access states. This function will count the number of words passed in and save the cumulative number in the state.
 
@@ -77,9 +93,13 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 
 ## Runtime dependencies
 
-Some plugin may need to access dependencies in the file system. Those files is put under {{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files in [etc directory](../../api/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the recommended place.
+Some plugins may need to access dependencies in the file system. Those files are put under
+{{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files
+in [etc directory](../../api/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the
+recommended place.
 
-In the plugin source code, developers can access the dependencies of file system by getting the eKuiper root path from the context:
+In the plugin source code, developers can access the dependencies of file system by getting the eKuiper root path from
+the context:
 
 ```go
 ctx.GetRootPath()

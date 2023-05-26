@@ -127,9 +127,10 @@ SELECT d.friends[0]->last FROM demo AS d
 
 ### Slicing
 
-Slices allow you to select a contiguous subset of an array. 
+Slices allow you to select a contiguous subset of an array.
 
-`field[from:to)`is the interval before closing and opening, excluding to. If from is not specified, then it means start from the 1st element of array; If to is not specified, then it means end with the last element of array.
+`field[from:to)`is the interval before closing and opening, excluding to. If from is not specified, then it means start
+from the 1st element of an array; If to is not specified, then it means end with the last element of array.
 
 ```
 SELECT children[0:1] FROM demo
@@ -199,7 +200,8 @@ SELECT followers->Group1[:1]->first FROM demo
 
 ## Json Path functions
 
-eKuiper provides a list of functions to allow to execute json path over struct or array columns or values. The functions are:
+eKuiper provides a list of functions to allow executing json path over struct or array columns or values. The functions
+are:
 
 ```sql
 json_path_exists(col, jsonpath)
@@ -207,9 +209,10 @@ json_path_query(col, jsonpath)
 json_path_query_first(col, jsonpath)
 ```
 
-Please refer to [json functions](./built-in_functions.md#json-functions) for detail.
+Please refer to [json functions](./functions/json_functions.md) for detail.
 
-All these functions share the same parameter signatures, among which, the second parameter is a jsonpath string. The jsonpath grammer used by eKuiper is based on [JsonPath](https://goessner.net/articles/JsonPath/).
+All these functions share the same parameter signatures, among which the second parameter is a jsonpath string. The
+jsonpath grammar used by eKuiper is based on [JsonPath](https://goessner.net/articles/JsonPath/).
 
 The basic grammar of those expressions is to use the keys part of the JSON objects combined with some elements:
 
@@ -217,7 +220,8 @@ The basic grammar of those expressions is to use the keys part of the JSON objec
 - Brackets `[]` for access to a given array member coupled with a position. It can also access to a map field.
 - Variables, with `$` representing a JSON text and `@` for result path evaluations.
 
-So for example, when applied to the previous JSON data sample we can reach the following parts of the tree with these expressions:
+So, for example, when applied to the previous JSON data sample, we can reach the following parts of the tree with these
+expressions:
 
 - `$.age` refers to 37.
 - `$.friends.first` refers to “dale”.

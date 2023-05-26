@@ -1,6 +1,9 @@
 # LF Edge eKuiper - Lightweight data stream processing engine for IoT edge
 
-LF Edge eKuiper is a lightweight IoT data analytics and stream processing engine running on resource-constraint edge devices. The major goal for eKuiper is to provide a streaming software framework (similar to [Apache Flink](https://flink.apache.org)) in edge side.  eKuiper's  **rule engine** allows user to provide either SQL based or graph based (similar to Node-RED) rules to create IoT edge analytics applications within few minutes.
+LF Edge eKuiper is a lightweight IoT data analytics and stream processing engine running on resource-constraint edge
+devices. The major goal for eKuiper is to provide a streaming software framework (similar
+to [Apache Flink](https://flink.apache.org)) in edge side. eKuiper's **rule engine** allows user to provide either
+SQL-based or graph based (similar to Node-RED) rules to create IoT edge analytics applications within few minutes.
 
 ![arch](./resources/arch.png)
 
@@ -25,17 +28,18 @@ LF Edge eKuiper is a lightweight IoT data analytics and stream processing engine
 
 - Highly extensible
 
-  It supports to extend at `Source`, `Functions` and `Sink` with Golang or Python.
+  It supports extending at `Source`, `Functions` and `Sink` with Golang or Python.
 
-  - Source: allows users to add more data source for analytics.
-  - Sink: allows users to send analysis result to different customized systems.
+  - Source: allows users to add more data sources for analytics.
+  - Sink: allows users to send the analysis result to different customized systems.
   - UDF functions: allow users to add customized functions for data analysis (for example, AI/ML function invocation)
 
 - Management
 
   - [A free web based management dashboard](https://hub.docker.com/r/emqx/ekuiper-manager) for visualized management
   - Plugins, streams and rules management through CLI, REST API and config maps(Kubernetes)
-  - Easily be integrated with Kubernetes frameworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
+  - Easily be integrated with Kubernetes
+    frameworks [KubeEdge](https://github.com/kubeedge/kubeedge), [OpenYurt](https://openyurt.io/), [K3s](https://github.com/rancher/k3s) [Baetyl](https://github.com/baetyl/baetyl)
 
 - Integration with EMQX products
 
@@ -74,14 +78,14 @@ Refer to the syntax and properties.
 - [Rule Syntax](./guide/rules/overview.md)
 - [Available Sources](./guide/sources/overview.md)
 - [Available Sinks](./guide/sinks/overview.md)
-- [Available Functions](./sqls/built-in_functions.md)
+- [Available Functions](./sqls/functions/overview.md
 - [SQL Reference](./sqls/overview.md)
 
 [View Reference](./sqls/overview.md)
 
 ## Learn how to use eKuiper
 
-Learn how to create and manage rules and how to modify configurations etc.
+Learn how to create and manage rules and how to modify configurations, etc.
 
 - [Configuration](./configuration/configuration.md)
 - [Rest API](./api/restapi/overview.md)

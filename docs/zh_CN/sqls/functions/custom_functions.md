@@ -1,6 +1,6 @@
 # 定制函数
 
-eKuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../extension/native/develop/function.md)。
+eKuiper 可以定制函数，函数的开发、编译及使用请[参见这里](../../extension/native/develop/function.md)。
 
 ## echo 插件
 
@@ -120,7 +120,7 @@ geohashDecodeInt 示例
 SELECT geohashDecodeInt(hash) FROM test
 ```
 
- geohashBoundingBox  示例
+geohashBoundingBox 示例
 
 - 输入：`{"hash" :"qgmpvf18h86e"} `
 - 输出：`{"geohashBoundingBox":{"MinLat":-25.345457140356302,"MaxLat":-25.34545697271824,"MinLng":131.03619195520878,"MaxLng":131.0361922904849}}`
@@ -129,7 +129,7 @@ SELECT geohashDecodeInt(hash) FROM test
 SELECT geohashBoundingBox(hash) FROM test
 ```
 
- geohashBoundingBoxInt  示例
+geohashBoundingBoxInt 示例
 
 - 输入：`{"hash" :12963433097944239317}`
 - 输出：`{"geohashBoundingBoxInt":{"MinLat":-25.345456302165985,"MaxLat":-25.34545626025647,"MinLng":131.0361886024475,"MaxLng":131.03618868626654}}`
@@ -186,8 +186,9 @@ SELECT labelImage(self) FROM tfdemo
 
 ### tfLite 插件
 
-该插件(只能用在有 slim 后缀的 docker image 中)用于执行 TensorFlow Lite 推理。用户只需上传 `.tflite` 模型，在 sql 中调用 `tfLite(model_name, input_data)` 函数，即可收到模型推理的结果。
-上传模型时请使用 [uploads](../api/restapi/uploads.md) 接口将模型文件上传即可。
+该插件(只能用在有 slim 后缀的 docker image 中)用于执行 TensorFlow Lite 推理。用户只需上传 `.tflite` 模型，在 sql
+中调用 `tfLite(model_name, input_data)` 函数，即可收到模型推理的结果。
+上传模型时请使用 [uploads](../../api/restapi/uploads.md) 接口将模型文件上传即可。
 函数调用时 `model_name` 参数为不带 `.tflite` 后缀的模型名称。 `input_data` 应该是消息中的 key 字段，对应的值应该是一维数组格式
 
 ```sql

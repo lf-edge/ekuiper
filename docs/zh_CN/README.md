@@ -73,7 +73,7 @@ LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处�
 - [规则语法](./guide/rules/overview.md)
 - [可用源](./guide/sources/overview.md)
 - [可用动作](./guide/sinks/overview.md)
-- [可用函数](./sqls/built-in_functions.md)
+- [可用函数](./sqls/functions/overview.md)
 - [SQL 语法](./sqls/overview.md)
 
 [查看参考](./sqls/overview.md)

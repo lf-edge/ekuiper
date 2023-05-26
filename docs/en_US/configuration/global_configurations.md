@@ -168,8 +168,9 @@ It has properties
 ### External State
 
 There is also a configuration item named `extStateType`.
-The configuration's usage is user can store some information in database in advance, when stream processing rules need these information,
-they can get them easily by [get_keyed_state](../sqls/built-in_functions.md#other-functions) function in SQL.
+The configuration's usage is user can store some information in database in advance, when stream processing rules need
+these information,
+they can get them easily by [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate) function in SQL.
 
 *Note*: `type` and `extStateType` can be configured differently.
 
