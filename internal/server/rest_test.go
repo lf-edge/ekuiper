@@ -21,15 +21,18 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func init() {
@@ -40,57 +43,75 @@ func init() {
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
 }
 
-func Test_rootHandler(t *testing.T) {
-	r := mux.NewRouter()
-	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
-
-	req, _ := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString("any"))
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	resp := w.Result()
-
-	if !reflect.DeepEqual(resp.StatusCode, 200) {
-		t.Errorf("Expect\t %v\nBut got\t%v", 200, resp.StatusCode)
-	}
+type RestTestSuite struct {
+	suite.Suite
+	r *mux.Router
 }
 
-func Test_sourcesManageHandler(t *testing.T) {
+func (suite *RestTestSuite) SetupTest() {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		panic(err)
+	}
+	uploadDir = filepath.Join(dataDir, "uploads")
+
+	r := mux.NewRouter()
+	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
+	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/streams/{name}/schema", streamSchemaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/tables", tablesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
+	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
+	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
+	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
+	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
+	suite.r = r
+}
+
+func (suite *RestTestSuite) Test_rootHandler() {
+	req, _ := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *RestTestSuite) Test_sourcesManageHandler() {
 	req, _ := http.NewRequest(http.MethodGet, "/", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
-
-	sourcesManageHandler(w, req, ast.TypeStream)
-
-	if !reflect.DeepEqual(w.Result().StatusCode, 200) {
-		t.Errorf("Expect\t %v\nBut got\t%v", 200, w.Result().StatusCode)
-	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// get scan table
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams?kind=scan", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
-
-	sourcesManageHandler(w, req, ast.TypeTable)
-
-	if !reflect.DeepEqual(w.Result().StatusCode, 200) {
-		t.Errorf("Expect\t %v\nBut got\t%v", 200, w.Result().StatusCode)
-	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// get lookup table
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams?kind=lookup", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
-
-	sourcesManageHandler(w, req, ast.TypeTable)
-
-	if !reflect.DeepEqual(w.Result().StatusCode, 200) {
-		t.Errorf("Expect\t %v\nBut got\t%v", 200, w.Result().StatusCode)
-	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// create table
 	buf := bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"memory\", KEY=\"id\", KIND=\"lookup\")"}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams?kind=lookup", buf)
 	w = httptest.NewRecorder()
-
-	sourcesManageHandler(w, req, ast.TypeTable)
-
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
 	var returnVal []byte
 	returnVal, _ = io.ReadAll(w.Result().Body)
 	fmt.Printf("returnVal %s\n", string(returnVal))
@@ -99,102 +120,73 @@ func Test_sourcesManageHandler(t *testing.T) {
 	buf = bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
 	w = httptest.NewRecorder()
-
-	sourcesManageHandler(w, req, ast.TypeStream)
-
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
 	returnVal, _ = io.ReadAll(w.Result().Body)
-
 	fmt.Printf("returnVal %s\n", string(returnVal))
 
 	// get stream
-	r := mux.NewRouter()
-	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 	expect := []byte(`{"Name":"alert","Options":{"datasource":"0","type":"mqtt"},"Statement":null,"StreamFields":null,"StreamType":0}`)
 	exp := map[string]interface{}{}
 	_ = json.NewDecoder(bytes.NewBuffer(expect)).Decode(&exp)
 
 	res := map[string]interface{}{}
 	_ = json.NewDecoder(w.Result().Body).Decode(&res)
-	if !reflect.DeepEqual(exp, res) {
-		t.Errorf("Expect\t%v\nBut got\t%v", exp, res)
-	}
+	assert.Equal(suite.T(), exp, res)
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams/alert/schema", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// get table
-	r = mux.NewRouter()
-	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tables/alertTable", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 	expect = []byte(`{"Name":"alertTable","Options":{"datasource":"0","type":"memory", "key":"id","kind":"lookup"},"Statement":null,"StreamFields":null,"StreamType":1}`)
 	exp = map[string]interface{}{}
 	_ = json.NewDecoder(bytes.NewBuffer(expect)).Decode(&exp)
-
 	res = map[string]interface{}{}
 	_ = json.NewDecoder(w.Result().Body).Decode(&res)
+	assert.Equal(suite.T(), exp, res)
 
-	if !reflect.DeepEqual(exp, res) {
-		t.Errorf("Expect\t%v\nBut got\t%v", exp, res)
-	}
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tables/alertTable/schema", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// put table
 	buf = bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"memory\", KEY=\"id\", KIND=\"lookup\")"}`))
-	r = mux.NewRouter()
-	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-
 	req, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/tables/alertTable", buf)
 	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	if !reflect.DeepEqual(w.Result().StatusCode, 200) {
-		t.Errorf("Expect\t%v\nBut got\t%v", 200, w.Result().StatusCode)
-	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// put stream
 	buf = bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"httppull\")"}`))
-	r = mux.NewRouter()
-	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-
 	req, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/streams/alert", buf)
 	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	if !reflect.DeepEqual(w.Result().StatusCode, 200) {
-		t.Errorf("Expect\t%v\nBut got\t%v", 200, w.Result().StatusCode)
-	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// drop table
-	r = mux.NewRouter()
-	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-
 	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/tables/alertTable", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	if !reflect.DeepEqual(w.Result().StatusCode, 200) {
-		t.Errorf("Expect\t%v\nBut got\t%v", 200, w.Result().StatusCode)
-	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	// drop stream
-	r = mux.NewRouter()
-	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-
 	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	if !reflect.DeepEqual(w.Result().StatusCode, 200) {
-		t.Errorf("Expect\t%v\nBut got\t%v", 200, w.Result().StatusCode)
-	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
-func Test_rulesManageHandler(t *testing.T) {
+func (suite *RestTestSuite) Test_rulesManageHandler() {
 	// Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
@@ -215,21 +207,10 @@ func Test_rulesManageHandler(t *testing.T) {
 		}
 	}
 
-	r := mux.NewRouter()
-	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
-	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
-	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
-	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
-	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
-	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
-	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
-
 	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
 	w1 := httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 
 	// create rule with trigger false
 	ruleJson := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
@@ -237,12 +218,12 @@ func Test_rulesManageHandler(t *testing.T) {
 	buf2 := bytes.NewBuffer([]byte(ruleJson))
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 := httptest.NewRecorder()
-	r.ServeHTTP(w2, req2)
+	suite.r.ServeHTTP(w2, req2)
 
 	// get all rules
 	req3, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules", bytes.NewBufferString("any"))
 	w3 := httptest.NewRecorder()
-	r.ServeHTTP(w3, req3)
+	suite.r.ServeHTTP(w3, req3)
 
 	_, _ = io.ReadAll(w3.Result().Body)
 
@@ -252,11 +233,9 @@ func Test_rulesManageHandler(t *testing.T) {
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 
-	if w1.Result().StatusCode != http.StatusOK {
-		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
-	}
+	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	// update wron rule
 	ruleJson = `{"id": "rule1","sql": "select * from alert1","actions": [{"nop": {}}]}`
@@ -264,91 +243,74 @@ func Test_rulesManageHandler(t *testing.T) {
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 
-	if w1.Result().StatusCode != http.StatusBadRequest {
-		t.Errorf("Expect\t%v\nBut got\t%v", 200, w1.Result().StatusCode)
-	}
+	assert.Equal(suite.T(), http.StatusBadRequest, w1.Code)
 
 	// get rule
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 
 	returnVal, _ := io.ReadAll(w1.Result().Body)
 	expect := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
-	if string(returnVal) != expect {
-		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
-	}
+	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// get rule status
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/status", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 
 	// get rule topo
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/topo", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
 	expect = `{"sources":["source_alert"],"edges":{"op_2_project":["sink_nop_0"],"source_alert":["op_2_project"]}}`
-	if string(returnVal) != expect {
-		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
-	}
+	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// start rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/start", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
 	expect = `Rule rule1 was started`
-	if string(returnVal) != expect {
-		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
-	}
+	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// stop rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/stop", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
 	expect = `Rule rule1 was stopped.`
-	if string(returnVal) != expect {
-		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
-	}
+	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// restart rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/restart", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
 	expect = `Rule rule1 was restarted`
-	if string(returnVal) != expect {
-		t.Errorf("Expect\t%v\nBut got\t%v", expect, string(returnVal))
-	}
+	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// delete rule
 	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
 
 	// drop stream
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
+	suite.r.ServeHTTP(w, req)
 }
 
-func Test_ruleSetImport(t *testing.T) {
-	r := mux.NewRouter()
-	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
-	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
-
+func (suite *RestTestSuite) Test_ruleSetImport() {
 	ruleJson := `{"streams":{"plugin":"\n              CREATE STREAM plugin\n              ()\n              WITH (FORMAT=\"json\", CONF_KEY=\"default\", TYPE=\"mqtt\", SHARED=\"false\", );\n          "},"tables":{},"rules":{"rule1":"{\"id\":\"rule1\",\"name\":\"\",\"sql\":\"select name from plugin\",\"actions\":[{\"log\":{\"runAsync\":false,\"omitIfEmpty\":false,\"sendSingle\":true,\"bufferLength\":1024,\"enableCache\":false,\"format\":\"json\"}}],\"options\":{\"restartStrategy\":{}}}"}}`
-
 	ruleSetJson := map[string]string{
 		"content": ruleJson,
 	}
@@ -356,11 +318,78 @@ func Test_ruleSetImport(t *testing.T) {
 	buf2 := bytes.NewBuffer(buf)
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/ruleset/import", buf2)
 	w1 := httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
+	suite.r.ServeHTTP(w1, req1)
+	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/ruleset/export", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
-	r.ServeHTTP(w1, req1)
-	returnVal, _ := io.ReadAll(w1.Result().Body)
-	fmt.Printf("%s\n", string(returnVal))
+	suite.r.ServeHTTP(w1, req1)
+	assert.Equal(suite.T(), http.StatusOK, w1.Code)
+}
+
+func (suite *RestTestSuite) Test_dataImport() {
+	file := "rpc_test_data/data/import_configuration.json"
+	f, err := os.Open(file)
+	if err != nil {
+		fmt.Printf("fail to open file %s: %v", file, err)
+		return
+	}
+	defer f.Close()
+	buffer := new(bytes.Buffer)
+	_, err = io.Copy(buffer, f)
+	if err != nil {
+		fmt.Printf("fail to convert file %s: %v", file, err)
+		return
+	}
+	content := buffer.Bytes()
+	ruleSetJson := map[string]string{
+		"content": string(content),
+	}
+	buf, _ := json.Marshal(ruleSetJson)
+	buf2 := bytes.NewBuffer(buf)
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/data/import", buf2)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/import/status", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/export", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/data/import?partial=1", bytes.NewBuffer(buf))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *RestTestSuite) Test_fileUpload() {
+	fileJson := `{"Name": "test.txt", "Content": "test"}`
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBufferString(fileJson))
+	req.Header["Content-Type"] = []string{"application/json"}
+	os.Mkdir(uploadDir, 0o777)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/config/uploads", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/config/uploads/test.txt", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	os.Remove(uploadDir)
+}
+
+func TestRestTestSuite(t *testing.T) {
+	suite.Run(t, new(RestTestSuite))
 }
