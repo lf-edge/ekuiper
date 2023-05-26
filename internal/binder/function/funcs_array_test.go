@@ -453,7 +453,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 			result: []interface{}{10, 7, 4, 1},
 		},
 		{
-			name: "cardinality",
+			name: "array_cardinality",
 			args: []interface{}{
 				[]interface{}{1, 2, 3},
 			},

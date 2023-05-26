@@ -426,7 +426,7 @@ func registerArrayFunc() {
 			return nil
 		},
 	}
-	builtins["cardinality"] = builtinFunc{
+	builtins["array_cardinality"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			array, ok := args[0].([]interface{})
