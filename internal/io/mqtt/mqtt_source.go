@@ -37,21 +37,23 @@ type MQTTSource struct {
 	tpc    string
 	buflen int
 
-	config map[string]interface{}
-	model  modelVersion
-	schema map[string]*ast.JsonStreamField
+	config               map[string]interface{}
+	model                modelVersion
+	schema               map[string]*ast.JsonStreamField
+	enableDecodeBySchema bool
 
 	cli          api.MessageClient
 	decompressor message.Decompressor
 }
 
 type MQTTConfig struct {
-	Format            string `json:"format"`
-	Qos               int    `json:"qos"`
-	BufferLen         int    `json:"bufferLength"`
-	KubeedgeModelFile string `json:"kubeedgeModelFile"`
-	KubeedgeVersion   string `json:"kubeedgeVersion"`
-	Decompression     string `json:"decompression"`
+	Format               string `json:"format"`
+	Qos                  int    `json:"qos"`
+	BufferLen            int    `json:"bufferLength"`
+	KubeedgeModelFile    string `json:"kubeedgeModelFile"`
+	KubeedgeVersion      string `json:"kubeedgeVersion"`
+	Decompression        string `json:"decompression"`
+	EnableDecodeBySchema string `json:"enableDecodeBySchema"`
 }
 
 func (ms *MQTTSource) WithSchema(_ string) *MQTTSource {
@@ -183,7 +185,7 @@ func getTuples(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.Sou
 		}
 	}
 	var results []map[string]interface{}
-	if len(ms.schema) > 0 {
+	if len(ms.schema) > 0 && ms.enableDecodeBySchema {
 		results, err = ctx.DecodeIntoListWithSchema(payload, ms.schema)
 	} else {
 		results, err = ctx.DecodeIntoList(payload)
