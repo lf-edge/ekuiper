@@ -1,6 +1,7 @@
 # Custom function
 
-eKuiper can customize functions. For the development, compilation and use of functions, please [see here](../extension/native/develop/function.md).
+eKuiper can customize functions.
+For the development, compilation and use of functions, please [see here](../../extension/native/develop/function.md).
 
 ## echo plugin
 
@@ -120,7 +121,7 @@ geohashDecodeInt example
 SELECT geohashDecodeInt(hash) FROM test
 ```
 
- geohashBoundingBox  example
+geohashBoundingBox example
 
 - Input: `{"hash" :"qgmpvf18h86e"} `
 - Output: `{"geohashBoundingBox":{"MinLat":-25.345457140356302,"MaxLat":-25.34545697271824,"MinLng":131.03619195520878,"MaxLng":131.0361922904849}}`
@@ -129,7 +130,7 @@ SELECT geohashDecodeInt(hash) FROM test
 SELECT geohashBoundingBox(hash) FROM test
 ```
 
- geohashBoundingBoxInt  example
+geohashBoundingBoxInt example
 
 - Input: `{"hash" :12963433097944239317}`
 - Output: `{"geohashBoundingBoxInt":{"MinLat":-25.345456302165985,"MaxLat":-25.34545626025647,"MinLng":131.0361886024475,"MaxLng":131.03618868626654}}`
@@ -176,7 +177,10 @@ SELECT geohashNeighborsInt(hash) FROM test
 
 ### LabelImage plugin
 
-This is a sample plugin(use in docker image tags with ``-slim`` suffix) to demonstrate the usage of TensorFlowLite(tflite) model interpreter. The function receives a bytea input representing an image and produce the AI label of the image by running the tflite model.
+This is a sample plugin(use in docker image tags with ``-slim`` suffix)
+to demonstrate the usage of TensorFlowLite(tflite) model interpreter.
+The function receives a bytea input representing an image
+and produces the AI label of the image by running the tflite model.
 
 Assuming the input is the byte array of peacock.jpg, the output will be "peacock".
 
@@ -186,9 +190,12 @@ SELECT labelImage(self) FROM tfdemo
 
 ### tfLite plugin
 
-This is a plugin (use in docker image tags with ``-slim`` suffix) to do the TensorFlow Lite inference. Users just need upload the `.tflite` model, call the `tfLite(model_name, input_data)` function in sql, then will receive results from the model inference.
-When uploading a model, please use the [uploads](../api/restapi/uploads.md) interface to upload the model file.
-`model_name` should be the name for the model without `.tflite` suffix.  `input_data` should be the key field in message and value should be 1D array format
+This is a plugin (use in docker image tags with ``-slim`` suffix) to do the TensorFlow Lite inference.
+Users just need to upload the `.tflite` model, call the `tfLite(model_name, input_data)` function in sql,
+then will receive results from the model inference.
+When uploading a model, please use the [uploads](../../api/restapi/uploads.md) interface to upload the model file.
+`model_name` should be the name for the model without `.tflite` suffix.
+Should be the key field in a message and value should be 1D array format
 
 ```sql
 SELECT tfLite(model_name, input_data) FROM tfdemo

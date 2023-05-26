@@ -588,12 +588,62 @@
 					]
 				},
 				{
-					"title": "内置函数",
-					"path": "sqls/built-in_functions"
-				},
-				{
-					"title": "预定义函数插件",
-					"path": "sqls/custom_functions"
+					"title": "函数",
+					"path": "sqls/functions/overview",
+					"children": [
+						{
+							"title": "聚合函数",
+							"path": "sqls/functions/aggregate_functions"
+						},
+						{
+							"title": "数学函数",
+							"path": "sqls/functions/mathematical_functions"
+						},
+						{
+							"title": "字符串函数",
+							"path": "sqls/functions/string_functions"
+						},
+						{
+							"title": "数组函数",
+							"path": "sqls/functions/array_functions"
+						},
+						{
+							"title": "对象函数",
+							"path": "sqls/functions/object_functions"
+						},
+						{
+							"title": "哈希函数",
+							"path": "sqls/functions/hashing_functions"
+						},
+						{
+							"title": "转换函数",
+							"path": "sqls/functions/transform_functions"
+						},
+						{
+							"title": "JSON 函数",
+							"path": "sqls/functions/json_functions"
+						},
+						{
+							"title": "其他函数",
+							"path": "sqls/functions/other_functions"
+						},
+						{
+							"title": "分析函数",
+							"path": "sqls/functions/analytic_functions"
+						},
+						{
+							"title": "多行函数",
+							"path": "sqls/functions/multi_row_functions"
+						},
+						{
+							"title": "多列函数",
+							"path": "sqls/functions/multi_column_functions"
+						},
+						{
+							"title": "预定义函数插件",
+							"path": "sqls/functions/custom_functions"
+						}
+					]
 				},
 				{
 					"title": "窗口",
@@ -1295,12 +1345,62 @@
 					]
 				},
 				{
-					"title": "Built-in Functions",
-					"path": "sqls/built-in_functions"
-				},
-				{
-					"title": "Predefined function plugins",
-					"path": "sqls/custom_functions"
+					"title": "Functions",
+					"path": "sqls/functions/overview",
+					"children": [
+						{
+							"title": "Aggregate Functions",
+							"path": "sqls/functions/aggregate_functions"
+						},
+						{
+							"title": "Mathematical Functions",
+							"path": "sqls/functions/mathematical_functions"
+						},
+						{
+							"title": "String Functions",
+							"path": "sqls/functions/string_functions"
+						},
+						{
+							"title": "Array Functions",
+							"path": "sqls/functions/array_functions"
+						},
+						{
+							"title": "Object Functions",
+							"path": "sqls/functions/object_functions"
+						},
+						{
+							"title": "Hashing Functions",
+							"path": "sqls/functions/hashing_functions"
+						},
+						{
+							"title": "Transform Functions",
+							"path": "sqls/functions/transform_functions"
+						},
+						{
+							"title": "JSON Functions",
+							"path": "sqls/functions/json_functions"
+						},
+						{
+							"title": "Other Functions",
+							"path": "sqls/functions/other_functions"
+						},
+						{
+							"title": "Analytic Functions",
+							"path": "sqls/functions/analytic_functions"
+						},
+						{
+							"title": "Multi-Row Functions",
+							"path": "sqls/functions/multi_row_functions"
+						},
+						{
+							"title": "Multi-Column Functions",
+							"path": "sqls/functions/multi_column_functions"
+						},
+						{
+							"title": "Predefined function plugins",
+							"path": "sqls/functions/custom_functions"
+						}
+					]
 				},
 				{
 					"title": "Windowing",

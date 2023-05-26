@@ -2,9 +2,14 @@ eKuiper has implemented the following plugins. At present, some of these plug-in
 
 Developers of eKuiper plugin can specify metadata files during the development process. These metadata files are mainly used in the following aspects:
 
-- Plugin compilation: For plugins in the directories `plugins/sinks` and `plugins/sources`, if the developer provides related metadata files, eKuiper will automatically compile the plugins when the version is released, and then automatically upload these plugins to the EMQ plugin download website: www.emqx.io/downloads/kuiper/vx.x.x/plugins, where `x.x.x` is the version number.
+- Plugin compilation: For plugins in the directories `plugins/sinks` and `plugins/sources`, if the developer provides
+  related metadata files, eKuiper will automatically compile the plugins when the version is released, and then
+  automatically upload these plugins to the EMQ plugin download website: www.emqx.io/downloads/kuiper/vx.x.x/plugins,
+  where `x.x.x` is the version number.
 
-  **<u>Note: Due to the limitations of Golang plugins, these automatically compiled plugins can run in the container of the corresponding version released by eKuiper. However, for the directly downloaded binary installation package, or the binary package compiled by the user , these downloaded plugins are not guaranteed to work properly. </u>**
+  **<u>Note: Due to the limitations of Golang plugins, these automatically compiled plugins can run in the container of
+  the corresponding version released by eKuiper. However, for the directly downloaded binary installation package, or
+  the binary package compiled by the user, these downloaded plugins are not guaranteed to work properly. </u>**
 
 - Visualization: from version 0.9.1, eKuiper will release the management console synchronously with the version, which can be used to manage eKuiper nodes, streams, rules, and plugins. Plugin metadata provided by developers can make it more convenient for users to use plugins. Therefore, it is strongly recommended that plugin developers provide corresponding metadata files when submitting plugins. The metadata file is in JSON format. The file name is consistent with that of the plugin and is placed in the root directory of the compressed package together with the plugin.
 
@@ -17,7 +22,9 @@ Developers of eKuiper plugin can specify metadata files during the development p
 
 ### source metadata file format
 
-Most attributes of source are specified by the user through the corresponding configuration file, and the user cannot configure it during the creation of the stream. In the metadata file provided by the plugin developer, only the following parts need to be specified.
+Most attributes of a source are specified by the user through the corresponding configuration file,
+and the user cannot configure it during the creation of the stream.
+In the metadata file provided by the plugin developer, only the following parts need to be specified.
 
 #### libs
 
@@ -56,8 +63,9 @@ The list of attributes supported by the plugin and the configuration related to 
 
 - name: attribute name; **This field must be provided;**
 - default: default value, which is used to set the default value of the attribute. The type can be numbers, characters, boolean, and so on. This field is optional (can be nested);
-- optional: set whether the attribute must be provided; the field is optional, if not provided, it is `true`, indicating that the user can provide the value of the field;
-- control: control type, which control the type of control displayed in the interface; **This field must be provided;**
+- optional: set whether the attribute must be provided; the field is optional, if not provided, it is `true`, indicating
+  that the user can provide the value of the field;
+- control: control type, which controls the type of control displayed in the interface; **This field must be provided;**
   - text: text input box
   - text-area: text editing area
   - list: list box
@@ -204,8 +212,9 @@ The list of attributes supported by the plugin and the configuration related to 
 
 - name: attribute name; **This field must be provided;**
 - default: default value, which is used to set the default value of the attribute. The type can be numbers, characters, boolean, and so on. This field is optional (can be nested);
-- optional: set whether the attribute must be provided; the field is optional, if not provided, it is `true`, indicating that the user can provide the value of the field;
-- control: control type, which control the type of control displayed in the interface; **This field must be provided;**
+- optional: set whether the attribute must be provided; the field is optional, if not provided, it is `true`, indicating
+  that the user can provide the value of the field;
+- control: control type, which controls the type of control displayed in the interface; **This field must be provided;**
   - text: text input box
   - text-area: text editing area
   - list: list box
@@ -275,13 +284,13 @@ The following is a sample of metadata file.
 
 ## Functions
 
-| Name                                                     | Description                                                                                                                                | Remarks                                                 |
-|----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| [echo](../../../sqls/custom_functions.md)                | Output parameter value as it is                                                                                                            | Plugin sample, not available for production environment |
-| [countPlusOne](../../../sqls/custom_functions.md)        | Output the value of the parameter length plus one                                                                                          | Plugin sample, not available for production environment |
-| [accumulateWordCount](../../../sqls/custom_functions.md) | The function counts how many words there are                                                                                               | Plugin sample, not available for production environment |
-| [resize](../../../sqls/custom_functions.md)              | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio | Plugin sample, not available for production environment |
-| [thumbnail](../../../sqls/custom_functions.md)           | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                  | Plugin sample, not available for production environment |
+| Name                                                               | Description                                                                                                                                | Remarks                                                 |
+|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| [echo](../../../sqls/functions/custom_functions.md)                | Output parameter value as it is                                                                                                            | Plugin sample, not available for production environment |
+| [countPlusOne](../../../sqls/functions/custom_functions.md)        | Output the value of the parameter length plus one                                                                                          | Plugin sample, not available for production environment |
+| [accumulateWordCount](../../../sqls/functions/custom_functions.md) | The function counts how many words there are                                                                                               | Plugin sample, not available for production environment |
+| [resize](../../../sqls/functions/custom_functions.md)              | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio | Plugin sample, not available for production environment |
+| [thumbnail](../../../sqls/functions/custom_functions.md)           | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                  | Plugin sample, not available for production environment |
 
 eKuiper has many built-in functions that can perform calculations on data. (Refer to https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md for specific documentation)
 
