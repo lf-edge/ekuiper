@@ -22,8 +22,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-const DecodeKey = "$$decode"
-const FastJSONDecodeKey = "$$fastjsonDecode"
+const (
+	DecodeKey         = "$$decode"
+	FastJSONDecodeKey = "$$fastjsonDecode"
+)
 
 func (c *DefaultContext) Decode(data []byte) (map[string]interface{}, error) {
 	v := c.Value(DecodeKey)

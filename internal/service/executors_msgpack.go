@@ -18,11 +18,12 @@ package service
 
 import (
 	"fmt"
-	"github.com/ugorji/go/codec"
 	"net"
 	"net/rpc"
 	"reflect"
 	"sync"
+
+	"github.com/ugorji/go/codec"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
