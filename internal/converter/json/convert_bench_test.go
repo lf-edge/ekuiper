@@ -17,23 +17,102 @@ package json
 import (
 	"os"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func BenchmarkSimpleTuples(b *testing.B) {
-	payload := []byte(`{"key": "value"}`)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		converter.Decode(payload)
+	benchmarkByFiles("./testdata/simple.json", b, nil)
+}
+
+func BenchmarkSimpleTuplesWithSchema(b *testing.B) {
+	schema := map[string]*ast.JsonStreamField{
+		"key": {
+			Type: "string",
+		},
 	}
+	benchmarkByFiles("./testdata/simple.json", b, schema)
+}
+
+func BenchmarkSmallJSON(b *testing.B) {
+	benchmarkByFiles("./testdata/small.json", b, nil)
+}
+
+func BenchmarkSmallJSONWithSchema(b *testing.B) {
+	schema := map[string]*ast.JsonStreamField{
+		"sid": {
+			Type: "bigint",
+		},
+	}
+	benchmarkByFiles("./testdata/small.json", b, schema)
+}
+
+func BenchmarkMediumJSON(b *testing.B) {
+	benchmarkByFiles("./testdata/medium.json", b, nil)
+}
+
+func BenchmarkMediumJSONWithSchema(b *testing.B) {
+	schema := map[string]*ast.JsonStreamField{
+		"person": {
+			Type: "struct",
+			Properties: map[string]*ast.JsonStreamField{
+				"id": {
+					Type: "string",
+				},
+			},
+		},
+	}
+	benchmarkByFiles("./testdata/medium.json", b, schema)
+}
+
+func BenchmarkLargeJSON(b *testing.B) {
+	benchmarkByFiles("./testdata/large.json", b, nil)
+}
+
+func BenchmarkLargeJSONWithSchema(b *testing.B) {
+	schema := map[string]*ast.JsonStreamField{
+		"users": {
+			Type: "array",
+			Items: &ast.JsonStreamField{
+				Type: "struct",
+				Properties: map[string]*ast.JsonStreamField{
+					"id": {
+						Type: "bigint",
+					},
+				},
+			},
+		},
+	}
+	benchmarkByFiles("./testdata/large.json", b, schema)
 }
 
 func BenchmarkComplexTuples(b *testing.B) {
-	payload, err := os.ReadFile("./testdata/MDFD.json")
+	benchmarkByFiles("./testdata/MDFD.json", b, nil)
+}
+
+func BenchmarkComplexTuplesWithSchema(b *testing.B) {
+	schema := map[string]*ast.JsonStreamField{
+		"STD_AbsoluteWindDirection": {
+			Type: "float",
+		},
+	}
+	benchmarkByFiles("./testdata/MDFD.json", b, schema)
+}
+
+func benchmarkByFiles(filePath string, b *testing.B, schema map[string]*ast.JsonStreamField) {
+	payload, err := os.ReadFile(filePath)
 	if err != nil {
 		b.Fatalf(err.Error())
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		converter.Decode(payload)
+	if schema != nil {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			fastConverter.DecodeWithSchema(payload, schema)
+		}
+	} else {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			converter.Decode(payload)
+		}
 	}
 }
