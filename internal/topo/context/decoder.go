@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@ package context
 import (
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/internal/converter/json"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 const DecodeKey = "$$decode"
+const FastJSONDecodeKey = "$$fastjsonDecode"
 
 func (c *DefaultContext) Decode(data []byte) (map[string]interface{}, error) {
 	v := c.Value(DecodeKey)
@@ -44,6 +47,36 @@ func (c *DefaultContext) DecodeIntoList(data []byte) ([]map[string]interface{}, 
 	f, ok := v.(message.Converter)
 	if ok {
 		t, err := f.Decode(data)
+		if err != nil {
+			return nil, fmt.Errorf("decode failed: %v", err)
+		}
+		typeErr := fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported but got: %v", t)
+		switch r := t.(type) {
+		case map[string]interface{}:
+			return []map[string]interface{}{r}, nil
+		case []map[string]interface{}:
+			return r, nil
+		case []interface{}:
+			rs := make([]map[string]interface{}, len(r))
+			for i, v := range r {
+				if vc, ok := v.(map[string]interface{}); ok {
+					rs[i] = vc
+				} else {
+					return nil, typeErr
+				}
+			}
+			return rs, nil
+		}
+		return nil, typeErr
+	}
+	return nil, fmt.Errorf("no decoder configured")
+}
+
+func (c *DefaultContext) DecodeIntoListWithSchema(data []byte, schema map[string]*ast.JsonStreamField) ([]map[string]interface{}, error) {
+	v := c.Value(FastJSONDecodeKey)
+	f, ok := v.(*json.FastJsonConverter)
+	if ok {
+		t, err := f.DecodeWithSchema(data, schema)
 		if err != nil {
 			return nil, fmt.Errorf("decode failed: %v", err)
 		}

@@ -181,7 +181,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		v, err := fastConverter.DecodeWithSchema(tc.payload, tc.schema)
+		v, err := FastConverter.DecodeWithSchema(tc.payload, tc.schema)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
 	}
@@ -191,8 +191,149 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		v, err := fastConverter.DecodeWithSchema(arrayPayload, tc.schema)
+		v, err := FastConverter.DecodeWithSchema(arrayPayload, tc.schema)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
+	}
+}
+
+func TestFastJsonConverterWithSchemaError(t *testing.T) {
+	testcases := []struct {
+		schema  map[string]*ast.JsonStreamField
+		payload []byte
+		err     error
+	}{
+		{
+			payload: []byte(`{"a":"123"}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bigint",
+				},
+			},
+			err: fmt.Errorf("a has wrong type:string, expect:bigint"),
+		},
+		{
+			payload: []byte(`{"a":123}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "string",
+				},
+			},
+			err: fmt.Errorf("a has wrong type:number, expect:string"),
+		},
+		{
+			payload: []byte(`{"a":123}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+				},
+			},
+			err: fmt.Errorf("a has wrong type:number, expect:array"),
+		},
+		{
+			payload: []byte(`{"a":123}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "struct",
+				},
+			},
+			err: fmt.Errorf("a has wrong type:number, expect:struct"),
+		},
+		{
+			payload: []byte(`{"a":123}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "boolean",
+				},
+			},
+			err: fmt.Errorf("a has wrong type:number, expect:boolean"),
+		},
+		{
+			payload: []byte(`{"a":true}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "datetime",
+				},
+			},
+			err: fmt.Errorf("a has wrong type:true, expect:datetime"),
+		},
+		{
+			payload: []byte(`{"a":["123"]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "bigint",
+					},
+				},
+			},
+			err: fmt.Errorf("array has wrong type:string, expect:bigint"),
+		},
+		{
+			payload: []byte(`{"a":[123]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "string",
+					},
+				},
+			},
+			err: fmt.Errorf("array has wrong type:number, expect:string"),
+		},
+		{
+			payload: []byte(`{"a":[123]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "array",
+					},
+				},
+			},
+			err: fmt.Errorf("array has wrong type:number, expect:array"),
+		},
+		{
+			payload: []byte(`{"a":[123]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "struct",
+					},
+				},
+			},
+			err: fmt.Errorf("array has wrong type:number, expect:struct"),
+		},
+		{
+			payload: []byte(`{"a":[123]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "boolean",
+					},
+				},
+			},
+			err: fmt.Errorf("array has wrong type:number, expect:boolean"),
+		},
+		{
+			payload: []byte(`{"a":[true]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "datetime",
+					},
+				},
+			},
+			err: fmt.Errorf("array has wrong type:true, expect:datetime"),
+		},
+	}
+
+	for _, tc := range testcases {
+		_, err := FastConverter.DecodeWithSchema(tc.payload, tc.schema)
+		require.Error(t, err)
+		require.Equal(t, err, tc.err)
 	}
 }

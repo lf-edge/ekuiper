@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/converter"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -142,6 +143,7 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source) 
 		}
 		sctx, cancel := ctx.WithMeta(ruleId, opId, store).WithCancel()
 		sctx = kctx.WithValue(sctx.(*kctx.DefaultContext), kctx.DecodeKey, node.ctx.Value(kctx.DecodeKey))
+		sctx = kctx.WithValue(sctx.(*kctx.DefaultContext), kctx.FastJSONDecodeKey, converter.GetFastJSONConverter())
 		si, err := start(sctx, node, source)
 		if err != nil {
 			return nil, err

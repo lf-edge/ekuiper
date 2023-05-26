@@ -62,3 +62,7 @@ func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }
+
+func GetFastJSONConverter() *json.FastJsonConverter {
+	return json.FastConverter
+}
