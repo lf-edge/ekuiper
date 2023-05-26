@@ -17,6 +17,8 @@ package function
 import (
 	"fmt"
 	"math"
+	"math/rand"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -29,8 +31,12 @@ var (
 	errorArraySecondArgumentNotArrayError  = fmt.Errorf("second argument should be array of interface{}")
 	errorArrayFirstArgumentNotIntError     = fmt.Errorf("first argument should be int")
 	errorArraySecondArgumentNotIntError    = fmt.Errorf("second argument should be int")
+	errorArraySecondArgumentNotStringError = fmt.Errorf("second argument should be string")
 	errorArrayThirdArgumentNotIntError     = fmt.Errorf("third argument should be int")
+	errorArrayThirdArgumentNotStringError  = fmt.Errorf("third argument should be string")
 	errorArrayContainsNonNumOrBoolValError = fmt.Errorf("array contain elements that are not numeric or Boolean")
+	errorArrayNotArrayElementError         = fmt.Errorf("array elements should be array")
+	errorArrayNotStringElementError        = fmt.Errorf("array elements should be string")
 )
 
 func registerArrayFunc() {
@@ -418,6 +424,176 @@ func registerArrayFunc() {
 				}
 			}
 			return nil
+		},
+	}
+	builtins["cardinality"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+			return len(array), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(1, len(args))
+		},
+	}
+	builtins["array_flatten"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+
+			var output []interface{}
+
+			for _, val := range array {
+				innerArr, ok := val.([]interface{})
+				if !ok {
+					return errorArrayNotArrayElementError, false
+				}
+				output = append(output, innerArr...)
+			}
+
+			return output, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(1, len(args))
+		},
+	}
+	builtins["array_distinct"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+
+			output := make([]interface{}, 0, len(array))
+			set := make(map[interface{}]bool)
+
+			for _, val := range array {
+				if !set[val] {
+					output = append(output, val)
+					set[val] = true
+				}
+			}
+
+			return output, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(1, len(args))
+		},
+	}
+	builtins["array_map"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			funcName, ok := args[0].(string)
+			if !ok {
+				return fmt.Errorf("first argument should be string"), false
+			}
+
+			array, ok := args[1].([]interface{})
+			if !ok {
+				return errorArraySecondArgumentNotArrayError, false
+			}
+
+			mapped := make([]interface{}, 0, len(array))
+			var result interface{}
+			for _, v := range array {
+				params := []interface{}{v}
+				fs, ok := builtins[funcName]
+				if !ok {
+					return fmt.Errorf("unknown built-in function: %s.", funcName), false
+				}
+
+				if fs.fType != ast.FuncTypeScalar {
+					return fmt.Errorf("first argument should be a scalar function."), false
+				}
+				eargs := make([]ast.Expr, len(params))
+				if err := fs.val(nil, eargs); err != nil {
+					return fmt.Errorf("function should accept exactly one argument."), false
+				}
+
+				result, ok = fs.exec(ctx, params)
+				if !ok {
+					return result, false
+				}
+				mapped = append(mapped, result)
+			}
+
+			return mapped, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+	}
+	builtins["array_join"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+
+			delimiter, ok := args[1].(string)
+			if !ok {
+				return errorArraySecondArgumentNotStringError, false
+			}
+
+			var nullReplacement string
+			if len(args) == 3 {
+				nullReplacement, ok = args[2].(string)
+				if !ok {
+					return errorArrayThirdArgumentNotStringError, false
+				}
+			}
+
+			for i, v := range array {
+				if v == nil {
+					array[i] = nullReplacement
+				} else {
+					array[i], ok = v.(string)
+					if !ok {
+						return errorArrayNotStringElementError, false
+					}
+				}
+			}
+
+			strs, err := cast.ToStringSlice(array, cast.CONVERT_ALL)
+			if err != nil {
+				return err, false
+			}
+			return strings.Join(strs, delimiter), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				if err := ValidateLen(3, len(args)); err != nil {
+					return fmt.Errorf("Expect two or three arguments but found %d.", len(args))
+				}
+			}
+			return nil
+		},
+	}
+	builtins["array_shuffle"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+
+			for i := range array {
+				j := rand.Intn(i + 1)
+				array[i], array[j] = array[j], array[i]
+			}
+
+			return array, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(1, len(args))
 		},
 	}
 }

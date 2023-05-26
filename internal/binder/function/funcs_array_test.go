@@ -25,7 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func TestArrayFunctions(t *testing.T) {
+func TestArrayCommonFunctions(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
@@ -452,6 +452,123 @@ func TestArrayFunctions(t *testing.T) {
 			},
 			result: []interface{}{10, 7, 4, 1},
 		},
+		{
+			name: "cardinality",
+			args: []interface{}{
+				[]interface{}{1, 2, 3},
+			},
+			result: 3,
+		},
+		{
+			name: "array_flatten",
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{1, 2, 3},
+				},
+			},
+			result: []interface{}{1, 2, 3},
+		},
+		{
+			name: "array_flatten",
+			args: []interface{}{
+				[]interface{}{1, 2, 3}, 4,
+			},
+			result: errorArrayNotArrayElementError,
+		},
+		{
+			name: "array_flatten",
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{1, 2, 3},
+					[]interface{}{4, 5, 6},
+				},
+			},
+			result: []interface{}{1, 2, 3, 4, 5, 6},
+		},
+		{
+			name: "array_distinct",
+			args: []interface{}{
+				[]interface{}{1, 2, 3},
+			},
+			result: []interface{}{1, 2, 3},
+		},
+		{
+			name: "array_distinct",
+			args: []interface{}{
+				[]interface{}{1, 1, 1},
+			},
+			result: []interface{}{1},
+		},
+		{
+			name: "array_distinct",
+			args: []interface{}{
+				[]interface{}{1, 2, 2, 1},
+			},
+			result: []interface{}{1, 2},
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
+				"round", []interface{}{0, 0.4, 1.2},
+			},
+			result: []interface{}{0.0, 0.0, 1.0},
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
+				"abs", []interface{}{0, -0.4, 1.2},
+			},
+			result: []interface{}{0, 0.4, 1.2},
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
+				"ceil", []interface{}{0, -1, 1.2},
+			},
+			result: []interface{}{0.0, -1.0, 2.0},
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
+				"power", []interface{}{1, 2, 3},
+			},
+			result: fmt.Errorf("function should accept exactly one argument."),
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, "",
+			},
+			result: "abc",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, ":,%",
+			},
+			result: "a:,%b:,%c",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", nil, "c"}, ":", "nullReplacementStr",
+			},
+			result: "a:nullReplacementStr:c",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, ":",
+			},
+			result: "a:b:c",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{nil, nil, nil}, ",", "nullReplacementStr",
+			},
+			result: "nullReplacementStr,nullReplacementStr,nullReplacementStr",
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]
@@ -461,6 +578,56 @@ func TestArrayFunctions(t *testing.T) {
 		result, _ := f.exec(fctx, tt.args)
 		if !reflect.DeepEqual(result, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestArrayShuffle(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		name   string
+		args   []interface{}
+		result []interface{}
+	}{
+		{
+			name: "array_shuffle",
+			args: []interface{}{
+				[]interface{}{1, 2, 3},
+			},
+			result: []interface{}{
+				[]interface{}{1, 2, 3}, []interface{}{1, 3, 2}, []interface{}{2, 1, 3}, []interface{}{2, 3, 1}, []interface{}{3, 1, 2}, []interface{}{3, 2, 1},
+			},
+		},
+		{
+			name: "array_shuffle",
+			args: []interface{}{
+				1,
+			},
+			result: []interface{}{
+				errorArrayFirstArgumentNotArrayError,
+			},
+		},
+	}
+
+	for i, tt := range tests {
+		f, ok := builtins[tt.name]
+		if !ok {
+			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
+		}
+		result, _ := f.exec(fctx, tt.args)
+		flag := false
+		for _, actual := range tt.result {
+			if reflect.DeepEqual(result, actual) {
+				flag = true
+				break
+			}
+		}
+
+		if !flag {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant in:\t%v", i, result, tt.result)
 		}
 	}
 }
