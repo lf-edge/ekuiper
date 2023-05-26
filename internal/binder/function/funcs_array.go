@@ -30,6 +30,7 @@ var (
 	errorArrayIndex                        = fmt.Errorf("index out of range")
 	errorArraySecondArgumentNotArrayError  = fmt.Errorf("second argument should be array of interface{}")
 	errorArrayFirstArgumentNotIntError     = fmt.Errorf("first argument should be int")
+	errorArrayFirstArgumentNotStringError  = fmt.Errorf("first argument should be string")
 	errorArraySecondArgumentNotIntError    = fmt.Errorf("second argument should be int")
 	errorArraySecondArgumentNotStringError = fmt.Errorf("second argument should be string")
 	errorArrayThirdArgumentNotIntError     = fmt.Errorf("third argument should be int")
@@ -492,7 +493,7 @@ func registerArrayFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			funcName, ok := args[0].(string)
 			if !ok {
-				return fmt.Errorf("first argument should be string"), false
+				return errorArrayFirstArgumentNotStringError, false
 			}
 
 			array, ok := args[1].([]interface{})

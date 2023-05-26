@@ -460,6 +460,13 @@ func TestArrayCommonFunctions(t *testing.T) {
 			result: 3,
 		},
 		{
+			name: "array_cardinality",
+			args: []interface{}{
+				1, 2, 3,
+			},
+			result: errorArrayFirstArgumentNotArrayError,
+		},
+		{
 			name: "array_flatten",
 			args: []interface{}{
 				[]interface{}{
@@ -467,6 +474,13 @@ func TestArrayCommonFunctions(t *testing.T) {
 				},
 			},
 			result: []interface{}{1, 2, 3},
+		},
+		{
+			name: "array_flatten",
+			args: []interface{}{
+				1, 2,
+			},
+			result: errorArrayFirstArgumentNotArrayError,
 		},
 		{
 			name: "array_flatten",
@@ -495,6 +509,13 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_distinct",
 			args: []interface{}{
+				1, 1,
+			},
+			result: errorArrayFirstArgumentNotArrayError,
+		},
+		{
+			name: "array_distinct",
+			args: []interface{}{
 				[]interface{}{1, 1, 1},
 			},
 			result: []interface{}{1},
@@ -516,9 +537,37 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_map",
 			args: []interface{}{
+				123, []interface{}{1, 2, 3},
+			},
+			result: errorArrayFirstArgumentNotStringError,
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
+				"round", 1,
+			},
+			result: errorArraySecondArgumentNotArrayError,
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
 				"abs", []interface{}{0, -0.4, 1.2},
 			},
 			result: []interface{}{0, 0.4, 1.2},
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
+				"pow", []interface{}{0, -0.4, 1.2},
+			},
+			result: fmt.Errorf("unknown built-in function: pow."),
+		},
+		{
+			name: "array_map",
+			args: []interface{}{
+				"avg", []interface{}{0, -0.4, 1.2},
+			},
+			result: fmt.Errorf("first argument should be a scalar function."),
 		},
 		{
 			name: "array_map",
@@ -537,9 +586,23 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_join",
 			args: []interface{}{
+				"a", "",
+			},
+			result: errorArrayFirstArgumentNotArrayError,
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
 				[]interface{}{"a", "b", "c"}, "",
 			},
 			result: "abc",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, ':',
+			},
+			result: errorArraySecondArgumentNotStringError,
 		},
 		{
 			name: "array_join",
@@ -558,9 +621,23 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_join",
 			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, ":", 'a',
+			},
+			result: errorArrayThirdArgumentNotStringError,
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
 				[]interface{}{"a", "b", "c"}, ":",
 			},
 			result: "a:b:c",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{123, "b", "c"}, ":", "a",
+			},
+			result: errorArrayNotStringElementError,
 		},
 		{
 			name: "array_join",
