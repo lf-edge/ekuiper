@@ -1,16 +1,25 @@
 # Function Extension
 
-In the eKuiper SQL syntax, [many built-in functions](../../../sqls/built-in_functions.md) are provided to server for various reusable business logic. However, the users still likely need various reusable business logic which are not covered by the built ins. The function extension is presented to customized the functions.
+In the eKuiper SQL syntax, [many built-in functions](../../../sqls/functions/overview.md) are provided to server for
+various reusable business logic. However, the users still likely need various reusable business logic which is not
+covered by the built ins. The function extension is presented to customize the functions.
 
 ## Developing
 
 ### Develop a customized function
 
-To develop a function for eKuiper is to implement [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a golang plugin.
+To develop a function for eKuiper is to
+implement [api.Function](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) interface and export it as a
+golang plugin.
 
-Before starting the development, you must [setup the environment for golang plugin](../overview.md#setup-the-plugin-developing-environment). 
+Before starting the development, you
+must [set up the environment for golang plugin](../overview.md#setup-the-plugin-developing-environment).
 
-To develop a function, the _Validate_ method is firstly to be implemented. This method will be called during SQL validation. In this method, a slice of [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/pkg/ast/expr.go) is passed as the parameter that contains the arguments for this function in the runtime. The developer can do a validation against it to check the argument count and type etc. If validation is successful, return nil. Otherwise, return an error object.
+To develop a function, the _Validate_ method is firstly to be implemented. This method will be called during SQL
+validation. In this method, a slice of [xsql.Expr](https://github.com/lf-edge/ekuiper/blob/master/pkg/ast/expr.go) is
+passed as the parameter that contains the arguments for this function in the runtime. The developer can do a validation
+against it to check the argument count and type etc. If validation is successful, return nil. Otherwise, return an error
+object.
 
 ```go
 //The argument is a list of xsql.Expr
@@ -23,7 +32,9 @@ There are 2 types of functions: aggregate function and common function. For aggr
 IsAggregate() bool
 ```
 
-The main task for a Function is to implement _exec_ method. The method will be leverage to calculate the result of the function in the SQL. The argument is a slice of the values for the function parameters. You can use them to do the calculation. If the calculation is successful, return the result and true; otherwise, return nil and false. 
+The main task for a Function is to implement _exec_ method. The method will be leveraged to calculate the result of the
+function in the SQL. The argument is a slice of the values for the function parameters. You can use them to do the
+calculation. If the calculation is successful, return the result and true; otherwise, return nil and false.
 
 ```go
 //Execute the function, return the result and if execution is successful.If execution fails, return the error and false. 
@@ -50,7 +61,7 @@ var(
 )
 ```
 
-It is a best practice to combine all related functions in a plugin to simplify the build and deployment of functions.
+It is the best practice to combine all related functions in a plugin to simplify the build and deployment of functions.
 
 ### Package the source
 
@@ -62,10 +73,17 @@ go build -trimpath --buildmode=plugin -o plugins/functions/MyFunction.so extensi
 
 ### Register multiple functions
 
-eKuiper will load plugins in the plugin folders automatically. The auto loaded function plugin assumes there is a function named the same as the plugin name. If multiple functions are exported, users need to explicitly register them to make them available. There are two ways to register the functions.
+eKuiper will load plugins in the plugin folders automatically. The autoload function plugin assumes there is a function
+named the same as the plugin name. If multiple functions are exported, users need to explicitly register them to make
+them available. There are two ways to register the functions.
 
-1. In development environment, we recommend to build plugin .so file directly into the plugin folder so that eKuiper can auto load it. Then call [CLI register functions command](../../../api/cli/plugins.md#register-functions) or [REST register functions API](../../../api/restapi/plugins.md#register-functions).
-2. In production environment, [package the plugin into zip file](plugins_tutorial.md#deployment), then call [CLI function plugin create command](../../../api/cli/plugins.md#create-a-plugin) or [REST function plugin create API](../../../api/restapi/plugins.md#create-a-plugin) with functions list specified.
+1. In development environment, we recommend to build plugin .so file directly into the plugin folder so that eKuiper can
+   autoload it. Then call [CLI register functions command](../../../api/cli/plugins.md#register-functions)
+   or [REST register functions API](../../../api/restapi/plugins.md#register-functions).
+2. In production environment, [package the plugin into zip file](plugins_tutorial.md#deployment), then
+   call [CLI function plugin create command](../../../api/cli/plugins.md#create-a-plugin)
+   or [REST function plugin create API](../../../api/restapi/plugins.md#create-a-plugin) with the function list
+   specified.
 
 ## Usage
 
