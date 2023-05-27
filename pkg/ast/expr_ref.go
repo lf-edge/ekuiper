@@ -27,6 +27,9 @@ type LikePattern struct {
 
 func (l *LikePattern) expr() {}
 func (l *LikePattern) node() {}
+func (l *LikePattern) String() string {
+	return "likePattern:" + l.Pattern.String()
+}
 
 func (l *LikePattern) Compile(likestr string) (*regexp.Regexp, error) {
 	regstr := strings.ReplaceAll(strings.NewReplacer(
@@ -62,6 +65,21 @@ func (fr *FieldRef) expr() {}
 func (fr *FieldRef) node() {}
 func (fr *FieldRef) IsColumn() bool {
 	return fr.StreamName != AliasStream && fr.StreamName != ""
+}
+
+func (fr *FieldRef) String() string {
+	sn := ""
+	n := ""
+	if fr.StreamName != "" {
+		sn += "streamName:" + string(fr.StreamName)
+	}
+	if fr.Name != "" {
+		if fr.StreamName != "" {
+			n += ", "
+		}
+		n += "fieldName:" + fr.Name
+	}
+	return "fieldRef:{ " + sn + n + " }"
 }
 
 func (fr *FieldRef) IsAlias() bool {

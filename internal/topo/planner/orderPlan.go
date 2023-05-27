@@ -26,7 +26,7 @@ func (p OrderPlan) Init() *OrderPlan {
 	return &p
 }
 
-func (p OrderPlan) BuildExplainInfo(id int64) {
+func (p *OrderPlan) BuildExplainInfo(id int64) {
 	info := ""
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info

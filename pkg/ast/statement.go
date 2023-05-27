@@ -14,6 +14,8 @@
 
 package ast
 
+import "strconv"
+
 type Statement interface {
 	stmt()
 	Node
@@ -205,6 +207,14 @@ type SortField struct {
 	FieldExpr  Expr
 
 	Expr
+}
+
+func (sf *SortField) String() string {
+	fe := ""
+	if sf.FieldExpr != nil {
+		fe += ", fieldExpr: { " + sf.FieldExpr.String() + " }"
+	}
+	return "SortField: { name: " + sf.Name + ", ascending: " + strconv.FormatBool(sf.Ascending) + fe + " }"
 }
 
 type SortFields []SortField

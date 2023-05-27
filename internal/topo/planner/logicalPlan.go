@@ -53,15 +53,13 @@ type baseLogicalPlan struct {
 	children []LogicalPlan
 	// Can be used to return the derived instance from the base type
 	self        LogicalPlan
-	Id          int64
 	ExplainInfo PlanExplainInfo
 }
 
 func (p *baseLogicalPlan) Explain() string {
 	p.ExplainInfo.T = p.Type()
-	p.ExplainInfo.Id = p.ID()
 	p.ExplainInfo.Children = p.ChildrenID()
-	data, _ := json.Marshal(p.Explain)
+	data, _ := json.Marshal(p.ExplainInfo)
 	return string(data)
 }
 
@@ -76,12 +74,7 @@ func (p *baseLogicalPlan) Type() string {
 }
 
 func (p *baseLogicalPlan) ID() int64 {
-	return p.Id
-}
-
-func (p *baseLogicalPlan) SetID(id int64) {
-	p.Id = id
-	p.ExplainInfo.Id = id
+	return p.ExplainInfo.Id
 }
 
 func (p *baseLogicalPlan) ChildrenID() []int64 {

@@ -27,7 +27,7 @@ func (p JoinPlan) Init() *JoinPlan {
 	return &p
 }
 
-func (p JoinPlan) BuildExplainInfo(id int64) {
+func (p *JoinPlan) BuildExplainInfo(id int64) {
 	info := ""
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info

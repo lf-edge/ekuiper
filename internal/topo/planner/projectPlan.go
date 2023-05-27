@@ -57,7 +57,7 @@ func (p ProjectPlan) Init() *ProjectPlan {
 	return &p
 }
 
-func (p ProjectPlan) BuildExplainInfo(id int64) {
+func (p *ProjectPlan) BuildExplainInfo(id int64) {
 	info := ""
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info

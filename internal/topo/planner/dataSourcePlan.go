@@ -50,10 +50,9 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 	return &p
 }
 
-func (p DataSourcePlan) BuildExplainInfo(id int64) {
-	info := "{\n"
-	info += "	streamName: " + string(p.name) + "\n"
-	info += "	fields: [ "
+func (p *DataSourcePlan) BuildExplainInfo(id int64) {
+	info := "{ streamName: " + string(p.name) + ", "
+	info += "fields: ["
 	i := 0
 	for n, field := range p.fields {
 		info += "{ fieldName: " + n + ", fieldType: " + field.Type + " }"
@@ -62,8 +61,15 @@ func (p DataSourcePlan) BuildExplainInfo(id int64) {
 		}
 		i++
 	}
-	info += " ]\n"
-	info += "}"
+	info += "], streamFields: ["
+	for n, field := range p.streamFields {
+		info += "{ fieldName: " + n + ", fieldType: " + field.Type + " }"
+		if i != len(p.streamFields)-1 {
+			info += ", "
+		}
+		i++
+	}
+	info += "] }"
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

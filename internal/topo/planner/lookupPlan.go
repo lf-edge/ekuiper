@@ -35,7 +35,7 @@ func (p LookupPlan) Init() *LookupPlan {
 	return &p
 }
 
-func (p LookupPlan) BuildExplainInfo(id int64) {
+func (p *LookupPlan) BuildExplainInfo(id int64) {
 	info := ""
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info

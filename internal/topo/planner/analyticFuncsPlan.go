@@ -30,13 +30,13 @@ func (p AnalyticFuncsPlan) Init() *AnalyticFuncsPlan {
 	return &p
 }
 
-func (p AnalyticFuncsPlan) BuildExplainInfo(id int64) {
+func (p *AnalyticFuncsPlan) BuildExplainInfo(id int64) {
 	info := "{\n"
 	info += "	funcs: [ "
 	for i, v := range p.funcs {
 		f := "{ funcName: " + v.Name
 		if v.WhenExpr != nil {
-			f += ", whenExprName: " + reflect.TypeOf(v.WhenExpr).Name()
+			f += ", whenExprName: " + reflect.TypeOf(v.WhenExpr).String()
 		}
 		info += f + " }"
 		if i != len(p.funcs)-1 {

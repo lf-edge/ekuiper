@@ -21,7 +21,7 @@ type HavingPlan struct {
 	condition ast.Expr
 }
 
-func (p HavingPlan) BuildExplainInfo(id int64) {
+func (p *HavingPlan) BuildExplainInfo(id int64) {
 	info := ""
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info

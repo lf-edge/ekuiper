@@ -24,7 +24,7 @@ func (p ProjectSetPlan) Init() *ProjectSetPlan {
 	return &p
 }
 
-func (p ProjectSetPlan) BuildExplainInfo(id int64) {
+func (p *ProjectSetPlan) BuildExplainInfo(id int64) {
 	info := ""
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info

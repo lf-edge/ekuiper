@@ -26,7 +26,7 @@ func (p FilterPlan) Init() *FilterPlan {
 	return &p
 }
 
-func (p FilterPlan) BuildExplainInfo(id int64) {
+func (p *FilterPlan) BuildExplainInfo(id int64) {
 	info := ""
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info

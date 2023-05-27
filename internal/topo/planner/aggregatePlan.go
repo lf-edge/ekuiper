@@ -26,8 +26,17 @@ func (p AggregatePlan) Init() *AggregatePlan {
 	return &p
 }
 
-func (p AggregatePlan) BuildExplainInfo(id int64) {
-	info := ""
+func (p *AggregatePlan) BuildExplainInfo(id int64) {
+	info := "dimension:{ "
+	for i, dimension := range p.dimensions {
+		if dimension.Expr != nil {
+			info += dimension.Expr.String()
+			if i != len(p.dimensions)-1 {
+				info += ", "
+			}
+		}
+	}
+	info += " }"
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
