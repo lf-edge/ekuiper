@@ -115,13 +115,14 @@ func BuildExplainResultFromLp(lp LogicalPlan) string {
 
 // BuildAllExplain recursively assign values to the ID of the logical plan,
 // and build the corresponding explainInfo
-func BuildAllExplain(lp LogicalPlan, id int64) {
+func BuildAllExplain(lp LogicalPlan, id *int64) {
+	lp.BuildExplainInfo(*id)
 	if len(lp.Children()) != 0 {
 		for _, v := range lp.Children() {
-			BuildAllExplain(v, id+1)
+			*id++
+			BuildAllExplain(v, id)
 		}
 	}
-	lp.BuildExplainInfo(id)
 }
 
 func createTopo(rule *api.Rule, lp LogicalPlan, sources []*node.SourceNode, sinks []*node.SinkNode, streamsFromStmt []string) (*topo.Topo, error) {

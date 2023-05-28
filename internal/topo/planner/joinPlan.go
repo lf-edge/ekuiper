@@ -29,6 +29,20 @@ func (p JoinPlan) Init() *JoinPlan {
 
 func (p *JoinPlan) BuildExplainInfo(id int64) {
 	info := ""
+	if p.joins != nil && len(p.joins) != 0 {
+		info += "Joins:[ "
+		for i, join := range p.joins {
+			info += "{ joinType:" + join.JoinType.String() + ", "
+			if join.Expr != nil {
+				info += join.Expr.String()
+			}
+			info += " }"
+			if i != len(p.joins)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

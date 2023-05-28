@@ -225,7 +225,7 @@ func (c *Call) String() string {
 	if c.WhenExpr != nil {
 		when += ", when:{ " + c.WhenExpr.String() + " }"
 	}
-	return "callExpr:{ name:" + c.Name + args + when + " }"
+	return "Call:{ name:" + c.Name + args + when + " }"
 }
 
 type PartitionExpr struct {
@@ -242,7 +242,7 @@ func (pe *PartitionExpr) String() string {
 			e += ", "
 		}
 	}
-	return "partitionExpr:[ " + e + " ]"
+	return "PartitionExpr:[ " + e + " ]"
 }
 
 type BinaryExpr struct {
@@ -254,18 +254,12 @@ type BinaryExpr struct {
 func (be *BinaryExpr) expr() {}
 func (be *BinaryExpr) node() {}
 func (be *BinaryExpr) String() string {
-	l := ""
-	r := ""
-	if be.LHS != nil {
-		l += ", left:{ " + be.LHS.String() + " }"
+	info := ""
+	if be.LHS != nil && be.RHS != nil {
+		t := Tokens[be.OP]
+		info += "BinaryExpr:{ " + be.LHS.String() + " " + t + " " + be.RHS.String() + " }"
 	}
-	if be.RHS != nil {
-		if be.LHS != nil {
-			r += ", "
-		}
-		r += "right:{ " + be.RHS.String() + " }"
-	}
-	return "binaryExpr:{ option:" + Tokens[be.OP] + l + r + " }"
+	return info
 }
 
 type WhenClause struct {
@@ -281,7 +275,7 @@ func (w *WhenClause) String() string {
 	if w.Expr != nil {
 		e += w.Expr.String()
 	}
-	return "whenClause : { " + e + " }"
+	return "whenClause:{ " + e + " }"
 }
 
 type CaseExpr struct {

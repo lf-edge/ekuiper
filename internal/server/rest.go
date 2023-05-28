@@ -51,6 +51,7 @@ const (
 )
 
 var uploadDir string
+var ID int64 = 0
 
 type statementDescriptor struct {
 	Sql string `json:"sql,omitempty"`
@@ -590,7 +591,8 @@ func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleError(w, err, "explain rules error", logger)
 	}
-	planner.BuildAllExplain(lp, 0)
+	ID = 0
+	planner.BuildAllExplain(lp, &ID)
 	resp := planner.BuildExplainResultFromLp(lp)
 	if err != nil {
 		handleError(w, err, "explain rules error", logger)
@@ -598,7 +600,6 @@ func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleError(w, err, "explain rules error", logger)
 	}
-	w.Header().Set(ContentType, ContentTypeJSON)
 	w.Write([]byte(resp))
 }
 

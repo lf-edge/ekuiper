@@ -16,6 +16,7 @@ package planner
 
 import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/modern-go/reflect2"
 )
 
 // LookupPlan is the plan for table lookup and then merged/joined
@@ -37,6 +38,22 @@ func (p LookupPlan) Init() *LookupPlan {
 
 func (p *LookupPlan) BuildExplainInfo(id int64) {
 	info := ""
+	if p.conditions != nil {
+		info += "Condition:{ "
+		info += p.conditions.String()
+		info += " }"
+	}
+	if !reflect2.IsNil(p.joinExpr) {
+		join := p.joinExpr
+		if p.conditions != nil {
+			info += ", "
+		}
+		info += "Join:{ joinType:" + join.JoinType.String()
+		if join.Expr != nil {
+			info += ", expr:" + join.Expr.String()
+		}
+		info += " }"
+	}
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

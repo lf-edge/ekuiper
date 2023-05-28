@@ -28,6 +28,9 @@ func (p FilterPlan) Init() *FilterPlan {
 
 func (p *FilterPlan) BuildExplainInfo(id int64) {
 	info := ""
+	if p.condition != nil {
+		info += "Condition:{ " + p.condition.String() + " }"
+	}
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

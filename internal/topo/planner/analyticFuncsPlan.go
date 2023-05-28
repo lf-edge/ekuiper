@@ -15,8 +15,6 @@
 package planner
 
 import (
-	"reflect"
-
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -31,20 +29,17 @@ func (p AnalyticFuncsPlan) Init() *AnalyticFuncsPlan {
 }
 
 func (p *AnalyticFuncsPlan) BuildExplainInfo(id int64) {
-	info := "{\n"
-	info += "	funcs: [ "
-	for i, v := range p.funcs {
-		f := "{ funcName: " + v.Name
-		if v.WhenExpr != nil {
-			f += ", whenExprName: " + reflect.TypeOf(v.WhenExpr).String()
+	info := ""
+	if p.funcs != nil && len(p.funcs) != 0 {
+		info += "Funcs:[ "
+		for i, v := range p.funcs {
+			info += v.String()
+			if i != len(p.funcs)-1 {
+				info += ", "
+			}
 		}
-		info += f + " }"
-		if i != len(p.funcs)-1 {
-			info += ", "
-		}
+		info += " ]"
 	}
-	info += " ]\n"
-	info += "}"
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

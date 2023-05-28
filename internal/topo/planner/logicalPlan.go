@@ -15,6 +15,7 @@
 package planner
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -59,8 +60,11 @@ type baseLogicalPlan struct {
 func (p *baseLogicalPlan) Explain() string {
 	p.ExplainInfo.T = p.Type()
 	p.ExplainInfo.Children = p.ChildrenID()
-	data, _ := json.Marshal(p.ExplainInfo)
-	return string(data)
+	bf := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(bf)
+	jsonEncoder.SetEscapeHTML(false)
+	jsonEncoder.Encode(p.ExplainInfo)
+	return bf.String()
 }
 
 func (p *baseLogicalPlan) BuildExplainInfo(id int64) {

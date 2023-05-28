@@ -71,15 +71,15 @@ func (fr *FieldRef) String() string {
 	sn := ""
 	n := ""
 	if fr.StreamName != "" {
-		sn += "streamName:" + string(fr.StreamName)
+		sn += string(fr.StreamName)
 	}
 	if fr.Name != "" {
 		if fr.StreamName != "" {
-			n += ", "
+			n += "."
 		}
-		n += "fieldName:" + fr.Name
+		n += fr.Name
 	}
-	return "fieldRef:{ " + sn + n + " }"
+	return sn + n
 }
 
 func (fr *FieldRef) IsAlias() bool {

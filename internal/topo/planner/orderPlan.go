@@ -28,6 +28,16 @@ func (p OrderPlan) Init() *OrderPlan {
 
 func (p *OrderPlan) BuildExplainInfo(id int64) {
 	info := ""
+	if p.SortFields != nil && len(p.SortFields) != 0 {
+		info += "SortFields:[ "
+		for i, field := range p.SortFields {
+			info += field.String()
+			if i != len(p.SortFields)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

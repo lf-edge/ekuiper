@@ -51,25 +51,31 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 }
 
 func (p *DataSourcePlan) BuildExplainInfo(id int64) {
-	info := "{ streamName: " + string(p.name) + ", "
-	info += "fields: ["
-	i := 0
-	for n, field := range p.fields {
-		info += "{ fieldName: " + n + ", fieldType: " + field.Type + " }"
-		if i != len(p.fields)-1 {
-			info += ", "
+	info := "StreamName: " + string(p.name)
+	if p.fields != nil && len(p.fields) != 0 {
+		info += ", Fields:[ "
+		i := 0
+		for n := range p.fields {
+			info += n
+			if i != len(p.fields)-1 {
+				info += ", "
+			}
+			i++
 		}
-		i++
+		info += " ]"
 	}
-	info += "], streamFields: ["
-	for n, field := range p.streamFields {
-		info += "{ fieldName: " + n + ", fieldType: " + field.Type + " }"
-		if i != len(p.streamFields)-1 {
-			info += ", "
+	if p.streamFields != nil && len(p.streamFields) != 0 {
+		info += ", StreamFields:[ "
+		j := 0
+		for n := range p.streamFields {
+			info += n
+			if j != len(p.streamFields)-1 {
+				info += ", "
+			}
+			j++
 		}
-		i++
+		info += " ]"
 	}
-	info += "] }"
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

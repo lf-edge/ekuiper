@@ -22,14 +22,17 @@ type JoinAlignPlan struct {
 }
 
 func (p *JoinAlignPlan) BuildExplainInfo(id int64) {
-	info := "{ emitters: ["
-	for i, emitter := range p.Emitters {
-		info += emitter
-		if i != len(p.Emitters)-1 {
-			info += ", "
+	info := ""
+	if p.Emitters != nil && len(p.Emitters) != 0 {
+		info += "Emitters:[ "
+		for i, emitter := range p.Emitters {
+			info += emitter
+			if i != len(p.Emitters)-1 {
+				info += ", "
+			}
 		}
+		info += " ]"
 	}
-	info += "] }"
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

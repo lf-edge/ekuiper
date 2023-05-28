@@ -23,6 +23,9 @@ type HavingPlan struct {
 
 func (p *HavingPlan) BuildExplainInfo(id int64) {
 	info := ""
+	if p.condition != nil {
+		info += "Condition:{ " + p.condition.String() + " }"
+	}
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

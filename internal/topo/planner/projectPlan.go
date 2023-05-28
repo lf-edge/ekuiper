@@ -59,6 +59,18 @@ func (p ProjectPlan) Init() *ProjectPlan {
 
 func (p *ProjectPlan) BuildExplainInfo(id int64) {
 	info := ""
+	if p.fields != nil && len(p.fields) != 0 {
+		info += "Fields:[ "
+		for i, field := range p.fields {
+			if field.Expr != nil {
+				info += field.Expr.String()
+				if i != len(p.fields)-1 {
+					info += ", "
+				}
+			}
+		}
+		info += " ]"
+	}
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

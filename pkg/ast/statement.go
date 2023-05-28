@@ -120,6 +120,23 @@ const (
 	CROSS_JOIN
 )
 
+func (j JoinType) String() string {
+	switch j {
+	case LEFT_JOIN:
+		return "LEFT_JOIN"
+	case INNER_JOIN:
+		return "INNER_JOIN"
+	case RIGHT_JOIN:
+		return "RIGHT_JOIN"
+	case FULL_JOIN:
+		return "FULL_JOIN"
+	case CROSS_JOIN:
+		return "CROSS_JOIN"
+	default:
+		return ""
+	}
+}
+
 type Join struct {
 	Name     string
 	Alias    string
@@ -212,9 +229,9 @@ type SortField struct {
 func (sf *SortField) String() string {
 	fe := ""
 	if sf.FieldExpr != nil {
-		fe += ", fieldExpr: { " + sf.FieldExpr.String() + " }"
+		fe += ", fieldExpr:{ " + sf.FieldExpr.String() + " }"
 	}
-	return "SortField: { name: " + sf.Name + ", ascending: " + strconv.FormatBool(sf.Ascending) + fe + " }"
+	return "SortField:{ name:" + sf.Name + ", ascending:" + strconv.FormatBool(sf.Ascending) + fe + " }"
 }
 
 type SortFields []SortField

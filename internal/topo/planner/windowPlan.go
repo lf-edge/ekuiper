@@ -38,11 +38,11 @@ func (p WindowPlan) Init() *WindowPlan {
 func (p *WindowPlan) BuildExplainInfo(id int64) {
 	t := p.wtype.String()
 	info := "{ length: " + strconv.Itoa(p.length) + ", "
-	info += "windowType: " + t + ", "
+	info += "windowType: " + t
 	if p.condition != nil {
-		info += "condition: " + p.condition.String() + ", "
+		info += ", condition: " + p.condition.String()
 	}
-	info += "limit: " + strconv.Itoa(p.limit) + " }"
+	info += ", limit: " + strconv.Itoa(p.limit) + " }"
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

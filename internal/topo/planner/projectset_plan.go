@@ -14,6 +14,11 @@
 
 package planner
 
+import (
+	"reflect"
+	"strings"
+)
+
 type ProjectSetPlan struct {
 	baseLogicalPlan
 	SrfMapping map[string]struct{}
@@ -26,6 +31,15 @@ func (p ProjectSetPlan) Init() *ProjectSetPlan {
 
 func (p *ProjectSetPlan) BuildExplainInfo(id int64) {
 	info := ""
+	if p.SrfMapping != nil && len(p.SrfMapping) != 0 {
+		info += "SrfMap:{ "
+		for str, s := range p.SrfMapping {
+			ty := reflect.TypeOf(s)
+			arr := strings.Split(ty.String(), ".")
+			info += "key:" + str + ", " + "value:" + arr[1] + ";"
+		}
+		info += "}"
+	}
 	p.baseLogicalPlan.ExplainInfo.Id = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
