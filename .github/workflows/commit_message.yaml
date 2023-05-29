@@ -8,8 +8,7 @@ on:
       - synchronize
 
 jobs:
-  check-commit-message:
-    name: check_commit_message
+  check_commit_message:
     runs-on: ubuntu-latest
     steps:
       - name: Check Type

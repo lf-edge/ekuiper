@@ -10,7 +10,7 @@ on:
       - '.github/workflows/lint.yaml'
 
 jobs:
-  check-licenses:
+  check_licenses:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
@@ -26,7 +26,7 @@ jobs:
           go install github.com/google/go-licenses@latest
           $(go env GOPATH)/bin/go-licenses check ./... --disallowed_types forbidden,restricted,unknown --ignore modernc.org/mathutil
 
-  golangci-lint:
+  golangci_lint:
     runs-on: ubuntu-latest
     needs:
       - check-licenses
