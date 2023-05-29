@@ -5,13 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  workflow_run:
-    workflows: ["Run fvt tests","Run test cases"]
-    types:
-      - completed
-  release:
-    types:
-      - published
+  workflow_call:
 
 jobs:
   build:

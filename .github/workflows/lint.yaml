@@ -12,7 +12,7 @@ on:
 jobs:
 
   lint:
-    name: Lint
+    name: run_golangci_lint
     runs-on: ubuntu-latest
     steps:
 

@@ -5,13 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    tags:
-      - "*"
-  pull_request:
-  release:
-    types:
-      - published
+  workflow_call:
 
 env:
   DEBIAN_FRONTEND: noninteractive

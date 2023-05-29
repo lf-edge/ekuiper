@@ -11,12 +11,14 @@ on:
     branches:
       - master
   pull_request:
+    paths-ignore:
+      - "docs/**"
   release:
     types:
       - published
 
 jobs:
-  run_test_case:
+  run_go_tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -88,3 +90,14 @@ jobs:
       with:
         name: stream.log
         path: log/stream.log
+
+  run_fvt_tests:
+    needs:
+      - run_go_tests
+    uses: ./.github/workflows/run_fvt_tests.yaml
+
+  build_packages:
+    needs:
+      - run_go_tests
+      - run_fvt_tests
+    uses: ./.github/workflows/build_packages.yaml
