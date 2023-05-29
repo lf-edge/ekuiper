@@ -45,11 +45,25 @@ func (c *Converter) Decode(b []byte) (interface{}, error) {
 	return r0, nil
 }
 
-type FastJsonConverter struct{}
+type FastJsonConverter struct {
+	schema map[string]*ast.JsonStreamField
+}
 
-var FastConverter = &FastJsonConverter{}
+func NewFastJsonConverter(schema map[string]*ast.JsonStreamField) *FastJsonConverter {
+	return &FastJsonConverter{
+		schema: schema,
+	}
+}
 
-func (f *FastJsonConverter) DecodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
+func (c *FastJsonConverter) Encode(_ interface{}) ([]byte, error) {
+	panic("FastJsonConverter shouldn't covert json data")
+}
+
+func (c *FastJsonConverter) Decode(b []byte) (interface{}, error) {
+	return c.decodeWithSchema(b, c.schema)
+}
+
+func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
 	var p fastjson.Parser
 	v, err := p.ParseBytes(b)
 	if err != nil {
@@ -200,6 +214,9 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string]*ast.JsonStreamField) (map[string]interface{}, error) {
 	m := make(map[string]interface{})
 	for key, field := range schema {
+		if obj.Get(key) == nil {
+			continue
+		}
 		switch field.Type {
 		case "bigint", "float":
 			typ := obj.Get(key).Type()

@@ -77,7 +77,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 		panicOrError := infra.SafeRun(func() error {
 			props := nodeConf.GetSourceConf(m.sourceType, m.options)
 			m.props = props
-			m.props["$$schema"] = m.schema
 			if c, ok := props["concurrency"]; ok {
 				if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
 					logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", c)
@@ -98,6 +97,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				props["isTable"] = true
 			}
 			props["delimiter"] = m.options.DELIMITER
+			m.options.Schema = m.schema
 			converterTool, err := converter.GetOrCreateConverter(m.options)
 			if err != nil {
 				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", m.options.FORMAT, m.options.SCHEMAID, err)
@@ -105,7 +105,6 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				return fmt.Errorf(msg)
 			}
 			ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, converterTool)
-			ctx = context.WithValue(ctx.(*context.DefaultContext), context.FastJSONDecodeKey, converter.GetFastJSONConverter())
 			m.reset()
 			logger.Infof("open source node with props %v, concurrency: %d, bufferLength: %d", conf.Printable(m.props), m.concurrency, m.bufferLength)
 			for i := 0; i < m.concurrency; i++ { // workers

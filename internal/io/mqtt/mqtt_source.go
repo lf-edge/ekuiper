@@ -26,7 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
@@ -37,23 +36,20 @@ type MQTTSource struct {
 	tpc    string
 	buflen int
 
-	config               map[string]interface{}
-	model                modelVersion
-	schema               map[string]*ast.JsonStreamField
-	enableDecodeBySchema bool
+	config map[string]interface{}
+	model  modelVersion
 
 	cli          api.MessageClient
 	decompressor message.Decompressor
 }
 
 type MQTTConfig struct {
-	Format               string `json:"format"`
-	Qos                  int    `json:"qos"`
-	BufferLen            int    `json:"bufferLength"`
-	KubeedgeModelFile    string `json:"kubeedgeModelFile"`
-	KubeedgeVersion      string `json:"kubeedgeVersion"`
-	Decompression        string `json:"decompression"`
-	EnableDecodeBySchema string `json:"enableDecodeBySchema"`
+	Format            string `json:"format"`
+	Qos               int    `json:"qos"`
+	BufferLen         int    `json:"bufferLength"`
+	KubeedgeModelFile string `json:"kubeedgeModelFile"`
+	KubeedgeVersion   string `json:"kubeedgeVersion"`
+	Decompression     string `json:"decompression"`
 }
 
 func (ms *MQTTSource) WithSchema(_ string) *MQTTSource {
@@ -76,11 +72,6 @@ func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) erro
 	ms.format = cfg.Format
 	ms.qos = cfg.Qos
 	ms.config = props
-	if v, ok := props["$$schema"]; ok {
-		if schema, ok := v.(map[string]*ast.JsonStreamField); ok {
-			ms.schema = schema
-		}
-	}
 
 	if cfg.Decompression != "" {
 		dc, err := compressor.GetDecompressor(cfg.Decompression)
@@ -185,11 +176,7 @@ func getTuples(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.Sou
 		}
 	}
 	var results []map[string]interface{}
-	if len(ms.schema) > 0 && ms.enableDecodeBySchema {
-		results, err = ctx.DecodeIntoListWithSchema(payload, ms.schema)
-	} else {
-		results, err = ctx.DecodeIntoList(payload)
-	}
+	results, err = ctx.DecodeIntoList(payload)
 	// The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 	if err != nil {
 		return []api.SourceTuple{

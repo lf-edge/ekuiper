@@ -47,6 +47,10 @@ func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
 	if t == "" {
 		t = message.FormatJson
 	}
+	if t == message.FormatJson && len(options.Schema) > 0 {
+		return json.NewFastJsonConverter(options.Schema), nil
+	}
+
 	schemaFile := ""
 	schemaName := options.SCHEMAID
 	if schemaName != "" {
@@ -61,8 +65,4 @@ func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
 		return c(schemaFile, schemaName, options.DELIMITER)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
-}
-
-func GetFastJSONConverter() *json.FastJsonConverter {
-	return json.FastConverter
 }

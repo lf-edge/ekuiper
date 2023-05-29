@@ -105,9 +105,10 @@ func benchmarkByFiles(filePath string, b *testing.B, schema map[string]*ast.Json
 		b.Fatalf(err.Error())
 	}
 	if schema != nil {
+		f := NewFastJsonConverter(schema)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			FastConverter.DecodeWithSchema(payload, schema)
+			f.Decode(payload)
 		}
 	} else {
 		b.ResetTimer()

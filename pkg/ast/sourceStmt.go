@@ -235,6 +235,8 @@ type Options struct {
 	KIND string `json:"kind,omitempty"`
 	// for delimited format only
 	DELIMITER string `json:"delimiter,omitempty"`
+
+	Schema map[string]*JsonStreamField `json:"-"`
 }
 
 func (o Options) node() {}

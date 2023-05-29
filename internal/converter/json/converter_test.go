@@ -181,7 +181,8 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		v, err := FastConverter.DecodeWithSchema(tc.payload, tc.schema)
+		f := NewFastJsonConverter(tc.schema)
+		v, err := f.Decode(tc.payload)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
 	}
@@ -191,7 +192,8 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		v, err := FastConverter.DecodeWithSchema(arrayPayload, tc.schema)
+		f := NewFastJsonConverter(tc.schema)
+		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
 	}
@@ -332,7 +334,8 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		_, err := FastConverter.DecodeWithSchema(tc.payload, tc.schema)
+		f := NewFastJsonConverter(tc.schema)
+		_, err := f.Decode(tc.payload)
 		require.Error(t, err)
 		require.Equal(t, err, tc.err)
 	}

@@ -18,8 +18,6 @@ import (
 	"context"
 	"sync"
 	"time"
-
-	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 type SourceTuple interface {
@@ -233,8 +231,6 @@ type StreamContext interface {
 	Decode(data []byte) (map[string]interface{}, error)
 
 	DecodeIntoList(data []byte) ([]map[string]interface{}, error)
-
-	DecodeIntoListWithSchema(data []byte, schema map[string]*ast.JsonStreamField) ([]map[string]interface{}, error)
 }
 
 type Operator interface {
