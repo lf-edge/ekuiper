@@ -581,7 +581,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				"power", []interface{}{1, 2, 3},
 			},
-			result: fmt.Errorf("function should accept exactly one argument."),
+			result: fmt.Errorf("validate function arguments failed."),
 		},
 		{
 			name: "array_join",
@@ -593,6 +593,27 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_join",
 			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, 123, "a",
+			},
+			result: errorArraySecondArgumentNotStringError,
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, ":", 123,
+			},
+			result: errorArrayThirdArgumentNotStringError,
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{123, "b", "c"}, ":", "a",
+			},
+			result: errorArrayNotStringElementError,
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
 				[]interface{}{"a", "b", "c"}, "",
 			},
 			result: "abc",
@@ -600,9 +621,16 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_join",
 			args: []interface{}{
-				[]interface{}{"a", "b", "c"}, ':',
+				[]interface{}{"a", nil, "b"}, ":",
 			},
-			result: errorArraySecondArgumentNotStringError,
+			result: "a:b",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, ":",
+			},
+			result: "a:b:c",
 		},
 		{
 			name: "array_join",
@@ -621,9 +649,16 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_join",
 			args: []interface{}{
-				[]interface{}{"a", "b", "c"}, ":", 'a',
+				[]interface{}{"a", nil, "c"}, ":", "nullReplacementStr",
 			},
-			result: errorArrayThirdArgumentNotStringError,
+			result: "a:nullReplacementStr:c",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", "c"}, ":", "a",
+			},
+			result: "a:b:c",
 		},
 		{
 			name: "array_join",
@@ -635,16 +670,23 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_join",
 			args: []interface{}{
-				[]interface{}{123, "b", "c"}, ":", "a",
+				[]interface{}{nil, nil, nil}, ",", "nullReplacementStr",
 			},
-			result: errorArrayNotStringElementError,
+			result: "nullReplacementStr,nullReplacementStr,nullReplacementStr",
 		},
 		{
 			name: "array_join",
 			args: []interface{}{
-				[]interface{}{nil, nil, nil}, ",", "nullReplacementStr",
+				[]interface{}{nil, nil, nil}, ",",
 			},
-			result: "nullReplacementStr,nullReplacementStr,nullReplacementStr",
+			result: "",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"a", "b", nil}, ",",
+			},
+			result: "a,b",
 		},
 	}
 	for i, tt := range tests {

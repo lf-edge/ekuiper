@@ -515,7 +515,7 @@ func registerArrayFunc() {
 				}
 				eargs := make([]ast.Expr, len(params))
 				if err := fs.val(nil, eargs); err != nil {
-					return fmt.Errorf("function should accept exactly one argument."), false
+					return fmt.Errorf("validate function arguments failed."), false
 				}
 
 				result, ok = fs.exec(ctx, params)
@@ -552,18 +552,23 @@ func registerArrayFunc() {
 				}
 			}
 
-			for i, v := range array {
+			var index int
+			for _, v := range array {
 				if v == nil {
-					array[i] = nullReplacement
+					if len(nullReplacement) != 0 {
+						array[index] = nullReplacement
+						index++
+					}
 				} else {
-					array[i], ok = v.(string)
+					array[index], ok = v.(string)
+					index++
 					if !ok {
 						return errorArrayNotStringElementError, false
 					}
 				}
 			}
 
-			strs, err := cast.ToStringSlice(array, cast.CONVERT_ALL)
+			strs, err := cast.ToStringSlice(array[:index], cast.CONVERT_ALL)
 			if err != nil {
 				return err, false
 			}
@@ -586,10 +591,9 @@ func registerArrayFunc() {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
 
-			for i := range array {
-				j := rand.Intn(i + 1)
+			rand.Shuffle(len(array), func(i, j int) {
 				array[i], array[j] = array[j], array[i]
-			}
+			})
 
 			return array, true
 		},
