@@ -146,6 +146,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						for {
 							select {
 							case <-ctx.Done():
+								// schema may be changed after we close the topo
 								m.schema = nil
 								return nil
 							case err := <-si.errorCh:

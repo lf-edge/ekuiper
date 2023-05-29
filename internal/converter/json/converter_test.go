@@ -215,13 +215,13 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("a has wrong type:string, expect:bigint"),
 		},
 		{
-			payload: []byte(`{"a":123}`),
+			payload: []byte(`{"a":true}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "string",
 				},
 			},
-			err: fmt.Errorf("a has wrong type:number, expect:string"),
+			err: fmt.Errorf("a has wrong type:true, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":123}`),
@@ -272,7 +272,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("array has wrong type:string, expect:bigint"),
 		},
 		{
-			payload: []byte(`{"a":[123]}`),
+			payload: []byte(`{"a":[true]}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "array",
@@ -281,7 +281,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("array has wrong type:number, expect:string"),
+			err: fmt.Errorf("array has wrong type:true, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":[123]}`),
