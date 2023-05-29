@@ -129,6 +129,12 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 					return nil, err
 				}
 				vs[i] = string(s)
+			case fastjson.TypeNumber:
+				f64, err := item.Float64()
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = f64
 			default:
 				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
@@ -238,6 +244,12 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 					return nil, err
 				}
 				m[key] = string(s)
+			case fastjson.TypeNumber:
+				f64v, err := obj.Get(key).Float64()
+				if err != nil {
+					return nil, err
+				}
+				m[key] = f64v
 			default:
 				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
 			}

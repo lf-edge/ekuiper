@@ -97,7 +97,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				props["isTable"] = true
 			}
 			props["delimiter"] = m.options.DELIMITER
-			m.options.Schema = m.schema
+			m.options.Schema = nil
+			if m.schema != nil {
+				m.options.Schema = m.schema
+			}
 			converterTool, err := converter.GetOrCreateConverter(m.options)
 			if err != nil {
 				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", m.options.FORMAT, m.options.SCHEMAID, err)
@@ -143,6 +146,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						for {
 							select {
 							case <-ctx.Done():
+								m.schema = nil
 								return nil
 							case err := <-si.errorCh:
 								return err
