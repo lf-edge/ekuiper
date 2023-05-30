@@ -19,6 +19,9 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
+ARG goproxy
+ENV GOPROXY=${goproxy}
+
 RUN make build_with_edgex_and_script
 
 FROM debian:buster-slim

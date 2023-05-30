@@ -19,6 +19,9 @@ COPY . /go/kuiper
 
 WORKDIR /go/kuiper
 
+ARG goproxy
+ENV GOPROXY=${goproxy}
+
 RUN apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
