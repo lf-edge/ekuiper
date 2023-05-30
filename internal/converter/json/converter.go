@@ -45,11 +45,25 @@ func (c *Converter) Decode(b []byte) (interface{}, error) {
 	return r0, nil
 }
 
-type FastJsonConverter struct{}
+type FastJsonConverter struct {
+	schema map[string]*ast.JsonStreamField
+}
 
-var fastConverter = &FastJsonConverter{}
+func NewFastJsonConverter(schema map[string]*ast.JsonStreamField) *FastJsonConverter {
+	return &FastJsonConverter{
+		schema: schema,
+	}
+}
 
-func (f *FastJsonConverter) DecodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
+func (c *FastJsonConverter) Encode(_ interface{}) ([]byte, error) {
+	panic("FastJsonConverter shouldn't covert json data")
+}
+
+func (c *FastJsonConverter) Decode(b []byte) (interface{}, error) {
+	return c.decodeWithSchema(b, c.schema)
+}
+
+func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
 	var p fastjson.Parser
 	v, err := p.ParseBytes(b)
 	if err != nil {
@@ -93,55 +107,92 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 	switch field.Type {
 	case "bigint", "float":
 		for i, item := range array {
-			f64, err := item.Float64()
-			if err != nil {
-				return nil, err
+			typ := item.Type()
+			switch typ {
+			case fastjson.TypeNumber:
+				f64, err := item.Float64()
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = f64
+			default:
+				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
-			vs[i] = f64
 		}
 	case "string", "bytea":
 		for i, item := range array {
-			s, err := item.StringBytes()
-			if err != nil {
-				return nil, err
+			typ := item.Type()
+			switch typ {
+			case fastjson.TypeString:
+				s, err := item.StringBytes()
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = string(s)
+			case fastjson.TypeNumber:
+				f64, err := item.Float64()
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = f64
+			default:
+				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
-			vs[i] = string(s)
 		}
 	case "array":
 		for i, item := range array {
-			childArrays, err := item.Array()
-			if err != nil {
-				return nil, err
+			typ := item.Type()
+			switch typ {
+			case fastjson.TypeArray:
+				childArrays, err := item.Array()
+				if err != nil {
+					return nil, err
+				}
+				subList, err := f.decodeArray(childArrays, field.Items)
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = subList
+			default:
+				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
-			subList, err := f.decodeArray(childArrays, field.Items)
-			if err != nil {
-				return nil, err
-			}
-			vs[i] = subList
 		}
 	case "struct":
 		for i, item := range array {
-			childObj, err := item.Object()
-			if err != nil {
-				return nil, err
+			typ := item.Type()
+			switch typ {
+			case fastjson.TypeObject:
+				childObj, err := item.Object()
+				if err != nil {
+					return nil, err
+				}
+				subMap, err := f.decodeObject(childObj, field.Properties)
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = subMap
+			default:
+				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
-			subMap, err := f.decodeObject(childObj, field.Properties)
-			if err != nil {
-				return nil, err
-			}
-			vs[i] = subMap
 		}
 	case "boolean":
 		for i, item := range array {
-			b, err := item.Bool()
-			if err != nil {
-				return nil, err
+			typ := item.Type()
+			switch typ {
+			case fastjson.TypeTrue, fastjson.TypeFalse:
+				b, err := item.Bool()
+				if err != nil {
+					return nil, err
+				}
+				vs[i] = b
+			default:
+				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
-			vs[i] = b
 		}
 	case "datetime":
 		for i, item := range array {
-			switch array[i].Type() {
+			typ := item.Type()
+			switch typ {
 			case fastjson.TypeNumber:
 				f64, err := item.Float64()
 				if err != nil {
@@ -154,6 +205,8 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 					return nil, err
 				}
 				vs[i] = string(s)
+			default:
+				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
 		}
 
@@ -166,47 +219,25 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string]*ast.JsonStreamField) (map[string]interface{}, error) {
 	m := make(map[string]interface{})
 	for key, field := range schema {
+		if obj.Get(key) == nil {
+			continue
+		}
 		switch field.Type {
 		case "bigint", "float":
-			f64v, err := obj.Get(key).Float64()
-			if err != nil {
-				return nil, err
+			typ := obj.Get(key).Type()
+			switch typ {
+			case fastjson.TypeNumber:
+				f64v, err := obj.Get(key).Float64()
+				if err != nil {
+					return nil, err
+				}
+				m[key] = f64v
+			default:
+				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
 			}
-			m[key] = f64v
 		case "string", "bytea":
-			s, err := obj.Get(key).StringBytes()
-			if err != nil {
-				return nil, err
-			}
-			m[key] = string(s)
-		case "array":
-			childArray, err := obj.Get(key).Array()
-			if err != nil {
-				return nil, err
-			}
-			subList, err := f.decodeArray(childArray, schema[key].Items)
-			if err != nil {
-				return nil, err
-			}
-			m[key] = subList
-		case "struct":
-			childObj, err := obj.Get(key).Object()
-			if err != nil {
-				return nil, err
-			}
-			childMap, err := f.decodeObject(childObj, schema[key].Properties)
-			if err != nil {
-				return nil, err
-			}
-			m[key] = childMap
-		case "boolean":
-			b, err := obj.Get(key).Bool()
-			if err != nil {
-				return nil, err
-			}
-			m[key] = b
-		case "datetime":
-			switch obj.Get(key).Type() {
+			typ := obj.Get(key).Type()
+			switch typ {
 			case fastjson.TypeString:
 				s, err := obj.Get(key).StringBytes()
 				if err != nil {
@@ -219,6 +250,70 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 					return nil, err
 				}
 				m[key] = f64v
+			default:
+				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
+			}
+		case "array":
+			typ := obj.Get(key).Type()
+			switch typ {
+			case fastjson.TypeArray:
+				childArray, err := obj.Get(key).Array()
+				if err != nil {
+					return nil, err
+				}
+				subList, err := f.decodeArray(childArray, schema[key].Items)
+				if err != nil {
+					return nil, err
+				}
+				m[key] = subList
+			default:
+				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
+			}
+		case "struct":
+			typ := obj.Get(key).Type()
+			switch typ {
+			case fastjson.TypeObject:
+				childObj, err := obj.Get(key).Object()
+				if err != nil {
+					return nil, err
+				}
+				childMap, err := f.decodeObject(childObj, schema[key].Properties)
+				if err != nil {
+					return nil, err
+				}
+				m[key] = childMap
+			default:
+				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
+			}
+		case "boolean":
+			typ := obj.Get(key).Type()
+			switch typ {
+			case fastjson.TypeFalse, fastjson.TypeTrue:
+				b, err := obj.Get(key).Bool()
+				if err != nil {
+					return nil, err
+				}
+				m[key] = b
+			default:
+				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
+			}
+		case "datetime":
+			typ := obj.Get(key).Type()
+			switch typ {
+			case fastjson.TypeString:
+				s, err := obj.Get(key).StringBytes()
+				if err != nil {
+					return nil, err
+				}
+				m[key] = string(s)
+			case fastjson.TypeNumber:
+				f64v, err := obj.Get(key).Float64()
+				if err != nil {
+					return nil, err
+				}
+				m[key] = f64v
+			default:
+				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
 			}
 		default:
 			return nil, fmt.Errorf("unknown filed type:%s", field.Type)

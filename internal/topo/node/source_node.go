@@ -40,9 +40,10 @@ type SourceNode struct {
 	mutex        sync.RWMutex
 	sources      []api.Source
 	preprocessOp UnOperation
+	schema       map[string]*ast.JsonStreamField
 }
 
-func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, sendError bool) *SourceNode {
+func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, sendError bool, schema map[string]*ast.JsonStreamField) *SourceNode {
 	t := options.TYPE
 	if t == "" {
 		if st == ast.TypeStream {
@@ -62,6 +63,7 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 		},
 		preprocessOp: op,
 		options:      options,
+		schema:       schema,
 	}
 }
 
@@ -95,13 +97,17 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				props["isTable"] = true
 			}
 			props["delimiter"] = m.options.DELIMITER
-			converter, err := converter.GetOrCreateConverter(m.options)
+			m.options.Schema = nil
+			if m.schema != nil {
+				m.options.Schema = m.schema
+			}
+			converterTool, err := converter.GetOrCreateConverter(m.options)
 			if err != nil {
 				msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", m.options.FORMAT, m.options.SCHEMAID, err)
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}
-			ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, converter)
+			ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, converterTool)
 			m.reset()
 			logger.Infof("open source node with props %v, concurrency: %d, bufferLength: %d", conf.Printable(m.props), m.concurrency, m.bufferLength)
 			for i := 0; i < m.concurrency; i++ { // workers
@@ -140,6 +146,13 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						for {
 							select {
 							case <-ctx.Done():
+								// We should clear the schema after we close the topo in order to avoid the following problem:
+								// 1. stop the rule
+								// 2. change the schema
+								// 3. restart the rule
+								// As the schema has changed, it will be error if we hold the old schema here
+								// TODO: fetch the latest stream schema after we open the topo
+								m.schema = nil
 								return nil
 							case err := <-si.errorCh:
 								return err
