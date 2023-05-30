@@ -18,7 +18,7 @@ on:
       - published
 
 jobs:
-  run_go_tests:
+  run_unit_tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -93,5 +93,5 @@ jobs:
 
   run_fvt_tests:
     needs:
-      - run_go_tests
+      - run_unit_tests
     uses: ./.github/workflows/run_fvt_tests.yaml
