@@ -1,4 +1,9 @@
 name: Check commit message
+
+concurrency:
+  group: commit-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     types:
@@ -8,8 +13,7 @@ on:
       - synchronize
 
 jobs:
-  check-commit-message:
-    name: check_commit_message
+  check_commit_message:
     runs-on: ubuntu-latest
     steps:
       - name: Check Type
