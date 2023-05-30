@@ -34,7 +34,7 @@ jobs:
   golangci_lint:
     runs-on: ubuntu-latest
     needs:
-      - check-licenses
+      - check_licenses
     steps:
       - name: Set up Go
         uses: actions/setup-go@v4
