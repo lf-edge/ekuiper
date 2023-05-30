@@ -100,15 +100,9 @@ build_with_wasm: build_prepare
 	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
-
 .PHONY: docker
 docker:
 	docker build -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile .
-
-.PHONY: docker_with_proxy
-docker_with_proxy:
-	docker build --build-arg goproxy="https://goproxy.cn" -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile .
-
 
 PLUGINS := sinks/influx \
 	sinks/influx2 \
