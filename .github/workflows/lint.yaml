@@ -1,4 +1,9 @@
 name: Lint
+
+concurrency:
+  group: lint-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]

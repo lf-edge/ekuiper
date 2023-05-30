@@ -1,4 +1,9 @@
 name: Check commit message
+
+concurrency:
+  group: commit-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     types:
