@@ -38,7 +38,7 @@ jobs:
       run: |
         curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash > /dev/null
 
-        curl -sSfL -O https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/WasmEdge-plugin-wasmedge_rustls-0.1.0-alpha-ubuntu20.04_x86_64.tar
+        curl -sSfL -O https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/wasmedge_rustls_plugin_ubuntu-22.04.zip
         tar -xf "WasmEdge-plugin-wasmedge_rustls-0.1.0-alpha-ubuntu20.04_x86_64.tar"
         mv libwasmedge_rustls.so ~/.wasmedge/plugin/
 
