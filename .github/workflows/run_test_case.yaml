@@ -95,9 +95,3 @@ jobs:
     needs:
       - run_go_tests
     uses: ./.github/workflows/run_fvt_tests.yaml
-
-  build_packages:
-    needs:
-      - run_go_tests
-      - run_fvt_tests
-    uses: ./.github/workflows/build_packages.yaml
