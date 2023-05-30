@@ -217,14 +217,8 @@ func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options 
 		if len(sources) > 0 {
 			srcNode = getMockSource(sources, string(t.name))
 		}
-		if isSchemaless {
-			if srcNode == nil {
-				srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, nil)
-			}
-		} else {
-			if srcNode == nil {
-				srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.streamFields)
-			}
+		if srcNode == nil {
+			srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.streamFields)
 		}
 		return srcNode, nil
 	}

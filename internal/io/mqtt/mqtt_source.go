@@ -175,13 +175,12 @@ func getTuples(ctx api.StreamContext, ms *MQTTSource, env interface{}) []api.Sou
 			}
 		}
 	}
-	var results []map[string]interface{}
-	results, err = ctx.DecodeIntoList(payload)
+	results, e := ctx.DecodeIntoList(payload)
 	// The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
-	if err != nil {
+	if e != nil {
 		return []api.SourceTuple{
 			&xsql.ErrorSourceTuple{
-				Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", string(msg.Payload()), err),
+				Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", string(msg.Payload()), e),
 			},
 		}
 	}

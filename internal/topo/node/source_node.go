@@ -146,7 +146,12 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						for {
 							select {
 							case <-ctx.Done():
-								// schema may be changed after we close the topo
+								// We should clear the schema after we close the topo in order to avoid the following problem:
+								// 1. stop the rule
+								// 2. change the schema
+								// 3. restart the rule
+								// As the schema has changed, it will be error if we hold the old schema here
+								// TODO: fetch the latest stream schema after we open the topo
 								m.schema = nil
 								return nil
 							case err := <-si.errorCh:
