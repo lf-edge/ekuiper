@@ -264,7 +264,7 @@ eKuiper provides different docker images for different purpose. The development 
          go build -trimpath --buildmode=plugin -o ./kuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
        ```
 
-eKuiper offers an Alpine version of its image, but it does not come with the Go environment pre-installed. To compile plugins using the Alpine image, users will need to install the necessary dependencies themselves. Alternatively, users can opt to use the Golang image as their base environment, which includes the Go environment and simplifies the plugin compilation process. Here are the specific steps to follow when using the Golang image as the base environment:
+eKuiper offers an Alpine version of its image, but it does not come with the Go environment pre-installed. To compile plugins using the Alpine image, users will need to install the necessary dependencies themselves. Alternatively, users can opt to use the Golang image as their base environment, which includes the Go environment and simplifies the plugin compilation process(If you are using the golang 1.20 version image and want to compile eKuiper plugins, you can use the provided base image (https://github.com/lf-edge/ekuiper/pkgs/container/ekuiper%2Fbase) as the base environment. Plugins compiled using this base image will not encounter the "Error loading shared library libresolve.so.2" when deployed to the alpine version of eKuiper). Here are the specific steps to follow when using the Golang image as the base environment:
 1. To use the Golang image as the base environment, you'll need to make sure that you have the correct version of the Golang image installed. Additionally, you'll need to mount the local plugin directory and eKuiper source code into a directory within Docker, so that you can access and compile the plugin project within the Docker environment.
 Assuming that your plugin project is located in the local directory `/var/git`, you can map this directory to the `/go/plugins` directory within Docker using the following command:  
     ```shell
@@ -348,7 +348,7 @@ Users can use [REST API](https://github.com/lf-edge/ekuiper/blob/master/docs/en_
     }
     ```
 
-Note: if you intend to deploy the plugin in an Alpine environment, you may encounter an error stating `Error loading shared library libresolve.so.2` after completing the above steps. In such a case, here is a solution you can try:
+Note: if you intend to deploy the plugin in an Alpine environment, you may encounter an error stating `Error loading shared library libresolve.so.2` after completing the above steps(We are planning to develop a dedicated image for alpine system development, namely the alpine-dev version. Please stay tuned for our latest updates and developments.). In such a case, here is a solution you can try:
 ```shell
 # In docker instance
 apk add gcompat
