@@ -143,9 +143,12 @@ tidy:
 	@echo "go mod tidy"
 	go mod tidy && git diff go.mod go.sum
 
-lint:tools/check/bin/golangci-lint
+lint:tools/lint/bin/golangci-lint
 	@echo "linting"
-	@tools/check/bin/golangci-lint run -c tools/check/.golangci.yaml ./...
+	golangci-lint run ./...
+	golangci-lint run ./extensions/...
+	golangci-lint run ./tools/kubernetes/...
+	cd ./sdk/go && golangci-lint run ./...
 
-tools/check/bin/golangci-lint:
-	GOBIN=$(shell pwd)/tools/check/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+tools/lint/bin/golangci-lint:
+	GOBIN=$(shell pwd)/tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest

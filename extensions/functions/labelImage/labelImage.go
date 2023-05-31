@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:typecheck
 package main
 
 import (
@@ -26,7 +27,7 @@ import (
 	"sort"
 	"sync"
 
-	tflite "github.com/mattn/go-tflite"
+	"github.com/mattn/go-tflite"
 	"github.com/nfnt/resize"
 
 	"github.com/lf-edge/ekuiper/pkg/api"

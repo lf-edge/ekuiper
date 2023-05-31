@@ -5,14 +5,9 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - 'tools/check/.golangci.yaml'
-      - '.github/workflows/lint.yaml'
 
 jobs:
   check_licenses:
@@ -54,4 +49,21 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: --config tools/check/.golangci.yaml
+
+      - name: golangci-lint (extensions)
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: extensions
+
+      - name: golangci-lint (tools/kubernetes)
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: tools/kubernetes
+
+      - name: golangci-lint (sdk/go)
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: sdk/go
