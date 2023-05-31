@@ -17,6 +17,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"strings"
@@ -47,17 +48,17 @@ func (c *command) call(host string) bool {
 	var err error
 	head := host + c.Url
 	body, _ := json.Marshal(c.Data)
-	switch c.Method {
-	case "post", "POST":
+	switch strings.ToUpper(c.Method) {
+	case http.MethodPost:
 		resp, err = kconf.Post(head, string(body))
 		break
-	case "get", "GET":
+	case http.MethodGet:
 		resp, err = kconf.Get(head)
 		break
-	case "delete", "DELETE":
+	case http.MethodDelete:
 		resp, err = kconf.Delete(head)
 		break
-	case "put", "PUT":
+	case http.MethodPut:
 		resp, err = kconf.Put(head, string(body))
 		break
 	default:
@@ -207,10 +208,11 @@ func (s *server) watchFolders() {
 	conf := kconf.GetConf()
 	s.processDir()
 	s.printLogs()
-	chTime := time.Tick(time.Second * time.Duration(conf.GetIntervalTime()))
+	chTimer := time.NewTicker(time.Second * time.Duration(conf.GetIntervalTime()))
+	defer chTimer.Stop()
 	for {
 		select {
-		case <-chTime:
+		case <-chTimer.C:
 			s.processDir()
 			s.printLogs()
 		}
