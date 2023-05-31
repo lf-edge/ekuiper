@@ -195,11 +195,7 @@ func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options 
 		var srcNode *node.SourceNode
 		if len(sources) == 0 {
 			var sourceNode *node.SourceNode
-			if !t.isSchemaless {
-				sourceNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.streamFields)
-			} else {
-				sourceNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, nil)
-			}
+			sourceNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.streamFields)
 			srcNode = sourceNode
 		} else {
 			srcNode = getMockSource(sources, string(t.name))
@@ -218,11 +214,7 @@ func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options 
 			srcNode = getMockSource(sources, string(t.name))
 		}
 		if srcNode == nil {
-			if t.isSchemaless {
-				srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, nil)
-			} else {
-				srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.streamFields)
-			}
+			srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.streamFields)
 		}
 		return srcNode, nil
 	}

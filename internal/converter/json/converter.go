@@ -55,8 +55,8 @@ func NewFastJsonConverter(schema map[string]*ast.JsonStreamField) *FastJsonConve
 	}
 }
 
-func (c *FastJsonConverter) Encode(_ interface{}) ([]byte, error) {
-	panic("FastJsonConverter shouldn't covert json data")
+func (c *FastJsonConverter) Encode(d interface{}) ([]byte, error) {
+	return json.Marshal(d)
 }
 
 func (c *FastJsonConverter) Decode(b []byte) (interface{}, error) {
