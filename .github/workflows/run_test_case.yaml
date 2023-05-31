@@ -74,7 +74,7 @@ jobs:
       uses: codecov/codecov-action@v3
       with:
         files: coverage.out,topotest-plugin.out
-        fail_ci_if_error: true
+        fail_ci_if_error: false
         verbose: true
     - name: Run plugins test case
       run: |
