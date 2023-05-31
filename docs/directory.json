@@ -6,11 +6,8 @@
 		},
 		{
 			"title": "快速开始",
+			"path": "getting_started/getting_started",
 			"children": [
-				{
-					"title": "快速开始",
-					"path": "getting_started/getting_started"
-				},
 				{
 					"title": "5分钟快速运行",
 					"path": "getting_started/quick_start_docker"
@@ -23,20 +20,12 @@
 		},
 		{
 			"title": "安装与部署",
-			"children": [
-				{
-					"title": "安装与部署",
-					"path": "installation"
-				}
-			]
+			"path": "installation"
 		},
 		{
 			"title": "配置",
+			"path": "configuration/configuration",
 			"children": [
-				{
-					"title": "配置",
-					"path": "configuration/configuration"
-				},
 				{
 					"title": "全局配置文件",
 					"path": "configuration/global_configurations"
@@ -48,20 +37,12 @@
 			"children": [
 				{
 					"title": "流：无界的事件系列",
-					"children": [
-						{
-							"title": "流",
-							"path": "guide/streams/overview"
-						}
-					]
+					"path": "guide/streams/overview"
 				},
 				{
 					"title": "表：事件序列的快照",
+					"path": "guide/tables/overview",
 					"children": [
-						{
-							"title": "表",
-							"path": "guide/tables/overview"
-						},
 						{
 							"title": "扫描表",
 							"path": "guide/tables/scan"
@@ -74,11 +55,8 @@
 				},
 				{
 					"title": "规则：查询和动作",
+					"path": "guide/rules/overview",
 					"children": [
-						{
-							"title": "规则",
-							"path": "guide/rules/overview"
-						},
 						{
 							"title": "图规则",
 							"path": "guide/rules/graph_rule"
@@ -95,11 +73,8 @@
 				},
 				{
 					"title": "数据源",
+					"path": "guide/sources/overview",
 					"children": [
-						{
-							"title": "数据源",
-							"path": "guide/sources/overview"
-						},
 						{
 							"title": "内置源",
 							"children": [
@@ -162,11 +137,8 @@
 				},
 				{
 					"title": "数据汇（Sink）",
+					"path": "guide/sinks/overview",
 					"children": [
-						{
-							"title": "概览",
-							"path": "guide/sinks/overview"
-						},
 						{
 							"title": "数据模板",
 							"path": "guide/sinks/data_template"
@@ -249,11 +221,8 @@
 				},
 				{
 					"title": "序列化",
+					"path": "guide/serialization/serialization",
 					"children": [
-						{
-							"title": "概览",
-							"path": "guide/serialization/serialization"
-						},
 						{
 							"title": "使用 Protobuf 编解码教程",
 							"path": "guide/serialization/protobuf_tutorial"
@@ -308,11 +277,8 @@
 				},
 				{
 					"title": "配置",
+					"path": "configuration/configuration",
 					"children": [
-						{
-							"title": "配置",
-							"path": "configuration/configuration"
-						},
 						{
 							"title": "全局配置文件",
 							"path": "configuration/global_configurations"
@@ -485,18 +451,12 @@
 		},
 		{
 			"title": "开发者指南",
+			"path": "extension/overview",
 			"children": [
 				{
-					"title": "概览",
-					"path": "extension/overview"
-				},
-				{
 					"title": "原生插件开发",
+					"path": "extension/native/overview",
 					"children": [
-						{
-							"title": "总览",
-							"path": "extension/native/overview"
-						},
 						{
 							"title": "原生插件开发",
 							"path": "extension/native/develop/overview"
@@ -568,11 +528,8 @@
 				},
 				{
 					"title": "语法",
+					"path": "sqls/overview",
 					"children": [
-						{
-							"title": "概览",
-							"path": "sqls/overview"
-						},
 						{
 							"title": "词汇元素",
 							"path": "sqls/lexical_elements"
@@ -656,11 +613,8 @@
 			"children": [
 				{
 					"title": "Rest API 接口",
+					"path": "api/restapi/overview",
 					"children": [
-						{
-							"title": "接口介绍",
-							"path": "api/restapi/overview"
-						},
 						{
 							"title": "认证配置",
 							"path": "api/restapi/authentication"
@@ -709,11 +663,8 @@
 				},
 				{
 					"title": "命令行工具",
+					"path": "api/cli/overview",
 					"children": [
-						{
-							"title": "总览",
-							"path": "api/cli/overview"
-						},
 						{
 							"title": "流管理",
 							"path": "api/cli/streams"
@@ -762,11 +713,8 @@
 		},
 		{
 			"title": "Getting Started",
+			"path": "getting_started/getting_started",
 			"children": [
-				{
-					"title": "Getting Started",
-					"path": "getting_started/getting_started"
-				},
 				{
 					"title": "5 Minutes Quick Start",
 					"path": "getting_started/quick_start_docker"
@@ -779,20 +727,12 @@
 		},
 		{
 			"title": "Installation",
-			"children": [
-				{
-					"title": "Installation",
-					"path": "installation"
-				}
-			]
+			"path": "installation"
 		},
 		{
 			"title": "Configuration",
+			"path": "configuration/configuration",
 			"children": [
-				{
-					"title": "Configuration",
-					"path": "configuration/configuration"
-				},
 				{
 					"title": "Global Configurations",
 					"path": "configuration/global_configurations"
@@ -804,20 +744,12 @@
 			"children": [
 				{
 					"title": "Stream: unbounded series of events",
-					"children": [
-						{
-							"title": "Overview",
-							"path": "guide/streams/overview"
-						}
-					]
+					"path": "guide/streams/overview"
 				},
 				{
 					"title": "Table: snapshot of events",
+					"path": "guide/tables/overview",
 					"children": [
-						{
-							"title": "Overview",
-							"path": "guide/tables/overview"
-						},
 						{
 							"title": "Scan Table",
 							"path": "guide/tables/scan"
@@ -830,11 +762,8 @@
 				},
 				{
 					"title": "Rule: query and action",
+					"path": "guide/rules/overview",
 					"children": [
-						{
-							"title": "Rules",
-							"path": "guide/rules/overview"
-						},
 						{
 							"title": "Graph Rule",
 							"path": "guide/rules/graph_rule"
@@ -851,11 +780,8 @@
 				},
 				{
 					"title": "Source Connectors",
+					"path": "guide/sources/overview",
 					"children": [
-						{
-							"title": "Overview",
-							"path": "guide/sources/overview"
-						},
 						{
 							"title": "Built-in Sources",
 							"children": [
@@ -918,11 +844,8 @@
 				},
 				{
 					"title": "Sink Connectors",
+					"path": "guide/sinks/overview",
 					"children": [
-						{
-							"title": "Overview",
-							"path": "guide/sinks/overview"
-						},
 						{
 							"title": "Data Template",
 							"path": "guide/sinks/data_template"
@@ -1005,12 +928,8 @@
 				},
 				{
 					"title": "Serialization",
-
+					"path": "guide/serialization/serialization",
 					"children": [
-						{
-							"title": "Overview",
-							"path": "guide/serialization/serialization"
-						},
 						{
 							"title": "Protobuf Codec Tutorial",
 							"path": "guide/serialization/protobuf_tutorial"
@@ -1065,11 +984,8 @@
 				},
 				{
 					"title": "Configuration",
+					"path": "configuration/configuration",
 					"children": [
-						{
-							"title": "Configuration",
-							"path": "configuration/configuration"
-						},
 						{
 							"title": "Global Configurations",
 							"path": "configuration/global_configurations"
@@ -1242,18 +1158,12 @@
 		},
 		{
 			"title": "Developer Guide",
+			"path": "extension/overview",
 			"children": [
 				{
-					"title": "Introduction",
-					"path": "extension/overview"
-				},
-				{
 					"title": "Native Plugin Develop",
+					"path": "extension/native/overview",
 					"children": [
-						{
-							"title": "Overview",
-							"path": "extension/native/overview"
-						},
 						{
 							"title": "Develop",
 							"path": "extension/native/develop/overview"
@@ -1325,11 +1235,8 @@
 				},
 				{
 					"title": "Syntax",
+					"path": "sqls/overview",
 					"children": [
-						{
-							"title": "Introduction",
-							"path": "sqls/overview"
-						},
 						{
 							"title": "Lexical elements",
 							"path": "sqls/lexical_elements"
@@ -1413,11 +1320,8 @@
 			"children": [
 				{
 					"title": "Rest API",
+					"path": "api/restapi/overview",
 					"children": [
-						{
-							"title": "Introduction",
-							"path": "api/restapi/overview"
-						},
 						{
 							"title": "Authentication",
 							"path": "api/restapi/authentication"
@@ -1466,11 +1370,8 @@
 				},
 				{
 					"title": "Command Line Tool",
+					"path": "api/cli/overview",
 					"children": [
-						{
-							"title": "Introduction",
-							"path": "api/cli/overview"
-						},
 						{
 							"title": "Streams",
 							"path": "api/cli/streams"
