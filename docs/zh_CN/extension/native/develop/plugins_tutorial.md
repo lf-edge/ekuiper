@@ -226,7 +226,7 @@ require (
 
 eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为 x.x.x-dev (0.4.0 到 1.7.0 之间版本的开发镜像为x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提供了 go 开发环境，使得用户可以在编译出在 eKuiper 正式发布版本中完全兼容的插件。由于1.9.0版本之后才使用go workspace功能，所以后面的步骤只适用于1.9.0之后的版本。在 Docker 中编译步骤如下：
 1. 运行 eKuiper 开发版本 docker。需要把本地插件目录 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git`目录映射到 docker 内的 `/go/plugins` 目录中。
-    ```go
+    ```shell
     docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:1.9.0
     ```
 2. 在 docker 环境中编译插件，其原理与本地编译一致。编译出的插件置于插件项目的 target 目录中
@@ -262,6 +262,34 @@ eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为
     # In docker instance
     go build -trimpath --buildmode=plugin -o ./kuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
     ```
+   
+eKuiper 也提供了精简的 alpine 版本，但是不包含 go 环境。用户可以使用 alpine 版本的镜像来编译插件，但这就需要用户自己安装相应的依赖。用户也可以使用 golang 镜像作为基础环境(如果您使用的是 golang 1.20版本的镜像，并且想要编译 eKuiper 插件，您可以使用提供的 base image (https://github.com/lf-edge/ekuiper/pkgs/container/ekuiper%2Fbase)作为基础环境。使用这个 base image 所编译的插件，在部署到 alpine版本 的 eKuiper 时，不会出现`Error loading shared library libresolve.so.2`的错误)。具体步骤如下:
+1. 运行 golang 相应版本 docker。需要把本地插件目录和 eKuiper源码 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git`目录映射到 docker 内的 `/go/plugins` 目录中。
+    ```shell
+    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.20.2 /bin/sh
+    ```
+2. 参照本地编译环境设置方法，设置编译环境，目录结构如下
+   ```
+   /go/plugins
+       kuiper
+           go.mod
+       samplePlugin
+           sinks           
+               mysql.go     
+           go.mod
+       go.work
+   ```
+   可以使用如下命令
+   ``` shell
+   # In docker instance
+   cd /go/plugins
+   go work init ./kuiper ./samplePlugin
+   ```
+3. 执行下面命令，便可以得到编译好的插件
+   ``` shell
+   # In docker instance
+   go build -trimpath --buildmode=plugin -o Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
+   ```
 
 ### 调试运行插件
 
@@ -318,5 +346,13 @@ eKuiper 生产环境和开发环境如果不同，开发的插件需要重新编
        "version": "1.0.0"
     }
     ```
+   
+注意：如果是在 alpine 环境中部署插件，执行上述步骤后，可能会出现 `Error loading shared library libresolve.so.2`错误（我们计划开发一个针对 alpine 的专门用于开发的镜像，即 alpine-dev 版本的镜像，敬请期待），这里提供了一种解决方案：
+```shell
+# In docker instance
+apk add gcompat
+cd /lib
+ln libgcompat.so.0  /usr/lib/libresolve.so.2
+```
 
 至此，插件部署成功。可以创建带有 mysql sink 的规则进行验证。
