@@ -210,7 +210,7 @@ func (r *geohashDecode) Exec(args []interface{}, _ api.FunctionContext) (interfa
 
 func (r *geohashDecodeInt) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
 	hash, ok := args[0].(uint64)
-	if !ok || 0 > hash {
+	if !ok {
 		return fmt.Errorf("arg[0] is not a bigint, got %v", args[0]), false
 	}
 	la, lo := geohash.DecodeInt(hash)
@@ -230,7 +230,7 @@ func (r *geohashBoundingBox) Exec(args []interface{}, _ api.FunctionContext) (in
 
 func (r *geohashBoundingBoxInt) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
 	hash, ok := args[0].(uint64)
-	if !ok || 0 > hash {
+	if !ok {
 		return fmt.Errorf("arg[0] is not a bigint, got %v", args[0]), false
 	}
 	return geohash.BoundingBoxInt(hash), true
@@ -260,7 +260,7 @@ func (r *geohashNeighbor) Exec(args []interface{}, _ api.FunctionContext) (inter
 
 func (r *geohashNeighborInt) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
 	hash, ok := args[0].(uint64)
-	if !ok || 0 > hash {
+	if !ok {
 		return fmt.Errorf("arg[0] is not a bigint, got %v", args[0]), false
 	}
 	var directionCode geohash.Direction
@@ -289,7 +289,7 @@ func (r *geohashNeighbors) Exec(args []interface{}, _ api.FunctionContext) (inte
 
 func (r *geohashNeighborsInt) Exec(args []interface{}, _ api.FunctionContext) (interface{}, bool) {
 	hash, ok := args[0].(uint64)
-	if !ok || 0 > hash {
+	if !ok {
 		return fmt.Errorf("arg[0] is not a bigint, got %v", args[0]), false
 	}
 	return geohash.NeighborsInt(hash), true
