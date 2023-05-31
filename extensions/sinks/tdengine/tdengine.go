@@ -18,9 +18,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"reflect"
 	"strings"
+
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 
 	_ "github.com/taosdata/driver-go/v2/taosSql"
 

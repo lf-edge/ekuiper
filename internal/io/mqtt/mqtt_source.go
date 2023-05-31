@@ -38,7 +38,6 @@ type MQTTSource struct {
 
 	config map[string]interface{}
 	model  modelVersion
-	schema map[string]interface{}
 
 	cli          api.MessageClient
 	decompressor message.Decompressor
