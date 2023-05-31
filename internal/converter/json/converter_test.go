@@ -206,6 +206,24 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 		err     error
 	}{
 		{
+			payload: []byte(`{123}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bigint",
+				},
+			},
+			err: fmt.Errorf(`cannot parse JSON: cannot parse object: cannot find opening '"" for object key; unparsed tail: "123}"`),
+		},
+		{
+			payload: []byte(`123`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bigint",
+				},
+			},
+			err: fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported"),
+		},
+		{
 			payload: []byte(`{"a":"123"}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
@@ -339,4 +357,53 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, err, tc.err)
 	}
+}
+
+func TestFastJsonEncode(t *testing.T) {
+	a := make(map[string]int)
+	a["a"] = 1
+	f := NewFastJsonConverter(nil)
+	v, err := f.Encode(a)
+	require.NoError(t, err)
+	require.Equal(t, v, []byte(`{"a":1}`))
+}
+
+func TestArrayWithArray(t *testing.T) {
+	payload := []byte(`{
+    "a":[
+        [
+            {
+                "c":1
+            }
+        ]
+    ]
+}`)
+	schema := map[string]*ast.JsonStreamField{
+		"a": {
+			Type: "array",
+			Items: &ast.JsonStreamField{
+				Type: "array",
+				Items: &ast.JsonStreamField{
+					Type: "struct",
+					Properties: map[string]*ast.JsonStreamField{
+						"c": {
+							Type: "bigint",
+						},
+					},
+				},
+			},
+		},
+	}
+	f := NewFastJsonConverter(schema)
+	v, err := f.Decode(payload)
+	require.NoError(t, err)
+	require.Equal(t, v, map[string]interface{}{
+		"a": []interface{}{
+			[]interface{}{
+				map[string]interface{}{
+					"c": float64(1),
+				},
+			},
+		},
+	})
 }
