@@ -49,10 +49,10 @@ func (m *imageSink) Configure(props map[string]interface{}) error {
 	}
 
 	if i, ok := props["path"]; ok {
-		if i, ok := i.(string); ok {
-			m.path = i
+		if ii, ok := i.(string); ok {
+			m.path = ii
 		} else {
-			return fmt.Errorf("%s image type is not supported", i)
+			return fmt.Errorf("%v image type is not supported", i)
 		}
 	} else {
 		return fmt.Errorf("Field not found path.")
@@ -201,9 +201,8 @@ func (m *imageSink) Collect(ctx api.StreamContext, item interface{}) error {
 	case map[string]interface{}:
 		return m.saveFiles(v)
 	default:
-		fmt.Errorf("image sink receive invalid data %v", item)
+		return fmt.Errorf("image sink receive invalid data %v", item)
 	}
-	return nil
 }
 
 func (m *imageSink) Close(ctx api.StreamContext) error {

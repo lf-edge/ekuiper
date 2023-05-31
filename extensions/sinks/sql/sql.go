@@ -20,11 +20,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/util"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
