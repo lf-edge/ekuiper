@@ -182,9 +182,6 @@ func (p *DataSourcePlan) getAllFields() {
 	if !p.isWildCard {
 		p.streamFields = p.fields
 	}
-	if p.isSchemaless {
-		p.streamFields = nil
-	}
 	p.metaFields = make([]string, 0, len(p.metaMap))
 	for _, v := range p.metaMap {
 		p.metaFields = append(p.metaFields, v)
