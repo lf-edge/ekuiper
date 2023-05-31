@@ -17,10 +17,11 @@
 package service
 
 import (
-	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 	"net"
 	"reflect"
 	"testing"
+
+	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 
 	"github.com/lf-edge/ekuiper/internal/topo/topotest"
 	"github.com/lf-edge/ekuiper/pkg/api"

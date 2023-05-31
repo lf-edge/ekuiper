@@ -3106,6 +3106,11 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 }
 
 func TestTransformSourceNode(t *testing.T) {
+	schema := map[string]*ast.JsonStreamField{
+		"a": {
+			Type: "bigint",
+		},
+	}
 	testCases := []struct {
 		name string
 		plan *DataSourcePlan
@@ -3129,7 +3134,27 @@ func TestTransformSourceNode(t *testing.T) {
 			},
 			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 				TYPE: "file",
-			}, false),
+			}, false, nil),
+		},
+		{
+			name: "schema source node",
+			plan: &DataSourcePlan{
+				name: "test",
+				streamStmt: &ast.StreamStmt{
+					StreamType: ast.TypeStream,
+					Options: &ast.Options{
+						TYPE: "file",
+					},
+				},
+				streamFields: schema,
+				allMeta:      false,
+				metaFields:   []string{},
+				iet:          false,
+				isBinary:     false,
+			},
+			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
+				TYPE: "file",
+			}, false, schema),
 		},
 	}
 	for _, tc := range testCases {
