@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:typecheck
 package main
 
 import (
@@ -20,7 +19,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/mattn/go-tflite"
+	tflite "github.com/mattn/go-tflite" //nolint:typecheck
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 )

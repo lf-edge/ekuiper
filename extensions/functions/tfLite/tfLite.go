@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:typecheck
 package main
 
 import (
 	"fmt"
 
-	"github.com/mattn/go-tflite"
+	tflite "github.com/mattn/go-tflite"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
