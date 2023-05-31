@@ -178,7 +178,7 @@ Check out the [latest document](https://ekuiper.org/docs/en/latest/) in official
 
   - Minimal binary file with core runtime only: `$ make build_core`
 
-+ Packages: `` $ make pkg``
++ Packages: `$ make pkg`
 
   - Packages: `$ make pkg`
 
