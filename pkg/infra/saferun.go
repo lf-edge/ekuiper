@@ -32,6 +32,7 @@ func SafeRun(fn func() error) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			debug.PrintStack()
+			conf.Log.Errorf("stack:%v", debug.Stack())
 			switch x := r.(type) {
 			case string:
 				err = errors.New(x)
