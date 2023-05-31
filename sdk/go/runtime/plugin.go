@@ -179,7 +179,7 @@ func Start(args []string, conf *PluginConfig) {
 	}()
 	// Stop the whole plugin
 	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL) //nolint:staticcheck
 	<-sigint
 	logger.Infof("stopping plugin %s", conf.Name)
 	os.Exit(0)
