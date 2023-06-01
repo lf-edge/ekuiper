@@ -92,7 +92,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 				},
 			},
 			require: map[string]interface{}{
-				"a": int64(1),
+				"a": float64(1),
 			},
 		},
 		{
@@ -175,7 +175,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 			},
 			require: map[string]interface{}{
 				"a": map[string]interface{}{
-					"b": int64(1),
+					"b": float64(1),
 				},
 			},
 		},
@@ -230,7 +230,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					Type: "bigint",
 				},
 			},
-			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:number"),
+			err: fmt.Errorf("a has wrong type:object, expect:bigint"),
 		},
 		{
 			payload: []byte(`{"a":{"b":1}}`),
@@ -287,7 +287,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:number"),
+			err: fmt.Errorf("array has wrong type:object, expect:bigint"),
 		},
 		{
 			payload: []byte(`{"a":[{"b":1}]}`),
@@ -401,7 +401,7 @@ func TestArrayWithArray(t *testing.T) {
 		"a": []interface{}{
 			[]interface{}{
 				map[string]interface{}{
-					"c": int64(1),
+					"c": float64(1),
 				},
 			},
 		},
