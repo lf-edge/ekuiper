@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	tflite "github.com/mattn/go-tflite" //nolint:typecheck
+	"github.com/mattn/go-tflite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 )

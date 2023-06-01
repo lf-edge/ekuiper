@@ -17,7 +17,7 @@ package main
 import (
 	"fmt"
 
-	tflite "github.com/mattn/go-tflite"
+	"github.com/mattn/go-tflite"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
