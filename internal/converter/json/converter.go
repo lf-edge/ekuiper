@@ -219,7 +219,7 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 		}
 		v := obj.Get(key)
 		switch field.Type {
-		case "bigint":
+		case "bigint", "float":
 			typ := obj.Get(key).Type()
 			switch typ {
 			case fastjson.TypeNumber:
@@ -231,12 +231,6 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 			default:
 				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
 			}
-		case "float":
-			f64, err := getFloatFromValue(v)
-			if err != nil {
-				return nil, fmt.Errorf("parse %v failed, err:%v", key, err)
-			}
-			m[key] = f64
 		case "string", "bytea":
 			typ := obj.Get(key).Type()
 			switch typ {
