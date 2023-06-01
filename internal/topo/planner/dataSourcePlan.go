@@ -47,7 +47,47 @@ type DataSourcePlan struct {
 
 func (p DataSourcePlan) Init() *DataSourcePlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(DATASOURCE)
 	return &p
+}
+
+func (p *DataSourcePlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.name != "" {
+		info += "StreamName: " + string(p.name)
+	}
+	if p.fields != nil && len(p.fields) != 0 {
+		info += ", Fields:[ "
+		keys := make([]string, 0, len(p.fields))
+		for k := range p.fields {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for i := 0; i < len(keys); i++ {
+			info += keys[i]
+			if i != len(keys)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
+	if p.streamFields != nil && len(p.streamFields) != 0 {
+		info += ", StreamFields:[ "
+		keys := make([]string, 0, len(p.streamFields))
+		for k := range p.streamFields {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for i := 0; i < len(keys); i++ {
+			info += keys[i]
+			if i != len(keys)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 // PushDownPredicate Presume no children for data source
