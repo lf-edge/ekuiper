@@ -17,11 +17,11 @@ package json
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 
 	"github.com/valyala/fastjson"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
