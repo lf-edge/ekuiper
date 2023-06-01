@@ -15,6 +15,10 @@
 				{
 					"title": "作为 EdgeX Foundry 规则引擎运行",
 					"path": "edgex/edgex_rule_engine_tutorial"
+				},
+				{
+					"title": "如何调试规则",
+					"path": "getting_started/debug_rules"
 				}
 			]
 		},
@@ -722,6 +726,10 @@
 				{
 					"title": "Run eKuiper with EdgeX Foundry",
 					"path": "edgex/edgex_rule_engine_tutorial"
+				},
+				{
+					"title": "How to Debug Rules",
+					"path": "getting_started/debug_rules"
 				}
 			]
 		},
