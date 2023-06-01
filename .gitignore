@@ -39,4 +39,4 @@ corss_build_for_rpm.tar
 */**/*.db
 
 .vscode/
-tools/check/bin/
+tools/lint/bin/
