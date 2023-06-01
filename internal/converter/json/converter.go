@@ -106,7 +106,7 @@ func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.Js
 func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.JsonStreamField) ([]interface{}, error) {
 	vs := make([]interface{}, len(array))
 	switch field.Type {
-	case "bigint":
+	case "bigint", "float":
 		for i, item := range array {
 			typ := item.Type()
 			switch typ {
@@ -119,14 +119,6 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 			default:
 				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
 			}
-		}
-	case "float":
-		for i, item := range array {
-			f64, err := getFloatFromValue(item)
-			if err != nil {
-				return nil, fmt.Errorf("parse array failed, err:%v", err)
-			}
-			vs[i] = f64
 		}
 	case "string", "bytea":
 		for i, item := range array {
