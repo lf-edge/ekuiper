@@ -14,9 +14,15 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"bytes"
+	"encoding/json"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type LogicalPlan interface {
+	ExplainInfo
 	Children() []LogicalPlan
 	SetChildren(children []LogicalPlan)
 	// PushDownPredicate pushes down the filter in the filter/where/on/having clauses as deeply as possible.
@@ -31,6 +37,56 @@ type baseLogicalPlan struct {
 	children []LogicalPlan
 	// Can be used to return the derived instance from the base type
 	self LogicalPlan
+	// Interface for explaining
+	ExplainInfo PlanExplainInfo
+}
+
+type ExplainInfo interface {
+	ID() int64
+	Type() string
+	ChildrenID() []int64
+	Explain() string
+	BuildExplainInfo(id int64)
+}
+
+type PlanExplainInfo struct {
+	T        PlanType `json:"type"`
+	Info     string   `json:"info"`
+	ID       int64    `json:"id"`
+	Children []int64  `json:"children"`
+}
+
+func (p *baseLogicalPlan) Explain() string {
+	p.ExplainInfo.Children = p.ChildrenID()
+	bf := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(bf)
+	jsonEncoder.SetEscapeHTML(true)
+	jsonEncoder.Encode(p.ExplainInfo)
+	return bf.String()
+}
+
+func (p *baseLogicalPlan) BuildExplainInfo(id int64) {
+	p.self.BuildExplainInfo(id)
+}
+
+func (p *baseLogicalPlan) Type() string {
+	return string(p.ExplainInfo.T)
+}
+
+func (p *baseLogicalPlan) ID() int64 {
+	return p.ExplainInfo.ID
+}
+
+func (p *baseLogicalPlan) ChildrenID() []int64 {
+	var children []int64
+	for _, child := range p.Children() {
+		children = append(children, child.ID())
+	}
+	return children
+}
+
+func (p *baseLogicalPlan) setPlanType(planType PlanType) {
+	p.ExplainInfo.T = planType
 }
 
 func (p *baseLogicalPlan) Children() []LogicalPlan {
@@ -65,3 +121,20 @@ func (p *baseLogicalPlan) PruneColumns(fields []ast.Expr) error {
 	}
 	return nil
 }
+
+type PlanType string
+
+const (
+	AGGREGATE     PlanType = "AggregatePlan"
+	ANALYTICFUNCS PlanType = "AnalyticFuncsPlan"
+	DATASOURCE    PlanType = "DataSourcePlan"
+	FILTER        PlanType = "FilterPlan"
+	HAVING        PlanType = "HavingPlan"
+	JOINALIGN     PlanType = "JoinAlignPlan"
+	JOIN          PlanType = "JoinPlan"
+	LOOKUP        PlanType = "LookupPlan"
+	ORDER         PlanType = "OrderPlan"
+	PROJECT       PlanType = "ProjectPlan"
+	PROJECTSET    PlanType = "ProjectSetPlan"
+	WINDOW        PlanType = "WindowPlan"
+)
