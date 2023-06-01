@@ -92,7 +92,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 				},
 			},
 			require: map[string]interface{}{
-				"a": float64(1),
+				"a": int64(1),
 			},
 		},
 		{
@@ -175,7 +175,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 			},
 			require: map[string]interface{}{
 				"a": map[string]interface{}{
-					"b": float64(1),
+					"b": int64(1),
 				},
 			},
 		},
@@ -224,22 +224,22 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported"),
 		},
 		{
-			payload: []byte(`{"a":"123"}`),
+			payload: []byte(`{"a":{"b":1}}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bigint",
 				},
 			},
-			err: fmt.Errorf("a has wrong type:string, expect:bigint"),
+			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:number"),
 		},
 		{
-			payload: []byte(`{"a":true}`),
+			payload: []byte(`{"a":{"b":1}}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "string",
 				},
 			},
-			err: fmt.Errorf("a has wrong type:true, expect:string"),
+			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":123}`),
@@ -260,13 +260,13 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("a has wrong type:number, expect:struct"),
 		},
 		{
-			payload: []byte(`{"a":123}`),
+			payload: []byte(`{"a":{"b":1}}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "boolean",
 				},
 			},
-			err: fmt.Errorf("a has wrong type:number, expect:boolean"),
+			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":true}`),
@@ -278,7 +278,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("a has wrong type:true, expect:datetime"),
 		},
 		{
-			payload: []byte(`{"a":["123"]}`),
+			payload: []byte(`{"a":[{"b":1}]}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "array",
@@ -287,10 +287,10 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("array has wrong type:string, expect:bigint"),
+			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:number"),
 		},
 		{
-			payload: []byte(`{"a":[true]}`),
+			payload: []byte(`{"a":[{"b":1}]}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "array",
@@ -299,7 +299,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("array has wrong type:true, expect:string"),
+			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":[123]}`),
@@ -326,7 +326,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("array has wrong type:number, expect:struct"),
 		},
 		{
-			payload: []byte(`{"a":[123]}`),
+			payload: []byte(`{"a":[{"b":1}]}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "array",
@@ -335,7 +335,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("array has wrong type:number, expect:boolean"),
+			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":[true]}`),
@@ -401,7 +401,7 @@ func TestArrayWithArray(t *testing.T) {
 		"a": []interface{}{
 			[]interface{}{
 				map[string]interface{}{
-					"c": float64(1),
+					"c": int64(1),
 				},
 			},
 		},
