@@ -239,7 +239,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					Type: "string",
 				},
 			},
-			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:string"),
+			err: fmt.Errorf("a has wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":123}`),
@@ -299,7 +299,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:string"),
+			err: fmt.Errorf("array has wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":[123]}`),
