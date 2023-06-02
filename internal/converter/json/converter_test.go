@@ -85,6 +85,34 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		require map[string]interface{}
 	}{
 		{
+			payload: []byte(`{"a":["true"]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "boolean",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{true},
+			},
+		},
+		{
+			payload: []byte(`{"a":[true]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "boolean",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{true},
+			},
+		},
+		{
 			payload: []byte(`{"a":1}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
