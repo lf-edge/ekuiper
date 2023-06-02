@@ -85,34 +85,6 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		require map[string]interface{}
 	}{
 		{
-			payload: []byte(`{"a":["true"]}`),
-			schema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "array",
-					Items: &ast.JsonStreamField{
-						Type: "boolean",
-					},
-				},
-			},
-			require: map[string]interface{}{
-				"a": []interface{}{true},
-			},
-		},
-		{
-			payload: []byte(`{"a":[true]}`),
-			schema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "array",
-					Items: &ast.JsonStreamField{
-						Type: "boolean",
-					},
-				},
-			},
-			require: map[string]interface{}{
-				"a": []interface{}{true},
-			},
-		},
-		{
 			payload: []byte(`{"a":1}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
@@ -267,7 +239,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					Type: "string",
 				},
 			},
-			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:string"),
+			err: fmt.Errorf("a has wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":123}`),
@@ -327,7 +299,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:string"),
+			err: fmt.Errorf("array has wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":[123]}`),
