@@ -24,6 +24,8 @@ The stream definition is a SQL statement. It is composed by two parts:
 
 Schema definition is optional. It is only needed when the ingested data is fixed type and need a strong validation.
 
+When the format of the data source is json, defining the schema information of the stream will help only the data in the schema definition be parsed when parsing json data. When the structure of the data from the source is relatively complex or large and the information required in the schema definition is clear and simple, parsing only the json data required will greatly reduce the processing time during paring, thereby improving performance.
+
 In eKuiper, each column or an expression has a related data type. A data type describes (and constrains) the set of values that a column of that type can hold or an expression of that type can produce.
 
 Below is the list of data types supported.

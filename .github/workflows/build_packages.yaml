@@ -6,9 +6,11 @@ concurrency:
 
 on:
   workflow_run:
-    workflows: ["Run fvt tests","Run test cases"]
+    workflows: [ "Run fvt tests","Run test cases" ]
     types:
       - completed
+    branches:
+      - master
   release:
     types:
       - published

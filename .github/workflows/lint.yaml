@@ -1,33 +1,43 @@
 name: Lint
+
+concurrency:
+  group: lint-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
+  push:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-    paths:
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - 'tools/check/.golangci.yaml'
-      - '.github/workflows/lint.yaml'
 
 jobs:
-
-  lint:
-    name: Lint
+  check_licenses:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.20'
 
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
-
       - name: Check licenses
         run: |
           go install github.com/google/go-licenses@latest
           $(go env GOPATH)/bin/go-licenses check ./... --disallowed_types forbidden,restricted,unknown --ignore modernc.org/mathutil
+
+  golangci_lint:
+    runs-on: ubuntu-latest
+    needs:
+      - check_licenses
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
 
       - name: Install dependencies
         env:
@@ -39,4 +49,21 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: --config tools/check/.golangci.yaml
+
+      - name: golangci-lint (extensions)
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: extensions
+
+      - name: golangci-lint (tools/kubernetes)
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: tools/kubernetes
+
+      - name: golangci-lint (sdk/go)
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: sdk/go

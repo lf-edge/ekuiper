@@ -26,7 +26,7 @@ import (
 	"sort"
 	"sync"
 
-	tflite "github.com/mattn/go-tflite"
+	tflite "github.com/mattn/go-tflite" //nolint:typecheck
 	"github.com/nfnt/resize"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
