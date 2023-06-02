@@ -383,7 +383,7 @@ jobs:
       if: github.event_name == 'release'
       run: |
         set -e -x -u
-        curl -w %{http_code} \
+        curl -fvs -w %{http_code} \
              --insecure \
              -H "Content-Type: application/json" \
              -H "token: ${{ secrets.EMQX_IO_TOKEN }}" \
