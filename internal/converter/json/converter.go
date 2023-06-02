@@ -122,23 +122,11 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 		}
 	case "string", "bytea":
 		for i, item := range array {
-			typ := item.Type()
-			switch typ {
-			case fastjson.TypeString:
-				s, err := item.StringBytes()
-				if err != nil {
-					return nil, err
-				}
-				vs[i] = string(s)
-			case fastjson.TypeNumber:
-				f64, err := item.Float64()
-				if err != nil {
-					return nil, err
-				}
-				vs[i] = f64
-			default:
-				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", typ.String(), field.Type)
+			s, err := getStringFromValue(item)
+			if err != nil {
+				return nil, fmt.Errorf("parse array failed, err:%v", err)
 			}
+			vs[i] = s
 		}
 	case "array":
 		for i, item := range array {
@@ -232,23 +220,11 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
 			}
 		case "string", "bytea":
-			typ := obj.Get(key).Type()
-			switch typ {
-			case fastjson.TypeString:
-				s, err := obj.Get(key).StringBytes()
-				if err != nil {
-					return nil, err
-				}
-				m[key] = string(s)
-			case fastjson.TypeNumber:
-				f64v, err := obj.Get(key).Float64()
-				if err != nil {
-					return nil, err
-				}
-				m[key] = f64v
-			default:
-				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, typ.String(), field.Type)
+			s, err := getStringFromValue(v)
+			if err != nil {
+				return nil, fmt.Errorf("parse %v failed, err:%v", key, err)
 			}
+			m[key] = s
 		case "array":
 			typ := obj.Get(key).Type()
 			switch typ {
