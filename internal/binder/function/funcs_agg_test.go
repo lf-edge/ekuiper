@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -258,6 +260,62 @@ func TestPercentileExec(t *testing.T) {
 		rDisc, _ := pDisc.exec(fctx, tt.args)
 		if !reflect.DeepEqual(rDisc, tt.pDisc) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, rDisc, tt.pCont)
+		}
+	}
+}
+
+func TestAggFuncNil(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerAggFunc()
+	for name, function := range builtins {
+		switch name {
+		case "avg":
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, 0, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, nil}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, int64(1), fmt.Sprintf("%v failed", name))
+		case "count":
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, 0, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, nil}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, 1, fmt.Sprintf("%v failed", name))
+		case "max":
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, int64(2), fmt.Sprintf("%v failed", name))
+		case "min":
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, int64(1), fmt.Sprintf("%v failed", name))
+		case "sum":
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, int64(3), fmt.Sprintf("%v failed", name))
+		default:
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		}
 	}
 }

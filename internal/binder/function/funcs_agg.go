@@ -28,6 +28,9 @@ func registerAggFunc() {
 	builtins["avg"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return 0, true
+			}
 			arg0 := args[0].([]interface{})
 			c := getCount(arg0)
 			if c > 0 {
@@ -58,6 +61,9 @@ func registerAggFunc() {
 	builtins["count"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return 0, true
+			}
 			arg0 := args[0].([]interface{})
 			return getCount(arg0), true
 		},
@@ -66,6 +72,9 @@ func registerAggFunc() {
 	builtins["max"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				v := getFirstValidArg(arg0)
@@ -107,6 +116,9 @@ func registerAggFunc() {
 	builtins["min"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				v := getFirstValidArg(arg0)
@@ -148,6 +160,9 @@ func registerAggFunc() {
 	builtins["sum"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				v := getFirstValidArg(arg0)
@@ -187,6 +202,11 @@ func registerAggFunc() {
 	builtins["deduplicate"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			v1, ok1 := args[0].([]interface{})
 			v2, ok2 := args[1].([]interface{})
 			v3a, ok3 := args[2].([]interface{})
@@ -216,6 +236,11 @@ func registerAggFunc() {
 	builtins["stddev"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -238,6 +263,11 @@ func registerAggFunc() {
 	builtins["stddevs"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -260,6 +290,11 @@ func registerAggFunc() {
 	builtins["var"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -282,6 +317,11 @@ func registerAggFunc() {
 	builtins["vars"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -304,6 +344,11 @@ func registerAggFunc() {
 	builtins["percentile_cont"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if err := ValidateLen(2, len(args)); err != nil {
 				return err, false
 			}
@@ -340,6 +385,11 @@ func registerAggFunc() {
 	builtins["percentile_disc"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if err := ValidateLen(2, len(args)); err != nil {
 				return err, false
 			}
@@ -396,6 +446,9 @@ func getFirstValidArg(s []interface{}) interface{} {
 func sliceIntTotal(s []interface{}) (int64, error) {
 	var total int64
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			total += vi
@@ -409,6 +462,9 @@ func sliceIntTotal(s []interface{}) (int64, error) {
 func sliceFloatTotal(s []interface{}) (float64, error) {
 	var total float64
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		if vf, ok := v.(float64); ok {
 			total += vf
 		} else if v != nil {
@@ -420,6 +476,9 @@ func sliceFloatTotal(s []interface{}) (float64, error) {
 
 func sliceIntMax(s []interface{}, max int64) (int64, error) {
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			if vi > max {
@@ -434,6 +493,9 @@ func sliceIntMax(s []interface{}, max int64) (int64, error) {
 
 func sliceFloatMax(s []interface{}, max float64) (float64, error) {
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		if vf, ok := v.(float64); ok {
 			if max < vf {
 				max = vf
@@ -447,6 +509,9 @@ func sliceFloatMax(s []interface{}, max float64) (float64, error) {
 
 func sliceStringMax(s []interface{}, max string) (string, error) {
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		if vs, ok := v.(string); ok {
 			if max < vs {
 				max = vs
@@ -460,6 +525,9 @@ func sliceStringMax(s []interface{}, max string) (string, error) {
 
 func sliceIntMin(s []interface{}, min int64) (int64, error) {
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		vi, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			if vi < min {
@@ -474,6 +542,9 @@ func sliceIntMin(s []interface{}, min int64) (int64, error) {
 
 func sliceFloatMin(s []interface{}, min float64) (float64, error) {
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		if vf, ok := v.(float64); ok {
 			if min > vf {
 				min = vf
@@ -487,6 +558,9 @@ func sliceFloatMin(s []interface{}, min float64) (float64, error) {
 
 func sliceStringMin(s []interface{}, min string) (string, error) {
 	for _, v := range s {
+		if v == nil {
+			continue
+		}
 		if vs, ok := v.(string); ok {
 			if vs < min {
 				min = vs
