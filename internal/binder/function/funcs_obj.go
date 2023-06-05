@@ -25,6 +25,11 @@ func registerObjectFunc() {
 	builtins["keys"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			arg := args[0]
 			if arg, ok := arg.(map[string]interface{}); ok {
 				list := make([]string, 0, len(arg))
@@ -40,6 +45,11 @@ func registerObjectFunc() {
 	builtins["values"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			arg := args[0]
 			if arg, ok := arg.(map[string]interface{}); ok {
 				list := make([]interface{}, 0, len(arg))
@@ -55,6 +65,11 @@ func registerObjectFunc() {
 	builtins["object"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			keys, ok := args[0].([]interface{})
 			if !ok {
 				return fmt.Errorf("first argument should be []string"), false
@@ -86,6 +101,11 @@ func registerObjectFunc() {
 	builtins["zip"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			lists, ok := args[0].([]interface{})
 			if !ok {
 				return fmt.Errorf("each argument should be [][2]interface{}"), false
@@ -115,6 +135,11 @@ func registerObjectFunc() {
 	builtins["items"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			m, ok := args[0].(map[string]interface{})
 			if !ok {
 				return fmt.Errorf("first argument should be map[string]interface{}"), false
