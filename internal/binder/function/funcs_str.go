@@ -80,6 +80,8 @@ func registerStrFunc() {
 				return len(v), true
 			case map[string]interface{}:
 				return len(v), true
+			case nil:
+				return 0, true
 			default:
 			}
 			return utf8.RuneCountInString(arg0), true

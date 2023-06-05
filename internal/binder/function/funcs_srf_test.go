@@ -89,7 +89,7 @@ func TestUnnestFunctionsNil(t *testing.T) {
 		builtins = oldBuiltins
 	}()
 	builtins = map[string]builtinFunc{}
-	registerStrFunc()
+	registerSetReturningFunc()
 	for name, function := range builtins {
 		r, b := function.exec(fctx, []interface{}{nil})
 		require.True(t, b, fmt.Sprintf("%v failed", name))
