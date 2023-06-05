@@ -31,7 +31,7 @@ jobs:
         with:
           image: tonistiigi/binfmt:latest
           platforms: all
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: /tmp/.docker-buildx-cache
           key: docker-buildx-${{ matrix.golang }}-${{ matrix.os }}
@@ -41,7 +41,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
-      - uses: docker/build-push-action@v3
+      - uses: docker/build-push-action@v4
         if: matrix.os == 'centos'
         with:
           push: true
@@ -52,7 +52,7 @@ jobs:
           build-args: GO_VERSION=${{ matrix.golang }}
           tags: ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }}
           file: .github/dockerfile/Dockerfile.${{ matrix.os }}
-      - uses: docker/build-push-action@v3
+      - uses: docker/build-push-action@v4
         if: matrix.os == 'debian'
         with:
           push: true
@@ -63,7 +63,7 @@ jobs:
           build-args: GO_VERSION=${{ matrix.golang }}
           tags: ghcr.io/${{ github.repository }}/base:${{ matrix.golang }}-${{ matrix.os }}
           file: .github/dockerfile/Dockerfile.${{ matrix.os }}
-      - uses: docker/build-push-action@v3
+      - uses: docker/build-push-action@v4
         if: matrix.os == 'alpine'
         with:
           push: true
