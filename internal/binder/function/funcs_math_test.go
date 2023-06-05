@@ -391,6 +391,9 @@ func TestFuncMathNil(t *testing.T) {
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
 	builtins = map[string]builtinFunc{}
 	registerMathFunc()
 	for mathFuncName, mathFunc := range builtins {
@@ -403,5 +406,4 @@ func TestFuncMathNil(t *testing.T) {
 			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
 		}
 	}
-	builtins = oldBuiltins
 }
