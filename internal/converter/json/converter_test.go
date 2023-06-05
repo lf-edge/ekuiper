@@ -120,7 +120,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 				},
 			},
 			require: map[string]interface{}{
-				"a": float64(1),
+				"a": int64(1),
 			},
 		},
 		{
@@ -203,7 +203,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 			},
 			require: map[string]interface{}{
 				"a": map[string]interface{}{
-					"b": float64(1),
+					"b": int64(1),
 				},
 			},
 		},
@@ -429,7 +429,7 @@ func TestArrayWithArray(t *testing.T) {
 		"a": []interface{}{
 			[]interface{}{
 				map[string]interface{}{
-					"c": float64(1),
+					"c": int64(1),
 				},
 			},
 		},
