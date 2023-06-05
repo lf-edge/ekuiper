@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -381,4 +383,25 @@ func TestFuncMath(t *testing.T) {
 			t.Errorf("%d.23 tanh result mismatch,\ngot:\t%v \nwant:\t%v", i, rTanh, tt.res[23])
 		}
 	}
+}
+
+func TestFuncMathNil(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	builtins = map[string]builtinFunc{}
+	registerMathFunc()
+	for mathFuncName, mathFunc := range builtins {
+		switch mathFuncName {
+		case "rand":
+			continue
+		default:
+			r, b := mathFunc.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
+		}
+	}
+	builtins = oldBuiltins
 }

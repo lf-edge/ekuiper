@@ -28,6 +28,9 @@ func registerMathFunc() {
 	builtins["abs"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
 			switch v := args[0].(type) {
 			case int:
 				return int(math.Abs(float64(v))), true
@@ -50,6 +53,11 @@ func registerMathFunc() {
 	builtins["acos"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Acos(v)
 				if math.IsNaN(r) {
@@ -66,6 +74,11 @@ func registerMathFunc() {
 	builtins["asin"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Asin(v)
 				if math.IsNaN(r) {
@@ -82,6 +95,11 @@ func registerMathFunc() {
 	builtins["atan"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Atan(v)
 				if math.IsNaN(r) {
@@ -98,6 +116,11 @@ func registerMathFunc() {
 	builtins["atan2"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v1, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				if v2, e1 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e1 == nil {
 					r := math.Atan2(v1, v2)
@@ -118,6 +141,11 @@ func registerMathFunc() {
 	builtins["bitand"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			v1, err := cast.ToInt(args[0], cast.STRICT)
 			if err != nil {
 				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
@@ -133,6 +161,11 @@ func registerMathFunc() {
 	builtins["bitor"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			v1, err := cast.ToInt(args[0], cast.STRICT)
 			if err != nil {
 				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
@@ -148,6 +181,11 @@ func registerMathFunc() {
 	builtins["bitxor"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			v1, err := cast.ToInt(args[0], cast.STRICT)
 			if err != nil {
 				return fmt.Errorf("Expect int type for the first operand but got %v", args[0]), false
@@ -163,6 +201,11 @@ func registerMathFunc() {
 	builtins["bitnot"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			v1, err := cast.ToInt(args[0], cast.STRICT)
 			if err != nil {
 				return fmt.Errorf("Expect int type for operand but got %v", args[0]), false
@@ -182,6 +225,11 @@ func registerMathFunc() {
 	builtins["ceil"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Ceil(v), true
 			} else {
@@ -193,6 +241,11 @@ func registerMathFunc() {
 	builtins["cos"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Cos(v)
 				if math.IsNaN(r) {
@@ -209,6 +262,11 @@ func registerMathFunc() {
 	builtins["cosh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Cosh(v)
 				if math.IsNaN(r) {
@@ -225,6 +283,11 @@ func registerMathFunc() {
 	builtins["exp"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Exp(v)
 				if math.IsNaN(r) {
@@ -241,6 +304,11 @@ func registerMathFunc() {
 	builtins["ln"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Log2(v)
 				if math.IsNaN(r) {
@@ -257,6 +325,11 @@ func registerMathFunc() {
 	builtins["log"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Log10(v)
 				if math.IsNaN(r) {
@@ -273,6 +346,11 @@ func registerMathFunc() {
 	builtins["mod"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				if v1, e1 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e == nil {
 					return math.Mod(v, v1), true
@@ -288,6 +366,11 @@ func registerMathFunc() {
 	builtins["power"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v1, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				if v2, e2 := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND); e2 == nil {
 					return math.Pow(v1, v2), true
@@ -305,11 +388,16 @@ func registerMathFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			return rand.Float64(), true
 		},
-		val: ValidateOneArg,
+		val: ValidateNoArg,
 	}
 	builtins["round"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				return math.Round(v), true
 			} else {
@@ -321,6 +409,11 @@ func registerMathFunc() {
 	builtins["sign"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				if v > 0 {
 					return 1, true
@@ -338,6 +431,11 @@ func registerMathFunc() {
 	builtins["sin"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Sin(v)
 				if math.IsNaN(r) {
@@ -354,6 +452,11 @@ func registerMathFunc() {
 	builtins["sinh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Sinh(v)
 				if math.IsNaN(r) {
@@ -370,6 +473,11 @@ func registerMathFunc() {
 	builtins["sqrt"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Sqrt(v)
 				if math.IsNaN(r) {
@@ -386,6 +494,11 @@ func registerMathFunc() {
 	builtins["tan"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Tan(v)
 				if math.IsNaN(r) {
@@ -402,6 +515,11 @@ func registerMathFunc() {
 	builtins["tanh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Tanh(v)
 				if math.IsNaN(r) {
