@@ -473,11 +473,6 @@ func registerMiscFunc() {
 	builtins["json_path_query"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			result, err := jsonCall(ctx, args)
 			if err != nil {
 				return err, false
@@ -489,11 +484,6 @@ func registerMiscFunc() {
 	builtins["json_path_query_first"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			result, err := jsonCall(ctx, args)
 			if err != nil {
 				return err, false
