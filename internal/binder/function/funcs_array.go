@@ -44,7 +44,17 @@ func registerArrayFunc() {
 	builtins["array_create"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			return args, true
+			var index int
+			for _, arg := range args {
+				if arg != nil {
+					args[index] = arg
+					index++
+				}
+			}
+			if index == 0 {
+				return nil, true
+			}
+			return args[:index], true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return nil
@@ -53,6 +63,9 @@ func registerArrayFunc() {
 	builtins["array_position"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return -1, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -71,6 +84,11 @@ func registerArrayFunc() {
 	builtins["element_at"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			switch args[0].(type) {
 			case []interface{}:
 				array := args[0].([]interface{})
@@ -103,6 +121,9 @@ func registerArrayFunc() {
 	builtins["array_contains"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return false, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -122,6 +143,9 @@ func registerArrayFunc() {
 	builtins["array_remove"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -145,6 +169,9 @@ func registerArrayFunc() {
 	builtins["array_last_position"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return false, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -168,6 +195,11 @@ func registerArrayFunc() {
 	builtins["array_contains_any"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return false, true
+				}
+			}
 			array1, ok1 := args[0].([]interface{})
 			if !ok1 {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -195,6 +227,11 @@ func registerArrayFunc() {
 	builtins["array_intersect"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			array1, ok1 := args[0].([]interface{})
 			if !ok1 {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -233,13 +270,19 @@ func registerArrayFunc() {
 	builtins["array_union"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			array1, ok1 := args[0].([]interface{})
-			if !ok1 {
-				return errorArrayFirstArgumentNotArrayError, false
+			var array1, array2 []interface{}
+			var ok bool
+			if args[0] != nil {
+				array1, ok = args[0].([]interface{})
+				if !ok {
+					return errorArrayFirstArgumentNotArrayError, false
+				}
 			}
-			array2, ok2 := args[1].([]interface{})
-			if !ok2 {
-				return errorArraySecondArgumentNotArrayError, false
+			if args[1] != nil {
+				array2, ok = args[1].([]interface{})
+				if !ok {
+					return errorArraySecondArgumentNotArrayError, false
+				}
 			}
 			union := make([]interface{}, 0, len(array1)+len(array2))
 			set := make(map[interface{}]bool)
@@ -266,6 +309,11 @@ func registerArrayFunc() {
 	builtins["array_max"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -296,6 +344,11 @@ func registerArrayFunc() {
 	builtins["array_min"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -327,6 +380,9 @@ func registerArrayFunc() {
 	builtins["array_except"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
 			array1, ok1 := args[0].([]interface{})
 			if !ok1 {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -358,6 +414,11 @@ func registerArrayFunc() {
 	builtins["repeat"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			elemt, ok := args[0].(interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -381,6 +442,11 @@ func registerArrayFunc() {
 	builtins["sequence"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			var step, start, stop int
 			var ok bool
 			start, ok = args[0].(int)
@@ -430,6 +496,9 @@ func registerArrayFunc() {
 	builtins["array_cardinality"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return 0, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -443,6 +512,11 @@ func registerArrayFunc() {
 	builtins["array_flatten"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -467,6 +541,11 @@ func registerArrayFunc() {
 	builtins["array_distinct"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -491,6 +570,11 @@ func registerArrayFunc() {
 	builtins["array_map"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			funcName, ok := args[0].(string)
 			if !ok {
 				return errorArrayFirstArgumentNotStringError, false
@@ -534,6 +618,11 @@ func registerArrayFunc() {
 	builtins["array_join"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -586,6 +675,11 @@ func registerArrayFunc() {
 	builtins["array_shuffle"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			for _, arg := range args {
+				if arg == nil {
+					return nil, true
+				}
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
