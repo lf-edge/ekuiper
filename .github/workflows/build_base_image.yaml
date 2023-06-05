@@ -31,7 +31,7 @@ jobs:
         with:
           image: tonistiigi/binfmt:latest
           platforms: all
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: /tmp/.docker-buildx-cache
           key: docker-buildx-${{ matrix.golang }}-${{ matrix.os }}
