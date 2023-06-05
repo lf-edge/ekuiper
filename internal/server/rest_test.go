@@ -30,6 +30,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
@@ -392,4 +393,56 @@ func (suite *RestTestSuite) Test_fileUpload() {
 
 func TestRestTestSuite(t *testing.T) {
 	suite.Run(t, new(RestTestSuite))
+}
+
+func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
+	sql := `Create Stream test (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+	var reply string
+	err := suite.s.Stream(sql, &reply)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "Stream test is created.\n", reply)
+
+	reply = ""
+	rule := `{
+			  "sql": "SELECT a from test;",
+			  "actions": [{
+				"file": {
+				  "path": "../internal/server/rpc_test_data/data/result.txt",
+				  "interval": 5000,
+				  "fileType": "lines",
+				  "format": "json"
+				}
+			  }]
+	}`
+	ruleId := "myRule"
+	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
+	err = suite.s.CreateRule(args, &reply)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "Rule myRule was created successfully, please use 'bin/kuiper getstatus rule myRule' command to get rule status.", reply)
+
+	reply = ""
+	err = suite.s.GetStatusRule(ruleId, &reply)
+	assert.Nil(suite.T(), err)
+
+	reply = ""
+	err = suite.s.StopRule(ruleId, &reply)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "Rule myRule was stopped.", reply)
+
+	reply = ""
+	sql = `drop stream test`
+	err = suite.s.Stream(sql, &reply)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "Stream test is dropped.\n", reply)
+
+	reply = ""
+	sql = `Create Stream test (b bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+	err = suite.s.Stream(sql, &reply)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "Stream test is created.\n", reply)
+
+	reply = ""
+	err = suite.s.StartRule(ruleId, &reply)
+	assert.Error(suite.T(), err)
+	assert.Equal(suite.T(), err.Error(), "unknown field a")
 }
