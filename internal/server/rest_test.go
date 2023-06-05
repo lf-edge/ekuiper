@@ -444,5 +444,5 @@ func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
 	reply = ""
 	err = suite.s.StartRule(ruleId, &reply)
 	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), err.Error(), "rerun rule topo error: unknown field a")
+	assert.Equal(suite.T(), err.Error(), "unknown field a")
 }

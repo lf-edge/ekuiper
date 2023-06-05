@@ -189,26 +189,7 @@ func reRunRule(name string) error {
 	if !ok {
 		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
 	} else {
-		r := rs.Rule
-		var err error
-		deleteRule(name)
-		// Validate the topo
-		panicOrError := infra.SafeRun(func() error {
-			rs, err = createRuleState(r)
-			return err
-		})
-		if panicOrError != nil {
-			// Do not store to registry so also delete the KV
-			deleteRule(r.Id)
-			_, _ = ruleProcessor.ExecDrop(r.Id)
-			return fmt.Errorf("rerun rule topo error: %v", panicOrError)
-		}
-		err = rs.Start()
-		if err != nil {
-			return err
-		}
-		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
-		return err
+		return rs.UpdateTopo(rs.Rule)
 	}
 }
 
