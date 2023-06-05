@@ -15,8 +15,11 @@
 package function
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
@@ -73,5 +76,23 @@ func TestUnnestFunctions(t *testing.T) {
 		if !reflect.DeepEqual(result, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 		}
+	}
+}
+
+func TestUnnestFunctionsNil(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerStrFunc()
+	for name, function := range builtins {
+		r, b := function.exec(fctx, []interface{}{nil})
+		require.True(t, b, fmt.Sprintf("%v failed", name))
+		require.Nil(t, r, fmt.Sprintf("%v failed", name))
 	}
 }
