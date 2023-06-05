@@ -180,16 +180,16 @@ func deleteRule(name string) (result string) {
 }
 
 func startRule(name string) error {
+	return reRunRule(name)
+}
+
+// reRunRule rerun the rule from optimize to Open the operator in order to refresh the schema
+func reRunRule(name string) error {
 	rs, ok := registry.Load(name)
 	if !ok {
 		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
 	} else {
-		err := rs.Start()
-		if err != nil {
-			return err
-		}
-		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
-		return err
+		return rs.UpdateTopo(rs.Rule)
 	}
 }
 
