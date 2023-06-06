@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
@@ -39,6 +40,7 @@ type FileSourceConfig struct {
 	Path             string   `json:"path"`
 	Interval         int      `json:"interval"`
 	IsTable          bool     `json:"isTable"`
+	Parallel         bool     `json:"parallel"`
 	SendInterval     int      `json:"sendInterval"`
 	ActionAfterRead  int      `json:"actionAfterRead"`
 	MoveTo           string   `json:"moveTo"`
@@ -178,15 +180,33 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 		if err != nil {
 			return err
 		}
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
+		if fs.config.Parallel {
+			var wg sync.WaitGroup
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				wg.Add(1)
+				go func(file string) {
+					defer wg.Done()
+					err := fs.parseFile(ctx, file, consumer)
+					if err != nil {
+						ctx.GetLogger().Errorf("Failed to parse file %s: %v", file, err)
+					}
+				}(filepath.Join(fs.file, entry.Name()))
 			}
-			file := filepath.Join(fs.file, entry.Name())
-			err := fs.parseFile(ctx, file, consumer)
-			if err != nil {
-				ctx.GetLogger().Errorf("parse file %s fail with error: %v", file, err)
-				continue
+			wg.Wait()
+		} else {
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				file := filepath.Join(fs.file, entry.Name())
+				err := fs.parseFile(ctx, file, consumer)
+				if err != nil {
+					ctx.GetLogger().Errorf("parse file %s fail with error: %v", file, err)
+					continue
+				}
 			}
 		}
 	} else {

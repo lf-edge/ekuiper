@@ -31,6 +31,18 @@ import (
 var count atomic.Value
 
 func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
+	result, err := RunMockSource(r, len(exp))
+	if err != nil {
+		t.Error(err)
+	}
+	for i, v := range result {
+		if !reflect.DeepEqual(exp[i].Message(), v.Message()) || !reflect.DeepEqual(exp[i].Meta(), v.Meta()) {
+			t.Errorf("result mismatch:\n  exp=%s\n  got=%s\n\n", exp[i], v)
+		}
+	}
+}
+
+func RunMockSource(r api.Source, limit int) ([]api.SourceTuple, error) {
 	c := count.Load()
 	if c == nil {
 		count.Store(1)
@@ -44,15 +56,13 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 	errCh := make(chan error)
 	go r.Open(ctx, consumer, errCh)
 	ticker := time.After(10 * time.Second)
-	limit := len(exp)
 	var result []api.SourceTuple
 outerloop:
 	for {
 		select {
 		case err := <-errCh:
-			t.Errorf("received error: %v", err)
 			cancel()
-			return
+			return nil, err
 		case tuple := <-consumer:
 			result = append(result, tuple)
 			limit--
@@ -60,21 +70,14 @@ outerloop:
 				break outerloop
 			}
 		case <-ticker:
-			t.Errorf("stop after timeout")
-			t.Errorf("expect %v, but got %v", exp, result)
 			cancel()
-			return
+			return nil, fmt.Errorf("timeout")
 		}
 	}
 	err := r.Close(ctx)
 	if err != nil {
-		t.Errorf(err.Error())
-		return
+		return nil, err
 	}
 	cancel()
-	for i, v := range result {
-		if !reflect.DeepEqual(exp[i].Message(), v.Message()) || !reflect.DeepEqual(exp[i].Meta(), v.Meta()) {
-			t.Errorf("result mismatch:\n  exp=%s\n  got=%s\n\n", exp[i], v)
-		}
-	}
+	return result, nil
 }
