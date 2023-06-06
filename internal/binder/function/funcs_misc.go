@@ -41,11 +41,6 @@ func registerMiscFunc() {
 	builtins["cast"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			value := args[0]
 			newType := args[1]
 			return cast.ToType(value, newType)
@@ -65,20 +60,19 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["to_json"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return "null", true
-			}
 			rr, err := json.Marshal(args[0])
 			if err != nil {
 				return fmt.Errorf("fail to convert %v to json", args[0]), false
 			}
 			return string(rr), true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["parse_json"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -102,11 +96,6 @@ func registerMiscFunc() {
 	builtins["chr"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			if v, ok := args[0].(int); ok {
 				return rune(v), true
 			} else if v, ok := args[0].(float64); ok {
@@ -131,15 +120,11 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["encode"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			if v, ok := args[1].(string); ok {
 				if strings.EqualFold(v, "base64") {
 					if v1, ok1 := args[0].(string); ok1 {
@@ -173,15 +158,11 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["decode"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			if v, ok := args[1].(string); ok {
 				if strings.EqualFold(v, "base64") {
 					if v1, ok1 := args[0].(string); ok1 {
@@ -219,15 +200,11 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["trunc"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			var v0 float64
 			if v1, ok := args[0].(int); ok {
 				v0 = float64(v1)
@@ -256,13 +233,11 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["md5"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			h := md5.New()
 			_, err := io.WriteString(h, arg0)
@@ -271,14 +246,12 @@ func registerMiscFunc() {
 			}
 			return fmt.Sprintf("%x", h.Sum(nil)), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sha1"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			h := sha1.New()
 			_, err := io.WriteString(h, arg0)
@@ -287,14 +260,12 @@ func registerMiscFunc() {
 			}
 			return fmt.Sprintf("%x", h.Sum(nil)), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sha256"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			h := sha256.New()
 			_, err := io.WriteString(h, arg0)
@@ -303,14 +274,12 @@ func registerMiscFunc() {
 			}
 			return fmt.Sprintf("%x", h.Sum(nil)), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sha384"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			h := sha512.New384()
 			_, err := io.WriteString(h, arg0)
@@ -319,14 +288,12 @@ func registerMiscFunc() {
 			}
 			return fmt.Sprintf("%x", h.Sum(nil)), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sha512"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			h := sha512.New()
 			_, err := io.WriteString(h, arg0)
@@ -335,7 +302,8 @@ func registerMiscFunc() {
 			}
 			return fmt.Sprintf("%x", h.Sum(nil)), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtinStatfulFuncs["compress"] = func() api.Function {
 		conf.Log.Infof("initializing compress function")
@@ -400,11 +368,6 @@ func registerMiscFunc() {
 	builtins["mqtt"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			if v, ok := args[0].(string); ok {
 				return v, true
 			}
@@ -425,6 +388,7 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["rule_id"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -499,11 +463,6 @@ func registerMiscFunc() {
 	builtins["json_path_exists"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			result, err := jsonCall(ctx, args)
 			if err != nil {
 				return false, true
@@ -535,11 +494,6 @@ func registerMiscFunc() {
 	builtins["object_construct"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			result := make(map[string]interface{})
 			for i := 0; i < len(args); i += 2 {
 				if args[i+1] != nil {
@@ -565,15 +519,11 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["delay"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			d, err := cast.ToInt(args[0], cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return err, false
@@ -590,15 +540,11 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["get_keyed_state"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			if len(args) != 3 {
 				return fmt.Errorf("the args must be two or three"), false
 			}
@@ -629,6 +575,7 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 }
 
