@@ -153,7 +153,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 				},
 			},
 			require: map[string]interface{}{
-				"a": "a",
+				"a": []byte("a"),
 			},
 		},
 		{
@@ -434,4 +434,131 @@ func TestArrayWithArray(t *testing.T) {
 			},
 		},
 	})
+}
+
+func TestTypeNull(t *testing.T) {
+	testcases := []struct {
+		schema  map[string]*ast.JsonStreamField
+		payload []byte
+		require map[string]interface{}
+	}{
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "boolean",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bigint",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "float",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "string",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bytea",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "boolean",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "datetime",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":{"b":null}}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "struct",
+					Properties: map[string]*ast.JsonStreamField{
+						"b": {
+							Type: "bigint",
+						},
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": nil,
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		arrayPayload := []byte(fmt.Sprintf("[%s]", string(tc.payload)))
+		arrayRequire := []map[string]interface{}{
+			tc.require,
+		}
+		f := NewFastJsonConverter(tc.schema)
+		v, err := f.Decode(arrayPayload)
+		require.NoError(t, err)
+		require.Equal(t, v, arrayRequire)
+	}
+	for _, tc := range testcases {
+		arrayPayload := []byte(fmt.Sprintf("[%s]", string(tc.payload)))
+		arrayRequire := []map[string]interface{}{
+			tc.require,
+		}
+		f := NewFastJsonConverter(tc.schema)
+		v, err := f.Decode(arrayPayload)
+		require.NoError(t, err)
+		require.Equal(t, v, arrayRequire)
+	}
 }
