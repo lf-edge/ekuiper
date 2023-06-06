@@ -386,10 +386,6 @@ func TestFuncMath(t *testing.T) {
 }
 
 func TestFuncMathNil(t *testing.T) {
-	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
-	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	oldBuiltins := builtins
 	defer func() {
 		builtins = oldBuiltins
@@ -401,7 +397,7 @@ func TestFuncMathNil(t *testing.T) {
 		case "rand":
 			continue
 		default:
-			r, b := mathFunc.exec(fctx, []interface{}{nil})
+			r, b := mathFunc.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
 		}
