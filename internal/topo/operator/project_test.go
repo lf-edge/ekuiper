@@ -2296,17 +2296,6 @@ func TestProjectPlanError(t *testing.T) {
 			},
 			result: errors.New("run Select error: call func round error: cannot convert string(common string) to float64"),
 		},
-		// 4
-		{
-			sql: `SELECT round(a) as r FROM test`,
-			data: &xsql.Tuple{
-				Emitter: "test",
-				Message: xsql.Message{
-					"abc": "common string",
-				},
-			},
-			result: errors.New("run Select error: call func round error: cannot convert <nil>(<nil>) to float64"),
-		},
 		// 5
 		{
 			sql: "SELECT avg(a) as avg FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10), test1.color",

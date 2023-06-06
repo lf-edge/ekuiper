@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -747,6 +749,50 @@ func TestArrayShuffle(t *testing.T) {
 
 		if !flag {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant in:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestArrayFuncNil(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerArrayFunc()
+	for mathFuncName, mathFunc := range builtins {
+		switch mathFuncName {
+		case "array_create":
+			r, b := mathFunc.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Equal(t, r, nil, fmt.Sprintf("%v failed", mathFuncName))
+			r, b = mathFunc.exec(fctx, []interface{}{nil, 1})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
+		case "array_position":
+			r, b := mathFunc.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Equal(t, r, -1, fmt.Sprintf("%v failed", mathFuncName))
+		case "array_contains", "array_last_position", "array_contains_any":
+			r, b := mathFunc.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.False(t, r.(bool), fmt.Sprintf("%v failed", mathFuncName))
+		case "array_union":
+			r, b := mathFunc.exec(fctx, []interface{}{[]interface{}{1}, nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
+		case "array_cardinality":
+			r, b := mathFunc.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Equal(t, r, 0, fmt.Sprintf("%v failed", mathFuncName))
+		default:
+			r, b := mathFunc.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
 		}
 	}
 }

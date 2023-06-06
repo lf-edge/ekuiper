@@ -35,7 +35,8 @@ func registerObjectFunc() {
 			}
 			return fmt.Errorf("the argument should be map[string]interface{}"), false
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["values"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -50,7 +51,8 @@ func registerObjectFunc() {
 			}
 			return fmt.Errorf("the argument should be map[string]interface{}"), false
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["object"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -82,6 +84,7 @@ func registerObjectFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["zip"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -110,7 +113,8 @@ func registerObjectFunc() {
 			}
 			return m, true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["items"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -128,6 +132,7 @@ func registerObjectFunc() {
 			}
 			return list, true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 }

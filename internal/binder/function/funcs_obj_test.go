@@ -20,6 +20,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -234,5 +236,19 @@ func TestObjectFunctions(t *testing.T) {
 				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 			}
 		}
+	}
+}
+
+func TestObjectFunctionsNil(t *testing.T) {
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerObjectFunc()
+	for name, function := range builtins {
+		r, b := function.check([]interface{}{nil})
+		require.True(t, b, fmt.Sprintf("%v failed", name))
+		require.Nil(t, r, fmt.Sprintf("%v failed", name))
 	}
 }

@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -377,4 +379,47 @@ func TestKeyedStateExec(t *testing.T) {
 		}
 	}
 	_ = keyedstate.ClearKeyedState()
+}
+
+func TestMiscFuncNil(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerMiscFunc()
+	for name, function := range builtins {
+		switch name {
+		case "compress", "decompress", "newuuid", "tstamp", "rule_id", "window_start", "window_end",
+			"json_path_query", "json_path_query_first", "coalesce", "meta", "json_path_exists":
+			continue
+		case "isnull":
+			v, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b)
+			require.Equal(t, v, true)
+		case "cardinality":
+			v, b := function.check([]interface{}{nil})
+			require.True(t, b)
+			require.Equal(t, v, 0)
+		case "to_json":
+			v, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b)
+			require.Equal(t, v, "null")
+		case "parse_json":
+			v, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b)
+			require.Equal(t, v, nil)
+			v, b = function.exec(fctx, []interface{}{"null"})
+			require.True(t, b)
+			require.Equal(t, v, nil)
+		default:
+			v, b := function.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, v, fmt.Sprintf("%v failed", name))
+		}
+	}
 }

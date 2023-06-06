@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -379,6 +381,25 @@ func TestFuncMath(t *testing.T) {
 		rTanh, _ := fTanh.exec(fctx, tt.args)
 		if !reflect.DeepEqual(rTanh, tt.res[23]) {
 			t.Errorf("%d.23 tanh result mismatch,\ngot:\t%v \nwant:\t%v", i, rTanh, tt.res[23])
+		}
+	}
+}
+
+func TestFuncMathNil(t *testing.T) {
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerMathFunc()
+	for mathFuncName, mathFunc := range builtins {
+		switch mathFuncName {
+		case "rand":
+			continue
+		default:
+			r, b := mathFunc.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
 		}
 	}
 }
