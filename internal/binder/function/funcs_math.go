@@ -45,7 +45,8 @@ func registerMathFunc() {
 				return fmt.Errorf("only float64 & int type are supported"), false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["acos"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -61,7 +62,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["asin"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -77,7 +79,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["atan"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -93,7 +96,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["atan2"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -113,7 +117,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateTwoNumberArg,
+		val:   ValidateTwoNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["bitand"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -128,7 +133,8 @@ func registerMathFunc() {
 			}
 			return v1 & v2, true
 		},
-		val: ValidateTwoIntArg,
+		val:   ValidateTwoIntArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["bitor"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -143,7 +149,8 @@ func registerMathFunc() {
 			}
 			return v1 | v2, true
 		},
-		val: ValidateTwoIntArg,
+		val:   ValidateTwoIntArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["bitxor"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -158,7 +165,8 @@ func registerMathFunc() {
 			}
 			return v1 ^ v2, true
 		},
-		val: ValidateTwoIntArg,
+		val:   ValidateTwoIntArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["bitnot"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -178,6 +186,7 @@ func registerMathFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["ceil"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -188,7 +197,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["cos"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -204,7 +214,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["cosh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -220,7 +231,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["exp"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -236,7 +248,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["ln"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -252,7 +265,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["log"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -268,7 +282,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["mod"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -283,7 +298,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateTwoNumberArg,
+		val:   ValidateTwoNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["power"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -298,14 +314,15 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateTwoNumberArg,
+		val:   ValidateTwoNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["rand"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			return rand.Float64(), true
 		},
-		val: ValidateOneArg,
+		val: ValidateNoArg,
 	}
 	builtins["round"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -316,7 +333,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sign"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -333,7 +351,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sin"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -349,7 +368,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sinh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -365,7 +385,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sqrt"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -381,7 +402,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["tan"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -397,7 +419,8 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["tanh"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -413,6 +436,7 @@ func registerMathFunc() {
 				return e, false
 			}
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 }

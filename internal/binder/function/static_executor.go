@@ -55,6 +55,12 @@ func (f *funcExecutor) ExecWithName(args []interface{}, ctx api.FunctionContext,
 	if !ok {
 		return fmt.Errorf("unknow name"), false
 	}
+	if fs.check != nil {
+		r, skipExec := fs.check(args)
+		if skipExec {
+			return r, true
+		}
+	}
 	return fs.exec(ctx, args)
 }
 

@@ -23,14 +23,16 @@ import (
 )
 
 type (
-	funcExe func(ctx api.FunctionContext, args []interface{}) (interface{}, bool)
-	funcVal func(ctx api.FunctionContext, args []ast.Expr) error
+	funcExe      func(ctx api.FunctionContext, args []interface{}) (interface{}, bool)
+	funcVal      func(ctx api.FunctionContext, args []ast.Expr) error
+	funcCheckNil func(args []interface{}) (interface{}, bool)
 )
 
 type builtinFunc struct {
 	fType ast.FuncType
 	exec  funcExe
 	val   funcVal
+	check funcCheckNil
 }
 
 var (
@@ -113,4 +115,31 @@ var m = &Manager{}
 
 func GetManager() *Manager {
 	return m
+}
+
+func returnNilIfHasAnyNil(args []interface{}) (returned interface{}, skipExec bool) {
+	for _, arg := range args {
+		if arg == nil {
+			return nil, true
+		}
+	}
+	return nil, false
+}
+
+func returnFalseIfHasAnyNil(args []interface{}) (returned interface{}, skipExec bool) {
+	for _, arg := range args {
+		if arg == nil {
+			return false, true
+		}
+	}
+	return nil, false
+}
+
+func return0IfHasAnyNil(args []interface{}) (returned interface{}, skipExec bool) {
+	for _, arg := range args {
+		if arg == nil {
+			return 0, true
+		}
+	}
+	return nil, false
 }

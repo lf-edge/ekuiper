@@ -30,6 +30,7 @@ func registerSetReturningFunc() {
 			}
 			return argArray, true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 }

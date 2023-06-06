@@ -16,7 +16,6 @@ package function
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,68 +26,39 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func TestUnnestFunctions(t *testing.T) {
-	f, ok := builtins["unnest"]
-	if !ok {
-		t.Fatal("builtin not found")
-	}
+func TestStrFuncNil(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	tests := []struct {
-		args   []interface{}
-		result interface{}
-	}{
-		{ // 0
-			args: []interface{}{
-				[]interface{}{1, 2, 3},
-			},
-			result: []interface{}{1, 2, 3},
-		},
-		{
-			args: []interface{}{
-				[]interface{}{
-					map[string]int{
-						"a": 1,
-						"b": 2,
-					},
-					map[string]int{
-						"a": 3,
-						"b": 4,
-					},
-				},
-			},
-			result: []interface{}{
-				map[string]int{
-					"a": 1,
-					"b": 2,
-				},
-				map[string]int{
-					"a": 3,
-					"b": 4,
-				},
-			},
-		},
-	}
-	for i, tt := range tests {
-		result, _ := f.exec(fctx, tt.args)
-		if !reflect.DeepEqual(result, tt.result) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
-		}
-	}
-}
-
-func TestUnnestFunctionsNil(t *testing.T) {
 	oldBuiltins := builtins
 	defer func() {
 		builtins = oldBuiltins
 	}()
 	builtins = map[string]builtinFunc{}
-	registerSetReturningFunc()
+	registerStrFunc()
 	for name, function := range builtins {
-		r, b := function.check([]interface{}{nil})
-		require.True(t, b, fmt.Sprintf("%v failed", name))
-		require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		switch name {
+		case "concat":
+			r, b := function.exec(fctx, []interface{}{"1", nil, "2"})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, "12", r)
+		case "endswith", "regexp_matches", "startswith":
+			r, b := function.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, false, r)
+		case "indexof":
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, -1, r)
+		case "length", "numbytes":
+			r, b := function.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, 0, r)
+		default:
+			r, b := function.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		}
 	}
 }
