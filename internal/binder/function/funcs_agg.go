@@ -28,9 +28,6 @@ func registerAggFunc() {
 	builtins["avg"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return 0, true
-			}
 			arg0 := args[0].([]interface{})
 			c := getCount(arg0)
 			if c > 0 {
@@ -56,25 +53,21 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["count"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return 0, true
-			}
 			arg0 := args[0].([]interface{})
 			return getCount(arg0), true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["max"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				v := getFirstValidArg(arg0)
@@ -111,14 +104,12 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["min"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				v := getFirstValidArg(arg0)
@@ -155,14 +146,12 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["sum"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				v := getFirstValidArg(arg0)
@@ -187,7 +176,8 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["collect"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
@@ -202,11 +192,6 @@ func registerAggFunc() {
 	builtins["deduplicate"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			v1, ok1 := args[0].([]interface{})
 			v2, ok2 := args[1].([]interface{})
 			v3a, ok3 := args[2].([]interface{})
@@ -232,15 +217,11 @@ func registerAggFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["stddev"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -258,16 +239,12 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["stddevs"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -285,16 +262,12 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["var"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -312,16 +285,12 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["vars"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
@@ -339,16 +308,12 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateOneNumberArg,
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["percentile_cont"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			if err := ValidateLen(2, len(args)); err != nil {
 				return err, false
 			}
@@ -380,16 +345,12 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateTwoNumberArg,
+		val:   ValidateTwoNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["percentile_disc"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			if err := ValidateLen(2, len(args)); err != nil {
 				return err, false
 			}
@@ -420,7 +381,8 @@ func registerAggFunc() {
 			}
 			return nil, true
 		},
-		val: ValidateTwoNumberArg,
+		val:   ValidateTwoNumberArg,
+		check: returnNilIfHasAnyNil,
 	}
 }
 
