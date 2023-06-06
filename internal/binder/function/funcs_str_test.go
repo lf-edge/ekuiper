@@ -56,7 +56,7 @@ func TestStrFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Equal(t, 0, r)
 		default:
-			r, b := function.exec(fctx, []interface{}{nil})
+			r, b := function.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		}

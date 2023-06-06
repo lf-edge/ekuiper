@@ -91,20 +91,15 @@ func registerStrFunc() {
 	builtins["lower"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			return strings.ToLower(arg0), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["lpad"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			arg1, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
@@ -112,18 +107,17 @@ func registerStrFunc() {
 			}
 			return strings.Repeat(" ", arg1) + arg0, true
 		},
-		val: ValidateOneStrOneInt,
+		val:   ValidateOneStrOneInt,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["ltrim"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			return strings.TrimLeftFunc(arg0, unicode.IsSpace), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["numbytes"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -136,9 +130,6 @@ func registerStrFunc() {
 	builtins["format_time"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0, err := cast.InterfaceToTime(args[0], "")
 			if err != nil {
 				return err, false
@@ -163,6 +154,7 @@ func registerStrFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["regexp_matches"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -182,9 +174,6 @@ func registerStrFunc() {
 	builtins["regexp_replace"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil || args[1] == nil || args[2] == nil {
-				return nil, true
-			}
 			arg0, arg1, arg2 := cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1]), cast.ToStringAlways(args[2])
 			if re, err := regexp.Compile(arg1); err != nil {
 				return err, false
@@ -203,13 +192,11 @@ func registerStrFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["regexp_substr"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil || args[1] == nil {
-				return nil, true
-			}
 			arg0, arg1 := cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1])
 			if re, err := regexp.Compile(arg1); err != nil {
 				return err, false
@@ -217,14 +204,12 @@ func registerStrFunc() {
 				return re.FindString(arg0), true
 			}
 		},
-		val: ValidateTwoStrArg,
+		val:   ValidateTwoStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["rpad"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			arg1, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
@@ -232,25 +217,21 @@ func registerStrFunc() {
 			}
 			return arg0 + strings.Repeat(" ", arg1), true
 		},
-		val: ValidateOneStrOneInt,
+		val:   ValidateOneStrOneInt,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["rtrim"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			return strings.TrimRightFunc(arg0, unicode.IsSpace), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["substring"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			arg1, err := cast.ToInt(args[1], cast.STRICT)
 			if err != nil {
@@ -314,6 +295,7 @@ func registerStrFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["startswith"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -329,9 +311,6 @@ func registerStrFunc() {
 	builtins["split_value"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil || args[1] == nil {
-				return nil, true
-			}
 			arg0, arg1 := cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1])
 			ss := strings.Split(arg0, arg1)
 			v, _ := cast.ToInt(args[2], cast.STRICT)
@@ -362,27 +341,24 @@ func registerStrFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["trim"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			return strings.TrimSpace(arg0), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["upper"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return nil, true
-			}
 			arg0 := cast.ToStringAlways(args[0])
 			return strings.ToUpper(arg0), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
 	}
 }
