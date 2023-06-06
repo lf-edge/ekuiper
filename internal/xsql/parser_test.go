@@ -398,6 +398,23 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT LenGth('test') FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "length",
+						Expr: &ast.Call{
+							Name: "length",
+							Args: []ast.Expr{&ast.StringLiteral{Val: "test"}},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
 			s: `SELECT length(test) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -449,6 +466,23 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT lpad('abc', 123) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "lpad",
+						Expr: &ast.Call{
+							Name: "lpad",
+							Args: []ast.Expr{&ast.StringLiteral{Val: "abc"}, &ast.IntegerLiteral{Val: 123}},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
 			s: `SELECT newuuid() FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -467,6 +501,26 @@ func TestParser_ParseStatement(t *testing.T) {
 
 		{
 			s: `SELECT indexof("abc", field1) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "indexof",
+						Expr: &ast.Call{
+							Name: "indexof",
+							Args: []ast.Expr{
+								&ast.StringLiteral{Val: "abc"},
+								&ast.FieldRef{Name: "field1", StreamName: ast.DefaultStream},
+							},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT indexof('abc', field1) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -539,6 +593,31 @@ func TestParser_ParseStatement(t *testing.T) {
 
 		{
 			s: `SELECT length(lower("test")) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "length",
+						Expr: &ast.Call{
+							Name:   "length",
+							FuncId: 1,
+							Args: []ast.Expr{
+								&ast.Call{
+									Name: "lower",
+									Args: []ast.Expr{
+										&ast.StringLiteral{Val: "test"},
+									},
+								},
+							},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT length(lower('test')) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -642,6 +721,14 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT 'abc' FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields:  []ast.Field{{AName: "", Name: "kuiper_field_0", Expr: &ast.StringLiteral{Val: "abc"}}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
 			s: `SELECT "abc" AS field1 FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields:  []ast.Field{{AName: "field1", Name: "", Expr: &ast.StringLiteral{Val: "abc"}}},
@@ -650,7 +737,27 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT 'abc' AS field1 FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields:  []ast.Field{{AName: "field1", Name: "", Expr: &ast.StringLiteral{Val: "abc"}}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
 			s: `SELECT field0,   "abc" AS field1, field2 FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{AName: "", Name: "field0", Expr: &ast.FieldRef{Name: "field0", StreamName: ast.DefaultStream}},
+					{AName: "field1", Name: "", Expr: &ast.StringLiteral{Val: "abc"}},
+					{AName: "", Name: "field2", Expr: &ast.FieldRef{Name: "field2", StreamName: ast.DefaultStream}},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT field0,   'abc' AS field1, field2 FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{AName: "", Name: "field0", Expr: &ast.FieldRef{Name: "field0", StreamName: ast.DefaultStream}},
@@ -706,6 +813,19 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT abc FROM tbl WHERE abc = 'hello' `,
+			stmt: &ast.SelectStatement{
+				Fields:  []ast.Field{{AName: "", Name: "abc", Expr: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream}}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
+					OP:  ast.EQ,
+					RHS: &ast.StringLiteral{Val: "hello"},
+				},
+			},
+		},
+
+		{
 			s: `SELECT t1.abc FROM tbl AS t1 WHERE t1.abc = "hello" `,
 			stmt: &ast.SelectStatement{
 				Fields:  []ast.Field{{AName: "", Name: "abc", Expr: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "abc"}}},
@@ -719,7 +839,33 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT t1.abc FROM tbl AS t1 WHERE t1.abc = 'hello' `,
+			stmt: &ast.SelectStatement{
+				Fields:  []ast.Field{{AName: "", Name: "abc", Expr: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "abc"}}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl", Alias: "t1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "abc"},
+					OP:  ast.EQ,
+					RHS: &ast.StringLiteral{Val: "hello"},
+				},
+			},
+		},
+
+		{
 			s: `SELECT abc, "fff" AS fa FROM tbl WHERE fa >= 5 `,
+			stmt: &ast.SelectStatement{
+				Fields:  []ast.Field{{AName: "", Name: "abc", Expr: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream}}, {AName: "fa", Name: "", Expr: &ast.StringLiteral{Val: "fff"}}},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "fa", StreamName: ast.DefaultStream},
+					OP:  ast.GTE,
+					RHS: &ast.IntegerLiteral{Val: 5},
+				},
+			},
+		},
+
+		{
+			s: `SELECT abc, 'fff' AS fa FROM tbl WHERE fa >= 5 `,
 			stmt: &ast.SelectStatement{
 				Fields:  []ast.Field{{AName: "", Name: "abc", Expr: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream}}, {AName: "fa", Name: "", Expr: &ast.StringLiteral{Val: "fff"}}},
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
@@ -825,6 +971,24 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT abc + 'hello' FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "kuiper_field_0",
+						Expr: &ast.BinaryExpr{
+							LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
+							OP:  ast.ADD,
+							RHS: &ast.StringLiteral{Val: "hello"},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
 			s: `SELECT abc*2 + 3 FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -902,6 +1066,34 @@ func TestParser_ParseStatement(t *testing.T) {
 
 		{
 			s: `SELECT lpad("param2", abc*2 + 3) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "lpad",
+						Expr: &ast.Call{
+							Name: "lpad",
+							Args: []ast.Expr{
+								&ast.StringLiteral{Val: "param2"},
+								&ast.BinaryExpr{
+									LHS: &ast.BinaryExpr{
+										LHS: &ast.FieldRef{Name: "abc", StreamName: ast.DefaultStream},
+										OP:  ast.MUL,
+										RHS: &ast.IntegerLiteral{Val: 2},
+									},
+									OP:  ast.ADD,
+									RHS: &ast.IntegerLiteral{Val: 3},
+								},
+							},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT lpad('param2', abc*2 + 3) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -1113,6 +1305,7 @@ func TestParser_ParseStatement(t *testing.T) {
 			s:   `SELECT a FROM tbl WHERE f1 NOT BETWEEN 1 OR 2`,
 			err: "expect AND expression after between but found OR",
 		},
+
 		{
 			s: `SELECT a FROM tbl WHERE a LIKE "foo"`,
 			stmt: &ast.SelectStatement{
@@ -1131,6 +1324,26 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			s: `SELECT a FROM tbl WHERE a LIKE 'foo'`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					OP:  ast.LIKE,
+					RHS: &ast.LikePattern{Expr: &ast.StringLiteral{Val: "foo"}, Pattern: re1},
+				},
+			},
+		},
+
 		{
 			s: `SELECT a FROM tbl WHERE a NOT LIKE "fo_o%"`,
 			stmt: &ast.SelectStatement{
@@ -1149,6 +1362,26 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			s: `SELECT a FROM tbl WHERE a NOT LIKE 'fo_o%'`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					OP:  ast.NOTLIKE,
+					RHS: &ast.LikePattern{Expr: &ast.StringLiteral{Val: "fo_o%"}, Pattern: re2},
+				},
+			},
+		},
+
 		{
 			s: `SELECT a FROM tbl WHERE a LIKE "foo\\%"`,
 			stmt: &ast.SelectStatement{
@@ -1167,8 +1400,44 @@ func TestParser_ParseStatement(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			s: `SELECT a FROM tbl WHERE a LIKE 'foo\\%'`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "a",
+						Expr:  &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.FieldRef{Name: "a", StreamName: ast.DefaultStream},
+					OP:  ast.LIKE,
+					RHS: &ast.LikePattern{Expr: &ast.StringLiteral{Val: "foo\\%"}, Pattern: re3},
+				},
+			},
+		},
+
 		{
 			s: `SELECT deviceId, name FROM topic/sensor1 WHERE deviceId=1 AND name = "dname"`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "deviceId", StreamName: ast.DefaultStream}, Name: "deviceId", AName: ""},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "deviceId", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.IntegerLiteral{Val: 1}},
+					OP:  ast.AND,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				},
+			},
+		},
+
+		{
+			s: `SELECT deviceId, name FROM topic/sensor1 WHERE deviceId=1 AND name = 'dname'`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{Expr: &ast.FieldRef{Name: "deviceId", StreamName: ast.DefaultStream}, Name: "deviceId", AName: ""},
@@ -1200,7 +1469,39 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT deviceId, name FROM topic/sensor1 AS t1 WHERE t1.deviceId=1 AND t1.name = 'dname'`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "deviceId", StreamName: ast.DefaultStream}, Name: "deviceId", AName: ""},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "t1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "deviceId"}, OP: ast.EQ, RHS: &ast.IntegerLiteral{Val: 1}},
+					OP:  ast.AND,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("t1"), Name: "name"}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t> = 20.5 OR name = "dname"`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.GTE, RHS: &ast.NumberLiteral{Val: 20.5}},
+					OP:  ast.OR,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t> = 20.5 OR name = 'dname'`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
@@ -1264,7 +1565,39 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t IN (20.5, 20.4) OR name IN ('dname', 'ename')`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.NumberLiteral{Val: 20.5}, &ast.NumberLiteral{Val: 20.4}}}},
+					OP:  ast.OR,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "dname"}, &ast.StringLiteral{Val: "ename"}}}},
+				},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t NOT IN (20.5, 20.4) OR name IN ("dname", "ename")`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{
+					LHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.NOTIN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.NumberLiteral{Val: 20.5}, &ast.NumberLiteral{Val: 20.4}}}},
+					OP:  ast.OR,
+					RHS: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "dname"}, &ast.StringLiteral{Val: "ename"}}}},
+				},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE t NOT IN (20.5, 20.4) OR name IN ('dname', 'ename')`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
@@ -1293,6 +1626,19 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = 'dname' GROUP BY name`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition:  &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{ast.Dimension{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name HAVING count(name) > 3`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1307,7 +1653,34 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = 'dname' GROUP BY name HAVING count(name) > 3`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition:  &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{ast.Dimension{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
+				Having:     &ast.BinaryExpr{LHS: &ast.Call{Name: "count", Args: []ast.Expr{&ast.FieldRef{StreamName: ast.DefaultStream, Name: "name"}}, FuncType: ast.FuncTypeAgg}, OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 3}},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" HAVING count(name) > 3`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Having:    &ast.BinaryExpr{LHS: &ast.Call{Name: "count", Args: []ast.Expr{&ast.FieldRef{StreamName: ast.DefaultStream, Name: "name"}}, FuncType: ast.FuncTypeAgg}, OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 3}},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = 'dname' HAVING count(name) > 3`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
@@ -1345,7 +1718,37 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT s1.temp AS t, name FROM topic/sensor1 AS s1 WHERE t = 'dname' GROUP BY s1.temp`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{StreamName: "s1", Name: "temp"}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "s1"}},
+				Condition:  &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "t", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{ast.Dimension{Expr: &ast.FieldRef{StreamName: "s1", Name: "temp"}}},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1)`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, &ast.IntegerLiteral{Val: 1}}},
+					},
+				},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = 'dname' GROUP BY lpad(name,1)`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
@@ -1379,7 +1782,47 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE name = 'dname' GROUP BY lpad(s1.name,1)`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "s1"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Call{Name: "lpad", Args: []ast.Expr{&ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"}, &ast.IntegerLiteral{Val: 1}}},
+					},
+				},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1) ORDER BY name`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Call{
+							Name: "lpad", Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								&ast.IntegerLiteral{Val: 1},
+							},
+						},
+					},
+				},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = 'dname' GROUP BY lpad(name,1) ORDER BY name`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
@@ -1425,7 +1868,53 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 AS s1 WHERE s1.name = 'dname' GROUP BY lpad(s1.name,1) ORDER BY s1.name`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1", Alias: "s1"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Call{
+							Name: "lpad", Args: []ast.Expr{
+								&ast.FieldRef{StreamName: ast.StreamName("s1"), Name: "name"},
+								&ast.IntegerLiteral{Val: 1},
+							},
+						},
+					},
+				},
+				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: "s1"}}},
+			},
+		},
+
+		{
 			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY lpad(name,1) ORDER BY name DESC`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
+					{Expr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, Name: "name", AName: ""},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.EQ, RHS: &ast.StringLiteral{Val: "dname"}},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Call{
+							Name: "lpad", Args: []ast.Expr{
+								&ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+								&ast.IntegerLiteral{Val: 1},
+							},
+						},
+					},
+				},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
+			},
+		},
+
+		{
+			s: `SELECT temp AS t, name FROM topic/sensor1 WHERE name = 'dname' GROUP BY lpad(name,1) ORDER BY name DESC`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{Expr: &ast.FieldRef{Name: "temp", StreamName: ast.DefaultStream}, Name: "temp", AName: "t"},
@@ -1583,6 +2072,23 @@ func TestParser_ParseStatement(t *testing.T) {
 
 		{
 			s: `SELECT indexof(field1, "abc") FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "indexof",
+						Expr: &ast.Call{
+							Name: "indexof",
+							Args: []ast.Expr{&ast.FieldRef{Name: "field1", StreamName: ast.DefaultStream}, &ast.StringLiteral{Val: "abc"}},
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT indexof(field1, 'abc') FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -1762,6 +2268,35 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
+			s: "SELECT CASE temperature WHEN 25 THEN 'bingo' WHEN 30 THEN 'high' ELSE 'low' END as label, humidity FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.CaseExpr{
+							Value: &ast.FieldRef{Name: "temperature", StreamName: ast.DefaultStream},
+							WhenClauses: []*ast.WhenClause{
+								{
+									Expr:   &ast.IntegerLiteral{Val: 25},
+									Result: &ast.StringLiteral{Val: "bingo"},
+								}, {
+									Expr:   &ast.IntegerLiteral{Val: 30},
+									Result: &ast.StringLiteral{Val: "high"},
+								},
+							},
+							ElseClause: &ast.StringLiteral{Val: "low"},
+						},
+						Name:  "",
+						AName: "label",
+					}, {
+						Expr:  &ast.FieldRef{Name: "humidity", StreamName: ast.DefaultStream},
+						Name:  "humidity",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
 			s: "SELECT CASE temperature WHEN 25 THEN \"bingo\" WHEN 30 THEN \"high\" END as label, humidity FROM tbl",
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -1791,7 +2326,41 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
+			s: "SELECT CASE temperature WHEN 25 THEN 'bingo' WHEN 30 THEN 'high' END as label, humidity FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.CaseExpr{
+							Value: &ast.FieldRef{Name: "temperature", StreamName: ast.DefaultStream},
+							WhenClauses: []*ast.WhenClause{
+								{
+									Expr:   &ast.IntegerLiteral{Val: 25},
+									Result: &ast.StringLiteral{Val: "bingo"},
+								}, {
+									Expr:   &ast.IntegerLiteral{Val: 30},
+									Result: &ast.StringLiteral{Val: "high"},
+								},
+							},
+							ElseClause: nil,
+						},
+						Name:  "",
+						AName: "label",
+					}, {
+						Expr:  &ast.FieldRef{Name: "humidity", StreamName: ast.DefaultStream},
+						Name:  "humidity",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
 			s:    "SELECT CASE temperature ELSE \"low\" END as label, humidity FROM tbl",
+			stmt: nil,
+			err:  "invalid CASE expression, WHEN expected before ELSE",
+		},
+		{
+			s:    "SELECT CASE temperature ELSE 'low' END as label, humidity FROM tbl",
 			stmt: nil,
 			err:  "invalid CASE expression, WHEN expected before ELSE",
 		},
@@ -1826,7 +2395,42 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
+			s: "SELECT CASE WHEN temperature > 30 THEN 'high' ELSE 'low' END as label, humidity FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.CaseExpr{
+							Value: nil,
+							WhenClauses: []*ast.WhenClause{
+								{
+									Expr: &ast.BinaryExpr{
+										OP:  ast.GT,
+										LHS: &ast.FieldRef{Name: "temperature", StreamName: ast.DefaultStream},
+										RHS: &ast.IntegerLiteral{Val: 30},
+									},
+									Result: &ast.StringLiteral{Val: "high"},
+								},
+							},
+							ElseClause: &ast.StringLiteral{Val: "low"},
+						},
+						Name:  "",
+						AName: "label",
+					}, {
+						Expr:  &ast.FieldRef{Name: "humidity", StreamName: ast.DefaultStream},
+						Name:  "humidity",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
 			s:    "SELECT CASE WHEN 30 THEN \"high\" ELSE \"low\" END as label, humidity FROM tbl",
+			stmt: nil,
+			err:  "invalid CASE expression, WHEN expression must be a bool condition",
+		},
+		{
+			s:    "SELECT CASE WHEN 30 THEN 'high' ELSE 'low' END as label, humidity FROM tbl",
 			stmt: nil,
 			err:  "invalid CASE expression, WHEN expression must be a bool condition",
 		},
@@ -1918,7 +2522,82 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
+			s: `SELECT changed_cols('',true,a,b,c) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "changed_cols",
+						Expr: &ast.Call{
+							Name: "changed_cols",
+							Args: []ast.Expr{
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.StringLiteral{Val: ""},
+								},
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.BooleanLiteral{Val: true},
+								},
+								&ast.ColFuncField{Name: "a", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "a",
+								}},
+								&ast.ColFuncField{Name: "b", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "b",
+								}},
+								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "c",
+								}},
+							},
+							FuncType: ast.FuncTypeCols,
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
 			s: `SELECT changed_cols("",true,a,*,c) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "changed_cols",
+						Expr: &ast.Call{
+							Name: "changed_cols",
+							Args: []ast.Expr{
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.StringLiteral{Val: ""},
+								},
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.BooleanLiteral{Val: true},
+								},
+								&ast.ColFuncField{Name: "a", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "a",
+								}},
+								&ast.ColFuncField{Name: "*", Expr: &ast.Wildcard{
+									Token: ast.ASTERISK,
+								}},
+								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "c",
+								}},
+							},
+							FuncType: ast.FuncTypeCols,
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT changed_cols('',true,a,*,c) FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
@@ -1959,11 +2638,29 @@ func TestParser_ParseStatement(t *testing.T) {
 			err: "function changed_cols can only be used inside the select clause",
 		},
 		{
+			s:   `SELECT a FROM tbl WHERE changed_cols('',true,a,b,c) > 3`,
+			err: "function changed_cols can only be used inside the select clause",
+		},
+		{
 			s:   `SELECT ".*(/)(?!.*\1)" FROM topic/sensor1 AS t1`,
 			err: `found "invalid string: \".*(/)(?!.*\\1)\"", expected expression.`,
 		},
 		{
 			s: `SELECT name FROM tbl WHERE name IN ("A", "B","C")`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources:   []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}, OP: ast.IN, RHS: &ast.ValueSetExpr{LiteralExprs: []ast.Expr{&ast.StringLiteral{Val: "A"}, &ast.StringLiteral{Val: "B"}, &ast.StringLiteral{Val: "C"}}}},
+			},
+		},
+		{
+			s: `SELECT name FROM tbl WHERE name IN ('A', 'B','C')`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
 					{
