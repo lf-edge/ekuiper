@@ -79,11 +79,41 @@ func TestMessageDecode(t *testing.T) {
 }
 
 func TestFastJsonConverterWithSchema(t *testing.T) {
+	origin := "123"
+	encode := base64.StdEncoding.EncodeToString([]byte(origin))
 	testcases := []struct {
 		schema  map[string]*ast.JsonStreamField
 		payload []byte
 		require map[string]interface{}
 	}{
+		{
+			payload: []byte(`{"a":["true"]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "boolean",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{true},
+			},
+		},
+		{
+			payload: []byte(`{"a":[true]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "boolean",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{true},
+			},
+		},
 		{
 			payload: []byte(`{"a":1}`),
 			schema: map[string]*ast.JsonStreamField{
@@ -92,7 +122,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 				},
 			},
 			require: map[string]interface{}{
-				"a": float64(1),
+				"a": int64(1),
 			},
 		},
 		{
@@ -118,14 +148,14 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 			},
 		},
 		{
-			payload: []byte(`{"a":"a"}`),
+			payload: []byte(fmt.Sprintf(`{"a":"%v"}`, encode)),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bytea",
 				},
 			},
 			require: map[string]interface{}{
-				"a": "a",
+				"a": []byte(origin),
 			},
 		},
 		{
@@ -175,7 +205,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 			},
 			require: map[string]interface{}{
 				"a": map[string]interface{}{
-					"b": float64(1),
+					"b": int64(1),
 				},
 			},
 		},
@@ -224,22 +254,22 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported"),
 		},
 		{
-			payload: []byte(`{"a":"123"}`),
+			payload: []byte(`{"a":{"b":1}}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bigint",
 				},
 			},
-			err: fmt.Errorf("a has wrong type:string, expect:bigint"),
+			err: fmt.Errorf("a has wrong type:object, expect:bigint"),
 		},
 		{
-			payload: []byte(`{"a":true}`),
+			payload: []byte(`{"a":{"b":1}}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "string",
 				},
 			},
-			err: fmt.Errorf("a has wrong type:true, expect:string"),
+			err: fmt.Errorf("a has wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":123}`),
@@ -260,13 +290,13 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("a has wrong type:number, expect:struct"),
 		},
 		{
-			payload: []byte(`{"a":123}`),
+			payload: []byte(`{"a":{"b":1}}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "boolean",
 				},
 			},
-			err: fmt.Errorf("a has wrong type:number, expect:boolean"),
+			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":true}`),
@@ -278,7 +308,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("a has wrong type:true, expect:datetime"),
 		},
 		{
-			payload: []byte(`{"a":["123"]}`),
+			payload: []byte(`{"a":[{"b":1}]}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "array",
@@ -287,10 +317,10 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("array has wrong type:string, expect:bigint"),
+			err: fmt.Errorf("array has wrong type:object, expect:bigint"),
 		},
 		{
-			payload: []byte(`{"a":[true]}`),
+			payload: []byte(`{"a":[{"b":1}]}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "array",
@@ -299,7 +329,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("array has wrong type:true, expect:string"),
+			err: fmt.Errorf("array has wrong type:object, expect:string"),
 		},
 		{
 			payload: []byte(`{"a":[123]}`),
@@ -326,7 +356,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 			err: fmt.Errorf("array has wrong type:number, expect:struct"),
 		},
 		{
-			payload: []byte(`{"a":[123]}`),
+			payload: []byte(`{"a":[{"b":1}]}`),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "array",
@@ -335,7 +365,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("array has wrong type:number, expect:boolean"),
+			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":[true]}`),
@@ -401,9 +431,225 @@ func TestArrayWithArray(t *testing.T) {
 		"a": []interface{}{
 			[]interface{}{
 				map[string]interface{}{
-					"c": float64(1),
+					"c": int64(1),
 				},
 			},
 		},
+	})
+}
+
+func TestTypeNull(t *testing.T) {
+	testcases := []struct {
+		schema  map[string]*ast.JsonStreamField
+		payload []byte
+		require map[string]interface{}
+	}{
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "bytea",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "string",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "float",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "bigint",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "boolean",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bigint",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "float",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "string",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bytea",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "boolean",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":null}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "datetime",
+				},
+			},
+			require: map[string]interface{}{
+				"a": nil,
+			},
+		},
+		{
+			payload: []byte(`{"a":{"b":null}}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "struct",
+					Properties: map[string]*ast.JsonStreamField{
+						"b": {
+							Type: "bigint",
+						},
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": nil,
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		arrayPayload := []byte(fmt.Sprintf("[%s]", string(tc.payload)))
+		arrayRequire := []map[string]interface{}{
+			tc.require,
+		}
+		f := NewFastJsonConverter(tc.schema)
+		v, err := f.Decode(arrayPayload)
+		require.NoError(t, err)
+		require.Equal(t, v, arrayRequire)
+	}
+	for _, tc := range testcases {
+		arrayPayload := []byte(fmt.Sprintf("[%s]", string(tc.payload)))
+		arrayRequire := []map[string]interface{}{
+			tc.require,
+		}
+		f := NewFastJsonConverter(tc.schema)
+		v, err := f.Decode(arrayPayload)
+		require.NoError(t, err)
+		require.Equal(t, v, arrayRequire)
+	}
+}
+
+func TestConvertBytea(t *testing.T) {
+	origin := "123"
+	encode := base64.StdEncoding.EncodeToString([]byte(origin))
+	payload := fmt.Sprintf(`{"a":"%s"}`, encode)
+	schema := map[string]*ast.JsonStreamField{
+		"a": {
+			Type: "bytea",
+		},
+	}
+	f := NewFastJsonConverter(schema)
+	v, err := f.Decode([]byte(payload))
+	require.NoError(t, err)
+	require.Equal(t, v, map[string]interface{}{
+		"a": []byte(origin),
+	})
+
+	payload = fmt.Sprintf(`{"a":["%s"]}`, encode)
+	schema = map[string]*ast.JsonStreamField{
+		"a": {
+			Type: "array",
+			Items: &ast.JsonStreamField{
+				Type: "bytea",
+			},
+		},
+	}
+	f = NewFastJsonConverter(schema)
+	v, err = f.Decode([]byte(payload))
+	require.NoError(t, err)
+	require.Equal(t, v, map[string]interface{}{
+		"a": []interface{}{[]byte(origin)},
 	})
 }
