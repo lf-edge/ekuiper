@@ -448,6 +448,62 @@ func TestTypeNull(t *testing.T) {
 				"a": {
 					Type: "array",
 					Items: &ast.JsonStreamField{
+						Type: "bytea",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "string",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "float",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
+						Type: "bigint",
+					},
+				},
+			},
+			require: map[string]interface{}{
+				"a": []interface{}{nil},
+			},
+		},
+		{
+			payload: []byte(`{"a":[null]}`),
+			schema: map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "array",
+					Items: &ast.JsonStreamField{
 						Type: "boolean",
 					},
 				},
