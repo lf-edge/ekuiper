@@ -44,7 +44,7 @@ func TestStrFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Equal(t, "12", r)
 		case "endswith", "regexp_matches", "startswith":
-			r, b := function.exec(fctx, []interface{}{nil})
+			r, b := function.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Equal(t, false, r)
 		case "indexof":
@@ -52,7 +52,7 @@ func TestStrFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Equal(t, -1, r)
 		case "length", "numbytes":
-			r, b := function.exec(fctx, []interface{}{nil})
+			r, b := function.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Equal(t, 0, r)
 		default:

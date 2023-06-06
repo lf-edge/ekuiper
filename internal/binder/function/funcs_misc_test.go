@@ -402,7 +402,7 @@ func TestMiscFuncNil(t *testing.T) {
 			require.True(t, b)
 			require.Equal(t, v, true)
 		case "cardinality":
-			v, b := function.exec(fctx, []interface{}{nil})
+			v, b := function.check([]interface{}{nil})
 			require.True(t, b)
 			require.Equal(t, v, 0)
 		case "to_json":

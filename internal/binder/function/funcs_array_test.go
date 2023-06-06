@@ -766,7 +766,7 @@ func TestArrayFuncNil(t *testing.T) {
 	registerArrayFunc()
 	for mathFuncName, mathFunc := range builtins {
 		switch mathFuncName {
-		case "array_created":
+		case "array_create":
 			r, b := mathFunc.exec(fctx, []interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Equal(t, r, nil, fmt.Sprintf("%v failed", mathFuncName))
@@ -778,7 +778,7 @@ func TestArrayFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Equal(t, r, -1, fmt.Sprintf("%v failed", mathFuncName))
 		case "array_contains", "array_last_position", "array_contains_any":
-			r, b := mathFunc.exec(fctx, []interface{}{nil})
+			r, b := mathFunc.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.False(t, r.(bool), fmt.Sprintf("%v failed", mathFuncName))
 		case "array_union":
@@ -786,11 +786,11 @@ func TestArrayFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
 		case "array_cardinality":
-			r, b := mathFunc.exec(fctx, []interface{}{nil})
+			r, b := mathFunc.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Equal(t, r, 0, fmt.Sprintf("%v failed", mathFuncName))
 		default:
-			r, b := mathFunc.exec(fctx, []interface{}{nil})
+			r, b := mathFunc.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
 		}

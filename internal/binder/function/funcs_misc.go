@@ -432,7 +432,8 @@ func registerMiscFunc() {
 			}
 			return 0, true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: return0IfHasAnyNil,
 	}
 	builtins["json_path_query"] = builtinFunc{
 		fType: ast.FuncTypeScalar,

@@ -52,13 +52,11 @@ func registerStrFunc() {
 	builtins["endswith"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil || args[1] == nil {
-				return false, true
-			}
 			arg0, arg1 := cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1])
 			return strings.HasSuffix(arg0, arg1), true
 		},
-		val: ValidateTwoStrArg,
+		val:   ValidateTwoStrArg,
+		check: returnFalseIfHasAnyNil,
 	}
 	builtins["indexof"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -86,7 +84,8 @@ func registerStrFunc() {
 			}
 			return utf8.RuneCountInString(arg0), true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: return0IfHasAnyNil,
 	}
 	builtins["lower"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -125,7 +124,8 @@ func registerStrFunc() {
 			arg0 := cast.ToStringAlways(args[0])
 			return len(arg0), true
 		},
-		val: ValidateOneStrArg,
+		val:   ValidateOneStrArg,
+		check: return0IfHasAnyNil,
 	}
 	builtins["format_time"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -159,9 +159,6 @@ func registerStrFunc() {
 	builtins["regexp_matches"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil || args[1] == nil {
-				return false, true
-			}
 			arg0, arg1 := cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1])
 			if matched, err := regexp.MatchString(arg1, arg0); err != nil {
 				return err, false
@@ -169,7 +166,8 @@ func registerStrFunc() {
 				return matched, true
 			}
 		},
-		val: ValidateTwoStrArg,
+		val:   ValidateTwoStrArg,
+		check: returnFalseIfHasAnyNil,
 	}
 	builtins["regexp_replace"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -300,13 +298,11 @@ func registerStrFunc() {
 	builtins["startswith"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return false, true
-			}
 			arg0, arg1 := cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1])
 			return strings.HasPrefix(arg0, arg1), true
 		},
-		val: ValidateTwoStrArg,
+		val:   ValidateTwoStrArg,
+		check: returnFalseIfHasAnyNil,
 	}
 	builtins["split_value"] = builtinFunc{
 		fType: ast.FuncTypeScalar,

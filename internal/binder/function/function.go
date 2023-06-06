@@ -125,3 +125,21 @@ func returnNilIfHasAnyNil(args []interface{}) (returned interface{}, skipExec bo
 	}
 	return nil, false
 }
+
+func returnFalseIfHasAnyNil(args []interface{}) (returned interface{}, skipExec bool) {
+	for _, arg := range args {
+		if arg == nil {
+			return false, true
+		}
+	}
+	return nil, false
+}
+
+func return0IfHasAnyNil(args []interface{}) (returned interface{}, skipExec bool) {
+	for _, arg := range args {
+		if arg == nil {
+			return 0, true
+		}
+	}
+	return nil, false
+}
