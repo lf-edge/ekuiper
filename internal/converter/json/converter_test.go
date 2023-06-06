@@ -79,6 +79,8 @@ func TestMessageDecode(t *testing.T) {
 }
 
 func TestFastJsonConverterWithSchema(t *testing.T) {
+	origin := "123"
+	encode := base64.StdEncoding.EncodeToString([]byte(origin))
 	testcases := []struct {
 		schema  map[string]*ast.JsonStreamField
 		payload []byte
@@ -146,14 +148,14 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 			},
 		},
 		{
-			payload: []byte(`{"a":"a"}`),
+			payload: []byte(fmt.Sprintf(`{"a":"%v"}`, encode)),
 			schema: map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bytea",
 				},
 			},
 			require: map[string]interface{}{
-				"a": []byte("a"),
+				"a": []byte(origin),
 			},
 		},
 		{
