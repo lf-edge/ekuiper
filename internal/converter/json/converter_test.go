@@ -618,3 +618,36 @@ func TestTypeNull(t *testing.T) {
 		require.Equal(t, v, arrayRequire)
 	}
 }
+
+func TestConvertBytea(t *testing.T) {
+	origin := "123"
+	encode := base64.StdEncoding.EncodeToString([]byte(origin))
+	payload := fmt.Sprintf(`{"a":"%s"}`, encode)
+	schema := map[string]*ast.JsonStreamField{
+		"a": {
+			Type: "bytea",
+		},
+	}
+	f := NewFastJsonConverter(schema)
+	v, err := f.Decode([]byte(payload))
+	require.NoError(t, err)
+	require.Equal(t, v, map[string]interface{}{
+		"a": []byte(origin),
+	})
+
+	payload = fmt.Sprintf(`{"a":["%s"]}`, encode)
+	schema = map[string]*ast.JsonStreamField{
+		"a": {
+			Type: "array",
+			Items: &ast.JsonStreamField{
+				Type: "bytea",
+			},
+		},
+	}
+	f = NewFastJsonConverter(schema)
+	v, err = f.Decode([]byte(payload))
+	require.NoError(t, err)
+	require.Equal(t, v, map[string]interface{}{
+		"a": []interface{}{[]byte(origin)},
+	})
+}

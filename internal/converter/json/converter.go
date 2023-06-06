@@ -169,7 +169,10 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 				if err != nil {
 					return nil, err
 				}
-				vs[i] = s
+				vs[i], err = cast.ToByteA(string(s), cast.CONVERT_ALL)
+				if err != nil {
+					return nil, err
+				}
 			case fastjson.TypeNull:
 				vs[i] = nil
 			}
@@ -314,7 +317,10 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				if err != nil {
 					return nil, err
 				}
-				m[key] = s
+				m[key], err = cast.ToByteA(string(s), cast.CONVERT_ALL)
+				if err != nil {
+					return nil, err
+				}
 			case fastjson.TypeNull:
 				m[key] = nil
 			default:
