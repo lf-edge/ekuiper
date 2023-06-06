@@ -31,6 +31,8 @@ default:
   interval: 0
   # The sending interval between each event in millisecond
   sendInterval: 0
+  # Read the files in a directory in parallel or not
+  parallel: false
   # After read
   # 0: keep the file
   # 1: delete the file

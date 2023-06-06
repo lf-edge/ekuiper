@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
@@ -93,6 +94,51 @@ func TestJsonFolder(t *testing.T) {
 	}
 	for _, f := range files {
 		os.Rename(filepath.Join(moveToFolder, f.Name()), filepath.Join(path, "test", "json", f.Name()))
+	}
+}
+
+func TestJsonFolderParallel(t *testing.T) {
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	mc := conf.Clock.(*clock.Mock)
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe", "height": 1.82}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe", "height": 1.65}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "Will Doe", "height": 1.76}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f2.json")}, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(4), "name": "Dude Doe", "height": 1.92}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(5), "name": "Jane Doe", "height": 1.72}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(6), "name": "John Smith", "height": 2.22}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f3.json")}, mc.Now()),
+	}
+	p := map[string]interface{}{
+		"path":     filepath.Join(path, "test"),
+		"parallel": true,
+	}
+	r := &FileSource{}
+	err = r.Configure("json", p)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	result, err := mock.RunMockSource(r, len(exp))
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	checkIds := make([]bool, len(exp))
+	// The result is not ordered, so we need to check the ids
+	for i, m := range result {
+		id, ok := m.Message()["id"]
+		if !ok {
+			t.Errorf("missing id in message %d: %v", i, r)
+		}
+		idInt := int(id.(float64)) - 1
+		if checkIds[idInt] == true {
+			t.Errorf("id %d already exists", idInt)
+		}
+		checkIds[idInt] = true
+		assert.Equal(t, exp[idInt], m)
 	}
 }
 

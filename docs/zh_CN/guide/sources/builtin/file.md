@@ -29,6 +29,8 @@ default:
   interval: 0
   # 读取后，两条数据发送的间隔时间
   sendInterval: 0
+  # 是否并行读取目录中的文件
+  parallel: false
   # 文件读取后的操作
   # 0: 文件保持不变
   # 1: 删除文件
