@@ -23,11 +23,6 @@ func registerSetReturningFunc() {
 	builtins["unnest"] = builtinFunc{
 		fType: ast.FuncTypeSrf,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-			}
 			arg := args[0]
 			argArray, ok := arg.([]interface{})
 			if !ok {
@@ -35,6 +30,7 @@ func registerSetReturningFunc() {
 			}
 			return argArray, true
 		},
-		val: ValidateOneArg,
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 }

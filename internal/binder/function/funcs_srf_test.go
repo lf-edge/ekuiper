@@ -80,10 +80,6 @@ func TestUnnestFunctions(t *testing.T) {
 }
 
 func TestUnnestFunctionsNil(t *testing.T) {
-	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
-	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	oldBuiltins := builtins
 	defer func() {
 		builtins = oldBuiltins
@@ -91,7 +87,7 @@ func TestUnnestFunctionsNil(t *testing.T) {
 	builtins = map[string]builtinFunc{}
 	registerSetReturningFunc()
 	for name, function := range builtins {
-		r, b := function.exec(fctx, []interface{}{nil})
+		r, b := function.check([]interface{}{nil})
 		require.True(t, b, fmt.Sprintf("%v failed", name))
 		require.Nil(t, r, fmt.Sprintf("%v failed", name))
 	}
