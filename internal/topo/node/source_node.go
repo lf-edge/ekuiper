@@ -182,12 +182,12 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 									continue
 								case error:
 									logger.Errorf("Source %s preprocess error: %s", ctx.GetOpId(), val)
-									m.Broadcast(val)
+									_ = m.Broadcast(val)
 									stats.IncTotalExceptions(val.Error())
 								default:
-									m.Broadcast(val)
+									_ = m.Broadcast(val)
+									stats.IncTotalRecordsOut()
 								}
-								stats.IncTotalRecordsOut()
 								stats.SetBufferLength(int64(buffer.GetLength()))
 								if rw, ok := si.source.(api.Rewindable); ok {
 									if offset, err := rw.GetOffset(); err != nil {

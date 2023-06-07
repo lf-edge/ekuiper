@@ -107,6 +107,8 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					case error:
 						_ = n.Broadcast(d)
 						n.statManager.IncTotalExceptions(d.Error())
+					case *xsql.WatermarkTuple:
+						_ = n.Broadcast(d)
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %s", d)
 						temp := &xsql.WindowTuples{

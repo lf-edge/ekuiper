@@ -452,7 +452,7 @@ func TestWindow(t *testing.T) {
 			M: map[string]interface{}{
 				"op_3_project_0_exceptions_total":   int64(3),
 				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(7),
+				"op_3_project_0_records_in_total":   int64(4),
 				"op_3_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
@@ -461,7 +461,7 @@ func TestWindow(t *testing.T) {
 
 				"source_demoError_0_exceptions_total":  int64(3),
 				"source_demoError_0_records_in_total":  int64(5),
-				"source_demoError_0_records_out_total": int64(5),
+				"source_demoError_0_records_out_total": int64(2),
 
 				"op_2_window_0_exceptions_total":   int64(3),
 				"op_2_window_0_process_latency_us": int64(0),
@@ -1095,7 +1095,7 @@ func TestEventWindow(t *testing.T) {
 			M: map[string]interface{}{
 				"op_4_project_0_exceptions_total":   int64(1),
 				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(6),
+				"op_4_project_0_records_in_total":   int64(5),
 				"op_4_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
@@ -1104,11 +1104,11 @@ func TestEventWindow(t *testing.T) {
 
 				"source_demoErr_0_exceptions_total":  int64(1),
 				"source_demoErr_0_records_in_total":  int64(6),
-				"source_demoErr_0_records_out_total": int64(6),
+				"source_demoErr_0_records_out_total": int64(5),
 
 				"op_3_window_0_exceptions_total":   int64(1),
 				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(4),
+				"op_3_window_0_records_in_total":   int64(3),
 				"op_3_window_0_records_out_total":  int64(5),
 			},
 		}, {
@@ -1317,7 +1317,7 @@ func TestWindowError(t *testing.T) {
 			M: map[string]interface{}{
 				"op_4_project_0_exceptions_total":   int64(1),
 				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(5),
+				"op_4_project_0_records_in_total":   int64(4),
 				"op_4_project_0_records_out_total":  int64(4),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
@@ -1371,7 +1371,7 @@ func TestWindowError(t *testing.T) {
 			M: map[string]interface{}{
 				"op_5_project_0_exceptions_total":   int64(3),
 				"op_5_project_0_process_latency_us": int64(0),
-				"op_5_project_0_records_in_total":   int64(8),
+				"op_5_project_0_records_in_total":   int64(5),
 				"op_5_project_0_records_out_total":  int64(5),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
@@ -1415,7 +1415,7 @@ func TestWindowError(t *testing.T) {
 			M: map[string]interface{}{
 				"op_6_project_0_exceptions_total":   int64(3),
 				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(5),
+				"op_6_project_0_records_in_total":   int64(2),
 				"op_6_project_0_records_out_total":  int64(2),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
@@ -1459,7 +1459,7 @@ func TestWindowError(t *testing.T) {
 			M: map[string]interface{}{
 				"op_4_project_0_exceptions_total":   int64(1),
 				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(4),
+				"op_4_project_0_records_in_total":   int64(3),
 				"op_4_project_0_records_out_total":  int64(3),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),

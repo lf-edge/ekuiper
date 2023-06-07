@@ -127,6 +127,16 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			if item, processed = o.preprocess(item); processed {
 				break
 			}
+			switch d := item.(type) {
+			case error:
+				_ = o.Broadcast(d)
+				stats.IncTotalExceptions(d.Error())
+				continue
+			case *xsql.WatermarkTuple:
+				_ = o.Broadcast(d)
+				continue
+			}
+
 			stats.IncTotalRecordsIn()
 			stats.ProcessTimeStart()
 			result := o.op.Apply(exeCtx, item, fv, afv)

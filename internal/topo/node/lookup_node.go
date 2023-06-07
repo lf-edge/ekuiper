@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -128,18 +128,20 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 					switch d := item.(type) {
 					case error:
-						n.Broadcast(d)
+						_ = n.Broadcast(d)
 						n.statManager.IncTotalExceptions(d.Error())
+					case *xsql.WatermarkTuple:
+						_ = n.Broadcast(d)
 					case xsql.TupleRow:
 						log.Debugf("Lookup Node receive tuple input %s", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 						err := n.lookup(ctx, d, fv, ns, sets, c)
 						if err != nil {
-							n.Broadcast(err)
+							_ = n.Broadcast(err)
 							n.statManager.IncTotalExceptions(err.Error())
 						} else {
-							n.Broadcast(sets)
+							_ = n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
 						}
 						n.statManager.ProcessTimeEnd()
@@ -160,17 +162,17 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							return true, nil
 						})
 						if err != nil {
-							n.Broadcast(err)
+							_ = n.Broadcast(err)
 							n.statManager.IncTotalExceptions(err.Error())
 						} else {
-							n.Broadcast(sets)
+							_ = n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
 						}
 						n.statManager.ProcessTimeEnd()
 						n.statManager.SetBufferLength(int64(len(n.input)))
 					default:
 						e := fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d)
-						n.Broadcast(e)
+						_ = n.Broadcast(e)
 						n.statManager.IncTotalExceptions(e.Error())
 					}
 				case <-ctx.Done():
@@ -281,7 +283,7 @@ func (n *LookupNode) merge(ctx api.StreamContext, d xsql.TupleRow, r []map[strin
 		sets.Content = append(sets.Content, merged)
 	}
 
-	n.Broadcast(sets)
+	_ = n.Broadcast(sets)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()
 	n.statManager.SetBufferLength(int64(len(n.input)))

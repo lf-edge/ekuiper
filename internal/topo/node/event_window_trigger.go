@@ -123,15 +123,12 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				o.statManager.IncTotalExceptions("input channel closed")
 				break
 			}
-			if _, ok := item.(*xsql.WatermarkTuple); !ok {
-				processed := false
-				if item, processed = o.preprocess(item); processed {
-					break
-				}
+			processed := false
+			if item, processed = o.preprocess(item); processed {
+				break
 			}
 			switch d := item.(type) {
 			case error:
-				o.statManager.IncTotalRecordsIn()
 				_ = o.Broadcast(d)
 				o.statManager.IncTotalExceptions(d.Error())
 			case *xsql.WatermarkTuple:

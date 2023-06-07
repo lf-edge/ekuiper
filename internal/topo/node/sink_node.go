@@ -179,9 +179,8 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							for {
 								select {
 								case data := <-m.input:
-									if temp, processed := m.preprocess(data); !processed {
-										data = temp
-									} else {
+									processed := false
+									if data, processed = m.preprocess(data); processed {
 										break
 									}
 									stats.SetBufferLength(int64(len(m.input)))
@@ -206,9 +205,8 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 								for {
 									select {
 									case data := <-m.input:
-										if temp, processed := m.preprocess(data); !processed {
-											data = temp
-										} else {
+										processed := false
+										if data, processed = m.preprocess(data); processed {
 											break
 										}
 										stats.IncTotalRecordsIn()
