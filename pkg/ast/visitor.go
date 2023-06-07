@@ -142,6 +142,9 @@ func Walk(v Visitor, node Node) {
 
 	case *LikePattern:
 		Walk(v, n.Expr)
+
+	case *WhenClause:
+		Walk(v, n.Expr)
 	}
 }
 
