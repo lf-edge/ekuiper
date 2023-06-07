@@ -177,11 +177,6 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 			}
 		}
 	}
-	// Filter all the watermark tuples.
-	// Only event time window op needs this, so handle it there
-	if _, ok := data.(*xsql.WatermarkTuple); ok {
-		return nil, true
-	}
 	return data, false
 }
 

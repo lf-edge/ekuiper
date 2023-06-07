@@ -271,7 +271,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		}
 		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
-		// The analytic function are calculated prior to all ops, so just get the cached field value
+		// The analytic functions are calculated prior to all ops, so just get the cached field value
 		if expr.Cached {
 			val, ok := v.Valuer.Value(expr.CachedField, "")
 			if ok {
