@@ -168,7 +168,7 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 		b, ok := data.(*checkpoint.BufferOrEvent)
 		if ok {
 			logger.Debugf("data is BufferOrEvent, start barrier handler")
-			// if it is barrier return true and ignore the further processing
+			// if it is a barrier, return true and ignore the further processing
 			// if it is blocked(align handler), return true and then write back to the channel later
 			if o.barrierHandler.Process(b, o.ctx) {
 				return nil, true
@@ -176,6 +176,11 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 				return b.Data, false
 			}
 		}
+	}
+	// Filter all the watermark tuples.
+	// Only event time window op needs this, so handle it there
+	if _, ok := data.(*xsql.WatermarkTuple); ok {
+		return nil, true
 	}
 	return data, false
 }
@@ -221,7 +226,7 @@ func SourceOpen(sourceType string, config map[string]interface{}) error {
 
 		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
 		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-		lns.Close(ctx)
+		_ = lns.Close(ctx)
 	} else {
 		err = ns.Configure(dataSource, config)
 		if err != nil {
@@ -230,7 +235,7 @@ func SourceOpen(sourceType string, config map[string]interface{}) error {
 
 		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
 		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-		ns.Close(ctx)
+		_ = ns.Close(ctx)
 	}
 
 	return nil

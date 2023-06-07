@@ -229,7 +229,7 @@ type Alias struct {
 }
 
 /*
- *   All row types definitions, watermark, barrier
+ * All row types definitions, watermark, barrier
  */
 
 // Tuple The input row, produced by the source
@@ -245,6 +245,18 @@ type Tuple struct {
 }
 
 var _ TupleRow = &Tuple{}
+
+type WatermarkTuple struct {
+	Timestamp int64
+}
+
+func (t *WatermarkTuple) GetTimestamp() int64 {
+	return t.Timestamp
+}
+
+func (t *WatermarkTuple) IsWatermark() bool {
+	return true
+}
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {

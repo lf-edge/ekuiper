@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,18 +16,19 @@ package planner
 
 import "github.com/lf-edge/ekuiper/pkg/ast"
 
-type JoinAlignPlan struct {
+type WatermarkPlan struct {
 	baseLogicalPlan
 	Emitters []string
 }
 
-func (p JoinAlignPlan) Init() *JoinAlignPlan {
+func (p WatermarkPlan) Init() *WatermarkPlan {
 	p.baseLogicalPlan.self = &p
 	return &p
 }
 
-// PushDownPredicate Push down to table first, then push to window
-func (p *JoinAlignPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
+// PushDownPredicate Push down all the conditions to the data source.
+// The condition here must be safe to push down or it will be catched by above planner, such as countWindow planner.
+func (p *WatermarkPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
 	if len(p.children) == 0 {
 		return condition, p.self
 	}

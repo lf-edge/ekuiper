@@ -144,7 +144,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				if err != nil {
 					return nil, fmt.Errorf("parse window conf %s with %v error: %w", nodeName, gn.Props, err)
 				}
-				op, err := node.NewWindowOp(nodeName, *wconf, ruleGraph.Topo.Sources, rule.Options)
+				op, err := node.NewWindowOp(nodeName, *wconf, rule.Options)
 				if err != nil {
 					return nil, fmt.Errorf("parse window %s with %v error: %w", nodeName, gn.Props, err)
 				}
