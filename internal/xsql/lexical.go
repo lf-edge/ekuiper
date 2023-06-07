@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ func (s *Scanner) Scan() (tok ast.Token, lit string) {
 		return s.ScanIdent()
 	} else if isQuotation(ch) {
 		s.unread()
-		return s.ScanString()
+		return s.ScanString(ch == '\'')
 	} else if isDigit(ch) {
 		s.unread()
 		return s.ScanNumber(false, false)
@@ -244,15 +244,28 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 	return ast.IDENT, buf.String()
 }
 
-func (s *Scanner) ScanString() (tok ast.Token, lit string) {
+func (s *Scanner) ScanString(isSingle bool) (tok ast.Token, lit string) {
 	var buf bytes.Buffer
 	ch := s.read()
-	buf.WriteRune(ch)
+	if ch == '\'' && isSingle {
+		buf.WriteRune('"')
+	} else {
+		buf.WriteRune(ch)
+	}
 	escape := false
 	for {
 		ch = s.read()
 		if ch == '"' && !escape {
-			buf.WriteRune(ch)
+			if !isSingle {
+				buf.WriteRune(ch)
+				break
+			} else {
+				escape = false
+				buf.WriteRune('\\')
+				buf.WriteRune(ch)
+			}
+		} else if ch == '\'' && !escape && isSingle {
+			buf.WriteRune('"')
 			break
 		} else if ch == eof {
 			return ast.BADSTRING, buf.String()
@@ -267,6 +280,9 @@ func (s *Scanner) ScanString() (tok ast.Token, lit string) {
 	r, err := strconv.Unquote(buf.String())
 	if err != nil {
 		return ast.ILLEGAL, "invalid string: " + buf.String()
+	}
+	if isSingle {
+		return ast.SINGLEQUOTE, r
 	}
 	return ast.STRING, r
 }
@@ -396,6 +412,6 @@ func isLetter(ch rune) bool { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && c
 
 func isDigit(ch rune) bool { return ch >= '0' && ch <= '9' }
 
-func isQuotation(ch rune) bool { return ch == '"' }
+func isQuotation(ch rune) bool { return ch == '"' || ch == '\'' }
 
 func isBackquote(ch rune) bool { return ch == '`' }

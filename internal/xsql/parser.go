@@ -686,7 +686,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 				return &ast.FieldRef{StreamName: ast.DefaultStream, Name: n[0]}, nil
 			}
 		}
-	} else if tok == ast.STRING {
+	} else if tok == ast.STRING || tok == ast.SINGLEQUOTE {
 		return &ast.StringLiteral{Val: lit}, nil
 	} else if tok == ast.INTEGER {
 		val, _ := strconv.Atoi(lit)
