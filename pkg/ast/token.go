@@ -29,10 +29,11 @@ const (
 	// Literals
 	IDENT // main
 
-	INTEGER   // 12345
-	NUMBER    // 12345.67
-	STRING    // "abc"
-	BADSTRING // "abc
+	INTEGER     // 12345
+	NUMBER      // 12345.67
+	STRING      // "abc"
+	SINGLEQUOTE // 'abc'
+	BADSTRING   // "abc
 
 	operatorBeg
 	// ADD and the following are InfluxQL Operators
@@ -117,14 +118,15 @@ const (
 )
 
 var Tokens = []string{
-	ILLEGAL: "ILLEGAL",
-	EOF:     "EOF",
-	AS:      "AS",
-	WS:      "WS",
-	IDENT:   "IDENT",
-	INTEGER: "INTEGER",
-	NUMBER:  "NUMBER",
-	STRING:  "STRING",
+	ILLEGAL:     "ILLEGAL",
+	EOF:         "EOF",
+	AS:          "AS",
+	WS:          "WS",
+	IDENT:       "IDENT",
+	INTEGER:     "INTEGER",
+	NUMBER:      "NUMBER",
+	STRING:      "STRING",
+	SINGLEQUOTE: "SINGLEQUOTE",
 
 	ADD:         "+",
 	SUB:         "-",
