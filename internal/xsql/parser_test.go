@@ -2934,6 +2934,63 @@ func TestParser_ParseStatement(t *testing.T) {
 				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
 			},
 		},
+		{
+			s: "SELECT 'abc' FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.StringLiteral{Val: "abc"},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: "SELECT \"abc\" FROM tbl",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.StringLiteral{Val: "abc"},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT 'ab"c' FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.StringLiteral{Val: `ab"c`},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT "ab'c" FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.StringLiteral{Val: `ab'c`},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s:    `SELECT "abc' FROM tbl`,
+			stmt: nil,
+			err:  `found "\"abc' FROM tbl", expected expression.`,
+		},
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

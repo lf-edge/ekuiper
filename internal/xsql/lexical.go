@@ -255,9 +255,15 @@ func (s *Scanner) ScanString(isSingle bool) (tok ast.Token, lit string) {
 	escape := false
 	for {
 		ch = s.read()
-		if ch == '"' && !escape && !isSingle {
-			buf.WriteRune(ch)
-			break
+		if ch == '"' && !escape {
+			if !isSingle {
+				buf.WriteRune(ch)
+				break
+			} else {
+				escape = false
+				buf.WriteRune('\\')
+				buf.WriteRune(ch)
+			}
 		} else if ch == '\'' && !escape && isSingle {
 			buf.WriteRune('"')
 			break
