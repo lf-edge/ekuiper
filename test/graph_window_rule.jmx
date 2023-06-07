@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022 EMQ Technologies Co., Ltd.
+  ~ Copyright 2023 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -135,26 +135,33 @@
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;rule1&quot;,&#xd;
   &quot;name&quot;: &quot;窗口规则&quot;,&#xd;
-  &quot;graph&quot;: {&#xd;
-    &quot;nodes&quot;: {&#xd;
-      &quot;demo&quot;: {&#xd;
-        &quot;type&quot;: &quot;source&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
-        &quot;props&quot;: {&#xd;
-          &quot;datasource&quot;: &quot;devices/+/messages&quot;,&#xd;
-          &quot;timestamp&quot;: &quot;ts&quot;&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;roundfunc&quot;: {&#xd;
-        &quot;type&quot;: &quot;operator&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;function&quot;,&#xd;
-        &quot;props&quot;: {&#xd;
-          &quot;expr&quot;: &quot;round(temperature) as temp&quot;&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;window&quot;: {&#xd;
-        &quot;type&quot;: &quot;operator&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;window&quot;,&#xd;
+                      &quot;graph&quot;: {&#xd;
+                      &quot;nodes&quot;: {&#xd;
+                      &quot;demo&quot;: {&#xd;
+                      &quot;type&quot;: &quot;source&quot;,&#xd;
+                      &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
+                      &quot;props&quot;: {&#xd;
+                      &quot;datasource&quot;: &quot;devices/+/messages&quot;,&#xd;
+                      &quot;timestamp&quot;: &quot;ts&quot;&#xd;
+                      }&#xd;
+                      },&#xd;
+                      &quot;watermark&quot;: {&#xd;
+                      &quot;type&quot;: &quot;operator&quot;,&#xd;
+                      &quot;nodeType&quot;: &quot;watermark&quot;,&#xd;
+                      &quot;props&quot;: {&#xd;
+                      &quot;emitters&quot;:[&quot;demo&quot;]&#xd;
+                      }&#xd;
+                      },&#xd;
+                      &quot;roundfunc&quot;: {&#xd;
+                      &quot;type&quot;: &quot;operator&quot;,&#xd;
+                      &quot;nodeType&quot;: &quot;function&quot;,&#xd;
+                      &quot;props&quot;: {&#xd;
+                      &quot;expr&quot;: &quot;round(temperature) as temp&quot;&#xd;
+                      }&#xd;
+                      },&#xd;
+                      &quot;window&quot;: {&#xd;
+                      &quot;type&quot;: &quot;operator&quot;,&#xd;
+                      &quot;nodeType&quot;: &quot;window&quot;,&#xd;
         &quot;props&quot;: {&#xd;
           &quot;type&quot;: &quot;tumblingwindow&quot;,&#xd;
           &quot;unit&quot;: &quot;ms&quot;,&#xd;
@@ -183,27 +190,28 @@
           &quot;topic&quot;: &quot;devices/result&quot;,&#xd;
           &quot;sendSingle&quot;: true&#xd;
         }&#xd;
-      },&#xd;
-      &quot;log&quot;: {&#xd;
-        &quot;type&quot;: &quot;sink&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;log&quot;,&#xd;
-        &quot;props&quot;: {}&#xd;
-      }&#xd;
-    },&#xd;
-    &quot;topo&quot;: {&#xd;
-      &quot;sources&quot;: [&quot;demo&quot;],&#xd;
-      &quot;edges&quot;: {&#xd;
-        &quot;demo&quot;: [&quot;roundfunc&quot;],&#xd;
-        &quot;roundfunc&quot;: [&quot;window&quot;],&#xd;
-        &quot;window&quot;: [&quot;avgfunc&quot;],&#xd;
-        &quot;avgfunc&quot;: [&quot;pick&quot;],&#xd;
-        &quot;pick&quot;: [&quot;mqtt&quot;, &quot;log&quot;]&#xd;
-      }&#xd;
-    }&#xd;
-  },&#xd;
-  &quot;options&quot;: {&#xd;
-    &quot;isEventTime&quot;: true,&#xd;
-    &quot;lateTolerance&quot; : 0&#xd;
+                      },&#xd;
+                      &quot;log&quot;: {&#xd;
+                      &quot;type&quot;: &quot;sink&quot;,&#xd;
+                      &quot;nodeType&quot;: &quot;log&quot;,&#xd;
+                      &quot;props&quot;: {}&#xd;
+                      }&#xd;
+                      },&#xd;
+                      &quot;topo&quot;: {&#xd;
+                      &quot;sources&quot;: [&quot;demo&quot;],&#xd;
+                      &quot;edges&quot;: {&#xd;
+                      &quot;demo&quot;: [&quot;watermark&quot;],&#xd;
+                      &quot;watermark&quot;: [&quot;roundfunc&quot;],&#xd;
+                      &quot;roundfunc&quot;: [&quot;window&quot;],&#xd;
+                      &quot;window&quot;: [&quot;avgfunc&quot;],&#xd;
+                      &quot;avgfunc&quot;: [&quot;pick&quot;],&#xd;
+                      &quot;pick&quot;: [&quot;mqtt&quot;, &quot;log&quot;]&#xd;
+                      }&#xd;
+                      }&#xd;
+                      },&#xd;
+                      &quot;options&quot;: {&#xd;
+                      &quot;isEventTime&quot;: true,&#xd;
+                      &quot;lateTolerance&quot; : 0&#xd;
   }&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>

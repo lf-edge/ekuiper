@@ -26,6 +26,10 @@ type Select struct {
 	Fields []string `json:"fields"`
 }
 
+type Watermark struct {
+	Emitters []string `json:"emitters"`
+}
+
 type Window struct {
 	Type     string `json:"type"`
 	Unit     string `json:"unit"`
