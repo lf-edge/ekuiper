@@ -32,9 +32,9 @@ import (
 )
 
 type WindowConfig struct {
-	Type     ast.WindowType
-	Length   int64
-	Interval int64 // If the interval is not set, it is equals to Length
+	Type        ast.WindowType
+	Length      int64
+	Interval    int64 // If the interval is not set, it is equals to Length
 	RawInterval int
 	TimeUnit    ast.Token
 }

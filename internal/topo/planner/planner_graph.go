@@ -110,6 +110,13 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			}
 			nt := strings.ToLower(gn.NodeType)
 			switch nt {
+			case "watermark":
+				emitters, err := parseWatermark(gn.Props, streamEmitters)
+				if err != nil {
+					return nil, fmt.Errorf("parse watermark %s with %v error: %w", nodeName, gn.Props, err)
+				}
+				op := node.NewWatermarkOp(nodeName, emitters, rule.Options)
+				nodeMap[nodeName] = op
 			case "function":
 				fop, err := parseFunc(gn.Props, sourceNames)
 				if err != nil {
@@ -559,6 +566,23 @@ func parseJoinAst(props map[string]interface{}, sourceNames []string) (*ast.Sele
 		stmt += " " + join.Type + " JOIN " + join.Name + " ON " + join.On
 	}
 	return xsql.NewParserWithSources(strings.NewReader(stmt), sourceNames).Parse()
+}
+
+func parseWatermark(props map[string]interface{}, streamEmitters map[string]struct{}) ([]string, error) {
+	n := &graph.Watermark{}
+	err := cast.MapToStruct(props, n)
+	if err != nil {
+		return nil, err
+	}
+	if len(n.Emitters) == 0 {
+		return nil, fmt.Errorf("watermark must have at least one emitter")
+	}
+	for _, e := range n.Emitters {
+		if _, ok := streamEmitters[e]; !ok {
+			return nil, fmt.Errorf("emitter %s does not exist", e)
+		}
+	}
+	return n.Emitters, nil
 }
 
 func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {

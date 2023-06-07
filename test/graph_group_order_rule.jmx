@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022 EMQ Technologies Co., Ltd.
+  ~ Copyright 2023 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -133,44 +133,51 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-  &quot;id&quot;: &quot;rule1&quot;,&#xd;
-  &quot;name&quot;: &quot;Group order规则&quot;,&#xd;
-  &quot;graph&quot;: {&#xd;
-    &quot;nodes&quot;: {&#xd;
-      &quot;device1&quot;: {&#xd;
-        &quot;type&quot;: &quot;source&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
-        &quot;props&quot;: {&#xd;
-          &quot;datasource&quot;: &quot;devices/1/messages&quot;,&#xd;
-          &quot;timestamp&quot;: &quot;ts&quot;&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;device2&quot;: {&#xd;
-        &quot;type&quot;: &quot;source&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
-        &quot;props&quot;: {&#xd;
-          &quot;datasource&quot;: &quot;devices/2/messages&quot;,&#xd;
-          &quot;timestamp&quot;: &quot;ts&quot;&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;window&quot;: {&#xd;
-        &quot;type&quot;: &quot;operator&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;window&quot;,&#xd;
-        &quot;props&quot;: {&#xd;
-          &quot;type&quot;: &quot;hoppingwindow&quot;,&#xd;
-          &quot;unit&quot;: &quot;ms&quot;,&#xd;
-          &quot;size&quot;: 1500,&#xd;
-          &quot;interval&quot;: 300&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;groupop&quot;: {&#xd;
-        &quot;type&quot;: &quot;operator&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;groupby&quot;,&#xd;
-        &quot;props&quot;: {&#xd;
-          &quot;dimensions&quot;: [&quot;device_id&quot;]&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;countop&quot;: {&#xd;
+                    &quot;id&quot;: &quot;rule1&quot;,&#xd;
+                    &quot;name&quot;: &quot;Group order规则&quot;,&#xd;
+                    &quot;graph&quot;: {&#xd;
+                    &quot;nodes&quot;: {&#xd;
+                    &quot;device1&quot;: {&#xd;
+                    &quot;type&quot;: &quot;source&quot;,&#xd;
+                    &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
+                    &quot;props&quot;: {&#xd;
+                    &quot;datasource&quot;: &quot;devices/1/messages&quot;,&#xd;
+                    &quot;timestamp&quot;: &quot;ts&quot;&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;device2&quot;: {&#xd;
+                    &quot;type&quot;: &quot;source&quot;,&#xd;
+                    &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
+                    &quot;props&quot;: {&#xd;
+                    &quot;datasource&quot;: &quot;devices/2/messages&quot;,&#xd;
+                    &quot;timestamp&quot;: &quot;ts&quot;&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;watermark&quot;: {&#xd;
+                    &quot;type&quot;: &quot;operator&quot;,&#xd;
+                    &quot;nodeType&quot;: &quot;watermark&quot;,&#xd;
+                    &quot;props&quot;: {&#xd;
+                    &quot;emitters&quot;:[&quot;device1&quot;,&quot;device2&quot;]&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;window&quot;: {&#xd;
+                    &quot;type&quot;: &quot;operator&quot;,&#xd;
+                    &quot;nodeType&quot;: &quot;window&quot;,&#xd;
+                    &quot;props&quot;: {&#xd;
+                    &quot;type&quot;: &quot;hoppingwindow&quot;,&#xd;
+                    &quot;unit&quot;: &quot;ms&quot;,&#xd;
+                    &quot;size&quot;: 1500,&#xd;
+                    &quot;interval&quot;: 300&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;groupop&quot;: {&#xd;
+                    &quot;type&quot;: &quot;operator&quot;,&#xd;
+                    &quot;nodeType&quot;: &quot;groupby&quot;,&#xd;
+                    &quot;props&quot;: {&#xd;
+                    &quot;dimensions&quot;: [&quot;device_id&quot;]&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;countop&quot;: {&#xd;
         &quot;type&quot;: &quot;operator&quot;,&#xd;
         &quot;nodeType&quot;: &quot;aggfunc&quot;,&#xd;
         &quot;props&quot;: {&#xd;
@@ -198,42 +205,43 @@
         &quot;type&quot;: &quot;operator&quot;,&#xd;
         &quot;nodeType&quot;: &quot;pick&quot;,&#xd;
         &quot;props&quot;: {&#xd;
-          &quot;fields&quot;: [&quot;device_id&quot;, &quot;count&quot;]&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;mqtt&quot;: {&#xd;
-        &quot;type&quot;: &quot;sink&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
-        &quot;props&quot;: {&#xd;
-          &quot;server&quot;: &quot;tcp://${mqtt_srv}:1883&quot;,&#xd;
-          &quot;topic&quot;: &quot;devices/result&quot;&#xd;
-        }&#xd;
-      },&#xd;
-      &quot;log&quot;: {&#xd;
-        &quot;type&quot;: &quot;sink&quot;,&#xd;
-        &quot;nodeType&quot;: &quot;log&quot;,&#xd;
-        &quot;props&quot;: {}&#xd;
-      }&#xd;
-    },&#xd;
-    &quot;topo&quot;: {&#xd;
-      &quot;sources&quot;: [&quot;device1&quot;, &quot;device2&quot;],&#xd;
-      &quot;edges&quot;: {&#xd;
-        &quot;device1&quot;: [&quot;window&quot;],&#xd;
-        &quot;device2&quot;: [&quot;window&quot;],&#xd;
-        &quot;window&quot;: [&quot;groupop&quot;],&#xd;
-        &quot;groupop&quot;: [&quot;countop&quot;],&#xd;
-        &quot;countop&quot;: [&quot;filterop&quot;],&#xd;
-        &quot;filterop&quot;: [&quot;orderop&quot;],&#xd;
-        &quot;orderop&quot;: [&quot;pick&quot;],&#xd;
-        &quot;pick&quot;: [&quot;mqtt&quot;, &quot;log&quot;]&#xd;
-      }&#xd;
-    }&#xd;
-  },&#xd;
-  &quot;options&quot;: {&#xd;
-    &quot;isEventTime&quot;: true,&#xd;
-    &quot;lateTolerance&quot; : 0&#xd;
-  }&#xd;
-}</stringProp>
+                    &quot;fields&quot;: [&quot;device_id&quot;, &quot;count&quot;]&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;mqtt&quot;: {&#xd;
+                    &quot;type&quot;: &quot;sink&quot;,&#xd;
+                    &quot;nodeType&quot;: &quot;mqtt&quot;,&#xd;
+                    &quot;props&quot;: {&#xd;
+                    &quot;server&quot;: &quot;tcp://${mqtt_srv}:1883&quot;,&#xd;
+                    &quot;topic&quot;: &quot;devices/result&quot;&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;log&quot;: {&#xd;
+                    &quot;type&quot;: &quot;sink&quot;,&#xd;
+                    &quot;nodeType&quot;: &quot;log&quot;,&#xd;
+                    &quot;props&quot;: {}&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;topo&quot;: {&#xd;
+                    &quot;sources&quot;: [&quot;device1&quot;, &quot;device2&quot;],&#xd;
+                    &quot;edges&quot;: {&#xd;
+                    &quot;device1&quot;: [&quot;watermark&quot;],&#xd;
+                    &quot;device2&quot;: [&quot;watermark&quot;],&#xd;
+                    &quot;watermark&quot;:[&quot;window&quot;],&#xd;
+                    &quot;window&quot;: [&quot;groupop&quot;],&#xd;
+                    &quot;groupop&quot;: [&quot;countop&quot;],&#xd;
+                    &quot;countop&quot;: [&quot;filterop&quot;],&#xd;
+                    &quot;filterop&quot;: [&quot;orderop&quot;],&#xd;
+                    &quot;orderop&quot;: [&quot;pick&quot;],&#xd;
+                    &quot;pick&quot;: [&quot;mqtt&quot;, &quot;log&quot;]&#xd;
+                    }&#xd;
+                    }&#xd;
+                    },&#xd;
+                    &quot;options&quot;: {&#xd;
+                    &quot;isEventTime&quot;: true,&#xd;
+                    &quot;lateTolerance&quot; : 0&#xd;
+                    }&#xd;
+                    }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
               </collectionProp>
@@ -342,7 +350,7 @@
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
               <stringProp name="JSON_PATH">$.op_window_0_records_in_total</stringProp>
-              <stringProp name="EXPECTED_VALUE">15</stringProp>
+              <stringProp name="EXPECTED_VALUE">13</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
               <boolProp name="INVERT">false</boolProp>
