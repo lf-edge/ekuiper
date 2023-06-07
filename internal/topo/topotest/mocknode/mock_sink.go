@@ -15,8 +15,6 @@
 package mocknode
 
 import (
-	"fmt"
-
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -38,7 +36,6 @@ func (m *MockSink) Open(ctx api.StreamContext) error {
 
 func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	fmt.Println("mock sink receive ", item)
 	if v, _, err := ctx.TransformOutput(item); err == nil {
 		logger.Debugf("mock sink receive %s", item)
 		m.results = append(m.results, v)
@@ -48,12 +45,12 @@ func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
 	return nil
 }
 
-func (m *MockSink) Close(ctx api.StreamContext) error {
+func (m *MockSink) Close(_ api.StreamContext) error {
 	// do nothing
 	return nil
 }
 
-func (m *MockSink) Configure(props map[string]interface{}) error {
+func (m *MockSink) Configure(_ map[string]interface{}) error {
 	return nil
 }
 

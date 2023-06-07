@@ -15,8 +15,6 @@
 package xsql
 
 import (
-	"sort"
-
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -185,14 +183,6 @@ func (w *WindowTuples) GroupRange(f func(i int, aggRow CollectionRow) (bool, err
 func (w *WindowTuples) AddTuple(tuple *Tuple) *WindowTuples {
 	w.Content = append(w.Content, tuple)
 	return w
-}
-
-// Sort by tuple timestamp
-func (w *WindowTuples) Sort() {
-	w.cachedMap = nil
-	sort.SliceStable(w.Content, func(i, j int) bool {
-		return w.Content[i].(Event).GetTimestamp() < w.Content[j].(Event).GetTimestamp()
-	})
 }
 
 func (w *WindowTuples) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {

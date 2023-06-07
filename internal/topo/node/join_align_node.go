@@ -105,7 +105,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 					switch d := item.(type) {
 					case error:
-						n.Broadcast(d)
+						_ = n.Broadcast(d)
 						n.statManager.IncTotalExceptions(d.Error())
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %s", d)
@@ -125,16 +125,16 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							_, ok := n.batch[emitter]
 							if !ok {
 								e := fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d)
-								n.Broadcast(e)
+								_ = n.Broadcast(e)
 								n.statManager.IncTotalExceptions(e.Error())
 								break
 							}
 							n.batch[emitter] = d.Content
-							ctx.PutState(BatchKey, n.batch)
+							_ = ctx.PutState(BatchKey, n.batch)
 						}
 					default:
 						e := fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d)
-						n.Broadcast(e)
+						_ = n.Broadcast(e)
 						n.statManager.IncTotalExceptions(e.Error())
 					}
 				case <-ctx.Done():
@@ -157,7 +157,7 @@ func (n *JoinAlignNode) alignBatch(_ api.StreamContext, w *xsql.WindowTuples) {
 		}
 	}
 
-	n.Broadcast(w)
+	_ = n.Broadcast(w)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()
 	n.statManager.SetBufferLength(int64(len(n.input)))

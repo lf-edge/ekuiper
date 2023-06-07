@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ type LogicalPlan interface {
 	SetChildren(children []LogicalPlan)
 	// PushDownPredicate pushes down the filter in the filter/where/on/having clauses as deeply as possible.
 	// It will accept a condition that is an expression slice, and return the expressions that can't be pushed.
-	// It also return the new tree of plan as it can possibly change the tree
+	// It is also return the new tree of plan as it can possibly change the tree
 	PushDownPredicate(ast.Expr) (ast.Expr, LogicalPlan)
-	// Prune the unused columns in the data source level, by pushing all needed columns down
+	// PruneColumns Prune the unused columns in the data source level, by pushing all needed columns down
 	PruneColumns(fields []ast.Expr) error
 }
 

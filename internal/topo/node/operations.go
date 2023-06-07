@@ -44,7 +44,7 @@ type UnaryOperator struct {
 	cancelled bool
 }
 
-// NewUnary creates *UnaryOperator value
+// New NewUnary creates *UnaryOperator value
 func New(name string, options *api.RuleOption) *UnaryOperator {
 	return &UnaryOperator{
 		defaultSinkNode: &defaultSinkNode{
@@ -136,19 +136,19 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				continue
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
-				o.Broadcast(val)
+				_ = o.Broadcast(val)
 				stats.IncTotalExceptions(val.Error())
 				continue
 			case []xsql.TupleRow:
 				stats.ProcessTimeEnd()
 				for _, v := range val {
-					o.Broadcast(v)
+					_ = o.Broadcast(v)
 					stats.IncTotalRecordsOut()
 				}
 				stats.SetBufferLength(int64(len(o.input)))
 			default:
 				stats.ProcessTimeEnd()
-				o.Broadcast(val)
+				_ = o.Broadcast(val)
 				stats.IncTotalRecordsOut()
 				stats.SetBufferLength(int64(len(o.input)))
 			}

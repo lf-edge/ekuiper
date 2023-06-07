@@ -58,7 +58,7 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sink
 	if err != nil {
 		return nil, err
 	}
-	// Create logical plan and optimize. Logical plans are a linked list
+	// Create the logical plan and optimize. Logical plans are a linked list
 	lp, err := createLogicalPlan(stmt, rule.Options, store)
 	if err != nil {
 		return nil, err
@@ -127,6 +127,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		tp.AddSrc(srcNode)
 		inputs = []api.Emitter{srcNode}
 		op = srcNode
+	case *WatermarkPlan:
+		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.Emitters, options)
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *WindowPlan:
@@ -150,7 +152,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			Interval:    i,
 			RawInterval: rawInterval,
 			TimeUnit:    t.timeUnit,
-		}, streamsFromStmt, options)
+		}, options)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -273,6 +275,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		lookupTableChildren map[string]*ast.Options
 		scanTableChildren   []LogicalPlan
 		scanTableEmitters   []string
+		streamEmitters      []string
 		w                   *ast.Window
 		ds                  ast.Dimensions
 	)
@@ -299,11 +302,19 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			}.Init()
 			if sInfo.stmt.StreamType == ast.TypeStream {
 				children = append(children, p)
+				streamEmitters = append(streamEmitters, string(sInfo.stmt.Name))
 			} else {
 				scanTableChildren = append(scanTableChildren, p)
 				scanTableEmitters = append(scanTableEmitters, string(sInfo.stmt.Name))
 			}
 		}
+	}
+	if opt.IsEventTime {
+		p = WatermarkPlan{
+			Emitters: streamEmitters,
+		}.Init()
+		p.SetChildren(children)
+		children = []LogicalPlan{p}
 	}
 	if len(analyticFuncs) > 0 {
 		p = AnalyticFuncsPlan{
