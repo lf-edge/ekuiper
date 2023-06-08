@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -251,6 +251,10 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						log.Debugf("receive non tuple element %v", d)
 					}
 					log.Debugf("event window receive tuple %s", tuple.Message)
+					// first tuple, set the window start time, which will set to triggerTime
+					if o.triggerTime == 0 {
+						o.triggerTime = tuple.Timestamp
+					}
 					if o.watermarkGenerator.track(tuple.Emitter, d.GetTimestamp(), ctx) {
 						inputs = append(inputs, tuple)
 					}

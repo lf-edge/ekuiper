@@ -794,7 +794,7 @@ func TestEventWindow(t *testing.T) {
 			Sql:  `SELECT window_start(), window_end(), color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"window_start": float64(1541152486000),
+					"window_start": float64(1541152486013),
 					"window_end":   float64(1541152487000),
 					"color":        "red",
 					"ts":           float64(1541152486013),
@@ -1179,7 +1179,7 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color":        "red",
-					"window_start": float64(1541152485000),
+					"window_start": float64(1541152485013),
 					"window_end":   float64(1541152487000),
 				}},
 				{{
