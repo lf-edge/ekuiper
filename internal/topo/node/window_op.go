@@ -123,7 +123,9 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	} else {
 		log.Warnf("Restore window state fails: %s", err)
 	}
-	o.triggerTime = conf.GetNowInMilli()
+	if !o.isEventTime {
+		o.triggerTime = conf.GetNowInMilli()
+	}
 	if s, err := ctx.GetState(TRIGGER_TIME_KEY); err == nil && s != nil {
 		if si, ok := s.(int64); ok {
 			o.triggerTime = si
