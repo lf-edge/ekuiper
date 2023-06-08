@@ -280,7 +280,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"size":  3,
 				"ts":    1541152486013,
 			},
-			Timestamp: 1541152486023,
+			Timestamp: 1541152586023,
 		},
 		{
 			Emitter: "demoE",
@@ -289,7 +289,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"size":  2,
 				"ts":    1541152487632,
 			},
-			Timestamp: 1541152487822,
+			Timestamp: 1541152587822,
 		},
 		{
 			Emitter: "demoE",
@@ -298,7 +298,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"size":  1,
 				"ts":    1541152489252,
 			},
-			Timestamp: 1541152489632,
+			Timestamp: 1541152589632,
 		},
 		{ // dropped item
 			Emitter: "demoE",
@@ -307,7 +307,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"size":  6,
 				"ts":    1541152486822,
 			},
-			Timestamp: 1541152489842,
+			Timestamp: 1541152589842,
 		},
 		{
 			Emitter: "demoE",
@@ -316,7 +316,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"size":  4,
 				"ts":    1541152488442,
 			},
-			Timestamp: 1541152490052,
+			Timestamp: 1541152590052,
 		},
 		{ // To lift the watermark and issue all windows
 			Emitter: "demoE",
@@ -325,7 +325,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"size":  4,
 				"ts":    1541152492342,
 			},
-			Timestamp: 1541152498888,
+			Timestamp: 1541152598888,
 		},
 	},
 	"demo1E": {
@@ -336,7 +336,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  59,
 				"ts":   1541152486823,
 			},
-			Timestamp: 1541152487250,
+			Timestamp: 1541152587250,
 		},
 		{
 			Emitter: "demo1E",
@@ -345,7 +345,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  65,
 				"ts":   1541152486013,
 			},
-			Timestamp: 1541152487751,
+			Timestamp: 1541152587751,
 		},
 		{
 			Emitter: "demo1E",
@@ -354,7 +354,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  80,
 				"ts":   1541152488442,
 			},
-			Timestamp: 1541152489252,
+			Timestamp: 1541152589252,
 		},
 		{
 			Emitter: "demo1E",
@@ -363,7 +363,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  75,
 				"ts":   1541152487632,
 			},
-			Timestamp: 1541152489753,
+			Timestamp: 1541152589753,
 		},
 		{
 			Emitter: "demo1E",
@@ -372,7 +372,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  62,
 				"ts":   1541152489252,
 			},
-			Timestamp: 1541152489954,
+			Timestamp: 1541152589954,
 		},
 		{
 			Emitter: "demo1E",
@@ -381,7 +381,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  62,
 				"ts":   1541152499252,
 			},
-			Timestamp: 1541152499755,
+			Timestamp: 1541152599755,
 		},
 	},
 	"sessionDemoE": {
@@ -392,7 +392,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  65,
 				"ts":   1541152486013,
 			},
-			Timestamp: 1541152486250,
+			Timestamp: 1541152586250,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -401,7 +401,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  75,
 				"ts":   1541152487932,
 			},
-			Timestamp: 1541152487951,
+			Timestamp: 1541152587951,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -410,7 +410,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  59,
 				"ts":   1541152486823,
 			},
-			Timestamp: 1541152488552,
+			Timestamp: 1541152588552,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -419,7 +419,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  62,
 				"ts":   1541152489252,
 			},
-			Timestamp: 1541152489353,
+			Timestamp: 1541152589353,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -428,7 +428,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  80,
 				"ts":   1541152488442,
 			},
-			Timestamp: 1541152489854,
+			Timestamp: 1541152589854,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -437,7 +437,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  63,
 				"ts":   1541152490062,
 			},
-			Timestamp: 1541152490155,
+			Timestamp: 1541152590155,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -446,7 +446,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  85,
 				"ts":   1541152491682,
 			},
-			Timestamp: 1541152491686,
+			Timestamp: 1541152591686,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -455,7 +455,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  71,
 				"ts":   1541152490872,
 			},
-			Timestamp: 1541152491972,
+			Timestamp: 1541152591972,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -464,7 +464,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  92,
 				"ts":   1541152492492,
 			},
-			Timestamp: 1541152492592,
+			Timestamp: 1541152592592,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -473,7 +473,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  87,
 				"ts":   1541152494112,
 			},
-			Timestamp: 1541152494212,
+			Timestamp: 1541152594212,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -482,7 +482,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  99,
 				"ts":   1541152493202,
 			},
-			Timestamp: 1541152495202,
+			Timestamp: 1541152595202,
 		},
 		{
 			Emitter: "sessionDemoE",
@@ -491,7 +491,7 @@ var TestData = map[string][]*xsql.Tuple{
 				"hum":  99,
 				"ts":   1541152499202,
 			},
-			Timestamp: 1541152499402,
+			Timestamp: 1541152599402,
 		},
 	},
 	"demoErr": {
