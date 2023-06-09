@@ -117,6 +117,7 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 	if err := rs.Stop(); err != nil {
 		return err
 	}
+	time.Sleep(1 * time.Millisecond)
 	rs.Rule = rule
 	return rs.Start()
 }
