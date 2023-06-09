@@ -2987,6 +2987,32 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
+			s: `SELECT "a\"b'c" FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.StringLiteral{Val: `a"b'c`},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT 'a"b\'c' FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.StringLiteral{Val: `a"b'c`},
+						Name:  "kuiper_field_0",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
 			s:    `SELECT "abc' FROM tbl`,
 			stmt: nil,
 			err:  `found "\"abc' FROM tbl", expected expression.`,
