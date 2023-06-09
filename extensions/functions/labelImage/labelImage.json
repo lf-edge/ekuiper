@@ -8,8 +8,8 @@
 			"website": "https://www.emqx.io"
 		},
 		"helpUrl": {
-          "en_US": "https://ekuiper.org/docs/en/latest/sqls/custom_functions.html",
-          "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/custom_functions.html"
+          "en_US": "https://ekuiper.org/docs/en/latest/sqls/functions/custom_functions.html",
+          "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/functions/custom_functions.html"
         },
 		"description": {
 			"en_US": "Example plugin to demonstrate inferring Tensorflow lite model to label an image",
