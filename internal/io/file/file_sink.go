@@ -119,7 +119,7 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debug("Opening file sink")
 	// Check if the files have opened longer than the rolling interval, if so close it and create a new one
 	if *m.c.CheckInterval > 0 {
-		t := conf.GetTicker(int(*m.c.CheckInterval))
+		t := conf.GetTicker(*m.c.CheckInterval)
 		go func() {
 			defer t.Stop()
 			for {

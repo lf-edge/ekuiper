@@ -32,15 +32,17 @@ import (
 )
 
 type WindowConfig struct {
-	Type     ast.WindowType
-	Length   int
-	Interval int // If interval is not set, it is equals to Length
+	Type        ast.WindowType
+	Length      int64
+	Interval    int64 // If the interval is not set, it is equals to Length
+	RawInterval int
+	TimeUnit    ast.Token
 }
 
 type WindowOperator struct {
 	*defaultSinkNode
 	window             *WindowConfig
-	interval           int
+	interval           int64
 	isEventTime        bool
 	watermarkGenerator *WatermarkGenerator // For event time only
 
@@ -166,16 +168,43 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
-func getAlignedWindowEndTime(n, interval int64) time.Time {
-	now := time.UnixMilli(n)
-	offset := conf.GetLocalZone()
-	start := now.Truncate(24 * time.Hour).Add(time.Duration(-1*offset) * time.Second)
-	diff := now.Sub(start).Milliseconds()
-	return now.Add(time.Duration(interval-(diff%interval)) * time.Millisecond)
+func getAlignedWindowEndTime(n time.Time, interval int, timeUnit ast.Token) time.Time {
+	switch timeUnit {
+	case ast.DD: // The interval * days starting today
+		return time.Date(n.Year(), n.Month(), n.Day()+interval, 0, 0, 0, 0, n.Location())
+	case ast.HH:
+		gap := interval
+		if n.Hour() > interval {
+			gap = interval * (n.Hour()/interval + 1)
+		}
+		return time.Date(n.Year(), n.Month(), n.Day(), 0, 0, 0, 0, n.Location()).Add(time.Duration(gap) * time.Hour)
+	case ast.MI:
+		gap := interval
+		if n.Minute() > interval {
+			gap = interval * (n.Minute()/interval + 1)
+		}
+		return time.Date(n.Year(), n.Month(), n.Day(), n.Hour(), 0, 0, 0, n.Location()).Add(time.Duration(gap) * time.Minute)
+	case ast.SS:
+		gap := interval
+		if n.Second() > interval {
+			gap = interval * (n.Second()/interval + 1)
+		}
+		return time.Date(n.Year(), n.Month(), n.Day(), n.Hour(), n.Minute(), 0, 0, n.Location()).Add(time.Duration(gap) * time.Second)
+	case ast.MS:
+		milli := n.Nanosecond() / int(time.Millisecond)
+		gap := interval
+		if milli > interval {
+			gap = interval * (milli/interval + 1)
+		}
+		return time.Date(n.Year(), n.Month(), n.Day(), n.Hour(), n.Minute(), n.Second(), 0, n.Location()).Add(time.Duration(gap) * time.Millisecond)
+	default: // should never happen
+		conf.Log.Errorf("invalid time unit %s", timeUnit)
+		return n
+	}
 }
 
-func getFirstTimer(ctx api.StreamContext, interval int64) (int64, *clock.Timer) {
-	next := getAlignedWindowEndTime(conf.GetNowInMilli(), interval)
+func getFirstTimer(ctx api.StreamContext, rawInerval int, timeUnit ast.Token) (int64, *clock.Timer) {
+	next := getAlignedWindowEndTime(conf.GetNow(), rawInerval, timeUnit)
 	ctx.GetLogger().Infof("align window timer to %v(%d)", next, next.UnixMilli())
 	return next.UnixMilli(), conf.GetTimerByTime(next)
 }
@@ -195,15 +224,15 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 	switch o.window.Type {
 	case ast.NOT_WINDOW:
 	case ast.TUMBLING_WINDOW:
-		firstTime, firstTicker = getFirstTimer(ctx, int64(o.window.Length))
+		firstTime, firstTicker = getFirstTimer(ctx, o.window.RawInterval, o.window.TimeUnit)
 		o.interval = o.window.Length
 	case ast.HOPPING_WINDOW:
-		firstTime, firstTicker = getFirstTimer(ctx, int64(o.window.Interval))
+		firstTime, firstTicker = getFirstTimer(ctx, o.window.RawInterval, o.window.TimeUnit)
 		o.interval = o.window.Interval
 	case ast.SLIDING_WINDOW:
 		o.interval = o.window.Length
 	case ast.SESSION_WINDOW:
-		firstTime, firstTicker = getFirstTimer(ctx, int64(o.window.Length))
+		firstTime, firstTicker = getFirstTimer(ctx, o.window.RawInterval, o.window.TimeUnit)
 		o.interval = o.window.Interval
 	case ast.COUNT_WINDOW:
 		o.interval = o.window.Interval
@@ -213,12 +242,12 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 		firstC = firstTicker.C
 		// resume previous window
 		if len(inputs) > 0 && o.triggerTime > 0 {
-			nextTick := conf.GetNowInMilli() + int64(o.interval)
+			nextTick := conf.GetNowInMilli() + o.interval
 			next := o.triggerTime
 			switch o.window.Type {
 			case ast.TUMBLING_WINDOW, ast.HOPPING_WINDOW:
 				for {
-					next = next + int64(o.interval)
+					next = next + o.interval
 					if next > nextTick {
 						break
 					}
@@ -228,7 +257,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 					ctx.PutState(TRIGGER_TIME_KEY, o.triggerTime)
 				}
 			case ast.SESSION_WINDOW:
-				timeout, duration := int64(o.window.Interval), int64(o.window.Length)
+				timeout, duration := o.window.Interval, o.window.Length
 				for {
 					et := inputs[0].Timestamp
 					tick := et + (duration - et%duration)
@@ -307,12 +336,12 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				case ast.COUNT_WINDOW:
 					o.msgCount++
 					log.Debugf(fmt.Sprintf("msgCount: %d", o.msgCount))
-					if o.msgCount%o.window.Interval != 0 {
+					if int64(o.msgCount)%o.window.Interval != 0 {
 						continue
 					}
 					o.msgCount = 0
 
-					if tl, er := NewTupleList(inputs, o.window.Length); er != nil {
+					if tl, er := NewTupleList(inputs, int(o.window.Length)); er != nil {
 						log.Error(fmt.Sprintf("Found error when trying to "))
 						infra.DrainError(ctx, er, errCh)
 						return
@@ -355,17 +384,17 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			c = o.ticker.C
 			inputs = o.tick(ctx, inputs, firstTime, log)
 			if o.window.Type == ast.SESSION_WINDOW {
-				nextTime = firstTime + int64(o.window.Length)
+				nextTime = firstTime + o.window.Length
 			} else {
-				nextTime = firstTime + int64(o.interval)
+				nextTime = firstTime + o.interval
 			}
 		case now := <-c:
 			log.Debugf("Successive tick at %v(%d)", now, now.UnixMilli())
 			inputs = o.tick(ctx, inputs, nextTime, log)
 			if o.window.Type == ast.SESSION_WINDOW {
-				nextTime += int64(o.window.Length)
+				nextTime += o.window.Length
 			} else {
-				nextTime += int64(o.interval)
+				nextTime += o.interval
 			}
 		case now := <-timeout:
 			if len(inputs) > 0 {
@@ -394,9 +423,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 func (o *WindowOperator) tick(ctx api.StreamContext, inputs []*xsql.Tuple, n int64, log api.Logger) []*xsql.Tuple {
 	if o.window.Type == ast.SESSION_WINDOW {
 		log.Debugf("session window update trigger time %d with %d inputs", n, len(inputs))
-		if len(inputs) == 0 || n-int64(o.window.Length) < inputs[0].Timestamp {
+		if len(inputs) == 0 || n-o.window.Length < inputs[0].Timestamp {
 			if len(inputs) > 0 {
-				log.Debugf("session window last trigger time %d < first tuple %d", n-int64(o.window.Length), inputs[0].Timestamp)
+				log.Debugf("session window last trigger time %d < first tuple %d", n-o.window.Length, inputs[0].Timestamp)
 			}
 			return inputs
 		}
@@ -480,7 +509,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	for _, tuple := range inputs {
 		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 			diff := triggerTime - tuple.Timestamp
-			if diff > int64(o.window.Length)+delta {
+			if diff > o.window.Length+delta {
 				log.Debugf("diff: %d, length: %d, delta: %d", diff, o.window.Length, delta)
 				log.Debugf("tuple %s emitted at %d expired", tuple, tuple.Timestamp)
 				// Expired tuple, remove it by not adding back to inputs
@@ -503,12 +532,12 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
 		windowStart = o.triggerTime
 	case ast.HOPPING_WINDOW:
-		windowStart = o.triggerTime - int64(o.window.Interval)
+		windowStart = o.triggerTime - o.window.Interval
 	case ast.SLIDING_WINDOW:
-		windowStart = triggerTime - int64(o.window.Length)
+		windowStart = triggerTime - o.window.Length
 	}
 	if windowStart <= 0 {
-		windowStart = windowEnd - int64(o.window.Length)
+		windowStart = windowEnd - o.window.Length
 	}
 	results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
@@ -531,7 +560,7 @@ func (o *WindowOperator) calDelta(triggerTime int64, log api.Logger) int64 {
 		delta = math.MaxInt16 // max int, all events for the initial window
 	} else {
 		if !o.isEventTime && o.window.Interval > 0 {
-			delta = triggerTime - lastTriggerTime - int64(o.window.Interval)
+			delta = triggerTime - lastTriggerTime - o.window.Interval
 			if delta > 100 {
 				log.Warnf("Possible long computation in window; Previous eviction time: %d, current eviction time: %d", lastTriggerTime, triggerTime)
 			}

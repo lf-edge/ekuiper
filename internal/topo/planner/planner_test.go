@@ -36,7 +36,7 @@ func init() {
 }
 
 func Test_createLogicalPlan(t *testing.T) {
-	store, err := store.GetKV("stream")
+	kv, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -73,7 +73,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			t.Error(err)
 			t.Fail()
 		}
-		err = store.Set(name, string(s))
+		err = kv.Set(name, string(s))
 		if err != nil {
 			t.Error(err)
 			t.Fail()
@@ -81,7 +81,7 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 	streams := make(map[string]*ast.StreamStmt)
 	for n := range streamSqls {
-		streamStmt, err := xsql.GetDataSource(store, n)
+		streamStmt, err := xsql.GetDataSource(kv, n)
 		if err != nil {
 			t.Errorf("fail to get stream %s, please check if stream is created", n)
 			return
@@ -293,7 +293,8 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							condition: nil,
 							wtype:     ast.TUMBLING_WINDOW,
-							length:    10000,
+							length:    10,
+							timeUnit:  ast.SS,
 							interval:  0,
 							limit:     0,
 						}.Init(),
@@ -352,7 +353,8 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										condition: nil,
 										wtype:     ast.TUMBLING_WINDOW,
-										length:    10000,
+										length:    10,
+										timeUnit:  ast.SS,
 										interval:  0,
 										limit:     0,
 									}.Init(),
@@ -445,7 +447,8 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							condition: nil,
 							wtype:     ast.TUMBLING_WINDOW,
-							length:    10000,
+							length:    10,
+							timeUnit:  ast.SS,
 							interval:  0,
 							limit:     0,
 						}.Init(),
@@ -610,7 +613,8 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										condition: nil,
 										wtype:     ast.TUMBLING_WINDOW,
-										length:    10000,
+										length:    10,
+										timeUnit:  ast.SS,
 										interval:  0,
 										limit:     0,
 									}.Init(),
@@ -698,7 +702,8 @@ func Test_createLogicalPlan(t *testing.T) {
 										},
 										condition: nil,
 										wtype:     ast.TUMBLING_WINDOW,
-										length:    10000,
+										length:    10,
+										timeUnit:  ast.SS,
 										interval:  0,
 										limit:     0,
 									}.Init(),
@@ -884,7 +889,8 @@ func Test_createLogicalPlan(t *testing.T) {
 													},
 													condition: nil,
 													wtype:     ast.TUMBLING_WINDOW,
-													length:    10000,
+													length:    10,
+													timeUnit:  ast.SS,
 													interval:  0,
 													limit:     0,
 												}.Init(),
@@ -1587,7 +1593,8 @@ func Test_createLogicalPlan(t *testing.T) {
 													},
 													condition: nil,
 													wtype:     ast.SLIDING_WINDOW,
-													length:    10000,
+													length:    10,
+													timeUnit:  ast.SS,
 													interval:  0,
 													limit:     0,
 												}.Init(),
@@ -1808,7 +1815,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			Qos:                0,
 			CheckpointInterval: 0,
 			SendError:          true,
-		}, store)
+		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else if !reflect.DeepEqual(tt.p, p) {
@@ -1818,7 +1825,7 @@ func Test_createLogicalPlan(t *testing.T) {
 }
 
 func Test_createLogicalPlanSchemaless(t *testing.T) {
-	store, err := store.GetKV("stream")
+	kv, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -1849,7 +1856,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 			t.Error(err)
 			t.Fail()
 		}
-		err = store.Set(name, string(s))
+		err = kv.Set(name, string(s))
 		if err != nil {
 			t.Error(err)
 			t.Fail()
@@ -1857,7 +1864,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 	}
 	streams := make(map[string]*ast.StreamStmt)
 	for n := range streamSqls {
-		streamStmt, err := xsql.GetDataSource(store, n)
+		streamStmt, err := xsql.GetDataSource(kv, n)
 		if err != nil {
 			t.Errorf("fail to get stream %s, please check if stream is created", n)
 			return
@@ -1933,7 +1940,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							},
 							condition: nil,
 							wtype:     ast.TUMBLING_WINDOW,
-							length:    10000,
+							length:    10,
+							timeUnit:  ast.SS,
 							interval:  0,
 							limit:     0,
 						}.Init(),
@@ -1985,7 +1993,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 										},
 										condition: nil,
 										wtype:     ast.TUMBLING_WINDOW,
-										length:    10000,
+										length:    10,
+										timeUnit:  ast.SS,
 										interval:  0,
 										limit:     0,
 									}.Init(),
@@ -2072,7 +2081,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							},
 							condition: nil,
 							wtype:     ast.TUMBLING_WINDOW,
-							length:    10000,
+							length:    10,
+							timeUnit:  ast.SS,
 							interval:  0,
 							limit:     0,
 						}.Init(),
@@ -2214,7 +2224,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 										},
 										condition: nil,
 										wtype:     ast.TUMBLING_WINDOW,
-										length:    10000,
+										length:    10,
+										timeUnit:  ast.SS,
 										interval:  0,
 										limit:     0,
 									}.Init(),
@@ -2295,7 +2306,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 										},
 										condition: nil,
 										wtype:     ast.TUMBLING_WINDOW,
-										length:    10000,
+										length:    10,
+										timeUnit:  ast.SS,
 										interval:  0,
 										limit:     0,
 									}.Init(),
@@ -2473,7 +2485,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													},
 													condition: nil,
 													wtype:     ast.TUMBLING_WINDOW,
-													length:    10000,
+													length:    10,
+													timeUnit:  ast.SS,
 													interval:  0,
 													limit:     0,
 												}.Init(),
@@ -2786,7 +2799,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 			Qos:                0,
 			CheckpointInterval: 0,
 			SendError:          true,
-		}, store)
+		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else if !reflect.DeepEqual(tt.p, p) {
@@ -2796,7 +2809,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 }
 
 func Test_createLogicalPlan4Lookup(t *testing.T) {
-	store, err := store.GetKV("stream")
+	kv, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
 		return
@@ -2820,7 +2833,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 			t.Error(err)
 			t.Fail()
 		}
-		err = store.Set(name, string(s))
+		err = kv.Set(name, string(s))
 		if err != nil {
 			t.Error(err)
 			t.Fail()
@@ -2828,7 +2841,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 	}
 	streams := make(map[string]*ast.StreamStmt)
 	for n := range streamSqls {
-		streamStmt, err := xsql.GetDataSource(store, n)
+		streamStmt, err := xsql.GetDataSource(kv, n)
 		if err != nil {
 			t.Errorf("fail to get stream %s, please check if stream is created", n)
 			return
@@ -3199,7 +3212,8 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 										},
 										condition: nil,
 										wtype:     ast.TUMBLING_WINDOW,
-										length:    10000,
+										length:    10,
+										timeUnit:  ast.SS,
 										interval:  0,
 										limit:     0,
 									}.Init(),
@@ -3264,7 +3278,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 			Qos:                0,
 			CheckpointInterval: 0,
 			SendError:          true,
-		}, store)
+		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else if !reflect.DeepEqual(tt.p, p) {
@@ -3302,13 +3316,13 @@ func TestTransformSourceNode(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			node, err := transformSourceNode(tc.plan, nil, &api.RuleOption{})
+			sourceNode, err := transformSourceNode(tc.plan, nil, &api.RuleOption{})
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
-			if !reflect.DeepEqual(node, tc.node) {
-				t.Errorf("unexpected result: got %v, want %v", node, tc.node)
+			if !reflect.DeepEqual(sourceNode, tc.node) {
+				t.Errorf("unexpected result: got %v, want %v", sourceNode, tc.node)
 			}
 		})
 	}

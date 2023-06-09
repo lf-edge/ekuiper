@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 var fivet = []*xsql.Tuple{
@@ -54,46 +55,68 @@ var fivet = []*xsql.Tuple{
 func TestTime(t *testing.T) {
 	tests := []struct {
 		interval int
+		unit     ast.Token
 		end      time.Time
 	}{
 		{
 			interval: 10,
+			unit:     ast.MS,
 			end:      time.UnixMilli(1658218371340),
 		}, {
 			interval: 500,
+			unit:     ast.MS,
 			end:      time.UnixMilli(1658218371500),
 		}, {
-			interval: 1000,
+			interval: 1,
+			unit:     ast.SS,
 			end:      time.UnixMilli(1658218372000),
 		}, {
-			interval: 40000, // 4oms
+			interval: 40, // 40 seconds
+			unit:     ast.SS,
 			end:      time.UnixMilli(1658218400000),
 		}, {
-			interval: 60000,
+			interval: 1,
+			unit:     ast.MI,
 			end:      time.UnixMilli(1658218380000),
 		}, {
-			interval: 180000,
+			interval: 3,
+			unit:     ast.MI,
 			end:      time.UnixMilli(1658218500000),
 		}, {
-			interval: 3600000,
+			interval: 1,
+			unit:     ast.HH,
 			end:      time.UnixMilli(1658221200000),
 		}, {
-			interval: 7200000,
+			interval: 2,
+			unit:     ast.HH,
 			end:      time.UnixMilli(1658224800000),
 		}, {
-			interval: 18000000, // 5 hours
+			interval: 5, // 5 hours
+			unit:     ast.HH,
 			end:      time.UnixMilli(1658232000000),
 		}, {
-			interval: 3600000 * 24, // 1 day
+			interval: 1, // 1 day
+			unit:     ast.DD,
 			end:      time.UnixMilli(1658246400000),
 		}, {
-			interval: 3600000 * 24 * 7, // 1 week
+			interval: 7, // 1 week
+			unit:     ast.DD,
 			end:      time.UnixMilli(1658764800000),
 		},
 	}
+	// Set the global timezone
+	location, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		fmt.Println("Error loading location:", err)
+		return
+	}
+	time.Local = location
+
+	fmt.Println(time.UnixMilli(1658218371337).String())
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+
 	for i, tt := range tests {
-		ae := getAlignedWindowEndTime(1658218371337, int64(tt.interval))
+		ae := getAlignedWindowEndTime(time.UnixMilli(1658218371337), tt.interval, tt.unit)
 		if tt.end.UnixMilli() != ae.UnixMilli() {
 			t.Errorf("%d for interval %d. error mismatch:\n  exp=%s(%d)\n  got=%s(%d)\n\n", i, tt.interval, tt.end, tt.end.UnixMilli(), ae, ae.UnixMilli())
 		}
