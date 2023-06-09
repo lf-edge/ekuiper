@@ -195,7 +195,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	scheduleOption1 := &*defaultOption
+	scheduleOption1 := *defaultOption
 	scheduleOption1.Cron = "mockCron1"
 	scheduleOption1.Duration = "1s"
 	rule1 := &api.Rule{
@@ -207,7 +207,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 				"log": map[string]interface{}{},
 			},
 		},
-		Options: scheduleOption1,
+		Options: &scheduleOption1,
 	}
 	rs, err := NewRuleState(rule1)
 	require.NoError(t, err)
@@ -218,7 +218,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	require.Equal(t, "mockCron1", rs.cronState.cron)
 	require.Equal(t, "1s", rs.cronState.duration)
 
-	scheduleOption2 := &*defaultOption
+	scheduleOption2 := *defaultOption
 	scheduleOption2.Cron = "mockCron2"
 	scheduleOption2.Duration = "2s"
 	rule2 := &api.Rule{
@@ -230,7 +230,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 				"log": map[string]interface{}{},
 			},
 		},
-		Options: scheduleOption2,
+		Options: &scheduleOption2,
 	}
 	err = rs.UpdateTopo(rule2)
 	require.NoError(t, err)

@@ -111,6 +111,9 @@ func NewRuleState(rule *api.Rule) (*RuleState, error) {
 // UpdateTopo update the rule and the topology AND restart the topology
 // Do not need to call restart after update
 func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
+	if _, err := planner.Plan(rule); err != nil {
+		return err
+	}
 	if err := rs.Stop(); err != nil {
 		return err
 	}
