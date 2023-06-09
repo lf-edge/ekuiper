@@ -61,7 +61,7 @@ collect(col)
     ```sql
     SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
-- 获取当前窗口所有消息的列 a 的值组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+- 获取当前窗口所有消息的值组成的数组。结果为: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
     ```sql
     SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```

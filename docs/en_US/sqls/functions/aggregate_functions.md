@@ -64,7 +64,7 @@ Examples:
     SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 - Get the whole array of the current window. The result will be
-  like: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+  like: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
     ```sql
     SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
