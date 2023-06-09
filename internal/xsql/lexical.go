@@ -271,7 +271,13 @@ func (s *Scanner) ScanString(isSingle bool) (tok ast.Token, lit string) {
 			return ast.BADSTRING, buf.String()
 		} else if ch == '\\' && !escape {
 			escape = true
-			buf.WriteRune(ch)
+			nextCh := s.read()
+			if nextCh == '\'' && isSingle {
+				buf.WriteRune(nextCh)
+			} else {
+				buf.WriteRune(ch)
+				s.unread()
+			}
 		} else {
 			escape = false
 			buf.WriteRune(ch)
