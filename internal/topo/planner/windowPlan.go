@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ type WindowPlan struct {
 	wtype       ast.WindowType
 	length      int
 	interval    int // If interval is not set, it is equals to Length
+	timeUnit    ast.Token
 	limit       int // If limit is not positive, there will be no limit
 	isEventTime bool
 }

@@ -153,6 +153,7 @@ func (rs *RuleState) run() {
 				if ctx != nil {
 					conf.Log.Warnf("rule %s is already started", rs.RuleId)
 				} else {
+
 					ctx, cancel = context.WithCancel(context.Background())
 					go rs.runTopo(ctx)
 				}
@@ -189,6 +190,7 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 		for {
 			select {
 			case e := <-tp.Open():
+
 				er = e
 				if er != nil { // Only restart rule for errors
 					tp.GetContext().SetError(er)

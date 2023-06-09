@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"time"
 
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -45,7 +46,9 @@ type WatermarkGenerator struct {
 	topicToTs     map[string]int64
 	window        *WindowConfig
 	lateTolerance int64
-	interval      int
+	interval      int64
+	rawInterval   int
+	timeUnit      ast.Token
 	// ticker          *clock.Ticker
 	stream chan<- interface{}
 	// state
@@ -59,6 +62,8 @@ func NewWatermarkGenerator(window *WindowConfig, l int64, s []string, stream cha
 		lateTolerance: l,
 		inputTopics:   s,
 		stream:        stream,
+		rawInterval:   window.RawInterval,
+		timeUnit:      window.TimeUnit,
 	}
 	switch window.Type {
 	case ast.NOT_WINDOW:
@@ -125,14 +130,13 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 	switch w.window.Type {
 	case ast.TUMBLING_WINDOW, ast.HOPPING_WINDOW:
 		if current > 0 {
-			return current + int64(w.interval)
-		} else { // first run without previous window
-			interval := int64(w.interval)
+			return current + w.interval
+		} else { // first run without a previous window
 			nextTs := getEarliestEventTs(inputs, current, watermark)
 			if nextTs == math.MaxInt64 {
 				return nextTs
 			}
-			return getAlignedWindowEndTime(nextTs, interval).UnixMilli()
+			return getAlignedWindowEndTime(time.UnixMilli(nextTs), w.rawInterval, w.timeUnit).UnixMilli()
 		}
 	case ast.SLIDING_WINDOW:
 		nextTs := getEarliestEventTs(inputs, current, watermark)
@@ -144,12 +148,12 @@ func (w *WatermarkGenerator) getNextWindow(inputs []*xsql.Tuple, current int64, 
 
 func (w *WatermarkGenerator) getNextSessionWindow(inputs []*xsql.Tuple) (int64, bool) {
 	if len(inputs) > 0 {
-		timeout, duration := int64(w.window.Interval), int64(w.window.Length)
+		timeout, duration := w.window.Interval, w.window.Length
 		sort.SliceStable(inputs, func(i, j int) bool {
 			return inputs[i].Timestamp < inputs[j].Timestamp
 		})
 		et := inputs[0].Timestamp
-		tick := getAlignedWindowEndTime(et, duration).UnixMilli()
+		tick := getAlignedWindowEndTime(time.UnixMilli(et), w.rawInterval, w.timeUnit).UnixMilli()
 		var p int64
 		ticked := false
 		for _, tuple := range inputs {
