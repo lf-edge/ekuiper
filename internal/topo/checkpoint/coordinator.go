@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -165,7 +165,7 @@ func (c *Coordinator) Activate() error {
 	if c.ticker != nil {
 		c.ticker.Stop()
 	}
-	c.ticker = conf.GetTicker(c.baseInterval)
+	c.ticker = conf.GetTicker(int64(c.baseInterval))
 	tc := c.ticker.C
 	go func() {
 		err := infra.SafeRun(func() error {

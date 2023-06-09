@@ -136,11 +136,20 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			tp.AddOperator(inputs, wfilterOp)
 			inputs = []api.Emitter{wfilterOp}
 		}
-
+		l, i := convertFromDuration(t)
+		var rawInterval int
+		switch t.wtype {
+		case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
+			rawInterval = t.length
+		case ast.HOPPING_WINDOW:
+			rawInterval = t.interval
+		}
 		op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), node.WindowConfig{
-			Type:     t.wtype,
-			Length:   t.length,
-			Interval: t.interval,
+			Type:        t.wtype,
+			Length:      l,
+			Interval:    i,
+			RawInterval: rawInterval,
+			TimeUnit:    t.timeUnit,
 		}, streamsFromStmt, options)
 		if err != nil {
 			return nil, 0, err
@@ -176,6 +185,23 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		tp.AddOperator(inputs, onode)
 	}
 	return op, newIndex, nil
+}
+
+func convertFromDuration(t *WindowPlan) (int64, int64) {
+	var unit int64 = 1
+	switch t.timeUnit {
+	case ast.DD:
+		unit = 24 * 3600 * 1000
+	case ast.HH:
+		unit = 3600 * 1000
+	case ast.MI:
+		unit = 60 * 1000
+	case ast.SS:
+		unit = 1000
+	case ast.MS:
+		unit = 1
+	}
+	return int64(t.length) * unit, int64(t.interval) * unit
 }
 
 func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options *api.RuleOption) (*node.SourceNode, error) {
@@ -300,8 +326,11 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			if w.Interval != nil {
 				wp.interval = w.Interval.Val
 			} else if w.WindowType == ast.COUNT_WINDOW {
-				// if no interval value is set, and it's count window, then set interval to length value.
+				// if no interval value is set, and it's a count window, then set interval to length value.
 				wp.interval = w.Length.Val
+			}
+			if w.TimeUnit != nil {
+				wp.timeUnit = w.TimeUnit.Val
 			}
 			if w.Filter != nil {
 				wp.condition = w.Filter

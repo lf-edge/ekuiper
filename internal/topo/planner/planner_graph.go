@@ -571,9 +571,10 @@ func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
 		return nil, fmt.Errorf("window size %d is invalid", n.Size)
 	}
 	var (
-		wt       ast.WindowType
-		length   int
-		interval int
+		wt          ast.WindowType
+		length      int
+		interval    int
+		rawInterval int
 	)
 	switch strings.ToLower(n.Type) {
 	case "tumblingwindow":
@@ -581,6 +582,7 @@ func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
 		if n.Interval != 0 && n.Interval != n.Size {
 			return nil, fmt.Errorf("tumbling window interval must equal to size")
 		}
+		rawInterval = n.Size
 	case "hoppingwindow":
 		wt = ast.HOPPING_WINDOW
 		if n.Interval <= 0 {
@@ -589,11 +591,13 @@ func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
 		if n.Interval > n.Size {
 			return nil, fmt.Errorf("hopping window interval must be less than size")
 		}
+		rawInterval = n.Interval
 	case "sessionwindow":
 		wt = ast.SESSION_WINDOW
 		if n.Interval <= 0 {
 			return nil, fmt.Errorf("hopping window interval must be greater than 0")
 		}
+		rawInterval = n.Size
 	case "slidingwindow":
 		wt = ast.SLIDING_WINDOW
 		if n.Interval != 0 && n.Interval != n.Size {
@@ -613,6 +617,7 @@ func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
 	default:
 		return nil, fmt.Errorf("unknown window type %s", n.Type)
 	}
+	var timeUnit ast.Token
 	if wt == ast.COUNT_WINDOW {
 		length = n.Size
 		interval = n.Interval
@@ -621,25 +626,31 @@ func parseWindow(props map[string]interface{}) (*node.WindowConfig, error) {
 		switch strings.ToLower(n.Unit) {
 		case "dd":
 			unit = 24 * 3600 * 1000
+			timeUnit = ast.DD
 		case "hh":
 			unit = 3600 * 1000
+			timeUnit = ast.HH
 		case "mi":
 			unit = 60 * 1000
+			timeUnit = ast.MI
 		case "ss":
 			unit = 1000
+			timeUnit = ast.SS
 		case "ms":
 			unit = 1
+			timeUnit = ast.MS
 		default:
 			return nil, fmt.Errorf("Invalid unit %s", n.Unit)
 		}
 		length = n.Size * unit
 		interval = n.Interval * unit
 	}
-
 	return &node.WindowConfig{
-		Type:     wt,
-		Length:   length,
-		Interval: interval,
+		RawInterval: rawInterval,
+		Type:        wt,
+		Length:      int64(length),
+		Interval:    int64(interval),
+		TimeUnit:    timeUnit,
 	}, nil
 }
 

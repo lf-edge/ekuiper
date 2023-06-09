@@ -1058,25 +1058,19 @@ func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.W
 		}
 		return win, nil
 	}
-	unit := 1
-	v := args[0].(*ast.TimeLiteral).Val
-	switch v {
-	case ast.DD:
-		unit = 24 * 3600 * 1000
-	case ast.HH:
-		unit = 3600 * 1000
-	case ast.MI:
-		unit = 60 * 1000
-	case ast.SS:
-		unit = 1000
-	case ast.MS:
-		unit = 1
-	default:
-		return nil, fmt.Errorf("Invalid timeliteral %s", v)
+	if tl, ok := args[0].(*ast.TimeLiteral); ok {
+		switch tl.Val {
+		case ast.DD, ast.HH, ast.MI, ast.SS, ast.MS:
+			win.TimeUnit = tl
+		default:
+			return nil, fmt.Errorf("Invalid timeliteral %s", tl.Val)
+		}
+	} else {
+		return nil, fmt.Errorf("Invalid timeliteral %s", tl.Val)
 	}
-	win.Length = &ast.IntegerLiteral{Val: args[1].(*ast.IntegerLiteral).Val * unit}
+	win.Length = &ast.IntegerLiteral{Val: args[1].(*ast.IntegerLiteral).Val}
 	if len(args) > 2 {
-		win.Interval = &ast.IntegerLiteral{Val: args[2].(*ast.IntegerLiteral).Val * unit}
+		win.Interval = &ast.IntegerLiteral{Val: args[2].(*ast.IntegerLiteral).Val}
 	} else {
 		win.Interval = &ast.IntegerLiteral{Val: 0}
 	}

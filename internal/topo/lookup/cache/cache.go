@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ func NewCache(expireTime int, cacheMissingKey bool) *Cache {
 }
 
 func (c *Cache) run(ctx context.Context) {
-	ticker := conf.GetTicker(c.expireTime * 2000)
+	ticker := conf.GetTicker(int64(c.expireTime * 2000))
 	for {
 		select {
 		case <-ticker.C:
