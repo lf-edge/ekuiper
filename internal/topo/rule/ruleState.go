@@ -61,6 +61,10 @@ type cronStateCtx struct {
 	// isInSchedule indicates the current rule is in scheduled in backgroundCron
 	isInSchedule   bool
 	startFailedCnt int
+
+	// only used for test
+	cron     string
+	duration string
 }
 
 /*********
@@ -107,27 +111,11 @@ func NewRuleState(rule *api.Rule) (*RuleState, error) {
 // UpdateTopo update the rule and the topology AND restart the topology
 // Do not need to call restart after update
 func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
-	if tp, err := planner.Plan(rule); err != nil {
+	if err := rs.Stop(); err != nil {
 		return err
-	} else {
-		rs.Lock()
-		defer rs.Unlock()
-		// Update rule
-		rs.Rule = rule
-		rs.topoGraph = nil
-		// Stop the old topo
-		if rs.triggered == 1 {
-			rs.Topology.Cancel()
-			rs.ActionCh <- ActionSignalStop
-			// wait a little to make sure the old topo is stopped
-			time.Sleep(1 * time.Millisecond)
-		}
-		// Update the topo and start
-		rs.Topology = tp
-		rs.triggered = 1
-		rs.ActionCh <- ActionSignalStart
-		return nil
 	}
+	rs.Rule = rule
+	return rs.Start()
 }
 
 // Run start to run the two loops, do not access any changeable states
@@ -270,8 +258,15 @@ func (rs *RuleState) startScheduleRule() error {
 	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
 	entryID, err := backgroundCron.AddFunc(rs.Rule.Options.Cron, func() {
 		if err := func() error {
-			rs.Lock()
-			defer rs.Unlock()
+			switch backgroundCron.(type) {
+			case *MockCron:
+				// skip mutex if this is a unit test
+			default:
+				rs.Lock()
+				defer rs.Unlock()
+			}
+			rs.cronState.cron = rs.Rule.Options.Cron
+			rs.cronState.duration = rs.Rule.Options.Duration
 			return rs.start()
 		}(); err != nil {
 			rs.Lock()
@@ -324,6 +319,11 @@ func (rs *RuleState) start() error {
 func (rs *RuleState) Stop() error {
 	rs.Lock()
 	defer rs.Unlock()
+	rs.stopScheduleRule()
+	return rs.stop()
+}
+
+func (rs *RuleState) stopScheduleRule() {
 	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
 		rs.cronState.isInSchedule = false
 		if rs.cronState.cancel != nil {
@@ -332,7 +332,6 @@ func (rs *RuleState) Stop() error {
 		rs.cronState.startFailedCnt = 0
 		backgroundCron.Remove(rs.cronState.entryID)
 	}
-	return rs.stop()
 }
 
 func (rs *RuleState) stop() error {
@@ -357,14 +356,7 @@ func (rs *RuleState) Close() error {
 		rs.Topology.Cancel()
 	}
 	rs.triggered = -1
-	if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
-		rs.cronState.isInSchedule = false
-		if rs.cronState.cancel != nil {
-			rs.cronState.cancel()
-		}
-		rs.cronState.startFailedCnt = 0
-		backgroundCron.Remove(rs.cronState.entryID)
-	}
+	rs.stopScheduleRule()
 	close(rs.ActionCh)
 	return nil
 }
