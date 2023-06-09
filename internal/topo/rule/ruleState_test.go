@@ -191,6 +191,53 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
+func TestUpdateScheduleRule(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	scheduleOption1 := *defaultOption
+	scheduleOption1.Cron = "mockCron1"
+	scheduleOption1.Duration = "1s"
+	rule1 := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: &scheduleOption1,
+	}
+	rs, err := NewRuleState(rule1)
+	require.NoError(t, err)
+	defer rs.Close()
+	err = rs.startScheduleRule()
+	require.NoError(t, err)
+	require.True(t, rs.cronState.isInSchedule)
+	require.Equal(t, "mockCron1", rs.cronState.cron)
+	require.Equal(t, "1s", rs.cronState.duration)
+
+	scheduleOption2 := *defaultOption
+	scheduleOption2.Cron = "mockCron2"
+	scheduleOption2.Duration = "2s"
+	rule2 := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: &scheduleOption2,
+	}
+	err = rs.UpdateTopo(rule2)
+	require.NoError(t, err)
+	require.Equal(t, "mockCron2", rs.cronState.cron)
+	require.Equal(t, "2s", rs.cronState.duration)
+}
+
 func TestMultipleAccess(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)

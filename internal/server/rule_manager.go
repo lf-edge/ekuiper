@@ -189,6 +189,9 @@ func reRunRule(name string) error {
 	if !ok {
 		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
 	} else {
+		if err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true); err != nil {
+			return err
+		}
 		return rs.UpdateTopo(rs.Rule)
 	}
 }
