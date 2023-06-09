@@ -65,7 +65,7 @@ func (sm *SendManager) Run(ctx context.Context) {
 }
 
 func (sm *SendManager) runWithTicker(ctx context.Context) {
-	ticker := conf.GetTicker(sm.lingerInterval)
+	ticker := conf.GetTicker(int64(sm.lingerInterval))
 	defer ticker.Stop()
 	for {
 		select {
@@ -91,7 +91,7 @@ func (sm *SendManager) runWithBatchSize(ctx context.Context) {
 }
 
 func (sm *SendManager) runWithTickerAndBatchSize(ctx context.Context) {
-	ticker := conf.GetTicker(sm.lingerInterval)
+	ticker := conf.GetTicker(int64(sm.lingerInterval))
 	defer ticker.Stop()
 	for {
 		select {

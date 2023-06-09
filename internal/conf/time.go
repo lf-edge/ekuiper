@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,11 +41,11 @@ func GetLocalZone() int {
 }
 
 // Time related. For Mock
-func GetTicker(duration int) *clock.Ticker {
+func GetTicker(duration int64) *clock.Ticker {
 	return Clock.Ticker(time.Duration(duration) * time.Millisecond)
 }
 
-func GetTimer(duration int) *clock.Timer {
+func GetTimer(duration int64) *clock.Timer {
 	return Clock.Timer(time.Duration(duration) * time.Millisecond)
 }
 

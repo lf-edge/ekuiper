@@ -3052,8 +3052,9 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					ast.Dimension{
 						Expr: &ast.Window{
 							WindowType: ast.TUMBLING_WINDOW,
-							Length:     &ast.IntegerLiteral{Val: 10000},
+							Length:     &ast.IntegerLiteral{Val: 10},
 							Interval:   &ast.IntegerLiteral{Val: 0},
+							TimeUnit:   &ast.TimeLiteral{Val: ast.SS},
 						},
 					},
 				},
@@ -3075,8 +3076,9 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					ast.Dimension{
 						Expr: &ast.Window{
 							WindowType: ast.HOPPING_WINDOW,
-							Length:     &ast.IntegerLiteral{Val: 3e5},
-							Interval:   &ast.IntegerLiteral{Val: 6e4},
+							Length:     &ast.IntegerLiteral{Val: 5},
+							Interval:   &ast.IntegerLiteral{Val: 1},
+							TimeUnit:   &ast.TimeLiteral{Val: ast.MI},
 						},
 					},
 				},
@@ -3098,8 +3100,9 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 					ast.Dimension{
 						Expr: &ast.Window{
 							WindowType: ast.SESSION_WINDOW,
-							Length:     &ast.IntegerLiteral{Val: 1.8e7},
-							Interval:   &ast.IntegerLiteral{Val: 3.6e6},
+							Length:     &ast.IntegerLiteral{Val: 5},
+							Interval:   &ast.IntegerLiteral{Val: 1},
+							TimeUnit:   &ast.TimeLiteral{Val: ast.HH},
 						},
 					},
 				},
@@ -3123,6 +3126,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 							WindowType: ast.SLIDING_WINDOW,
 							Length:     &ast.IntegerLiteral{Val: 5},
 							Interval:   &ast.IntegerLiteral{Val: 0},
+							TimeUnit:   &ast.TimeLiteral{Val: ast.MS},
 						},
 					},
 				},
