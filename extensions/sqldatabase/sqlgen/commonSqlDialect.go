@@ -16,6 +16,7 @@ package sqlgen
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
