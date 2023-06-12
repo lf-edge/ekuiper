@@ -53,21 +53,25 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
+          args: "--out-${NO_FUTURE}format colored-line-number"
 
       - name: golangci-lint (extensions)
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
           working-directory: extensions
+          args: "--out-${NO_FUTURE}format colored-line-number"
 
       - name: golangci-lint (tools/kubernetes)
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
           working-directory: tools/kubernetes
+          args: "--out-${NO_FUTURE}format colored-line-number"
 
       - name: golangci-lint (sdk/go)
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
           working-directory: sdk/go
+          args: "--out-${NO_FUTURE}format colored-line-number"
