@@ -121,7 +121,7 @@ func GetQueryGenerator(driver string, props map[string]interface{}) (SqlQueryGen
 	switch driver {
 	case "sqlserver":
 		return NewSqlServerQuery(cfg.InternalSqlQueryCfg), nil
-	case "godror":
+	case "godror", "oracle":
 		return NewOracleQueryGenerate(cfg.InternalSqlQueryCfg), nil
 	default:
 		return NewCommonSqlQuery(cfg.InternalSqlQueryCfg), nil
