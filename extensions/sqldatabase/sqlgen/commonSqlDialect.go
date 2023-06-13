@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -92,4 +92,32 @@ func (q *CommonQueryGenerator) UpdateMaxIndexValue(row map[string]interface{}) {
 		}
 		q.IndexValue = v
 	}
+}
+
+type OracleQueryGenerate struct {
+	*CommonQueryGenerator
+}
+
+func NewOracleQueryGenerate(cfg *InternalSqlQueryCfg) SqlQueryGenerator {
+	return &OracleQueryGenerate{
+		CommonQueryGenerator: &CommonQueryGenerator{
+			InternalSqlQueryCfg: cfg,
+		},
+	}
+}
+
+func (q *OracleQueryGenerate) SqlQueryStatement() (string, error) {
+	con, err := q.getCondition()
+	if err != nil {
+		return "", err
+	}
+	query := q.getSelect() + con + q.getOrderby()
+	if q.Limit != 0 {
+		return fmt.Sprintf("select * from (%s) where rownum <= %v", query, q.Limit), nil
+	}
+	return query, nil
+}
+
+func (q *OracleQueryGenerate) UpdateMaxIndexValue(row map[string]interface{}) {
+	q.CommonQueryGenerator.UpdateMaxIndexValue(row)
 }

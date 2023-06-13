@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package sqlgen
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
@@ -78,6 +80,16 @@ func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOracleQuery(t *testing.T) {
+	s := NewOracleQueryGenerate(&InternalSqlQueryCfg{
+		Table: "t",
+		Limit: 1,
+	})
+	query, err := s.SqlQueryStatement()
+	require.NoError(t, err)
+	require.Equal(t, query, "select * from (select * from t ) where rownum <= 1")
 }
 
 func TestInternalQuery(t *testing.T) {
