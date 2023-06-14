@@ -78,7 +78,7 @@ Refer to the syntax and properties.
 - [Rule Syntax](./guide/rules/overview.md)
 - [Available Sources](./guide/sources/overview.md)
 - [Available Sinks](./guide/sinks/overview.md)
-- [Available Functions](./sqls/functions/overview.md
+- [Available Functions](./sqls/functions/overview.md)
 - [SQL Reference](./sqls/overview.md)
 
 [View Reference](./sqls/overview.md)
@@ -109,7 +109,7 @@ If you get stuck, check out our community support resources.
 - Ask in the [forum](https://askemq.com/c/ekuiper).
 - Join our [Slack](https://slack.lfedge.org/), and then join [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) or [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) channel.
 - Mail to eKuiper help [mail list](mailto:ekuiper+help@lists.lfedge.org).
-- Join WeChat group, scan the below QR code and mark "eKuiper". 
+- Join WeChat group, scan the below QR code and mark "eKuiper".
   
   <img src="./wechat.png" alt="drawing" width="200"/>
 
