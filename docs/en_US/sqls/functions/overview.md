@@ -2,7 +2,7 @@
 
 eKuiper has many built-in functions for performing calculations on data.
 
-- [Aggregate Functions](./aggregate_functions)
+- [Aggregate Functions](./aggregate_functions.md)
 - [Math Functions](./mathematical_functions.md)
 - [String Functions](./string_functions.md)
 - [Array Functions](./array_functions.md)
@@ -13,7 +13,7 @@ eKuiper has many built-in functions for performing calculations on data.
 - [Other Functions](./other_functions.md)
 
 
-- [Analytic Functions](./analytic_functions)
+- [Analytic Functions](./analytic_functions.md)
 - [Multi-Row Functions](./multi_row_functions.md
 - [Multi-Column Functions](./multi_column_functions.md)
 
