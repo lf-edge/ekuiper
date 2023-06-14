@@ -2,7 +2,7 @@
 
 eKuiper 具有许多内置函数，可以对数据执行计算。
 
-- [聚合函数](./aggregate_functions)
+- [聚合函数](./aggregate_functions.md)
 - [数学函数](./mathematical_functions.md)
 - [字符串函数](./string_functions.md)
 - [数组函数](./array_functions.md)
@@ -13,7 +13,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 - [其他函数](./other_functions.md)
 
 
-- [分析函数](./analytic_functions)
+- [分析函数](./analytic_functions.md)
 - [多行函数](./multi_row_functions.md)
 - [多列函数](./multi_column_functions.md)
 
