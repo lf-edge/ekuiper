@@ -1,18 +1,18 @@
 # Sources
 
-Sources are used to read data from external systems. The source can be unbounded streaming data named stream or bounded batch data named table. When using in a rule, at least one of the source must be a stream.
+Sources are used to read data from external systems. The source can be unbounded streaming data named stream or bounded batch data named table. When using the source in a rule, at least one of the sources must be a stream.
 
 The source basically defines how to connect to an external resource and fetch data from the resource in a streaming way. After fetching the data, common tasks like decode and transform by schema can be done by setting properties.
 
 ## Define and Run
 
-When define a source stream or table, it actually creates the logical definition instead of a physical running data input. The logical definition can then be used in rule's SQL in the `from` clause. The source only starts to run when any of the rules refer to it has started.
+When defining a source stream or table, it actually creates the logical definition instead of a physical running data input. The logical definition can then be used in rule's SQL in the `from` clause. The source only starts to run when any of the rules refer to it has started.
 
-By default, if multiple rules refer to the same source, each rule will have its own, standalone source instance from other rules so that the rules are total separated. To boost performance when users want to process the same data across multiple rules, they can define the source as [shared](../../guide/streams/overview.md#share-source-instance-across-rules). Then the rules refer to the same shared source will share the same running source instance.
+By default, if multiple rules refer to the same source, each rule will have its own, standalone source instance from other rules so that the rules are totally separated. To boost performance when users want to process the same data across multiple rules, they can define the source as [shared](../../guide/streams/overview.md#share-source-instance-across-rules).
 
 ## Decode
 
-Users can define the format to decode by setting `format` property. Currently, only `json` and `binary` format are supported. For other formats, customized source must be developed.
+Users can define the format to decode by setting `format` property. Currently, `json`,  `binary`, `protobuf`, and `delimited` formats are supported. And you can also use your own decoding methods by setting it to `custom`. 
 
 ## Schema
 
@@ -22,7 +22,7 @@ Where the definition in the schema registry is the physical schema and the data 
 
 ## Stream & Table
 
-The source defines the external system connection. When using in a rule, users can define them as stream or table according to the processing mechanism. Check [stream](stream.md) and [table](table.md) for detail.
+The source defines the external system connection. When using the source with a rule, users can define them as a stream or table according to the processing mechanism. Check [stream](stream.md) and [table](table.md) for detail.
 
 ## More Readings
 
