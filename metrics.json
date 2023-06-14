@@ -1,12 +1,19 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_TEST-CLUSTER",
+      "label": "test-cluster",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
   "annotations": {
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": "${DS_TEST-CLUSTER}",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -36,10 +43,7 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -128,10 +132,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -245,10 +246,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -337,10 +335,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -442,10 +437,7 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -536,10 +528,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -630,10 +619,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -728,10 +714,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -826,10 +809,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -932,10 +912,7 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1026,10 +1003,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1120,10 +1094,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1218,10 +1189,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1316,10 +1284,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1422,10 +1387,7 @@
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1516,10 +1478,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -1610,10 +1569,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1708,10 +1664,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1806,10 +1759,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-      },
+      "datasource": "${DS_TEST-CLUSTER}",
       "fieldConfig": {
         "defaults": {
           "color": {
