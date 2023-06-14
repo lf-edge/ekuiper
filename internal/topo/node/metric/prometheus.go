@@ -37,11 +37,12 @@ func GetPrometheusMetrics() *PrometheusMetrics {
 }
 
 type MetricGroup struct {
-	TotalRecordsIn  *prometheus.CounterVec
-	TotalRecordsOut *prometheus.CounterVec
-	TotalExceptions *prometheus.CounterVec
-	ProcessLatency  *prometheus.GaugeVec
-	BufferLength    *prometheus.GaugeVec
+	TotalRecordsIn     *prometheus.CounterVec
+	TotalRecordsOut    *prometheus.CounterVec
+	TotalExceptions    *prometheus.CounterVec
+	ProcessLatencyHist *prometheus.HistogramVec
+	ProcessLatency     *prometheus.GaugeVec
+	BufferLength       *prometheus.GaugeVec
 }
 
 type PrometheusMetrics struct {
@@ -72,17 +73,23 @@ func newPrometheusMetrics() *PrometheusMetrics {
 			Name: prefix + "_" + ProcessLatencyUs,
 			Help: "Process latency in millisecond of " + prefix,
 		}, labelNames)
+		processLatencyHist := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    prefix + "_" + ProcessLatencyUsHist,
+			Help:    "Histograms of process latency in millisecond of " + prefix,
+			Buckets: prometheus.ExponentialBuckets(10, 2, 20), // 10us ~ 5s
+		}, labelNames)
 		bufferLength := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prefix + "_" + BufferLength,
 			Help: "The length of the plan buffer which is shared by all instances of " + prefix,
 		}, labelNames)
-		prometheus.MustRegister(totalRecordsIn, totalRecordsOut, totalExceptions, processLatency, bufferLength)
+		prometheus.MustRegister(totalRecordsIn, totalRecordsOut, totalExceptions, processLatency, processLatencyHist, bufferLength)
 		vecs = append(vecs, &MetricGroup{
-			TotalRecordsIn:  totalRecordsIn,
-			TotalRecordsOut: totalRecordsOut,
-			TotalExceptions: totalExceptions,
-			ProcessLatency:  processLatency,
-			BufferLength:    bufferLength,
+			TotalRecordsIn:     totalRecordsIn,
+			TotalRecordsOut:    totalRecordsOut,
+			TotalExceptions:    totalExceptions,
+			ProcessLatency:     processLatency,
+			ProcessLatencyHist: processLatencyHist,
+			BufferLength:       bufferLength,
 		})
 	}
 	return &PrometheusMetrics{vecs: vecs}

@@ -40,12 +40,14 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		mg.TotalRecordsOut.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.TotalExceptions.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.ProcessLatency.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		mg.ProcessLatencyHist.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.BufferLength.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 
 		psm.pTotalRecordsIn = mg.TotalRecordsIn.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pTotalRecordsOut = mg.TotalRecordsOut.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pTotalExceptions = mg.TotalExceptions.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pProcessLatency = mg.ProcessLatency.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		psm.pProcessLatencyHist = mg.ProcessLatencyHist.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pBufferLength = mg.BufferLength.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		sm = psm
 	} else {
@@ -57,11 +59,12 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 type PrometheusStatManager struct {
 	DefaultStatManager
 	// prometheus metrics
-	pTotalRecordsIn  prometheus.Counter
-	pTotalRecordsOut prometheus.Counter
-	pTotalExceptions prometheus.Counter
-	pProcessLatency  prometheus.Gauge
-	pBufferLength    prometheus.Gauge
+	pTotalRecordsIn     prometheus.Counter
+	pTotalRecordsOut    prometheus.Counter
+	pTotalExceptions    prometheus.Counter
+	pProcessLatency     prometheus.Gauge
+	pProcessLatencyHist prometheus.Observer
+	pBufferLength       prometheus.Gauge
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsIn() {
@@ -83,6 +86,7 @@ func (sm *PrometheusStatManager) ProcessTimeEnd() {
 	if !sm.processTimeStart.IsZero() {
 		sm.processLatency = int64(time.Since(sm.processTimeStart) / time.Microsecond)
 		sm.pProcessLatency.Set(float64(sm.processLatency))
+		sm.pProcessLatencyHist.Observe(float64(sm.processLatency))
 	}
 }
 

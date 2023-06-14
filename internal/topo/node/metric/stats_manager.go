@@ -22,14 +22,15 @@ import (
 )
 
 const (
-	RecordsInTotal    = "records_in_total"
-	RecordsOutTotal   = "records_out_total"
-	ProcessLatencyUs  = "process_latency_us"
-	LastInvocation    = "last_invocation"
-	BufferLength      = "buffer_length"
-	ExceptionsTotal   = "exceptions_total"
-	LastException     = "last_exception"
-	LastExceptionTime = "last_exception_time"
+	RecordsInTotal       = "records_in_total"
+	RecordsOutTotal      = "records_out_total"
+	ProcessLatencyUs     = "process_latency_us"
+	ProcessLatencyUsHist = "process_latency_us_hist"
+	LastInvocation       = "last_invocation"
+	BufferLength         = "buffer_length"
+	ExceptionsTotal      = "exceptions_total"
+	LastException        = "last_exception"
+	LastExceptionTime    = "last_exception_time"
 )
 
 var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
