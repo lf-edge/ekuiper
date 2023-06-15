@@ -1,6 +1,6 @@
 # Native Plugin
 
-eKuiper allows user to customize the different kinds of extensions by the native golang plugin system. 
+eKuiper allows user to customize the different kinds of extensions by the native golang plugin system.
 
 - The source extension is used for extending different stream sources, such as consuming data from other message
   brokers. eKuiper has built-in source support for [MQTT broker](../../guide/sources/builtin/mqtt.md).
@@ -40,9 +40,11 @@ If multiple versions of plugins with the same name in place, only the latest ver
 It is required to build the plugin with exactly the same version of dependencies. And the plugin must implement interfaces exported by Kuiper, so the Kuiper project must be in the gopath.
 
 A typical environment for developing plugins is to put the plugin and Kuiper in the same project. To set it up:
+
 1. Clone Kuiper project.
 2. Create the plugin implementation file inside plugins/sources or plugin/sinks or plugin/functions according to what extension type is developing.
 3. Build the file as plugin into the same folder. The build command is typically like:
+
 ```bash
 go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
 ```
@@ -79,15 +81,15 @@ Below is an example of a function extension to access states. This function will
 ```go
 func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
     logger := ctx.GetLogger()    
-	err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
-	if err != nil {
-		return err, false
-	}
-	if c, err := ctx.GetCounter("allwordcount"); err != nil   {
-		return err, false
-	} else {
-		return c, true
-	}
+    err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
+    if err != nil {
+        return err, false
+    }
+    if c, err := ctx.GetCounter("allwordcount"); err != nil   {
+        return err, false
+    } else {
+        return c, true
+    }
 }
 ```
 

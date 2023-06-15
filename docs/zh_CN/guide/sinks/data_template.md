@@ -1,6 +1,6 @@
 # 数据模板
 
-用户通过 eKuiper 进行数据分析处理后，使用各种 sink 可以往不同的系统发送数据分析结果。针对同样的分析结果，不同的 sink 需要的格式可能未必一样。比如，在某物联网场景中，当发现某设备温度过高的时候，需要向云端某 rest 服务发送一个请求，同时在本地需要通过 MQTT 协议往设备发送一个控制命令，这两者需要的数据格式可能并不一样，因此，需要对来自于分析的结果进行「二次处理」后，才可以往不同的目标发送针对数据。本文将介绍如何利用 sink 中的数据模版（data  template ）来实现对分析结果的「二次处理」。
+用户通过 eKuiper 进行数据分析处理后，使用各种 sink 可以往不同的系统发送数据分析结果。针对同样的分析结果，不同的 sink 需要的格式可能未必一样。比如，在某物联网场景中，当发现某设备温度过高的时候，需要向云端某 rest 服务发送一个请求，同时在本地需要通过 MQTT 协议往设备发送一个控制命令，这两者需要的数据格式可能并不一样，因此，需要对来自于分析的结果进行「二次处理」后，才可以往不同的目标发送针对数据。本文将介绍如何利用 sink 中的数据模版（data  template）来实现对分析结果的「二次处理」。
 
 ## Golang 模版介绍
 
@@ -16,7 +16,7 @@ Golang  模版将一段逻辑应用到数据上，然后按照用户指定的逻
 
 例如，我们的目标输入为
 
-```
+```go
 []map[string]interface{}{{
     "ab" : "hello1",
 },{
@@ -28,18 +28,19 @@ Golang  模版将一段逻辑应用到数据上，然后按照用户指定的逻
 
 - 打印整个记录
 
-```
+```json
 "dataTemplate": "{\"content\":{{json .}}}",
 ```
 
 - 打印 ab 字段
 
-```
+```json
 "dataTemplate": "{\"content\":{{.ab}}}",
 ```
 
 如果 ab 字段是字符串，请添加引号
-```
+
+```json
 "dataTemplate": "{\"content\":\"{{.ab}}\"}",
 ```
 
@@ -47,28 +48,27 @@ Golang  模版将一段逻辑应用到数据上，然后按照用户指定的逻
 
 - 打印出整个记录数组
 
-```
+```json
 "dataTemplate": "{\"content\":{{json .}}}",
 ```
 
 - 打印出第一条记录
 
-```
+```json
 "dataTemplate": "{\"content\":{{json (index . 0)}}}",
 ```
 
 - 打印出第一个记录的字段 ab
 
-```
+```json
 "dataTemplate": "{\"content\":{{index . 0 \"ab\"}}}",
 ```
 
 - 将数组中每个记录的字段 ab 打印为 html 格式
 
-```
+```json
 "dataTemplate": "<div>results</div><ul>{{range .}}<li>{{.ab}}</li>{{end}}</ul>",
 ```
-
 
 可以自定义动作以支持不同种类的输出，有关更多详细信息，请参见 [extension](../../extension/overview.md) 。
 
@@ -85,26 +85,25 @@ eKuiper 扩展了几个可以在模版中使用的函数。
 - (deprecated)`json para1`: `json` 函数用于将 map 内容转换为 JSON 字符串。本函数已弃用，建议使用 sprig 扩展的 `toJson` 函数。
 - (deprecated)`base64 para1`: `base64` 函数用于将参数值编码为 base64 字符串。本函数已弃用，建议将参数转换为 string 类型后，使用 sprig 扩展的 `b64enc` 函数。
 
-
 ### 动作 (Actions)
 
 Golang 模版提供了一些[内置的动作](https://golang.org/pkg/text/template/#hdr-Actions)，可以让用户写各种控制语句，用于提取内容。比如，
 
 - 根据判断条件来输出不同的内容
 
-```
+```text
 {{if pipeline}} T1 {{else}} T0 {{end}}
 ```
 
 - 循环遍历数据，并进行处理
 
-```
+```text
 {{range pipeline}} T1 {{else}} T0 {{end}}
 ```
 
 读者可以看到，动作是用 `{{}}` 界定的，在 eKuiper 的数据模版使用过程中，由于输出一般也是 JSON 格式， 而 JSON 格式是用 `{}` 来界定，因此读者在不太熟悉使用的时候，在使用 eKuiper 的数据模版的功能会觉得比较难以理解。比如以下的例子中，
 
-```
+```text
 {{if pipeline}} {"field1": true} {{else}}  {"field1": false} {{end}}
 ```
 
@@ -152,7 +151,7 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 还是针对上述例子，需要对返回的 `t_av`（平均温度）做一些转换，转换的基本要求就是根据不同的平均温度，加入不同的描述文字，用于目标 sink 中的处理。规则如下，
 
 - 当温度小于 30，描述字段为「Current temperature is`$t_av`,  it's normal.」
-- 当温度大于 30，描述字段为「Current temperature is`$t_av`, it's high.」 
+- 当温度大于 30，描述字段为「Current temperature is`$t_av`, it's high.」
 
 假设目标 sink 还是需要 JSON 数据，该数据模版的内容如下，
 
@@ -166,7 +165,7 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 在上述的数据模版中，使用了 `{{if pipeline}} T1 {{else if pipeline}} T0 {{end}}` 的内置动作，看上去比较复杂，稍微调整一下，去掉转义并加入缩进后排版如下（注意：在生成 eKuiper 规则的时候，不能传入以下优化后排版的规则）。
 :::
 
-```
+```text
 {"device_id": {{.device_id}}, "description": "
   {{if lt .t_av 30.0}}
     Current temperature is {{.t_av}}, it's normal."
@@ -219,18 +218,21 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 该数据模板比较复杂，解释如下，
 
 ::: v-pre
-- `{{$len := len .values}} {{$loopsize := add $len -1}}`，这一段执行了两个表达式，第一个 `len` 函数取得数据中 `values` 的长度，第二个 `add` 将其值减 1 并赋值到变量 `loopsize`：由于 Golang 的表达式中目前还不支持直接将数值减 1 的操作， `add` 是 eKuiper 为实现该功能而扩展的函数。
+
+- `{{$len := len .values}} {{$loopsize := add $len -1}}`，这一段执行了两个表达式，第一个 `len` 函数取得数据中 `values` 的长度，第二个 `add` 将其值减 1 并赋值到变量 `loopsize`：由于 Golang 的表达式中目前还不支持直接将数值减 1 的操作，`add` 是 eKuiper 为实现该功能而扩展的函数。
 :::
 
 ::: v-pre
-- `{\"device_id\": \"{{.device_id}}\", \"description\": [` 这一段模版在作用到样例数据后，生成了 JSON 串 `{"device_id": "1", "description": [ `
+
+- `{\"device_id\": \"{{.device_id}}\", \"description\": [` 这一段模版在作用到样例数据后，生成了 JSON 串 `{"device_id": "1", "description": [`
 :::
 
 ::: v-pre
+
 - `{{range $index, $ele := .values}} {{if le .temperature 25.0}}\"fine\"{{else if gt .temperature 25.0}}\"high\"{{end}} {{if eq $loopsize $index}}]{{else}},{{end}}{{end}}` ，这一段模版看起来比较复杂，但是如果把它调整一下，去掉转义并加入缩进后排版如下，看起来可能会更加清晰（注意：在生成 eKuiper 规则的时候，不能传入以下优化后排版的规则）。
 :::
 
-```
+```text
 {{range $index, $ele := .values}} 
   {{if le .temperature 25.0}}
     "fine"
@@ -258,4 +260,3 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 通过 eKuiper 提供的数据模版功能可以实现对分析结果的二次处理，以满足不同的 sink 目标的需求。但是读者也可以看到，由于 Golang 模版本身的限制，实现比较复杂的数据转换的时候会比较笨拙，希望将来 Golang 模版的功能可以做得更加强大和灵活，这样可以支持处理更加复杂的需求。目前建议用户可以通过数据模版来实现一些较为简单的数据的转换；如果用户需要对数据进行比较复杂的处理，并且自己扩展了 sink 的情况下，可以在 sink 的实现中直接进行处理。
 
 另外，eKuiper 团队在规划将来支持自定义扩展 sink 中的模版函数，这样一些比较复杂的逻辑可以在函数内部实现，用户调用的时候只需一个简单的模版函数调用即可实现。
-

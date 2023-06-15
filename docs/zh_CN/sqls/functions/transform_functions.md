@@ -4,7 +4,7 @@
 
 ## CAST
 
-```
+```text
 cast(col,  "bigint")
 ``
 ```
@@ -22,7 +22,7 @@ cast(col,  "bigint")
 
 ## CHR
 
-```
+```text
 chr(col)
 ```
 
@@ -30,23 +30,23 @@ chr(col)
 
 ## ENCODE
 
-```
+```text
 encode(col, "base64")
 ```
 
-根据编码方案将数据编码为其字符串表示形式。目前，只支持"base64" 编码类型。
+根据编码方案将数据编码为其字符串表示形式。目前，只支持 "base64" 编码类型。
 
 ## DECODE
 
-```
+```text
 decode(col, "base64")
 ```
 
-解码输入字符串。目前，只支持"base64" 类型。
+解码输入字符串。目前，只支持 "base64" 类型。
 
 ## TRUNC
 
-```
+```text
 trunc(dec, int)
 ```
 
@@ -54,7 +54,7 @@ trunc(dec, int)
 
 ## COMPRESS
 
-```
+```text
 compress(input, "zlib")
 ```
 
@@ -62,7 +62,7 @@ compress(input, "zlib")
 
 ## DECOMPRESS
 
-```
+```text
 decompress(input, "zlib")
 ```
 

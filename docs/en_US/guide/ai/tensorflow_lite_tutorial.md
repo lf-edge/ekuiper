@@ -22,28 +22,28 @@ To integrate eKuiper with TensorFlow lite, we will develop a customized eKuiper 
 To develop the function plugin, we need to:
 
 1. Create the plugin go file.  For example, in eKuiper source code, create *plugins/functions/labelImage/labelImage.go* file.
-2. Create a struct that implements [api.Function interface](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go). 
+2. Create a struct that implements [api.Function interface](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go).
 3. Export the struct.
 
 The key part of the implementation is the *Exec* function. The pseudo code is like:
 
 ```go
 func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	
+    
     //... do some initialization and validation
     
     // decode the input image
-	img, _, err := image.Decode(bytes.NewReader(arg[0]))
-	if err != nil {
-		return err, false
-	}
-	var outerErr error
-	f.once.Do(func() {		
-		// Load labels, tflite model and initialize the tflite interpreter
-	})
+    img, _, err := image.Decode(bytes.NewReader(arg[0]))
+    if err != nil {
+        return err, false
+    }
+    var outerErr error
+    f.once.Do(func() {        
+        // Load labels, tflite model and initialize the tflite interpreter
+    })
 
-	// Run the interpreter against the input image
-	
+    // Run the interpreter against the input image
+    
     // Return the label with the highest possibility
     return result, true
 }
@@ -53,8 +53,8 @@ Another thing to notice is the export of plugin. The function is stateless, so w
 
 ```go
 var LabelImage = labelImage{
-	modelPath: "labelImage/mobilenet_quant_v1_224.tflite",
-	labelPath: "labelImage/labels.txt",
+    modelPath: "labelImage/mobilenet_quant_v1_224.tflite",
+    labelPath: "labelImage/labels.txt",
 }
 ```
 
@@ -105,6 +105,7 @@ There is a very simple [instruction](https://github.com/tensorflow/tensorflow/tr
    $ cp bazel-bin/tensorflow/lite/libtensorflowlite.so lib
    $ cp bazel-bin/tensorflow/lite/c/libtensorflowlite_c.so lib
    ```
+
 6. Install the so files.
    1. Update ldconfig file. `sudo vi /etc/ld.so.conf.d/tflite.conf`.
    2. Add the path `{{tensorflowPath}}/lib` to tflite.conf then save and exit.
@@ -131,11 +132,11 @@ By these commands, the plugin is built into plugins/functions/LabelImage.so and 
 Package all files and directories inside *plugins/functions/labelImage* into a zip file along with the built LabelImage.so. The file structure inside the zip file should be like:
 
 - etc
-    - labels.txt
-    - mobilenet_quant_v1_224.tflite
+  - labels.txt
+  - mobilenet_quant_v1_224.tflite
 - lib
-    - libtensorflowlite.so
-    - libtensorflowlite_c.so
+  - libtensorflowlite.so
+  - libtensorflowlite_c.so
 - install.sh
 - LabelImage.so
 - tflite.conf
@@ -184,41 +185,41 @@ Here we create a go program to send image data to the tfdemo topic to be process
 package main
 
 import (
-	"fmt"
-	"os"
-	"time"
+    "fmt"
+    "os"
+    "time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+    mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
-	const TOPIC = "tfdemo"
+    const TOPIC = "tfdemo"
 
-	images := []string{
-		"peacock.png",
-		"frog.jpg",
-		// other images you want
-	}
-	opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-	for _, image := range images {
-		fmt.Println("Publishing " + image)
-		payload, err := os.ReadFile(image)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
-		} else {
-			fmt.Println("Published " + image)
-		}
-		time.Sleep(1 * time.Second)
-	}
-	client.Disconnect(0)
+    images := []string{
+        "peacock.png",
+        "frog.jpg",
+        // other images you want
+    }
+    opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        panic(token.Error())
+    }
+    for _, image := range images {
+        fmt.Println("Publishing " + image)
+        payload, err := os.ReadFile(image)
+        if err != nil {
+            fmt.Println(err)
+            continue
+        }
+        if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
+            fmt.Println(token.Error())
+        } else {
+            fmt.Println("Published " + image)
+        }
+        time.Sleep(1 * time.Second)
+    }
+    client.Disconnect(0)
 }
 
 ```

@@ -4,7 +4,7 @@ Transform functions manipulate data in various ways like convert types, encode w
 
 ## CAST
 
-```
+```text
 cast(col, dataType)
 ```
 
@@ -23,7 +23,7 @@ When casting to a datetime type, the supported column type and casting rule are:
 
 ## ENCODE
 
-```
+```text
 encode(col, encodeType)
 ```
 
@@ -32,7 +32,7 @@ based on the encoding scheme. Currently, only "base64" encoding type is supporte
 
 ## DECODE
 
-```
+```text
 decode(col, encodeType)
 ```
 
@@ -40,7 +40,7 @@ Decode the input string with specified decoding method. Currently, only "base64"
 
 ## COMPRESS
 
-```
+```text
 compress(input, method)
 ```
 
@@ -49,7 +49,7 @@ method are supported.
 
 ## DECOMPRESS
 
-```
+```text
 decompress(input, method)
 ```
 
@@ -58,7 +58,7 @@ method are supported.
 
 ## TRUNC
 
-```
+```text
 trunc(dec, int)
 ```
 
@@ -68,7 +68,7 @@ stripped from the result.
 
 ## CHR
 
-```
+```text
 chr(col)
 ```
 

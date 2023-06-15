@@ -7,6 +7,7 @@
 ```shell
 go build -trimpath --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extensions/sinks/tdengine/tdengine.go
 ```
+
 ## 安装插件
 
 由于 TDengine 插件的运行依赖于 TDengine 客户端，为了便于用户使用，安装插件时将下载 TDengine 客户端。但是 TDengine 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 TDengine 服务器版本。
@@ -34,7 +35,9 @@ go build -trimpath --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extens
 
 ## 操作示例
 
-### 创建数据库、表，参考以下文档：
+### 创建数据库、表
+
+参考以下文档:
 
 ```http
 https://www.taosdata.com/cn/getting-started/
@@ -85,8 +88,6 @@ curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-T
 }
 ```
 
-
-
 根据 tableDataField 配置将结果写入数据库:
 
 以下配置将 telemetry 字段的对应值写入数据库
@@ -124,4 +125,3 @@ curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-T
   }
 }
 ```
-

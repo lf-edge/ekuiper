@@ -10,6 +10,7 @@ eKuiper REST api 可用于管理流，例如创建、描述、显示和删除流
 ```shell
 POST http://localhost:9081/streams
 ```
+
 请求示例，请求命令是带有 `sql` 字段的 json 字符串。
 
 ```json
@@ -68,7 +69,7 @@ GET http://localhost:9081/streams/{id}}
 
 ## 获取数据结构
 
-该 API 用于获取流的数据结构，该数据结构为合并物理 schema 和逻辑 schema后推断出的实际定义结构。
+该 API 用于获取流的数据结构，该数据结构为合并物理 schema 和逻辑 schema 后推断出的实际定义结构。
 
 ```shell
 GET http://localhost:9081/streams/{id}/schema
@@ -80,13 +81,13 @@ GET http://localhost:9081/streams/{id}/schema
 {
     "id": {
         "type": "bigint"
-	},
+  },
     "name": {
         "type": "string"
-	},
+  },
     "age": {
         "type": "bigint"
-	},
+  },
     "hobbies": {
         "type": "struct",
         "properties": {
@@ -106,7 +107,6 @@ GET http://localhost:9081/streams/{id}/schema
     }
 }
 ```
-
 
 ## 更新流
 
@@ -131,4 +131,3 @@ PUT http://localhost:9081/streams/{id}
 ```shell
 DELETE http://localhost:9081/streams/{id}
 ```
-

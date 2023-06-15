@@ -23,7 +23,6 @@ The file format for importing and exporting ruleset is JSON, which can contain t
 
 This command accepts the ruleset and imports it into the system. If a stream or rule in the ruleset already exists, it is not created. The imported rules are started immediately. The command returns text about the number of streams and rules created
 
-
 ```shell
 # bin/kuiper import ruleset -f myrules.json
 ```

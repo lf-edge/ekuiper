@@ -4,27 +4,27 @@
 
 分析函数完整使用格式如下，其中 over 子句为可选子句。
 
-```
+```text
 AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression>])
 ```
 
 分析函数的计算是在当前查询输入的所有输入事件上进行的，可以选择限制分析函数只考虑符合 PARTITION BY 子句的事件。
 分析函数可以使用 PARTITION BY 子句，语法如下：
 
-```
+```text
 AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
 ```
 
 分析函数可以使用 WHEN 条件判断子句，根据是否满足条件来确定当前事件是否为有效事件。
 当为有效事件时，根据分析函数语意计算结果并更新状态。当为无效事件时，忽略事件值，复用保存的状态值。
 
-```
+```text
 AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 ```
 
 ## LAG
 
-```
+```text
 lag(expr, [offset], [default value])
 ```
 
@@ -50,7 +50,7 @@ select lag(Status) as Status, ts - lag(ts, 1, ts) OVER (WHEN had_changed(true, s
 
 ## LATEST
 
-```
+```text
 latest(expr, [default value])
 ```
 
@@ -58,7 +58,7 @@ latest(expr, [default value])
 
 ## CHANGED_COL
 
-```
+```text
 changed_col(true, col)
 ```
 
@@ -66,7 +66,7 @@ changed_col(true, col)
 
 ## HAD_CHANGED
 
-```
+```text
 had_changed(true, expr1, expr2, ...)
 ```
 

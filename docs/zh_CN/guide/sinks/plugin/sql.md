@@ -8,13 +8,15 @@
 该插件默认支持 `sqlserver\postgres\mysql\sqlite3\oracle` 驱动。用户可以自己编译只支持一个驱动的插件，例如如果他只想要 MySQL，那么他可以用 build tag mysql 构建。
 
 ### 默认构建指令
+
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
-### MySQL 构建指令 
+### MySQL 构建指令
+
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go

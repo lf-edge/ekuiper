@@ -7,4 +7,3 @@ When using as a stream, the source must be unbounded. The stream acts like a tri
 ## More Readings
 
 - [Stream Reference](../../sqls/streams.md)
-

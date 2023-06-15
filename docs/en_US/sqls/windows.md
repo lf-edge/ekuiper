@@ -2,9 +2,9 @@
 
 In time-streaming scenarios, performing operations on the data contained in temporal windows is a common pattern. eKuiper has native support for windowing functions, enabling you to author complex stream processing jobs with minimal effort.
 
-There are five kinds of windows to use: [Tumbling window](#tumbling-window), [Hopping window](#hopping-window), [Sliding window](#sliding-window), [Session window](#session-window) and [Count window](#count-window). You use the window functions in the `GROUP BY` clause of the query syntax in your eKuiper queries. 
+There are five kinds of windows to use: [Tumbling window](#tumbling-window), [Hopping window](#hopping-window), [Sliding window](#sliding-window), [Session window](#session-window) and [Count window](#count-window). You use the window functions in the `GROUP BY` clause of the query syntax in your eKuiper queries.
 
-All the windowing operations output results at the end of the window. The output of the window will be single event based on the aggregate function used. 
+All the windowing operations output results at the end of the window. The output of the window will be single event based on the aggregate function used.
 
 ## Time-units
 
@@ -36,12 +36,9 @@ Hopping window functions hop forward in time by a fixed period. It may be easy t
 
 ![Hopping Window](./resources/hoppingWindow.png)
 
-
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 ```
-
-
 
 ## Sliding window
 
@@ -49,12 +46,9 @@ Sliding window functions, unlike Tumbling or Hopping windows, produce an output 
 
 ![Sliding Window](./resources/slidingWindow.png)
 
-
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 ```
-
-
 
 ## Session window
 
@@ -62,12 +56,9 @@ Session window functions group events that arrive at similar times, filtering ou
 
 ![Session Window](./resources/sessionWindow.png)
 
-
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mi, 2, 1);
 ```
-
-
 
 A session window begins when the first event occurs. If another event occurs within the specified timeout from the last ingested event, then the window extends to include the new event. Otherwise if no events occur within the timeout, then the window is closed at the timeout.
 
@@ -79,7 +70,7 @@ Please notice that the count window does not concern time, it only concern about
 
 ### Tumbling count window
 
-Tumbling count window is similar to general tumbling window, events in a tumbling window can not repeat, do not overlap, and an event cannot belong to more than one tumbling window. Below is a count window with 5 events length. 
+Tumbling count window is similar to general tumbling window, events in a tumbling window can not repeat, do not overlap, and an event cannot belong to more than one tumbling window. Below is a count window with 5 events length.
 
 ![](./resources/tumblingCountWindow.png)
 
@@ -87,7 +78,7 @@ Tumbling count window is similar to general tumbling window, events in a tumblin
 SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 ```
 
-The SQL will group events with 5 count window, and only get the `temperature` that is great than 20. 
+The SQL will group events with 5 count window, and only get the `temperature` that is great than 20.
 
 ### Other count windows
 
@@ -124,6 +115,7 @@ The SQL has following conditions,
 In some cases, not all the inputs are needed for the window. Filter clause is presented to filter out input data given the condition. Unlike `where` clause, the filter clause runs before the window partitioning. The result will be different especially for count window. If filter with `where` clause for data with count window of length 3, the output length will vary across windows; while filter with `filter` clause, the output length will be always 3.
 
 The filter clause must follow the window function. The filter clause must be like `FILTER(WHERE expr)`. Example:
+
 ```sql
 SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 ```
@@ -134,13 +126,14 @@ Every event has a timestamp associated with it. The timestamp will be used to ca
 
 `
 CREATE STREAM demo (
-					color STRING,
-					size BIGINT,
-					ts BIGINT
-				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
+                    color STRING,
+                    size BIGINT,
+                    ts BIGINT
+                ) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
 `
 
 In event time mode, the watermark algorithm is used to calculate a window.
 
 ## Runtime error in window
+
 If the window receive an error (for example, the data type does not comply to the stream definition) from upstream, the error event will be forwarded immediately to the sink. The current window calculation will ignore the error event.

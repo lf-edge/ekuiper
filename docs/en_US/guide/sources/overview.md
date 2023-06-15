@@ -24,7 +24,6 @@ Users can directly use the built-in sources in the standard eKuiper instance. Th
 - [File source](./builtin/file.md): source to read from file, usually used as tables.
 - [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
 
-
 ## Predefined Source Plugins
 
 We have developed some official source plugins. These plugins can be found in eKuiper's source code and users need to build them manually. Please check each source about how to build and use.

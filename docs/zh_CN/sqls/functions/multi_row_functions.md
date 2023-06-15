@@ -6,7 +6,7 @@
 
 ## UNNEST
 
-```
+```text
 unnest(array)
 ```
 

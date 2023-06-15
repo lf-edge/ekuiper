@@ -7,9 +7,7 @@ software which can be run at all kinds of resource constrained IoT devices.
 mobile, embedded, and IoT devices. It enables on-device machine learning inference with low latency and a small binary
 size.
 
-
 By integrating eKuiper and TensorFlow Lite, users only need to upload a pre-built TensorFlow model, which can be used in rules to analyze data in the flow. In this tutorial, we will demonstrate how to quickly call a pre-trained TensorFlow model through ekuiper.
-
 
 ## Prerequisite
 
@@ -23,7 +21,6 @@ In this tutorial we will use the [sin](https://github.com/mattn/go-tflite/tree/m
 This tutorial uses the eKuiper Docker image `lfedge/ekuiper:1.8.0-slim` and the eKuiper manager Docker image `emqx/ekuiper-manager:1.8.0` released by the team to demonstrate. Please refer to [here](https://hub.docker.com/r/emqx/ekuiper-manager) on how to use them.
 
 ### TensorFlow Lite Plugin Download
-
 
 TensorFlow Lite is provided as a precompiled plug-in, and users need to download and install it themselves.
 
@@ -45,7 +42,6 @@ Note that the model input data format must be a byte array, and json does not su
 Users can upload model files to eKuiper through eKuiper manager. As shown below.
 ![model upload](../../resources/sin_upload.png)
 
-
 ### Call Model in TensorFlow Lite
 
 After users install the TensorFlow Lite plugin, they can call the model in SQL as normal built-in functions. The first parameter is the model name, and the second parameter is the data to be processed.
@@ -55,7 +51,6 @@ After users install the TensorFlow Lite plugin, they can call the model in SQL a
 
 The result is shown in the figure below, when the input is 1.57, the derivation result is about 1.
 ![result check](../../resources/mqttx_sin.png)
-
 
 ## MobileNet V1 Model Set up
 
@@ -78,12 +73,10 @@ Since the precompiled model requires 224 * 224 pixel image data, another precomp
 ![image install](../../resources/image_install.png)
 ![resize register](../../resources/image_register.png)
 
-
 ### Model Upload
 
 Users can upload model files to eKuiper through eKuiper manager. As shown below.
 ![model upload](../../resources/mobilenet_upload.png)
-
 
 ### Call Model in TensorFlow Lite
 
@@ -106,53 +99,53 @@ Users can write code to filter out the item tags with the highest matching degre
 package demo
 
 import (
-	"bufio"
-	"os"
-	"sort"
+    "bufio"
+    "os"
+    "sort"
 )
 
 func loadLabels() ([]string, error) {
-	labels := []string{}
-	f, err := os.Open("./labels.txt")
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		labels = append(labels, scanner.Text())
-	}
-	return labels, nil
+    labels := []string{}
+    f, err := os.Open("./labels.txt")
+    if err != nil {
+        return nil, err
+    }
+    defer f.Close()
+    scanner := bufio.NewScanner(f)
+    for scanner.Scan() {
+        labels = append(labels, scanner.Text())
+    }
+    return labels, nil
 }
 
 type result struct {
-	score float64
-	index int
+    score float64
+    index int
 }
 
 func bestMatchLabel(keyValue map[string]interface{}) (string, bool) {
-	labels, _ := loadLabels()
-	resultArray := keyValue["tfLite"].([]interface{})
-	outputArray := resultArray[0].([]byte)
-	outputSize := len(outputArray)
-	
-	var results []result
-	for i := 0; i < outputSize; i++ {
-		score := float64(outputArray[i]) / 255.0
-		if score < 0.2 {
-			continue
-		}
-		results = append(results, result{score: score, index: i})
-	}
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].score > results[j].score
-	})
-	// output is the biggest score labelImage
-	if len(results) > 0 {
-		return labels[results[0].index], true
-	} else {
-		return "", true
-	}
+    labels, _ := loadLabels()
+    resultArray := keyValue["tfLite"].([]interface{})
+    outputArray := resultArray[0].([]byte)
+    outputSize := len(outputArray)
+    
+    var results []result
+    for i := 0; i < outputSize; i++ {
+        score := float64(outputArray[i]) / 255.0
+        if score < 0.2 {
+            continue
+        }
+        results = append(results, result{score: score, index: i})
+    }
+    sort.Slice(results, func(i, j int) bool {
+        return results[i].score > results[j].score
+    })
+    // output is the biggest score labelImage
+    if len(results) > 0 {
+        return labels[results[0].index], true
+    } else {
+        return "", true
+    }
 
 }
 ```

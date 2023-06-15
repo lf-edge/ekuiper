@@ -14,14 +14,15 @@
 | certificationPath  | 是    | 证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 `kuiperd` 命令的路径。比如，如果你在 `/var/kuiper` 中运行 `bin/kuiperd` ，那么父目录为 `/var/kuiper`; 如果运行从 `/var/kuiper/bin` 中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。 |
 | privateKeyPath     | 是    | 私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。                                                                                                                                    |
 | rootCaPath         | 是    | 根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径，相对路径的用法与 `certificationPath` 类似。                                                                                                                         |
-| insecureSkipVerify | 是    | 如果 InsecureSkipVerify 设置为 `true`, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为`false`。配置项只能用于TLS连接。                                                                              |
-| retained           | 是    | 如果 retained 设置为 `true`,Broker会存储每个Topic的最后一条保留消息及其Qos。默认值是 `false`                                                                                                                        |
+| insecureSkipVerify | 是    | 如果 InsecureSkipVerify 设置为 `true`, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为 `false`。配置项只能用于TLS连接。                                                                              |
+| retained           | 是    | 如果 retained 设置为 `true`,Broker会存储每个 Topic 的最后一条保留消息及其 Qos。默认值是 `false`                                                                                                                        |
 | compression        | 是    | 使用指定的压缩方法压缩 Payload。当前支持 zlib, gzip, flate, zstd  算法。                                                                                                                                     |
 | connectionSelector | 是    | 重用到 MQTT Broker 的连接，详细信息，[请参考](../../sources/builtin/mqtt.md#connectionselector)                                                                                                          |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 以下为使用 SAS 连接到 Azure IoT Hub 的样例。
+
 ```json
     {
       "mqtt": {
@@ -70,4 +71,3 @@
       }
     }
 ```
-

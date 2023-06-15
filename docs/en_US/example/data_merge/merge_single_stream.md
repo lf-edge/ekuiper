@@ -10,7 +10,7 @@ In IoT scenarios, devices such as sensors are often numerous, and usually the ac
 
 The temperature and humidity sensor data is mixed in the data stream, and none of the data is complete.
 
-```
+```text
 {"device_id":"B","humidity":79.66,"ts":1681786070367}
 {"device_id":"A","temperature":27.23,"ts":1681786070368}
 {"device_id":"B","humidity":83.86,"ts":1681786070477}
@@ -63,7 +63,7 @@ As shown in the above SQL, latest(temperature, 0) will get the latest temperatur
 
 With this rule, from the sample input sequence we can get the following output:
 
-```
+```text
 {"humidity":79.66,"temperature":0,"ts":1681786070367}
 {"humidity":79.66,"temperature":27.23,"ts":1681786070368}
 {"humidity":83.86,"temperature":27.23,"ts":1681786070477}
@@ -100,7 +100,7 @@ As shown in the above SQL, `WHERE isNull(temperature) = false` will filter out e
 
 With this rule, from the sample input sequence we can get the following output:
 
-```
+```text
 {"humidity":79.66,"temperature":27.23,"ts":1681786070368}
 {"humidity":83.86,"temperature":27.68,"ts":1681786070479}
 {"humidity":83.86,"temperature":27.28,"ts":1681786070588}
@@ -125,7 +125,7 @@ As shown in the above SQL, `WHERE ts - lag(ts) < 10` will filter out events with
 
 With this rule, from the sample input sequence we can get the following output:
 
-```
+```text
 {"humidity":79.66,"temperature":27.23,"ts":1681786070368}
 {"humidity":83.86,"temperature":27.68,"ts":1681786070479}
 {"humidity":75.79,"temperature":27.28,"ts":1681786070590}
@@ -150,7 +150,7 @@ As shown in the above SQL, `GROUP BY TUMBLINGWINDOW(ms, 500)` will merge each 50
 
 With this rule, from the sample input sequence we can get the following output:
 
-```
+```text
 {"humidity":81.75999999999999,"temperature":27.455,"ts":1681786070500}
 {"humidity":77.5625,"temperature":27.332500000000003,"ts":1681786071000}
 ```

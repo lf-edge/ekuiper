@@ -20,9 +20,11 @@ go version
 ```
 
 To check if tinygo is installed, run the following command.
+
 ```shell
 tinygo version
 ```
+
 tinygo download address: https://github.com/tinygo-org/tinygo/releases
 
 To check whether wasmedge is installed, please run the following command.
@@ -30,6 +32,7 @@ To check whether wasmedge is installed, please run the following command.
 ```shell
 wasmedge -v
 ```
+
 wasmedge download location: https://wasmedge.org/book/en/quick_start/install.html
 
 Download command:
@@ -51,6 +54,7 @@ Official tutorial (https://wasmedge.org/book/en/write_wasm/go.html)
 Develop fibonacci plugin:
 
 fibonacci.go
+
 ```go
 package main
 
@@ -59,16 +63,16 @@ func main() {
 
 //export fib
 func fibArray(n int32) int32 {
-	arr := make([]int32, n)
-	for i := int32(0); i < n; i++ {
-		switch {
-		case i < 2:
-			arr[i] = i
-		default:
-			arr[i] = arr[i-1] + arr[i-2]
-		}
-	}
-	return arr[n-1]
+  arr := make([]int32, n)
+  for i := int32(0); i < n; i++ {
+    switch {
+    case i < 2:
+      arr[i] = i
+    default:
+      arr[i] = arr[i-1] + arr[i-2]
+    }
+  }
+  return arr[n-1]
 }
 ```
 
@@ -95,6 +99,7 @@ After development is complete, we need to package the results into a zip for ins
 In the json file, we need to describe the metadata of this plugin. This information must match the definition in the main plugin program. The following is an example.
 
 fibonacci.json
+
 ```json
 {
   "version": "v1.0.0",
@@ -104,6 +109,7 @@ fibonacci.json
   "wasmEngine": "wasmedge"
 }
 ```
+
 ## Build eKuiper
 
 The official released eKuiper do not have wasm support, users need build eKuiper by himself
@@ -123,26 +129,31 @@ Check plugin installation.
 ```shell
 bin/kuiper describe plugin wasm fibonacci
 ```
+
 ## Run
 
 1. Create a stream
+
     ```shell
     bin/kuiper create stream demo_fib '(num float) WITH (FORMAT="JSON", DATASOURCE="demo_fib")'
     bin/kuiper query
     select fib(num) from demo_fib
     ```
+
 2. Install EMQX to send data.
+
     ```shell
     docker pull emqx/emqx:v4.0.0
     docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx:v4.0.0
     ```
+
 3. Send data by EMQX
 
 Login to: http://127.0.0.1:18083/ with admin/public.
 
 Use TOOLS/Websocket  to send data:
 
-Tpoic    : demo_fib 
+Tpoic    : demo_fib
 
 Messages : {"num" : 25}
 

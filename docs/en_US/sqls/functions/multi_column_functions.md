@@ -7,7 +7,7 @@ Multiple column function can only be used in the `SELECT` clause of a query.
 
 ## CHANGED_COLS
 
-```
+```text
 changed_cols(prefix, ignoreNull, colA, colB)
 ```
 

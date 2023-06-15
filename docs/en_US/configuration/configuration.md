@@ -5,6 +5,7 @@ eKuiper configuration is based on yaml file and allow to configure by updating t
 ## Configuration Scope
 
 eKuiper configurations include
+
 1. `etc/kuiper.yaml`: global configuration file. Make change to it need to restart the eKuiper instance. Please refer to [basic configuration file](./global_configurations.md) for detail.
 2. `etc/sources/${source_name}.yaml`: the configuration file for each source to define the default properties (except MQTT source, whose configuration file is `etc/mqtt_source.yaml`). Please refer to the doc for each source for detail. For example, [MQTT source](../guide/sources/builtin/mqtt.md) and [Neuron source](../guide/sources/builtin/neuron.md) covers the configuration items.
 3. `etc/connections/connection.yaml`: shared connection configuration file.
@@ -25,7 +26,7 @@ When deploying in docker or k8s, it is not easy enough to manipulate files, smal
 
 There is a mapping from environment variable to the configuration yaml file. When modifying configuration through environment variables, the environment variables need to be set according to the prescribed format, for example:
 
-```
+```text
 KUIPER__BASIC__DEBUG => basic.debug in etc/kuiper.yaml
 MQTT_SOURCE__DEMO_CONF__QOS => demo_conf.qos in etc/mqtt_source.yaml
 EDGEX__DEFAULT__PORT => default.port in etc/sources/edgex.yaml

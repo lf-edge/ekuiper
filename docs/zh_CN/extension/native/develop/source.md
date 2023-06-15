@@ -1,6 +1,6 @@
-# 源（ Source ）扩展 
+# 源（ Source ）扩展
 
-源将数据从其他系统反馈到 eKuiper。eKuiper 支持  [MQTT 消息服务器](../../../guide/sources/builtin/mqtt.md)的内置源。 然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
+源将数据从其他系统反馈到 eKuiper。eKuiper 支持 [MQTT 消息服务器](../../../guide/sources/builtin/mqtt.md)的内置源。然而，用户仍然需要从各种外部系统（包括消息传递系统和数据管道等）中获取数据。源扩展正是为了满足此要求。
 
 ## 开发
 
@@ -55,21 +55,21 @@ function MySource() api.Source{
 Configure(datasource string, props map[string]interface{}) error
 ```
 
-下一个任务是实现_open_方法。一旦源被创建，该方法将被调用。它负责初始化，比如建立连接。
+下一个任务是实现 _open_ 方法。一旦源被创建，该方法将被调用。它负责初始化，比如建立连接。
 
 ```go
 // Open 创建与外部数据源的连接
 Open(ctx StreamContext) error
 ```
 
-查询源的主要任务是实现 _Lookup_ 方法。该方法将在每个连接操作中运行。参数是在运行时获得的，包括要从外部系统中检索的字段、键和值等信息。每个查询源都有不同的查询机制。例如，SQL查询源将从这些参数中组装一个 SQL 查询来检索查询数据。
+查询源的主要任务是实现 _Lookup_ 方法。该方法将在每个连接操作中运行。参数是在运行时获得的，包括要从外部系统中检索的字段、键和值等信息。每个查询源都有不同的查询机制。例如，SQL 查询源将从这些参数中组装一个 SQL 查询来检索查询数据。
 
 ```go
 // Lookup 接收查询值以构建查询并返回查询结果
 Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
 ```  
 
-最后要实现的方法是 _Close_，它实际上用来关闭连接。 当流即将终止时调用它。 您也可以在此功能中执行任何清理工作。
+最后要实现的方法是 _Close_，它实际上用来关闭连接。当流即将终止时调用它。 您也可以在此功能中执行任何清理工作。
 
 ```go
 Close(ctx StreamContext) error
@@ -83,14 +83,13 @@ function MySourceLookup() api.LookupSource{
 }
 ```
 
-[SQL Lookup Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/sql/sqlLookup.go) 是一个很好的示例。。
+[SQL Lookup Source](https://github.com/lf-edge/ekuiper/blob/master/extensions/sources/sql/sqlLookup.go) 是一个很好的示例。
 
 ### 可回溯源
 
-如果[规则检查点](../../../guide/rules/state_and_fault_tolerance.md#源考虑)被启用，源需要可回退。这意味着源需要同时实现`api.Source`和`api.Rewindable`接口。
+如果[规则检查点](../../../guide/rules/state_and_fault_tolerance.md#源考虑)被启用，源需要可回退。这意味着源需要同时实现 `api.Source` 和 `api.Rewindable` 接口。
 
-一个典型的实现是将 "offset "作为源的一个字段来保存。当读入新的值时更新偏移值。注意，当实现GetOffset()时，将被eKuiper系统调用，这意味着偏移值可以被多个go routines访问。因此，在读或写偏移量时，需要一个锁。
-
+一个典型的实现是将 "offset" 作为源的一个字段来保存。当读入新的值时更新偏移值。注意，当实现 GetOffset() 时，将被 eKuiper 系统调用，这意味着偏移值可以被多个 go routines 访问。因此，在读或写偏移量时，需要一个锁。
 
 ### 处理配置
 
@@ -99,9 +98,10 @@ eKuiper 配置的格式为 yaml，它提供了一个集中位置  _/etc_  来保
 eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其输入到源的 _Configure_ 方法中。 如果在流中指定了 [CONF_KEY](../../../guide/streams/overview.md#流属性)  属性，则将输入该键的配置。 否则，将使用默认配置。
 
 要在源中使用配置，必须遵循以下约定：
+
  1. 您的配置文件名称必须与插件名字相同，例如，mySource.yaml。
-  2. yaml 文件必须位于 _etc/sources_ 内。
-  3. 可以在 [此处](../../../guide/sources/builtin/mqtt.md)找到 yaml 文件的格式。
+ 2. yaml 文件必须位于 _etc/sources_ 内。
+ 3. 可以在[此处](../../../guide/sources/builtin/mqtt.md)找到 yaml 文件的格式。
 
 #### 通用配置字段
 
@@ -111,6 +111,7 @@ eKuiper 扩展支持配置系统自动读取 yaml 文件中的配置，并将其
 * `bufferLength` 指定要在内存中缓冲的最大消息数。 这是为了避免过多的内存使用情况而导致内存不足错误。 请注意，内存使用情况将因实际缓冲区而异。 在此处增加长度不会增加初始内存分配，因此可以安全设置较大的缓冲区长度。 默认值为102400，即如果每个消息体大小约为100个字节，则最大缓冲区大小将约为102400 * 100B〜= 10MB。
 
 ### 打包源
+
 将已实现的源构建为 go 插件，并确保输出的 so 文件位于 plugins/sources 文件夹中。
 
 ```bash
@@ -121,22 +122,24 @@ go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so extensions/
 
 在[流定义](../../../guide/streams/overview.md#流属性)中指定自定义源， 相关属性为：
 
-- TYPE：指定源名称，必须为驼峰式命名。
-- CONF_KEY：指定要使用的配置键。
+* TYPE：指定源名称，必须为驼峰式命名。
+* CONF_KEY：指定要使用的配置键。
 
 如果您开发了源实现 MySource，则应该具有：
+
 1. 在插件文件中，将导出符号 MySource。
 2. 编译的 MySource.so 文件位于 _plugins/sources_ 内部。
 3. 如果需要配置，请将 mySource.yaml 放在 _etc/sources_ 中。
 
 要使用它，请定义一个流：
+
 ```sql
 CREATE STREAM demo (
-		USERID BIGINT,
-		FIRST_NAME STRING,
-		LAST_NAME STRING,
-		NICKNAMES ARRAY(STRING),
-		Gender BOOLEAN,
-		ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-	) WITH (DATASOURCE="mytopic", TYPE="mySource", CONF_KEY="democonf");
+        USERID BIGINT,
+        FIRST_NAME STRING,
+        LAST_NAME STRING,
+        NICKNAMES ARRAY(STRING),
+        Gender BOOLEAN,
+        ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+    ) WITH (DATASOURCE="mytopic", TYPE="mySource", CONF_KEY="democonf");
 ```
