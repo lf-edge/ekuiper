@@ -27,7 +27,8 @@ type Select struct {
 }
 
 type Watermark struct {
-	Emitters []string `json:"emitters"`
+	Emitters      []string `json:"emitters"`
+	SendWatermark bool     `json:"sendWatermark"`
 }
 
 type Window struct {

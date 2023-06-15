@@ -358,6 +358,8 @@ func itemToMap(item interface{}) []map[string]interface{} {
 	case []map[string]interface{}: // for test only
 		outs = val
 		break
+	case *xsql.WatermarkTuple:
+		// just ignore
 	default:
 		outs = []map[string]interface{}{
 			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},

@@ -33,6 +33,7 @@ type WatermarkOp struct {
 	statManager metric.StatManager
 	// config
 	lateTolerance int64
+	sendWatermark bool
 	// state
 	events          []*xsql.Tuple // All the cached events in order
 	streamWMs       map[string]int64
@@ -47,8 +48,11 @@ const (
 	StreamWMKey   = "$$streamwms"
 )
 
-func NewWatermarkOp(name string, streams []string, options *api.RuleOption) *WatermarkOp {
+func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *api.RuleOption) *WatermarkOp {
 	wms := make(map[string]int64, len(streams))
+	for _, s := range streams {
+		wms[s] = options.LateTol
+	}
 	return &WatermarkOp{
 		defaultSinkNode: &defaultSinkNode{
 			input: make(chan interface{}, options.BufferLength),
@@ -59,6 +63,7 @@ func NewWatermarkOp(name string, streams []string, options *api.RuleOption) *Wat
 			},
 		},
 		lateTolerance: options.LateTol,
+		sendWatermark: sendWatermark,
 		streamWMs:     wms,
 	}
 }
@@ -167,35 +172,50 @@ func (w *WatermarkOp) track(ctx api.StreamContext, emitter string, ts int64) boo
 // Add an event and check if watermark proceeds
 // If yes, send out all events before the watermark
 func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
-	w.events = append(w.events, d)
+	// Insert into the sorted array, should be faster than append then sort
+	if len(w.events) == 0 {
+		w.events = append(w.events, d)
+	} else {
+		index := sort.Search(len(w.events), func(i int) bool {
+			return w.events[i].GetTimestamp() > d.GetTimestamp()
+		})
+		w.events = append(w.events, nil)
+		copy(w.events[index+1:], w.events[index:])
+		w.events[index] = d
+	}
+
 	watermark := w.computeWatermarkTs()
 	ctx.GetLogger().Debugf("compute watermark event at %d with last %d", watermark, w.lastWatermarkTs)
+	// Make sure watermark time proceeds
 	if watermark > w.lastWatermarkTs {
-		sort.SliceStable(w.events, func(i, j int) bool {
-			return w.events[i].GetTimestamp() < w.events[j].GetTimestamp()
-		})
-
-		// Find out the last event to send in this watermark change
-		c := len(w.events)
-		for i, e := range w.events {
-			if e.GetTimestamp() > watermark {
-				c = i
-				break
-			}
-		}
 		// Send out all events before the watermark
-		for i := 0; i < c; i++ {
-			if i > 0 { // The first event processing time start at the beginning of event receiving
-				w.statManager.ProcessTimeStart()
+		if watermark >= w.events[0].GetTimestamp() {
+			// Find out the last event to send in this watermark change
+			c := len(w.events)
+			for i, e := range w.events {
+				if e.GetTimestamp() > watermark {
+					c = i
+					break
+				}
 			}
-			_ = w.Broadcast(w.events[i])
-			ctx.GetLogger().Debug("send out event", w.events[i].GetTimestamp())
-			w.statManager.IncTotalRecordsOut()
-			w.statManager.ProcessTimeEnd()
+
+			// Send out all events before the watermark
+			for i := 0; i < c; i++ {
+				if i > 0 { // The first event processing time start at the beginning of event receiving
+					w.statManager.ProcessTimeStart()
+				}
+				_ = w.Broadcast(w.events[i])
+				ctx.GetLogger().Debug("send out event", w.events[i].GetTimestamp())
+				w.statManager.IncTotalRecordsOut()
+				w.statManager.ProcessTimeEnd()
+			}
+			w.events = w.events[c:]
+			_ = ctx.PutState(EventInputKey, w.events)
 		}
-		w.events = w.events[c:]
-		_ = ctx.PutState(EventInputKey, w.events)
-		_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
+		// Update watermark
+		if w.sendWatermark {
+			_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
+		}
 		w.lastWatermarkTs = watermark
 		_ = ctx.PutState(WatermarkKey, w.lastWatermarkTs)
 		ctx.GetLogger().Debugf("scan watermark event at %d", watermark)

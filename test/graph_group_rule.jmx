@@ -157,7 +157,8 @@
                     &quot;type&quot;: &quot;operator&quot;,&#xd;
                     &quot;nodeType&quot;: &quot;watermark&quot;,&#xd;
                     &quot;props&quot;: {&#xd;
-                    &quot;emitters&quot;:[&quot;device1&quot;,&quot;device2&quot;]&#xd;
+                    &quot;emitters&quot;:[&quot;device1&quot;,&quot;device2&quot;],&#xd;
+                    &quot;sendWatermark&quot;:true&#xd;
                     }&#xd;
                     },&#xd;
                     &quot;window&quot;: {&#xd;
