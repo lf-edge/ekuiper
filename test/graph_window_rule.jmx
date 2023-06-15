@@ -149,7 +149,8 @@
                       &quot;type&quot;: &quot;operator&quot;,&#xd;
                       &quot;nodeType&quot;: &quot;watermark&quot;,&#xd;
                       &quot;props&quot;: {&#xd;
-                      &quot;emitters&quot;:[&quot;demo&quot;]&#xd;
+                      &quot;emitters&quot;:[&quot;demo&quot;],&#xd;
+                      &quot;sendWatermark&quot;:true&#xd;
                       }&#xd;
                       },&#xd;
                       &quot;roundfunc&quot;: {&#xd;

@@ -18,7 +18,8 @@ import "github.com/lf-edge/ekuiper/pkg/ast"
 
 type WatermarkPlan struct {
 	baseLogicalPlan
-	Emitters []string
+	Emitters      []string
+	SendWatermark bool
 }
 
 func (p WatermarkPlan) Init() *WatermarkPlan {
