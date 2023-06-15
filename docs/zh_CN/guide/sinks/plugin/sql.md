@@ -23,7 +23,6 @@
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
-
 ## 属性
 
 | 属性名称  | 是否可选 | 说明                                                  |
