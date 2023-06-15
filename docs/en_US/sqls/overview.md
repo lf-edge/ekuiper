@@ -1,3 +1,5 @@
+# SQL References
+
 eKuiper offers a SQL-like query language for performing transformations and computations over streams of events. This document describes the syntax, usage and best practices for the eKuiper query language. 
 
 - [Stream specifications](streams.md)
