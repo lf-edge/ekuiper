@@ -913,6 +913,129 @@ func TestSingleSQL(t *testing.T) {
 	}
 }
 
+func TestSingleSQLWithEventTime(t *testing.T) {
+	// Reset
+	streamList := []string{"demoE"}
+	HandleStream(false, streamList, t)
+	// Data setup
+	tests := []RuleTest{
+		{
+			Name: `TestSingleSQLRule1`,
+			Sql:  `SELECT *, upper(color) FROM demoE`,
+			R: [][]map[string]interface{}{
+				{{
+					"color": "red",
+					"size":  float64(3),
+					"ts":    float64(1541152486013),
+					"upper": "RED",
+				}},
+				{{
+					"color": "blue",
+					"size":  float64(2),
+					"ts":    float64(1541152487632),
+					"upper": "BLUE",
+				}},
+				{{
+					"color": "yellow",
+					"size":  float64(4),
+					"ts":    float64(1541152488442),
+					"upper": "YELLOW",
+				}},
+				{{
+					"color": "red",
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+					"upper": "RED",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(4),
+				"op_3_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+			},
+			T: &api.PrintableTopo{
+				Sources: []string{"source_demoE"},
+				Edges: map[string][]interface{}{
+					"source_demoE":   {"op_2_watermark"},
+					"op_2_watermark": {"op_3_project"},
+					"op_3_project":   {"sink_mockSink"},
+				},
+			},
+		},
+		{
+			Name: `TestChanged`,
+			Sql:  "SELECT changed_cols(\"tt_\", true, color, size) FROM demoE",
+			R: [][]map[string]interface{}{
+				{{
+					"tt_color": "red",
+					"tt_size":  float64(3),
+				}},
+				{{
+					"tt_color": "blue",
+					"tt_size":  float64(2),
+				}},
+				{{
+					"tt_color": "yellow",
+					"tt_size":  float64(4),
+				}},
+				{{
+					"tt_color": "red",
+					"tt_size":  float64(1),
+				}},
+			},
+			M: map[string]interface{}{
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(4),
+				"op_3_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+			},
+		},
+	}
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+			IsEventTime:  true,
+			LateTol:      1000,
+		}, {
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		}, {
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}
+
 func TestSingleSQLError(t *testing.T) {
 	// Reset
 	streamList := []string{"ldemo"}
