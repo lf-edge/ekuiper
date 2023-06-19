@@ -333,9 +333,8 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			SendWatermark: hasWindow,
 			Emitters:      streamEmitters,
 		}
-		if hasWindow {
-			w = dimensions.GetWindow()
-			wp.delay = convertFromUnit(w.TimeUnit.Val, int64(w.Delay.Val))
+		if hasWindow && dimensions.GetWindow().Delay != nil {
+			wp.delay = convertFromUnit(w.TimeUnit.Val, int64(dimensions.GetWindow().Delay.Val))
 		}
 		p = wp.Init()
 		p.SetChildren(children)
@@ -357,9 +356,11 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			wp := WindowPlan{
 				wtype:       w.WindowType,
 				length:      w.Length.Val,
-				delay:       int64(w.Delay.Val),
 				isEventTime: opt.IsEventTime,
 			}.Init()
+			if w.Delay != nil {
+				wp.delay = int64(w.Delay.Val)
+			}
 			if w.Interval != nil {
 				wp.interval = w.Interval.Val
 			} else if w.WindowType == ast.COUNT_WINDOW {
