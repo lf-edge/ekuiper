@@ -334,7 +334,8 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			Emitters:      streamEmitters,
 		}
 		if hasWindow && dimensions.GetWindow().Delay != nil {
-			wp.delay = convertFromUnit(w.TimeUnit.Val, int64(dimensions.GetWindow().Delay.Val))
+			w = dimensions.GetWindow()
+			wp.delay = convertFromUnit(w.TimeUnit.Val, int64(w.Delay.Val))
 		}
 		p = wp.Init()
 		p.SetChildren(children)
