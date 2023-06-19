@@ -3038,6 +3038,30 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 		err  string
 	}{
 		{
+			s: `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW(ms, 5)`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "f1", StreamName: ast.DefaultStream},
+						Name:  "f1",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Dimensions: ast.Dimensions{
+					ast.Dimension{
+						Expr: &ast.Window{
+							WindowType: ast.SLIDING_WINDOW,
+							Length:     &ast.IntegerLiteral{Val: 5},
+							Interval:   &ast.IntegerLiteral{Val: 0},
+							TimeUnit:   &ast.TimeLiteral{Val: ast.MS},
+							Delay:      &ast.IntegerLiteral{Val: 0},
+						},
+					},
+				},
+			},
+		},
+		{
 			s: `SELECT f1 FROM tbl GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -3055,6 +3079,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 							Length:     &ast.IntegerLiteral{Val: 10},
 							Interval:   &ast.IntegerLiteral{Val: 0},
 							TimeUnit:   &ast.TimeLiteral{Val: ast.SS},
+							Delay:      &ast.IntegerLiteral{Val: 0},
 						},
 					},
 				},
@@ -3079,6 +3104,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 							Length:     &ast.IntegerLiteral{Val: 5},
 							Interval:   &ast.IntegerLiteral{Val: 1},
 							TimeUnit:   &ast.TimeLiteral{Val: ast.MI},
+							Delay:      &ast.IntegerLiteral{Val: 0},
 						},
 					},
 				},
@@ -3103,6 +3129,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 							Length:     &ast.IntegerLiteral{Val: 5},
 							Interval:   &ast.IntegerLiteral{Val: 1},
 							TimeUnit:   &ast.TimeLiteral{Val: ast.HH},
+							Delay:      &ast.IntegerLiteral{Val: 0},
 						},
 					},
 				},
@@ -3126,6 +3153,7 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 							WindowType: ast.SLIDING_WINDOW,
 							Length:     &ast.IntegerLiteral{Val: 5},
 							Interval:   &ast.IntegerLiteral{Val: 0},
+							Delay:      &ast.IntegerLiteral{Val: 0},
 							TimeUnit:   &ast.TimeLiteral{Val: ast.MS},
 						},
 					},
@@ -3134,9 +3162,9 @@ func TestParser_ParseWindowsExpr(t *testing.T) {
 		},
 
 		{
-			s:    `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW(mi, 5, 1)`,
+			s:    `SELECT f1 FROM tbl GROUP BY SLIDINGWINDOW(mi, 5, 1, 4)`,
 			stmt: nil,
-			err:  "The arguments for slidingwindow should be 2.\n",
+			err:  "The arguments for slidingwindow should be 2 or 3.\n",
 		},
 
 		{

@@ -173,6 +173,7 @@ const (
 
 type Window struct {
 	WindowType WindowType
+	Delay      *IntegerLiteral
 	Length     *IntegerLiteral
 	Interval   *IntegerLiteral
 	TimeUnit   *TimeLiteral
