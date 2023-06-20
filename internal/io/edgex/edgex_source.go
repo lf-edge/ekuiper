@@ -30,6 +30,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -257,21 +258,21 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 		return v, nil
 	case v3.ValueTypeBoolArray:
 		var val []bool
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := json.Unmarshal(hack.StringToBytes(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
 	case v3.ValueTypeInt8Array, v3.ValueTypeInt16Array, v3.ValueTypeInt32Array, v3.ValueTypeInt64Array, v3.ValueTypeUint8Array, v3.ValueTypeUint16Array, v3.ValueTypeUint32Array:
 		var val []int
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := json.Unmarshal(hack.StringToBytes(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
 		}
 	case v3.ValueTypeUint64Array:
 		var val []uint64
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := json.Unmarshal(hack.StringToBytes(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
@@ -282,7 +283,7 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 		return convertFloatArray(v, 64)
 	case v3.ValueTypeStringArray:
 		var val []string
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := json.Unmarshal(hack.StringToBytes(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e
@@ -299,7 +300,7 @@ func (es *EdgexSource) getValue(r dtos.BaseReading, logger api.Logger) (interfac
 
 func convertFloatArray(v string, bitSize int) (interface{}, error) {
 	var val1 []string
-	if e := json.Unmarshal([]byte(v), &val1); e == nil {
+	if e := json.Unmarshal(hack.StringToBytes(v), &val1); e == nil {
 		var ret []float64
 		for _, v := range val1 {
 			if fv, err := strconv.ParseFloat(v, bitSize); err != nil {
@@ -311,7 +312,7 @@ func convertFloatArray(v string, bitSize int) (interface{}, error) {
 		return ret, nil
 	} else {
 		var val []float64
-		if e := json.Unmarshal([]byte(v), &val); e == nil {
+		if e := json.Unmarshal(hack.StringToBytes(v), &val); e == nil {
 			return val, nil
 		} else {
 			return nil, e

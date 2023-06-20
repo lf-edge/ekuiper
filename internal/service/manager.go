@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
@@ -478,7 +479,7 @@ func (m *Manager) UninstallAllServices() {
 
 func (m *Manager) servicesRegisterForImport(_, v string) error {
 	req := &ServiceCreationRequest{}
-	err := json.Unmarshal([]byte(v), req)
+	err := json.Unmarshal(hack.StringToBytes(v), req)
 	if err != nil {
 		return err
 	}

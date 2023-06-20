@@ -25,6 +25,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	cnf "github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
@@ -97,7 +98,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 			return nil, err
 		}
 		m := make(map[string]interface{})
-		err = json.Unmarshal([]byte(res), &m)
+		err = json.Unmarshal(hack.StringToBytes(res), &m)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +114,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 		ret := make([]api.SourceTuple, 0, len(res))
 		for _, r := range res {
 			m := make(map[string]interface{})
-			err = json.Unmarshal([]byte(r), &m)
+			err = json.Unmarshal(hack.StringToBytes(r), &m)
 			if err != nil {
 				return nil, err
 			}

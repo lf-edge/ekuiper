@@ -24,6 +24,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/lookup"
@@ -126,7 +127,7 @@ func (p *StreamProcessor) RecoverLookupTable() error {
 	)
 	for _, k := range keys {
 		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == ast.TypeTable {
+			if err := json.Unmarshal(hack.StringToBytes(v), vs); err == nil && vs.StreamType == ast.TypeTable {
 				parser := xsql.NewParser(strings.NewReader(vs.Statement))
 				stmt, e := xsql.Language.Parse(parser)
 				if e != nil {
@@ -232,7 +233,7 @@ func (p *StreamProcessor) ShowStream(st ast.StreamType) ([]string, error) {
 	)
 	for _, k := range keys {
 		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == st {
+			if err := json.Unmarshal(hack.StringToBytes(v), vs); err == nil && vs.StreamType == st {
 				result = append(result, k)
 			}
 		}
@@ -255,7 +256,7 @@ func (p *StreamProcessor) ShowTable(kind string) ([]string, error) {
 	)
 	for _, k := range keys {
 		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == ast.TypeTable {
+			if err := json.Unmarshal(hack.StringToBytes(v), vs); err == nil && vs.StreamType == ast.TypeTable {
 				if kind == "scan" && (vs.StreamKind == ast.StreamKindScan || vs.StreamKind == "") {
 					result = append(result, k)
 				} else if kind == "lookup" && vs.StreamKind == ast.StreamKindLookup {
@@ -471,7 +472,7 @@ func (p *StreamProcessor) GetAll() (result map[string]map[string]string, e error
 		"tables":  make(map[string]string),
 	}
 	for k, v := range defs {
-		if err := json.Unmarshal([]byte(v), vs); err == nil {
+		if err := json.Unmarshal(hack.StringToBytes(v), vs); err == nil {
 			switch vs.StreamType {
 			case ast.TypeStream:
 				result["streams"][k] = vs.Statement

@@ -28,6 +28,7 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -430,7 +431,7 @@ func (m *Manager) GetAllPluginsStatus() map[string]string {
 
 func (m *Manager) pluginRegisterForImport(k, v string) error {
 	sd := plugin.NewPluginByType(plugin.PORTABLE)
-	err := json.Unmarshal([]byte(v), &sd)
+	err := json.Unmarshal(hack.StringToBytes(v), &sd)
 	if err != nil {
 		return err
 	}

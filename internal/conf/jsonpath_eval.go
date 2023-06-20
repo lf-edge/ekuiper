@@ -23,6 +23,7 @@ import (
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
 
+	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
@@ -47,7 +48,7 @@ func (e *gvalPathEval) Eval(data interface{}) (interface{}, error) {
 			input = cast.ConvertSlice(data)
 		case reflect.String:
 			v, _ := data.(string)
-			err := json.Unmarshal([]byte(v), &input)
+			err := json.Unmarshal(hack.StringToBytes(v), &input)
 			if err != nil {
 				return nil, fmt.Errorf("data '%v' is not a valid json string", data)
 			}

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/hack"
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -309,7 +310,7 @@ func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data interface{}) (map
 		if err != nil {
 			return nil, fmt.Errorf("fail to parse the header template %s: %v", cc.config.HeadersTemplate, err)
 		}
-		err = json.Unmarshal([]byte(tstr), &headers)
+		err = json.Unmarshal(hack.StringToBytes(tstr), &headers)
 		if err != nil {
 			return nil, fmt.Errorf("parsed header template is not json: %s", tstr)
 		}

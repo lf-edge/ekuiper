@@ -33,6 +33,7 @@ import (
 	"unicode"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -882,7 +883,7 @@ func (rr *Manager) clearInstallFlag() {
 func (rr *Manager) pluginRegisterForImport(key, script string) error {
 	plgType := plugin2.PluginTypeMap[strings.Split(key, "_")[0]]
 	sd := plugin2.NewPluginByType(plgType)
-	err := json.Unmarshal([]byte(script), &sd)
+	err := json.Unmarshal(hack.StringToBytes(script), &sd)
 	if err != nil {
 		return err
 	}
