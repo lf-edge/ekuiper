@@ -918,6 +918,14 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		} else if f != nil {
 			win.Filter = f
 		}
+		// parse over when clause
+		c, err := p.ParseOver4Window()
+		if err != nil {
+			return nil, err
+		} else if c != nil {
+			win.TriggerCondition = c
+		}
+
 		return win, nil
 	}
 }
@@ -1505,6 +1513,27 @@ func (p *Parser) parseStreamOptions() (*ast.Options, error) {
 		return nil, fmt.Errorf("Option \"key\" is required for memory lookup table.")
 	}
 	return opts, nil
+}
+
+func (p *Parser) ParseOver4Window() (ast.Expr, error) {
+	if tok, _ := p.scanIgnoreWhitespace(); tok != ast.OVER {
+		p.unscan()
+		return nil, nil
+	}
+	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.LPAREN {
+		return nil, fmt.Errorf("Found %q after OVER, expect parentheses.", lit)
+	}
+	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.WHEN {
+		return nil, fmt.Errorf("Found %q after OVER(, expect WHEN.", lit)
+	}
+	expr, err := p.ParseExpr()
+	if err != nil {
+		return nil, err
+	}
+	if tok, lit := p.scanIgnoreWhitespace(); tok != ast.RPAREN {
+		return nil, fmt.Errorf("Found %q after OVER, expect right parentheses.", lit)
+	}
+	return expr, nil
 }
 
 // Only support filter on window now

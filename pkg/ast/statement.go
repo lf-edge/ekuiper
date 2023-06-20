@@ -172,11 +172,12 @@ const (
 )
 
 type Window struct {
-	WindowType WindowType
-	Length     *IntegerLiteral
-	Interval   *IntegerLiteral
-	TimeUnit   *TimeLiteral
-	Filter     Expr
+	WindowType       WindowType
+	Length           *IntegerLiteral
+	Interval         *IntegerLiteral
+	TimeUnit         *TimeLiteral
+	Filter           Expr
+	TriggerCondition Expr
 	Expr
 }
 

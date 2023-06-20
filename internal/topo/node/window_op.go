@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
+	"github.com/lf-edge/ekuiper/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -32,11 +33,12 @@ import (
 )
 
 type WindowConfig struct {
-	Type        ast.WindowType
-	Length      int64
-	Interval    int64 // If the interval is not set, it is equals to Length
-	RawInterval int
-	TimeUnit    ast.Token
+	Type             ast.WindowType
+	Length           int64
+	Interval         int64 // If the interval is not set, it is equals to Length
+	RawInterval      int
+	TimeUnit         ast.Token
+	TriggerCondition ast.Expr
 }
 
 type WindowOperator struct {
@@ -49,8 +51,9 @@ type WindowOperator struct {
 	statManager metric.StatManager
 	ticker      *clock.Ticker // For processing time only
 	// states
-	triggerTime int64
-	msgCount    int
+	triggerTime      int64
+	msgCount         int
+	triggerCondition UnOperation
 }
 
 const (
@@ -89,6 +92,10 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 			o.trigger = w
 		}
 	}
+	if w.TriggerCondition != nil {
+		o.triggerCondition = &operator.FilterOp{Condition: w.TriggerCondition}
+	}
+
 	return o, nil
 }
 
@@ -493,6 +500,22 @@ func (tl *TupleList) getRestTuples() []*xsql.Tuple {
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
+	triggerTuple := inputs[len(inputs)-1]
+	if o.triggerCondition != nil {
+		fv, afv := xsql.NewFunctionValuersForOp(ctx)
+		triggered := o.triggerCondition.Apply(ctx, triggerTuple, fv, afv)
+		// not match trigger condition
+		if triggered == nil {
+			return inputs
+		}
+		switch v := triggered.(type) {
+		case error:
+			log.Errorf("window %s trigger condition meet error: %v", o.name, v)
+			return inputs
+		default:
+			// match trigger condition
+		}
+	}
 	var (
 		delta       int64
 		windowStart int64

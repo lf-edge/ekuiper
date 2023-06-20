@@ -147,11 +147,12 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			rawInterval = t.interval
 		}
 		op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), node.WindowConfig{
-			Type:        t.wtype,
-			Length:      l,
-			Interval:    i,
-			RawInterval: rawInterval,
-			TimeUnit:    t.timeUnit,
+			Type:             t.wtype,
+			Length:           l,
+			Interval:         i,
+			RawInterval:      rawInterval,
+			TimeUnit:         t.timeUnit,
+			TriggerCondition: t.triggerCondition,
 		}, options)
 		if err != nil {
 			return nil, 0, err
@@ -347,6 +348,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			}
 			if w.Filter != nil {
 				wp.condition = w.Filter
+			}
+			if w.TriggerCondition != nil {
+				wp.triggerCondition = w.TriggerCondition
 			}
 			// TODO calculate limit
 			// TODO incremental aggregate
