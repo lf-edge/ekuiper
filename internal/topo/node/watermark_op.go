@@ -214,7 +214,7 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 		}
 		// Update watermark
 		if w.sendWatermark {
-			_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark, Tuple: d})
+			_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
 		}
 		w.lastWatermarkTs = watermark
 		_ = ctx.PutState(WatermarkKey, w.lastWatermarkTs)

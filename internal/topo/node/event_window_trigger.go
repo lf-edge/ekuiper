@@ -151,7 +151,16 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						o.triggerTime = inputs[0].Timestamp
 					}
 					if windowEndTs > 0 {
-						if o.isMatchCondition(ctx, d.Tuple) {
+						var targetTuple *xsql.Tuple
+						if len(inputs) > 0 && o.window.Type == ast.SLIDING_WINDOW {
+							for _, t := range inputs {
+								if t.Timestamp == windowEndTs {
+									targetTuple = t
+									break
+								}
+							}
+						}
+						if o.isMatchCondition(ctx, targetTuple) {
 							inputs = o.scan(inputs, windowEndTs, ctx)
 						}
 					}
