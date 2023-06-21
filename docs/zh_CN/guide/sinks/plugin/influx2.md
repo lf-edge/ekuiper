@@ -1,7 +1,7 @@
 # InfluxDB 目标（Sink）
 
 该插件将分析结果发送到 InfluxDB V2.X 中。
-## 编译插件&创建插件
+## 编译部署插件
 
 在编译之前，请对源代码做如下更改：
 
@@ -67,7 +67,7 @@ $(PLUGINS_CUSTOM):
 
 下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。
 
-### ####/tmp/influxRule.txt
+### /tmp/influxRule.txt
 ```json
 {
   "id": "influx",
@@ -89,7 +89,7 @@ $(PLUGINS_CUSTOM):
   ]
 }
 ```
-### ####/tmp/influxPlugin.txt
+### /tmp/influxPlugin.txt
 ```json
 {
   "file":"http://localhost:8080/influx2.zip"

@@ -27,10 +27,10 @@
 - [SQL](./plugin/sql.md)：写入 SQL。
 - [InfluxDB sink](./plugin/influx.md)： 写入 Influx DB `v1.x`。
 - [InfluxDBV2 sink](./plugin/influx2.md)： 写入 Influx DB `v2.x`。
-- [Tdengine sink](./plugin/tdengine.md)： 写入 Tdengine 。
+- [Tdengine sink](./plugin/tdengine.md)： 写入 Tdengine。
 - [Image sink](./plugin/image.md)：写入一个图像文件。仅用于处理二进制结果。
-- [ZeroMQ sink](./plugin/zmq.md)：输出到 Zero MQ 。
-- [Kafka sink](./plugin/kafka.md)：输出到 Kafka 。
+- [ZeroMQ sink](./plugin/zmq.md)：输出到 ZeroMQ。
+- [Kafka sink](./plugin/kafka.md)：输出到 Kafka。
 
 ## 更新
 
