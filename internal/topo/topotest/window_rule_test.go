@@ -89,7 +89,8 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(5),
 				"op_2_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule2`,
 			Sql:  `SELECT color, ts FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -131,7 +132,8 @@ func TestWindow(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(3),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule3`,
 			Sql:  `SELECT color, temp, demo.ts as ts1, demo1.ts as ts2, demo.ts - demo1.ts as diff FROM demo INNER JOIN demo1 ON ts1 = ts2 GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -235,7 +237,8 @@ func TestWindow(t *testing.T) {
 					"op_5_project": {"sink_mockSink"},
 				},
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule4`,
 			Sql:  `SELECT color, count(*) as c FROM demo GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			R: [][]map[string]interface{}{
@@ -300,7 +303,8 @@ func TestWindow(t *testing.T) {
 				"op_4_order_0_records_in_total":   int64(5),
 				"op_4_order_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule5`,
 			Sql:  `SELECT count(temp), window_start() as ws, window_end() FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
@@ -341,7 +345,8 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(11),
 				"op_2_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule6`,
 			Sql:  `SELECT window_end(), sum(temp) as temp, count(color) as c, window_start() FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -415,7 +420,8 @@ func TestWindow(t *testing.T) {
 				"op_4_join_0_records_in_total":   int64(10),
 				"op_4_join_0_records_out_total":  int64(8),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule7`,
 			Sql:  `SELECT * FROM demoError GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
@@ -468,7 +474,8 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(5),
 				"op_2_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule8`,
 			Sql:  `SELECT color, window_end(), ts, count(*) as c, window_start() FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
 			R: [][]map[string]interface{}{
@@ -509,7 +516,8 @@ func TestWindow(t *testing.T) {
 				"op_4_having_0_records_in_total":   int64(4),
 				"op_4_having_0_records_out_total":  int64(1),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule9`,
 			Sql:  `SELECT color, window_start(), window_end() FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1) FILTER( WHERE size > 2)`,
 			R: [][]map[string]interface{}{
@@ -561,7 +569,8 @@ func TestWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":   int64(3),
 				"op_3_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestCountWindowRule1`,
 			Sql:  `SELECT collect(*)[0]->color as c, window_end() as we FROM demo GROUP BY COUNTWINDOW(3)`,
 			R: [][]map[string]interface{}{
@@ -589,7 +598,8 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(5),
 				"op_2_window_0_records_out_total":  int64(1),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule10`,
 			Sql:  `SELECT deduplicate(color, false)->color as c FROM demo GROUP BY SlidingWindow(hh, 1)`,
 			R: [][]map[string]interface{}{
@@ -620,7 +630,8 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(5),
 				"op_2_window_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule11`,
 			Sql:  `SELECT color, name, window_start(), window_end() FROM demo INNER JOIN table1 on demo.ts = table1.id where demo.size > 2 and table1.size > 1 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -660,7 +671,8 @@ func TestWindow(t *testing.T) {
 				"source_table1_0_records_in_total":  int64(4),
 				"source_table1_0_records_out_total": int64(1),
 			},
-		}, {
+		},
+		{
 			Name: `TestWindowRule12`,
 			Sql:  `SELECT collect(size) as allSize FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1), color ORDER BY color`,
 			R: [][]map[string]interface{}{
@@ -700,6 +712,34 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(4),
 			},
 		},
+		{
+			Name: `TestWindowRule13`,
+			Sql:  `SELECT color as c FROM demo GROUP BY SlidingWindow(ss, 3600,1) filter (where size = 3 )`,
+			R: [][]map[string]interface{}{
+				{{
+					"c": "red",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(1),
+				"op_3_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_2_window_0_exceptions_total":   int64(0),
+				"op_2_window_0_process_latency_us": int64(0),
+				"op_2_window_0_records_in_total":   int64(1),
+				"op_2_window_0_records_out_total":  int64(1),
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
@@ -725,7 +765,7 @@ func TestWindow(t *testing.T) {
 
 func TestEventWindow(t *testing.T) {
 	// Reset
-	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
@@ -792,7 +832,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_watermark_0_records_in_total":  int64(6),
 				"op_2_watermark_0_records_out_total": int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule2`,
 			Sql:  `SELECT window_start(), window_end(), color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -833,7 +874,8 @@ func TestEventWindow(t *testing.T) {
 				"op_4_filter_0_records_in_total":   int64(5),
 				"op_4_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule3`,
 			Sql:  `SELECT color, temp, demoE.ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -895,7 +937,8 @@ func TestEventWindow(t *testing.T) {
 				"op_5_join_0_records_in_total":   int64(5),
 				"op_5_join_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule4`,
 			Sql:  `SELECT  window_start() as ws, color, window_end() as we FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			R: [][]map[string]interface{}{
@@ -962,7 +1005,8 @@ func TestEventWindow(t *testing.T) {
 				"op_5_order_0_records_in_total":   int64(4),
 				"op_5_order_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule5`,
 			Sql:  `SELECT temp FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
@@ -1007,7 +1051,8 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":   int64(10),
 				"op_3_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule6`,
 			Sql:  `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -1055,7 +1100,8 @@ func TestEventWindow(t *testing.T) {
 				"op_5_join_0_records_in_total":   int64(5),
 				"op_5_join_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule7`,
 			Sql:  `SELECT * FROM demoErr GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
@@ -1111,7 +1157,8 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":   int64(3),
 				"op_3_window_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule8`,
 			Sql:  `SELECT temp, window_start(), window_end() FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
@@ -1176,7 +1223,8 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":   int64(10),
 				"op_3_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule9`,
 			Sql:  `SELECT window_end(), color, window_start() FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
