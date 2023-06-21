@@ -1,7 +1,7 @@
 # InfluxDB 目标（Sink）
 
 该插件将分析结果发送到 InfluxDB 中。
-## 编译插件&创建插件
+## 编译部署插件
 
 在编译之前，请对源代码做如下更改：
 
@@ -23,21 +23,21 @@
 
 | 属性名称         | 会否可选 | 说明               |
 |--------------|------|------------------|
-| addr         | 是    | InfluxDB的地址      |
-| measurement  | 是    | InfluxDb的测量（如表名） |
-| username     | 否    | InfluxDB登陆用户名    |
-| password     | 否    | InfluxDB登陆密码     |
-| databasename | 是    | InfluxDB的数据库     |
-| tagkey       | 是    | InfluxDB的标签键     |
-| tagvalue     | 是    | InfluxDB的标签值     |
+| addr         | 是    | InfluxDB 的地址      |
+| measurement  | 是    | InfluxDb 的测量（如表名） |
+| username     | 否    | InfluxDB 登陆用户名    |
+| password     | 否    | InfluxDB 登陆密码     |
+| databasename | 是    | InfluxDB 数据库名称     |
+| tagkey       | 是    | InfluxDB 的标签键     |
+| tagvalue     | 是    | InfluxDB 的标签值     |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 ## 示例用法
 
-下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。
+下面是选择温度大于 50 度的样本规则，和一些配置文件仅供参考。
 
-### ####/tmp/influxRule.txt
+### /tmp/influxRule.txt
 ```json
 {
   "id": "influx",
@@ -59,7 +59,7 @@
   ]
 }
 ```
-### ####/tmp/influxPlugin.txt
+### /tmp/influxPlugin.txt
 ```json
 {
   "file":"http://localhost:8080/influx.zip"

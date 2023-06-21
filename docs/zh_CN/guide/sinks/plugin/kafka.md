@@ -30,7 +30,7 @@ RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN make plugins_c
 CMD ["sleep","3600"]
 ```
-在Makefile中添加：
+在 Makefile 中添加：
 ```
 PLUGINS_CUSTOM := sinks/kafka
 
@@ -51,7 +51,7 @@ $(PLUGINS_CUSTOM):
 |-------------------|------|--------------------------------|
 | brokers           | 否    | broker地址列表 ,用 "," 分割           |
 | topic             | 否    | kafka 主题                       |
-| saslAuthType      | 否    | sasl 认证类型 , 支持none,plain,scram |
+| saslAuthType      | 否    | sasl 认证类型 , 支持none，plain，scram |
 | saslUserName      | 是    | sasl 用户名                       |
 | saslPassword      | 是    | sasl 密码                        |
 
@@ -63,6 +63,7 @@ $(PLUGINS_CUSTOM):
 下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。
 
 ### /tmp/kafkaRule.txt
+
 ```json
 {
   "id": "kafka",
@@ -82,6 +83,7 @@ $(PLUGINS_CUSTOM):
 }
 ```
 ### /tmp/kafkaPlugin.txt
+
 ```json
 {
   "file":"http://localhost:8080/kafka.zip"

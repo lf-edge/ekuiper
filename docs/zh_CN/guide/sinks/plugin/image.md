@@ -23,7 +23,7 @@
 
 ## 使用示例
 
-下面示例演示接收图片并将图片保存到文件夹 `/tmp`  中，当图片数量超过1000张时，删除时间较早的图片；当图片保存时长超过72小时时，删除超时的图片。
+下面示例演示接收图片并将图片保存到文件夹 `/tmp`  中，当图片数量超过1000张时，删除时间较早的图片；图片保存时长超过 72 小时后，将删除超时的图片。
 
 ```json
 {
@@ -43,7 +43,7 @@
 
 ## 演示
 
-下面以`zmq`插件为`source`，`image`插件为`sink`，将`zmq`接受到的图片保存在`image`指定的文件夹中。
+下面以 `zmq` 插件为 `source`，`image` 插件为 `sink`，将 `zmq` 接受到的图片保存在 `image` 指定的文件夹中。
 
 ```shell
 curl http://127.0.0.1:9081/streams -X POST -d '{"sql":"create stream s(image bytea)WITH(DATASOURCE = \"\",FORMAT=\"binary\", TYPE=\"zmq\");"}'
