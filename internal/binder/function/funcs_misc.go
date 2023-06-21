@@ -31,7 +31,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -86,7 +85,7 @@ func registerMiscFunc() {
 				return fmt.Errorf("fail to convert %v to string", args[0]), false
 			}
 			var data interface{}
-			err = json.Unmarshal(hack.StringToBytes(text), &data)
+			err = json.Unmarshal(cast.StringToBytes(text), &data)
 			if err != nil {
 				return fmt.Errorf("fail to parse json: %v", err), false
 			}

@@ -1,4 +1,4 @@
-package hack
+package cast
 
 import "unsafe"
 

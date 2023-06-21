@@ -22,9 +22,9 @@ import (
 	"plugin"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -60,7 +60,7 @@ func InferCustom(schemaFile string, messageName string) (ast.StreamFields, error
 	if ok {
 		sj := mc.GetSchemaJson()
 		var result ast.StreamFields
-		err := json.Unmarshal(hack.StringToBytes(sj), &result)
+		err := json.Unmarshal(cast.StringToBytes(sj), &result)
 		if err != nil {
 			return nil, fmt.Errorf("invalid schema json %s: %v", sj, err)
 		}

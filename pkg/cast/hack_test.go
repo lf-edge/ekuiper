@@ -1,4 +1,4 @@
-package hack
+package cast
 
 import (
 	"reflect"
@@ -40,14 +40,14 @@ func TestString2bytes(t *testing.T) {
 }
 
 var (
-	L   = 1024 * 1024
-	str = strings.Repeat("a", L)
+	l   = 1024 * 1024
+	str = strings.Repeat("a", l)
 )
 
 func BenchmarkStringToBytes(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		bt := []byte(str)
-		if len(bt) != L {
+		if len(bt) != l {
 			b.Fatal()
 		}
 	}
@@ -56,7 +56,7 @@ func BenchmarkStringToBytes(b *testing.B) {
 func BenchmarkStringToBytesUnsafe(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		bt := StringToBytes(str)
-		if len(bt) != L {
+		if len(bt) != l {
 			b.Fatal()
 		}
 	}

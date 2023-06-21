@@ -28,13 +28,13 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
@@ -431,7 +431,7 @@ func (m *Manager) GetAllPluginsStatus() map[string]string {
 
 func (m *Manager) pluginRegisterForImport(k, v string) error {
 	sd := plugin.NewPluginByType(plugin.PORTABLE)
-	err := json.Unmarshal(hack.StringToBytes(v), &sd)
+	err := json.Unmarshal(cast.StringToBytes(v), &sd)
 	if err != nil {
 		return err
 	}

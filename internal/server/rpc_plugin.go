@@ -20,9 +20,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func (t *Server) CreatePlugin(arg *model.PluginDesc, reply *string) error {
@@ -103,7 +103,7 @@ func (t *Server) ShowPlugins(arg int, reply *string) error {
 func getPluginByJson(arg *model.PluginDesc, pt plugin.PluginType) (plugin.Plugin, error) {
 	p := plugin.NewPluginByType(pt)
 	if arg.Json != "" {
-		if err := json.Unmarshal(hack.StringToBytes(arg.Json), p); err != nil {
+		if err := json.Unmarshal(cast.StringToBytes(arg.Json), p); err != nil {
 			return nil, fmt.Errorf("Parse plugin %s error : %s.", arg.Json, err)
 		}
 	}

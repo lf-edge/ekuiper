@@ -20,7 +20,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -116,7 +115,7 @@ func (p *defaultFieldProcessor) validateAndConvertField(sf *ast.JsonStreamField,
 				return nil, fmt.Errorf("expect map but found %[1]T(%[1]v)", t)
 			}
 		} else if jtype == reflect.String {
-			err := json.Unmarshal(hack.StringToBytes(t.(string)), &nextJ)
+			err := json.Unmarshal(cast.StringToBytes(t.(string)), &nextJ)
 			if err != nil {
 				return nil, fmt.Errorf("invalid data type for %s, expect map but found %[1]T(%[1]v)", t)
 			}

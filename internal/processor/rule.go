@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
@@ -163,7 +163,7 @@ func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*api.Rule, erro
 		Triggered: true,
 		Options:   clone(opt),
 	}
-	if err := json.Unmarshal(hack.StringToBytes(ruleJson), &rule); err != nil {
+	if err := json.Unmarshal(cast.StringToBytes(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
 	}
 	if rule.Options == nil {

@@ -21,15 +21,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/hack"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/service"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func (t *Server) CreateService(arg *model.RPCArgDesc, reply *string) error {
 	sd := &service.ServiceCreationRequest{}
 	if arg.Json != "" {
-		if err := json.Unmarshal(hack.StringToBytes(arg.Json), sd); err != nil {
+		if err := json.Unmarshal(cast.StringToBytes(arg.Json), sd); err != nil {
 			return fmt.Errorf("Parse service %s error : %s.", arg.Json, err)
 		}
 	}
