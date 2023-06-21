@@ -44,11 +44,11 @@ Currently, only `memory`, `redis` and `sql` source can be lookup table.
 | CONF_KEY      | true     | If additional configuration items are requied to be configured, then specify the config key here. See [MQTT stream](../sources/builtin/mqtt.md) for more info.                   |
 | KIND          | true     | The table kind, could be `scan` or `lookup`. If not specified, the default value is `scan`.                                                                                      |
 
-
 ## Usage scenarios
 
 Table is a way to keep a large bunch of state for both scan and lookup type. Scan table keeps state in memory while lookup table keeps them externally and possibly persisted. Scan table is easier to set up while lookup table can easily connect to existed persisted states. Both types are suitable for stream batch integrated calculation.
 
 Please check below links for some typical scenarios.
+
 - [Scan table scenarios](scan.md)
 - [Lookup table scenarios](lookup.md)

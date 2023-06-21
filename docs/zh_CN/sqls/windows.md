@@ -40,8 +40,6 @@ SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
 SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 ```
 
-
-
 ## 滑动窗口
 
 滑动窗口功能与翻转或跳动窗口不同，仅在事件发生时会产生输出。 每个窗口至少会有一个事件，并且该窗口连续向前移动€（ε）。 就像跳跃窗口一样，事件可以属于多个滑动窗口。
@@ -52,8 +50,6 @@ SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 ```
 
-
-
 ## 会话窗口
 
 会话窗口功能对在相似时间到达的事件进行分组，以过滤掉没有数据的时间段。 它有两个主要参数：超时和最大持续时间。
@@ -63,8 +59,6 @@ SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 ```sql
 SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mi, 2, 1);
 ```
-
-
 
 当第一个事件发生时，会话窗口开始。 如果从上一次摄取的事件起在指定的超时时间内发生了另一个事件，则窗口将扩展为包括新事件。 否则，如果在超时时间内未发生任何事件，则该窗口将在超时时关闭。
 
@@ -93,15 +87,15 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 - 如果第二个参数值为 1， 那么每次事件进来的时候都会被触发
 - 第二个参数的值不应该大于第一个参数的值
 
-以下为 `COUNTWINDOW(5,1)`  的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
+以下为 `COUNTWINDOW(5,1)` 的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
 
 ![](./resources/slidingCountWindow_1.png)
 
 以下计数窗口的长度为 5，每 2 个事件触发一次窗口。输出为最近的 5 个事件。
 
-1. 当收到事件 `2`，目前总共有 2 个事件，小于窗口长度 5， 不会触发窗口 
-2. 当收到事件 `4`，目前总共有 4 个事件，小于窗口长度 5， 不会触发窗口 
-3. 当收到事件 `6`，目前总共有 6 个事件，大于窗口长度 5， 生成了1个窗口包含了 5 个事件。由于长度为 5，因此第一个事件将被忽略
+1. 当收到事件 `2`，目前总共有 2 个事件，小于窗口长度 5，不会触发窗口
+2. 当收到事件 `4`，目前总共有 4 个事件，小于窗口长度 5，不会触发窗口
+3. 当收到事件 `6`，目前总共有 6 个事件，大于窗口长度 5，生成了1个窗口包含了 5 个事件。由于长度为 5，因此第一个事件将被忽略
 4. 剩下窗口生成与之前的类似
 
 ![](./resources/slidingCountWindow_2.png)
@@ -130,13 +124,13 @@ SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 
 每个事件都有一个与之关联的时间戳。 时间戳将用于计算窗口。 默认情况下，当事件输入到源时，将添加时间戳，称为`处理时间`。 我们还支持将某个字段指定为时间戳，称为`事件时间`。 时间戳字段在流定义中指定。 在下面的定义中，字段 `ts` 被指定为时间戳字段。
 
-`
+```sql
 CREATE STREAM demo (
-					color STRING,
-					size BIGINT,
-					ts BIGINT
-				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
-`
+                    color STRING,
+                    size BIGINT,
+                    ts BIGINT
+                ) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
+```
 
 在事件时间模式下，水印算法用于计算窗口。
 

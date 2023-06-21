@@ -8,7 +8,7 @@ as expressions only in the following:
 
 ## AVG
 
-```
+```text
 avg(col)
 ```
 
@@ -16,7 +16,7 @@ The average of the values in a group. The null values will be ignored.
 
 ## COUNT
 
-```
+```text
 count(*)
 count(col)
 ```
@@ -25,7 +25,7 @@ The number of items in a group. The null values will be ignored.
 
 ## MAX
 
-```
+```text
 max(col)
 ```
 
@@ -33,7 +33,7 @@ The maximum value in a group. The null values will be ignored.
 
 ## MIN
 
-```
+```text
 min(col)
 ```
 
@@ -41,7 +41,7 @@ The minimum value in a group. The null values will be ignored.
 
 ## SUM
 
-```
+```text
 sum(col)
 ```
 
@@ -49,7 +49,7 @@ The sum of all the values in a group. The null values will be ignored.
 
 ## COLLECT
 
-```
+```text
 collect(*)
 collect(col1, col2 ...)
 ```
@@ -58,25 +58,29 @@ Returns an array with all columns or the whole record (when the parameter is *) 
 
 Examples:
 
-- Get an array of column `a` of the current window. Assume the column `a` is of an int type, the result will be
+* Get an array of column `a` of the current window. Assume the column `a` is of an int type, the result will be
   like: `[{"r1":[32, 45]}]`
+
     ```sql
     SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
-- Get the whole array of the current window. The result will be
+
+* Get the whole array of the current window. The result will be
   like: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
+
     ```sql
     SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
-- Get the second element's column 'a' value within the current window. The result will be like: `[{"r1":32}]`
+* Get the second element's column 'a' value within the current window. The result will be like: `[{"r1":32}]`
+
     ```sql
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
 ## DEDUPLICATE
 
-```
+```text
 deduplicate(col, false)
 ```
 
@@ -87,21 +91,24 @@ property [omitIfEmpty](../../guide/sinks/overview.md#common-properties) to the s
 
 Examples:
 
-- Get the whole array of the current window which is deduplicated by column `a`. The result will be
+* Get the whole array of the current window which is deduplicated by column `a`. The result will be
   like: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+
     ```sql
     SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
-- Get the column `a` value which is not duplicate during the last hour. The result will be
+
+* Get the column `a` value which is not duplicate during the last hour. The result will be
   like: `[{"r1":32}]`, `[{"r1":45}]` and `[{}]` if a duplicate value arrives. Use the omitIfEmpty sink property to
   filter out those empty results.
+
      ```sql
      SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
      ```
 
 ## STDDEV
 
-```
+```text
 stddev(col)
 ```
 
@@ -110,7 +117,7 @@ the key to stddev.
 
 ## STDDEVS
 
-```
+```text
 stddevs(col)
 ```
 
@@ -119,7 +126,7 @@ key to stddevs.
 
 ## VAR
 
-```
+```text
 var(col)
 ```
 
@@ -128,7 +135,7 @@ window. The argument is the column as the key to var.
 
 ## VARS
 
-```
+```text
 vars(col)
 ```
 
@@ -137,7 +144,7 @@ argument is the column as the key to vars.
 
 ## PERCENTILE
 
-```
+```text
 percentile(col, percentile)
 ```
 
@@ -147,7 +154,7 @@ find. The percentile must be a constant between 0.0 and 1.0.
 
 ## PERCENTILE_DISC
 
-```
+```text
 percentile_disc(col, percentile)
 ```
 

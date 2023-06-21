@@ -14,11 +14,11 @@ For source, implement the source interface as below as the same as described in 
 
 ```go
 type Source interface {
-	// Open Should be sync function for normal case. The container will run it in go func
-	Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
-	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml
-	Configure(datasource string, props map[string]interface{}) error
-	Closable
+    // Open Should be sync function for normal case. The container will run it in go func
+    Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
+    // Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml
+    Configure(datasource string, props map[string]interface{}) error
+    Closable
 }
 ```
 
@@ -26,13 +26,13 @@ For sink, implement the sink interface as below as the same as described in [nat
 
 ```go
 type Sink interface {
-	//Should be sync function for normal case. The container will run it in go func
-	Open(ctx StreamContext) error
-	//Called during initialization. Configure the sink with the properties from rule action definition
-	Configure(props map[string]interface{}) error
-	//Called when each row of data has transferred to this sink
-	Collect(ctx StreamContext, data interface{}) error
-	Closable
+    //Should be sync function for normal case. The container will run it in go func
+    Open(ctx StreamContext) error
+    //Called during initialization. Configure the sink with the properties from rule action definition
+    Configure(props map[string]interface{}) error
+    //Called when each row of data has transferred to this sink
+    Collect(ctx StreamContext, data interface{}) error
+    Closable
 }
 ```
 
@@ -40,13 +40,13 @@ For function, implement the function interface as below as the same as described
 
 ```go
 type Function interface {
-	//The argument is a list of xsql.Expr
-	Validate(args []interface{}) error
-	//Execute the function, return the result and if execution is successful.
-	//If execution fails, return the error and false.
-	Exec(args []interface{}, ctx FunctionContext) (interface{}, bool)
-	//If this function is an aggregate function. Each parameter of an aggregate function will be a slice
-	IsAggregate() bool
+    //The argument is a list of xsql.Expr
+    Validate(args []interface{}) error
+    //Execute the function, return the result and if execution is successful.
+    //If execution fails, return the error and false.
+    Exec(args []interface{}, ctx FunctionContext) (interface{}, bool)
+    //If this function is an aggregate function. Each parameter of an aggregate function will be a slice
+    IsAggregate() bool
 }
 ```
 
@@ -58,30 +58,30 @@ As the portable plugin is a standalone program, it needs a main program to be ab
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/sdk/go/api"
-	sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
-	"os"
+    "github.com/lf-edge/ekuiper/sdk/go/api"
+    sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
+    "os"
 )
 
 func main() {
-	sdk.Start(os.Args, &sdk.PluginConfig{
-		Name: "mirror",
-		Sources: map[string]sdk.NewSourceFunc{
-			"random": func() api.Source {
-				return &randomSource{}
-			},
-		},
-		Functions: map[string]sdk.NewFunctionFunc{
-			"echo": func() api.Function {
-				return &echo{}
-			},
-		},
-		Sinks: map[string]sdk.NewSinkFunc{
-			"file": func() api.Sink {
-				return &fileSink{}
-			},
-		},
-	})
+    sdk.Start(os.Args, &sdk.PluginConfig{
+        Name: "mirror",
+        Sources: map[string]sdk.NewSourceFunc{
+            "random": func() api.Source {
+                return &randomSource{}
+            },
+        },
+        Functions: map[string]sdk.NewFunctionFunc{
+            "echo": func() api.Function {
+                return &echo{}
+            },
+        },
+        Sinks: map[string]sdk.NewSinkFunc{
+            "file": func() api.Sink {
+                return &fileSink{}
+            },
+        },
+    })
 }
 ```
 

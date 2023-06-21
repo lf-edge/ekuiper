@@ -7,6 +7,7 @@ This API accepts JSON content to create new external services.
 ```shell
 POST http://localhost:9081/services
 ```
+
 An example of a request for a file on an HTTP server:
 
 ```json
@@ -17,6 +18,7 @@ An example of a request for a file on an HTTP server:
 ```
 
 An example of a request for a file on the eKuiper server:
+
 ```json
 {
   "name":"random",
@@ -30,10 +32,11 @@ An example of a request for a file on the eKuiper server:
 2. file: URL of external service file. URL supports http, https and file modes. When using the file mode, the file must be on the machine where the eKuiper server is located. It must be a zip file, which contains the service description json file with the same name as the service and any other auxiliary files. The schema file must be in the schema folder.
 
 ### Service file format
+
 A sample zip file of the source named sample.zip
+
 1. sample.json
 2. Schema directory: it contains one or more schema files used by the service. For example, sample.proto.
-
 
 ## Display external services
 

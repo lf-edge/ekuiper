@@ -10,13 +10,13 @@
   - 主题为：`devices/device_001/messages`，
   - 数据为：`{"temperature": 40, "humidity" : 20}`
 - 创建一个规则，用于计算订阅到的数据，并将数据写入目标 (sink) 端「本例演示将订阅到的消息写入到文件中」。
-- eKuiper 目前已经支持多种源和目标。用户只需安装相对应的插件，便能实现对应的功能「本例的源为 MQTT源是内置支持，无需安装；目标为文件 (file)。」
+- eKuiper 目前已经支持多种源和目标。用户只需安装相对应的插件，便能实现对应的功能「本例的源为 MQTT 源是内置支持，无需安装；目标为文件 (file)。」
 
 ## 架构设计
 
-* UI 端：可视化的界面，便于用户操作
-* Kuiper-manager：管理控制台，本质是一个反向 HTTP 代理服务，提供用户管理，权限验证等服务。既可以部署在云端，也可以部署在边缘端
-* eKuiper 实例，被管理的 eKuiper 节点实例，eKuiper-manager 可以同时管理多个 eKuiper 节点
+- UI 端：可视化的界面，便于用户操作
+- Kuiper-manager：管理控制台，本质是一个反向 HTTP 代理服务，提供用户管理，权限验证等服务。既可以部署在云端，也可以部署在边缘端
+- eKuiper 实例，被管理的 eKuiper 节点实例，eKuiper-manager 可以同时管理多个 eKuiper 节点
 
 ![construct](./resources/arch.png)
 
@@ -27,7 +27,7 @@
 
 ### 安装 eKuiper
 
-- 从 [Docker 镜像库](https://hub.docker.com/r/lfedge/ekuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用`ekuiper:1.8-slim`镜像（`ekuiper:1.8-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `ekuiper:1.8-dev` 镜像是开发版本的镜像，适合于开发阶段使用）。
+- 从 [Docker 镜像库](https://hub.docker.com/r/lfedge/ekuiper/tags)拉取 eKuiper 的 Docker 镜像。由于本文中要安装插件，必须使用 `ekuiper:1.8-slim` 镜像（`ekuiper:1.8-alpine` 镜像比较小，安装比较方便，但是由于缺少一些必要的库文件，插件无法正常运行；而 `ekuiper:1.8-dev` 镜像是开发版本的镜像，适合于开发阶段使用）。
 
   ```shell
   docker pull lfedge/ekuiper:1.8-slim
@@ -77,11 +77,11 @@
 
 登录时需要提供 kuiper-manager 的地址，用户名、密码。如下图所示：
 
-* 地址：`http://$yourhost:9082`
+- 地址：`http://$yourhost:9082`
 
-* 用户名：admin
+- 用户名：admin
 
-* 密码：public
+- 密码：public
 
   ![login](./resources/login.png)
 
@@ -89,11 +89,11 @@
 
 创建 eKuiper 服务时需要填写「服务类型」，「服务名称」和「端点 URL 」。
 
-* 服务类型 : 选择 `直接连接服务`  (`华为 IEF 服务` 专用于华为用户)。
+- 服务类型 : 选择 `直接连接服务`  (`华为 IEF 服务` 专用于华为用户)。
 
-* 服务名称 : 自拟，本例为 `example`。
+- 服务名称 : 自拟，本例为 `example`。
 
-* 端点URL：`http://$IP:9081`，IP 获取命令如下：
+- 端点URL：`http://$IP:9081`，IP 获取命令如下：
 
   ```shell
   docker inspect kuiper |  grep IPAddress
@@ -111,9 +111,9 @@
 
 - 消息主题为 `devices/device_001/messages`
 
-- 流结构体定义包含了以下两个字段。 
+- 流结构体定义包含了以下两个字段。
 
-  - temperature: bigint 
+  - temperature: bigint
   - humidity: bigint
 
   用户也可以去掉「是否为带结构的流」来定义一个 schemaless 的数据源。

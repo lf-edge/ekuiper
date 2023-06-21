@@ -7,7 +7,7 @@ the clause for now.
 
 ## UNNEST
 
-```
+```text
 unnest(array)
 ```
 

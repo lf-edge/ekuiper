@@ -4,7 +4,7 @@ String functions are used to manipulate string data.
 
 ## CONCAT
 
-```
+```text
 concat(col1, col2, ...)
 ```
 
@@ -12,7 +12,7 @@ Concatenates arrays or strings. This function accepts any number of arguments an
 
 ## ENDSWITH
 
-```
+```text
 endswith(col1, col2)
 ```
 
@@ -20,7 +20,7 @@ Returns a boolean indicating whether the first string argument ends with the sec
 
 ## FORMAT_TIME
 
-```
+```text
 format_time(col, format)
 ```
 
@@ -58,7 +58,7 @@ Examples:
 
 ## INDEXOF
 
-```
+```text
 indexof(col1, col2)
 ```
 
@@ -66,7 +66,7 @@ Returns the first index (0-based) of the second argument as a substring in the f
 
 ## LENGTH
 
-```
+```text
 length(col)
 ```
 
@@ -74,7 +74,7 @@ Returns the number of characters in the provided string.
 
 ## LOWER
 
-```
+```text
 lower(col)
 ```
 
@@ -82,7 +82,7 @@ Returns the lowercase version of the given string.
 
 ## LPAD
 
-```
+```text
 lpad(col, 2)
 ```
 
@@ -90,7 +90,7 @@ Returns the string argument, padded on the left side with the number of spaces s
 
 ## LTRIM
 
-```
+```text
 ltrim(col)
 ```
 
@@ -98,7 +98,7 @@ Removes all leading whitespace (tabs and spaces) from the provided string.
 
 ## NUMBYTES
 
-```
+```text
 numbytes(col)
 ```
 
@@ -106,7 +106,7 @@ Returns the number of bytes in the UTF-8 encoding of the provided string.
 
 ## REGEXP_MATCHES
 
-```
+```text
 regexp_matches(col, regex)
 ```
 
@@ -114,7 +114,7 @@ Returns true if the string (first argument) contains a match for the regular exp
 
 ## REGEXP_REPLACE
 
-```
+```text
 regexp_replace(col, regex, replacement)
 ```
 
@@ -122,7 +122,7 @@ Replaces all substrings of the specified string value that matches regexp with r
 
 ## REGEXP_SUBSTRING
 
-```
+```text
 regexp_substring(col, regex)
 ```
 
@@ -130,7 +130,7 @@ Returns the first substring of the specified string value that matches regexp.
 
 ## RPAD
 
-```
+```text
 rpad(col, 2)
 ```
 
@@ -138,7 +138,7 @@ Returns the string argument, padded on the right side with the number of spaces 
 
 ## RTRIM
 
-```
+```text
 rtrim(col)
 ```
 
@@ -146,7 +146,7 @@ Removes all trailing whitespace (tabs and spaces) from the provided string.
 
 ## SUBSTRING
 
-```
+```text
 substring(col, start, length)
 ```
 
@@ -155,7 +155,7 @@ to the specified length of characters.
 
 ## STARTSWITH
 
-```
+```text
 startswith(col, str)
 ```
 
@@ -163,7 +163,7 @@ Returns a boolean indicating whether the first string argument starts with the s
 
 ## SPLIT_VALUE
 
-```
+```text
 split_value(col, str_splitter, index)
 ```
 
@@ -176,7 +176,7 @@ For example, `split_value("/test/device001/message","/",0) AS a`, the returned v
 
 ## TRIM
 
-```
+```text
 trim(col)
 ```
 
@@ -184,7 +184,7 @@ Removes all leading and trailing whitespace (tabs and spaces) from the provided 
 
 ## UPPER
 
-```
+```text
 upper(col)
 ```
 

@@ -77,9 +77,11 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
 
 当 eKuiper 从 messageBus 获取数据并返回处理结果时，用户需要在创建源和接收器时分别指定连接信息。
 从 `eKuiper 1.4.0` 和 `EdgeX Jakarta` 开始，有一个新功能支持用户可以在固定位置指定连接信息，然后源和目标输出可以参考。
-* `redis` 消息总线： 这个功能在 EdgeX 使用 `secure` 模式时特别有用，在这种情况下，客户端凭据将在服务引导时自动注入该共享位置。
-  为了使用这个功能，用户需要对目标`docker-compose`文件的`rulesengine`服务部分做部分修改
+
+- `redis` 消息总线： 这个功能在 EdgeX 使用 `secure` 模式时特别有用，在这种情况下，客户端凭据将在服务引导时自动注入该共享位置。
+  为了使用这个功能，用户需要对目标 `docker-compose` 文件的 `rulesengine` 服务部分做部分修改
   将这些添加到 `environment` 部分并确保镜像是 `1.4.0` 或更高版本
+
   ```yaml
   environment:
       CONNECTION__EDGEX__REDISMSGBUS__PORT: 6379
@@ -88,8 +90,10 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
       CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
   ```
-* `mqtt/zeromq` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
+
+- `mqtt/zeromq` 消息总线: 根据目标总线类型填写相应参数，指定必要的客户端凭证
   这里以 mqtt 消息总线为例，确保相应的连接信息存在于此文件 `etc/connections/connection.yaml` 中, [更多信息](../guide/sources/builtin/edgex.md#connectionselector) 请参考
+
   ```yaml
   environment:
       CONNECTION__EDGEX__MQTTMSGBUS__PORT: 1883
@@ -103,11 +107,11 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
   
 做完这些修改后，请参考这篇[文档](../guide/sinks/builtin/edgex.md#使用连接重用功能发布)了解如何使用连接重用功能
 
-
 ### 使用 Redis 作为 KV 存储
 
 从 `1.4.0` 开始，eKuiper 支持 redis 来存储 KV 元数据，用户可以对目标 `docker-compose` 文件的 `rulesengine` 服务部分进行一些修改以应用此更改。
 用户可以将这些添加到 `environment` 部分并确保映像为 `1.4.0` 或更高版本
+
   ```yaml
   environment:
     KUIPER__STORE__TYPE: redis
@@ -115,6 +119,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
     KUIPER__STORE__REDIS__PORT: 6379
     KUIPER__STORE__REDIS__PASSWORD: ""
   ```
+
 *注意*: 这个功能仅适用于 redis 工作在非安全模式时
 
 ### 原生 (native) 方式运行
@@ -183,7 +188,7 @@ default:
 
 以下例子将选出所有 `events` 主题上所有的数据，分析结果将被
 
-- 发布到公共的 MQTT 服务器 `broker.emqx.io` 的主题`result` 上；
+- 发布到公共的 MQTT 服务器 `broker.emqx.io` 的主题 `result` 上；
 - 打印至日志文件
 
 ### 选项1: 使用 Rest API
@@ -243,9 +248,9 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ------
 
-如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../guide/sinks/overview.md)。你现在可以看一下在 `log/stream.log`中的日志文件，查看规则的详细信息。
+如想将结果发送到别的目标，请参考 eKuiper 中支持的[其它目标](../guide/sinks/overview.md)。你现在可以看一下在 `log/stream.log` 中的日志文件，查看规则的详细信息。
 
-```
+```text
 time="2021-07-08 01:03:08" level=info msg="Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. \n" file="server/server.go:144"
 Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. 
 time="2021-07-08 01:08:14" level=info msg="Successfully subscribed to edgex messagebus topic rules-events." file="extensions/edgex_source.go:111" rule=rule1
@@ -261,7 +266,7 @@ time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Uint3
 
 ## 监控分析结果
 
-因为所有的分析结果都被发布到`tcp://broker.emqx.io:1883`，你可以直接使用以下的  `mosquitto_sub` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools).
+因为所有的分析结果都被发布到 `tcp://broker.emqx.io:1883`，你可以直接使用以下的  `mosquitto_sub` 命令来监听结果，你也可以参考别的 [MQTT 客户端工具](https://www.emqx.cn/blog/mqtt-client-tools).
 
 ```shell
 # mosquitto_sub -h broker.emqx.io -t result
@@ -337,4 +342,3 @@ Connecting to 127.0.0.1:20498...
 
 - [eKuiper Github 代码库](https://github.com/lf-edge/ekuiper/)
 - [eKuiper 参考指南](../guide/streams/overview.md)
-

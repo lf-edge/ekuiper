@@ -32,30 +32,30 @@ This part of the content defines which library dependencies are used by the plug
 
 #### about
 
-* trial: indicates whether the plugin is under beta test stage 
+- trial: indicates whether the plugin is under beta test stage
 
-* author
+- author
 
   This part contains the author information of the plugin. The plugin developer can provide this information as appropriate. The information of this part will be displayed in the plugin information list of the management console.
 
-  * name
-  * email
-  * company
-  * website
+  - name
+  - email
+  - company
+  - website
 
-* helpUrl
+- helpUrl
 
   The help file address of the plug-in. The console will link to the corresponding help file according to the language support.
 
-  * en_US: English document help address
-  * zh_CN: Chinese document help address
+  - en_US: English document help address
+  - zh_CN: Chinese document help address
 
-* description
+- description
 
   A simple description of the plugin. The console supports multiple languages.
 
-  * en_US: English description
-  * zh_CN: Chinese description
+  - en_US: English description
+  - zh_CN: Chinese description
 
 #### properties
 
@@ -81,11 +81,11 @@ The list of attributes supported by the plugin and the configuration related to 
   - zh_CN
 - type: field type; **This field must be provided;**
 
-  * string
-  * float
-  * int
-  * list_object: list, element is structure
-  * list_string: list, elements is string
+  - string
+  - float
+  - int
+  - list_object: list, element is structure
+  - list_string: list, elements is string
 - values: If the control type is `list-box` or `radio`, **this field must be provided;**
 - Array: The data type can be number, character, boolean, etc.
 
@@ -95,73 +95,71 @@ The following is a sample of metadata file.
 
 ```json
 {
-	"libs": [""],
-	"about": {
-		"trial": false,
-		"author": {
-			"name": "",
-			"email": "",
-			"company": "",
-			"website": ""
-		},
-		"helpUrl": {
-			"en_US": "",
-			"zh_CN": ""
-		},
-		"description": {
-			"en_US": "",
-			"zh_CN": ""
-		}
-	},
-	"properties": {
-		"default": [{
-			"name": "",
-			"default": "",
-			"optional": false,
-			"control": "",
-			"type": "",
-			"hint": {
-				"en_US": "",
-				"zh_CN": ""
-			},
-			"label": {
-				"en_US": "",
-				"zh_CN": ""
-			}
-		}, {
-			"name": "",
-			"default": [{
-				"name": "",
-				"default": "",
-				"optional": false,
-				"control": "",
-				"type": "",
-				"hint": {
-					"en_US": "",
-					"zh_CN": ""
-				},
-				"label": {
-					"en_US": "",
-					"zh_CN": ""
-				}
-			}],
-			"optional": false,
-			"control": "",
-			"type": "",
-			"hint": {
-				"en_US": "",
-				"zh_CN": ""
-			},
-			"label": {
-				"en_US": "",
-				"zh_CN": ""
-			}
-		}]
-	}
+    "libs": [""],
+    "about": {
+        "trial": false,
+        "author": {
+            "name": "",
+            "email": "",
+            "company": "",
+            "website": ""
+        },
+        "helpUrl": {
+            "en_US": "",
+            "zh_CN": ""
+        },
+        "description": {
+            "en_US": "",
+            "zh_CN": ""
+        }
+    },
+    "properties": {
+        "default": [{
+            "name": "",
+            "default": "",
+            "optional": false,
+            "control": "",
+            "type": "",
+            "hint": {
+                "en_US": "",
+                "zh_CN": ""
+            },
+            "label": {
+                "en_US": "",
+                "zh_CN": ""
+            }
+        }, {
+            "name": "",
+            "default": [{
+                "name": "",
+                "default": "",
+                "optional": false,
+                "control": "",
+                "type": "",
+                "hint": {
+                    "en_US": "",
+                    "zh_CN": ""
+                },
+                "label": {
+                    "en_US": "",
+                    "zh_CN": ""
+                }
+            }],
+            "optional": false,
+            "control": "",
+            "type": "",
+            "hint": {
+                "en_US": "",
+                "zh_CN": ""
+            },
+            "label": {
+                "en_US": "",
+                "zh_CN": ""
+            }
+        }]
+    }
 }
 ```
-
-
 
 ## Sinks/Actions
 
@@ -181,30 +179,30 @@ The content of this part defines which library dependencies are used by the plug
 
 #### about
 
-* trial: indicates whether the plugin is under beta test stage
+- trial: indicates whether the plugin is under beta test stage
 
-* author
+- author
 
   This part contains the author information of the plugin. The plugin developer can provide this information as appropriate. The information of this part will be displayed in the plugin information list of the management console.
 
-  * name
-     * email
-     * company
-     * website
+  - name
+    - email
+    - company
+    - website
 
-* helpUrl
+- helpUrl
 
   The help file address of the plugin. The console will link to the corresponding help file according to the language support.
 
-     * en_US: English document help address
-  * zh_CN: Chinese document help address
+  - en_US: English document help address
+  - zh_CN: Chinese document help address
 
-* description
+- description
 
   A simple description of the plugin. The console supports multiple languages.
 
-  * en_US: English description
-  * zh_CN: Chinese description
+  - en_US: English description
+  - zh_CN: Chinese description
 
 #### properties
 
@@ -230,13 +228,13 @@ The list of attributes supported by the plugin and the configuration related to 
   - zh_CN
 - type: field type; **This field must be provided;**
 
-  * string
-  * float
-  * int
-  * list_object: list, element is structure
-  * list_string: list, elements is string
-  * list_float: list, elements is float
-   * list_int: list, elements is int
+  - string
+  - float
+  - int
+  - list_object: list, element is structure
+  - list_string: list, elements is string
+  - list_float: list, elements is float
+  - list_int: list, elements is int
 - values: If the control type is `list-box` or `radio`, **this field must be provided;**
 - Array: The data type can be number, character, boolean, etc.
 
@@ -246,39 +244,39 @@ The following is a sample of metadata file.
 
 ```json
 {
-	"about": {
-		"trial": false,
-		"author": {
-			"name": "",
-			"email": "",
-			"company": "",
-			"website": ""
-		},
-		"helpUrl": {
-			"en_US": "",
-			"zh_CN": ""
-		},
-		"description": {
-			"en_US": "",
-			"zh_CN": ""
-		}
-	},
-	"libs": [""],
-	"properties": [{
-		"name": "",
-		"default": "",
-		"optional": false,
-		"control": "",
-		"type": "",
-		"hint": {
-			"en_US": "",
-			"zh_CN": ""
-		},
-		"label": {
-			"en_US": "",
-			"zh_CN": ""
-		}
-	}]
+    "about": {
+        "trial": false,
+        "author": {
+            "name": "",
+            "email": "",
+            "company": "",
+            "website": ""
+        },
+        "helpUrl": {
+            "en_US": "",
+            "zh_CN": ""
+        },
+        "description": {
+            "en_US": "",
+            "zh_CN": ""
+        }
+    },
+    "libs": [""],
+    "properties": [{
+        "name": "",
+        "default": "",
+        "optional": false,
+        "control": "",
+        "type": "",
+        "hint": {
+            "en_US": "",
+            "zh_CN": ""
+        },
+        "label": {
+            "en_US": "",
+            "zh_CN": ""
+        }
+    }]
 }
 ```
 
@@ -300,37 +298,37 @@ The metadata file format is JSON and is mainly divided into the following parts:
 
 #### about
 
-* trial: indicates whether the plugin is under beta test stage
+- trial: indicates whether the plugin is under beta test stage
 
-* author
+- author
 
   This part contains the author information of the plugin. The plugin developer can provide this information as appropriate. The information of this part will be displayed in the plugin information list of the management console.
 
-  * name
-     * email
-     * company
-     * website
+  - name
+    - email
+    - company
+    - website
 
-* helpUrl
+- helpUrl
 
   The help file address of the plugin. The console will link to the corresponding help file according to the language support.
 
-     * en_US: English document help address
-  * zh_CN: Chinese document help address
+  - en_US: English document help address
+  - zh_CN: Chinese document help address
 
-* description
+- description
 
   A simple description of the plugin. The console supports multiple languages.
 
-  * en_US: English description
-  * zh_CN: Chinese description
+  - en_US: English description
+  - zh_CN: Chinese description
 
 #### functions
 
 - name: attribute name; **This field must be provided;**
 - example
 - hint: hint information of the function; this field is optional;
-- - en_US
+  - en_US
   - zh_CN
 
 #### Sample file
@@ -339,32 +337,30 @@ The following is a sample of metadata file.
 
 ```json
 {
-	"about": {
-		"trial":false,
-		"author": {
-			"name": "",
-			"email": "",
-			"company": "",
-			"website": ""
-		},
-		"helpUrl": {
-			"en_US": "",
-			"zh_CN": ""
-		},
-		"description": {
-			"en_US": "",
-			"zh_CN": ""
-		}
-	},
-	"functions": [{
-		"name": "",
-		"example": "",
-		"hint": {
-			"en_US": "",
-			"zh_CN": ""
-		}
-	}]
+    "about": {
+        "trial":false,
+        "author": {
+            "name": "",
+            "email": "",
+            "company": "",
+            "website": ""
+        },
+        "helpUrl": {
+            "en_US": "",
+            "zh_CN": ""
+        },
+        "description": {
+            "en_US": "",
+            "zh_CN": ""
+        }
+    },
+    "functions": [{
+        "name": "",
+        "example": "",
+        "hint": {
+            "en_US": "",
+            "zh_CN": ""
+        }
+    }]
 }
 ```
-
-

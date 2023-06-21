@@ -21,9 +21,9 @@ Retrieves rows from input streams and enables the selection of one or many colum
 
 ```sql
 SELECT 
-	*
-	| [source_stream.]column_name [AS column_alias]
-	| expression
+    *
+    | [source_stream.]column_name [AS column_alias]
+    | expression
   
 ```
 
@@ -41,7 +41,7 @@ The source stream name or alias name.
 
 **column_name**
 
-Is the name of a column to return.  If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns. 
+Is the name of a column to return.  If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns.
 
 **column_alias**
 
@@ -69,7 +69,7 @@ The input stream name or alias name.
 
 ## JOIN
 
-JOIN is used to combine records from two or more input streams. JOIN includes LEFT, RIGHT, FULL & CROSS. 
+JOIN is used to combine records from two or more input streams. JOIN includes LEFT, RIGHT, FULL & CROSS.
 
 ### Syntax
 
@@ -106,7 +106,7 @@ ON stream1.column_name = stream2.column_name;
 
 **FULL**
 
-The FULL JOIN keyword return all records when there is a match in left (stream1) or right (stream2) table records. 
+The FULL JOIN keyword return all records when there is a match in left (stream1) or right (stream2) table records.
 
 **Note:** FULL JOIN can potentially return large result-sets!
 
@@ -138,7 +138,7 @@ The input stream name or alias name to be joined.
 
 **column_name**
 
-Is the name of a column to return.  If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns. 
+Is the name of a column to return.  If the column to specified is a embedded nest record type, then use the [JSON expressions](json_expr.md) to refer the embedded columns.
 
 ## WHERE
 
@@ -146,7 +146,7 @@ WHERE specifies the search condition for the rows returned by the query. The WHE
 
 ### Syntax
 
-```
+```text
 WHERE <search_condition>
 <search_condition> ::=   
     { <predicate> | ( <search_condition> ) }   
@@ -240,21 +240,20 @@ Is the operator used to test the condition of one expression (not) being part of
 ```sql
   expression [NOT] IN (expression2,...n)
 ```
+
 *Note*： support multiple expressions at the same time, but each expression must return single value
 
 ```sql
   expression [NOT] IN expression2
 ```
 
-*Note*：user must make sure the result of expression2 is in array format 
+*Note*：user must make sure the result of expression2 is in array format
 
 ```sql
 SELECT column1, column2, ...
 FROM table_name
 WHERE condition;
 ```
-
-
 
 ## GROUP BY
 
@@ -291,7 +290,7 @@ GROUP BY column_name
 
 ### HAVING
 
-The HAVING clause was added to SQL because the WHERE keyword could not be used with aggregate functions. Specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression. HAVING is typically used in a GROUP BY clause. 
+The HAVING clause was added to SQL because the WHERE keyword could not be used with aggregate functions. Specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression. HAVING is typically used in a GROUP BY clause.
 
 #### Syntax
 
@@ -311,7 +310,7 @@ SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name HAV
 
 ## ORDER BY
 
-Order the rows by values of one or more columns. 
+Order the rows by values of one or more columns.
 
 ### Syntax
 
@@ -333,8 +332,6 @@ To sort the data in ascending order.
 **DESC**
 
 To sort the data in descending order.
-
-
 
 ```sql
 SELECT column1, column2, ...
@@ -398,4 +395,3 @@ FROM tbl
 ## Use reserved keywords or special characters
 
 If you'd like to use reserved keywords or special characters in rule SQL or streams management, please refer to [eKuiper lexical elements](lexical_elements.md).
-

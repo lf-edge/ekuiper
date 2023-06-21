@@ -14,7 +14,7 @@ We aim to provide SDK for all mainstream language. Currently, [go SDK](go_sdk.md
 
 ## Development
 
-Unlike the native plugin, a portable plugin can bundle multiple *symbols*. Each symbol represents an extension of source, sink or function. The implementation of a symbol is to implement the interface of source, sink or function similar to the native plugin. In portable plugin mode, it is to implement the interface with the selected language. 
+Unlike the native plugin, a portable plugin can bundle multiple *symbols*. Each symbol represents an extension of source, sink or function. The implementation of a symbol is to implement the interface of source, sink or function similar to the native plugin. In portable plugin mode, it is to implement the interface with the selected language.
 
 Then, the user need to create a main program to define and serve all the symbols. The main program will be run when starting the plugin. The development varies for languages, please check [go SDK](go_sdk.md) and [python SDK](python_sdk.md) for the detail.
 
@@ -23,11 +23,13 @@ Then, the user need to create a main program to define and serve all the symbols
 We provide a portable plugin test server to simulate the eKuiper main program part while the developers can start the plugin side manually to support debug.
 
 You can find the tool in `tools/plugin_test_server`. It only supports to test a single plugin Testing process.
-0. Edit the testingPlugin variable to match your plugin meta.
-1. Start this server, and wait for handshake.
-2. Start or debug your plugin. Make sure the handshake completed.
-3. Issue startSymbol/stopSymbol REST API  to debug your plugin symbol. The REST API is like:
-   ```
+
+1. Edit the testingPlugin variable to match your plugin meta.
+2. Start this server, and wait for handshake.
+3. Start or debug your plugin. Make sure the handshake completed.
+4. Issue startSymbol/stopSymbol REST API  to debug your plugin symbol. The REST API is like:
+
+   ```shell
    POST http://localhost:33333/symbol/start
    Content-Type: application/json
    
@@ -101,4 +103,3 @@ Currently, there are two limitations compared to native plugins:
 
 1. Support less context methods. For example, [State](../native/overview.md#state-storage) and Connection API are not supported; dynamic properties are required to be parsed by developers. Whereas, state is planned to be supported in the future.
 2. In the function interface, the arguments cannot be transferred with the AST which means the user cannot validate the argument types. The only validation supported may be the argument count. In the sink interface, the collect function parameter data will always be a json encoded `[]byte`, developers need to decode by themselves.
-

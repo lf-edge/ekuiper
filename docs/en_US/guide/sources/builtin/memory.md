@@ -20,10 +20,11 @@ CREATE STREAM stream1 (
 
 Similar to mqtt topic, memory source also supports topic wildcards. Currently, there are two wildcards supported.
 
-**+** : Single level wildcard replaces one topic level. 
+**+** : Single level wildcard replaces one topic level.
 **#**: Multi level wildcard covers multiple topic levels, and it can only be used at the end.
 
 Examples:
+
 1. `home/device1/+/sensor1`
 2. `home/device1/#`
 

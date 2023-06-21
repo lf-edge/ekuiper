@@ -11,6 +11,7 @@ This plugin supports `sqlserver\postgres\mysql\sqlite3\oracle` drivers by defaul
 for example, if he only wants mysql, then he can build with build tag `mysql`.
 
 ### Default build command
+
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
@@ -18,12 +19,12 @@ for example, if he only wants mysql, then he can build with build tag `mysql`.
 ```
 
 ### MySql build command
+
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
-
 
 ## Properties
 
@@ -39,7 +40,7 @@ Other common sink properties are supported. Please refer to the [sink common pro
 
 ## Sample usage
 
-Below is a sample for using sql to get the target data and set to mysql database 
+Below is a sample for using sql to get the target data and set to mysql database
 
 ```json
 {
@@ -58,7 +59,6 @@ Below is a sample for using sql to get the target data and set to mysql database
   ]
 }
 ```
-
 
 Write values of tableDataField into database:
 
@@ -118,4 +118,3 @@ By specifying the `rowkindField` and `keyField`, the sink can generate insert, u
   ]
 }
 ```
-

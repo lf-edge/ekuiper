@@ -12,6 +12,7 @@ CREATE TABLE
 ( column_name <data_type> [ ,...n ] )
 WITH ( property_name = expression [, ...] );
 ```
+
 详细的表语法和属性，请查看 [表](../guide/tables/overview.md)。
 
 ## 描述表

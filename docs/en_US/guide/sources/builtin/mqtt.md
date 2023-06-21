@@ -1,4 +1,4 @@
-# MQTT source 
+# MQTT source
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
@@ -30,7 +30,7 @@ demo_conf: #Conf_key
 
 ## Global MQTT configurations
 
-Use can specify the global MQTT settings here. The configuration items specified in `default` section will be taken as default settings for all MQTT connections. 
+Use can specify the global MQTT settings here. The configuration items specified in `default` section will be taken as default settings for all MQTT connections.
 
 ### qos
 
@@ -38,11 +38,11 @@ The default subscription QoS level.
 
 ### server
 
-The server for MQTT message broker. 
+The server for MQTT message broker.
 
 ### username
 
-The username for MQTT connection. 
+The username for MQTT connection.
 
 ### password
 
@@ -59,7 +59,6 @@ MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4
 ### clientid
 
 The client id for MQTT connection. If not specified, an uuid will be used.
-
 
 ### certificationPath
 
@@ -80,6 +79,7 @@ Control if to skip the certification verification. If it is set to true, then sk
 ### connectionSelector
 
 specify the stream to reuse the connection to mqtt broker. The connection profile located in `connections/connection.yaml`.
+
 ```yaml
 mqtt:
   localConnection: #connection key
@@ -101,8 +101,10 @@ mqtt:
     #protocolVersion: 3
 
 ```
+
 There are two configuration groups for mqtt in the example, user need use `mqtt.localConnection` or `mqtt.cloudConnection` as the selector.
 For example
+
 ```yaml
 #Global MQTT configurations
 default:
@@ -114,6 +116,7 @@ default:
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
   connectionSelector: mqtt.localConnection
 ```
+
 *Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case ``servers: [tcp://127.0.0.1:1883]``
 
 ### bufferLength
@@ -130,16 +133,16 @@ The name of the kubeedge template file. The file is located in the specified etc
 
 ```json
 {
-	"deviceModels": [{
-		"name": "device1",
-		"properties": [{
-			"name": "temperature",
-			"dataType": "int"
-		}, {
-			"name": "temperature-enable",
-			"dataType": "string"
-		}]
-	}]
+  "deviceModels": [{
+    "name": "device1",
+    "properties": [{
+      "name": "temperature",
+      "dataType": "int"
+    }, {
+      "name": "temperature-enable",
+      "dataType": "string"
+    }]
+  }]
 }
 ```
 
@@ -161,10 +164,10 @@ If you have a specific connection that need to overwrite the default settings, y
 
 **Sample**
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo_conf");
+    ...
+  ) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo_conf");
 ```
 
 The configuration keys used for these specific settings are the same as in `default` settings, any values specified in specific settings will overwrite the values in `default` section.
@@ -188,20 +191,22 @@ demo2_conf: #Conf_key
 ```
 
 create two streams using the config defined above
-```
+
+```text
 demo (
-		...
-	) WITH (DATASOURCE="test/", FORMAT="JSON", CONF_KEY="demo_conf");
+    ...
+  ) WITH (DATASOURCE="test/", FORMAT="JSON", CONF_KEY="demo_conf");
 
 demo2 (
-		...
-	) WITH (DATASOURCE="test2/", FORMAT="JSON", CONF_KEY="demo2_conf");
+    ...
+  ) WITH (DATASOURCE="test2/", FORMAT="JSON", CONF_KEY="demo2_conf");
 
 ```
-When create rules using the defined streams, the rules will share the same connection in source part. 
+
+When create rules using the defined streams, the rules will share the same connection in source part.
 The `DATASOURCE` here will be used as mqtt subscription topics, and subscription  `Qos` defined in config section.
 So stream `demo` will subscribe to topic `test/` with Qos 0 and stream `demo2` will subscribe to topic `test2/` with Qos 0 in this example.
-But if  `DATASOURCE` is same and `qos` not, will only subscribe one time when the first rule starts.       
+But if  `DATASOURCE` is same and `qos` not, will only subscribe one time when the first rule starts.
 
 ## Migration Guide
 

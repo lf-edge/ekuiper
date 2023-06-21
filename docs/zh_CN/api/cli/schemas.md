@@ -38,7 +38,6 @@ create schema $schema_type $schema_name $schema_json
 2. schema_name：模式的唯一名称，模式内容将保存在以此为名的文件中。
 3. schema_json：定义模式内容的 json，需要包含 name 以及 file 或 content。
 
-
 ## 显示模式
 
 该命令用于显示服务器中为模式类型定义的所有模式。

@@ -5,7 +5,7 @@ JSON 函数操作 JSON 字符串或返回有关 JSON 的信息。
 
 ## TO_JSON
 
-```
+```text
 to_json(col)
 ```
 
@@ -13,7 +13,7 @@ to_json(col)
 
 ## PARSE_JSON
 
-```
+```text
 parse_json(col)
 ```
 
@@ -21,7 +21,7 @@ parse_json(col)
 
 ## JSON_PATH_EXISTS
 
-```
+```text
 json_path_exists(col, json_path)
 ```
 
@@ -29,7 +29,7 @@ json_path_exists(col, json_path)
 
 ## JSON_PATH_QUERY
 
-```
+```text
 json_path_query(col, json_path)
 ```
 
@@ -37,7 +37,7 @@ json_path_query(col, json_path)
 
 ## JSON_PATH_QUERY_FIRST
 
-```
+```text
 json_path_query_first(col, json_path)
 ```
 

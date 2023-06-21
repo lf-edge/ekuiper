@@ -14,7 +14,7 @@ eKuiper 提供了内置的源、动作和函数作为规则的构建模块。然
 
 我们支持3种类型的扩展。
 
-- [Go 原生](../extension/native/overview.md)：作为Go插件扩展。它是性能最好的，但在开发和部署方面有很多限制。
+- [Go 原生](../extension/native/overview.md)：作为 Go 插件扩展。它是性能最好的，但在开发和部署方面有很多限制。
 - [Portable 插件](../extension/portable/overview.md)用 Go 或 Python 语言，以后会支持更多语言。它简化了开发和部署，限制较少。
 - [外部服务](../extension/external/external_func.md)：通过配置将现有的外部 REST 或 RPC 服务包装成 eKuiper SQL 函数。这是一种快速的方式来扩展现有的服务，但它只支持函数扩展。
 

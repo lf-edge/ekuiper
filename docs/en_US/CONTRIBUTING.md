@@ -9,7 +9,7 @@ We're really glad you're reading this, because we need volunteer developers to h
 
 ## Code and doc contribution
 
-Welcome to contribute code to provide features or fix bugs. 
+Welcome to contribute code to provide features or fix bugs.
 
 ### One time setup
 
@@ -18,6 +18,7 @@ We use GitHub pull request to review proposed code changes. So you'll need to ob
 1. **Fork** eKuiper to your private repository. Click the `Fork` button in the top right corner of eKuiper repository.
 2. **Clone** the repository locally from your personal fork. `git clone https://github.com/<Github_user>/ekuiper.git`.
 3. Add eKuiper repo as additional Git remote so that you can sync between local repo and eKuiper.
+
   ```shell
   git remote add upstream https://github.com/lf-edge/ekuiper.git
   ```
@@ -66,7 +67,7 @@ Alternatively, if you use GoLand, you can check `Group` and `Group stdlib import
 
 ### Debug your code
 
-Take GoLand as an example, developers can debug the code: 
+Take GoLand as an example, developers can debug the code:
 
 1. Debug the whole program. Make sure all directories mentioned in [Makefile](https://github.com/lf-edge/ekuiper/blob/master/Makefile) build_prepare sections are created in your eKuiper root path. Add your breakpoints. Open `cmd/kuiperd/main.go`. In the main function, you'll find a green triangle in the ruler, click it and select debug. Then create your stream/rule that would run through your breakpoint, the debugger will pause there.
 2. To debug a small portion of code, we recommend writing a unit test and debug it. You can go to any test file and find the same green triangle to run in debug mode. For example, `pkg/cast/cast_test.go` TestMapConvert_Funcs can run as debug.
@@ -139,7 +140,6 @@ default:
 After changing this, redis will listen on the host 6379 port, developers can connect to the machine that edgex runs remotely by the server address.
 For example, the host ip address is 10.65.38.224 , users can connect to this machine by the ip address.
 
-
 #### enable eKuiper console log and set rest api port
 
 Change the config file in `etc/kuiper.yaml`, set the console log true and set eKuiper rest api port to 59720
@@ -179,8 +179,8 @@ basic:
 ```
 
 #### run locally
-  Use the [former method](./CONTRIBUTING.md#debug-your-code) to run the eKuiper
 
+  Use the [former method](./CONTRIBUTING.md#debug-your-code) to run the eKuiper
 
 ### Testing
 
@@ -234,7 +234,7 @@ You'll then push to your branch on your forked repo and then navigate to eKuiper
 
 Each commit message consists of a **header**, a **body** and a **footer**. The header has a special format that includes a **type**, a **scope** and a **subject**:
 
-```
+```text
 <type>(<scope>): <subject>
 <BLANK LINE>
 <body>
@@ -250,11 +250,11 @@ The footer should contain a [closing reference to an issue](https://help.github.
 
 Example 1:
 
-```
+```text
 feat: add Fuji release compose files
 ```
 
-```
+```text
 fix(script): correct run script to use the right ports
 
 Previously device services used wrong port numbers. This commit fixes the port numbers to use the latest port numbers.

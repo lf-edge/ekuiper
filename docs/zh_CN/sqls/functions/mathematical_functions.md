@@ -4,7 +4,7 @@
 
 ## ABS
 
-```
+```text
 abs(col)
 ```
 
@@ -12,7 +12,7 @@ abs(col)
 
 ## ACOS
 
-```
+```text
 acos(col)
 ```
 
@@ -20,7 +20,7 @@ acos(col)
 
 ## ASIN
 
-```
+```text
 asin(col)
 ```
 
@@ -28,7 +28,7 @@ asin(col)
 
 ## ATAN
 
-```
+```text
 atan(col)
 ```
 
@@ -36,7 +36,7 @@ atan(col)
 
 ## ATAN2
 
-```
+```text
 atan2(col1, col2)
 ```
 
@@ -44,7 +44,7 @@ atan2(col1, col2)
 
 ## BITAND
 
-```
+```text
 bitand(col1, col2)
 ```
 
@@ -52,7 +52,7 @@ bitand(col1, col2)
 
 ## BITOR
 
-```
+```text
 bitor(col1, col2)
 ```
 
@@ -60,7 +60,7 @@ bitor(col1, col2)
 
 ## BITXOR
 
-```
+```text
 bitxor(col1, col2)
 ```
 
@@ -68,7 +68,7 @@ bitxor(col1, col2)
 
 ## BITNOT
 
-```
+```text
 bitnot(col)
 ```
 
@@ -76,7 +76,7 @@ bitnot(col)
 
 ## CEIL
 
-```
+```text
 ceil(col)
 ```
 
@@ -84,7 +84,7 @@ ceil(col)
 
 ## COS
 
-```
+```text
 cos(col)
 ```
 
@@ -92,7 +92,7 @@ cos(col)
 
 ## COSH
 
-```
+```text
 cosh(col)
 ```
 
@@ -100,7 +100,7 @@ cosh(col)
 
 ## EXP
 
-```
+```text
 exp(col)
 ```
 
@@ -108,7 +108,7 @@ exp(col)
 
 ## LN
 
-```
+```text
 ln(col)
 ```
 
@@ -116,7 +116,7 @@ ln(col)
 
 ## LOG
 
-```
+```text
 log(col)
 ```
 
@@ -124,7 +124,7 @@ log(col)
 
 ## MOD
 
-```
+```text
 mod(col1, col2)
 ```
 
@@ -132,7 +132,7 @@ mod(col1, col2)
 
 ## POWER
 
-```
+```text
 power(x, y)
 ```
 
@@ -140,7 +140,7 @@ power(x, y)
 
 ## RAND
 
-```
+```text
 rand()
 ```
 
@@ -148,7 +148,7 @@ rand()
 
 ## ROUND
 
-```
+```text
 round(col)
 ```
 
@@ -156,7 +156,7 @@ round(col)
 
 ## SIGN
 
-```
+```text
 sign(col)
 ```
 
@@ -164,7 +164,7 @@ sign(col)
 
 ## SIN
 
-```
+```text
 sin(col)
 ```
 
@@ -172,7 +172,7 @@ sin(col)
 
 ## SINH
 
-```
+```text
 sinh(col)
 ```
 
@@ -180,7 +180,7 @@ sinh(col)
 
 ## SQRT
 
-```
+```text
 sqrt(col)
 ```
 
@@ -188,7 +188,7 @@ sqrt(col)
 
 ## TAN
 
-```
+```text
 tan(col)
 ```
 
@@ -196,7 +196,7 @@ tan(col)
 
 ## TANH
 
-```
+```text
 tanh(col)
 ```
 

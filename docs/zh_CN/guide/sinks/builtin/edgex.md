@@ -99,7 +99,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
 
 ## 发送到 MQTT 消息总线
 
-以下是将分析结果发送到 MQTT 消息总线的规则，请注意在`optional` 中是如何指定 `ClientId` 的。
+以下是将分析结果发送到 MQTT 消息总线的规则，请注意在 `optional` 中是如何指定 `ClientId` 的。
 
 ```json
 {
@@ -116,7 +116,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
         "metadata": "edgex_meta",
         "contentType": "application/json",
         "optional": {
-        	"ClientId": "edgex_message_bus_001"
+          "ClientId": "edgex_message_bus_001"
         }
       }
     }
@@ -173,11 +173,12 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
 ## 动态元数据
 
 ### 发布结果到  EdgeX 消息总线，而不保留原有的元数据
-在此情况下，原有的元数据 (例如 `Events` 结构体中的 `id, deviceName, profileName, sourceName, origin, tags`，以及`Reading` 结构体中的  `id, deviceName, profileName, origin, valueType` 不会被保留)。eKuiper 在此情况下作为 EdgeX 的一个单独微服务，它有自己的 `device name`， `profile name` 和 `source name`。 提供了属性 `deviceName` 和 `profileName`， 这两个属性允许用户指定 eKuiper 的设备名称和 profile 名称。而 `sourceName` 默认为 `topic` 属性的值。如下所示，
+
+在此情况下，原有的元数据 (例如 `Events` 结构体中的 `id，deviceName，profileName，sourceName，origin，tags`，以及`Reading` 结构体中的  `id，deviceName，profileName，origin，valueType` 不会被保留)。eKuiper 在此情况下作为 EdgeX 的一个单独微服务，它有自己的 `device name`， `profile name` 和 `source name`。 提供了属性 `deviceName` 和 `profileName`， 这两个属性允许用户指定 eKuiper 的设备名称和 profile 名称。而 `sourceName` 默认为 `topic` 属性的值。如下所示，
 
 1. 从 EdgeX 消息总线上的 `events` 主题上收到的消息，
 
-    ```
+    ```json
     {
       "DeviceName": "demo", "Origin": 000, …
       "readings": 
@@ -187,6 +188,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
       ]
     }
     ```
+
 2. 使用如下的规则，并且在 `edgex` action 中给属性 `deviceName` 指定 `kuiper`，属性 `profileName` 指定 `kuiperProfile`。
 
     ```json
@@ -205,9 +207,10 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
       ]
     }
     ```
+
 3. 发送到 EdgeX 消息总线上的数据。
 
-    ```
+    ```json
     {
       "DeviceName": "kuiper", "ProfileName": "kuiperProfile",  "Origin": 0, …
       "readings": 
@@ -217,8 +220,10 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
       ]
     }
     ```
-请注意，
-- Event 结构体中的设备名称( `DeviceName`)变成了 `kuiper`，profile 名称( `ProfileName`)变成了 `kuiperProfile`
+
+请注意：
+
+- Event 结构体中的设备名称（`DeviceName`）变成了 `kuiper`，profile 名称( `ProfileName`)变成了 `kuiperProfile`
 - `Events and Readings` 结构体中的数据被更新为新的值。 字段 `Origin` 被 eKuiper 更新为新的值 (这里为 `0`).
 
 ### 发布结果到  EdgeX 消息总线，并保留原有的元数据
@@ -229,7 +234,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
 
 1. 从 EdgeX 消息总线上的 `events` 主题上收到的消息，
 
-    ```
+    ```json
     {
       "DeviceName": "demo", "Origin": 000, …
       "readings": 
@@ -239,6 +244,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
       ]
     }
     ```
+
 2. 使用如下规则，在`edgex` action 中，为 `metadata` 指定值 `edgex_meta` 。
 
     ```json
@@ -256,26 +262,29 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
       ]
     }
     ```
+
     请注意，
     - 用户需要在 SQL 子句中加 `meta(*) AS edgex_meta` ，函数 `meta(*)` 返回所有的元数据。
     - 在 `edgex` action里， 属性 `metadata` 指定值 `edgex_meta` 。该属性指定哪个字段包含了元数据。
 
 3. 发送给 EdgeX 消息总线的数据
 
-  ```
-  {
-    "DeviceName": "demo", "Origin": 000, …
-    "readings": 
-    [
-       {"ResourceName": "t1", value: "90" , "Origin": 0 …},
-       {"ResourceName": "humidity", value: "20", "Origin":456 …}
-    ]
-  }
-  ```
-请注意，
-- `Events` 结构体的元数据依然保留，例如 `DeviceName` & `Origin`.
-- 对于在原有消息中可以找到的 reading，元数据将继续保留。 比如 `humidity` 的元数据就是从 EdgeX 消息总线里接收到的`原值 - 或者说是旧值`。
-- 对于在原有消息中无法找到的 reading，元数据将不会被设置。如例子中的 `t1` 的元数据被设置为 eKuiper 产生的缺省值。
-- 如果你的 SQL 包含了聚合函数，那保留原有的元数据就没有意义，但是 eKuiper 还是会使用时间窗口中的某一条记录的元数据。例如，在下面的 SQL 里，
-```SELECT avg(temperature) AS temperature, meta(*) AS edgex_meta FROM ... GROUP BY TUMBLINGWINDOW(ss, 10)```. 
-这种情况下，在时间窗口中可能有几条数据，eKuiper 会使用窗口中的第一条数据的元数据来填充 `temperature` 的元数据。
+   ```json
+   {
+     "DeviceName": "demo", "Origin": 000, …
+     "readings": 
+     [
+        {"ResourceName": "t1", value: "90" , "Origin": 0 …},
+        {"ResourceName": "humidity", value: "20", "Origin":456 …}
+     ]
+   }
+   ```
+
+   请注意，
+
+   - `Events` 结构体的元数据依然保留，例如 `DeviceName` & `Origin`.
+   - 对于在原有消息中可以找到的 reading，元数据将继续保留。 比如 `humidity` 的元数据就是从 EdgeX 消息总线里接收到的`原值 - 或者说是旧值`。
+   - 对于在原有消息中无法找到的 reading，元数据将不会被设置。如例子中的 `t1` 的元数据被设置为 eKuiper 产生的缺省值。
+   - 如果你的 SQL 包含了聚合函数，那保留原有的元数据就没有意义，但是 eKuiper 还是会使用时间窗口中的某一条记录的元数据。例如，在下面的 SQL 里，
+   ```SELECT avg(temperature) AS temperature, meta(*) AS edgex_meta FROM ... GROUP BY TUMBLINGWINDOW(ss, 10)```。
+   这种情况下，在时间窗口中可能有几条数据，eKuiper 会使用窗口中的第一条数据的元数据来填充 `temperature` 的元数据。

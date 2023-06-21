@@ -22,9 +22,9 @@ eKuiper 提供了用于构建查询的各种元素。 总结如下。
 
 ```sql
 SELECT 
-	*
-	| [source_stream.]column_name [AS column_alias]
-	| expression
+    *
+    | [source_stream.]column_name [AS column_alias]
+    | expression
   
 ```
 
@@ -42,7 +42,7 @@ SELECT
 
 **column_name**
 
-要返回的列的名称。 如果要指定的列是嵌入式嵌套记录类型，则使用[JSON 表达式](json_expr.md)引用嵌入式列。
+要返回的列的名称。 如果要指定的列是嵌入式嵌套记录类型，则使用 [JSON 表达式](json_expr.md)引用嵌入式列。
 
 **column_alias**
 
@@ -139,7 +139,7 @@ WHERE condition;
 
 **column_name**
 
-要返回的列的名称。 如果要指定的列是嵌入式嵌套记录类型，则使用[JSON 表达式](json_expr.md)引用嵌入式列。
+要返回的列的名称。 如果要指定的列是嵌入式嵌套记录类型，则使用 [JSON 表达式](json_expr.md)引用嵌入式列。
 
 ## WHERE
 
@@ -147,7 +147,7 @@ WHERE 指定查询返回的行的搜索条件。 WHERE 子句仅用于提取满�
 
 ### 句法
 
-```
+```sql
 WHERE <search_condition>
 <search_condition> ::=   
     { <predicate> | ( <search_condition> ) }   
@@ -209,7 +209,6 @@ WHERE <search_condition>
 
 用于测试一个表达式小于或等于另一个表达式的条件的运算符。
 
-
 **[NOT] BETWEEN**
 
 用于测试一个表达式的值是否在指定的区间。
@@ -243,6 +242,7 @@ a LIKE "string%"
 ```sql
   expression [NOT] IN (expression2,...n)
 ```
+
 *注意*： 支持同时设置多个表达式， 但用户须确保每个表达式返回值为单一值
 
 ```sql
@@ -256,8 +256,6 @@ SELECT column1, column2, ...
 FROM table_name
 WHERE condition;
 ```
-
-
 
 ## GROUP BY
 
@@ -280,7 +278,7 @@ GROUP BY <group by spec>
 
 **<window_type>**
 
-指定任何支持eKuiper的窗口，有关详细信息，请参阅 [windows](windows.md) 。
+指定任何支持 eKuiper 的窗口，有关详细信息，请参阅 [windows](windows.md) 。
 
 **< column_expression >**
 
@@ -336,8 +334,6 @@ sql 中的 ORDER BY 语句用于根据一个或多个列对获取的数据进行
 **DESC**
 
 按降对数据进行排序。
-
-
 
 ```sql
 SELECT column1, column2, ...
@@ -399,5 +395,5 @@ FROM tbl
 ```
 
 ## 使用保留字或特殊字符
-如果你想在 SQL 或者流管理中使用保留关键字，或者特殊字符，请参考 [eKuiper 词法元素](lexical_elements.md).
 
+如果你想在 SQL 或者流管理中使用保留关键字，或者特殊字符，请参考 [eKuiper 词法元素](lexical_elements.md)。

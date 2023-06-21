@@ -1,6 +1,6 @@
 # Rules management
 
-The eKuiper rule command line tools allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules. 
+The eKuiper rule command line tools allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules.
 
 ## create a rule
 
@@ -10,7 +10,7 @@ The command is used for creating a rule.  The rule's definition is specified wit
 create rule $rule_name '$rule_json' | create rule $rule_name -f $rule_def_file
 ```
 
-The rule can be created with two ways. 
+The rule can be created with two ways.
 
 - Specify the rule definition in command line. Notice that, the json string must be quoted.
 
@@ -20,7 +20,7 @@ Sample:
 # bin/kuiper create rule rule1 '{"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}'
 ```
 
-The command create a rule named `rule1`. 
+The command create a rule named `rule1`.
 
 - Specify the rule definition in file. If the rule is complex, or the rule is already wrote in text files with well organized formats, you can just specify the rule definition through `-f` option.
 
@@ -81,7 +81,7 @@ The command is used for print the detailed definition of rule.
 describe rule $rule_name
 ```
 
-Sample: 
+Sample:
 
 ```shell
 # bin/kuiper describe rule rule1
@@ -164,6 +164,7 @@ Rule rule1 was restarted.
 ## get the status of a rule
 
 The command is used to get the status of the rule. If the rule is running, the metrics will be retrieved realtime. The status can be
+
 - $metrics
 - stopped: $reason
 

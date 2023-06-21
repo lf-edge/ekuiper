@@ -130,11 +130,12 @@ curl -X PUT \
 
 #### 第一条规则
 
-第一条规则是监视 `Random-UnsignedInteger-Device` 设备的规则，如果 `uint8` 值大于 20，则向 `Random-Boolean-Device` 设备发送命令，并开启布尔值的随机生成。 
+第一条规则是监视 `Random-UnsignedInteger-Device` 设备的规则，如果 `uint8` 值大于 20，则向 `Random-Boolean-Device` 设备发送命令，并开启布尔值的随机生成。
 
 ##### 使用 Rest API
 
 以下是规则定义，请注意：
+
 - 当 `uint8` 的值大于20时将触发该动作。由于 `uint8` 的值不用于向 `Random-Boolean-Device` 发送控制命令，因此在 `rest` 操作的 `dataTemplate` 属性中不使用 `uint8` 值。
 
 ```shell
@@ -167,6 +168,7 @@ curl -X POST \
 1. 将 `MESSAGEQUEUE_EXTERNAL_ENABLED` 环境变量设为 `true` ，开启 `core-command` 的 `external messagebus` ；
 将 `MESSAGEQUEUE_EXTERNAL_URL` 环境变量设为 `external messagebus` 的地址和端口号。
 2. 使用如下配置创建规则：
+
 ```shell
 {
   "sql": "SELECT uint8 FROM demo WHERE uint8 > 20",
@@ -184,8 +186,10 @@ curl -X POST \
   ]
 }
 ```
+
 其中 `payload` 是 `{"Bool":"true", "EnableRandomization_Bool": "true"}` 的 base64 编码。
 3. 发送成功后，可以在 `edgex/command/response/#` 主题里收到如下响应 ：
+
 ```shell
 {
   "ReceivedTopic": "edgex/device/command/response/device-virtual/Random-Boolean-Device/WriteBoolValue/set",
@@ -234,6 +238,7 @@ curl -X POST \
 ##### 使用 Messaging
 
 具体步骤同上，使用如下配置创建规则：
+
 ```shell
 {
   "sql": "SELECT avg(int8) AS avg_int8 FROM demo WHERE int8 != nil GROUP BY  TUMBLINGWINDOW(ss, 20) HAVING avg(int8) > 0",
@@ -283,7 +288,7 @@ curl -X PUT \
 
 eKuiper 使用[Go模板](https://golang.org/pkg/text/template/) 从分析结果中提取数据，并且 `dataTemplate` 内容如下：
 
-```
+```text
 "dataTemplate": "{\"value\": {{.int8}}, \"EnableRandomization_Bool\": \"{{.randomization}}\"}"
 ```
 
@@ -295,4 +300,3 @@ eKuiper 使用[Go模板](https://golang.org/pkg/text/template/) 从分析结果�
 
 - [eKuiper Github 代码库](https://github.com/lf-edge/ekuiper/)
 - [eKuiper 参考指南](https://github.com/lf-edge/ekuiper/blob/edgex/docs/en_US/reference.md)
-

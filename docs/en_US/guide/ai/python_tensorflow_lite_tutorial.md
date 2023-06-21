@@ -18,6 +18,7 @@ The completed plugin package can be downloaded [here](https://github.com/lf-edge
 To run the TensorFlow lite interpreter, we need a trained model. We won't cover how to train and cover a model in this tutorial, you can check [tflite converter](https://www.tensorflow.org/lite/convert) for how to do that. We can either train a new model or pick one online. In this tutorial, we will use the model in [TensorFlow image classification example](https://www.tensorflow.org/lite/examples/image_classification/overview).
 
 Before starting the tutorial, please prepare the following products or environments.
+
 1. Install the Python 3.x environment.
 2. Install the pynng, ekuiper and tensorflow lite packages via `pip install pynng ekuiper tflite_runtime`.
 
@@ -35,6 +36,7 @@ To develop the function plugin, we need to：
 2. Package the relevant files according to the plugin format.
 
 Create Python files that implement the extended interface (source, sink, or function). In this tutorial, we are developing a function plugin, so we need to implement the function extension interface.
+
 - Writing Python image classification functions
 - Wrapping an existing function as an eKuiper function plugin
 
@@ -42,7 +44,7 @@ Create Python files that implement the extended interface (source, sink, or func
 
 Our target function wants to take the binary data of an image as an input parameter, perform image preprocessing and other operations in the function, call the TensorFlow Lite model for inference, extract the most likely classification result from the inference result, and output it. We need to implement this function using Python in the same way as we would write a normal Python function.
 
-1. Download the [Image Classification Model](https://storage.googleapis.com/download.tensorflow.org/models/tflite/mobilenet_v1_1.0_224_quant_and_labels.zip), unzip it, and place it in the plug-in project. It contains a model file `mobilenet_v1_1.0_224.tflite` and a classification text file `labels.txt`. 
+1. Download the [Image Classification Model](https://storage.googleapis.com/download.tensorflow.org/models/tflite/mobilenet_v1_1.0_224_quant_and_labels.zip), unzip it, and place it in the plug-in project. It contains a model file `mobilenet_v1_1.0_224.tflite` and a classification text file `labels.txt`.
 2. Implement the image classification inference business logic. Create a Python file label.py, and implement the function `label(file_bytes)` in it.
 
 The label function will receive the base64 encoded image data passed by the eKuiper rule and perform inference on the classification. The pseudocode for its implementation is as follows:
@@ -128,6 +130,7 @@ At this point, we have completed the development of the main functionality, and 
 
 1. If the plugin has additional dependencies, such as TensorFlow Lite in this case, you need to create the dependency installation script `install.sh`. When the plugin is installed, eKuiper will look for an installation script file `install.sh` in the plugin package and execute the it if there is one. In this case, we create a `requirements.txt` file listing all the dependency packages. The installation of the dependencies is done in `install.sh` by calling `pip install -r $cur/requirements.txt`. For other plugins, you can reuse this script to update `requirements.txt` if you have no special requirements.
 2. Create a Python entry file that exposes all the implemented interfaces. Because multiple extensions can be implemented in a single plugin, you need an entry file that defines the implementation classes for each extension. The content is a main function, which is the entry point for the plugin runtime. It calls the methods in the SDK to define the plugin, including the plugin name, and a list of keys for the source, sink, and function implemented in the plugin. Here only a function plugin named `labelImage` is implemented, and its corresponding implementation method is `labelIns`. The Python plug-in process is independent of the eKuiper main process.
+
     ```python
     if __name__ == '__main__':
         # Define the plugin
@@ -136,7 +139,9 @@ At this point, we have completed the development of the main functionality, and 
         # Start the plugin instance
         plugin.start(c)
     ```
+
 3. Create a plugin description file in JSON format to define the metadata of the plugin. The file name must be the same as the plugin name, i.e. `pyai.json`. The function names defined therein must correspond exactly to the entry file, and the contents of the file are as follows. Where, executable is used to define the name of the plugin's executable entry file.
+
     ```json
     {
       "version": "v1.0.0",
@@ -228,41 +233,41 @@ Here we create a go program to send image data to the tfdemo topic to be process
 package main
 
 import (
-	"fmt"
-	"os"
-	"time"
+  "fmt"
+  "os"
+  "time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+  mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
-	const TOPIC = "tfdemo"
+  const TOPIC = "tfdemo"
 
-	images := []string{
-		"peacock.png",
-		"frog.jpg",
-		// Other images
-	}
-	opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-	for _, image := range images {
-		fmt.Println("Publishing " + image)
-		payload, err := os.ReadFile(image)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
-		} else {
-			fmt.Println("Published " + image)
-		}
-		time.Sleep(1 * time.Second)
-	}
-	client.Disconnect(0)
+  images := []string{
+    "peacock.png",
+    "frog.jpg",
+    // Other images
+  }
+  opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
+  client := mqtt.NewClient(opts)
+  if token := client.Connect(); token.Wait() && token.Error() != nil {
+    panic(token.Error())
+  }
+  for _, image := range images {
+    fmt.Println("Publishing " + image)
+    payload, err := os.ReadFile(image)
+    if err != nil {
+      fmt.Println(err)
+      continue
+    }
+    if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
+      fmt.Println(token.Error())
+    } else {
+      fmt.Println("Published " + image)
+    }
+    time.Sleep(1 * time.Second)
+  }
+  client.Disconnect(0)
 }
 
 ```
