@@ -454,5 +454,4 @@ func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
-
 }
