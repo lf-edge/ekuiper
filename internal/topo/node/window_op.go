@@ -328,23 +328,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.Timestamp, ctx)
 				case ast.SLIDING_WINDOW:
-					trigger := true
-					if o.triggerCondition != nil {
-						fv, afv := xsql.NewFunctionValuersForOp(ctx)
-						triggered := o.triggerCondition.Apply(ctx, d, fv, afv)
-						// not match trigger condition
-						if triggered == nil {
-							trigger = false
-						}
-						switch v := triggered.(type) {
-						case error:
-							log.Errorf("window %s trigger condition meet error: %v", o.name, v)
-							trigger = false
-						default:
-							// match trigger condition
-						}
-					}
-					if trigger {
+					if o.isMatchCondition(ctx, d) {
 						inputs = o.scan(inputs, d.Timestamp, ctx)
 					}
 				case ast.SESSION_WINDOW:
@@ -600,5 +584,26 @@ func (o *WindowOperator) GetMetrics() [][]interface{} {
 		}
 	} else {
 		return nil
+	}
+}
+
+func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) bool {
+	if o.triggerCondition == nil {
+		return true
+	}
+	log := ctx.GetLogger()
+	fv, afv := xsql.NewFunctionValuersForOp(ctx)
+	triggered := o.triggerCondition.Apply(ctx, d, fv, afv)
+	// not match trigger condition
+	if triggered == nil {
+		return false
+	}
+	switch v := triggered.(type) {
+	case error:
+		log.Errorf("window %s trigger condition meet error: %v", o.name, v)
+		return false
+	default:
+		// match trigger condition
+		return true
 	}
 }
