@@ -134,6 +134,11 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 			case *xsql.WatermarkTuple:
 				ctx.GetLogger().Debug("WatermarkTuple", d.GetTimestamp())
 				watermarkTs := d.GetTimestamp()
+				for len(o.delayTS) > 0 && watermarkTs >= o.delayTS[0] {
+					inputs = o.scan(inputs, o.delayTS[0], ctx)
+					o.delayTS = o.delayTS[1:]
+				}
+
 				windowEndTs := nextWindowEndTs
 				ticked := false
 				// Session window needs a recalculation of window because its window end depends on the inputs
@@ -151,7 +156,18 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						o.triggerTime = inputs[0].Timestamp
 					}
 					if windowEndTs > 0 {
-						inputs = o.scan(inputs, windowEndTs, ctx)
+						var targetTuple *xsql.Tuple
+						for _, t := range inputs {
+							if targetTuple.Timestamp == windowEndTs {
+								targetTuple = t
+								break
+							}
+						}
+						if o.window.Delay > 0 {
+							o.delayTS = append(o.delayTS, windowEndTs+o.window.Delay)
+						} else {
+							inputs = o.scan(inputs, windowEndTs, ctx)
+						}
 					}
 					prevWindowEndTs = windowEndTs
 					lastTicked = ticked
