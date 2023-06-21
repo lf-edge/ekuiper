@@ -8,9 +8,9 @@ A typical usage for table is as a lookup table. Sample SQL will be like:
 
 ```sql
 CREATE TABLE table1 (
-		id BIGINT,
-		name STRING
-	) WITH (DATASOURCE="lookup.json", FORMAT="JSON", TYPE="file");
+    id BIGINT,
+    name STRING
+  ) WITH (DATASOURCE="lookup.json", FORMAT="JSON", TYPE="file");
 
 SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 ```
@@ -42,9 +42,9 @@ In some scenario, we may have an event stream for data and another event stream 
 
 ```sql
 CREATE TABLE stateTable (
-		id BIGINT,
-		triggered bool
-	) WITH (DATASOURCE="myTopic", FORMAT="JSON", TYPE="mqtt");
+    id BIGINT,
+    triggered bool
+  ) WITH (DATASOURCE="myTopic", FORMAT="JSON", TYPE="mqtt");
 
 SELECT * FROM demo LEFT JOIN stateTable on demo.id = stateTable.id  WHERE triggered=true
 ```

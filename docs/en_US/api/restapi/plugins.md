@@ -1,5 +1,6 @@
 
 The eKuiper REST api for plugins allows you to manage plugins, such as create, drop and list plugins. Notice that, drop a plugin will need to restart eKuiper to take effect. To update a plugin, do the following:
+
 1. Drop the plugin.
 2. Restart eKuiper.
 3. Create the plugin with the new configuration.
@@ -7,12 +8,14 @@ The eKuiper REST api for plugins allows you to manage plugins, such as create, d
 ## create a plugin
 
 The API accepts a JSON content to create a new plugin. Each plugin type has a standalone endpoint. The supported types are `["sources", "sinks", "functions","portables"]`. The plugin is identified by the name. The name must be unique.
+
 ```shell
 POST http://localhost:9081/plugins/sources
 POST http://localhost:9081/plugins/sinks
 POST http://localhost:9081/plugins/functions
 POST http://localhost:9081/plugins/portables
 ```
+
 Request Sample when the file locates in a http server
 
 ```json
@@ -37,18 +40,21 @@ Request Sample for files locates in the same machine of the eKuiper server.
 2. file: the url of the plugin files. The url can be `http` or `https` scheme or `file` scheme to refer to a local file path of the eKuiper server. It must be a zip file with: a compiled so file and the yaml file(only required for sources). If the plugin depends on some external dependencies, a bash script named install.sh can be provided to do the dependency installation. The name of the files must match the name of the plugin. Please check [Extension](../../extension/overview.md) for the naming rule.
 
 ### Plugin File Format
+
 `Note`: For `portables` type, please refer to this [format](../../extension/portable/overview.md#package).
 
 A sample zip file for a source named random.zip
+
 1. Random@v1.0.0.so
 2. random.yaml
 3. install.sh
-4. Various dependency files/folders of install.sh   
+4. Various dependency files/folders of install.sh
    - mysdk.zip
    - myconfig.conf
 5. etc directory: the runtime configuration files or dependency files. After installation, this directory will be renamed to the plugin name under {{eKuiperPath}}/etc/{{pluginType}} directory.
 
-Notice that, the install.sh will be run that the system may already had the lib or package. Make sure to check the path before. Below is an example install.sh to install a sample sdk lib. 
+Notice that, the install.sh will be run that the system may already had the lib or package. Make sure to check the path before. Below is an example install.sh to install a sample sdk lib.
+
 ```bash
 #!/bin/sh
 dir=/usr/local/mysdk
@@ -112,7 +118,7 @@ GET http://localhost:9081/plugins/portables/{name}
 
 Path parameter `name` is the name of the plugin.
 
-Response Sample: 
+Response Sample:
 
 ```json
 {
@@ -131,14 +137,16 @@ DELETE http://localhost:9081/plugins/sinks/{name}
 DELETE http://localhost:9081/plugins/functions/{name}
 DELETE http://localhost:9081/plugins/portables/{name}
 ```
+
 The user can pass a query parameter to decide if eKuiper should be stopped after a delete in order to make the deletion take effect. The parameter is `stop` and only when the value is `1` will the eKuiper be stopped. The user has to manually restart it.
+
 ```shell
 DELETE http://localhost:9081/plugins/sources/{name}?stop=1
 ```
 
 ## update a plugin
 
-Only portable plugins allows to be updated. The rules will hot reload the new plugin automatically. 
+Only portable plugins allows to be updated. The rules will hot reload the new plugin automatically.
 
 ```shell
 PUT http://localhost:9081/plugins/portables/{name}
@@ -194,7 +202,7 @@ POST http://{{host}}/plugins/functions/{plugin_name}/register
 
 According to the configuration `pluginHosts` in file `etc/kuiper.yaml` ,  it returns the plugins list that can be installed at local run eKuiper instance. By default, it get the list from `https://packages.emqx.net` .
 
-```
+```shell
 GET http://localhost:9081/plugins/sources/prebuild
 GET http://localhost:9081/plugins/sinks/prebuild
 GET http://localhost:9081/plugins/functions/prebuild

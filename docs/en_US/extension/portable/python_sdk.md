@@ -3,6 +3,7 @@
 By using Python SDK for portable plugins, user can develop portable plugins with python language. The Python SDK provides APIs for the source, sink and function interfaces. Additionally, it provides a plugin start function as the execution entry point to define the plugin and its symbols.
 
 To run python plugin, there are two prerequisites in the runtime environment:
+
 1. Install Python 3.x environment.
 2. Install nng and ekuiper package by `pip install nng ekuiper`.
 
@@ -13,6 +14,7 @@ By default, the eKuiper portable plugin runtime will run python script with `pyt
 The process is the same: develop the symbols and then develop the main program. Python SDK provides the similar source, sink and function interfaces in python language.
 
 Source interface:
+
 ```python
   class Source(object):
     """abstract class for eKuiper source plugin"""
@@ -34,6 +36,7 @@ Source interface:
 ```
 
 Sink interface:
+
 ```python
 class Sink(object):
     """abstract class for eKuiper sink plugin"""
@@ -60,6 +63,7 @@ class Sink(object):
 ```
 
 Function interface:
+
 ```python
 class Function(object):
     """abstract class for eKuiper function plugin"""
@@ -116,6 +120,7 @@ To use conda environment, the common steps are:
 1. Create and set up the conda environment.
 2. When packaging the plugin, make sure `virtualEnvType` is set to `conda` and `env` is set to the created virtual
    environment. Below is an example.
+
     ```json
     {
       "version": "v1.0.0",
@@ -134,4 +139,5 @@ To use conda environment, the common steps are:
       ]
     }
     ```
+
 3. If the plugin has installation script, make sure the script install the dependencies to the correct environment.

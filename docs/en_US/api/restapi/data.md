@@ -44,9 +44,7 @@ The file format for importing and exporting data is JSON, which can contain : `s
 The API resets all existing data and then imports the new data into the system by default. But user can specify ``partial=1`` parameter in HTTP URL to keep the existing data and apply the new data.
 The API supports specifying data by means of text content or file URIs.
 
-
 Example 1: Import by text content
-
 
 ```shell
 POST http://{{host}}/data/import
@@ -79,7 +77,6 @@ Content-Type: application/json
 }
 ```
 
-
 Example 4: Keep the old data and import new data (overwrite the tables/streams/rules/source config/sink config. install plugins/schema if not exist, else ignore them)
 
 ```shell
@@ -92,7 +89,6 @@ Content-Type: application/json
 ```
 
 ## Import data status
-
 
 This API returns data import errors. If all returns are empty, it means that the import is completely successful.
 

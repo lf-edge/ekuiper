@@ -29,7 +29,6 @@ message Book {
 
 At this point, we have registered a schema named `schema1`, which defines the type `Book`, and the registered schema can be used in the source and sink of the rule. Users can also continue to register and manage more schemas in this page.
 
-
 ## Read Protobuf Data
 
 In this section, we will use the MQTT source as an example to describe how to access and parse data transmitted based on Protobuf format so that it can be computed by eKuiper rules. Note that in Source, the encoding format is not bound to the transport protocol. Any source type such as MQTT, httpPull, etc. can be used with different encoding formats, such as ProtoBuf and JSON.
@@ -40,6 +39,7 @@ Suppose we have an MQTT topic `demo` with Protobuf-encoded binary data for the p
 2. Configure the stream and its format: the stream name can be set to a custom unique name; the data source is the MQTT topic to listen to; the stream type is set to mqtt; the stream format is selected as `protobuf`; the schema name is selected as `schema1` registered in the previous step; the schema message is set to the message `Book` defined in the proto file. This configuration means that the stream `protoDemo` will listen to the MQTT topic `protoDemo` and when it receives the binary data it will be decoded in protobuf using the format of `Book` in `schema1`. Clicking submit should list the newly created stream in the stream list.
    ![create stream with protobuf format](./resources/create_proto_stream.png)
 3. Create a rule: Select the rule and click New Rule to enter the rule creation interface. As shown in the figure below, click the top right corner switch button to enter text mode, enter a custom rule ID, rule name, and enter the JSON text of the rule in the text content. The rule represents the content of the selected stream `protoDemo`, sent to the MQTT topic `result/protobuf`.
+
    ```json
    {
       "id": "ruleDecode",
@@ -53,6 +53,7 @@ Suppose we have an MQTT topic `demo` with Protobuf-encoded binary data for the p
       }]
    }
    ```
+
    ![create rule to deal with protobuf stream](./resources/proto_src_rule.png)
 4. Send data and see the result: We will use MQTTX to send Protobuf encoded binary data to the `protoDemo` topic and observe if the result received is the correct data after decoding.
    1. Open MQTT X and connect to the cloud `tcp://broker.emqx.io:1883`.
@@ -72,7 +73,7 @@ In this section, we show the usage of reading JSON formatted data, processing it
    ![create stream with json format](./resources/create_json_stream.png)
 2. Create a rule to send to the cloud using the Protobuf format.
    1. Click New Rule, enter a custom Rule ID and name, enter SQL `SELECT * FROM demo`.
-   2. Click the New button to the right of the actions to configure the MQTT action. The MQTT server address is configured as the cloud broker address, the MQTT subject is `result/protobufOut`; the data is sent by item is configured as true to ensure that the data received is a single item in matching format; the stream format is configured as `protobuf`, the schema name is `schema1` registered in the first section, and the schema message is ` Book`. The rule will read the JSON data and then encode it into binary data in the Book format and send it to the `result/protobufOut` topic. Click Submit to complete the action configuration.
+   2. Click the New button to the right of the actions to configure the MQTT action. The MQTT server address is configured as the cloud broker address, the MQTT subject is `result/protobufOut`; the data is sent by item is configured as true to ensure that the data received is a single item in matching format; the stream format is configured as `protobuf`, the schema name is `schema1` registered in the first section, and the schema message is `Book`. The rule will read the JSON data and then encode it into binary data in the Book format and send it to the `result/protobufOut` topic. Click Submit to complete the action configuration.
       ![add mqtt action](./resources/action_mqtt.png)
       ![protobuf conf](./resources/action_protobuf.png)
    3. Each rule can have multiple actions and the encoding format used for each action is independent. The user can continue to configure the rest of the actions. After all configurations are completed, click Submit to finish creating the rule.

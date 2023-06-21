@@ -5,6 +5,7 @@ In eKuiper source code root path, run the below command.
 ```shell
 go build -trimpath --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extensions/sinks/tdengine/tdengine.go
 ```
+
 ### Install plugin
 
 Since the operation of the tdengine plug-in depends on the tdengine client, for the convenience of users, the tdengine client will be downloaded when the plug-in is installed. However, the tdengine client version corresponds to the server version one-to-one, which is not compatible with each other, so the user must inform the tdengine server version used.
@@ -32,7 +33,7 @@ Other common sink properties are supported. Please refer to the [sink common pro
 
 ## Operation example
 
-### To create a database or table, refer to the following documents:
+### To create a database or table, refer to the following documents
 
 ```http
 https://www.taosdata.com/cn/getting-started/
@@ -83,10 +84,9 @@ Write into dynamic table:
 }
 ```
 
-
 Write values of tableDataField into database:
 
-The following configuration will write telemetry field's values into database 
+The following configuration will write telemetry field's values into database
 
 ```json
 {

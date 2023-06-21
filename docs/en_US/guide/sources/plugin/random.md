@@ -34,6 +34,7 @@ dedup:
   interval: 100
   deduplicate: 50
 ```
+
 ### Global configurations
 
 Use can specify the global random source settings here. The configuration items specified in `default` section will be taken as default settings for the source when running this source.
@@ -60,11 +61,10 @@ If you have a specific connection that need to overwrite the default settings, y
 
 ## Sample usage
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="ext", TYPE="random");
+    ...
+  ) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="ext", TYPE="random");
 ```
 
 The configuration keys "ext" will be used.
-

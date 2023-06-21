@@ -112,22 +112,21 @@ Function 元数据详细配置请参考 [sink 元数据配置](../../extension/n
 
 在 `etc/kuiper.yaml` 中，有一个 `pluginHosts` 配置项，用户可以在这里配置服务器列表。除了官方的插件发布地址之外，用户可以在这里加入自己本地的插件发布地址。但是插件发布时候对目录的结构和内容有要求。部署服务应为
 
-```
+```text
 https://$host/$folder/$version/$os/$type/$plugin.zip
 ```
 
-例如： https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/sql.zip
+例如： <https://127.0.0.1:9090/kuiper-plugins/1.7.1/debian/sinks/sql.zip>
 
 其中：
 
 1. $version: 插件编译所用的 eKuiper 版本号
 2. $os: 插件编译所用的操作系统。在默认 eKuiper Docker 镜像中编译的插件，该值为 debian.
-3. $type: 插件类型，可为`sources`, `sinks`, `functions`.
-
+3. $type: 插件类型，可为 `sources`，`sinks`，`functions`.
 
 ## 限制
 
-由于`Go`语言插件机制的限制，插件的编译环境必须与`eKuiper`环境相同。因此，建议插件在`eKuiper`相同版本的`Docker` 容器中进行编译。同时，由于`alpine` 环境部分库缺失，不建议在上面运行插件。因此，若需要插件安装运行，建议使用如下容器：
+由于 `Go` 语言插件机制的限制，插件的编译环境必须与 `eKuiper` 环境相同。因此，建议插件在 `eKuiper` 相同版本的 `Docker` 容器中进行编译。同时，由于 `alpine` 环境部分库缺失，不建议在上面运行插件。因此，若需要插件安装运行，建议使用如下容器：
 
 - eKuiper: 使用 slim 镜像，例如 `1.7.1-slim`
 - 插件：使用对应版本默认镜像进行编译，例如 `1.7.1-dev`

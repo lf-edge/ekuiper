@@ -2,8 +2,6 @@
 
 In eKuiper, each column or an expression has a related data type. A data type describes (and constrains) the set of values that a column of that type can hold or an expression of that type can produce.
 
-
-
 ## Supported data types
 
 Below is the list of data types supported.

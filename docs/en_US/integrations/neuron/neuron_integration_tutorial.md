@@ -20,6 +20,7 @@ The integration between eKuiper and Neuron is bidirectional and the implementati
 In a typical industrial IoT edge data processing scenario, Neuron and eKuiper are deployed on the same edge machine. This is the scenario currently supported by the integration of the two. If communication over the network is required, collaboration can still be performed in the same way as before with MQTT.
 
 The connection between Neuron and eKuiper has gone through several phases.
+
 1. Early versions, where both sides used MQTT as a relay.
 2. Neuron 2.0 and eKuiper 1.5 onwards, where the two sides use the IPC protocol for one-to-one connectivity.
 3. Neuron 2.4 and eKuiper 1.9 onwards, the two sides use TCP protocol to connect and can support many-to-many connections.
@@ -85,15 +86,17 @@ Both Neuron and eKuiper support binary installation packages and Docker containe
       # volumes:
       #  nng-ipc:
    ```
+
    To modify the port, you need to modify Neuron's eKuiper northbound application port, as well as the parts of this document that use the port, i.e., Neuron's port exposure and eKuiper's environment variable default connection url section.
-   
+
    > Notes for different version combinations
+   >
    > 1. eKuiper 1.9 onwards can only interface with Neuron versions before 2.4 via ipc, you need to configure `NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"` and enable the configuration of volumes nng-ipc. Neuron does not need to expose port 7081.
    > 2. eKuiper versions before 1.9 can only interface with Neuron versions before 2.4 via ipc, you need to remove the `NEURON__DEFAULT__URL` environment variable configuration and enable the volumes nng-ipc configuration.
    > 3. eKuiper versions before 1.9 and Neuron versions after 2.4 cannot connect directly, but can be relayed through MQTT
-   
+
 2. In the directory where the file is located, run:
-   
+
    ```shell
    # docker compose up -d
    ```
@@ -163,6 +166,7 @@ After the Neuron stream is established, we can create any number of rules in eKu
 ### Cleaning data to the cloud
 
 Assume that the two tags set in Neuron mean:
+
 - tag1: decimal temperature data, the actual temperature should be divided by 10
 - tag2: integer humidity data.
 
@@ -266,11 +270,7 @@ Also, the two rules created in the previous section should capture the new value
 This tutorial uses some features of Neuron source and sink, as well as some streaming scenarios. Read the following material for a more in-depth look at the features.
 
 - For more details on the Neuron streaming data format, please read the [Neuron Source Reference](../../guide/sources/builtin/neuron.md).
-- For more details about the Neuron back-control parameters, please read [Neuron Sink Reference](../../guide/sources/builtin/neuron.md). 
+- For more details about the Neuron back-control parameters, please read [Neuron Sink Reference](../../guide/sources/builtin/neuron.md).
 - Understanding the [concepts and basic usage scenarios](../../concepts/ekuiper.md) of eKuiper.
 - Understand [the composition and parameters of the rules](../../guide/rules/overview.md).
 - Using the [eKuiper Management Console](../../operation/manager-ui/overview.md).
-
-
-
-

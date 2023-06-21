@@ -15,7 +15,7 @@ SQL-based or graph based (similar to Node-RED) rules to create IoT edge analytic
 
 - Cross-platform
 
-  - CPU Arch：X86 AMD * 32/64; ARM * 32/64; PPC
+  - CPU Arch：X86 AMD 32/64; ARM 32/64; PPC
   - Popular Linux distributions, OpenWrt Linux, MacOS and Docker
   - Industrial PC, Raspberry Pi, industrial gateway, home gateway, MEC edge cloud server
 

@@ -4,7 +4,7 @@
 
 ## ISNULL
 
-```
+```text
 isNull(col)
 ```
 
@@ -12,7 +12,7 @@ isNull(col)
 
 ## COALESCE
 
-```
+```text
 coalesce(expr1, expr2, ...)
 ```
 
@@ -20,7 +20,7 @@ coalesce(expr1, expr2, ...)
 
 ## NEWUUID
 
-```
+```text
 newuuid()
 ```
 
@@ -28,7 +28,7 @@ newuuid()
 
 ## TSTAMP
 
-```
+```text
 tstamp()
 ```
 
@@ -36,7 +36,7 @@ tstamp()
 
 ## RULE_ID
 
-```
+```text
 rule_id()
 ```
 
@@ -44,20 +44,20 @@ rule_id()
 
 ## MQTT
 
-```
+```text
 mqtt(topic)
 ```
 
 返回指定键的 MQTT 元数据。 当前支持的键包括:
 
-- topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src1.topic)`
-- messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)`
+- topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。如 `mqtt(src1.topic)`
+- messageid：返回消息的消息ID。如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)`
 
 该函数仅用于数据源为 MQTT 的情况。其余数据源请使用 META 函数。
 
 ## META
 
-```
+```text
 meta(key)
 ```
 
@@ -65,7 +65,7 @@ meta(key)
 
 ## WINDOW_START
 
-```
+```text
 window_start()
 ```
 
@@ -73,7 +73,7 @@ window_start()
 
 ## WINDOW_END
 
-```
+```text
 window_end()
 ```
 
@@ -81,7 +81,7 @@ window_end()
 
 ## GET_KEYED_STATE
 
-```
+```text
 get_keyed_state(key, state_name)
 ```
 
@@ -91,7 +91,7 @@ get_keyed_state(key, state_name)
 
 ## DELAY
 
-```
+```text
 delay(delayTime, returnVal)
 ```
 

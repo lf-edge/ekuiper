@@ -3,7 +3,7 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于[EdgeX 消息总线](https://github.com/edgexfoundry/go-mod-messaging)的数据，并且将数据放入 eKuiper 数据处理流水线中。
+eKuiper 提供了内置的 EdgeX 源支持，它可以被用来订阅来自于 [EdgeX 消息总线](https://github.com/edgexfoundry/go-mod-messaging)的数据，并且将数据放入 eKuiper 数据处理流水线中。
 
 ## EdgeX 流定义
 
@@ -26,7 +26,7 @@ EdgeX 源会试图取得某个字段的类型，
 
 如果 `reading` 中  `ValueType` 的值为 `Bool` ，那么 eKuiper 会试着将其转换为 `boolean` 类型，以下的值将被转化为 `true`。
 
-- "1", "t", "T", "true", "TRUE", "True" 
+- "1", "t", "T", "true", "TRUE", "True"
 
 以下值将被转换为 `false`。
 
@@ -34,11 +34,11 @@ EdgeX 源会试图取得某个字段的类型，
 
 ### Bigint
 
-如果 `reading` 中  `ValueType` 的值为 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` 那么 eKuiper 会试着将其转换为 `Bigint` 类型。 
+如果 `reading` 中  `ValueType` 的值为 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` 那么 eKuiper 会试着将其转换为 `Bigint` 类型。
 
 ### Float
 
-如果 `reading` 中  `ValueType` 的值为 `FLOAT32`, `FLOAT64` ，那么 eKuiper 会试着将其转换为 `Float` 类型。 
+如果 `reading` 中  `ValueType` 的值为 `FLOAT32`, `FLOAT64` ，那么 eKuiper 会试着将其转换为 `Float` 类型。
 
 ### String
 
@@ -50,11 +50,11 @@ EdgeX 中的 `Bool` 数组类型会被转换为 `boolean` 数组。
 
 ### Bigint 数组
 
-EdgeX 中所有的 `INT8` , `INT16`, `INT32`,  `INT64` , `UINT8` , `UINT16` ,  `UINT32` , `UINT64` 数组类型会被转换为 `Bigint` 数组。
+EdgeX 中所有的 `INT8`，`INT16`，`INT32`，`INT64`，`UINT8`，`UINT16`，`UINT32`，`UINT64` 数组类型会被转换为 `Bigint` 数组。
 
 ### Float 数组
 
-EdgeX 中所有的 `FLOAT32`, `FLOAT64`  数组类型会被转换为 `Float` 数组。 
+EdgeX 中所有的 `FLOAT32`，`FLOAT64` 数组类型会被转换为 `Float` 数组。
 
 ## 全局配置
 
@@ -90,7 +90,8 @@ EdgeX 消息总线的端口，缺省为 `5573`
 
 ## connectionSelector
 
-重用 EdgeX 源连接。连接配置信息位于 `connections/connection.yaml`.
+重用 EdgeX 源连接。连接配置信息位于 `connections/connection.yaml`。
+
 ```yaml
 edgex:
   redisMsgBus: #connection key
@@ -114,7 +115,9 @@ edgex:
     #    KeyPEMBlock:
     #    SkipCertVerify: true/false
 ```
+
 对于 EdgeX 连接，这里有一个配置组。用户应该使用 `edgex.redisMsgBus` 来作为参数。举例如下：
+
 ```yaml
 #Global Edgex configurations
 default:
@@ -125,8 +128,8 @@ default:
   topic: rules-events
   messageType: event
 ```
-*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，` protocol: tcp | server: localhost | port: 5573` 会被忽略。
 
+*注意*: 相应配置组一旦指定 connectionSelector 参数，所有关于连接的参数都会被忽略. 上面例子中，`protocol: tcp | server: localhost | port: 5573` 会被忽略。
 
 ## topic
 
@@ -142,6 +145,7 @@ EdgeX 消息总线类型，目前支持三种消息总线。如果指定了错�
 - `redis`: 使用 Redis 服务器作为消息总线。使用 EdgeX docker compose 启动时，type参数会默认设置为该类型。
 
 EdgeX Levski 引入了两种信息消息总线类型，eKuiper 从 1.7.1 开始支持这两种新的类型，分别为
+
 - `nats-jetstream`
 - `nats-core`
 
@@ -189,9 +193,8 @@ demo1: #Conf_key
 
 **例子**
 
-```
+```sql
 create stream demo1() WITH (FORMAT="JSON", type="edgex", CONF_KEY="demo1");
 ```
 
 在自定义的配置中，能够使用的配置项与 `default` 部分的是一样的，任何在自定义段中设置的值将覆盖 `default` 部分里的配置。
-

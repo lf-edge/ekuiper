@@ -41,13 +41,13 @@ The file format for importing and exporting Data is JSON, which can contain : `s
 
 ## Reset And Import Data
 
-The API resets all existing data and then imports the new data into the system. 
+The API resets all existing data and then imports the new data into the system.
 
 ```shell
 # bin/kuiper import data -f myrules.json -s false
 ```
 
-## Import Data 
+## Import Data
 
 The API imports the data into the system(overwrite the tables/streams/rules/source config/sink config. install plugins/schema if not exist, else ignore them).
 
@@ -65,7 +65,7 @@ This API returns Data import errors. If all returns are empty, it means that the
 
 ## Data Export
 
-This command exports the Data to the specified file. 
+This command exports the Data to the specified file.
 
 ```shell
 # bin/kuiper export data myrules.json

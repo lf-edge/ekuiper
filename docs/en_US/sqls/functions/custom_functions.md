@@ -13,7 +13,7 @@ echo(avg) example
 
 - Assuming the type of avg is int and the value is 30, the result is: `[{"r1":30}]`
 
-  ```
+  ```sql
   SELECT echo(avg) as r1 FROM test;
   ```
 
@@ -27,7 +27,7 @@ countPlusOne(avg) example
 
 - Assuming the type of avg is []int and the value is `[1,2,3]`, the result is: `[{"r1":4}]`
 
-  ```
+  ```sql
   SELECT countPlusOne(avg) as r1 FROM test;
   ```
 
@@ -41,13 +41,13 @@ accumulateWordCount(avg,sep) example
 
 - Assuming that the avg type is string and the value is `My name is Bob`, the sep type is string and the value is a space, the result is: `[{"r1":4}]`
 
-  ```
+  ```sql
   SELECT accumulateWordCount(avg,sep) as r1 FROM test;
   ```
 
 ## Image processing plugin
 
-Image processing currently only supports the formats of `png` and `jpeg` 
+Image processing currently only supports the formats of `png` and `jpeg`
 
 | Function  | Example                             | Description                                                                                                                                                                                                                                                                     |
 |-----------|-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -58,7 +58,7 @@ resize(avg,width, height) example
 
 - The avg type is []byte.
 
-  ```
+  ```sql
   SELECT resize(avg,width,height) as r1 FROM test;
   ```
 
@@ -66,7 +66,7 @@ thumbnail(avg,maxWidth, maxHeight) example
 
 - The avg type is []byte.
 
-  ```
+  ```sql
   SELECT countPlusOne(avg,maxWidth, maxHeight) as r1 FROM test;
   ```
 
@@ -87,7 +87,7 @@ thumbnail(avg,maxWidth, maxHeight) example
 
  geohashEncode example
 
-- Input: `{"lo" :131.036192,"la":-25.345457}` 
+- Input: `{"lo" :131.036192,"la":-25.345457}`
 - Output: `{"geohashEncode":"qgmpvf18h86e"}`
 
 ```sql
@@ -96,7 +96,7 @@ SELECT geohashEncode(la,lo) FROM test
 
  geohashEncodeInt example
 
-- Input: `{"lo" :131.036192,"la":-25.345457}` 
+- Input: `{"lo" :131.036192,"la":-25.345457}`
 - Output: `{"geohashEncodeInt":12963433097944239317}`
 
 ```sql
@@ -105,7 +105,7 @@ SELECT geohashEncodeInt(la,lo) FROM test
 
  geohashDecode example
 
-- Input: `{"hash" :"qgmpvf18h86e"} ` 
+- Input: `{"hash" :"qgmpvf18h86e"}`
 - Output: `{"geohashDecode":{"Longitude":131.036192,"Latitude":-25.345457099999997}}`
 
 ```sql
@@ -123,7 +123,7 @@ SELECT geohashDecodeInt(hash) FROM test
 
 geohashBoundingBox example
 
-- Input: `{"hash" :"qgmpvf18h86e"} `
+- Input: `{"hash" :"qgmpvf18h86e"}`
 - Output: `{"geohashBoundingBox":{"MinLat":-25.345457140356302,"MaxLat":-25.34545697271824,"MinLng":131.03619195520878,"MaxLng":131.0361922904849}}`
 
 ```sql
@@ -141,7 +141,7 @@ SELECT geohashBoundingBoxInt(hash) FROM test
 
 geohashNeighbor example
 
-- Input: `{"hash" :"qgmpvf18h86e","direction":"North"} `
+- Input: `{"hash" :"qgmpvf18h86e","direction":"North"}`
 - Output: `{"geohashNeighbor":"qgmpvf18h86s"}`
 
 ```sql
@@ -168,7 +168,7 @@ SELECT geohashNeighbors(hash) FROM test
 
 geohashNeighborsInt example
 
-- Input:  `{"hash" :"qgmpvf18h86e","neber":"North"}` 
+- Input:  `{"hash" :"qgmpvf18h86e","neber":"North"}`
 - Output: `{"geohashNeighborsInt":[12963433097944240129,12963433097944240131,12963433097944240130,12963433097944237399,12963433097944237397,12963433097944150015,12963433097944152746,12963433097944152747]}`
 
 ```sql

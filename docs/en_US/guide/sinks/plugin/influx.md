@@ -39,6 +39,7 @@ Other common sink properties are supported. Please refer to the [sink common pro
 Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
 
 ### /tmp/influxRule.txt
+
 ```json
 {
   "id": "influx",
@@ -60,14 +61,18 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
   ]
 }
 ```
+
 ### /tmp/influxPlugin.txt
+
 ```json
 {
    "file":"http://localhost:8080/influx.zip"
  }
 ```
+
 ### plugins/go.mod
-```
+
+```go
 module plugins
 
 go 1.14

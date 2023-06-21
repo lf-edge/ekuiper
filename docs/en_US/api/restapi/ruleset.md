@@ -47,7 +47,7 @@ Content-Type: application/json
 
 ## Export Ruleset
 
-The export API returns a file to download. 
+The export API returns a file to download.
 
 ```shell
 POST http://{{host}}/ruleset/export

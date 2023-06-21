@@ -1,4 +1,5 @@
 # 状态和容错
+
 ## 状态
 
 eKuiper 支持有状态的规则流。eKuiper 中有两种状态：
@@ -36,8 +37,8 @@ eKuiper 支持有状态的规则流。eKuiper 中有两种状态：
 
 ```go
 type Rewindable interface {
-	GetOffset() (interface{}, error)
-	Rewind(offset interface{}) error
+    GetOffset() (interface{}, error)
+    Rewind(offset interface{}) error
 }
 ```
 

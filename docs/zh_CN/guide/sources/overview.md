@@ -15,7 +15,7 @@
 
 用户可以直接使用标准 eKuiper 实例中的内置源。内置源的列表如下。
 
-- [Mqtt source](./builtin/mqtt.md)：从mqtt主题读取数据。
+- [Mqtt source](./builtin/mqtt.md)：从mqtt 主题读取数据。
 - [Neuron source](./builtin/neuron.md): 从本地 Neuron 实例读取数据。
 - [EdgeX source](./builtin/edgex.md): 从 EdgeX foundry 读取数据。
 - [Http pull source](./builtin/http_pull.md)：从 http 服务器中拉取数据。
@@ -34,7 +34,7 @@
 
 - [SQL source](./plugin/sql.md): 定期从关系数据库中拉取数据。
 - [Random source](./plugin/random.md): 一个生成随机数据的源，用于测试。
-- [Zero MQ source](./plugin/zmq.md)：从Zero MQ读取数据。
+- [Zero MQ source](./plugin/zmq.md)：从 Zero MQ 读取数据。
 
 ## 源的使用
 

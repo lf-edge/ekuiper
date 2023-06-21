@@ -6,7 +6,7 @@
 
 ## CHANGED_COLS
 
-```
+```text
 changed_cols(prefix, ignoreNull, colA, colB)
 ```
 

@@ -20,7 +20,7 @@
 
 我们已经开发了一些官方的动作插件。这些插件可以在 eKuiper 的源代码中找到，用户需要手动构建它们。详细信息请查看每个动作的构建和使用方法。
 
-这些插件有预编译的二进制文件，用于主流cpu架构，如AMD或ARM。预编译的插件托管在 `https：//packages.emqx.net/kuiper-plugins/$version/$os/sinks/$type_$arch.zip` 中。例如，要获得用于 debian amd64 的 tdengine 插件，请从 `https：//packages.emqx.net/kuiper-plugins/1.4.4/debian/sinks/tdengine_amd64.zip` 安装。
+这些插件有预编译的二进制文件，用于主流cpu架构，如AMD或ARM。预编译的插件托管在 `https://packages.emqx.net/kuiper-plugins/$version/$os/sinks/$type_$arch.zip` 中。例如，要获得用于 debian amd64 的 tdengine 插件，请从 `https://packages.emqx.net/kuiper-plugins/1.4.4/debian/sinks/tdengine_amd64.zip` 安装。
 
 预定义的动作插件列表：
 
@@ -34,7 +34,7 @@
 
 ## 更新
 
-默认情况下，Sink 将数据附加到外部系统中。一些外部系统，如 SQL DB 本身是可更新的，允许更新或删除数据。与查找源类似，只有少数 Sink 是天然 "可更新 "的。可更新的 Sink 必须支持插入、更新和删除。产品自带的 Sink 中，可更新的包括: 
+默认情况下，Sink 将数据附加到外部系统中。一些外部系统，如 SQL DB 本身是可更新的，允许更新或删除数据。与查找源类似，只有少数 Sink 是天然 "可更新 "的。可更新的 Sink 必须支持插入、更新和删除。产品自带的 Sink 中，可更新的包括：
 
 - [Memory Sink](./builtin/memory.md)
 - [Redis Sink](./builtin/redis.md)
@@ -87,7 +87,6 @@
 | batchSize           | int: 0                                | 设置缓存发送的消息数目。sink将阻塞消息发送，直到缓存的消息数目等于该值后，再将该数目的消息一次性发送。batchSize 将对 []map 的数据视为多条数据。                                                                                                                                                                                                                                                                                           |
 | lingerInterval      | int  0                                | 设置缓存发送的间隔时间，单位为毫秒。sink将阻塞消息发送，直到缓存发送的间隔时间达到该值后。lingerInterval 可以与 batchSize 一起使用，任意条件满足时都会触发发送。                                                                                                                                                                                                                                                                              |
 
-
 ### 动态属性
 
 有些情况下，用户需要按照数据把结果发送到不同的目标中。例如，根据收到的数据，把计算结果发到不同的 mqtt 主题中。使用基于[数据模板](./data_template.md)格式的动态属性，可以实现这样的功能。在以下的例子中，目标的 topic 属性是一个数据模板格式的字符串从而在运行时会将消息发送到动态的主题中。
@@ -125,7 +124,7 @@
 
 Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定义所有规则的默认行为。还有一个规则 sink 层的定义，用来覆盖默认行为。
 
-- enableCache：是否启用sink cache。缓存存储配置遵循 `etc/kuiper.yaml` 中定义的元数据存储的配置。
+- enableCache：是否启用 sink cache。缓存存储配置遵循 `etc/kuiper.yaml` 中定义的元数据存储的配置。
 - memoryCacheThreshold：要缓存在内存中的消息数量。出于性能方面的考虑，最早的缓存信息被存储在内存中，以便在故障恢复时立即重新发送。这里的数据会因为断电等故障而丢失。
 - maxDiskCache：缓存在磁盘中的信息的最大数量。磁盘缓存是先进先出的。如果磁盘缓存满了，最早的一页信息将被加载到内存缓存中，取代旧的内存缓存。
 - bufferPageSize：缓冲页是批量读/写到磁盘的单位，以防止频繁的IO。如果页面未满，eKuiper 因硬件或软件错误而崩溃，最后未写入磁盘的页面将被丢失。
@@ -159,12 +158,15 @@ Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定
 像源一样，动作也支持配置复用，用户只需要在 sinks 文件夹中创建与目标动作同名的 yaml 文件并按照源一样的形式写入配置。
 
 例如，针对 MQTT 动作场景， 用户可以在 sinks 目录下创建 mqtt.yaml 文件，并写入如下内容
+
 ```yaml
 test:
   qos: 1
   server: "tcp://broker.emqx.io:1883"
 ```
+
 当用户需要 MQTT 动作时，除了采用传统的配置方式，如下所示
+
 ```json
     {
       "mqtt": {
@@ -179,6 +181,7 @@ test:
       }
     }
 ```
+
 还可以通过 `resourceId` 引用形式，采用如下的配置
 
 ```json

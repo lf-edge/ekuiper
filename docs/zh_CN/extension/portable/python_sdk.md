@@ -1,7 +1,9 @@
-# Portable 插件 Python SDK 
+# Portable 插件 Python SDK
+
 用户可利用 Python SDK 来开发 portable 插件，这个 SDK 提供了类似原生插件的 API，另外它提供了启动函数，用户只需填充插件信息即可。
 
 运行 python 插件有两个前置条件
+
 1. 安装 Python 3.x 环境.
 2. 通过 `pip install nng ekuiper` 安装 nng 和 ekuiper 包.
 
@@ -12,6 +14,7 @@
 开发插件包括子模块和主程序两部分, Python SDK 提供了 python 语言的源，目标和函数 API。
 
 源接口:
+
 ```python
   class Source(object):
     """abstract class for eKuiper source plugin"""
@@ -33,6 +36,7 @@
 ```
 
 目标接口:
+
 ```python
 class Sink(object):
     """abstract class for eKuiper sink plugin"""
@@ -59,6 +63,7 @@ class Sink(object):
 ```
 
 函数接口:
+
 ```python
 class Function(object):
     """abstract class for eKuiper function plugin"""
@@ -78,6 +83,7 @@ class Function(object):
         """callback to check if function is for aggregation, return bool"""
         pass
 ```
+
 用户通过实现这些抽象接口来创建自己的源，目标和函数，然后在主函数中声明这些自定义插件的实例化方法
 
 ```python
@@ -109,6 +115,7 @@ Anaconda®、Miniconda 和 Anaconda Repository 中。eKuiper 支持使用 conda 
 
 1. 创建并配置虚拟环境。
 2. 在打包插件时，确保 `virtualEnvType` 设置为 `conda`，`env` 设置为创建的虚拟环境名，如下所示。
+
     ```json
     {
       "version": "v1.0.0",
@@ -127,4 +134,5 @@ Anaconda®、Miniconda 和 Anaconda Repository 中。eKuiper 支持使用 conda 
       ]
     }
     ```
+
 3. 如果该插件有安装脚本，确保该脚本将依赖安装到正确的虚拟环境中。

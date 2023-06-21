@@ -38,7 +38,7 @@ eKuiper 的规则是一个持续运行的流式计算任务。规则用于处理
 }
 ```
 
-运行指标主要包括两个部分，一部分是 status，用于标示规则是否正常运行，其值可能为 `running`, `stopped manually` 等。另一部分为规则每个算子的运行指标。规则的算子根据规则的 SQL 生成，每个规则可能会有所不同。在此例中，规则 SQL 为最简单的 `SELECT * FROM demo`, action 为 MQTT，其生成的算子为 [source_demo, op_project, sink_mqtt] 3个。每一种算子都有相同数目的运行指标，与算子名字合起来构成一条指标。例如，算子 source_demo_0 的输入数量 records_in_total 的指标为 `source_demo_0_records_in_total`。
+运行指标主要包括两个部分，一部分是 status，用于标示规则是否正常运行，其值可能为 `running`，`stopped manually` 等。另一部分为规则每个算子的运行指标。规则的算子根据规则的 SQL 生成，每个规则可能会有所不同。在此例中，规则 SQL 为最简单的 `SELECT * FROM demo`，action 为 MQTT，其生成的算子为 [source_demo，op_project，sink_mqtt] 3个。每一种算子都有相同数目的运行指标，与算子名字合起来构成一条指标。例如，算子 source_demo_0 的输入数量 records_in_total 的指标为 `source_demo_0_records_in_total`。
 
 ### 运行指标
 
@@ -107,7 +107,7 @@ scrape_configs:
       - targets: ['localhost:20499']
 ```
 
-此处定义了监控任务名为 `eKuiper`, targets 指向上一节启动的服务的地址。配置完成后，启动 Prometheus 。
+此处定义了监控任务名为 `eKuiper`，targets 指向上一节启动的服务的地址。配置完成后，启动 Prometheus。
 
 ```shell
 ./prometheus --config.file=prometheus.yml
@@ -126,5 +126,3 @@ scrape_configs:
 ## 总结
 
 本文介绍了 eKuiper 中的规则状态指标以及如何使用 Prometheus 简单地监控这些状态指标。用户朋友可以基于此进一步探索 Prometheus 的更多高级功能，更好地实现 eKuiper 的运维。
-
-
