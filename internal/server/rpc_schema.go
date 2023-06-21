@@ -24,12 +24,13 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/schema"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func (t *Server) CreateSchema(arg *model.RPCTypedArgDesc, reply *string) error {
 	sd := &schema.Info{Type: def.SchemaType(arg.Type)}
 	if arg.Json != "" {
-		if err := json.Unmarshal([]byte(arg.Json), sd); err != nil {
+		if err := json.Unmarshal(cast.StringToBytes(arg.Json), sd); err != nil {
 			return fmt.Errorf("Parse service %s error : %s.", arg.Json, err)
 		}
 	}

@@ -85,7 +85,7 @@ func registerMiscFunc() {
 				return fmt.Errorf("fail to convert %v to string", args[0]), false
 			}
 			var data interface{}
-			err = json.Unmarshal([]byte(text), &data)
+			err = json.Unmarshal(cast.StringToBytes(text), &data)
 			if err != nil {
 				return fmt.Errorf("fail to parse json: %v", err), false
 			}
