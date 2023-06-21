@@ -146,6 +146,12 @@ type RuleOption struct {
 	Restart            *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
 	Cron               string           `json:"cron" yaml:"cron"`
 	Duration           string           `json:"duration" yaml:"duration"`
+	Schedules          []ScheduleRange  `json:"schedules" yaml:"schedules"`
+}
+
+type ScheduleRange struct {
+	Begin string `json:"begin" yaml:"begin"`
+	End   string `json:"end" yaml:"end"`
 }
 
 type RestartStrategy struct {
