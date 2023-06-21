@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
@@ -66,7 +67,7 @@ func GetDataSourceStatement(m kv.KeyValue, name string) (*StreamInfo, error) {
 		vs = &StreamInfo{}
 	)
 	if ok, _ := m.Get(name, &v); ok {
-		if err := json.Unmarshal([]byte(v), vs); err != nil {
+		if err := json.Unmarshal(cast.StringToBytes(v), vs); err != nil {
 			return nil, fmt.Errorf("error unmarshall %s, the data in db may be corrupted", name)
 		} else {
 			return vs, nil

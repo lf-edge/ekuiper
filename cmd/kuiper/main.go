@@ -28,6 +28,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -1104,7 +1105,7 @@ func main() {
 						rulesArray := c.String("rules")
 						if rulesArray != "" {
 							var rules []string
-							err := json.Unmarshal([]byte(rulesArray), &rules)
+							err := json.Unmarshal(cast.StringToBytes(rulesArray), &rules)
 							if err != nil {
 								fmt.Printf("rules %s unmarshal error %s", rules, err)
 								return nil
