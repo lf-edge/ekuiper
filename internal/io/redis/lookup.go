@@ -97,7 +97,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 			return nil, err
 		}
 		m := make(map[string]interface{})
-		err = json.Unmarshal([]byte(res), &m)
+		err = json.Unmarshal(cast.StringToBytes(res), &m)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +113,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 		ret := make([]api.SourceTuple, 0, len(res))
 		for _, r := range res {
 			m := make(map[string]interface{})
-			err = json.Unmarshal([]byte(r), &m)
+			err = json.Unmarshal(cast.StringToBytes(r), &m)
 			if err != nil {
 				return nil, err
 			}

@@ -309,7 +309,7 @@ func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data interface{}) (map
 		if err != nil {
 			return nil, fmt.Errorf("fail to parse the header template %s: %v", cc.config.HeadersTemplate, err)
 		}
-		err = json.Unmarshal([]byte(tstr), &headers)
+		err = json.Unmarshal(cast.StringToBytes(tstr), &headers)
 		if err != nil {
 			return nil, fmt.Errorf("parsed header template is not json: %s", tstr)
 		}
