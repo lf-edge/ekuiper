@@ -20,7 +20,6 @@ type WatermarkPlan struct {
 	baseLogicalPlan
 	Emitters      []string
 	SendWatermark bool
-	delay         int64
 }
 
 func (p WatermarkPlan) Init() *WatermarkPlan {
