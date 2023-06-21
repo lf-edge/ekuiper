@@ -1,11 +1,11 @@
-# Sql 目标（Sink）
+# SQL 目标（Sink）
 
-此插件将结果写入数据库
+此插件将结果写入 SQL 数据库
 
 ## 编译部署插件
 
-此插件必须与至少一个数据库驱动程序一起使用。我们使用构建标签来确定将包含哪个驱动程序。[此处](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver)列出了所有支持的驱动程序。
-该插件默认支持 `sqlserver\postgres\mysql\sqlite3\oracle` 驱动。用户可以自己编译只支持一个驱动的插件，例如如果他只想要 mysql，那么他可以用 build tag mysql 构建。
+此插件必须与至少一个数据库驱动程序一起使用。我们使用构建标签来确定将包含哪个驱动程序。[eKuiper - SQL 数据库插件 GitHub 页面](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver)列出了所有支持的驱动程序。
+该插件默认支持 `sqlserver\postgres\mysql\sqlite3\oracle` 驱动。用户可以自己编译只支持一个驱动的插件，例如如果他只想要 MySQL，那么他可以用 build tag mysql 构建。
 
 ### 默认构建指令
 ```shell
@@ -14,7 +14,7 @@
 # cp plugins/sinks/Sql.so $eKuiper_install/plugins/sinks
 ```
 
-### MySql 构建指令 
+### MySQL 构建指令 
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -tags mysql -o plugins/sinks/Sql.so extensions/sinks/sql/sql.go
@@ -24,19 +24,19 @@
 
 ## 属性
 
-| Property name  | Optional | Description                                                  |
+| 属性名称  | 是否可选 | 说明                                                  |
 | -------------- | -------- | ------------------------------------------------------------ |
-| url            | false    | 目标数据库的 url                                             |
-| table          | false    | 结果的表名                                                   |
-| fields         | true     | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
-| tableDataField | true     | 将 tableDataField 的嵌套值写入数据库。                       |
-| rowkindField   | true     | 指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作 |
+| url            | 否    | 目标数据库的 url                                             |
+| table          | 否    | 结果的表名                                                   |
+| fields         | 是     | 要插入的字段。结果映射和数据库都应该有这些字段。如果未指定，将插入结果映射中的所有字段 |
+| tableDataField | 是     | 将 tableDataField 的嵌套值写入数据库。                       |
+| rowkindField   | 是     | 指定哪个字段表示操作，例如插入或更新。如果不指定，默认所有的数据都是插入操作 |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 ## 使用样例
 
-下面是一个获取目标数据并写入 mysql 数据库的示例
+下面是一个获取目标数据并写入 MySQL 数据库的示例
 
 ```json
 {

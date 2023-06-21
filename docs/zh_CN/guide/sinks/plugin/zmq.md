@@ -14,10 +14,10 @@
 
 ## 属性
 
-| 属性名称 | Optional | Description         |
+| 属性名称 | 是否可选 | 说明       |
 | -------- | -------- | ------------------- |
-| server   | false    | ZeroMQ 服务器的 URL |
-| topic    | true     | 待发送的主题        |
+| server   | 否    | ZeroMQ 服务器的 URL |
+| topic    | 是     | 待发送的主题        |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
