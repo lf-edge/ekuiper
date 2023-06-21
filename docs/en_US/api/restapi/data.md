@@ -53,7 +53,7 @@ POST http://{{host}}/data/import
 Content-Type: application/json
 
 {
-  "content": "$规则集 json 内容"
+  "content": "{json of the ruleset}"
 }
 ```
 
