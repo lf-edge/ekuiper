@@ -134,8 +134,8 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 			case *xsql.WatermarkTuple:
 				ctx.GetLogger().Debug("WatermarkTuple", d.GetTimestamp())
 				watermarkTs := d.GetTimestamp()
-				for len(o.delayTS) > 0 && watermarkTs >= o.delayTS[0] {
-					inputs = o.scan(inputs, o.delayTS[0], ctx)
+				for len(o.delayTS) > 0 && watermarkTs >= o.delayTS[0].ts {
+					inputs = o.scan(inputs, o.delayTS[0].ts, ctx)
 					o.delayTS = o.delayTS[1:]
 				}
 
@@ -156,15 +156,16 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						o.triggerTime = inputs[0].Timestamp
 					}
 					if windowEndTs > 0 {
-						var targetTuple *xsql.Tuple
-						for _, t := range inputs {
-							if targetTuple.Timestamp == windowEndTs {
-								targetTuple = t
-								break
-							}
-						}
 						if o.window.Delay > 0 {
-							o.delayTS = append(o.delayTS, windowEndTs+o.window.Delay)
+							var targetTuple *xsql.Tuple
+							for _, t := range inputs {
+								if targetTuple.Timestamp == windowEndTs {
+									targetTuple = t
+									break
+								}
+							}
+							c := &delayTSCache{ts: windowEndTs + o.window.Delay, tuple: targetTuple}
+							o.delayTS = append(o.delayTS, c)
 						} else {
 							inputs = o.scan(inputs, windowEndTs, ctx)
 						}

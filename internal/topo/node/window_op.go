@@ -52,7 +52,12 @@ type WindowOperator struct {
 	// states
 	triggerTime int64
 	msgCount    int
-	delayTS     []int64
+	delayTS     []*delayTSCache
+}
+
+type delayTSCache struct {
+	tuple *xsql.Tuple
+	ts    int64
 }
 
 const (
@@ -91,7 +96,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 			o.trigger = w
 		}
 	}
-	o.delayTS = make([]int64, 0)
+	o.delayTS = make([]*delayTSCache, 0)
 	return o, nil
 }
 
