@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"time"
 
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -34,7 +33,6 @@ type WatermarkOp struct {
 	statManager metric.StatManager
 	// config
 	lateTolerance int64
-	delay         int64
 	sendWatermark bool
 	// state
 	events          []*xsql.Tuple // All the cached events in order
@@ -50,7 +48,7 @@ const (
 	StreamWMKey   = "$$streamwms"
 )
 
-func NewWatermarkOp(name string, sendWatermark bool, delay int64, streams []string, options *api.RuleOption) *WatermarkOp {
+func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *api.RuleOption) *WatermarkOp {
 	wms := make(map[string]int64, len(streams))
 	for _, s := range streams {
 		wms[s] = options.LateTol
@@ -67,7 +65,6 @@ func NewWatermarkOp(name string, sendWatermark bool, delay int64, streams []stri
 		lateTolerance: options.LateTol,
 		sendWatermark: sendWatermark,
 		streamWMs:     wms,
-		delay:         delay,
 	}
 }
 
@@ -187,7 +184,7 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 		w.events[index] = d
 	}
 
-	watermark := w.computeWatermarkTs() + w.delay
+	watermark := w.computeWatermarkTs()
 	ctx.GetLogger().Debugf("compute watermark event at %d with last %d", watermark, w.lastWatermarkTs)
 	// Make sure watermark time proceeds
 	if watermark > w.lastWatermarkTs {
@@ -217,17 +214,7 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 		}
 		// Update watermark
 		if w.sendWatermark {
-			if w.delay > 0 {
-				go func() {
-					after := time.After(time.Duration(w.delay) * time.Millisecond)
-					select {
-					case <-after:
-						_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
-					}
-				}()
-			} else {
-				_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
-			}
+			_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
 		}
 		w.lastWatermarkTs = watermark
 		_ = ctx.PutState(WatermarkKey, w.lastWatermarkTs)

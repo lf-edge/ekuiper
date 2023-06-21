@@ -128,7 +128,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		inputs = []api.Emitter{srcNode}
 		op = srcNode
 	case *WatermarkPlan:
-		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.delay, t.Emitters, options)
+		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *WindowPlan:
@@ -329,15 +329,10 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 	}
 	hasWindow := dimensions != nil && dimensions.GetWindow() != nil
 	if opt.IsEventTime {
-		wp := WatermarkPlan{
+		p = WatermarkPlan{
 			SendWatermark: hasWindow,
 			Emitters:      streamEmitters,
-		}
-		if hasWindow && dimensions.GetWindow().Delay != nil {
-			w = dimensions.GetWindow()
-			wp.delay = convertFromUnit(w.TimeUnit.Val, int64(w.Delay.Val))
-		}
-		p = wp.Init()
+		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}

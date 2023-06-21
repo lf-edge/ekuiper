@@ -115,7 +115,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 				if err != nil {
 					return nil, fmt.Errorf("parse watermark %s with %v error: %w", nodeName, gn.Props, err)
 				}
-				op := node.NewWatermarkOp(nodeName, n.SendWatermark, 0, n.Emitters, rule.Options)
+				op := node.NewWatermarkOp(nodeName, n.SendWatermark, n.Emitters, rule.Options)
 				nodeMap[nodeName] = op
 			case "function":
 				fop, err := parseFunc(gn.Props, sourceNames)

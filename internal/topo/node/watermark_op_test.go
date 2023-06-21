@@ -200,7 +200,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 			tempStore, _ := state.CreateStore("TestWatermark", api.AtMostOnce)
 			nctx := ctx.WithMeta("TestWatermark", "test", tempStore)
-			w := NewWatermarkOp("mock", false, 0, []string{"demo"}, &api.RuleOption{
+			w := NewWatermarkOp("mock", false, []string{"demo"}, &api.RuleOption{
 				IsEventTime:        true,
 				LateTol:            tt.latetol,
 				Concurrency:        0,
@@ -452,7 +452,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 			tempStore, _ := state.CreateStore("TestWatermark", api.AtMostOnce)
 			nctx := ctx.WithMeta("TestWatermark", "test", tempStore)
-			w := NewWatermarkOp("mock", true, 0, []string{"demo1", "demo2"}, &api.RuleOption{
+			w := NewWatermarkOp("mock", true, []string{"demo1", "demo2"}, &api.RuleOption{
 				IsEventTime:        true,
 				LateTol:            tt.latetol,
 				Concurrency:        0,
