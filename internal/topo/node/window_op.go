@@ -328,7 +328,25 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.Timestamp, ctx)
 				case ast.SLIDING_WINDOW:
-					inputs = o.scan(inputs, d.Timestamp, ctx)
+					trigger := true
+					if o.triggerCondition != nil {
+						fv, afv := xsql.NewFunctionValuersForOp(ctx)
+						triggered := o.triggerCondition.Apply(ctx, d, fv, afv)
+						// not match trigger condition
+						if triggered == nil {
+							trigger = false
+						}
+						switch v := triggered.(type) {
+						case error:
+							log.Errorf("window %s trigger condition meet error: %v", o.name, v)
+							trigger = false
+						default:
+							// match trigger condition
+						}
+					}
+					if trigger {
+						inputs = o.scan(inputs, d.Timestamp, ctx)
+					}
 				case ast.SESSION_WINDOW:
 					if timeoutTicker != nil {
 						timeoutTicker.Stop()
@@ -500,24 +518,6 @@ func (tl *TupleList) getRestTuples() []*xsql.Tuple {
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
-	if len(inputs) > 0 {
-		triggerTuple := inputs[len(inputs)-1]
-		if o.triggerCondition != nil {
-			fv, afv := xsql.NewFunctionValuersForOp(ctx)
-			triggered := o.triggerCondition.Apply(ctx, triggerTuple, fv, afv)
-			// not match trigger condition
-			if triggered == nil {
-				return inputs
-			}
-			switch v := triggered.(type) {
-			case error:
-				log.Errorf("window %s trigger condition meet error: %v", o.name, v)
-				return inputs
-			default:
-				// match trigger condition
-			}
-		}
-	}
 	var (
 		delta       int64
 		windowStart int64

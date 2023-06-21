@@ -248,6 +248,7 @@ var _ TupleRow = &Tuple{}
 
 type WatermarkTuple struct {
 	Timestamp int64
+	Tuple     *Tuple
 }
 
 func (t *WatermarkTuple) GetTimestamp() int64 {

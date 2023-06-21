@@ -151,7 +151,25 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						o.triggerTime = inputs[0].Timestamp
 					}
 					if windowEndTs > 0 {
-						inputs = o.scan(inputs, windowEndTs, ctx)
+						trigger := true
+						if o.triggerCondition != nil {
+							fv, afv := xsql.NewFunctionValuersForOp(ctx)
+							triggered := o.triggerCondition.Apply(ctx, d.Tuple, fv, afv)
+							// not match trigger condition
+							if triggered == nil {
+								trigger = false
+							}
+							switch v := triggered.(type) {
+							case error:
+								log.Errorf("window %s trigger condition meet error: %v", o.name, v)
+								trigger = false
+							default:
+								// match trigger condition
+							}
+						}
+						if trigger {
+							inputs = o.scan(inputs, windowEndTs, ctx)
+						}
 					}
 					prevWindowEndTs = windowEndTs
 					lastTicked = ticked
