@@ -26,6 +26,7 @@ default:
 test:
   server: tcp://127.0.0.1:5563
 ```
+
 ### Global configurations
 
 Use can specify the global zmq source settings here. The configuration items specified in `default` section will be taken as default settings for the source when connects to Zero Mq.
@@ -40,11 +41,10 @@ If you have a specific connection that need to overwrite the default settings, y
 
 ## Sample usage
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="test", TYPE="zmq");
+    ...
+  ) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="test", TYPE="zmq");
 ```
 
 The configuration keys "test" will be used. The Zero Mq topic to subscribe is "demo" as specified in the `DATASOURCE`.
-

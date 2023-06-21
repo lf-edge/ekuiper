@@ -7,7 +7,7 @@
 
 ## AVG
 
-```
+```text
 avg(col)
 ```
 
@@ -15,7 +15,7 @@ avg(col)
 
 ## COUNT
 
-```
+```text
 count(*)
 count(col)
 ```
@@ -24,7 +24,7 @@ count(col)
 
 ## MAX
 
-```
+```text
 max(col)
 ```
 
@@ -32,7 +32,7 @@ max(col)
 
 ## MIN
 
-```
+```text
 min(col)
 ```
 
@@ -40,7 +40,7 @@ min(col)
 
 ## SUM
 
-```
+```text
 sum(col)
 ```
 
@@ -48,7 +48,7 @@ sum(col)
 
 ## COLLECT
 
-```
+```text
 collect(*)
 collect(col)
 ```
@@ -57,23 +57,27 @@ collect(col)
 
 ## 示例
 
-- 获取当前窗口所有消息的列 a 的值组成的数组。假设列 a 的类型为 int, 则结果为: `[{"r1":[32, 45]}]`
+* 获取当前窗口所有消息的列 a 的值组成的数组。假设列 a 的类型为 int, 则结果为: `[{"r1":[32, 45]}]`
+
     ```sql
     SELECT collect(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
-- 获取当前窗口所有消息的值组成的数组。结果为: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
+
+* 获取当前窗口所有消息的值组成的数组。结果为: `[{"r1":[{"a":32, "b":"hello"}, {"a":45, "b":"world"}]}]`
+
     ```sql
     SELECT collect(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
-- 获取当前窗口第二个消息的列 `a` 的值。结果为: `[{"r1":32}]`
+* 获取当前窗口第二个消息的列 `a` 的值。结果为: `[{"r1":32}]`
+
     ```sql
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
 ## DEDUPLICATE
 
-```
+```text
 deduplicate(col, false)
 ```
 
@@ -83,19 +87,22 @@ deduplicate(col, false)
 
 ### 示例
 
-- 获取当前窗口中，列 `a` 值不重复的所有消息组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+* 获取当前窗口中，列 `a` 值不重复的所有消息组成的数组。结果为: `[{"r1":{"a":32, "b":"hello"}, {"a":45, "b":"world"}}]`
+
     ```sql
     SELECT deduplicate(a, true) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
-- 获取列 `a` 值在过去一小时中不重复的值。每收到一条新消息，都会检测列 `a` 是否重复，若不重复则输出：`[{"r1":32}]`
+
+* 获取列 `a` 值在过去一小时中不重复的值。每收到一条新消息，都会检测列 `a` 是否重复，若不重复则输出：`[{"r1":32}]`
   或者 `[{"r1":45}]`。若检测到重复值，则输出 `[{}]` 。此时，可以设置 omitIfEmpty 的 sink 参数使得检测到重复值时不触发规则。
+
      ```sql
      SELECT deduplicate(a, false)->a as r1 FROM demo GROUP BY SlidingWindow(hh, 1)
      ```
 
 ## STDDEV
 
-```
+```text
 stddev(col)
 ```
 
@@ -103,7 +110,7 @@ stddev(col)
 
 ## STDDEVS
 
-```
+```text
 stddevs(col)
 ```
 
@@ -111,7 +118,7 @@ stddevs(col)
 
 ## VAR
 
-```
+```text
 var(col)
 ```
 
@@ -119,7 +126,7 @@ var(col)
 
 ## VARS
 
-```
+```text
 vars(col)
 ```
 
@@ -127,7 +134,7 @@ vars(col)
 
 ## PERCENTILE
 
-```
+```text
 percentile(col, 0.5)
 ```
 
@@ -136,7 +143,7 @@ percentile(col, 0.5)
 
 ## PERCENTILE_DISC
 
-```
+```text
 percentile_disc(col, 0.5)
 ```
 

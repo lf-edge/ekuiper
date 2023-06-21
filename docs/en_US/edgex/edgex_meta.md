@@ -6,7 +6,7 @@ When data are published into EdgeX message bus, besides the actual device value,
 
 The data structure received from EdgeX message bus is list as in below. An `Event` structure encapsulates related metadata (ID, DeviceName, ProfileName, SourceName, Origin, Tags), along with the actual data (in `Readings` field) collected from device service.  
 
-Similar to `Event`, `Reading` also has some metadata (ID, DeviceName... etc). 
+Similar to `Event`, `Reading` also has some metadata (ID, DeviceName... etc).
 
 - Event
   - ID
@@ -33,7 +33,7 @@ Similar to `Event`, `Reading` also has some metadata (ID, DeviceName... etc).
 
 If upgrading from eKuiper versions v1.2.0 and before which integrates with EdgeX v1, there will be some breaking changes of the meta datas due to the refactor of EdgeX v2.
 
-1. The metadata `Pushed`, `Created` and `Modified` for both events and readings are removed. 
+1. The metadata `Pushed`, `Created` and `Modified` for both events and readings are removed.
 2. The metadata `Device` for both events and readings are renamed to `DeviceName`.
 3. The metadata `Name` of readings is renamed to `ResourceName`.
 
@@ -45,10 +45,10 @@ As in below - firstly, user creates an EdgeX stream named `events` with yellow c
 
 <img src="./create_stream.png" style="zoom:50%;" />
 
-Secondly, one message is published to message bus as in below. 
+Secondly, one message is published to message bus as in below.
 
 - The device name is `demo` with green color
-- Reading name `temperature` & `Humidity` with red color. 
+- Reading name `temperature` & `Humidity` with red color.
 - It has some `metadata` that is not necessary to "visible", but it probably will be used during data analysis, such as `DeviceName` field in `Event` structure. eKuiper saves these values into message tuple named metadata, and user can get these values during analysis. **Notice that, metadata name `DeviceName` was renamed from `Device` in EdgeX v2.**
 
 <img src="./bus_data.png" style="zoom:50%;" />
@@ -63,15 +63,15 @@ Thirdly, a SQL is provided for data analysis. Please notice that,
 
 Below are some other samples that extract other metadata through `meta` function.
 
-1. `meta(origin)`: 000 
+1. `meta(origin)`: 000
 
    Get 'Origin' metadata from Event structure
 
-2. `meta(temperature -> origin)`: 123 
+2. `meta(temperature -> origin)`: 123
 
    Get 'origin' metadata from reading[0], key with 'temperature'
 
-3. `meta(humidity -> origin)`: 456 
+3. `meta(humidity -> origin)`: 456
 
    Get 'origin' metadata from reading[1], key with 'humidity'
 

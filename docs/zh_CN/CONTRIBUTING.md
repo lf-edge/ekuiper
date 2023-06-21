@@ -4,7 +4,7 @@
 
 ## 发现 bug ？
 
-- **通过在 GitHub 的 [Issues](https://github.com/lf-edge/ekuiper/issues)下搜索，确保该错误尚未被报告**。
+- **通过在 GitHub 的 [Issues](https://github.com/lf-edge/ekuiper/issues) 下搜索，确保该错误尚未被报告**。
 - 如果你找不到解决该问题的公开问题，[开一个新的 Issue](https://github.com/lf-edge/ekuiper/issues/new)。请确保**标题和清晰的描述**，尽可能多的相关信息，以及**代码样本**或**可执行的测试案例**，以明确问题。
 
 ## 代码和文档贡献
@@ -15,18 +15,19 @@
 
 我们使用 GitHub pull request 来审查提议的代码修改。所以你需要在做出代码贡献之前拥有一个 GitHub 账户。
 
-1. **Fork** eKuiper到你的私人仓库。点击 eKuiper 仓库右上角的 "Fork "按钮。
+1. **Fork** eKuiper 到你的私人仓库。点击 eKuiper 仓库右上角的 "Fork "按钮。
 2. 从你的个人分叉中**克隆**版本库。 `git clone https://github.com/<Github_user>/ekuiper.git` 。
-3. 添加 eKuiper repo 作为额外的 Git 远程仓库，这样你就可以在本地 repo 和eKuiper 之间进行同步。
+3. 添加 eKuiper repo 作为额外的 Git 远程仓库，这样你就可以在本地 repo 和 eKuiper 之间进行同步。
+
    ```shell
       git remote add upstream https://github.com/lf-edge/ekuiper.git
    ```
 
-你可以使用你喜欢的IDE或编辑器来开发。你可以在 [Editors and IDEs for GO](https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins) 中找到编辑器对Go工具的支持信息。
+你可以使用你喜欢的 IDE 或编辑器来开发。你可以在 [Editors and IDEs for GO](https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins) 中找到编辑器对 Go 工具的支持信息。
 
 ### 创建一个分支
 
-你将在你自己的 repo 中的一个分支中进行你的代码开发。创建一个本地分支，初始化为你希望合并到的分支的状态。`master`分支是活跃的开发分支，所以建议将`master`设为基础分支。
+你将在你自己的 repo 中的一个分支中进行你的代码开发。创建一个本地分支，初始化为你希望合并到的分支的状态。`master` 分支是活跃的开发分支，所以建议将 `master` 设为基础分支。
 
 ```shell
 $ git fetch upstream
@@ -63,7 +64,7 @@ import (
 
 以 GoLand 为例，开发者可以对代码进行调试。
 
-1. 调试整个程序。确保 [Makefile](https://github.com/lf-edge/ekuiper/blob/master/Makefile) build_prepare 部分提到的所有目录都在你的eKuiper根路径中创建。添加你的断点。打开 `cmd/kuiperd/main.go` 。在主函数中，你会发现标尺上有一个绿色的三角形，点击它并选择调试。然后创建你的流/规则，让它运行到你的断点，调试器会在那里暂停。
+1. 调试整个程序。确保 [Makefile](https://github.com/lf-edge/ekuiper/blob/master/Makefile) build_prepare 部分提到的所有目录都在你的 eKuiper 根路径中创建。添加你的断点。打开 `cmd/kuiperd/main.go` 。在主函数中，你会发现标尺上有一个绿色的三角形，点击它并选择调试。然后创建你的流/规则，让它运行到你的断点，调试器会在那里暂停。
 2. 要调试一小部分代码，我们建议写一个单元测试并调试它。你可以到任何一个测试文件中，找到同样的绿色三角形，在调试模式下运行。例如，`pkg/cast/cast_test.go` TestMapConvert_Funcs 可以作为调试运行。
 
 #### 调试 edgex 代码
@@ -116,7 +117,7 @@ eKuiper 按主题订阅消息，默认情况下，edgex 使用 redis 作为消�
 | mqtt  broker  | mqtt  | tcp      | 10.65.38.224 | 1883 |
 | zemo mq       | zero  | tcp      | 10.65.38.224 | 5566 |
 
-以redis为例，下面的配置会让eKuiper连接到10.65.38.224的6379端口。
+以 redis 为例，下面的配置会让 eKuiper 连接到 10.65.38.224 的 6379 端口。
 
 ```yaml
 default:
@@ -131,12 +132,13 @@ default:
   messageType: event
 ```
 
-修改后 redis 会监听主机的6379端口，开发者可以通过服务器地址连接到edgex远程运行的机器。
-例如机器 ip 地址为 10.65.38.224 ，用户可以通过该ip地址连接。
+修改后 redis 会监听主机的 6379 端口，开发者可以通过服务器地址连接到 edgex 远程运行的机器。
+例如机器 ip 地址为 10.65.38.224 ，用户可以通过该 ip 地址连接。
 
 #### 打开 eKuiper 的控制台日志，修改 rest 端口
 
 更改 `etc/kuiper.yaml` 中的配置文件，将控制台日志设置为 true 并将 eKuiper rest api 端口设置为 59720
+
 ```yaml
 basic:
   # true|false, with debug level, it prints more debug info
@@ -173,18 +175,18 @@ basic:
 
 #### run locally
 
-使用前面提到的[启动方法](./CONTRIBUTING.md#调试你的代码) 运行 eKuiper
+使用前面提到的 [启动方法](./CONTRIBUTING.md#调试你的代码) 运行 eKuiper
 
 ### 测试
 
 eKuiper 项目利用 Github actions 来运行单元测试和 FVT（功能验证测试），所以请看一下 PR 状态的运行结果，并确保所有的测试用例都能成功运行。
 
 - 如果有必要，请编写 Golang 单元测试案例来测试你的代码。
-- [FVT测试案例](../../test/README.md) 将随着任何PR提交而被触发，所以请确保这些测试案例能够成功运行。
+- [FVT 测试案例](../../test/README.md) 将随着任何 PR 提交而被触发，所以请确保这些测试案例能够成功运行。
 
 ### 许可
 
-所有贡献给eKuiper的代码都将在Apache License V2下授权。你需要确保你添加的每个新文件都有正确的许可证头。
+所有贡献给 eKuiper 的代码都将在 Apache License V2 下授权。你需要确保你添加的每个新文件都有正确的许可证头。
 
 ### Sign-off
 
@@ -208,7 +210,7 @@ git push origin -f
 
 ### 提交修改
 
-`master` 分支是活跃的开发分支，所以建议将 `master` 设为基础分支，并在 `master` 分支下创建PR
+`master` 分支是活跃的开发分支，所以建议将 `master` 设为基础分支，并在 `master` 分支下创建 PR
 
 组织你的提交，使提交者在审查时更容易。提交者通常喜欢多个小的拉动请求，而不是一个大的拉动请求。在一个拉动请求中，最好有相对较少的提交，将问题分解成合理的步骤。对于大多数 PR ，你可以将你的修改压缩到一个提交。你可以使用下面的命令来重新排序、合并、编辑或改变单个提交的描述。
 
@@ -216,15 +218,15 @@ git push origin -f
 git rebase -i upstream/master
 ```
 
-确保你的所有提交都符合[提交信息指南](#提交信息指南)。
+确保你的所有提交都符合 [提交信息指南](#提交信息指南)。
 
-然后你会推送到你 forked 的 repo 上的分支，然后导航到 eKuiper repo 创建一个 PR 。我们的 GitHub repo 提供了基于 GitHub actions的自动化测试。请确保这些测试通过。我们将在所有测试通过后审查代码。
+然后你会推送到你 forked 的 repo 上的分支，然后导航到 eKuiper repo 创建一个 PR 。我们的 GitHub repo 提供了基于 GitHub actions 的自动化测试。请确保这些测试通过。我们将在所有测试通过后审查代码。
 
 ### 提交信息指南
 
 每条提交信息都由一个 **header** ，一个 **body** 和一个 **footer** 组成。header 包含三个部分：**类型**，**范围**和**主题**。
 
-```
+```text
 <类型>(<范围>): <主题>
 <空行>
 <body>
@@ -234,17 +236,17 @@ git rebase -i upstream/master
 
 **header** 的**类型**为必填项。header 的**范围**是可选的。没有预定义的范围选项，可以使用一个自定义的范围。
 
-提交信息的任何一行都不能超过100个字符，这样可以使信息在 GitHub 以及各种 git 工具中更容易阅读。
+提交信息的任何一行都不能超过 100 个字符，这样可以使信息在 GitHub 以及各种 git 工具中更容易阅读。
 
 如果有的话，footer 应该包含一个 [对 Issue 的关闭引用](https://help.github.com/articles/closing-issues-via-commit-messages/)。
 
-例子1:
+例子 1:
 
-```
+```text
 feat: add Fuji release compose files
 ```
 
-```
+```text
 fix(script): correct run script to use the right ports
 
 Previously device services used wrong port numbers. This commit fixes the port numbers to use the latest port numbers.
@@ -258,7 +260,7 @@ Closes: #123, #245, #992
 
 #### 类型
 
-必须是以下类型之一:
+必须是以下类型之一：
 
 - **feat**: 为用户提供的新功能，而不是构建脚本的新功能
 - **fix**: 为用户提供的错误修复，而不是对构建脚本的修复
@@ -307,4 +309,4 @@ Closes: #123, #245, #992
 - 撰写项目的使用教程
 - 为其他贡献者提供指导
 
-感谢你的贡献!
+感谢你的贡献！

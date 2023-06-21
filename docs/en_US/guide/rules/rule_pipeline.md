@@ -51,8 +51,6 @@ Rule pipeline will be implicit. Each rule can use an memory sink / source. This 
 ```
 
 By using the memory topic as the bridge, we now form a rule pipeline:
-`rule1->{rule2-1, rule2-2}`. The pipeline can be multiple to multiple and very flexible. 
+`rule1->{rule2-1, rule2-2}`. The pipeline can be multiple to multiple and very flexible.
 
 Notice that, the memory sink can be used together with other sinks to create multiple rule actions for a rule. And the memory source topic can use wildcard to subscirbe to a filtered topic list.
-
-     

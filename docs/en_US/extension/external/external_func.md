@@ -15,14 +15,14 @@ The json configuration file includes the following two parts:
 
 - about: Used to describe the Meta-information of service, including author, detailed description, help document url, etc. For detailed usage, please refer to the example below.
 - interfaces: Used to define a set of service interfaces. Services provided by the same server often have the same service address and can be used as a service interface. Each service interface contains the following attributes:
-    - protocol: The protocol used by the service. "grpc", "rest" are supported currently. The "msgpack-rpc" is not built by default, you need to build it with build tag "msgpack" by yourself. Please refer to [feature compilation](../../operation/compile/features.md#usage) for detail.
-    - address: Service address, which must be url. For example, typical rpc service address: "tcp://localhost:50000" or http service address "https://localhost:8000".
-    - schemaType: The type of service description file. Only "protobuf" is supported currently .
-    - schemaFile: service description file, currently only proto file is supported. The rest and msgpack services also need to be described in proto.
-    - functions: function mapping array, used to map the services defined in the schema to SQL functions. It is mainly used to provide function aliases. For example,`{"name":"helloFromMsgpack","serviceName":"SayHello"}` can map the SayHello service in the service definition to the SQL function helloFromMsgpack. For unmapped functions, the defined service uses the original name as the SQL function name.
-    - options: Service interface options. Different service types have different options. Among them, the configurable options of rest service include:
-      - headers: configure HTTP headers
-      - insecureSkipVerify: whether to skip the HTTPS security check
+  - protocol: The protocol used by the service. "grpc", "rest" are supported currently. The "msgpack-rpc" is not built by default, you need to build it with build tag "msgpack" by yourself. Please refer to [feature compilation](../../operation/compile/features.md#usage) for detail.
+  - address: Service address, which must be url. For example, typical rpc service address: "tcp://localhost:50000" or http service address "https://localhost:8000".
+  - schemaType: The type of service description file. Only "protobuf" is supported currently .
+  - schemaFile: service description file, currently only proto file is supported. The rest and msgpack services also need to be described in proto.
+  - functions: function mapping array, used to map the services defined in the schema to SQL functions. It is mainly used to provide function aliases. For example,`{"name":"helloFromMsgpack","serviceName":"SayHello"}` can map the SayHello service in the service definition to the SQL function helloFromMsgpack. For unmapped functions, the defined service uses the original name as the SQL function name.
+  - options: Service interface options. Different service types have different options. Among them, the configurable options of rest service include:
+    - headers: configure HTTP headers
+    - insecureSkipVerify: whether to skip the HTTPS security check
 
 Assuming we have a service named 'sample', we can define a service definition file named sample.json as follows:
 
@@ -153,7 +153,7 @@ service TSRest {
 }
 ```
 
-Another typical scenario is the REST services to search a list. The search parameters are usually appended to the url as the query parameters. 
+Another typical scenario is the REST services to search a list. The search parameters are usually appended to the url as the query parameters.
 
 ```protobuf
 service TSRest {
@@ -213,6 +213,7 @@ The REST service is **POST** by default currently, and the transmission format i
 - The marshalled json for int64 type will be string
 
 The msgpack-rpc service has the following limitation:
+
 - Input can not be empty
 
 ## Registration and Management
@@ -228,7 +229,7 @@ When eKuiper is started, it will read and register the external service configur
 
 2. The Schema file used must be placed in the schemas folder. The directory structure is similar to:
 
-   ```
+   ```text
    etc
      services
        schemas
@@ -239,6 +240,7 @@ When eKuiper is started, it will read and register the external service configur
        other.json
        ...
    ```
+
    Note: After eKuiper is started, it **cannot** automatically load the system by modifying the configuration file. If you need to update dynamically, please use the REST service.
 
 For dynamic registration and management of services, please refer to [External Service Management API](../../api/restapi/services.md).
@@ -270,4 +272,3 @@ message ObjectDetectionRequest {
 ```
 
 In eKuiper, users can pass in the entire struct as a parameter, or pass in two string parameters as cmd and base64_img respectively.
-

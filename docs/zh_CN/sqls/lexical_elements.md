@@ -30,7 +30,7 @@ SELECT `a-b`, `hello world`, `中文Chinese` from demo
 
 **规则 SQL 的保留关键字**：如果您想在规则 SQL 中使用以下关键字，则必须使用反撇号将其括起来。
 
-```
+```text
 SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, THEN, ELSE, END, IN, NOT, BETWEEN, LIKE, OVER, PARTITION
 ```
 
@@ -44,20 +44,20 @@ SELECT * FROM demo1 where `from`="device1"
 
 ```sql
 CREATE STREAM `stream` (
-					USERID BIGINT,
-					FIRST_NAME STRING,
-					LAST_NAME  STRING,
-					NICKNAMES  ARRAY(STRING),
-					Gender     BOOLEAN,
-					`地址`      STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-				) WITH (DATASOURCE="users", FORMAT="JSON");
+                    USERID BIGINT,
+                    FIRST_NAME STRING,
+                    LAST_NAME  STRING,
+                    NICKNAMES  ARRAY(STRING),
+                    Gender     BOOLEAN,
+                    `地址`      STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+                ) WITH (DATASOURCE="users", FORMAT="JSON");
 ```
 
 ## 运算法（Operators）
 
 提供了以下运算符。
 
-```
+```text
 +, -, *, /, %, &, |, ^, =, !=, <, <=, >, >=, [], ->, (), IN, NOT IN, BETWEEN, NOT BETWEEN
 ```
 
@@ -65,15 +65,14 @@ CREATE STREAM `stream` (
 
 **布尔字面量**
 
-```
+```text
 TRUE, FALSE
 ```
 
-例如， ` SELECT TRUE AS field1 FROM demo` ,  `field1`字段 总是返回 `true`.
+例如，`SELECT TRUE AS field1 FROM demo`，`field1`字段 总是返回 `true`。
 
 **时间字面量**： 下面的字面量在时间窗口中使用，用于标识窗口的时间单位。
 
-```
+```text
 DD, HH, MI, SS, MS
 ```
-

@@ -14,7 +14,7 @@ EdgeX already defines data types in [readings](https://docs.edgexfoundry.org/2.0
 # bin/kuiper CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
 ```
 
-EdgeX source will try to get the data type of fields, 
+EdgeX source will try to get the data type of fields,
 
 - convert to related data type if field of a type can be found in the readings's ValueType field;
 - or keep original value if  field of a type can not be found in the readings's ValueType field;
@@ -26,7 +26,7 @@ The types defined in readings will be converted into related [data types](../../
 
 If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert to `boolean` type. Following values will be converted into `true`.
 
-- "1", "t", "T", "true", "TRUE", "True" 
+- "1", "t", "T", "true", "TRUE", "True"
 
 Following will be converted into `false`.
 
@@ -34,15 +34,15 @@ Following will be converted into `false`.
 
 #### Bigint
 
-If `ValueType` value of the reading is `INT8`, `INT16`, `INT32`, `INT64`, `UINT`, `UINT8`, `UINT16`, `UINT32`, `UINT64` then eKuiper tries to convert to `Bigint` type. 
+If `ValueType` value of the reading is `INT8`, `INT16`, `INT32`, `INT64`, `UINT`, `UINT8`, `UINT16`, `UINT32`, `UINT64` then eKuiper tries to convert to `Bigint` type.
 
 #### Float
 
-If `ValueType` value of the reading is `FLOAT32`, `FLOAT64`, then eKuiper tries to convert to `Float` type. 
+If `ValueType` value of the reading is `FLOAT32`, `FLOAT64`, then eKuiper tries to convert to `Float` type.
 
 #### String
 
-If `ValueType` value of the reading is `String`, then eKuiper tries to convert to `String` type. 
+If `ValueType` value of the reading is `String`, then eKuiper tries to convert to `String` type.
 
 #### Boolean array
 
@@ -74,9 +74,7 @@ default:
 #    Password: password
 ```
 
-
-
-Use can specify the global EdgeX settings here. The configuration items specified in `default` section will be taken as default settings for all EdgeX source. 
+Use can specify the global EdgeX settings here. The configuration items specified in `default` section will be taken as default settings for all EdgeX source.
 
 ### protocol
 
@@ -93,6 +91,7 @@ The port of EdgeX message bus, default value is `5573`.
 ### connectionSelector
 
 specify the stream to reuse the connection to EdgeX message bus. The connection profile located in `connections/connection.yaml`.
+
 ```yaml
 edgex:
   redisMsgBus: #connection key
@@ -116,8 +115,10 @@ edgex:
     #    KeyPEMBlock:
     #    SkipCertVerify: true/false
 ```
+
 There is one configuration group for EdgeX message bus in the example, user need use `edgex.redisMsgBus` as the selector.
 For example
+
 ```yaml
 #Global Edgex configurations
 default:
@@ -132,8 +133,8 @@ default:
   #    Username: user1
   #    Password: password
 ```
-*Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case `protocol: tcp | server: localhost | port: 5573`
 
+*Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case `protocol: tcp | server: localhost | port: 5573`
 
 ### topic
 
@@ -151,6 +152,7 @@ use the default `redis` value.
 - `redis`: Use Redis as EdgeX message bus. When using EdgeX docker compose, the type will be set to this by default.
 
 EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively
+
 - `nats-jetstream`
 - `nats-core`
 
@@ -200,9 +202,8 @@ If you have a specific connection that need to overwrite the default settings, y
 
 **Sample**
 
-```
+```sql
 create stream demo1() WITH (FORMAT="JSON", type="edgex", CONF_KEY="demo1");
 ```
 
 The configuration keys used for these specific settings are the same as in `default` settings, any values specified in specific settings will overwrite the values in `default` section.
-

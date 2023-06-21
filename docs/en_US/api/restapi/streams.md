@@ -9,6 +9,7 @@ The API is used for creating a stream. For more detailed information of stream d
 ```shell
 POST http://localhost:9081/streams
 ```
+
 Request sample, the request is a json string with `sql` field.
 
 ```json
@@ -79,13 +80,13 @@ The format is like Json schema:
 {
     "id": {
         "type": "bigint"
-	},
+  },
     "name": {
         "type": "string"
-	},
+  },
     "age": {
         "type": "bigint"
-	},
+  },
     "hobbies": {
         "type": "struct",
         "properties": {
@@ -129,4 +130,3 @@ The API is used for drop the stream definition.
 ```shell
 DELETE http://localhost:9081/streams/{id}
 ```
-

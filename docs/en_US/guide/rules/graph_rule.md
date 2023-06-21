@@ -49,7 +49,7 @@ The `graph` property is a JSON presentation of the DAG. It is consisted by `node
 Each node in the graph JSON has at least 3 fields:
 
 - type: the type of the node, could be `source`, `operator` and `sink`.
-- nodeType: the node type which defines the business logic of a node. There are various node types including built-in types and extended types defined by the plugins. 
+- nodeType: the node type which defines the business logic of a node. There are various node types including built-in types and extended types defined by the plugins.
 - props: the properties for the node. It is different for each nodeType.
 
 ### Node Type
@@ -68,7 +68,6 @@ For source node, the nodeType is the type of the source like `mqtt` and `edgex`.
 ```
 
 For sink node, the nodeType is the type of the sink like `mqtt` and `edgex`. Please refer to [sink](../sinks/overview.md) for all supported types. For all sink nodes, they share some common properties but each type will have some owned properties.
-
 
 For operator node, the nodeType are newly defined. Each nodeType will have different properties.
 
@@ -373,12 +372,13 @@ are met.
 
 This node allows JavaScript code to be run against the messages that are passed through it.
 
-- script: The inline javascript code to be run. 
+- script: The inline javascript code to be run.
 - isAgg: Whether the node is for aggregated data.
 
 There must be a function named `exec` defined in the script. If isAgg is false, the script node can accept a single message and must return a processed message. If isAgg is true, it will receive a message array (connected to window etc.) and must return an array.
 
 1. Example to deal with single message.
+
    ```json
    {
      "type": "operator",
@@ -388,7 +388,9 @@ There must be a function named `exec` defined in the script. If isAgg is false, 
       }
    }
    ```
+
 2. Example to deal with window aggregated messages.
+
    ```json
    {
       "type": "operator",

@@ -21,6 +21,7 @@ basic:
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: false
 ```
+
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
 
 The configuration item **ignoreCase** is used to specify whether case is ignored in SQL processing. If it is true, the column name case of the input data can be different from that defined in SQL. If the column name case in SQL statements, stream definitions, and input data can be guaranteed to be exactly the same, it is recommended to set this value to "false" to obtain better performance. Before version 1.10, its default value was true to be compatible with standard SQL; after version 1.10, its default value was changed to false for better performance.
@@ -40,9 +41,13 @@ basic:
   # Maximum file storage hours
   maxAge: 72
 ```
+
 ## system log
+
 When the user sets the value of the environment variable named KuiperSyslogKey to true, the log will be printed to the syslog.
+
 ## Cli Addr
+
 ```yaml
 basic:
   # CLI bind IP
@@ -50,6 +55,7 @@ basic:
   # CLI port
   port: 20498
 ```
+
 ## Rest Service Configuration
 
 ```yaml
@@ -64,12 +70,15 @@ basic:
 ```
 
 ### restPort
+
 The port for the rest api http server to listen to.
 
 ### restTls
+
 The tls cert file path and key file path setting. If restTls is not set, the rest api server will listen on http. Otherwise, it will listen on https.
 
-## authentication 
+## authentication
+
 eKuiper will check the `Token` for rest api when `authentication` option is true. please check this file for [more info](../api/restapi/authentication.md).
 
 ```yaml
@@ -86,13 +95,14 @@ basic:
   prometheus: true
   prometheusPort: 20499
 ```
+
 For such a default configuration, eKuiper will export metrics and serve prometheus at `http://localhost:20499/metrics`.
 
 The prometheus port can be the same as the eKuiper REST API port. If so, both service will be served on the same server.
 
 ## Pluginhosts Configuration
 
-The URL where hosts all of pre-build [native plugins](../extension/native/overview.md). By default, it's at `packages.emqx.net`. 
+The URL where hosts all of pre-build [native plugins](../extension/native/overview.md). By default, it's at `packages.emqx.net`.
 
 All plugins list as follows:
 
@@ -104,13 +114,13 @@ All plugins list as follows:
 
 User can get all pre-build plugins names and address by below Rest-APIs:
 
-```
+```shell
 GET http://localhost:9081/plugins/sources/prebuild
 GET http://localhost:9081/plugins/sinks/prebuild
 GET http://localhost:9081/plugins/functions/prebuild
-``` 
+```
 
-After get the plugin info, users can try these plugins, [more info](../api/restapi/plugins.md) 
+After get the plugin info, users can try these plugins, [more info](../api/restapi/plugins.md)
 
 **Note: only the official released debian based docker images support these operations**
 
@@ -149,13 +159,15 @@ There is possibility to configure storage of state for application. Default stor
 In order to use redis as store type property must be changed into redis value.
 
 ### Sqlite
-    
+
 It has properties
+
 * name - name of database file - if left empty it will be `sqliteKV.db`
- 
+
 ### Redis
 
 It has properties
+
 * host     - host of redis
 * port     - port of redis
 * password - password used for auth in redis, if left empty auth won't be used
@@ -175,6 +187,7 @@ they can get them easily by [get_keyed_state](../sqls/functions/other_functions.
 *Note*: `type` and `extStateType` can be configured differently.
 
 ### Config
+
 ```yaml
     store:
       #Type of store that will be used for keeping state of the application
@@ -190,6 +203,7 @@ they can get them easily by [get_keyed_state](../sqls/functions/other_functions.
         #Sqlite file name, if left empty name of db will be sqliteKV.db
         name:
 ```
+
 ## Portable plugin configurations
 
 This section configures the portable plugin runtime.

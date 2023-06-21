@@ -1,12 +1,13 @@
 # InfluxDB 目标（Sink）
 
 该插件将分析结果发送到 InfluxDB 中。
+
 ## 编译部署插件
 
 在编译之前，请对源代码做如下更改：
 
 - 在 `go.mod` 文件中增加对 InfluxDB 库文件的引用
--  把文件 `plugins/sinks/influxdb.go` 中的第一行 `// +build plugins` 删除
+- 把文件 `plugins/sinks/influxdb.go` 中的第一行 `// +build plugins` 删除
 
 ```shell
 # cd $eKuiper_src
@@ -38,6 +39,7 @@
 下面是选择温度大于 50 度的样本规则，和一些配置文件仅供参考。
 
 ### /tmp/influxRule.txt
+
 ```json
 {
   "id": "influx",
@@ -59,14 +61,18 @@
   ]
 }
 ```
+
 ### /tmp/influxPlugin.txt
+
 ```json
 {
   "file":"http://localhost:8080/influx.zip"
 }
 ```
+
 ### plugins/go.mod
-```
+
+```go
 module plugins
 
 go 1.14

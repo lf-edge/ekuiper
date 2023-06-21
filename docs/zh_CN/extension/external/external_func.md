@@ -7,6 +7,7 @@
 ## 配置
 
 外部函数的配置文件为 json 格式。通常包括两个部分：
+
 - json 文件，用于描述服务的信息。文件将保存为 eKuiper 中服务的名字。
 - schema 文件，用于描述服务 API 接口。包括服务包含的 API 名字，输入输出参数类型等。目前仅支持 [protobuf 类型](https://developers.google.com/protocol-buffers) 。
 
@@ -14,15 +15,15 @@ json 配置文件包括以下两个部分：
 
 - about: 用于描述服务的元信息，包括作者，详细描述，帮助文档 url 等。详细用法请参考下面的范例。
 - interfaces: 用于定义一组服务接口。同一个服务器提供的服务往往具有相同的服务地址，可作为一个服务接口。每一个服务接口包含下列属性：
-    - protocol: 服务采用的协议。目前支持 "grpc", "rest"。需要注意的是， "msgpack-rpc" 服务没有编译到默认的 eKuiper 中，需要添加 build tag "msgpack" 并自行编译。详情请参考[按需编译](../../operation/compile/features.md#使用)。
-    - adddress: 服务地址，必须为 url。例如，典型 rpc 服务地址："tcp://localhost:50000" 或者 http 服务地址 "https://localhost:8000"。
-    - schemaType: 服务描述文件类型。目前仅支持 "protobuf"。
-    - schemaFile: 服务描述文件，目前仅支持 proto 文件。rest 和 msgpack 服务也需要采用 proto 描述。
-    - functions: 函数映射数组，用于将 schema 里定义的服务映射到 SQL 函数。主要用于提供函数别名，例如 `{"name":"helloFromMsgpack","serviceName":"SayHello"}` 将服务定义中的 SayHello 服务映射为 SQL 函数 helloFromMsgpack 。未做映射的函数，其定义的服务以原名作为 SQL 函数名。
-    - options: 服务接口选项。不同的服务类型有不同的选项。其中， rest 服务可配置的选项包括：
-        - headers: 配置 http 头
-        - insecureSkipVerify: 是否跳过 https 安全检查
-    
+  - protocol: 服务采用的协议。目前支持 "grpc", "rest"。需要注意的是， "msgpack-rpc" 服务没有编译到默认的 eKuiper 中，需要添加 build tag "msgpack" 并自行编译。详情请参考[按需编译](../../operation/compile/features.md#使用)。
+  - adddress: 服务地址，必须为 url。例如，典型 rpc 服务地址："tcp://localhost:50000" 或者 http 服务地址 "<https://localhost:8000"。>
+  - schemaType: 服务描述文件类型。目前仅支持 "protobuf"。
+  - schemaFile: 服务描述文件，目前仅支持 proto 文件。rest 和 msgpack 服务也需要采用 proto 描述。
+  - functions: 函数映射数组，用于将 schema 里定义的服务映射到 SQL 函数。主要用于提供函数别名，例如 `{"name":"helloFromMsgpack","serviceName":"SayHello"}` 将服务定义中的 SayHello 服务映射为 SQL 函数 helloFromMsgpack 。未做映射的函数，其定义的服务以原名作为 SQL 函数名。
+  - options: 服务接口选项。不同的服务类型有不同的选项。其中， rest 服务可配置的选项包括：
+    - headers: 配置 http 头
+    - insecureSkipVerify: 是否跳过 https 安全检查
+
 假设我们有服务名为 'sample'，则可定义其名为 sample.json 的服务定义文件如下：
 
 ```json
@@ -89,6 +90,7 @@ json 配置文件包括以下两个部分：
 ```
 
 该文件定义了 sample 服务，其中包含 3 个服务接口的调用信息:
+
 - trueno: grpc 服务
 - tsrest: rest 服务
 - tsrpc：msgpack-rpc 服务
@@ -125,7 +127,7 @@ Protobuf 采用 proto3 格式，详细格式请参考 [proto3-spec](https://deve
 
 为了支持更细粒度的 REST 服务配置，例如配置 http 方法，URL，参数以及请求体，我们支持了基于 *google.api.http* 注解的 grpc 转码配置。在 proto 文件中，用户可通过给每个 rpc 方法添加注解的方式，配置该方法映射的 http 方法，URL 路径，URL 参数以及请求体。
 
-以下例子是修改过的 tsrest.proto 文件的一部分，添加了 http 规则的注解。例子中，注解指定了 http 方法为 *post*，映射的 url 为 */v1/computation/object_detection* 以覆盖默认的 url */object_detection*。注解中的 body 设置为 * 表示方法的类型为 *ObjectDetectionRequest* 的输入参数将完全转换为请求消息体。
+以下例子是修改过的 tsrest.proto 文件的一部分，添加了 http 规则的注解。例子中，注解指定了 http 方法为 *post*，映射的 url 为 */v1/computation/object_detection* 以覆盖默认的 url */object_detection*。注解中的 body 设置为 *表示方法的类型为*ObjectDetectionRequest* 的输入参数将完全转换为请求消息体。
 
 ```protobuf
 service TSRest {
@@ -192,8 +194,8 @@ import "google/api/annotations.proto";
 外部服务配置需要1个 json 文件和至少一个 schema（.proto） 文件。配置定义了服务映射的3个层次。
 
 1. eKuiper 外部服务层: 外部服务名通过 json 文件名定义。这个名字将作为 [REST API](../../api/restapi/services.md) 中描述，删除和更新整体外部服务的键。
-2. 接口层: 定义于 json 文件的 `interfaces` 部分。该层为用户不可见的虚拟层，主要用于将一组服务聚合，以便可以只定义一次一组函数共有的属性，例如 schema，访问地址等。 
-3. eKuiper 函数层: 函数定义于 proto 文件中的`rpc`。需要注意的是，proto 文件中的 `rpc` 必须定义在 proto 文件中的 `service` 之下。此 `sevice` 与 eKuiper 中的外部服务概念不同，且没有关联，其取名没有任何限制。默认情况下，外部函数的名字与 rpc 名字相同。用户可通过修改 json 文件中，interface 下的 functions 部分来覆盖函数名的映射关系。 
+2. 接口层: 定义于 json 文件的 `interfaces` 部分。该层为用户不可见的虚拟层，主要用于将一组服务聚合，以便可以只定义一次一组函数共有的属性，例如 schema，访问地址等。
+3. eKuiper 函数层: 函数定义于 proto 文件中的`rpc`。需要注意的是，proto 文件中的 `rpc` 必须定义在 proto 文件中的 `service` 之下。此 `sevice` 与 eKuiper 中的外部服务概念不同，且没有关联，其取名没有任何限制。默认情况下，外部函数的名字与 rpc 名字相同。用户可通过修改 json 文件中，interface 下的 functions 部分来覆盖函数名的映射关系。
 
 在这个样例中，如果用户在 eKuiper SQL 中调用 `objectDetection` 函数，则其映射过程如下:
 
@@ -211,18 +213,22 @@ REST 服务目前默认为 **POST**，且传输格式为 json。用户可通过�
 - 如果未指定 http 选项，输入参数仅可以为 message 类型或者 *google.protobuf.StringValue* 类型。若输入参数为 *google.protobuf.StringValue*，则传入的参数必须为已编码的 json 字符串，例如 `"{\"name\":\"name1\",\"size\":1}"`。
 
 msgpack-rpc 服务有以下限制：
+
 - 输入不能为空
 
 ## 注册和管理
 
 外部函数需要注册后才能使用。其注册方法有两种：
+
 - 放置在配置文件夹
 - 通过 REST API 动态注册。
 
 eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务配置文件并注册。用户可在启动之前，将配置文件遵循如下规则放入配置文件夹：
+
 1. 文件名必须为 *$服务名$.json*。例如，*sample.json* 会注册为 sample 服务。
 2. 使用的 Schema 文件必须放入 schemas 文件夹。其目录结构类似为:
-   ```
+
+   ```text
    etc
      services
        schemas
@@ -233,6 +239,7 @@ eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务�
        other.json
        ...
    ```
+
 注意：eKuiper 启动之后，修改配置文件**不能**自动载入系统。需要动态更新时，请使用 REST 服务。
 
 服务的动态注册和管理，请参考[外部服务管理 API](../../api/restapi/services.md)。
@@ -245,7 +252,7 @@ eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务�
 SELECT objectDetection(cmd, img) from comandStream
 ```
 
-调用前，需要确保 REST 服务运行于 *http://localhost:8090* 且其中有 API *http://localhost:8090/object_detection* 。
+调用前，需要确保 REST 服务运行于 *<http://localhost:8090>* 且其中有 API *<http://localhost:8090/object_detection>* 。
 
 ### 参数展开
 
@@ -255,6 +262,7 @@ ptoto 文件中，一般参数为 message 类型。映射到 eKuiper 中，其�
 2. 参数展开，按照 message 中定义的顺序，传入多个参数
 
 在上面的例子中，objectDetection 接收一个 message 参数。
+
 ```protobuf
 message ObjectDetectionRequest {
   string cmd = 1;

@@ -1,6 +1,7 @@
 # InfluxDB 目标（Sink）
 
 该插件将分析结果发送到 InfluxDB V2.X 中。
+
 ## 编译部署插件
 
 在编译之前，请对源代码做如下更改：
@@ -8,6 +9,7 @@
 - 在 `go.mod` 文件中增加对 InfluxDB 库文件的引用
 
 ### 本地构建
+
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -o plugins/sinks/influx2.so extensions/sinks/influx/influx2.go
@@ -18,13 +20,16 @@
 ```
 
 ### 镜像构建
-```
+
+```shell
 docker build -t demo/plugins:v1 -f build/plugins/Dockerfile .
 docker run demo/plugins:v1
 docker cp  90eae15a7245:/workspace/_plugins/debian/sinks /tmp
 ```
+
 Dockerfile 如下所示：
-```
+
+```dockerfile
 ## plase check go version that kuiper used
 ARG GO_VERSION=1.18.5
 FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
@@ -34,8 +39,10 @@ RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN make plugins_c
 CMD ["sleep","3600"]
 ```
+
 在Makefile中添加：
-```
+
+```dockerfile
 PLUGINS_CUSTOM := sinks/influx2
 
 .PHONY: plugins_c $(PLUGINS_CUSTOM)
@@ -44,7 +51,7 @@ plugins_c: $(PLUGINS_CUSTOM)
 $(PLUGINS_CUSTOM): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS_CUSTOM): PLUGIN_NAME = $(word 2, $(subst /, , $@))
 $(PLUGINS_CUSTOM):
-	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+  @$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
 ```
 
 重新启动 eKuiper 服务器以激活插件。
@@ -68,6 +75,7 @@ $(PLUGINS_CUSTOM):
 下面是选择温度大于50度的样本规则，和一些配置文件仅供参考。
 
 ### /tmp/influxRule.txt
+
 ```json
 {
   "id": "influx",
@@ -89,14 +97,18 @@ $(PLUGINS_CUSTOM):
   ]
 }
 ```
+
 ### /tmp/influxPlugin.txt
+
 ```json
 {
   "file":"http://localhost:8080/influx2.zip"
 }
 ```
+
 ### plugins/go.mod
-```
+
+```go
 module plugins
 
 go 1.18

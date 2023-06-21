@@ -4,13 +4,13 @@
 
 ## 问题
 
-在物联网场景中，终端设备如传感器往往数量众多，通常采集软件会将所有设备的数据合并到一个数据流中。由于每个传感器的采集和响应周期不同，数据流中就会间杂各种设备的数据，而且数据较为碎片化，每个事件只包含了一个传感器的数据。例如，传感器A每秒采集一次温度数据，传感器B每5秒采集一次湿度数据，传感器C每10秒采集一次数据，那么数据流中就会有A、B、C三种数据，每种数据的采集频率不同，但都混杂到一起。后端应用中，同一组传感器的设置通常是相关联的，需要将同一组传感器的数据合并到一起，以便后续处理。
+在物联网场景中，终端设备如传感器往往数量众多，通常采集软件会将所有设备的数据合并到一个数据流中。由于每个传感器的采集和响应周期不同，数据流中就会间杂各种设备的数据，而且数据较为碎片化，每个事件只包含了一个传感器的数据。例如，传感器A每秒采集一次温度数据，传感器B每5秒采集一次湿度数据，传感器C每10秒采集一次数据，那么数据流中就会有 A、B、C 三种数据，每种数据的采集频率不同，但都混杂到一起。后端应用中，同一组传感器的设置通常是相关联的，需要将同一组传感器的数据合并到一起，以便后续处理。
 
 ## 输入样例
 
 数据流里温湿度传感器数据混杂，且数据都不完整。
 
-```
+```text
 {"device_id":"B","humidity":79.66,"ts":1681786070367}
 {"device_id":"A","temperature":27.23,"ts":1681786070368}
 {"device_id":"B","humidity":83.86,"ts":1681786070477}
@@ -63,7 +63,7 @@ SELECT latest(temperature, 0) as temperature, latest(humidity, 0) as humidity, t
 
 通过这个规则，从样例输入序列中我们可以得到如下输出：
 
-```
+```text
 {"humidity":79.66,"temperature":0,"ts":1681786070367}
 {"humidity":79.66,"temperature":27.23,"ts":1681786070368}
 {"humidity":83.86,"temperature":27.23,"ts":1681786070477}
@@ -86,7 +86,7 @@ SELECT latest(temperature, 0) as temperature, latest(humidity, 0) as humidity, t
 {"humidity":80.5,"temperature":30.34,"ts":1681786071362}
 ```
 
-用户可以根据实际需求，再添加`where`语句对输出做进一步过滤，例如[解决方案3](#3-时间相近的数据合并)中根据时间戳进行了过滤。
+用户可以根据实际需求，再添加 `where` 语句对输出做进一步过滤，例如[解决方案3](#3-时间相近的数据合并)中根据时间戳进行了过滤。
 
 ### 2. 以温度为准输出
 
@@ -100,7 +100,7 @@ SELECT temperature, latest(humidity, 0) as humidity, ts FROM demoStream WHERE is
 
 通过这个规则，从样例输入序列中我们可以得到如下输出：
 
-```
+```text
 {"humidity":79.66,"temperature":27.23,"ts":1681786070368}
 {"humidity":83.86,"temperature":27.68,"ts":1681786070479}
 {"humidity":83.86,"temperature":27.28,"ts":1681786070588}
@@ -115,7 +115,7 @@ SELECT temperature, latest(humidity, 0) as humidity, ts FROM demoStream WHERE is
 
 ### 3. 时间相近的数据合并
 
-这种合并算法基于各传感器数据采集频率相同的假设，时间相近的数据应当包含所有需要的传感器数据，但各个数据收到的时间不固定。以温湿度为例，规则可能先收到温度数据，也可能先收到湿度数据，但是相同批次的数据之间的时间间隔应当接近；相反的是，不同批次的数据之间，时间间隔相对较大。 
+这种合并算法基于各传感器数据采集频率相同的假设，时间相近的数据应当包含所有需要的传感器数据，但各个数据收到的时间不固定。以温湿度为例，规则可能先收到温度数据，也可能先收到湿度数据，但是相同批次的数据之间的时间间隔应当接近；相反的是，不同批次的数据之间，时间间隔相对较大。
 
 ```SQL
 SELECT latest(temperature, 0) as temperature, latest(humidity, 0) as humidity, ts FROM demoStream WHERE ts - lag(ts) < 10
@@ -125,7 +125,7 @@ SELECT latest(temperature, 0) as temperature, latest(humidity, 0) as humidity, t
 
 通过这个规则，从样例输入序列中我们可以得到如下输出：
 
-```
+```text
 {"humidity":79.66,"temperature":27.23,"ts":1681786070368}
 {"humidity":83.86,"temperature":27.68,"ts":1681786070479}
 {"humidity":75.79,"temperature":27.28,"ts":1681786070590}
@@ -150,7 +150,7 @@ SELECT avg(temperature) as temperature, avg(humidity) as humidity, window_end() 
 
 通过这个规则，从样例输入序列中我们可以得到如下输出：
 
-```
+```text
 {"humidity":81.75999999999999,"temperature":27.455,"ts":1681786070500}
 {"humidity":77.5625,"temperature":27.332500000000003,"ts":1681786071000}
 ```

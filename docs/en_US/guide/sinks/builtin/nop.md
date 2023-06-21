@@ -5,5 +5,3 @@ The action is an Nop sink, the result sent to this sink will be ignored. If spec
 | Property name | Optional | Description                                                                                                          |
 |---------------|----------|----------------------------------------------------------------------------------------------------------------------|
 | log           | true     | true/false - print the sink result to log or not. By default is `false`, that will not print the result to log file. |
-
-

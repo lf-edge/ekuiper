@@ -60,7 +60,6 @@ GET http://localhost:9081/config/uploads
 ]
 ```
 
-
 ## 删除已上传文件
 
 该 API 用于删除 `${dataPath}/uploads` 路径下的文件。

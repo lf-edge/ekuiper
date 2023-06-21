@@ -1,6 +1,7 @@
 # 插件管理
 
-eKuiper 插件命令行工具使您可以管理插件，例如创建，显示和删除插件。 请注意，删除插件将需要重新启动eKuiper 才能生效。 要更新插件，请执行以下操作：
+eKuiper 插件命令行工具使您可以管理插件，例如创建，显示和删除插件。 请注意，删除插件将需要重新启动 eKuiper 才能生效。 要更新插件，请执行以下操作：
+
 1. 删除插件。
 2. 重新启动 eKuiper。
 3. 使用新配置创建插件。
@@ -48,6 +49,7 @@ create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_typ
 ```
 
 ### 参数
+
 1. plugin_type：插件类型，可用值为 `["source", "sink", "function", "portable"]`
 2. plugin_name：插件的唯一名称。名称首字母必须小写。例如，如果导出的插件名称为 `Random`，则此插件的名称为 `Random`。
 3. file：插件文件的网址。 它必须是一个 zip 文件，其中包含：编译后的 so 文件和 yaml 文件（仅源文件需要）。 文件名称必须与插件名称匹配。 关于命名规则，查看 [扩展名](../../extension/overview.md) 。
@@ -70,6 +72,7 @@ function2
 ```
 
 ## 描述插件
+
 该命令用于打印插件的详细定义。
 
 ```shell
@@ -93,6 +96,7 @@ describe plugin $plugin_type $plugin_name
 ```shell
 drop plugin $plugin_type $plugin_name -s $stop 
 ```
+
 其中，`-s $stop` 是可选的布尔参数。 如果将其设置为 true，则 eKuiper 服务器将停止，以使删除生效。 用户将需要手动重新启动它。
 
 示例：
@@ -108,7 +112,7 @@ Plugin random is dropped.
 
 ### 显示用户自定义函数列表
 
-此命令用于展示所有自定义的函数的名称。 
+此命令用于展示所有自定义的函数的名称。
 
 ```shell
 show udfs

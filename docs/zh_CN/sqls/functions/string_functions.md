@@ -4,7 +4,7 @@
 
 ## CONCAT
 
-```
+```text
 concat(col1...)
 ```
 
@@ -12,7 +12,7 @@ concat(col1...)
 
 ## ENDSWITH
 
-```
+```text
 endswith(col1, col2)
 ```
 
@@ -20,7 +20,7 @@ endswith(col1, col2)
 
 ## FORMAT_TIME
 
-```
+```text
 format_time(col, format)
 ```
 
@@ -56,7 +56,7 @@ format_time(col, format)
 
 ## INDEXOF
 
-```
+```text
 indexof(col1, col2)
 ```
 
@@ -64,7 +64,7 @@ indexof(col1, col2)
 
 ## LENGTH
 
-```
+```text
 length(col)
 ```
 
@@ -72,7 +72,7 @@ length(col)
 
 ## LOWER
 
-```
+```text
 lower(col)
 ```
 
@@ -80,7 +80,7 @@ lower(col)
 
 ## LPAD
 
-```
+```text
 lpad(col, padNum)
 ```
 
@@ -88,7 +88,7 @@ lpad(col, padNum)
 
 ## LTRIM
 
-```
+```text
 ltrim(col)
 ```
 
@@ -96,7 +96,7 @@ ltrim(col)
 
 ## NUMBYTES
 
-```
+```text
 numbytes(col)
 ```
 
@@ -104,7 +104,7 @@ numbytes(col)
 
 ## REGEXP_MATCHES
 
-```
+```text
 regexp_matches(col, regex)
 ```
 
@@ -112,7 +112,7 @@ regexp_matches(col, regex)
 
 ## REGEXP_REPLACE
 
-```
+```text
 regexp_replace(col, regex, str)
 ```
 
@@ -120,7 +120,7 @@ regexp_replace(col, regex, str)
 
 ## REGEXP_SUBSTR
 
-```
+```text
 regexp_substr(col, regex)
 ```
 
@@ -128,7 +128,7 @@ regexp_substr(col, regex)
 
 ## RPAD
 
-```
+```text
 rpad(col, padNum)
 ```
 
@@ -136,7 +136,7 @@ rpad(col, padNum)
 
 ## RTRIM
 
-```
+```text
 rtrim(col)
 ```
 
@@ -144,7 +144,7 @@ rtrim(col)
 
 ## SUBSTRING
 
-```
+```text
 substring(col, start, end)
 ```
 
@@ -152,7 +152,7 @@ substring(col, start, end)
 
 ## STARTSWITH
 
-```
+```text
 startswith(col, str)
 ```
 
@@ -160,7 +160,7 @@ startswith(col, str)
 
 ## SPLIT_VALUE
 
-```
+```text
 split_value(col, splitter, index)
 ```
 
@@ -168,7 +168,7 @@ split_value(col, splitter, index)
 
 ## TRIM
 
-```
+```text
 trim(col)
 ```
 
@@ -176,7 +176,7 @@ trim(col)
 
 ## UPPER
 
-```
+```text
 upper(col)
 ```
 

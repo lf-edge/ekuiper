@@ -12,9 +12,8 @@ eKuiper has many built-in functions for performing calculations on data.
 - [JSON Functions](./json_functions.md)
 - [Other Functions](./other_functions.md)
 
-
 - [Analytic Functions](./analytic_functions.md)
-- [Multi-Row Functions](./multi_row_functions.md
+- [Multi-Row Functions](./multi_row_functions.md)
 - [Multi-Column Functions](./multi_column_functions.md)
 
 eKuiper also provides a set of functions though shipped plugins. Users need to install the plugins before using them.

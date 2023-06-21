@@ -6,7 +6,7 @@ Streaming data is a sequence of data elements made available over time. Stream p
 
 Stream processing has the below characteristics:
 
-- Unbounded data: streaming data is a type of ever-growing, essentially infinite data set which cannot be operated as a whole. 
+- Unbounded data: streaming data is a type of ever-growing, essentially infinite data set which cannot be operated as a whole.
 - Unbounded data processing: As applying to unbounded data, the stream processing itself is also unbounded. The workload can distribute evenly across time compared to batch processing.
 - Low-latency, near real-time: stream processing can process data once it is produced to get the result in a very low latency.
 
@@ -28,4 +28,3 @@ The state information can be found or managed by:
 
 - [Windows](./windowing.md)
 - [State API](../../extension/native/overview.md#state-storage)
-
