@@ -6,7 +6,6 @@
 
 ```text
 cast(col,  "bigint")
-``
 ```
 
 将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean，bytea 和 datetime。
@@ -67,3 +66,19 @@ decompress(input, "zlib")
 ```
 
 解压缩输入的字符串或二进制值。目前支持 'zlib', 'gzip', 'flate' 和 'zstd' 压缩算法。
+
+## HEX2DEC
+
+```text
+hex2dec(col)
+```
+
+返回给定16进制字符串的10进制数值, 参数的数据类型需要是 string, 如果参数是 `"0x10"` 或 `"10"`,则将其转换为 `16`。
+
+## DEC2HEX
+
+```text
+dec2hex(col)
+```
+
+返回给定 Int 类型10进制的16进制字符串,如果参数为 `16`,则将其转换为 `"0x10"`。

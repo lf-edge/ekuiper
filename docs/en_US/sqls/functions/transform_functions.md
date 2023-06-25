@@ -73,3 +73,19 @@ chr(col)
 ```
 
 Returns the ASCII character that corresponds to the given Int argument.
+
+## HEX2DEC
+
+```text
+hex2dec(col)
+```
+
+Returns the decimal value of the given hexadecimal string. The data type of the parameter needs to be string. If the parameter is `"0x10"` or `"10"`, convert it to `16`.
+
+## DEC2HEX
+
+```text
+dec2hex(col)
+```
+
+Returns the hexadecimal string of the given Int type decimal, if the parameter is `16`, convert it to `"0x10"`.
