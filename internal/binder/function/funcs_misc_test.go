@@ -381,6 +381,43 @@ func TestKeyedStateExec(t *testing.T) {
 	_ = keyedstate.ClearKeyedState()
 }
 
+func TestHexIntFunctions(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		name   string
+		args   []interface{}
+		result interface{}
+	}{
+		{
+			name: "hex2dec",
+			args: []interface{}{
+				"0x10",
+			},
+			result: int64(16),
+		},
+		{
+			name: "dec2hex",
+			args: []interface{}{
+				16,
+			},
+			result: "0x10",
+		},
+	}
+	for i, tt := range tests {
+		f, ok := builtins[tt.name]
+		if !ok {
+			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
+		}
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
 func TestMiscFuncNil(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)

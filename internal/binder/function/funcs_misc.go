@@ -25,6 +25,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -576,6 +577,36 @@ func registerMiscFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["hex2dec"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			hex, ok := args[0].(string)
+			if !ok {
+				return fmt.Errorf("invalid input type: %v please input hex string", args[0]), false
+			}
+			hex = strings.TrimPrefix(hex, "0x")
+			dec, err := strconv.ParseInt(hex, 16, 64)
+			if err != nil {
+				return fmt.Errorf("invalid hexadecimal value: %v", hex), false
+			}
+			return dec, true
+		},
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["dec2hex"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			dec, err := cast.ToInt(args[0], cast.STRICT)
+			if err != nil {
+				return err, false
+			}
+			hex := "0x" + strconv.FormatInt(int64(dec), 16)
+			return hex, true
+		},
+		val:   ValidateOneStrArg,
 		check: returnNilIfHasAnyNil,
 	}
 }
