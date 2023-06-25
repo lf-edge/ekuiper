@@ -765,9 +765,23 @@ func TestWindow(t *testing.T) {
 
 func TestEventWindow(t *testing.T) {
 	// Reset
-	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2"}
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
+		{
+			Name: `TestEventWindowDelayRule0`,
+			Sql:  `SELECT color  FROM demoE GROUP BY SlidingWindow(ss, 1,1) FILTER (where size = 3)`,
+			R: [][]map[string]interface{}{
+				{{
+					"color": "red",
+				}},
+			},
+			M: map[string]interface{}{
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+			},
+		},
 		{
 			Name: `TestEventWindowRule1`,
 			Sql:  `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
@@ -1535,4 +1549,54 @@ func TestWindowError(t *testing.T) {
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
+}
+
+func TestEventSlidingWindow(t *testing.T) {
+	// Reset
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: `TestEventWindowRuleDelay`,
+			Sql:  `SELECT color  FROM demoE GROUP BY SlidingWindow(ss, 1,1) FILTER (where size = 3)`,
+			R: [][]map[string]interface{}{
+				{{
+					"color": "red",
+				}},
+			},
+			M: map[string]interface{}{
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+			},
+		},
+	}
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		},
+		{
+			BufferLength: 100,
+			SendError:    true,
+			IsEventTime:  true,
+			LateTol:      1000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 10)
+	}
 }
