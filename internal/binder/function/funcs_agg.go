@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -188,6 +188,26 @@ func registerAggFunc() {
 			return make([]interface{}, 0), true
 		},
 		val: ValidateOneArg,
+	}
+	builtins["merge_agg"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			data, ok := args[0].([]interface{})
+			if ok {
+				result := make(map[string]interface{})
+				for _, ele := range data {
+					if m, ok := ele.(map[string]interface{}); ok {
+						for k, v := range m {
+							result[k] = v
+						}
+					}
+				}
+				return result, true
+			}
+			return nil, true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["deduplicate"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
