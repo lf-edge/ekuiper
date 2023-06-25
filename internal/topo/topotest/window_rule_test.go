@@ -770,11 +770,16 @@ func TestEventWindow(t *testing.T) {
 	tests := []RuleTest{
 		{
 			Name: `TestEventWindowDelayRule0`,
-			Sql:  `SELECT color  FROM demoE GROUP BY SlidingWindow(ss, 1,1) FILTER (where size = 3)`,
+			Sql:  `SELECT size FROM demoE GROUP BY SlidingWindow(ss, 1,4) FILTER (where color = "red")`,
 			R: [][]map[string]interface{}{
-				{{
-					"color": "red",
-				}},
+				{
+					{
+						"size": float64(3),
+					},
+					{
+						"size": float64(1),
+					},
+				},
 			},
 			M: map[string]interface{}{
 				"op_2_watermark_0_records_in_total":  int64(6),
@@ -782,10 +787,10 @@ func TestEventWindow(t *testing.T) {
 				"op_2_watermark_0_exceptions_total":  int64(0),
 
 				"op_3_windowFilter_0_records_in_total":  int64(4),
-				"op_3_windowFilter_0_records_out_total": int64(1),
+				"op_3_windowFilter_0_records_out_total": int64(2),
 				"op_3_windowFilter_0_exceptions_total":  int64(0),
 
-				"op_3_window_0_records_in_total":  int64(1),
+				"op_3_window_0_records_in_total":  int64(2),
 				"op_3_window_0_records_out_total": int64(1),
 				"op_3_window_0_exceptions_total":  int64(0),
 			},
