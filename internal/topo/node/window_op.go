@@ -328,8 +328,12 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.Timestamp, ctx)
 				case ast.SLIDING_WINDOW:
-					if o.isMatchCondition(ctx, d) {
+					if o.window.Type != ast.SLIDING_WINDOW {
 						inputs = o.scan(inputs, d.Timestamp, ctx)
+					} else {
+						if o.isMatchCondition(ctx, d) {
+							inputs = o.scan(inputs, d.Timestamp, ctx)
+						}
 					}
 				case ast.SESSION_WINDOW:
 					if timeoutTicker != nil {
@@ -588,7 +592,7 @@ func (o *WindowOperator) GetMetrics() [][]interface{} {
 }
 
 func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) bool {
-	if o.triggerCondition == nil {
+	if o.triggerCondition == nil || o.window.Type != ast.SLIDING_WINDOW {
 		return true
 	}
 	log := ctx.GetLogger()
