@@ -276,7 +276,7 @@ func (rs *RuleState) startScheduleRule() error {
 			now := conf.GetNow()
 			var err error
 			allowed := true
-			for _, timeRange := range rs.Rule.Options.Schedules {
+			for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
 				allowed, err = isInScheduleRange(now, timeRange.Begin, timeRange.End)
 				if err != nil {
 					return false, err

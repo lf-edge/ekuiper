@@ -550,7 +550,7 @@ func TestScheduleRuleInRange(t *testing.T) {
 	}
 	r.Options.Cron = "mockCron"
 	r.Options.Duration = "1s"
-	r.Options.Schedules = []api.ScheduleRange{
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
 		{
 			Begin: before.Format(layout),
 			End:   after.Format(layout),
@@ -584,7 +584,7 @@ func TestScheduleRuleInRange(t *testing.T) {
 		}
 	}()
 
-	r.Options.Schedules = []api.ScheduleRange{
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
 		{
 			Begin: after.Format(layout),
 			End:   after.Format(layout),
