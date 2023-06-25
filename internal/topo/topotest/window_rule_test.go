@@ -777,9 +777,17 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"source_demoE_0_exceptions_total":  int64(0),
-				"source_demoE_0_records_in_total":  int64(6),
-				"source_demoE_0_records_out_total": int64(6),
+				"op_2_watermark_0_records_in_total":  int64(6),
+				"op_2_watermark_0_records_out_total": int64(4),
+				"op_2_watermark_0_exceptions_total":  int64(0),
+
+				"op_3_windowFilter_0_records_in_total":  int64(4),
+				"op_3_windowFilter_0_records_out_total": int64(1),
+				"op_3_windowFilter_0_exceptions_total":  int64(0),
+
+				"op_3_window_0_records_in_total":  int64(1),
+				"op_3_window_0_records_out_total": int64(1),
+				"op_3_window_0_exceptions_total":  int64(0),
 			},
 		},
 		{
