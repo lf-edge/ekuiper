@@ -329,9 +329,9 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 							}
 							switch cf.Expr.(type) {
 							case *ast.Wildcard:
-								m, ok := temp.(Message)
+								m, ok := temp.(map[string]interface{})
 								if !ok {
-									return fmt.Errorf("wildcarder return non message result")
+									return fmt.Errorf("wildcarder return non map result")
 								}
 								for kk, vv := range m {
 									args = append(args, vv)

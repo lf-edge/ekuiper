@@ -75,6 +75,45 @@ collect(col)
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
+## MERGE_AGG
+
+```text
+merge_agg(*)
+merge_agg(col)
+```
+
+将组中的值合并为单个值。若存在重复键时取较后对象的值。它不进行递归操作；只合并顶级键值。
+
+如果参数是列，结果将是一个包含列中所有对象的键的联合的对象。如果列只包含非对象值，则结果将是一个空对象。
+
+## 范例
+
+假设组中的值如下所示：
+
+```json lines
+{"a": {"a": 2}, "b": 2, "c": 3}
+{"a": {"b": 2}, "b": 5, "d": 6}
+{"a": {"a": 3}, "b": 8}
+```
+
+* 合并 * 结果为： `{"a": {"a": 3}, "b": 8, "c": 3, "d": 6}`
+
+    ```sql
+    SELECT merge_agg(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+
+* 合并对象列，结果为： `{"a": 3, "b": 2}`
+
+    ```sql
+    SELECT merge_agg(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+
+* 合并非对象列： `{}`
+
+    ```sql
+    SELECT merge_agg(b) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+
 ## DEDUPLICATE
 
 ```text

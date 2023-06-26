@@ -51,7 +51,7 @@ The sum of all the values in a group. The null values will be ignored.
 
 ```text
 collect(*)
-collect(col1, col2 ...)
+collect(col)
 ```
 
 Returns an array with all columns or the whole record (when the parameter is *) values from the group.
@@ -76,6 +76,67 @@ Examples:
 
     ```sql
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+
+## MERGE_AGG
+
+```text
+merge_agg(*)
+merge_agg(col)
+```
+
+Concatenate values from the group into a single value.
+It concatenates multiple objects by generating an object containing the union of their keys,
+taking the second object's value when there are duplicate keys.
+It does not operate recursively; only the top-level object structure is merged.
+
+If the parameter is a column,
+the result will be an object containing the union of the keys of all the objects in the column.
+If the column contains only non-object values, the result will be an empty object.
+
+## Examples
+
+Given the following values in the group:
+
+```json lines
+{
+  "a": {
+    "a": 2
+  },
+  "b": 2,
+  "c": 3
+}
+{
+  "a": {
+    "b": 2
+  },
+  "b": 5,
+  "d": 6
+}
+{
+  "a": {
+    "a": 3
+  },
+  "b": 8
+}
+```
+
+* Concat wildcard, the result will be: `{"a": {"a": 3}, "b": 8, "c": 3, "d": 6}`
+
+    ```sql
+    SELECT merge_agg(*) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+
+* Concat a specified object column, the result will be: `{"a": 3, "b": 2}`
+
+    ```sql
+    SELECT merge_agg(a) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
+    ```
+
+* Concat a specified non-object column, the result will be: `{}`
+
+    ```sql
+    SELECT merge_agg(b) as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
 ## DEDUPLICATE
