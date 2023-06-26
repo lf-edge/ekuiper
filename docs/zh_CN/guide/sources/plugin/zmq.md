@@ -26,13 +26,14 @@ default:
 test:
   server: tcp://127.0.0.1:5563
 ```
+
 ### 全局配置
 
 用户可以在此处指定全局 zmq 源设置。 连接到Zero Mq 时，`default` 部分中指定的配置项目将被用作源的默认设置。
 
 ### server
 
-源将订阅的Zero Mq 服务器的 URL。
+源将订阅的 Zero Mq 服务器的 URL。
 
 ## 覆盖默认设置
 
@@ -40,11 +41,10 @@ test:
 
 ## 使用示例
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="test", TYPE="zmq");
+    ...
+  ) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="test", TYPE="zmq");
 ```
 
 将使用配置键 "test"。 订阅的 Zero Mq 主题是 `DATASOURCE` 中指定的 "demo"。
-

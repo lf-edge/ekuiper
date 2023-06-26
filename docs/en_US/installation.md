@@ -7,10 +7,13 @@ eKuiper provides docker image, binary packages and helm chart to install.
 Please make sure docker has installed before running.
 
 1. Get docker image.
+
    ```shell
    docker pull lfedge/ekuiper:x.x.x
    ```
+
 2. Start docker container.
+
    ```shell
    docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER=tcp://broker.emqx.io:1883 lfedge/ekuiper:xxx
    ```
@@ -26,6 +29,7 @@ eKuiper manager is a free eKuiper management web console which is provided as a 
 Please make sure docker compose has installed before running.
 
 1. Create `docker-compose.yaml` file.
+
    ```yaml
    version: '3.4'
 
@@ -56,11 +60,15 @@ Please make sure docker compose has installed before running.
             KUIPER__BASIC__CONSOLELOG: "true"
             KUIPER__BASIC__IGNORECASE: "false"
      ```
+
 2. Start docker-compose cluster.
+
    ```shell
    $ docker-compose -p my_ekuiper up -d
    ```
+
 3. Check docker images running status, make sure two containers are started.
+
    ```shell
    $ docker ps
    CONTAINER ID   IMAGE                         COMMAND                  CREATED              STATUS                  PORTS                                                NAMES
@@ -88,54 +96,68 @@ For other operating systems such as Windows, users can [compile from source code
 
 1. Download eKuiper zip or tar for your CPU architecture from [ekuiper.org](https://ekuiper.org/downloads) or [Github](https://github.com/lf-edge/ekuiper/releases).
 2. Unzip the installation file:
+
     ```shell
     unzip kuiper-x.x.x-linux-amd64.zip
     ```
+
 3. Start eKuiper.
+
     ```shell
     $ bin/kuiperd
     ```
+
 4. Remove eKuiper. Simply delete the eKuiper directory.
 
 After installation, all the files are inside the unzipped directory. Please check [installed directory structure](#installation-structure) for detail.
-    
 
 ## Install from package
 
 1. Download eKuiper package for your CPU architecture from [ekuiper.org](https://ekuiper.org/downloads) or [Github](https://github.com/lf-edge/ekuiper/releases).
 2. Install eKuiper.
    - DEB package:
+
      ```shell
      # for debian/ubuntu
      $ sudo apt install ./kuiper-x.x.x-linux-amd64.deb
-     ```   
+     ```
+
    - RPM package:
+
      ```shell
      # for CentOS
      $ sudo rpm -ivh kuiper-x.x.x-linux-amd64.rpm
-     ```   
+     ```
+
 3. Start eKuiper.
    - quick start
+
      ```shell
      $ sudo kuiperd
-     ```   
+     ```
+
    - systemctl
+
      ```shell
      sudo systemctl start kuiper
      ```
+
 4. Remove eKuiper.
    - DEB:
+
      ```shell
      sudo apt remove --purge kuiper
      ```
+
    - RPM:
+
      ```shell
      sudo yum remove kuiper
      ```
-     
+
 When installing by package, the eKuiper folders are not in the same directory. The installation structure is as below:
 
-```
+```text
 /usr/lib/kuiper/bin
   kuiperd
   kuiper
@@ -152,11 +174,14 @@ When installing by package, the eKuiper folders are not in the same directory. T
 ## Install via Helm (K8S、K3S)
 
 1. Add helm repository.
+
    ```shell
     $ helm repo add emqx https://repos.emqx.io/charts
     $ helm repo update
    ```
+
 2. Query eKuiper.
+
    ```shell
     $ helm search repo emqx
     NAME         CHART VERSION APP VERSION DESCRIPTION
@@ -164,11 +189,15 @@ When installing by package, the eKuiper folders are not in the same directory. T
     emqx/emqx-ee v4.0.0        v4.0.0      A Helm chart for EMQX
     emqx/ekuiper  0.1.1         0.1.1       A lightweight IoT edge analytic software
    ```
+
 3. Start eKuiper.
+
    ```shell
     $ helm install my-ekuiper emqx/ekuiper
-   ``` 
+   ```
+
 4. View eKuiper status.
+
    ```shell
    $ kubectl get pods
    NAME         READY  STATUS    RESTARTS  AGE
@@ -178,26 +207,31 @@ When installing by package, the eKuiper folders are not in the same directory. T
 ## Compile from source code
 
 1. Get the source code.
+
    ```shell
    $ git clone https://github.com/lf-edge/ekuiper.git
    ```
-2. Compile. 
+
+2. Compile.
+
    ```shell
    $ make
    ```
+
 3. Start eKuiper.
+
    ```shell
    $ cd _build/kuiper-x.x.x-linux-amd64/
    $ bin/kuiperd
    ```
-   
+
 eKuiper allows to tailor the binary in compilation to get a customized feature set. As written by go, it also allows cross compilation. For detail, please check [compilation](./operation/compile/compile.md).
 
 ## Installation structure
 
 Below is the directory structure after installation.
 
-```shell
+```text
 bin
   kuiperd
   kuiper

@@ -6,7 +6,7 @@
 
 在 EdgeX 消息总线上收到的数据结构如下，一个 `Event` 结构体封装了相关的「元数据」(ID, DeviceName, ProfileName, SourceName, Origin, Tags)，以及从设备服务中采集到的实际数据 (在 `Readings` 字段中) 。
 
-与`Event` 类似， `Reading` 也包含了一些元数据 (ID, DeviceName... 等)。
+与 `Event` 类似，`Reading` 也包含了一些元数据 (ID, DeviceName... 等)。
 
 - Event
   - ID
@@ -57,7 +57,7 @@
 
 - FROM 子句中的 `events` 为黄色高亮，就是在第一步中定义的流名字。
 - SELECT 中的 `temperature` & `humidity` 字段为红色高亮，它们是 readings 中的 `Name` 字段的值。
-- WHERE 子句中的 `meta(deviceName)` 为绿色高亮，用于从 `Events `结构体中抽取 `device` 字段。该 SQL 语句将过滤所有设备名称不是 `demo` 的记录。
+- WHERE 子句中的 `meta(deviceName)` 为绿色高亮，用于从 `Events` 结构体中抽取 `device` 字段。该 SQL 语句将过滤所有设备名称不是 `demo` 的记录。
 
 <img src="./sql.png" style="zoom:50%;" />
 
@@ -67,11 +67,11 @@
 
    从 Event 结构体中获取 'origin' 元数据
 
-2. `meta(temperature -> origin)`: 123 
+2. `meta(temperature -> origin)`: 123
 
    从 reading[0] 中获取  'origin' 元数据，以 'temperature'  为 key
 
-3. `meta(humidity -> origin)`: 456 
+3. `meta(humidity -> origin)`: 456
 
    从 reading[1] 中获取  'origin' 元数据，以 'humidity' 为 key
 

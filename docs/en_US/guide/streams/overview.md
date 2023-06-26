@@ -73,13 +73,13 @@ The stream will subscribe to MQTT topic ``topic/temperature``, the server connec
 
 ```sql
 demo (
-		USERID BIGINT,
-		FIRST_NAME STRING,
-		LAST_NAME STRING,
-		NICKNAMES ARRAY(STRING),
-		Gender BOOLEAN,
-		ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
+        USERID BIGINT,
+        FIRST_NAME STRING,
+        LAST_NAME STRING,
+        NICKNAMES ARRAY(STRING),
+        Gender BOOLEAN,
+        ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+    ) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
 The stream will subscribe to MQTT topic `test/`, the server connection uses settings of `demo` section in configuration file `$ekuiper/etc/mqtt_source.yaml`.
@@ -102,10 +102,10 @@ By default, each rule will instantiate its own source instance. In some scenario
 
 To use the share instance mode, just set the `SHARED` option to true in the stream definition.
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
+        ...
+    ) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
 
 ## Schema
@@ -120,13 +120,14 @@ Overall, we will support 3 recursive ways of schema.
 
 Both the logical and physical schema definitions are used for SQL syntax validation in the parsing and loading phases of rule creation and for runtime optimization. The inferred schema of the stream can be obtained via [Schema API](../../api/restapi/streams.md#get-stream-schema).
 
-
 ### Strict Validation
 
 Used only for logically schema streams. If strict validation is set, the rule will verify the existence of the field and validate the field type based on the schema. If the data is in good format, it is recommended to turn off validation.
 
 ### Schema-less stream
+
 If the data type of the stream is unknown or varying, we can define it without the fields. This is called schema-less. It is defined by leaving the fields empty.
+
 ```sql
 schemaless_stream 
   ()
@@ -143,7 +144,7 @@ Specify "BINARY" format for streams of binary data such as image or video stream
 
 ```sql
 demoBin (
-	image BYTEA
+    image BYTEA
 ) WITH (DATASOURCE="test/", FORMAT="BINARY");
 ```
 

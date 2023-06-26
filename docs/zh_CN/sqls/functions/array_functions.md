@@ -4,7 +4,7 @@
 
 ## CARDINALITY
 
-```
+```text
 cardinality(array)
 ```
 
@@ -12,7 +12,7 @@ cardinality(array)
 
 ## ARRAY_POSITION
 
-```
+```text
 array_position(array, value)
 ```
 
@@ -20,7 +20,7 @@ array_position(array, value)
 
 ## ELEMENT_AT
 
-```
+```text
 element_at(array, index)
 ```
 
@@ -28,7 +28,7 @@ element_at(array, index)
 
 ## ARRAY_CONTAINS
 
-```
+```text
 array_contains(array, value)
 ```
 
@@ -36,7 +36,7 @@ array_contains(array, value)
 
 ## ARRAY_CREATE
 
-```
+```text
 array_create(value1, ......)
 ```
 
@@ -44,7 +44,7 @@ array_create(value1, ......)
 
 ## ARRAY_REMOVE
 
-```
+```text
 array_remove(array, value)
 ```
 
@@ -52,7 +52,7 @@ array_remove(array, value)
 
 ## ARRAY_LAST_POSITION
 
-```
+```text
 array_last_position(array, val)
 ```
 
@@ -60,7 +60,7 @@ array_last_position(array, val)
 
 ## ARRAY_CONTAIN_ANY
 
-```
+```text
 array_contain_any(array1, array2)
 ```
 
@@ -68,7 +68,7 @@ array_contain_any(array1, array2)
 
 ## ARRAY_INTERSECT
 
-```
+```text
 array_intersect(array1, array2)
 ```
 
@@ -76,7 +76,7 @@ array_intersect(array1, array2)
 
 ## ARRAY_UNION
 
-```
+```text
 array_union(array1, array2)
 ```
 
@@ -84,7 +84,7 @@ array_union(array1, array2)
 
 ## ARRAY_MAX
 
-```
+```text
 array_max(array)
 ```
 
@@ -92,7 +92,7 @@ array_max(array)
 
 ## ARRAY_MIN
 
-```
+```text
 array_min(array)
 ```
 
@@ -100,7 +100,7 @@ array_min(array)
 
 ## ARRAY_EXCEPT
 
-```
+```text
 array_except(array1, array2)
 ```
 
@@ -108,7 +108,7 @@ array_except(array1, array2)
 
 ## REPEAT
 
-```
+```text
 repeat(value, count)
 ```
 
@@ -116,7 +116,7 @@ repeat(value, count)
 
 ## SEQUENCE
 
-```
+```text
 sequence(start, stop[, step])
 ```
 

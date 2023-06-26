@@ -115,7 +115,7 @@ func (p *defaultFieldProcessor) validateAndConvertField(sf *ast.JsonStreamField,
 				return nil, fmt.Errorf("expect map but found %[1]T(%[1]v)", t)
 			}
 		} else if jtype == reflect.String {
-			err := json.Unmarshal([]byte(t.(string)), &nextJ)
+			err := json.Unmarshal(cast.StringToBytes(t.(string)), &nextJ)
 			if err != nil {
 				return nil, fmt.Errorf("invalid data type for %s, expect map but found %[1]T(%[1]v)", t)
 			}

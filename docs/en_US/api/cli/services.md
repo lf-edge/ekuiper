@@ -18,8 +18,7 @@ Example：
 # bin/kuiper create service sample '{"name": "sample","file": "file:///tmp/sample.zip"}'
 ```
 
-This command creates a service named sample whose content is provided by `file` field in the json. 
-
+This command creates a service named sample whose content is provided by `file` field in the json.
 
 ## Show services and service_funcs
 
@@ -81,7 +80,6 @@ Example：
 
 ```
 
-
 ## Describe a service function
 
 The command prints the detailed information of a service function.
@@ -100,7 +98,6 @@ Example：
   "MethodName": "label"
 }
 ```
-
 
 ## Drop a service
 

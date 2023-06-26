@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,27 +57,23 @@ func (ms *MultiSorter) Less(i, j int) bool {
 		if vp == nil && vq != nil {
 			return false
 		} else if vp != nil && vq == nil {
-			ms.valueSwap(true, i, j)
 			return true
 		} else if vp == nil && vq == nil {
 			return false
 		}
 		switch {
 		case v.simpleDataEval(vp, vq, ast.LT):
-			ms.valueSwap(field.Ascending, i, j)
 			return field.Ascending
 		case v.simpleDataEval(vq, vp, ast.LT):
-			ms.valueSwap(!field.Ascending, i, j)
 			return !field.Ascending
 		}
 	}
 	return false
 }
 
-func (ms *MultiSorter) valueSwap(s bool, i, j int) {
-	if s {
-		ms.values[i], ms.values[j] = ms.values[j], ms.values[i]
-	}
+func (ms *MultiSorter) Swap(i, j int) {
+	ms.values[i], ms.values[j] = ms.values[j], ms.values[i]
+	ms.SortingData.Swap(i, j)
 }
 
 // Sort sorts the argument slice according to the less functions passed to OrderedBy.

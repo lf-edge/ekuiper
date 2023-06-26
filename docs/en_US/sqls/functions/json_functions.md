@@ -6,7 +6,7 @@ to [json path functions](../json_expr.md#json-path-functions) for how to compose
 
 ## TO_JSON
 
-```
+```text
 to_json(col)
 ```
 
@@ -15,7 +15,7 @@ NULL.
 
 ## PARSE_JSON
 
-```
+```text
 parse_json(col)
 ```
 
@@ -23,7 +23,7 @@ Converts a JSON string to a value. If the input is NULL, the result is also NULL
 
 ## JSON_PATH_EXISTS
 
-```
+```text
 json_path_exists(col, json_path)
 ```
 
@@ -31,7 +31,7 @@ Check whether JSON path returns any item for the specified JSON value. Return bo
 
 ## JSON_PATH_QUERY
 
-```
+```text
 json_path_query(col, json_path)
 ```
 
@@ -39,7 +39,7 @@ Get all items returned by JSON path for the specified JSON value.
 
 ## JSON_PATH_QUERY_FIRST
 
-```
+```text
 json_path_query_first(col, json_path)
 ```
 

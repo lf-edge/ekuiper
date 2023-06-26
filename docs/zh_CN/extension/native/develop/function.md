@@ -17,6 +17,7 @@
 //The argument is a list of xsql.Expr
 Validate(args []interface{}) error
 ```
+
 函数有2种类型：聚合函数和通用函数。 对于聚合函数，如果参数为列，则接收的值将始终是组中列值的一部分。 扩展函数必须通过实施 _IsAggregate_ 方法来区分函数类型。
 
 ```go
@@ -54,6 +55,7 @@ var(
 同一类的函数可以在一个插件里开发和导出以减少构建和部署开销。
 
 ### 源文件打包
+
 将实现的函数构建为 go 插件，并确保输出 so 文件位于 plugins/functions 文件夹中。
 
 ```bash
@@ -77,6 +79,7 @@ eKuiper 启动时会自动载入插件目录里已编译好的插件。自动载
 2. 编译的 MyFunction.so 文件位于 _plugins/functions_ 内部
 
 要使用它，只需在规则定义中的 SQL 中调用它：
+
 ```json
 {
   "id": "rule1",

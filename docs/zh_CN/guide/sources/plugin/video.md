@@ -32,6 +32,7 @@ ext:
 dedup:
   interval: 100
 ```
+
 ### 全局配置
 
 用户可以在此处指定全局随机源设置。 运行此源时，将在 `default` 部分中指定的配置项目作为源的默认设置。
@@ -44,18 +45,16 @@ dedup:
 
 发出消息的间隔（毫秒）。
 
-
 ## 覆盖默认设置
 
-如果您有特定的连接需要覆盖默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建一个名为 `ext` 的特定设置。 然后，您可以在创建流定义时使用选项`CONF_KEY` 指定配置（有关更多信息，请参见 [stream specs](../../../sqls/streams.md)）。
+如果您有特定的连接需要覆盖默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建一个名为 `ext` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [stream specs](../../../sqls/streams.md)）。
 
 ## 使用示例
 
-```
+```text
 demo (
-		...
-	) WITH (FORMAT="JSON", CONF_KEY="ext", TYPE="video");
+    ...
+  ) WITH (FORMAT="JSON", CONF_KEY="ext", TYPE="video");
 ```
 
 配置键 "ext" 将被使用。
-

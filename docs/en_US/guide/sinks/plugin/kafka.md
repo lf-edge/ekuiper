@@ -5,6 +5,7 @@ The sink will publish the result into a Kafka .
 ## Compile & deploy plugin
 
 ### build in shell
+
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -o plugins/sinks/kafka.so extensions/sinks/kafka/kafka.go
@@ -15,13 +16,16 @@ The sink will publish the result into a Kafka .
 ```
 
 ### build with image
-```
+
+```shell
 docker build -t demo/plugins:v1 -f build/plugins/Dockerfile .
 docker run demo/plugins:v1
 docker cp  90eae15a7245:/workspace/_plugins/debian/sinks /tmp
 ```
+
 Dockerfile like this：
-```
+
+```dockerfile
 ## plase check go version that kuiper used
 ARG GO_VERSION=1.18.5
 FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
@@ -31,8 +35,10 @@ RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN make plugins_c
 CMD ["sleep","3600"]
 ```
+
 add this in Makefile：
-```
+
+```dockerfile
 PLUGINS_CUSTOM := sinks/kafka
 
 .PHONY: plugins_c $(PLUGINS_CUSTOM)
@@ -41,7 +47,7 @@ plugins_c: $(PLUGINS_CUSTOM)
 $(PLUGINS_CUSTOM): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS_CUSTOM): PLUGIN_NAME = $(word 2, $(subst /, , $@))
 $(PLUGINS_CUSTOM):
-	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+  @$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
 ```
 
 Restart the eKuiper server to activate the plugin.
@@ -56,7 +62,6 @@ Restart the eKuiper server to activate the plugin.
 | saslUserName  | true     | The sasl user name                                |
 | saslPassword  | true     | The sasl password                                 |
 
-
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
 ## Sample usage
@@ -64,6 +69,7 @@ Other common sink properties are supported. Please refer to the [sink common pro
 Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
 
 ### /tmp/kafkaRule.txt
+
 ```json
 {
   "id": "kafka",
@@ -82,7 +88,9 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
   ]
 }
 ```
+
 ### /tmp/kafkaPlugin.txt
+
 ```json
 {
    "file":"http://localhost:8080/kafka.zip"

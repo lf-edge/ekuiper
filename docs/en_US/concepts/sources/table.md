@@ -19,7 +19,7 @@ Lookup table do not store the table content in memory but refer to the external 
 
 - Memory source: if a memory source is used as table type, we need to accumulate the data as a table in memory. It can serve as a intermediate to convert any stream into a lookup table.
 - Redis source: Support to query by redis key.
-- SQL source: This is the most typical lookup source. We can use SQL directly to query. 
+- SQL source: This is the most typical lookup source. We can use SQL directly to query.
 
 Unlike scan tables, lookup table will run separately from rules. Thus, all rules that refer to a lookup table can actually query the same table content.
 

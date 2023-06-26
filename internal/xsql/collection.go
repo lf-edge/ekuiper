@@ -222,7 +222,7 @@ func (w *WindowTuples) Meta(key, table string) (interface{}, bool) {
 	return nil, false
 }
 
-func (w *WindowTuples) All(_ string) (Message, bool) {
+func (w *WindowTuples) All(_ string) (map[string]interface{}, bool) {
 	return w.ToMap(), true
 }
 
@@ -362,7 +362,7 @@ func (s *JoinTuples) Meta(key, table string) (interface{}, bool) {
 	return s.Content[0].Meta(key, table)
 }
 
-func (s *JoinTuples) All(_ string) (Message, bool) {
+func (s *JoinTuples) All(_ string) (map[string]interface{}, bool) {
 	return s.ToMap(), true
 }
 

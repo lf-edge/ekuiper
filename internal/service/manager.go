@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
@@ -478,7 +479,7 @@ func (m *Manager) UninstallAllServices() {
 
 func (m *Manager) servicesRegisterForImport(_, v string) error {
 	req := &ServiceCreationRequest{}
-	err := json.Unmarshal([]byte(v), req)
+	err := json.Unmarshal(cast.StringToBytes(v), req)
 	if err != nil {
 		return err
 	}

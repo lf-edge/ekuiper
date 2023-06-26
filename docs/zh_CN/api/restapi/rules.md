@@ -5,9 +5,11 @@ eKuiper REST api 可以管理规则，例如创建、显示、删除、描述、
 ## 创建规则
 
 该 API 接受 JSON 内容并创建和启动规则。
+
 ```shell
 POST http://localhost:9081/rules
 ```
+
 请求示例：
 
 ```json
@@ -19,7 +21,6 @@ POST http://localhost:9081/rules
   }]
 }
 ```
-
 
 ## 展示规则
 
@@ -110,7 +111,6 @@ DELETE http://localhost:9081/rules/{id}
 ```shell
 POST http://localhost:9081/rules/{id}/start
 ```
-
 
 ## 停止规则
 

@@ -6,7 +6,7 @@ eKuiper 规则。
 
 ## 创建规则
 
-要调试一个规则，第一步就是要创建它。你可以通过使用 REST API 或 CLI来 做到这一点。在本教程中，我们将使用 REST API
+要调试一个规则，第一步就是要创建它。你可以通过使用 REST API 或 CLI 来 做到这一点。在本教程中，我们将使用 REST API
 进行所有的规则管理操作。下面是一个使用 REST API 创建规则的例子：
 
 ```http request
@@ -64,8 +64,8 @@ Content-Type: application/json
 
 日志位于 eKuiper 安装目录下的 `logs` 目录中。你可以使用 `tail` 命令来实时查看日志。
 
-如果你使用Docker镜像，请确保通过环境变量`KUIPER__BASIC__CONSOLELOG=true`启用控制台日志，或者编辑`etc/kupier.yaml`
-并将`consoleLog`设置为true。然后你可以使用`docker logs`命令来查看日志，请特别留意日志级别为错误的日志。
+如果你使用Docker镜像，请确保通过环境变量 `KUIPER__BASIC__CONSOLELOG=true` 启用控制台日志，或者编辑`etc/kupier.yaml`
+并将 `consoleLog` 设置为 true。然后你可以使用 `docker logs` 命令来查看日志，请特别留意日志级别为错误的日志。
 
 ### 常见错误
 
@@ -113,8 +113,7 @@ store the rule error: Item rule1 already exists
 
 ## 诊断规则
 
-默认情况下，规则创建成功后将立即运行。如果你的规则期望将结果发送到一个 MQTT
-主题，你可能已经订阅了那个主题并等待检查结果。但是，如果你没有收到任何消息时应该怎么办呢？接下来我们将讲解一些针对技巧，帮助用户找出问题所在。
+默认情况下，规则创建成功后将立即运行。如果你的规则期望将结果发送到一个 MQTT 主题，你可能已经订阅了那个主题并等待检查结果。但是，如果你没有收到任何消息时应该怎么办呢？接下来我们将讲解一些针对技巧，帮助用户找出问题所在。
 
 ### 调试方法
 
@@ -124,7 +123,7 @@ store the rule error: Item rule1 already exists
 
 在创建规则时，我们只对语法做一些静态验证。当要运行规则时，有更多的事情需要考虑，比如外部数据源在运行时是否可用。所以，调试规则的第一步是检查规则的状态，看它是在正常运行还是由于一些运行时的错误而处于停止状态。
 
-你可以使用REST API来检查规则的状态。例如，要检查规则`rule1`的状态，你可以发送这样的请求：
+你可以使用 REST API 来检查规则的状态。例如，要检查规则`rule1`的状态，你可以发送这样的请求：
 
 ```http request
 ###
@@ -150,9 +149,9 @@ GET http://{{host}}/rules/rule1/status
 
 首先，看一下下面的源指标。如果你的源指标 `records_in_total`
 是0，这意味着数据源没有收到任何数据。你需要检查数据源端：数据源是否已经发送了数据；你的源配置是否正确。例如，如果你的MQTT源主题配置为 `topic1`
-，但你向`topic2` 发送数据，那么源将不会收到任何数据。
+，但你向 `topic2` 发送数据，那么源将不会收到任何数据。
 
-```
+```text
 "source_demo_0_records_in_total": 0,
 "source_demo_0_records_out_total": 0,
 ```
@@ -168,7 +167,7 @@ GET http://{{host}}/rules/rule1/status
 如果状态是停止的，你可以查看日志来检查细节。如果状态是运行的，但指标不符合预期，你可以检查日志，看看是否有任何错误，甚至打开调试来跟踪数据流。
 
 下面是[检查日志的指令](#检查日志)。要打开调试日志，你可以在`etc/kuiper.yaml`文件中设置日志级别为`debug`
-或者设置环境变量： `KUIPER__BASIC__DEBUG=false`。然后你就可以检查调试日志来查看数据流。例如，下面是关于过滤器的调试日志的一行。
+或者设置环境变量：`KUIPER__BASIC__DEBUG=false`。然后你就可以检查调试日志来查看数据流。例如，下面是关于过滤器的调试日志的一行。
 
 ```text
 time="2023-05-31 14:58:43" level=debug msg="filter plan receive &{mockStream map[temperature:%!s(float64=-11.77) ts:%!s(float64=1.684738889251e+12)] %!s(int64=1685516298342) map[fi
@@ -378,7 +377,7 @@ POST http://{{host}}/rules/rule1/start
 
 再次检查规则状态。指标没有变化，`source_mockStream_0_records_in_total`
 仍然是0，这意味着规则还是没有收到数据。这很可能是数据源方面的问题。让我们再次检查我们的源配置，在这个例子中，检查流定义中
-MQTT 服务器和主题配置。我们在流定义中把主题配置为`data/mock`，但我们却向`mockStream`主题发送数据，因此规则没有收到数据。
+MQTT 服务器和主题配置。我们在流定义中把主题配置为 `data/mock`，但我们却向 `mockStream` 主题发送数据，因此规则没有收到数据。
 
 问题确认，接下来我们把数据发送到 `data/mock`
 主题。再一次检查规则状态，这一次规则指标终于改变了。指标显示，我们收到了一条数据，在 `op_3_filter` 中被过滤，因此 MQTT

@@ -47,7 +47,7 @@ func (e *gvalPathEval) Eval(data interface{}) (interface{}, error) {
 			input = cast.ConvertSlice(data)
 		case reflect.String:
 			v, _ := data.(string)
-			err := json.Unmarshal([]byte(v), &input)
+			err := json.Unmarshal(cast.StringToBytes(v), &input)
 			if err != nil {
 				return nil, fmt.Errorf("data '%v' is not a valid json string", data)
 			}

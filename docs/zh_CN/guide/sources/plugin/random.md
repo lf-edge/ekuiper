@@ -34,6 +34,7 @@ dedup:
   interval: 100
   deduplicate: 50
 ```
+
 ### 全局配置
 
 用户可以在此处指定全局随机源设置。 运行此源时，将在 `default` 部分中指定的配置项目作为源的默认设置。
@@ -48,7 +49,7 @@ dedup:
 
 ### pattern
 
-源生成的样式。 在上面的示例中，样式将为 json，例如{"count":50}
+源生成的样式。 在上面的示例中，样式将为 json，例如 {"count":50}
 
 ### deduplicate
 
@@ -56,15 +57,14 @@ dedup:
 
 ## 覆盖默认设置
 
-如果您有特定的连接需要覆盖默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建一个名为 `test` 的特定设置。 然后，您可以在创建流定义时使用选项`CONF_KEY` 指定配置（有关更多信息，请参见 [stream specs](../../../sqls/streams.md)）。
+如果您有特定的连接需要覆盖默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建一个名为 `test` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [stream specs](../../../sqls/streams.md)）。
 
 ## 使用示例
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="ext", TYPE="random");
+    ...
+  ) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="ext", TYPE="random");
 ```
 
 配置键 "ext" 将被使用。
-

@@ -1,5 +1,7 @@
 # 基本配置
-eKuiper 的配置文件位于 `$ eKuiper / etc / kuiper.yaml` 中。 配置文件为 yaml 格式。应用程序可以通过环境变量进行配置。环境变量优先于 yaml 文件中的对应项。为了对给定的配置使用 env 变量，我们必须使用如下格式： `KUIPER__`前缀 + 由`__`连接的路径元素。例如，在配置的情况下：
+
+eKuiper 的配置文件位于 `$eKuiper/etc/kuiper.yaml` 中。 配置文件为 yaml 格式。应用程序可以通过环境变量进行配置。环境变量优先于 yaml 文件中的对应项。为了对给定的配置使用 env 变量，我们必须使用如下格式： `KUIPER__` 前缀 + 由 `__` 连接的路径元素。例如，在配置的情况下：
+
 ```yaml
 basic:
   # true|false, with debug level, it prints more debug info
@@ -15,6 +17,7 @@ basic:
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: true
 ```
+
 将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
 
 配置ignoreCase用于在SQL处理中忽略大小写。默认情况下，它设置为 true 以符合标准 SQL。在这种情况下，摄取的数据可能不区分大小写。如果 SQL 中的列名、流定义和摄取的数据可以统一为区分大小写的名称，建议设置为 false 以获得更好的性能。
@@ -40,9 +43,11 @@ basic:
 配置项 **ignoreCase** 用于指定 SQL 处理中是否大小写无关。若为 true，则输入数据的列名大小写可以与 SQL 中的定义不同。如果 SQL 语句中，流定义以及输入数据中可以保证列名大小写完全一致，则建议设置该值为 false 以获得更优的性能。在 1.10 版本之前，其默认值为 true ， 以兼容标准 SQL ；在 1.10 及之后版本中，默认值改为 false ，以获得更优的性能 。
 
 ## 系统日志
+
 用户将名为 KuiperSyslogKey 的环境变量的值设置为 true 时，日志将打印到系统日志中。
 
 ## Cli 地址
+
 ```yaml
 basic:
   # CLI 绑定 IP
@@ -50,6 +55,7 @@ basic:
   # CLI port
   port: 20498
 ```
+
 ## REST 服务配置
 
 ```yaml
@@ -64,19 +70,21 @@ basic:
 ```
 
 ### restPort
+
 REST http 服务器监听端口
 
 ### restTls
+
 TLS 证书 cert 文件和 key 文件位置。如果 restTls 选项未配置，则 REST 服务器将启动为 http 服务器，否则启动为 https 服务器。
 
-## authentication 
+## authentication
+
 当 `authentication` 选项为 true 时，eKuiper 将为 rest api 请求检查 `Token` 。请检查此文件以获取 [更多信息](../api/restapi/authentication.md)。
 
 ```yaml
 basic:
   authentication: false
 ```
-
 
 ## Prometheus 配置
 
@@ -87,6 +95,7 @@ basic:
   prometheus: true
   prometheusPort: 20499
 ```
+
 在如上默认配置中，eKuiper 暴露于 Prometheus 运行指标可通过 `http://localhost:20499/metrics` 访问。
 
 Prometheus 端口可设置为与 eKuiper 的 REST 服务端口相同。这样设置的话，两个服务将运行在同一个 HTTP 服务中。
@@ -105,15 +114,15 @@ Prometheus 端口可设置为与 eKuiper 的 REST 服务端口相同。这样设
 
 用户可以通过以下 Rest-API 获取所有预构建插件的名称和地址：
 
-```
+```shell
 GET http://localhost:9081/plugins/sources/prebuild
 GET http://localhost:9081/plugins/sinks/prebuild
 GET http://localhost:9081/plugins/functions/prebuild
-``` 
+```
 
 获取插件信息后，用户可以尝试这些插件，[更多信息](../api/restapi/plugins.md)
 
-**注意：只有官方发布的基于 debian 的 docker 镜像支持以上操作**
+**注意：只有官方发布的基于 debian 的 docker 镜像支持以上操作。**
 
 ## 规则配置
 
@@ -150,19 +159,21 @@ GET http://localhost:9081/plugins/functions/prebuild
 ### Sqlite
 
 可配置如下属性：
-* name - 数据库文件名。若为空，则设置为默认名字`sqliteKV.db`。
+
+* name - 数据库文件名。若为空，则设置为默认名字 `sqliteKV.db`。
 
 ### Redis
 
 可配置如下属性：
+
 * host     - redis 服务器地址。
 * port     - redis 服务器端口。
 * password - redis 服务器密码。若 redis 未配置认证系统，则可不设置密码。
 * timeout  - 连接超时时间。
 * connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
-    * 只适用于 edgex redis 的连接信息 
-    * 连接信息中的 server， port 和 password 会覆盖以上定义的 host， port 和 password
-    * [具体信息可参考](../guide/sources/builtin/edgex.md#connectionselector)
+  * 只适用于 edgex redis 的连接信息
+  * 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
+  * [具体信息可参考](../guide/sources/builtin/edgex.md#connectionselector)
 
 ### 外部状态
 

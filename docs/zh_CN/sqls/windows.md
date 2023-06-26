@@ -52,12 +52,12 @@ SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 ```
 
-滑动窗口功能同时也支持延迟触发，在事件发生后会根据所设置的参数延迟一段时间后触发，此时窗口内的事件则包含了事件触发时向前连续向前移动€（ε1）的事件，和连续向前延迟€（ε2）的事件。
+滑动窗口功能同时也支持延迟触发，在事件发生后会根据所设置的参数延迟一段时间后触发，此时窗口内的事件则包含了事件触发时向前连续向前移动€（ε1）的事件，和连续向后延迟€（ε2）的事件。
 
 ![Sliding Window with Delay](./resources/slidingWindow-delay.png)
 
 ```sql
-SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(ss, 10, 5);
+SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(ss, 5, 5);
 ```
 
 

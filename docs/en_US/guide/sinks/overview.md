@@ -24,7 +24,7 @@ Additionally, these plugins have pre-built binaries for the mainstream cpu archi
 
 The list of predefined sink plugins:
 
-- [InfluxDB sink](./plugin/influx.md): sink to influx db `v1.x`. 
+- [InfluxDB sink](./plugin/influx.md): sink to influx db `v1.x`.
 - [InfluxDBV2 sink](./plugin/influx2.md): sink to influx db `v2.x`.
 - [Tdengine sink](./plugin/tdengine.md): sink to tdengine.
 - [Image sink](./plugin/image.md): sink to an image file. Only used to handle binary result.
@@ -39,7 +39,7 @@ By default, sinks append data to the external system. Some external system such 
 - Redis sink
 - SQL sink
 
-To activate the update feature, the sink must set the `rowkindField` property to specify which field in the data represents to action to take. In the below example, `rowkindField` is set to `action`. 
+To activate the update feature, the sink must set the `rowkindField` property to specify which field in the data represents to action to take. In the below example, `rowkindField` is set to `action`.
 
 ```json
 {"redis": {
@@ -85,7 +85,6 @@ Each action can define its own properties. There are several common properties:
 | cleanCacheAtStop    | bool: default to global definition | whether to clean all caches when the rule is stopped, to prevent mass resending of expired messages when the rule is restarted. If not set to true, the in-memory cache will be stored to disk once the rule is stopped. Otherwise, the memory and disk rules will be cleared out.                                                                                                                                                                                                                                                                                                                                                                         |
 | batchSize           | int: 0                           | Specify the number of buffered messages before sending. The sink will block sending messages until the number of buffered messages is equal to this value, then the messages will be sent at one time. batchSize treats the data for []map as multiple messages.                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                                 |
 | lingerInterval      | int  0                           | Specify the interval time for buffer messages before seding, the unit is millisecond. The sink will block sending messages until the buffer sending interval reaches this value. lingerInterval can be used together with batchSize to trigger sending when any condition is met.                                                                                                                                                                                                                                                                                                                                                                          |                                    |
-
 
 ### Dynamic properties
 

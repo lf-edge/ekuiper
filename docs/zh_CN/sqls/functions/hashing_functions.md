@@ -4,7 +4,7 @@
 
 ## MD5
 
-```
+```text
 md5(col)
 ```
 
@@ -12,7 +12,7 @@ md5(col)
 
 ## SHA1
 
-```
+```text
 sha1(col)
 ```
 
@@ -20,7 +20,7 @@ sha1(col)
 
 ## SHA256
 
-```
+```text
 sha256(col)
 ```
 
@@ -28,7 +28,7 @@ sha256(col)
 
 ## SHA384
 
-```
+```text
 sha384(col)
 ```
 
@@ -36,7 +36,7 @@ sha384(col)
 
 ## SHA512
 
-```
+```text
 sha512(col)
 ```
 

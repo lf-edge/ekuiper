@@ -1,6 +1,6 @@
 # Features
 
-Except core runtime and REST api, there are some features that are allowed to be enabled or disabled during compilation by [go build constraints](https://pkg.go.dev/go/build#hdr-Build_Constraints). Uses can customize the built binary to include only the desired features to reduce the binary size according to the limit of the target environment. 
+Except core runtime and REST api, there are some features that are allowed to be enabled or disabled during compilation by [go build constraints](https://pkg.go.dev/go/build#hdr-Build_Constraints). Uses can customize the built binary to include only the desired features to reduce the binary size according to the limit of the target environment.
 
 ## Feature List
 
@@ -31,7 +31,7 @@ make build_with_edgex
 make build_core
 ```
 
-Feature selection is useful in a limited resource target which is unlikely to run as docker container. So we only provide standard feature set in the docker images. 
+Feature selection is useful in a limited resource target which is unlikely to run as docker container. So we only provide standard feature set in the docker images.
 
 And users need to build from source to customize the feature sets. To build with the desired features:
 
