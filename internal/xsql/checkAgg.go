@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ func getOrCalculateAgg(f *ast.FieldRef) bool {
 	return false
 }
 
-func IsAggStatement(stmt *ast.SelectStatement) bool {
+func WithAggFields(stmt *ast.SelectStatement) bool {
 	if stmt.Dimensions != nil {
 		ds := stmt.Dimensions.GetGroups()
 		if ds != nil && len(ds) > 0 {

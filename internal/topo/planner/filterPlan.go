@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,11 +14,15 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type FilterPlan struct {
 	baseLogicalPlan
-	condition ast.Expr
+	condition  ast.Expr
+	stateFuncs []*ast.Call
 }
 
 func (p FilterPlan) Init() *FilterPlan {
@@ -50,4 +54,21 @@ func (p *FilterPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 func (p *FilterPlan) PruneColumns(fields []ast.Expr) error {
 	f := getFields(p.condition)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
+}
+
+func (p *FilterPlan) ExtractStateFunc() {
+	ast.WalkFunc(p.condition, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			if _, ok := xsql.ImplicitStateFuncs[f.Name]; ok {
+				f.Cached = true
+				p.stateFuncs = append(p.stateFuncs, &ast.Call{
+					Name:     f.Name,
+					FuncId:   f.FuncId,
+					FuncType: f.FuncType,
+				})
+			}
+		}
+		return true
+	})
 }

@@ -690,7 +690,7 @@ func parsePick(props map[string]interface{}, sourceNames []string) (*operator.Pr
 	}
 	t := ProjectPlan{
 		fields:      stmt.Fields,
-		isAggregate: xsql.IsAggStatement(stmt),
+		isAggregate: xsql.WithAggFields(stmt),
 	}.Init()
 	return &operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta}, nil
 }

@@ -534,6 +534,8 @@ func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
 		return r.windowStart, true
 	case "window_end":
 		return r.windowEnd, true
+	case "current_time":
+		return r.windowEnd, true
 	default:
 		return nil, false
 	}

@@ -617,7 +617,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			t.Errorf("parse sql error： %s", err)
 			continue
 		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)
@@ -1221,7 +1221,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)
@@ -1429,7 +1429,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)
@@ -2386,7 +2386,7 @@ func TestProjectPlanError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)

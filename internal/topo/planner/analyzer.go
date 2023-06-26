@@ -180,6 +180,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 }
 
 func validate(s *ast.SelectStatement) (err error) {
+	isAggStmt := false
 	if xsql.IsAggregate(s.Condition) {
 		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause.")
 	}
@@ -187,9 +188,13 @@ func validate(s *ast.SelectStatement) (err error) {
 		return fmt.Errorf("Not allowed to call non-aggregate functions in HAVING clause.")
 	}
 	for _, d := range s.Dimensions {
+		isAggStmt = true
 		if xsql.IsAggregate(d.Expr) {
 			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause.")
 		}
+	}
+	if s.Joins != nil {
+		isAggStmt = true
 	}
 	ast.WalkFunc(s, func(n ast.Node) bool {
 		switch f := n.(type) {
@@ -203,6 +208,10 @@ func validate(s *ast.SelectStatement) (err error) {
 						return false
 					}
 				}
+			}
+			if isAggStmt && function.NoAggFunc(f.Name) {
+				err = fmt.Errorf("function %s is not allowed in an aggreagate query", f.Name)
+				return false
 			}
 		}
 		return true

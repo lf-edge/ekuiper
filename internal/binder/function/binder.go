@@ -113,6 +113,14 @@ func IsAggFunc(funcName string) bool {
 	return false
 }
 
+// NoAggFunc returns true if the function CANNOT be used in an aggregate query
+func NoAggFunc(funcName string) bool {
+	if funcName == "last_hit_count" || funcName == "last_hit_time" {
+		return true
+	}
+	return false
+}
+
 func GetFuncType(funcName string) ast.FuncType {
 	f, _ := Function(funcName)
 	if f != nil {
