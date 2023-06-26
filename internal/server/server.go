@@ -166,9 +166,9 @@ func StartUp(Version, LoadFileType string) {
 	if conf.Config.Basic.RestTls != nil {
 		restHttpType = "https"
 	}
-	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s:%d. \n", Version, conf.Config.Basic.Port, restHttpType, conf.Config.Basic.RestIp, conf.Config.Basic.RestPort)
+	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s:%d.", Version, conf.Config.Basic.Port, restHttpType, conf.Config.Basic.RestIp, conf.Config.Basic.RestPort)
 	logger.Info(msg)
-	fmt.Print(msg)
+	fmt.Println(msg)
 
 	// Stop the services
 	sigint := make(chan os.Signal, 1)
