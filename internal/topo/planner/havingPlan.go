@@ -36,18 +36,36 @@ func (p *HavingPlan) PruneColumns(fields []ast.Expr) error {
 }
 
 func (p *HavingPlan) ExtractStateFunc() {
+	aliases := make(map[string]ast.Expr)
 	ast.WalkFunc(p.condition, func(n ast.Node) bool {
 		switch f := n.(type) {
 		case *ast.Call:
-			if _, ok := xsql.ImplicitStateFuncs[f.Name]; ok {
-				f.Cached = true
-				p.stateFuncs = append(p.stateFuncs, &ast.Call{
-					Name:     f.Name,
-					FuncId:   f.FuncId,
-					FuncType: f.FuncType,
-				})
+			p.transform(f)
+		case *ast.FieldRef:
+			if f.AliasRef != nil {
+				aliases[f.Name] = f.AliasRef.Expression
 			}
 		}
 		return true
 	})
+	for _, ex := range aliases {
+		ast.WalkFunc(ex, func(n ast.Node) bool {
+			switch f := n.(type) {
+			case *ast.Call:
+				p.transform(f)
+			}
+			return true
+		})
+	}
+}
+
+func (p *HavingPlan) transform(f *ast.Call) {
+	if _, ok := xsql.ImplicitStateFuncs[f.Name]; ok {
+		f.Cached = true
+		p.stateFuncs = append(p.stateFuncs, &ast.Call{
+			Name:     f.Name,
+			FuncId:   f.FuncId,
+			FuncType: f.FuncType,
+		})
+	}
 }

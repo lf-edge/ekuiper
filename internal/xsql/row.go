@@ -414,7 +414,7 @@ func (t *Tuple) IsWatermark() bool {
 
 func (t *Tuple) FuncValue(key string) (interface{}, bool) {
 	switch key {
-	case "current_time":
+	case "event_time":
 		return t.Timestamp, true
 	default:
 		return nil, false

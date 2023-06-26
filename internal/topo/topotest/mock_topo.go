@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -159,9 +161,7 @@ func compareResult(t *testing.T, mockSink *mocknode.MockSink, resultFunc func(re
 	results := mockSink.GetResults()
 	maps := resultFunc(results)
 
-	if !reflect.DeepEqual(tt.R, maps) {
-		t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Sql, tt.R, maps)
-	}
+	assert.Equal(t, tt.R, maps)
 	if err := CompareMetrics(tp, tt.M); err != nil {
 		t.Errorf("%d. %q\n\nmetrics mismatch:\n\n%s\n\n", i, tt.Sql, err)
 	}

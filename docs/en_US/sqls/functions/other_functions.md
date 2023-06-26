@@ -34,15 +34,6 @@ tstamp()
 
 Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970.
 
-## EVENT_TIME
-
-```text
-event_time()
-```
-
-Returns the timestamp of the current processing event. It may be earlier then the current time due to processing
-latency.
-
 ## RULE_ID
 
 ```text
@@ -84,6 +75,7 @@ The function is usually used to get the accumulated trigger count of a continuou
 If the function is used in `WHERE` clause, it will only update the count when the condition is true.
 
 Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
+To get the hit count of an aggregate rule, use [last_agg_hit_count](./aggregate_functions.md#lastagghitcount) instead.
 
 ## LAST_HIT_TIME
 
@@ -96,6 +88,7 @@ The function is usually used to get the last trigger time of a continuous rule.
 If the function is used in `WHERE` clause, it will only update the timestamp when the condition is true.
 
 Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
+To get the hit time of an aggregate rule, use [last_agg_hit_time](./aggregate_functions.md#lastagghittime) instead.
 
 ## WINDOW_START
 

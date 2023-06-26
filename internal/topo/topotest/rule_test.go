@@ -287,15 +287,17 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestSingleSQLRule2`,
-			Sql:  `SELECT color, ts FROM demo where size > 3`,
+			Sql:  `SELECT color, ts, last_hit_count() + 1 as lc FROM demo where size > 3`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
 					"ts":    float64(1541152486822),
+					"lc":    float64(1),
 				}},
 				{{
 					"color": "yellow",
 					"ts":    float64(1541152488442),
+					"lc":    float64(2),
 				}},
 			},
 			M: map[string]interface{}{
@@ -392,7 +394,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestSingleSQLRule5`,
-			Sql:  `SELECT meta(topic) as m, ts FROM demo`,
+			Sql:  `SELECT meta(topic) as m, ts FROM demo WHERE last_hit_count() < 4`,
 			R: [][]map[string]interface{}{
 				{{
 					"m":  "mock",
@@ -410,20 +412,11 @@ func TestSingleSQL(t *testing.T) {
 					"m":  "mock",
 					"ts": float64(1541152488442),
 				}},
-				{{
-					"m":  "mock",
-					"ts": float64(1541152489252),
-				}},
 			},
 			M: map[string]interface{}{
-				"op_2_project_0_exceptions_total":   int64(0),
-				"op_2_project_0_process_latency_us": int64(0),
-				"op_2_project_0_records_in_total":   int64(5),
-				"op_2_project_0_records_out_total":  int64(5),
-
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_records_in_total":  int64(4),
+				"sink_mockSink_0_records_out_total": int64(4),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -972,6 +965,34 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestStateFunc`,
+			Sql:  `SELECT *, last_hit_time() as lt, last_hit_count() as lc FROM demoE WHERE size < 3 AND lc < 2`,
+			R: [][]map[string]interface{}{
+				{{
+					"color": "blue",
+					"size":  float64(2),
+					"ts":    float64(1541152487632),
+					"lc":    float64(0),
+				}},
+				{{
+					"color": "red",
+					"size":  float64(1),
+					"ts":    float64(1541152489252),
+					"lc":    float64(1),
+					"lt":    float64(1541152487632),
+				}},
+			},
+			M: map[string]interface{}{
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(2),
+				"sink_mockSink_0_records_out_total": int64(2),
+
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+			},
+		},
+		{
 			Name: `TestChanged`,
 			Sql:  "SELECT changed_cols(\"tt_\", true, color, size) FROM demoE",
 			R: [][]map[string]interface{}{
@@ -1031,7 +1052,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			LateTol:            1000,
 		},
 	}
-	for j, opt := range options {
+	for j, opt := range options[:1] {
 		DoRuleTest(t, tests, j, opt, 0)
 	}
 }

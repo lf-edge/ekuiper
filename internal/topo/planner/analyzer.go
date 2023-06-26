@@ -210,7 +210,7 @@ func validate(s *ast.SelectStatement) (err error) {
 				}
 			}
 			if isAggStmt && function.NoAggFunc(f.Name) {
-				err = fmt.Errorf("function %s is not allowed in an aggreagate query", f.Name)
+				err = fmt.Errorf("function %s is not allowed in an aggregate query", f.Name)
 				return false
 			}
 		}

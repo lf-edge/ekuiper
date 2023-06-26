@@ -233,6 +233,9 @@ Returns the number of times the function had been called and passed.
 The function is usually used to get the accumulated trigger count of an aggregate rule.
 If the function is used in `HAVING` clause, it will only update the count when the condition is true.
 
+To use the similar functionality in a non-aggregate rule,
+use the [last_hit_count](./other_functions.md#lasthitcount) function.
+
 ## LAST_AGG_HIT_TIME
 
 ```text
@@ -242,3 +245,6 @@ last_agg_hit_time()
 Returns the int64 timestamp of the last **event** time the function had been called and passed.
 The function is usually used to get the last trigger time of an aggregate rule.
 If the function is used in `HAVING` clause, it will only update the timestamp when the condition is true.
+
+To use the similar functionality in a non-aggregate rule,
+use the [last_hit_time](./other_functions.md#lasthittime) function.

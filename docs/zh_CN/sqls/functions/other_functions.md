@@ -63,6 +63,26 @@ meta(key)
 
 返回指定键的元数据。
 
+## LAST_HIT_COUNT
+
+```text
+last_hit_count()
+```
+
+返回该函数的总命中次数。通常用于获取聚合规则的累计触发次数。如果在 `WHERE` 子句中使用，只有当条件为真时才会更新计数。
+该函数仅可用于非聚合规则中或 Sliding Window
+的条件中。若要在聚合规则中实现类似功能，请使用 [last_agg_hit_count](./aggregate_functions.md#lastagghitcount)。
+
+## LAST_HIT_TIME
+
+```text
+last_hit_time()
+```
+
+返回该函数最后一次命中时的 int64 格式时间戳。通常用于获取聚合规则的最后一次触发时间。如果在 `WHERE` 子句中使用，只有当条件为真时才会更新时间戳。
+该函数仅可用于非聚合规则中或 Sliding Window
+的条件中。若要在聚合规则中实现类似功能，请使用 [last_agg_hit_time](./aggregate_functions.md#lastagghittime)。
+
 ## WINDOW_START
 
 ```text

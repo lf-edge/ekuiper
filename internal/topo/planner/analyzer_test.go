@@ -128,6 +128,10 @@ var tests = []struct {
 		sql: `SELECT collect(*)[0] as last FROM src1 GROUP BY SlidingWindow(ss,5) HAVING last.temp > 30`,
 		r:   newErrorStruct(""),
 	},
+	{ // 17
+		sql: `SELECT last_hit_time() FROM src1 GROUP BY SlidingWindow(ss,5) HAVING last_agg_hit_count() < 3`,
+		r:   newErrorStruct("function last_hit_time is not allowed in an aggregate query"),
+	},
 }
 
 func Test_validation(t *testing.T) {

@@ -324,7 +324,6 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 						} else {
 							return fmt.Errorf("call %s error: %v", expr.Name, "cannot get current time")
 						}
-
 					}
 					val, _ := valuer.Call(expr.Name, expr.FuncId, args)
 					return val
