@@ -137,3 +137,17 @@ In event time mode, the watermark algorithm is used to calculate a window.
 ## Runtime error in window
 
 If the window receive an error (for example, the data type does not comply to the stream definition) from upstream, the error event will be forwarded immediately to the sink. The current window calculation will ignore the error event.
+
+## The trigger condition of the Sliding Window
+
+each piece of data can trigger a window. We can filter the data that triggers the window through the `over` clause, and only the data that meets the filtering conditions will be used to trigger the window. The `over` clause can be used alone behind the sliding window, or it can be used after the `filter` clause, the `over` clause must be similar to `Over(When expr)`, for example:
+
+```sql
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100) OVER(when revenue > 200)
+```
+
+或者:
+
+```sql
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) OVER(when revenue > 200)
+```
