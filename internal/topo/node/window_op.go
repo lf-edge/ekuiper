@@ -24,7 +24,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
-	"github.com/lf-edge/ekuiper/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -53,7 +52,7 @@ type WindowOperator struct {
 	// states
 	triggerTime      int64
 	msgCount         int
-	triggerCondition UnOperation
+	triggerCondition ast.Expr
 }
 
 const (
@@ -93,9 +92,8 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 		}
 	}
 	if w.TriggerCondition != nil {
-		o.triggerCondition = &operator.FilterOp{Condition: w.TriggerCondition}
+		o.triggerCondition = w.TriggerCondition
 	}
-
 	return o, nil
 }
 
@@ -596,18 +594,21 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 		return true
 	}
 	log := ctx.GetLogger()
-	fv, afv := xsql.NewFunctionValuersForOp(ctx)
-	triggered := o.triggerCondition.Apply(ctx, d, fv, afv)
+	fv, _ := xsql.NewFunctionValuersForOp(ctx)
+	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
+	result := ve.Eval(o.triggerCondition)
 	// not match trigger condition
-	if triggered == nil {
+	if result == nil {
 		return false
 	}
-	switch v := triggered.(type) {
+	switch v := result.(type) {
 	case error:
 		log.Errorf("window %s trigger condition meet error: %v", o.name, v)
 		return false
-	default:
+	case bool:
 		// match trigger condition
-		return true
+		return v
+	default:
+		return false
 	}
 }
