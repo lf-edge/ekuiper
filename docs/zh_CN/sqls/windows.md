@@ -68,8 +68,6 @@ SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(ss, 5, 5);
 SELECT count(*) FROM demo GROUP BY ID, SESSIONWINDOW(mi, 2, 1);
 ```
 
-
-
 当第一个事件发生时，会话窗口开始。 如果从上一次摄取的事件起在指定的超时时间内发生了另一个事件，则窗口将扩展为包括新事件。 否则，如果在超时时间内未发生任何事件，则该窗口将在超时时关闭。
 
 如果事件在指定的超时时间内持续发生，则会话窗口将继续扩展直到达到最大持续时间。 最大持续时间检查间隔设置为与指定的最大持续时间相同的大小。 例如，如果最大持续时间为10，则检查窗口是否超过最大持续时间将在 t = 0、10、20、30等处进行。
@@ -97,15 +95,15 @@ SELECT * FROM demo WHERE temperature > 20 GROUP BY COUNTWINDOW(5)
 - 如果第二个参数值为 1， 那么每次事件进来的时候都会被触发
 - 第二个参数的值不应该大于第一个参数的值
 
-以下为 `COUNTWINDOW(5,1)`  的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
+以下为 `COUNTWINDOW(5,1)` 的示意图，计数窗口长度为 5， 每接收一个事件就触发一次。
 
 ![](./resources/slidingCountWindow_1.png)
 
 以下计数窗口的长度为 5，每 2 个事件触发一次窗口。输出为最近的 5 个事件。
 
-1. 当收到事件 `2`，目前总共有 2 个事件，小于窗口长度 5， 不会触发窗口 
-2. 当收到事件 `4`，目前总共有 4 个事件，小于窗口长度 5， 不会触发窗口 
-3. 当收到事件 `6`，目前总共有 6 个事件，大于窗口长度 5， 生成了1个窗口包含了 5 个事件。由于长度为 5，因此第一个事件将被忽略
+1. 当收到事件 `2`，目前总共有 2 个事件，小于窗口长度 5，不会触发窗口
+2. 当收到事件 `4`，目前总共有 4 个事件，小于窗口长度 5，不会触发窗口
+3. 当收到事件 `6`，目前总共有 6 个事件，大于窗口长度 5，生成了1个窗口包含了 5 个事件。由于长度为 5，因此第一个事件将被忽略
 4. 剩下窗口生成与之前的类似
 
 ![](./resources/slidingCountWindow_2.png)
@@ -134,13 +132,13 @@ SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100)
 
 每个事件都有一个与之关联的时间戳。 时间戳将用于计算窗口。 默认情况下，当事件输入到源时，将添加时间戳，称为`处理时间`。 我们还支持将某个字段指定为时间戳，称为`事件时间`。 时间戳字段在流定义中指定。 在下面的定义中，字段 `ts` 被指定为时间戳字段。
 
-`
+```sql
 CREATE STREAM demo (
-					color STRING,
-					size BIGINT,
-					ts BIGINT
-				) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
-`
+                    color STRING,
+                    size BIGINT,
+                    ts BIGINT
+                ) WITH (DATASOURCE="demo", FORMAT="json", KEY="ts", TIMESTAMP="ts"
+```
 
 在事件时间模式下，水印算法用于计算窗口。
 
