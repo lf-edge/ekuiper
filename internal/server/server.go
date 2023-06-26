@@ -89,13 +89,10 @@ func StartUp(Version, LoadFileType string) {
 	conf.InitConf()
 	factory.InitClientsFactory()
 
-	undo, err := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
-	if err != nil {
-		panic(err)
-	}
+	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
 	defer undo()
 
-	err = store.SetupWithKuiperConfig(conf.Config)
+	err := store.SetupWithKuiperConfig(conf.Config)
 	if err != nil {
 		panic(err)
 	}
