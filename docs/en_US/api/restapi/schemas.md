@@ -8,7 +8,7 @@ The API accepts a JSON content and create a schema. Each schema type has a stand
 POST http://localhost:9081/schemas/protobuf
 ```
 
-Schema content inside request body: 
+Schema content inside request body:
 
 ```json
 {
@@ -35,7 +35,6 @@ Schema with static plugin：
    "soFile": "file:///tmp/ekuiper/internal/schema/test/so.proto"
 }
 ```
-
 
 ### Parameters
 

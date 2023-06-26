@@ -9,6 +9,7 @@ The API is used for creating a table. For more detailed information of table def
 ```shell
 POST http://localhost:9081/tables
 ```
+
 Request sample, the request is a json string with `sql` field.
 
 ```json
@@ -79,7 +80,6 @@ The API is used to get the table schema. The schema is inferred from the physica
 GET http://localhost:9081/tables/{id}/schema
 ```
 
-
 ## update a table
 
 The API is used for update the table definition.
@@ -103,4 +103,3 @@ The API is used for drop the table definition.
 ```shell
 DELETE http://localhost:9081/tables/{id}
 ```
-

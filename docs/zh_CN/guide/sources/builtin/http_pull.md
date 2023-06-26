@@ -3,7 +3,7 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。 HTTP提取源的配置文件位于 `etc/sources/httppull.yaml`中。 以下是文件格式。
+eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。HTTP 提取源的配置文件位于 `etc/sources/httppull.yaml` 中。 以下是文件格式。
 
 ```yaml
 #全局httppull配置
@@ -57,13 +57,14 @@ application_conf: #Conf_key
 
 ## 全局HTTP提取配置
 
-用户可以在此处指定全局 HTTP 提取设置。 `default` 部分中指定的配置项将用作所有HTTP 连接的默认设置。
+用户可以在此处指定全局 HTTP 提取设置。 `default` 部分中指定的配置项将用作所有 HTTP 连接的默认设置。
 
 ### url
 
 获取结果的 URL。
 
 ### method
+
 HTTP 方法，它可以是 post、get、put 和 delete。
 
 ### interval
@@ -98,7 +99,8 @@ http 请求的超时时间，单位为 ms。
 
 根证书路径。可以为绝对路径，也可以为相对路径。
 
-### insecureSkipVerify 
+### insecureSkipVerify
+
 控制是否跳过证书认证。如果被设置为 `true`，那么跳过证书认证；否则进行证书验证。缺省为 `true`
 
 ### headers
@@ -108,6 +110,7 @@ http 请求的超时时间，单位为 ms。
 ### 响应类型
 
 定义如何解析 HTTP 响应。目前支持两种方式：
+
 - code：通过 HTTP 响应码判断响应状态。
 - body：通过 HTTP 响应正文判断响应状态。要求响应正文为 JSON 格式且其中包含 code
  字段。
@@ -140,11 +143,10 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 
 **样例**
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="test/", FORMAT="JSON", TYPE="httppull", KEY="USERID", CONF_KEY="application_conf");
+    ...
+  ) WITH (DATASOURCE="test/", FORMAT="JSON", TYPE="httppull", KEY="USERID", CONF_KEY="application_conf");
 ```
 
 这些特定设置所使用的配置键与 `default` 设置中的配置键相同，在特定设置中指定的任何值都将重载 `default` 部分中的值。
-

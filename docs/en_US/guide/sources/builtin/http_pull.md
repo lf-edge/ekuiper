@@ -1,4 +1,4 @@
-# HTTP pull source 
+# HTTP pull source
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
@@ -58,13 +58,14 @@ application_conf: #Conf_key
 
 ## Global HTTP pull configurations
 
-Use can specify the global HTTP pull settings here. The configuration items specified in `default` section will be taken as default settings for all HTTP connections. 
+Use can specify the global HTTP pull settings here. The configuration items specified in `default` section will be taken as default settings for all HTTP connections.
 
 ### url
 
 The URL where to get the result.
 
 ### method
+
 HTTP method, it could be post, get, put & delete.
 
 ### interval
@@ -110,6 +111,7 @@ The HTTP request headers that you want to send along with the HTTP request.
 ### responseType
 
 Define how to parse the HTTP response. There are two types defined:
+
 - code: which means to check the response status from the HTTP status code.
 - body: which means to check the response status from the response body. The body must be "application/json" content type and contains a "code" field.
 
@@ -135,18 +137,16 @@ There are two parts to configure: access for access code fetch and refresh for t
 - headers: the request header to refresh the token. Usually put the tokens here for authorization.
 - body: the request body to refresh the token. May not need when using header to pass the refresh token.
 
-
 ## Override the default settings
 
 If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `application_conf`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
 
 **Sample**
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="test/", FORMAT="JSON", TYPE="httppull", KEY="USERID", CONF_KEY="application_conf");
+    ...
+  ) WITH (DATASOURCE="test/", FORMAT="JSON", TYPE="httppull", KEY="USERID", CONF_KEY="application_conf");
 ```
 
 The configuration keys used for these specific settings are the same as in `default` settings, any values specified in specific settings will overwrite the values in `default` section.
-

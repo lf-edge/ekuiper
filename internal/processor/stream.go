@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
@@ -126,7 +127,7 @@ func (p *StreamProcessor) RecoverLookupTable() error {
 	)
 	for _, k := range keys {
 		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == ast.TypeTable {
+			if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil && vs.StreamType == ast.TypeTable {
 				parser := xsql.NewParser(strings.NewReader(vs.Statement))
 				stmt, e := xsql.Language.Parse(parser)
 				if e != nil {
@@ -232,7 +233,7 @@ func (p *StreamProcessor) ShowStream(st ast.StreamType) ([]string, error) {
 	)
 	for _, k := range keys {
 		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == st {
+			if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil && vs.StreamType == st {
 				result = append(result, k)
 			}
 		}
@@ -255,7 +256,7 @@ func (p *StreamProcessor) ShowTable(kind string) ([]string, error) {
 	)
 	for _, k := range keys {
 		if ok, _ := p.db.Get(k, &v); ok {
-			if err := json.Unmarshal([]byte(v), vs); err == nil && vs.StreamType == ast.TypeTable {
+			if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil && vs.StreamType == ast.TypeTable {
 				if kind == "scan" && (vs.StreamKind == ast.StreamKindScan || vs.StreamKind == "") {
 					result = append(result, k)
 				} else if kind == "lookup" && vs.StreamKind == ast.StreamKindLookup {
@@ -471,7 +472,7 @@ func (p *StreamProcessor) GetAll() (result map[string]map[string]string, e error
 		"tables":  make(map[string]string),
 	}
 	for k, v := range defs {
-		if err := json.Unmarshal([]byte(v), vs); err == nil {
+		if err := json.Unmarshal(cast.StringToBytes(v), vs); err == nil {
 			switch vs.StreamType {
 			case ast.TypeStream:
 				result["streams"][k] = vs.Statement

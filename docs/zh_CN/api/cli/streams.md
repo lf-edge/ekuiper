@@ -66,9 +66,9 @@ describe stream $stream_name
 # bin/kuiper describe stream my_stream
 Fields
 --------------------------------------------------------------------------------
-id	bigint
-name	string
-score	float
+id bigint
+name string
+score float
 
 FORMAT: json
 KEY: id
@@ -91,8 +91,10 @@ stream my_stream dropped
 ```
 
 ## 查询流
+
 该命令用于从流中查询数据。
-```
+
+```shell
 query
 ```
 
@@ -112,5 +114,6 @@ kuiper > SELECT * FROM my_stream WHERE id > 10;
 [{"...":"..." ....}]
 ...
 ```
-- 输入 `CTRL + C` 停止查询; 
+
+- 输入 `CTRL + C` 停止查询;
 - 如果没有键入任何 SQL，则可以键入 `quit` 或 `exit` 退出 `kuiper` 提示控制台。

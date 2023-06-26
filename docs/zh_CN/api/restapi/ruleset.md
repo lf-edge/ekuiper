@@ -25,7 +25,6 @@ eKuiper REST api 允许您导入导出当前的所有流和规则配置。
 
 示例1：通过文本内容导入
 
-
 ```shell
 POST http://{{host}}/ruleset/import
 Content-Type: application/json

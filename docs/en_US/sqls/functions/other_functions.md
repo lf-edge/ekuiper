@@ -4,7 +4,7 @@ The following function are built-in functions that are not included in other doc
 
 ## ISNULL
 
-```
+```text
 isNull(col)
 ```
 
@@ -12,7 +12,7 @@ Returns true if the argument is the null value.
 
 ## COALESCE
 
-```
+```text
 coalesce(expr1, expr2, ...)
 ```
 
@@ -20,7 +20,7 @@ Return the first non-null value. If all expressions are null,return null.
 
 ## NEWUUID
 
-```
+```text
 newuuid()
 ```
 
@@ -28,7 +28,7 @@ Returns a random 16-byte UUID.
 
 ## TSTAMP
 
-```
+```text
 tstamp()
 ```
 
@@ -36,7 +36,7 @@ Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universa
 
 ## RULE_ID
 
-```
+```text
 rule_id()
 ```
 
@@ -44,7 +44,7 @@ Returns the ID of the currently matched rule.
 
 ## MQTT
 
-```
+```text
 mqtt(topic)
 ```
 
@@ -53,7 +53,7 @@ MQTT message.
 
 ## META
 
-```
+```text
 meta(topic)
 ```
 
@@ -66,7 +66,7 @@ Returns the meta-data of a specified key. The key could be:
 
 ## WINDOW_START
 
-```
+```text
 window_start()
 ```
 
@@ -76,7 +76,7 @@ processing timestamp. If the rule is using event time, then the window start tim
 
 ## WINDOW_END
 
-```
+```text
 window_end()
 ```
 
@@ -86,7 +86,7 @@ processing timestamp. If the rule is using event time, then the window end times
 
 ## GET_KEYED_STATE
 
-```
+```text
 get_keyed_state(key, dataType, defaultValue)
 ```
 
@@ -97,7 +97,7 @@ this [configuration](../../configuration/global_configurations.md#external-state
 
 ## DELAY
 
-```
+```text
 delay(delayTime, returnVal)
 ```
 

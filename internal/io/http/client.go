@@ -35,9 +35,10 @@ import (
 // ClientConf is the configuration for http client
 // It is shared by httppull source and rest sink to configure their http client
 type ClientConf struct {
-	config      *RawConf
-	accessConf  *AccessTokenConf
-	refreshConf *RefreshTokenConf
+	config            *RawConf
+	accessConf        *AccessTokenConf
+	refreshConf       *RefreshTokenConf
+	tokenLastUpdateAt time.Time
 
 	tokens map[string]interface{}
 	client *http.Client
@@ -256,6 +257,8 @@ func (cc *ClientConf) auth(ctx api.StreamContext) error {
 			if err != nil {
 				return err
 			}
+		} else {
+			cc.tokenLastUpdateAt = time.Now()
 		}
 	} else {
 		return fmt.Errorf("fail to get access token: %v", e)
@@ -286,6 +289,7 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 				cc.tokens[k] = v
 			}
 		}
+		cc.tokenLastUpdateAt = time.Now()
 		return nil
 	} else if cc.accessConf != nil {
 		return cc.auth(ctx)
@@ -309,7 +313,7 @@ func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data interface{}) (map
 		if err != nil {
 			return nil, fmt.Errorf("fail to parse the header template %s: %v", cc.config.HeadersTemplate, err)
 		}
-		err = json.Unmarshal([]byte(tstr), &headers)
+		err = json.Unmarshal(cast.StringToBytes(tstr), &headers)
 		if err != nil {
 			return nil, fmt.Errorf("parsed header template is not json: %s", tstr)
 		}

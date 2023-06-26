@@ -1,6 +1,7 @@
 # Plugins management
 
 The eKuiper plugin command line tools allows you to manage plugins, such as create, show and drop plugins. Notice that, drop a plugin will need to restart eKuiper to take effect. To update a plugin, do the following:
+
 1. Drop the plugin.
 2. Restart eKuiper.
 3. Create the plugin with the new configuration.
@@ -13,7 +14,7 @@ The command is used for creating a plugin.  The plugin's definition is specified
 create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file
 ```
 
-The plugin can be created with two ways. 
+The plugin can be created with two ways.
 
 - Specify the plugin definition in command line.
 
@@ -23,7 +24,7 @@ Sample:
 # bin/kuiper create plugin source random {"file":"http://127.0.0.1/plugins/sources/random.zip"}
 ```
 
-The command create a source plugin named `random`. 
+The command create a source plugin named `random`.
 
 - Specify the plugin definition in a file. If the plugin is complex, or the plugin is already wrote in text files with well organized formats, you can just specify the plugin definition through `-f` option.
 
@@ -48,6 +49,7 @@ To create a function plugin with multiple exported functions, specify the export
 ```
 
 ### parameters
+
 1. plugin_type: the type of the plugin. Available values are `["source", "sink", "function", "portable"]`
 2. plugin_name: a unique name of the plugin. The name must be the same as the camel case version of the plugin with lowercase first letter. For example, if the exported plugin name is `Random`, then the name of this plugin is `random`.
 3. file: the url of the plugin files. It must be a zip file with: a compiled so file and the yaml file(only required for sources). The name of the files must match the name of the plugin. Please check [Extension](../../extension/overview.md) for the naming rule.
@@ -70,13 +72,14 @@ function2
 ```
 
 ## describe a plugin
+
 The command is used to print out the detailed definition of a plugin.
 
 ```shell
 describe plugin $plugin_type $plugin_name
 ```
 
-Sample: 
+Sample:
 
 ```shell
 # bin/kuiper describe plugin source plugin1
@@ -93,6 +96,7 @@ The command is used for drop the plugin.
 ```shell
 drop plugin $plugin_type $plugin_name -s $stop 
 ```
+
 In which, `-s $stop` is an optional boolean parameter. If it is set to true, the eKuiper server will be stopped for the delete to take effect. The user will need to restart it manually.
 Sample:
 
@@ -107,7 +111,7 @@ Unlike source and sink plugins, function plugin can export multiple functions at
 
 ### show udfs
 
-The command will list all user defined functions. 
+The command will list all user defined functions.
 
 ```shell
 show udfs
@@ -139,6 +143,7 @@ register plugin function $pluginName "{\"functions\":[\"$funcName\",\"$anotherFu
 ```
 
 Sample:
+
 ```shell
 # bin/kuiper register plugin function myPlugin "{\"functions\":[\"func1\",\"func2\",\"funcn\"]}"
 ```

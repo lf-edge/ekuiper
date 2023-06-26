@@ -10,6 +10,7 @@ Please make following update before compile the plugin,
 - Remove the first line `// +build plugins` of file `plugins/sinks/influx.go`.
 
 ### build in shell
+
 ```shell
 # cd $eKuiper_src
 # go build -trimpath --buildmode=plugin -o plugins/sinks/influx2.so extensions/sinks/influx/influx2.go
@@ -20,13 +21,16 @@ Please make following update before compile the plugin,
 ```
 
 ### build with image
-```
+
+```shell
 docker build -t demo/plugins:v1 -f build/plugins/Dockerfile .
 docker run demo/plugins:v1
 docker cp  90eae15a7245:/workspace/_plugins/debian/sinks /tmp
 ```
+
 Dockerfile like this：
-```
+
+```dockerfile
 ## plase check go version that kuiper used
 ARG GO_VERSION=1.18.5
 FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
@@ -36,8 +40,10 @@ RUN go env -w GOPROXY=https://goproxy.cn,direct
 RUN make plugins_c
 CMD ["sleep","3600"]
 ```
+
 add this in Makefile：
-```
+
+```dockerfile
 PLUGINS_CUSTOM := sinks/influx2
 
 .PHONY: plugins_c $(PLUGINS_CUSTOM)
@@ -46,7 +52,7 @@ plugins_c: $(PLUGINS_CUSTOM)
 $(PLUGINS_CUSTOM): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
 $(PLUGINS_CUSTOM): PLUGIN_NAME = $(word 2, $(subst /, , $@))
 $(PLUGINS_CUSTOM):
-	@$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
+  @$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
 ```
 
 Restart the eKuiper server to activate the plugin.
@@ -70,6 +76,7 @@ Other common sink properties are supported. Please refer to the [sink common pro
 Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
 
 ### /tmp/influxRule.txt
+
 ```json
 {
   "id": "influx",
@@ -91,14 +98,18 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
   ]
 }
 ```
+
 ### /tmp/influxPlugin.txt
+
 ```json
 {
    "file":"http://localhost:8080/influx2.zip"
  }
 ```
+
 ### plugins/go.mod
-```
+
+```go
 module plugins
 
 go 1.18

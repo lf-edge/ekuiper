@@ -5,7 +5,7 @@ that they are not affected by predicates in WHERE clause.
 
 Analytic function call format is as below, where `over` clause is optional
 
-```
+```text
 AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>] [WHEN <Expression>])
 ```
 
@@ -14,7 +14,7 @@ limit analytic function to only consider events that match the partition_by_clau
 
 The syntax is like:
 
-```
+```text
 AnalyticFuncName(<arguments>...) OVER ([PARTITION BY <partition key>])
 ```
 
@@ -23,13 +23,13 @@ the condition is met.
 When it is a valid event, calculate the result and update the state according to the analysis function semantics. When
 it is an invalid event, ignore the event value and reuse the saved state value.
 
-```
+```text
 AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 ```
 
 ## LAG
 
-```
+```text
 lag(expr, [offset], [default value])
 ```
 
@@ -57,7 +57,7 @@ select lag(Status) as Status, ts - lag(ts, 1, ts) OVER (WHEN had_changed(true, s
 
 ## LATEST
 
-```
+```text
 latest(expr, [default value])
 ```
 
@@ -66,7 +66,7 @@ not set, return nil.
 
 ## CHANGED_COL
 
-```
+```text
 changed_col(true, col)
 ```
 
@@ -74,7 +74,7 @@ Return the column value if it has changed from the last execution.
 
 ## HAD_CHANGED
 
-```
+```text
 had_changed(true, expr1, expr2, ...)
 ```
 

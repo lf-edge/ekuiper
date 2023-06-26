@@ -38,4 +38,3 @@ Below is a sample for selecting temperature great than 50 degree, and publish th
   ]
 }
 ```
-

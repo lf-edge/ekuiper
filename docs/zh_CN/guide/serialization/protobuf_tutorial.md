@@ -53,6 +53,7 @@ message Book {
       }]
    }
    ```
+
    ![create rule to deal with protobuf stream](./resources/proto_src_rule.png)
 4. 发送数据并查看结果：我们将使用 MQTTX 发送 Protobuf 编码后的二进制数据到 `protoDemo` 主题中，观察收到的结果是否是解码后的正确数据。
    1. 打开 MQTT X，连接到云端 `tcp://broker.emqx.io:1883`。
@@ -88,4 +89,3 @@ message Book {
 - [编解码](./serialization.md)
 - [Schema 管理 REST API](../../api/restapi/schemas.md)
 - [Schema 管理命令行](../../api/cli/schemas.md)
-

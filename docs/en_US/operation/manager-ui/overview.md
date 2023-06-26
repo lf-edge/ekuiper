@@ -14,9 +14,9 @@ From eKuiper version 0.9.1, whenever a new version of eKuiper is released, the c
 
 ## Architecture design
 
-* UI end: a visual interface, easy for users to operate
-* Kuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
-* eKuiper instance: managed eKuiper node instance, eKuiper-manager can manage multiple eKuiper nodes at the same time
+- UI end: a visual interface, easy for users to operate
+- Kuiper-manager: Management console, which essentially is a reverse HTTP proxy service, providing the services of user management, permission verification. It can be deployed in the cloud or at the edge
+- eKuiper instance: managed eKuiper node instance, eKuiper-manager can manage multiple eKuiper nodes at the same time
 
 ![construct](./resources/arch.png)
 
@@ -69,8 +69,7 @@ During test, it is more handy to use docker compose to install and deploy both p
 - Run the Kuiper-manager container and expose port 9082. Whereas DEFAULT_EKUIPER_ENDPOINT can be used to specify the default managed eKuiper address, which should be set to the actual ip of the machine where the eKuiper is located.
 
   ```shell
-  docker run --name kuiperManager -d -p 9082:9082 -e DEFAULT_EKUIPER_ENDPOINT="	
-http://$your_ekuiper_host:9081" emqx/ekuiper-manager:1.8
+  docker run --name kuiperManager -d -p 9082:9082 -e DEFAULT_EKUIPER_ENDPOINT="http://$your_ekuiper_host:9081" emqx/ekuiper-manager:1.8
   ```
 
 ## Getting started
@@ -79,11 +78,11 @@ http://$your_ekuiper_host:9081" emqx/ekuiper-manager:1.8
 
 You need to provide the address, username, and password of kuiper-manager when logging in, which is shown below:
 
-* Address: `http://$yourhost:9082`
+- Address: `http://$yourhost:9082`
 
-* User name: `admin`
+- User name: `admin`
 
-* Password: public
+- Password: public
 
   ![login](./resources/login.png)
 
@@ -91,12 +90,11 @@ You need to provide the address, username, and password of kuiper-manager when l
 
 When creating a eKuiper service, you need to fill in the "service type", "service name" and "endpoint URL".
 
-* Service Type: Select `Direct Connect service` (`Huawei IEF service` is dedicated to Huawei users).
+- Service Type: Select `Direct Connect service` (`Huawei IEF service` is dedicated to Huawei users).
 
-* * Service Type: Select `Direct Connect service` (`Huawei IEF service` is dedicated to Huawei users).
- name: self-made, this example uses `example`.
+  name: self-made, this example uses `example`.
 
-* Endpoint URL: `http://$IP:9081`, the IP acquisition command is as follows:
+- Endpoint URL: `http://$IP:9081`, the IP acquisition command is as follows:
 
   ```shell
   docker inspect kuiper |  grep IPAddress
@@ -116,7 +114,7 @@ Create a stream named `demoStream`, as shown below:
 
 - The stream structure definition contains the following two fields.
 
-  - temperature: bigint 
+  - temperature: bigint
   - humidity: bigint
 
   Users can also remove "whether it is a stream with structure" to define a schemaless data source.
@@ -178,5 +176,3 @@ As shown in the figure below, there are three buttons in the options. Readers ca
 - [How to display custom plugins in the installation list of the management console](plugins_in_manager.md): eKuiper provides a plugin extension mechanism, and users can implement custom plugins based on the extended interface. On the management console, users can install plugins directly through the interface. If readers have customized plugins and want to show them in the installation list of the management console, this article can give readers some reference.
 - If the readers want to develop their own plug-in, they can refer to [Plugin Development Tutorial](../../extension/native/develop/plugins_tutorial.md) for more information.
 - [EMQ edge-stack project](https://github.com/emqx/edge-stack): This project allows users to install and test EMQ edge series products more easily, realize industrial data analysis, edge data aggregation, and eKuiper-based edge data analysis and other one-stop edge solutions.
-
-

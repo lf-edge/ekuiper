@@ -54,13 +54,13 @@
 - 要处理的流或表。
 - 如何处理。
 
-在使用SQL规则之前，必须事先定义流。请查看[streams](../streams/overview.md)了解详情。
+在使用SQL规则之前，必须事先定义流。请查看 [streams](../streams/overview.md) 了解详情。
 
 #### 动作
 
 动作部分定义了一个规则的输出行为。每个规则可以有多个动作。一个动作是一个 sink 连接器的实例。当定义动作时，键是 sink 连接器的类型名称，而值是其属性。
 
-eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 file 。用户也可以扩展更多的 sink 类型来用于规则动作中。每种sink类型都有自己的属性集。更多细节，请查看[sink](../sinks/overview.md)。
+eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 file 。用户也可以扩展更多的 sink 类型来用于规则动作中。每种sink类型都有自己的属性集。更多细节，请查看 [sink](../sinks/overview.md)。
 
 ### 图规则
 
@@ -130,7 +130,7 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 }
 ```
 
-`graph` 属性是一个 json 结构，其中 `nodes` 定义图形中呈现的节点，`topo` 定义节点之间的边缘。节点类型可以是内置的节点类型，如窗口节点和过滤器节点等。它也可以是来自插件的用户定义的节点。请参考[graph rule](./graph_rule.md)了解更多细节。
+`graph` 属性是一个 json 结构，其中 `nodes` 定义图形中呈现的节点，`topo` 定义节点之间的边缘。节点类型可以是内置的节点类型，如窗口节点和过滤器节点等。它也可以是来自插件的用户定义的节点。请参考 [graph rule](./graph_rule.md) 了解更多细节。
 
 ## 选项
 
@@ -147,7 +147,7 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | qos                | int:0      | 指定流的 qos。 值为0对应最多一次； 1对应至少一次，2对应恰好一次。 如果 qos 大于0，将激活检查点机制以定期保存状态，以便可以从错误中恢复规则。                 |
 | checkpointInterval | int:300000 | 指定触发检查点的时间间隔（单位为 ms）。 仅当 qos 大于0时才有效。                                                          |
 | restartStrategy    | 结构         | 指定规则运行失败后自动重新启动规则的策略。这可以帮助从可恢复的故障中回复，而无需手动操作。请查看[规则重启策略](#规则重启策略)了解详细的配置项目。                    |
-| cron               | string: ""   | 指定规则的周期性触发策略，该周期通过[ cron 表达式](https://zh.wikipedia.org/wiki/Cron) 进行描述。 |
+| cron               | string: ""   | 指定规则的周期性触发策略，该周期通过 [cron 表达式](https://zh.wikipedia.org/wiki/Cron) 进行描述。 |
 | duration           | string: ""   | 指定规则的运行持续时间，只有当指定了 cron 后才有效。duration 不应该超过两次 cron 周期之间的时间间隔，否则会引起非预期的行为。   |
 
 有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](./state_and_fault_tolerance.md)。
@@ -161,8 +161,8 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | 选项名          | 类型和默认值     | 说明                                                        |
 |--------------|------------|-----------------------------------------------------------|
 | attempts     | int: 0     | 最大重试次数。如果设置为0，该规则将立即失败，不会进行重试。                            |
-| delay        | int: 1000  | 默认的重试间隔时间，以毫秒为单位。如果没有设置`multiplier`，重试的时间间隔将固定为这个值。       |
-| maxDelay     | int: 30000 | 重试的最大间隔时间，单位是毫秒。只有当`multiplier`有设置时，从而使得每次重试的延迟都会增加时才会生效。 |
+| delay        | int: 1000  | 默认的重试间隔时间，以毫秒为单位。如果没有设置 `multiplier`，重试的时间间隔将固定为这个值。       |
+| maxDelay     | int: 30000 | 重试的最大间隔时间，单位是毫秒。只有当 `multiplier` 有设置时，从而使得每次重试的延迟都会增加时才会生效。 |
 | multiplier   | float: 2   | 重试间隔时间的乘数。                                                |
 | jitterFactor | float: 0.1 | 添加或减去延迟的随机值系数，防止在同一时间重新启动多个规则。                            |
 
@@ -175,7 +175,6 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 当 `cron` 是每 1 小时一次，而 `duration` 是 30 分钟时，那么该规则会每隔 1 小时启动一次，每次运行 30 分钟后便被暂停，等待下一次的启动运行。
 
 通过 [停止规则](../../api/restapi/rules.md#停止规则) 停止一个周期性规则时，便会将该规则从周期性调度器中移除，从而不再被调度运行。如果该周期性规则正在运行，那么该运行也会被暂停。
-
 
 ## 查看规则状态
 

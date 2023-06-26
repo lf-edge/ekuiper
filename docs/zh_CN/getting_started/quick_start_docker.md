@@ -1,6 +1,6 @@
 ## 5 分钟快速入门
 
-1. 从 `https://hub.docker.com/r/lfedge/ekuiper/tags` 拉取 eKuiper 的 Docker 镜像。在本教程中推荐使用 `alpine` 镜像（参考 [eKuiper Docker](https://hub.docker.com/r/lfedge/ekuiper) 的内容了解不同 eKuiper Docker 镜像的区别）。 
+1. 从 `https://hub.docker.com/r/lfedge/ekuiper/tags` 拉取 eKuiper 的 Docker 镜像。在本教程中推荐使用 `alpine` 镜像（参考 [eKuiper Docker](https://hub.docker.com/r/lfedge/ekuiper) 的内容了解不同 eKuiper Docker 镜像的区别）。
 
 2. 设置 eKuiper 源为一个 MQTT 服务器。本例使用位于 `tcp://broker.emqx.io:1883` 的 MQTT 服务器， `broker.emqx.io` 是一个由 [EMQ](https://www.emqx.cn) 提供的公有 MQTT 服务器。
 
@@ -41,11 +41,11 @@
 
    如有任何问题，请查看日志文件 `log/stream.log`。
 
-6. 如果想停止测试，在`bin/kuiper query`命令行窗口中敲 `ctrl + c ` ，或者输入 `exit` 后回车
+6. 如果想停止测试，在`bin/kuiper query`命令行窗口中敲 `ctrl + c` ，或者输入 `exit` 后回车
 
 你可以参考 [eKuiper 管理控制台](../operation/manager-ui/overview.md)这篇文章来了解更好的产品使用体验。
 
 想了解更多 LF Edge eKuiper 的功能？请参考以下关于在边缘端使用 LF Edge eKuiper 与 AWS/Azure IoT 云集成的案例。
 
-   - [轻量级边缘计算 LF Edge eKuiper 与 AWS IoT 集成方案](https://www.emqx.com/zh/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)
-   - [轻量级边缘计算 LF Edge eKuiper 与 Azure IoT Hub 集成方案](https://www.emqx.com/zh/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution) 
+- [轻量级边缘计算 LF Edge eKuiper 与 AWS IoT 集成方案](https://www.emqx.com/zh/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)
+- [轻量级边缘计算 LF Edge eKuiper 与 Azure IoT Hub 集成方案](https://www.emqx.com/zh/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution)

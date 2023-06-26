@@ -15,6 +15,7 @@
 如需运行 TensorFlow Lite 解释器，我们需要一个经过训练的模型。在本教程中，我们将不介绍如何训练和涵盖这个模型，您可以通过查看 [tflite converter](https://www.tensorflow.org/lite/convert) 了解如何做到这一点。我们既可以训练一个新的模型，也可以在线选择一个。在本教程中，我们将使用 [TensorFlow 图像分类示例](https://www.tensorflow.org/lite/examples/image_classification/overview) 中的图像分类模型。
 
 开始教程之前，请准备以下产品或环境：
+
 1. 安装 Python 3.x 环境。
 2. 通过 `pip install pynng ekuiper tflite_runtime` 安装 pynng，ekuiper 和 tensorflow lite 包。
 
@@ -32,9 +33,9 @@
 2. 按照插件格式对相关文件进行打包。
 
 创建 Python 文件实现扩展接口（源，sink 或函数）。在本例中，我们要开发的是函数插件， 因此需要实现函数扩展接口。
+
 - 编写 Python 图像分类函数
 - 包装已有函数为 eKuiper 函数插件
-
 
 ### 实现业务逻辑
 
@@ -124,8 +125,9 @@ labelIns = LabelImageFunc()
 
 至此，我们已经完成了主要功能的开发，接下来需要将这些文件打包成插件的格式。插件打包需要完成几个步骤：
 
-1. 如果插件有额外的依赖，例如本例中的 TensorFlow Lite, 需要创建依赖安装脚本 `install.sh`。插件安装时，eKuiper 会查找插件包中是否有安装脚本文件 `install.sh`，若有的话执行安装脚本。在本例中，我们创建一个 `requirements.txt` 文件列出所有的依赖包。在 `install.sh` 通过调用 `pip install -r $cur/requirements.txt` 完成依赖的安装。对于别的插件，若无特殊要求可重用该脚本，更新`requirements.txt`即可。
+1. 如果插件有额外的依赖，例如本例中的 TensorFlow Lite, 需要创建依赖安装脚本 `install.sh`。插件安装时，eKuiper 会查找插件包中是否有安装脚本文件 `install.sh`，若有的话执行安装脚本。在本例中，我们创建一个 `requirements.txt` 文件列出所有的依赖包。在 `install.sh` 通过调用 `pip install -r $cur/requirements.txt` 完成依赖的安装。对于别的插件，若无特殊要求可重用该脚本，更新 `requirements.txt` 即可。
 2. 创建 Python 入口文件，用于暴露所有实现的接口。因为在单个插件中可以实现多个扩展，所以需要一个入口文件定义各个扩展的实现类。其内容为一个 main 函数，为插件运行时入口。它调用 SDK 里的方法定义插件，包括插件名，插件里实现的 source, sink, function 的键值列表。此处仅实现一个名为 `labelImage` 的函数插件，其对应的实现方法为 `labelIns`。之后调用 start 方法启动插件进程的运行。Python 插件进程独立于 eKuiper 主进程。
+
     ```python
     if __name__ == '__main__':
         # 定义插件
@@ -134,7 +136,9 @@ labelIns = LabelImageFunc()
         # 启动插件
         plugin.start(c)
     ```
+
 3. 创建 JSON 格式的插件描述文件，用于定义插件的元数据。文件名必须与插件名相同，即 `pyai.json`。其中定义的函数名与入口文件必须完全对应，文件内容如下。其中，executable 用于定义插件的可执行入口文件名。
+
     ```json
     {
       "version": "v1.0.0",
@@ -150,7 +154,7 @@ labelIns = LabelImageFunc()
     }
     ```
 
-至此我们已经完成了插件的开发，接下来只需要把目录中的所有文件打包成 zip 文件即可。 zip文件的文件结构应类似于：
+至此我们已经完成了插件的开发，接下来只需要把目录中的所有文件打包成 zip 文件即可。 zip 文件的文件结构应类似于：
 
 - label.py
 - label_func.py
@@ -222,41 +226,41 @@ Content-Type: application/json
 package main
 
 import (
-	"fmt"
-	"os"
-	"time"
+  "fmt"
+  "os"
+  "time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+  mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
-	const TOPIC = "tfdemo"
+  const TOPIC = "tfdemo"
 
-	images := []string{
-		"peacock.png",
-		"frog.jpg",
-		// 其他你需要的图像
-	}
-	opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-	for _, image := range images {
-		fmt.Println("Publishing " + image)
-		payload, err := os.ReadFile(image)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
-		} else {
-			fmt.Println("Published " + image)
-		}
-		time.Sleep(1 * time.Second)
-	}
-	client.Disconnect(0)
+  images := []string{
+    "peacock.png",
+    "frog.jpg",
+    // 其他你需要的图像
+  }
+  opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
+  client := mqtt.NewClient(opts)
+  if token := client.Connect(); token.Wait() && token.Error() != nil {
+    panic(token.Error())
+  }
+  for _, image := range images {
+    fmt.Println("Publishing " + image)
+    payload, err := os.ReadFile(image)
+    if err != nil {
+      fmt.Println(err)
+      continue
+    }
+    if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
+      fmt.Println(token.Error())
+    } else {
+      fmt.Println("Published " + image)
+    }
+    time.Sleep(1 * time.Second)
+  }
+  client.Disconnect(0)
 }
 
 ```

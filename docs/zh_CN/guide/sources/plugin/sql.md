@@ -65,7 +65,7 @@ template_config:
 
 ### 全局配置
 
-用户可以在此处指定全局 sql 源设置。 `default` 部分中指定的配置项将在运行此源时作为源的默认设置。
+用户可以在此处指定全局 sql 源设置。`default` 部分中指定的配置项将在运行此源时作为源的默认设置。
 
 ### interval
 
@@ -89,7 +89,7 @@ template_config:
 * `limit`: 需要从结果中获取多少条目
 * `indexField`: 表的哪一列作为索引来记录偏移量
 * `indexValue`: 初始索引值，如果用户指定该字段，查询将使用这个初始值作为查询条件，当获得更大的值时将更新下一个查询
-* `indexFieldType`: 索引字段的列类型，如果是dateTime类型，必须将该字段设置为`DATETIME`
+* `indexFieldType`: 索引字段的列类型，如果是 dateTime 类型，必须将该字段设置为 `DATETIME`
 * `dateTimeFormat`: 索引字段的时间格式
 
 | table   | limit | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
@@ -122,7 +122,7 @@ template_config:
 
 ## 使用样例
 
-```
+```text
 demo (
   ...
  ) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="template_config", TYPE="sql");
@@ -142,7 +142,7 @@ CREATE TABLE alertTable() WITH (DATASOURCE="tableName", CONF_KEY="sqlite_config"
 
 查询外部数据库比在内存中计算要慢。如果吞吐量很高，可以使用查找缓存来提高性能。如果不启用查找缓存，那么所有的请求都被发送到外部数据库。当启用查找缓存时，每个查找表实例将持有一个缓存。当查询时，我们将首先查询缓存，然后再发送到外部数据库。
 
-缓存的配置在`sql.yaml`中。
+缓存的配置在 `sql.yaml` 中。
 
 ```yaml
   lookup:
@@ -151,6 +151,6 @@ CREATE TABLE alertTable() WITH (DATASOURCE="tableName", CONF_KEY="sqlite_config"
     cacheMissingKey: true
 ```
 
-- cache: bool值，表示是否启用缓存。
-- cacheTtl: 缓存的生存时间，单位是秒。
-- cacheMissingKey：是否对空值进行缓存。
+* cache: bool 值，表示是否启用缓存。
+* cacheTtl: 缓存的生存时间，单位是秒。
+* cacheMissingKey：是否对空值进行缓存。

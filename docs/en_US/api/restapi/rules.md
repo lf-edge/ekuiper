@@ -1,13 +1,15 @@
 # Rules management
 
-The eKuiper REST api for rules allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules. 
+The eKuiper REST api for rules allows you to manage rules, such as create, show, drop, describe, start, stop and restart rules.
 
 ## create a rule
 
 The API accepts a JSON content and create and start a rule.
+
 ```shell
 POST http://localhost:9081/rules
 ```
+
 Request Sample
 
 ```json
@@ -19,7 +21,6 @@ Request Sample
   }]
 }
 ```
-
 
 ## show rules
 
@@ -54,7 +55,7 @@ GET http://localhost:9081/rules/{id}
 
 Path parameter `id` is the id or name of the rule.
 
-Response Sample: 
+Response Sample:
 
 ```json
 {
@@ -103,7 +104,6 @@ The API is used for drop the rule.
 DELETE http://localhost:9081/rules/{id}
 ```
 
-
 ## start a rule
 
 The API is used to start running the rule.
@@ -111,7 +111,6 @@ The API is used to start running the rule.
 ```shell
 POST http://localhost:9081/rules/{id}/start
 ```
-
 
 ## stop a rule
 
@@ -132,6 +131,7 @@ POST http://localhost:9081/rules/{id}/restart
 ## get the status of a rule
 
 The command is used to get the status of the rule. If the rule is running, the metrics will be retrieved realtime. The status can be
+
 - $metrics
 - stopped: $reason
 
