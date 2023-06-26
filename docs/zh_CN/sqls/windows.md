@@ -58,8 +58,6 @@ SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(ss, 5, 5);
 ```
 
-
-
 ## 会话窗口
 
 会话窗口功能对在相似时间到达的事件进行分组，以过滤掉没有数据的时间段。 它有两个主要参数：超时和最大持续时间。
