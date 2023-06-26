@@ -175,7 +175,7 @@ When `cron` is every 1 hour and `duration` is 30 minutes, then the rule will be 
 
 When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a-rule), the rule will be removed from the periodic scheduler and will no longer be scheduled to run. If the rule is running, it will also be paused.
 
- `cronDatetimeRange` configuration items are like following: 
+`cronDatetimeRange`configuration items are like following:
 
 | Option name  | Type & Default Value | Description                                                                                                                           |
 |--------------|------------|-----------------------------------------------------------|
