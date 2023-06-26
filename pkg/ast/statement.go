@@ -14,6 +14,8 @@
 
 package ast
 
+import "strconv"
+
 type Statement interface {
 	stmt()
 	Node
@@ -119,6 +121,23 @@ const (
 	CROSS_JOIN
 )
 
+func (j JoinType) String() string {
+	switch j {
+	case LEFT_JOIN:
+		return "LEFT_JOIN"
+	case INNER_JOIN:
+		return "INNER_JOIN"
+	case RIGHT_JOIN:
+		return "RIGHT_JOIN"
+	case FULL_JOIN:
+		return "FULL_JOIN"
+	case CROSS_JOIN:
+		return "CROSS_JOIN"
+	default:
+		return ""
+	}
+}
+
 type Join struct {
 	Name     string
 	Alias    string
@@ -172,6 +191,24 @@ const (
 	COUNT_WINDOW
 )
 
+func (w WindowType) String() string {
+	switch w {
+	case NOT_WINDOW:
+		return "NOT_WINDOW"
+	case TUMBLING_WINDOW:
+		return "TUMBLING_WINDOW"
+	case HOPPING_WINDOW:
+		return "HOPPING_WINDOW"
+	case SLIDING_WINDOW:
+		return "SLIDING_WINDOW"
+	case SESSION_WINDOW:
+		return "SESSION_WINDOW"
+	case COUNT_WINDOW:
+		return "COUNT_WINDOW"
+	}
+	return ""
+}
+
 type Window struct {
 	TriggerCondition Expr
 	WindowType       WindowType
@@ -191,6 +228,26 @@ type SortField struct {
 	FieldExpr  Expr
 
 	Expr
+}
+
+func (sf *SortField) String() string {
+	fe := ""
+	if sf.FieldExpr != nil {
+		fe += ", fieldExpr:{ " + sf.FieldExpr.String() + " }"
+	}
+	return "sortField:{ name:" + sf.Name + ", ascending:" + strconv.FormatBool(sf.Ascending) + fe + " }"
+}
+
+func (wd *Window) String() string {
+	tu := ""
+	if wd.TimeUnit != nil {
+		tu += ", timeUnit: " + wd.TimeUnit.String() + " "
+	}
+	filter := ""
+	if wd.Filter != nil {
+		filter += ", " + wd.Filter.String()
+	}
+	return "window:{ windowType:" + wd.WindowType.String() + tu + filter + " }"
 }
 
 type SortFields []SortField
