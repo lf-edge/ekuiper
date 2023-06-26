@@ -20,7 +20,7 @@ basic:
 
 将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
 
-配置ignoreCase用于在SQL处理中忽略大小写。默认情况下，它设置为 true 以符合标准 SQL。在这种情况下，摄取的数据可能不区分大小写。如果 SQL 中的列名、流定义和摄取的数据可以统一为区分大小写的名称，建议设置为 false 以获得更好的性能。
+配置项 **ignoreCase** 用于指定 SQL 处理中是否大小写无关。若为 true，则输入数据的列名大小写可以与 SQL 中的定义不同。如果 SQL 语句中，流定义以及输入数据中可以保证列名大小写完全一致，则建议设置该值为 false 以获得更优的性能。在 1.10 版本之前，其默认值为 true ， 以兼容标准 SQL ；在 1.10 及之后版本中，默认值改为 false ，以获得更优的性能。
 
 ## 日志级别
 
@@ -39,8 +39,6 @@ basic:
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: false
 ```
-
-配置项 **ignoreCase** 用于指定 SQL 处理中是否大小写无关。若为 true，则输入数据的列名大小写可以与 SQL 中的定义不同。如果 SQL 语句中，流定义以及输入数据中可以保证列名大小写完全一致，则建议设置该值为 false 以获得更优的性能。在 1.10 版本之前，其默认值为 true ， 以兼容标准 SQL ；在 1.10 及之后版本中，默认值改为 false ，以获得更优的性能 。
 
 ## 系统日志
 
