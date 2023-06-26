@@ -54,6 +54,14 @@ Sliding window functions, unlike Tumbling or Hopping windows, produce an output 
 SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(mi, 1);
 ```
 
+The sliding window function also supports delayed triggering. After the event occurs, it will be triggered after a period of delay according to the set parameters. At this time, the events in the window include events that move forward continuously €(ε1) forward when the event is triggered. and events with successive backward delays €(ε2).
+
+![Sliding Window with Delay](./resources/slidingWindow-delay.png)
+
+```sql
+SELECT count(*) FROM demo GROUP BY ID, SLIDINGWINDOW(ss, 5, 5);
+```
+
 
 
 ## Session window
