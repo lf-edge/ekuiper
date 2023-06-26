@@ -10,7 +10,6 @@
 通过使用外部函数，eKuiper和外部函数可以运行在完全不同的进程或主机中，这意味着 eKuiper 和外部函数可以有不同的生命周期，更重要的是，外部函数
 可以为除 eKuiper 以外的其他系统程序提供服务。
 
-
 ## 先决条件
 
 外部功能插件将是一个 gRPC 服务器，因此用户应该了解 gRPC。本教程将给出设置 gRPC 服务器的示例代码。
@@ -20,10 +19,10 @@
 
 ## 开发外部函数
 
-在示例代码中，gRPC 服务器提供了 ``label`` 方法，用户只需要编写一个接口描述文件，注册到 eKuiper 中即可。然后eKuiper就可以调用 gRPC 方法,
+在示例代码中，gRPC 服务器提供了 ``label`` 方法，用户只需要编写一个接口描述文件，注册到 eKuiper 中即可。然后 eKuiper 就可以调用 gRPC 方法,
 就像内置函数一样。 ``label`` 方法由 ``tflite_runtime`` 图像分类提供支持，有关更多详细信息，请查看示例代码中的 `label.py` 文件。
 
-这是提供服务的外部功能的 proto 文件描述。 ``label`` 方法的参数应该是 base64 编码的图像。
+这是提供服务的外部功能的 proto 文件描述。``label`` 方法的参数应该是 base64 编码的图像。
 
 ```proto
 syntax = "proto3";
@@ -79,9 +78,7 @@ message LabelReply {
 
 - 有关文件格式和内容的更多详细信息，请参阅[这里](../../extension/external/external_func.md)。
 
-
 您可以在[示例代码](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/pythonGRPC.zip)的文件夹 ``kuiper_package`` 中获取示例 zip 文件。
-
 
 ### 注册外部函数
 
@@ -106,6 +103,7 @@ message LabelReply {
 ### 创建规则
 
 通过 eKuiper cli 创建规则。我们将创建一个查询。我们从 demo 流中读取 base64 编码的图像，并针对它进行自定义函数 label 运算, 其结果将是 AI 识别的图像标签。
+
 ```shell
 #/bin/kuiper query
 

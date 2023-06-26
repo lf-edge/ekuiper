@@ -71,9 +71,10 @@ Use visualization create rules SQL and Actions
 Use text json create rules SQL and Actions
 
 Example for taosdb rest：
+
 ```json
 {"id": "rest1",
-  "sql": "SELECT tele[0]-\u003eTag00001 AS temperature, tele[0]-\u003eTag00002 AS humidity FROM neuron", 
+  "sql": "SELECT tele[0].Tag00001 AS temperature, tele[0].Tag00002 AS humidity FROM neuron", 
   "actions": [
     {
       "rest": {

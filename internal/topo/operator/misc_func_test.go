@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -938,17 +938,17 @@ func TestChangedFuncs_Apply1(t *testing.T) {
 				},
 			},
 			result: [][]map[string]interface{}{{{
-				"changed_col": xsql.Message{
+				"changed_col": map[string]interface{}{
 					"a": "a1",
 					"b": "b1",
 				},
 			}}, {{
-				"changed_col": xsql.Message{
+				"changed_col": map[string]interface{}{
 					"a": "a1",
 					"c": "c1",
 				},
 			}}, {{}}, {{
-				"changed_col": xsql.Message{
+				"changed_col": map[string]interface{}{
 					"a": "a1",
 					"b": "b2",
 					"c": "c2",

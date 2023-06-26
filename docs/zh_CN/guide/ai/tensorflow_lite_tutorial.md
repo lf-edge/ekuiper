@@ -19,28 +19,28 @@
 要开发函数插件，我们需要：
 
 1. 创建插件 go 文件。 例如，在 eKuiper 源代码中，创建 *plugins/functions/labelImage/labelImage.go* 文件。
-2. 创建一个实现 [api.函数接口](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 的 struct。
+2. 创建一个实现 [api 函数接口](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 的 struct。
 3. 导出 struct。
 
 实现的关键是 *Exec* 函数。 伪代码如下：
 
 ```go
 func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-	
+    
     //... 初始化和验证
     
     // 解码输入图像
-	img, _, err := image.Decode(bytes.NewReader(arg[0]))
-	if err != nil {
-		return err, false
-	}
-	var outerErr error
-	f.once.Do(func() {		
-		// 加载标签、tflite模型并初始化tflite解释器
-	})
+    img, _, err := image.Decode(bytes.NewReader(arg[0]))
+    if err != nil {
+        return err, false
+    }
+    var outerErr error
+    f.once.Do(func() {
+        // 加载标签、tflite模型并初始化tflite解释器
+    })
 
-	// 对输入图像运行解释器
-	
+    // 对输入图像运行解释器
+    
     // 返回可能性最大的标签
     return result, true
 }
@@ -50,8 +50,8 @@ func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interfac
 
 ```go
 var LabelImage = labelImage{
-	modelPath: "labelImage/mobilenet_quant_v1_224.tflite",
-	labelPath: "labelImage/labels.txt",
+    modelPath: "labelImage/mobilenet_quant_v1_224.tflite",
+    labelPath: "labelImage/labels.txt",
 }
 ```
 
@@ -63,7 +63,7 @@ var LabelImage = labelImage{
 
 ### 通过预构建的 zip 安装
 
-如果使用基于 debian 的带有 1.1.1 或 1.1.1-slim标签的 eKuiper docker 镜像，我们可以安装预构建的 labelImage插件。 例如，要在 docker image lfedge/ekuiper:1.1.2-slim 中安装 eKuiper 1.1.2 插件，则预构建的 zip 文件位于 *https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip*。 按如下所示运行 rest命令以进行安装。
+如果使用基于 debian 的带有 1.1.1 或 1.1.1-slim 标签的 eKuiper docker 镜像，我们可以安装预构建的 labelImage 插件。 例如，要在 docker image lfedge/ekuiper:1.1.2-slim 中安装 eKuiper 1.1.2 插件，则预构建的 zip 文件位于 *<https://packages.emqx.net/kuiper-plugins/1.1.2/debian/functions/labelImage_amd64.zip>*。 按如下所示运行 rest 命令以进行安装。
 
 ```shell
 POST http://{{kuiperHost:kuiperRestPort}}/plugins/functions
@@ -82,7 +82,7 @@ Content-Type: application/json
 
 #### 构建 TensorFlowLite C API
 
-有一个来自 tensorflow repo 的关于构建C API的非常简单的 [说明](https://github.com/tensorflow/tensorflow/tree/v2.2.0-rc3/tensorflow/lite/c) 。 我们将在本节中逐步详细展开。 请注意，该插件仅针对 TensorFlow v2.2.0-rc3 进行测试，因此我们将以此版本为基础进行构建。 以 **ubuntu** 为例，以下是构建步骤：
+有一个来自 tensorflow repo 的关于构建 C API 的非常简单的 [说明](https://github.com/tensorflow/tensorflow/tree/v2.2.0-rc3/tensorflow/lite/c) 。 我们将在本节中逐步详细展开。 请注意，该插件仅针对 TensorFlow v2.2.0-rc3 进行测试，因此我们将以此版本为基础进行构建。 以 **ubuntu** 为例，以下是构建步骤：
 
 1. 安装 [Python 3](https://www.tensorflow.org/install/pip#1.-install-the-python-development-environment-on-your-system).
 
@@ -129,11 +129,11 @@ $ cp -r extensions/functions/labelImage plugins/functions
 将 *plugins/functions/labelImage* 目录中的所有文件和目录与构建的 LabelImage.so 一起打包到一个 zip 文件中。 zip文件的文件结构应类似于：
 
 - etc
-    - labels.txt
-    - mobilenet_quant_v1_224.tflite
+  - labels.txt
+  - mobilenet_quant_v1_224.tflite
 - lib
-    - libtensorflowlite.so
-    - libtensorflowlite_c.so
+  - libtensorflowlite.so
+  - libtensorflowlite_c.so
 - install.sh
 - LabelImage.so
 - tflite.conf
@@ -146,7 +146,7 @@ $ cp -r extensions/functions/labelImage plugins/functions
 
 ### 定义流
 
-通过 eKuiper rest API 定义流。 我们创建一个名为 tfdemo 的流，其格式为二进制，主题为 tfdemo。
+通过 eKuiper rest API 定义流。我们创建一个名为 tfdemo 的流，其格式为二进制，主题为 tfdemo。
 
 ```shell
 POST http://{{host}}/streams
@@ -157,7 +157,7 @@ Content-Type: application/json
 
 ### 定义规则
 
-通过 eKuiper rest API 定义规则。 我们将创建一个名为 ruleTf 的规则。 我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 *labelImage*。 返回结果将是 AI 识别的图像的标签。
+通过 eKuiper rest API 定义规则。我们将创建一个名为 ruleTf 的规则。我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 *labelImage*。返回结果将是 AI 识别的图像的标签。
 
 ```shell
 POST http://{{host}}/rules
@@ -182,41 +182,41 @@ Content-Type: application/json
 package main
 
 import (
-	"fmt"
-	"os"
-	"time"
+    "fmt"
+    "os"
+    "time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+    mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 func main() {
-	const TOPIC = "tfdemo"
+    const TOPIC = "tfdemo"
 
-	images := []string{
-		"peacock.png",
-		"frog.jpg",
-		// 其他你需要的图像
-	}
-	opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-	for _, image := range images {
-		fmt.Println("Publishing " + image)
-		payload, err := os.ReadFile(image)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
-		} else {
-			fmt.Println("Published " + image)
-		}
-		time.Sleep(1 * time.Second)
-	}
-	client.Disconnect(0)
+    images := []string{
+        "peacock.png",
+        "frog.jpg",
+        // 其他你需要的图像
+    }
+    opts := mqtt.NewClientOptions().AddBroker("tcp://yourownhost:1883")
+    client := mqtt.NewClient(opts)
+    if token := client.Connect(); token.Wait() && token.Error() != nil {
+        panic(token.Error())
+    }
+    for _, image := range images {
+        fmt.Println("Publishing " + image)
+        payload, err := os.ReadFile(image)
+        if err != nil {
+            fmt.Println(err)
+            continue
+        }
+        if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
+            fmt.Println(token.Error())
+        } else {
+            fmt.Println("Published " + image)
+        }
+        time.Sleep(1 * time.Second)
+    }
+    client.Disconnect(0)
 }
 
 ```
@@ -236,4 +236,4 @@ time="2021-02-05 16:23:30" level=info msg="sink result for rule ruleTf: [{\"labe
 
 ## 结论
 
-在本教程中，我们将引导您构建自定义的 eKuiper 插件，以利用预先训练好的 TensorFlow Lite 模型。 如果需要使用其他模型，只需按照规定步骤创建另一个函数。 请注意，如果在同一环境中运行，构建的 TensorFlow C API 可以在所有函数之间共享。希望这些功能能让你在实现边缘设备中的AI时候感到开心 。
+在本教程中，我们将引导您构建自定义的 eKuiper 插件，以利用预先训练好的 TensorFlow Lite 模型。 如果需要使用其他模型，只需按照规定步骤创建另一个函数。 请注意，如果在同一环境中运行，构建的 TensorFlow C API 可以在所有函数之间共享。希望这些功能能让你在实现边缘设备中的 AI 时候感到开心。

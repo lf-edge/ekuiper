@@ -112,7 +112,7 @@ For plugin development, compilation and packaging, please refer to [Plugin Devel
 
 In `etc/kuiper.yaml`, there is a `pluginHosts` configuration item, and users can configure the server list here. In addition to the official plugin releasing address, users can add their local plugin releasing address here. However, there are requirements for the structure and content of the directory when the plugin is released. The deployment service should be
 
-```
+```text
 https://$host/$folder/$version/$os/$type/$plugin.zip
 ```
 
@@ -123,7 +123,6 @@ Among them:
 1. $version: eKuiper version number used for plugin compilation
 2. $os: The operating system used for the plugin compilation. If the plugin is compiled in the default eKuiper Docker image, the value is debian.
 3. $type: plugin type, which can be `sources`, `sinks`, `functions`.
-
 
 ### Limitation
 

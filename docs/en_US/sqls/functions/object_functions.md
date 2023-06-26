@@ -4,7 +4,7 @@ Object functions are used to manipulate objects/maps.
 
 ## KEYS
 
-```
+```text
 keys(map<string, interface{}>) -> array<string>
 ```
 
@@ -12,7 +12,7 @@ Return an array containing the keys of the map.
 
 ## VALUES
 
-```
+```text
 values(map<string, interface{}>) -> array<interface{}>
 ```
 
@@ -20,7 +20,7 @@ Return an array containing the values of the map.
 
 ## OBJECT
 
-```
+```text
 object(array<string>, array<interface{}>) -> map<string, interface{}>
 ```
 
@@ -29,7 +29,7 @@ arbitrary array of the same length as keys.
 
 ## ZIP
 
-```
+```text
 zip(array<array<string, interface{}>>) -> map<string, interface{}>
 ```
 
@@ -38,7 +38,7 @@ key (and must be a string), and the second element is the value.
 
 ## ITEMS
 
-```
+```text
 items(map<string, interface{}>) -> array<array<string, interface{}>>
 ```
 
@@ -47,7 +47,7 @@ the value.
 
 ## OBJECT_CONSTRUCT
 
-```
+```text
 object_construct(key1, col1, key2, col2, ...) -> map<string, interface{}>
 ```
 

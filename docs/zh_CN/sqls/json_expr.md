@@ -15,16 +15,16 @@
   ],
     "followers": {
         "Group1": [
-		    {"first": "John", "last": "Shavor", "age": 22},
-		    {"first": "Ken", "last": "Miller", "age": 33}
+            {"first": "John", "last": "Shavor", "age": 22},
+            {"first": "Ken", "last": "Miller", "age": 33}
         ],
         "Group2": [
             {"first": "Alice", "last": "Murphy", "age": 33},
-		    {"first": "Brian", "last": "Craig", "age": 44}
+            {"first": "Brian", "last": "Craig", "age": 44}
         ]
     },
    "ops": {
-   	"functionA": {"numArgs": 2},
+       "functionA": {"numArgs": 2},
     "functionB": {"numArgs": 3},
     "functionC": {"variadic": true}
   }
@@ -39,42 +39,32 @@
 
 源引用运算符可用于通过引用源流或表来指定列。 `->` 引用选择嵌套 JSON 对象中的键。 源引用`.`也可以选择嵌套 JSON 对象中的键。
 
-```
+```sql
 SELECT demo.age FROM demo
 {"age" : 37}
 ```
 
-
-
-```
+```sql
 SELECT demo.name->first FROM demo
 {"first" : "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT demo.name.first FROM demo
 {"first" : "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT name.first AS fname FROM demo
 {"fname": "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT name->first AS fname FROM demo
 {"fname": "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT ops->functionA.numArgs AS num FROM demo
 {"num": 2}
 ```
@@ -83,7 +73,7 @@ SELECT ops->functionA.numArgs AS num FROM demo
 
 索引表达式使您可以选择列表中的特定元素。 它看起来应该类似于普通编程语言中的数组访问。 索引值以0为开始值，-1 为从末尾的开始位置，以此类推。
 
-```
+```sql
 SELECT children FROM demo
 
 {
@@ -91,9 +81,7 @@ SELECT children FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[0] FROM demo
 
 {
@@ -131,7 +119,7 @@ SELECT d.friends[0]->last FROM demo AS d
 
 `field[from:to)` 为前闭后开区间，不包含to。如果未指定 from，则表示从数组的第一个元素开始; 如果未指定 to，则表示以数组的最后一个元素结尾。
 
-```
+```sql
 SELECT children[0:1] FROM demo
 
 {
@@ -151,9 +139,7 @@ SELECT children[0:-1] FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[:] FROM demo == SELECT children FROM demo
 
 {
@@ -161,9 +147,7 @@ SELECT children[:] FROM demo == SELECT children FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[:2] FROM demo
 
 {
@@ -177,9 +161,7 @@ SELECT children[:-1] FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[x:y] FROM demo
 
 {
@@ -193,9 +175,7 @@ SELECT children[x+1:y] FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT followers->Group1[:1]->first FROM demo
 
 {
@@ -236,6 +216,7 @@ json_path_query_first(col, jsonpath)
 开发人员可以在 SQL 语句中使用 json 函数。 这里有些例子。
 
 - 查询第1组跟随者的姓氏
+
 ```sql
 SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
 
@@ -243,6 +224,7 @@ SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
 ```
 
 - 查询第1组年龄大于60岁的跟随者的姓氏
+
 ```sql
 SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>30]")
 
@@ -250,6 +232,7 @@ SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>
 ```
 
 - 查询第1组年龄大于30岁的跟随者的姓氏
+
 ```sql
 SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
 
@@ -257,6 +240,7 @@ SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
 ```
 
 - 假设跟随者有一个字段有保留字或点之类的字符， 比如 `my.follower`,使用括号访问它。
+
 ```sql
 SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
@@ -269,16 +253,14 @@ SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
 通配符表达式创建列表映射，它是 JSON 数组上的映射。
 
-```
+```sql
 SELECT demo.friends[*]->first FROM demo
 {
     "first": ["Dale", "Roger", "Jane"]
 }
 ```
 
-
-
-```
+```sql
 SELECT friends[:1]->first FROM demo
 {
     "first": ["Dale", "Roger"]
@@ -287,9 +269,8 @@ SELECT friends[:1]->first FROM demo
 
 #### 对象映射
 
-```
+```sql
 SELECT ops->*->numArgs FROM demo
 
 { "numArgs" : [2, 3] }
 ```
-

@@ -39,7 +39,7 @@ There are two ways to define the flow aka. business logic of a rule. Either usin
 
 ### SQL Query
 
-By specifying the `sql` and `actions` property, we can define the business logic of a rule in a declarative way. Among these, `sql` defines the SQL query to run against a predefined stream which will transform the data. The output data can then route to multiple locations by `actions`. 
+By specifying the `sql` and `actions` property, we can define the business logic of a rule in a declarative way. Among these, `sql` defines the SQL query to run against a predefined stream which will transform the data. The output data can then route to multiple locations by `actions`.
 
 #### SQL
 
@@ -165,7 +165,7 @@ The restart strategy options include:
 | multiplier   | float: 2             | The exponential to increase the interval.                                                                                             |
 | jitterFactor | float: 0.1           | How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.                |
 
-The default values can be changed by editing the `etc/kuiper.yaml` file. 
+The default values can be changed by editing the `etc/kuiper.yaml` file.
 
 ### Scheduled Rule
 
@@ -269,6 +269,5 @@ When we try to send a record to the stream, the status of the rule is obtained a
   ......
 }
 ```
-
 
 It can be seen that `records_in_total` and `records_out_total` of each operator have changed from 0 to 1, which means that the operator has received a record and passed a record to the next operator, and finally sent to the `sink` and the `sink` wrote 1 record.

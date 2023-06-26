@@ -31,7 +31,7 @@ import (
 
 type Wildcarder interface {
 	// All Value returns the value and existence flag for a given key.
-	All(stream string) (Message, bool)
+	All(stream string) (map[string]interface{}, bool)
 }
 
 type Event interface {
@@ -357,7 +357,7 @@ func (t *Tuple) Value(key, table string) (interface{}, bool) {
 	return t.Message.Value(key, table)
 }
 
-func (t *Tuple) All(string) (Message, bool) {
+func (t *Tuple) All(string) (map[string]interface{}, bool) {
 	return t.ToMap(), true
 }
 
@@ -498,7 +498,7 @@ func (jt *JoinTuple) Meta(key, table string) (interface{}, bool) {
 	return jt.doGetValue(key, table, false)
 }
 
-func (jt *JoinTuple) All(stream string) (Message, bool) {
+func (jt *JoinTuple) All(stream string) (map[string]interface{}, bool) {
 	if stream != "" {
 		for _, t := range jt.Tuples {
 			if t.GetEmitter() == stream {
@@ -580,7 +580,7 @@ func (s *GroupedTuples) Meta(key, table string) (interface{}, bool) {
 	return s.Content[0].Meta(key, table)
 }
 
-func (s *GroupedTuples) All(_ string) (Message, bool) {
+func (s *GroupedTuples) All(_ string) (map[string]interface{}, bool) {
 	return s.ToMap(), true
 }
 

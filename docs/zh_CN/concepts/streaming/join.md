@@ -7,4 +7,4 @@ eKuiper支持的连接包括：
 - 多流的连接：必须在一个窗口中进行。
 - 流和表的连接：流将是连接操作的触发器。
 
-eKuiper 支持的连接类型包括 LEFT, RIGHT, FULL 和 CROSS 。
+eKuiper 支持的连接类型包括 LEFT、RIGHT、FULL 和 CROSS 。

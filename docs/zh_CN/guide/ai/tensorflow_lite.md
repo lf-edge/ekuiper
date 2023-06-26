@@ -6,7 +6,7 @@
 模型的工具，它使得设备上的机器学习预测具有低延迟和较小的二进制容量。
 
 通过集成 eKuiper 和 TensorFlow Lite，用户只需要上传预先构建的 TensorFlow 模型， 即可在规则中使用该模型来分析流中的数据。 在本教程中，我们将演示如何通过 ekuiper 快速调用已预先训练好的 TensorFlow 模型。
-
+4
 
 ## 先决条件
 
@@ -40,7 +40,6 @@ TensorFlow Lite 以预编译插件的形式提供，用户需自行下载安装�
 用户可以通过 eKuiper manager 上传模型文件到 eKuiper。如下图所示。
 ![模型上传](../../resources/sin_upload.png)
 
-
 ### 调用模型
 
 用户安装完 TensorFlow Lite 插件后，可以在 SQL 中按正常内置函数那样调用模型。第一个参数为模型名称，第二个参数为待处理数据。
@@ -50,7 +49,6 @@ TensorFlow Lite 以预编译插件的形式提供，用户需自行下载安装�
 
 结果如下图所示，当输入为 1.57 时，推导结果约为 1。
 ![结果查询](../../resources/mqttx_sin.png)
-
 
 ## MobileNet V1 模型运行
 
@@ -71,12 +69,10 @@ video 源定期从直播源中拉取数据并从中抽取图片数据。直播�
 ![image 安装](../../resources/image_install.png)
 ![resize 注册](../../resources/image_register.png)
 
-
 ### 模型上传
 
 用户可以通过 eKuiper manager 上传模型文件到 eKuiper。如下图所示。
 ![模型上传](../../resources/mobilenet_upload.png)
-
 
 ### 调用模型
 
@@ -88,7 +84,7 @@ video 源定期从直播源中拉取数据并从中抽取图片数据。直播�
 结果如下图所示，图片数据经过推理后，返回结果为字节数组(经过 base64 编码)。
 ![结果查询](../../resources/mqttx_mobilenet.png)
 
-以下为经过 base64 译码后得到的字节数组，共有 1001 个元素。需要结合所测试模型来解释其意义。 
+以下为经过 base64 译码后得到的字节数组，共有 1001 个元素。需要结合所测试模型来解释其意义。
 在本例中，测试模型为图像识别模型，此模型共支持 1001 种物品分类，因此推导结果中的 1001 个元素与 1001 种物品按照顺序一一对应。例如第一个数组元素匹配第一个物品，其中元素的值代表匹配程度，值越大匹配度越高。
 物品的列表可从[此处](https://github.com/lf-edge/ekuiper/blob/master/extensions/functions/labelImage/etc/labels.txt)获得。
 ![结果解释](../../resources/tflite_image_result.png)
@@ -99,58 +95,57 @@ video 源定期从直播源中拉取数据并从中抽取图片数据。直播�
 package demo
 
 import (
-	"bufio"
-	"os"
-	"sort"
+    "bufio"
+    "os"
+    "sort"
 )
 
 func loadLabels() ([]string, error) {
-	labels := []string{}
-	f, err := os.Open("./labels.txt")
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		labels = append(labels, scanner.Text())
-	}
-	return labels, nil
+    labels := []string{}
+    f, err := os.Open("./labels.txt")
+    if err != nil {
+        return nil, err
+    }
+    defer f.Close()
+    scanner := bufio.NewScanner(f)
+    for scanner.Scan() {
+        labels = append(labels, scanner.Text())
+    }
+    return labels, nil
 }
 
 type result struct {
-	score float64
-	index int
+    score float64
+    index int
 }
 
 func bestMatchLabel(keyValue map[string]interface{}) (string, bool) {
-	labels, _ := loadLabels()
-	resultArray := keyValue["tfLite"].([]interface{})
-	outputArray := resultArray[0].([]byte)
-	outputSize := len(outputArray)
-	
-	var results []result
-	for i := 0; i < outputSize; i++ {
-		score := float64(outputArray[i]) / 255.0
-		if score < 0.2 {
-			continue
-		}
-		results = append(results, result{score: score, index: i})
-	}
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].score > results[j].score
-	})
-	// output is the biggest score labelImage
-	if len(results) > 0 {
-		return labels[results[0].index], true
-	} else {
-		return "", true
-	}
+    labels, _ := loadLabels()
+    resultArray := keyValue["tfLite"].([]interface{})
+    outputArray := resultArray[0].([]byte)
+    outputSize := len(outputArray)
+    
+    var results []result
+    for i := 0; i < outputSize; i++ {
+        score := float64(outputArray[i]) / 255.0
+        if score < 0.2 {
+            continue
+        }
+        results = append(results, result{score: score, index: i})
+    }
+    sort.Slice(results, func(i, j int) bool {
+        return results[i].score > results[j].score
+    })
+    // output is the biggest score labelImage
+    if len(results) > 0 {
+        return labels[results[0].index], true
+    } else {
+        return "", true
+    }
 
 }
 ```
 
-
 ## 结论
 
-在本教程中，我们通过预编译的 TensorFlow Lite 插件，在 ekuiper 中直接调用预先训练好的 TensorFlow Lite 模型，避免了编写代码，简化了推理步骤。 
+在本教程中，我们通过预编译的 TensorFlow Lite 插件，在 ekuiper 中直接调用预先训练好的 TensorFlow Lite 模型，避免了编写代码，简化了推理步骤。

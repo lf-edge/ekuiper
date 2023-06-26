@@ -1,6 +1,6 @@
 ## 5 minutes quick start
 
-1. Pull a eKuiper Docker image from `https://hub.docker.com/r/lfedge/ekuiper/tags`. It's recommended to use `alpine` image in this tutorial (refer to [eKuiper Docker](https://hub.docker.com/r/lfedge/ekuiper) for the difference of eKuiper Docker image variants). 
+1. Pull a eKuiper Docker image from `https://hub.docker.com/r/lfedge/ekuiper/tags`. It's recommended to use `alpine` image in this tutorial (refer to [eKuiper Docker](https://hub.docker.com/r/lfedge/ekuiper) for the difference of eKuiper Docker image variants).
 
 2. Set eKuiper source to an MQTT server. This sample uses server locating at `tcp://broker.emqx.io:1883`. `broker.emqx.io` is a public MQTT test server hosted by [EMQ](https://www.emqx.io).
 
@@ -32,9 +32,9 @@
    # mqttx pub -h broker.emqx.io -m '{"temperature": 40, "humidity" : 20}' -t devices/device_001/messages
    ```
 
-5. If everything goes well,  you can see the message is print on docker `bin/kuiper query` window. Please try to publish another message with `temperature` less than 30, and it will be filtered by WHERE condition of the SQL. 
+5. If everything goes well,  you can see the message is print on docker `bin/kuiper query` window. Please try to publish another message with `temperature` less than 30, and it will be filtered by WHERE condition of the SQL.
 
-   ```
+   ```shell
    kuiper > select * from demo WHERE temperature > 30;
    [{"temperature": 40, "humidity" : 20}]
    ```
@@ -47,5 +47,5 @@ You can also refer to [eKuiper dashboard documentation](../operation/manager-ui/
 
 Next for exploring more powerful features of eKuiper? Refer to below for how to apply LF Edge eKuiper in edge and integrate with AWS / Azure IoT cloud.
 
-   - [Lightweight edge computing eKuiper and Azure IoT Hub integration solution](https://www.emqx.com/en/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution) 
-   - [Lightweight edge computing eKuiper and AWS IoT Hub integration solution](https://www.emqx.com/en/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)
+- [Lightweight edge computing eKuiper and Azure IoT Hub integration solution](https://www.emqx.com/en/blog/lightweight-edge-computing-emqx-kuiper-and-azure-iot-hub-integration-solution)
+- [Lightweight edge computing eKuiper and AWS IoT Hub integration solution](https://www.emqx.com/en/blog/lightweight-edge-computing-emqx-kuiper-and-aws-iot-hub-integration-solution)

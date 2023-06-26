@@ -2,7 +2,7 @@ eKuiper REST api 允许您管理模式，例如创建、删除和列出模式。
 
 ## 创建模式
 
-该API接受JSON内容以创建新的模式。 每种模式类型都有一个独立的端点。当前模式类型仅有一种 `protobuf`。模式由名称标识。名称必须唯一。
+该 API 接受 JSON 内容以创建新的模式。 每种模式类型都有一个独立的端点。当前模式类型仅有一种 `protobuf`。模式由名称标识。名称必须唯一。
 
 ```shell
 POST http://localhost:9081/schemas/protobuf

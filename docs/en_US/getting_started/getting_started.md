@@ -4,13 +4,13 @@ Starting from download and installation, this document will guide you to start e
 
 ## Install eKuiper
 
-eKuiper provides docker image, binary package and helm chart to install. 
+eKuiper provides docker image, binary package and helm chart to install.
 
 In this tutorial, we provide both web UI and CLI to create and manage the rules. If you want to run the eKuiper manager which is the web management console for eKuiper, please refer to [running eKuiper with management console](../installation.md#running-ekuiper-with-management-console).
 
 ### Running in docker
 
-Docker deployment is the fastest way to start experimenting with eKuiper. 
+Docker deployment is the fastest way to start experimenting with eKuiper.
 
 ```shell
 docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:$tag
@@ -130,7 +130,7 @@ query is submit successfully.
 
 Now if any data are published to the MQTT server available at `tcp://127.0.0.1:1883`, then it prints message as following.
 
-```
+```shell
 kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
 [{"avg_hum":62,"count":5,"max_hum":96}]
 [{"avg_hum":36,"count":3,"max_hum":63}]
@@ -144,7 +144,7 @@ kuiper > [{"avg_hum":41,"count":4,"max_hum":91}]
 
 You can press `ctrl + c` to break the query, and server will terminate streaming if detecting client disconnects from the query. Below is the log print at server.
 
-```
+```text
 ...
 time="2019-09-09T21:46:54+08:00" level=info msg="The client seems no longer fetch the query result, stop the query now."
 time="2019-09-09T21:46:54+08:00" level=info msg="stop the query."
@@ -154,6 +154,7 @@ time="2019-09-09T21:46:54+08:00" level=info msg="stop the query."
 ### Writing the rule
 
 As part of the rule, we need to specify the following:
+
 * rule id: the id of the rule. It must be unique
 * rule name: the description of the rule
 * sql: the query to run for the rule
@@ -179,11 +180,12 @@ The content of `myRule` file as below. It publishes the result to the mqtt topic
     }]
 }
 ```
+
 You should see a successful message `rule myRule created` in the stream log, and the rule is now set up and running.
 
 ### Managing the rules
 
-You can use command line tool to stop the rule for a while and restart it and other management work. The rule name is the identifier of a rule. 
+You can use command line tool to stop the rule for a while and restart it and other management work. The rule name is the identifier of a rule.
 
 ```sh
 $ bin/kuiper stop rule myRule
@@ -207,10 +209,10 @@ Below is an example data and the output in MQTT X.
 
 Refer to the following topics for guidance on using the eKuiper.
 
-- [Installation](../installation.md)
-- [Rules](../guide/rules/overview.md)
-- [SQL reference](../sqls/overview.md)
-- [Stream](../guide/streams/overview.md)
-- [Sink](../guide/sinks/overview.md)
-- [Command line interface tools - CLI](../api/cli/overview.md)
-- [Management Console](../guide/rules/overview.md)
+* [Installation](../installation.md)
+* [Rules](../guide/rules/overview.md)
+* [SQL reference](../sqls/overview.md)
+* [Stream](../guide/streams/overview.md)
+* [Sink](../guide/sinks/overview.md)
+* [Command line interface tools - CLI](../api/cli/overview.md)
+* [Management Console](../guide/rules/overview.md)

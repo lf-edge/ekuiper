@@ -18,10 +18,13 @@
 针对这两种输入，我们分别创建流和查询表进行建模。
 
 1. 创建数据流。假设数据流写入 MQTT Topic `scene1/data` 中，则我们可通过以下 REST API 创建名为 `demoStream` 的数据流。
+
    ```json
     {"sql":"CREATE STREAM demoStream() WITH (DATASOURCE=\"scene1/data\", FORMAT=\"json\", TYPE=\"mqtt\")"}
     ```
+
 2. 创建查询表。假设预警值数据存储于 Redis 数据库0中，创建名为 `alertTable` 的查询表。此处，若使用其他存储方式，可将 `type` 替换为对应的 source 类型，例如 `sql`。
+
    ```json
     {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"redis\", KIND=\"lookup\")"}
     ```
@@ -33,10 +36,13 @@
 预警值规则与常规规则无异，用户可接入任意的数据源，做任意数据计算，只需要确保输出结果中包含更新指令字段 `action`，例如 `{"action":"upsert","id":1,"alarm":50}`。本教程中，我们使用 MQTT 输入预警值更新指令通过规则更新 Redis 数据。
 
 1. 创建 MQTT 流，绑定预警值更新指令数据流。假设更新指令通过 MQTT topic `scene1/alert` 发布。
+
    ```json
    {"sql":"CREATE STREAM alertStream() WITH (DATASOURCE=\"scene1/alert\", FORMAT=\"json\", TYPE=\"mqtt\")"}
    ```
+
 2. 创建预警值更新规则。其中，规则接入了上一步创建的指令流，规则 SQL 只是简单的获取所有指令，然后在 action 中使用支持动态更新的 redis sink。配置了 redis 的地址，存储数据类型； key 使用的字段名设置为 `id`，更新类型使用的字段名设置为 `action`。这样，只需要保证指令流中包含 `id` 和 `action` 字段就可以对 Redis 进行更新了。
+
    ```json
    {
      "id": "ruleUpdateAlert",
@@ -55,6 +61,7 @@
    ```
 
 3. 接下来，我们可以向发送 MQTT 主题 `scene1/alert` 发送指令，更新预警值。例如：
+
    ```text
    {"action":"upsert","id":1,"alarm":50}
    {"action":"upsert","id":2,"alarm":80}
@@ -128,14 +135,17 @@
 针对这两种输入，我们分别创建流和查询表进行建模。
 
 1. 创建数据流。假设数据流写入 MQTT Topic `scene2/data` 中，则我们可通过以下 REST API 创建名为 `demoStream2` 的数据流。
+
    ```json
     {"sql":"CREATE STREAM demoStream2() WITH (DATASOURCE=\"scene2/data\", FORMAT=\"json\", TYPE=\"mqtt\")"}
     ```
+
 2. 创建查询表。假设设备数据存储于 MySQL 数据库 devices 中，创建名为 `deviceTable` 的查询表。CONF_KEY 设置为上一节中创建的 SQL source 配置。
+
    ```json
     {"sql":"CREATE TABLE deviceTable() WITH (DATASOURCE=\"devices\", CONF_KEY=\"mysql\",TYPE=\"sql\", KIND=\"lookup\")"}
     ```
-   
+
 ### 数据补全规则
 
 流和表都创建完成后，我们就可以创建补全规则了。

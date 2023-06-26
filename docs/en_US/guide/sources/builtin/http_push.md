@@ -1,4 +1,4 @@
-# HTTP push source 
+# HTTP push source
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>

@@ -5,11 +5,12 @@
 ## 数据补全
 
 表的典型用法是作为查找表。示例 SQL 将类似于：
+
 ```sql
 CREATE TABLE table1 (
-		id BIGINT,
-		name STRING
-	) WITH (DATASOURCE="lookup.json", FORMAT="JSON", TYPE="file");
+    id BIGINT,
+    name STRING
+  ) WITH (DATASOURCE="lookup.json", FORMAT="JSON", TYPE="file");
 
 SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 ```
@@ -17,6 +18,7 @@ SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 在这个例子中，创建了一个表 `table1` 来从文件 *lookup.json* 中读取 json 数据。然后在规则中，将 `table1` 与流 `demo` 连接起来，以便流可以从 id 中查找名称。
 
 *lookup.json* 文件的内容应该是一个对象数组。下面是一个例子：
+
 ```json
 [
   {
@@ -37,12 +39,14 @@ SELECT * FROM demo INNER JOIN table1 on demo.id = table1.id
 ## 按历史状态过滤
 
 在某些情况下，我们可能有一个用于数据的事件流和另一个作为控制信息的事件流。
+
 ```sql
 CREATE TABLE stateTable (
-		id BIGINT,
-		triggered bool
-	) WITH (DATASOURCE="myTopic", FORMAT="JSON", TYPE="mqtt");
+    id BIGINT,
+    triggered bool
+  ) WITH (DATASOURCE="myTopic", FORMAT="JSON", TYPE="mqtt");
 
 SELECT * FROM demo LEFT JOIN stateTable on demo.id = stateTable.id WHERE triggered=true
 ```
+
 在此示例中，创建了一个表 `stateTable` 来记录来自 mqtt 主题 *myTopic* 的触发器状态。在规则中，会根据当前触发状态来过滤 `demo` 流的数据。

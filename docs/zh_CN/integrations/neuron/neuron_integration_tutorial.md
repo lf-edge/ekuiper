@@ -20,6 +20,7 @@ eKuiper 与 Neuron 之间的集成是双向的，其实现主要包含两个部�
 典型的工业物联网边缘数据处理场景中，Neuron 和 eKuiper 部署在同一台边缘机器上。这也是目前二者集成所支持的场景。若需要通过网络进行通信，则仍然可以通过之前 MQTT 的方式进行协同。
 
 Neuron 与 eKuiper 的连接经历了几个阶段：
+
 1. 早期版本，双方采用 MQTT 作为中转。
 2. Neuron 2.0 和 eKuiper 1.5 之后的版本，双方采用 IPC 协议一对一连接。
 3. Neuron 2.4 和 eKuiper 1.9 之后的版本，双方采用 TCP 协议连接，可支持多对多连接。
@@ -85,14 +86,17 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
       # volumes:
       #  nng-ipc:
    ```
+
    用户可自定义配置连接端口，本例中为 7081。修改端口时，需要修改 Neuron 的 eKuiper 北向应用端口，同时修改本文件中用到该端口的部分，即 Neuron 的端口暴露和 eKuiper 的环境变量默认连接 url 部分。
 
    > 各版本使用注意事项
+   >
    > 1. eKuiper 1.9 之后版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要配置 `NEURON__DEFAULT__URL: "ipc:///tmp/neuron-ekuiper.ipc"`，并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
    > 2. eKuiper 1.9 之前版本与 Neuron 2.4 之前版本对接只能通过 ipc，需要去除 `NEURON__DEFAULT__URL` 环境变量配置并且启用 volumes nng-ipc 的配置。Neuron 无需暴露 7081 端口。
    > 3. eKuiper 1.9 之前版本与 Neuron 2.4 之后版本无法直接对接，可通过 MQTT 中转。
+   >
 2. 在该文件所在目录，运行:
-   
+
    ```shell
    # docker compose up -d
    ```
@@ -110,7 +114,7 @@ Neuron 和 eKuiper 都支持二进制安装包以及 Docker 容器化部署方�
 
 Neuron 启动之后，我们需要配置 Neuron 的南向设备和北向 eKuiper 应用通道，然后启动模拟器进行模拟数据采集。
 
-南向设备和模拟器配置，请参考[Neuron 快速教程](https://neugates.io/docs/zh/latest/getting-started/quick_start.html#%E8%B5%84%E6%BA%90%E5%87%86%E5%A4%87) ，完成到运行和使用的 3. 南向配置部分。该教程中的北向配置部分为 mqtt 应用，本教程需要采用 eKuiper 作为北向应用。
+南向设备和模拟器配置，请参考 [Neuron 快速教程](https://neugates.io/docs/zh/latest/getting-started/quick_start.html#%E8%B5%84%E6%BA%90%E5%87%86%E5%A4%87) ，完成到运行和使用的 3. 南向配置部分。该教程中的北向配置部分为 mqtt 应用，本教程需要采用 eKuiper 作为北向应用。
 
 ### Neuron 北向 eKuiper 应用配置
 
@@ -162,6 +166,7 @@ Neuron 流建立之后，我们可以在 eKuiper 里创建任意多条规则，�
 ### 清洗数据到云端
 
 假设 Neuron 中设置的两个tag 的真是含义为:
+
 - tag1: decimal 表示的温度数据，实际温度应该除以10
 - tag2: 整型的湿度数据。
 
@@ -223,7 +228,7 @@ curl -X POST --location "http://127.0.0.1:9081/streams" \
     -d '{"sql":"CREATE STREAM mqttCommand() WITH (TYPE=\"mqtt\",SHARED=\"TRUE\",DATASOURCE=\"command\");"}'
 ```
 
-接着，我们创建一个规则，读取来自该 MQTT 流的数据，并根据规则通过 Neuron 写入数据。与前文相同，假设 tag1 为温度传感器的 decimal 类型的读数。该规则读取 MQTT payload 中的 temperature 值并乘 10 之后作为 tag1 的值；使用 payload 中的 nodeName, groupName 字段作为写到 Neuron 中的动态 node 和 group 名。
+接着，我们创建一个规则，读取来自该 MQTT 流的数据，并根据规则通过 Neuron 写入数据。与前文相同，假设 tag1 为温度传感器的 decimal 类型的读数。该规则读取 MQTT payload 中的 temperature 值并乘 10 之后作为 tag1 的值；使用 payload 中的 nodeName，groupName 字段作为写到 Neuron 中的动态 node 和 group 名。
 
 ```shell
 curl -X POST --location http://127.0.0.1:9081/rules \
@@ -244,7 +249,7 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 }'
 ```
 
-规则运行之后，打开 MQTT X，向 `command` 主题写入如下格式的JSON 串。需要注意的是，应当确保 node 和 group 在 Neuron 中已创建。在本教程的配置中，只创建了 modbus-plus-tcp-1 和 group-1。
+规则运行之后，打开 MQTT X，向 `command` 主题写入如下格式的 JSON 串。需要注意的是，应当确保 node 和 group 在 Neuron 中已创建。在本教程的配置中，只创建了 modbus-plus-tcp-1 和 group-1。
 
 ```json
 {
@@ -269,7 +274,3 @@ curl -X POST --location http://127.0.0.1:9081/rules \
 - 了解 eKuiper 的[概念和基本使用场景](../../concepts/ekuiper.md)。
 - 了解[规则的组成和参数](../../guide/rules/overview.md)。
 - [eKuiper 管理控制台的使用](../../operation/manager-ui/overview.md#开始使用)。
-
-
-
-
