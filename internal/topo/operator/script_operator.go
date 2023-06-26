@@ -50,7 +50,7 @@ func NewScriptOp(script string, isAgg bool) (*ScriptOp, error) {
 }
 
 func (p *ScriptOp) Apply(ctx api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
-	ctx.GetLogger().Debugf("ScriptOp receive: %s", data)
+	ctx.GetLogger().Debugf("ScriptOp receive: %v", data)
 	switch input := data.(type) {
 	case error:
 		return input
