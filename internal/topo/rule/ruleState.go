@@ -263,7 +263,9 @@ func (rs *RuleState) startScheduleRule() error {
 	var cronCtx context.Context
 	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
 	entryID, err := backgroundCron.AddFunc(rs.Rule.Options.Cron, func() {
-		if err := func() error {
+		var started bool
+		var err error
+		if started, err = func() (bool, error) {
 			switch backgroundCron.(type) {
 			case *MockCron:
 				// skip mutex if this is a unit test
@@ -271,9 +273,25 @@ func (rs *RuleState) startScheduleRule() error {
 				rs.Lock()
 				defer rs.Unlock()
 			}
+			now := conf.GetNow()
+			var err error
+			allowed := true
+			for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
+				allowed, err = isInScheduleRange(now, timeRange.Begin, timeRange.End)
+				if err != nil {
+					return false, err
+				}
+				if allowed {
+					break
+				}
+			}
+			if !allowed {
+				return false, nil
+			}
+
 			rs.cronState.cron = rs.Rule.Options.Cron
 			rs.cronState.duration = rs.Rule.Options.Duration
-			return rs.start()
+			return true, rs.start()
 		}(); err != nil {
 			rs.Lock()
 			rs.cronState.startFailedCnt++
@@ -281,20 +299,22 @@ func (rs *RuleState) startScheduleRule() error {
 			conf.Log.Errorf(err.Error())
 			return
 		}
-		after := time.After(d)
-		go func(ctx context.Context) {
-			select {
-			case <-after:
-				rs.Lock()
-				defer rs.Unlock()
-				if err := rs.stop(); err != nil {
-					conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
+		if started {
+			after := time.After(d)
+			go func(ctx context.Context) {
+				select {
+				case <-after:
+					rs.Lock()
+					defer rs.Unlock()
+					if err := rs.stop(); err != nil {
+						conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
+					}
+					return
+				case <-cronCtx.Done():
+					return
 				}
-				return
-			case <-cronCtx.Done():
-				return
-			}
-		}(cronCtx)
+			}(cronCtx)
+		}
 	})
 	if err != nil {
 		return err
@@ -415,4 +435,23 @@ func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
 	} else {
 		return nil
 	}
+}
+
+const layout = "2006-01-02 15:04:05"
+
+func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
+	s, err := time.Parse(layout, start)
+	if err != nil {
+		return false, err
+	}
+	e, err := time.Parse(layout, end)
+	if err != nil {
+		return false, err
+	}
+	isBefore := s.Before(now)
+	isAfter := e.After(now)
+	if isBefore && isAfter {
+		return true, nil
+	}
+	return false, nil
 }

@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -522,5 +523,96 @@ func TestScheduleRule(t *testing.T) {
 		status, err := rs.GetState()
 		require.NoError(t, err)
 		require.Equal(t, "Stopped: waiting for next schedule.", status)
+	}()
+}
+
+func TestScheduleRuleInRange(t *testing.T) {
+	now := time.Now()
+	m := conf.Clock.(*clock.Mock)
+	m.Set(now)
+	before := now.AddDate(-10, -10, -10)
+	after := now.Add(10 * time.Second)
+	conf.IsTesting = true
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	// Test rule not triggered
+	r := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: defaultOption,
+	}
+	r.Options.Cron = "mockCron"
+	r.Options.Duration = "1s"
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: before.Format(layout),
+			End:   after.Format(layout),
+		},
+	}
+	const ruleStarted = "Running"
+	const ruleStopped = "Stopped: waiting for next schedule."
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err != nil {
+			t.Error(err)
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleStarted {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStarted, state)
+			return
+		}
+		if !rs.cronState.isInSchedule {
+			t.Error("cron state should be in schedule")
+			return
+		}
+	}()
+
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: after.Format(layout),
+			End:   after.Format(layout),
+		},
+	}
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err != nil {
+			t.Error(err)
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleStopped {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
+			return
+		}
+		if !rs.cronState.isInSchedule {
+			t.Error("cron state should be in schedule")
+			return
+		}
 	}()
 }
