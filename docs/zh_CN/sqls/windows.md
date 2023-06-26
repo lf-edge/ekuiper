@@ -40,8 +40,6 @@ SELECT count(*) FROM demo GROUP BY ID, TUMBLINGWINDOW(ss, 10);
 SELECT count(*) FROM demo GROUP BY ID, HOPPINGWINDOW(ss, 10, 5);
 ```
 
-
-
 ## 滑动窗口
 
 滑动窗口功能与翻转或跳动窗口不同，仅在事件发生时会产生输出。 每个窗口至少会有一个事件，并且该窗口连续向前移动€（ε）。 就像跳跃窗口一样，事件可以属于多个滑动窗口。
