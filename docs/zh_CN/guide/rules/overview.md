@@ -149,6 +149,7 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | restartStrategy    | 结构         | 指定规则运行失败后自动重新启动规则的策略。这可以帮助从可恢复的故障中回复，而无需手动操作。请查看[规则重启策略](#规则重启策略)了解详细的配置项目。                    |
 | cron               | string: ""   | 指定规则的周期性触发策略，该周期通过[ cron 表达式](https://zh.wikipedia.org/wiki/Cron) 进行描述。 |
 | duration           | string: ""   | 指定规则的运行持续时间，只有当指定了 cron 后才有效。duration 不应该超过两次 cron 周期之间的时间间隔，否则会引起非预期的行为。   |
+| cronDatetimeRange | 结构体数组 | 指定周期性规则的生效时间段，只有当指定了 cron 后才有效。当指定了该参数后，周期性规则只有在这个参数所制定的时间范围内才生效。请查看 [周期性规则](#周期性规则) 了解详细的配置项目|
 
 有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](./state_and_fault_tolerance.md)。
 
@@ -176,6 +177,29 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 
 通过 [停止规则](../../api/restapi/rules.md#停止规则) 停止一个周期性规则时，便会将该规则从周期性调度器中移除，从而不再被调度运行。如果该周期性规则正在运行，那么该运行也会被暂停。
 
+cronDatetimeRange 的配置项如下: 
+
+| 选项名          | 类型和默认值     | 说明                                                        |
+|--------------|------------|-----------------------------------------------------------|
+| begin     | string    | 周期性规则生效时间段的起始时间，格式为 `YYYY-MM-DD hh:mm:ss"                            |
+| end        | string  | 周期性规则生效时间段的结束时间，格式为 `YYYY-MM-DD hh:mm:ss"       |
+
+cronDatetimeRange 支持结构体数组，你可以声明一组时间段来表达周期性规则生效的多个时间段:
+
+```json
+{
+    "cronDatetimeRange": [
+        {
+            "begin": "2023-06-26 10:00:00",
+            "end": "2023-06-26 20:00:00"
+        },
+        {
+            "begin": "2023-06-27 10:00:00",
+            "end": "2023-06-27 20:00:00"
+        }
+    ]
+}
+```
 
 ## 查看规则状态
 

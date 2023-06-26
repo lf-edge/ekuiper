@@ -147,6 +147,7 @@ The current options includes:
 | restartStrategy    | struct               | Specify the strategy to automatic restarting rule after failures. This can help to get over recoverable failures without manual operations. Please check [Rule Restart Strategy](#rule-restart-strategy) for detail configuration items.                                                                                                          |
 | cron | string: "" | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron) |
 | duration | string: "" | Specifies the running duration of the rule, only valid when cron is specified. The duration should not exceed the time interval between two cron cycles, otherwise it will cause unexpected behavior. |
+| cronDatetimeRange | lists of struct | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items|
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
@@ -173,6 +174,31 @@ Rules support periodic start, run and pause. In options, `cron` expresses the st
 When `cron` is every 1 hour and `duration` is 30 minutes, then the rule will be started every 1 hour, and will be suspended after 30 minutes each time, waiting for the next startup.
 
 When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a-rule), the rule will be removed from the periodic scheduler and will no longer be scheduled to run. If the rule is running, it will also be paused.
+
+`cronDatetimeRange` configuration items are like following: 
+
+| Option name  | Type & Default Value | Description                                                                                                                           |
+|--------------|------------|-----------------------------------------------------------|
+| begin     | string    | The begin time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss'                           |
+| end        | string  | The end time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss'       |
+
+
+`cronDatetimeRange` supports lists of struct, you can declare a set of time ranges to express multiple time ranges for scheduled rules to take effect:
+
+```json
+{
+    "cronDatetimeRange": [
+        {
+            "begin": "2023-06-26 10:00:00",
+            "end": "2023-06-26 20:00:00"
+        },
+        {
+            "begin": "2023-06-27 10:00:00",
+            "end": "2023-06-27 20:00:00"
+        }
+    ]
+}
+```
 
 ## View rule status
 
