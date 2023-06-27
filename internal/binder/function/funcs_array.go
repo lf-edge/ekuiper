@@ -39,7 +39,6 @@ var (
 	errorArrayContainsNonNumOrBoolValError = fmt.Errorf("array contain elements that are not numeric or Boolean")
 	errorArrayNotArrayElementError         = fmt.Errorf("array elements should be array")
 	errorArrayNotStringElementError        = fmt.Errorf("array elements should be string")
-	errorArrayElementCannotStringify       = fmt.Errorf("array contain elements that can not be stringify")
 )
 
 func registerArrayFunc() {
@@ -642,34 +641,17 @@ func registerArrayFunc() {
 	builtins["array_concat"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			var res interface{}
-
-			firstArgValue := reflect.ValueOf(args[0])
-			if firstArgValue.Kind() == reflect.Slice {
-				res = make([]interface{}, 0)
-			} else {
-				res = ""
-			}
+			var res []interface{}
 
 			for _, arg := range args {
-				if arg == nil {
-					return nil, true
-				}
-
 				v := reflect.ValueOf(arg)
 
 				switch v.Kind() {
 				case reflect.Slice:
 					array := arg.([]interface{})
-					res = append(res.([]interface{}), array...)
-				case reflect.String:
-					res = res.(string) + arg.(string)
+					res = append(res, array...)
 				default:
-					str, err := cast.ToString(arg, cast.CONVERT_ALL)
-					if err != nil {
-						return errorArrayElementCannotStringify, false
-					}
-					res = res.(string) + str
+					return errorArrayNotArrayElementError, false
 				}
 			}
 
