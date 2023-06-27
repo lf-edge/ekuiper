@@ -33,7 +33,7 @@ type FilterOp struct {
  */
 func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
-	log.Debugf("filter plan receive %s", data)
+	log.Debugf("filter plan receive %v", data)
 	switch input := data.(type) {
 	case error:
 		return input

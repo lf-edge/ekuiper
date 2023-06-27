@@ -29,7 +29,7 @@ type FuncOp struct {
 }
 
 func (p *FuncOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
-	ctx.GetLogger().Debugf("FuncOp receive: %s", data)
+	ctx.GetLogger().Debugf("FuncOp receive: %v", data)
 	switch input := data.(type) {
 	case error:
 		return input

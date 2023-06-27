@@ -32,7 +32,7 @@ type OrderOp struct {
  */
 func (p *OrderOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
-	log.Debugf("order plan receive %s", data)
+	log.Debugf("order plan receive %v", data)
 	sorter := xsql.OrderedBy(p.SortFields, fv, afv)
 	switch input := data.(type) {
 	case error:

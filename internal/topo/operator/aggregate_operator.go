@@ -32,7 +32,7 @@ type AggregateOp struct {
  */
 func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
-	log.Debugf("aggregate plan receive %s", data)
+	log.Debugf("aggregate plan receive %v", data)
 	grouped := data
 	if p.Dimensions != nil {
 		switch input := data.(type) {
@@ -48,7 +48,7 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 				for _, d := range p.Dimensions {
 					r := ve.Eval(d.Expr)
 					if _, ok := r.(error); ok {
-						return false, fmt.Errorf("run Group By error: %s", r)
+						return false, fmt.Errorf("run Group By error: %v", r)
 					} else {
 						name += fmt.Sprintf("%v,", r)
 					}
