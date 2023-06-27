@@ -27,7 +27,7 @@ type AnalyticFuncsOp struct {
 }
 
 func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
-	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %s", data)
+	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %v", data)
 	switch input := data.(type) {
 	case error:
 		return input
