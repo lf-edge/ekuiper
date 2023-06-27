@@ -138,7 +138,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			tp.AddOperator(inputs, wfilterOp)
 			inputs = []api.Emitter{wfilterOp}
 		}
-		l, i := convertFromDuration(t)
+		l, i, d := convertFromDuration(t)
 		var rawInterval int
 		switch t.wtype {
 		case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
@@ -148,6 +148,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		}
 		op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), node.WindowConfig{
 			Type:        t.wtype,
+			Delay:       d,
 			Length:      l,
 			Interval:    i,
 			RawInterval: rawInterval,
@@ -189,7 +190,24 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	return op, newIndex, nil
 }
 
-func convertFromDuration(t *WindowPlan) (int64, int64) {
+func convertFromUnit(t ast.Token, v int64) int64 {
+	unit := 1
+	switch t {
+	case ast.DD:
+		unit = 24 * 3600 * 1000
+	case ast.HH:
+		unit = 3600 * 1000
+	case ast.MI:
+		unit = 60 * 1000
+	case ast.SS:
+		unit = 1000
+	case ast.MS:
+		unit = 1
+	}
+	return int64(unit) * v
+}
+
+func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
 	var unit int64 = 1
 	switch t.timeUnit {
 	case ast.DD:
@@ -203,7 +221,7 @@ func convertFromDuration(t *WindowPlan) (int64, int64) {
 	case ast.MS:
 		unit = 1
 	}
-	return int64(t.length) * unit, int64(t.interval) * unit
+	return int64(t.length) * unit, int64(t.interval) * unit, t.delay * unit
 }
 
 func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options *api.RuleOption) (*node.SourceNode, error) {
@@ -336,6 +354,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 				length:      w.Length.Val,
 				isEventTime: opt.IsEventTime,
 			}.Init()
+			if w.Delay != nil {
+				wp.delay = int64(w.Delay.Val)
+			}
 			if w.Interval != nil {
 				wp.interval = w.Interval.Val
 			} else if w.WindowType == ast.COUNT_WINDOW {

@@ -1003,7 +1003,10 @@ func validateWindows(fname string, args []ast.Expr) (ast.WindowType, error) {
 		}
 		return ast.SESSION_WINDOW, nil
 	case "slidingwindow":
-		if err := validateWindow(fname, 2, args); err != nil {
+		if len(args) != 2 && len(args) != 3 {
+			return ast.SLIDING_WINDOW, fmt.Errorf("The arguments for %s should be 2 or 3.\n", fname)
+		}
+		if err := validateWindow(fname, len(args), args); err != nil {
 			return ast.SLIDING_WINDOW, err
 		}
 		return ast.SLIDING_WINDOW, nil
@@ -1069,8 +1072,14 @@ func (p *Parser) ConvertToWindows(wtype ast.WindowType, args []ast.Expr) (*ast.W
 		return nil, fmt.Errorf("Invalid timeliteral %s", tl.Val)
 	}
 	win.Length = &ast.IntegerLiteral{Val: args[1].(*ast.IntegerLiteral).Val}
+	win.Delay = &ast.IntegerLiteral{Val: 0}
 	if len(args) > 2 {
-		win.Interval = &ast.IntegerLiteral{Val: args[2].(*ast.IntegerLiteral).Val}
+		if wtype != ast.SLIDING_WINDOW {
+			win.Interval = &ast.IntegerLiteral{Val: args[2].(*ast.IntegerLiteral).Val}
+		} else {
+			win.Delay = &ast.IntegerLiteral{Val: args[2].(*ast.IntegerLiteral).Val}
+			win.Interval = &ast.IntegerLiteral{Val: 0}
+		}
 	} else {
 		win.Interval = &ast.IntegerLiteral{Val: 0}
 	}
