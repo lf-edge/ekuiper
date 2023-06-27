@@ -115,6 +115,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 		prevWindowEndTs int64
 		lastTicked      bool
 	)
+	isTupleMatch := make(map[*xsql.Tuple]bool, 0)
 	for {
 		select {
 		// process incoming item
@@ -161,11 +162,11 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 									}
 								}
 							}
-							if o.isMatchCondition(ctx, targetTuple) {
+							isMatch := isTupleMatch[targetTuple]
+							if isMatch {
 								inputs = o.scan(inputs, windowEndTs, ctx)
 							}
-						} else {
-							inputs = o.scan(inputs, windowEndTs, ctx)
+							delete(isTupleMatch, targetTuple)
 						}
 					}
 					prevWindowEndTs = windowEndTs
@@ -188,6 +189,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				if o.triggerTime == 0 {
 					o.triggerTime = d.Timestamp
 				}
+				isTupleMatch[d] = o.isMatchCondition(ctx, d)
 				inputs = append(inputs, d)
 				o.statManager.ProcessTimeEnd()
 				_ = ctx.PutState(WindowInputsKey, inputs)
