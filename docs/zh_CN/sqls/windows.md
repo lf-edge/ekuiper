@@ -145,3 +145,17 @@ CREATE STREAM demo (
 ## 窗口中的运行时错误
 
 如果窗口从上游接收到错误（例如，数据类型不符合流定义），则错误事件将立即转发到目标（sink）。 当前窗口计算将忽略错误事件。
+
+## 过滤窗口的触发条件
+
+对于滑动窗口，每一条数据都可以触发一个窗口，我们可以通过 `over` 子句将触发窗口的数据进行过滤，只会将满足过滤条件的数据去触发窗口。`over` 子句可以单独用在滑动窗口后面，也可以用在 `filter` 子句后，`over` 子句必须类似于 `Over(When expr)`，例如:
+
+```sql
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100) OVER(when revenue > 200)
+```
+
+或者:
+
+```sql
+SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) OVER(when revenue > 200)
+```

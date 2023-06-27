@@ -18,14 +18,15 @@ import "github.com/lf-edge/ekuiper/pkg/ast"
 
 type WindowPlan struct {
 	baseLogicalPlan
-	condition   ast.Expr
-	wtype       ast.WindowType
-	delay       int64
-	length      int
-	interval    int // If interval is not set, it is equals to Length
-	timeUnit    ast.Token
-	limit       int // If limit is not positive, there will be no limit
-	isEventTime bool
+	triggerCondition ast.Expr
+	condition        ast.Expr
+	wtype            ast.WindowType
+	delay            int64
+	length           int
+	interval         int // If interval is not set, it is equals to Length
+	timeUnit         ast.Token
+	limit            int // If limit is not positive, there will be no limit
+	isEventTime      bool
 }
 
 func (p WindowPlan) Init() *WindowPlan {

@@ -172,12 +172,13 @@ const (
 )
 
 type Window struct {
-	WindowType WindowType
-	Delay      *IntegerLiteral
-	Length     *IntegerLiteral
-	Interval   *IntegerLiteral
-	TimeUnit   *TimeLiteral
-	Filter     Expr
+	TriggerCondition Expr
+	WindowType       WindowType
+	Delay            *IntegerLiteral
+	Length           *IntegerLiteral
+	Interval         *IntegerLiteral
+	TimeUnit         *TimeLiteral
+	Filter           Expr
 	Expr
 }
 

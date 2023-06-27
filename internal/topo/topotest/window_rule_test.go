@@ -26,6 +26,23 @@ func TestWindow(t *testing.T) {
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
+			Name: `TestWindowRule0`,
+			Sql:  `SELECT size,color FROM demo GROUP BY SlidingWindow(ss, 5) Filter (where color = "red") Over (when size = 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size":  float64(3),
+						"color": "red",
+					},
+					{
+						"size":  float64(1),
+						"color": "red",
+					},
+				},
+			},
+			M: map[string]interface{}{},
+		},
+		{
 			Name: `TestWindowRule1`,
 			Sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{

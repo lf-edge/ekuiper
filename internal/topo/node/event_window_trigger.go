@@ -115,6 +115,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 		prevWindowEndTs int64
 		lastTicked      bool
 	)
+	isTupleMatch := make(map[*xsql.Tuple]bool, 0)
 	for {
 		select {
 		// process incoming item
@@ -158,8 +159,25 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						o.triggerTime = inputs[0].Timestamp
 					}
 					if windowEndTs > 0 {
-						if o.window.Delay > 0 && o.window.Type == ast.SLIDING_WINDOW {
-							o.delayTS = append(o.delayTS, windowEndTs+o.window.Delay)
+						if o.window.Type == ast.SLIDING_WINDOW {
+							var targetTuple *xsql.Tuple
+							if len(inputs) > 0 && o.window.Type == ast.SLIDING_WINDOW {
+								for _, t := range inputs {
+									if t.Timestamp == windowEndTs {
+										targetTuple = t
+										break
+									}
+								}
+							}
+							isMatch := isTupleMatch[targetTuple]
+							if isMatch {
+								if o.window.Delay > 0 && o.window.Type == ast.SLIDING_WINDOW {
+									o.delayTS = append(o.delayTS, windowEndTs+o.window.Delay)
+								} else {
+									inputs = o.scan(inputs, windowEndTs, ctx)
+								}
+							}
+							delete(isTupleMatch, targetTuple)
 						} else {
 							inputs = o.scan(inputs, windowEndTs, ctx)
 						}
@@ -184,6 +202,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				if o.triggerTime == 0 {
 					o.triggerTime = d.Timestamp
 				}
+				isTupleMatch[d] = o.isMatchCondition(ctx, d)
 				inputs = append(inputs, d)
 				o.statManager.ProcessTimeEnd()
 				_ = ctx.PutState(WindowInputsKey, inputs)
