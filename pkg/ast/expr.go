@@ -75,7 +75,9 @@ type NumberLiteral struct {
 }
 
 type Wildcard struct {
-	Token Token
+	Token   Token
+	Replace []Field
+	Except  []string
 }
 
 func (pe *ParenExpr) expr() {}

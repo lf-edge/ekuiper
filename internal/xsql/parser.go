@@ -1568,12 +1568,71 @@ func (p *Parser) parseFilter() (ast.Expr, error) {
 }
 
 func (p *Parser) parseAsterisk() (ast.Expr, error) {
-	switch p.inFunc {
-	case "mqtt", "meta":
+	if p.inFunc == "mqtt" || p.inFunc == "meta" {
+		tok, _ := p.scanIgnoreWhitespace()
+		if tok == ast.EXCEPT || tok == ast.REPLACE {
+			return nil, fmt.Errorf("%q is not supported in meta function", tok)
+		}
+		p.unscan()
 		return &ast.MetaRef{StreamName: ast.DefaultStream, Name: "*"}, nil
-	default:
-		return &ast.Wildcard{Token: ast.ASTERISK}, nil
 	}
+
+	w := ast.Wildcard{Token: ast.ASTERISK}
+loop:
+	for {
+		tok, _ := p.scanIgnoreWhitespace()
+		switch tok {
+		case ast.EXCEPT:
+			if tok1, lit := p.scanIgnoreWhitespace(); tok1 != ast.LPAREN {
+				return nil, fmt.Errorf("Found %q after EXCEPT, expect left parentheses.", lit)
+			}
+			fieldNames := make([]string, 0)
+		except:
+			for {
+				tok, lit := p.scanIgnoreWhitespace()
+				switch tok {
+				case ast.IDENT:
+					fieldNames = append(fieldNames, lit)
+				case ast.COMMA:
+					continue except
+				case ast.RPAREN:
+					break except
+				default:
+					return nil, fmt.Errorf("Found %q in EXCEPT", lit)
+				}
+			}
+			w.Except = fieldNames
+		case ast.REPLACE:
+			if tok1, lit := p.scanIgnoreWhitespace(); tok1 != ast.LPAREN {
+				return nil, fmt.Errorf("Found %q after REPLACE, expect left parentheses.", lit)
+			}
+			var fields ast.Fields
+		replace:
+			for {
+				field, err := p.parseField()
+
+				if err != nil {
+					return nil, err
+				} else {
+					fields = append(fields, *field)
+				}
+
+				tok, lit := p.scanIgnoreWhitespace()
+				if tok == ast.RPAREN {
+					break replace
+				}
+				if tok != ast.COMMA {
+					return nil, fmt.Errorf("Found % q in REPLACE", lit)
+				}
+			}
+			w.Replace = fields
+		default:
+			p.unscan()
+			break loop
+		}
+	}
+
+	return &w, nil
 }
 
 func (p *Parser) inmeta() bool {

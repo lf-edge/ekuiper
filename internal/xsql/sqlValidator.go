@@ -204,6 +204,11 @@ func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
 	case *ast.ColFuncField:
 		e.Expr = validateExpr(e.Expr, streamName)
 		return e
+	case *ast.Wildcard:
+		for i, replace := range e.Replace {
+			e.Replace[i].Expr = validateExpr(replace.Expr, streamName)
+		}
+		return e
 	default:
 		return expr
 	}

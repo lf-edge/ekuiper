@@ -462,7 +462,21 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			return nil
 		}
 	case *ast.Wildcard:
-		val, _ := v.Valuer.Value("*", "")
+		all, _ := v.Valuer.Value("*", "")
+		val, ok := all.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected wildcard value %v", all)
+		}
+		for _, key := range expr.Except {
+			delete(val, key)
+		}
+		for _, field := range expr.Replace {
+			vi := v.Eval(field.Expr)
+			if e, ok := vi.(error); ok {
+				return e
+			}
+			val[field.AName] = vi
+		}
 		return val
 	case *ast.CaseExpr:
 		return v.evalCase(expr)

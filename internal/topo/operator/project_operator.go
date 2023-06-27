@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ type ProjectOp struct {
 	ColNames         [][]string // list of [col, table]
 	AliasNames       []string   // list of alias name
 	ExprNames        []string   // list of expr name
+	ExceptNames      []string   // list of except name
 	AllWildcard      bool
 	WildcardEmitters map[string]bool
 	AliasFields      ast.Fields
@@ -147,7 +148,7 @@ func (pp *ProjectOp) project(row xsql.Row, ve *xsql.ValuerEval) error {
 			pp.alias = append(pp.alias, f.AName, vi)
 		}
 	}
-	row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters)
+	row.Pick(pp.AllWildcard, pp.ColNames, pp.WildcardEmitters, pp.ExceptNames)
 	for i := 0; i < len(pp.kvs); i += 2 {
 		row.Set(pp.kvs[i].(string), pp.kvs[i+1])
 	}

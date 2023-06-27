@@ -274,11 +274,11 @@ func (w *WindowTuples) ToMaps() []map[string]interface{} {
 	}
 }
 
-func (w *WindowTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+func (w *WindowTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
 	cols = w.AffiliateRow.Pick(cols)
 	for i, t := range w.Content {
 		tc := t.Clone()
-		tc.Pick(allWildcard, cols, wildcardEmitters)
+		tc.Pick(allWildcard, cols, wildcardEmitters, except)
 		w.Content[i] = tc.(TupleRow)
 	}
 }
@@ -412,11 +412,11 @@ func (s *JoinTuples) ToMaps() []map[string]interface{} {
 	}
 }
 
-func (s *JoinTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+func (s *JoinTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
 	cols = s.AffiliateRow.Pick(cols)
 	for i, t := range s.Content {
 		tc := t.Clone().(*JoinTuple)
-		tc.Pick(allWildcard, cols, wildcardEmitters)
+		tc.Pick(allWildcard, cols, wildcardEmitters, except)
 		s.Content[i] = tc
 	}
 }
