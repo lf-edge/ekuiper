@@ -222,3 +222,29 @@ percentile_disc(col, percentile)
 Returns the percentile value based on a discrete distribution of expression in the group, usually a window. The first
 argument is the column as the key to percentile_disc. The second argument is the percentile of the value that you want
 to find. The percentile must be a constant between 0.0 and 1.0.
+
+## LAST_AGG_HIT_COUNT
+
+```text
+last_agg_hit_count()
+```
+
+Returns the number of times the function had been called and passed.
+The function is usually used to get the accumulated trigger count of an aggregate rule.
+If the function is used in `HAVING` clause, it will only update the count when the condition is true.
+
+To use the similar functionality in a non-aggregate rule,
+use the [last_hit_count](./other_functions.md#lasthitcount) function.
+
+## LAST_AGG_HIT_TIME
+
+```text
+last_agg_hit_time()
+```
+
+Returns the int64 timestamp of the last **event** time the function had been called and passed.
+The function is usually used to get the last trigger time of an aggregate rule.
+If the function is used in `HAVING` clause, it will only update the timestamp when the condition is true.
+
+To use the similar functionality in a non-aggregate rule,
+use the [last_hit_time](./other_functions.md#lasthittime) function.

@@ -26,10 +26,21 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-var implicitValueFuncs = map[string]bool{
-	"window_start": true,
-	"window_end":   true,
-}
+var (
+	// implicitValueFuncs is a set of functions that event implicitly passes the value.
+	implicitValueFuncs = map[string]bool{
+		"window_start": true,
+		"window_end":   true,
+		"event_time":   true,
+	}
+	// ImplicitStateFuncs is a set of functions that read/update global state implicitly.
+	ImplicitStateFuncs = map[string]bool{
+		"last_hit_time":      true,
+		"last_hit_count":     true,
+		"last_agg_hit_time":  true,
+		"last_agg_hit_count": true,
+	}
+)
 
 /*
  *  Valuer definitions
@@ -272,7 +283,7 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 		return &BracketEvalResult{Start: ii, End: ii}
 	case *ast.Call:
 		// The analytic functions are calculated prior to all ops, so just get the cached field value
-		if expr.Cached {
+		if expr.Cached && expr.CachedField != "" {
 			val, ok := v.Valuer.Value(expr.CachedField, "")
 			if ok {
 				return val
@@ -293,6 +304,30 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 					args []interface{}
 					ft   = expr.FuncType
 				)
+				if _, ok := ImplicitStateFuncs[expr.Name]; ok {
+					args = make([]interface{}, 1)
+					// This is the implicit arg set by the filter planner
+					// If set, it will only return the value, no updating the value
+					if expr.Cached {
+						args[0] = false
+					} else {
+						args[0] = true
+					}
+					if expr.Name == "last_hit_time" || expr.Name == "last_agg_hit_time" {
+						if vv, ok := v.Valuer.(FuncValuer); ok {
+							val, ok := vv.FuncValue("event_time")
+							if ok {
+								args = append(args, val)
+							} else {
+								return fmt.Errorf("call %s error: %v", expr.Name, val)
+							}
+						} else {
+							return fmt.Errorf("call %s error: %v", expr.Name, "cannot get current time")
+						}
+					}
+					val, _ := valuer.Call(expr.Name, expr.FuncId, args)
+					return val
+				}
 				if len(expr.Args) > 0 {
 					switch ft {
 					case ast.FuncTypeAgg:

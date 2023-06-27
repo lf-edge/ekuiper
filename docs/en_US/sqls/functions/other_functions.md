@@ -64,6 +64,32 @@ Returns the meta-data of a specified key. The key could be:
 - A key to refer to nested field for multi level metadata, such as `meta(src1.reading.device.name)`. This assumes
   reading is map structure metadata.
 
+## LAST_HIT_COUNT
+
+```text
+last_hit_count()
+```
+
+Returns the number of times the function had been called and passed.
+The function is usually used to get the accumulated trigger count of a continuous rule.
+If the function is used in `WHERE` clause, it will only update the count when the condition is true.
+
+Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
+To get the hit count of an aggregate rule, use [last_agg_hit_count](./aggregate_functions.md#lastagghitcount) instead.
+
+## LAST_HIT_TIME
+
+```text
+last_hit_time()
+```
+
+Returns the int64 timestamp of the last **event** time the function had been called and passed.
+The function is usually used to get the last trigger time of a continuous rule.
+If the function is used in `WHERE` clause, it will only update the timestamp when the condition is true.
+
+Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
+To get the hit time of an aggregate rule, use [last_agg_hit_time](./aggregate_functions.md#lastagghittime) instead.
+
 ## WINDOW_START
 
 ```text

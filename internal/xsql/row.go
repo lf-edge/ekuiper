@@ -26,7 +26,7 @@ import (
 // The tuple clone should be cheap.
 
 /*
- *  Interfaces definition
+ * Interfaces definition
  */
 
 type Wildcarder interface {
@@ -410,6 +410,15 @@ func (t *Tuple) GetTimestamp() int64 {
 
 func (t *Tuple) IsWatermark() bool {
 	return false
+}
+
+func (t *Tuple) FuncValue(key string) (interface{}, bool) {
+	switch key {
+	case "event_time":
+		return t.Timestamp, true
+	default:
+		return nil, false
+	}
 }
 
 func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
