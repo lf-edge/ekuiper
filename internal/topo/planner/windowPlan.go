@@ -14,7 +14,10 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type WindowPlan struct {
 	baseLogicalPlan
@@ -27,6 +30,8 @@ type WindowPlan struct {
 	timeUnit         ast.Token
 	limit            int // If limit is not positive, there will be no limit
 	isEventTime      bool
+
+	stateFuncs []*ast.Call
 }
 
 func (p WindowPlan) Init() *WindowPlan {
@@ -56,5 +61,41 @@ func (p *WindowPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 
 func (p *WindowPlan) PruneColumns(fields []ast.Expr) error {
 	f := getFields(p.condition)
+	f = append(f, getFields(p.triggerCondition)...)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
+}
+
+func (p *WindowPlan) ExtractStateFunc() {
+	aliases := make(map[string]ast.Expr)
+	ast.WalkFunc(p.triggerCondition, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			p.transform(f)
+		case *ast.FieldRef:
+			if f.AliasRef != nil {
+				aliases[f.Name] = f.AliasRef.Expression
+			}
+		}
+		return true
+	})
+	for _, ex := range aliases {
+		ast.WalkFunc(ex, func(n ast.Node) bool {
+			switch f := n.(type) {
+			case *ast.Call:
+				p.transform(f)
+			}
+			return true
+		})
+	}
+}
+
+func (p *WindowPlan) transform(f *ast.Call) {
+	if _, ok := xsql.ImplicitStateFuncs[f.Name]; ok {
+		f.Cached = true
+		p.stateFuncs = append(p.stateFuncs, &ast.Call{
+			Name:     f.Name,
+			FuncId:   f.FuncId,
+			FuncType: f.FuncType,
+		})
+	}
 }

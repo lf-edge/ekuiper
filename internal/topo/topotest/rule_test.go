@@ -978,6 +978,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
 					"lc":    float64(0),
+					"lt":    float64(0),
 					"et":    float64(1541152487632),
 				}},
 				{{

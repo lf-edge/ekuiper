@@ -153,7 +153,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		return nil, nil, walkErr
 	}
 	// walk sources at last to let them run firstly
-	// because other clause may depend on the alias defined here
+	// because another clause may depend on the alias defined here
 	ast.WalkFunc(s.Fields, func(n ast.Node) bool {
 		switch f := n.(type) {
 		case *ast.Call:
@@ -213,6 +213,10 @@ func validate(s *ast.SelectStatement) (err error) {
 				err = fmt.Errorf("function %s is not allowed in an aggregate query", f.Name)
 				return false
 			}
+		case *ast.Window:
+			// agg func check is done in dimensions.
+			// in window trigger condition, NoAggFunc is allowed unlike normal condition so return false to skip that check
+			return false
 		}
 		return true
 	})
