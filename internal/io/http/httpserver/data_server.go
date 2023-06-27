@@ -126,7 +126,7 @@ func createDataServer() (*http.Server, *mux.Router, error) {
 		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin", "Authorization"}), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE", "HEAD"}))(r),
 	}
 	done = make(chan struct{})
-	go func() {
+	go func(done chan struct{}) {
 		var err error
 		if conf.Config.Source.HttpServerTls == nil {
 			err = s.ListenAndServe()
@@ -137,7 +137,7 @@ func createDataServer() (*http.Server, *mux.Router, error) {
 			sctx.GetLogger().Errorf("http data server error: %v", err)
 			close(done)
 		}
-	}()
+	}(done)
 	sctx.GetLogger().Infof("Serving http data server on port http://%s", cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort))
 	return s, r, nil
 }
