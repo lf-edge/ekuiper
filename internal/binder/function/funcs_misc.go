@@ -493,6 +493,11 @@ func registerMiscFunc() {
 		exec:  nil, // directly return in the valuer
 		val:   ValidateNoArg,
 	}
+	builtins["event_time"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec:  nil, // directly return in the valuer
+		val:   ValidateNoArg,
+	}
 	builtins["object_construct"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

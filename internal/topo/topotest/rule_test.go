@@ -230,37 +230,42 @@ func TestSingleSQL(t *testing.T) {
 		},
 		{
 			Name: `TestSingleSQLRule1`,
-			Sql:  `SELECT *, upper(color) FROM demo`,
+			Sql:  `SELECT *, upper(color), event_time() FROM demo`,
 			R: [][]map[string]interface{}{
 				{{
-					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
-					"upper": "RED",
+					"color":      "red",
+					"size":       float64(3),
+					"ts":         float64(1541152486013),
+					"upper":      "RED",
+					"event_time": float64(1541152486013),
 				}},
 				{{
-					"color": "blue",
-					"size":  float64(6),
-					"ts":    float64(1541152486822),
-					"upper": "BLUE",
+					"color":      "blue",
+					"size":       float64(6),
+					"ts":         float64(1541152486822),
+					"upper":      "BLUE",
+					"event_time": float64(1541152486822),
 				}},
 				{{
-					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
-					"upper": "BLUE",
+					"color":      "blue",
+					"size":       float64(2),
+					"ts":         float64(1541152487632),
+					"upper":      "BLUE",
+					"event_time": float64(1541152487632),
 				}},
 				{{
-					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
-					"upper": "YELLOW",
+					"color":      "yellow",
+					"size":       float64(4),
+					"ts":         float64(1541152488442),
+					"upper":      "YELLOW",
+					"event_time": float64(1541152488442),
 				}},
 				{{
-					"color": "red",
-					"size":  float64(1),
-					"ts":    float64(1541152489252),
-					"upper": "RED",
+					"color":      "red",
+					"size":       float64(1),
+					"ts":         float64(1541152489252),
+					"upper":      "RED",
+					"event_time": float64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
@@ -966,13 +971,14 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 		},
 		{
 			Name: `TestStateFunc`,
-			Sql:  `SELECT *, last_hit_time() as lt, last_hit_count() as lc FROM demoE WHERE size < 3 AND lc < 2`,
+			Sql:  `SELECT *, last_hit_time() as lt, last_hit_count() as lc, event_time() as et FROM demoE WHERE size < 3 AND lc < 2`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
 					"lc":    float64(0),
+					"et":    float64(1541152487632),
 				}},
 				{{
 					"color": "red",
@@ -980,6 +986,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 					"ts":    float64(1541152489252),
 					"lc":    float64(1),
 					"lt":    float64(1541152487632),
+					"et":    float64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
@@ -1052,7 +1059,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			LateTol:            1000,
 		},
 	}
-	for j, opt := range options[:1] {
+	for j, opt := range options {
 		DoRuleTest(t, tests, j, opt, 0)
 	}
 }

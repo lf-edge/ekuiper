@@ -27,47 +27,56 @@ func TestWindow(t *testing.T) {
 	tests := []RuleTest{
 		{
 			Name: `TestWindowRule1`,
-			Sql:  `SELECT * FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
+			Sql:  `SELECT *, event_time() as et FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
 					"size":  float64(3),
 					"ts":    float64(1541152486013),
+					"et":    float64(1541152486013),
 				}, {
 					"color": "blue",
 					"size":  float64(6),
 					"ts":    float64(1541152486822),
+					"et":    float64(1541152486822),
 				}},
 				{{
 					"color": "red",
 					"size":  float64(3),
 					"ts":    float64(1541152486013),
+					"et":    float64(1541152486013),
 				}, {
 					"color": "blue",
 					"size":  float64(6),
 					"ts":    float64(1541152486822),
+					"et":    float64(1541152486822),
 				}, {
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
+					"et":    float64(1541152487632),
 				}},
 				{{
 					"color": "blue",
 					"size":  float64(2),
 					"ts":    float64(1541152487632),
+					"et":    float64(1541152487632),
 				}, {
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
+					"et":    float64(1541152488442),
 				}},
 				{{
 					"color": "yellow",
 					"size":  float64(4),
 					"ts":    float64(1541152488442),
+					"et":    float64(1541152488442),
 				}, {
 					"color": "red",
 					"size":  float64(1),
 					"ts":    float64(1541152489252),
+					"et":    float64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
@@ -290,24 +299,28 @@ func TestWindow(t *testing.T) {
 		},
 		{
 			Name: `TestWindowRule5`,
-			Sql:  `SELECT count(temp), window_start() as ws, window_end() FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
+			Sql:  `SELECT count(temp), window_start() as ws, window_end(), event_time() as et FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
 				{{
 					"count":      float64(2),
 					"ws":         float64(1541152486013),
 					"window_end": float64(1541152487823), // timeout
+					"et":         float64(1541152487823),
 				}}, {{
 					"count":      float64(3),
 					"ws":         float64(1541152487932),
 					"window_end": float64(1541152490000), // tick
+					"et":         float64(1541152490000),
 				}}, {{
 					"count":      float64(5),
 					"ws":         float64(1541152490000),
 					"window_end": float64(1541152494000), // tick
+					"et":         float64(1541152494000),
 				}}, {{
 					"count":      float64(1),
 					"ws":         float64(1541152494000),
 					"window_end": float64(1541152495112), // timeout
+					"et":         float64(1541152495112),
 				}},
 			},
 			M: map[string]interface{}{
@@ -332,48 +345,56 @@ func TestWindow(t *testing.T) {
 		},
 		{
 			Name: `TestWindowRule6`,
-			Sql:  `SELECT window_end(), sum(temp) as temp, count(color) as c, window_start() FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
+			Sql:  `SELECT window_end(), event_time(), sum(temp) as temp, count(color) as c, window_start() FROM demo INNER JOIN demo1 ON demo.ts = demo1.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
 					"temp":         25.5,
 					"c":            float64(1),
 					"window_start": float64(1541152485115),
 					"window_end":   float64(1541152486115),
+					"event_time":   float64(1541152486115),
 				}}, {{
 					"temp":         25.5,
 					"c":            float64(1),
 					"window_start": float64(1541152485822),
 					"window_end":   float64(1541152486822),
+					"event_time":   float64(1541152486822),
 				}}, {{
 					"temp":         25.5,
 					"c":            float64(1),
 					"window_start": float64(1541152485903),
 					"window_end":   float64(1541152486903),
+					"event_time":   float64(1541152486903),
 				}}, {{
 					"temp":         28.1,
 					"c":            float64(1),
 					"window_start": float64(1541152486702),
 					"window_end":   float64(1541152487702),
+					"event_time":   float64(1541152487702),
 				}}, {{
 					"temp":         28.1,
 					"c":            float64(1),
 					"window_start": float64(1541152487442),
 					"window_end":   float64(1541152488442),
+					"event_time":   float64(1541152488442),
 				}}, {{
 					"temp":         55.5,
 					"c":            float64(2),
 					"window_start": float64(1541152487605),
 					"window_end":   float64(1541152488605),
+					"event_time":   float64(1541152488605),
 				}}, {{
 					"temp":         27.4,
 					"c":            float64(1),
 					"window_start": float64(1541152488252),
 					"window_end":   float64(1541152489252),
+					"event_time":   float64(1541152489252),
 				}}, {{
 					"temp":         52.9,
 					"c":            float64(2),
 					"window_start": float64(1541152488305),
 					"window_end":   float64(1541152489305),
+					"event_time":   float64(1541152489305),
 				}},
 			},
 			M: map[string]interface{}{
@@ -461,7 +482,7 @@ func TestWindow(t *testing.T) {
 		},
 		{
 			Name: `TestWindowRule8`,
-			Sql:  `SELECT color, window_end(), ts, count(*) as c, window_start() FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
+			Sql:  `SELECT color, window_end(), event_time() as et, ts, count(*) as c, window_start() FROM demo where size > 2 GROUP BY tumblingwindow(ss, 1) having c > 1`,
 			R: [][]map[string]interface{}{
 				{{
 					"color":        "red",
@@ -469,6 +490,7 @@ func TestWindow(t *testing.T) {
 					"c":            float64(2),
 					"window_start": float64(1541152486000),
 					"window_end":   float64(1541152487000),
+					"et":           float64(1541152487000),
 				}},
 			},
 			M: map[string]interface{}{
@@ -781,26 +803,30 @@ func TestEventWindow(t *testing.T) {
 		},
 		{
 			Name: `TestEventWindowRule1`,
-			Sql:  `SELECT count(*), last_agg_hit_time() as lt, last_agg_hit_count() as lc FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1) HAVING lc < 4`,
+			Sql:  `SELECT count(*), last_agg_hit_time() as lt, last_agg_hit_count() as lc, event_time() as et FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1) HAVING lc < 4`,
 			R: [][]map[string]interface{}{
 				{{
 					"count": float64(1),
 					"lc":    float64(0),
+					"et":    float64(1541152487000),
 				}},
 				{{
 					"count": float64(2),
 					"lc":    float64(1),
 					"lt":    float64(1541152487000),
+					"et":    float64(1541152488000),
 				}},
 				{{
 					"count": float64(2),
 					"lc":    float64(2),
 					"lt":    float64(1541152488000),
+					"et":    float64(1541152489000),
 				}},
 				{{
 					"count": float64(2),
 					"lc":    float64(3),
 					"lt":    float64(1541152489000),
+					"et":    float64(1541152490000),
 				}},
 			},
 			M: map[string]interface{}{
@@ -1298,7 +1324,7 @@ func TestEventWindow(t *testing.T) {
 			LateTol:            1000,
 		},
 	}
-	for j, opt := range options[:1] {
+	for j, opt := range options {
 		DoRuleTest(t, tests, j, opt, 10)
 	}
 }
