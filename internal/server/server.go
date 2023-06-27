@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/automaxprocs/maxprocs"
+
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/binder/meta"
@@ -37,6 +39,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 var (
@@ -86,6 +89,9 @@ func StartUp(Version, LoadFileType string) {
 	createPaths()
 	conf.InitConf()
 	factory.InitClientsFactory()
+
+	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
+	defer undo()
 
 	err := store.SetupWithKuiperConfig(conf.Config)
 	if err != nil {
@@ -166,9 +172,9 @@ func StartUp(Version, LoadFileType string) {
 	if conf.Config.Basic.RestTls != nil {
 		restHttpType = "https"
 	}
-	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s:%d. \n", Version, conf.Config.Basic.Port, restHttpType, conf.Config.Basic.RestIp, conf.Config.Basic.RestPort)
+	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort))
 	logger.Info(msg)
-	fmt.Print(msg)
+	fmt.Println(msg)
 
 	// Stop the services
 	sigint := make(chan os.Signal, 1)

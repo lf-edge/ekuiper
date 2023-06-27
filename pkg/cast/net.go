@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cast
 
 import (
-	"github.com/lf-edge/ekuiper/internal/server"
+	"net"
+	"strconv"
 )
 
-var (
-	Version      = "unknown"
-	LoadFileType = "relative"
-)
-
-func main() {
-	server.StartUp(Version, LoadFileType)
+func JoinHostPortInt(host string, port int) string {
+	return net.JoinHostPort(host, strconv.Itoa(port))
 }

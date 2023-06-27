@@ -135,6 +135,13 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 			case *xsql.WatermarkTuple:
 				ctx.GetLogger().Debug("WatermarkTuple", d.GetTimestamp())
 				watermarkTs := d.GetTimestamp()
+				if o.window.Type == ast.SLIDING_WINDOW {
+					for len(o.delayTS) > 0 && watermarkTs >= o.delayTS[0] {
+						inputs = o.scan(inputs, o.delayTS[0], ctx)
+						o.delayTS = o.delayTS[1:]
+					}
+				}
+
 				windowEndTs := nextWindowEndTs
 				ticked := false
 				// Session window needs a recalculation of window because its window end depends on the inputs
@@ -164,9 +171,15 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 							}
 							isMatch := isTupleMatch[targetTuple]
 							if isMatch {
-								inputs = o.scan(inputs, windowEndTs, ctx)
+								if o.window.Delay > 0 && o.window.Type == ast.SLIDING_WINDOW {
+									o.delayTS = append(o.delayTS, windowEndTs+o.window.Delay)
+								} else {
+									inputs = o.scan(inputs, windowEndTs, ctx)
+								}
 							}
 							delete(isTupleMatch, targetTuple)
+						} else {
+							inputs = o.scan(inputs, windowEndTs, ctx)
 						}
 					}
 					prevWindowEndTs = windowEndTs

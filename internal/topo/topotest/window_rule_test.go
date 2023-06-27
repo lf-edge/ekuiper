@@ -729,6 +729,34 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(4),
 			},
 		},
+		{
+			Name: `TestWindowRule13`,
+			Sql:  `SELECT color as c FROM demo GROUP BY SlidingWindow(ss, 3600,1) filter (where size = 3 )`,
+			R: [][]map[string]interface{}{
+				{{
+					"c": "red",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_3_project_0_exceptions_total":   int64(0),
+				"op_3_project_0_process_latency_us": int64(0),
+				"op_3_project_0_records_in_total":   int64(1),
+				"op_3_project_0_records_out_total":  int64(1),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(1),
+				"sink_mockSink_0_records_out_total": int64(1),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"op_2_window_0_exceptions_total":   int64(0),
+				"op_2_window_0_process_latency_us": int64(0),
+				"op_2_window_0_records_in_total":   int64(1),
+				"op_2_window_0_records_out_total":  int64(1),
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
@@ -757,6 +785,33 @@ func TestEventWindow(t *testing.T) {
 	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
+		{
+			Name: `TestEventWindowDelayRule0`,
+			Sql:  `SELECT size FROM demoE GROUP BY SlidingWindow(ss, 1,4) FILTER (where color = "red")`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size": float64(3),
+					},
+					{
+						"size": float64(1),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"op_2_watermark_0_records_in_total":  int64(6),
+				"op_2_watermark_0_records_out_total": int64(4),
+				"op_2_watermark_0_exceptions_total":  int64(0),
+
+				"op_3_windowFilter_0_records_in_total":  int64(4),
+				"op_3_windowFilter_0_records_out_total": int64(2),
+				"op_3_windowFilter_0_exceptions_total":  int64(0),
+
+				"op_3_window_0_records_in_total":  int64(2),
+				"op_3_window_0_records_out_total": int64(1),
+				"op_3_window_0_exceptions_total":  int64(0),
+			},
+		},
 		{
 			Name: `TestEventWindowRule1`,
 			Sql:  `SELECT * FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
@@ -821,7 +876,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_watermark_0_records_in_total":  int64(6),
 				"op_2_watermark_0_records_out_total": int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule2`,
 			Sql:  `SELECT window_start(), window_end(), color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -862,7 +918,8 @@ func TestEventWindow(t *testing.T) {
 				"op_4_filter_0_records_in_total":   int64(5),
 				"op_4_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule3`,
 			Sql:  `SELECT color, temp, demoE.ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -924,7 +981,8 @@ func TestEventWindow(t *testing.T) {
 				"op_5_join_0_records_in_total":   int64(5),
 				"op_5_join_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule4`,
 			Sql:  `SELECT  window_start() as ws, color, window_end() as we FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			R: [][]map[string]interface{}{
@@ -991,7 +1049,8 @@ func TestEventWindow(t *testing.T) {
 				"op_5_order_0_records_in_total":   int64(4),
 				"op_5_order_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule5`,
 			Sql:  `SELECT temp FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
@@ -1036,7 +1095,8 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":   int64(10),
 				"op_3_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule6`,
 			Sql:  `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -1084,7 +1144,8 @@ func TestEventWindow(t *testing.T) {
 				"op_5_join_0_records_in_total":   int64(5),
 				"op_5_join_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule7`,
 			Sql:  `SELECT * FROM demoErr GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
@@ -1140,7 +1201,8 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":   int64(3),
 				"op_3_window_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule8`,
 			Sql:  `SELECT temp, window_start(), window_end() FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
@@ -1205,7 +1267,8 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":   int64(10),
 				"op_3_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule9`,
 			Sql:  `SELECT window_end(), color, window_start() FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
@@ -1516,4 +1579,54 @@ func TestWindowError(t *testing.T) {
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
+}
+
+func TestEventSlidingWindow(t *testing.T) {
+	// Reset
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: `TestEventWindowRuleDelay`,
+			Sql:  `SELECT color  FROM demoE GROUP BY SlidingWindow(ss, 1,1) FILTER (where size = 3)`,
+			R: [][]map[string]interface{}{
+				{{
+					"color": "red",
+				}},
+			},
+			M: map[string]interface{}{
+				"source_demoE_0_exceptions_total":  int64(0),
+				"source_demoE_0_records_in_total":  int64(6),
+				"source_demoE_0_records_out_total": int64(6),
+			},
+		},
+	}
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+			LateTol:            1000,
+		},
+		{
+			BufferLength: 100,
+			SendError:    true,
+			IsEventTime:  true,
+			LateTol:      1000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 10)
+	}
 }

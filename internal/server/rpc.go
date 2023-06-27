@@ -33,6 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/sink"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -59,7 +60,7 @@ func (r *rpcComp) serve() {
 		logger.Fatal("Format of service Server isn'restHttpType correct. ", err)
 	}
 	srvRpc := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", ipRpc, portRpc),
+		Addr:         cast.JoinHostPortInt(ipRpc, portRpc),
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,

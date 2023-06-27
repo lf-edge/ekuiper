@@ -29,6 +29,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 // manage the global http data server
@@ -117,7 +118,7 @@ func UnregisterEndpoint(endpoint string) {
 func createDataServer() (*http.Server, *mux.Router, error) {
 	r := mux.NewRouter()
 	s := &http.Server{
-		Addr: fmt.Sprintf("%s:%d", conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort),
+		Addr: cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 60 * 5,
 		ReadTimeout:  time.Second * 60 * 5,
@@ -137,7 +138,7 @@ func createDataServer() (*http.Server, *mux.Router, error) {
 			close(done)
 		}
 	}()
-	sctx.GetLogger().Infof("Serving http data server on port http://%s:%d", conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort)
+	sctx.GetLogger().Infof("Serving http data server on port http://%s", cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort))
 	return s, r, nil
 }
 

@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	kconf "github.com/lf-edge/ekuiper/tools/kubernetes/conf"
 )
 
@@ -170,7 +171,7 @@ func (s *server) processDir() bool {
 		return false
 	}
 	conf := kconf.GetConf()
-	host := fmt.Sprintf(`http://%s:%d`, conf.GetIp(), conf.GetPort())
+	host := "http://" + cast.JoinHostPortInt(conf.GetIp(), conf.GetPort())
 	for _, entry := range dirEntries {
 		if !strings.HasSuffix(entry.Name(), ".json") {
 			continue

@@ -28,7 +28,7 @@ type HavingOp struct {
 
 func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
-	log.Debugf("having plan receive %s", data)
+	log.Debugf("having plan receive %v", data)
 	switch input := data.(type) {
 	case error:
 		return input

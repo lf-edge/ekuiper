@@ -21,6 +21,7 @@ type WindowPlan struct {
 	triggerCondition ast.Expr
 	condition        ast.Expr
 	wtype            ast.WindowType
+	delay            int64
 	length           int
 	interval         int // If interval is not set, it is equals to Length
 	timeUnit         ast.Token
