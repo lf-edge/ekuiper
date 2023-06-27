@@ -190,7 +190,7 @@ func (m *taosSink) Configure(props map[string]interface{}) error {
 	if cfg.STable != "" && len(cfg.TagFields) == 0 {
 		return fmt.Errorf("property tagFields is required when sTable is set")
 	}
-	m.url = fmt.Sprintf(`%s:%s@tcp(%s:%d)/%s`, cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
+	m.url = fmt.Sprintf(`%s:%s@tcp(%s)/%s`, cfg.User, cfg.Password, cast.JoinHostPortInt(cfg.Host, cfg.Port), cfg.Database)
 	if cfg.DataField == "" {
 		cfg.DataField = cfg.TableDataField
 	}

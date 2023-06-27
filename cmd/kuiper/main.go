@@ -88,9 +88,9 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Connecting to %s:%d... \n", config.Host, config.Port)
+	fmt.Printf("Connecting to %s... \n", cast.JoinHostPortInt(config.Host, config.Port))
 	// Create a TCP connection to localhost on port 1234
-	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", config.Host, config.Port))
+	client, err := rpc.DialHTTP("tcp", cast.JoinHostPortInt(config.Host, config.Port))
 	if err != nil {
 		fmt.Printf("Failed to connect the server, please start the server.\n")
 		return
