@@ -25,11 +25,12 @@ import (
 )
 
 type Scanner struct {
-	r *bufio.Reader
+	r   *bufio.Reader
+	buf *bytes.Buffer
 }
 
 func NewScanner(r io.Reader) *Scanner {
-	return &Scanner{r: bufio.NewReader(r)}
+	return &Scanner{r: bufio.NewReader(r), buf: &bytes.Buffer{}}
 }
 
 func (s *Scanner) Scan() (tok ast.Token, lit string) {
@@ -150,8 +151,8 @@ func (s *Scanner) Scan() (tok ast.Token, lit string) {
 }
 
 func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
-	var buf bytes.Buffer
-	buf.WriteRune(s.read())
+	s.buf.Reset()
+	s.buf.WriteRune(s.read())
 	for {
 		if ch := s.read(); ch == eof {
 			break
@@ -159,11 +160,11 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 			s.unread()
 			break
 		} else {
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		}
 	}
-
-	switch lit = strings.ToUpper(buf.String()); lit {
+	word := s.buf.String()
+	switch lit = strings.ToUpper(word); lit {
 	case "SELECT":
 		return ast.SELECT, lit
 	case "AS":
@@ -241,51 +242,52 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 	case "MS":
 		return ast.MS, lit
 	}
-	return ast.IDENT, buf.String()
+	return ast.IDENT, word
 }
 
 func (s *Scanner) ScanString(isSingle bool) (tok ast.Token, lit string) {
-	var buf bytes.Buffer
+	s.buf.Reset()
 	ch := s.read()
 	if ch == '\'' && isSingle {
-		buf.WriteRune('"')
+		s.buf.WriteRune('"')
 	} else {
-		buf.WriteRune(ch)
+		s.buf.WriteRune(ch)
 	}
 	escape := false
 	for {
 		ch = s.read()
 		if ch == '"' && !escape {
 			if !isSingle {
-				buf.WriteRune(ch)
+				s.buf.WriteRune(ch)
 				break
 			} else {
 				escape = false
-				buf.WriteRune('\\')
-				buf.WriteRune(ch)
+				s.buf.WriteRune('\\')
+				s.buf.WriteRune(ch)
 			}
 		} else if ch == '\'' && !escape && isSingle {
-			buf.WriteRune('"')
+			s.buf.WriteRune('"')
 			break
 		} else if ch == eof {
-			return ast.BADSTRING, buf.String()
+			return ast.BADSTRING, s.buf.String()
 		} else if ch == '\\' && !escape {
 			escape = true
 			nextCh := s.read()
 			if nextCh == '\'' && isSingle {
-				buf.WriteRune(nextCh)
+				s.buf.WriteRune(nextCh)
 			} else {
-				buf.WriteRune(ch)
+				s.buf.WriteRune(ch)
 				s.unread()
 			}
 		} else {
 			escape = false
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		}
 	}
-	r, err := strconv.Unquote(buf.String())
+	word := s.buf.String()
+	r, err := strconv.Unquote(word)
 	if err != nil {
-		return ast.ILLEGAL, "invalid string: " + buf.String()
+		return ast.ILLEGAL, "invalid string: " + word
 	}
 	if isSingle {
 		return ast.SINGLEQUOTE, r
@@ -294,63 +296,63 @@ func (s *Scanner) ScanString(isSingle bool) (tok ast.Token, lit string) {
 }
 
 func (s *Scanner) ScanDigit() (tok ast.Token, lit string) {
-	var buf bytes.Buffer
+	s.buf.Reset()
 	ch := s.read()
-	buf.WriteRune(ch)
+	s.buf.WriteRune(ch)
 	for {
 		if ch := s.read(); isDigit(ch) {
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		} else {
 			s.unread()
 			break
 		}
 	}
-	return ast.INTEGER, buf.String()
+	return ast.INTEGER, s.buf.String()
 }
 
 func (s *Scanner) ScanNumber(startWithDot bool, isNeg bool) (tok ast.Token, lit string) {
-	var buf bytes.Buffer
+	s.buf.Reset()
 
 	if isNeg {
-		buf.WriteRune('-')
+		s.buf.WriteRune('-')
 	}
 
 	if startWithDot {
-		buf.WriteRune('.')
+		s.buf.WriteRune('.')
 	}
 
 	ch := s.read()
-	buf.WriteRune(ch)
+	s.buf.WriteRune(ch)
 
 	isNum := false
 	for {
 		if ch := s.read(); isDigit(ch) {
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		} else if ch == '.' {
 			isNum = true
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		} else {
 			s.unread()
 			break
 		}
 	}
 	if isNum || startWithDot {
-		return ast.NUMBER, buf.String()
+		return ast.NUMBER, s.buf.String()
 	} else {
-		return ast.INTEGER, buf.String()
+		return ast.INTEGER, s.buf.String()
 	}
 }
 
 func (s *Scanner) ScanBackquoteIdent() (tok ast.Token, lit string) {
-	var buf bytes.Buffer
+	s.buf.Reset()
 	for {
 		ch := s.read()
 		if isBackquote(ch) || ch == eof {
 			break
 		}
-		buf.WriteRune(ch)
+		s.buf.WriteRune(ch)
 	}
-	return ast.IDENT, buf.String()
+	return ast.IDENT, s.buf.String()
 }
 
 func (s *Scanner) skipUntilNewline() {
@@ -382,7 +384,7 @@ func (s *Scanner) skipUntilEndComment() error {
 }
 
 func (s *Scanner) ScanWhiteSpace() (tok ast.Token, lit string) {
-	var buf bytes.Buffer
+	s.buf.Reset()
 	for {
 		if ch := s.read(); ch == eof {
 			break
@@ -390,10 +392,10 @@ func (s *Scanner) ScanWhiteSpace() (tok ast.Token, lit string) {
 			s.unread()
 			break
 		} else {
-			buf.WriteRune(ch)
+			s.buf.WriteRune(ch)
 		}
 	}
-	return ast.WS, buf.String()
+	return ast.WS, s.buf.String()
 }
 
 func (s *Scanner) read() rune {
