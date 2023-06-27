@@ -40,6 +40,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
@@ -157,7 +158,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	}
 
 	server := &http.Server{
-		Addr: fmt.Sprintf("%s:%d", ip, port),
+		Addr: cast.JoinHostPortInt(ip, port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 60 * 5,
 		ReadTimeout:  time.Second * 60 * 5,
