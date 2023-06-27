@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/automaxprocs/maxprocs"
+
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/binder/meta"
@@ -86,6 +88,9 @@ func StartUp(Version, LoadFileType string) {
 	createPaths()
 	conf.InitConf()
 	factory.InitClientsFactory()
+
+	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
+	defer undo()
 
 	err := store.SetupWithKuiperConfig(conf.Config)
 	if err != nil {

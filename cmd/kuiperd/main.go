@@ -15,8 +15,6 @@
 package main
 
 import (
-	_ "go.uber.org/automaxprocs"
-
 	"github.com/lf-edge/ekuiper/internal/server"
 )
 
