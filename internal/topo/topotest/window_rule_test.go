@@ -1317,6 +1317,26 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_out_total":  int64(5),
 			},
 		},
+		{
+			Name: `TestEventWindowCondition10`,
+			Sql:  `SELECT color FROM demoE GROUP BY SlidingWindow(ss, 1) Over (When size = 3)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"color": "red",
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"op_2_watermark_0_records_in_total":  int64(6),
+				"op_2_watermark_0_records_out_total": int64(4),
+				"op_2_watermark_0_exceptions_total":  int64(0),
+
+				"op_3_window_0_records_in_total":  int64(4),
+				"op_3_window_0_records_out_total": int64(1),
+				"op_3_window_0_exceptions_total":  int64(0),
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
