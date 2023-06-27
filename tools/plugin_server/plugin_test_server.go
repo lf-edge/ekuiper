@@ -31,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 // Only support to test a single plugin Testing process.
@@ -112,7 +113,7 @@ func createRestServer(ip string, port int) *http.Server {
 	r.HandleFunc("/symbol/start", startSymbolHandler).Methods(http.MethodPost)
 	r.HandleFunc("/symbol/stop", stopSymbolHandler).Methods(http.MethodPost)
 	server := &http.Server{
-		Addr: fmt.Sprintf("%s:%d", ip, port),
+		Addr: cast.JoinHostPortInt(ip, port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 60 * 5,
 		ReadTimeout:  time.Second * 60 * 5,
