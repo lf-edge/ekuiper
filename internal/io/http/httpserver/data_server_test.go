@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/internal/testx"
 )
@@ -67,11 +68,19 @@ func TestEndpoints(t *testing.T) {
 		t.Error("RegisterEndpoint should not return error for same endpoint")
 	}
 	RegisterEndpoint(endpoints[1], "PUT", "application/json")
-
-	err = testHttp(client, urlPrefix+endpoints[0], "POST")
-	if err != nil {
-		t.Error(err)
+	// wait for http server start
+	for i := 0; i < 3; i++ {
+		err = testHttp(client, urlPrefix+endpoints[0], "POST")
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Millisecond * 500)
 	}
+
+	if err != nil {
+		t.Error("httptest still fails after 3 times :", err.Error())
+	}
+
 	err = testHttp(client, urlPrefix+endpoints[1], "PUT")
 	if err != nil {
 		t.Error(err)
