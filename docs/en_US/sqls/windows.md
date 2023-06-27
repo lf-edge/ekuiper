@@ -140,13 +140,13 @@ If the window receive an error (for example, the data type does not comply to th
 
 ## The trigger condition of the Sliding Window
 
-each piece of data can trigger a window. We can filter the data that triggers the window through the `over` clause, and only the data that meets the filtering conditions will be used to trigger the window. The `over` clause can be used alone behind the sliding window, or it can be used after the `filter` clause, the `over` clause must be similar to `Over(When expr)`, for example:
+Each piece of data can trigger a window. We can filter the data that triggers the window through the `over` clause, and only the data that meets the filtering conditions will be used to trigger the window. The `over` clause can be used alone behind the sliding window, or it can be used after the `filter` clause, the `over` clause must be similar to `Over(When expr)`, for example:
 
 ```sql
 SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100) OVER(when revenue > 200)
 ```
 
-或者:
+or:
 
 ```sql
 SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) OVER(when revenue > 200)
