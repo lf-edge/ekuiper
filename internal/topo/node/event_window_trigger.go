@@ -160,24 +160,27 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					}
 					if windowEndTs > 0 {
 						if o.window.Type == ast.SLIDING_WINDOW {
-							var targetTuple *xsql.Tuple
-							if len(inputs) > 0 && o.window.Type == ast.SLIDING_WINDOW {
+							var targetTuples []*xsql.Tuple
+							if len(inputs) > 0 {
 								for _, t := range inputs {
 									if t.Timestamp == windowEndTs {
-										targetTuple = t
+										targetTuples = append(targetTuples, t)
+									} else if t.Timestamp > windowEndTs {
 										break
 									}
 								}
 							}
-							isMatch := isTupleMatch[targetTuple]
-							if isMatch {
-								if o.window.Delay > 0 && o.window.Type == ast.SLIDING_WINDOW {
-									o.delayTS = append(o.delayTS, windowEndTs+o.window.Delay)
-								} else {
-									inputs = o.scan(inputs, windowEndTs, ctx)
+							for _, targetTuple := range targetTuples {
+								isMatch := isTupleMatch[targetTuple]
+								if isMatch {
+									if o.window.Delay > 0 && o.window.Type == ast.SLIDING_WINDOW {
+										o.delayTS = append(o.delayTS, windowEndTs+o.window.Delay)
+									} else {
+										inputs = o.scan(inputs, windowEndTs, ctx)
+									}
 								}
+								delete(isTupleMatch, targetTuple)
 							}
-							delete(isTupleMatch, targetTuple)
 						} else {
 							inputs = o.scan(inputs, windowEndTs, ctx)
 						}
