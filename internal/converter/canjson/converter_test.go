@@ -47,11 +47,11 @@ func TestDecode(t *testing.T) {
 				"ChrgngSttnCapctOfDsttnNav": 464.0,
 				"DistToDsttnNav":            0.0,
 				"DsttnTypOfNav":             5.0,
-				"FICMChrgCtrlReq":           0.0,
-				"FICMChrgSttnMchngSta":      0.0,
-				"FICMEleccLckCtrlReq":       0.0,
-				"FICMOnRutWarmOffReq":       0.0,
-				"FICMOnRutWarmOffReqV":      0.0,
+				"FICMChrgCtrlReq":           2.0,
+				"FICMChrgSttnMchngSta":      3.0,
+				"FICMEleccLckCtrlReq":       1.0,
+				"FICMOnRutWarmOffReq":       1.0,
+				"FICMOnRutWarmOffReqV":      1.0,
 				"GudTimeToDsttnNav":         0.0,
 				"NavGudcSts":                0.0,
 			},
@@ -62,11 +62,11 @@ func TestDecode(t *testing.T) {
 				"ChrgngSttnCapctOfDsttnNav": 464.0,
 				"DistToDsttnNav":            0.0,
 				"DsttnTypOfNav":             5.0,
-				"FICMChrgCtrlReq":           0.0,
-				"FICMChrgSttnMchngSta":      0.0,
-				"FICMEleccLckCtrlReq":       0.0,
-				"FICMOnRutWarmOffReq":       0.0,
-				"FICMOnRutWarmOffReqV":      0.0,
+				"FICMChrgCtrlReq":           2.0,
+				"FICMChrgSttnMchngSta":      3.0,
+				"FICMEleccLckCtrlReq":       1.0,
+				"FICMOnRutWarmOffReq":       1.0,
+				"FICMOnRutWarmOffReqV":      1.0,
 				"GudTimeToDsttnNav":         0.0,
 				"NavGudcSts":                0.0,
 				"VBBrkCntlAccel":            0.0,
@@ -85,6 +85,21 @@ func TestDecode(t *testing.T) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.m, a) {
 			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, a)
+		}
+	}
+}
+
+func BenchmarkDecode(b *testing.B) {
+	f := []byte(`{"meta":{"id":1}, "frames":[{"id":1006, "data":"54657374000000005465737400000000"},{"id":1414, "data":"5465737400000000"},{"id":338, "data":"5465737400000000"},{"id":1414, "data":"5465737400000000"},{"id":340, "data":"5465737400000000"},{"id":368, "data":"5465737400000000"},{"id":1548, "data":"5465737400000000"},{"id":1547, "data":"5465737400000000"}]}`)
+
+	c, err := NewConverter("test")
+	if err != nil {
+		b.Fatal(err)
+	}
+	for i := 0; i < b.N; i++ {
+		_, err := c.Decode(f)
+		if err != nil {
+			b.Fatal(err)
 		}
 	}
 }

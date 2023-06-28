@@ -15,25 +15,24 @@
 package canjson
 
 import (
-	"encoding/json"
+	"encoding/hex"
 	"fmt"
-
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/converter/can/dbc"
 
 	"github.com/ngjaying/can"
 	"github.com/ngjaying/can/pkg/descriptor"
+	"github.com/valyala/fastjson"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/converter/can/dbc"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
-// The converter for socketCan format
-// Expects to receive a socketCan bytes array [16]byte with canId and data inside
-
-type packedFrames struct {
-	Meta   map[string]interface{} `json:"meta,omitempty"`
-	Frames []can.Frame            `json:"frames,omitempty"`
-}
+// The format of the json.
+// Comment out as we use fastjson
+//type packedFrames struct {
+//	Meta   map[string]interface{} `json:"meta,omitempty"`
+//	Frames []can.Frame            `json:"frames,omitempty"`
+//}
 
 type Converter struct {
 	messages map[uint32]*descriptor.Message
@@ -45,31 +44,74 @@ func (c *Converter) Encode(_ interface{}) ([]byte, error) {
 }
 
 func (c *Converter) Decode(b []byte) (interface{}, error) {
-	//frame := socketcan.Frame{}
-	//frame.UnmarshalBinary(b)
-	//if frame.IsError() {
-	//	return nil, fmt.Errorf("error frame received: %v", frame.DecodeErrorFrame())
-	//}
-	//canFrame := frame.DecodeFrame()
-	p := &packedFrames{}
-	err := json.Unmarshal(b, p)
-	// canFrame := &can.Frame{}
-	// err := canFrame.UnmarshalJSON(b)
+	var p fastjson.Parser
+	v, err := p.ParseBytes(b)
 	if err != nil {
 		return nil, fmt.Errorf("invalid frame json `%s` received: %v", b, err)
 	}
-	if p.Frames == nil {
-		return nil, fmt.Errorf("invalid frame json `%s`, no frames", b)
+	// The format is staic, so we can use static struct to decode
+	obj, err := v.Object()
+	if err != nil {
+		return nil, fmt.Errorf("invalid frame json `%s`, should be object but receive error: %v", b, err)
+	}
+
+	// decode frames
+	rawFrames, err := obj.Get("frames").Array()
+	if err != nil {
+		return nil, fmt.Errorf("invalid frame json `%s`, should have frames array but receive error: %v", b, err)
+	}
+	if rawFrames == nil || len(rawFrames) == 0 {
+		return nil, fmt.Errorf("invalid frame json `%s`, should have frames array but receive empty", b)
 	}
 	result := make(map[string]interface{})
-	for _, frame := range p.Frames {
-		desc, ok := c.messages[frame.ID]
+	for _, rawFrame := range rawFrames {
+		tid, err := rawFrame.Get("id").Uint()
+		if err != nil {
+			return nil, fmt.Errorf("invalid frame json `%s`, frame id should be uint but receive error: %v", b, err)
+		}
+		// Filter out invalid/unknown id frame, avoid to parse them
+		desc, ok := c.messages[uint32(tid)]
 		if !ok {
-			conf.Log.Errorf("cannot find message %d", frame.ID)
+			conf.Log.Warnf("cannot find message %d", tid)
 			continue
 		}
-		desc.DecodeToMap(&frame, result)
+		tdata := rawFrame.Get("data").GetStringBytes()
+		if err != nil {
+			return nil, fmt.Errorf("invalid frame json `%s`, frame data should be string but receive error: %v", b, err)
+		}
+		decodedData := make([]byte, hex.DecodedLen(len(tdata)))
+		_, err = hex.Decode(decodedData, tdata)
+		if err != nil {
+			return nil, fmt.Errorf("invalid frame json `%s`, frame data should be hex string but receive error: %v", b, err)
+		}
+		signals := desc.Decode(&can.Payload{Data: decodedData})
+		for _, s := range signals {
+			result[s.Signal.Name] = s.Value
+		}
 	}
+	// decode meta, ignore for now
+	//metaObj, err := obj.Get("meta").Object()
+	//if err != nil {
+	//	return nil, fmt.Errorf("invalid frame json `%s`, should have meta object but receive error: %v", b, err)
+	//}
+	//if metaObj != nil {
+	//	metaMap := make(map[string]interface{})
+	//	metaObj.Visit(func(k []byte, v *fastjson.Value) {
+	//		switch v.Type() {
+	//		case fastjson.TypeNumber:
+	//			metaMap[string(k)] = v.GetFloat64()
+	//		case fastjson.TypeString:
+	//			metaMap[string(k)] = v.String()
+	//		case fastjson.TypeTrue:
+	//			metaMap[string(k)] = true
+	//		case fastjson.TypeFalse:
+	//			metaMap[string(k)] = false
+	//		default:
+	//			conf.Log.Warnf("unknown type %s for meta %s", v.Type(), k)
+	//		}
+	//	})
+	//	result["meta"] = metaMap
+	//}
 	return result, nil
 }
 
