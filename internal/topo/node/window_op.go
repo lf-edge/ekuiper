@@ -54,6 +54,7 @@ type WindowOperator struct {
 	triggerTime      int64
 	msgCount         int
 	delayTS          []int64
+	triggerTS        []int64
 	triggerCondition ast.Expr
 }
 
@@ -97,6 +98,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 		o.triggerCondition = w.TriggerCondition
 	}
 	o.delayTS = make([]int64, 0)
+	o.triggerTS = make([]int64, 0)
 	return o, nil
 }
 

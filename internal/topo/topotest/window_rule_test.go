@@ -910,45 +910,99 @@ func TestEventWindow(t *testing.T) {
 			Name: `TestEventWindowRule3`,
 			Sql:  `SELECT color, temp, demoE.ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
-				{{
-					"color": "red",
-					"temp":  25.5,
-					"ts":    float64(1541152486013),
-				}}, {{
-					"color": "red",
-					"temp":  25.5,
-					"ts":    float64(1541152486013),
-				}}, {{
-					"color": "blue",
-					"temp":  28.1,
-					"ts":    float64(1541152487632),
-				}}, {{
-					"color": "blue",
-					"temp":  28.1,
-					"ts":    float64(1541152487632),
-				}, {
-					"color": "yellow",
-					"temp":  27.4,
-					"ts":    float64(1541152488442),
-				}}, {{
-					"color": "yellow",
-					"temp":  27.4,
-					"ts":    float64(1541152488442),
-				}, {
-					"color": "red",
-					"temp":  25.5,
-					"ts":    float64(1541152489252),
-				}},
+				{
+					{
+						"color": "red",
+						"temp":  25.5,
+						"ts":    float64(1541152486013),
+					},
+				},
+				{
+					{
+						"color": "red",
+						"temp":  25.5,
+						"ts":    float64(1541152486013),
+					},
+				},
+				{
+					{
+						"color": "red",
+						"temp":  25.5,
+						"ts":    float64(1541152486013),
+					},
+				},
+				{
+					{
+						"color": "blue",
+						"temp":  28.1,
+						"ts":    float64(1541152487632),
+					},
+				},
+				{
+					{
+						"color": "blue",
+						"temp":  28.1,
+						"ts":    float64(1541152487632),
+					},
+				},
+				{
+					{
+						"color": "blue",
+						"temp":  28.1,
+						"ts":    float64(1541152487632),
+					},
+					{
+						"color": "yellow",
+						"temp":  27.4,
+						"ts":    float64(1541152488442),
+					},
+				},
+				{
+					{
+						"color": "blue",
+						"temp":  28.1,
+						"ts":    float64(1541152487632),
+					},
+					{
+						"color": "yellow",
+						"temp":  27.4,
+						"ts":    float64(1541152488442),
+					},
+				},
+				{
+					{
+						"color": "yellow",
+						"temp":  27.4,
+						"ts":    float64(1541152488442),
+					},
+					{
+						"color": "red",
+						"temp":  25.5,
+						"ts":    float64(1541152489252),
+					},
+				},
+				{
+					{
+						"color": "yellow",
+						"temp":  27.4,
+						"ts":    float64(1541152488442),
+					},
+					{
+						"color": "red",
+						"temp":  25.5,
+						"ts":    float64(1541152489252),
+					},
+				},
 			},
 			M: map[string]interface{}{
 				"op_6_project_0_exceptions_total":   int64(0),
 				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(5),
-				"op_6_project_0_records_out_total":  int64(5),
+				"op_6_project_0_records_in_total":   int64(9),
+				"op_6_project_0_records_out_total":  int64(9),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_records_in_total":  int64(9),
+				"sink_mockSink_0_records_out_total": int64(9),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -961,51 +1015,64 @@ func TestEventWindow(t *testing.T) {
 				"op_4_window_0_exceptions_total":   int64(0),
 				"op_4_window_0_process_latency_us": int64(0),
 				"op_4_window_0_records_in_total":   int64(9),
-				"op_4_window_0_records_out_total":  int64(5),
+				"op_4_window_0_records_out_total":  int64(9),
 
 				"op_5_join_0_exceptions_total":   int64(0),
 				"op_5_join_0_process_latency_us": int64(0),
-				"op_5_join_0_records_in_total":   int64(5),
-				"op_5_join_0_records_out_total":  int64(5),
+				"op_5_join_0_records_in_total":   int64(9),
+				"op_5_join_0_records_out_total":  int64(9),
 			},
 		},
 		{
 			Name: `TestEventWindowRule4`,
 			Sql:  `SELECT  window_start() as ws, color, window_end() as we FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			R: [][]map[string]interface{}{
-				{{
-					"color": "red",
-					"ws":    float64(1541152484013),
-					"we":    float64(1541152486013),
-				}}, {{
-					"color": "blue",
-					"ws":    float64(1541152485632),
-					"we":    float64(1541152487632),
-				}, {
-					"color": "red",
-					"ws":    float64(1541152485632),
-					"we":    float64(1541152487632),
-				}}, {{
-					"color": "blue",
-					"ws":    float64(1541152486442),
-					"we":    float64(1541152488442),
-				}, {
-					"color": "yellow",
-					"ws":    float64(1541152486442),
-					"we":    float64(1541152488442),
-				}}, {{
-					"color": "blue",
-					"ws":    float64(1541152487252),
-					"we":    float64(1541152489252),
-				}, {
-					"color": "red",
-					"ws":    float64(1541152487252),
-					"we":    float64(1541152489252),
-				}, {
-					"color": "yellow",
-					"ws":    float64(1541152487252),
-					"we":    float64(1541152489252),
-				}},
+				{
+					{
+						"color": "red",
+						"ws":    float64(1541152484013),
+						"we":    float64(1541152486013),
+					},
+				},
+				{
+					{
+						"color": "blue",
+						"ws":    float64(1541152485632),
+						"we":    float64(1541152487632),
+					}, {
+						"color": "red",
+						"ws":    float64(1541152485632),
+						"we":    float64(1541152487632),
+					},
+				},
+				{
+					{
+						"color": "blue",
+						"ws":    float64(1541152486442),
+						"we":    float64(1541152488442),
+					}, {
+						"color": "yellow",
+						"ws":    float64(1541152486442),
+						"we":    float64(1541152488442),
+					},
+				},
+				{
+					{
+						"color": "blue",
+						"ws":    float64(1541152487252),
+						"we":    float64(1541152489252),
+					},
+					{
+						"color": "red",
+						"ws":    float64(1541152487252),
+						"we":    float64(1541152489252),
+					},
+					{
+						"color": "yellow",
+						"ws":    float64(1541152487252),
+						"we":    float64(1541152489252),
+					},
+				},
 			},
 			M: map[string]interface{}{
 				"op_6_project_0_exceptions_total":   int64(0),
@@ -1087,32 +1154,70 @@ func TestEventWindow(t *testing.T) {
 			Name: `TestEventWindowRule6`,
 			Sql:  `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
-				{{
-					"m": 25.5,
-					"c": float64(1),
-				}}, {{
-					"m": 25.5,
-					"c": float64(1),
-				}}, {{
-					"m": 28.1,
-					"c": float64(1),
-				}}, {{
-					"m": 28.1,
-					"c": float64(2),
-				}}, {{
-					"m": 27.4,
-					"c": float64(2),
-				}},
+				{
+					{
+						"m": 25.5,
+						"c": float64(1),
+					},
+				},
+				{
+					{
+						"m": 25.5,
+						"c": float64(1),
+					},
+				},
+				{
+					{
+						"m": 25.5,
+						"c": float64(1),
+					},
+				},
+				{
+					{
+						"m": 28.1,
+						"c": float64(1),
+					},
+				},
+				{
+					{
+						"m": 28.1,
+						"c": float64(1),
+					},
+				},
+				{
+					{
+						"m": 28.1,
+						"c": float64(2),
+					},
+				},
+				{
+					{
+						"m": 28.1,
+						"c": float64(2),
+					},
+				},
+				{
+					{
+						"m": 27.4,
+						"c": float64(2),
+					},
+				},
+				{
+					{
+						"m": 27.4,
+						"c": float64(2),
+					},
+				},
 			},
 			M: map[string]interface{}{
 				"op_6_project_0_exceptions_total":   int64(0),
 				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(5),
-				"op_6_project_0_records_out_total":  int64(5),
+				"op_6_project_0_records_in_total":   int64(9),
+				"op_6_project_0_records_out_total":  int64(9),
 
 				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_mockSink_0_records_in_total":  int64(9),
+				"sink_mockSink_0_records_out_total": int64(9),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1124,12 +1229,12 @@ func TestEventWindow(t *testing.T) {
 
 				"op_4_window_0_exceptions_total":  int64(0),
 				"op_4_window_0_records_in_total":  int64(9),
-				"op_4_window_0_records_out_total": int64(5),
+				"op_4_window_0_records_out_total": int64(9),
 
 				"op_5_join_0_exceptions_total":   int64(0),
 				"op_5_join_0_process_latency_us": int64(0),
-				"op_5_join_0_records_in_total":   int64(5),
-				"op_5_join_0_records_out_total":  int64(5),
+				"op_5_join_0_records_in_total":   int64(9),
+				"op_5_join_0_records_out_total":  int64(9),
 			},
 		},
 		{
@@ -1317,6 +1422,26 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_out_total":  int64(5),
 			},
 		},
+		{
+			Name: `TestEventWindowCondition10`,
+			Sql:  `SELECT color FROM demoE GROUP BY SlidingWindow(ss, 1) Over (When size = 3)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"color": "red",
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"op_2_watermark_0_records_in_total":  int64(6),
+				"op_2_watermark_0_records_out_total": int64(4),
+				"op_2_watermark_0_exceptions_total":  int64(0),
+
+				"op_3_window_0_records_in_total":  int64(4),
+				"op_3_window_0_records_out_total": int64(1),
+				"op_3_window_0_exceptions_total":  int64(0),
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
@@ -1325,14 +1450,16 @@ func TestEventWindow(t *testing.T) {
 			SendError:    true,
 			IsEventTime:  true,
 			LateTol:      1000,
-		}, {
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.AtLeastOnce,
 			CheckpointInterval: 5000,
 			IsEventTime:        true,
 			LateTol:            1000,
-		}, {
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.ExactlyOnce,
