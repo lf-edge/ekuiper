@@ -21,7 +21,7 @@ Retrieves rows from input streams and enables the selection of one or many colum
 
 ```sql
 SELECT 
-    *
+    * [EXCEPT | REPLACE]
     | [source_stream.]column_name [AS column_alias]
     | expression
   
@@ -34,6 +34,22 @@ Specifies that all columns from all input streams in the FROM clause should be r
 **\***
 
 Select all of fields from source stream.
+
+**\* EXCEPT**
+
+Specify one or more fields to be excluded from the result. It allows excluding one or more specific column names from the query result while still including other columns.
+```sql
+SELECT * EXCEPT(column_name1, column_name2...)
+FROM stream1
+```
+
+**\* REPLACE**
+
+Replace specific columns in the result. It allows for the replacement of certain columns in the result by specifying new expressions, while other columns are still included in the output.
+```sql
+SELECT * REPLACE(expression1 as column_name1, expression2 as column_name2...)
+FROM stream1
+```
 
 **source_stream**
 

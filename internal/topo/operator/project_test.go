@@ -39,6 +39,11 @@ func parseStmt(p *ProjectOp, fields ast.Fields) {
 			switch ft := field.Expr.(type) {
 			case *ast.Wildcard:
 				p.AllWildcard = true
+				p.ExceptNames = ft.Except
+				for _, replace := range ft.Replace {
+					p.AliasNames = append(p.AliasNames, replace.AName)
+					p.AliasFields = append(p.AliasFields, replace)
+				}
 			case *ast.FieldRef:
 				if ft.Name == "*" {
 					p.WildcardEmitters[string(ft.StreamName)] = true
@@ -605,6 +610,66 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"b":   "b",
 				"f1":  -12,
 			}},
+		},
+		// 36
+		{
+			sql: `SELECT * EXCEPT(a, b) from test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b": "b",
+					"c": "c",
+				},
+			},
+			result: []map[string]interface{}{
+				{
+					"c": "c",
+				},
+			},
+		},
+		// 37
+		{
+			sql: `SELECT * REPLACE(a->b as a) from test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b": "b",
+					"c": "c",
+				},
+			},
+			result: []map[string]interface{}{
+				{
+					"a": "test",
+					"b": "b",
+					"c": "c",
+				},
+			},
+		},
+		// 38
+		{
+			sql: `SELECT * EXCEPT(c) REPLACE("test" as b, a->b as a) from test`,
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": map[string]interface{}{
+						"b": "test",
+					},
+					"b": "b",
+					"c": 1,
+				},
+			},
+			result: []map[string]interface{}{
+				{
+					"a": "test",
+					"b": "test",
+				},
+			},
 		},
 	}
 
@@ -1211,6 +1276,81 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 			}, {
 				"id1": 3,
 				"f1":  "v1",
+			}},
+		},
+		// 19
+		{
+			sql: `SELECT * EXCEPT(a, b) from test WHERE f1 = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			data: &xsql.WindowTuples{
+				Content: []xsql.TupleRow{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 1, "f1": "v1", "a": map[string]interface{}{"b": "test"}, "b": "b", "c": "c"},
+					}, &xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 2, "f1": "v2", "a": map[string]interface{}{"b": "test"}, "b": "b", "c": "c"},
+					}, &xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 3, "f1": "v1", "a": map[string]interface{}{"b": "test"}, "b": "b", "c": "c"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"id1": 1, "c": "c", "f1": "v1",
+			}, {
+				"id1": 2, "c": "c", "f1": "v2",
+			}, {
+				"id1": 3, "c": "c", "f1": "v1",
+			}},
+		},
+		// 20
+		{
+			sql: `SELECT * REPLACE(a->b as a) from test WHERE f1 = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			data: &xsql.WindowTuples{
+				Content: []xsql.TupleRow{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 1, "f1": "v1", "a": map[string]interface{}{"b": "test"}, "b": "b", "c": "c"},
+					}, &xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 2, "f1": "v2", "a": map[string]interface{}{"b": "test"}, "b": "b", "c": "c"},
+					}, &xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 3, "f1": "v1", "a": map[string]interface{}{"b": "test"}, "b": "b", "c": "c"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"id1": 1, "c": "c", "a": "test", "b": "b", "f1": "v1",
+			}, {
+				"id1": 2, "c": "c", "a": "test", "b": "b", "f1": "v2",
+			}, {
+				"id1": 3, "c": "c", "a": "test", "b": "b", "f1": "v1",
+			}},
+		},
+		// 21
+		{
+			sql: `SELECT * EXCEPT(c) REPLACE("test" as b, a->b as a) from test WHERE f1 = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			data: &xsql.WindowTuples{
+				Content: []xsql.TupleRow{
+					&xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 1, "f1": "v1", "a": map[string]interface{}{"b": "test"}, "b": "test"},
+					}, &xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 2, "f1": "v2", "a": map[string]interface{}{"b": "test"}, "b": "test"},
+					}, &xsql.Tuple{
+						Emitter: "src1",
+						Message: xsql.Message{"id1": 3, "f1": "v1", "a": map[string]interface{}{"b": "test"}, "b": "test"},
+					},
+				},
+			},
+			result: []map[string]interface{}{{
+				"id1": 1, "a": "test", "b": "test", "f1": "v1",
+			}, {
+				"id1": 2, "a": "test", "b": "test", "f1": "v2",
+			}, {
+				"id1": 3, "a": "test", "b": "test", "f1": "v1",
 			}},
 		},
 	}
@@ -2225,6 +2365,36 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				"var2": "moduleB topic",
 				"max2": int64(1),
 				"max3": int64(100),
+			}},
+		},
+		// 22
+		{
+			sql: "SELECT count(* EXCEPT(a, b)) as all  FROM test Inner Join test1 on test.id = test1.id GROUP BY TumblingWindow(ss, 10)",
+			data: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.TupleRow{
+							&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": "a", "b": "b"}},
+							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.TupleRow{
+							&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": "a", "b": "b"}},
+							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
+						},
+					},
+					{
+						Tuples: []xsql.TupleRow{
+							&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 5, "a": "a", "b": "b"}},
+							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
+						},
+					},
+				},
+			},
+
+			result: []map[string]interface{}{{
+				"all": 3,
 			}},
 		},
 	}
