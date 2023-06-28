@@ -4,7 +4,7 @@ PACKAGES_PATH ?= _packages
 VERSION := $(shell git describe --tags --always)
 ARCH := $(shell go env GOARCH)
 OS := $(shell go env GOOS)
-PACKAGE_NAME := kuiper-$(VERSION)-$(OS)-$(ARCH)
+PACKAGE_NAME := kuiper-can-$(VERSION)-$(OS)-$(ARCH)
 GO              := GO111MODULE=on go
 
 TARGET ?= lfedge/ekuiper

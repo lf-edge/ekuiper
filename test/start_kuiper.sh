@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2021 EMQ Technologies Co., Ltd.
+# Copyright 2021-2023 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ fi
 
 ver=`git describe --tags --always`
 os=`uname -s | tr "[A-Z]" "[a-z]"`
-base_dir=_build/kuiper-"$ver"-"$os"-amd64
+base_dir=_build/kuiper-can-"$ver"-"$os"-amd64
 
 rm -rf $base_dir/data/*
 ls -l $base_dir/bin/kuiperd
