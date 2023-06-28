@@ -214,9 +214,10 @@ func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
 	}
 }
 
-func contains(streamName []string, name string) bool {
-	for _, s := range streamName {
-		if s == name {
+// Checks whether a slice contains an element
+func contains(s []string, n string) bool {
+	for _, val := range s {
+		if val == n {
 			return true
 		}
 	}
