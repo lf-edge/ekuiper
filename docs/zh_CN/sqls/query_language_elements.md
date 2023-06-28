@@ -39,6 +39,7 @@ SELECT
 **\* EXCEPT**
 
 用于指定一个或多个字段，以便从结果中排除这些字段。它允许在查询结果中排除一个或多个特定的列名，而其他列则仍然包含在查询结果中。
+
 ```sql
 SELECT * EXCEPT(column_name1, column_name2...)
 FROM stream1
@@ -47,6 +48,7 @@ FROM stream1
 **\* REPLACE**
 
 用于在SQL查询结果中替换指定列。它允许通过指定新的表达式来替换查询结果中的某些列，而其他列则仍然包含在查询结果中。
+
 ```sql
 SELECT * REPLACE(expression1 as column_name1, expression2 as column_name2...)
 FROM stream1
