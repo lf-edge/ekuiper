@@ -139,15 +139,6 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						inputs = o.scan(inputs, o.delayTS[0], ctx)
 						o.delayTS = o.delayTS[1:]
 					}
-					for len(o.triggerTS) > 0 && o.triggerTS[0] <= watermarkTs {
-						if o.window.Delay > 0 {
-							o.delayTS = append(o.delayTS, o.triggerTS[0]+o.window.Delay)
-						} else {
-							inputs = o.scan(inputs, o.triggerTS[0], ctx)
-						}
-						o.triggerTS = o.triggerTS[1:]
-					}
-					continue
 				}
 
 				windowEndTs := nextWindowEndTs
@@ -167,7 +158,18 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						o.triggerTime = inputs[0].Timestamp
 					}
 					if windowEndTs > 0 {
-						inputs = o.scan(inputs, windowEndTs, ctx)
+						if o.window.Type == ast.SLIDING_WINDOW {
+							for len(o.triggerTS) > 0 && o.triggerTS[0] <= watermarkTs {
+								if o.window.Delay > 0 {
+									o.delayTS = append(o.delayTS, o.triggerTS[0]+o.window.Delay)
+								} else {
+									inputs = o.scan(inputs, o.triggerTS[0], ctx)
+								}
+								o.triggerTS = o.triggerTS[1:]
+							}
+						} else {
+							inputs = o.scan(inputs, windowEndTs, ctx)
+						}
 					}
 					prevWindowEndTs = windowEndTs
 					lastTicked = ticked
