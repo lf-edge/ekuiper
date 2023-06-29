@@ -125,3 +125,11 @@ sequence(start, stop, step)
 ```
 
 Returns an array of integers from start to stop, incrementing by step.
+
+## ARRAY_CONCAT
+
+```text
+array_concat(array1, array2, ...)
+```
+
+Returns the concatenation of the input arrays, this function does not modify the existing arrays, but returns new one.

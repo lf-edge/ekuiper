@@ -35,6 +35,13 @@ func ValidateLen(exp, actual int) error {
 	return nil
 }
 
+func ValidateAtLeast(min, actual int) error {
+	if actual < min {
+		return fmt.Errorf("At least has %d argument but found %d.", min, actual)
+	}
+	return nil
+}
+
 // Shared validating functions
 
 func ValidateNoArg(_ api.FunctionContext, args []ast.Expr) error {
