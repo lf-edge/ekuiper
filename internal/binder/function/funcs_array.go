@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -634,6 +635,30 @@ func registerArrayFunc() {
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
+		},
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["array_concat"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			var res []interface{}
+
+			for _, arg := range args {
+				v := reflect.ValueOf(arg)
+
+				switch v.Kind() {
+				case reflect.Slice:
+					array := arg.([]interface{})
+					res = append(res, array...)
+				default:
+					return errorArrayNotArrayElementError, false
+				}
+			}
+
+			return res, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateAtLeast(1, len(args))
 		},
 		check: returnNilIfHasAnyNil,
 	}

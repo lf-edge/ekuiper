@@ -690,6 +690,26 @@ func TestArrayCommonFunctions(t *testing.T) {
 			},
 			result: "a,b",
 		},
+		{
+			name: "array_concat",
+			args: []interface{}{
+				[]interface{}{1},
+				[]interface{}{2},
+				[]interface{}{"3"},
+				[]interface{}{nil},
+			},
+			result: []interface{}{
+				1, 2, "3", nil,
+			},
+		},
+		{
+			name: "array_concat",
+			args: []interface{}{
+				[]interface{}{1},
+				nil,
+			},
+			result: errorArrayNotArrayElementError,
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]
