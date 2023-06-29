@@ -59,7 +59,7 @@ func TestHitFuncs(t *testing.T) {
 				int64(10100),
 			},
 			result: []any{
-				0, nil, 0, nil,
+				0, 0, 0, 0,
 			},
 		},
 		{

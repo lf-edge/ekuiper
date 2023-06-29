@@ -34,6 +34,15 @@ tstamp()
 
 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。
 
+## EVENT_TIME
+
+```text
+event_time()
+```
+
+返回当前处理事件的 int64 格式时间戳。由于处理延迟，该时间戳可能早于当前时间。
+若在窗口规则中用作聚合函数，则返回窗口结束时间。
+
 ## RULE_ID
 
 ```text
@@ -73,6 +82,8 @@ last_hit_count()
 该函数仅可用于非聚合规则中或 Sliding Window
 的条件中。若要在聚合规则中实现类似功能，请使用 [last_agg_hit_count](./aggregate_functions.md#lastagghitcount)。
 
+若在滑动窗口触发条件中使用，当触发条件满足时就会更新计数而无需考虑规则整体触发情况。
+
 ## LAST_HIT_TIME
 
 ```text
@@ -82,6 +93,8 @@ last_hit_time()
 返回该函数最后一次命中时的 int64 格式时间戳。通常用于获取聚合规则的最后一次触发时间。如果在 `WHERE` 子句中使用，只有当条件为真时才会更新时间戳。
 该函数仅可用于非聚合规则中或 Sliding Window
 的条件中。若要在聚合规则中实现类似功能，请使用 [last_agg_hit_time](./aggregate_functions.md#lastagghittime)。
+
+若在滑动窗口触发条件中使用，当触发条件满足时就会更新时间而无需考虑规则整体触发情况。
 
 ## WINDOW_START
 

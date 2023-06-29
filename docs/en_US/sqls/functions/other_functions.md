@@ -34,6 +34,18 @@ tstamp()
 
 Returns the current timestamp in milliseconds from 00:00:00 Coordinated Universal Time (UTC), Thursday, 1 January 1970.
 
+## EVENT_TIME
+
+```text
+event_time()
+```
+
+Returns the int64 timestamp of the current processing event.
+It may be earlier then the current time due to processing
+latency.
+
+If it is used in a window rule as aggregate function, it returns the window end time.
+
 ## RULE_ID
 
 ```text
@@ -77,6 +89,9 @@ If the function is used in `WHERE` clause, it will only update the count when th
 Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
 To get the hit count of an aggregate rule, use [last_agg_hit_count](./aggregate_functions.md#lastagghitcount) instead.
 
+If used in a sliding window trigger condition,
+the status will be updated only when the trigger condition is met regardless of the rule trigger result.
+
 ## LAST_HIT_TIME
 
 ```text
@@ -89,6 +104,9 @@ If the function is used in `WHERE` clause, it will only update the timestamp whe
 
 Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
 To get the hit time of an aggregate rule, use [last_agg_hit_time](./aggregate_functions.md#lastagghittime) instead.
+
+If used in a sliding window trigger condition,
+the status will be updated only when the trigger condition is met regardless of the rule trigger result.
 
 ## WINDOW_START
 

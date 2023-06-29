@@ -33,6 +33,7 @@ import (
 
 type WindowConfig struct {
 	TriggerCondition ast.Expr
+	StateFuncs       []*ast.Call
 	Type             ast.WindowType
 	Length           int64
 	Interval         int64 // If the interval is not set, it is equals to Length
@@ -56,6 +57,7 @@ type WindowOperator struct {
 	delayTS          []int64
 	triggerTS        []int64
 	triggerCondition ast.Expr
+	stateFuncs       []*ast.Call
 }
 
 const (
@@ -96,6 +98,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 	}
 	if w.TriggerCondition != nil {
 		o.triggerCondition = w.TriggerCondition
+		o.stateFuncs = w.StateFuncs
 	}
 	o.delayTS = make([]int64, 0)
 	o.triggerTS = make([]int64, 0)
@@ -630,6 +633,11 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 		return false
 	case bool:
 		// match trigger condition
+		if v {
+			for _, f := range o.stateFuncs {
+				_ = ve.Eval(f)
+			}
+		}
 		return v
 	default:
 		return false

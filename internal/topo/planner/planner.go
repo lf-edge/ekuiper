@@ -146,6 +146,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		case ast.HOPPING_WINDOW:
 			rawInterval = t.interval
 		}
+		t.ExtractStateFunc()
 		op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), node.WindowConfig{
 			Type:             t.wtype,
 			Delay:            d,
@@ -154,6 +155,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			RawInterval:      rawInterval,
 			TimeUnit:         t.timeUnit,
 			TriggerCondition: t.triggerCondition,
+			StateFuncs:       t.stateFuncs,
 		}, options)
 		if err != nil {
 			return nil, 0, err

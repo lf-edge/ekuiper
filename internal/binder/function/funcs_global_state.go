@@ -55,6 +55,9 @@ func registerGlobalStateFunc() {
 			if err != nil {
 				return err, false
 			}
+			if lv == nil {
+				lv = 0
+			}
 			if args0 {
 				err := ctx.PutState(timeKey, args1)
 				if err != nil {
@@ -92,6 +95,9 @@ func registerGlobalStateFunc() {
 			lv, err := ctx.GetState(aggTimeKey)
 			if err != nil {
 				return err, false
+			}
+			if lv == nil {
+				lv = 0
 			}
 			if args0 {
 				err := ctx.PutState(aggTimeKey, args1)
