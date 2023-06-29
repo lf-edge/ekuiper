@@ -125,7 +125,7 @@ sequence(start, stop[, step])
 
 ## ARRAY_CONCAT
 
-```
+```text
 array_concat(array1, array2, ...)
 ```
 
