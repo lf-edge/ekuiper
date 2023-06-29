@@ -26,12 +26,12 @@ import (
 // The tuple clone should be cheap.
 
 /*
- *  Interfaces definition
+ * Interfaces definition
  */
 
 type Wildcarder interface {
 	// All Value returns the value and existence flag for a given key.
-	All(stream string) (Message, bool)
+	All(stream string) (map[string]interface{}, bool)
 }
 
 type Event interface {
@@ -357,7 +357,7 @@ func (t *Tuple) Value(key, table string) (interface{}, bool) {
 	return t.Message.Value(key, table)
 }
 
-func (t *Tuple) All(string) (Message, bool) {
+func (t *Tuple) All(string) (map[string]interface{}, bool) {
 	return t.ToMap(), true
 }
 
@@ -410,6 +410,15 @@ func (t *Tuple) GetTimestamp() int64 {
 
 func (t *Tuple) IsWatermark() bool {
 	return false
+}
+
+func (t *Tuple) FuncValue(key string) (interface{}, bool) {
+	switch key {
+	case "event_time":
+		return t.Timestamp, true
+	default:
+		return nil, false
+	}
 }
 
 func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
@@ -498,7 +507,7 @@ func (jt *JoinTuple) Meta(key, table string) (interface{}, bool) {
 	return jt.doGetValue(key, table, false)
 }
 
-func (jt *JoinTuple) All(stream string) (Message, bool) {
+func (jt *JoinTuple) All(stream string) (map[string]interface{}, bool) {
 	if stream != "" {
 		for _, t := range jt.Tuples {
 			if t.GetEmitter() == stream {
@@ -580,7 +589,7 @@ func (s *GroupedTuples) Meta(key, table string) (interface{}, bool) {
 	return s.Content[0].Meta(key, table)
 }
 
-func (s *GroupedTuples) All(_ string) (Message, bool) {
+func (s *GroupedTuples) All(_ string) (map[string]interface{}, bool) {
 	return s.ToMap(), true
 }
 

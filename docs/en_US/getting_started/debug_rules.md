@@ -61,7 +61,7 @@ invalid SQL statement, you will get an error message like this:
   "code": 400,
   "message": "invalid sql: near \"SELEC\": syntax error"
 }
-```    
+```
 
 #### Check the logs
 
@@ -173,7 +173,7 @@ is not receiving any data. You need to check the source side: if the data source
 configuration is correct. For example, if your MQTT source topic is configured to `topic1`, but you send data
 to `topic2`, then the source will not receive any data which can be observed by the source metric.
 
-```
+```text
 "source_demo_0_records_in_total": 0,
 "source_demo_0_records_out_total": 0,
 ```

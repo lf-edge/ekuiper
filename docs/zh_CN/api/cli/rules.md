@@ -164,6 +164,7 @@ rule rule1 restarted
 ## 获取规则的状态
 
 该命令用于获取规则的状态。 状态可以是
+
 - 运行: $metrics
 - 停止: $reason
 

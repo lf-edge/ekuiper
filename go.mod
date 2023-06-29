@@ -36,6 +36,7 @@ require (
 	github.com/urfave/cli v1.22.12
 	github.com/valyala/fastjson v1.6.4
 	go.nanomsg.org/mangos/v3 v3.4.2
+	go.uber.org/automaxprocs v1.5.2
 	golang.org/x/text v0.9.0
 	google.golang.org/genproto v0.0.0-20230227214838-9b19f0bdc514
 	google.golang.org/grpc v1.53.0

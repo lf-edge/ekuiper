@@ -134,6 +134,13 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 			case *xsql.WatermarkTuple:
 				ctx.GetLogger().Debug("WatermarkTuple", d.GetTimestamp())
 				watermarkTs := d.GetTimestamp()
+				if o.window.Type == ast.SLIDING_WINDOW {
+					for len(o.delayTS) > 0 && watermarkTs >= o.delayTS[0] {
+						inputs = o.scan(inputs, o.delayTS[0], ctx)
+						o.delayTS = o.delayTS[1:]
+					}
+				}
+
 				windowEndTs := nextWindowEndTs
 				ticked := false
 				// Session window needs a recalculation of window because its window end depends on the inputs
@@ -151,7 +158,18 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 						o.triggerTime = inputs[0].Timestamp
 					}
 					if windowEndTs > 0 {
-						inputs = o.scan(inputs, windowEndTs, ctx)
+						if o.window.Type == ast.SLIDING_WINDOW {
+							for len(o.triggerTS) > 0 && o.triggerTS[0] <= watermarkTs {
+								if o.window.Delay > 0 {
+									o.delayTS = append(o.delayTS, o.triggerTS[0]+o.window.Delay)
+								} else {
+									inputs = o.scan(inputs, o.triggerTS[0], ctx)
+								}
+								o.triggerTS = o.triggerTS[1:]
+							}
+						} else {
+							inputs = o.scan(inputs, windowEndTs, ctx)
+						}
 					}
 					prevWindowEndTs = windowEndTs
 					lastTicked = ticked
@@ -172,6 +190,9 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				// first tuple, set the window start time, which will set to triggerTime
 				if o.triggerTime == 0 {
 					o.triggerTime = d.Timestamp
+				}
+				if o.window.Type == ast.SLIDING_WINDOW && o.isMatchCondition(ctx, d) {
+					o.triggerTS = append(o.triggerTS, d.GetTimestamp())
 				}
 				inputs = append(inputs, d)
 				o.statManager.ProcessTimeEnd()

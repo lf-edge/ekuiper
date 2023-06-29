@@ -72,7 +72,7 @@ func (kv redisKvStore) Set(key string, value interface{}) error {
 func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
 	val, err := kv.database.Get(context.Background(), kv.tableKey(key)).Result()
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	dec := gob.NewDecoder(bytes.NewBuffer([]byte(val)))
 	if err := dec.Decode(value); err != nil {

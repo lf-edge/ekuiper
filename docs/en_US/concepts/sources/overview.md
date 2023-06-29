@@ -12,7 +12,7 @@ By default, if multiple rules refer to the same source, each rule will have its 
 
 ## Decode
 
-Users can define the format to decode by setting `format` property. Currently, `json`,  `binary`, `protobuf`, and `delimited` formats are supported. And you can also use your own decoding methods by setting it to `custom`. 
+Users can define the format to decode by setting `format` property. Currently, `json`,  `binary`, `protobuf`, and `delimited` formats are supported. And you can also use your own decoding methods by setting it to `custom`.
 
 ## Schema
 
@@ -27,6 +27,3 @@ The source defines the external system connection. When using the source with a 
 ## More Readings
 
 - [Source Reference](../../guide/sources/overview.md)
-
-
-

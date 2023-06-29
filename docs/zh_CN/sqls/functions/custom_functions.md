@@ -12,7 +12,7 @@ echo(avg) 示例
 
 - 假设 avg 类型为 int ，值为30， 则结果为: `[{"r1":30}]`
 
-  ```
+  ```sql
   SELECT echo(avg) as r1 FROM test;
   ```
 
@@ -26,7 +26,7 @@ countPlusOne(avg) 示例
 
 - 假设 avg 类型为 []int ，值为`[1,2,3]`， 则结果为: `[{"r1":4}]`
 
-  ```
+  ```sql
   SELECT countPlusOne(avg) as r1 FROM test;
   ```
 
@@ -38,26 +38,26 @@ countPlusOne(avg) 示例
 
 accumulateWordCount(avg,sep) 示例
 
-- 假设 avg 类型为 string ，值为`My name is Bob`；sep  类型为 string ，值为空格,则结果为: `[{"r1":4}]`
+- 假设 avg 类型为 string ，值为 `My name is Bob`；sep 类型为 string ，值为空格,则结果为: `[{"r1":4}]`
 
-  ```
+  ```sql
   SELECT accumulateWordCount(avg,sep) as r1 FROM test;
   ```
 
 ## 图像处理插件
 
-图像处理目前暂时只支持`png`和`jpeg`格式
+图像处理目前暂时只支持 `png` 和 `jpeg` 格式
 
 | 函数        | 示例                                  | 说明                                                                                                |
 |-----------|-------------------------------------|---------------------------------------------------------------------------------------------------|
 | resize    | resize(avg, width, height, [isRaw]) | 创建具有新尺寸（宽度，高度）的缩放图像。如果 width 或 height 设置为0，则将其设置为长宽比保留值。isRaw 为可选参数，用于指定是否输出原始未编码数据，常用于 AI 模型推理中。 |
-| thumbnail | thumbnail(avg,maxWidth, maxHeight)  | 将保留宽高比的图像缩小到最大尺寸( maxWidth，maxHeight)。                                                            |
+| thumbnail | thumbnail(avg,maxWidth, maxHeight)  | 将保留宽高比的图像缩小到最大尺寸(maxWidth，maxHeight)。                                                            |
 
 resize(avg,width, height)示例
 
 - 其中 avg 类型为 []byte 。
 
-  ```
+  ```sql
   SELECT resize(avg,width,height) as r1 FROM test;
   ```
 
@@ -65,7 +65,7 @@ thumbnail(avg,maxWidth, maxHeight)示例
 
 - 其中 avg 类型为 []byte。
 
-  ```
+  ```sql
   SELECT countPlusOne(avg,maxWidth, maxHeight) as r1 FROM test;
   ```
 
@@ -86,7 +86,7 @@ thumbnail(avg,maxWidth, maxHeight)示例
 
  geohashEncode 示例
 
-- 输入：`{"lo" :131.036192,"la":-25.345457}` 
+- 输入：`{"lo" :131.036192,"la":-25.345457}`
 - 输出：`{"geohashEncode":"qgmpvf18h86e"}`
 
 ```sql
@@ -95,7 +95,7 @@ SELECT geohashEncode(la,lo) FROM test
 
  geohashEncodeInt 示例
 
-- 输入：`{"lo" :131.036192,"la":-25.345457}` 
+- 输入：`{"lo" :131.036192,"la":-25.345457}`
 - 输出：`{"geohashEncodeInt":12963433097944239317}`
 
 ```sql
@@ -104,7 +104,7 @@ SELECT geohashEncodeInt(la,lo) FROM test
 
  geohashDecode 示例
 
-- 输入：`{"hash" :"qgmpvf18h86e"} ` 
+- 输入：`{"hash" :"qgmpvf18h86e"}`
 - 输出：`{"geohashDecode":{"Longitude":131.036192,"Latitude":-25.345457099999997}}`
 
 ```sql
@@ -122,7 +122,7 @@ SELECT geohashDecodeInt(hash) FROM test
 
 geohashBoundingBox 示例
 
-- 输入：`{"hash" :"qgmpvf18h86e"} `
+- 输入：`{"hash" :"qgmpvf18h86e"}`
 - 输出：`{"geohashBoundingBox":{"MinLat":-25.345457140356302,"MaxLat":-25.34545697271824,"MinLng":131.03619195520878,"MaxLng":131.0361922904849}}`
 
 ```sql
@@ -140,7 +140,7 @@ SELECT geohashBoundingBoxInt(hash) FROM test
 
 geohashNeighbor 示例
 
-- 输入：`{"hash" :"qgmpvf18h86e","direction":"North"} `
+- 输入：`{"hash" :"qgmpvf18h86e","direction":"North"}`
 - 输出：`{"geohashNeighbor":"qgmpvf18h86s"}`
 
 ```sql
@@ -167,7 +167,7 @@ SELECT geohashNeighbors(hash) FROM test
 
 geohashNeighborsInt 示例
 
-- 输入： `{"hash" :"qgmpvf18h86e","neber":"North"}` 
+- 输入： `{"hash" :"qgmpvf18h86e","neber":"North"}`
 - 输出：`{"geohashNeighborsInt":[12963433097944240129,12963433097944240131,12963433097944240130,12963433097944237399,12963433097944237397,12963433097944150015,12963433097944152746,12963433097944152747]}`
 
 ```sql

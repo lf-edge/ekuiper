@@ -18,10 +18,13 @@ In this scenario, we have two inputs.
 For both inputs, we create streams and lookup tables to model them separately.
 
 1. Create a data stream. Assuming that the data stream is written to the MQTT Topic `scene1/data`, we can create a data stream named `demoStream` using the following REST API.
+
    ```json
     {"sql":"CREATE STREAM demoStream() WITH (DATASOURCE=\"scene1/data\", FORMAT=\"json\", TYPE=\"mqtt\")"}
     ```
+
 2. Create a lookup table. Assuming that the threshold value data is stored in Redis database 0, create a lookup table named `alertTable`. Here, if you use other storage methods, you can replace `type` with the corresponding source type, such as `sql`.
+
    ```json
     {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"redis\", KIND=\"lookup\")"}
     ```
@@ -30,12 +33,14 @@ For both inputs, we create streams and lookup tables to model them separately.
 
 Alerting threshold values are stored in external storage such as Redis or SQL databases. They can be updated by the user through customized application or automatically by rules through the `Updatable Sink` feature provided by eKuiper. This tutorial will use rules to dynamically update the Redis lookup table which is defined above via Redis sink.
 
-The updating table rule is the same as the regular rule, the user can access any data source and do any data calculation, just make sure the output contains the update command field `action`, for example `{"action": "upsert", "id":1, "alarm":50}`. In this tutorial, we use the MQTT input update command to update Redis data via rules. 
+The updating table rule is the same as the regular rule, the user can access any data source and do any data calculation, just make sure the output contains the update command field `action`, for example `{"action": "upsert", "id":1, "alarm":50}`. In this tutorial, we use the MQTT input update command to update Redis data via rules.
 
 1. Create an MQTT stream to bind the alert update command data stream. Assume that the update command is published through the MQTT topic `scene1/alert`.
+
    ```json
    {"sql": "CREATE STREAM alertStream() WITH (DATASOURCE=\"scene1/alert\", FORMAT=\"json\", TYPE=\"mqtt\")"}
    ```
+
 2. Create the threshold value update rule. The rule accesses the command stream created in the previous step, the rule SQL simply gets all the instructions and then uses the redis sink that supports dynamic updates in the action. Redis address is configured to store the data type; the field name used for the key is set to `id` and the field name used for the update command type is set to `action`. Configured as below, you only need to ensure that the command stream contains the `id` and `action` fields in order to update Redis.
 
    ```json
@@ -56,6 +61,7 @@ The updating table rule is the same as the regular rule, the user can access any
    ```
 
 3. Next, we can send a command to the MQTT topic `scene1/alert` to update the alert value. For example.
+
    ```text
    {"action": "upsert", "id":1, "alarm":50}
    {"action": "upsert", "id":2, "alarm":80}
@@ -129,10 +135,13 @@ In this scenario, we have two inputs.
 For these two inputs, we create streams and loookup tables for modeling respectively.
 
 1. Create a data stream. Assuming that the data stream is written to the MQTT Topic `scene2/data`, we can create a data stream named `demoStream2` with the following REST API.
+
    ```json
     {"sql": "CREATE STREAM demoStream2() WITH (DATASOURCE=\"scene2/data\", FORMAT=\"json\", TYPE=\"mqtt\")"}
     ```
+
 2. Create a lookup table. Assuming the device data is stored in the MySQL database devices, create a lookup table named `deviceTable`. CONF_KEY is set to the SQL source configuration created in the previous section.
+
    ```json
     {"sql": "CREATE TABLE deviceTable() WITH (DATASOURCE=\"devices\", CONF_KEY=\"mysql\",TYPE=\"sql\", KIND=\"lookup\")"}
     ```

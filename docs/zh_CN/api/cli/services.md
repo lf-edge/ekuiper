@@ -20,7 +20,6 @@ create service $service_name $service_json
 
 这个命令创建了一个名为 sample 的服务，该服务的具体描述信息放在了 file 路径指定的地方。
 
-
 ## 查看服务和服务函数
 
 此命令查看 eKuiper 系统中注册的所有服务
@@ -83,7 +82,6 @@ describe service $service_name
 
 ```
 
-
 ## 描述服务函数详细信息
 
 此命令可以列出服务函数详细信息
@@ -102,7 +100,6 @@ describe service_func $service_name
   "MethodName": "label"
 }
 ```
-
 
 ## 删除服务
 

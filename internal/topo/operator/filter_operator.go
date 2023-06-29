@@ -23,7 +23,8 @@ import (
 )
 
 type FilterOp struct {
-	Condition ast.Expr
+	Condition  ast.Expr
+	StateFuncs []*ast.Call
 }
 
 // Apply
@@ -31,9 +32,9 @@ type FilterOp struct {
  *  input: *xsql.Tuple from preprocessor | xsql.WindowTuples from windowOp | xsql.JoinTuples from joinOp
  *  output: *xsql.Tuple | xsql.WindowTuples | xsql.JoinTuples
  */
-func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
+func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
-	log.Debugf("filter plan receive %s", data)
+	log.Debugf("filter plan receive %v", data)
 	switch input := data.(type) {
 	case error:
 		return input
@@ -45,6 +46,9 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 			return fmt.Errorf("run Where error: %s", r)
 		case bool:
 			if r {
+				for _, f := range p.StateFuncs {
+					_ = ve.Eval(f)
+				}
 				return input
 			}
 		case nil: // nil is false

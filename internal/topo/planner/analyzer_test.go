@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -128,6 +130,18 @@ var tests = []struct {
 		sql: `SELECT collect(*)[0] as last FROM src1 GROUP BY SlidingWindow(ss,5) HAVING last.temp > 30`,
 		r:   newErrorStruct(""),
 	},
+	{ // 17
+		sql: `SELECT last_hit_time() FROM src1 GROUP BY SlidingWindow(ss,5) HAVING last_agg_hit_count() < 3`,
+		r:   newErrorStruct("function last_hit_time is not allowed in an aggregate query"),
+	},
+	{ // 18
+		sql: `SELECT * FROM src1 GROUP BY SlidingWindow(ss,5) Over (WHEN last_hit_time() > 1) HAVING last_agg_hit_count() < 3`,
+		r:   newErrorStruct(""),
+	},
+	//{ // 19 already captured in parser
+	//	sql: `SELECT * FROM src1 GROUP BY SlidingWindow(ss,5) Over (WHEN abs(sum(a)) > 1) HAVING last_agg_hit_count() < 3`,
+	//	r:   newErrorStruct("error compile sql: Not allowed to call aggregate functions in GROUP BY clause."),
+	//},
 }
 
 func Test_validation(t *testing.T) {
@@ -186,9 +200,7 @@ func Test_validation(t *testing.T) {
 			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
-		if !reflect.DeepEqual(tt.r.err, testx.Errstring(err)) {
-			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.r.err, err)
-		}
+		assert.Equal(t, tt.r.err, testx.Errstring(err))
 	}
 }
 

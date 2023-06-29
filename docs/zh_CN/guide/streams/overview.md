@@ -57,7 +57,6 @@ CREATE STREAM
 | TIMESTAMP        | 是   | 代表该事件时间戳的字段名。如果有设置，则使用此流的规则将采用事件时间；否则将采用处理时间。详情请看[时间戳管理](../../sqls/windows.md#时间戳管理)。                                                                                  |
 | TIMESTAMP_FORMAT | 是   | 字符串和时间格式转换时使用的默认格式。                                                                                                                                                     |
 
-
 **示例1**
 
 ```sql
@@ -66,7 +65,7 @@ my_stream
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
 
-该流将订阅 MQTT 主题`topic/temperature`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中默认部分的 server 键。
+该流将订阅 MQTT 主题 `topic/temperature`，服务器连接使用配置文件 `$ekuiper/etc/mqtt_source.yaml` 中默认部分的 server 键。
 
 - 有关更多信息，请参见 [MQTT source](../sources/builtin/mqtt.md)
 
@@ -74,16 +73,16 @@ WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 
 ```sql
 demo (
-		USERID BIGINT,
-		FIRST_NAME STRING,
-		LAST_NAME STRING,
-		NICKNAMES ARRAY(STRING),
-		Gender BOOLEAN,
-		ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-	) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
+        USERID BIGINT,
+        FIRST_NAME STRING,
+        LAST_NAME STRING,
+        NICKNAMES ARRAY(STRING),
+        Gender BOOLEAN,
+        ADDRESS STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+    ) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo");
 ```
 
-流将订阅 MQTT 主题 `test/`，服务器连接使用配置文件`$ekuiper/etc/mqtt_source.yaml` 中 demo 部分的设置。
+流将订阅 MQTT 主题 `test/`，服务器连接使用配置文件 `$ekuiper/etc/mqtt_source.yaml` 中 demo 部分的设置。
 
 **示例3**
 
@@ -103,15 +102,15 @@ demo () WITH (DATASOURCE="test/", FORMAT="protobuf", SCHEMAID="proto1.Book");
 
 使用共享源实例模式，只需要共享源实例的流时，将其 `SHARED` 属性设置为 true 。
 
-```
+```text
 demo (
-		...
-	) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
+        ...
+    ) WITH (DATASOURCE="test", FORMAT="JSON", KEY="USERID", SHARED="true");
 ```
 
 ## 数据结构
 
-流的数据结构(schema) 包含两个部分。一个是在数据源定义中定义的数据结构，即逻辑数据结构；另一个是在使用强类型数据格式时指定的 SchemaId 即物理数据结构，例如 Protobuf 和 Custom 格式定义的数据结构。
+流的数据结构（schema）包含两个部分。一个是在数据源定义中定义的数据结构，即逻辑数据结构；另一个是在使用强类型数据格式时指定的 SchemaId 即物理数据结构，例如 Protobuf 和 Custom 格式定义的数据结构。
 
 整体上，我们将支持3种递进的数据结构方式：
 
@@ -119,7 +118,7 @@ demo (
 2. 仅逻辑结构，用户在 source 层定义 schema，多用于弱类型的编码方式，例如最常用的 JSON。适用于用户的数据有固定或大致固定的格式，同时不想使用强类型的数据编解码格式。使用这种方式的情况下，可以可通过 StrictValidation 参数配置是否进行数据验证和转换。
 3. 物理结构，用户使用 protobuf 或者 custom 格式，并定义 schemaId。此时，数据结构的验证将由格式来实现。
 
-逻辑结构和物理结构定义都用于规则创建的解析和载入阶段的 SQL 语法验证以及运行时优化等。推断后的数据流的数据结构可通过 [Schema API](../../api/restapi/streams.md#获取数据结构)获取。
+逻辑结构和物理结构定义都用于规则创建的解析和载入阶段的 SQL 语法验证以及运行时优化等。推断后的数据流的数据结构可通过 [Schema API](../../api/restapi/streams.md#获取数据结构) 获取。
 
 ### Strict Validation
 
@@ -145,9 +144,8 @@ Schema-less 流字段数据类型将在运行时确定。 如果在不兼容子�
 
 ```sql
 demoBin (
-	image BYTEA
+    image BYTEA
 ) WITH (DATASOURCE="test/", FORMAT="BINARY");
 ```
 
 如果 "BINARY" 格式流定义为 schemaless，数据将会解析到默认的名为 `self` 的字段。
-

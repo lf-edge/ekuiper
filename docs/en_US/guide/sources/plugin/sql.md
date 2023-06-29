@@ -123,7 +123,7 @@ If you have a specific connection that need to overwrite the default settings, y
 
 ## Sample usage
 
-```
+```text
 demo (
   ...
  ) WITH (DATASOURCE="demo", FORMAT="JSON", CONF_KEY="template_config", TYPE="sql");
@@ -154,6 +154,6 @@ The cache configuration lies in the `sql.yaml`.
     cacheMissingKey: true
 ```
 
-- cache: bool value to indicate whether to enable cache.
-- cacheTtl: the time to live of the cache in seconds.
-- cacheMissingKey: whether to cache nil value for a key.
+* cache: bool value to indicate whether to enable cache.
+* cacheTtl: the time to live of the cache in seconds.
+* cacheMissingKey: whether to cache nil value for a key.

@@ -1,6 +1,6 @@
 # Run Examples
 
-This page explains how to use eKuiper to run the examples in this document. Before running the examples, you need to [install eKuiper](../installation.md). 
+This page explains how to use eKuiper to run the examples in this document. Before running the examples, you need to [install eKuiper](../installation.md).
 
 You can use SQL to define rules in the example documents. You can run rules using eKuiper manager management console UI or eKuiper’s REST API or command-line tool.
 
@@ -25,6 +25,7 @@ eKuiper provides many kinds of data source access methods and the File sink outp
 To run an example, we recommend that you use File source as input for ease of debugging. After the example runs successfully, you can replace the input data source with your own data source according to your needs.
 
 When running an example, most examples will follow these conventions, and the following will not be repeated.
+
 - We will create a data stream, the data source is file source, the data stream name is `demoStream`. Through the file source, we can conveniently **"replay"** the data prepared in the first step.
 - The output action of the rule is MQTT sink, which outputs the data to the `result/{{ruleId}}` topic.
 

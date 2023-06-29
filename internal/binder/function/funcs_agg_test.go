@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -264,6 +265,70 @@ func TestPercentileExec(t *testing.T) {
 	}
 }
 
+func TestConcatExec(t *testing.T) {
+	fcon, ok := builtins["merge_agg"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		name   string
+		args   []interface{}
+		result map[string]interface{}
+	}{
+		{ // 0
+			name: "concat wildcard",
+			args: []interface{}{
+				[]interface{}{
+					map[string]interface{}{
+						"foo": "bar",
+						"a":   123,
+					},
+					map[string]interface{}{
+						"foo1": "bar",
+						"a":    243,
+					},
+					map[string]interface{}{
+						"foo": "bar1",
+						"a":   342,
+					},
+				},
+			},
+			result: map[string]interface{}{
+				"foo":  "bar1",
+				"a":    342,
+				"foo1": "bar",
+			},
+		}, { // 1
+			name: "concat int column",
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					int64(150),
+					int64(200),
+				},
+			},
+			result: map[string]interface{}{},
+		}, { // 2
+			name: "concat empty",
+			args: []interface{}{
+				[]interface{}{},
+			},
+			result: map[string]interface{}{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r, ok := fcon.exec(fctx, tt.args)
+			assert.True(t, ok, "failed to execute concat")
+			assert.Equal(t, tt.result, r)
+		})
+	}
+}
+
 func TestAggFuncNil(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
@@ -328,6 +393,10 @@ func TestAggFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		case "collect":
+			r, b := function.exec(fctx, []interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		case "merge_agg":
 			r, b := function.exec(fctx, []interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))

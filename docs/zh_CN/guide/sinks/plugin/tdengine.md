@@ -1,3 +1,5 @@
+# TDengine 目标 （Sink）
+
 ## 编译插件
 
 在 eKuiper 项目主目录运行如下命令：
@@ -5,15 +7,16 @@
 ```shell
 go build -trimpath --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extensions/sinks/tdengine/tdengine.go
 ```
-### 安装插件
 
-由于 tdengine 插件的运行依赖于 tdengine 客户端，为了便于用户使用，安装插件时将下载 tdengine 客户端。但是 tdengine 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 tdengine 服务器版本。
+## 安装插件
+
+由于 TDengine 插件的运行依赖于 TDengine 客户端，为了便于用户使用，安装插件时将下载 TDengine 客户端。但是 TDengine 客户端版本与其服务器版本一一对应，互不兼容，所以用户必须告知所用 TDengine 服务器版本。
 
 ## 规则 Actions 说明
 
-由于 tdengine 数据库要求表中必须有时间戳字段，所以用户必须告知数据表的时间戳字段名称（必填tsFieldName）。用户可以选择是否提供时间戳数据，若不提供（provideTs=false），时间戳字段的内容由 tdengine 数据库自动生成。
+由于 TDengine 数据库要求表中必须有时间戳字段，所以用户必须告知数据表的时间戳字段名称（必填tsFieldName）。用户可以选择是否提供时间戳数据，若不提供（provideTs=false），时间戳字段的内容由 TDengine 数据库自动生成。
 
-| 名称             | 类型       | 是否必填 | 释义                                                                                                    |
+| 名称             | 类型       | 是否必填 | 说明                                                                                                    |
 |----------------|----------|------|-------------------------------------------------------------------------------------------------------|
 | host           | string   | 否    | 数据库域名，其值必须为域名，即 [FQDN](https://www.taosdata.com/blog/2020/09/11/1824.html)，不能为 IP 地址。其默认值为 localhost。 |
 | port           | int      | 是    | 数据库端口                                                                                                 |
@@ -32,7 +35,9 @@ go build -trimpath --buildmode=plugin -o plugins/sinks/Tdengine@v1.0.0.so extens
 
 ## 操作示例
 
-### 创建数据库、表，参考以下文档：
+### 创建数据库、表
+
+参考以下文档:
 
 ```http
 https://www.taosdata.com/cn/getting-started/
@@ -83,8 +88,6 @@ curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-T
 }
 ```
 
-
-
 根据 tableDataField 配置将结果写入数据库:
 
 以下配置将 telemetry 字段的对应值写入数据库
@@ -122,5 +125,3 @@ curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-T
   }
 }
 ```
-
-

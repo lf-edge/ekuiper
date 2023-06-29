@@ -17,7 +17,7 @@ eKuiper SQL is built up from tokens. There are four classes of tokens:
 
 ## Identifiers
 
-Identifiers name entities within a program. An *identifier* is a sequence of one or more letters and digits. An identifier must start with a letter. 
+Identifiers name entities within a program. An *identifier* is a sequence of one or more letters and digits. An identifier must start with a letter.
 
 To use the reserved words as the column name and the stream name etc, they need to be quoted by backtick. You can also use all kinds of unicode string in the backtick as an SQL element. For example, operator `-`, spaces, and various language characters such as Chinese.
 
@@ -30,7 +30,7 @@ SELECT `a-b`, `hello world`, `中文Chinese` from demo
 
 **Reserved keywords for rule SQL**: If you'd like to use the following keyword in rule SQL, you will have to use backtick to enclose them.
 
-```
+```text
 SELECT, FROM, JOIN, LEFT, INNER, ON, WHERE, GROUP, ORDER, HAVING, BY, ASC, DESC, AND, OR, CASE, WHEN, THEN, ELSE, END, IN, NOT, BETWEEN, LIKE, OVER, PARTITION
 ```
 
@@ -44,20 +44,20 @@ The following is an example for how to use reserved keywords in stream creation 
 
 ```sql
 CREATE STREAM `stream` (
-					USERID BIGINT,
-					FIRST_NAME STRING,
-					LAST_NAME  STRING,
-					NICKNAMES  ARRAY(STRING),
-					Gender     BOOLEAN,
-					`地址`      STRUCT(STREET_NAME STRING, NUMBER BIGINT),
-				) WITH (DATASOURCE="users", FORMAT="JSON");
+                    USERID BIGINT,
+                    FIRST_NAME STRING,
+                    LAST_NAME  STRING,
+                    NICKNAMES  ARRAY(STRING),
+                    Gender     BOOLEAN,
+                    `地址`      STRUCT(STREET_NAME STRING, NUMBER BIGINT),
+                ) WITH (DATASOURCE="users", FORMAT="JSON");
 ```
 
 ## Operators
 
 Following operators are provided.
 
-```
+```text
 +, -, *, /, %, &, |, ^, =, !=, <, <=, >, >=, [], ->, (), IN, NOT IN, BETWEEN, NOT BETWEEN
 ```
 
@@ -65,15 +65,14 @@ Following operators are provided.
 
 **Boolean literals**
 
-```
+```text
 TRUE, FALSE
 ```
 
-Example, ` SELECT TRUE AS field1 FROM demo` , the field `field1` always returns `true`.
+Example, `SELECT TRUE AS field1 FROM demo` , the field `field1` always returns `true`.
 
 **Time literals**: Below literals are used in time window, which identify the time unit for windows.
 
-```
+```text
 DD, HH, MI, SS, MS
 ```
-

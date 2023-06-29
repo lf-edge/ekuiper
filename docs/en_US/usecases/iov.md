@@ -8,9 +8,9 @@ Based on a large number of IoV user cases and experiences, EMQ has introduced a 
 
 ![IoV case](./resources/iov_case.png)
 
-As a light-weight stream processing engine, eKuiper has a 10 MB level footprint and 20 MB memory requirement for data collection. Thus, eKuiper is suitable to deploy to the edge side of a vehicle, such as TBOX, MPU and infotainment system. 
+As a light-weight stream processing engine, eKuiper has a 10 MB level footprint and 20 MB memory requirement for data collection. Thus, eKuiper is suitable to deploy to the edge side of a vehicle, such as TBOX, MPU and infotainment system.
 
-In this solution, we use eKuiper, the stream processing at the IoT Edge to implement flexible data collect on in-vehicle terminals; and adopt [EMQX](https://www.emqx.com/en), the large-scale distributed IoT MQTT broker to realize the connection, movement and processing of the collected data as well as the control command interaction of the integrated vehicle-cloud. 
+In this solution, we use eKuiper, the stream processing at the IoT Edge to implement flexible data collect on in-vehicle terminals; and adopt [EMQX](https://www.emqx.com/en), the large-scale distributed IoT MQTT broker to realize the connection, movement and processing of the collected data as well as the control command interaction of the integrated vehicle-cloud.
 
 ## Scenarios
 
@@ -27,7 +27,6 @@ The most mature usage is to achieve flexible data collection, we will learn abou
 Among these, data collection is the core of all the applications. Once data collected, eKuiper can leverage it locally inside the vehicle or transfer it to the cloud.
 
 ## Flexible Data Collection
-
 
 ### Why we need flexible data collection
 
@@ -136,6 +135,7 @@ The eKuiper rules are divided into two parts. The SQL is used to write the busin
     ```
 
 2. **Collection of signals with changes**. Some signals may have a long variation period. If all the signals are collected, most of them are repeated values, occupying storage and bandwidth. eKuiper provides a built-in variation capture function CHANGED_COLS, which can capture only the variation of signal values. In the following rule example, we capture the change information of the battery and save it in a local file.
+
     ```json
     {
       "id": "ruleChangeCollect",
@@ -147,7 +147,9 @@ The eKuiper rules are divided into two parts. The SQL is used to write the busin
       }]
     }
     ```
+
 3. **Collection based on events**.Some signals need to be collected only under certain circumstances, such as collecting relevant data after a collision. eKuiper has the flexibility to set the conditions for collection. In the following rule, all data is collected in the Topic exception of MQTT in case of abnormal battery voltage (not between 10 and 20).
+
     ```json
     {
         "id": "ruleExpCollect",
@@ -160,7 +162,6 @@ The eKuiper rules are divided into two parts. The SQL is used to write the busin
         }]
     }
     ```
-
 
 ### Integrated vehicle-cloud rules management
 

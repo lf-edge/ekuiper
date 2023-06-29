@@ -25,6 +25,7 @@ object.
 //The argument is a list of xsql.Expr
 Validate(args []interface{}) error
 ```
+
 There are 2 types of functions: aggregate function and common function. For aggregate function, if the argument is a column, the received value will always be a slice of the column values in a group. The extended function must distinguish the function type by implement _IsAggregate_ method.
 
 ```go
@@ -90,10 +91,12 @@ them available. There are two ways to register the functions.
 The customized function can be directly used in the SQL of a rule if it follows the below convention.
 
 If you have developed a function implementation MyFunction, you should have:
+
 1. In the plugin file, symbol MyFunction is exported.
 2. The compiled MyFunction.so file is located inside _plugins/functions_
 
 To use it, just call it in the SQL inside a rule definition:
+
 ```json
 {
   "id": "rule1",

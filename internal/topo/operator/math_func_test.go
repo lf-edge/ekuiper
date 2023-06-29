@@ -490,7 +490,7 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 			t.Errorf("%d: found error %q", i, err)
 			continue
 		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)

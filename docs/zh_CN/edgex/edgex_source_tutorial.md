@@ -23,7 +23,7 @@ EdgeX 源的完整属性列表可以在 [这里](../guide/sources/builtin/edgex.
 
 ### 修改连接的应用服务
 
-在某些情况下，用户可能对多个应用服务来进行不同类型的数据转换。 要让 eKuiper 连接到另一个应用服务，只需更改主题以匹配新主题名称。因此，修改 docker compose 文件，在应用服务中添加环境变量`TRIGGER_EDGEXMESSAGEBUS_PUBLISHHOST_PUBLISHTOPIC` 来明确指定发布主题。 然后更新规则引擎中的环境变量 `EDGEX__DEFAULT__TOPIC` 以匹配新主题并连接它们。
+在某些情况下，用户可能对多个应用服务来进行不同类型的数据转换。 要让 eKuiper 连接到另一个应用服务，只需更改主题以匹配新主题名称。因此，修改 docker compose 文件，在应用服务中添加环境变量 `TRIGGER_EDGEXMESSAGEBUS_PUBLISHHOST_PUBLISHTOPIC` 来明确指定发布主题。 然后更新规则引擎中的环境变量 `EDGEX__DEFAULT__TOPIC` 以匹配新主题并连接它们。
 
 ```yaml
 ...
@@ -108,7 +108,7 @@ CREATE STREAM edgexAll() WITH (FORMAT="JSON", TYPE="edgex")
 CREATE STREAM edgexInt8(int8 bigint) WITH (FORMAT="JSON", TYPE="edgex", CONF_KEY="int8_conf")
 ```
 
-不同之处在于，edgexInt8 明确指定 confkey 使用 `int8_conf`，它配置为 Random-Integer-Device 设备 Int8读取的筛选主题。 因此，它只会接收每个事件的 Int8 读取，并且事件结构是固定的。 因此，流定义也定义了模式，而不是无模式。
+不同之处在于，edgexInt8 明确指定 confkey 使用 `int8_conf`，它配置为 Random-Integer-Device 设备 Int8 读取的筛选主题。 因此，它只会接收每个事件的 Int8 读取，并且事件结构是固定的。 因此，流定义也定义了模式，而不是无模式。
 
 同样，用户可以为每个 confkey 创建流。 每个规则都可以根据其关注点选择流。
 

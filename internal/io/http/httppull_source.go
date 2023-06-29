@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 type PullSource struct {
@@ -34,24 +33,6 @@ func (hps *PullSource) Configure(device string, props map[string]interface{}) er
 
 func (hps *PullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	ctx.GetLogger().Infof("Opening HTTP pull source with conf %+v", hps.config)
-	// trigger refresh token timer
-	if hps.accessConf != nil && hps.accessConf.ExpireInSecond > 0 {
-		go infra.SafeRun(func() error {
-			ctx.GetLogger().Infof("Starting refresh token for %d seconds", hps.accessConf.ExpireInSecond/2)
-			ticker := time.NewTicker(time.Duration(hps.accessConf.ExpireInSecond/2) * time.Second)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ticker.C:
-					ctx.GetLogger().Debugf("Refreshing token")
-					hps.refresh(ctx)
-				case <-ctx.Done():
-					ctx.GetLogger().Infof("Closing refresh token timer")
-					return nil
-				}
-			}
-		})
-	}
 	hps.initTimerPull(ctx, consumer, errCh)
 }
 
@@ -74,6 +55,14 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 			headers, err := hps.parseHeaders(ctx, hps.tokens)
 			if err != nil {
 				continue
+			}
+			// check oAuth token expiration
+			if hps.accessConf != nil && hps.accessConf.ExpireInSecond > 0 &&
+				int(time.Now().Sub(hps.tokenLastUpdateAt).Abs().Seconds()) >= hps.accessConf.ExpireInSecond {
+				ctx.GetLogger().Debugf("Refreshing token")
+				if err := hps.refresh(ctx); err != nil {
+					ctx.GetLogger().Warnf("Refresh token error: %v", err)
+				}
 			}
 			ctx.GetLogger().Debugf("rest sink sending request url: %s, headers: %v, body %s", hps.config.Url, headers, hps.config.Body)
 			if resp, e := httpx.Send(logger, hps.client, hps.config.BodyType, hps.config.Method, hps.config.Url, headers, true, []byte(hps.config.Body)); e != nil {

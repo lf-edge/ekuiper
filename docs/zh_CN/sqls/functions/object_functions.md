@@ -4,7 +4,7 @@
 
 ## KEYS
 
-```
+```text
 keys(map<string, any>)
 ```
 
@@ -12,7 +12,7 @@ keys(map<string, any>)
 
 ## VALUES
 
-```
+```text
 values(map<string, any>)
 ```
 
@@ -20,7 +20,7 @@ values(map<string, any>)
 
 ## OBJECT
 
-```
+```text
 object(arr1, arr2)
 ```
 
@@ -28,7 +28,7 @@ object(arr1, arr2)
 
 ## ZIP
 
-```
+```text
 zip([arr1, arr2], ......)
 ```
 
@@ -37,7 +37,7 @@ value。
 
 ## ITEMS
 
-```
+```text
 items(map<string, any>)
 ```
 
@@ -45,7 +45,7 @@ items(map<string, any>)
 
 ## OBJECT_CONSTRUCT
 
-```
+```text
 object_construct(key1, col, ...)
 ```
 

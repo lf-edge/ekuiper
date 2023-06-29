@@ -128,7 +128,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		inputs = []api.Emitter{srcNode}
 		op = srcNode
 	case *WatermarkPlan:
-		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.Emitters, options)
+		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
 	case *AnalyticFuncsPlan:
 		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *WindowPlan:
@@ -138,7 +138,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 			tp.AddOperator(inputs, wfilterOp)
 			inputs = []api.Emitter{wfilterOp}
 		}
-		l, i := convertFromDuration(t)
+		l, i, d := convertFromDuration(t)
 		var rawInterval int
 		switch t.wtype {
 		case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
@@ -146,12 +146,16 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		case ast.HOPPING_WINDOW:
 			rawInterval = t.interval
 		}
+		t.ExtractStateFunc()
 		op, err = node.NewWindowOp(fmt.Sprintf("%d_window", newIndex), node.WindowConfig{
-			Type:        t.wtype,
-			Length:      l,
-			Interval:    i,
-			RawInterval: rawInterval,
-			TimeUnit:    t.timeUnit,
+			Type:             t.wtype,
+			Delay:            d,
+			Length:           l,
+			Interval:         i,
+			RawInterval:      rawInterval,
+			TimeUnit:         t.timeUnit,
+			TriggerCondition: t.triggerCondition,
+			StateFuncs:       t.stateFuncs,
 		}, options)
 		if err != nil {
 			return nil, 0, err
@@ -163,11 +167,13 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	case *JoinPlan:
 		op = Transform(&operator.JoinOp{Joins: t.joins, From: t.from}, fmt.Sprintf("%d_join", newIndex), options)
 	case *FilterPlan:
-		op = Transform(&operator.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_filter", newIndex), options)
+		t.ExtractStateFunc()
+		op = Transform(&operator.FilterOp{Condition: t.condition, StateFuncs: t.stateFuncs}, fmt.Sprintf("%d_filter", newIndex), options)
 	case *AggregatePlan:
 		op = Transform(&operator.AggregateOp{Dimensions: t.dimensions}, fmt.Sprintf("%d_aggregate", newIndex), options)
 	case *HavingPlan:
-		op = Transform(&operator.HavingOp{Condition: t.condition}, fmt.Sprintf("%d_having", newIndex), options)
+		t.ExtractStateFunc()
+		op = Transform(&operator.HavingOp{Condition: t.condition, StateFuncs: t.stateFuncs}, fmt.Sprintf("%d_having", newIndex), options)
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
@@ -189,7 +195,24 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	return op, newIndex, nil
 }
 
-func convertFromDuration(t *WindowPlan) (int64, int64) {
+func convertFromUnit(t ast.Token, v int64) int64 {
+	unit := 1
+	switch t {
+	case ast.DD:
+		unit = 24 * 3600 * 1000
+	case ast.HH:
+		unit = 3600 * 1000
+	case ast.MI:
+		unit = 60 * 1000
+	case ast.SS:
+		unit = 1000
+	case ast.MS:
+		unit = 1
+	}
+	return int64(unit) * v
+}
+
+func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
 	var unit int64 = 1
 	switch t.timeUnit {
 	case ast.DD:
@@ -203,7 +226,7 @@ func convertFromDuration(t *WindowPlan) (int64, int64) {
 	case ast.MS:
 		unit = 1
 	}
-	return int64(t.length) * unit, int64(t.interval) * unit
+	return int64(t.length) * unit, int64(t.interval) * unit, t.delay * unit
 }
 
 func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options *api.RuleOption) (*node.SourceNode, error) {
@@ -309,9 +332,11 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			}
 		}
 	}
+	hasWindow := dimensions != nil && dimensions.GetWindow() != nil
 	if opt.IsEventTime {
 		p = WatermarkPlan{
-			Emitters: streamEmitters,
+			SendWatermark: hasWindow,
+			Emitters:      streamEmitters,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -334,6 +359,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 				length:      w.Length.Val,
 				isEventTime: opt.IsEventTime,
 			}.Init()
+			if w.Delay != nil {
+				wp.delay = int64(w.Delay.Val)
+			}
 			if w.Interval != nil {
 				wp.interval = w.Interval.Val
 			} else if w.WindowType == ast.COUNT_WINDOW {
@@ -345,6 +373,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			}
 			if w.Filter != nil {
 				wp.condition = w.Filter
+			}
+			if w.TriggerCondition != nil {
+				wp.triggerCondition = w.TriggerCondition
 			}
 			// TODO calculate limit
 			// TODO incremental aggregate
@@ -390,7 +421,6 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 				p.SetChildren(append(children, scanTableChildren...))
 				children = []LogicalPlan{p}
 			}
-			// TODO extract on filter
 			p = JoinPlan{
 				from:  stmt.Sources[0].(*ast.Table),
 				joins: stmt.Joins,
@@ -436,7 +466,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 	if stmt.Fields != nil {
 		p = ProjectPlan{
 			fields:      stmt.Fields,
-			isAggregate: xsql.IsAggStatement(stmt),
+			isAggregate: xsql.WithAggFields(stmt),
 			sendMeta:    opt.SendMetaToSink,
 		}.Init()
 		p.SetChildren(children)

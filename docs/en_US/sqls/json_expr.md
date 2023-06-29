@@ -15,16 +15,16 @@
   ],
     "followers": {
         "Group1": [
-		    {"first": "John", "last": "Shavor", "age": 22},
-		    {"first": "Ken", "last": "Miller", "age": 33}
+            {"first": "John", "last": "Shavor", "age": 22},
+            {"first": "Ken", "last": "Miller", "age": 33}
         ],
         "Group2": [
             {"first": "Alice", "last": "Murphy", "age": 33},
-		    {"first": "Brian", "last": "Craig", "age": 44}
+            {"first": "Brian", "last": "Craig", "age": 44}
         ]
     },
    "ops": {
-   	"functionA": {"numArgs": 2},
+    "functionA": {"numArgs": 2},
     "functionB": {"numArgs": 3},
     "functionC": {"variadic": true}
   },
@@ -35,46 +35,36 @@
 
 ## Basic expressions
 
-### Identifier 
+### Identifier
 
 The source dereference operator `.` can be used to specify columns by dereferencing the source stream or table, or to select a key in a nested JSON object. The `->` dereference selects a key in a nested JSON object.
 
-```
+```sql
 SELECT demo.age FROM demo
 {"age" : 37}
 ```
 
-
-
-```
+```sql
 SELECT demo.name->first FROM demo
 {"first" : "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT demo.name.first FROM demo
 {"first" : "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT name.first AS fname FROM demo
 {"fname": "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT name->first AS fname FROM demo
 {"fname": "Tom"}
 ```
 
-
-
-```
+```sql
 SELECT ops->functionA.numArgs AS num FROM demo
 {"num": 2}
 ```
@@ -83,7 +73,7 @@ SELECT ops->functionA.numArgs AS num FROM demo
 
 Index Expressions allow you to select a specific element in a list. It should look similar to array access in common programming languages.The index value starts with 0, -1 is the starting position from the end, and so on.
 
-```
+```sql
 SELECT children FROM demo
 
 {
@@ -91,9 +81,7 @@ SELECT children FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[0] FROM demo
 
 {
@@ -132,7 +120,7 @@ Slices allow you to select a contiguous subset of an array.
 `field[from:to)`is the interval before closing and opening, excluding to. If from is not specified, then it means start
 from the 1st element of an array; If to is not specified, then it means end with the last element of array.
 
-```
+```sql
 SELECT children[0:1] FROM demo
 
 {
@@ -152,9 +140,7 @@ SELECT children[0:-1] FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[:] FROM demo == SELECT children FROM demo
 
 {
@@ -162,9 +148,7 @@ SELECT children[:] FROM demo == SELECT children FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[:2] FROM demo
 
 {
@@ -172,9 +156,7 @@ SELECT children[:2] FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT children[x:y] FROM demo
 
 {
@@ -188,9 +170,7 @@ SELECT children[x+1:y] FROM demo
 }
 ```
 
-
-
-```
+```sql
 SELECT followers->Group1[:1]->first FROM demo
 
 {
@@ -233,6 +213,7 @@ expressions:
 Developers can use the json functions in the SQL statement. Here are some examples.
 
 - Select the lastname of group1 followers
+
 ```sql
 SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
 
@@ -240,6 +221,7 @@ SELECT json_path_query(followers, "$.Group1[*].last") FROM demo
 ```
 
 - Select the lastname if any of the group1 followers is older than 60
+
 ```sql
 SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>30]")
 
@@ -247,6 +229,7 @@ SELECT name->last FROM demo where json_path_exists(followers, "$.Group1[? @.age>
 ```
 
 - Select the follower's lastname from group1 whose age is bigger than 30
+
 ```sql
 SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
 
@@ -254,6 +237,7 @@ SELECT json_path_exists(followers, "$.Group1[? @.age>30].last") FROM demo
 ```
 
 - Assume there is a field in follows with reserved words or chars like dot `my.follower`, use bracket to access it.
+
 ```sql
 SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
@@ -264,18 +248,16 @@ SELECT json_path_exists(followers, "$[\"my.follower\"]") FROM demo
 
 #### List & Slice projections
 
-A wildcard expression creates a list projection, which is a projection over a JSON array. 
+A wildcard expression creates a list projection, which is a projection over a JSON array.
 
-```
+```sql
 SELECT demo.friends[*]->first FROM demo
 {
     "first": ["Dale", "Roger", "Jane"]
 }
 ```
 
-
-
-```
+```sql
 SELECT friends[:1]->first FROM demo
 {
     "first": ["Dale", "Roger"]
@@ -284,9 +266,8 @@ SELECT friends[:1]->first FROM demo
 
 #### Object projections
 
-```
+```sql
 SELECT ops->*->numArgs FROM demo
 
 { "numArgs" : [2, 3] }
 ```
-

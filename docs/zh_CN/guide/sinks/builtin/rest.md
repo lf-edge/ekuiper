@@ -18,7 +18,7 @@
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
 ::: v-pre
-REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `dataTemplate` 强制使用。 请参考[数据模板](../data_template.md)。 以下是用于连接到 Edgex Foundry core 命令的示例配置。dataTemplate`{{.key}}` 表示将打印出键值，即 result [key]。 因此，这里的模板是在结果中仅选择字段 `key` ，并将字段名称更改为 `newKey`。 `sendSingle` 是另一个常见属性。 设置为 true 表示如果结果是数组，则每个元素将单独发送。
+REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `dataTemplate` 强制使用。 请参考[数据模板](../data_template.md)。 以下是用于连接到 Edgex Foundry core 命令的示例配置。dataTemplate`{{.key}}` 表示将打印出键值，即 result [key]。 因此，这里的模板是在结果中仅选择字段 `key`，并将字段名称更改为 `newKey`。`sendSingle` 是另一个常见属性。 设置为 true 表示如果结果是数组，则每个元素将单独发送。
 :::
 
 ```json
@@ -62,16 +62,16 @@ REST 服务通常需要特定的数据格式。 这可以由公共目标属性 `
 ```
 
 Visualization mode
-以可视化图形交互创建rules的SQL和Actions
+以可视化图形交互创建 rules 的 SQL 和 Actions
 
 Text mode
-以json格式创建rules的SQL和Actions
+以json格式创建 rules 的 SQL 和 Actions
 
-创建写taosdb rest示例：
+创建写 taosdb rest示例：
 
 ```json
 {"id": "rest1",
-  "sql": "SELECT tele[0]-\u003eTag00001 AS temperature, tele[0]-\u003eTag00002 AS humidity FROM neuron", 
+  "sql": "SELECT tele[0].Tag00001 AS temperature, tele[0].Tag00002 AS humidity FROM neuron", 
   "actions": [
     {
       "rest": {
@@ -90,7 +90,7 @@ Text mode
 
 ## 设置动态输出参数
 
-很多情况下，我们需要根据结果数据，决定写入的目的地址和参数。在 REST sink 里，`method`, `url`, `bodyType` 和 `headers` 支持动态参数。动态参数可通过数据模板语法配置。接下来，让我们使用动态参数改写上例。假设我们收到了数据中包含了 http 方法和 url 后缀等元数据。我们可以通过改写 SQL 语句，在输出结果中得到这两个值。规则输出的单条数据类似：
+很多情况下，我们需要根据结果数据，决定写入的目的地址和参数。在 REST sink 里，`method`，`url`，`bodyType` 和 `headers` 支持动态参数。动态参数可通过数据模板语法配置。接下来，让我们使用动态参数改写上例。假设我们收到了数据中包含了 http 方法和 url 后缀等元数据。我们可以通过改写 SQL 语句，在输出结果中得到这两个值。规则输出的单条数据类似：
 
 ```json
 {

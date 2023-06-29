@@ -4,7 +4,7 @@
 
 ## ISNULL
 
-```
+```text
 isNull(col)
 ```
 
@@ -12,7 +12,7 @@ isNull(col)
 
 ## COALESCE
 
-```
+```text
 coalesce(expr1, expr2, ...)
 ```
 
@@ -20,7 +20,7 @@ coalesce(expr1, expr2, ...)
 
 ## NEWUUID
 
-```
+```text
 newuuid()
 ```
 
@@ -28,15 +28,24 @@ newuuid()
 
 ## TSTAMP
 
-```
+```text
 tstamp()
 ```
 
 返回当前时间戳，以1970年1月1日星期四00:00:00协调世界时（UTC）为单位。
 
+## EVENT_TIME
+
+```text
+event_time()
+```
+
+返回当前处理事件的 int64 格式时间戳。由于处理延迟，该时间戳可能早于当前时间。
+若在窗口规则中用作聚合函数，则返回窗口结束时间。
+
 ## RULE_ID
 
-```
+```text
 rule_id()
 ```
 
@@ -44,28 +53,52 @@ rule_id()
 
 ## MQTT
 
-```
+```text
 mqtt(topic)
 ```
 
 返回指定键的 MQTT 元数据。 当前支持的键包括:
 
-- topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src1.topic)`
-- messageid：返回消息的消息ID。 如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)`
+- topic：返回消息的主题。 如果有多个流源，则在参数中指定源名称。如 `mqtt(src1.topic)`
+- messageid：返回消息的消息ID。如果有多个流源，则在参数中指定源名称。 如 `mqtt(src2.messageid)`
 
 该函数仅用于数据源为 MQTT 的情况。其余数据源请使用 META 函数。
 
 ## META
 
-```
+```text
 meta(key)
 ```
 
 返回指定键的元数据。
 
+## LAST_HIT_COUNT
+
+```text
+last_hit_count()
+```
+
+返回该函数的总命中次数。通常用于获取聚合规则的累计触发次数。如果在 `WHERE` 子句中使用，只有当条件为真时才会更新计数。
+该函数仅可用于非聚合规则中或 Sliding Window
+的条件中。若要在聚合规则中实现类似功能，请使用 [last_agg_hit_count](./aggregate_functions.md#lastagghitcount)。
+
+若在滑动窗口触发条件中使用，当触发条件满足时就会更新计数而无需考虑规则整体触发情况。
+
+## LAST_HIT_TIME
+
+```text
+last_hit_time()
+```
+
+返回该函数最后一次命中时的 int64 格式时间戳。通常用于获取聚合规则的最后一次触发时间。如果在 `WHERE` 子句中使用，只有当条件为真时才会更新时间戳。
+该函数仅可用于非聚合规则中或 Sliding Window
+的条件中。若要在聚合规则中实现类似功能，请使用 [last_agg_hit_time](./aggregate_functions.md#lastagghittime)。
+
+若在滑动窗口触发条件中使用，当触发条件满足时就会更新时间而无需考虑规则整体触发情况。
+
 ## WINDOW_START
 
-```
+```text
 window_start()
 ```
 
@@ -73,7 +106,7 @@ window_start()
 
 ## WINDOW_END
 
-```
+```text
 window_end()
 ```
 
@@ -81,7 +114,7 @@ window_end()
 
 ## GET_KEYED_STATE
 
-```
+```text
 get_keyed_state(key, state_name)
 ```
 
@@ -91,7 +124,7 @@ get_keyed_state(key, state_name)
 
 ## DELAY
 
-```
+```text
 delay(delayTime, returnVal)
 ```
 

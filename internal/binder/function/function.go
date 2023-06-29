@@ -52,6 +52,7 @@ func init() {
 	registerSetReturningFunc()
 	registerArrayFunc()
 	registerObjectFunc()
+	registerGlobalStateFunc()
 }
 
 //var funcWithAsteriskSupportMap = map[string]string{

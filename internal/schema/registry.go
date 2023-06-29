@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
@@ -271,7 +272,7 @@ func UninstallAllSchema() {
 	}
 	for key, value := range schemaMaps {
 		info := &Info{}
-		_ = json.Unmarshal([]byte(value), info)
+		_ = json.Unmarshal(cast.StringToBytes(value), info)
 		_ = DeleteSchema(info.Type, key)
 	}
 }
@@ -320,7 +321,7 @@ func SchemaPartialImport(schemas map[string]string) map[string]string {
 
 func schemaRegisterForImport(k, v string) error {
 	info := &Info{}
-	err := json.Unmarshal([]byte(v), info)
+	err := json.Unmarshal(cast.StringToBytes(v), info)
 	if err != nil {
 		return err
 	}

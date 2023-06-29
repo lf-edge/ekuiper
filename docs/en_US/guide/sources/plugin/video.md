@@ -33,6 +33,7 @@ dedup:
   interval: 100
 
 ```
+
 ### Global configurations
 
 Use can specify the global video source settings here. The configuration items specified in `default` section will be taken as default settings for the source when running this source.
@@ -45,18 +46,16 @@ The url address for the video streaming.
 
 The interval (ms) to issue a message.
 
-
 ## Override the default settings
 
 If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `ext`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
 
 ## Sample usage
 
-```
+```text
 demo (
-		...
-	) WITH (FORMAT="JSON", CONF_KEY="ext", TYPE="video");
+    ...
+  ) WITH (FORMAT="JSON", CONF_KEY="ext", TYPE="video");
 ```
 
 The configuration keys "ext" will be used.
-

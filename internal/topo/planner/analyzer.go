@@ -153,7 +153,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		return nil, nil, walkErr
 	}
 	// walk sources at last to let them run firstly
-	// because other clause may depend on the alias defined here
+	// because another clause may depend on the alias defined here
 	ast.WalkFunc(s.Fields, func(n ast.Node) bool {
 		switch f := n.(type) {
 		case *ast.Call:
@@ -180,6 +180,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 }
 
 func validate(s *ast.SelectStatement) (err error) {
+	isAggStmt := false
 	if xsql.IsAggregate(s.Condition) {
 		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause.")
 	}
@@ -187,9 +188,13 @@ func validate(s *ast.SelectStatement) (err error) {
 		return fmt.Errorf("Not allowed to call non-aggregate functions in HAVING clause.")
 	}
 	for _, d := range s.Dimensions {
+		isAggStmt = true
 		if xsql.IsAggregate(d.Expr) {
 			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause.")
 		}
+	}
+	if s.Joins != nil {
+		isAggStmt = true
 	}
 	ast.WalkFunc(s, func(n ast.Node) bool {
 		switch f := n.(type) {
@@ -204,6 +209,14 @@ func validate(s *ast.SelectStatement) (err error) {
 					}
 				}
 			}
+			if isAggStmt && function.NoAggFunc(f.Name) {
+				err = fmt.Errorf("function %s is not allowed in an aggregate query", f.Name)
+				return false
+			}
+		case *ast.Window:
+			// agg func check is done in dimensions.
+			// in window trigger condition, NoAggFunc is allowed unlike normal condition so return false to skip that check
+			return false
 		}
 		return true
 	})

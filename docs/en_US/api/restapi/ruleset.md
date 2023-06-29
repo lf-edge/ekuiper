@@ -30,7 +30,7 @@ POST http://{{host}}/ruleset/import
 Content-Type: application/json
 
 {
-  "content": "$规则集 json 内容"
+  "content": "{json of the ruleset}"
 }
 ```
 
@@ -47,7 +47,7 @@ Content-Type: application/json
 
 ## Export Ruleset
 
-The export API returns a file to download. 
+The export API returns a file to download.
 
 ```shell
 POST http://{{host}}/ruleset/export

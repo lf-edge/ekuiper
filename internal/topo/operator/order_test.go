@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -510,6 +510,117 @@ func TestOrderPlan_Apply(t *testing.T) {
 							},
 						},
 						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
+					},
+				},
+			},
+		},
+		{
+			sql: "SELECT a FROM demo GROUP BY a, TUMBLINGWINDOW(ss, 10) ORDER BY a ASC",
+			data: &xsql.WindowTuples{
+				Content: []xsql.TupleRow{
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 4},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 5},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 3},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 7},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 1},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 9},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 10},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 2},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 6},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 8},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 15},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 11},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 13},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 14},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 12},
+					},
+				},
+			},
+			result: &xsql.WindowTuples{
+				Content: []xsql.TupleRow{
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 1},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 2},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 3},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 4},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 5},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 6},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 7},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 8},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 9},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 10},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 11},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 12},
+					},
+					&xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 13},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 14},
+					}, &xsql.Tuple{
+						Emitter: "demo",
+						Message: xsql.Message{"a": 15},
 					},
 				},
 			},

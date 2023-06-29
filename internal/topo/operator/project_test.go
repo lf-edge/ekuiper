@@ -617,7 +617,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 			t.Errorf("parse sql error： %s", err)
 			continue
 		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)
@@ -1221,7 +1221,7 @@ func TestProjectPlan_MultiInput(t *testing.T) {
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)
@@ -1429,7 +1429,7 @@ func TestProjectPlan_Funcs(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)
@@ -2036,7 +2036,7 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 			},
 			result: []map[string]interface{}{{
-				"c1": xsql.Message{
+				"c1": map[string]interface{}{
 					"a": 27,
 				},
 			}},
@@ -2127,13 +2127,13 @@ func TestProjectPlan_AggFuncs(t *testing.T) {
 			result: []map[string]interface{}{
 				{
 					"r1": []interface{}{
-						xsql.Message{"a": 122.33, "c": 2, "color": "w2", "id": 1, "r": 122},
-						xsql.Message{"a": 177.51, "color": "w2", "id": 5},
+						map[string]interface{}{"a": 122.33, "c": 2, "color": "w2", "id": 1, "r": 122},
+						map[string]interface{}{"a": 177.51, "color": "w2", "id": 5},
 					},
 				}, {
 					"r1": []interface{}{
-						xsql.Message{"a": 89.03, "c": 2, "color": "w1", "id": 2, "r": 89},
-						xsql.Message{"a": 14.6, "color": "w1", "id": 4},
+						map[string]interface{}{"a": 89.03, "c": 2, "color": "w1", "id": 2, "r": 89},
+						map[string]interface{}{"a": 14.6, "color": "w1", "id": 4},
 					},
 				},
 			},
@@ -2386,7 +2386,7 @@ func TestProjectPlanError(t *testing.T) {
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
 		stmt, _ := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.IsAggStatement(stmt)}
+		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
 		parseStmt(pp, stmt.Fields)
 		fv, afv := xsql.NewFunctionValuersForOp(nil)
 		opResult := pp.Apply(ctx, tt.data, fv, afv)

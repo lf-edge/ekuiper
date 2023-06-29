@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
@@ -547,7 +548,7 @@ func LoadConfigurations(configSets YamlConfigurationSet) YamlConfigurationSet {
 
 	for key, val := range srcResources {
 		configs := YamlConfigurations{}
-		err := json.Unmarshal([]byte(val), &configs)
+		err := json.Unmarshal(cast.StringToBytes(val), &configs)
 		if err != nil {
 			_ = ConfigManager.sourceConfigStatusDb.Set(key, err.Error())
 			configResponse.Sources[key] = err.Error()
@@ -563,7 +564,7 @@ func LoadConfigurations(configSets YamlConfigurationSet) YamlConfigurationSet {
 
 	for key, val := range sinkResources {
 		configs := YamlConfigurations{}
-		err := json.Unmarshal([]byte(val), &configs)
+		err := json.Unmarshal(cast.StringToBytes(val), &configs)
 		if err != nil {
 			_ = ConfigManager.sinkConfigStatusDb.Set(key, err.Error())
 			configResponse.Sinks[key] = err.Error()
@@ -579,7 +580,7 @@ func LoadConfigurations(configSets YamlConfigurationSet) YamlConfigurationSet {
 
 	for key, val := range connectionResources {
 		configs := YamlConfigurations{}
-		err := json.Unmarshal([]byte(val), &configs)
+		err := json.Unmarshal(cast.StringToBytes(val), &configs)
 		if err != nil {
 			_ = ConfigManager.connectionConfigStatusDb.Set(key, err.Error())
 			configResponse.Connections[key] = err.Error()
@@ -608,7 +609,7 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 
 	for key, val := range srcResources {
 		configs := YamlConfigurations{}
-		err := json.Unmarshal([]byte(val), &configs)
+		err := json.Unmarshal(cast.StringToBytes(val), &configs)
 		if err != nil {
 			configResponse.Sources[key] = err.Error()
 			continue
@@ -622,7 +623,7 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 
 	for key, val := range sinkResources {
 		configs := YamlConfigurations{}
-		err := json.Unmarshal([]byte(val), &configs)
+		err := json.Unmarshal(cast.StringToBytes(val), &configs)
 		if err != nil {
 			configResponse.Sinks[key] = err.Error()
 			continue
@@ -636,7 +637,7 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 
 	for key, val := range connectionResources {
 		configs := YamlConfigurations{}
-		err := json.Unmarshal([]byte(val), &configs)
+		err := json.Unmarshal(cast.StringToBytes(val), &configs)
 		if err != nil {
 			configResponse.Connections[key] = err.Error()
 			continue

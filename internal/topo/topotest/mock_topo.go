@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -109,47 +111,48 @@ func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, wait
 }
 
 func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, w int, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
-	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
-		datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
-		if tp == nil {
-			t.Errorf("topo is not created successfully")
-			break
-		}
-		wait := tt.W
-		if wait == 0 {
-			if w > 0 {
-				wait = w
-			} else {
-				wait = 5
+		t.Run(tt.Name, func(t *testing.T) {
+			datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
+			if tp == nil {
+				t.Errorf("topo is not created successfully")
+				return
 			}
-		}
-		switch opt.Qos {
-		case api.ExactlyOnce:
-			wait *= 10
-		case api.AtLeastOnce:
-			wait *= 3
-		}
-		var retry int
-		if opt.Qos > api.AtMostOnce {
-			for retry = 3; retry > 0; retry-- {
-				if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
-					conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
-					time.Sleep(10 * time.Millisecond)
+			wait := tt.W
+			if wait == 0 {
+				if w > 0 {
+					wait = w
 				} else {
-					break
+					wait = 5
 				}
 			}
-			if retry < 0 {
-				t.Error("coordinator timeout")
-				t.FailNow()
+			switch opt.Qos {
+			case api.ExactlyOnce:
+				wait *= 10
+			case api.AtLeastOnce:
+				wait *= 3
 			}
-		}
-		if err := sendData(t, dataLength, tt.M, datas, errCh, tp, POSTLEAP, wait); err != nil {
-			t.Errorf("send data error %s", err)
-			break
-		}
-		compareResult(t, mockSink, resultFunc, tt, i, tp)
+			var retry int
+			if opt.Qos > api.AtMostOnce {
+				for retry = 3; retry > 0; retry-- {
+					if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
+						conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
+						time.Sleep(10 * time.Millisecond)
+					} else {
+						break
+					}
+				}
+				if retry < 0 {
+					t.Error("coordinator timeout")
+					t.FailNow()
+				}
+			}
+			if err := sendData(t, dataLength, tt.M, datas, errCh, tp, POSTLEAP, wait); err != nil {
+				t.Errorf("send data error %s", err)
+				return
+			}
+			compareResult(t, mockSink, resultFunc, tt, i, tp)
+		})
 	}
 }
 
@@ -158,9 +161,7 @@ func compareResult(t *testing.T, mockSink *mocknode.MockSink, resultFunc func(re
 	results := mockSink.GetResults()
 	maps := resultFunc(results)
 
-	if !reflect.DeepEqual(tt.R, maps) {
-		t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Sql, tt.R, maps)
-	}
+	assert.Equal(t, tt.R, maps)
 	if err := CompareMetrics(tp, tt.M); err != nil {
 		t.Errorf("%d. %q\n\nmetrics mismatch:\n\n%s\n\n", i, tt.Sql, err)
 	}

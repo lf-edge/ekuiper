@@ -29,6 +29,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 // manage the global http data server
@@ -117,7 +118,7 @@ func UnregisterEndpoint(endpoint string) {
 func createDataServer() (*http.Server, *mux.Router, error) {
 	r := mux.NewRouter()
 	s := &http.Server{
-		Addr: fmt.Sprintf("%s:%d", conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort),
+		Addr: cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 60 * 5,
 		ReadTimeout:  time.Second * 60 * 5,
@@ -125,7 +126,7 @@ func createDataServer() (*http.Server, *mux.Router, error) {
 		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin", "Authorization"}), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE", "HEAD"}))(r),
 	}
 	done = make(chan struct{})
-	go func() {
+	go func(done chan struct{}) {
 		var err error
 		if conf.Config.Source.HttpServerTls == nil {
 			err = s.ListenAndServe()
@@ -136,8 +137,8 @@ func createDataServer() (*http.Server, *mux.Router, error) {
 			sctx.GetLogger().Errorf("http data server error: %v", err)
 			close(done)
 		}
-	}()
-	sctx.GetLogger().Infof("Serving http data server on port http://%s:%d", conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort)
+	}(done)
+	sctx.GetLogger().Infof("Serving http data server on port http://%s", cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort))
 	return s, r, nil
 }
 

@@ -38,7 +38,6 @@ This command creates a schema named `schema1` whose content is provided by `file
 2. schema_name：The unique name of the schema which is also the name of the schema file.
 3. schema_json：The json to define the schema. It must contain name and file or content field.
 
-
 ## Show schemas
 
 The command is used for displaying all schemas defined in the server.

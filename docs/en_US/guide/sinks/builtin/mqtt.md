@@ -1,6 +1,6 @@
 # MQTT action
 
-The action is used for publish output message into an MQTT server. 
+The action is used for publish output message into an MQTT server.
 
 | Property name      | Optional | Description                                                                                                                                                                                                                                                                                                                                               |
 |--------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -17,11 +17,12 @@ The action is used for publish output message into an MQTT server.
 | insecureSkipVerify | true     | If InsecureSkipVerify is `true`, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is `false`. The configuration item can only be used with TLS connections.                                                                   |
 | retained           | true     | If retained is `true`,The broker stores the last retained message and the corresponding QoS for that topic.The default value is `false`.                                                                                                                                                                                                                  |
 | compression        | true     | Compress the payload with the specified compression method. Support `zlib`, `gzip`, `flate`, `zstd` method now.                                                                                                                                                                                                                                           |
-| connectionSelector | true     | reuse the connection to mqtt broker. [more info](../../sources/builtin/mqtt.md#connectionselector)                                                                                                                                                                                                                                                        | 
+| connectionSelector | true     | reuse the connection to mqtt broker. [more info](../../sources/builtin/mqtt.md#connectionselector)                                                                                                                                                                                                                                                        |
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
 Below is sample configuration for connecting to Azure IoT Hub by using SAS authentication.
+
 ```json
     {
       "mqtt": {

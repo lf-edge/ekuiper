@@ -18,7 +18,8 @@ import "github.com/lf-edge/ekuiper/pkg/ast"
 
 type WatermarkPlan struct {
 	baseLogicalPlan
-	Emitters []string
+	Emitters      []string
+	SendWatermark bool
 }
 
 func (p WatermarkPlan) Init() *WatermarkPlan {
@@ -26,19 +27,14 @@ func (p WatermarkPlan) Init() *WatermarkPlan {
 	return &p
 }
 
-// PushDownPredicate Push down all the conditions to the data source.
-// The condition here must be safe to push down or it will be catched by above planner, such as countWindow planner.
+// PushDownPredicate watermark plan can not push down predicate. It must receive all tuples to process watermark
 func (p *WatermarkPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
-	if len(p.children) == 0 {
-		return condition, p.self
+	if condition != nil {
+		f := FilterPlan{
+			condition: condition,
+		}.Init()
+		f.SetChildren([]LogicalPlan{p})
+		return nil, f
 	}
-	rest := condition
-	for i, child := range p.children {
-		if _, ok := child.(*DataSourcePlan); ok {
-			var newChild LogicalPlan
-			rest, newChild = child.PushDownPredicate(rest)
-			p.children[i] = newChild
-		}
-	}
-	return rest, p.self
+	return nil, p.self
 }

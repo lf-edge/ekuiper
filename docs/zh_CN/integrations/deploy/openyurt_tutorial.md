@@ -40,7 +40,7 @@ sudo apt-get install -y kubelet=1.20.8-00 kubeadm=1.20.8-00 kubectl=1.20.8-00
 
 我们将通过 `kubeadm` 配置 kubernetes 集群，并让边缘节点加入集群。
 
-假设您的云节点的外部 IP 是 `34.209.219.149`。 在云节点中，输入以下命令，我们将得到类似下面的结果。
+假设您的云节点的外部 IP 是 `34.209.219.149`。在云节点中，输入以下命令，我们将得到类似下面的结果。
 
 ```shell
 # sudo kubeadm init --control-plane-endpoint 34.209.219.149 --kubernetes-version stable-1.20 
@@ -177,8 +177,7 @@ $ curl http://192.168.2.143:9081
 
 ## 将 eKuiper 仪表板部署到云端
 
-我们将使用 [kmanager.yaml](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/tutorials/deploy/kmanager.yaml) 和 kubectl 工具在云节点中部署 ekuiper 仪表板。 eKuiper manager 是一个基于 web
-的用户界面。在配置文件中，我们为eKuiper manager 定义了部署和服务。
+我们将使用 [kmanager.yaml](https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/tutorials/deploy/kmanager.yaml) 和 kubectl 工具在云节点中部署 ekuiper 仪表板。 eKuiper manager 是一个基于 web 的用户界面。在配置文件中，我们为eKuiper manager 定义了部署和服务。
 
 首先，我们需要确保文件中使用的仪表盘版本跟 eKuiper 版本相匹配。打开并修改 kmanager.yaml 第21行，确保版本正确。
 
@@ -207,7 +206,7 @@ kmanager-http      NodePort    10.99.154.153   <none>        9082:32555/TCP     
 kubernetes         ClusterIP   10.96.0.1       <none>        443/TCP              33h
 ```
 
-仪表板在端口 `32555` 的云节点中运行。 因此，在浏览器中使用 url http://34.209.219.149:32555 打开仪表板。 使用默认用户名和密码登录：admin/public 。
+仪表板在端口 `32555` 的云节点中运行。 因此，在浏览器中使用 url <http://34.209.219.149:32555> 打开仪表板。 使用默认用户名和密码登录：admin/public 。
 
 我们的目标是在边缘节点管理 eKuiper 实例。 因此，我们将在上一节中设置的边缘节点中添加一个 eKuiper 服务作为仪表板中的服务。
 

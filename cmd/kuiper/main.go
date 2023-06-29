@@ -28,6 +28,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -87,9 +88,9 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Connecting to %s:%d... \n", config.Host, config.Port)
+	fmt.Printf("Connecting to %s... \n", cast.JoinHostPortInt(config.Host, config.Port))
 	// Create a TCP connection to localhost on port 1234
-	client, err := rpc.DialHTTP("tcp", fmt.Sprintf("%s:%d", config.Host, config.Port))
+	client, err := rpc.DialHTTP("tcp", cast.JoinHostPortInt(config.Host, config.Port))
 	if err != nil {
 		fmt.Printf("Failed to connect the server, please start the server.\n")
 		return
@@ -1104,7 +1105,7 @@ func main() {
 						rulesArray := c.String("rules")
 						if rulesArray != "" {
 							var rules []string
-							err := json.Unmarshal([]byte(rulesArray), &rules)
+							err := json.Unmarshal(cast.StringToBytes(rulesArray), &rules)
 							if err != nil {
 								fmt.Printf("rules %s unmarshal error %s", rules, err)
 								return nil
