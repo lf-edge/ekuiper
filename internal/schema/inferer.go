@@ -28,11 +28,11 @@ type inferer func(schemaFileName string, SchemaMessageName string) (ast.StreamFi
 var inferes = map[string]inferer{}
 
 func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, error) {
-	r := strings.Split(schemaId, ".")
-	if len(r) != 2 {
-		return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
-	}
 	if c, ok := inferes[schemaType]; ok {
+		r := strings.Split(schemaId, ".")
+		if len(r) != 2 {
+			return nil, fmt.Errorf("invalid schemaId: %s", schemaId)
+		}
 		// mock result for testing
 		if conf.IsTesting {
 			return ast.StreamFields{
@@ -52,6 +52,6 @@ func InferFromSchemaFile(schemaType string, schemaId string) (ast.StreamFields, 
 		}
 		return c(r[0], r[1])
 	} else {
-		return nil, fmt.Errorf("unsupported type: %s", schemaType)
+		return nil, nil
 	}
 }
