@@ -443,9 +443,14 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 			t.cachedMap = nil
 		}
 	} else if len(except) > 0 {
-		for _, e := range except {
-			delete(t.Message, e)
+		pickedMap := make(map[string]interface{})
+		messages := map[string]interface{}(t.Message)
+		for key, mess := range messages {
+			if !contains(except, key) {
+				pickedMap[key] = mess
+			}
 		}
+		t.Message = pickedMap
 	}
 }
 
