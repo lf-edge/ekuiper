@@ -398,15 +398,15 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 
 			ln := 0
 			// This is a queue to store the lines that should be ignored
-			tempLines := make([]string, 0, fs.config.IgnoreEndLines)
+			tempLines := make([][]byte, 0, fs.config.IgnoreEndLines)
 			for scanner.Scan() {
 				if ln >= fs.config.IgnoreStartLines {
 					if fs.config.IgnoreEndLines > 0 { // the last n line are left in the tempLines
 						slot := (ln - fs.config.IgnoreStartLines) % fs.config.IgnoreEndLines
 						if len(tempLines) <= slot { // first round
-							tempLines = append(tempLines, scanner.Text())
+							tempLines = append(tempLines, scanner.Bytes())
 						} else {
-							_, err := w.Write([]byte(tempLines[slot]))
+							_, err := w.Write(tempLines[slot])
 							if err != nil {
 								ctx.GetLogger().Error(err)
 								break
@@ -416,7 +416,7 @@ func (fs *FileSource) prepareFile(ctx api.StreamContext, file string) (io.Reader
 								ctx.GetLogger().Error(err)
 								break
 							}
-							tempLines[slot] = scanner.Text()
+							tempLines[slot] = scanner.Bytes()
 						}
 					} else {
 						_, err = w.Write(scanner.Bytes())

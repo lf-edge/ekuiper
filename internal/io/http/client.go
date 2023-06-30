@@ -235,7 +235,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 
 // initialize the oAuth access token
 func (cc *ClientConf) auth(ctx api.StreamContext) error {
-	if resp, e := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, true, []byte(cc.accessConf.Body)); e == nil {
+	if resp, e := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, true, cc.accessConf.Body); e == nil {
 		conf.Log.Infof("try to get access token got response %v", resp)
 		tokens, _, e := cc.parseResponse(ctx, resp, true, nil)
 		if e != nil {
@@ -273,7 +273,7 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 				return fmt.Errorf("fail to parse the header for refresh token request %s: %v", k, err)
 			}
 		}
-		rr, ee := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, true, []byte(cc.accessConf.Body))
+		rr, ee := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, true, cc.accessConf.Body)
 		if ee != nil {
 			return fmt.Errorf("fail to get refresh token: %v", ee)
 		}

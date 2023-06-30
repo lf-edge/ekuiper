@@ -43,12 +43,12 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 			return nil, fmt.Errorf("fail to create request: %v", err)
 		}
 	case "json", "text", "javascript", "html", "xml":
-		body := &(bytes.Buffer{})
+		var body io.Reader
 		switch t := v.(type) {
 		case []byte:
 			body = bytes.NewBuffer(t)
 		case string:
-			body = bytes.NewBufferString(t)
+			body = strings.NewReader(t)
 		default:
 			vj, err := json.Marshal(v)
 			if err != nil {

@@ -15,6 +15,7 @@
 package delimited
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -43,7 +44,7 @@ func (c *Converter) SetColumns(cols []string) {
 func (c *Converter) Encode(d interface{}) ([]byte, error) {
 	switch m := d.(type) {
 	case map[string]interface{}:
-		var sb strings.Builder
+		sb := &bytes.Buffer{}
 		if len(c.cols) == 0 {
 			keys := make([]string, 0, len(m))
 			for k := range m {
@@ -57,9 +58,9 @@ func (c *Converter) Encode(d interface{}) ([]byte, error) {
 			if i > 0 {
 				sb.WriteString(c.delimiter)
 			}
-			sb.WriteString(fmt.Sprintf("%v", m[v]))
+			fmt.Fprintf(sb, "%v", m[v])
 		}
-		return []byte(sb.String()), nil
+		return sb.Bytes(), nil
 	default:
 		return nil, fmt.Errorf("unsupported type %v, must be a map", d)
 	}
