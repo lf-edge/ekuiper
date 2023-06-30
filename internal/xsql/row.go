@@ -444,8 +444,7 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 		}
 	} else if len(except) > 0 {
 		pickedMap := make(map[string]interface{})
-		messages := map[string]interface{}(t.Message)
-		for key, mess := range messages {
+		for key, mess := range t.Message {
 			if !contains(except, key) {
 				pickedMap[key] = mess
 			}
