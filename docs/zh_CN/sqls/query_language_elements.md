@@ -341,17 +341,17 @@ FROM table_name
 ORDER BY column1, column2, ... ASC|DESC;
 ```
 
-## Case Expression
+## Case 表达式
 
-The case expression evaluates a list of conditions and returns one of multiple possible result expressions. It let you use IF ... THEN ... ELSE logic in SQL statements without having to invoke procedures.
+Case 表达式评估一系列条件，并返回多个可能的结果表达式之一。它允许你在 SQL 语句中使用 IF ... THEN ... ELSE 逻辑，而无需调用过程。
 
-There are two types of case expression: simple case expression and searched case expression.
+Case 表达式有两种类型：简单 Case 表达式和搜索 Case 表达式。
 
-### Simple Case Expression
+### 简单 Case 表达式
 
-The simple case expression compares an expression to a set of simple expressions to determine the result.
+简单 Case 表达式将一个表达式与一组简单表达式进行比较，以确定结果。
 
-#### Syntax
+#### 语法
 
 ```sql
 CASE value   
@@ -360,7 +360,7 @@ CASE value
 END   
 ```
 
-**Example**:
+**示例**:
 
 ```sql
 SELECT CASE color 
@@ -370,11 +370,11 @@ SELECT CASE color
 humidity FROM tbl
 ```
 
-### Searched Case Expression
+### 搜索 Case 表达式
 
-The searched case expression evaluates a set of bool expressions to determine the result.
+搜索 Case 表达式评估一组布尔表达式以确定结果。
 
-#### Syntax
+#### 语法
 
 ```sql
 CASE    
@@ -383,7 +383,7 @@ CASE
 END 
 ```
 
-**Example**:
+**示例**:
 
 ```sql
 SELECT CASE 
