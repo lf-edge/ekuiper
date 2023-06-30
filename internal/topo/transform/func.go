@@ -27,6 +27,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func RegisterAdditionalFuncs() {
@@ -57,7 +58,7 @@ func Base64Encode(para interface{}) (string, error) {
 		fv := strconv.FormatFloat(v.Float(), 'f', -1, 64)
 		return base64.StdEncoding.EncodeToString([]byte(fv)), nil
 	case reflect.String:
-		return base64.StdEncoding.EncodeToString([]byte(v.String())), nil
+		return base64.StdEncoding.EncodeToString(cast.StringToBytes(v.String())), nil
 	case reflect.Map:
 		if a, err := json.Marshal(para); err != nil {
 			return "", err

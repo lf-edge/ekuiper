@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
@@ -240,7 +241,7 @@ func getRuleStatus(name string) (string, error) {
 			}
 			metrics = metrics[:len(metrics)-1] + "}"
 			dst := &bytes.Buffer{}
-			if err = json.Indent(dst, []byte(metrics), "", "  "); err != nil {
+			if err = json.Indent(dst, cast.StringToBytes(metrics), "", "  "); err != nil {
 				result = metrics
 			} else {
 				result = dst.String()

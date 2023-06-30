@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -45,7 +46,7 @@ func create() {
 
 func createStream() {
 	s := `{"sql":"CREATE STREAM rawdata() WITH (DATASOURCE=\"rawdata\", SHARED=\"TRUE\");"}`
-	resp, err := http.Post(url+"streams", "application/json", bytes.NewReader([]byte(s)))
+	resp, err := http.Post(url+"streams", "application/json", strings.NewReader(s))
 	if err != nil {
 		fmt.Println(err)
 	}
