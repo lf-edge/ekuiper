@@ -17,7 +17,6 @@
 package redis
 
 import (
-	"bytes"
 	"context"
 	"encoding/gob"
 	"fmt"
@@ -74,7 +73,7 @@ func (kv redisKvStore) Get(key string, value interface{}) (bool, error) {
 	if err != nil {
 		return false, nil
 	}
-	dec := gob.NewDecoder(bytes.NewBuffer([]byte(val)))
+	dec := gob.NewDecoder(strings.NewReader(val))
 	if err := dec.Decode(value); err != nil {
 		return false, err
 	}

@@ -154,7 +154,7 @@ func CreateOrUpdateSchema(info *Info) error {
 			defer file.Close()
 		}
 		if info.Content != "" {
-			err := os.WriteFile(schemaFile, []byte(info.Content), 0o666)
+			err := os.WriteFile(schemaFile, cast.StringToBytes(info.Content), 0o666)
 			if err != nil {
 				return err
 			}

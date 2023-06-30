@@ -15,7 +15,6 @@
 package conf
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,6 +23,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -196,7 +196,7 @@ func Get(inUrl string) (data []byte, err error) {
 }
 
 func Post(inHead, inBody string) (data []byte, err error) {
-	request, err := http.NewRequest(http.MethodPost, inHead, bytes.NewBuffer([]byte(inBody)))
+	request, err := http.NewRequest(http.MethodPost, inHead, strings.NewReader(inBody))
 	if nil != err {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ func Post(inHead, inBody string) (data []byte, err error) {
 }
 
 func Put(inHead, inBody string) (data []byte, err error) {
-	request, err := http.NewRequest(http.MethodPut, inHead, bytes.NewBuffer([]byte(inBody)))
+	request, err := http.NewRequest(http.MethodPut, inHead, strings.NewReader(inBody))
 	if nil != err {
 		return nil, err
 	}
