@@ -204,14 +204,20 @@ func validateExpr(expr ast.Expr, streamName []string) ast.Expr {
 	case *ast.ColFuncField:
 		e.Expr = validateExpr(e.Expr, streamName)
 		return e
+	case *ast.Wildcard:
+		for i, replace := range e.Replace {
+			e.Replace[i].Expr = validateExpr(replace.Expr, streamName)
+		}
+		return e
 	default:
 		return expr
 	}
 }
 
-func contains(streamName []string, name string) bool {
-	for _, s := range streamName {
-		if s == name {
+// Checks whether a slice contains an element
+func contains(s []string, n string) bool {
+	for _, val := range s {
+		if val == n {
 			return true
 		}
 	}

@@ -462,7 +462,25 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			return nil
 		}
 	case *ast.Wildcard:
-		val, _ := v.Valuer.Value("*", "")
+		// TODO: optimize this to avoid copy twice
+		all, _ := v.Valuer.Value("*", "")
+		al, ok := all.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected wildcard value %v", all)
+		}
+		val := make(map[string]interface{})
+		for k, v := range al {
+			if !contains(expr.Except, k) {
+				val[k] = v
+			}
+		}
+		for _, field := range expr.Replace {
+			vi := v.Eval(field.Expr)
+			if e, ok := vi.(error); ok {
+				return e
+			}
+			val[field.AName] = vi
+		}
 		return val
 	case *ast.CaseExpr:
 		return v.evalCase(expr)

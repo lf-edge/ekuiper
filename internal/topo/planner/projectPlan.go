@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ type ProjectPlan struct {
 	colNames         [][]string
 	aliasNames       []string
 	exprNames        []string
+	exceptNames      []string
 	wildcardEmitters map[string]bool
 	aliasFields      ast.Fields
 	exprFields       ast.Fields
@@ -41,6 +42,12 @@ func (p ProjectPlan) Init() *ProjectPlan {
 			switch ft := field.Expr.(type) {
 			case *ast.Wildcard:
 				p.allWildcard = true
+				// TODO: fix Prunecolums
+				p.exceptNames = ft.Except
+				for _, replace := range ft.Replace {
+					p.aliasFields = append(p.aliasFields, replace)
+					p.aliasNames = append(p.aliasNames, replace.AName)
+				}
 			case *ast.FieldRef:
 				if ft.Name == "*" {
 					p.wildcardEmitters[string(ft.StreamName)] = true

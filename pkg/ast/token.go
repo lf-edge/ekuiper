@@ -65,6 +65,8 @@ const (
 	NOTBETWEEN
 	LIKE
 	NOTLIKE
+	REPLACE
+	EXCEPT
 
 	operatorEnd
 
@@ -192,6 +194,8 @@ var Tokens = []string{
 	NOTBETWEEN: "NOT BETWEEN",
 	LIKE:       "LIKE",
 	NOTLIKE:    "NOT LIKE",
+	REPLACE:    "REPLACE",
+	EXCEPT:     "EXCEPT",
 
 	DD: "DD",
 	HH: "HH",

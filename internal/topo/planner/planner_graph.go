@@ -692,7 +692,7 @@ func parsePick(props map[string]interface{}, sourceNames []string) (*operator.Pr
 		fields:      stmt.Fields,
 		isAggregate: xsql.WithAggFields(stmt),
 	}.Init()
-	return &operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta}, nil
+	return &operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta}, nil
 }
 
 func parseFunc(props map[string]interface{}, sourceNames []string) (*operator.FuncOp, error) {

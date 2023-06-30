@@ -340,6 +340,59 @@ func TestParser_ParseStatement(t *testing.T) {
 			},
 		},
 		{
+			s: `SELECT * EXCEPT(a, b, c) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.Wildcard{Token: ast.ASTERISK, Except: []string{"a", "b", "c"}},
+						Name:  "*",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT * REPLACE(a * 2 AS a, b / 2 AS b) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Wildcard{Token: ast.ASTERISK, Replace: []ast.Field{
+							{
+								AName: "a",
+								Expr: &ast.BinaryExpr{
+									LHS: &ast.FieldRef{
+										Name:       "a",
+										StreamName: ast.DefaultStream,
+									},
+									OP: ast.MUL,
+									RHS: &ast.IntegerLiteral{
+										Val: 2,
+									},
+								},
+							},
+							{
+								AName: "b",
+								Expr: &ast.BinaryExpr{
+									LHS: &ast.FieldRef{
+										Name:       "b",
+										StreamName: ast.DefaultStream,
+									},
+									OP: ast.DIV,
+									RHS: &ast.IntegerLiteral{
+										Val: 2,
+									},
+								},
+							},
+						}},
+						Name:  "*",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
 			s: `SELECT a,b FROM tbl`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -651,6 +704,69 @@ func TestParser_ParseStatement(t *testing.T) {
 						Expr: &ast.Call{
 							Name:     "count",
 							Args:     []ast.Expr{&ast.Wildcard{Token: ast.ASTERISK}},
+							FuncType: ast.FuncTypeAgg,
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT count(* EXCEPT(a, b, c)) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "count",
+						Expr: &ast.Call{
+							Name:     "count",
+							Args:     []ast.Expr{&ast.Wildcard{Token: ast.ASTERISK, Except: []string{"a", "b", "c"}}},
+							FuncType: ast.FuncTypeAgg,
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+
+		{
+			s: `SELECT count(* REPLACE(a * 2 AS a, b / 2 AS b)) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "count",
+						Expr: &ast.Call{
+							Name: "count",
+							Args: []ast.Expr{&ast.Wildcard{Token: ast.ASTERISK, Replace: []ast.Field{
+								{
+									AName: "a",
+									Expr: &ast.BinaryExpr{
+										LHS: &ast.FieldRef{
+											Name:       "a",
+											StreamName: ast.DefaultStream,
+										},
+										OP: ast.MUL,
+										RHS: &ast.IntegerLiteral{
+											Val: 2,
+										},
+									},
+								},
+								{
+									AName: "b",
+									Expr: &ast.BinaryExpr{
+										LHS: &ast.FieldRef{
+											Name:       "b",
+											StreamName: ast.DefaultStream,
+										},
+										OP: ast.DIV,
+										RHS: &ast.IntegerLiteral{
+											Val: 2,
+										},
+									},
+								},
+							}}},
 							FuncType: ast.FuncTypeAgg,
 						},
 					},
@@ -1952,6 +2068,63 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 
 		{
+			s: `SELECT * EXCEPT(a, b, c) FROM topic/sensor1 ORDER BY name DESC`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.Wildcard{Token: ast.ASTERISK, Except: []string{"a", "b", "c"}},
+						Name:  "*",
+						AName: "",
+					},
+				},
+				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
+			},
+		},
+
+		{
+			s: `SELECT * REPLACE(a * 2 as a, b / 2 as b) FROM topic/sensor1 ORDER BY name DESC`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr: &ast.Wildcard{Token: ast.ASTERISK, Replace: []ast.Field{
+							{
+								AName: "a",
+								Expr: &ast.BinaryExpr{
+									LHS: &ast.FieldRef{
+										Name:       "a",
+										StreamName: ast.DefaultStream,
+									},
+									OP: ast.MUL,
+									RHS: &ast.IntegerLiteral{
+										Val: 2,
+									},
+								},
+							},
+							{
+								AName: "b",
+								Expr: &ast.BinaryExpr{
+									LHS: &ast.FieldRef{
+										Name:       "b",
+										StreamName: ast.DefaultStream,
+									},
+									OP: ast.DIV,
+									RHS: &ast.IntegerLiteral{
+										Val: 2,
+									},
+								},
+							},
+						}},
+						Name:  "*",
+						AName: "",
+					},
+				},
+				Sources:    []ast.Source{&ast.Table{Name: "topic/sensor1"}},
+				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
+			},
+		},
+
+		{
 			s: `SELECT * FROM topic/sensor1 ORDER BY name DESC, name2 ASC`,
 			stmt: &ast.SelectStatement{
 				Fields: []ast.Field{
@@ -2583,6 +2756,109 @@ func TestParser_ParseStatement(t *testing.T) {
 								}},
 								&ast.ColFuncField{Name: "*", Expr: &ast.Wildcard{
 									Token: ast.ASTERISK,
+								}},
+								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "c",
+								}},
+							},
+							FuncType: ast.FuncTypeCols,
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT changed_cols("",true,a,* EXCEPT(a, b, c),c) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "changed_cols",
+						Expr: &ast.Call{
+							Name: "changed_cols",
+							Args: []ast.Expr{
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.StringLiteral{Val: ""},
+								},
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.BooleanLiteral{Val: true},
+								},
+								&ast.ColFuncField{Name: "a", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "a",
+								}},
+								&ast.ColFuncField{Name: "*", Expr: &ast.Wildcard{
+									Token:  ast.ASTERISK,
+									Except: []string{"a", "b", "c"},
+								}},
+								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "c",
+								}},
+							},
+							FuncType: ast.FuncTypeCols,
+						},
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+			},
+		},
+		{
+			s: `SELECT changed_cols("",true,a,* REPLACE(a * 2 as a, b / 2 as b),c) FROM tbl`,
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						AName: "",
+						Name:  "changed_cols",
+						Expr: &ast.Call{
+							Name: "changed_cols",
+							Args: []ast.Expr{
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.StringLiteral{Val: ""},
+								},
+								&ast.ColFuncField{
+									Name: "",
+									Expr: &ast.BooleanLiteral{Val: true},
+								},
+								&ast.ColFuncField{Name: "a", Expr: &ast.FieldRef{
+									StreamName: ast.DefaultStream,
+									Name:       "a",
+								}},
+								&ast.ColFuncField{Name: "*", Expr: &ast.Wildcard{
+									Token: ast.ASTERISK,
+									Replace: []ast.Field{
+										{
+											AName: "a",
+											Expr: &ast.BinaryExpr{
+												LHS: &ast.FieldRef{
+													Name:       "a",
+													StreamName: ast.DefaultStream,
+												},
+												OP: ast.MUL,
+												RHS: &ast.IntegerLiteral{
+													Val: 2,
+												},
+											},
+										},
+										{
+											AName: "b",
+											Expr: &ast.BinaryExpr{
+												LHS: &ast.FieldRef{
+													Name:       "b",
+													StreamName: ast.DefaultStream,
+												},
+												OP: ast.DIV,
+												RHS: &ast.IntegerLiteral{
+													Val: 2,
+												},
+											},
+										},
+									},
 								}},
 								&ast.ColFuncField{Name: "c", Expr: &ast.FieldRef{
 									StreamName: ast.DefaultStream,

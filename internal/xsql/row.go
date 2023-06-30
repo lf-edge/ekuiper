@@ -26,7 +26,7 @@ import (
 // The tuple clone should be cheap.
 
 /*
- * Interfaces definition
+ *  Interfaces definition
  */
 
 type Wildcarder interface {
@@ -55,7 +55,7 @@ type Row interface {
 	ToMap() map[string]interface{}
 	// Pick the columns and discard others. It replaces the underlying message with a new value. There are 3 types to pick: column, alias and annonymous expressions.
 	// cols is a list [columnname, tablename]
-	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool)
+	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string)
 }
 
 type CloneAbleRow interface {
@@ -421,7 +421,7 @@ func (t *Tuple) FuncValue(key string) (interface{}, bool) {
 	}
 }
 
-func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
 	cols = t.AffiliateRow.Pick(cols)
 	if !allWildcard && wildcardEmitters[t.Emitter] {
 		allWildcard = true
@@ -442,6 +442,14 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 			// invalidate cache, will calculate again
 			t.cachedMap = nil
 		}
+	} else if len(except) > 0 {
+		pickedMap := make(map[string]interface{})
+		for key, mess := range t.Message {
+			if !contains(except, key) {
+				pickedMap[key] = mess
+			}
+		}
+		t.Message = pickedMap
 	}
 }
 
@@ -548,7 +556,7 @@ func (jt *JoinTuple) ToMap() map[string]interface{} {
 	return jt.cachedMap
 }
 
-func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
 	cols = jt.AffiliateRow.Pick(cols)
 	if !allWildcard {
 		if len(cols) > 0 {
@@ -557,7 +565,7 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 					continue
 				}
 				nt := tuple.Clone().(TupleRow)
-				nt.Pick(allWildcard, cols, wildcardEmitters)
+				nt.Pick(allWildcard, cols, wildcardEmitters, except)
 				jt.Tuples[i] = nt
 			}
 		} else {
@@ -620,9 +628,9 @@ func (s *GroupedTuples) Clone() CloneAbleRow {
 	return c
 }
 
-func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool) {
+func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
 	cols = s.AffiliateRow.Pick(cols)
 	sc := s.Content[0].Clone().(TupleRow)
-	sc.Pick(allWildcard, cols, wildcardEmitters)
+	sc.Pick(allWildcard, cols, wildcardEmitters, except)
 	s.Content[0] = sc
 }
