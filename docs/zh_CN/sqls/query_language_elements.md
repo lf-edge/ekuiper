@@ -341,15 +341,15 @@ FROM table_name
 ORDER BY column1, column2, ... ASC|DESC;
 ```
 
-## Case表达式
+## Case 表达式
 
-Case表达式评估一系列条件，并返回多个可能的结果表达式之一。它允许你在SQL语句中使用IF ... THEN ... ELSE逻辑，而无需调用过程。
+Case 表达式评估一系列条件，并返回多个可能的结果表达式之一。它允许你在 SQL 语句中使用 IF ... THEN ... ELSE 逻辑，而无需调用过程。
 
-Case表达式有两种类型：简单Case表达式和搜索Case表达式。
+Case 表达式有两种类型：简单 Case 表达式和搜索 Case 表达式。
 
-### 简单Case表达式
+### 简单 Case 表达式
 
-简单Case表达式将一个表达式与一组简单表达式进行比较，以确定结果。
+简单 Case 表达式将一个表达式与一组简单表达式进行比较，以确定结果。
 
 #### 语法
 
@@ -370,9 +370,9 @@ SELECT CASE color
 humidity FROM tbl
 ```
 
-### 搜索Case表达式
+### 搜索 Case 表达式
 
-搜索Case表达式评估一组布尔表达式以确定结果。
+搜索 Case 表达式评估一组布尔表达式以确定结果。
 
 #### 语法
 
