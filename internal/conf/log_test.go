@@ -41,6 +41,10 @@ func TestLogOutdated(t *testing.T) {
 			name:   "stream.log.2023-06-29_00-00-00",
 			remove: false,
 		},
+		{
+			name:   "stream.log.2023-error",
+			remove: false,
+		},
 	}
 	for _, tc := range testcases {
 		require.Equal(t, tc.remove, isLogOutdated(tc.name, now, maxDuration))
