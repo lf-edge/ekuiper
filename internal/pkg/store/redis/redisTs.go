@@ -18,11 +18,11 @@
 package redis
 
 import (
-	"bytes"
 	"context"
 	"encoding/gob"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 
@@ -88,7 +88,7 @@ func (t *ts) Get(key int64, value interface{}) (bool, error) {
 	if len(reply) == 0 {
 		return false, fmt.Errorf("record under %s key and %d score not found", t.key, key)
 	}
-	dec := gob.NewDecoder(bytes.NewBuffer([]byte(reply[0])))
+	dec := gob.NewDecoder(strings.NewReader(reply[0]))
 	err := dec.Decode(value)
 	if err != nil {
 		return false, err
@@ -122,7 +122,7 @@ func getLast(db *redis.Client, key string, value interface{}) (int64, error) {
 	if len(reply) > 0 {
 		if value != nil {
 			v := reply[0].Member.(string)
-			dec := gob.NewDecoder(bytes.NewBuffer([]byte(v)))
+			dec := gob.NewDecoder(strings.NewReader(v))
 			if err := dec.Decode(value); err != nil {
 				return 0, err
 			}

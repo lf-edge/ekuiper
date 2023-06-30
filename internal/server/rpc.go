@@ -170,7 +170,7 @@ func (t *Server) GetTopoRule(name string, reply *string) error {
 		return err
 	} else {
 		dst := &bytes.Buffer{}
-		if err = json.Indent(dst, []byte(r), "", "  "); err != nil {
+		if err = json.Indent(dst, cast.StringToBytes(r), "", "  "); err != nil {
 			*reply = r
 		} else {
 			*reply = dst.String()

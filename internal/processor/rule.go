@@ -236,7 +236,7 @@ func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 		return "", fmt.Errorf("Rule %s is not found.", name)
 	}
 	dst := &bytes.Buffer{}
-	if err := json.Indent(dst, []byte(s1), "", "  "); err != nil {
+	if err := json.Indent(dst, cast.StringToBytes(s1), "", "  "); err != nil {
 		return "", err
 	}
 
