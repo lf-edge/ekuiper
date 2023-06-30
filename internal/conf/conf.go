@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/lestrrat-go/file-rotatelogs"
@@ -222,6 +223,7 @@ func InitConf() {
 		} else if !Config.Basic.ConsoleLog {
 			Log.SetOutput(logWriter)
 		}
+		gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
 	} else if Config.Basic.ConsoleLog {
 		Log.SetOutput(os.Stdout)
 	}
@@ -308,4 +310,40 @@ func ValidateRuleOption(option *api.RuleOption) error {
 func init() {
 	InitLogger()
 	InitClock()
+}
+
+func gcOutdatedLog(filePath string, maxDuration time.Duration) {
+	entries, err := os.ReadDir(filePath)
+	if err != nil {
+		Log.Errorf("gc outdated logs when started failed, err:%v", err)
+	}
+	now := time.Now()
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if isLogOutdated(entry.Name(), now, maxDuration) {
+			err := os.Remove(path.Join(filePath, entry.Name()))
+			if err != nil {
+				Log.Errorf("remove outdated log %v failed, err:%v", entry.Name(), err)
+			}
+		}
+	}
+}
+
+func isLogOutdated(name string, now time.Time, maxDuration time.Duration) bool {
+	prefix := fmt.Sprintf("%s.", logFileName)
+	layout := "2006-01-02_15-04-05"
+	if strings.HasPrefix(name, prefix) {
+		logDate := name[len(prefix):]
+		t, err := time.Parse(layout, logDate)
+		if err != nil {
+			Log.Errorf("parse log %v datetime failed, err:%v", name, err)
+			return false
+		}
+		if int64(now.Sub(t))-int64(maxDuration) > 0 {
+			return true
+		}
+	}
+	return false
 }
