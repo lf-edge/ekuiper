@@ -17,7 +17,6 @@ OpenVINO 的示例代码和模型参考 [工业表面缺陷检测实施参考](h
 1. 安装 Python 3.x 环境。默认情况下，eKuiper 的便携式插件将使用 *python* 命令运行，您跟根据实际环境更新[配置文件](../../configuration/global_configurations.md#portable-plugin-configurations) 中的 Python 命令，例如 `python3`。
 2. 通过 `pip install opencv-python==4.7.0.* openvino==2023.0.0 numpy==1.24.3` 安装 opencv-python、numpy 和 openvino 软件包。
 
-
 ## 插件开发
 
 为了将 eKuiper 与 OpenVINO 集成，我们将开发一个自定义 eKuiper 函数插件并配合 eKuiper 规则使用。我们将创建 *inference* 函数，其输入是base64编码的图像数据，输出是 json 字典数据，其中包含片段缺陷的数量、处理后的图像数据和推理成本。
@@ -26,16 +25,10 @@ OpenVINO 的示例代码和模型参考 [工业表面缺陷检测实施参考](h
 
 1. 用Python实现业务逻辑并将其包装为 eKuiper 函数。
 2. 按照插件格式打包相关文件。
-
-
 3. 创建实现扩展接口（源、接收器或函数）的 Python 文件：
 
-
    - 编写 Python 缺陷检测函数
-
-
    - 将现有函数包装为 eKuiper 函数插件
-
 
 ### 实现业务逻辑
 
@@ -223,7 +216,6 @@ Content-Type: application/json
 
 通过 eKuiper Rest API 定义规则。我们将创建一个名为 ruleOp 的规则。我们只是从 openvino_demo 流中读取 base64 编码的图像，并针对它运行自定义函数 *inference*。
 当段缺陷数不为零时，它将发送 Base64 编码的原始图像和处理后的图像到主题 *ekuiper/defect*。
-
 
 ```shell
 POST http://{{host}}/rules

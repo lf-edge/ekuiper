@@ -8,7 +8,7 @@ It converts and optimizes models trained using popular frameworks like TensorFlo
 The example code and models for OpenVINO take reference from [Intel - Industrial Surface Defect Detection Reference Implementation](https://www.intel.com/content/www/us/en/developer/articles/reference-implementation/industrial-surface-defect-detection.html).
 
 By combining eKuiper and OpenVINO, data analysis can become more accessible and efficient.
-This tutorial will guide you through creating an AI-based system for defect detection on surfaces, utilizing the power of eKuiper and OpenVINO. 
+This tutorial will guide you through creating an AI-based system for defect detection on surfaces, utilizing the power of eKuiper and OpenVINO.
 A complete plugin package, including full source code, can be downloaded from [eKuiper Resources page](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/openvinoProject.zip).
 
 ## Prerequisite
@@ -17,7 +17,6 @@ Before starting the tutorial, please prepare the following products or environme
 
 1. Install the Python 3.x environment. And set the `pythonBin` under the portable configuration of [eKuiper configuration file](../../configuration/global_configurations.md#portable-plugin-configurations) to match your Python command (e.g., 'python3' if applicable).
 2. Install the opencv-python, numpy and openvino packages via `pip install opencv-python==4.7.0.* openvino==2023.0.0 numpy==1.24.3`.
-
 
 For Docker users:
 
@@ -35,9 +34,7 @@ To develop the function plugin, we need to：
 3. Create a Python file that implements the extended interface (source, sink, or function):
 
    - Writing Python segment defects functions
-
    - Wrapping an existing function as an eKuiper function plugin
-
 
 ### Implement the Business Logic
 
@@ -99,6 +96,7 @@ def inference(file_bytes):
 ```
 
 The above code is only related to the business logic and can be tested without calling eKuiper's SDK. We just need to make sure that the input and output is of a type that can be converted to JSON format. For example, if the return value is a numpy array, it needs to be converted to a list type first. Developers can add main functions or unit tests to their business logic file or to another file for testing. For example, the following main function can be used to test the above business logic.
+
 Ensure the `model.xml` and `model.bin` files are in the `models` directory.
 
 ```python
@@ -145,7 +143,7 @@ class InferenceFunc(Function):
 inferenceIns = InferenceFunc()
 ```
 
-Once the code is implemented, we also need to add a description file for each function, which is placed in the functions directory, in this case, we create the `defect.json` file. 
+Once the code is implemented, we also need to add a description file for each function, which is placed in the functions directory, in this case, we create the `defect.json` file.
 
 ### Plugin Packaging
 
@@ -155,30 +153,30 @@ At this point, we have completed the development of the main functionality, and 
 2. **Create a Python Entry File**: Because multiple extensions can be implemented in a single plugin, you need an entry file that defines the implementation classes for each extension. The entry file is a main function, which is the entry point for the plugin runtime. It calls the methods in the SDK to define the plugin, including the plugin name, and a list of keys for the implemented source, sink, and function. Here only a function plugin named `inference` is implemented, with `inferenceIns` as its corresponding implementation method. The Python plug-in process operates independently from the eKuiper main process.
 
     ```python
-    if __name__ == '__main__':
+        if __name__ == '__main__':
         # Define the plugin
         c = PluginConfig("defect", {}, {},
-                         {"inference": lambda: inferenceIns})
+            {"inference": lambda: inferenceIns})
         # Start the plugin instance
         plugin.start(c)
     ```
 
 3. **Establish a Plugin Description File**: Create a plugin description file in JSON format to define the metadata of the plugin. The file name must match the plugin name, i.e. `defect.json`. The function names defined within the file must align precisely with those in the entry file. The `executable` field is used to define the name of the plugin's executable entry file.
 
-    ```json
-    {
-      "version": "v1.0.0",
-      "language": "python",
-      "executable": "main.py",
-      "sources": [
-      ],
-      "sinks": [
-      ],
-      "functions": [
-        "inference"
-      ]
-    }
-    ```
+```json
+{
+  "version": "v1.0.0",
+  "language": "python",
+  "executable": "main.py",
+  "sources": [
+  ],
+  "sinks": [
+  ],
+  "functions": [
+    "inference"
+  ]
+}
+```
 
 At this point we have completed the development of the plugin, next we just need to package all the files in the directory into a zip file. The zip file should have a file structure similar to:
 
@@ -226,7 +224,6 @@ Content-Type: application/json
 
 Define the rule by eKuiper rest API. This rule will read base64 encoded images from the `openvino_demo` stream and apply the custom function `inference` to it.
 If the number of segmented defects is non-zero, it will dispatch the base64 encoded original and processed images to the `ekuiper/defect` topic.
-
 
 ```shell
 POST http://{{host}}/rules
