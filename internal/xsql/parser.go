@@ -57,6 +57,22 @@ func (p *Parser) ParseCondition() (ast.Expr, error) {
 	return expr, nil
 }
 
+func (p *Parser) ParseLimit() (ast.Expr, error) {
+	if tok, _ := p.scanIgnoreWhitespace(); tok != ast.LIMIT {
+		p.unscan()
+		return nil, nil
+	}
+	expr, err := p.ParseExpr()
+	if err != nil {
+		return nil, err
+	}
+	limitCount, ok := expr.(*ast.IntegerLiteral)
+	if !ok {
+		return nil, fmt.Errorf("limit should be integer")
+	}
+	return &ast.LimitExpr{LimitCount: limitCount}, nil
+}
+
 func (p *Parser) scan() (tok ast.Token, lit string) {
 	if p.n > 0 {
 		p.n--
@@ -167,6 +183,15 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 			selects.Condition = exp
 		}
 	}
+	p.clause = "limit"
+	if expr, err := p.ParseLimit(); err != nil {
+		return nil, err
+	} else {
+		if expr != nil {
+			selects.Limit = expr
+		}
+	}
+
 	p.clause = "groupby"
 	if dims, err := p.parseDimensions(); err != nil {
 		return nil, err

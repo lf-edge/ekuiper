@@ -94,6 +94,7 @@ const (
 	CROSS
 	ON
 	WHERE
+	LIMIT
 	GROUP
 	ORDER
 	HAVING
@@ -170,6 +171,7 @@ var Tokens = []string{
 	INNER:     "INNER",
 	ON:        "ON",
 	WHERE:     "WHERE",
+	LIMIT:     "LIMIT",
 	GROUP:     "GROUP",
 	ORDER:     "ORDER",
 	HAVING:    "HAVING",

@@ -24,6 +24,7 @@ type SelectStatement struct {
 	Sources    Sources
 	Joins      Joins
 	Condition  Expr
+	Limit      Expr
 	Dimensions Dimensions
 	Having     Expr
 	SortFields SortFields

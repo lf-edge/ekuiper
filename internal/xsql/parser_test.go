@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/stretchr/testify/require"
 )
 
 // Ensure the parser can parse strings into Statement ASTs.
@@ -4479,5 +4480,60 @@ func TestParser_ParseStatements(t *testing.T) {
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmts, stmts) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmts, stmts)
 		}
+	}
+}
+
+func TestParser_ParseLimit(t *testing.T) {
+	tests := []struct {
+		s    string
+		stmt *ast.SelectStatement
+		err  string
+	}{
+		{
+			s: "SELECT name FROM tbl LIMIT 1;",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Limit: &ast.LimitExpr{
+					LimitCount: &ast.IntegerLiteral{
+						Val: 1,
+					},
+				},
+			},
+		},
+		{
+			s: "SELECT name FROM tbl where true LIMIT 1;",
+			stmt: &ast.SelectStatement{
+				Fields: []ast.Field{
+					{
+						Expr:  &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream},
+						Name:  "name",
+						AName: "",
+					},
+				},
+				Sources: []ast.Source{&ast.Table{Name: "tbl"}},
+				Condition: &ast.BooleanLiteral{
+					Val: true,
+				},
+				Limit: &ast.LimitExpr{
+					LimitCount: &ast.IntegerLiteral{
+						Val: 1,
+					},
+				},
+			},
+		},
+	}
+
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	for _, tt := range tests {
+		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
+		require.NoError(t, err)
+		require.Equal(t, tt.stmt, stmt)
 	}
 }

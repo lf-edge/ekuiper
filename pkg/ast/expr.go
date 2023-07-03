@@ -198,6 +198,13 @@ type BetweenExpr struct {
 func (b *BetweenExpr) expr() {}
 func (b *BetweenExpr) node() {}
 
+type LimitExpr struct {
+	LimitCount *IntegerLiteral
+}
+
+func (l *LimitExpr) expr() {}
+func (l *LimitExpr) node() {}
+
 type StreamName string
 
 func (sn *StreamName) node() {}
