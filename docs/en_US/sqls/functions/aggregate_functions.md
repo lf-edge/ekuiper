@@ -56,7 +56,7 @@ collect(col)
 
 Returns an array with all columns or the whole record (when the parameter is *) values from the group.
 
-Examples:
+### Examples
 
 * Get an array of column `a` of the current window. Assume the column `a` is of an int type, the result will be
   like: `[{"r1":[32, 45]}]`
@@ -94,7 +94,7 @@ If the parameter is a column,
 the result will be an object containing the union of the keys of all the objects in the column.
 If the column contains only non-object values, the result will be an empty object.
 
-## Examples
+### Examples
 
 Given the following values in the group:
 
