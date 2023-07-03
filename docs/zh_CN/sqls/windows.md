@@ -151,11 +151,11 @@ CREATE STREAM demo (
 对于滑动窗口，每一条数据都可以触发一个窗口，我们可以通过 `over` 子句将触发窗口的数据进行过滤，只会将满足过滤条件的数据去触发窗口。`over` 子句可以单独用在滑动窗口后面，也可以用在 `filter` 子句后，`over` 子句必须类似于 `Over(When expr)`，例如:
 
 ```sql
-SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) FILTER(where revenue > 100) OVER(when revenue > 200)
+SELECT * FROM demo GROUP BY SlidingWindow(ss,1) FILTER(where revenue > 100) OVER(when revenue > 200)
 ```
 
 或者:
 
 ```sql
-SELECT * FROM demo GROUP BY COUNTWINDOW(3,1) OVER(when revenue > 200)
+SELECT * FROM demo GROUP BY SlidingWindow(ss,1) OVER(when revenue > 200)
 ```
