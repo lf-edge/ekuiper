@@ -167,7 +167,7 @@ GET http://{{host}}/rules/rule1/status
 如果状态是停止的，你可以查看日志来检查细节。如果状态是运行的，但指标不符合预期，你可以检查日志，看看是否有任何错误，甚至打开调试来跟踪数据流。
 
 下面是[检查日志的指令](#检查日志)。要打开调试日志，你可以在`etc/kuiper.yaml`文件中设置日志级别为`debug`
-或者设置环境变量：`KUIPER__BASIC__DEBUG=false`。然后你就可以检查调试日志来查看数据流。例如，下面是关于过滤器的调试日志的一行。
+或者设置环境变量：`KUIPER__BASIC__DEBUG=true`。然后你就可以检查调试日志来查看数据流。例如，下面是关于过滤器的调试日志的一行。
 
 ```text
 time="2023-05-31 14:58:43" level=debug msg="filter plan receive &{mockStream map[temperature:%!s(float64=-11.77) ts:%!s(float64=1.684738889251e+12)] %!s(int64=1685516298342) map[fi
