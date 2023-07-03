@@ -15,15 +15,25 @@
 package http
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
+type pullTimeMeta struct {
+	LastPullTime int64 `json:"lastPullTime"`
+	PullTime     int64 `json:"pullTime"`
+}
+
 type PullSource struct {
 	ClientConf
+
+	t *pullTimeMeta
 }
 
 func (hps *PullSource) Configure(device string, props map[string]interface{}) error {
@@ -45,51 +55,93 @@ func (hps *PullSource) Close(ctx api.StreamContext) error {
 func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Infof("Starting HTTP pull source with interval %d", hps.config.Interval)
-	ticker := time.NewTicker(time.Millisecond * time.Duration(hps.config.Interval))
+	ticker := conf.GetTicker(int64(hps.config.Interval))
 	defer ticker.Stop()
 	omd5 := ""
 	for {
 		select {
-		case <-ticker.C:
-			rcvTime := conf.GetNow()
-			headers, err := hps.parseHeaders(ctx, hps.tokens)
-			if err != nil {
-				continue
-			}
-			// check oAuth token expiration
-			if hps.accessConf != nil && hps.accessConf.ExpireInSecond > 0 &&
-				int(time.Now().Sub(hps.tokenLastUpdateAt).Abs().Seconds()) >= hps.accessConf.ExpireInSecond {
-				ctx.GetLogger().Debugf("Refreshing token")
-				if err := hps.refresh(ctx); err != nil {
-					ctx.GetLogger().Warnf("Refresh token error: %v", err)
-				}
-			}
-			ctx.GetLogger().Debugf("rest sink sending request url: %s, headers: %v, body %s", hps.config.Url, headers, hps.config.Body)
-			if resp, e := httpx.Send(logger, hps.client, hps.config.BodyType, hps.config.Method, hps.config.Url, headers, true, hps.config.Body); e != nil {
-				logger.Warnf("Found error %s when trying to reach %v ", e, hps)
-			} else {
-				logger.Debugf("rest sink got response %v", resp)
-				results, _, e := hps.parseResponse(ctx, resp, true, &omd5)
-				if e != nil {
-					logger.Errorf("Parse response error %v", e)
-					continue
-				}
-				if results == nil {
-					logger.Debugf("no data to send for incremental")
-					continue
-				}
-				meta := make(map[string]interface{})
-				for _, result := range results {
-					select {
-					case consumer <- api.NewDefaultSourceTupleWithTime(result, meta, rcvTime):
-						logger.Debugf("send data to device node")
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
+		case rcvTime := <-ticker.C:
+			logger.Debugf("Pulling data at %d", rcvTime.UnixMilli())
+			tuples := hps.doPull(ctx, rcvTime, &omd5)
+			io.ReceiveTuples(ctx, consumer, tuples)
 		case <-ctx.Done():
 			return
 		}
+	}
+}
+
+func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *string) []api.SourceTuple {
+	if hps.t == nil {
+		hps.t = &pullTimeMeta{
+			LastPullTime: rcvTime.UnixMilli() - int64(hps.config.Interval),
+			PullTime:     rcvTime.UnixMilli(),
+		}
+	} else {
+		// only update last pull time when there is no error
+		hps.t.PullTime = rcvTime.UnixMilli()
+	}
+	// Parse url which may contain dynamic time range
+	url, err := ctx.ParseTemplate(hps.config.Url, hps.t)
+	if err != nil {
+		return []api.SourceTuple{
+			&xsql.ErrorSourceTuple{
+				Error: fmt.Errorf("parse url %s error %v", hps.config.Url, err),
+			},
+		}
+	}
+
+	headers, err := hps.parseHeaders(ctx, hps.tokens)
+	if err != nil {
+		return []api.SourceTuple{
+			&xsql.ErrorSourceTuple{
+				Error: fmt.Errorf("parse headers error %v", err),
+			},
+		}
+	}
+	body, err := ctx.ParseTemplate(hps.config.Body, hps.t)
+	if err != nil {
+		return []api.SourceTuple{
+			&xsql.ErrorSourceTuple{
+				Error: fmt.Errorf("parse body %s error %v", hps.config.Body, err),
+			},
+		}
+	}
+	// check oAuth token expiration
+	if hps.accessConf != nil && hps.accessConf.ExpireInSecond > 0 &&
+		int(time.Now().Sub(hps.tokenLastUpdateAt).Abs().Seconds()) >= hps.accessConf.ExpireInSecond {
+		ctx.GetLogger().Debugf("Refreshing token")
+		if err := hps.refresh(ctx); err != nil {
+			ctx.GetLogger().Warnf("Refresh token error: %v", err)
+		}
+	}
+	ctx.GetLogger().Debugf("httppull source sending request url: %s, headers: %v, body %s", url, headers, hps.config.Body)
+	if resp, e := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, url, headers, true, body); e != nil {
+		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", e, hps)
+		return []api.SourceTuple{
+			&xsql.ErrorSourceTuple{
+				Error: fmt.Errorf("send request error %v", e),
+			},
+		}
+	} else {
+		ctx.GetLogger().Debugf("httppull source got response %v", resp)
+		results, _, e := hps.parseResponse(ctx, resp, true, omd5)
+		if e != nil {
+			return []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: fmt.Errorf("parse response error %v", e),
+				},
+			}
+		}
+		hps.t.LastPullTime = hps.t.PullTime
+		if results == nil {
+			ctx.GetLogger().Debugf("no data to send for incremental")
+			return nil
+		}
+		tuples := make([]api.SourceTuple, len(results))
+		meta := make(map[string]interface{})
+		for i, result := range results {
+			tuples[i] = api.NewDefaultSourceTupleWithTime(result, meta, rcvTime)
+		}
+		return tuples
 	}
 }

@@ -23,6 +23,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -141,14 +142,7 @@ func subscribe(ms *MQTTSource, ctx api.StreamContext, consumer chan<- api.Source
 				}
 				tuples = getTuples(ctx, ms, env)
 			}
-			for _, t := range tuples {
-				select {
-				case consumer <- t:
-					log.Debugf("send data to source node")
-				case <-ctx.Done():
-					return nil
-				}
-			}
+			io.ReceiveTuples(ctx, consumer, tuples)
 		}
 	}
 }
