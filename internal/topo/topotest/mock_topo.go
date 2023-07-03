@@ -326,6 +326,9 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 					size BIGINT,
 					ts BIGINT
 				) WITH (DATASOURCE="demoErr", TYPE="mock", FORMAT="json", KEY="ts", TIMESTAMP="ts",STRICT_VALIDATION="true");`
+			case "demoE2":
+				sql = `CREATE STREAM demoE2 (					
+				) WITH (DATASOURCE="demoE2", TYPE="mock", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
 			case "ldemo":
 				sql = `CREATE STREAM ldemo (					
 				) WITH (DATASOURCE="ldemo", TYPE="mock", FORMAT="json");`

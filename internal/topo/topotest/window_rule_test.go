@@ -747,7 +747,8 @@ func TestWindow(t *testing.T) {
 		{
 			BufferLength: 100,
 			SendError:    true,
-		}, {
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.AtLeastOnce,
@@ -766,9 +767,29 @@ func TestWindow(t *testing.T) {
 
 func TestEventWindow(t *testing.T) {
 	// Reset
-	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
+		{
+			Name: `TestEventWindowDelayInternal00`,
+			Sql:  `SELECT temp FROM demoE2 GROUP BY SlidingWindow(ss, 1,1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(27.5),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"op_2_watermark_0_records_in_total":  int64(3),
+				"op_2_watermark_0_records_out_total": int64(2),
+				"op_2_watermark_0_exceptions_total":  int64(0),
+
+				"op_3_window_0_records_in_total":  int64(2),
+				"op_3_window_0_records_out_total": int64(1),
+				"op_3_window_0_exceptions_total":  int64(0),
+			},
+		},
 		{
 			Name: `TestEventWindowDelayRule0`,
 			Sql:  `SELECT size FROM demoE GROUP BY SlidingWindow(ss, 1,4) FILTER (where color = "red")`,
