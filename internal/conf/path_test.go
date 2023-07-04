@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func initAbstractPathConfig() {
-	PathConfig.LoadFileType = "abstract"
+func initAbsolutePathConfig() {
+	PathConfig.LoadFileType = "absolute"
 	PathConfig.DataDir = AbsoluteMapping[dataDir]
 	PathConfig.EtcDir = AbsoluteMapping[etcDir]
 	PathConfig.PluginsDir = AbsoluteMapping[pluginsDir]
@@ -48,7 +48,7 @@ func TestAbsolutePath(t *testing.T) {
 			a: "/var/lib/kuiper/plugins",
 		},
 	}
-	initAbstractPathConfig()
+	initAbsolutePathConfig()
 	for i, tt := range tests {
 		aa, err := absolutePath(tt.r)
 		if err != nil {
@@ -71,7 +71,7 @@ func TestGetDataLoc_Funcs(t *testing.T) {
 }
 
 func TestPathConfig(t *testing.T) {
-	initAbstractPathConfig()
+	initAbsolutePathConfig()
 	PathConfig.EtcDir = "/etc/kuiper"
 	PathConfig.DataDir = "/data/kuiper"
 	PathConfig.LogDir = "/log/kuiper"

@@ -21,9 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/server"
 )
 
-var (
-	Version = "unknown"
-)
+var Version = "unknown"
 
 var (
 	loadFileType string

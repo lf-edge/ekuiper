@@ -59,6 +59,9 @@ func GetConfLoc() (string, error) {
 
 func GetDataLoc() (string, error) {
 	if IsTesting {
+		if PathConfig.LoadFileType == "" {
+			PathConfig.LoadFileType = "relative"
+		}
 		dataDir, err := GetLoc(dataDir)
 		if err != nil {
 			return "", err

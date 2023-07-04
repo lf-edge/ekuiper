@@ -73,9 +73,7 @@ func streamProcess(client *rpc.Client, args string) {
 	}
 }
 
-var (
-	Version = "unknown"
-)
+var Version = "unknown"
 
 func main() {
 	app := cli.NewApp()
