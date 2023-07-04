@@ -4,7 +4,8 @@
 software which can be run at all kinds of resource constrained IoT devices.
 
 [OpenVINO](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html) is an open source toolkit that makes it easier to write once, deploy anywhere.
-It converts and optimizes models trained using popular frameworks like TensorFlow*, PyTorch*, and Caffe*. Deploy across a mix of Intel hardware and environments, on-premise and on-device, in the browser, or in the cloud.
+It converts and optimizes models trained using popular frameworks like TensorFlow, PyTorch, and Caffe. Deploy across a mix of Intel hardware and environments, on-premise and on-device, in the browser, or in the cloud.
+The example code and models for OpenVINO take reference from this [post](https://www.intel.cn/content/www/cn/zh/developer/articles/reference-implementation/industrial-surface-defect-detection.html), users can get more detail information from that link.
 
 By integrating eKuiper and OpenVINO, users can analyze the data more easily.
 In this tutorial, we will walk you through building an AI-enabled approach to segment defects from the surface powered by eKuiper and OpenVINO.

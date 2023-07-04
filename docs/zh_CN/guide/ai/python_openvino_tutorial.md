@@ -3,7 +3,8 @@
 [LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) 是一款边缘轻量级物联网数据分析/流软件，可在各种资源受限的物联网设备上运行。
 
 [OpenVINO](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html) 是一个开源工具包，可以更轻松地编写一次，随处部署。
-它可以转换和优化使用 TensorFlow*、PyTorch* 和 Caffe* 等流行框架训练的模型。跨多种英特尔硬件和环境（本地和设备上、浏览器或云端）进行部署。
+它可以转换和优化使用 TensorFlow、PyTorch 和 Caffe 等流行框架训练的模型。跨多种英特尔硬件和环境（本地和设备上、浏览器或云端）进行部署。
+OpenVINO 的示例代码和模型参考这篇 [文章](https://www.intel.cn/content/www/cn/zh/developer/articles/reference-implementation/industrial-surface-defect-detection.html)，用户可以从该链接获取更多详细信息。
 
 通过集成 eKuiper 和 OpenVINO，用户可以更轻松地分析数据。
 在本教程中，我们将引导您构建一种基于 eKuiper 和 OpenVINO 的表面分割缺陷检测方法。
@@ -13,7 +14,7 @@
 
 在开始教程之前，请准备以下产品或环境。
 
-1. 安装mPython 3.x 环境。
+1. 安装 Python 3.x 环境。
 2. 通过 `pip install opencv-python==4.7.0.* openvino==2023.0.0 numpy==1.24.3` 安装 opencv-python、numpy 和 openvino 软件包。
 
 默认情况下，eKuiper 的便携式插件将使用 *python* 命令运行。如果您的环境不支持 `python` 命令，请使用[配置文件](../../configuration/global_configurations.md#portable-plugin-configurations)修改Python命令，例如`python3`。
@@ -24,8 +25,8 @@
 
 开发功能插件需要：
 
-1. 用Python实现业务逻辑并将其包装为eKuiper函数。
-   2、按照插件格式打包相关文件。
+1. 用Python实现业务逻辑并将其包装为 eKuiper 函数。
+2. 按照插件格式打包相关文件。
 
 创建实现扩展接口（源、接收器或函数）的 Python 文件。在本教程中，我们正在开发一个功能插件，因此我们需要实现功能扩展接口。
 
@@ -36,7 +37,7 @@
 
 我们的目标函数需要将 base64 编码的图像数据作为输入参数，进行图像预处理，加载 OpenVINO 模型，调用 OpenVINO 进行推理，提取推理结果并输出。我们需要使用 Python 实现这个函数，就像编写普通的 Python 函数一样。
 
-推理函数将接收base64编码的图像数据并返回结果。
+推理函数将接收 base64 编码的图像数据并返回结果。
 
 ```python
 
@@ -109,7 +110,7 @@ if __name__ == '__main__':
 
 ### 插件实现
 
-和原生插件一样，Python 插件也需要实现相应的接口； Python插件还支持Source、Sink和Function接口，[接口定义](../../extension/portable/python_sdk.md#development)与原生插件类似。这里，我们需要实现的是函数接口。
+和原生插件一样，Python 插件也需要实现相应的接口； Python 插件还支持 Source、Sink 和 Function 接口，[接口定义](../../extension/portable/python_sdk.md#development)与原生插件类似。这里，我们需要实现的是函数接口。
 
 创建 `inference.py` 函数来包装上一节中实现的函数。从eKuiper的插件SDK中导入Function类并创建相应的实现类。 validate 函数用于验证参数； is_aggregate 用于定义函数是否为聚合函数。关键的实现在 exec 函数中。这里，我们以 eKuiper 流中的数据为参数，调用上面实现的逻辑，并将结果返回给 eKuiper 。
 
