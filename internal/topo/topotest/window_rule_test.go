@@ -741,35 +741,6 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(1),
 			},
 		},
-		{
-			Name: `TestTUMBLINGWindowInterval0`,
-			Sql:  `SELECT temp FROM demoE2 GROUP BY TUMBLINGWINDOW(ss, 1)`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"temp": float64(27.5),
-					},
-				},
-				{
-					{
-						"temp": float64(25.5),
-					},
-				},
-				{
-					{
-						"temp": float64(23.5),
-					},
-				},
-			},
-			M: map[string]interface{}{
-				"source_demoE2_0_records_in_total":  int64(3),
-				"source_demoE2_0_records_out_total": int64(3),
-				"op_2_window_0_records_in_total":    int64(3),
-				"op_2_window_0_records_out_total":   int64(3),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
-			},
-		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
@@ -1441,6 +1412,27 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_out_total":    int64(2),
 				"sink_mockSink_0_records_in_total":   int64(2),
 				"sink_mockSink_0_records_out_total":  int64(2),
+			},
+		},
+		{
+			Name: `TestTUMBLINGWindowInterval13`,
+			Sql:  `SELECT temp FROM demoE2 GROUP BY TUMBLINGWINDOW(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(27.5),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"source_demoE2_0_records_in_total":   int64(3),
+				"source_demoE2_0_records_out_total":  int64(3),
+				"op_2_watermark_0_records_in_total":  int64(3),
+				"op_2_watermark_0_records_out_total": int64(2),
+				"op_3_window_0_records_in_total":     int64(2),
+				"op_3_window_0_records_out_total":    int64(1),
+				"sink_mockSink_0_records_in_total":   int64(1),
+				"sink_mockSink_0_records_out_total":  int64(1),
 			},
 		},
 	}
