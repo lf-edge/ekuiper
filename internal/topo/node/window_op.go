@@ -341,21 +341,17 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.Timestamp, ctx)
 				case ast.SLIDING_WINDOW:
-					if o.window.Type != ast.SLIDING_WINDOW {
-						inputs = o.scan(inputs, d.Timestamp, ctx)
-					} else {
-						if o.isMatchCondition(ctx, d) {
-							if o.window.Delay > 0 {
-								go func(ts int64) {
-									after := time.After(time.Duration(o.window.Delay) * time.Millisecond)
-									select {
-									case <-after:
-										delayCh <- ts
-									}
-								}(d.Timestamp + o.window.Delay)
-							} else {
-								inputs = o.scan(inputs, d.Timestamp, ctx)
-							}
+					if o.isMatchCondition(ctx, d) {
+						if o.window.Delay > 0 {
+							go func(ts int64) {
+								after := time.After(time.Duration(o.window.Delay) * time.Millisecond)
+								select {
+								case <-after:
+									delayCh <- ts
+								}
+							}(d.Timestamp + o.window.Delay)
+						} else {
+							inputs = o.scan(inputs, d.Timestamp, ctx)
 						}
 					}
 				case ast.SESSION_WINDOW:
@@ -526,6 +522,20 @@ func (tl *TupleList) getRestTuples() []*xsql.Tuple {
 	return tl.tuples[len(tl.tuples)-tl.size+1:]
 }
 
+func (o *WindowOperator) isTimeRelatedWindow() bool {
+	switch o.window.Type {
+	case ast.SLIDING_WINDOW:
+		return o.window.Delay > 0
+	case ast.TUMBLING_WINDOW:
+		return true
+	case ast.HOPPING_WINDOW:
+		return true
+	case ast.SESSION_WINDOW:
+		return true
+	}
+	return false
+}
+
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
@@ -560,8 +570,14 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			inputs[i] = tuple
 			i++
 		}
-		if tuple.Timestamp <= triggerTime {
-			results = results.AddTuple(tuple)
+		if o.isTimeRelatedWindow() {
+			if tuple.Timestamp < triggerTime {
+				results = results.AddTuple(tuple)
+			}
+		} else {
+			if tuple.Timestamp <= triggerTime {
+				results = results.AddTuple(tuple)
+			}
 		}
 	}
 

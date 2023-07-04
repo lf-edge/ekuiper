@@ -22,7 +22,7 @@ import (
 
 func TestWindow(t *testing.T) {
 	// Reset
-	streamList := []string{"demo", "demoError", "demo1", "sessionDemo", "table1"}
+	streamList := []string{"demo", "demoError", "demo1", "sessionDemo", "table1", "demoE2"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
@@ -747,12 +747,14 @@ func TestWindow(t *testing.T) {
 		{
 			BufferLength: 100,
 			SendError:    true,
-		}, {
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.AtLeastOnce,
 			CheckpointInterval: 5000,
-		}, {
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.ExactlyOnce,
@@ -766,7 +768,7 @@ func TestWindow(t *testing.T) {
 
 func TestEventWindow(t *testing.T) {
 	// Reset
-	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE"}
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
@@ -1360,6 +1362,77 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_in_total":  int64(4),
 				"op_3_window_0_records_out_total": int64(1),
 				"op_3_window_0_exceptions_total":  int64(0),
+			},
+		},
+		{
+			Name: `TestSlidingWindowInterval11`,
+			Sql:  `SELECT temp FROM demoE2 GROUP BY SLIDINGWINDOW(ss, 1, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(27.5),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"source_demoE2_0_records_in_total":   int64(3),
+				"source_demoE2_0_records_out_total":  int64(3),
+				"op_2_watermark_0_records_in_total":  int64(3),
+				"op_2_watermark_0_records_out_total": int64(2),
+				"op_3_window_0_records_in_total":     int64(2),
+				"op_3_window_0_records_out_total":    int64(1),
+				"sink_mockSink_0_records_in_total":   int64(1),
+				"sink_mockSink_0_records_out_total":  int64(1),
+			},
+		},
+		{
+			Name: `TestSlidingWindowInterval12`,
+			Sql:  `SELECT temp FROM demoE2 GROUP BY SLIDINGWINDOW(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(27.5),
+					},
+				},
+				{
+					{
+						"temp": float64(27.5),
+					},
+					{
+						"temp": float64(25.5),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"source_demoE2_0_records_in_total":   int64(3),
+				"source_demoE2_0_records_out_total":  int64(3),
+				"op_2_watermark_0_records_in_total":  int64(3),
+				"op_2_watermark_0_records_out_total": int64(2),
+				"op_3_window_0_records_in_total":     int64(2),
+				"op_3_window_0_records_out_total":    int64(2),
+				"sink_mockSink_0_records_in_total":   int64(2),
+				"sink_mockSink_0_records_out_total":  int64(2),
+			},
+		},
+		{
+			Name: `TestTUMBLINGWindowInterval13`,
+			Sql:  `SELECT temp FROM demoE2 GROUP BY TUMBLINGWINDOW(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(27.5),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"source_demoE2_0_records_in_total":   int64(3),
+				"source_demoE2_0_records_out_total":  int64(3),
+				"op_2_watermark_0_records_in_total":  int64(3),
+				"op_2_watermark_0_records_out_total": int64(2),
+				"op_3_window_0_records_in_total":     int64(2),
+				"op_3_window_0_records_out_total":    int64(1),
+				"sink_mockSink_0_records_in_total":   int64(1),
+				"sink_mockSink_0_records_out_total":  int64(1),
 			},
 		},
 	}
