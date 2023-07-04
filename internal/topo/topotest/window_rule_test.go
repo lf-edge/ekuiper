@@ -26,35 +26,6 @@ func TestWindow(t *testing.T) {
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
-			Name: `TestSlidingWindowInterval0`,
-			Sql:  `SELECT temp FROM demoE2 GROUP BY SLIDINGWINDOW(ss, 1,1)`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"temp": float64(27.5),
-					},
-				},
-				{
-					{
-						"temp": float64(25.5),
-					},
-				},
-				{
-					{
-						"temp": float64(23.5),
-					},
-				},
-			},
-			M: map[string]interface{}{
-				"source_demoE2_0_records_in_total":  int64(3),
-				"source_demoE2_0_records_out_total": int64(3),
-				"op_2_window_0_records_in_total":    int64(3),
-				"op_2_window_0_records_out_total":   int64(3),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
-			},
-		},
-		{
 			Name: `TestTUMBLINGWindowInterval0`,
 			Sql:  `SELECT temp FROM demoE2 GROUP BY TUMBLINGWINDOW(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -799,6 +770,35 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_records_out_total":  int64(1),
 			},
 		},
+		{
+			Name: `TestSlidingWindowInterval14`,
+			Sql:  `SELECT temp FROM demoE2 GROUP BY SLIDINGWINDOW(ss, 1, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(27.5),
+					},
+				},
+				{
+					{
+						"temp": float64(25.5),
+					},
+				},
+				{
+					{
+						"temp": float64(23.5),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"source_demoE2_0_records_in_total":  int64(3),
+				"source_demoE2_0_records_out_total": int64(3),
+				"op_2_window_0_records_in_total":    int64(3),
+				"op_2_window_0_records_out_total":   int64(3),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{
@@ -829,54 +829,6 @@ func TestEventWindow(t *testing.T) {
 	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
-		{
-			Name: `TestSlidingWindowInterval0`,
-			Sql:  `SELECT temp FROM demoE2 GROUP BY SLIDINGWINDOW(ss, 1,1)`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"temp": float64(27.5),
-					},
-				},
-			},
-			M: map[string]interface{}{
-				"source_demoE2_0_records_in_total":   int64(3),
-				"source_demoE2_0_records_out_total":  int64(3),
-				"op_2_watermark_0_records_in_total":  int64(3),
-				"op_2_watermark_0_records_out_total": int64(2),
-				"op_3_window_0_records_in_total":     int64(2),
-				"op_3_window_0_records_out_total":    int64(1),
-				"sink_mockSink_0_records_in_total":   int64(1),
-				"sink_mockSink_0_records_out_total":  int64(1),
-			},
-		},
-		{
-			Name: `TestEventWindowDelayRule0`,
-			Sql:  `SELECT size FROM demoE GROUP BY SlidingWindow(ss, 1,4) FILTER (where color = "red")`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"size": float64(3),
-					},
-					{
-						"size": float64(1),
-					},
-				},
-			},
-			M: map[string]interface{}{
-				"op_2_watermark_0_records_in_total":  int64(6),
-				"op_2_watermark_0_records_out_total": int64(4),
-				"op_2_watermark_0_exceptions_total":  int64(0),
-
-				"op_3_windowFilter_0_records_in_total":  int64(4),
-				"op_3_windowFilter_0_records_out_total": int64(2),
-				"op_3_windowFilter_0_exceptions_total":  int64(0),
-
-				"op_3_window_0_records_in_total":  int64(2),
-				"op_3_window_0_records_out_total": int64(1),
-				"op_3_window_0_exceptions_total":  int64(0),
-			},
-		},
 		{
 			Name: `TestEventWindowRule1`,
 			Sql:  `SELECT count(*), last_agg_hit_time() as lt, last_agg_hit_count() as lc, event_time() as et FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1) HAVING lc < 4`,
@@ -1439,6 +1391,54 @@ func TestEventWindow(t *testing.T) {
 				"op_2_watermark_0_exceptions_total":  int64(0),
 
 				"op_3_window_0_records_in_total":  int64(4),
+				"op_3_window_0_records_out_total": int64(1),
+				"op_3_window_0_exceptions_total":  int64(0),
+			},
+		},
+		{
+			Name: `TestSlidingWindowInterval11`,
+			Sql:  `SELECT temp FROM demoE2 GROUP BY SLIDINGWINDOW(ss, 1,1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(27.5),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"source_demoE2_0_records_in_total":   int64(3),
+				"source_demoE2_0_records_out_total":  int64(3),
+				"op_2_watermark_0_records_in_total":  int64(3),
+				"op_2_watermark_0_records_out_total": int64(2),
+				"op_3_window_0_records_in_total":     int64(2),
+				"op_3_window_0_records_out_total":    int64(1),
+				"sink_mockSink_0_records_in_total":   int64(1),
+				"sink_mockSink_0_records_out_total":  int64(1),
+			},
+		},
+		{
+			Name: `TestEventWindowDelayRule12`,
+			Sql:  `SELECT size FROM demoE GROUP BY SlidingWindow(ss, 1,4) FILTER (where color = "red")`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size": float64(3),
+					},
+					{
+						"size": float64(1),
+					},
+				},
+			},
+			M: map[string]interface{}{
+				"op_2_watermark_0_records_in_total":  int64(6),
+				"op_2_watermark_0_records_out_total": int64(4),
+				"op_2_watermark_0_exceptions_total":  int64(0),
+
+				"op_3_windowFilter_0_records_in_total":  int64(4),
+				"op_3_windowFilter_0_records_out_total": int64(2),
+				"op_3_windowFilter_0_exceptions_total":  int64(0),
+
+				"op_3_window_0_records_in_total":  int64(2),
 				"op_3_window_0_records_out_total": int64(1),
 				"op_3_window_0_exceptions_total":  int64(0),
 			},
