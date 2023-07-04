@@ -341,21 +341,17 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.Timestamp, ctx)
 				case ast.SLIDING_WINDOW:
-					if o.window.Type != ast.SLIDING_WINDOW {
-						inputs = o.scan(inputs, d.Timestamp, ctx)
-					} else {
-						if o.isMatchCondition(ctx, d) {
-							if o.window.Delay > 0 {
-								go func(ts int64) {
-									after := time.After(time.Duration(o.window.Delay) * time.Millisecond)
-									select {
-									case <-after:
-										delayCh <- ts
-									}
-								}(d.Timestamp + o.window.Delay)
-							} else {
-								inputs = o.scan(inputs, d.Timestamp, ctx)
-							}
+					if o.isMatchCondition(ctx, d) {
+						if o.window.Delay > 0 {
+							go func(ts int64) {
+								after := time.After(time.Duration(o.window.Delay) * time.Millisecond)
+								select {
+								case <-after:
+									delayCh <- ts
+								}
+							}(d.Timestamp + o.window.Delay)
+						} else {
+							inputs = o.scan(inputs, d.Timestamp, ctx)
 						}
 					}
 				case ast.SESSION_WINDOW:
