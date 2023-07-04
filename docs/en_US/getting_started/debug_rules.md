@@ -192,7 +192,7 @@ If the status is stopped, you can check the logs to check the detail. If the sta
 as expected, you can check the logs to see if there is any error or even open debug to track the data flow.
 
 Here is [the instruction to check the logs](#check-the-logs). To open debug log, you can set the log level to `debug` in
-the `etc/kuiper.yaml` file or setting environment variable: `KUIPER__BASIC__DEBUG=false`. Then you can check the debug
+the `etc/kuiper.yaml` file or setting environment variable: `KUIPER__BASIC__DEBUG=true`. Then you can check the debug
 log to see the data flow. For example, the below is one line of debug log regarding filter.
 
 ```text
