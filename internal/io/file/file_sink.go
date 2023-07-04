@@ -234,14 +234,21 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 		}
 		nfn := fn
 		if m.c.RollingNamePattern != "" {
+			newFile := ""
+			fileDir := filepath.Dir(fn)
+			fileName := filepath.Base(fn)
 			switch m.c.RollingNamePattern {
 			case "prefix":
-				nfn = fmt.Sprintf("%d-%s", conf.GetNowInMilli(), fn)
+				newFile = fmt.Sprintf("%d-%s", conf.GetNowInMilli(), fileName)
 			case "suffix":
 				ext := filepath.Ext(fn)
-				nfn = fmt.Sprintf("%s-%d%s", strings.TrimSuffix(fn, ext), conf.GetNowInMilli(), ext)
+				newFile = fmt.Sprintf("%s-%d%s", strings.TrimSuffix(fileName, ext), conf.GetNowInMilli(), ext)
+			default:
+				newFile = fileName
 			}
+			nfn = filepath.Join(fileDir, newFile)
 		}
+
 		fws, e = createFileWriter(ctx, nfn, m.c.FileType, headers, m.c.Compression)
 		if e != nil {
 			return nil, e
