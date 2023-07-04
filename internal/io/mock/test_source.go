@@ -37,8 +37,13 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 		t.Error(err)
 	}
 	for i, v := range result {
-		assert.Equal(t, exp[i].Message(), v.Message())
-		assert.Equal(t, exp[i].Meta(), v.Meta())
+		switch v.(type) {
+		case *api.DefaultSourceTuple:
+			assert.Equal(t, exp[i].Message(), v.Message())
+			assert.Equal(t, exp[i].Meta(), v.Meta())
+		default:
+			assert.Equal(t, exp[i], v)
+		}
 	}
 }
 

@@ -28,12 +28,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -886,6 +887,8 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestPullWithAuth(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
 	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -915,15 +918,10 @@ func TestPullWithAuth(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := conf.Clock
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}, map[string]interface{}{}, mc.Now()),
 	}
-	c := mockclock.GetMockClock()
-	go func() {
-		time.Sleep(10 * time.Millisecond)
-		c.Add(120 * time.Millisecond)
-	}()
 	mock.TestSourceOpen(r, exp, t)
 }
 
@@ -1033,4 +1031,70 @@ func TestPullBodyTimeRange(t *testing.T) {
 		c.Add(350 * time.Millisecond)
 	}()
 	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestPullErrorTest(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
+
+	tests := []struct {
+		name string
+		conf map[string]interface{}
+		exp  []api.SourceTuple
+	}{
+		{
+			name: "wrong url template",
+			conf: map[string]interface{}{"url": "http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime}", "interval": 10},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse url http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime} error template: sink:1: bad character U+007D '}'"),
+				},
+			},
+		}, {
+			name: "wrong header template",
+			conf: map[string]interface{}{"url": "http://localhost:52345/data4", "interval": 10, "HeadersTemplate": "\"Authorization\": \"Bearer {{.aatoken}}"},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse headers error parsed header template is not json: \"Authorization\": \"Bearer <no value>"),
+				},
+			},
+		}, {
+			name: "wrong body template",
+			conf: map[string]interface{}{"url": "http://localhost:52345/data4", "interval": 10, "body": `{"device": "d1", "start": {{.LastPullTime}}, "end": {{.pullTime}}}`},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse body {\"device\": \"d1\", \"start\": {{.LastPullTime}}, \"end\": {{.pullTime}}} error template: sink:1:54: executing \"sink\" at <.pullTime>: can't evaluate field pullTime in type *http.pullTimeMeta"),
+				},
+			},
+		}, {
+			name: "wrong response",
+			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse response error http return code error: 404"),
+				},
+			},
+		}, {
+			name: "wrong request",
+			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10, "bodyType": "form", "body": "ddd"},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("send request error invalid content: ddd"),
+				},
+			},
+		},
+	}
+
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := &PullSource{}
+			err := r.Configure("", test.conf)
+			assert.NoError(t, err)
+			mock.TestSourceOpen(r, test.exp, t)
+		})
+	}
 }
