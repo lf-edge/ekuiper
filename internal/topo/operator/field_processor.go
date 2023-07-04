@@ -129,9 +129,5 @@ func (p *defaultFieldProcessor) validateAndConvertField(sf *ast.JsonStreamField,
 }
 
 func (p *defaultFieldProcessor) parseTime(s string) (time.Time, error) {
-	if p.timestampFormat != "" {
-		return cast.ParseTime(s, p.timestampFormat)
-	} else {
-		return time.Parse(cast.JSISO, s)
-	}
+	return cast.ParseTime(s, p.timestampFormat)
 }

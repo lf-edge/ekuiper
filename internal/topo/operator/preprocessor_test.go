@@ -613,7 +613,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": "2019-09-19T00:55:1dd5Z", "def" : 111568854573431}`),
-			result: errors.New("error in preprocessor: field abc type mismatch: parsing time \"2019-09-19T00:55:1dd5Z\" as \"2006-01-02T15:04:05.000Z07:00\": cannot parse \"1dd5Z\" as \"05\""),
+			result: errors.New("error in preprocessor: field abc type mismatch: Can't parse string as time: 2019-09-19T00:55:1dd5Z"),
 		},
 		{ // 3
 			stmt: &ast.StreamStmt{
@@ -868,7 +868,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				},
 			},
 			data:   []byte(`{"abc": 34, "def" : "2019-09-23AT02:47:29", "ghi": 50}`),
-			result: errors.New("cannot convert timestamp field def to timestamp with error parsing time \"2019-09-23AT02:47:29\" as \"2006-01-02PM15:04:05\": cannot parse \"AT02:47:29\" as \"PM\""),
+			result: errors.New("cannot convert timestamp field def to timestamp with error Can't parse string as time: 2019-09-23AT02:47:29"),
 		},
 	}
 
