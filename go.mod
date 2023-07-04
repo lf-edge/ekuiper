@@ -19,6 +19,7 @@ require (
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jhump/protoreflect v1.15.0
+	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.16.4
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible

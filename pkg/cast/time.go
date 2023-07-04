@@ -17,6 +17,8 @@ package cast
 import (
 	"fmt"
 	"time"
+
+	"github.com/jinzhu/now"
 )
 
 //var (
@@ -79,20 +81,8 @@ func InterfaceToUnixMilli(i interface{}, format string) (int64, error) {
 	case time.Time:
 		return TimeToUnixMilli(t), nil
 	case string:
-		var ti time.Time
-		var err error
-		f := JSISO
-		if format != "" {
-			f, err = convertFormat(format)
-			if err != nil {
-				return 0, err
-			}
-		}
-		ti, err = time.Parse(f, t)
-		if err != nil {
-			return 0, err
-		}
-		return TimeToUnixMilli(ti), nil
+		ti, err := ParseTime(t, format)
+		return TimeToUnixMilli(ti), err
 	default:
 		return 0, fmt.Errorf("unsupported type to convert to timestamp %v", t)
 	}
@@ -109,20 +99,7 @@ func InterfaceToTime(i interface{}, format string) (time.Time, error) {
 	case time.Time:
 		return t, nil
 	case string:
-		var ti time.Time
-		var err error
-		f := JSISO
-		if format != "" {
-			f, err = convertFormat(format)
-			if err != nil {
-				return ti, err
-			}
-		}
-		ti, err = time.Parse(f, t)
-		if err != nil {
-			return ti, err
-		}
-		return ti, nil
+		return ParseTime(t, format)
 	default:
 		return time.Now(), fmt.Errorf("unsupported type to convert to timestamp %v", t)
 	}
@@ -132,12 +109,18 @@ func TimeFromUnixMilli(t int64) time.Time {
 	return time.Unix(t/1000, (t%1000)*1e6).UTC()
 }
 
-func ParseTime(t string, f string) (time.Time, error) {
-	if f, err := convertFormat(f); err != nil {
-		return time.Now(), err
-	} else {
-		return time.Parse(f, t)
+func ParseTime(t string, f string) (_ time.Time, err error) {
+	if f, err = convertFormat(f); err != nil {
+		return time.Time{}, err
 	}
+	c := &now.Config{
+		TimeLocation: time.UTC,
+		TimeFormats:  now.TimeFormats,
+	}
+	if f != "" {
+		c.TimeFormats = []string{f}
+	}
+	return c.Parse(t)
 }
 
 func FormatTime(time time.Time, f string) (string, error) {

@@ -94,6 +94,12 @@ func TestParseTime(t *testing.T) {
 			false,
 		},
 		{
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.UTC),
+			"2020-01-16 02:14:24",
+			"",
+			false,
+		},
+		{
 			time.Time{},
 			"2020",
 			"YYY",
