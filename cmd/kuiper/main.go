@@ -52,13 +52,10 @@ func streamProcess(client *rpc.Client, args string) {
 	}
 }
 
-var (
-	Version      = "unknown"
-	LoadFileType = "relative"
-)
+var Version = "unknown"
 
 func main() {
-	conf.LoadFileType = LoadFileType
+	conf.PathConfig.LoadFileType = "relative"
 	app := cli.NewApp()
 	app.Version = Version
 

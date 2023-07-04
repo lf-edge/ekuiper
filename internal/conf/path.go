@@ -22,6 +22,18 @@ import (
 	"strings"
 )
 
+func init() {
+	PathConfig.LoadFileType = "relative"
+}
+
+type PathConfigure struct {
+	LoadFileType string
+	EtcDir       string
+	DataDir      string
+	LogDir       string
+	PluginsDir   string
+}
+
 const (
 	etcDir          = "etc"
 	dataDir         = "data"
@@ -32,7 +44,7 @@ const (
 )
 
 var (
-	LoadFileType    = "relative"
+	PathConfig      PathConfigure
 	AbsoluteMapping = map[string]string{
 		etcDir:     "/etc/kuiper",
 		dataDir:    "/var/lib/kuiper/data",
@@ -82,11 +94,11 @@ func absolutePath(loc string) (dir string, err error) {
 
 // GetLoc subdir must be a relative path
 func GetLoc(subdir string) (string, error) {
-	if "relative" == LoadFileType {
+	if "relative" == PathConfig.LoadFileType {
 		return relativePath(subdir)
 	}
 
-	if "absolute" == LoadFileType {
+	if "relative" == PathConfig.LoadFileType {
 		return absolutePath(subdir)
 	}
 	return "", fmt.Errorf("Unrecognized loading method.")

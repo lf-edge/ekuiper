@@ -18,11 +18,8 @@ import (
 	"github.com/lf-edge/ekuiper/internal/server"
 )
 
-var (
-	Version      = "unknown"
-	LoadFileType = "relative"
-)
+var Version = "unknown"
 
 func main() {
-	server.StartUp(Version, LoadFileType)
+	server.StartUp(Version)
 }
