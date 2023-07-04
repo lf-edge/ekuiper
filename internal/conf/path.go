@@ -31,8 +31,16 @@ const (
 	KuiperSyslogKey = "KuiperSyslogKey"
 )
 
+type PathConfigure struct {
+	LoadFileType string
+	EtcDir       string
+	DataDir      string
+	LogDir       string
+	PluginsDir   string
+}
+
 var (
-	LoadFileType    = "relative"
+	PathConfig      PathConfigure
 	AbsoluteMapping = map[string]string{
 		etcDir:     "/etc/kuiper",
 		dataDir:    "/var/lib/kuiper/data",
@@ -40,6 +48,10 @@ var (
 		pluginsDir: "/var/lib/kuiper/plugins",
 	}
 )
+
+func init() {
+	PathConfig.LoadFileType = "relative"
+}
 
 func GetConfLoc() (string, error) {
 	return GetLoc(etcDir)
@@ -70,6 +82,16 @@ func GetPluginsLoc() (string, error) {
 func absolutePath(loc string) (dir string, err error) {
 	for relDir, absoluteDir := range AbsoluteMapping {
 		if strings.HasPrefix(loc, relDir) {
+			switch loc {
+			case etcDir:
+				return PathConfig.EtcDir, nil
+			case dataDir:
+				return PathConfig.DataDir, nil
+			case logDir:
+				return PathConfig.LogDir, nil
+			case pluginsDir:
+				return PathConfig.PluginsDir, nil
+			}
 			dir = strings.Replace(loc, relDir, absoluteDir, 1)
 			break
 		}
@@ -82,11 +104,11 @@ func absolutePath(loc string) (dir string, err error) {
 
 // GetLoc subdir must be a relative path
 func GetLoc(subdir string) (string, error) {
-	if "relative" == LoadFileType {
+	if "relative" == PathConfig.LoadFileType {
 		return relativePath(subdir)
 	}
 
-	if "absolute" == LoadFileType {
+	if "absolute" == PathConfig.LoadFileType {
 		return absolutePath(subdir)
 	}
 	return "", fmt.Errorf("Unrecognized loading method.")

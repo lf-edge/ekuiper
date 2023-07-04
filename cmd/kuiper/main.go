@@ -17,6 +17,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/rpc"
 	"os"
@@ -31,6 +32,26 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
+
+var (
+	loadFileType string
+	etcPath      string
+	dataPath     string
+	logPath      string
+	pluginsPath  string
+)
+
+func init() {
+	flag.StringVar(&loadFileType, "loadFileTye", "relative", "loadFileType indicates the how to load path")
+	flag.StringVar(&etcPath, "etc", conf.AbsoluteMapping["etc"], "etc indicates the path of etc dir")
+	flag.StringVar(&dataPath, "data", conf.AbsoluteMapping["data"], "data indicates the path of data dir")
+	flag.StringVar(&logPath, "log", conf.AbsoluteMapping["log"], "log indicates the path of log dir")
+	flag.StringVar(&pluginsPath, "plugins", conf.AbsoluteMapping["plugins"], "plugins indicates the path of plugins dir")
+	conf.PathConfig.LoadFileType = loadFileType
+	conf.PathConfig.EtcDir = etcPath
+	conf.PathConfig.DataDir = dataPath
+	conf.PathConfig.PluginsDir = pluginsPath
+}
 
 type clientConf struct {
 	Host string `yaml:"host"`
@@ -53,12 +74,10 @@ func streamProcess(client *rpc.Client, args string) {
 }
 
 var (
-	Version      = "unknown"
-	LoadFileType = "relative"
+	Version = "unknown"
 )
 
 func main() {
-	conf.LoadFileType = LoadFileType
 	app := cli.NewApp()
 	app.Version = Version
 

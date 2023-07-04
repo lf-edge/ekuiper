@@ -17,7 +17,17 @@ package conf
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
+
+func initAbstractPathConfig() {
+	PathConfig.LoadFileType = "abstract"
+	PathConfig.DataDir = AbsoluteMapping[dataDir]
+	PathConfig.EtcDir = AbsoluteMapping[etcDir]
+	PathConfig.PluginsDir = AbsoluteMapping[pluginsDir]
+	PathConfig.LogDir = AbsoluteMapping[logDir]
+}
 
 func TestAbsolutePath(t *testing.T) {
 	tests := []struct {
@@ -38,6 +48,7 @@ func TestAbsolutePath(t *testing.T) {
 			a: "/var/lib/kuiper/plugins",
 		},
 	}
+	initAbstractPathConfig()
 	for i, tt := range tests {
 		aa, err := absolutePath(tt.r)
 		if err != nil {
@@ -56,5 +67,41 @@ func TestGetDataLoc_Funcs(t *testing.T) {
 		t.Errorf("Errors when getting data loc: %s.", err)
 	} else if !strings.HasSuffix(d, "kuiper/data/test") {
 		t.Errorf("Unexpected data location %s", d)
+	}
+}
+
+func TestPathConfig(t *testing.T) {
+	initAbstractPathConfig()
+	PathConfig.EtcDir = "/etc/kuiper"
+	PathConfig.DataDir = "/data/kuiper"
+	PathConfig.LogDir = "/log/kuiper"
+	PathConfig.PluginsDir = "/tmp/plugins"
+
+	testcases := []struct {
+		dir    string
+		expect string
+	}{
+		{
+			dir:    etcDir,
+			expect: "/etc/kuiper",
+		},
+		{
+			dir:    dataDir,
+			expect: "/data/kuiper",
+		},
+		{
+			dir:    logDir,
+			expect: "/log/kuiper",
+		},
+		{
+			dir:    pluginsDir,
+			expect: "/tmp/plugins",
+		},
+	}
+
+	for _, tc := range testcases {
+		d, err := absolutePath(tc.dir)
+		require.NoError(t, err)
+		require.Equal(t, tc.expect, d)
 	}
 }
