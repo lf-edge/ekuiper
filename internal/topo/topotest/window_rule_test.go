@@ -706,12 +706,14 @@ func TestWindow(t *testing.T) {
 		{
 			BufferLength: 100,
 			SendError:    true,
-		}, {
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.AtLeastOnce,
 			CheckpointInterval: 5000,
-		}, {
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.ExactlyOnce,
@@ -789,7 +791,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(6),
 				"op_2_window_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule2`,
 			Sql:  `SELECT window_start(), window_end(), color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -830,7 +833,8 @@ func TestEventWindow(t *testing.T) {
 				"op_3_filter_0_records_in_total":   int64(5),
 				"op_3_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule3`,
 			Sql:  `SELECT color, temp, demoE.ts FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -892,7 +896,8 @@ func TestEventWindow(t *testing.T) {
 				"op_4_join_0_records_in_total":   int64(5),
 				"op_4_join_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule4`,
 			Sql:  `SELECT  window_start() as ws, color, window_end() as we FROM demoE GROUP BY SlidingWindow(ss, 2), color ORDER BY color`,
 			R: [][]map[string]interface{}{
@@ -959,7 +964,8 @@ func TestEventWindow(t *testing.T) {
 				"op_4_order_0_records_in_total":   int64(4),
 				"op_4_order_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule5`,
 			Sql:  `SELECT temp FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
@@ -1004,7 +1010,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(12),
 				"op_2_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule6`,
 			Sql:  `SELECT max(temp) as m, count(color) as c FROM demoE INNER JOIN demo1E ON demoE.ts = demo1E.ts GROUP BY SlidingWindow(ss, 1)`,
 			R: [][]map[string]interface{}{
@@ -1052,7 +1059,8 @@ func TestEventWindow(t *testing.T) {
 				"op_4_join_0_records_in_total":   int64(5),
 				"op_4_join_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule7`,
 			Sql:  `SELECT * FROM demoErr GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{
@@ -1108,7 +1116,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(6),
 				"op_2_window_0_records_out_total":  int64(5),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule8`,
 			Sql:  `SELECT temp, window_start(), window_end() FROM sessionDemoE GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
@@ -1173,7 +1182,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_window_0_records_in_total":   int64(12),
 				"op_2_window_0_records_out_total":  int64(4),
 			},
-		}, {
+		},
+		{
 			Name: `TestEventWindowRule9`,
 			Sql:  `SELECT window_end(), color, window_start() FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1)`,
 			R: [][]map[string]interface{}{

@@ -1025,6 +1025,35 @@ var TestData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152489253,
 		},
 	},
+	"demoE2": {
+		{
+			Emitter: "demoE2",
+			Message: map[string]interface{}{
+				"temp": 27.5,
+				"hum":  59,
+				"ts":   1541152486000,
+			},
+			Timestamp: 1541152486000,
+		},
+		{
+			Emitter: "demoE2",
+			Message: map[string]interface{}{
+				"temp": 25.5,
+				"hum":  65,
+				"ts":   1541152487000,
+			},
+			Timestamp: 1541152487000,
+		},
+		{
+			Emitter: "demoE2",
+			Message: map[string]interface{}{
+				"temp": 25.5,
+				"hum":  65,
+				"ts":   1541152488000,
+			},
+			Timestamp: 1541152488000,
+		},
+	},
 }
 
 var Image, _ = getImg()
