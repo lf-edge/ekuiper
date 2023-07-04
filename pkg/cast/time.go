@@ -66,6 +66,10 @@ const (
 	ISO8601 = "2006-01-02T15:04:05"
 )
 
+func init() {
+	now.TimeFormats = append(now.TimeFormats, JSISO, ISO8601)
+}
+
 func TimeToUnixMilli(time time.Time) int64 {
 	return time.UnixNano() / 1e6
 }
