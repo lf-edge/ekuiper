@@ -490,6 +490,20 @@ func (tl *TupleList) getRestTuples() []*xsql.Tuple {
 	return tl.tuples[len(tl.tuples)-tl.size+1:]
 }
 
+func (o *WindowOperator) isTimeRelatedWindow() bool {
+	switch o.window.Type {
+	case ast.SLIDING_WINDOW:
+		return false
+	case ast.TUMBLING_WINDOW:
+		return true
+	case ast.HOPPING_WINDOW:
+		return true
+	case ast.SESSION_WINDOW:
+		return true
+	}
+	return false
+}
+
 func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
@@ -523,8 +537,14 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			inputs[i] = tuple
 			i++
 		}
-		if tuple.Timestamp <= triggerTime {
-			results = results.AddTuple(tuple)
+		if o.isTimeRelatedWindow() {
+			if tuple.Timestamp < triggerTime {
+				results = results.AddTuple(tuple)
+			}
+		} else {
+			if tuple.Timestamp <= triggerTime {
+				results = results.AddTuple(tuple)
+			}
 		}
 	}
 
