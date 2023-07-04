@@ -358,7 +358,7 @@ func (t *Tuple) Value(key, table string) (interface{}, bool) {
 }
 
 func (t *Tuple) All(string) (map[string]interface{}, bool) {
-	return t.ToMap(), true
+	return t.Message, true
 }
 
 func (t *Tuple) Clone() CloneAbleRow {
@@ -519,13 +519,20 @@ func (jt *JoinTuple) All(stream string) (map[string]interface{}, bool) {
 	if stream != "" {
 		for _, t := range jt.Tuples {
 			if t.GetEmitter() == stream {
-				return t.ToMap(), true
+				return t.All("")
 			}
 		}
-	} else {
-		return jt.ToMap(), true
 	}
-	return nil, false
+	result := make(map[string]interface{})
+	for _, t := range jt.Tuples {
+		if m, ok := t.All(""); ok {
+			for k, v := range m {
+				result[k] = v
+			}
+		}
+	}
+	return result, true
+
 }
 
 func (jt *JoinTuple) Clone() CloneAbleRow {
@@ -598,7 +605,7 @@ func (s *GroupedTuples) Meta(key, table string) (interface{}, bool) {
 }
 
 func (s *GroupedTuples) All(_ string) (map[string]interface{}, bool) {
-	return s.ToMap(), true
+	return s.Content[0].All("")
 }
 
 func (s *GroupedTuples) ToMap() map[string]interface{} {
