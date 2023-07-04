@@ -98,7 +98,7 @@ func GetLoc(subdir string) (string, error) {
 		return relativePath(subdir)
 	}
 
-	if "relative" == PathConfig.LoadFileType {
+	if "absolute" == PathConfig.LoadFileType {
 		return absolutePath(subdir)
 	}
 	return "", fmt.Errorf("Unrecognized loading method.")
