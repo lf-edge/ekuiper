@@ -532,7 +532,6 @@ func (jt *JoinTuple) All(stream string) (map[string]interface{}, bool) {
 		}
 	}
 	return result, true
-
 }
 
 func (jt *JoinTuple) Clone() CloneAbleRow {
