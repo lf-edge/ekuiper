@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
@@ -45,6 +46,13 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 		f   *os.File
 		err error
 	)
+	Dir := filepath.Dir(fn)
+	if _, err = os.Stat(Dir); os.IsNotExist(err) {
+		if err := os.Mkdir(Dir, 0o777); err != nil {
+			return nil, fmt.Errorf("fail to create file %s: %v", fn, err)
+		}
+	}
+
 	if _, err = os.Stat(fn); os.IsNotExist(err) {
 		if _, err := os.Create(fn); err != nil {
 			return nil, fmt.Errorf("fail to create file %s: %v", fn, err)
