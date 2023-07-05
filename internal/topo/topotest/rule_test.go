@@ -22,6 +22,48 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
+func TestLimitSQL(t *testing.T) {
+	// Reset
+	streamList := []string{"demo", "demoArr"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: "TestLimitSQL",
+			Sql:  `SELECT unnest(demoArr.arr3) as col, demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1) limit 1;`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"col":  float64(1),
+						"size": float64(1),
+					},
+				},
+			},
+		},
+	}
+	// Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+		}, {
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		}, {
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+
+}
+
 func TestSRFSQL(t *testing.T) {
 	// Reset
 	streamList := []string{"demo", "demoArr"}

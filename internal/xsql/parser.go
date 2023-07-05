@@ -183,14 +183,6 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 			selects.Condition = exp
 		}
 	}
-	p.clause = "limit"
-	if expr, err := p.ParseLimit(); err != nil {
-		return nil, err
-	} else {
-		if expr != nil {
-			selects.Limit = expr
-		}
-	}
 
 	p.clause = "groupby"
 	if dims, err := p.parseDimensions(); err != nil {
@@ -209,6 +201,14 @@ func (p *Parser) Parse() (*ast.SelectStatement, error) {
 		return nil, err
 	} else {
 		selects.SortFields = sorts
+	}
+	p.clause = "limit"
+	if expr, err := p.ParseLimit(); err != nil {
+		return nil, err
+	} else {
+		if expr != nil {
+			selects.Limit = expr
+		}
 	}
 	p.clause = ""
 	if tok, lit := p.scanIgnoreWhitespace(); tok == ast.SEMICOLON {
