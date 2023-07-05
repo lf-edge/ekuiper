@@ -59,7 +59,7 @@ The file source supports monitoring files or folders. If the monitored location 
 The supported file types are
 
 - json: standard JSON array format files,
-  see [example](https://github.com/lf-edge/ekuiper/tree/master/internal/topo/source/test/test.json). If the file format is a line-separated JSON string, it needs to be defined in lines format.
+  see [example](https://github.com/lf-edge/ekuiper/tree/master/internal/io/file/test/test.json). If the file format is a line-separated JSON string, it needs to be defined in lines format.
 - csv: comma-separated csv files are supported, as well as custom separators.
 - lines: line-separated file. The decoding method of each line can be defined by the format parameter in the stream definition. For example, for a line-separated JSON string, the file type is set to lines and the format is set to json.
 
