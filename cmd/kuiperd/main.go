@@ -21,7 +21,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/server"
 )
 
-var Version = "unknown"
+var (
+	Version      = "unknown"
+	LoadFileType = "relative"
+)
 
 var (
 	loadFileType string
@@ -39,6 +42,8 @@ func init() {
 	flag.StringVar(&pluginsPath, "plugins", "", "plugins indicates the path of plugins dir")
 	if len(loadFileType) > 0 {
 		conf.PathConfig.LoadFileType = loadFileType
+	} else {
+		conf.PathConfig.LoadFileType = LoadFileType
 	}
 	if len(etcPath) > 0 {
 		conf.PathConfig.EtcDir = etcPath
