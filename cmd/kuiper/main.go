@@ -92,7 +92,6 @@ func init() {
 }
 
 func main() {
-	conf.PathConfig.LoadFileType = "relative"
 	app := cli.NewApp()
 	app.Version = Version
 
