@@ -56,7 +56,7 @@ default:
 
 支持的文件类型有：
 
-- json：标准的JSON数组格式文件。见[例子](https://github.com/lf-edge/ekuiper/tree/master/internal/topo/source/test/test.json)。如果文件格式是一个以行分隔的JSON字符串，它需要以 `lines` 格式定义。
+- json：标准的JSON数组格式文件。见[例子](https://github.com/lf-edge/ekuiper/tree/master/internal/io/file/test/test.json)。如果文件格式是一个以行分隔的JSON字符串，它需要以 `lines` 格式定义。
 - csv：支持逗号分隔的 csv 文件，也支持自定义分隔符。
 - lines：以行分隔的文件。每行的解码方法可以通过流定义中的 `format` 参数来定义。例如，对于一个按行分隔的 JSON 字符串文件，文件类型应设置为 `lines`，格式应设置为 `json`，表示单行的格式为 json。
 
