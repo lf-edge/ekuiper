@@ -22,9 +22,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/stretchr/testify/require"
 )
 
 // Ensure the parser can parse strings into Statement ASTs.

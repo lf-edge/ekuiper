@@ -61,7 +61,6 @@ func TestLimitSQL(t *testing.T) {
 	for j, opt := range options {
 		DoRuleTest(t, tests, j, opt, 0)
 	}
-
 }
 
 func TestSRFSQL(t *testing.T) {
