@@ -70,6 +70,17 @@ func init() {
 	now.TimeFormats = append(now.TimeFormats, JSISO, ISO8601)
 }
 
+var localTimeZone = time.UTC
+
+func SetTimeZone(name string) error {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		return err
+	}
+	localTimeZone = loc
+	return nil
+}
+
 func TimeToUnixMilli(time time.Time) int64 {
 	return time.UnixNano() / 1e6
 }
@@ -110,7 +121,7 @@ func InterfaceToTime(i interface{}, format string) (time.Time, error) {
 }
 
 func TimeFromUnixMilli(t int64) time.Time {
-	return time.Unix(t/1000, (t%1000)*1e6).UTC()
+	return time.Unix(t/1000, (t%1000)*1e6).In(localTimeZone)
 }
 
 func ParseTime(t string, f string) (_ time.Time, err error) {
@@ -118,7 +129,7 @@ func ParseTime(t string, f string) (_ time.Time, err error) {
 		return time.Time{}, err
 	}
 	c := &now.Config{
-		TimeLocation: time.UTC,
+		TimeLocation: localTimeZone,
 		TimeFormats:  now.TimeFormats,
 	}
 	if f != "" {
