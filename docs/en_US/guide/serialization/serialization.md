@@ -5,7 +5,8 @@ The eKuiper uses a map based data structure internally during computation, so so
 ## Format
 
 There are two types of formats for codecs: schema and schema-less formats. The formats currently supported by eKuiper
-are `json`, `binary`, `delimiter`, `protobuf` and `custom`. Among them, `protobuf` is the schema format.
+are `json`, `binary`, `delimiter`, `protobuf`, `can`, `canjson` and `custom`. Among them, `protobuf` is the schema
+format.
 The schema format requires registering the schema first, and then setting the referenced schema along with the format.
 For example, when using mqtt sink, the format and schema can be configured as follows
 
@@ -24,19 +25,77 @@ All formats provide the ability to codec and, optionally, the definition of sche
 
 All currently supported formats, their supported codec methods and modes are shown in the following table.
 
-| Format    | Codec                               | Custom Codec           | Schema                 |
-|-----------|-------------------------------------|------------------------|------------------------|
-| json      | Built-in                            | Unsupported            | Unsupported            |
-| binary    | Built-in                            | Unsupported            | Unsupported            |
-| delimiter | Built-in, need to specify delimiter | Unsupported            | Unsupported            |
-| protobuf  | Built-in                            | Supported              | Supported and required |
-| custom    | Not Built-in                        | Supported and required | Supported and optional |
+| Format    | Codec                               | Custom Codec           | Schema                          |
+|-----------|-------------------------------------|------------------------|---------------------------------|
+| json      | Built-in                            | Unsupported            | Unsupported                     |
+| binary    | Built-in                            | Unsupported            | Unsupported                     |
+| delimiter | Built-in, need to specify delimiter | Unsupported            | Unsupported                     |
+| protobuf  | Built-in                            | Supported              | Supported and required          |
+| can       | Built-in                            | Unsupported            | Supported and required, use dbc |
+| canjson   | Built-in                            | Unsupported            | Supported and required, use dbc |
+| custom    | Not Built-in                        | Supported and required | Supported and optional          |
+
+### CAN Bus Related Formats
+
+We support to connect to CAN bus by two ways:
+
+1. Directly connect by SocketCan.
+2. Connect by CAN bus gateway or other proxy.
+
+When connecting to CAN bus by SocketCan,
+we will need to use `can` format which parse each CAN frame to an internal map for rule processing.
+
+When connecting to CAN bus by CAN bus gateway or other proxy, we support a specific JSON format like below.
+Each packet will contain an arbitrary number of CAN frames.
+The parsing happens for each packet, not for each frame.
+The parsed result contains a merged map of all frames in the packet.
+For example, if a CAN id appears in multiple frames, only the last one will be used.
+
+```json
+{
+   "frames": [
+      {
+         "id": 123,
+         "data": "0x12345678"
+      },
+      {
+         "id": 456,
+         "data": "0x12345678"
+      }
+   ]
+}
+```
+
+The schemaId for these two format is the path to the DBC file or DBC folder.
+If the path is a folder, all the DBC files inside that folder will be loaded.
+The DBC defines the CAN frame and signal information and the parser will leverage it to parse the CAN frames.
+
+Examples:
+
+Create a stream to connect to socketCan and parse the data with CAN format by DBC files in `dbc` folder.
+
+```sql
+create
+stream canDemo () WITH (TYPE="can", FORMAT="can", SHARED="TRUE", SCHEMAID="dbc")
+```
+
+Create a stream to subscribe to MQTT topic `canDemo` parsing canjson format payload by DBC files in `dbc` folder.
+
+```sql
+create
+stream canDemo () WITH (TYPE="mqtt", FORMAT="canjson", SHARED="TRUE", SCHEMAID="dbc", DATASOURCE="canDemo")
+```
 
 ### Format Extension
 
-When using `custom` format or `protobuf` format, the user can customize the codec and schema in the form of a go language plugin. Among them, `protobuf` only supports custom codecs, and the schema needs to be defined by `*.proto` file. The steps for customizing the format are as follows:
+When using `custom` format or `protobuf` format, the user can customize the codec and schema in the form of a go
+language plugin. Among them, `protobuf` only supports custom codecs, and the schema needs to be defined by `*.proto`
+file. The steps for customizing the format are as follows:
 
-1. Implement codec-related interfaces. The Encode function encodes the incoming data (currently always `map[string]interface{}`) into a byte array. The Decode function, on the other hand, decodes the byte array into `map[string]interface{}`. The decode function is called in source, while the encode function will be called in sink.
+1. Implement codec-related interfaces. The Encode function encodes the incoming data (currently
+   always `map[string]interface{}`) into a byte array. The Decode function, on the other hand, decodes the byte array
+   into `map[string]interface{}`. The decode function is called in source, while the encode function will be called in
+   sink.
 
     ```go
     // Converter converts bytes & map or []map according to the schema

@@ -4,7 +4,7 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 
 ## 格式
 
-编解码的格式分为两种：有模式和无模式的格式。当前 eKuiper 支持的格式有 `json`，`binary`，`delimiter`，`protobuf`
+编解码的格式分为两种：有模式和无模式的格式。当前 eKuiper 支持的格式有 `json`，`binary`，`delimiter`，`protobuf`, `can`, `canjson`
 和 `custom`。其中，`protobuf` 为有模式的格式。
 有模式的格式需要先注册模式，然后在设置格式的同时，设置引用的模式。例如，在使用 mqtt sink 时，可配置格式和模式：
 
@@ -23,13 +23,62 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
 
 当前所有支持的格式，及其支持的编解码方法和模式如下表所示：
 
-| 格式        | 编解码                    | 自定义编解码 | 模式    |
-|-----------|------------------------|--------|-------|
-| json      | 内置                     | 不支持    | 不支持   |
-| binary    | 内置                     | 不支持    | 不支持   |
-| delimiter | 内置，必须配置 `delimiter` 属性 | 不支持    | 不支持   |
-| protobuf  | 内置                     | 支持     | 支持且必需 |
-| custom    | 无内置                    | 支持且必需  | 支持且可选 |
+| 格式        | 编解码                    | 自定义编解码 | 模式              |
+|-----------|------------------------|--------|-----------------|
+| json      | 内置                     | 不支持    | 不支持             |
+| binary    | 内置                     | 不支持    | 不支持             |
+| delimiter | 内置，必须配置 `delimiter` 属性 | 不支持    | 不支持             |
+| protobuf  | 内置                     | 支持     | 支持且必需           |
+| can       | 内置                     | 不支持    | 支持且必需，使用 dbc 文件 |
+| canjson   | 内置                     | 不支持    | 支持且必需，使用 dbc 文件 |
+| custom    | 无内置                    | 支持且必需  | 支持且可选           |
+
+### CAN 总线相关格式
+
+我们支持通过两种方式连接 CAN 总线：
+
+1. 直接通过 SocketCan 连接。
+2. 通过 CAN 总线网关或其他代理连接。
+
+当通过 SocketCan 直连时， eKuiper 会使用 `can` 格式，将每个 CAN 帧解析为内部 map，以便进行规则处理。
+
+当通过 CAN 总线网关或其他代理连接时， eKuiper 会使用 `canjson` 格式，将每个 CAN 帧解析为内部 map，以便进行规则处理。
+该格式中，每个数据包包含任意数量的 CAN 帧。解析发生在每个数据包上，而不是每个帧上。解析结果包含数据包中所有帧的合并映射。例如，如果一个 CAN id 在多个帧中出现，则只使用最后一个。
+数据包的格式如下所示：
+
+```json
+{
+   "frames": [
+      {
+         "id": 123,
+         "data": "0x12345678"
+      },
+      {
+         "id": 456,
+         "data": "0x12345678"
+      }
+   ]
+}
+```
+
+这两种格式的 `schemaId` 都是 DBC 文件或 DBC 文件夹的路径。
+如果路径是文件夹，则将加载该文件夹中的所有 DBC 文件。DBC 文件定义了 CAN 帧和信号信息，解析器将利用它来解析 CAN 帧。
+
+示例：
+
+创建连接到 SocketCan 的数据流，并使用 `dbc` 文件夹中的 DBC 文件解析数据。
+
+```sql
+create
+stream canDemo () WITH (TYPE="can", FORMAT="can", SHARED="TRUE", SCHEMAID="dbc")
+```
+
+创建连接到 MQTT 并订阅 `canDemo` 主题的数据流，使用 `canjson` 格式并使用 `dbc` 文件夹中的 DBC 文件解析数据。
+
+```sql
+create
+stream canDemo () WITH (TYPE="mqtt", FORMAT="canjson", SHARED="TRUE", SCHEMAID="dbc", DATASOURCE="canDemo")
+```
 
 ### 格式扩展
 
