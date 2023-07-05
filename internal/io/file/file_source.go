@@ -264,7 +264,6 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 
 func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
 	ctx.GetLogger().Debug("Start to load")
-	rcvTime := conf.GetNow()
 	switch fs.config.FileType {
 	case JSON_TYPE:
 		r := json.NewDecoder(file)
@@ -276,7 +275,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 		ctx.GetLogger().Debug("Sending tuples")
 		for _, m := range resultMap {
 			select {
-			case consumer <- api.NewDefaultSourceTupleWithTime(m, meta, rcvTime):
+			case consumer <- api.NewDefaultSourceTupleWithTime(m, meta, conf.GetNow()):
 			case <-ctx.Done():
 				return nil
 			}
@@ -305,6 +304,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 			ctx.GetLogger().Debugf("Got header %v", cols)
 		}
 		for {
+			rcvTime := conf.GetNow()
 			record, err := r.Read()
 			if err == io.EOF {
 				break
@@ -339,6 +339,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 		scanner := bufio.NewScanner(file)
 		scanner.Split(bufio.ScanLines)
 		for scanner.Scan() {
+			rcvTime := conf.GetNow()
 			var tuples []api.SourceTuple
 			m, err := ctx.DecodeIntoList(scanner.Bytes())
 			if err != nil {
