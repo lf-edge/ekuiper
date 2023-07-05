@@ -18,7 +18,7 @@ When casting to a datetime type, the supported column type and casting rule are:
 1. If a column is datetime type, just return the value.
 2. If column is bigint or float type, the number will be treated as the milliseconds elapsed since January 1, 1970 00:
    00:00 UTC and converted.
-3. If column is string, it will be parsed to datetime with the default format: `"2006-01-02T15:04:05.000Z07:00"`.
+3. If column is string, it will try to automatically detect the format and convert it to datetime type.
 4. Other types are not supported.
 
 ## ENCODE
