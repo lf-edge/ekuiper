@@ -98,6 +98,87 @@ func Test_createLogicalPlan(t *testing.T) {
 		err string
 	}{
 		{
+			sql: "select name from src1 where true limit 1",
+			p: LimitPlan{
+				LimitCount: 1,
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						ProjectPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									FilterPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields: map[string]*ast.JsonStreamField{
+														"name": {
+															Type: "string",
+														},
+													},
+													streamStmt: streams["src1"],
+													metaFields: []string{},
+												}.Init(),
+											},
+										},
+										condition: &ast.BooleanLiteral{
+											Val: true,
+										},
+									}.Init(),
+								},
+							},
+							fields: []ast.Field{
+								{
+									Name: "name",
+									Expr: &ast.FieldRef{
+										StreamName: "src1",
+										Name:       "name",
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+			}.Init(),
+		},
+		{
+			sql: "select name from src1 limit 1",
+			p: LimitPlan{
+				LimitCount: 1,
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						ProjectPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: map[string]*ast.JsonStreamField{
+											"name": {
+												Type: "string",
+											},
+										},
+										streamStmt: streams["src1"],
+										metaFields: []string{},
+									}.Init(),
+								},
+							},
+							fields: []ast.Field{
+								{
+									Name: "name",
+									Expr: &ast.FieldRef{
+										StreamName: "src1",
+										Name:       "name",
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+			}.Init(),
+		},
+		{
 			sql: "select unnest(myarray) as col from src1",
 			p: ProjectSetPlan{
 				SrfMapping: map[string]struct{}{

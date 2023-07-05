@@ -479,6 +479,14 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			SrfMapping: srfMapping,
 		}.Init()
 		p.SetChildren(children)
+		children = []LogicalPlan{p}
+	}
+
+	if stmt.Limit != nil {
+		p = LimitPlan{
+			LimitCount: stmt.Limit.(*ast.LimitExpr).LimitCount.Val,
+		}.Init()
+		p.SetChildren(children)
 	}
 
 	return optimize(p)
