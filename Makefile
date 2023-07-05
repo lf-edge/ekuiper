@@ -27,6 +27,7 @@ build_prepare:
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/services
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/etc/services/schemas
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/data
+	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/dbc
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/sources
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/plugins/sinks
@@ -36,6 +37,7 @@ build_prepare:
 	@mkdir -p $(BUILD_PATH)/$(PACKAGE_NAME)/log
 
 	@cp -r etc/* $(BUILD_PATH)/$(PACKAGE_NAME)/etc
+	@cp -r dbc/* $(BUILD_PATH)/$(PACKAGE_NAME)/dbc
 
 .PHONY: build_without_edgex
 build_without_edgex: build_prepare
