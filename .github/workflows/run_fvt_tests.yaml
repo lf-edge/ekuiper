@@ -80,7 +80,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: build kuiper
       run: |
-        sudo apt-get update && sudo apt-get install pkg-config libczmq-dev -y
+        sudo apt-get update && sudo apt-get install pkg-config libczmq-dev can-utils -y
         make build_with_edgex
         go build -trimpath --buildmode=plugin -o plugins/sources/Zmq.so extensions/sources/zmq/zmq.go
         go build -trimpath --buildmode=plugin -o plugins/functions/Image.so extensions/functions/image/*.go

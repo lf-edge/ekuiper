@@ -63,6 +63,10 @@ echo -e "-------------------- canjson test ------------------------\n"
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/can_mqttcan.jmx -Dfvt="$fvt_dir" -l jmeter_logs/can_mqttcan.jtl -j jmeter_logs/can_mqttcan.log
 echo -e "---------------------------------------------\n"
 
+#echo -e "-------------------- can test ------------------------\n"
+#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/can_socketcan.jmx -Dfvt="$fvt_dir" -l jmeter_logs/can_socketcan.jtl -j jmeter_logs/can_socketcan.log
+#echo -e "---------------------------------------------\n"
+
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/streams_test.jmx -Dbase="$base_dir" -l jmeter_logs/stream_test.jtl -j jmeter_logs/stream_test.log
 echo -e "---------------------------------------------\n"
 
