@@ -5,15 +5,39 @@ Object functions are used to manipulate objects/maps.
 ## KEYS
 
 ```text
-keys(map<string, interface{}>) -> array<string>
+keys(map\<string, interface{}>)
 ```
 
 Return an array containing the keys of the map.
 
+example:
+
+```sql
+keys({"a":1, "b":2})
+```
+
+result:
+
+```sql
+["a","b"]
+```
+
 ## VALUES
 
 ```text
-values(map<string, interface{}>) -> array<interface{}>
+values(map\<string, interface{}>)
+```
+
+example:
+
+```sql
+values({"a":1, "b":2})
+```
+
+result:
+
+```sql
+[1,2]
 ```
 
 Return an array containing the values of the map.
@@ -21,36 +45,84 @@ Return an array containing the values of the map.
 ## OBJECT
 
 ```text
-object(array<string>, array<interface{}>) -> map<string, interface{}>
+object(array\<string>, array\<interface{}>)
 ```
 
 Construct an object from an array of keys and an array of values. Keys must be an array of strings. Values must be an
 arbitrary array of the same length as keys.
 
+example:
+
+```sql
+object(["a","b"],[1,2])
+```
+
+result:
+
+```sql
+{"a":1, "b":2}
+```
+
 ## ZIP
 
 ```text
-zip(array<array<string, interface{}>>) -> map<string, interface{}>
+zip(array\<array\<string, interface{}>>)
 ```
 
 Construct an object from an array of entries. Each entry must itself be an array of size 2: the first element is the
 key (and must be a string), and the second element is the value.
 
+example:
+
+```sql
+zip([["a",1],["b":2]])
+```
+
+result:
+
+```sql
+{"a":1, "b":2}
+```
+
 ## ITEMS
 
 ```text
-items(map<string, interface{}>) -> array<array<string, interface{}>>
+items(map\<string, interface{}>)
 ```
 
 Return an array containing the entries of object. Each entry is a 2-element array; the first is the key, the second is
 the value.
 
+example:
+
+```sql
+items({"a":1, "b":2})
+```
+
+result:
+
+```sql
+[["a",1],["b":2]]
+```
+
 ## OBJECT_CONSTRUCT
 
 ```text
-object_construct(key1, col1, key2, col2, ...) -> map<string, interface{}>
+object_construct(key1, col1, key2, col2, ...)
 ```
 
 Return a struct type object/map constructed by the arguments. The arguments are a series of key value pairs, thus the
 arguments count must be an odd number. The key must be a string, and the value can be of any type. If the value is null,
 the key/value pair will not present in the final object.
+
+example:
+
+```sql
+object_construct("a", 1, "b", 2)
+```
+
+result:
+
+```sql
+{"a":1, "b":2}
+```
