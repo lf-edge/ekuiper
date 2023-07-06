@@ -81,6 +81,16 @@ func GetPluginsLoc() (string, error) {
 
 func absolutePath(loc string) (dir string, err error) {
 	for relDir, absoluteDir := range AbsoluteMapping {
+		switch loc {
+		case etcDir:
+			return PathConfig.EtcDir, nil
+		case dataDir:
+			return PathConfig.DataDir, nil
+		case pluginsDir:
+			return PathConfig.PluginsDir, nil
+		case logDir:
+			return PathConfig.LogDir, nil
+		}
 		if strings.HasPrefix(loc, relDir) {
 			dir = strings.Replace(loc, relDir, absoluteDir, 1)
 			break
