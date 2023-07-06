@@ -46,4 +46,3 @@ eKuiper supports importing configuration from command line parameters, as follow
 | data | string | Set the absolute path of the data directory |
 | log | string | Set the absolute path of the log directory |
 | plugins | string | Set the absolute path of the plugins directory |
- 

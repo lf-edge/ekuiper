@@ -40,11 +40,10 @@ CONNECTION__EDGEX__REDISMSGBUS__PORT => edgex.redismsgbus.port int etc/connectio
 
 eKuiper 支持从命令行参数的方式传入配置，如下:
 
-| 配置名           | 类型   |       配置作用                                        | 
+| 配置名           | 类型   |       配置作用                                        |
 |-----------------|--------|-----------------------------------------------------|
 | loadFileTye     | string | 设置加载文件的方式，支持 "relative" 与 "absolute" 两种方式      |
 | etc             | string | 设置 etc 目录的绝对路径                                |
 | data            | string | 设置 data 目录的绝对路径                               |
 | log             | string | 设置 log 目录的绝对路径                                |
 | plugins         | string | 设置 plugins 目录的绝对路径                            |
- 
