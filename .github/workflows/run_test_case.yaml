@@ -36,7 +36,7 @@ jobs:
         pip3 install pynng && sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: Build plugins
       run: |
-        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash > /dev/null
+        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.12.1 > /dev/null
 
         curl -sSfL -O https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/wasmedge_rustls_plugin_ubuntu-22.04.zip
         unzip wasmedge_rustls_plugin_ubuntu-22.04.zip
