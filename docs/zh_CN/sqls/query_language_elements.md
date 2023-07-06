@@ -13,6 +13,7 @@ eKuiper 提供了用于构建查询的各种元素。 总结如下。
 | [ORDER BY](#order-by) | 按一列或多列的值对行进行排序。                                                                                                                |
 | [HAVING](#having)     | HAVING 为组或集合指定搜索条件。 HAVING 只能与 SELECT 表达式一起使用。                                                                                 |
 |                       |                                                                                                                                |
+| [LIMIT](#limit)       | LIMIT 将输出的数据条数进行数量上的限制 |
 
 ## SELECT
 
@@ -357,6 +358,14 @@ sql 中的 ORDER BY 语句用于根据一个或多个列对获取的数据进行
 SELECT column1, column2, ...
 FROM table_name
 ORDER BY column1, column2, ... ASC|DESC;
+```
+
+## LIMIT
+
+将输出的数据条数进行限制
+
+```sql
+LIMIT 1
 ```
 
 ## Case 表达式
