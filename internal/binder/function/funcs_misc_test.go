@@ -290,6 +290,48 @@ func TestConvertTZ(t *testing.T) {
 		result, _ := f.exec(fctx, tt.args)
 		assert.Equal(t, tt.result, result)
 	}
+
+	vtests := []struct {
+		args    []ast.Expr
+		wantErr bool
+	}{
+		{
+			[]ast.Expr{&ast.TimeLiteral{Val: 0}, &ast.StringLiteral{Val: "0"}},
+			false,
+		},
+		{
+			[]ast.Expr{&ast.StringLiteral{Val: "0"}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.NumberLiteral{Val: 0}, &ast.NumberLiteral{Val: 0}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.NumberLiteral{Val: 0}, &ast.TimeLiteral{Val: 0}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.NumberLiteral{Val: 0}, &ast.BooleanLiteral{Val: true}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.StringLiteral{Val: "0"}, &ast.NumberLiteral{Val: 0}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.BooleanLiteral{Val: true}, &ast.NumberLiteral{Val: 0}},
+			true,
+		},
+	}
+	for _, vtt := range vtests {
+		err := f.val(fctx, vtt.args)
+		if vtt.wantErr {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+	}
 }
 
 func TestDelay(t *testing.T) {
