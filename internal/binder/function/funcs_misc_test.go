@@ -15,6 +15,7 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -271,6 +272,18 @@ func TestConvertTZ(t *testing.T) {
 				"Asia/Shanghai",
 			},
 			result: time.Date(2022, time.April, 13, 14, 22, 32, 233000000, loc),
+		}, { // 2
+			args: []interface{}{
+				time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+				"Unknown",
+			},
+			result: errors.New("unknown time zone Unknown"),
+		}, { // 3
+			args: []interface{}{
+				true,
+				"UTC",
+			},
+			result: errors.New("unsupported type to convert to timestamp true"),
 		},
 	}
 	for _, tt := range tests {
