@@ -29,6 +29,8 @@ type ProjectPlan struct {
 	wildcardEmitters map[string]bool
 	aliasFields      ast.Fields
 	exprFields       ast.Fields
+	enableLimit      bool
+	limitCount       int
 }
 
 func (p ProjectPlan) Init() *ProjectPlan {

@@ -34,6 +34,8 @@ type ProjectOp struct {
 	AliasFields      ast.Fields
 	ExprFields       ast.Fields
 	IsAggregate      bool
+	EnableLimit      bool
+	LimitCount       int
 
 	SendMeta bool
 
@@ -49,6 +51,9 @@ type ProjectOp struct {
 func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("project plan receive %v", data)
+	if pp.LimitCount == 0 && pp.EnableLimit {
+		return []xsql.TupleRow{}
+	}
 	switch input := data.(type) {
 	case error:
 		return input
@@ -88,6 +93,14 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		if err != nil {
 			return err
 		}
+		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
+			var sel []int
+			sel = make([]int, pp.LimitCount, pp.LimitCount)
+			for i := 0; i < pp.LimitCount; i++ {
+				sel[i] = i
+			}
+			return input.Filter(sel)
+		}
 	case xsql.GroupedCollection: // The order is important, because single collection usually is also a groupedCollection
 		err := input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
 			ve := pp.getVE(aggRow, aggRow, input.GetWindowRange(), fv, afv)
@@ -98,6 +111,14 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		})
 		if err != nil {
 			return err
+		}
+		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
+			var sel []int
+			sel = make([]int, pp.LimitCount, pp.LimitCount)
+			for i := 0; i < pp.LimitCount; i++ {
+				sel[i] = i
+			}
+			return input.Filter(sel)
 		}
 	default:
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
