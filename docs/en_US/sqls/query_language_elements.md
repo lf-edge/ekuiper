@@ -12,8 +12,7 @@ eKuiper provides a variety of elements for building queries. They are summarized
 | [GROUP BY](#group-by) | GROUP BY groups a selected set of rows into a set of summary rows grouped by the values of one or more columns or expressions. It must run within a [window](./windows.md).                                                                   |
 | [ORDER BY](#order-by) | Order the rows by values of one or more columns.                                                                                                                                                                                              |
 | [HAVING](#having)     | HAVING specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression.                                                                                                                          |
-| [LIMIT](#limit)       | 
-LIMIT will limit the number of output data  |
+| [LIMIT](#limit) | LIMIT will limit the number of output data. |
 
 ## SELECT
 
