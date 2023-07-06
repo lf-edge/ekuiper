@@ -9,7 +9,7 @@ on:
     tags:
       - "*"
     branches:
-      - master
+      - master-*
   pull_request:
     paths-ignore:
       - "docs/**"
