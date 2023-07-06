@@ -53,7 +53,7 @@ When the user sets the value of the environment variable named KuiperSyslogKey t
 timezone: UTC
 ```
 
-The global time zone configuration based on the IANA time zone database, if it is left blank, UTC will be used as the default time zone, and if it is set to Local, the system time zone will be used.
+The global time zone configuration based on the [IANA time zone database](https://www.iana.org/time-zones), if it is left blank, `UTC` will be used as the default time zone, and if it is set to `Local`, the system time zone will be used.
 
 ## Cli Addr
 

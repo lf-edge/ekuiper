@@ -51,7 +51,7 @@ basic:
 timezone: UTC
 ```
 
-基于 IANA 时区数据库的全局时区配置，如果留空则使用 UTC 作为默认时区，设置为 Local 时则使用系统时区。
+基于 [IANA 时区数据库](https://www.iana.org/time-zones)的全局时区配置，如果留空则使用 `UTC` 作为默认时区，设置为 `Local` 时则使用系统时区。
 
 ## Cli 地址
 
