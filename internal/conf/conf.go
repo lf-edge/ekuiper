@@ -27,6 +27,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 const ConfFileName = "kuiper.yaml"
@@ -126,6 +127,7 @@ type KuiperConf struct {
 		FileLog        bool     `yaml:"fileLog"`
 		RotateTime     int      `yaml:"rotateTime"`
 		MaxAge         int      `yaml:"maxAge"`
+		TimeZone       string   `yaml:"timezone"`
 		Ip             string   `yaml:"ip"`
 		Port           int      `yaml:"port"`
 		RestIp         string   `yaml:"restIp"`
@@ -226,6 +228,12 @@ func InitConf() {
 		gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
 	} else if Config.Basic.ConsoleLog {
 		Log.SetOutput(os.Stdout)
+	}
+
+	if Config.Basic.TimeZone != "" {
+		if err := cast.SetTimeZone(Config.Basic.TimeZone); err != nil {
+			Log.Fatal(err)
+		}
 	}
 
 	if Config.Store.Type == "redis" && Config.Store.Redis.ConnectionSelector != "" {

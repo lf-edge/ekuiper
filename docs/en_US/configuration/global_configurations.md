@@ -46,6 +46,15 @@ basic:
 
 When the user sets the value of the environment variable named KuiperSyslogKey to true, the log will be printed to the syslog.
 
+## Timezone
+
+```yaml
+# The global time zone from the IANA time zone database, or UTC if not set.
+timezone: UTC
+```
+
+The global time zone configuration based on the [IANA time zone database](https://www.iana.org/time-zones), if it is left blank, `UTC` will be used as the default time zone, and if it is set to `Local`, the system time zone will be used.
+
 ## Cli Addr
 
 ```yaml
