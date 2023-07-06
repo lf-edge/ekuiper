@@ -63,6 +63,34 @@ func registerMiscFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["convert_tz"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0, err := cast.InterfaceToTime(args[0], "")
+			if err != nil {
+				return err, false
+			}
+			arg1 := cast.ToStringAlways(args[1])
+			loc, err := time.LoadLocation(arg1)
+			if err != nil {
+				return err, false
+			}
+			return arg0.In(loc), true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err
+			}
+			if ast.IsNumericArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) {
+				return ProduceErrInfo(0, "datetime")
+			}
+			if ast.IsNumericArg(args[1]) || ast.IsTimeArg(args[1]) || ast.IsBooleanArg(args[1]) {
+				return ProduceErrInfo(1, "string")
+			}
+			return nil
+		},
+		check: returnNilIfHasAnyNil,
+	}
 	builtins["to_json"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

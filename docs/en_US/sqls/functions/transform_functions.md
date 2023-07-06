@@ -21,6 +21,14 @@ When casting to a datetime type, the supported column type and casting rule are:
 3. If column is string, it will try to automatically detect the format and convert it to datetime type.
 4. Other types are not supported.
 
+## CONVERT_TZ
+
+```text
+convert_tz(col, "Asia/Shanghai")
+```
+
+Convert a time value to a time in the corresponding time zone. The time zone parameter format refers to [IANA Time Zone Database](https://www.iana.org/time-zones), the default value is `UTC`. Set to `Local` to use the system time zone.
+
 ## ENCODE
 
 ```text
