@@ -41,6 +41,7 @@ func TestAbsolutePath(t *testing.T) {
 		},
 	}
 	initAbsolutePathConfig()
+	defer initRelativePathConfig()
 	for i, tt := range tests {
 		aa, err := absolutePath(tt.r)
 		if err != nil {
@@ -70,8 +71,13 @@ func initAbsolutePathConfig() {
 	PathConfig.LogDir = AbsoluteMapping[logDir]
 }
 
+func initRelativePathConfig() {
+	PathConfig.LoadFileType = "relative"
+}
+
 func TestPathConfig(t *testing.T) {
 	initAbsolutePathConfig()
+	defer initRelativePathConfig()
 	PathConfig.EtcDir = "/etc/kuiper"
 	PathConfig.DataDir = "/data/kuiper"
 	PathConfig.LogDir = "/log/kuiper"
