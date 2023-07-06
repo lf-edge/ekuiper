@@ -40,6 +40,7 @@ func TestAbsolutePath(t *testing.T) {
 			a: "/var/lib/kuiper/plugins",
 		},
 	}
+	initAbsolutePathConfig()
 	for i, tt := range tests {
 		aa, err := absolutePath(tt.r)
 		if err != nil {
