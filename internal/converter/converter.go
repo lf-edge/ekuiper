@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/converter/binary"
+	"github.com/lf-edge/ekuiper/internal/converter/canjson"
 	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -39,6 +40,9 @@ var converters = map[string]Instantiator{
 	},
 	message.FormatDelimited: func(_ string, _ string, delimiter string) (message.Converter, error) {
 		return delimited.NewConverter(delimiter)
+	},
+	message.FormatCanJson: func(schemaFile string, _ string, _ string) (message.Converter, error) {
+		return canjson.NewConverter(schemaFile)
 	},
 }
 

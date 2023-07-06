@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ const (
 	FormatProtobuf  = "protobuf"
 	FormatDelimited = "delimited"
 	FormatCustom    = "custom"
+	FormatCanJson   = "canjson"
 
 	DefaultField = "self"
 	MetaKey      = "__meta"
@@ -27,7 +28,7 @@ const (
 
 func IsFormatSupported(format string) bool {
 	switch format {
-	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom, FormatDelimited:
+	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom, FormatDelimited, FormatCanJson:
 		return true
 	default:
 		return false
