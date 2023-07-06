@@ -15,10 +15,13 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -237,6 +240,96 @@ func TestFromJson(t *testing.T) {
 		result, _ := f.exec(fctx, tt.args)
 		if !reflect.DeepEqual(result, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}
+
+func TestConvertTZ(t *testing.T) {
+	f, ok := builtins["convert_tz"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+				"UTC",
+			},
+			result: time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+		}, { // 1
+			args: []interface{}{
+				time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+				"Asia/Shanghai",
+			},
+			result: time.Date(2022, time.April, 13, 14, 22, 32, 233000000, loc),
+		}, { // 2
+			args: []interface{}{
+				time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+				"Unknown",
+			},
+			result: errors.New("unknown time zone Unknown"),
+		}, { // 3
+			args: []interface{}{
+				true,
+				"UTC",
+			},
+			result: errors.New("unsupported type to convert to timestamp true"),
+		},
+	}
+	for _, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		assert.Equal(t, tt.result, result)
+	}
+
+	vtests := []struct {
+		args    []ast.Expr
+		wantErr bool
+	}{
+		{
+			[]ast.Expr{&ast.TimeLiteral{Val: 0}, &ast.StringLiteral{Val: "0"}},
+			false,
+		},
+		{
+			[]ast.Expr{&ast.StringLiteral{Val: "0"}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.NumberLiteral{Val: 0}, &ast.NumberLiteral{Val: 0}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.NumberLiteral{Val: 0}, &ast.TimeLiteral{Val: 0}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.NumberLiteral{Val: 0}, &ast.BooleanLiteral{Val: true}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.StringLiteral{Val: "0"}, &ast.NumberLiteral{Val: 0}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.BooleanLiteral{Val: true}, &ast.NumberLiteral{Val: 0}},
+			true,
+		},
+	}
+	for _, vtt := range vtests {
+		err := f.val(fctx, vtt.args)
+		if vtt.wantErr {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
 		}
 	}
 }

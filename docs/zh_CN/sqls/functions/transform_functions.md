@@ -8,7 +8,7 @@
 cast(col,  "bigint")
 ```
 
-将值从一种数据类型转换为另一种数据类型。 支持的类型包括：bigint，float，string，boolean，bytea 和 datetime。
+将值从一种数据类型转换为另一种数据类型。支持的类型包括：bigint，float，string，boolean，bytea 和 datetime。
 
 ### 转换为 datetime 类型
 
@@ -18,6 +18,14 @@ cast(col,  "bigint")
 2. 如果参数为 bigint 或者 float 类型，则其数值会作为自 1970年1月1日0时起至今的毫秒值而转换为 datetime 类型。
 3. 如果参数为 string 类型，则会尝试自动识别格式并将其转换为 datetime类型。
 4. 其他类型的参数均不支持转换。
+
+## CONVERT_TZ
+
+```text
+convert_tz(col, "Asia/Shanghai")
+```
+
+将时间数值转换成对应时区的时间。时区参数格式参照 [IANA 时区数据库](https://www.iana.org/time-zones)，默认值为 `UTC`，设置为 `Local` 则使用系统时区。
 
 ## CHR
 
