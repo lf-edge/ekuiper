@@ -44,6 +44,15 @@ basic:
 
 用户将名为 KuiperSyslogKey 的环境变量的值设置为 true 时，日志将打印到系统日志中。
 
+## 时区配置
+
+```yaml
+# The global time zone from the IANA time zone database, or UTC if not set.
+timezone: UTC
+```
+
+基于 IANA 时区数据库的全局时区配置，如果留空则使用 UTC 作为默认时区，设置为 Local 时则使用系统时区。
+
 ## Cli 地址
 
 ```yaml
