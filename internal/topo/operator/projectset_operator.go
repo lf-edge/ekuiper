@@ -22,7 +22,9 @@ import (
 )
 
 type ProjectSetOperator struct {
-	SrfMapping map[string]struct{}
+	SrfMapping  map[string]struct{}
+	EnableLimit bool
+	LimitCount  int
 }
 
 // Apply implement UnOperation
@@ -32,6 +34,9 @@ type ProjectSetOperator struct {
 // For Collection, ProjectSetOperator will do the following transform:
 // [{"a":[1,2],"b":3},{"a":[1,2],"b":4}] = > [{"a":"1","b":3},{"a":"2","b":3},{"a":"1","b":4},{"a":"2","b":4}]
 func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+	if ps.LimitCount == 0 && ps.EnableLimit {
+		return []xsql.TupleRow{}
+	}
 	switch input := data.(type) {
 	case error:
 		return input
@@ -40,10 +45,21 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 		if err != nil {
 			return err
 		}
+		if ps.EnableLimit && ps.LimitCount > 0 && len(results.rows) > ps.LimitCount {
+			return results.rows[:ps.LimitCount]
+		}
 		return results.rows
 	case xsql.Collection:
 		if err := ps.handleSRFRowForCollection(input); err != nil {
 			return err
+		}
+		if ps.EnableLimit && ps.LimitCount > 0 && input.Len() > ps.LimitCount {
+			var sel []int
+			sel = make([]int, ps.LimitCount, ps.LimitCount)
+			for i := 0; i < ps.LimitCount; i++ {
+				sel[i] = i
+			}
+			return input.Filter(sel)
 		}
 		return input
 	default:

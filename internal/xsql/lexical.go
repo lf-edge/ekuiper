@@ -245,6 +245,8 @@ func (s *Scanner) ScanIdent() (tok ast.Token, lit string) {
 		return ast.SS, lit
 	case "MS":
 		return ast.MS, lit
+	case "LIMIT":
+		return ast.LIMIT, lit
 	}
 	return ast.IDENT, word
 }

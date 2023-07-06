@@ -16,7 +16,9 @@ package planner
 
 type ProjectSetPlan struct {
 	baseLogicalPlan
-	SrfMapping map[string]struct{}
+	SrfMapping  map[string]struct{}
+	enableLimit bool
+	limitCount  int
 }
 
 func (p ProjectSetPlan) Init() *ProjectSetPlan {
