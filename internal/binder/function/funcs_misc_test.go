@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -238,6 +240,42 @@ func TestFromJson(t *testing.T) {
 		if !reflect.DeepEqual(result, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 		}
+	}
+}
+
+func TestConvertTZ(t *testing.T) {
+	f, ok := builtins["convert_tz"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+				"UTC",
+			},
+			result: time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+		}, { // 1
+			args: []interface{}{
+				time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+				"Asia/Shanghai",
+			},
+			result: time.Date(2022, time.April, 13, 14, 22, 32, 233000000, loc),
+		},
+	}
+	for _, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		assert.Equal(t, tt.result, result)
 	}
 }
 
