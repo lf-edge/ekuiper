@@ -68,7 +68,7 @@ eKuiper 规则由 SQL 和多个动作组成。eKuiper SQL 是一种易于使用�
 ### 编写规则
 
 1. 进入规则页面，点击 "创建规则"。
-2. 写下规则的ID、名称和SQL，如下所示。然后点击 "添加" 来添加动作。SQL是`SELECT count(*), avg(temperature) AS avg_temp, max(hum) AS max_hum FROM demo GROUP BY TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30`。
+2. 写下规则的ID、名称和SQL，如下所示。然后点击 "添加" 来添加动作。SQL是`SELECT count(*), avg(temperature) AS avg_temp, max(humidity) AS max_hum FROM demo GROUP BY TUMBLINGWINDOW(ss, 5) HAVING avg_temp > 30`。
   ![创建规则](../resources/create_rule.png)
 3. 添加 MQTT 动作并填写配置，如下所示。在 Sink 类型下拉菜单中选择 `mqtt`。将服务器地址设为你的服务器，并将主题设为 `result/rule1`。ClientID 是可选的，如果没有设置，将自动分配一个 uuid。如果设置了，请确保该 ID 是唯一的，并且只在一条规则中使用。根据你的 MQTT 服务器的配置，设置其他属性，如用户名、密码。
    ![add mqtt action](../resources/mqtt_action.png)
