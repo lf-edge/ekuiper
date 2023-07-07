@@ -24,6 +24,10 @@ import (
 
 func init() {
 	PathConfig.LoadFileType = "relative"
+	PathConfig.EtcDir = AbsoluteMapping[etcDir]
+	PathConfig.DataDir = AbsoluteMapping[dataDir]
+	PathConfig.PluginsDir = AbsoluteMapping[pluginsDir]
+	PathConfig.LogDir = AbsoluteMapping[logDir]
 }
 
 type PathConfigure struct {
