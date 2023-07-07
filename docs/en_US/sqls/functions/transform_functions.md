@@ -19,6 +19,7 @@ When casting to a datetime type, the supported column type and casting rule are:
 2. If column is bigint or float type, the number will be treated as the milliseconds elapsed since January 1, 1970 00:
    00:00 UTC and converted.
 3. If column is string, it will try to automatically detect the format and convert it to datetime type.
+   - Supported time formats can refer to `github.com/jinzhu/now`'s [TimeFormats](https://github.com/jinzhu/now/blob/f067b166b35a996b9ff5a0f610225e1458f23adc/main.go#L17-L27)
 4. Other types are not supported.
 
 ## CONVERT_TZ
