@@ -170,8 +170,50 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 }
 
 type fileContent struct {
-	Name    string `json:"name"`
-	Content string `json:"content"`
+	Name     string `json:"name"`
+	Content  string `json:"content"`
+	FilePath string `json:"file"`
+}
+
+func (f *fileContent) Validate() error {
+	if f.Content == "" && f.FilePath == "" {
+		return fmt.Errorf("invalid body: content or FilePath is required")
+	}
+	if f.Name == "" {
+		return fmt.Errorf("invalid body: name is required")
+	}
+	return nil
+}
+
+func upload(file *fileContent) error {
+	err := getFile(file)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getFile(file *fileContent) error {
+	filePath := filepath.Join(uploadDir, file.Name)
+	dst, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	if file.FilePath != "" {
+		err := httpx.DownloadFile(filePath, file.FilePath)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := dst.Write([]byte(file.Content))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -187,20 +229,16 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 				handleError(w, err, "Invalid body: Error decoding file json", logger)
 				return
 			}
-			if fc.Content == "" || fc.Name == "" {
-				handleError(w, nil, "Invalid body: name and content are required", logger)
+			err = fc.Validate()
+			if err != nil {
+				handleError(w, err, "Invalid body: missing necessary field", logger)
 				return
 			}
+
 			filePath := filepath.Join(uploadDir, fc.Name)
-			dst, err := os.Create(filePath)
-			defer dst.Close()
+			err = upload(fc)
 			if err != nil {
-				handleError(w, err, "Error creating the file", logger)
-				return
-			}
-			_, err = dst.Write([]byte(fc.Content))
-			if err != nil {
-				handleError(w, err, "Error writing the file", logger)
+				handleError(w, err, "Upload error: getFile has error", logger)
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
