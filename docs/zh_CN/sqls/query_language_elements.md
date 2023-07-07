@@ -55,6 +55,13 @@ SELECT * REPLACE(expression1 as column_name1, expression2 as column_name2...)
 FROM stream1
 ```
 
+REPLACE 和 EXCEPT 可以同时使用，但需要注意的是如果这两个操作之间存在冲突，REPLACE 操作具有优先权。比如在下面的例子中，最终的结果包含`column_name1`字段。
+
+```sql
+SELECT * EXCEPT(column_name1, column_name2) REPLACE(expression1 as column_name1, expression3 as column_name3)
+FROM stream1
+```
+
 **source_stream**
 
 源流名称或别名。

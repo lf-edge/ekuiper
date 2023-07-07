@@ -54,6 +54,13 @@ SELECT * REPLACE(expression1 as column_name1, expression2 as column_name2...)
 FROM stream1
 ```
 
+REPLACE and EXCEPT can be used together, but it's important to note that if there is a conflict between these two operations, REPLACE takes precedence. In the following example, the final result will include the column_name1 field.
+
+```sql
+SELECT * EXCEPT(column_name1, column_name2) REPLACE(expression1 as column_name1, expression3 as column_name3)
+FROM stream1
+```
+
 **source_stream**
 
 The source stream name or alias name.
