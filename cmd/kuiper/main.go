@@ -72,7 +72,7 @@ func init() {
 		conf.PathConfig.LoadFileType = LoadFileType
 	}
 	if len(etcPath) > 0 {
-		conf.PathConfig.EtcDir = etcPath
+		conf.PathConfig.Dirs["etc"] = etcPath
 	}
 }
 

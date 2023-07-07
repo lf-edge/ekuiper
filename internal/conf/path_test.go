@@ -65,10 +65,7 @@ func TestGetDataLoc_Funcs(t *testing.T) {
 
 func initAbsolutePathConfig() {
 	PathConfig.LoadFileType = "absolute"
-	PathConfig.DataDir = AbsoluteMapping[dataDir]
-	PathConfig.EtcDir = AbsoluteMapping[etcDir]
-	PathConfig.PluginsDir = AbsoluteMapping[pluginsDir]
-	PathConfig.LogDir = AbsoluteMapping[logDir]
+	PathConfig.Dirs = AbsoluteMapping
 }
 
 func initRelativePathConfig() {
@@ -78,10 +75,10 @@ func initRelativePathConfig() {
 func TestPathConfig(t *testing.T) {
 	initAbsolutePathConfig()
 	defer initRelativePathConfig()
-	PathConfig.EtcDir = "/etc/kuiper"
-	PathConfig.DataDir = "/data/kuiper"
-	PathConfig.LogDir = "/log/kuiper"
-	PathConfig.PluginsDir = "/tmp/plugins"
+	PathConfig.Dirs["etc"] = "/etc/kuiper"
+	PathConfig.Dirs["data"] = "/data/kuiper"
+	PathConfig.Dirs["log"] = "/log/kuiper"
+	PathConfig.Dirs["plugins"] = "/tmp/plugins"
 
 	testcases := []struct {
 		dir    string

@@ -46,16 +46,16 @@ func init() {
 		conf.PathConfig.LoadFileType = LoadFileType
 	}
 	if len(etcPath) > 0 {
-		conf.PathConfig.EtcDir = etcPath
+		conf.PathConfig.Dirs["etc"] = etcPath
 	}
 	if len(dataPath) > 0 {
-		conf.PathConfig.DataDir = dataPath
+		conf.PathConfig.Dirs["data"] = dataPath
 	}
 	if len(logPath) > 0 {
-		conf.PathConfig.LogDir = logPath
+		conf.PathConfig.Dirs["log"] = logPath
 	}
 	if len(pluginsPath) > 0 {
-		conf.PathConfig.PluginsDir = pluginsPath
+		conf.PathConfig.Dirs["plugins"] = pluginsPath
 	}
 }
 
