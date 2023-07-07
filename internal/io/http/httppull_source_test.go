@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -25,12 +26,15 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -178,9 +182,86 @@ func mockAuthServer() *httptest.Server {
 		}
 		jsonOut(w, out)
 	}).Methods(http.MethodGet)
+	// data4 receives time range in url
+	router.HandleFunc("/data4", func(w http.ResponseWriter, r *http.Request) {
+		device := r.URL.Query().Get("device")
+		s := r.URL.Query().Get("start")
+		e := r.URL.Query().Get("end")
+
+		start, _ := strconv.ParseInt(s, 10, 64)
+		end, _ := strconv.ParseInt(e, 10, 64)
+
+		out := &struct {
+			Code int `json:"code"`
+			Data struct {
+				DeviceId    string `json:"device_id"`
+				Temperature int64  `json:"temperature"`
+				Humidity    int64  `json:"humidity"`
+			} `json:"data"`
+		}{
+			Code: 200,
+			Data: struct {
+				DeviceId    string `json:"device_id"`
+				Temperature int64  `json:"temperature"`
+				Humidity    int64  `json:"humidity"`
+			}{
+				DeviceId:    device,
+				Temperature: start % 50,
+				Humidity:    end % 100,
+			},
+		}
+		jsonOut(w, out)
+	}).Methods(http.MethodGet)
+
+	// data5 receives time range in body
+	router.HandleFunc("/data5", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Failed to read request body", http.StatusBadRequest)
+			return
+		}
+
+		// Create a Person struct to hold the JSON data
+		var ddd struct {
+			Device string `json:"device"`
+			Start  int64  `json:"start"`
+			End    int64  `json:"end"`
+		}
+
+		// Unmarshal the JSON data into the Person struct
+		err = json.Unmarshal(body, &ddd)
+		if err != nil {
+			http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
+			return
+		}
+
+		out := &struct {
+			Code int `json:"code"`
+			Data struct {
+				DeviceId    string `json:"device_id"`
+				Temperature int64  `json:"temperature"`
+				Humidity    int64  `json:"humidity"`
+			} `json:"data"`
+		}{
+			Code: 200,
+			Data: struct {
+				DeviceId    string `json:"device_id"`
+				Temperature int64  `json:"temperature"`
+				Humidity    int64  `json:"humidity"`
+			}{
+				DeviceId:    ddd.Device,
+				Temperature: ddd.Start % 50,
+				Humidity:    ddd.End % 100,
+			},
+		}
+		jsonOut(w, out)
+	}).Methods(http.MethodPost)
 
 	server := httptest.NewUnstartedServer(router)
-	server.Listener.Close()
+	err := server.Listener.Close()
+	if err != nil {
+		panic(err)
+	}
 	server.Listener = l
 	return server
 }
@@ -806,6 +887,8 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestPullWithAuth(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
 	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -835,7 +918,7 @@ func TestPullWithAuth(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := conf.Clock
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}, map[string]interface{}{}, mc.Now()),
 	}
@@ -843,6 +926,8 @@ func TestPullWithAuth(t *testing.T) {
 }
 
 func TestPullIncremental(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
 	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -857,7 +942,7 @@ func TestPullIncremental(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := conf.Clock
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device0", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
@@ -867,6 +952,8 @@ func TestPullIncremental(t *testing.T) {
 }
 
 func TestPullJsonList(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
 	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -880,10 +967,134 @@ func TestPullJsonList(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := conf.Clock
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d2", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 	}
 	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestPullUrlTimeRange(t *testing.T) {
+	r := &PullSource{}
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+	err := r.Configure("", map[string]interface{}{
+		"url":          "http://localhost:52345/data4?device=d1&start={{.LastPullTime}}&end={{.PullTime}}",
+		"interval":     110,
+		"responseType": "body",
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	// Mock time
+	mockclock.ResetClock(143)
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(53), "temperature": float64(43)}}, map[string]interface{}{}, time.UnixMilli(253)),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(63), "temperature": float64(3)}}, map[string]interface{}{}, time.UnixMilli(363)),
+	}
+	c := mockclock.GetMockClock()
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		c.Add(350 * time.Millisecond)
+	}()
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestPullBodyTimeRange(t *testing.T) {
+	r := &PullSource{}
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+	err := r.Configure("data5", map[string]interface{}{
+		"url":          "http://localhost:52345/",
+		"interval":     110,
+		"responseType": "body",
+		"method":       "POST",
+		"body":         `{"device": "d1", "start": {{.LastPullTime}}, "end": {{.PullTime}}}`,
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	// Mock time
+	mockclock.ResetClock(143)
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(53), "temperature": float64(43)}}, map[string]interface{}{}, time.UnixMilli(253)),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(63), "temperature": float64(3)}}, map[string]interface{}{}, time.UnixMilli(363)),
+	}
+	c := mockclock.GetMockClock()
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		c.Add(350 * time.Millisecond)
+	}()
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestPullErrorTest(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
+
+	tests := []struct {
+		name string
+		conf map[string]interface{}
+		exp  []api.SourceTuple
+	}{
+		{
+			name: "wrong url template",
+			conf: map[string]interface{}{"url": "http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime}", "interval": 10},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse url http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime} error template: sink:1: bad character U+007D '}'"),
+				},
+			},
+		}, {
+			name: "wrong header template",
+			conf: map[string]interface{}{"url": "http://localhost:52345/data4", "interval": 10, "HeadersTemplate": "\"Authorization\": \"Bearer {{.aatoken}}"},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse headers error parsed header template is not json: \"Authorization\": \"Bearer <no value>"),
+				},
+			},
+		}, {
+			name: "wrong body template",
+			conf: map[string]interface{}{"url": "http://localhost:52345/data4", "interval": 10, "body": `{"device": "d1", "start": {{.LastPullTime}}, "end": {{.pullTime}}}`},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse body {\"device\": \"d1\", \"start\": {{.LastPullTime}}, \"end\": {{.pullTime}}} error template: sink:1:54: executing \"sink\" at <.pullTime>: can't evaluate field pullTime in type *http.pullTimeMeta"),
+				},
+			},
+		}, {
+			name: "wrong response",
+			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("parse response error http return code error: 404"),
+				},
+			},
+		}, {
+			name: "wrong request",
+			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10, "bodyType": "form", "body": "ddd"},
+			exp: []api.SourceTuple{
+				&xsql.ErrorSourceTuple{
+					Error: errors.New("send request error invalid content: ddd"),
+				},
+			},
+		},
+	}
+
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := &PullSource{}
+			err := r.Configure("", test.conf)
+			assert.NoError(t, err)
+			mock.TestSourceOpen(r, test.exp, t)
+		})
+	}
 }

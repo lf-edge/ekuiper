@@ -154,14 +154,6 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 			}
 		case string:
 			c.HeadersTemplate = h
-		// TODO remove later, adapt to the wrong format in manager
-		case []interface{}:
-			c.HeadersMap = make(map[string]string, len(h))
-			for _, v := range h {
-				if mv, ok := v.(map[string]interface{}); ok && len(mv) == 3 {
-					c.HeadersMap[mv["name"].(string)] = mv["default"].(string)
-				}
-			}
 		default:
 			return fmt.Errorf("headers must be a map or a string")
 		}
@@ -329,7 +321,12 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 			return nil, []byte("fail to read body"),
 				fmt.Errorf("http return code error: %d", resp.StatusCode)
 		}
-		defer resp.Body.Close()
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				conf.Log.Errorf("fail to close the response body: %v", err)
+			}
+		}(resp.Body)
 		return nil, c, fmt.Errorf("http return code error: %d", resp.StatusCode)
 	} else if !returnBody { // For rest sink who only need to know if the request is successful
 		return nil, nil, nil
@@ -338,7 +335,12 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	if err != nil {
 		return nil, []byte("fail to read body"), err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			conf.Log.Errorf("fail to close the response body: %v", err)
+		}
+	}(resp.Body)
 	if returnBody && cc.config.Incremental {
 		nmd5 := getMD5Hash(c)
 		if *omd5 == nmd5 {

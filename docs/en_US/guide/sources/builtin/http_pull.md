@@ -137,9 +137,30 @@ There are two parts to configure: access for access code fetch and refresh for t
 - headers: the request header to refresh the token. Usually put the tokens here for authorization.
 - body: the request body to refresh the token. May not need when using header to pass the refresh token.
 
+## Dynamic Properties
+
+Dynamic properties are properties that are updated at runtime.
+You can use dynamic attributes to specify the HTTP request's URL, body and header.
+The syntax is based on [data template](../../sinks/data_template.md) format for dynamic attributes.
+
+The attributes that can be used include:
+
+- PullTime: The timestamp of the current pull time in int64 format.
+- LastPullTime: The timestamp of the last pull time in int64 format.
+
+If the target HTTP service supports filtering the start and end times,
+these two properties can be used to implement incremental pulls.
+
+- If the target HTTP service passes the start and end times via the url parameter, you can configure the
+  URL, e.g. `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}`.
+- If the target HTTP service passes the start and end times via the body parameter, you can configure the
+  body, e.g. `{"start": {{.LastPullTime}}, "end": {{.PullTime}}`.
+
 ## Override the default settings
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `application_conf`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
+If you have a specific connection that need to overwrite the default settings, you can create a customized section. In
+the previous sample, we create a specific setting named with `application_conf`. Then you can specify the configuration
+with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
 
 **Sample**
 

@@ -16,10 +16,11 @@ package mock
 
 import (
 	"fmt"
-	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/converter"
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
@@ -36,8 +37,12 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 		t.Error(err)
 	}
 	for i, v := range result {
-		if !reflect.DeepEqual(exp[i].Message(), v.Message()) || !reflect.DeepEqual(exp[i].Meta(), v.Meta()) {
-			t.Errorf("result mismatch:\n  exp=%s\n  got=%s\n\n", exp[i], v)
+		switch v.(type) {
+		case *api.DefaultSourceTuple:
+			assert.Equal(t, exp[i].Message(), v.Message())
+			assert.Equal(t, exp[i].Meta(), v.Meta())
+		default:
+			assert.Equal(t, exp[i], v)
 		}
 	}
 }

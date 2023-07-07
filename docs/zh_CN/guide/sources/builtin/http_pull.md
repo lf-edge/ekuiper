@@ -6,7 +6,7 @@
 eKuiper 为提取 HTTP 源流提供了内置支持，该支持可从 HTTP 服务器代理提取消息并输入 eKuiper 处理管道。HTTP 提取源的配置文件位于 `etc/sources/httppull.yaml` 中。 以下是文件格式。
 
 ```yaml
-#全局httppull配置
+#全局 httppull 配置
 default:
   # 请求服务器地址的URL
   url: http://localhost
@@ -137,9 +137,25 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 - headers：用于刷新令牌的请求头。通常把令牌放在这里，用于授权。
 - body：刷新令牌的请求主体。当使用头文件来传递刷新令牌时，可能不需要配置此选项。
 
+## 动态属性
+
+动态属性是指在运行时会动态更新的属性。 您可以使用动态属性来指定 HTTP 请求的
+URL、正文和标头。其语法基于[数据模板](../../sinks/data_template.md)格式的动态属性。可使用的动态属性包括：
+
+- PullTime: 本次拉取的 int64 格式时间戳。
+- LastPullTime: 上次拉取的 int64 格式时间戳。
+
+若目标 HTTP 服务支持过滤开始和结束时间，可以使用这两个属性来实现增量拉取。
+
+- 目标 HTTP 服务通过 url 参数传递开始和结束时间，则可配置
+  URL，例如 `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}` 。
+- 目标 HTTP 服务通过 body 参数传递开始和结束时间，则可配置
+  body，例如 `{"start": {{.LastPullTime}}, "end": {{.PullTime}}}`。
+
 ## 重载默认设置
 
-如果您有特定的连接需要重载默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建了一个名为 `application_conf` 的特定设置。 然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [流规格](../../../sqls/streams.md)）。
+如果您有特定的连接需要重载默认设置，则可以创建一个自定义部分。 在上一个示例中，我们创建了一个名为 `application_conf` 的特定设置。
+然后，您可以在创建流定义时使用选项 `CONF_KEY` 指定配置（有关更多信息，请参见 [流规格](../../../sqls/streams.md)）。
 
 **样例**
 
