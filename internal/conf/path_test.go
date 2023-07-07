@@ -40,8 +40,6 @@ func TestAbsolutePath(t *testing.T) {
 			a: "/var/lib/kuiper/plugins",
 		},
 	}
-	initAbsolutePathConfig()
-	defer initRelativePathConfig()
 	for i, tt := range tests {
 		aa, err := absolutePath(tt.r)
 		if err != nil {
@@ -63,18 +61,7 @@ func TestGetDataLoc_Funcs(t *testing.T) {
 	}
 }
 
-func initAbsolutePathConfig() {
-	PathConfig.LoadFileType = "absolute"
-	PathConfig.Dirs = AbsoluteMapping
-}
-
-func initRelativePathConfig() {
-	PathConfig.LoadFileType = "relative"
-}
-
 func TestPathConfig(t *testing.T) {
-	initAbsolutePathConfig()
-	defer initRelativePathConfig()
 	PathConfig.Dirs["etc"] = "/etc/kuiper"
 	PathConfig.Dirs["data"] = "/data/kuiper"
 	PathConfig.Dirs["log"] = "/log/kuiper"
@@ -99,6 +86,10 @@ func TestPathConfig(t *testing.T) {
 		{
 			dir:    pluginsDir,
 			expect: "/tmp/plugins",
+		},
+		{
+			dir:    "etc/source",
+			expect: "/etc/kuiper/source",
 		},
 	}
 
