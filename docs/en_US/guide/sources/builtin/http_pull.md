@@ -139,18 +139,22 @@ There are two parts to configure: access for access code fetch and refresh for t
 
 ## Dynamic Properties
 
-动态属性是指在运行时从消息中提取的属性。 您可以使用动态属性来指定 HTTP 请求的
-URL、正文和标头。其语法基于[数据模板](../../sinks/data_template.md)格式的动态属性。可使用的动态属性包括：
+Dynamic properties are properties that are updated at runtime.
+You can use dynamic attributes to specify the HTTP request's URL, body and header.
+The syntax is based on [data template](../../sinks/data_template.md) format for dynamic attributes.
 
-- PullTime: 本次拉取的 int64 格式时间戳。
-- LastPullTime: 上次拉取的 int64 格式时间戳。
+The attributes that can be used include:
 
-若目标 HTTP 服务支持过滤开始和结束时间，可以使用这两个属性来实现增量拉取。
+- PullTime: The timestamp of the current pull time in int64 format.
+- LastPullTime: The timestamp of the last pull time in int64 format.
 
-- 目标 HTTP 服务通过 url 参数传递开始和结束时间，则可配置
-  URL，例如 `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}` 。
-- 目标 HTTP 服务通过 body 参数传递开始和结束时间，则可配置
-  body，例如 `{"start": {{.LastPullTime}}, "end": {{.PullTime}}}`。
+If the target HTTP service supports filtering the start and end times,
+these two properties can be used to implement incremental pulls.
+
+- If the target HTTP service passes the start and end times via the url parameter, you can configure the
+  URL, e.g. `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}`.
+- If the target HTTP service passes the start and end times via the body parameter, you can configure the
+  body, e.g. `{"start": {{.LastPullTime}}, "end": {{.PullTime}}`.
 
 ## Override the default settings
 
