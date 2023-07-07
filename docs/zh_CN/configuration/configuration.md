@@ -48,7 +48,7 @@ eKuiper 支持从命令行参数的方式传入配置，如下:
 | log             | string | 设置 log 目录的绝对路径，只有当 loadFileType 是 "absolute" 时有效                                |
 | plugins         | string | 设置 plugins 目录的绝对路径，只有当 loadFileType 是 "absolute" 时有效                            |
 
-example:
+举例如下:
 
 ```sh
 ./bin/kuiperd -loadFileType absolute -etc /etc/kuiper

@@ -47,7 +47,7 @@ eKuiper supports importing configuration from command line parameters, as follow
 | log | string | Set the absolute path of the log directory, only valid when loadFileType is "absolute" |
 | plugins | string | Set the absolute path of the plugins directory, only valid when loadFileType is "absolute" |
 
-举例如下:
+example:
 
 ```sh
 ./bin/kuiperd -loadFileType absolute -etc /etc/kuiper
