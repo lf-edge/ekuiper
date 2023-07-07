@@ -41,7 +41,7 @@ eKuiper supports importing configuration from command line parameters, as follow
 
 | configuration name | type | configuration role |
 |-----------------|--------|---------------------- --------------------------------|
-| loadFileTye | string | Set the way to load files, support "relative" and "absolute" |
+| loadFileType | string | Set the way to load files, support "relative" and "absolute" |
 | etc | string | Set absolute path of etc directory |
 | data | string | Set the absolute path of the data directory |
 | log | string | Set the absolute path of the log directory |
