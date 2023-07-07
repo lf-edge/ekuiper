@@ -81,6 +81,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 	for {
 		select {
 		case <-t.C:
+			rcvTime := conf.GetNow()
 			query, err := m.Query.SqlQueryStatement()
 			if err != nil {
 				logger.Errorf("Get sql query error %v", err)
@@ -102,7 +103,6 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				return
 			}
 			for rows.Next() {
-				rcvTime := conf.GetNow()
 				data := make(map[string]interface{})
 				columns := make([]interface{}, len(cols))
 				prepareValues(columns, types, cols)
@@ -117,6 +117,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				scanIntoMap(data, columns, cols)
 				m.Query.UpdateMaxIndexValue(data)
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
+				rcvTime = conf.GetNow()
 			}
 		case <-ctx.Done():
 			return
