@@ -16,7 +16,8 @@ cast(col,  "bigint")
 
 1. 如果参数为 datetime 类型，则直接返回原值。
 2. 如果参数为 bigint 或者 float 类型，则其数值会作为自 1970年1月1日0时起至今的毫秒值而转换为 datetime 类型。
-3. 如果参数为 string 类型，则会尝试自动识别格式并将其转换为 datetime类型。
+3. 如果参数为 string 类型，则会尝试自动识别格式并将其转换为 datetime 类型。
+   - 支持的时间格式可以参考 `github.com/jinzhu/now` 的 [TimeFormats](https://github.com/jinzhu/now/blob/f067b166b35a996b9ff5a0f610225e1458f23adc/main.go#L17-L27)
 4. 其他类型的参数均不支持转换。
 
 ## CONVERT_TZ
