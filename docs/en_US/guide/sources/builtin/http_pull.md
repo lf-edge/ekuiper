@@ -151,10 +151,14 @@ The attributes that can be used include:
 If the target HTTP service supports filtering the start and end times,
 these two properties can be used to implement incremental pulls.
 
+::: v-pre
+
 - If the target HTTP service passes the start and end times via the url parameter, you can configure the
   URL, e.g. `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}`.
 - If the target HTTP service passes the start and end times via the body parameter, you can configure the
   body, e.g. `{"start": {{.LastPullTime}}, "end": {{.PullTime}}`.
+
+:::
 
 ## Override the default settings
 
