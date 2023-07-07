@@ -55,6 +55,8 @@ timezone: UTC
 
 The global time zone configuration based on the [IANA time zone database](https://www.iana.org/time-zones), if it is left blank, `UTC` will be used as the default time zone, and if it is set to `Local`, the system time zone will be used.
 
+> Note: To use time zone configuration in an alpine-based environment, you need to ensure that the time zone data has been properly installed (e.g. `apk add tzdata`).
+
 ## Cli Addr
 
 ```yaml
