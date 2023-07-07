@@ -283,6 +283,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 			if fs.config.SendInterval > 0 {
 				time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
 			}
+			rcvTime = conf.GetNow()
 		}
 		return nil
 	case CSV_TYPE:
@@ -334,6 +335,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 			if fs.config.SendInterval > 0 {
 				time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
 			}
+			rcvTime = conf.GetNow()
 		}
 	case LINES_TYPE:
 		scanner := bufio.NewScanner(file)
@@ -360,6 +362,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 			if fs.config.SendInterval > 0 {
 				time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
 			}
+			rcvTime = conf.GetNow()
 		}
 	default:
 		return fmt.Errorf("invalid file type %s", fs.config.FileType)
