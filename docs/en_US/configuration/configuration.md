@@ -42,7 +42,13 @@ eKuiper supports importing configuration from command line parameters, as follow
 | configuration name | type | configuration role |
 |-----------------|--------|---------------------- --------------------------------|
 | loadFileType | string | Set the way to load files, support "relative" and "absolute" |
-| etc | string | Set absolute path of etc directory |
-| data | string | Set the absolute path of the data directory |
-| log | string | Set the absolute path of the log directory |
-| plugins | string | Set the absolute path of the plugins directory |
+| etc | string | Set absolute path of etc directory, only valid when loadFileType is "absolute" |
+| data | string | Set the absolute path of the data directory, only valid when loadFileType is "absolute" |
+| log | string | Set the absolute path of the log directory, only valid when loadFileType is "absolute" |
+| plugins | string | Set the absolute path of the plugins directory, only valid when loadFileType is "absolute" |
+
+举例如下:
+
+```sh
+./bin/kuiperd -loadFileType absolute -etc /etc/kuiper
+```
