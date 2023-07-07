@@ -1,13 +1,13 @@
 # Running OpenVINO Algorithms with Python Function Plugin
 
-[LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) is an edge lightweight IoT data analytics / streaming
-software which can be run at all kinds of resource-constrained IoT devices.
+[LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) is an edge lightweight IoT data analytics/streaming
+software that can run on all kinds of resource-constrained IoT devices.
 
-[OpenVINO](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html) is an open source toolkit that makes it easier to write once, deploy anywhere.
+[OpenVINO](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html) is an open source toolkit that makes it easier to write once and deploy anywhere.
 It converts and optimizes models trained using popular frameworks like TensorFlow, PyTorch, and Caffe. Deploy across a mix of Intel hardware and environments, on-premise and on-device, in the browser, or in the cloud.
 The example code and models for OpenVINO take reference from [Intel - Industrial Surface Defect Detection Reference Implementation](https://www.intel.com/content/www/us/en/developer/articles/reference-implementation/industrial-surface-defect-detection.html).
 
-By integrating eKuiper and OpenVINO, users can analyze the data more easily.
+By combining eKuiper and OpenVINO, data analysis can become more accessible and efficient.
 This tutorial will guide you through creating an AI-based system for defect detection on surfaces, utilizing the power of eKuiper and OpenVINO. 
 A complete plugin package, including full source code, can be downloaded from [eKuiper Resources page](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/openvinoProject.zip).
 
@@ -34,8 +34,10 @@ To develop the function plugin, we need to：
 
 3. Create a Python file that implements the extended interface (source, sink, or function):
 
-- Writing Python segment defects functions
-- Wrapping an existing function as an eKuiper function plugin
+   - Writing Python segment defects functions
+
+   - Wrapping an existing function as an eKuiper function plugin
+
 
 ### Implement the Business Logic
 
@@ -44,7 +46,6 @@ Our goal is to create a function that accepts base64 encoded image data, conduct
 The inference function will receive the base64 encoded image data and return the result.
 
 ```python
-
 def inference(file_bytes):
     ie = IECore()
     # Read OpenVINO IR files

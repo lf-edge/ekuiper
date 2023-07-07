@@ -968,7 +968,7 @@
 							"path": "guide/ai/tensorflow_lite"
 						},
 						{
-							"title": "Running tensorflow_lite AI Model with external function",
+							"title": "Running tensorflow_lite AI Model with External Function",
 							"path": "guide/ai/tensorflow_lite_external_function_tutorial"
 						}
 					]
