@@ -27,6 +27,8 @@ convert_tz(col, "Asia/Shanghai")
 
 将时间数值转换成对应时区的时间。时区参数格式参照 [IANA 时区数据库](https://www.iana.org/time-zones)，默认值为 `UTC`，设置为 `Local` 则使用系统时区。
 
+> 注意：在基于 alpine 的环境里使用该函数，需要确保已经正确安装（`apk add tzdata`）了时区数据。
+
 ## CHR
 
 ```text

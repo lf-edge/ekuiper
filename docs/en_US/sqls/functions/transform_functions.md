@@ -29,6 +29,8 @@ convert_tz(col, "Asia/Shanghai")
 
 Convert a time value to a time in the corresponding time zone. The time zone parameter format refers to [IANA Time Zone Database](https://www.iana.org/time-zones), the default value is `UTC`. Set to `Local` to use the system time zone.
 
+> Note: To use this function in an alpine-based environment, you need to ensure that the time zone data has been properly installed (e.g. `apk add tzdata`).
+
 ## ENCODE
 
 ```text
