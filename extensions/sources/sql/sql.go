@@ -117,6 +117,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				scanIntoMap(data, columns, cols)
 				m.Query.UpdateMaxIndexValue(data)
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
+				rcvTime = conf.GetNow()
 			}
 		case <-ctx.Done():
 			return
