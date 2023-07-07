@@ -1,44 +1,45 @@
-# Running AI Algorithms with Python Function Plugins
+# Running OpenVINO Algorithms with Python Function Plugin
 
 [LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) is an edge lightweight IoT data analytics / streaming
-software which can be run at all kinds of resource constrained IoT devices.
+software which can be run at all kinds of resource-constrained IoT devices.
 
 [OpenVINO](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/overview.html) is an open source toolkit that makes it easier to write once, deploy anywhere.
 It converts and optimizes models trained using popular frameworks like TensorFlow, PyTorch, and Caffe. Deploy across a mix of Intel hardware and environments, on-premise and on-device, in the browser, or in the cloud.
-The example code and models for OpenVINO take reference from this [post](https://www.intel.cn/content/www/cn/zh/developer/articles/reference-implementation/industrial-surface-defect-detection.html), users can get more detail information from that link.
+The example code and models for OpenVINO take reference from [Intel - Industrial Surface Defect Detection Reference Implementation](https://www.intel.com/content/www/us/en/developer/articles/reference-implementation/industrial-surface-defect-detection.html).
 
 By integrating eKuiper and OpenVINO, users can analyze the data more easily.
-In this tutorial, we will walk you through building an AI-enabled approach to segment defects from the surface powered by eKuiper and OpenVINO.
-The completed plugin package can be downloaded [here](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/openvinoProject.zip), which also contains the full source code.
+This tutorial will guide you through creating an AI-based system for defect detection on surfaces, utilizing the power of eKuiper and OpenVINO. 
+A complete plugin package, including full source code, can be downloaded from [eKuiper Resources page](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/openvinoProject.zip).
 
 ## Prerequisite
 
 Before starting the tutorial, please prepare the following products or environments.
 
-1. Install the Python 3.x environment.
+1. Install the Python 3.x environment. And set the `pythonBin` under the portable configuration of [eKuiper configuration file](../../configuration/global_configurations.md#portable-plugin-configurations) to match your Python command (e.g., 'python3' if applicable).
 2. Install the opencv-python, numpy and openvino packages via `pip install opencv-python==4.7.0.* openvino==2023.0.0 numpy==1.24.3`.
 
-By default, the portable plugin for eKuiper will run with the `python` command. If your environment does not support the `python` command, please use the [configuration file](../../configuration/global_configurations.md#portable-plugin-configurations) to modify the Python command, such as `python3`.
 
-If you are developing with Docker, you can use the `lfedge/ekuiper:<tag>-slim-python` version. This version includes both the eKuiper and python environments.
+For Docker users:
+
+Use the lfedge/ekuiper:<tag>-slim-python Docker image which includes eKuiper and Python environments. If this Docker image lacks the required Python packages, install them using the pip command mentioned earlier, either by extending the Dockerfile or running the command inside the Docker container.
 
 ## Develop the Plugin
 
-To integrate eKuiper with OpenVINO, we will develop a custom eKuiper function plugin to use with eKuiper rules. We will create the `inference` function whose input is base64 encoded image data and whose output is json dictionary data containing the number of segment defects 、the processed image data and the cost for the inference.
+To integrate eKuiper with OpenVINO, we will develop a custom eKuiper function plugin to use with eKuiper rules. This plugin will include an inference function that takes base64 encoded image data as input and outputs a JSON dictionary. The output dictionary will contain information such as the number of segmented defects, processed image data, and the cost of the inference process.
 
 To develop the function plugin, we need to：
 
-1. implement the business logic in Python and wrap it as an eKuiper function.
+1. Implement the business logic in Python and wrap it as an eKuiper function.
 2. Package the relevant files according to the plugin format.
 
-Create Python files that implement the extended interface (source, sink, or function). In this tutorial, we are developing a function plugin, so we need to implement the function extension interface.
+3. Create a Python file that implements the extended interface (source, sink, or function):
 
 - Writing Python segment defects functions
 - Wrapping an existing function as an eKuiper function plugin
 
-### Implement the business logic
+### Implement the Business Logic
 
-Our target function needs to take the base64 encoded image data as an input parameter, perform image preprocessing, load the OpenVINO models, call the OpenVINO for inference, extract the inference result, and output it. We need to implement this function using Python in the same way as we would write a normal Python function.
+Our goal is to create a function that accepts base64 encoded image data, conducts image preprocessing, loads OpenVINO models, makes inference calls through OpenVINO, extracts inference results, and provides an output. This function will be implemented as a standard Python function.
 
 The inference function will receive the base64 encoded image data and return the result.
 
@@ -97,7 +98,7 @@ def inference(file_bytes):
 ```
 
 The above code is only related to the business logic and can be tested without calling eKuiper's SDK. We just need to make sure that the input and output is of a type that can be converted to JSON format. For example, if the return value is a numpy array, it needs to be converted to a list type first. Developers can add main functions or unit tests to their business logic file or to another file for testing. For example, the following main function can be used to test the above business logic.
-make sure the model.xml and model.bin file are in the models directory.
+Ensure the `model.xml` and `model.bin` files are in the `models` directory.
 
 ```python
 # To test the logic
@@ -111,11 +112,11 @@ if __name__ == '__main__':
 
 This file uses the `test.jpg` image file as input, calls the inference function to test it, and converts the result to a json string and prints it. This allows us to see if the function works as expected.
 
-### Plugin Implementation
+### Build the Plugin
 
-Like native plugins, Python plugins need to implement the corresponding interfaces; Python plugins also support the Source, Sink and Function interfaces, [interface definition](../../extension/portable/python_sdk.md#development) is similar to the native plugins. Here, what we need to implement is the function interface.
+Similar to native plugins, Python plugins need to implement the corresponding interfaces, including the Source, Sink, and Function interfaces. The [Interface definition](../../extension/portable/python_sdk.md#development) for Python plugins is similar to the native plugins.
 
-Create the `inference.py` function to wrap the functions implemented in the previous section. Import the Function class from eKuiper's plugin SDK and create the corresponding implementation class. The validate function is used to validate the parameters; is_aggregate is used to define whether the function is an aggregate function. The key implementations are in the exec function. Here, we take the data in the eKuiper stream as an argument, call the logic implemented above, and return the result to eKuiper.
+Create the `inference.py` function to encapsulate the previously implemented functionalities. Import the Function class from eKuiper's plugin SDK and create the corresponding implementation class. The `validate` function is used to validate the parameters; `is_aggregate` is to define whether the function is an aggregate function. The core implementations are in the `exec` function. Here, we take the data in the eKuiper stream as an argument, call the previously implemented logic, and return the result to eKuiper.
 
 ```python
 from typing import List, Any
@@ -143,14 +144,14 @@ class InferenceFunc(Function):
 inferenceIns = InferenceFunc()
 ```
 
-Once the code is implemented, we also need to add a description file for each function, which is placed in the functions directory, in this case we create the `defect.json` file. This file will help the eKuiper manager to automatically produce the UI associated with the plugin.
+Once the code is implemented, we also need to add a description file for each function, which is placed in the functions directory, in this case, we create the `defect.json` file. 
 
 ### Plugin Packaging
 
-At this point, we have completed the development of the main functionality, and next we need to package these files into a plugin format. Plugin packaging requires several steps to be completed.
+At this point, we have completed the development of the main functionality, and next we need to package these files into a plugin format:
 
-1. If the plugin has additional dependencies, you need to create the dependency installation script `install.sh`. When the plugin is installed, eKuiper will look for an installation script file `install.sh` in the plugin package and execute it if there is one. In this case, we create a `requirements.txt` file listing all the dependency packages. The installation of the dependencies is done in `install.sh` by calling `pip install -r $cur/requirements.txt`. For other plugins, you can reuse this script to update `requirements.txt` if you have no special requirements.
-2. Create a Python entry file that exposes all the implemented interfaces. Because multiple extensions can be implemented in a single plugin, you need an entry file that defines the implementation classes for each extension. The content is a main function, which is the entry point for the plugin runtime. It calls the methods in the SDK to define the plugin, including the plugin name, and a list of keys for the source, sink, and function implemented in the plugin. Here only a function plugin named `inference` is implemented, and its corresponding implementation method is `inferenceIns`. The Python plug-in process is independent of the eKuiper main process.
+1. **Managing Plugin Dependencies**: If the plugin has additional dependencies, you need to create the dependency installation script `install.sh`. When the plugin is installed, eKuiper will search for this script within the plugin package and executes it if found. In this case, we create a `requirements.txt` file listing all the dependency packages. The installation of the dependencies is done in `install.sh` by calling `pip install -r $cur/requirements.txt`. For other plugins, you can reuse this script to update `requirements.txt` if you have no special requirements.
+2. **Create a Python Entry File**: Because multiple extensions can be implemented in a single plugin, you need an entry file that defines the implementation classes for each extension. The entry file is a main function, which is the entry point for the plugin runtime. It calls the methods in the SDK to define the plugin, including the plugin name, and a list of keys for the implemented source, sink, and function. Here only a function plugin named `inference` is implemented, with `inferenceIns` as its corresponding implementation method. The Python plug-in process operates independently from the eKuiper main process.
 
     ```python
     if __name__ == '__main__':
@@ -161,7 +162,7 @@ At this point, we have completed the development of the main functionality, and 
         plugin.start(c)
     ```
 
-3. Create a plugin description file in JSON format to define the metadata of the plugin. The file name must be the same as the plugin name, i.e. `defect.json`. The function names defined therein must correspond exactly to the entry file, and the contents of the file are as follows. Where, executable is used to define the name of the plugin's executable entry file.
+3. **Establish a Plugin Description File**: Create a plugin description file in JSON format to define the metadata of the plugin. The file name must match the plugin name, i.e. `defect.json`. The function names defined within the file must align precisely with those in the entry file. The `executable` field is used to define the name of the plugin's executable entry file.
 
     ```json
     {
@@ -191,9 +192,9 @@ At this point we have completed the development of the plugin, next we just need
 - functions
   - defect.json
 
-## Plugin Installation
+## Install the Plugin
 
-As the same with installing native plugins, we can also install Python plugins via the eKuiper manager UI or the REST API. To use the REST API, upload the zip file packaged above to the machine where eKuiper is located. Then use the following API to install it:
+The same as installing native plugins, the Python plugins can be installed with REST API. To use the REST API, upload the zip file packaged above to the machine where eKuiper is located. Then use the following API to install it:
 
 ```text
 ### Install pyai plugin
@@ -205,11 +206,11 @@ Content-Type: application/json
 
 The installation process requires an Internet connection to download dependencies, including `ffmpeg libsm6 libxext6`, which may take a long time depending on the network conditions.
 
-## Run the plugin
+## Start the Plugin
 
-Once the plugin installed, we can use it in our rule. We will create a rule to receive image byte data from a mqtt topic and do the inference for the image by OpenVINO model.
+After installing the plugin, it can be incorporated into our rule. We'll create a rule that receives image byte data from an MQTT topic and performs inference on the image using the OpenVINO model.
 
-### Define the stream
+### Define the Stream
 
 Define the stream by eKuiper rest API. We create a stream named openvino_demo and the topic is openvino_demo.
 
@@ -220,12 +221,11 @@ Content-Type: application/json
 {"sql":"CREATE STREAM openvino_demo () WITH (DATASOURCE=\"openvino_demo\")"}
 ```
 
-### Define the rule
+### Define the Rule
 
-Define the rule by eKuiper rest API.  We will create a rule named ruleOp. We just read the base64 encoded images from openvino_demo stream and run the custom function *inference* against it.  
-It will send out the base64 encoded origin and processed image to topic *ekuiper/defect* when the segment defects numbers not be zero.
+Define the rule by eKuiper rest API. This rule will read base64 encoded images from the `openvino_demo` stream and apply the custom function `inference` to it.
+If the number of segmented defects is non-zero, it will dispatch the base64 encoded original and processed images to the `ekuiper/defect` topic.
 
-sends it to the MQTT topic `ekuiper/labels`.
 
 ```shell
 POST http://{{host}}/rules
@@ -246,9 +246,9 @@ Content-Type: application/json
 }
 ```
 
-### Feed the data
+### Feed the Data
 
-Here we create a python program to send image data to the openvino_demo topic to be processed by the rule.
+Here we create a Python program to send image data to the `openvino_demo` topic and to be processed by the rule.
 Users can get the full code [here](https://github.com/lf-edge/ekuiper/blob/master/docs/resources/openvinoProject.zip)
 
 ```python
@@ -277,10 +277,10 @@ def publish(client):
             break
 ```
 
-### Check the result
+### Check the Result
 
-Users can subscribe to the *ekuiper/defect* to get the notification when the images have segment defect.
+Users can subscribe to the `ekuiper/defect` topic to get a notification when the images exhibit segmented defects.
 
 ## Conclusion
 
-In this tutorial, we guide you through building custom eKuiper Python plugins that do segment defects for real-time image streams using OpenVINO models. Developers can replace the models with their own desired models to implement their own plug-ins.
+In this tutorial, we guide you through building custom eKuiper Python plugins that do defect segmentation for real-time image streams using OpenVINO models. Developers can replace the models with their own desired models to develop customized plugins.
