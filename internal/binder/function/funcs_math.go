@@ -15,6 +15,7 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -271,18 +272,36 @@ func registerMathFunc() {
 	builtins["log"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				r := math.Log10(v)
-				if math.IsNaN(r) {
-					return nil, true
-				} else {
-					return r, true
-				}
-			} else {
+			v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND)
+			if e != nil {
 				return e, false
 			}
+
+			var r float64
+			if len(args) == 1 {
+				r = math.Log10(v)
+			} else {
+				x, e := cast.ToFloat64(args[1], cast.CONVERT_SAMEKIND)
+				if e != nil {
+					return e, false
+				}
+				r = math.Log(x) / math.Log(v)
+			}
+
+			if !math.IsNaN(r) {
+				return r, true
+			}
+			return nil, true
 		},
-		val:   ValidateOneNumberArg,
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if len(args) != 1 && len(args) != 2 {
+				return errors.New("Expect 1 or 2 arguments only")
+			}
+			if ast.IsStringArg(args[0]) || ast.IsTimeArg(args[0]) || ast.IsBooleanArg(args[0]) {
+				return ProduceErrInfo(0, "number - float or int")
+			}
+			return nil
+		},
 		check: returnNilIfHasAnyNil,
 	}
 	builtins["mod"] = builtinFunc{

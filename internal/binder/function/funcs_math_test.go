@@ -302,7 +302,7 @@ func TestFuncMath(t *testing.T) {
 		if !reflect.DeepEqual(rLn, tt.res[3]) {
 			t.Errorf("%d.3 ln result mismatch,\ngot:\t%v \nwant:\t%v", i, rLn, tt.res[3])
 		}
-		rLog10, _ := fLog10.exec(fctx, tt.args)
+		rLog10, _ := fLog10.exec(fctx, tt.args[:1])
 		if !reflect.DeepEqual(rLog10, tt.res[4]) {
 			t.Errorf("%d.4 log result mismatch,\ngot:\t%v \nwant:\t%v", i, rLog10, tt.res[4])
 		}
