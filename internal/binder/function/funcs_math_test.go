@@ -41,6 +41,10 @@ func TestFuncMath(t *testing.T) {
 	if !ok {
 		t.Fatal("builtin not found")
 	}
+	fFloor, ok := builtins["floor"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
 	fLn, ok := builtins["ln"]
 	if !ok {
 		t.Fatal("builtin not found")
@@ -98,6 +102,10 @@ func TestFuncMath(t *testing.T) {
 		t.Fatal("builtin not found")
 	}
 	fMod, ok := builtins["mod"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	fPi, ok := builtins["pi"]
 	if !ok {
 		t.Fatal("builtin not found")
 	}
@@ -162,6 +170,8 @@ func TestFuncMath(t *testing.T) {
 				math.Sinh(-10),
 				math.Tan(-10),
 				math.Tanh(-10),
+				math.Floor(-10),
+				math.Pi,
 			},
 		}, { // 1
 			args: []interface{}{
@@ -192,6 +202,8 @@ func TestFuncMath(t *testing.T) {
 				math.Sinh(10),
 				math.Tan(10),
 				math.Tanh(10),
+				math.Floor(10),
+				math.Pi,
 			},
 		}, { // 2
 			args: []interface{}{
@@ -222,6 +234,8 @@ func TestFuncMath(t *testing.T) {
 				math.Sinh(-10.5),
 				math.Tan(-10.5),
 				math.Tanh(-10.5),
+				math.Floor(-10.5),
+				math.Pi,
 			},
 		}, { // 3
 			args: []interface{}{
@@ -252,6 +266,8 @@ func TestFuncMath(t *testing.T) {
 				math.Sinh(10.5),
 				math.Tan(10.5),
 				math.Tanh(10.5),
+				math.Floor(10.5),
+				math.Pi,
 			},
 		}, { // 4
 			args: []interface{}{
@@ -282,6 +298,8 @@ func TestFuncMath(t *testing.T) {
 				math.Sinh(0),
 				math.Tan(0),
 				math.Tanh(0),
+				float64(0),
+				math.Pi,
 			},
 		},
 	}
@@ -381,6 +399,14 @@ func TestFuncMath(t *testing.T) {
 		rTanh, _ := fTanh.exec(fctx, tt.args)
 		if !reflect.DeepEqual(rTanh, tt.res[23]) {
 			t.Errorf("%d.23 tanh result mismatch,\ngot:\t%v \nwant:\t%v", i, rTanh, tt.res[23])
+		}
+		rFloor, _ := fFloor.exec(fctx, tt.args)
+		if !reflect.DeepEqual(rFloor, tt.res[24]) {
+			t.Errorf("%d.24 exp result mismatch,\ngot:\t%v \nwant:\t%v", i, rFloor, tt.res[24])
+		}
+		rPi, _ := fPi.exec(fctx, tt.args)
+		if !reflect.DeepEqual(rPi, tt.res[25]) {
+			t.Errorf("%d.25 exp result mismatch,\ngot:\t%v \nwant:\t%v", i, rPi, tt.res[25])
 		}
 	}
 }

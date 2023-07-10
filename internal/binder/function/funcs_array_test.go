@@ -562,7 +562,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				"pow", []interface{}{0, -0.4, 1.2},
 			},
-			result: fmt.Errorf("unknown built-in function: pow."),
+			result: fmt.Errorf("validate function arguments failed."),
 		},
 		{
 			name: "array_map",

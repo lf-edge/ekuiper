@@ -77,8 +77,12 @@ Performs a bitwise NOT on the bit representations of the Int(-converted) argumen
 
 ## CEIL
 
+`CEIL()` is a synonym for [`CEILING()`](#ceiling).
+
+## CEILING
+
 ```text
-ceil(col)
+ceiling(col)
 ```
 
 The smallest integer value that is greater than or equal to the argument.
@@ -107,6 +111,14 @@ exp(col)
 
 Returns Euler's number e raised to the power of a double value.
 
+## FLOOR
+
+```text
+floor(col)
+```
+
+Returns the largest integer value not greater than X.
+
 ## LN
 
 ```text
@@ -130,6 +142,18 @@ mod(col1, col2)
 ```
 
 Returns the remainder of the division of the first argument by the second argument.
+
+## PI
+
+```text
+pi()
+```
+
+Returns the value of π (pi).
+
+## POW
+
+`POW()` is a synonym for [`POWER()`](#power).
 
 ## POWER
 
