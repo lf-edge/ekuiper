@@ -67,14 +67,6 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 		}
 	case xsql.SingleCollection:
-		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
-			var sel []int
-			sel = make([]int, pp.LimitCount, pp.LimitCount)
-			for i := 0; i < pp.LimitCount; i++ {
-				sel[i] = i
-			}
-			input = input.Filter(sel).(xsql.SingleCollection)
-		}
 		var err error
 		if pp.IsAggregate {
 			input.SetIsAgg(true)
@@ -100,6 +92,14 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		}
 		if err != nil {
 			return err
+		}
+		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
+			var sel []int
+			sel = make([]int, pp.LimitCount, pp.LimitCount)
+			for i := 0; i < pp.LimitCount; i++ {
+				sel[i] = i
+			}
+			input = input.Filter(sel).(xsql.SingleCollection)
 		}
 	case xsql.GroupedCollection: // The order is important, because single collection usually is also a groupedCollection
 		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
