@@ -56,7 +56,7 @@ func Walk(v Visitor, node Node) {
 		for _, replace := range n.Replace {
 			Walk(v, replace)
 		}
-		
+
 	case Sources:
 		for _, s := range n {
 			Walk(v, s)

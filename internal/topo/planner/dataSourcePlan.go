@@ -236,7 +236,7 @@ func (p *DataSourcePlan) getAllFields() {
 		} else {
 			for _, pf := range p.pruneFields {
 				prune := true
-				for f, _ := range p.fields {
+				for f := range p.fields {
 					if pf == f {
 						prune = false
 						break
