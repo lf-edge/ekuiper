@@ -188,7 +188,7 @@ func registerMathFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
-	builtins["ceil"] = builtinFunc{
+	builtins["ceiling"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
@@ -200,6 +200,7 @@ func registerMathFunc() {
 		val:   ValidateOneNumberArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["ceil"] = builtins["ceiling"] // Synonym for CEILING.
 	builtins["cos"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -244,6 +245,18 @@ func registerMathFunc() {
 				} else {
 					return r, true
 				}
+			} else {
+				return e, false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["floor"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				return math.Floor(v), true
 			} else {
 				return e, false
 			}
@@ -301,6 +314,14 @@ func registerMathFunc() {
 		val:   ValidateTwoNumberArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["pi"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(_ api.FunctionContext, _ []interface{}) (interface{}, bool) {
+			return math.Pi, true
+		},
+		val:   ValidateNoArg,
+		check: returnNilIfHasAnyNil,
+	}
 	builtins["power"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -317,6 +338,7 @@ func registerMathFunc() {
 		val:   ValidateTwoNumberArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["pow"] = builtins["power"] // Synonym for POWER.
 	builtins["rand"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

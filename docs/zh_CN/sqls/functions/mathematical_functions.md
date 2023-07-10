@@ -76,8 +76,12 @@ bitnot(col)
 
 ## CEIL
 
+`CEIL()` 是 [`CEILING()`](#ceiling) 的别名。
+
+## CEILING
+
 ```text
-ceil(col)
+ceiling(col)
 ```
 
 将值舍入到最接近的 BIGINT 值。
@@ -106,6 +110,14 @@ exp(col)
 
 返回小数点参数的 e。
 
+## FLOOR
+
+```text
+floor(col)
+```
+
+返回小于 X 的最大整数值。
+
 ## LN
 
 ```text
@@ -129,6 +141,18 @@ mod(col1, col2)
 ```
 
 返回第一个参数除以第二个参数的余数。
+
+## PI
+
+```text
+pi()
+```
+
+返回 π (pi) 的值。
+
+## POW
+
+`POW()` 是函数 [`POWER()`](#power) 的别名。
 
 ## POWER
 
