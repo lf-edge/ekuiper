@@ -1025,6 +1025,24 @@ var TestData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152489253,
 		},
 	},
+	"demoArr2": {
+		{
+			Emitter: "demoArr2",
+			Message: map[string]interface{}{
+				"arr": []interface{}{1, 2, 3, 4, 5},
+				"x":   1,
+			},
+			Timestamp: 1541152489253,
+		},
+		{
+			Emitter: "demoArr2",
+			Message: map[string]interface{}{
+				"arr": []interface{}{1, 2, 3, 4, 5},
+				"x":   1,
+			},
+			Timestamp: 1541152489254,
+		},
+	},
 	"demoE2": {
 		{
 			Emitter: "demoE2",
