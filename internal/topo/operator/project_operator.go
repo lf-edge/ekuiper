@@ -67,6 +67,14 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 		}
 	case xsql.SingleCollection:
+		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
+			var sel []int
+			sel = make([]int, pp.LimitCount, pp.LimitCount)
+			for i := 0; i < pp.LimitCount; i++ {
+				sel[i] = i
+			}
+			input = input.Filter(sel).(xsql.SingleCollection)
+		}
 		var err error
 		if pp.IsAggregate {
 			input.SetIsAgg(true)
@@ -93,15 +101,15 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		if err != nil {
 			return err
 		}
+	case xsql.GroupedCollection: // The order is important, because single collection usually is also a groupedCollection
 		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
 			var sel []int
 			sel = make([]int, pp.LimitCount, pp.LimitCount)
 			for i := 0; i < pp.LimitCount; i++ {
 				sel[i] = i
 			}
-			return input.Filter(sel)
+			input = input.Filter(sel).(xsql.GroupedCollection)
 		}
-	case xsql.GroupedCollection: // The order is important, because single collection usually is also a groupedCollection
 		err := input.GroupRange(func(_ int, aggRow xsql.CollectionRow) (bool, error) {
 			ve := pp.getVE(aggRow, aggRow, input.GetWindowRange(), fv, afv)
 			if err := pp.project(aggRow, ve); err != nil {
@@ -112,18 +120,9 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		if err != nil {
 			return err
 		}
-		if pp.EnableLimit && pp.LimitCount > 0 && input.Len() > pp.LimitCount {
-			var sel []int
-			sel = make([]int, pp.LimitCount, pp.LimitCount)
-			for i := 0; i < pp.LimitCount; i++ {
-				sel[i] = i
-			}
-			return input.Filter(sel)
-		}
 	default:
 		return fmt.Errorf("run Select error: invalid input %[1]T(%[1]v)", input)
 	}
-
 	return data
 }
 
