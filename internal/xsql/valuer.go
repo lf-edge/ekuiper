@@ -462,7 +462,6 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 			return nil
 		}
 	case *ast.Wildcard:
-		// TODO: optimize this to avoid copy twice
 		all, _ := v.Valuer.Value("*", "")
 		al, ok := all.(map[string]interface{})
 		if !ok {

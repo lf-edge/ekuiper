@@ -44,7 +44,6 @@ func (p ProjectPlan) Init() *ProjectPlan {
 			switch ft := field.Expr.(type) {
 			case *ast.Wildcard:
 				p.allWildcard = true
-				// TODO: fix Prunecolums
 				p.exceptNames = ft.Except
 				for _, replace := range ft.Replace {
 					p.aliasFields = append(p.aliasFields, replace)

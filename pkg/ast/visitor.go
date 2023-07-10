@@ -52,6 +52,11 @@ func Walk(v Visitor, node Node) {
 			Walk(v, fr.Expression)
 		}
 
+	case *Wildcard:
+		for _, replace := range n.Replace {
+			Walk(v, replace)
+		}
+		
 	case Sources:
 		for _, s := range n {
 			Walk(v, s)
