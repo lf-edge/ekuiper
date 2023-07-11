@@ -76,7 +76,7 @@ bitnot(col)
 
 ## CEIL
 
-`CEIL()` 是 [`CEILING()`](#ceiling) 的别名。
+`CEIL()` 是 `CEILING()` 的别名。
 
 ## CEILING
 
@@ -152,7 +152,7 @@ pi()
 
 ## POW
 
-`POW()` 是函数 [`POWER()`](#power) 的别名。
+`POW()` 是函数 `POWER()` 的别名。
 
 ## POWER
 

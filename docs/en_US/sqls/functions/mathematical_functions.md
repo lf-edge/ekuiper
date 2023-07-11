@@ -77,7 +77,7 @@ Performs a bitwise NOT on the bit representations of the Int(-converted) argumen
 
 ## CEIL
 
-`CEIL()` is a synonym for [`CEILING()`](#ceiling).
+`CEIL()` is a synonym for `CEILING()`.
 
 ## CEILING
 
@@ -153,7 +153,7 @@ Returns the value of π (pi).
 
 ## POW
 
-`POW()` is a synonym for [`POWER()`](#power).
+`POW()` is a synonym for `POWER()`.
 
 ## POWER
 
