@@ -65,15 +65,16 @@ jobs:
         cp -r sdk/python/ekuiper plugins/portable/pysam/
     - name: Run topotest case
       run: |
-        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=github.com/lf-edge/ekuiper/internal/topo -coverprofile=topotest-plugin.out github.com/lf-edge/ekuiper/internal/topo/topotest/plugin
+        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=github.com/lf-edge/ekuiper/internal/topo -coverprofile=topotest-plugin.xml github.com/lf-edge/ekuiper/internal/topo/topotest/plugin
     - name: Run test case
       run: |
         source $HOME/.wasmedge/env
-        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.out $(go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/topo/topotest/plugin")
+        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/topo/topotest/plugin")
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        files: coverage.out,topotest-plugin.out
+        files: coverage.xml,topotest-plugin.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
         verbose: true
     - name: Run plugins test case
