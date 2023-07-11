@@ -54,7 +54,7 @@ func Walk(v Visitor, node Node) {
 
 	case *Wildcard:
 		for _, replace := range n.Replace {
-			Walk(v, replace)
+			Walk(v, &replace)
 		}
 
 	case Sources:
