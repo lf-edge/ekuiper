@@ -147,10 +147,14 @@ URL、正文和标头。其语法基于[数据模板](../../sinks/data_template.
 
 若目标 HTTP 服务支持过滤开始和结束时间，可以使用这两个属性来实现增量拉取。
 
+::: v-pre
+
 - 目标 HTTP 服务通过 url 参数传递开始和结束时间，则可配置
   URL，例如 `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}` 。
 - 目标 HTTP 服务通过 body 参数传递开始和结束时间，则可配置
   body，例如 `{"start": {{.LastPullTime}}, "end": {{.PullTime}}}`。
+
+:::
 
 ## 重载默认设置
 

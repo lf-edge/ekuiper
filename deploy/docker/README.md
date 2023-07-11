@@ -1,6 +1,6 @@
 # `Dockerfile` links
 
-- [lfedge/ekuiper](https://github.com/lf-edge/ekuiper/blob/master/docker/Dockerfile)
+- [lfedge/ekuiper](https://github.com/lf-edge/ekuiper/blob/master/deploy/docker/Dockerfile)
 
 # Quick reference
 

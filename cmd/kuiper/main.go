@@ -17,6 +17,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"net/rpc"
 	"os"
@@ -57,8 +58,25 @@ var (
 	LoadFileType = "relative"
 )
 
+var (
+	loadFileType string
+	etcPath      string
+)
+
+func init() {
+	flag.StringVar(&loadFileType, "loadFileTye", "", "loadFileType indicates the how to load path")
+	flag.StringVar(&etcPath, "etc", "", "etc indicates the path of etc dir")
+	if len(loadFileType) > 0 {
+		conf.PathConfig.LoadFileType = loadFileType
+	} else {
+		conf.PathConfig.LoadFileType = LoadFileType
+	}
+	if len(etcPath) > 0 {
+		conf.PathConfig.Dirs["etc"] = etcPath
+	}
+}
+
 func main() {
-	conf.LoadFileType = LoadFileType
 	app := cli.NewApp()
 	app.Version = Version
 

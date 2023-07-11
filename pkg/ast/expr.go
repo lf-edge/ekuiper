@@ -14,6 +14,11 @@
 
 package ast
 
+import (
+	"fmt"
+	"strconv"
+)
+
 type Node interface {
 	node()
 }
@@ -26,6 +31,8 @@ type NameNode interface {
 type Expr interface {
 	Node
 	expr()
+	// String function for the explain grammar, convert Expr to String
+	String() string
 }
 
 type Literal interface {
@@ -82,41 +89,101 @@ type Wildcard struct {
 
 func (pe *ParenExpr) expr() {}
 func (pe *ParenExpr) node() {}
+func (pe *ParenExpr) String() string {
+	e := ""
+	if pe.Expr != nil {
+		e += pe.Expr.String()
+	}
+	return "parenExpr:{ " + e + " }"
+}
 
 func (ae *ArrowExpr) expr() {}
 func (ae *ArrowExpr) node() {}
+func (ae *ArrowExpr) String() string {
+	e := ""
+	if ae.Expr != nil {
+		e += ae.Expr.String()
+	}
+	return "arrowExpr:{ " + e + " }"
+}
 
 func (be *BracketExpr) expr() {}
 func (be *BracketExpr) node() {}
+func (be *BracketExpr) String() string {
+	e := ""
+	if be.Expr != nil {
+		e += be.Expr.String()
+	}
+	return "bracketExpr:{ " + e + " }"
+}
 
 func (be *ColonExpr) expr() {}
 func (be *ColonExpr) node() {}
+func (be *ColonExpr) String() string {
+	s := ""
+	e := ""
+	if be.Start != nil {
+		s += "start:{ " + be.Start.String() + " }"
+	}
+	if be.End != nil {
+		if be.Start != nil {
+			e += ", "
+		}
+		e += "end:{ " + be.End.String() + " }"
+	}
+	return "ColonExpr:{ " + s + e + " }"
+}
 
 func (be *IndexExpr) expr() {}
 func (be *IndexExpr) node() {}
+func (be *IndexExpr) String() string {
+	i := ""
+	if be.Index != nil {
+		i += be.Index.String()
+	}
+	return i
+}
 
 func (w *Wildcard) expr() {}
 func (w *Wildcard) node() {}
+func (w *Wildcard) String() string {
+	return Tokens[w.Token]
+}
 
 func (bl *BooleanLiteral) expr()    {}
 func (bl *BooleanLiteral) literal() {}
 func (bl *BooleanLiteral) node()    {}
+func (bl *BooleanLiteral) String() string {
+	return strconv.FormatBool(bl.Val)
+}
 
 func (tl *TimeLiteral) expr()    {}
 func (tl *TimeLiteral) literal() {}
 func (tl *TimeLiteral) node()    {}
+func (tl *TimeLiteral) String() string {
+	return Tokens[tl.Val]
+}
 
 func (il *IntegerLiteral) expr()    {}
 func (il *IntegerLiteral) literal() {}
 func (il *IntegerLiteral) node()    {}
+func (il *IntegerLiteral) String() string {
+	return strconv.Itoa(il.Val)
+}
 
 func (nl *NumberLiteral) expr()    {}
 func (nl *NumberLiteral) literal() {}
 func (nl *NumberLiteral) node()    {}
+func (nl *NumberLiteral) String() string {
+	return fmt.Sprintf("%f", nl.Val)
+}
 
 func (sl *StringLiteral) expr()    {}
 func (sl *StringLiteral) literal() {}
 func (sl *StringLiteral) node()    {}
+func (sl *StringLiteral) String() string {
+	return sl.Val
+}
 
 type FuncType int
 
@@ -145,6 +212,24 @@ type Call struct {
 func (c *Call) expr()    {}
 func (c *Call) literal() {}
 func (c *Call) node()    {}
+func (c *Call) String() string {
+	args := ""
+	if c.Args != nil {
+		args = ", args:["
+		for i, arg := range c.Args {
+			args += arg.String()
+			if i != len(c.Args)-1 {
+				args += ", "
+			}
+		}
+		args += "]"
+	}
+	when := ""
+	if c.WhenExpr != nil {
+		when += ", when:{ " + c.WhenExpr.String() + " }"
+	}
+	return "Call:{ name:" + c.Name + args + when + " }"
+}
 
 type PartitionExpr struct {
 	Exprs []Expr
@@ -152,6 +237,16 @@ type PartitionExpr struct {
 
 func (pe *PartitionExpr) expr() {}
 func (pe *PartitionExpr) node() {}
+func (pe *PartitionExpr) String() string {
+	e := ""
+	for i, expr := range pe.Exprs {
+		e += expr.String()
+		if i != len(pe.Exprs)-1 {
+			e += ", "
+		}
+	}
+	return "PartitionExpr:[ " + e + " ]"
+}
 
 type BinaryExpr struct {
 	OP  Token
@@ -161,6 +256,18 @@ type BinaryExpr struct {
 
 func (be *BinaryExpr) expr() {}
 func (be *BinaryExpr) node() {}
+func (be *BinaryExpr) String() string {
+	info := ""
+	if be.LHS != nil && be.RHS != nil {
+		t := Tokens[be.OP]
+		if t == "[]" {
+			info += "binaryExpr:{ " + be.LHS.String() + "[" + be.RHS.String() + "] }"
+			return info
+		}
+		info += "binaryExpr:{ " + be.LHS.String() + " " + t + " " + be.RHS.String() + " }"
+	}
+	return info
+}
 
 type WhenClause struct {
 	// The condition Expression
@@ -170,6 +277,13 @@ type WhenClause struct {
 
 func (w *WhenClause) expr() {}
 func (w *WhenClause) node() {}
+func (w *WhenClause) String() string {
+	e := ""
+	if w.Expr != nil {
+		e += w.Expr.String()
+	}
+	return "whenClause:{ " + e + " }"
+}
 
 type CaseExpr struct {
 	// The compare value Expression. It can be a value Expression or nil.
@@ -181,6 +295,29 @@ type CaseExpr struct {
 
 func (c *CaseExpr) expr() {}
 func (c *CaseExpr) node() {}
+func (c *CaseExpr) String() string {
+	v := ""
+	if c.Value != nil {
+		v += "value:{ " + c.Value.String() + " }"
+	}
+	w := ""
+	if c.WhenClauses != nil && len(c.WhenClauses) != 0 {
+		if c.Value != nil {
+			w += ", "
+		}
+		w += "whenClauses:["
+		for i, clause := range c.WhenClauses {
+			if clause.Expr != nil {
+				w += "{ " + clause.String() + " }"
+				if i != len(c.WhenClauses)-1 {
+					w += ", "
+				}
+			}
+		}
+		w += "]"
+	}
+	return "caseExprValue:{ " + v + w + " }"
+}
 
 type ValueSetExpr struct {
 	LiteralExprs []Expr // ("A", "B", "C") or (1, 2, 3)
@@ -189,6 +326,27 @@ type ValueSetExpr struct {
 
 func (c *ValueSetExpr) expr() {}
 func (c *ValueSetExpr) node() {}
+func (c *ValueSetExpr) String() string {
+	le := ""
+	if c.LiteralExprs != nil && len(c.LiteralExprs) != 0 {
+		le += "literalExprs:["
+		for i, expr := range c.LiteralExprs {
+			le += expr.String()
+			if i != len(c.LiteralExprs)-1 {
+				le += ", "
+			}
+		}
+		le += "]"
+	}
+	a := ""
+	if c.ArrayExpr != nil {
+		if c.LiteralExprs != nil && len(c.LiteralExprs) != 0 {
+			a += ", "
+		}
+		a += "arrayExpr:{ " + c.ArrayExpr.String() + " }"
+	}
+	return "valueSetExpr:{ " + le + a + " }"
+}
 
 type BetweenExpr struct {
 	Lower  Expr
@@ -197,6 +355,20 @@ type BetweenExpr struct {
 
 func (b *BetweenExpr) expr() {}
 func (b *BetweenExpr) node() {}
+func (b *BetweenExpr) String() string {
+	low := ""
+	high := ""
+	if b.Lower != nil {
+		low += b.Lower.String()
+	}
+	if b.Higher != nil {
+		if b.Lower != nil {
+			high += ", "
+		}
+		high += b.Higher.String()
+	}
+	return "betweenExpr:{ " + low + high + " }"
+}
 
 type LimitExpr struct {
 	LimitCount *IntegerLiteral
@@ -204,6 +376,12 @@ type LimitExpr struct {
 
 func (l *LimitExpr) expr() {}
 func (l *LimitExpr) node() {}
+func (l *LimitExpr) String() string {
+	if l.LimitCount != nil {
+		return "limitExpr:{ " + l.LimitCount.String() + " }"
+	}
+	return ""
+}
 
 type StreamName string
 
@@ -221,6 +399,20 @@ type MetaRef struct {
 
 func (fr *MetaRef) expr() {}
 func (fr *MetaRef) node() {}
+func (fr *MetaRef) String() string {
+	sn := ""
+	n := ""
+	if fr.StreamName != "" {
+		sn += "streamName:" + string(fr.StreamName)
+	}
+	if fr.Name != "" {
+		if fr.StreamName != "" {
+			n += ", "
+		}
+		n += "fieldName:" + fr.Name
+	}
+	return "metaRef:{ " + sn + n + " }"
+}
 
 type JsonFieldRef struct {
 	Name string
@@ -228,6 +420,9 @@ type JsonFieldRef struct {
 
 func (fr *JsonFieldRef) expr() {}
 func (fr *JsonFieldRef) node() {}
+func (fr *JsonFieldRef) String() string {
+	return "jsonFieldName:" + fr.Name
+}
 
 type ColFuncField struct {
 	Name string
@@ -236,3 +431,16 @@ type ColFuncField struct {
 
 func (fr *ColFuncField) expr() {}
 func (fr *ColFuncField) node() {}
+func (fr *ColFuncField) String() string {
+	e := ""
+	if fr.Name != "" {
+		e += "name: " + fr.Name
+	}
+	if fr.Expr != nil {
+		if fr.Name != "" {
+			e += ", "
+		}
+		e += "expr:{ " + fr.Expr.String() + " }"
+	}
+	return "colFuncField:{ " + e + " }"
+}

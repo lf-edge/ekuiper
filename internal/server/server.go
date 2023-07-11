@@ -82,9 +82,8 @@ func createPaths() {
 	}
 }
 
-func StartUp(Version, LoadFileType string) {
+func StartUp(Version string) {
 	version = Version
-	conf.LoadFileType = LoadFileType
 	startTimeStamp = time.Now().Unix()
 	createPaths()
 	conf.InitConf()
