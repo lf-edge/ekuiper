@@ -1470,3 +1470,79 @@ func TestSingleSQLForBinary(t *testing.T) {
 		doRuleTestBySinkProps(t, tests, j, opt, 0, nil, byteFunc)
 	}
 }
+
+func TestWindowSQL(t *testing.T) {
+	// Reset
+	streamList := []string{"demoE"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: "TestHoppingWindowSQL1",
+			Sql:  `select size,color from demoE GROUP BY HOPPINGWINDOW(ss, 3, 5)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"color": "blue",
+						"size":  float64(2),
+					},
+					{
+						"color": "red",
+						"size":  float64(1),
+					},
+				},
+			},
+		},
+		{
+			Name: "TestHoppingWindowSQL2",
+			Sql:  `select size,color from demoE GROUP BY HOPPINGWINDOW(ss, 1, 2)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"color": "blue",
+						"size":  float64(2),
+					},
+				},
+				{
+					{
+						"color": "red",
+						"size":  float64(1),
+					},
+				},
+				{},
+			},
+		},
+		{
+			Name: "TestHoppingWindowSQL3",
+			Sql:  `select size,color from demoE GROUP BY HOPPINGWINDOW(ss, 2, 5)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"color": "red",
+						"size":  float64(1),
+					},
+				},
+			},
+		},
+	}
+	// Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+			IsEventTime:        true,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}

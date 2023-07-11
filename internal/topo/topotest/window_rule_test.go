@@ -772,53 +772,6 @@ func TestEventWindow(t *testing.T) {
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
-			Name: "TestHoppingWindowSQL1",
-			Sql:  `select size,color from demoE GROUP BY HOPPINGWINDOW(ss, 3, 5)`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"color": "blue",
-						"size":  float64(2),
-					},
-					{
-						"color": "red",
-						"size":  float64(1),
-					},
-				},
-			},
-		},
-		{
-			Name: "TestHoppingWindowSQL2",
-			Sql:  `select size,color from demoE GROUP BY HOPPINGWINDOW(ss, 1, 2)`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"color": "blue",
-						"size":  float64(2),
-					},
-				},
-				{
-					{
-						"color": "red",
-						"size":  float64(1),
-					},
-				},
-				{},
-			},
-		},
-		{
-			Name: "TestHoppingWindowSQL3",
-			Sql:  `select size,color from demoE GROUP BY HOPPINGWINDOW(ss, 2, 5)`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"color": "red",
-						"size":  float64(1),
-					},
-				},
-			},
-		},
-		{
 			Name: `TestEventWindowDelayRule0`,
 			Sql:  `SELECT size FROM demoE GROUP BY SlidingWindow(ss, 1,4) FILTER (where color = "red")`,
 			R: [][]map[string]interface{}{
