@@ -24,10 +24,22 @@ import (
 
 func TestLimitSQL(t *testing.T) {
 	// Reset
-	streamList := []string{"demo", "demoArr"}
+	streamList := []string{"demo", "demoArr", "demoArr2"}
 	HandleStream(false, streamList, t)
 	var r [][]map[string]interface{}
 	tests := []RuleTest{
+		{
+			Name: "TestLimitSQL01",
+			Sql:  `SELECT unnest(demoArr2.arr) as col, demo.size FROM demo inner join demoArr2 on demo.size = demoArr2.x group by SESSIONWINDOW(ss, 2, 1) limit 1;`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"col":  float64(1),
+						"size": float64(1),
+					},
+				},
+			},
+		},
 		{
 			Name: "TestLimitSQL0",
 			Sql:  `SELECT unnest(demoArr.arr3) as col, demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1) limit 1;`,

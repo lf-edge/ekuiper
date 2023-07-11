@@ -50,6 +50,13 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 		}
 		return results.rows
 	case xsql.Collection:
+		if ps.EnableLimit && ps.LimitCount > 0 && input.Len() > ps.LimitCount {
+			sel := make([]int, 0, ps.LimitCount)
+			for i := 0; i < ps.LimitCount; i++ {
+				sel = append(sel, i)
+			}
+			input = input.Filter(sel)
+		}
 		if err := ps.handleSRFRowForCollection(input); err != nil {
 			return err
 		}
