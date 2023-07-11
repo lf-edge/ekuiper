@@ -131,9 +131,13 @@ Returns the natural logarithm of a double value.
 
 ```text
 log(col)
+
+or
+
+log(b, col)
 ```
 
-Returns the base 10 logarithm of a double value.
+If called with one argument, the function returns the decimal logarithm of X. If X is less than or equal to 0, the function returns nil; if called with two arguments, the function returns the base B logarithm of X. Returns nil if X is less than or equal to 0, or if B is less than or equal to 1.
 
 ## MOD
 
