@@ -2164,6 +2164,176 @@ func Test_createLogicalPlan(t *testing.T) {
 				sendMeta:    false,
 			}.Init(),
 		},
+		{ // 23
+			sql: `SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* EXCEPT(id1, name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
+														},
+														"temp": {
+															Type: "bigint",
+														},
+														"myarray": {
+															Type: "array",
+															Items: &ast.JsonStreamField{
+																Type: "string",
+															},
+														},
+													},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													isWildCard:  false,
+													pruneFields: []string{"id1", "name"},
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token:  ast.ASTERISK,
+											Except: []string{"id1", "name"},
+										},
+									},
+									FuncType: ast.FuncTypeAgg},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "id1",
+						Expr: &ast.FieldRef{
+							Name:       "id1",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 24
+			sql: `SELECT temp FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* REPLACE(temp * 2 AS id1, myarray * 2 AS name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields: map[string]*ast.JsonStreamField{
+														"temp": {
+															Type: "bigint",
+														},
+														"myarray": {
+															Type: "array",
+															Items: &ast.JsonStreamField{
+																Type: "string",
+															},
+														},
+													},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													isWildCard:  false,
+													pruneFields: []string{"id1", "name"},
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token: ast.ASTERISK,
+											Replace: []ast.Field{
+												{
+													AName: "id1",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "temp",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+												{
+													AName: "name",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "myarray",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+											},
+										},
+									},
+									FuncType: ast.FuncTypeAgg},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "temp",
+						Expr: &ast.FieldRef{
+							Name:       "temp",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
@@ -3388,6 +3558,153 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					},
 				},
 				isAggregate: true,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 17
+			sql: `SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* EXCEPT(id1, name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields:    map[string]*ast.JsonStreamField{},
+													streamStmt:      streams["src1"],
+													metaFields:      []string{},
+													isWildCard:      false,
+													pruneFields:     []string{"id1", "name"},
+													isSchemaless:    true,
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token:  ast.ASTERISK,
+											Except: []string{"id1", "name"},
+										},
+									},
+									FuncType: ast.FuncTypeAgg},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "id1",
+						Expr: &ast.FieldRef{
+							Name:       "id1",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 18
+			sql: `SELECT temp FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* REPLACE(temp * 2 AS id1, myarray * 2 AS name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields:    map[string]*ast.JsonStreamField{},
+													streamStmt:      streams["src1"],
+													metaFields:      []string{},
+													isWildCard:      false,
+													pruneFields:     []string{"id1", "name"},
+													isSchemaless:    true,
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token: ast.ASTERISK,
+											Replace: []ast.Field{
+												{
+													AName: "id1",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "temp",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+												{
+													AName: "name",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "myarray",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+											},
+										},
+									},
+									FuncType: ast.FuncTypeAgg},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "temp",
+						Expr: &ast.FieldRef{
+							Name:       "temp",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
 				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
