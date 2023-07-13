@@ -113,8 +113,9 @@ func Test_createLogicalPlan(t *testing.T) {
 												Type: "string",
 											},
 										},
-										streamStmt: streams["src1"],
-										metaFields: []string{},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										pruneFields: []string{},
 									}.Init(),
 								},
 							},
@@ -150,8 +151,9 @@ func Test_createLogicalPlan(t *testing.T) {
 									Type: "string",
 								},
 							},
-							streamStmt: streams["src1"],
-							metaFields: []string{},
+							streamStmt:  streams["src1"],
+							metaFields:  []string{},
+							pruneFields: []string{},
 						}.Init(),
 					},
 				},
@@ -192,8 +194,9 @@ func Test_createLogicalPlan(t *testing.T) {
 												},
 											},
 										},
-										streamStmt: streams["src1"],
-										metaFields: []string{},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										pruneFields: []string{},
 									}.Init(),
 								},
 							},
@@ -253,8 +256,9 @@ func Test_createLogicalPlan(t *testing.T) {
 												Type: "string",
 											},
 										},
-										streamStmt: streams["src1"],
-										metaFields: []string{},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										pruneFields: []string{},
 									}.Init(),
 								},
 							},
@@ -304,8 +308,9 @@ func Test_createLogicalPlan(t *testing.T) {
 									Type: "bigint",
 								},
 							},
-							streamStmt: streams["src1"],
-							metaFields: []string{},
+							streamStmt:  streams["src1"],
+							metaFields:  []string{},
+							pruneFields: []string{},
 						}.Init(),
 					},
 				},
@@ -351,8 +356,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -405,8 +411,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 												DataSourcePlan{
 													name: "src2",
@@ -421,6 +428,7 @@ func Test_createLogicalPlan(t *testing.T) {
 													streamStmt:      streams["src2"],
 													metaFields:      []string{},
 													timestampFormat: "YYYY-MM-dd HH:mm:ss",
+													pruneFields:     []string{},
 												}.Init(),
 											},
 										},
@@ -497,8 +505,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -572,8 +581,9 @@ func Test_createLogicalPlan(t *testing.T) {
 																		},
 																	},
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																streamStmt:  streams["src1"],
+																metaFields:  []string{},
+																pruneFields: []string{},
 															}.Init(),
 														},
 													},
@@ -638,8 +648,9 @@ func Test_createLogicalPlan(t *testing.T) {
 																		Type: "bigint",
 																	},
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																streamStmt:  streams["src1"],
+																metaFields:  []string{},
+																pruneFields: []string{},
 															}.Init(),
 														},
 													},
@@ -673,6 +684,7 @@ func Test_createLogicalPlan(t *testing.T) {
 																streamStmt:      streams["src2"],
 																metaFields:      []string{},
 																timestampFormat: "YYYY-MM-dd HH:mm:ss",
+																pruneFields:     []string{},
 															}.Init(),
 														},
 													},
@@ -746,8 +758,9 @@ func Test_createLogicalPlan(t *testing.T) {
 																		Type: "bigint",
 																	},
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																streamStmt:  streams["src1"],
+																metaFields:  []string{},
+																pruneFields: []string{},
 															}.Init(),
 														},
 													},
@@ -769,6 +782,7 @@ func Test_createLogicalPlan(t *testing.T) {
 													},
 													streamStmt:      streams["src2"],
 													metaFields:      []string{},
+													pruneFields:     []string{},
 													timestampFormat: "YYYY-MM-dd HH:mm:ss",
 												}.Init(),
 											},
@@ -856,8 +870,9 @@ func Test_createLogicalPlan(t *testing.T) {
 																		Type: "bigint",
 																	},
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																streamStmt:  streams["src1"],
+																metaFields:  []string{},
+																pruneFields: []string{},
 															}.Init(),
 														},
 													},
@@ -885,8 +900,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["tableInPlanner"],
-													metaFields: []string{},
+													streamStmt:  streams["tableInPlanner"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -955,8 +971,9 @@ func Test_createLogicalPlan(t *testing.T) {
 																		Type: "bigint",
 																	},
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																streamStmt:  streams["src1"],
+																metaFields:  []string{},
+																pruneFields: []string{},
 															}.Init(),
 														},
 													},
@@ -977,8 +994,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["tableInPlanner"],
-													metaFields: []string{},
+													streamStmt:  streams["tableInPlanner"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -1054,8 +1072,9 @@ func Test_createLogicalPlan(t *testing.T) {
 												Type: "bigint",
 											},
 										},
-										streamStmt: streams["src1"],
-										metaFields: []string{"Humidity", "device", "id"},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{"Humidity", "device", "id"},
+										pruneFields: []string{},
 									}.Init(),
 								},
 							},
@@ -1136,6 +1155,7 @@ func Test_createLogicalPlan(t *testing.T) {
 													streamStmt:      streams["src2"],
 													metaFields:      []string{},
 													timestampFormat: "YYYY-MM-dd HH:mm:ss",
+													pruneFields:     []string{},
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
@@ -1147,8 +1167,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["tableInPlanner"],
-													metaFields: []string{},
+													streamStmt:  streams["tableInPlanner"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -1240,9 +1261,10 @@ func Test_createLogicalPlan(t *testing.T) {
 												Type: "bigint",
 											},
 										},
-										streamStmt: streams["src1"],
-										metaFields: []string{},
-										allMeta:    true,
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										allMeta:     true,
+										pruneFields: []string{},
 									}.Init(),
 								},
 							},
@@ -1309,8 +1331,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -1398,9 +1421,10 @@ func Test_createLogicalPlan(t *testing.T) {
 									},
 								},
 							},
-							streamStmt: streams["src1"],
-							metaFields: []string{"device"},
-							isWildCard: true,
+							streamStmt:  streams["src1"],
+							metaFields:  []string{"device"},
+							isWildCard:  true,
+							pruneFields: []string{},
 						}.Init(),
 					},
 				},
@@ -1458,8 +1482,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -1551,8 +1576,9 @@ func Test_createLogicalPlan(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["src1"],
-													metaFields: []string{},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -1659,8 +1685,9 @@ func Test_createLogicalPlan(t *testing.T) {
 																		},
 																	},
 																},
-																streamStmt: streams["src1"],
-																metaFields: []string{},
+																streamStmt:  streams["src1"],
+																metaFields:  []string{},
+																pruneFields: []string{},
 															}.Init(),
 														},
 													},
@@ -1756,7 +1783,8 @@ func Test_createLogicalPlan(t *testing.T) {
 											},
 											StreamType: ast.StreamType(0),
 										},
-										metaFields: []string{},
+										metaFields:  []string{},
+										pruneFields: []string{},
 									}.Init(),
 								},
 							},
@@ -1870,6 +1898,444 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 			}.Init(),
 		},
+		{ // 19
+			sql: `SELECT * EXCEPT(id1, name), meta(device) FROM src1`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src1",
+							streamFields: map[string]*ast.JsonStreamField{
+								"temp": {
+									Type: "bigint",
+								},
+								"myarray": {
+									Type: "array",
+									Items: &ast.JsonStreamField{
+										Type: "string",
+									},
+								},
+							},
+							streamStmt:  streams["src1"],
+							metaFields:  []string{"device"},
+							isWildCard:  false,
+							pruneFields: []string{"id1", "name"},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "*",
+						Expr: &ast.Wildcard{
+							Token:  ast.ASTERISK,
+							Except: []string{"id1", "name"},
+						},
+					},
+					{
+						Name: "meta",
+						Expr: &ast.Call{
+							Name: "meta",
+							Args: []ast.Expr{
+								&ast.MetaRef{
+									StreamName: ast.DefaultStream,
+									Name:       "device",
+								},
+							},
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: true,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 20
+			sql: `SELECT * REPLACE(temp * 2 AS id1, myarray * 2 AS name), meta(device) FROM src1`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src1",
+							streamFields: map[string]*ast.JsonStreamField{
+								"temp": {
+									Type: "bigint",
+								},
+								"myarray": {
+									Type: "array",
+									Items: &ast.JsonStreamField{
+										Type: "string",
+									},
+								},
+							},
+							streamStmt:  streams["src1"],
+							metaFields:  []string{"device"},
+							isWildCard:  false,
+							pruneFields: []string{"id1", "name"},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "*",
+						Expr: &ast.Wildcard{
+							Token: ast.ASTERISK,
+							Replace: []ast.Field{
+								{
+									AName: "id1",
+									Expr: &ast.BinaryExpr{
+										OP: ast.MUL,
+										LHS: &ast.FieldRef{
+											Name:       "temp",
+											StreamName: "src1",
+										},
+										RHS: &ast.IntegerLiteral{Val: 2},
+									},
+								},
+								{
+									AName: "name",
+									Expr: &ast.BinaryExpr{
+										OP: ast.MUL,
+										LHS: &ast.FieldRef{
+											Name:       "myarray",
+											StreamName: "src1",
+										},
+										RHS: &ast.IntegerLiteral{Val: 2},
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "meta",
+						Expr: &ast.Call{
+							Name: "meta",
+							Args: []ast.Expr{
+								&ast.MetaRef{
+									StreamName: ast.DefaultStream,
+									Name:       "device",
+								},
+							},
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: true,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 21
+			sql: `SELECT collect( * EXCEPT(id1, name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						WindowPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: map[string]*ast.JsonStreamField{
+											"temp": {
+												Type: "bigint",
+											},
+											"myarray": {
+												Type: "array",
+												Items: &ast.JsonStreamField{
+													Type: "string",
+												},
+											},
+										},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										isWildCard:  false,
+										pruneFields: []string{"id1", "name"},
+									}.Init(),
+								},
+							},
+							condition: nil,
+							wtype:     ast.TUMBLING_WINDOW,
+							length:    10,
+							timeUnit:  ast.SS,
+							interval:  0,
+							limit:     0,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "collect",
+						Expr: &ast.Call{
+							Name:     "collect",
+							FuncType: ast.FuncTypeAgg,
+							Args: []ast.Expr{
+								&ast.Wildcard{
+									Token:  ast.ASTERISK,
+									Except: []string{"id1", "name"},
+								},
+							},
+						},
+					},
+				},
+				isAggregate: true,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 22
+			sql: `SELECT collect( * REPLACE(temp * 2 AS id1, myarray * 2 AS name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						WindowPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: map[string]*ast.JsonStreamField{
+											"temp": {
+												Type: "bigint",
+											},
+											"myarray": {
+												Type: "array",
+												Items: &ast.JsonStreamField{
+													Type: "string",
+												},
+											},
+										},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										isWildCard:  false,
+										pruneFields: []string{"id1", "name"},
+									}.Init(),
+								},
+							},
+							condition: nil,
+							wtype:     ast.TUMBLING_WINDOW,
+							length:    10,
+							timeUnit:  ast.SS,
+							interval:  0,
+							limit:     0,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "collect",
+						Expr: &ast.Call{
+							Name:     "collect",
+							FuncType: ast.FuncTypeAgg,
+							Args: []ast.Expr{
+								&ast.Wildcard{
+									Token: ast.ASTERISK,
+									Replace: []ast.Field{
+										{
+											AName: "id1",
+											Expr: &ast.BinaryExpr{
+												OP: ast.MUL,
+												LHS: &ast.FieldRef{
+													Name:       "temp",
+													StreamName: "src1",
+												},
+												RHS: &ast.IntegerLiteral{Val: 2},
+											},
+										},
+										{
+											AName: "name",
+											Expr: &ast.BinaryExpr{
+												OP: ast.MUL,
+												LHS: &ast.FieldRef{
+													Name:       "myarray",
+													StreamName: "src1",
+												},
+												RHS: &ast.IntegerLiteral{Val: 2},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				isAggregate: true,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 23
+			sql: `SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* EXCEPT(id1, name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": {
+															Type: "bigint",
+														},
+														"temp": {
+															Type: "bigint",
+														},
+														"myarray": {
+															Type: "array",
+															Items: &ast.JsonStreamField{
+																Type: "string",
+															},
+														},
+													},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													isWildCard:  false,
+													pruneFields: []string{"id1", "name"},
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token:  ast.ASTERISK,
+											Except: []string{"id1", "name"},
+										},
+									},
+									FuncType: ast.FuncTypeAgg,
+								},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "id1",
+						Expr: &ast.FieldRef{
+							Name:       "id1",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 24
+			sql: `SELECT temp FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* REPLACE(temp * 2 AS id1, myarray * 2 AS name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields: map[string]*ast.JsonStreamField{
+														"temp": {
+															Type: "bigint",
+														},
+														"myarray": {
+															Type: "array",
+															Items: &ast.JsonStreamField{
+																Type: "string",
+															},
+														},
+													},
+													streamStmt:  streams["src1"],
+													metaFields:  []string{},
+													isWildCard:  false,
+													pruneFields: []string{"id1", "name"},
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token: ast.ASTERISK,
+											Replace: []ast.Field{
+												{
+													AName: "id1",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "temp",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+												{
+													AName: "name",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "myarray",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+											},
+										},
+									},
+									FuncType: ast.FuncTypeAgg,
+								},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "temp",
+						Expr: &ast.FieldRef{
+							Name:       "temp",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
@@ -1967,6 +2433,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							streamStmt:   streams["src1"],
 							isSchemaless: true,
 							metaFields:   []string{},
+							pruneFields:  []string{},
 						}.Init(),
 					},
 				},
@@ -2000,6 +2467,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													streamStmt:   streams["src1"],
 													metaFields:   []string{},
 													isSchemaless: true,
+													pruneFields:  []string{},
 												}.Init(),
 											},
 										},
@@ -2050,6 +2518,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													streamStmt:   streams["src1"],
 													metaFields:   []string{},
 													isSchemaless: true,
+													pruneFields:  []string{},
 												}.Init(),
 												DataSourcePlan{
 													name: "src2",
@@ -2061,6 +2530,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													isSchemaless: true,
 													streamStmt:   streams["src2"],
 													metaFields:   []string{},
+													pruneFields:  []string{},
 												}.Init(),
 											},
 										},
@@ -2133,6 +2603,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													isSchemaless: true,
 													streamStmt:   streams["src1"],
 													metaFields:   []string{},
+													pruneFields:  []string{},
 												}.Init(),
 											},
 										},
@@ -2192,6 +2663,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
 																isSchemaless: true,
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -2254,6 +2726,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 																isSchemaless: true,
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -2284,6 +2757,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 																isSchemaless: true,
 																streamStmt:   streams["src2"],
 																metaFields:   []string{},
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -2355,6 +2829,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 																isSchemaless: true,
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -2374,6 +2849,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													isSchemaless: true,
 													streamStmt:   streams["src2"],
 													metaFields:   []string{},
+													pruneFields:  []string{},
 												}.Init(),
 											},
 										},
@@ -2458,6 +2934,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 																isSchemaless: true,
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -2485,8 +2962,9 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["tableInPlanner"],
-													metaFields: []string{},
+													streamStmt:  streams["tableInPlanner"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -2553,6 +3031,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 																isSchemaless: true,
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -2573,8 +3052,9 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["tableInPlanner"],
-													metaFields: []string{},
+													streamStmt:  streams["tableInPlanner"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -2650,6 +3130,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 										isSchemaless: true,
 										streamStmt:   streams["src1"],
 										metaFields:   []string{"Humidity", "device", "id"},
+										pruneFields:  []string{},
 									}.Init(),
 								},
 							},
@@ -2726,6 +3207,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													isSchemaless: true,
 													streamStmt:   streams["src2"],
 													metaFields:   []string{},
+													pruneFields:  []string{},
 												}.Init(),
 												DataSourcePlan{
 													name: "tableInPlanner",
@@ -2737,8 +3219,9 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 															Type: "bigint",
 														},
 													},
-													streamStmt: streams["tableInPlanner"],
-													metaFields: []string{},
+													streamStmt:  streams["tableInPlanner"],
+													metaFields:  []string{},
+													pruneFields: []string{},
 												}.Init(),
 											},
 										},
@@ -2828,6 +3311,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							isSchemaless: true,
 							streamStmt:   streams["src1"],
 							metaFields:   []string{},
+							pruneFields:  []string{},
 						}.Init(),
 					},
 				},
@@ -2851,6 +3335,381 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 					},
 				},
 				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 13
+			sql: `SELECT * EXCEPT(id1, name), meta(device) FROM src1`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src1",
+							streamFields:    map[string]*ast.JsonStreamField{},
+							streamStmt:      streams["src1"],
+							metaFields:      []string{"device"},
+							isWildCard:      false,
+							pruneFields:     []string{"id1", "name"},
+							isSchemaless:    true,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "*",
+						Expr: &ast.Wildcard{
+							Token:  ast.ASTERISK,
+							Except: []string{"id1", "name"},
+						},
+					},
+					{
+						Name: "meta",
+						Expr: &ast.Call{
+							Name: "meta",
+							Args: []ast.Expr{
+								&ast.MetaRef{
+									StreamName: ast.DefaultStream,
+									Name:       "device",
+								},
+							},
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: true,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 14
+			sql: `SELECT * REPLACE(temp * 2 AS id1, myarray * 2 AS name), meta(device) FROM src1`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src1",
+							streamFields:    map[string]*ast.JsonStreamField{},
+							streamStmt:      streams["src1"],
+							metaFields:      []string{"device"},
+							isWildCard:      false,
+							pruneFields:     []string{"id1", "name"},
+							isSchemaless:    true,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "*",
+						Expr: &ast.Wildcard{
+							Token: ast.ASTERISK,
+							Replace: []ast.Field{
+								{
+									AName: "id1",
+									Expr: &ast.BinaryExpr{
+										OP: ast.MUL,
+										LHS: &ast.FieldRef{
+											Name:       "temp",
+											StreamName: "src1",
+										},
+										RHS: &ast.IntegerLiteral{Val: 2},
+									},
+								},
+								{
+									AName: "name",
+									Expr: &ast.BinaryExpr{
+										OP: ast.MUL,
+										LHS: &ast.FieldRef{
+											Name:       "myarray",
+											StreamName: "src1",
+										},
+										RHS: &ast.IntegerLiteral{Val: 2},
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "meta",
+						Expr: &ast.Call{
+							Name: "meta",
+							Args: []ast.Expr{
+								&ast.MetaRef{
+									StreamName: ast.DefaultStream,
+									Name:       "device",
+								},
+							},
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: true,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 15
+			sql: `SELECT collect( * EXCEPT(id1, name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						WindowPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields:    map[string]*ast.JsonStreamField{},
+										streamStmt:      streams["src1"],
+										metaFields:      []string{},
+										isWildCard:      false,
+										pruneFields:     []string{"id1", "name"},
+										isSchemaless:    true,
+									}.Init(),
+								},
+							},
+							condition: nil,
+							wtype:     ast.TUMBLING_WINDOW,
+							length:    10,
+							timeUnit:  ast.SS,
+							interval:  0,
+							limit:     0,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "collect",
+						Expr: &ast.Call{
+							Name:     "collect",
+							FuncType: ast.FuncTypeAgg,
+							Args: []ast.Expr{
+								&ast.Wildcard{
+									Token:  ast.ASTERISK,
+									Except: []string{"id1", "name"},
+								},
+							},
+						},
+					},
+				},
+				isAggregate: true,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 16
+			sql: `SELECT collect( * REPLACE(temp * 2 AS id1, myarray * 2 AS name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						WindowPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields:    map[string]*ast.JsonStreamField{},
+										streamStmt:      streams["src1"],
+										metaFields:      []string{},
+										isWildCard:      false,
+										pruneFields:     []string{"id1", "name"},
+										isSchemaless:    true,
+									}.Init(),
+								},
+							},
+							condition: nil,
+							wtype:     ast.TUMBLING_WINDOW,
+							length:    10,
+							timeUnit:  ast.SS,
+							interval:  0,
+							limit:     0,
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "collect",
+						Expr: &ast.Call{
+							Name:     "collect",
+							FuncType: ast.FuncTypeAgg,
+							Args: []ast.Expr{
+								&ast.Wildcard{
+									Token: ast.ASTERISK,
+									Replace: []ast.Field{
+										{
+											AName: "id1",
+											Expr: &ast.BinaryExpr{
+												OP: ast.MUL,
+												LHS: &ast.FieldRef{
+													Name:       "temp",
+													StreamName: "src1",
+												},
+												RHS: &ast.IntegerLiteral{Val: 2},
+											},
+										},
+										{
+											AName: "name",
+											Expr: &ast.BinaryExpr{
+												OP: ast.MUL,
+												LHS: &ast.FieldRef{
+													Name:       "myarray",
+													StreamName: "src1",
+												},
+												RHS: &ast.IntegerLiteral{Val: 2},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				isAggregate: true,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 17
+			sql: `SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* EXCEPT(id1, name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields:    map[string]*ast.JsonStreamField{},
+													streamStmt:      streams["src1"],
+													metaFields:      []string{},
+													isWildCard:      false,
+													pruneFields:     []string{"id1", "name"},
+													isSchemaless:    true,
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token:  ast.ASTERISK,
+											Except: []string{"id1", "name"},
+										},
+									},
+									FuncType: ast.FuncTypeAgg,
+								},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "id1",
+						Expr: &ast.FieldRef{
+							Name:       "id1",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: false,
+				sendMeta:    false,
+			}.Init(),
+		}, { // 18
+			sql: `SELECT temp FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* REPLACE(temp * 2 AS id1, myarray * 2 AS name)) > 0`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						HavingPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									WindowPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													baseLogicalPlan: baseLogicalPlan{},
+													name:            "src1",
+													streamFields:    map[string]*ast.JsonStreamField{},
+													streamStmt:      streams["src1"],
+													metaFields:      []string{},
+													isWildCard:      false,
+													pruneFields:     []string{"id1", "name"},
+													isSchemaless:    true,
+												}.Init(),
+											},
+										},
+										condition: nil,
+										wtype:     ast.TUMBLING_WINDOW,
+										length:    10,
+										timeUnit:  ast.SS,
+										interval:  0,
+										limit:     0,
+									}.Init(),
+								},
+							},
+							condition: &ast.BinaryExpr{
+								LHS: &ast.Call{
+									Name:   "count",
+									FuncId: 0,
+									Args: []ast.Expr{
+										&ast.Wildcard{
+											Token: ast.ASTERISK,
+											Replace: []ast.Field{
+												{
+													AName: "id1",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "temp",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+												{
+													AName: "name",
+													Expr: &ast.BinaryExpr{
+														OP: ast.MUL,
+														LHS: &ast.FieldRef{
+															Name:       "myarray",
+															StreamName: "src1",
+														},
+														RHS: &ast.IntegerLiteral{Val: 2},
+													},
+												},
+											},
+										},
+									},
+									FuncType: ast.FuncTypeAgg,
+								},
+								OP:  ast.GT,
+								RHS: &ast.IntegerLiteral{Val: 0},
+							},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name: "temp",
+						Expr: &ast.FieldRef{
+							Name:       "temp",
+							StreamName: "src1",
+						},
+					},
+				},
+				isAggregate: false,
+				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
 		},
@@ -2943,6 +3802,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 										isSchemaless: true,
 										streamStmt:   streams["src1"],
 										metaFields:   []string{},
+										pruneFields:  []string{},
 									}.Init(),
 								},
 							},
@@ -3024,6 +3884,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																isSchemaless: true,
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -3163,6 +4024,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 													isSchemaless: true,
 													streamStmt:   streams["src1"],
 													metaFields:   []string{},
+													pruneFields:  []string{},
 												}.Init(),
 											},
 										},
@@ -3280,6 +4142,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 													metaFields:      []string{},
 													isWildCard:      true,
 													isSchemaless:    true,
+													pruneFields:     []string{},
 												}.Init(),
 											},
 										},
