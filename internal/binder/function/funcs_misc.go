@@ -91,6 +91,18 @@ func registerMiscFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["to_seconds"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			t, err := cast.InterfaceToTime(args[0], "")
+			if err != nil {
+				return err, false
+			}
+			return t.Unix(), true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
 	builtins["to_json"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

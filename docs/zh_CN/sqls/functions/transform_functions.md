@@ -30,6 +30,14 @@ convert_tz(col, "Asia/Shanghai")
 
 > 注意：在基于 alpine 的环境里使用该函数，需要确保已经正确安装（`apk add tzdata`）了时区数据。
 
+## TO_SECONDS
+
+```text
+to_seconds(col)
+```
+
+`to_seconds` 首先将 col 转换为日期时间并将其作为 Unix 时间返回，即自 1970 年 1 月 1 日 UTC 以来经过的秒数。
+
 ## CHR
 
 ```text
