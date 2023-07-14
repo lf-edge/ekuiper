@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,13 +44,14 @@ func NewPreprocessor(isSchemaless bool, fields map[string]*ast.JsonStreamField, 
 	p := &Preprocessor{
 		isEventTime: iet, timestampField: timestampField, isBinary: isBinary,
 	}
+	p.defaultFieldProcessor = defaultFieldProcessor{
+		timestampFormat: timestampFormat,
+	}
 	conf.Log.Infof("preprocessor isSchemaless %v, strictValidation %v, isBinary %v", isSchemaless, strictValidation, strictValidation)
 	if !isSchemaless && (strictValidation || isBinary) {
 		p.checkSchema = true
 		conf.Log.Infof("preprocessor check schema")
-		p.defaultFieldProcessor = defaultFieldProcessor{
-			streamFields: fields, timestampFormat: timestampFormat,
-		}
+		p.defaultFieldProcessor.streamFields = fields
 	}
 	return p, nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
@@ -688,11 +690,12 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorTime_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		pp := &Preprocessor{checkSchema: true}
-		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
+		timestampFormat := ""
 		if tt.stmt.Options != nil {
-			pp.timestampFormat = tt.stmt.Options.TIMESTAMP_FORMAT
+			timestampFormat = tt.stmt.Options.TIMESTAMP_FORMAT
 		}
+		pp, e := NewPreprocessor(false, tt.stmt.StreamFields.ToJsonSchema(), false, nil, false, "", timestampFormat, false, true)
+		assert.NoError(t, e)
 		dm := make(map[string]interface{})
 		if e := json.Unmarshal(tt.data, &dm); e != nil {
 			log.Fatal(e)
