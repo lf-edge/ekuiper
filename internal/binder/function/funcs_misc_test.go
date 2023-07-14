@@ -147,6 +147,37 @@ func TestCoalesceExec(t *testing.T) {
 	}
 }
 
+func TestToSeconds(t *testing.T) {
+	f, ok := builtins["to_seconds"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				time.Unix(1e9, 0),
+			},
+			result: int64(1e9),
+		}, { // 1
+			args: []interface{}{
+				nil,
+			},
+			result: errors.New("unsupported type to convert to timestamp <nil>"),
+		},
+	}
+	for _, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		assert.Equal(t, tt.result, result)
+	}
+}
+
 func TestToJson(t *testing.T) {
 	f, ok := builtins["to_json"]
 	if !ok {

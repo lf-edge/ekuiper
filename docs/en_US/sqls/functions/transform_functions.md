@@ -32,6 +32,14 @@ Convert a time value to a time in the corresponding time zone. The time zone par
 
 > Note: To use this function in an alpine-based environment, you need to ensure that the time zone data has been properly installed (e.g. `apk add tzdata`).
 
+## TO_SECONDS
+
+```text
+to_seconds(col)
+```
+
+`to_seconds` converts col to a datetime first and returns it as a Unix time, the number of seconds elapsed since January 1, 1970 UTC.
+
 ## ENCODE
 
 ```text
