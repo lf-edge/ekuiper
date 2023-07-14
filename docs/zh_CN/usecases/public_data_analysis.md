@@ -205,3 +205,24 @@ Content-Type: application/json
 其中的 `velocity` 就是我们所需要的单车速度。
 
 ## 可视化数据
+
+最后，我们可以通过计算的数据，将其存储在相应的 DB 中，并通过外部的 API 做成需要的图标显示出来。
+
+```json
+{
+  "influx2": {
+    "addr": "http://influx.db:8086",
+    "token": "token",
+    "org": "admin",
+    "measurement": "test",
+    "bucket": "bucketName",
+    "tagKey": "tagKey",
+    "tagValue": "tagValue",
+    "fields": ["velocity", "user_id"]
+  }
+}
+```
+
+例如，我们可以将前四位的用户骑行的平均速度用 [quickchart.io](https://quickchart.io/) 的柱状图接口将其可视化出来：
+
+![chart](https://quickchart.io/chart?bkg=white&c=%7B%0A%20%20type%3A%20%27bar%27%2C%0A%20%20data%3A%20%7B%0A%20%20%20%20labels%3A%20%5B%279fb2d1e%27%2C%20%271184eec%27%2C%20%2730a457b%27%2C%20%27bee78cd%27%5D%2C%0A%20%20%20%20datasets%3A%20%5B%7B%0A%20%20%20%20%20%20label%3A%20%27Users%27%2C%0A%20%20%20%20%20%20data%3A%20%5B2.383%2C%201.550%2C%202.524%2C%200.293%5D%0A%20%20%20%20%7D%5D%0A%20%20%7D%0A%7D)
