@@ -138,7 +138,40 @@ With this rule, from the sample input sequence we can get the following output:
 {"humidity":80.5,"temperature":30.34,"ts":1681786071362}
 ```
 
-### 4. Fixed interval average output
+### 4. Down-Sampling
+
+This merging algorithm uses time as the trigger to control emit frequency,
+and combines the temperature and humidity values from a fixed time interval to send out.
+
+```SQL
+SELECT merge_agg(*) as result FROM demoStream GROUP BY TUMBLINGWINDOW(ms, 500)
+```
+
+As shown in the above SQL, `merge_agg` function merge all the data in a window into one message.
+In this way, every 500 milliseconds, we can get an event containing the latest temperature and humidity.
+
+With this rule, from the sample input sequence we can get the following output:
+
+```json lines
+{
+  "result": {
+    "device_id": "A",
+    "humidity": 83.86,
+    "temperature": 27.68,
+    "ts": 1681786070479
+  }
+}
+{
+  "result": {
+    "device_id": "A",
+    "humidity": 80.85,
+    "temperature": 28.51,
+    "ts": 1681786070921
+  }
+}
+```
+
+### 5. Fixed interval average output
 
 Previous algorithms are all based on collecting all data as the goal, but in actual application, users may not be interested in each individual real-time value, but in the trend of a certain index such as the average value. In this case, we can use the `TUMBLINGWINDOW` time window, and the data in each time window will be merged into one piece of data and aggregated. Since our sample data is relatively short, there is only 1 second of data in total, in order to get the output, we set the time window here to be relatively short 500 milliseconds. In order to get a fixed result, we use event time to calculate the window, so that each window can be calculated at a fixed time.
 
