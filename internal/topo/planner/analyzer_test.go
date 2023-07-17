@@ -104,7 +104,7 @@ var tests = []struct {
 	},
 	{ // 10
 		sql: `SELECT sum(temp) as temp, count(temp) as temp FROM src1`,
-		r:   newErrorStruct("duplicate alias temp"),
+		r:   newErrorStruct("invalid argument for func count: aggregate argument is not allowed"),
 	},
 	{ // 11
 		sql: `SELECT sum(temp) as temp1, count(temp) as ct FROM src1`,

@@ -1097,10 +1097,6 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []ast.Field{
 					{
-						Expr:  &ast.FieldRef{Name: "temp", StreamName: "src1"},
-						Name:  "temp",
-						AName: "",
-					}, {
 						Expr: &ast.FieldRef{Name: "eid", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
 							&ast.Call{Name: "meta", FuncId: 0, Args: []ast.Expr{&ast.MetaRef{
 								Name:       "id",
@@ -1111,7 +1107,8 @@ func Test_createLogicalPlan(t *testing.T) {
 						)},
 						Name:  "meta",
 						AName: "eid",
-					}, {
+					},
+					{
 						Expr: &ast.FieldRef{Name: "hdevice", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
 							&ast.Call{Name: "meta", FuncId: 1, Args: []ast.Expr{
 								&ast.BinaryExpr{
@@ -1125,6 +1122,11 @@ func Test_createLogicalPlan(t *testing.T) {
 						)},
 						Name:  "meta",
 						AName: "hdevice",
+					},
+					{
+						Expr:  &ast.FieldRef{Name: "temp", StreamName: "src1"},
+						Name:  "temp",
+						AName: "",
 					},
 				},
 				isAggregate: false,
@@ -1287,10 +1289,6 @@ func Test_createLogicalPlan(t *testing.T) {
 				},
 				fields: []ast.Field{
 					{
-						Expr:  &ast.FieldRef{Name: "temp", StreamName: "src1"},
-						Name:  "temp",
-						AName: "",
-					}, {
 						Expr: &ast.FieldRef{Name: "m", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
 							&ast.Call{Name: "meta", FuncId: 0, Args: []ast.Expr{&ast.MetaRef{
 								Name:       "*",
@@ -1301,6 +1299,11 @@ func Test_createLogicalPlan(t *testing.T) {
 						)},
 						Name:  "meta",
 						AName: "m",
+					},
+					{
+						Expr:  &ast.FieldRef{Name: "temp", StreamName: "src1"},
+						Name:  "temp",
+						AName: "",
 					},
 				},
 				isAggregate: false,
