@@ -35,6 +35,8 @@ eKuiper 命令行工具允许您导入导出当前数据。
   "Service":{
   },
   "Schema":{
+  },
+  "uploads":{
   }
 }
 ```

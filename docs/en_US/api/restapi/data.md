@@ -35,6 +35,8 @@ The file format for importing and exporting data is JSON, which can contain : `s
     "Service":{
     },
     "Schema":{
+    },
+    "uploads":{
     }
 }
 ```
@@ -112,7 +114,8 @@ Content-Type: application/json
   "sinkConfig":{},
   "connectionConfig":{},
   "Service":{},
-  "Schema":{}
+  "Schema":{},
+  "uploads":{}
 }
 
 ```
@@ -135,7 +138,9 @@ Content-Type: application/json
   "sinkConfig":{},
   "connectionConfig":{},
   "Service":{},
-  "Schema":{}}
+  "Schema":{},
+  "uploads":{}
+}
 ```
 
 ## Data Export
