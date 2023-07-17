@@ -90,6 +90,14 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 		}
 	}
 
+	// check oAuth token expiration
+	if hps.accessConf != nil && hps.accessConf.ExpireInSecond > 0 &&
+		int(time.Now().Sub(hps.tokenLastUpdateAt).Abs().Seconds()) >= hps.accessConf.ExpireInSecond {
+		ctx.GetLogger().Debugf("Refreshing token for HTTP pull")
+		if err := hps.refresh(ctx); err != nil {
+			ctx.GetLogger().Warnf("Refresh HTTP pull token error: %v", err)
+		}
+	}
 	headers, err := hps.parseHeaders(ctx, hps.tokens)
 	if err != nil {
 		return []api.SourceTuple{
@@ -104,14 +112,6 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 			&xsql.ErrorSourceTuple{
 				Error: fmt.Errorf("parse body %s error %v", hps.config.Body, err),
 			},
-		}
-	}
-	// check oAuth token expiration
-	if hps.accessConf != nil && hps.accessConf.ExpireInSecond > 0 &&
-		int(time.Now().Sub(hps.tokenLastUpdateAt).Abs().Seconds()) >= hps.accessConf.ExpireInSecond {
-		ctx.GetLogger().Debugf("Refreshing token")
-		if err := hps.refresh(ctx); err != nil {
-			ctx.GetLogger().Warnf("Refresh token error: %v", err)
 		}
 	}
 	ctx.GetLogger().Debugf("httppull source sending request url: %s, headers: %v, body %s", url, headers, hps.config.Body)
