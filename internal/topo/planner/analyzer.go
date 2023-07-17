@@ -51,7 +51,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			isSchemaless = true
 		}
 	}
-	aliasFieldTopoSort(s, streamStmts)
+	if !isSchemaless {
+		aliasFieldTopoSort(s, streamStmts)
+	}
 	dsn := ast.DefaultStream
 	if len(streamsFromStmt) == 1 {
 		dsn = streamStmts[0].stmt.Name
