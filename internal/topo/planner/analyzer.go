@@ -16,6 +16,7 @@ package planner
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/binder/function"
@@ -50,7 +51,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			isSchemaless = true
 		}
 	}
-
+	aliasFieldTopoSort(s, streamStmts)
 	dsn := ast.DefaultStream
 	if len(streamsFromStmt) == 1 {
 		dsn = streamStmts[0].stmt.Name
@@ -199,12 +200,26 @@ type aliasTopoDegree struct {
 	field  ast.Field
 }
 
+type aliasTopoDegrees []*aliasTopoDegree
+
+func (a aliasTopoDegrees) Len() int {
+	return len(a)
+}
+
+func (a aliasTopoDegrees) Less(i, j int) bool {
+	return a[i].degree < a[j].degree
+}
+
+func (a aliasTopoDegrees) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
 func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 	nonAliasFields := make([]ast.Field, 0)
-	aliasDegree := make(map[string]*aliasTopoDegree)
+	aliasDegreeMap := make(map[string]*aliasTopoDegree)
 	for _, field := range s.Fields {
 		if field.AName != "" {
-			aliasDegree[field.AName] = &aliasTopoDegree{
+			aliasDegreeMap[field.AName] = &aliasTopoDegree{
 				alias:  field.AName,
 				degree: -1,
 				field:  field,
@@ -213,15 +228,15 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 			nonAliasFields = append(nonAliasFields, field)
 		}
 	}
-	for !isAliasFieldTopoSortFinish(aliasDegree) {
+	for !isAliasFieldTopoSortFinish(aliasDegreeMap) {
 		for _, field := range s.Fields {
-			if field.AName != "" && aliasDegree[field.AName].degree < 0 {
+			if field.AName != "" && aliasDegreeMap[field.AName].degree < 0 {
 				skip := false
 				degree := 0
-				ast.WalkFunc(field, func(node ast.Node) bool {
+				ast.WalkFunc(field.Expr, func(node ast.Node) bool {
 					switch f := node.(type) {
 					case *ast.FieldRef:
-						if fDegree, ok := aliasDegree[f.Name]; ok {
+						if fDegree, ok := aliasDegreeMap[f.Name]; ok && fDegree.degree >= 0 {
 							if degree < fDegree.degree+1 {
 								degree = fDegree.degree + 1
 							}
@@ -235,13 +250,20 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 					return true
 				})
 				if !skip {
-					aliasDegree[field.AName].degree = degree
+					aliasDegreeMap[field.AName].degree = degree
 				}
 			}
 		}
 	}
-	//aliasDegrees := make([]*aliasTopoDegree, 0)
-	//sort.Sort(aliasDegrees)
+	as := make(aliasTopoDegrees, 0)
+	for _, degree := range aliasDegreeMap {
+		as = append(as, degree)
+	}
+	sort.Sort(as)
+	s.Fields = nonAliasFields
+	for _, d := range as {
+		s.Fields = append(s.Fields, d.field)
+	}
 }
 
 func isFieldRefNameExists(name string, streamStmts []*streamInfo) bool {

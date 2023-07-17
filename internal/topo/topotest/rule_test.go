@@ -1599,42 +1599,42 @@ func TestAliasSQL(t *testing.T) {
 				},
 			},
 		},
-		//{
-		//	Name: "TestAliasSQL2",
-		//	Sql:  `select a + 1 as b, size as a from demo`,
-		//	R: [][]map[string]interface{}{
-		//		{
-		//			{
-		//				"a": float64(3),
-		//				"b": float64(4),
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"a": float64(6),
-		//				"b": float64(7),
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"a": float64(2),
-		//				"b": float64(3),
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"a": float64(4),
-		//				"b": float64(5),
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"a": float64(1),
-		//				"b": float64(2),
-		//			},
-		//		},
-		//	},
-		//},
+		{
+			Name: "TestAliasSQL2",
+			Sql:  `select a + 1 as b, size as a from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+					},
+				},
+				{
+					{
+						"a": float64(6),
+						"b": float64(7),
+					},
+				},
+				{
+					{
+						"a": float64(2),
+						"b": float64(3),
+					},
+				},
+				{
+					{
+						"a": float64(4),
+						"b": float64(5),
+					},
+				},
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+					},
+				},
+			},
+		},
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
