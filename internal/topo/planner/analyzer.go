@@ -262,10 +262,11 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 		as = append(as, degree)
 	}
 	sort.Sort(as)
-	s.Fields = nonAliasFields
+	s.Fields = make([]ast.Field, 0)
 	for _, d := range as {
 		s.Fields = append(s.Fields, d.field)
 	}
+	s.Fields = append(s.Fields, nonAliasFields...)
 }
 
 func isFieldRefNameExists(name string, streamStmts []*streamInfo) bool {
