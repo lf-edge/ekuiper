@@ -155,7 +155,7 @@ func TestPlannerAlias(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		p, err := createLogicalPlan(stmt, &api.RuleOption{
+		p, _ := createLogicalPlan(stmt, &api.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,

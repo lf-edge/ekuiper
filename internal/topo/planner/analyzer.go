@@ -193,6 +193,64 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 	return streamStmts, analyticFuncs, walkErr
 }
 
+func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
+	aliasColIndex := make(map[string]int)
+	aliasDegree := make(map[string]int)
+	for index, field := range s.Fields {
+		if field.AName != "" {
+			aliasColIndex[field.AName] = index
+			aliasDegree[field.AName] = -1
+		}
+	}
+	for !isAliasFieldTopoSortFinish(aliasDegree) {
+		for _, field := range s.Fields {
+			if field.AName != "" && aliasDegree[field.AName] < 0 {
+				skip := false
+				degree := 0
+				ast.WalkFunc(field, func(node ast.Node) bool {
+					switch f := node.(type) {
+					case *ast.FieldRef:
+						if fDegree, ok := aliasDegree[f.Name]; ok {
+							if degree < fDegree+1 {
+								degree = fDegree + 1
+							}
+							return true
+						}
+						if !isFieldRefNameExists(f.Name, streamStmts) {
+							skip = true
+							return false
+						}
+					}
+					return true
+				})
+				if !skip {
+					aliasDegree[field.AName] = degree
+				}
+			}
+		}
+	}
+}
+
+func isFieldRefNameExists(name string, streamStmts []*streamInfo) bool {
+	for _, streamStmt := range streamStmts {
+		for _, col := range streamStmt.schema {
+			if col.Name == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isAliasFieldTopoSortFinish(aliasDegree map[string]int) bool {
+	for _, degree := range aliasDegree {
+		if degree < 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func validate(s *ast.SelectStatement) (err error) {
 	isAggStmt := false
 	if xsql.IsAggregate(s.Condition) {
@@ -333,7 +391,7 @@ func (f *fieldsMap) bind(fr *ast.FieldRef) error {
 			return fmt.Errorf("unknown field %s", fr.Name)
 		}
 	}
-	if ok1 {
+	if fm != nil {
 		err := fm.bindRef(fr)
 		if err != nil {
 			return fmt.Errorf("%s%s", err, fr.Name)
