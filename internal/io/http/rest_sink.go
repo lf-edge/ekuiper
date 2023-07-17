@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -39,21 +38,6 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 func (ms *RestSink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Opening HTTP pull source with conf %+v", ms.config)
 	return nil
-}
-
-type MultiErrors []error
-
-func (me MultiErrors) AddError(err error) MultiErrors {
-	me = append(me, err)
-	return me
-}
-
-func (me MultiErrors) Error() string {
-	s := make([]string, len(me))
-	for i, v := range me {
-		s = append(s, fmt.Sprintf("Error %d with info %s. \n", i, v))
-	}
-	return strings.Join(s, "  ")
 }
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
