@@ -156,7 +156,7 @@ func StartUp(Version string) {
 			err = srvRest.ListenAndServeTLS(conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
 		}
 		if err != nil && err != http.ErrServerClosed {
-			logger.Errorf("Error serving rest service: %s", err)
+			logger.Fatal("Error serving rest service: ", err)
 		}
 	}()
 
