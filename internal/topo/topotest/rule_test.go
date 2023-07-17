@@ -1558,3 +1558,101 @@ func TestWindowSQL(t *testing.T) {
 		DoRuleTest(t, tests, j, opt, 0)
 	}
 }
+
+func TestAliasSQL(t *testing.T) {
+	streamList := []string{"demo"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: "TestAliasSQL1",
+			Sql:  `select size as a, a + 1 as b from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(3),
+						"b": float64(4),
+					},
+				},
+				{
+					{
+						"a": float64(6),
+						"b": float64(7),
+					},
+				},
+				{
+					{
+						"a": float64(2),
+						"b": float64(3),
+					},
+				},
+				{
+					{
+						"a": float64(4),
+						"b": float64(5),
+					},
+				},
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+					},
+				},
+			},
+		},
+		//{
+		//	Name: "TestAliasSQL2",
+		//	Sql:  `select a + 1 as b, size as a from demo`,
+		//	R: [][]map[string]interface{}{
+		//		{
+		//			{
+		//				"a": float64(3),
+		//				"b": float64(4),
+		//			},
+		//		},
+		//		{
+		//			{
+		//				"a": float64(6),
+		//				"b": float64(7),
+		//			},
+		//		},
+		//		{
+		//			{
+		//				"a": float64(2),
+		//				"b": float64(3),
+		//			},
+		//		},
+		//		{
+		//			{
+		//				"a": float64(4),
+		//				"b": float64(5),
+		//			},
+		//		},
+		//		{
+		//			{
+		//				"a": float64(1),
+		//				"b": float64(2),
+		//			},
+		//		},
+		//	},
+		//},
+	}
+	// Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}

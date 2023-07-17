@@ -83,6 +83,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		}
 		if f.AName != "" {
 			aliasFields = append(aliasFields, &s.Fields[i])
+			fieldsMap.bindAlias(f.AName)
 		}
 	}
 	// bind alias field expressions
@@ -97,6 +98,19 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 				AliasRef:   ar,
 			}
 			walkErr = fieldsMap.save(f.AName, ast.AliasStream, ar)
+			for _, subF := range aliasFields {
+				ast.WalkFunc(subF, func(node ast.Node) bool {
+					switch fr := node.(type) {
+					case *ast.FieldRef:
+						if fr.Name == f.AName {
+							fr.StreamName = ast.AliasStream
+							fr.AliasRef = ar
+						}
+						return false
+					}
+					return true
+				})
+			}
 		}
 	}
 	// Bind field ref for alias AND set StreamName for all field ref
@@ -265,12 +279,13 @@ func convertStreamInfo(streamStmt *ast.StreamStmt) (*streamInfo, error) {
 
 type fieldsMap struct {
 	content       map[string]streamFieldStore
+	alias         map[string]struct{}
 	isSchemaless  bool
 	defaultStream ast.StreamName
 }
 
 func newFieldsMap(isSchemaless bool, defaultStream ast.StreamName) *fieldsMap {
-	return &fieldsMap{content: make(map[string]streamFieldStore), isSchemaless: isSchemaless, defaultStream: defaultStream}
+	return &fieldsMap{content: make(map[string]streamFieldStore), alias: map[string]struct{}{}, isSchemaless: isSchemaless, defaultStream: defaultStream}
 }
 
 func (f *fieldsMap) reserve(fieldName string, streamName ast.StreamName) {
@@ -302,10 +317,15 @@ func (f *fieldsMap) save(fieldName string, streamName ast.StreamName, field *ast
 	return nil
 }
 
+func (f *fieldsMap) bindAlias(aliasName string) {
+	f.alias[aliasName] = struct{}{}
+}
+
 func (f *fieldsMap) bind(fr *ast.FieldRef) error {
 	lname := strings.ToLower(fr.Name)
-	fm, ok := f.content[lname]
-	if !ok {
+	fm, ok1 := f.content[lname]
+	_, ok2 := f.alias[lname]
+	if !ok1 && !ok2 {
 		if f.isSchemaless && fr.Name != "" {
 			fm = newStreamFieldStore(f.isSchemaless, f.defaultStream)
 			f.content[lname] = fm
@@ -313,9 +333,11 @@ func (f *fieldsMap) bind(fr *ast.FieldRef) error {
 			return fmt.Errorf("unknown field %s", fr.Name)
 		}
 	}
-	err := fm.bindRef(fr)
-	if err != nil {
-		return fmt.Errorf("%s%s", err, fr.Name)
+	if ok1 {
+		err := fm.bindRef(fr)
+		if err != nil {
+			return fmt.Errorf("%s%s", err, fr.Name)
+		}
 	}
 	return nil
 }
