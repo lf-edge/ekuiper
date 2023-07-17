@@ -103,7 +103,7 @@ var tests = []struct {
 		r:   newErrorStruct(""),
 	},
 	{ // 10
-		sql: `SELECT sum(temp) as temp, count(temp) as temp FROM src1`,
+		sql: `SELECT sum(temp) as temp1, count(temp) as temp FROM src1`,
 		r:   newErrorStruct("invalid argument for func count: aggregate argument is not allowed"),
 	},
 	{ // 11
