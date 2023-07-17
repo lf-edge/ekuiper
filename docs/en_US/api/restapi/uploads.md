@@ -2,7 +2,7 @@ The eKuiper REST api for configuration file uploads allows you to upload configu
 
 ## Upload a configuration file
 
-The API supports to upload a local file or provide the text content of file. The upload request will save the file into your `${dataPath}/uploads`. It will override the existed file of the same name. The response is the absolute path of the uploaded file which you can refer in other configurations.
+The API supports to upload a local file, provide the text content of file or upload a http file link. The upload request will save the file into your `${dataPath}/uploads`. It will override the existed file of the same name. The response is the absolute path of the uploaded file which you can refer in other configurations.
 
 ### Upload by a file
 
@@ -40,6 +40,19 @@ POST http://localhost:9081/config/uploads
 {
   "name": "my.json",
   "content": "{\"hello\":\"world\"}"
+}
+```
+
+### Upload by HTTP file link
+
+Should put the file in HTTP Server in advance
+
+```shell
+POST http://localhost:9081/config/uploads
+
+{
+  "name": "my.json",
+  "file": "http://127.0.0.1:80/my.json"
 }
 ```
 

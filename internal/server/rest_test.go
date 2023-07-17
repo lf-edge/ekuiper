@@ -379,6 +379,17 @@ func (suite *RestTestSuite) Test_fileUpload() {
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusCreated, w.Code)
 
+	postContent := map[string]string{}
+	postContent["Name"] = "test1.txt"
+	postContent["file"] = "file://" + uploadDir + "/test.txt"
+
+	bdy, _ := json.Marshal(postContent)
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBuffer(bdy))
+	req.Header["Content-Type"] = []string{"application/json"}
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
+
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/config/uploads", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
@@ -388,6 +399,50 @@ func (suite *RestTestSuite) Test_fileUpload() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/config/uploads/test1.txt", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	os.Remove(uploadDir)
+}
+
+func (suite *RestTestSuite) Test_fileUploadValidate() {
+	fileJson := `{"Name": "test.txt", "Content": test}`
+	req, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBufferString(fileJson))
+	req.Header["Content-Type"] = []string{"application/json"}
+	os.Mkdir(uploadDir, 0o777)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	fileJson = `{"Name": "test.txt", "Contents": "test"}`
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBufferString(fileJson))
+	req.Header["Content-Type"] = []string{"application/json"}
+	os.Mkdir(uploadDir, 0o777)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	fileJson = `{"Content": "test"}`
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBufferString(fileJson))
+	req.Header["Content-Type"] = []string{"application/json"}
+	os.Mkdir(uploadDir, 0o777)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	postContent := map[string]string{}
+	postContent["Name"] = "test1.txt"
+	postContent["file"] = "file://" + uploadDir + "/test.txt"
+
+	bdy, _ := json.Marshal(postContent)
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/config/uploads", bytes.NewBuffer(bdy))
+	req.Header["Content-Type"] = []string{"application/json"}
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
 	os.Remove(uploadDir)
 }
 
