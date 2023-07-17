@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -100,8 +101,14 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 }
 
 func (ms *RestSink) Send(ctx api.StreamContext, decodedData []byte, v interface{}, logger api.Logger) (*http.Response, error) {
-	// Allow to use tokens in headers
-	// TODO optimization: only do this if tokens are used in template
+	// Allow to use tokens in headers and check oAuth token expiration
+	if ms.accessConf != nil && ms.accessConf.ExpireInSecond > 0 &&
+		int(time.Now().Sub(ms.tokenLastUpdateAt).Abs().Seconds()) >= ms.accessConf.ExpireInSecond {
+		ctx.GetLogger().Debugf("Refreshing token for REST sink")
+		if err := ms.refresh(ctx); err != nil {
+			ctx.GetLogger().Warnf("Refresh REST sink token error: %v", err)
+		}
+	}
 	if ms.tokens != nil {
 		switch dt := v.(type) {
 		case map[string]interface{}:
