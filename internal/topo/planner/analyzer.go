@@ -193,26 +193,37 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 	return streamStmts, analyticFuncs, walkErr
 }
 
+type aliasTopoDegree struct {
+	alias  string
+	degree int
+	field  ast.Field
+}
+
 func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
-	aliasColIndex := make(map[string]int)
-	aliasDegree := make(map[string]int)
-	for index, field := range s.Fields {
+	nonAliasFields := make([]ast.Field, 0)
+	aliasDegree := make(map[string]*aliasTopoDegree)
+	for _, field := range s.Fields {
 		if field.AName != "" {
-			aliasColIndex[field.AName] = index
-			aliasDegree[field.AName] = -1
+			aliasDegree[field.AName] = &aliasTopoDegree{
+				alias:  field.AName,
+				degree: -1,
+				field:  field,
+			}
+		} else {
+			nonAliasFields = append(nonAliasFields, field)
 		}
 	}
 	for !isAliasFieldTopoSortFinish(aliasDegree) {
 		for _, field := range s.Fields {
-			if field.AName != "" && aliasDegree[field.AName] < 0 {
+			if field.AName != "" && aliasDegree[field.AName].degree < 0 {
 				skip := false
 				degree := 0
 				ast.WalkFunc(field, func(node ast.Node) bool {
 					switch f := node.(type) {
 					case *ast.FieldRef:
 						if fDegree, ok := aliasDegree[f.Name]; ok {
-							if degree < fDegree+1 {
-								degree = fDegree + 1
+							if degree < fDegree.degree+1 {
+								degree = fDegree.degree + 1
 							}
 							return true
 						}
@@ -224,11 +235,13 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 					return true
 				})
 				if !skip {
-					aliasDegree[field.AName] = degree
+					aliasDegree[field.AName].degree = degree
 				}
 			}
 		}
 	}
+	//aliasDegrees := make([]*aliasTopoDegree, 0)
+	//sort.Sort(aliasDegrees)
 }
 
 func isFieldRefNameExists(name string, streamStmts []*streamInfo) bool {
@@ -242,9 +255,9 @@ func isFieldRefNameExists(name string, streamStmts []*streamInfo) bool {
 	return false
 }
 
-func isAliasFieldTopoSortFinish(aliasDegree map[string]int) bool {
-	for _, degree := range aliasDegree {
-		if degree < 0 {
+func isAliasFieldTopoSortFinish(aliasDegrees map[string]*aliasTopoDegree) bool {
+	for _, aliasDegree := range aliasDegrees {
+		if aliasDegree.degree < 0 {
 			return false
 		}
 	}
