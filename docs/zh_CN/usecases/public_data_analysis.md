@@ -227,7 +227,7 @@ Content-Type: application/json
     "token": "token",
     "org": "admin",
     "measurement": "test",
-    "bucket": "bucketName",
+    "bucket": "pubdata",
     "tagKey": "tagKey",
     "tagValue": "tagValue",
     "fields": ["velocity", "user_id"]
@@ -235,6 +235,41 @@ Content-Type: application/json
 }
 ```
 
-例如，我们可以将前四位的用户骑行的平均速度用 [quickchart.io](https://quickchart.io/) 的柱状图接口将其可视化出来：
+例如，用户可以通过 python 脚本方便地从 InfluxDB 中获取想要的数据并做进一步处理。
+以下脚本将从 DB 中获得前四条记录，并将其用 [quickchart.io](https://quickchart.io/) 的参数格式打印出来：
+
+```python
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
+
+url = "http://influx.db:8086"
+token = "token"
+org = "admin"
+bucket = "pubdata"
+
+client = InfluxDBClient(url=url, token=token)
+client.switch_database(bucket=bucket, org=org)
+
+query = f'from(bucket: "{bucket}") |> range(start: 0, stop: now()) |> filter(fn: (r) => r._measurement == "test") |> limit(n: 4)'
+
+result = client.query_api().query(query)
+
+params = '''{
+  type: 'bar',
+  data: {
+    labels: {[v[:7] for v in record.values['user_id']]},
+    datasets: [{
+      label: 'Users',
+      data: {record.values['velocity']}
+    }]
+  }
+}'''
+
+print(params)
+
+client.close()
+```
+
+之后，我们可以将前四位的用户骑行的平均速度的参数用 [quickchart.io](https://quickchart.io/) 的柱状图接口将其可视化出来：
 
 ![chart](https://quickchart.io/chart?bkg=white&c=%7B%0A%20%20type%3A%20%27bar%27%2C%0A%20%20data%3A%20%7B%0A%20%20%20%20labels%3A%20%5B%279fb2d1e%27%2C%20%271184eec%27%2C%20%2730a457b%27%2C%20%27bee78cd%27%5D%2C%0A%20%20%20%20datasets%3A%20%5B%7B%0A%20%20%20%20%20%20label%3A%20%27Users%27%2C%0A%20%20%20%20%20%20data%3A%20%5B2.383%2C%201.550%2C%202.524%2C%200.293%5D%0A%20%20%20%20%7D%5D%0A%20%20%7D%0A%7D)
