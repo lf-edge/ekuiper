@@ -400,10 +400,134 @@ func TestAggFuncNil(t *testing.T) {
 			r, b := function.exec(fctx, []interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		case "last_value":
+			r, b := function.exec(fctx, []interface{}{[]interface{}{nil}, false})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, true})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, 2, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, false})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, nil, fmt.Sprintf("%v failed", name))
+			r, b = function.check([]interface{}{nil, true})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		default:
 			r, b := function.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		}
+	}
+}
+
+func TestLastValue(t *testing.T) {
+	f, ok := builtins["last_value"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{
+			args: []interface{}{
+				[]interface{}{
+					"foo",
+					"bar",
+					"self",
+				},
+				true,
+			},
+			result: "self",
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					"foo",
+					"bar",
+					"self",
+				},
+				false,
+			},
+			result: "self",
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					1,
+				},
+				true,
+			},
+			result: int(1),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					1,
+				},
+				false,
+			},
+			result: 1,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					nil,
+				},
+				true,
+			},
+			result: float64(3.14),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					nil,
+				},
+				false,
+			},
+			result: nil,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					nil,
+					nil,
+					nil,
+				},
+				true,
+			},
+			result: nil,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					nil,
+					nil,
+					nil,
+				},
+				false,
+			},
+			result: nil,
+		},
+	}
+
+	for i, tt := range tests {
+		r, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(r, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
 		}
 	}
 }
