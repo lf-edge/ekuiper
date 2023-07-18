@@ -199,9 +199,12 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							}
 						} else {
 							logger.Infof("Creating sink cache")
-							{ // sync mode, the ack is already in order
-								dataCh := make(chan []map[string]interface{}, sconf.BufferLength)
-								c := cache.NewSyncCache(ctx, dataCh, result, stats, &sconf.SinkConf, sconf.BufferLength)
+							dataCh := make(chan []map[string]interface{}, sconf.BufferLength)
+							// cache for normal sink data
+							c := cache.NewSyncCache(ctx, dataCh, result, &sconf.SinkConf, sconf.BufferLength)
+							// One cache queue to mix live data and resend data. Send by time order
+							if !sconf.ResendAlterQueue {
+								// sync mode, the ack is already in order
 								for {
 									select {
 									case data := <-m.input:
@@ -210,6 +213,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 											break
 										}
 										stats.IncTotalRecordsIn()
+										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength))
 										outs := itemToMap(data)
 										if sconf.Omitempty && (data == nil || len(outs) == 0) {
 											ctx.GetLogger().Debugf("receive empty in sink")
@@ -221,23 +225,75 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										}
 									case data := <-c.Out:
 										stats.ProcessTimeStart()
-										ack := true
-										err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats)
-										// Only recoverable error should be cached
-										if err != nil {
-											if strings.HasPrefix(err.Error(), errorx.IOErr) { // do not log to prevent a lot of logs!
-												ack = false
-											} else {
-												ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), data, err)
-											}
-										} else {
-											ctx.GetLogger().Debugf("sent data to MQTT: %v", data)
-										}
+										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength))
+										err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, false)
+										ack := checkAck(ctx, data, err)
 										select {
 										case c.Ack <- ack:
 										case <-ctx.Done():
 										}
 										stats.ProcessTimeEnd()
+									case <-ctx.Done():
+										logger.Infof("sink node %s instance %d done", m.name, instance)
+										if err := sink.Close(ctx); err != nil {
+											logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+										}
+										return nil
+									}
+								}
+							} else {
+								resendCh := make(chan []map[string]interface{}, sconf.BufferLength)
+								rq := cache.NewSyncCache(ctx, resendCh, result, &sconf.SinkConf, sconf.BufferLength)
+								for {
+									select {
+									case data := <-m.input:
+										processed := false
+										if data, processed = m.preprocess(data); processed {
+											break
+										}
+										stats.IncTotalRecordsIn()
+										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
+										outs := itemToMap(data)
+										if sconf.Omitempty && (data == nil || len(outs) == 0) {
+											ctx.GetLogger().Debugf("receive empty in sink")
+											return nil
+										}
+										select {
+										case dataCh <- outs:
+										case <-ctx.Done():
+										}
+										select {
+										case resendCh <- nil:
+										case <-ctx.Done():
+										}
+									case data := <-c.Out:
+										stats.ProcessTimeStart()
+										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
+										ctx.GetLogger().Debugf("sending data: %v", data)
+										err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, false)
+										ack := checkAck(ctx, data, err)
+										// If ack is false, add it to the resend queue
+										if !ack {
+											select {
+											case resendCh <- data:
+											case <-ctx.Done():
+											}
+										}
+										// Always ack for the normal queue as fail items are handled by the resend queue
+										select {
+										case c.Ack <- true:
+										case <-ctx.Done():
+										}
+										stats.ProcessTimeEnd()
+									case data := <-rq.Out:
+										ctx.GetLogger().Debugf("resend data: %v", data)
+										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
+										err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, true)
+										ack := checkAck(ctx, data, err)
+										select {
+										case rq.Ack <- ack:
+										case <-ctx.Done():
+										}
 									case <-ctx.Done():
 										logger.Infof("sink node %s instance %d done", m.name, instance)
 										if err := sink.Close(ctx); err != nil {
@@ -260,6 +316,19 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			infra.DrainError(ctx, err, result)
 		}
 	}()
+}
+
+func checkAck(ctx api.StreamContext, data interface{}, err error) bool {
+	if err != nil {
+		if strings.HasPrefix(err.Error(), errorx.IOErr) { // do not log to prevent a lot of logs!
+			return false
+		} else {
+			ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), data, err)
+		}
+	} else {
+		ctx.GetLogger().Debugf("sent data: %v", data)
+	}
+	return true
 }
 
 func (m *SinkNode) parseConf(logger api.Logger) (*SinkConf, error) {
@@ -317,12 +386,12 @@ func doCollect(ctx api.StreamContext, sink api.Sink, item interface{}, sendManag
 		ctx.GetLogger().Debugf("receive empty in sink")
 		return nil
 	}
-	return doCollectMaps(ctx, sink, sconf, outs, sendManager, stats)
+	return doCollectMaps(ctx, sink, sconf, outs, sendManager, stats, false)
 }
 
-func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs []map[string]interface{}, sendManager *sinkUtil.SendManager, stats metric.StatManager) error {
+func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs []map[string]interface{}, sendManager *sinkUtil.SendManager, stats metric.StatManager, isResend bool) error {
 	if !sconf.SendSingle {
-		return doCollectData(ctx, sink, outs, sendManager, stats)
+		return doCollectData(ctx, sink, outs, sendManager, stats, isResend)
 	} else {
 		var err error
 		for _, d := range outs {
@@ -330,7 +399,7 @@ func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs [
 				ctx.GetLogger().Debugf("receive empty in sink")
 				continue
 			}
-			newErr := doCollectData(ctx, sink, d, sendManager, stats)
+			newErr := doCollectData(ctx, sink, d, sendManager, stats, isResend)
 			if newErr != nil {
 				err = newErr
 			}
@@ -369,7 +438,7 @@ func itemToMap(item interface{}) []map[string]interface{} {
 }
 
 // doCollectData outData must be map or []map
-func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, sendManager *sinkUtil.SendManager, stats metric.StatManager) error {
+func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, sendManager *sinkUtil.SendManager, stats metric.StatManager, isResend bool) error {
 	if sendManager != nil {
 		switch v := outData.(type) {
 		case map[string]interface{}:
@@ -386,7 +455,11 @@ func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, se
 		ctx.GetLogger().Infof("sink node %s instance %d stops data resending", ctx.GetOpId(), ctx.GetInstanceId())
 		return nil
 	default:
-		return sendDataToSink(ctx, sink, outData, stats)
+		if isResend {
+			return resendDataToSink(ctx, sink, outData, stats)
+		} else {
+			return sendDataToSink(ctx, sink, outData, stats)
+		}
 	}
 }
 
@@ -411,6 +484,23 @@ func sendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, s
 	} else {
 		ctx.GetLogger().Debugf("success")
 		stats.IncTotalRecordsOut()
+		return nil
+	}
+}
+
+func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager) error {
+	var err error
+	switch st := sink.(type) {
+	case api.ResendSink:
+		err = st.CollectResend(ctx, outData)
+	default:
+		err = st.Collect(ctx, outData)
+	}
+	if err != nil {
+		stats.IncTotalExceptions(err.Error())
+		return err
+	} else {
+		ctx.GetLogger().Debugf("success resend")
 		return nil
 	}
 }

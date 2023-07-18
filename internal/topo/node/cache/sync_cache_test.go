@@ -25,7 +25,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -193,11 +192,6 @@ func TestRun(t *testing.T) {
 	for i, tt := range tests {
 		contextLogger := conf.Log.WithField("rule", fmt.Sprintf("TestRun-%d", i))
 		ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
-		stats, err := metric.NewStatManager(ctx, "sink")
-		if err != nil {
-			t.Fatal(err)
-			return
-		}
 		in := make(chan []map[string]interface{})
 		errCh := make(chan error)
 		var result []interface{}
@@ -208,18 +202,18 @@ func TestRun(t *testing.T) {
 		}()
 		exitCh := make(chan struct{})
 		// send data
-		_ = NewSyncCacheWithExitChanel(ctx, in, errCh, stats, tt.sconf, 100, exitCh)
+		_ = NewSyncCacheWithExitChanel(ctx, in, errCh, tt.sconf, 100, exitCh)
 		for i := 0; i < tt.stopPt; i++ {
 			in <- tt.dataIn[i]
 			time.Sleep(1 * time.Millisecond)
 		}
 		cancel()
-		// wait cleanup job done
+		// wait a cleanup job done
 		<-exitCh
 
 		// send the second half data
 		ctx, cancel = context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
-		sc := NewSyncCache(ctx, in, errCh, stats, tt.sconf, 100)
+		sc := NewSyncCache(ctx, in, errCh, tt.sconf, 100)
 		for i := tt.stopPt; i < len(tt.dataIn); i++ {
 			in <- tt.dataIn[i]
 			time.Sleep(1 * time.Millisecond)
