@@ -73,12 +73,12 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
 ```json
 {
   "id": "kafka",
-  "sql": "SELECT * from  demo_stream where temperature > 50",
+  "sql": "SELECT * from demo_stream where temperature > 50",
   "actions": [
     {
       "log": {}
     },
-    { 
+    {
       "kafka":{
         "brokers": "127.0.0.1:9092,127.0.0.2:9092",
         "topic": "test_topic",
@@ -125,7 +125,7 @@ But kafka needs special attention `` KAFKA_CFG_ADVERTISED_LISTENERS `` needs to 
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://122.9.166.75:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://<YOUR_HOST_IP>:9092
      depends_on:
       - zookeeper
 ```
