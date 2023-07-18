@@ -25,7 +25,7 @@ Below is a sample for selecting temperature greater than 50 degree, and some pro
 ```json
 {
   "id": "redis",
-  "sql": "SELECT * from  demo_stream where temperature > 50",
+  "sql": "SELECT * from demo_stream where temperature > 50",
   "actions": [
     {
       "log": {},

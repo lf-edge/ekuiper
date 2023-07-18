@@ -73,7 +73,7 @@ $(PLUGINS_CUSTOM):
 ```json
 {
   "id": "kafka",
-  "sql": "SELECT * from  demo_stream where temperature > 50",
+  "sql": "SELECT * from demo_stream where temperature > 50",
   "actions": [
     {
       "log": {}
