@@ -40,6 +40,9 @@ func init() {
 	flag.StringVar(&dataPath, "data", "", "data indicates the path of data dir")
 	flag.StringVar(&logPath, "log", "", "log indicates the path of log dir")
 	flag.StringVar(&pluginsPath, "plugins", "", "plugins indicates the path of plugins dir")
+
+	flag.Parse()
+
 	if len(loadFileType) > 0 {
 		conf.PathConfig.LoadFileType = loadFileType
 	} else {
