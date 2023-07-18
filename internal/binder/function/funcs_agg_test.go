@@ -401,16 +401,16 @@ func TestAggFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		case "last_value":
-			r, b := function.exec(fctx, []interface{}{[]interface{}{nil}, false})
+			r, b := function.exec(fctx, []interface{}{[]interface{}{nil}, []interface{}{false}})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
-			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, true})
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, []interface{}{true}})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Equal(t, r, 2, fmt.Sprintf("%v failed", name))
-			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, false})
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, []interface{}{false}})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Equal(t, r, nil, fmt.Sprintf("%v failed", name))
-			r, b = function.check([]interface{}{nil, true})
+			r, b = function.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		default:
@@ -441,7 +441,11 @@ func TestLastValue(t *testing.T) {
 					"bar",
 					"self",
 				},
-				true,
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
 			},
 			result: "self",
 		},
@@ -452,7 +456,11 @@ func TestLastValue(t *testing.T) {
 					"bar",
 					"self",
 				},
-				false,
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
 			},
 			result: "self",
 		},
@@ -463,7 +471,11 @@ func TestLastValue(t *testing.T) {
 					float64(3.14),
 					1,
 				},
-				true,
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
 			},
 			result: int(1),
 		},
@@ -474,7 +486,11 @@ func TestLastValue(t *testing.T) {
 					float64(3.14),
 					1,
 				},
-				false,
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
 			},
 			result: 1,
 		},
@@ -485,7 +501,11 @@ func TestLastValue(t *testing.T) {
 					float64(3.14),
 					nil,
 				},
-				true,
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
 			},
 			result: float64(3.14),
 		},
@@ -496,7 +516,11 @@ func TestLastValue(t *testing.T) {
 					float64(3.14),
 					nil,
 				},
-				false,
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
 			},
 			result: nil,
 		},
@@ -507,7 +531,11 @@ func TestLastValue(t *testing.T) {
 					nil,
 					nil,
 				},
-				true,
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
 			},
 			result: nil,
 		},
@@ -518,7 +546,11 @@ func TestLastValue(t *testing.T) {
 					nil,
 					nil,
 				},
-				false,
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
 			},
 			result: nil,
 		},
