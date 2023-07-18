@@ -14,7 +14,9 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type WindowFuncPlan struct {
 	baseLogicalPlan
@@ -23,5 +25,26 @@ type WindowFuncPlan struct {
 
 func (p WindowFuncPlan) Init() *WindowFuncPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(WINDOWFUNC)
 	return &p
+}
+
+func (p *WindowFuncPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.windowFuncFields != nil && len(p.windowFuncFields) != 0 {
+		info += "windowFuncFields:[ "
+		for i, field := range p.windowFuncFields {
+			info += "{name:" + field.GetName()
+			if field.Expr != nil {
+				info += ", expr:" + field.Expr.String()
+			}
+			info += "}"
+			if i != len(p.windowFuncFields)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }

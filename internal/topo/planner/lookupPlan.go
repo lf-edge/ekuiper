@@ -15,6 +15,8 @@
 package planner
 
 import (
+	"github.com/modern-go/reflect2"
+
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -32,7 +34,30 @@ type LookupPlan struct {
 // Init must run validateAndExtractCondition before this func
 func (p LookupPlan) Init() *LookupPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(LOOKUP)
 	return &p
+}
+
+func (p *LookupPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.conditions != nil {
+		info += "Condition:{ "
+		info += p.conditions.String()
+		info += " }"
+	}
+	if !reflect2.IsNil(p.joinExpr) {
+		join := p.joinExpr
+		if p.conditions != nil {
+			info += ", "
+		}
+		info += "Join:{ joinType:" + join.JoinType.String()
+		if join.Expr != nil {
+			info += ", expr:" + join.Expr.String()
+		}
+		info += " }"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 // PushDownPredicate do not deal with conditions, push down or return up

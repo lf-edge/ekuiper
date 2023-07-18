@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2022 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,25 @@ type JoinAlignPlan struct {
 	Emitters []string
 }
 
+func (p *JoinAlignPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.Emitters != nil && len(p.Emitters) != 0 {
+		info += "Emitters:[ "
+		for i, emitter := range p.Emitters {
+			info += emitter
+			if i != len(p.Emitters)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 func (p JoinAlignPlan) Init() *JoinAlignPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(JOINALIGN)
 	return &p
 }
 

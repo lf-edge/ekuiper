@@ -25,8 +25,28 @@ type HavingPlan struct {
 	stateFuncs []*ast.Call
 }
 
+func (p *HavingPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.condition != nil {
+		info += "Condition:{ " + p.condition.String() + " }, "
+	}
+	if p.stateFuncs != nil && len(p.stateFuncs) != 0 {
+		info += "StateFuncs:["
+		for i := 0; i < len(p.stateFuncs); i++ {
+			info += p.stateFuncs[i].String()
+			if i != len(p.stateFuncs)-1 {
+				info += ", "
+			}
+		}
+		info += "]"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
+}
+
 func (p HavingPlan) Init() *HavingPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(HAVING)
 	return &p
 }
 

@@ -23,7 +23,24 @@ type OrderPlan struct {
 
 func (p OrderPlan) Init() *OrderPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(ORDER)
 	return &p
+}
+
+func (p *OrderPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.SortFields != nil && len(p.SortFields) != 0 {
+		info += "SortFields:[ "
+		for i, field := range p.SortFields {
+			info += field.String()
+			if i != len(p.SortFields)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 func (p *OrderPlan) PruneColumns(fields []ast.Expr) error {
