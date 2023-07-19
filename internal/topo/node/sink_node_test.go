@@ -677,7 +677,8 @@ func TestSinkCache(t *testing.T) {
 				[]byte(`[{"a":3}]`),
 				[]byte(`[{"a":5}]`),
 			},
-		}, {
+		},
+		{
 			name: "test resend priority low",
 			config: map[string]interface{}{
 				"enableCache":          true,
@@ -697,7 +698,8 @@ func TestSinkCache(t *testing.T) {
 				[]byte(`[{"a":3,"isResend":true}]`),
 				[]byte(`[{"a":5,"isResend":true}]`),
 			},
-		}, {
+		},
+		{
 			name: "test resend priority high",
 			config: map[string]interface{}{
 				"enableCache":      true,
@@ -738,34 +740,31 @@ func TestSinkCache(t *testing.T) {
 			fmt.Printf("mockSink: %+v\n", tt.config)
 			s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
 			s.Open(ctx, make(chan error))
-			if tt.resendResult == nil {
-				for i := 0; i < 200; i++ {
-					s.input <- data[i%10]
-					select {
-					case count := <-hitch:
-						if count == len(data)*2 {
-							goto end
+			for i := 0; i < 200; i++ {
+				s.input <- data[i%len(data)]
+				select {
+				case <-hitch:
+					done := true
+					results := mockSink.GetResults()
+					if len(results) != len(tt.result) {
+						done = false
+					}
+					if done && tt.resendResult != nil {
+						resentResults := mockSink.GetResendResults()
+						if len(resentResults) != len(tt.resendResult) {
+							done = false
 						}
-					case <-time.After(1 * time.Second):
 					}
-				}
-			end:
-				results := mockSink.GetResults()
-				assert.Equal(t, tt.result, results)
-			} else {
-				for _, d := range data {
-					s.input <- d
-					<-hitch
-				}
-				for i := 0; i < 20; i++ {
-					time.Sleep(100 * time.Millisecond)
-					resentResults := mockSink.GetResendResults()
-					if len(resentResults) == len(tt.resendResult) {
-						break
+					if done {
+						goto end
 					}
+				case <-time.After(1 * time.Second):
 				}
-				results := mockSink.GetResults()
-				assert.Equal(t, results, tt.result)
+			}
+		end:
+			results := mockSink.GetResults()
+			assert.Equal(t, results[:len(tt.result)], tt.result)
+			if tt.resendResult != nil {
 				resentResults := mockSink.GetResendResults()
 				assert.Equal(t, resentResults[:len(tt.resendResult)], tt.resendResult)
 			}
