@@ -19,6 +19,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -1362,7 +1364,26 @@ func TestAccumulateExec(t *testing.T) {
 	tests := []struct {
 		args   []interface{}
 		result interface{}
+		err    error
 	}{
+		{ // 0
+			args: []interface{}{
+				"string",
+				float64(1),
+				true,
+				"self",
+			},
+			result: fmt.Errorf("the initial value should be number"),
+		},
+		{ // 0
+			args: []interface{}{
+				float64(0),
+				"1",
+				true,
+				"self",
+			},
+			result: fmt.Errorf("the accumulate value should be number"),
+		},
 		{ // 1
 			args: []interface{}{
 				float64(0),
@@ -1390,11 +1411,40 @@ func TestAccumulateExec(t *testing.T) {
 			},
 			result: float64(5),
 		},
+		{ // 3
+			args: []interface{}{
+				float64(0),
+				float32(3),
+				true,
+				"self",
+			},
+			result: float64(8),
+		},
+		{ // 4
+			args: []interface{}{
+				float64(0),
+				int32(3),
+				true,
+				"self",
+			},
+			result: float64(11),
+		},
+		{ // 5
+			args: []interface{}{
+				float64(0),
+				int(3),
+				true,
+				"self",
+			},
+			result: float64(14),
+		},
 	}
-	for i, tt := range tests {
-		result, _ := f.exec(fctx, tt.args)
-		if !reflect.DeepEqual(result, tt.result) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+	for _, tt := range tests {
+		result, err := f.exec(fctx, tt.args)
+		if tt.err != nil {
+			require.Equal(t, tt.err, err)
+		} else {
+			require.Equal(t, tt.result, result)
 		}
 	}
 }
