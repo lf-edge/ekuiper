@@ -115,20 +115,50 @@ The storage location of the offline cache is determined by the storage configura
 
 Each sink can configure its own caching mechanism. The caching process is the same for each sink. If caching is enabled, all sink's events go through two phases: first, saving all content to the cache; then deleting the cache after receiving an ack.
 
-- Error detection: After a failed send, sink should identify recoverable failures (network, etc.) by returning a specific error type, which will return a failed ack so that the cache can be retained. For successful sends or unrecoverable errors, a successful ack will be sent to delete the cache.
-- Cache mechanism: The cache will first be kept in memory. If the memory threshold is exceeded, the later cache will be saved to disk. Once the disk cache exceeds the disk storage threshold, the cache will start to rotate, i.e. the earliest cache in memory will be discarded and the earliest cache on disk will be loaded instead.
-- Resend policy: Currently the caching mechanism can only run in the default synchronous mode, where if a message is being sent, it will wait for the result of the send to continue sending the next cached data. Otherwise, when new data arrives, the first data in the cache is sent to detect network conditions. If the send is successful, all caches in memory and on disk are sent in a sequential chain. Chained sends can define a send interval to prevent message storms.
+- Error detection: After a failed send, sink should identify recoverable failures (network, etc.) by returning a
+  specific error type, which will return a failed ack so that the cache can be retained. For successful sends or
+  unrecoverable errors, a successful ack will be sent to delete the cache.
+- Cache mechanism: The cache will first be kept in memory. If the memory threshold is exceeded, the later cache will be
+  saved to disk. Once the disk cache exceeds the disk storage threshold, the cache will start to rotate, i.e. the
+  earliest cache in memory will be discarded and the earliest cache on disk will be loaded instead.
+- Resend policy: Currently the caching mechanism can only run in the default synchronous mode, where if a message is
+  being sent, it will wait for the sending result to continue sending the next cached data. Otherwise, when new data
+  arrives, the first data in the cache is sent to detect network conditions. If the sending result is successful, all
+  caches in memory and on disk are sent in a sequential chain. Chained sends can define a send interval to prevent
+  message storms.
+- Separation of normal data and retransmission data: Users can configure retransmission data and normal data to be sent
+  separately to different destinations. It is also possible to configure the priority of sending. For example, send
+  normal data with higher priority. You can even change the content of the retransmission data. For example, add a field
+  to the retransmission data in order to distinguish it at the receiving end.
 
 ### Configuration
 
 There are two levels of configuration for the Sink cache. A global configuration in `etc/kuiper.yaml` that defines the default behavior of all rules. There is also a rule sink level definition to override the default behavior.
 
-- enableCache: whether to enable sink cache. cache storage configuration follows the configuration of the metadata store defined in `etc/kuiper.yaml`.
-- memoryCacheThreshold: the number of messages to be cached in memory. For performance reasons, the earliest cached messages are stored in memory so that they can be resent immediately upon failure recovery. Data here can be lost due to failures such as power outages.
-- maxDiskCache: The maximum number of messages to be cached on disk. The disk cache is first-in, first-out. If the disk cache is full, the earliest page of information will be loaded into the memory cache, replacing the old memory cache.
-- bufferPageSize. buffer pages are units of bulk reads/writes to disk to prevent frequent IO. if the pages are not full and eKuiper crashes due to hardware or software errors, the last unwritten pages to disk will be lost.
+- enableCache: whether to enable sink cache. cache storage configuration follows the configuration of the metadata store
+  defined in `etc/kuiper.yaml`.
+- memoryCacheThreshold: the number of messages to be cached in memory. For performance reasons, the earliest cached
+  messages are stored in memory so that they can be resent immediately upon failure recovery. Data here can be lost due
+  to failures such as power outages.
+- maxDiskCache: The maximum number of messages to be cached on disk. The disk cache is first-in, first-out. If the disk
+  cache is full, the earliest page of information will be loaded into the memory cache, replacing the old memory cache.
+- bufferPageSize. buffer pages are units of bulk reads/writes to disk to prevent frequent IO. if the pages are not full
+  and eKuiper crashes due to hardware or software errors, the last unwritten pages to disk will be lost.
 - resendInterval: The time interval to resend information after failure recovery to prevent message storms.
-- cleanCacheAtStop: whether to clean all caches when the rule is stopped, to prevent mass resending of expired messages when the rule is restarted. If not set to true, the in-memory cache will be stored to disk once the rule is stopped. Otherwise, the memory and disk rules will be cleared out.
+- cleanCacheAtStop: whether to clean all caches when the rule is stopped, to prevent mass resending of expired messages
+  when the rule is restarted. If not set to true, the in-memory cache will be stored to disk once the rule is stopped.
+  Otherwise, the memory and disk rules will be cleared out.
+- resendAlterQueue: whether to use the alternate queue when resending the cache. If set to true, the cache will be sent
+  to the alternate queue instead of the original queue. This will result in real-time messages and resend messages being
+  sent using different queues and the order of the messages will change. The following resend-related configurations
+  will only take effect if set to true.
+- resendPriority: resend cached priority, int type, default is 0. -1 means resend real-time data first; 0 means equal
+  priority; 1 means resend cached data first.
+- resendIndicatorField: field name of the resend cache, the field type must be a bool value. If the field is set, it
+  will be set to true when resending. e.g., if resendIndicatorField is `resend`, then the `resend` field will be set to
+  true when resending the cache.
+- resendDestination: the destination to resend the cache to, which may have different meanings or support depending on
+  the sink. For example, the mqtt sink can send the resend data to a different topic.
 
 In the following example configuration of the rule, log sink has no cache-related options configured, so the global default configuration will be used; whereas mqtt sink performs its own caching policy configuration.
 
