@@ -65,6 +65,7 @@ var analyticFuncs = map[string]struct{}{
 	"changed_col": {},
 	"had_changed": {},
 	"latest":      {},
+	"accumulate":  {},
 }
 
 const AnalyticPrefix = "$$a"

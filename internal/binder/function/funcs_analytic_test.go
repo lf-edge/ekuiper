@@ -1349,3 +1349,52 @@ func TestLatestPartition(t *testing.T) {
 		}
 	}
 }
+
+func TestAccumulateExec(t *testing.T) {
+	f, ok := builtins["accumulate"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 1
+			args: []interface{}{
+				float64(0),
+				float64(1),
+				true,
+				"self",
+			},
+			result: float64(1),
+		},
+		{ // 2
+			args: []interface{}{
+				float64(0),
+				float64(1),
+				true,
+				"self",
+			},
+			result: float64(2),
+		},
+		{ // 2
+			args: []interface{}{
+				float64(0),
+				int64(3),
+				true,
+				"self",
+			},
+			result: float64(5),
+		},
+	}
+	for i, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(result, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
+		}
+	}
+}

@@ -237,4 +237,53 @@ func registerAnalyticFunc() {
 			return nil
 		},
 	}
+
+	builtins["accumulate"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			key := args[len(args)-1].(string)
+			val, err := ctx.GetState(key)
+			if err != nil {
+				return err, false
+			}
+			if val == nil {
+				switch initValue := args[0].(type) {
+				case int:
+					val = float64(initValue)
+				case int32:
+					val = float64(initValue)
+				case int64:
+					val = float64(initValue)
+				case float32:
+					val = float64(initValue)
+				case float64:
+					val = initValue
+				default:
+					return fmt.Errorf("the inital value should be number"), false
+				}
+			}
+			accu := val.(float64)
+			switch sumValue := args[1].(type) {
+			case int:
+				accu += float64(sumValue)
+			case int32:
+				accu += float64(sumValue)
+			case int64:
+				accu += float64(sumValue)
+			case float32:
+				accu += float64(sumValue)
+			case float64:
+				accu += sumValue
+			default:
+				return fmt.Errorf("the accumulate value should be number"), false
+			}
+			if err := ctx.PutState(key, accu); err != nil {
+				return err, false
+			}
+			return accu, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+	}
 }
