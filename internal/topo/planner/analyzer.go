@@ -375,13 +375,13 @@ func convertStreamInfo(streamStmt *ast.StreamStmt) (*streamInfo, error) {
 
 type fieldsMap struct {
 	content       map[string]streamFieldStore
-	alias         map[string]struct{}
+	aliasNames    map[string]struct{}
 	isSchemaless  bool
 	defaultStream ast.StreamName
 }
 
 func newFieldsMap(isSchemaless bool, defaultStream ast.StreamName) *fieldsMap {
-	return &fieldsMap{content: make(map[string]streamFieldStore), alias: map[string]struct{}{}, isSchemaless: isSchemaless, defaultStream: defaultStream}
+	return &fieldsMap{content: make(map[string]streamFieldStore), aliasNames: map[string]struct{}{}, isSchemaless: isSchemaless, defaultStream: defaultStream}
 }
 
 func (f *fieldsMap) reserve(fieldName string, streamName ast.StreamName) {
@@ -414,13 +414,13 @@ func (f *fieldsMap) save(fieldName string, streamName ast.StreamName, field *ast
 }
 
 func (f *fieldsMap) bindAlias(aliasName string) {
-	f.alias[aliasName] = struct{}{}
+	f.aliasNames[aliasName] = struct{}{}
 }
 
 func (f *fieldsMap) bind(fr *ast.FieldRef) error {
 	lname := strings.ToLower(fr.Name)
 	fm, ok1 := f.content[lname]
-	_, ok2 := f.alias[lname]
+	_, ok2 := f.aliasNames[lname]
 	if !ok1 && !ok2 {
 		if f.isSchemaless && fr.Name != "" {
 			fm = newStreamFieldStore(f.isSchemaless, f.defaultStream)
