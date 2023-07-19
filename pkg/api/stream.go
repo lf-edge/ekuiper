@@ -117,6 +117,12 @@ type Sink interface {
 	Closable
 }
 
+type ResendSink interface {
+	Sink
+	// CollectResend Called when the sink cache resend is triggered
+	CollectResend(ctx StreamContext, data interface{}) error
+}
+
 type Emitter interface {
 	AddOutput(chan<- interface{}, string) error
 }

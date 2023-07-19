@@ -49,6 +49,7 @@ type SinkConf struct {
 	EnableCache          bool `json:"enableCache" yaml:"enableCache"`
 	ResendInterval       int  `json:"resendInterval" yaml:"resendInterval"`
 	CleanCacheAtStop     bool `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
+	ResendAlterQueue     bool `json:"resendAlterQueue" yaml:"resendAlterQueue"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.
