@@ -259,7 +259,7 @@ func registerAnalyticFunc() {
 				case float64:
 					val = initValue
 				default:
-					return fmt.Errorf("the inital value should be number"), false
+					return fmt.Errorf("the initial value should be number"), false
 				}
 			}
 			accu := val.(float64)
