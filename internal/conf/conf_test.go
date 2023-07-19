@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
 package conf
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -223,5 +226,161 @@ func TestRuleOptionValidate(t *testing.T) {
 		if !reflect.DeepEqual(tt.s, tt.e) {
 			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.e)
 		}
+	}
+}
+
+func TestSinkConf_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		sc      SinkConf
+		wantErr error
+	}{
+		{
+			name: "valid config",
+			sc: SinkConf{
+				MemoryCacheThreshold: 1024,
+				MaxDiskCache:         1024000,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "invalid memoryCacheThreshold",
+			sc: SinkConf{
+				MemoryCacheThreshold: -1,
+				MaxDiskCache:         1024000,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("memoryCacheThreshold:memoryCacheThreshold must be positive")),
+		},
+		{
+			name: "invalid maxDiskCache",
+			sc: SinkConf{
+				MemoryCacheThreshold: 1024,
+				MaxDiskCache:         -1,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("maxDiskCache:maxDiskCache must be positive")),
+		},
+		{
+			name: "invalid bufferPageSize",
+			sc: SinkConf{
+				MemoryCacheThreshold: 1024,
+				MaxDiskCache:         1024000,
+				BufferPageSize:       0,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("bufferPageSize:bufferPageSize must be positive")),
+		},
+		{
+			name: "invalid resendInterval",
+			sc: SinkConf{
+				MemoryCacheThreshold: 1024,
+				MaxDiskCache:         1024000,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       -1,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("resendInterval:resendInterval must be positive")),
+		},
+		{
+			name: "memoryCacheThresholdTooSmall",
+			sc: SinkConf{
+				MemoryCacheThreshold: 128,
+				MaxDiskCache:         1024000,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("memoryCacheThresholdTooSmall:memoryCacheThreshold must be greater than or equal to bufferPageSize")),
+		},
+		{
+			name: "memoryCacheThresholdNotMultiple",
+			sc: SinkConf{
+				MemoryCacheThreshold: 300,
+				MaxDiskCache:         1024000,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("memoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize")),
+		},
+		{
+			name: "maxDiskCacheTooSmall",
+			sc: SinkConf{
+				MemoryCacheThreshold: 1024,
+				MaxDiskCache:         128,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("maxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize")),
+		},
+		{
+			name: "maxDiskCacheNotMultiple",
+			sc: SinkConf{
+				MemoryCacheThreshold: 1024,
+				MaxDiskCache:         300,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       0,
+			},
+			wantErr: errors.Join(errors.New("maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize")),
+		},
+		{
+			name: "invalid resendPriority",
+			sc: SinkConf{
+				MemoryCacheThreshold: 1024,
+				MaxDiskCache:         1024000,
+				BufferPageSize:       256,
+				EnableCache:          true,
+				ResendInterval:       0,
+				CleanCacheAtStop:     true,
+				ResendAlterQueue:     true,
+				ResendPriority:       2,
+			},
+			wantErr: errors.Join(errors.New("resendPriority:resendPriority must be -1, 0 or 1")),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.sc.Validate()
+			assert.Equal(t, tt.wantErr, err)
+		})
 	}
 }

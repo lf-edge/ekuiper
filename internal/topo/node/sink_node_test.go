@@ -647,70 +647,126 @@ func TestSinkCache(t *testing.T) {
 		{{"a": 10}},
 	}
 
-	t.Run("test cache", func(t *testing.T) {
-		hitch := make(chan int, 10)
-		config := map[string]interface{}{
-			"enableCache": true,
-		}
-		result := [][]byte{
-			[]byte(`[{"a":1}]`),
-			[]byte(`[{"a":2}]`),
-			[]byte(`[{"a":3}]`),
-			[]byte(`[{"a":4}]`),
-			[]byte(`[{"a":5}]`),
-			[]byte(`[{"a":6}]`),
-			[]byte(`[{"a":7}]`),
-			[]byte(`[{"a":8}]`),
-			[]byte(`[{"a":9}]`),
-			[]byte(`[{"a":10}]`),
-		}
-		mockSink := mocknode.NewMockResendSink(hitch)
-		s := NewSinkNodeWithSink("mockSink", mockSink, config)
-		s.Open(ctx, make(chan error))
-		for i := 0; i < 200; i++ {
-			s.input <- data[i%10]
-			select {
-			case count := <-hitch:
-				if count == len(data)*2 {
-					goto end
-				}
-			case <-time.After(1 * time.Second):
-			}
-		}
-	end:
-		results := mockSink.GetResults()
-		assert.Equal(t, result, results)
-	})
+	tests := []struct {
+		name         string
+		config       map[string]interface{}
+		result       [][]byte
+		resendResult [][]byte
+	}{
+		{
+			name: "test cache",
+			config: map[string]interface{}{
+				"enableCache": true,
+			},
+			result: [][]byte{
+				[]byte(`[{"a":1}]`),
+				[]byte(`[{"a":2}]`),
+				[]byte(`[{"a":3}]`),
+				[]byte(`[{"a":4}]`),
+				[]byte(`[{"a":5}]`),
+				[]byte(`[{"a":6}]`),
+				[]byte(`[{"a":7}]`),
+				[]byte(`[{"a":8}]`),
+				[]byte(`[{"a":9}]`),
+				[]byte(`[{"a":10}]`),
+			},
+		},
+		{
+			name: "test resend",
+			config: map[string]interface{}{
+				"enableCache":      true,
+				"resendAlterQueue": true,
+			},
+			result: [][]byte{
+				[]byte(`[{"a":2}]`),
+				[]byte(`[{"a":4}]`),
+				[]byte(`[{"a":6}]`),
+				[]byte(`[{"a":8}]`),
+				[]byte(`[{"a":10}]`),
+			},
+			resendResult: [][]byte{
+				[]byte(`[{"a":1}]`),
+				[]byte(`[{"a":3}]`),
+				[]byte(`[{"a":5}]`),
+			},
+		}, {
+			name: "test resend priority low",
+			config: map[string]interface{}{
+				"enableCache":      true,
+				"resendAlterQueue": true,
+				"resendPriority":   -1,
+			},
+			result: [][]byte{
+				[]byte(`[{"a":2}]`),
+				[]byte(`[{"a":4}]`),
+				[]byte(`[{"a":6}]`),
+				[]byte(`[{"a":8}]`),
+				[]byte(`[{"a":10}]`),
+			},
+			resendResult: [][]byte{
+				[]byte(`[{"a":1}]`),
+				[]byte(`[{"a":3}]`),
+				[]byte(`[{"a":5}]`),
+			},
+		}, {
+			name: "test resend priority high",
+			config: map[string]interface{}{
+				"enableCache":      true,
+				"resendAlterQueue": true,
+				"resendPriority":   1,
+			},
+			result: [][]byte{
+				[]byte(`[{"a":2}]`),
+				[]byte(`[{"a":4}]`),
+				[]byte(`[{"a":6}]`),
+				[]byte(`[{"a":8}]`),
+				[]byte(`[{"a":10}]`),
+			},
+			resendResult: [][]byte{
+				[]byte(`[{"a":1}]`),
+				[]byte(`[{"a":3}]`),
+				[]byte(`[{"a":5}]`),
+			},
+		},
+	}
 
-	t.Run("test resend cache", func(t *testing.T) {
-		hitch := make(chan int, 10)
-		config := map[string]interface{}{
-			"enableCache":      true,
-			"resendAlterQueue": true,
-		}
-		result := [][]byte{
-			[]byte(`[{"a":2}]`),
-			[]byte(`[{"a":4}]`),
-			[]byte(`[{"a":6}]`),
-			[]byte(`[{"a":8}]`),
-			[]byte(`[{"a":10}]`),
-		}
-		resendResult := [][]byte{
-			[]byte(`[{"a":1}]`),
-			[]byte(`[{"a":3}]`),
-			[]byte(`[{"a":5}]`),
-		}
-		mockSink := mocknode.NewMockResendSink(hitch)
-		s := NewSinkNodeWithSink("mockSink", mockSink, config)
-		s.Open(ctx, make(chan error))
-		for _, d := range data {
-			s.input <- d
-			<-hitch
-		}
-		time.Sleep(1 * time.Second)
-		results := mockSink.GetResults()
-		assert.Equal(t, results, result)
-		resentResults := mockSink.GetResendResults()
-		assert.Equal(t, resendResult, resentResults[:3])
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hitch := make(chan int, 10)
+			mockSink := mocknode.NewMockResendSink(hitch)
+			s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
+			s.Open(ctx, make(chan error))
+			if tt.resendResult == nil {
+				for i := 0; i < 200; i++ {
+					s.input <- data[i%10]
+					select {
+					case count := <-hitch:
+						if count == len(data)*2 {
+							goto end
+						}
+					case <-time.After(1 * time.Second):
+					}
+				}
+			end:
+				results := mockSink.GetResults()
+				assert.Equal(t, tt.result, results)
+			} else {
+				for _, d := range data {
+					s.input <- d
+					<-hitch
+				}
+				for i := 0; i < 20; i++ {
+					time.Sleep(100 * time.Millisecond)
+					resentResults := mockSink.GetResendResults()
+					if len(resentResults) == len(tt.resendResult) {
+						break
+					}
+				}
+				results := mockSink.GetResults()
+				assert.Equal(t, results, tt.result)
+				resentResults := mockSink.GetResendResults()
+				assert.Equal(t, resentResults[:len(tt.resendResult)], tt.resendResult)
+			}
+		})
+	}
 }

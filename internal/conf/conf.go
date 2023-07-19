@@ -50,6 +50,7 @@ type SinkConf struct {
 	ResendInterval       int  `json:"resendInterval" yaml:"resendInterval"`
 	CleanCacheAtStop     bool `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
 	ResendAlterQueue     bool `json:"resendAlterQueue" yaml:"resendAlterQueue"`
+	ResendPriority       int  `json:"resendPriority" yaml:"resendPriority"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.
@@ -94,6 +95,11 @@ func (sc *SinkConf) Validate() error {
 		sc.MaxDiskCache = sc.BufferPageSize * (sc.MaxDiskCache/sc.BufferPageSize + 1)
 		Log.Warnf("maxDiskCache is not a multiple of bufferPageSize, set to %d", sc.MaxDiskCache)
 		errs = errors.Join(errs, errors.New("maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"))
+	}
+	if sc.ResendPriority < -1 || sc.ResendPriority > 1 {
+		sc.ResendPriority = 0
+		Log.Warnf("resendPriority is not in [-1, 1], set to 0")
+		errs = errors.Join(errs, errors.New("resendPriority:resendPriority must be -1, 0 or 1"))
 	}
 	return errs
 }

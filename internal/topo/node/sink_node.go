@@ -217,7 +217,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										outs := itemToMap(data)
 										if sconf.Omitempty && (data == nil || len(outs) == 0) {
 											ctx.GetLogger().Debugf("receive empty in sink")
-											return nil
+											break
 										}
 										select {
 										case dataCh <- outs:
@@ -244,64 +244,118 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							} else {
 								resendCh := make(chan []map[string]interface{}, sconf.BufferLength)
 								rq := cache.NewSyncCache(ctx, resendCh, result, &sconf.SinkConf, sconf.BufferLength)
-								for {
+								receiveQ := func(data interface{}) {
+									processed := false
+									if data, processed = m.preprocess(data); processed {
+										return
+									}
+									stats.IncTotalRecordsIn()
+									stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
+									outs := itemToMap(data)
+									if sconf.Omitempty && (data == nil || len(outs) == 0) {
+										ctx.GetLogger().Debugf("receive empty in sink")
+										return
+									}
 									select {
-									case data := <-m.input:
-										processed := false
-										if data, processed = m.preprocess(data); processed {
-											break
-										}
-										stats.IncTotalRecordsIn()
-										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
-										outs := itemToMap(data)
-										if sconf.Omitempty && (data == nil || len(outs) == 0) {
-											ctx.GetLogger().Debugf("receive empty in sink")
-											return nil
-										}
-										select {
-										case dataCh <- outs:
-										case <-ctx.Done():
-										}
-										select {
-										case resendCh <- nil:
-										case <-ctx.Done():
-										}
-									case data := <-c.Out:
-										stats.ProcessTimeStart()
-										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
-										ctx.GetLogger().Debugf("sending data: %v", data)
-										err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, false)
-										ack := checkAck(ctx, data, err)
-										// If ack is false, add it to the resend queue
-										if !ack {
-											select {
-											case resendCh <- data:
-											case <-ctx.Done():
-											}
-										}
-										// Always ack for the normal queue as fail items are handled by the resend queue
-										select {
-										case c.Ack <- true:
-										case <-ctx.Done():
-										}
-										stats.ProcessTimeEnd()
-									case data := <-rq.Out:
-										ctx.GetLogger().Debugf("resend data: %v", data)
-										stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
-										err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, true)
-										ack := checkAck(ctx, data, err)
-										select {
-										case rq.Ack <- ack:
-										case <-ctx.Done():
-										}
+									case dataCh <- outs:
 									case <-ctx.Done():
-										logger.Infof("sink node %s instance %d done", m.name, instance)
-										if err := sink.Close(ctx); err != nil {
-											logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
-										}
-										return nil
+									}
+									select {
+									case resendCh <- nil:
+									case <-ctx.Done():
 									}
 								}
+								normalQ := func(data []map[string]interface{}) {
+									stats.ProcessTimeStart()
+									stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
+									ctx.GetLogger().Debugf("sending data: %v", data)
+									err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, false)
+									ack := checkAck(ctx, data, err)
+									// If ack is false, add it to the resend queue
+									if !ack {
+										select {
+										case resendCh <- data:
+										case <-ctx.Done():
+										}
+									}
+									// Always ack for the normal queue as fail items are handled by the resend queue
+									select {
+									case c.Ack <- true:
+									case <-ctx.Done():
+									}
+									stats.ProcessTimeEnd()
+								}
+								resendQ := func(data []map[string]interface{}) {
+									ctx.GetLogger().Debugf("resend data: %v", data)
+									stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
+									err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, true)
+									ack := checkAck(ctx, data, err)
+									select {
+									case rq.Ack <- ack:
+									case <-ctx.Done():
+									}
+								}
+								doneQ := func() {
+									logger.Infof("sink node %s instance %d done", m.name, instance)
+									if err := sink.Close(ctx); err != nil {
+										logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+									}
+								}
+
+								if sconf.ResendPriority == 0 {
+									for {
+										select {
+										case data := <-m.input:
+											receiveQ(data)
+										case data := <-c.Out:
+											normalQ(data)
+										case data := <-rq.Out:
+											resendQ(data)
+										case <-ctx.Done():
+											doneQ()
+											return nil
+										}
+									}
+								} else if sconf.ResendPriority < 0 { // normal queue has higher priority
+									for {
+										select {
+										case data := <-m.input:
+											receiveQ(data)
+										case data := <-c.Out:
+											normalQ(data)
+										case <-ctx.Done():
+											doneQ()
+											return nil
+										default:
+											select {
+											case data := <-c.Out:
+												normalQ(data)
+											case data := <-rq.Out:
+												resendQ(data)
+											}
+										}
+									}
+								} else {
+									for {
+										select {
+										case data := <-m.input:
+											receiveQ(data)
+										case data := <-rq.Out:
+											resendQ(data)
+										case <-ctx.Done():
+											doneQ()
+											return nil
+										default:
+											select {
+											case data := <-c.Out:
+												normalQ(data)
+											case data := <-rq.Out:
+												resendQ(data)
+											}
+										}
+									}
+								}
+
 							}
 						}
 					})
