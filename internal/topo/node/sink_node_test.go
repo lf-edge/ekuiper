@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build template || !core
-// +build template !core
 
 package node
 
@@ -27,6 +26,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
@@ -619,11 +619,98 @@ func TestSinkFields_Apply(t *testing.T) {
 		tf, _ := transform.GenTransform(tt.dt, tt.format, tt.schemaId, tt.delimiter, tt.dataField, tt.fields)
 		vCtx := context.WithValue(ctx, context.TransKey, tf)
 		mockSink := mocknode.NewMockSink()
-		mockSink.Collect(vCtx, tt.data)
+		_ = mockSink.Collect(vCtx, tt.data)
 		time.Sleep(1 * time.Second)
 		results := mockSink.GetResults()
 		if !reflect.DeepEqual(tt.result, results) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
 		}
 	}
+}
+
+func TestSinkCache(t *testing.T) {
+	conf.InitConf()
+	transform.RegisterAdditionalFuncs()
+
+	contextLogger := conf.Log.WithField("rule", "TestSinkCache")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	data := [][]map[string]interface{}{
+		{{"a": 1}},
+		{{"a": 2}},
+		{{"a": 3}},
+		{{"a": 4}},
+		{{"a": 5}},
+		{{"a": 6}},
+		{{"a": 7}},
+		{{"a": 8}},
+		{{"a": 9}},
+		{{"a": 10}},
+	}
+
+	t.Run("test cache", func(t *testing.T) {
+		hitch := make(chan int, 10)
+		config := map[string]interface{}{
+			"enableCache": true,
+		}
+		result := [][]byte{
+			[]byte(`[{"a":1}]`),
+			[]byte(`[{"a":2}]`),
+			[]byte(`[{"a":3}]`),
+			[]byte(`[{"a":4}]`),
+			[]byte(`[{"a":5}]`),
+			[]byte(`[{"a":6}]`),
+			[]byte(`[{"a":7}]`),
+			[]byte(`[{"a":8}]`),
+			[]byte(`[{"a":9}]`),
+			[]byte(`[{"a":10}]`),
+		}
+		mockSink := mocknode.NewMockResendSink(hitch)
+		s := NewSinkNodeWithSink("mockSink", mockSink, config)
+		s.Open(ctx, make(chan error))
+		for i := 0; i < 200; i++ {
+			s.input <- data[i%10]
+			select {
+			case count := <-hitch:
+				if count == len(data)*2 {
+					goto end
+				}
+			case <-time.After(1 * time.Second):
+			}
+		}
+	end:
+		results := mockSink.GetResults()
+		assert.Equal(t, result, results)
+	})
+
+	t.Run("test resend cache", func(t *testing.T) {
+		hitch := make(chan int, 10)
+		config := map[string]interface{}{
+			"enableCache":      true,
+			"resendAlterQueue": true,
+		}
+		result := [][]byte{
+			[]byte(`[{"a":2}]`),
+			[]byte(`[{"a":4}]`),
+			[]byte(`[{"a":6}]`),
+			[]byte(`[{"a":8}]`),
+			[]byte(`[{"a":10}]`),
+		}
+		resendResult := [][]byte{
+			[]byte(`[{"a":1}]`),
+			[]byte(`[{"a":3}]`),
+			[]byte(`[{"a":5}]`),
+		}
+		mockSink := mocknode.NewMockResendSink(hitch)
+		s := NewSinkNodeWithSink("mockSink", mockSink, config)
+		s.Open(ctx, make(chan error))
+		for _, d := range data {
+			s.input <- d
+			<-hitch
+		}
+		time.Sleep(1 * time.Second)
+		results := mockSink.GetResults()
+		assert.Equal(t, results, result)
+		resentResults := mockSink.GetResendResults()
+		assert.Equal(t, resendResult, resentResults[:3])
+	})
 }

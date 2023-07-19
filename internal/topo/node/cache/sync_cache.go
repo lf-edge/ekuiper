@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/lf-edge/ekuiper/pkg/kv"
@@ -29,7 +28,7 @@ import (
 
 type AckResult bool
 
-// page Rotate storage for in memory cache
+// page Rotates storage for in memory cache
 // Not thread safe!
 type page struct {
 	Data [][]map[string]interface{}
@@ -101,7 +100,6 @@ type SyncCache struct {
 	Ack       chan bool
 	cacheCtrl chan interface{} // CacheCtrl is the only place to control the cache; sync in and ack result
 	errorCh   chan<- error
-	stats     metric.StatManager
 	// cache config
 	cacheConf   *conf.SinkConf
 	maxDiskPage int
@@ -110,8 +108,8 @@ type SyncCache struct {
 	memCache       []*page
 	diskBufferPage *page
 	// status
-	diskSize     int // how many pages has been saved
-	cacheLength  int // readonly, for metrics only to save calculation
+	diskSize     int // the count of pages has been saved
+	CacheLength  int // readonly, for metrics only to save calculation
 	diskPageTail int // init from the database
 	diskPageHead int
 	sendStatus   int // 0: idle, 1: sending and waiting for ack, 2: stopped for error
@@ -121,13 +119,13 @@ type SyncCache struct {
 	exitCh chan<- struct{}
 }
 
-func NewSyncCacheWithExitChanel(ctx api.StreamContext, in <-chan []map[string]interface{}, errCh chan<- error, stats metric.StatManager, cacheConf *conf.SinkConf, bufferLength int, exitCh chan<- struct{}) *SyncCache {
-	c := NewSyncCache(ctx, in, errCh, stats, cacheConf, bufferLength)
+func NewSyncCacheWithExitChanel(ctx api.StreamContext, in <-chan []map[string]interface{}, errCh chan<- error, cacheConf *conf.SinkConf, bufferLength int, exitCh chan<- struct{}) *SyncCache {
+	c := NewSyncCache(ctx, in, errCh, cacheConf, bufferLength)
 	c.exitCh = exitCh
 	return c
 }
 
-func NewSyncCache(ctx api.StreamContext, in <-chan []map[string]interface{}, errCh chan<- error, stats metric.StatManager, cacheConf *conf.SinkConf, bufferLength int) *SyncCache {
+func NewSyncCache(ctx api.StreamContext, in <-chan []map[string]interface{}, errCh chan<- error, cacheConf *conf.SinkConf, bufferLength int) *SyncCache {
 	c := &SyncCache{
 		cacheConf:  cacheConf,
 		in:         in,
@@ -139,7 +137,6 @@ func NewSyncCache(ctx api.StreamContext, in <-chan []map[string]interface{}, err
 		memCache:   make([]*page, 0),
 		// add one more slot so that there will be at least one slot between head and tail to find out the head/tail id
 		maxDiskPage: (cacheConf.MaxDiskCache / cacheConf.BufferPageSize) + 1,
-		stats:       stats,
 	}
 	go func() {
 		err := infra.SafeRun(func() error {
@@ -156,7 +153,7 @@ func NewSyncCache(ctx api.StreamContext, in <-chan []map[string]interface{}, err
 func (c *SyncCache) run(ctx api.StreamContext) {
 	c.initStore(ctx)
 	defer c.onClose(ctx)
-	if c.cacheLength > 0 { // start to send the cache
+	if c.CacheLength > 0 { // start to send the cache
 		c.send(ctx)
 	}
 	for {
@@ -186,7 +183,12 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 				}
 			case []map[string]interface{}:
 				ctx.GetLogger().Debugf("adding cache %v", data)
-				c.addCache(ctx, r)
+				// hack here: nil is a signal to continue sending, so not adding nil to cache
+				if r != nil {
+					c.addCache(ctx, r)
+				} else {
+					ctx.GetLogger().Debug("nil cache, continue sending")
+				}
 				if c.sendStatus == 2 {
 					c.sendStatus = 0
 					ctx.GetLogger().Debug("send status to 0 after adding cache in error state")
@@ -194,7 +196,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 			default:
 				ctx.GetLogger().Errorf("unknown cache control command %v", data)
 			}
-			c.stats.SetBufferLength(int64(len(c.in) + c.cacheLength))
+			ctx.GetLogger().Debugf("cache status %d", c.sendStatus)
 			if c.sendStatus == 0 {
 				c.send(ctx)
 			}
@@ -206,7 +208,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 }
 
 func (c *SyncCache) send(ctx api.StreamContext) {
-	if c.cacheLength > 1 && c.cacheConf.ResendInterval > 0 {
+	if c.CacheLength > 1 && c.cacheConf.ResendInterval > 0 {
 		time.Sleep(time.Duration(c.cacheConf.ResendInterval) * time.Millisecond)
 	}
 	d, ok := c.peakMemCache(ctx)
@@ -264,38 +266,38 @@ func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{
 	} else {
 		ctx.GetLogger().Debugf("added cache to mem cache %v", c.memCache)
 	}
-	c.cacheLength++
-	ctx.GetLogger().Debugf("added cache %d", c.cacheLength)
+	c.CacheLength++
+	ctx.GetLogger().Debugf("added cache %d", c.CacheLength)
 }
 
 // deleteCache not thread safe!
 func (c *SyncCache) deleteCache(ctx api.StreamContext) {
-	ctx.GetLogger().Debugf("deleting cache. cacheLength: %d, diskSize: %d", c.cacheLength, c.diskSize)
+	ctx.GetLogger().Debugf("deleting cache. CacheLength: %d, diskSize: %d", c.CacheLength, c.diskSize)
 	if len(c.memCache) == 0 {
 		ctx.GetLogger().Debug("mem cache is empty")
 		return
 	}
 	isNotEmpty := c.memCache[0].delete()
 	if isNotEmpty {
-		c.cacheLength--
-		ctx.GetLogger().Debugf("deleted cache: %d", c.cacheLength)
+		c.CacheLength--
+		ctx.GetLogger().Debugf("deleted cache: %d", c.CacheLength)
 	}
 	if c.memCache[0].isEmpty() { // read from disk or cool list
 		c.memCache = c.memCache[1:]
 		if c.diskSize > 0 {
 			c.loadFromDisk(ctx)
 		} else if c.diskBufferPage != nil { // use cool page as the new page
-			ctx.GetLogger().Debugf("reading from diskBufferPage: %d", c.cacheLength)
+			ctx.GetLogger().Debugf("reading from diskBufferPage: %d", c.CacheLength)
 			c.memCache = append(c.memCache, c.diskBufferPage)
 			c.diskBufferPage = nil
 		}
 	}
-	ctx.GetLogger().Debugf("deleted cache. cacheLength: %d, diskSize: %d, memCache: %v", c.cacheLength, c.diskSize, c.memCache)
+	ctx.GetLogger().Debugf("deleted cache. CacheLength: %d, diskSize: %d, memCache: %v", c.CacheLength, c.diskSize, c.memCache)
 }
 
 func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 	// load page from the disk
-	ctx.GetLogger().Debugf("loading from disk %d. cacheLength: %d, diskSize: %d", c.diskPageTail, c.cacheLength, c.diskSize)
+	ctx.GetLogger().Debugf("loading from disk %d. CacheLength: %d, diskSize: %d", c.diskPageTail, c.CacheLength, c.diskSize)
 	hotPage := newPage(c.cacheConf.BufferPageSize)
 	ok, err := c.store.Get(strconv.Itoa(c.diskPageHead), hotPage)
 	if err != nil {
@@ -306,7 +308,7 @@ func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 		_ = c.store.Delete(strconv.Itoa(c.diskPageHead))
 		if len(c.memCache) >= c.maxMemPage {
 			ctx.GetLogger().Warnf("drop a page of %d items in memory", c.memCache[0].L)
-			c.cacheLength -= c.memCache[0].L
+			c.CacheLength -= c.memCache[0].L
 			c.memCache = c.memCache[1:]
 		}
 		c.memCache = append(c.memCache, hotPage)
@@ -324,7 +326,7 @@ func (c *SyncCache) loadFromDisk(ctx api.StreamContext) {
 			ctx.GetLogger().Warnf("fail to store disk cache size %v", err)
 		}
 	}
-	ctx.GetLogger().Debugf("loaded from disk %d. cacheLength: %d, diskSize: %d", c.diskPageTail, c.cacheLength, c.diskSize)
+	ctx.GetLogger().Debugf("loaded from disk %d. CacheLength: %d, diskSize: %d", c.diskPageTail, c.CacheLength, c.diskSize)
 }
 
 func (c *SyncCache) appendMemCache(item []map[string]interface{}) bool {
@@ -356,7 +358,7 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 	kvTable := path.Join("sink", ctx.GetRuleId()+ctx.GetOpId()+strconv.Itoa(ctx.GetInstanceId()))
 	if c.cacheConf.CleanCacheAtStop {
 		ctx.GetLogger().Infof("creating cache store %s", kvTable)
-		store.DropCacheKV(kvTable)
+		_ = store.DropCacheKV(kvTable)
 	}
 	var err error
 	c.store, err = store.GetCacheKV(kvTable)
@@ -372,8 +374,8 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 			i := 0
 			for ; i < 100; i++ {
 				time.Sleep(time.Millisecond * 10)
-				c.store.Get("storeSig", &set)
-				if set == 1 {
+				_, err := c.store.Get("storeSig", &set)
+				if err == nil && set == 1 {
 					ctx.GetLogger().Infof("waiting for previous cache for %d times", i)
 					break
 				}
@@ -382,7 +384,7 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 				ctx.GetLogger().Errorf("waiting for previous cache for %d times, exit and drop", i)
 			}
 		}
-		c.store.Set("storeSig", 0)
+		_ = c.store.Set("storeSig", 0)
 		ctx.GetLogger().Infof("start to restore cache from disk")
 		// restore the memCache
 		_, err = c.store.Get("memcache", &c.memCache)
@@ -390,13 +392,13 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 			ctx.GetLogger().Errorf("fail to restore mem cache %v", err)
 		}
 		for _, p := range c.memCache {
-			c.cacheLength += p.L
+			c.CacheLength += p.L
 		}
 		err = c.store.Delete("memcache")
 		if err != nil {
 			ctx.GetLogger().Errorf("fail to delete mem cache %v", err)
 		}
-		ctx.GetLogger().Infof("restored mem cache %d", c.cacheLength)
+		ctx.GetLogger().Infof("restored mem cache %d", c.CacheLength)
 		// restore the disk cache
 		var size int
 		ok, _ = c.store.Get("size", &size)
@@ -409,7 +411,7 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 		if ok {
 			c.diskPageHead = head
 		}
-		c.cacheLength += (c.diskSize - 1) * c.cacheConf.BufferPageSize
+		c.CacheLength += (c.diskSize - 1) * c.cacheConf.BufferPageSize
 		c.diskPageTail = (c.diskPageHead + c.diskSize - 1) % c.maxDiskPage
 		// load buffer page
 		hotPage := newPage(c.cacheConf.BufferPageSize)
@@ -420,10 +422,10 @@ func (c *SyncCache) initStore(ctx api.StreamContext) {
 			ctx.GetLogger().Errorf("nothing in the disk, should not happen")
 		} else {
 			c.diskBufferPage = hotPage
-			c.cacheLength += c.diskBufferPage.L
+			c.CacheLength += c.diskBufferPage.L
 			c.diskSize--
 		}
-		ctx.GetLogger().Infof("restored all cache %d. diskSize %d", c.cacheLength, c.diskSize)
+		ctx.GetLogger().Infof("restored all cache %d. diskSize %d", c.CacheLength, c.diskSize)
 	}
 }
 
@@ -438,7 +440,7 @@ func (c *SyncCache) onClose(ctx api.StreamContext) {
 	if c.cacheConf.CleanCacheAtStop {
 		kvTable := path.Join("sink", ctx.GetRuleId()+ctx.GetOpId()+strconv.Itoa(ctx.GetInstanceId()))
 		ctx.GetLogger().Infof("cleaning cache store %s", kvTable)
-		store.DropCacheKV(kvTable)
+		_ = store.DropCacheKV(kvTable)
 	} else {
 		if c.diskBufferPage != nil {
 			err := c.store.Set(strconv.Itoa(c.diskPageTail), c.diskBufferPage)
@@ -459,6 +461,6 @@ func (c *SyncCache) onClose(ctx api.StreamContext) {
 			}
 			ctx.GetLogger().Debugf("store memory cache %d", len(c.memCache))
 		}
-		c.store.Set("storeSig", 1)
+		_ = c.store.Set("storeSig", 1)
 	}
 }

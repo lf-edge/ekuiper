@@ -31,6 +31,7 @@ type AdConf struct {
 	Qos         byte   `json:"qos"`
 	Retained    bool   `json:"retained"`
 	Compression string `json:"compression"`
+	ResendTopic string `json:"resendDestination"`
 }
 
 type MQTTSink struct {
@@ -51,7 +52,10 @@ func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
 
 func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	adconf := &AdConf{}
-	cast.MapToStruct(ps, adconf)
+	err := cast.MapToStruct(ps, adconf)
+	if err != nil {
+		return err
+	}
 
 	if adconf.Tpc == "" {
 		return fmt.Errorf("mqtt sink is missing property topic")
@@ -59,7 +63,6 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	if adconf.Qos != 0 && adconf.Qos != 1 && adconf.Qos != 2 {
 		return fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", adconf.Qos)
 	}
-	var err error
 	if adconf.Compression != "" {
 		ms.compressor, err = compressor.GetCompressor(adconf.Compression)
 		if err != nil {
@@ -84,6 +87,14 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 }
 
 func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
+	return ms.collectWithTopic(ctx, item, ms.adconf.Tpc)
+}
+
+func (ms *MQTTSink) CollectResend(ctx api.StreamContext, item interface{}) error {
+	return ms.collectWithTopic(ctx, item, ms.adconf.ResendTopic)
+}
+
+func (ms *MQTTSink) collectWithTopic(ctx api.StreamContext, item interface{}, topic string) error {
 	logger := ctx.GetLogger()
 	jsonBytes, _, err := ctx.TransformOutput(item)
 	if err != nil {
@@ -97,7 +108,7 @@ func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 	}
 
-	tpc, err := ctx.ParseTemplate(ms.adconf.Tpc, item)
+	tpc, err := ctx.ParseTemplate(topic, item)
 	if err != nil {
 		return err
 	}
