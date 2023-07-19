@@ -1374,6 +1374,7 @@ func TestAccumulateExec(t *testing.T) {
 				"self",
 			},
 			result: fmt.Errorf("the initial value should be number"),
+			err:    fmt.Errorf("the initial value should be number"),
 		},
 		{ // 0
 			args: []interface{}{
@@ -1383,6 +1384,7 @@ func TestAccumulateExec(t *testing.T) {
 				"self",
 			},
 			result: fmt.Errorf("the accumulate value should be number"),
+			err:    fmt.Errorf("the accumulate value should be number"),
 		},
 		{ // 1
 			args: []interface{}{
@@ -1432,7 +1434,7 @@ func TestAccumulateExec(t *testing.T) {
 		{ // 5
 			args: []interface{}{
 				float64(0),
-				int(3),
+				3,
 				true,
 				"self",
 			},
@@ -1440,11 +1442,67 @@ func TestAccumulateExec(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		result, err := f.exec(fctx, tt.args)
+		result, _ := f.exec(fctx, tt.args)
 		if tt.err != nil {
-			require.Equal(t, tt.err, err)
+			require.Equal(t, tt.err, tt.result)
 		} else {
 			require.Equal(t, tt.result, result)
 		}
+	}
+
+	testInits := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{
+			args: []interface{}{
+				float64(0),
+				float64(1),
+				true,
+				"self",
+			},
+			result: float64(1),
+		},
+		{
+			args: []interface{}{
+				float32(0),
+				float64(1),
+				true,
+				"self",
+			},
+			result: float64(1),
+		},
+		{
+			args: []interface{}{
+				int(0),
+				float64(1),
+				true,
+				"self",
+			},
+			result: float64(1),
+		},
+		{
+			args: []interface{}{
+				int32(0),
+				float64(1),
+				true,
+				"self",
+			},
+			result: float64(1),
+		},
+		{
+			args: []interface{}{
+				int64(0),
+				float64(1),
+				true,
+				"self",
+			},
+			result: float64(1),
+		},
+	}
+	for _, tt := range testInits {
+		fctx.PutState("self", nil)
+		result, _ := f.exec(fctx, tt.args)
+		require.Equal(t, tt.result, result)
 	}
 }
