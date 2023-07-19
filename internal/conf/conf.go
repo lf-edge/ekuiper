@@ -43,14 +43,15 @@ type tlsConf struct {
 }
 
 type SinkConf struct {
-	MemoryCacheThreshold int  `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
-	MaxDiskCache         int  `json:"maxDiskCache" yaml:"maxDiskCache"`
-	BufferPageSize       int  `json:"bufferPageSize" yaml:"bufferPageSize"`
-	EnableCache          bool `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       int  `json:"resendInterval" yaml:"resendInterval"`
-	CleanCacheAtStop     bool `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
-	ResendAlterQueue     bool `json:"resendAlterQueue" yaml:"resendAlterQueue"`
-	ResendPriority       int  `json:"resendPriority" yaml:"resendPriority"`
+	MemoryCacheThreshold int    `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
+	MaxDiskCache         int    `json:"maxDiskCache" yaml:"maxDiskCache"`
+	BufferPageSize       int    `json:"bufferPageSize" yaml:"bufferPageSize"`
+	EnableCache          bool   `json:"enableCache" yaml:"enableCache"`
+	ResendInterval       int    `json:"resendInterval" yaml:"resendInterval"`
+	CleanCacheAtStop     bool   `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
+	ResendAlterQueue     bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
+	ResendPriority       int    `json:"resendPriority" yaml:"resendPriority"`
+	ResendIndicatorField string `json:"resendIndicatorField" yaml:"resendIndicatorField"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.

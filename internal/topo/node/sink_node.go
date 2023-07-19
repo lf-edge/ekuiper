@@ -288,6 +288,11 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 								resendQ := func(data []map[string]interface{}) {
 									ctx.GetLogger().Debugf("resend data: %v", data)
 									stats.SetBufferLength(int64(len(dataCh) + c.CacheLength + rq.CacheLength))
+									if sconf.ResendIndicatorField != "" {
+										for _, item := range data {
+											item[sconf.ResendIndicatorField] = true
+										}
+									}
 									err := doCollectMaps(ctx, sink, sconf, data, sendManager, stats, true)
 									ack := checkAck(ctx, data, err)
 									select {

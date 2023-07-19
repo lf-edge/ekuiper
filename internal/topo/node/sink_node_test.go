@@ -634,18 +634,6 @@ func TestSinkCache(t *testing.T) {
 
 	contextLogger := conf.Log.WithField("rule", "TestSinkCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	data := [][]map[string]interface{}{
-		{{"a": 1}},
-		{{"a": 2}},
-		{{"a": 3}},
-		{{"a": 4}},
-		{{"a": 5}},
-		{{"a": 6}},
-		{{"a": 7}},
-		{{"a": 8}},
-		{{"a": 9}},
-		{{"a": 10}},
-	}
 
 	tests := []struct {
 		name         string
@@ -692,9 +680,10 @@ func TestSinkCache(t *testing.T) {
 		}, {
 			name: "test resend priority low",
 			config: map[string]interface{}{
-				"enableCache":      true,
-				"resendAlterQueue": true,
-				"resendPriority":   -1,
+				"enableCache":          true,
+				"resendAlterQueue":     true,
+				"resendPriority":       -1,
+				"resendIndicatorField": "isResend",
 			},
 			result: [][]byte{
 				[]byte(`[{"a":2}]`),
@@ -704,9 +693,9 @@ func TestSinkCache(t *testing.T) {
 				[]byte(`[{"a":10}]`),
 			},
 			resendResult: [][]byte{
-				[]byte(`[{"a":1}]`),
-				[]byte(`[{"a":3}]`),
-				[]byte(`[{"a":5}]`),
+				[]byte(`[{"a":1,"isResend":true}]`),
+				[]byte(`[{"a":3,"isResend":true}]`),
+				[]byte(`[{"a":5,"isResend":true}]`),
 			},
 		}, {
 			name: "test resend priority high",
@@ -732,8 +721,21 @@ func TestSinkCache(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			data := [][]map[string]interface{}{
+				{{"a": 1}},
+				{{"a": 2}},
+				{{"a": 3}},
+				{{"a": 4}},
+				{{"a": 5}},
+				{{"a": 6}},
+				{{"a": 7}},
+				{{"a": 8}},
+				{{"a": 9}},
+				{{"a": 10}},
+			}
 			hitch := make(chan int, 10)
 			mockSink := mocknode.NewMockResendSink(hitch)
+			fmt.Printf("mockSink: %+v\n", tt.config)
 			s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
 			s.Open(ctx, make(chan error))
 			if tt.resendResult == nil {
