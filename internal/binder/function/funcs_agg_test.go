@@ -26,6 +26,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestAggExec(t *testing.T) {
@@ -554,12 +555,75 @@ func TestLastValue(t *testing.T) {
 			},
 			result: nil,
 		},
+		{
+			args: []interface{}{
+				1,
+				true,
+			},
+			result: fmt.Errorf("Invalid argument type found."),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1},
+				true,
+			},
+			result: fmt.Errorf("Invalid argument type found."),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1},
+				[]interface{}{1},
+			},
+			result: fmt.Errorf("Invalid argument type found."),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{},
+				[]interface{}{true},
+			},
+			result: nil,
+		},
 	}
 
 	for i, tt := range tests {
 		r, _ := f.exec(fctx, tt.args)
 		if !reflect.DeepEqual(r, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
+		}
+	}
+}
+
+func TestLastValueValidation(t *testing.T) {
+	f, ok := builtins["last_value"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	tests := []struct {
+		args []ast.Expr
+		err  error
+	}{
+		{
+			args: []ast.Expr{
+				&ast.BooleanLiteral{Val: true},
+			},
+			err: fmt.Errorf("Expect 2 arguments but found 1."),
+		}, {
+			args: []ast.Expr{
+				&ast.FieldRef{Name: "foo"},
+				&ast.FieldRef{Name: "bar"},
+			},
+			err: fmt.Errorf("Expect bool type for parameter 2"),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.BooleanLiteral{Val: true},
+			},
+		},
+	}
+	for i, tt := range tests {
+		err := f.val(nil, tt.args)
+		if !reflect.DeepEqual(err, tt.err) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, err, tt.err)
 		}
 	}
 }
