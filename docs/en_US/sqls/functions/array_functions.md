@@ -90,8 +90,7 @@ Returns a union of the two arrays, with all duplicates removed.
 array_max(array)
 ```
 
-Returns an element which is greater than or equal to all other elements of the array. If an element of the array is
-null, it returns null.
+Returns an element which is greater than or equal to all other elements of the array. The null element will be ignored.
 
 ## ARRAY_MIN
 
@@ -99,8 +98,7 @@ null, it returns null.
 array_min(array)
 ```
 
-Returns an element which is less than or equal to all other elements of the array. If an element of the array is null,
-it returns null.
+Returns an element which is less than or equal to all other elements of the array. The null element will be ignored.
 
 ## ARRAY_EXCEPT
 

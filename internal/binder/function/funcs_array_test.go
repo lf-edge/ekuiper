@@ -15,10 +15,12 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -284,28 +286,28 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1},
 			},
-			result: 1,
+			result: int64(1),
 		},
 		{
 			name: "array_max",
 			args: []interface{}{
 				[]interface{}{1, nil, 3},
 			},
-			result: nil,
+			result: int64(3),
 		},
 		{
 			name: "array_max",
 			args: []interface{}{
 				[]interface{}{1, "4", 3},
 			},
-			result: "4",
+			result: errors.New("requires int64 but found string(4)"),
 		},
 		{
 			name: "array_max",
 			args: []interface{}{
 				[]interface{}{1, "a4a", 3},
 			},
-			result: errorArrayContainsNonNumOrBoolValError,
+			result: errors.New("requires int64 but found string(a4a)"),
 		},
 		{
 			name: "array_max",
@@ -319,21 +321,21 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1, 3.2, 4.1, 2},
 			},
-			result: 4.1,
+			result: int64(4),
 		},
 		{
 			name: "array_min",
 			args: []interface{}{
 				[]interface{}{1, nil, 3},
 			},
-			result: nil,
+			result: int64(1),
 		},
 		{
 			name: "array_min",
 			args: []interface{}{
 				[]interface{}{1, "0", 3},
 			},
-			result: "0",
+			result: errors.New("requires int64 but found string(0)"),
 		},
 		{
 			name: "array_min",
@@ -347,14 +349,14 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{1, "a4a", 3},
 			},
-			result: errorArrayContainsNonNumOrBoolValError,
+			result: errors.New("requires int64 but found string(a4a)"),
 		},
 		{
 			name: "array_min",
 			args: []interface{}{
 				[]interface{}{1, 3.2, 4.1, 2},
 			},
-			result: 1,
+			result: int64(1),
 		},
 		{
 			name: "array_except",
@@ -708,18 +710,16 @@ func TestArrayCommonFunctions(t *testing.T) {
 				[]interface{}{1},
 				nil,
 			},
-			result: errorArrayNotArrayElementError,
+			result: nil,
 		},
 	}
-	for i, tt := range tests {
-		f, ok := builtins[tt.name]
-		if !ok {
-			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
-		}
-		result, _ := f.exec(fctx, tt.args)
-		if !reflect.DeepEqual(result, tt.result) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
-		}
+
+	fe := funcExecutor{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, _ := fe.ExecWithName(tt.args, fctx, tt.name)
+			assert.Equal(t, tt.result, result)
+		})
 	}
 }
 
@@ -793,11 +793,11 @@ func TestArrayFuncNil(t *testing.T) {
 			r, b = mathFunc.exec(fctx, []interface{}{nil, 1})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
-		case "array_position":
+		case "array_position", "array_last_position":
 			r, b := mathFunc.exec(fctx, []interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Equal(t, r, -1, fmt.Sprintf("%v failed", mathFuncName))
-		case "array_contains", "array_last_position", "array_contains_any":
+		case "array_contains", "array_contains_any":
 			r, b := mathFunc.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.False(t, r.(bool), fmt.Sprintf("%v failed", mathFuncName))
