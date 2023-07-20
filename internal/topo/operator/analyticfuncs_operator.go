@@ -74,6 +74,7 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 		if err != nil {
 			return err
 		}
+		data = input
 	case xsql.SingleCollection:
 		input, err = p.evalCollectionFunc(p.FieldFuncs, fv, input)
 		if err != nil {
@@ -83,6 +84,7 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 		if err != nil {
 			return err
 		}
+		data = input
 	default:
 		return fmt.Errorf("run analytic funcs op error: invalid input %[1]T(%[1]v)", input)
 	}
