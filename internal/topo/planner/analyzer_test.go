@@ -103,11 +103,11 @@ var tests = []struct {
 		r:   newErrorStruct(""),
 	},
 	{ // 10
-		sql: `SELECT sum(temp) as temp, count(temp) as temp FROM src1`,
-		r:   newErrorStruct("duplicate alias temp"),
+		sql: `SELECT sum(temp) as temp1, count(temp) as temp FROM src1`,
+		r:   newErrorStruct("invalid argument for func count: aggregate argument is not allowed"),
 	},
 	{ // 11
-		sql: `SELECT sum(temp) as temp, count(temp) as ct FROM src1`,
+		sql: `SELECT sum(temp) as temp1, count(temp) as ct FROM src1`,
 		r:   newErrorStruct(""),
 	},
 	{ // 12
@@ -116,7 +116,7 @@ var tests = []struct {
 	},
 	{ // 13
 		sql: `SELECT sin(temp) as temp1, cos(temp1) FROM src1`,
-		r:   newErrorStructWithS("unknown field temp1", ""),
+		r:   newErrorStruct(""),
 	},
 	{ // 14
 		sql: `SELECT collect(*)[-1] as current FROM src1 GROUP BY COUNTWINDOW(2, 1) HAVING isNull(current->name) = false`,

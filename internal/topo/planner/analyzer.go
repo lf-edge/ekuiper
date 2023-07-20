@@ -16,6 +16,7 @@ package planner
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/binder/function"
@@ -50,7 +51,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			isSchemaless = true
 		}
 	}
-
+	if !isSchemaless {
+		aliasFieldTopoSort(s, streamStmts)
+	}
 	dsn := ast.DefaultStream
 	if len(streamsFromStmt) == 1 {
 		dsn = streamStmts[0].stmt.Name
@@ -83,6 +86,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		}
 		if f.AName != "" {
 			aliasFields = append(aliasFields, &s.Fields[i])
+			fieldsMap.bindAlias(f.AName)
 		}
 	}
 	// bind alias field expressions
@@ -97,6 +101,19 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 				AliasRef:   ar,
 			}
 			walkErr = fieldsMap.save(f.AName, ast.AliasStream, ar)
+			for _, subF := range aliasFields {
+				ast.WalkFunc(subF, func(node ast.Node) bool {
+					switch fr := node.(type) {
+					case *ast.FieldRef:
+						if fr.Name == f.AName {
+							fr.StreamName = ast.AliasStream
+							fr.AliasRef = ar
+						}
+						return false
+					}
+					return true
+				})
+			}
 		}
 	}
 	// Bind field ref for alias AND set StreamName for all field ref
@@ -177,6 +194,99 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		return nil, nil, walkErr
 	}
 	return streamStmts, analyticFuncs, walkErr
+}
+
+type aliasTopoDegree struct {
+	alias  string
+	degree int
+	field  ast.Field
+}
+
+type aliasTopoDegrees []*aliasTopoDegree
+
+func (a aliasTopoDegrees) Len() int {
+	return len(a)
+}
+
+func (a aliasTopoDegrees) Less(i, j int) bool {
+	return a[i].degree < a[j].degree
+}
+
+func (a aliasTopoDegrees) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
+	nonAliasFields := make([]ast.Field, 0)
+	aliasDegreeMap := make(map[string]*aliasTopoDegree)
+	for _, field := range s.Fields {
+		if field.AName != "" {
+			aliasDegreeMap[field.AName] = &aliasTopoDegree{
+				alias:  field.AName,
+				degree: -1,
+				field:  field,
+			}
+		} else {
+			nonAliasFields = append(nonAliasFields, field)
+		}
+	}
+	for !isAliasFieldTopoSortFinish(aliasDegreeMap) {
+		for _, field := range s.Fields {
+			if field.AName != "" && aliasDegreeMap[field.AName].degree < 0 {
+				skip := false
+				degree := 0
+				ast.WalkFunc(field.Expr, func(node ast.Node) bool {
+					switch f := node.(type) {
+					case *ast.FieldRef:
+						if fDegree, ok := aliasDegreeMap[f.Name]; ok && fDegree.degree >= 0 {
+							if degree < fDegree.degree+1 {
+								degree = fDegree.degree + 1
+							}
+							return true
+						}
+						if !isFieldRefNameExists(f.Name, streamStmts) {
+							skip = true
+							return false
+						}
+					}
+					return true
+				})
+				if !skip {
+					aliasDegreeMap[field.AName].degree = degree
+				}
+			}
+		}
+	}
+	as := make(aliasTopoDegrees, 0)
+	for _, degree := range aliasDegreeMap {
+		as = append(as, degree)
+	}
+	sort.Sort(as)
+	s.Fields = make([]ast.Field, 0)
+	for _, d := range as {
+		s.Fields = append(s.Fields, d.field)
+	}
+	s.Fields = append(s.Fields, nonAliasFields...)
+}
+
+func isFieldRefNameExists(name string, streamStmts []*streamInfo) bool {
+	for _, streamStmt := range streamStmts {
+		for _, col := range streamStmt.schema {
+			if col.Name == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func isAliasFieldTopoSortFinish(aliasDegrees map[string]*aliasTopoDegree) bool {
+	for _, aliasDegree := range aliasDegrees {
+		if aliasDegree.degree < 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func validate(s *ast.SelectStatement) (err error) {
@@ -265,12 +375,13 @@ func convertStreamInfo(streamStmt *ast.StreamStmt) (*streamInfo, error) {
 
 type fieldsMap struct {
 	content       map[string]streamFieldStore
+	aliasNames    map[string]struct{}
 	isSchemaless  bool
 	defaultStream ast.StreamName
 }
 
 func newFieldsMap(isSchemaless bool, defaultStream ast.StreamName) *fieldsMap {
-	return &fieldsMap{content: make(map[string]streamFieldStore), isSchemaless: isSchemaless, defaultStream: defaultStream}
+	return &fieldsMap{content: make(map[string]streamFieldStore), aliasNames: map[string]struct{}{}, isSchemaless: isSchemaless, defaultStream: defaultStream}
 }
 
 func (f *fieldsMap) reserve(fieldName string, streamName ast.StreamName) {
@@ -302,10 +413,15 @@ func (f *fieldsMap) save(fieldName string, streamName ast.StreamName, field *ast
 	return nil
 }
 
+func (f *fieldsMap) bindAlias(aliasName string) {
+	f.aliasNames[aliasName] = struct{}{}
+}
+
 func (f *fieldsMap) bind(fr *ast.FieldRef) error {
 	lname := strings.ToLower(fr.Name)
-	fm, ok := f.content[lname]
-	if !ok {
+	fm, ok1 := f.content[lname]
+	_, ok2 := f.aliasNames[lname]
+	if !ok1 && !ok2 {
 		if f.isSchemaless && fr.Name != "" {
 			fm = newStreamFieldStore(f.isSchemaless, f.defaultStream)
 			f.content[lname] = fm
@@ -313,9 +429,11 @@ func (f *fieldsMap) bind(fr *ast.FieldRef) error {
 			return fmt.Errorf("unknown field %s", fr.Name)
 		}
 	}
-	err := fm.bindRef(fr)
-	if err != nil {
-		return fmt.Errorf("%s%s", err, fr.Name)
+	if fm != nil {
+		err := fm.bindRef(fr)
+		if err != nil {
+			return fmt.Errorf("%s%s", err, fr.Name)
+		}
 	}
 	return nil
 }

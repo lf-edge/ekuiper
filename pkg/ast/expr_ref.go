@@ -15,7 +15,6 @@
 package ast
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
@@ -115,6 +114,14 @@ type AliasRef struct {
 	IsAggregate *bool
 }
 
+// SetRefSource only used for unit test
+func (a *AliasRef) SetRefSource(names []string) {
+	a.refSources = make([]StreamName, 0)
+	for _, name := range names {
+		a.refSources = append(a.refSources, StreamName(name))
+	}
+}
+
 func NewAliasRef(e Expr) (*AliasRef, error) {
 	r := make(map[StreamName]bool)
 	var walkErr error
@@ -123,8 +130,9 @@ func NewAliasRef(e Expr) (*AliasRef, error) {
 		case *FieldRef:
 			switch f.StreamName {
 			case AliasStream:
-				walkErr = fmt.Errorf("cannot use alias %s inside another alias %v", f.Name, e)
-				return false
+				for _, name := range f.AliasRef.refSources {
+					r[name] = true
+				}
 			default:
 				r[f.StreamName] = true
 			}
