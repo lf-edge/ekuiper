@@ -498,6 +498,7 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 			return nil, ILLEGAL, "", err
 		}
 		sourceOption.TYPE = gn.NodeType
+		sourceOption.SCHEMAID = gn.Props["schemaName"].(string) + "." + gn.Props["schemaMessage"].(string)
 		switch sourceMeta.SourceType {
 		case "stream":
 			pp, err := operator.NewPreprocessor(true, nil, true, nil, rule.Options.IsEventTime, sourceOption.TIMESTAMP, sourceOption.TIMESTAMP_FORMAT, strings.EqualFold(sourceOption.FORMAT, message.FormatBinary), sourceOption.STRICT_VALIDATION)
