@@ -103,12 +103,56 @@ func TestPlannerAlias(t *testing.T) {
 		},
 	}
 	aliasRef2.SetRefSource([]string{"src1"})
-
 	testcases := []struct {
 		sql string
 		p   LogicalPlan
 		err string
 	}{
+		{
+			sql: "select a + b as sum, sum + 1 from src1",
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src1",
+							streamFields: map[string]*ast.JsonStreamField{
+								"a": nil,
+								"b": nil,
+							},
+							streamStmt:   streams["src1"],
+							pruneFields:  []string{},
+							isSchemaless: true,
+							metaFields:   []string{},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						AName: "sum",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "sum",
+							AliasRef:   aliasRef1,
+						},
+					},
+					{
+						Name: "kuiper_field_0",
+						Expr: &ast.BinaryExpr{
+							OP: ast.ADD,
+							LHS: &ast.FieldRef{
+								Name:       "sum",
+								StreamName: ast.AliasStream,
+								AliasRef:   aliasRef1,
+							},
+							RHS: &ast.IntegerLiteral{
+								Val: 1,
+							},
+						},
+					},
+				},
+			}.Init(),
+		},
 		{
 			sql: "select a + b as sum, sum + 1 as sum2 from src1",
 			p: ProjectPlan{
