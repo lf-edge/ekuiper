@@ -39,25 +39,6 @@ func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, 
 	return input, nil
 }
 
-func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.FunctionValuer, input xsql.SingleCollection) (xsql.SingleCollection, error) {
-	err := input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
-		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, &xsql.WindowRangeValuer{WindowRange: input.GetWindowRange()}, fv, &xsql.WildcardValuer{Data: row})}
-		for _, call := range calls {
-			f := call
-			result := ve.Eval(f)
-			if e, ok := result.(error); ok {
-				return false, e
-			}
-			row.Set(f.CachedField, result)
-		}
-		return true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return input, nil
-}
-
 func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %v", data)
 	var err error
@@ -71,16 +52,6 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 			return err
 		}
 		input, err = p.evalTupleFunc(p.Funcs, ve, input)
-		if err != nil {
-			return err
-		}
-		data = input
-	case xsql.SingleCollection:
-		input, err = p.evalCollectionFunc(p.FieldFuncs, fv, input)
-		if err != nil {
-			return err
-		}
-		input, err = p.evalCollectionFunc(p.Funcs, fv, input)
 		if err != nil {
 			return err
 		}
