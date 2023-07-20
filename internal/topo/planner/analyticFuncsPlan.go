@@ -18,7 +18,8 @@ import "github.com/lf-edge/ekuiper/pkg/ast"
 
 type AnalyticFuncsPlan struct {
 	baseLogicalPlan
-	funcs []*ast.Call
+	funcs      []*ast.Call
+	fieldFuncs []*ast.Call
 }
 
 func (p AnalyticFuncsPlan) Init() *AnalyticFuncsPlan {

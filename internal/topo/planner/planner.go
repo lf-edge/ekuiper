@@ -130,7 +130,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	case *WatermarkPlan:
 		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
 	case *AnalyticFuncsPlan:
-		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs}, fmt.Sprintf("%d_analytic", newIndex), options)
+		op = Transform(&operator.AnalyticFuncsOp{Funcs: t.funcs, FieldFuncs: t.fieldFuncs}, fmt.Sprintf("%d_analytic", newIndex), options)
 	case *WindowPlan:
 		if t.condition != nil {
 			wfilterOp := Transform(&operator.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
@@ -303,7 +303,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		ds                  ast.Dimensions
 	)
 
-	streamStmts, analyticFuncs, err := decorateStmt(stmt, store)
+	streamStmts, analyticFuncs, analyticFieldFuncs, err := decorateStmt(stmt, store)
 	if err != nil {
 		return nil, err
 	}
@@ -341,9 +341,10 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	if len(analyticFuncs) > 0 {
+	if len(analyticFuncs) > 0 || len(analyticFieldFuncs) > 0 {
 		p = AnalyticFuncsPlan{
-			funcs: analyticFuncs,
+			funcs:      analyticFuncs,
+			fieldFuncs: analyticFieldFuncs,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}

@@ -33,18 +33,18 @@ type streamInfo struct {
 
 // Analyze the select statement by decorating the info from stream statement.
 // Typically, set the correct stream name for fieldRefs
-func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*ast.Call, error) {
+func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*ast.Call, []*ast.Call, error) {
 	streamsFromStmt := xsql.GetStreams(s)
 	streamStmts := make([]*streamInfo, len(streamsFromStmt))
 	isSchemaless := false
 	for i, s := range streamsFromStmt {
 		streamStmt, err := xsql.GetDataSource(store, s)
 		if err != nil {
-			return nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
+			return nil, nil, nil, fmt.Errorf("fail to get stream %s, please check if stream is created", s)
 		}
 		si, err := convertStreamInfo(streamStmt)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		streamStmts[i] = si
 		if si.schema == nil {
@@ -68,9 +68,10 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		}
 	}
 	var (
-		walkErr       error
-		aliasFields   []*ast.Field
-		analyticFuncs []*ast.Call
+		walkErr            error
+		aliasFields        []*ast.Field
+		analyticFieldFuncs []*ast.Call
+		analyticFuncs      []*ast.Call
 	)
 	// Scan columns fields: bind all field refs, collect alias
 	for i, f := range s.Fields {
@@ -82,7 +83,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			return true
 		})
 		if walkErr != nil {
-			return nil, nil, walkErr
+			return nil, nil, nil, walkErr
 		}
 		if f.AName != "" {
 			aliasFields = append(aliasFields, &s.Fields[i])
@@ -141,7 +142,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		return true
 	})
 	if walkErr != nil {
-		return nil, nil, walkErr
+		return nil, nil, nil, walkErr
 	}
 	walkErr = validate(s)
 	// Collect all analytic function calls so that we can let them run firstly
@@ -167,7 +168,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		return true
 	})
 	if walkErr != nil {
-		return nil, nil, walkErr
+		return nil, nil, nil, walkErr
 	}
 	// walk sources at last to let them run firstly
 	// because another clause may depend on the alias defined here
@@ -177,7 +178,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			if function.IsAnalyticFunc(f.Name) {
 				f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
 				f.Cached = true
-				analyticFuncs = append(analyticFuncs, &ast.Call{
+				analyticFieldFuncs = append(analyticFieldFuncs, &ast.Call{
 					Name:        f.Name,
 					FuncId:      f.FuncId,
 					FuncType:    f.FuncType,
@@ -191,9 +192,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		return true
 	})
 	if walkErr != nil {
-		return nil, nil, walkErr
+		return nil, nil, nil, walkErr
 	}
-	return streamStmts, analyticFuncs, walkErr
+	return streamStmts, analyticFuncs, analyticFieldFuncs, walkErr
 }
 
 type aliasTopoDegree struct {
