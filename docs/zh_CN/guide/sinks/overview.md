@@ -100,25 +100,79 @@
       "sendSingle": true,
       "topic": "prefix/{{.topic}}"
     }
-  }]
+  }
+  ]
 }
 ```
 
-需要注意的是，上例中的 `sendSingle` 属性已设置。在默认情况下，目标接收到的是数组，使用的 jsonpath 需要采用 <code v-pre>{{index . 0 "topic"}}</code>。
+需要注意的是，上例中的 `sendSingle` 属性已设置。在默认情况下，目标接收到的是数组，使用的 jsonpath 需要采用 <code v-pre>
+{{index . 0 "topic"}}</code>。
+
+## 资源引用
+
+像源一样，动作也支持配置复用，用户只需要在 sinks 文件夹中创建与目标动作同名的 yaml 文件并按照源一样的形式写入配置。
+
+例如，针对 MQTT 动作场景， 用户可以在 sinks 目录下创建 mqtt.yaml 文件，并写入如下内容
+
+```yaml
+test:
+  qos: 1
+  server: "tcp://broker.emqx.io:1883"
+```
+
+当用户需要 MQTT 动作时，除了采用传统的配置方式，如下所示
+
+```json
+    {
+  "mqtt": {
+    "server": "tcp://broker.emqx.io:1883",
+    "topic": "devices/demo_001/messages/events/",
+    "protocolVersion": "3.1.1",
+    "qos": 1,
+    "clientId": "demo_001",
+    "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+    "password": "SharedAccessSignature sr=*******************",
+    "retained": false
+  }
+}
+```
+
+还可以通过 `resourceId` 引用形式，采用如下的配置
+
+```json
+ {
+  "mqtt": {
+    "resourceId": "test",
+    "topic": "devices/demo_001/messages/events/",
+    "protocolVersion": "3.1.1",
+    "clientId": "demo_001",
+    "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
+    "password": "SharedAccessSignature sr=*******************",
+    "retained": false
+  }
+}
+```
 
 ## 缓存
 
 动作用于将处理结果发送到外部系统中，存在外部系统不可用的情况，特别是在从边到云的场景中。例如，在弱网情况下，边到云的网络连接可能会不时断开和重连。因此，动作提供了缓存功能，用于在发送错误的情况下暂存数据，并在错误恢复之后自动重发缓存数据。动作的缓存可分为内存和磁盘的两级存储。用户可配置内存缓存条数，超过上限后，新的缓存将离线存储到磁盘中。缓存将同时保存在内存和磁盘中，这样缓存的容量就变得更大了；它还将持续检测故障恢复状态，并在不重新启动规则的情况下重新发送。
 
-离线缓存的保存位置根据 `etc/kuiper.yaml` 里的 store 配置决定，默认为 sqlite 。如果磁盘存储是sqlite，所有的缓存将被保存到`data/cache.db`文件。每个 sink 将有一个唯一的 sqlite 表来保存缓存。缓存的计数添加到 sink 的 指标中的 buffer length 部分。
+离线缓存的保存位置根据 `etc/kuiper.yaml` 里的 store 配置决定，默认为 sqlite
+。如果磁盘存储是sqlite，所有的缓存将被保存到`data/cache.db`文件。每个 sink 将有一个唯一的 sqlite 表来保存缓存。缓存的计数添加到
+sink 的 指标中的 buffer length 部分。
 
 ### 流程
 
-每个 sink 都可以配置自己的缓存机制。每个 sink 的缓存流程是相同的。如果启用了缓存，所有 sink 的事件都会经过两个阶段：首先是将所有内容保存到缓存中；然后在收到 ack 后删除缓存。
+每个 sink 都可以配置自己的缓存机制。每个 sink 的缓存流程是相同的。如果启用了缓存，所有 sink
+的事件都会经过两个阶段：首先是将所有内容保存到缓存中；然后在收到 ack 后删除缓存。
 
-- 错误检测：发送失败后，sink应该通过返回特定的错误类型来识别可恢复的失败（网络等），这将返回一个失败的ack，这样缓存就可以被保留下来。对于成功的发送或不可恢复的错误，将发送一个成功的 ack 来删除缓存。
-- 缓存机制：缓存将首先被保存在内存中。如果超过了内存的阈值，后面的缓存将被保存到磁盘中。一旦磁盘缓存超过磁盘存储阈值，缓存将开始 rotate，即内存中最早的缓存将被丢弃，并加载磁盘中最早的缓存来代替。
-- 重发策略：目前缓存机制仅可运行在默认的同步模式中，如果有一条消息正在发送中，则会等待发送的结果以继续发送下个缓存数据。否则，当有新的数据到来时，发送缓存中的第一个数据以检测网络状况。如果发送成功，将按顺序链式发送所有内存和磁盘中的所有缓存。链式发送可定义一个发送间隔，防止形成消息风暴。
+- 错误检测：发送失败后，sink应该通过返回特定的错误类型来识别可恢复的失败（网络等），这将返回一个失败的ack，这样缓存就可以被保留下来。对于成功的发送或不可恢复的错误，将发送一个成功的
+  ack 来删除缓存。
+- 缓存机制：缓存将首先被保存在内存中。如果超过了内存的阈值，后面的缓存将被保存到磁盘中。一旦磁盘缓存超过磁盘存储阈值，缓存将开始
+  rotate，即内存中最早的缓存将被丢弃，并加载磁盘中最早的缓存来代替。
+-
+重发策略：如果有一条消息正在发送中，则会等待发送的结果以继续发送下个缓存数据。否则，当有新的数据到来时，发送缓存中的第一个数据以检测网络状况。如果发送成功，将按顺序链式发送所有内存和磁盘中的所有缓存。链式发送可定义一个发送间隔，防止形成消息风暴。
+- 实时数据和重发数据区分：用户可配置重发数据与实时数据分开发送，分别发送到不同的目的地。也可配置发送的优先级，优先发送重发数据或实时数据。甚至可以更改发送的内容，例如，将重发数据的增加一个字段，以便在接收端进行区分。
 
 ### 配置
 
@@ -130,6 +184,13 @@ Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定
 - bufferPageSize：缓冲页是批量读/写到磁盘的单位，以防止频繁的IO。如果页面未满，eKuiper 因硬件或软件错误而崩溃，最后未写入磁盘的页面将被丢失。
 - resendInterval：故障恢复后重新发送信息的时间间隔，防止信息风暴。
 - cleanCacheAtStop：是否在规则停止时清理所有缓存，以防止规则重新启动时对过期消息进行大量重发。如果不设置为true，一旦规则停止，内存缓存将被存储到磁盘中。否则，内存和磁盘规则会被清理掉。
+- resendAlterQueue：是否在重新发送缓存时使用备用队列。如果设置为true，缓存将被发送到备用队列，而不是原始队列。这将导致实时消息和重发消息使用不同的队列发送，消息的顺序发生变化，但是可以防止消息风暴。只有设置为
+  true 时，以下 resend 相关配置才能生效。
+- resendPriority： 重新发送缓存的优先级，int 类型，默认为 0。-1 表示优先发送实时数据；0 表示同等优先级；1 表示优先发送缓存数据。
+- resendIndicatorField：重新发送缓存的字段名，该字段类型必须是 bool 值。如果设置了字段，重发时将设置为
+  true。例如，resendIndicatorField 为 resend，那么在重新发送缓存时，将会将 resend 字段设置为 true。
+- resendDestination：重新发送缓存的目的地，根据不同的 sink 可能有不同的意义或支持。例如，mqtt sink 可以将重发数据发送到不同的
+  topic。
 
 在以下规则的示例配置中，log sink 没有配置缓存相关选项，因此将会采用全局默认配置；而 mqtt sink 进行了自身缓存策略的配置。
 
@@ -150,50 +211,5 @@ Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定
       "resendInterval": 10
     }
   }]
-}
-```
-
-## 资源引用
-
-像源一样，动作也支持配置复用，用户只需要在 sinks 文件夹中创建与目标动作同名的 yaml 文件并按照源一样的形式写入配置。
-
-例如，针对 MQTT 动作场景， 用户可以在 sinks 目录下创建 mqtt.yaml 文件，并写入如下内容
-
-```yaml
-test:
-  qos: 1
-  server: "tcp://broker.emqx.io:1883"
-```
-
-当用户需要 MQTT 动作时，除了采用传统的配置方式，如下所示
-
-```json
-    {
-      "mqtt": {
-        "server": "tcp://broker.emqx.io:1883",
-        "topic": "devices/demo_001/messages/events/",
-        "protocolVersion": "3.1.1",
-        "qos": 1,
-        "clientId": "demo_001",
-        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
-        "password": "SharedAccessSignature sr=*******************",
-        "retained": false
-      }
-    }
-```
-
-还可以通过 `resourceId` 引用形式，采用如下的配置
-
-```json
- {
-      "mqtt": {
-        "resourceId": "test",
-        "topic": "devices/demo_001/messages/events/",
-        "protocolVersion": "3.1.1",
-        "clientId": "demo_001",
-        "username": "xyz.azure-devices.net/demo_001/?api-version=2018-06-30",
-        "password": "SharedAccessSignature sr=*******************",
-        "retained": false
-      }
 }
 ```
