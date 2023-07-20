@@ -156,6 +156,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
+	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
@@ -1092,6 +1093,48 @@ func configurationStatusExport() Configuration {
 	conf.ConnectionConfig = yamlCfgStatus.Connections
 
 	return conf
+}
+
+func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	basic := struct {
+		Debug      *bool   `json:"debug"`
+		ConsoleLog *bool   `json:"consoleLog"`
+		FileLog    *bool   `json:"fileLog"`
+		TimeZone   *string `json:"timezone"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&basic); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		handleError(w, err, "Invalid JSON", logger)
+		return
+	}
+
+	if basic.Debug != nil {
+		conf.SetDebugLevel(*basic.Debug)
+		conf.Config.Basic.Debug = *basic.Debug
+	}
+
+	if basic.TimeZone != nil {
+		if err := cast.SetTimeZone(*basic.TimeZone); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			handleError(w, err, "Invalid TZ", logger)
+			return
+		}
+		conf.Config.Basic.TimeZone = *basic.TimeZone
+	}
+
+	if basic.FileLog != nil {
+		if err := conf.SetFileLog(*basic.FileLog); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			handleError(w, err, "", logger)
+			return
+		}
+		conf.Config.Basic.FileLog = *basic.FileLog
+	} else if basic.ConsoleLog != nil {
+		conf.SetConsoleLog(*basic.ConsoleLog)
+		conf.Config.Basic.ConsoleLog = *basic.ConsoleLog
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func configurationStatusHandler(w http.ResponseWriter, r *http.Request) {

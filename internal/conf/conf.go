@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"strings"
@@ -171,6 +172,54 @@ type KuiperConf struct {
 	}
 }
 
+func SetDebugLevel(v bool) {
+	lvl := logrus.InfoLevel
+	if v {
+		lvl = logrus.DebugLevel
+	}
+	Log.SetLevel(lvl)
+}
+
+func SetConsoleLog(v bool) {
+	out := io.Discard
+	if v {
+		out = os.Stdout
+	}
+	Log.SetOutput(out)
+}
+
+func SetFileLog(v bool) error {
+	if !v {
+		SetConsoleLog(Config.Basic.ConsoleLog)
+		return nil
+	}
+
+	logDir, err := GetLoc(logDir)
+	if err != nil {
+		return err
+	}
+
+	file := path.Join(logDir, logFileName)
+	logWriter, err := rotatelogs.New(
+		file+".%Y-%m-%d_%H-%M-%S",
+		rotatelogs.WithLinkName(file),
+		rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
+		rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
+	)
+
+	if err != nil {
+		fmt.Printf("Failed to init log file settings: %v", err)
+		Log.Infof("Failed to log to file, using default stderr.")
+	} else if Config.Basic.ConsoleLog {
+		mw := io.MultiWriter(os.Stdout, logWriter)
+		Log.SetOutput(mw)
+	} else if !Config.Basic.ConsoleLog {
+		Log.SetOutput(logWriter)
+	}
+	gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
+	return nil
+}
+
 func InitConf() {
 	cpath, err := GetConfLoc()
 	if err != nil {
@@ -207,35 +256,15 @@ func InitConf() {
 	}
 
 	if Config.Basic.Debug {
-		Log.SetLevel(logrus.DebugLevel)
+		SetDebugLevel(true)
 	}
 
 	if Config.Basic.FileLog {
-		logDir, err := GetLoc(logDir)
-		if err != nil {
-			Log.Fatal(err)
+		if err := SetFileLog(true); err != nil {
+			log.Fatal(err)
 		}
-
-		file := path.Join(logDir, logFileName)
-		logWriter, err := rotatelogs.New(
-			file+".%Y-%m-%d_%H-%M-%S",
-			rotatelogs.WithLinkName(file),
-			rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
-			rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
-		)
-
-		if err != nil {
-			fmt.Println("Failed to init log file settings..." + err.Error())
-			Log.Infof("Failed to log to file, using default stderr.")
-		} else if Config.Basic.ConsoleLog {
-			mw := io.MultiWriter(os.Stdout, logWriter)
-			Log.SetOutput(mw)
-		} else if !Config.Basic.ConsoleLog {
-			Log.SetOutput(logWriter)
-		}
-		gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
 	} else if Config.Basic.ConsoleLog {
-		Log.SetOutput(os.Stdout)
+		SetConsoleLog(true)
 	}
 
 	if Config.Basic.TimeZone != "" {
