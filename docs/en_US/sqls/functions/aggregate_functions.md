@@ -78,6 +78,15 @@ Returns an array with all columns or the whole record (when the parameter is *) 
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
+## LAST_VALUE
+
+```text
+last_value(*, true)
+last_value(col, false)
+```
+
+The last_value function is used to retrieve the value of the last row in a group for the specified column(s) or the entire message. It has two parameters, the first of which specifies the column(s) or the entire message, and the second of which specifies whether to ignore null values. If the second parameter is true, the function will only return the last non-null value. If there are no non-null values, the function will return null. If the second parameter is false, the function will return the last value, regardless of whether it is null or not.
+
 ## MERGE_AGG
 
 ```text

@@ -75,6 +75,15 @@ collect(col)
     SELECT collect(*)[1]->a as r1 FROM test GROUP BY TumblingWindow(ss, 10)
     ```
 
+## LAST_VALUE
+
+```text
+last_value(*, true)
+last_value(col, false)
+```
+
+用于返回在组中指定列或整个消息中最后一行的值。该函数有两个参数，第一个参数用于指定列或整个消息，第二个参数用于指定是否需要忽略空值；如果第二个参数为 true，则该函数仅返回最后的非空值，如果没有非空值，则返回空值；如果第二个参数为 false，则函数将返回最后的值，无论它是否为空。
+
 ## MERGE_AGG
 
 ```text

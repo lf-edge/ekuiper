@@ -26,6 +26,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestAggExec(t *testing.T) {
@@ -400,10 +401,229 @@ func TestAggFuncNil(t *testing.T) {
 			r, b := function.exec(fctx, []interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		case "last_value":
+			r, b := function.exec(fctx, []interface{}{[]interface{}{nil}, []interface{}{false}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, []interface{}{true}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, 2, fmt.Sprintf("%v failed", name))
+			r, b = function.exec(fctx, []interface{}{[]interface{}{1, 2, nil}, []interface{}{false}})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Equal(t, r, nil, fmt.Sprintf("%v failed", name))
+			r, b = function.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		default:
 			r, b := function.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		}
+	}
+}
+
+func TestLastValue(t *testing.T) {
+	f, ok := builtins["last_value"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{
+			args: []interface{}{
+				[]interface{}{
+					"foo",
+					"bar",
+					"self",
+				},
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
+			},
+			result: "self",
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					"foo",
+					"bar",
+					"self",
+				},
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
+			},
+			result: "self",
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					1,
+				},
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
+			},
+			result: int(1),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					1,
+				},
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
+			},
+			result: 1,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					nil,
+				},
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
+			},
+			result: float64(3.14),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					int64(100),
+					float64(3.14),
+					nil,
+				},
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
+			},
+			result: nil,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					nil,
+					nil,
+					nil,
+				},
+				[]interface{}{
+					true,
+					true,
+					true,
+				},
+			},
+			result: nil,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					nil,
+					nil,
+					nil,
+				},
+				[]interface{}{
+					false,
+					false,
+					false,
+				},
+			},
+			result: nil,
+		},
+		{
+			args: []interface{}{
+				1,
+				true,
+			},
+			result: fmt.Errorf("Invalid argument type found."),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1},
+				true,
+			},
+			result: fmt.Errorf("Invalid argument type found."),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1},
+				[]interface{}{1},
+			},
+			result: fmt.Errorf("Invalid argument type found."),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{},
+				[]interface{}{true},
+			},
+			result: nil,
+		},
+	}
+
+	for i, tt := range tests {
+		r, _ := f.exec(fctx, tt.args)
+		if !reflect.DeepEqual(r, tt.result) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
+		}
+	}
+}
+
+func TestLastValueValidation(t *testing.T) {
+	f, ok := builtins["last_value"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	tests := []struct {
+		args []ast.Expr
+		err  error
+	}{
+		{
+			args: []ast.Expr{
+				&ast.BooleanLiteral{Val: true},
+			},
+			err: fmt.Errorf("Expect 2 arguments but found 1."),
+		}, {
+			args: []ast.Expr{
+				&ast.FieldRef{Name: "foo"},
+				&ast.FieldRef{Name: "bar"},
+			},
+			err: fmt.Errorf("Expect bool type for parameter 2"),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.BooleanLiteral{Val: true},
+			},
+		},
+	}
+	for i, tt := range tests {
+		err := f.val(nil, tt.args)
+		if !reflect.DeepEqual(err, tt.err) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, err, tt.err)
 		}
 	}
 }
