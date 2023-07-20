@@ -1350,6 +1350,8 @@ func Test_createLogicalPlan(t *testing.T) {
 													StreamName: "src1",
 												}},
 											},
+										},
+										fieldFuncs: []*ast.Call{
 											{
 												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}},
 											},
@@ -1501,6 +1503,8 @@ func Test_createLogicalPlan(t *testing.T) {
 													StreamName: "src1",
 												}},
 											},
+										},
+										fieldFuncs: []*ast.Call{
 											{
 												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}},
 											},
@@ -1595,6 +1599,8 @@ func Test_createLogicalPlan(t *testing.T) {
 													StreamName: "src1",
 												}},
 											},
+										},
+										fieldFuncs: []*ast.Call{
 											{
 												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}}, WhenExpr: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"}, OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 12}},
 											},
@@ -1791,7 +1797,7 @@ func Test_createLogicalPlan(t *testing.T) {
 									}.Init(),
 								},
 							},
-							funcs: []*ast.Call{
+							fieldFuncs: []*ast.Call{
 								{
 									Name:     "lag",
 									FuncId:   0,
@@ -3274,17 +3280,6 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				},
 				fields: []ast.Field{
 					{
-						Expr: &ast.FieldRef{Name: "hum1", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
-							&ast.FieldRef{
-								Name:       "hum",
-								StreamName: "src2",
-							},
-							[]ast.StreamName{"src2"},
-							&boolFalse,
-						)},
-						Name:  "hum",
-						AName: "hum1",
-					}, {
 						Expr: &ast.FieldRef{Name: "hum2", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
 							&ast.FieldRef{
 								Name:       "hum",
@@ -3295,6 +3290,18 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 						)},
 						Name:  "hum",
 						AName: "hum2",
+					},
+					{
+						Expr: &ast.FieldRef{Name: "hum1", StreamName: ast.AliasStream, AliasRef: ast.MockAliasRef(
+							&ast.FieldRef{
+								Name:       "hum",
+								StreamName: "src2",
+							},
+							[]ast.StreamName{"src2"},
+							&boolFalse,
+						)},
+						Name:  "hum",
+						AName: "hum1",
 					},
 				},
 				isAggregate: false,
