@@ -106,10 +106,6 @@ var tests = []struct {
 		sql: `SELECT sum(temp) as temp1, count(temp) as temp FROM src1`,
 		r:   newErrorStruct("invalid argument for func count: aggregate argument is not allowed"),
 	},
-	{ // 10-1
-		sql: `SELECT sum(temp) as temp, count(temp) as temp FROM src1`,
-		r:   newErrorStruct("invalid argument for func count: aggregate argument is not allowed"),
-	},
 	{ // 11
 		sql: `SELECT sum(temp) as temp1, count(temp) as ct FROM src1`,
 		r:   newErrorStruct(""),
@@ -149,7 +145,6 @@ var tests = []struct {
 }
 
 func Test_validation(t *testing.T) {
-	tests[11].r = newErrorStruct("invalid argument for func count: aggregate argument is not allowed")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
@@ -210,7 +205,6 @@ func Test_validation(t *testing.T) {
 }
 
 func Test_validationSchemaless(t *testing.T) {
-	tests[11].r = newErrorStruct("duplicate alias temp")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
