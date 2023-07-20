@@ -149,6 +149,7 @@ var tests = []struct {
 }
 
 func Test_validation(t *testing.T) {
+	tests[11].r = newErrorStruct("invalid argument for func count: aggregate argument is not allowed")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
@@ -209,6 +210,7 @@ func Test_validation(t *testing.T) {
 }
 
 func Test_validationSchemaless(t *testing.T) {
+	tests[11].r = newErrorStruct("duplicate alias temp")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
