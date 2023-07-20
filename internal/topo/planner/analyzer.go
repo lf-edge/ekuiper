@@ -68,9 +68,10 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		}
 	}
 	var (
-		walkErr       error
-		aliasFields   []*ast.Field
-		analyticFuncs []*ast.Call
+		walkErr            error
+		aliasFields        []*ast.Field
+		analyticFuncs      []*ast.Call
+		analyticFieldFuncs []*ast.Call
 	)
 	// Scan columns fields: bind all field refs, collect alias
 	for i, f := range s.Fields {
@@ -177,15 +178,17 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			if function.IsAnalyticFunc(f.Name) {
 				f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
 				f.Cached = true
-				analyticFuncs = append(analyticFuncs, &ast.Call{
-					Name:        f.Name,
-					FuncId:      f.FuncId,
-					FuncType:    f.FuncType,
-					Args:        f.Args,
-					CachedField: f.CachedField,
-					Partition:   f.Partition,
-					WhenExpr:    f.WhenExpr,
-				})
+				analyticFieldFuncs = append([]*ast.Call{
+					{
+						Name:        f.Name,
+						FuncId:      f.FuncId,
+						FuncType:    f.FuncType,
+						Args:        f.Args,
+						CachedField: f.CachedField,
+						Partition:   f.Partition,
+						WhenExpr:    f.WhenExpr,
+					},
+				}, analyticFieldFuncs...)
 			}
 		}
 		return true
@@ -193,7 +196,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 	if walkErr != nil {
 		return nil, nil, walkErr
 	}
-	return streamStmts, analyticFuncs, walkErr
+	return streamStmts, append(analyticFuncs, analyticFieldFuncs...), walkErr
 }
 
 type aliasTopoDegree struct {
