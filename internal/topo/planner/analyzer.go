@@ -172,25 +172,31 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 	}
 	// walk sources at last to let them run firstly
 	// because another clause may depend on the alias defined here
-	ast.WalkFunc(s.Fields, func(n ast.Node) bool {
-		switch f := n.(type) {
-		case *ast.Call:
-			if function.IsAnalyticFunc(f.Name) {
-				f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
-				f.Cached = true
-				analyticFieldFuncs = append(analyticFieldFuncs, &ast.Call{
-					Name:        f.Name,
-					FuncId:      f.FuncId,
-					FuncType:    f.FuncType,
-					Args:        f.Args,
-					CachedField: f.CachedField,
-					Partition:   f.Partition,
-					WhenExpr:    f.WhenExpr,
-				})
+	for _, field := range s.Fields {
+		var calls []*ast.Call
+		ast.WalkFunc(&field, func(n ast.Node) bool {
+			switch f := n.(type) {
+			case *ast.Call:
+				if function.IsAnalyticFunc(f.Name) {
+					f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
+					f.Cached = true
+					calls = append([]*ast.Call{
+						{
+							Name:        f.Name,
+							FuncId:      f.FuncId,
+							FuncType:    f.FuncType,
+							Args:        f.Args,
+							CachedField: f.CachedField,
+							Partition:   f.Partition,
+							WhenExpr:    f.WhenExpr,
+						},
+					}, calls...)
+				}
 			}
-		}
-		return true
-	})
+			return true
+		})
+		analyticFieldFuncs = append(analyticFieldFuncs, calls...)
+	}
 	if walkErr != nil {
 		return nil, nil, nil, walkErr
 	}
