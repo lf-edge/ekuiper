@@ -1,25 +1,22 @@
 # eKuiper 在公共数据分析中的应用
 
-在大数据时代下，有许多随处可见的公共数据分享平台，通过一些处理手段可以很清晰的从中提取出有价值的信息。
-但是如何处理公共数据并加以分析通常需要一定的编程能力，这对于一些非技术用户存在着一些学习门槛。
-本文以 eKuiper 为例，介绍如何仅用基础的 SQL 语句来处理公共数据。
+在大数据时代下，有许多随处可见的公共数据分享平台，借助专业的处理技术，我们可以从中清晰地抽取有价值的信息。然而，处理和分析这些公共数据通常需要具备一定的编程技巧，这对非技术类用户来说，无疑增加了一定的学习难度。在本文中，我们将以 eKuiper 为例，展示如何通过基础的 SQL 语句轻松处理公共数据。
 
 ## 场景介绍
 
-本教程展示了如何使用 eKuiper 处理深圳市开放数据平台的共享单车企业每日订单表数据，应用场景包括：
+本教程展示了如何使用 eKuiper 处理深圳市开放数据平台的共享单车企业每日订单表数据，实现步骤包括：
 
 - 使用 [HTTP 提取源](../guide/sources/builtin/http_pull.md)订阅开放数据平台的 API
 - 使用 eKuiper 的 REST API 接口创建流和规则
 - 使用内置 SQL 函数以及规则流水线对数据进行处理
-- 对处理完的数据存储后通过外部 API 将数据可视化
+- 存储处理完的数据，并通过外部 API 进行数据可视化
 
 ## 获取数据
 
-eKuiper 可以用来处理毫秒级的实时数据。本教程中，由于我们没有找到更新频率高的API，
-因此以日更的深圳市开放数据平台的[共享单车企业每日订单表](https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00403627)的数据为例，
-介绍如何使用 eKuiper 来获取相应的接口数据并用于后续的处理。
+eKuiper 支持处理毫秒级的实时数据。本教程中，我们将以日更的深圳市开放数据平台的[共享单车企业每日订单表](https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00403627)的数据为例，
+介绍如何使用 eKuiper 来获取相应的接口数据并进行数据处理。
 
-> 用户若是要分析实时更新的 API，可将[HTTP 提取源](../guide/sources/builtin/http_pull.md)的 interval 调小。
+> 如您希望分析实时更新的 API，可将 [HTTP 提取源](../guide/sources/builtin/http_pull.md)的 interval 调小。
 
 数据接口的 URL 以及参数如下：
 
@@ -27,7 +24,7 @@ eKuiper 可以用来处理毫秒级的实时数据。本教程中，由于我们
 http://opendata.sz.gov.cn/api/29200_00403627/1/service.xhtml?page=1&rows=100&appKey=
 ```
 
-我们现在尝试使用 eKuiper 的 [HTTP 提取源](../guide/sources/builtin/http_pull.md) 从数据平台的 HTTP 服务器提取前100条消息数据并输入 eKuiper 处理管道。
+我们现在尝试使用 eKuiper 的 [HTTP 提取源](../guide/sources/builtin/http_pull.md) 从数据平台的 HTTP 服务器提取前 100 条消息数据并输入 eKuiper 处理管道。
 
 HTTP 提取源的配置文件位于 `etc/sources/httppull.yaml` 中，我们需要配置相应的字段以便 eKuiper 能正确地拉取数据。以下是配置文件内容：
 
@@ -46,7 +43,7 @@ default:
   responseType: code
 ```
 
-之后我们需要使用 REST 客户端，创建相应的 STREAM 来作为源输入：
+随后使用 REST 客户端，创建相应的 STREAM 流来作为源输入：
 
 ```http request
 ###
@@ -60,7 +57,7 @@ Content-Type: application/json
 
 ## 数据处理
 
-观察接口返回的数据，我们不难发现我们所需要的数据，全都在 `data` 字段的数组里：
+观察接口返回的数据，发现所需的数据都在 `data` 字段的数组里：
 
 ```json
 {
@@ -117,7 +114,7 @@ Content-Type: application/json
 }
 ```
 
-然后我们利用 API 基于上述内存源创建新的流：
+然后利用 API 基于上述内存源创建新的流：
 
 ```http request
 ###
@@ -146,21 +143,21 @@ Content-Type: application/json
 
 ### SQL 计算坐标距离
 
-eKuiper 内置了丰富的 SQL 函数，即便在不是用插件拓展的情况下，也能利用现有的函数来满足大部分场景下的计算需求。
+eKuiper 内置了丰富的 SQL 函数，即便在不是用插件拓展的情况下，也可以利用现有函数来满足大部分场景下的计算需求。
 
 我们的数据中已经有了单车的起始和结束坐标，所以我们可以根据经纬度计算距离公式，来计算出单车的平均速度：
 
 ![coordinator](./resources/formula.webp)
 
-对上面的公式解释如下：
+其中：
 
-1. Lng1 Lat1 表示 A 点经纬度， Lng2 Lat2 表示 B 点经纬度
-2. `a = Lat1 – Lat2` 为两点纬度之差 `b = Lng1 -Lng2` 为两点经度之差
-3. 6378.137为地球半径，单位为千米
-4. 计算出来的结果单位为千米，若将半径改为米为单位则计算的结果单位为米
-5. 计算精度与谷歌地图的距离精度差不多，相差范围在0.2米以下
+- Lng1 Lat1 表示 A 点经纬度， Lng2 Lat2 表示 B 点经纬度
+- `a = Lat1 – Lat2` 为两点纬度之差，`b = Lng1 -Lng2` 为两点经度之差
+- 6378.137 为地球半径，单位为千米
+- 计算出来的结果单位为千米，若将半径改为米为单位则计算的结果单位为米
+- 计算精度与谷歌地图的距离精度类似，相差范围在 0.2 米以下
 
-于是我们可以利用如下的 SELECT 语句，计算出相应的路程以及时间：
+于是我们可以利用如下 SELECT 语句，计算出相应的路程以及时间：
 
 ```sql
 SELECT 
@@ -179,7 +176,7 @@ FROM pubdata2
 
 ### 计算速度
 
-在有了距离和时间之后，我们可以继续使用规则流水线，在下一个规则中，计算所需要的单车的速度：
+有了距离和时间之后，我们可以继续使用规则流水线，在下一个规则中，计算所需要的单车的速度：
 
 我们将以上一步中 SELECT 计算出来的距离与时间，继续通过内存源创建新的流，然后创建相对应的流作为下一步处理：
 
@@ -218,7 +215,7 @@ Content-Type: application/json
 
 ## 可视化数据
 
-最后，我们可以通过计算的数据，将其存储在相应的 DB 中，并通过外部的 API 做成需要的图标显示出来。
+最后，我们可以将计算数据存储在相应的 DB 中，并通过外部的 API 进行可视化展示。
 
 ```json
 {
@@ -235,7 +232,7 @@ Content-Type: application/json
 }
 ```
 
-例如，用户可以通过 python 脚本方便地从 InfluxDB 中获取想要的数据并做进一步处理。
+例如，用户可以通过 Python 脚本方便地从 InfluxDB 中获取想要的数据并做进一步处理。
 以下脚本将从 DB 中获得前四条记录，并将其用 [quickchart.io](https://quickchart.io/) 的参数格式打印出来：
 
 ```python
@@ -270,6 +267,6 @@ print(params)
 client.close()
 ```
 
-之后，我们可以将前四位的用户骑行的平均速度的参数用 [quickchart.io](https://quickchart.io/) 的柱状图接口将其可视化出来：
+之后，我们可以将前四位的用户骑行的平均速度的参数用 [quickchart.io](https://quickchart.io/) 的柱状图接口进行可视化：
 
-![chart](https://quickchart.io/chart?bkg=white&c=%7B%0A%20%20type%3A%20%27bar%27%2C%0A%20%20data%3A%20%7B%0A%20%20%20%20labels%3A%20%5B%279fb2d1e%27%2C%20%271184eec%27%2C%20%2730a457b%27%2C%20%27bee78cd%27%5D%2C%0A%20%20%20%20datasets%3A%20%5B%7B%0A%20%20%20%20%20%20label%3A%20%27Users%27%2C%0A%20%20%20%20%20%20data%3A%20%5B2.383%2C%201.550%2C%202.524%2C%200.293%5D%0A%20%20%20%20%7D%5D%0A%20%20%7D%0A%7D)
+![public-data-chart](./resources/public-data-chart.png)
