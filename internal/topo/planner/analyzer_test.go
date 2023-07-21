@@ -138,6 +138,10 @@ var tests = []struct {
 		sql: `SELECT * FROM src1 GROUP BY SlidingWindow(ss,5) Over (WHEN last_hit_time() > 1) HAVING last_agg_hit_count() < 3`,
 		r:   newErrorStruct(""),
 	},
+	{
+		sql: "select a + 1 as b, b + 1 as a from src1",
+		r:   newErrorStruct("select fields have cycled alias"),
+	},
 	//{ // 19 already captured in parser
 	//	sql: `SELECT * FROM src1 GROUP BY SlidingWindow(ss,5) Over (WHEN abs(sum(a)) > 1) HAVING last_agg_hit_count() < 3`,
 	//	r:   newErrorStruct("error compile sql: Not allowed to call aggregate functions in GROUP BY clause."),
@@ -201,6 +205,9 @@ func Test_validation(t *testing.T) {
 			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
+		if tt.r.err != testx.Errstring(err) {
+			fmt.Printf("")
+		}
 		assert.Equal(t, tt.r.err, testx.Errstring(err))
 	}
 }
