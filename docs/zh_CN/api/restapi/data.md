@@ -35,6 +35,8 @@ eKuiper REST api 允许您导入导出数据。
     "Service":{
     },
     "Schema":{
+    },
+    "uploads":{
     }
 }
 ```
@@ -111,7 +113,9 @@ Content-Type: application/json
   "sinkConfig":{},
   "connectionConfig":{},
   "Service":{},
-  "Schema":{}}
+  "Schema":{},
+  "uploads":{}
+}
 ```
 
 示例2：导入插件失败
@@ -132,7 +136,9 @@ Content-Type: application/json
   "sinkConfig":{},
   "connectionConfig":{},
   "Service":{},
-  "Schema":{}}
+  "Schema":{},
+  "uploads":{}
+}
 ```
 
 ## 导出数据

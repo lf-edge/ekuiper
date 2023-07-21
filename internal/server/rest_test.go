@@ -31,6 +31,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
@@ -42,6 +43,8 @@ func init() {
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
+	uploadsDb, _ = store.GetKV("uploads")
+	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
 }
 
 type RestTestSuite struct {

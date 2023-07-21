@@ -161,12 +161,12 @@ func (suite *ServerTestSuite) TestConfigurarion() {
 	var reply string
 	err := suite.s.ImportConfiguration(&importArg, &reply)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "{\n  \"ErrorMsg\": \"\",\n  \"ConfigResponse\": {\n    \"streams\": {},\n    \"tables\": {},\n    \"rules\": {},\n    \"nativePlugins\": {},\n    \"portablePlugins\": {},\n    \"sourceConfig\": {},\n    \"sinkConfig\": {},\n    \"connectionConfig\": {},\n    \"Service\": {},\n    \"Schema\": {}\n  }\n}", reply)
+	assert.Equal(suite.T(), "{\n  \"ErrorMsg\": \"\",\n  \"ConfigResponse\": {\n    \"streams\": {},\n    \"tables\": {},\n    \"rules\": {},\n    \"nativePlugins\": {},\n    \"portablePlugins\": {},\n    \"sourceConfig\": {},\n    \"sinkConfig\": {},\n    \"connectionConfig\": {},\n    \"Service\": {},\n    \"Schema\": {},\n    \"uploads\": {}\n  }\n}", reply)
 
 	reply = ""
 	err = suite.s.GetStatusImport(1, &reply)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "{\n  \"streams\": {},\n  \"tables\": {},\n  \"rules\": {},\n  \"nativePlugins\": {},\n  \"portablePlugins\": {},\n  \"sourceConfig\": {},\n  \"sinkConfig\": {},\n  \"connectionConfig\": {},\n  \"Service\": {},\n  \"Schema\": {}\n}", reply)
+	assert.Equal(suite.T(), "{\n  \"streams\": {},\n  \"tables\": {},\n  \"rules\": {},\n  \"nativePlugins\": {},\n  \"portablePlugins\": {},\n  \"sourceConfig\": {},\n  \"sinkConfig\": {},\n  \"connectionConfig\": {},\n  \"Service\": {},\n  \"Schema\": {},\n  \"uploads\": {}\n}", reply)
 
 	reply = ""
 	exportArg := model.ExportDataDesc{
