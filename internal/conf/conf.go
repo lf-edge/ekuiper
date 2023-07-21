@@ -43,13 +43,15 @@ type tlsConf struct {
 }
 
 type SinkConf struct {
-	MemoryCacheThreshold int  `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
-	MaxDiskCache         int  `json:"maxDiskCache" yaml:"maxDiskCache"`
-	BufferPageSize       int  `json:"bufferPageSize" yaml:"bufferPageSize"`
-	EnableCache          bool `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       int  `json:"resendInterval" yaml:"resendInterval"`
-	CleanCacheAtStop     bool `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
-	ResendAlterQueue     bool `json:"resendAlterQueue" yaml:"resendAlterQueue"`
+	MemoryCacheThreshold int    `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
+	MaxDiskCache         int    `json:"maxDiskCache" yaml:"maxDiskCache"`
+	BufferPageSize       int    `json:"bufferPageSize" yaml:"bufferPageSize"`
+	EnableCache          bool   `json:"enableCache" yaml:"enableCache"`
+	ResendInterval       int    `json:"resendInterval" yaml:"resendInterval"`
+	CleanCacheAtStop     bool   `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
+	ResendAlterQueue     bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
+	ResendPriority       int    `json:"resendPriority" yaml:"resendPriority"`
+	ResendIndicatorField string `json:"resendIndicatorField" yaml:"resendIndicatorField"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.
@@ -94,6 +96,11 @@ func (sc *SinkConf) Validate() error {
 		sc.MaxDiskCache = sc.BufferPageSize * (sc.MaxDiskCache/sc.BufferPageSize + 1)
 		Log.Warnf("maxDiskCache is not a multiple of bufferPageSize, set to %d", sc.MaxDiskCache)
 		errs = errors.Join(errs, errors.New("maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"))
+	}
+	if sc.ResendPriority < -1 || sc.ResendPriority > 1 {
+		sc.ResendPriority = 0
+		Log.Warnf("resendPriority is not in [-1, 1], set to 0")
+		errs = errors.Join(errs, errors.New("resendPriority:resendPriority must be -1, 0 or 1"))
 	}
 	return errs
 }

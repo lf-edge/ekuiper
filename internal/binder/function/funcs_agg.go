@@ -404,6 +404,44 @@ func registerAggFunc() {
 		val:   ValidateTwoNumberArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["last_value"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0, ok := args[0].([]interface{})
+			if !ok {
+				return fmt.Errorf("Invalid argument type found."), false
+			}
+			args1, ok := args[1].([]interface{})
+			if !ok {
+				return fmt.Errorf("Invalid argument type found."), false
+			}
+			arg1, ok := getFirstValidArg(args1).(bool)
+			if !ok {
+				return fmt.Errorf("Invalid argument type found."), false
+			}
+			if len(arg0) == 0 {
+				return nil, true
+			}
+			if arg1 {
+				for i := len(arg0) - 1; i >= 0; i-- {
+					if arg0[i] != nil {
+						return arg0[i], true
+					}
+				}
+			}
+			return arg0[len(arg0)-1], true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(2, len(args)); err != nil {
+				return err
+			}
+			if !ast.IsBooleanArg(args[1]) {
+				return ProduceErrInfo(1, "bool")
+			}
+			return nil
+		},
+		check: returnNilIfHasAnyNil,
+	}
 }
 
 func getCount(s []interface{}) int {

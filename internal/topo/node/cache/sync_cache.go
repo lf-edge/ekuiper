@@ -160,15 +160,11 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 		select {
 		case item := <-c.in:
 			ctx.GetLogger().Debugf("send to cache")
-			go func() { // avoid deadlock when cacheCtrl is full
-				c.cacheCtrl <- item
-			}()
+			c.cacheCtrl <- item
 		case isSuccess := <-c.Ack:
 			// only send the next sink after receiving an ack
 			ctx.GetLogger().Debugf("cache ack")
-			go func() {
-				c.cacheCtrl <- AckResult(isSuccess)
-			}()
+			c.cacheCtrl <- AckResult(isSuccess)
 		case data := <-c.cacheCtrl: // The only place to manipulate cache
 			switch r := data.(type) {
 			case AckResult:
@@ -213,7 +209,7 @@ func (c *SyncCache) send(ctx api.StreamContext) {
 	}
 	d, ok := c.peakMemCache(ctx)
 	if ok {
-		ctx.GetLogger().Debugf("sending cache item %v", d)
+		ctx.GetLogger().Infof("sending cache item %v", d)
 		c.sendStatus = 1
 		ctx.GetLogger().Debug("send status to 0 after sending tuple")
 		select {
@@ -264,7 +260,7 @@ func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{
 			ctx.GetLogger().Debugf("added cache to disk buffer page %v", c.diskBufferPage)
 		}
 	} else {
-		ctx.GetLogger().Debugf("added cache to mem cache %v", c.memCache)
+		ctx.GetLogger().Infof("added cache to mem cache %v", item)
 	}
 	c.CacheLength++
 	ctx.GetLogger().Debugf("added cache %d", c.CacheLength)

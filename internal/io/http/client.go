@@ -60,8 +60,9 @@ type RawConf struct {
 	ResponseType string                            `json:"responseType"`
 	OAuth        map[string]map[string]interface{} `json:"oauth"`
 	// source specific properties
-	Interval    int  `json:"interval"`
-	Incremental bool `json:"incremental"`
+	Interval    int    `json:"interval"`
+	Incremental bool   `json:"incremental"`
+	ResendUrl   string `json:"resendDestination"`
 	// sink specific properties
 	SendSingle bool `json:"sendSingle"`
 	// inferred properties

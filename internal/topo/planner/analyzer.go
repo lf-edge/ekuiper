@@ -51,6 +51,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			isSchemaless = true
 		}
 	}
+	if checkAliasReferenceCycle(s) {
+		return nil, nil, fmt.Errorf("select fields have cycled alias")
+	}
 	if !isSchemaless {
 		aliasFieldTopoSort(s, streamStmts)
 	}
@@ -216,11 +219,59 @@ func (a aliasTopoDegrees) Len() int {
 }
 
 func (a aliasTopoDegrees) Less(i, j int) bool {
+	if a[i].degree == a[j].degree {
+		return a[i].alias < a[j].alias
+	}
 	return a[i].degree < a[j].degree
 }
 
 func (a aliasTopoDegrees) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
+}
+
+// checkAliasReferenceCycle checks whether exists select a + 1 as b, b + 1 as a from demo;
+func checkAliasReferenceCycle(s *ast.SelectStatement) bool {
+	aliasRef := make(map[string]map[string]struct{})
+	for _, field := range s.Fields {
+		if len(field.AName) > 0 {
+			aliasRef[field.AName] = make(map[string]struct{})
+		}
+	}
+	if len(aliasRef) < 1 {
+		return false
+	}
+	hasCycleAlias := false
+	for _, field := range s.Fields {
+		if len(field.AName) > 0 {
+			ast.WalkFunc(&field, func(node ast.Node) bool {
+				switch f := node.(type) {
+				case *ast.FieldRef:
+					if len(f.Name) > 0 {
+						if f.Name == field.AName {
+							return true
+						}
+						_, ok := aliasRef[f.Name]
+						if ok {
+							aliasRef[field.AName][f.Name] = struct{}{}
+							v, ok1 := aliasRef[f.Name]
+							if ok1 {
+								_, ok2 := v[field.AName]
+								if ok2 {
+									hasCycleAlias = true
+									return false
+								}
+							}
+						}
+					}
+				}
+				return true
+			})
+			if hasCycleAlias {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {

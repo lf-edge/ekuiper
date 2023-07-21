@@ -104,7 +104,7 @@ var tests = []struct {
 	},
 	{ // 10
 		sql: `SELECT sum(temp) as temp1, count(temp) as temp FROM src1`,
-		r:   newErrorStruct("invalid argument for func count: aggregate argument is not allowed"),
+		r:   newErrorStruct("invalid argument for func sum: aggregate argument is not allowed"),
 	},
 	{ // 11
 		sql: `SELECT sum(temp) as temp1, count(temp) as ct FROM src1`,
@@ -138,6 +138,10 @@ var tests = []struct {
 		sql: `SELECT * FROM src1 GROUP BY SlidingWindow(ss,5) Over (WHEN last_hit_time() > 1) HAVING last_agg_hit_count() < 3`,
 		r:   newErrorStruct(""),
 	},
+	{
+		sql: "select a + 1 as b, b + 1 as a from src1",
+		r:   newErrorStruct("select fields have cycled alias"),
+	},
 	//{ // 19 already captured in parser
 	//	sql: `SELECT * FROM src1 GROUP BY SlidingWindow(ss,5) Over (WHEN abs(sum(a)) > 1) HAVING last_agg_hit_count() < 3`,
 	//	r:   newErrorStruct("error compile sql: Not allowed to call aggregate functions in GROUP BY clause."),
@@ -145,6 +149,7 @@ var tests = []struct {
 }
 
 func Test_validation(t *testing.T) {
+	tests[10].r = newErrorStruct("invalid argument for func sum: aggregate argument is not allowed")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
@@ -205,6 +210,7 @@ func Test_validation(t *testing.T) {
 }
 
 func Test_validationSchemaless(t *testing.T) {
+	tests[10].r = newErrorStruct("invalid argument for func count: aggregate argument is not allowed")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
