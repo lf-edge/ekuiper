@@ -209,6 +209,9 @@ func (a aliasTopoDegrees) Len() int {
 }
 
 func (a aliasTopoDegrees) Less(i, j int) bool {
+	if a[i].degree == a[j].degree {
+		return a[i].alias < a[j].alias
+	}
 	return a[i].degree < a[j].degree
 }
 
