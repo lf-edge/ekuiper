@@ -33,6 +33,7 @@ type config struct {
 	KeyField     string   `json:"keyField"`
 	Fields       []string `json:"fields"`
 	DataField    string   `json:"dataField"`
+	ResendTopic  string   `json:"resendDestination"`
 }
 
 type sink struct {
@@ -42,6 +43,7 @@ type sink struct {
 	rowkindField string
 	fields       []string
 	dataField    string
+	resendTopic  string
 }
 
 func (s *sink) Open(ctx api.StreamContext) error {
@@ -70,12 +72,12 @@ func (s *sink) Configure(props map[string]interface{}) error {
 	if s.rowkindField != "" && s.keyField == "" {
 		return fmt.Errorf("keyField is required when rowkindField is set")
 	}
+	s.resendTopic = cfg.ResendTopic
 	return nil
 }
 
-func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
-	ctx.GetLogger().Debugf("receive %+v", data)
-	topic, err := ctx.ParseTemplate(s.topic, data)
+func (s *sink) collectWithTopic(ctx api.StreamContext, data interface{}, t string) error {
+	topic, err := ctx.ParseTemplate(t, data)
 	if err != nil {
 		return err
 	}
@@ -114,6 +116,16 @@ func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
 		return fmt.Errorf("unrecognized format of %s", data)
 	}
 	return nil
+}
+
+func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
+	ctx.GetLogger().Debugf("receive %+v", data)
+	return s.collectWithTopic(ctx, data, s.topic)
+}
+
+func (s *sink) CollectResend(ctx api.StreamContext, data interface{}) error {
+	ctx.GetLogger().Debugf("resend %+v", data)
+	return s.collectWithTopic(ctx, data, s.resendTopic)
 }
 
 func (s *sink) Close(ctx api.StreamContext) error {

@@ -69,7 +69,7 @@ As the sink itself is a plugin, it must be in the main package. Given the sink s
 
 ```go
 func MySink() api.Sink {
-  return &mySink{}
+return &mySink{}
 }
 ```
 
@@ -77,15 +77,36 @@ The [Memory Sink](https://github.com/lf-edge/ekuiper/blob/master/extensions/sink
 
 #### Updatable Sink
 
-If your sink is updatable, you'll need to deal with the `rowkindField` property. Some sink may also need a `keyField` property to specify which field is the primary key to update.
+If your sink is updatable, you'll need to deal with the `rowkindField` property. Some sink may also need a `keyField`
+property to specify which field is the primary key to update.
 
-So in the _Configure_ method, parse the `rowkindField` to know which field in the data is the update action. Then in the _Collect_ method, retrieve the rowkind by the `rowkindField` and perform the proper action. The rowkind value could be `insert`, `update`, `upsert` and `delete`. For example, in SQL sink, each rowkind value will generate different SQL statement to execute.
+So in the _Configure_ method, parse the `rowkindField` to know which field in the data is the update action. Then in the
+_Collect_ method, retrieve the rowkind by the `rowkindField` and perform the proper action. The rowkind value could
+be `insert`, `update`, `upsert` and `delete`. For example, in SQL sink, each rowkind value will generate different SQL
+statement to execute.
+
+#### Customize Resend Strategy
+
+Sink can set the [cache and resend strategy](../../../guide/sinks/overview.md#caching) to ensure data delivery.
+By default, resending data will invoke the `Collect` method again.
+If you want to customize the resend strategy, you can implement the `CollectResend` method in the sink.
+In that method, you can do some format conversion or other operations on the data.
+You can also parse the common sink property `resendDestination` and make it the destination of the resend data.
+For example, you can resend the data to another topic defined in that property.
+
+```go
+// CollectResend Called when the sink cache resend is triggered
+CollectResend(ctx StreamContext, data interface{}) error
+```  
 
 #### Parse dynamic properties
 
-For customized sink plugins, users may still want to support [dynamic properties](../../../guide/sinks/overview.md#dynamic-properties) like the built-in ones.
+For customized sink plugins, users may still want to
+support [dynamic properties](../../../guide/sinks/overview.md#dynamic-properties) like the built-in ones.
 
-In the context object, a function `ParseTemplate` is provided to support the parsing of the dynamic property with the go template syntax. In the customized sink, developers can specify some properties to be dynamic according to the business logic. And in the plugin code, use this function to parse the user input in the collect function or elsewhere.
+In the context object, a function `ParseTemplate` is provided to support the parsing of the dynamic property with the go
+template syntax. In the customized sink, developers can specify some properties to be dynamic according to the business
+logic. And in the plugin code, use this function to parse the user input in the collect function or elsewhere.
 
 ```go
 // Parse the prop of go template syntax against the current data.

@@ -40,16 +40,15 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
+func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desUrl string) error {
 	logger := ctx.GetLogger()
-	logger.Debugf("rest sink receive %s", item)
 	decodedData, _, err := ctx.TransformOutput(item)
 	if err != nil {
 		logger.Warnf("rest sink decode data error: %v", err)
 		return fmt.Errorf("rest sink decode data error: %v", err)
 	}
 
-	resp, err := ms.Send(ctx, decodedData, item, logger)
+	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
 	if err != nil {
 		e := err.Error()
 		if urlErr, ok := err.(*url.Error); ok {
@@ -84,7 +83,17 @@ func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
 	return nil
 }
 
-func (ms *RestSink) Send(ctx api.StreamContext, decodedData []byte, v interface{}, logger api.Logger) (*http.Response, error) {
+func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
+	ctx.GetLogger().Debugf("rest sink receive %s", item)
+	return ms.collectWithUrl(ctx, item, ms.config.Url)
+}
+
+func (ms *RestSink) CollectResend(ctx api.StreamContext, item interface{}) error {
+	ctx.GetLogger().Debugf("rest sink resend %s", item)
+	return ms.collectWithUrl(ctx, item, ms.config.ResendUrl)
+}
+
+func (ms *RestSink) sendWithUrl(ctx api.StreamContext, decodedData []byte, v interface{}, desUrl string) (*http.Response, error) {
 	// Allow to use tokens in headers and check oAuth token expiration
 	if ms.accessConf != nil && ms.accessConf.ExpireInSecond > 0 &&
 		int(time.Now().Sub(ms.tokenLastUpdateAt).Abs().Seconds()) >= ms.accessConf.ExpireInSecond {
@@ -115,7 +124,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, decodedData []byte, v interface{
 	if err != nil {
 		return nil, err
 	}
-	u, err := ctx.ParseTemplate(ms.config.Url, v)
+	u, err := ctx.ParseTemplate(desUrl, v)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +132,7 @@ func (ms *RestSink) Send(ctx api.StreamContext, decodedData []byte, v interface{
 	if err != nil {
 		return nil, fmt.Errorf("rest sink headers template decode error: %v", err)
 	}
-	return httpx.Send(logger, ms.client, bodyType, method, u, headers, ms.config.SendSingle, decodedData)
+	return httpx.Send(ctx.GetLogger(), ms.client, bodyType, method, u, headers, ms.config.SendSingle, decodedData)
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {
