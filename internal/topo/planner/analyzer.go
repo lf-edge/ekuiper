@@ -52,7 +52,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		}
 	}
 	if checkAliasReferenceCycle(s) {
-		return nil, nil, fmt.Errorf("select fields have cycled alias")
+		return nil, nil, nil, fmt.Errorf("select fields have cycled alias")
 	}
 	if !isSchemaless {
 		aliasFieldTopoSort(s, streamStmts)
