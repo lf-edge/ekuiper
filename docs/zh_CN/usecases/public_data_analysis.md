@@ -141,7 +141,7 @@ Content-Type: application/json
 }
 ```
 
-### SQL 计算坐标距离
+### SQL 计算骑行距离
 
 eKuiper 内置了丰富的 SQL 函数，即便在不是用插件拓展的情况下，也可以利用现有函数来满足大部分场景下的计算需求。
 
@@ -174,7 +174,7 @@ SELECT
 FROM pubdata2
 ```
 
-### 计算速度
+### 计算骑行速度
 
 有了距离和时间之后，我们可以继续使用规则流水线，在下一个规则中，计算所需要的单车的速度：
 
@@ -269,4 +269,4 @@ client.close()
 
 之后，我们可以将前四位的用户骑行的平均速度的参数用 [quickchart.io](https://quickchart.io/) 的柱状图接口进行可视化：
 
-![public-data-chart](./resources/public-data-chart.png)
+<img src="./resources/public-data-chart.png" alt="public-data-chart" style="zoom:80%;" />
