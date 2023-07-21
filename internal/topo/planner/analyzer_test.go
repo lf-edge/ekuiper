@@ -205,9 +205,6 @@ func Test_validation(t *testing.T) {
 			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
-		if tt.r.err != testx.Errstring(err) {
-			fmt.Printf("")
-		}
 		assert.Equal(t, tt.r.err, testx.Errstring(err))
 	}
 }
