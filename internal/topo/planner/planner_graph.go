@@ -498,11 +498,11 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 			return nil, ILLEGAL, "", err
 		}
 		sourceOption.TYPE = gn.NodeType
-		if sourceOption.SCHEMAID == "" && gn.Props["schemaName"] != nil && gn.Props["schemaMessage"] != nil{
+		if sourceOption.SCHEMAID == "" && gn.Props["schemaName"] != nil && gn.Props["schemaMessage"] != nil {
 			schemaName, ok1 := gn.Props["schemaName"].(string)
 			schemaMessage, ok2 := gn.Props["schemaMessage"].(string)
 			if ok1 && ok2 {
-				sourceOption.SCHEMAID = schemaName+"."+schemaMessage
+				sourceOption.SCHEMAID = schemaName + "." + schemaMessage
 			}
 		}
 		switch sourceMeta.SourceType {
