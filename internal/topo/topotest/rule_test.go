@@ -295,7 +295,40 @@ func TestSingleSQL(t *testing.T) {
 	// Data setup
 	tests := []RuleTest{
 		{
-			Name: `TestAnalyzeFuncAlias`,
+			Name: `TestAnalyzeFuncAlias1`,
+			Sql:  `SELECT lag(size,1,0) + 1 as b, lag(b,1,0),size FROM demo Group by COUNTWINDOW(5)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"b":    float64(1),
+						"lag":  float64(0),
+						"size": float64(3),
+					},
+					{
+						"b":    float64(4),
+						"lag":  float64(1),
+						"size": float64(6),
+					},
+					{
+						"b":    float64(7),
+						"lag":  float64(4),
+						"size": float64(2),
+					},
+					{
+						"b":    float64(3),
+						"lag":  float64(7),
+						"size": float64(4),
+					},
+					{
+						"b":    float64(5),
+						"lag":  float64(3),
+						"size": float64(1),
+					},
+				},
+			},
+		},
+		{
+			Name: `TestAnalyzeFuncAlias2`,
 			Sql:  `SELECT lag(size,1,0) + 1 as b, lag(b,1,0),size FROM demo`,
 			R: [][]map[string]interface{}{
 				{
