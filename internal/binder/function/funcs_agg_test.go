@@ -629,83 +629,117 @@ func TestLastValueValidation(t *testing.T) {
 }
 
 func TestGlobalAgg(t *testing.T) {
-	f, ok := builtins["global_sum"]
-	if !ok {
-		t.Fatal("builtin not found")
-	}
-	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
-	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 	tests := []struct {
-		args   []interface{}
-		result interface{}
-		err    error
+		name     string
+		results  []interface{}
+		testargs []interface{}
 	}{
 		{
-			args: []interface{}{
+			name: "global_avg",
+			testargs: []interface{}{
 				"1",
-				true,
-				"self",
-			},
-			result: fmt.Errorf("the accumulate value should be number"),
-			err:    fmt.Errorf("the accumulate value should be number"),
-		},
-		{
-			args: []interface{}{
 				float64(1),
-				true,
-				"self",
+				float32(1),
+				1,
+				int32(1),
+				int64(1),
 			},
-			result: float64(1),
-		},
-		{
-			args: []interface{}{
+			results: []interface{}{
+				fmt.Errorf("the value should be number"),
 				float64(1),
-				true,
-				"self",
+				float64(1),
+				float64(1),
+				float64(1),
+				float64(1),
 			},
-			result: float64(2),
 		},
 		{
-			args: []interface{}{
-				int64(3),
-				true,
-				"self",
-			},
-			result: float64(5),
-		},
-		{
-			args: []interface{}{
-				float32(3),
-				true,
-				"self",
-			},
-			result: float64(8),
-		},
-		{ // 4
-			args: []interface{}{
-				int32(3),
-				true,
-				"self",
-			},
-			result: float64(11),
-		},
-		{ // 5
-			args: []interface{}{
+			name: "global_count",
+			testargs: []interface{}{
+				"1",
+				float64(1),
+				float32(2),
 				3,
-				true,
-				"self",
+				int32(4),
+				int64(5),
 			},
-			result: float64(14),
+			results: []interface{}{
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+			},
+		},
+		{
+			name: "global_max",
+			testargs: []interface{}{
+				"1",
+				float64(1),
+				float32(2),
+				3,
+				int32(4),
+				int64(5),
+			},
+			results: []interface{}{
+				fmt.Errorf("the value should be number"),
+				float64(1),
+				float64(2),
+				float64(3),
+				float64(4),
+				float64(5),
+			},
+		},
+		{
+			name: "global_min",
+			testargs: []interface{}{
+				"1",
+				float64(5),
+				float32(4),
+				3,
+				int32(2),
+				int64(1),
+			},
+			results: []interface{}{
+				fmt.Errorf("the value should be number"),
+				float64(5),
+				float64(4),
+				float64(3),
+				float64(2),
+				float64(1),
+			},
+		},
+		{
+			name: "global_sum",
+			testargs: []interface{}{
+				"1",
+				float64(1),
+				float32(1),
+				1,
+				int32(1),
+				int64(1),
+			},
+			results: []interface{}{
+				fmt.Errorf("the value should be number"),
+				float64(1),
+				float64(2),
+				float64(3),
+				float64(4),
+				float64(5),
+			},
 		},
 	}
-	for _, tt := range tests {
-		result, _ := f.exec(fctx, tt.args)
-		if tt.err != nil {
-			require.Equal(t, tt.err, tt.result)
-		} else {
-			require.Equal(t, tt.result, result)
+	for _, test := range tests {
+		f, ok := builtins[test.name]
+		require.True(t, ok)
+		contextLogger := conf.Log.WithField("rule", "testExec")
+		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+		fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+		for i, arg := range test.testargs {
+			result, _ := f.exec(fctx, []interface{}{arg, true, fmt.Sprintf("%s_key", test.name)})
+			require.Equal(t, test.results[i], result)
 		}
 	}
 }
