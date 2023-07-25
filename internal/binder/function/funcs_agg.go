@@ -28,10 +28,6 @@ var GlobalAggFuncs map[string]struct{}
 
 func init() {
 	GlobalAggFuncs = map[string]struct{}{}
-	//GlobalAggFuncs["avg"] = struct{}{}
-	//GlobalAggFuncs["count"] = struct{}{}
-	//GlobalAggFuncs["max"] = struct{}{}
-	//GlobalAggFuncs["min"] = struct{}{}
 	GlobalAggFuncs["sum"] = struct{}{}
 }
 
