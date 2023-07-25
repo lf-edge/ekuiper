@@ -62,15 +62,14 @@ func init() {
 //}
 
 var analyticFuncs = map[string]struct{}{
-	"lag":          {},
-	"changed_col":  {},
-	"had_changed":  {},
-	"latest":       {},
-	"global_sum":   {},
-	"global_min":   {},
-	"global_max":   {},
-	"global_count": {},
-	"global_avg":   {},
+	"lag":         {},
+	"changed_col": {},
+	"had_changed": {},
+	"latest":      {},
+	"global_sum":  {},
+	"global_min":  {},
+	"global_max":  {},
+	"global_avg":  {},
 }
 
 const AnalyticPrefix = "$$a"

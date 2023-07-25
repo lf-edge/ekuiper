@@ -654,25 +654,6 @@ func TestGlobalAgg(t *testing.T) {
 			},
 		},
 		{
-			name: "global_count",
-			testargs: []interface{}{
-				"1",
-				float64(1),
-				float32(2),
-				3,
-				int32(4),
-				int64(5),
-			},
-			results: []interface{}{
-				1,
-				2,
-				3,
-				4,
-				5,
-				6,
-			},
-		},
-		{
 			name: "global_max",
 			testargs: []interface{}{
 				"1",

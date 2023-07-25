@@ -32,7 +32,6 @@ func init() {
 	GlobalAggFuncs["min"] = struct{}{}
 	GlobalAggFuncs["max"] = struct{}{}
 	GlobalAggFuncs["sum"] = struct{}{}
-	GlobalAggFuncs["count"] = struct{}{}
 	GlobalAggFuncs["avg"] = struct{}{}
 }
 
@@ -103,30 +102,6 @@ func registerGlobalAggFunc() {
 				return err, false
 			}
 			return sum / count, true
-		},
-		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			return nil
-		},
-	}
-	builtins["global_count"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			key := args[len(args)-1].(string)
-			val, err := ctx.GetState(key)
-			if err != nil {
-				return err, false
-			}
-			if val == nil {
-				val = 0
-			}
-			count := val.(int)
-			if args[0] != nil {
-				count = count + 1
-			}
-			if err := ctx.PutState(key, count); err != nil {
-				return err, false
-			}
-			return count, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return nil
