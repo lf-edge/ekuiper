@@ -24,6 +24,55 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
+var GlobalAggFuncs map[string]struct{}
+
+func init() {
+	GlobalAggFuncs = map[string]struct{}{}
+	//GlobalAggFuncs["avg"] = struct{}{}
+	//GlobalAggFuncs["count"] = struct{}{}
+	//GlobalAggFuncs["max"] = struct{}{}
+	//GlobalAggFuncs["min"] = struct{}{}
+	GlobalAggFuncs["sum"] = struct{}{}
+}
+
+func registerGlobalAggFunc() {
+	builtins["global_sum"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			key := args[len(args)-1].(string)
+			val, err := ctx.GetState(key)
+			if err != nil {
+				return err, false
+			}
+			if val == nil {
+				val = float64(0)
+			}
+			accu := val.(float64)
+			switch sumValue := args[0].(type) {
+			case int:
+				accu += float64(sumValue)
+			case int32:
+				accu += float64(sumValue)
+			case int64:
+				accu += float64(sumValue)
+			case float32:
+				accu += float64(sumValue)
+			case float64:
+				accu += sumValue
+			default:
+				return fmt.Errorf("the accumulate value should be number"), false
+			}
+			if err := ctx.PutState(key, accu); err != nil {
+				return err, false
+			}
+			return accu, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(1, len(args))
+		},
+	}
+}
+
 func registerAggFunc() {
 	builtins["avg"] = builtinFunc{
 		fType: ast.FuncTypeAgg,

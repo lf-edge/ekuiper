@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo"
@@ -463,6 +464,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
+	if !hasWindow {
+		setIsGlobalAgg(stmt)
+	}
 
 	srfMapping := extractSRFMapping(stmt)
 	if stmt.Fields != nil {
@@ -499,6 +503,18 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 	}
 
 	return optimize(p)
+}
+
+func setIsGlobalAgg(stmt *ast.SelectStatement) {
+	ast.WalkFunc(stmt.Fields, func(n ast.Node) bool {
+		switch f := n.(type) {
+		case *ast.Call:
+			if _, ok := function.GlobalAggFuncs[f.Name]; ok {
+				f.Name = fmt.Sprintf("global_%s", f.Name)
+			}
+		}
+		return true
+	})
 }
 
 // extractSRFMapping extracts the set-returning-function in the field
