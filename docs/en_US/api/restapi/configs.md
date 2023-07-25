@@ -1,6 +1,6 @@
 # Dynamic Reload Configs
 
-By dynamically reloading configuration, parameters such as debug and timezone
+By dynamically reloading [configuration](../../configuration/global_configurations.md), parameters such as debug and timezone
 can be updated for running eKuiper without restarting the application.
 
 ## Reload Basic Configs
@@ -19,3 +19,10 @@ Request demo:
   "timezone": "UTC"
 }
 ```
+
+Current supported dynamic reloadable parameters:
+
+- `debug`
+- `consoleLog`
+- `fileLog`
+- `timezone`
