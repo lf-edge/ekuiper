@@ -85,7 +85,7 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("%s plugin %s is created", plugin.PluginTypes[t], sd.GetName())))
+		fmt.Fprintf(w, "%s plugin %s is created", plugin.PluginTypes[t], sd.GetName())
 	}
 }
 
@@ -196,7 +196,7 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("function plugin %s function list is registered", name)))
+	fmt.Fprintf(w, "function plugin %s function list is registered", name)
 }
 
 func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {

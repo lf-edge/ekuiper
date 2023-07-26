@@ -77,7 +77,7 @@ func servicesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("service %s is created", sd.Name)))
+		fmt.Fprintf(w, "service %s is created", sd.Name)
 	}
 }
 
@@ -93,8 +93,7 @@ func serviceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		result := fmt.Sprintf("service %s is deleted", name)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "service %s is deleted", name)
 	case http.MethodGet:
 		j, err := serviceManager.Get(name)
 		if err != nil {
@@ -117,7 +116,7 @@ func serviceHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf("service %s is updated", sd.Name)))
+		fmt.Fprintf(w, "service %s is updated", sd.Name)
 	}
 }
 

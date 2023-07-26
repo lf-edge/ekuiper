@@ -72,7 +72,7 @@ func wasmsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("wasm plugin %s is created", sd.GetName())))
+		fmt.Fprintf(w, "wasm plugin %s is created", sd.GetName())
 	}
 }
 
@@ -88,8 +88,7 @@ func wasmHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		result := fmt.Sprintf("wasm plugin %s is deleted", name)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "wasm plugin %s is deleted", name)
 	case http.MethodGet:
 		j, ok := wasmManager.GetPluginInfo(name)
 		if !ok {

@@ -495,9 +495,8 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "", logger)
 			return
 		}
-		result := fmt.Sprintf("Rule %s was created successfully.", id)
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "Rule %s was created successfully.", id)
 	case http.MethodGet:
 		content, err := getAllRulesWithStatus()
 		if err != nil {
@@ -551,15 +550,12 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// Update to db after validation
 		_, err = ruleProcessor.ExecUpdate(name, string(body))
-		var result string
 		if err != nil {
 			handleError(w, err, "Update rule error, suggest to delete it and recreate", logger)
 			return
-		} else {
-			result = fmt.Sprintf("Rule %s was updated successfully.", name)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
 }
 
@@ -591,7 +587,7 @@ func startRuleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Rule %s was started", name)))
+	fmt.Fprintf(w, "Rule %s was started", name)
 }
 
 // stop a rule
@@ -617,7 +613,7 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Rule %s was restarted", name)))
+	fmt.Fprintf(w, "Rule %s was restarted", name)
 }
 
 // get topo of a rule
@@ -689,7 +685,7 @@ func importHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
-	w.Write([]byte(fmt.Sprintf("imported %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])))
+	fmt.Fprintf(w, "imported %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
 }
 
 func exportHandler(w http.ResponseWriter, r *http.Request) {
