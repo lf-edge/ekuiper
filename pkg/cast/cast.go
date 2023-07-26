@@ -825,7 +825,7 @@ func ToByteA(input interface{}, _ Strictness) ([]byte, error) {
 		}
 		return r, nil
 	}
-	return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bytes", input)
+	return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to bytea", input)
 }
 
 func ToStringMap(input interface{}) (map[string]interface{}, error) {
@@ -1112,7 +1112,7 @@ func ConvertSlice(v interface{}) []interface{} {
 }
 
 // ToType cast value into newType type
-// newType support bigint, float, string, boolean, datetime
+// newType support bigint, float, string, boolean, datetime, bytea
 func ToType(value interface{}, newType interface{}) (interface{}, bool) {
 	if v, ok := newType.(string); ok {
 		switch v {
@@ -1150,6 +1150,13 @@ func ToType(value interface{}, newType interface{}) (interface{}, bool) {
 				return err, false
 			} else {
 				return dt, true
+			}
+		case "bytea":
+			r, e := ToByteA(value, CONVERT_ALL)
+			if e != nil {
+				return e, false
+			} else {
+				return r, true
 			}
 		default:
 			return fmt.Errorf("unknow type, only support bigint, float, string, boolean and datetime"), false

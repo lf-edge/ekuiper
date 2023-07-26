@@ -55,8 +55,8 @@ func registerMiscFunc() {
 				return ProduceErrInfo(0, "string")
 			}
 			if av, ok := a.(*ast.StringLiteral); ok {
-				if !(av.Val == "bigint" || av.Val == "float" || av.Val == "string" || av.Val == "boolean" || av.Val == "datetime") {
-					return fmt.Errorf("Expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime.")
+				if !(av.Val == "bigint" || av.Val == "float" || av.Val == "string" || av.Val == "boolean" || av.Val == "datetime" || av.Val == "bytea") {
+					return fmt.Errorf("Expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime, bytea.")
 				}
 			}
 			return nil
