@@ -27,42 +27,42 @@ func TestAccAggSQL(t *testing.T) {
 	streamList := []string{"demo"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
-		//{
-		//	Name: "TestAccAggSql1",
-		//	Sql:  `select acc_sum(size) over (partition by color), color from demo`,
-		//	R: [][]map[string]interface{}{
-		//		{
-		//			{
-		//				"acc_sum": float64(3),
-		//				"color":   "red",
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"acc_sum": float64(6),
-		//				"color":   "blue",
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"acc_sum": float64(8),
-		//				"color":   "blue",
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"acc_sum": float64(4),
-		//				"color":   "yellow",
-		//			},
-		//		},
-		//		{
-		//			{
-		//				"acc_sum": float64(4),
-		//				"color":   "red",
-		//			},
-		//		},
-		//	},
-		//},
+		{
+			Name: "TestAccAggSql1",
+			Sql:  `select acc_sum(size) over (partition by color), color from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"acc_sum": float64(3),
+						"color":   "red",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(6),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(8),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(4),
+						"color":   "yellow",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(4),
+						"color":   "red",
+					},
+				},
+			},
+		},
 		{
 			Name: "TestAccAggSql2",
 			Sql:  `select acc_sum(size) over (when color = "red"), color from demo`,
