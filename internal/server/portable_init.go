@@ -73,7 +73,7 @@ func portablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("portable plugin %s is created", sd.GetName())))
+		fmt.Fprintf(w, "portable plugin %s is created", sd.GetName())
 	}
 }
 
@@ -89,8 +89,7 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		result := fmt.Sprintf("portable plugin %s is deleted", name)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "portable plugin %s is deleted", name)
 	case http.MethodGet:
 		j, ok := portableManager.GetPluginInfo(name)
 		if !ok {
@@ -116,7 +115,7 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf("portable plugin %s is updated", sd.GetName())))
+		fmt.Fprintf(w, "portable plugin %s is updated", sd.GetName())
 	}
 }
 
