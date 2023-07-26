@@ -583,7 +583,7 @@ func TestPlannerGraphValidate(t *testing.T) {
 }`,
 			err: "",
 		},
-    {
+		{
 			graph: `{
 				"nodes": {
 					"log": {
