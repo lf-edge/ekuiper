@@ -328,18 +328,18 @@ func registerGlobalAggFunc() {
 			switch v := args[0].(type) {
 			case int:
 				v1 := float64(v)
-				m = max(m, v1)
+				m = getMax(m, v1)
 			case int32:
 				v1 := float64(v)
-				m = max(m, v1)
+				m = getMax(m, v1)
 			case int64:
 				v1 := float64(v)
-				m = max(m, v1)
+				m = getMax(m, v1)
 			case float32:
 				v1 := float64(v)
-				m = max(m, v1)
+				m = getMax(m, v1)
 			case float64:
-				m = max(m, v)
+				m = getMax(m, v)
 			default:
 				return fmt.Errorf("the value should be number"), false
 			}
@@ -377,18 +377,18 @@ func registerGlobalAggFunc() {
 			switch v := args[0].(type) {
 			case int:
 				v1 := float64(v)
-				m = min(m, v1)
+				m = getMin(m, v1)
 			case int32:
 				v1 := float64(v)
-				m = min(m, v1)
+				m = getMin(m, v1)
 			case int64:
 				v1 := float64(v)
-				m = min(m, v1)
+				m = getMin(m, v1)
 			case float32:
 				v1 := float64(v)
-				m = min(m, v1)
+				m = getMin(m, v1)
 			case float64:
-				m = min(m, v)
+				m = getMin(m, v)
 			default:
 				return fmt.Errorf("the value should be number"), false
 			}
@@ -482,14 +482,14 @@ func registerGlobalAggFunc() {
 	}
 }
 
-func max(a, b float64) float64 {
+func getMax(a, b float64) float64 {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func min(a, b float64) float64 {
+func getMin(a, b float64) float64 {
 	if a < b {
 		return a
 	}
