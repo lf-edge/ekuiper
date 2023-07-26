@@ -583,6 +583,39 @@ func TestPlannerGraphValidate(t *testing.T) {
 }`,
 			err: "",
 		},
+		{
+			graph: `{
+				"nodes": {
+					"log": {
+						"type": "sink",
+						"nodeType": "log",
+						"props": {}
+					},
+					"mqtt": {
+						"type": "source",
+						"nodeType": "mqtt",
+						"props": {
+							"datasource": "demo",
+							"format": "protobuf",
+							"schemaMessage": "PropertiesReport",
+							"schemaName": "EventBusMessage",
+							"shared": false
+						}
+					}
+				},
+				"topo": {
+					"sources": [
+						"mqtt"
+					],
+					"edges": {
+						"mqtt": [
+						"log"
+					]
+				}
+			}
+		}`,
+			err: "",
+		},
 	}
 
 	t.Logf("The test bucket size is %d.\n\n", len(tests))
