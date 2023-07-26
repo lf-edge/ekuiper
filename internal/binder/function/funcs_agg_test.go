@@ -628,14 +628,28 @@ func TestLastValueValidation(t *testing.T) {
 	}
 }
 
-func TestGlobalAgg(t *testing.T) {
+func TestAccumulateAgg(t *testing.T) {
 	tests := []struct {
 		name     string
 		results  []interface{}
 		testargs []interface{}
 	}{
 		{
-			name: "global_avg",
+			name: "acc_count",
+			testargs: []interface{}{
+				"1",
+				float64(1),
+				float32(1),
+				1,
+				int32(1),
+				int64(1),
+			},
+			results: []interface{}{
+				1, 2, 3, 4, 5, 6,
+			},
+		},
+		{
+			name: "acc_avg",
 			testargs: []interface{}{
 				"1",
 				float64(1),
@@ -654,7 +668,7 @@ func TestGlobalAgg(t *testing.T) {
 			},
 		},
 		{
-			name: "global_max",
+			name: "acc_max",
 			testargs: []interface{}{
 				"1",
 				float64(1),
@@ -673,7 +687,7 @@ func TestGlobalAgg(t *testing.T) {
 			},
 		},
 		{
-			name: "global_min",
+			name: "acc_min",
 			testargs: []interface{}{
 				"1",
 				float64(5),
@@ -692,7 +706,7 @@ func TestGlobalAgg(t *testing.T) {
 			},
 		},
 		{
-			name: "global_sum",
+			name: "acc_sum",
 			testargs: []interface{}{
 				"1",
 				float64(1),

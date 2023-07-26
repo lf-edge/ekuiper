@@ -25,16 +25,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-var GlobalAggFuncs map[string]struct{}
-
-func init() {
-	GlobalAggFuncs = map[string]struct{}{}
-	GlobalAggFuncs["min"] = struct{}{}
-	GlobalAggFuncs["max"] = struct{}{}
-	GlobalAggFuncs["sum"] = struct{}{}
-	GlobalAggFuncs["avg"] = struct{}{}
-}
-
 func max(a, b float64) float64 {
 	if a > b {
 		return a
@@ -50,7 +40,7 @@ func min(a, b float64) float64 {
 }
 
 func registerGlobalAggFunc() {
-	builtins["global_avg"] = builtinFunc{
+	builtins["acc_avg"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			key := args[len(args)-1].(string)
@@ -107,7 +97,7 @@ func registerGlobalAggFunc() {
 			return nil
 		},
 	}
-	builtins["global_max"] = builtinFunc{
+	builtins["acc_max"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			key := args[len(args)-1].(string)
@@ -146,7 +136,7 @@ func registerGlobalAggFunc() {
 			return ValidateLen(1, len(args))
 		},
 	}
-	builtins["global_min"] = builtinFunc{
+	builtins["acc_min"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			key := args[len(args)-1].(string)
@@ -185,7 +175,7 @@ func registerGlobalAggFunc() {
 			return ValidateLen(1, len(args))
 		},
 	}
-	builtins["global_sum"] = builtinFunc{
+	builtins["acc_sum"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			key := args[len(args)-1].(string)
@@ -215,6 +205,30 @@ func registerGlobalAggFunc() {
 				return err, false
 			}
 			return accu, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(1, len(args))
+		},
+	}
+	builtins["acc_count"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			key := args[len(args)-1].(string)
+			val, err := ctx.GetState(key)
+			if err != nil {
+				return err, false
+			}
+			if val == nil {
+				val = 0
+			}
+			cnt := val.(int)
+			if args[0] != nil {
+				cnt = cnt + 1
+			}
+			if err := ctx.PutState(key, cnt); err != nil {
+				return err, false
+			}
+			return cnt, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))

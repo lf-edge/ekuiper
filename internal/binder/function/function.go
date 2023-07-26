@@ -66,10 +66,11 @@ var analyticFuncs = map[string]struct{}{
 	"changed_col": {},
 	"had_changed": {},
 	"latest":      {},
-	"global_sum":  {},
-	"global_min":  {},
-	"global_max":  {},
-	"global_avg":  {},
+	"acc_sum":     {},
+	"acc_min":     {},
+	"acc_max":     {},
+	"acc_avg":     {},
+	"acc_count":   {},
 }
 
 const AnalyticPrefix = "$$a"
