@@ -16,7 +16,6 @@ package function
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -36,7 +35,6 @@ var (
 	errorArraySecondArgumentNotStringError = fmt.Errorf("second argument should be string")
 	errorArrayThirdArgumentNotIntError     = fmt.Errorf("third argument should be int")
 	errorArrayThirdArgumentNotStringError  = fmt.Errorf("third argument should be string")
-	errorArrayContainsNonNumOrBoolValError = fmt.Errorf("array contain elements that are not numeric or Boolean")
 	errorArrayNotArrayElementError         = fmt.Errorf("array elements should be array")
 	errorArrayNotStringElementError        = fmt.Errorf("array elements should be string")
 )
@@ -158,15 +156,38 @@ func registerArrayFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
-
-	builtins["array_last_position"] = builtinFunc{
+	builtins["array_position"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return -1, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
+			for i, item := range array {
+				if item == args[1] {
+					return i, true
+				}
+			}
+			return -1, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+	}
 
+	builtins["array_last_position"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return -1, true
+			}
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
 			lastPos := -1
 			for i := len(array) - 1; i >= 0; i-- {
 				if array[i] == args[1] {
@@ -174,13 +195,11 @@ func registerArrayFunc() {
 					break
 				}
 			}
-
 			return lastPos, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnFalseIfHasAnyNil,
 	}
 
 	builtins["array_contains_any"] = builtinFunc{
@@ -296,24 +315,7 @@ func registerArrayFunc() {
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
-			var res interface{}
-			var maxVal float64 = math.Inf(-1)
-
-			for _, val := range array {
-				if val == nil {
-					return nil, true
-				}
-				f, err := cast.ToFloat64(val, cast.CONVERT_ALL)
-				if err != nil {
-					return errorArrayContainsNonNumOrBoolValError, false
-				}
-
-				if f > maxVal {
-					maxVal = f
-					res = val
-				}
-			}
-			return res, true
+			return max(array)
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
@@ -327,25 +329,7 @@ func registerArrayFunc() {
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
-			var res interface{}
-			var min float64 = math.Inf(1)
-
-			for _, val := range array {
-				if val == nil {
-					return nil, true
-				}
-
-				f, err := cast.ToFloat64(val, cast.CONVERT_ALL)
-				if err != nil {
-					return errorArrayContainsNonNumOrBoolValError, false
-				}
-
-				if f < min {
-					min = f
-					res = val
-				}
-			}
-			return res, true
+			return min(array)
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
@@ -465,7 +449,7 @@ func registerArrayFunc() {
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
-			return len(array), true
+			return getCount(array), true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))

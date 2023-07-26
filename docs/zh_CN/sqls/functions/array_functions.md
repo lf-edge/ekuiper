@@ -88,7 +88,7 @@ array_union(array1, array2)
 array_max(array)
 ```
 
-返回数组中的最大值, 若数组元素中存在 null，则返回 null。
+返回数组中的最大值, 数组元素中的 null 值将被忽略。
 
 ## ARRAY_MIN
 
@@ -96,7 +96,7 @@ array_max(array)
 array_min(array)
 ```
 
-返回数组中的最小值, 若数组元素中存在 null，则返回 null。
+返回数组中的最小值, 数组元素中的 null 值将被忽略。
 
 ## ARRAY_EXCEPT
 
