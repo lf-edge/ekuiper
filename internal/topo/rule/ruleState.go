@@ -402,7 +402,11 @@ func (rs *RuleState) GetState() (string, error) {
 				result = "Running"
 			case context.Canceled:
 				if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
-					result = "Stopped: waiting for next schedule."
+					if isAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+						result = "Stopped: schedule terminated."
+					} else {
+						result = "Stopped: waiting for next schedule."
+					}
 				} else {
 					result = "Stopped: canceled manually."
 				}
@@ -413,7 +417,11 @@ func (rs *RuleState) GetState() (string, error) {
 			}
 		} else {
 			if rs.cronState.isInSchedule {
-				result = "Stopped: waiting for next schedule."
+				if isAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+					result = "Stopped: schedule terminated."
+				} else {
+					result = "Stopped: waiting for next schedule."
+				}
 			} else {
 				result = "Stopped: canceled manually."
 			}
@@ -454,4 +462,22 @@ func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func isAfterTimeRanges(now time.Time, ranges []api.DatetimeRange) bool {
+	for _, r := range ranges {
+		isAfter, err := isAfterTimeRange(now, r.End)
+		if err != nil || !isAfter {
+			return false
+		}
+	}
+	return true
+}
+
+func isAfterTimeRange(now time.Time, end string) (bool, error) {
+	e, err := time.Parse(layout, end)
+	if err != nil {
+		return false, err
+	}
+	return now.After(e), nil
 }
