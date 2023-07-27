@@ -69,6 +69,8 @@ const (
 func init() {
 	gob.Register([]*xsql.Tuple{})
 	gob.Register([]map[string]interface{}{})
+	gob.Register(make(map[string][]xsql.TupleRow))
+	gob.Register(xsql.Tuple{})
 }
 
 func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowOperator, error) {
