@@ -618,7 +618,7 @@ func TestCast(t *testing.T) {
 				1,
 				"bytea",
 			},
-			result: fmt.Errorf("cannot convert int(1) to bytes"),
+			result: fmt.Errorf("cannot convert int(1) to bytea"),
 		},
 		{ // 3
 			args: []interface{}{
