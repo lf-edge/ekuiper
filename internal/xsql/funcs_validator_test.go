@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -361,7 +361,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT cast("12", "bool") FROM tbl`,
 			stmt: nil,
-			err:  "Expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime.",
+			err:  "Expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime, bytea.",
 		},
 
 		///
