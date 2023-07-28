@@ -292,3 +292,97 @@ WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
 ```
+
+# ACC Functions
+
+The ACC Functions means the accumulate functions, which will perform cumulative calculations based on the obtained parameters, and the cumulative scope is the entire life cycle of the rule.
+
+For the next acc functions, we will simulate input and output with the following data:
+
+```text
+a
+```
+
+
+Enter 3 pieces of data in sequence, 1,2,3 respectively.
+
+## ACC_SUM
+
+```text
+acc_sum(expr)
+```
+
+
+The acc_sum function accumulates the expression results and returns the cumulative sum result.
+
+Example 1: Cumulative sums using acc_sum
+
+```text
+acc_sum(a)
+```
+
+The results are: 1 3 6
+
+## ACC_MAX
+
+```text
+acc_max(expr)
+```
+
+The acc_max function performs accumulative comparison on the result of the expression to take the larger value, and returns the result of the cumulative comparison to take the larger value.
+
+Example 1: Use acc_max for cumulative comparison to take the larger value
+
+```text
+acc_max(a)
+```
+
+The results are: 1 2 3
+
+## ACC_MIN
+
+```text
+acc_min(expr)
+```
+
+The acc_min function performs accumulative comparison on the result of the expression to take the smaller value, and returns the result of the cumulative comparison to take the smaller value.
+
+Example 1: Use acc_min for cumulative comparison to take the smaller value
+
+```text
+acc_min(a)
+```
+
+The results are: 1 1 1
+
+## ACC_COUNT
+
+```text
+acc_count(expr)
+```
+
+The acc_count function counts the cumulative number of expression results and returns the cumulative value.
+
+Example 1: Use acc_count for cumulative count statistics
+
+```text
+acc_count(a)
+```
+
+The results are: 1 2 3
+
+## ACC_AVG
+
+```text
+acc_avg(expr)
+```
+
+The acc_avg function performs cumulative average statistics on the expression result and returns the cumulative average.
+
+Example 1: Cumulative average statistics using acc_count
+
+```text
+acc_avg(a)
+```
+
+The results are: 1 1.5 2
