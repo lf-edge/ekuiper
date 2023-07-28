@@ -465,6 +465,9 @@ func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
 }
 
 func isAfterTimeRanges(now time.Time, ranges []api.DatetimeRange) bool {
+	if len(ranges) < 1 {
+		return false
+	}
 	for _, r := range ranges {
 		isAfter, err := isAfterTimeRange(now, r.End)
 		if err != nil || !isAfter {
