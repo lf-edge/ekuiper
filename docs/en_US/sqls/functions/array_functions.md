@@ -60,10 +60,10 @@ array_last_position(array, val)
 Return a 0-based index of the last occurrence of val if it is found within the array. If val does not exist within the
 array, it returns -1.
 
-## ARRAY_CONTAIN_ANY
+## ARRAY_CONTAINS_ANY
 
 ```text
-array_contain_any(array1, array2)
+array_contains_any(array1, array2)
 ```
 
 Returns true if array1 and array2 have any elements in common.
@@ -123,6 +123,58 @@ sequence(start, stop, step)
 ```
 
 Returns an array of integers from start to stop, incrementing by step.
+
+## ARRAY_CARDINALITY
+
+```text
+array_cardinality(array)
+```
+
+Return the number of elements in the array. The null value will be ignored.
+
+## ARRAY_FLATTEN
+
+```text
+array_flatten(array)
+```
+
+Return a flattened array, i.e., expand the array elements in the array.
+
+For example, if the input is [[1, 4], [2, 3]], then the output is [1, 4, 2, 3].
+
+## ARRAY_DISTINCT
+
+```text
+array_distinct(array)
+```
+
+Return a distinct array, i.e., remove the duplicate elements in the array.
+
+## ARRAY_MAP
+
+```text
+array_map(function_name, array)
+```
+
+Return a new array by applying a function to each element of the array.
+
+## ARRAY_JOIN
+
+```text
+array_join(array, delimiter, null_replacement)
+```
+
+Return a string that concatenates all elements of the array and uses the delimiter and an optional string to replace null values.
+
+For example, if the input is [1, 2, 3], delimiter is set to comma, then the output is "1,2,3".
+
+## ARRAY_SHUFFLE
+
+```text
+array_shuffle(array)
+```
+
+Return a shuffled array, i.e., randomly shuffle the elements in the array.
 
 ## ARRAY_CONCAT
 
