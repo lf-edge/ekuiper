@@ -558,6 +558,7 @@ func TestScheduleRuleInRange(t *testing.T) {
 	}
 	const ruleStarted = "Running"
 	const ruleStopped = "Stopped: waiting for next schedule."
+	const ruleTerminated = "Stopped: schedule terminated."
 	func() {
 		rs, err := NewRuleState(r)
 		if err != nil {
@@ -608,6 +609,38 @@ func TestScheduleRuleInRange(t *testing.T) {
 		}
 		if state != ruleStopped {
 			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
+			return
+		}
+		if !rs.cronState.isInSchedule {
+			t.Error("cron state should be in schedule")
+			return
+		}
+	}()
+
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: before.Format(layout),
+			End:   before.Format(layout),
+		},
+	}
+	func() {
+		rs, err := NewRuleState(r)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		if err := rs.startScheduleRule(); err != nil {
+			t.Error(err)
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		if err != nil {
+			t.Errorf("get rule state error: %v", err)
+			return
+		}
+		if state != ruleTerminated {
+			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleTerminated, state)
 			return
 		}
 		if !rs.cronState.isInSchedule {
