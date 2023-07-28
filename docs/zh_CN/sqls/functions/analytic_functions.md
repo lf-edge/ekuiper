@@ -275,3 +275,95 @@ WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
 ```
+
+## ACC 函数
+
+ACC 函数全称为 accumulate function，该函数将会根据所得的参数进行累计计算，累计范围为该规则的整个生命周期。
+
+对于接下来的 acc 函数，我们将用以下数据进行模拟输入输出:
+
+```text
+a
+```
+
+依次输入 3 条数据，分别为 1,2,3。
+
+### ACC_SUM
+
+```text
+acc_sum(expr)
+```
+
+acc_sum 函数对表达式结果进行累计加和，返回累计加和结果。
+
+示例1：使用 acc_sum 进行累计加和
+
+```text
+acc_sum(a)
+```
+
+结果为分别为: 1 3 6
+
+### ACC_MAX
+
+```text
+acc_max(expr)
+```
+
+acc_max 函数对表达式结果进行累计比较取较大值，返回累计比较取较大值的结果。
+
+示例1：使用 acc_max 进行累计比较取较大值
+
+```text
+acc_max(a)
+```
+
+结果为分别为: 1 2 3
+
+### ACC_MIN
+
+```text
+acc_min(expr)
+```
+
+acc_min 函数对表达式结果进行累计比较取较小值，返回累计比较取较小值的结果。
+
+示例1：使用 acc_min 进行累计比较取较小值
+
+```text
+acc_min(a)
+```
+
+结果为分别为: 1 1 1
+
+### ACC_COUNT
+
+```text
+acc_count(expr)
+```
+
+acc_count 函数对表达式结果进行累计个数统计，返回累计个数值。
+
+示例1：使用 acc_count 进行累计个数统计
+
+```text
+acc_count(a)
+```
+
+结果为分别为: 1 2 3
+
+### ACC_AVG
+
+```text
+acc_avg(expr)
+```
+
+acc_avg 函数对表达式结果进行累计平均值统计，返回累计平均值。
+
+示例1：使用 acc_count 进行累计平均值统计
+
+```text
+acc_avg(a)
+```
+
+结果为分别为: 1 1.5 2

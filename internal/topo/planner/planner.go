@@ -463,7 +463,6 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-
 	srfMapping := extractSRFMapping(stmt)
 	if stmt.Fields != nil {
 		enableLimit := false

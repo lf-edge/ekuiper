@@ -53,6 +53,7 @@ func init() {
 	registerArrayFunc()
 	registerObjectFunc()
 	registerGlobalStateFunc()
+	registerGlobalAggFunc()
 }
 
 //var funcWithAsteriskSupportMap = map[string]string{
@@ -65,6 +66,11 @@ var analyticFuncs = map[string]struct{}{
 	"changed_col": {},
 	"had_changed": {},
 	"latest":      {},
+	"acc_sum":     {},
+	"acc_min":     {},
+	"acc_max":     {},
+	"acc_avg":     {},
+	"acc_count":   {},
 }
 
 const AnalyticPrefix = "$$a"
