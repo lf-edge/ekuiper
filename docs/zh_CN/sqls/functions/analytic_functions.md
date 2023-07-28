@@ -276,7 +276,7 @@ _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
 ```
 
-# ACC 函数
+## ACC 函数
 
 ACC 函数全称为 accumulate function，该函数将会根据所得的参数进行累计计算，累计范围为该规则的整个生命周期。
 
@@ -288,7 +288,7 @@ a
 
 依次输入 3 条数据，分别为 1,2,3。
 
-## ACC_SUM
+### ACC_SUM
 
 ```text
 acc_sum(expr)
@@ -304,7 +304,7 @@ acc_sum(a)
 
 结果为分别为: 1 3 6
 
-## ACC_MAX
+### ACC_MAX
 
 ```text
 acc_max(expr)
@@ -320,7 +320,7 @@ acc_max(a)
 
 结果为分别为: 1 2 3
 
-## ACC_MIN
+### ACC_MIN
 
 ```text
 acc_min(expr)
@@ -336,7 +336,7 @@ acc_min(a)
 
 结果为分别为: 1 1 1
 
-## ACC_COUNT
+### ACC_COUNT
 
 ```text
 acc_count(expr)
@@ -352,7 +352,7 @@ acc_count(a)
 
 结果为分别为: 1 2 3
 
-## ACC_AVG
+### ACC_AVG
 
 ```text
 acc_avg(expr)
