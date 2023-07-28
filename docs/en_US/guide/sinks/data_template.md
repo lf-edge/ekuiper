@@ -255,6 +255,15 @@ In addition, the template is still applied to each record in the slice. Therefor
   {"device_id": "1", "description": [ "fine" , "fine" , "high" ]}
 ```
 
+## AI-assisted generation
+
+eKuiper's template syntax is the same as the Go language, so it is easy to generate data templates with AI assistance. For example, in the data traversal example above, we can use the following hints to assist in generating data templates:
+
+```text
+Use Golang  text/template  and sprig  lib to convert [{"device_id": 1, "description": "Current temperature is 36.25, it's high."}
+{"device_id": 2, "description": "Current temperature is 27, it's normal."}]  into {"device_id":"1",  "values": [  {"temperature": 10.5}, {"temperature": 20.3}, {"temperature": 30.3}]}
+```
+
 ## Summary
 
 The data template function provided by eKuiper can realize the secondary processing of the analysis results to meet the needs of different sink targets. However, readers can also see that due to the limitations of the Golang template, it is awkward to implement more complex data conversion. We hope that the Golang template function can be made more powerful and flexible in the future, which can support more complex requirements. At present, it is recommended that users can implement some simpler data conversion through data templates. If the user needs to perform more complicated processing on the data and extends the sink by himself, it can be directly processed in the sink implementation.

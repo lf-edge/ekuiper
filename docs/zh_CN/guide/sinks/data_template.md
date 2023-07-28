@@ -255,6 +255,15 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
   {"device_id": "1", "description": [ "fine" , "fine" , "high" ]}
 ```
 
+## 使用 AI 辅助生成
+
+eKuiper 的模板语法与 Go 语言相同，因此可以方便地通过 AI 辅助生成数据模版。例如上文的数据遍历的示例，我们可以使用如下提示词来辅助生成数据模版：
+
+```text
+使用 Golang 的 text/template 以及 sprig 库将数据[{"device_id": 1, "description": "Current temperature is 36.25, it's high."}
+{"device_id": 2, "description": "Current temperature is 27, it's normal."}] 转换成 {"device_id":"1",  "values": [  {"temperature": 10.5}, {"temperature": 20.3}, {"temperature": 30.3}]}
+```
+
 ## 总结
 
 通过 eKuiper 提供的数据模版功能可以实现对分析结果的二次处理，以满足不同的 sink 目标的需求。但是读者也可以看到，由于 Golang 模版本身的限制，实现比较复杂的数据转换的时候会比较笨拙，希望将来 Golang 模版的功能可以做得更加强大和灵活，这样可以支持处理更加复杂的需求。目前建议用户可以通过数据模版来实现一些较为简单的数据的转换；如果用户需要对数据进行比较复杂的处理，并且自己扩展了 sink 的情况下，可以在 sink 的实现中直接进行处理。
