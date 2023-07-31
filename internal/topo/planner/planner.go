@@ -180,6 +180,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 		op = Transform(&operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
+	case *WindowFuncPlan:
+		op = Transform(&operator.WindowFuncOperator{WindowFuncFields: t.windowFuncFields}, fmt.Sprintf("%d_windowFunc", newIndex), options)
 	default:
 		err = fmt.Errorf("unknown logical plan %v", t)
 	}
@@ -463,6 +465,8 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
+	windowFuncFields, remained := extractWindowFuncFields(stmt)
+	stmt.Fields = remained
 	srfMapping := extractSRFMapping(stmt)
 	if stmt.Fields != nil {
 		enableLimit := false
@@ -495,6 +499,13 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			limitCount:  limitCount,
 		}.Init()
 		p.SetChildren(children)
+		children = []LogicalPlan{p}
+	}
+	if len(windowFuncFields) > 0 {
+		p = WindowFuncPlan{
+			windowFuncFields: windowFuncFields,
+		}.Init()
+		p.SetChildren(children)
 	}
 
 	return optimize(p)
@@ -524,4 +535,23 @@ func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.
 	unaryOperator := node.New(name, options)
 	unaryOperator.SetOperation(op)
 	return unaryOperator
+}
+
+func extractWindowFuncFields(stmt *ast.SelectStatement) (ast.Fields, ast.Fields) {
+	windowFuncFields := make([]ast.Field, 0)
+	remained := make([]ast.Field, 0)
+	for _, field := range stmt.Fields {
+		if wf, ok := field.Expr.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
+			windowFuncFields = append(windowFuncFields, field)
+			continue
+		}
+		if ref, ok := field.Expr.(*ast.FieldRef); ok && ref.AliasRef != nil {
+			if wf, ok := ref.AliasRef.Expression.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
+				windowFuncFields = append(windowFuncFields, field)
+				continue
+			}
+		}
+		remained = append(remained, field)
+	}
+	return windowFuncFields, remained
 }
