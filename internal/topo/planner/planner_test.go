@@ -92,11 +92,111 @@ func Test_createLogicalPlan(t *testing.T) {
 	// boolTrue = true
 	boolFalse := false
 
+	ref := &ast.AliasRef{
+		Expression: &ast.Call{
+			Name:     "row_number",
+			FuncType: ast.FuncTypeWindow,
+		},
+	}
+	ref.SetRefSource([]string{})
+
 	tests := []struct {
 		sql string
 		p   LogicalPlan
 		err string
 	}{
+		{
+			sql: "select name, row_number() as index from src1",
+			p: WindowFuncPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						ProjectPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: map[string]*ast.JsonStreamField{
+											"name": {
+												Type: "string",
+											},
+										},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										pruneFields: []string{},
+									}.Init(),
+								},
+							},
+							fields: []ast.Field{
+								{
+									Name: "name",
+									Expr: &ast.FieldRef{
+										StreamName: "src1",
+										Name:       "name",
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+				windowFuncFields: []ast.Field{
+					{
+						Name:  "row_number",
+						AName: "index",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "index",
+							AliasRef:   ref,
+						},
+					},
+				},
+			}.Init(),
+		},
+		{
+			sql: "select name, row_number() from src1",
+			p: WindowFuncPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						ProjectPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									DataSourcePlan{
+										baseLogicalPlan: baseLogicalPlan{},
+										name:            "src1",
+										streamFields: map[string]*ast.JsonStreamField{
+											"name": {
+												Type: "string",
+											},
+										},
+										streamStmt:  streams["src1"],
+										metaFields:  []string{},
+										pruneFields: []string{},
+									}.Init(),
+								},
+							},
+							fields: []ast.Field{
+								{
+									Name: "name",
+									Expr: &ast.FieldRef{
+										StreamName: "src1",
+										Name:       "name",
+									},
+								},
+							},
+						}.Init(),
+					},
+				},
+				windowFuncFields: []ast.Field{
+					{
+						Name: "row_number",
+						Expr: &ast.Call{
+							Name:     "row_number",
+							FuncType: ast.FuncTypeWindow,
+						},
+					},
+				},
+			}.Init(),
+		},
 		{
 			sql: "select name from src1 where true limit 1",
 			p: ProjectPlan{

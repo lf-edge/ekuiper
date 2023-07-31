@@ -22,6 +22,101 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
+func TestWindowFuncSQL(t *testing.T) {
+	// Reset
+	streamList := []string{"demo"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: "TestRowNumber1",
+			Sql:  `select size, row_number() from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(3),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(6),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(2),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(4),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(1),
+					},
+				},
+			},
+		},
+		{
+			Name: "TestRowNumber2",
+			Sql:  `select size, row_number() from demo group by countWindow(5)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(3),
+					},
+					{
+						"row_number": float64(2),
+						"size":       float64(6),
+					},
+					{
+						"row_number": float64(3),
+						"size":       float64(2),
+					},
+					{
+						"row_number": float64(4),
+						"size":       float64(4),
+					},
+					{
+						"row_number": float64(5),
+						"size":       float64(1),
+					},
+				},
+			},
+		},
+	}
+	// Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}
+
 func TestAccAggSQL(t *testing.T) {
 	// Reset
 	streamList := []string{"demo"}

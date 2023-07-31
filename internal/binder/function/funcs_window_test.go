@@ -15,17 +15,28 @@
 package function
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
-func registerWindowFunc() {
-	builtins["row_number"] = builtinFunc{
-		fType: ast.FuncTypeWindow,
-		// we implement window functions in windowFuncOperator instead of exec.
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			return nil, true
+func TestWindowFuncValidate(t *testing.T) {
+	testcases := []struct {
+		name string
+		args []ast.Expr
+	}{
+		{
+			name: "row_number",
+			args: nil,
 		},
-		val: ValidateNoArg,
+	}
+
+	for _, tc := range testcases {
+		f, ok := builtins[tc.name]
+		require.True(t, ok)
+		err := f.val(nil, tc.args)
+		require.NoError(t, err)
 	}
 }
