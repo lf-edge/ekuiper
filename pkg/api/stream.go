@@ -141,6 +141,8 @@ type Rewindable interface {
 }
 
 type RuleOption struct {
+	Debug              bool             `json:"debug" yaml:"debug"`
+	LogPath            string           `json:"logPath" yaml:"logPath"`
 	IsEventTime        bool             `json:"isEventTime" yaml:"isEventTime"`
 	LateTol            int64            `json:"lateTolerance" yaml:"lateTolerance"`
 	Concurrency        int              `json:"concurrency" yaml:"concurrency"`

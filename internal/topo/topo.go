@@ -17,8 +17,15 @@ package topo
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
+	"path"
 	"strconv"
 	"sync"
+	"time"
+
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/sirupsen/logrus"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
@@ -118,8 +125,37 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 // stream starts execution.
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
-		contextLogger := conf.Log.WithField("rule", s.name)
-		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		ctxLogger := &logrus.Logger{
+			Out:          conf.Log.Out,
+			Hooks:        conf.Log.Hooks,
+			Level:        conf.Log.Level,
+			Formatter:    conf.Log.Formatter,
+			ReportCaller: conf.Log.ReportCaller,
+			ExitFunc:     conf.Log.ExitFunc,
+			BufferPool:   conf.Log.BufferPool,
+		}
+		if conf.Config.Basic.Debug || s.options.Debug {
+			ctxLogger.SetLevel(logrus.DebugLevel)
+		}
+		if s.options.LogPath != "" {
+			logDir, _ := conf.GetLogLoc()
+
+			file := path.Join(logDir, s.options.LogPath)
+			output, err := rotatelogs.New(
+				file+".%Y-%m-%d_%H-%M-%S",
+				rotatelogs.WithLinkName(file),
+				rotatelogs.WithRotationTime(time.Hour*time.Duration(conf.Config.Basic.RotateTime)),
+				rotatelogs.WithMaxAge(time.Hour*time.Duration(conf.Config.Basic.MaxAge)),
+			)
+			if err != nil {
+				conf.Log.Warnf("Create rule log file failed: %s", file)
+			} else if conf.Config.Basic.ConsoleLog {
+				ctxLogger.SetOutput(io.MultiWriter(output, os.Stdout))
+			} else if !conf.Config.Basic.ConsoleLog {
+				ctxLogger.SetOutput(output)
+			}
+		}
+		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, logrus.NewEntry(ctxLogger).WithField("rule", s.name))
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
