@@ -51,6 +51,14 @@ rule_id()
 
 返回当前匹配到的规则的ID。
 
+## RULE_START
+
+```text
+rule_start()
+```
+
+返回规则开始运行的时间戳，格式为 int64。
+
 ## MQTT
 
 ```text

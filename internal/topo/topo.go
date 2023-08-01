@@ -159,6 +159,7 @@ func (s *Topo) prepareContext() {
 			}
 		}
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, conf.GetNowInMilli())
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
