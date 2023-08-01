@@ -329,6 +329,12 @@ func TestLimitSQL(t *testing.T) {
 			SendError:    true,
 		},
 		{
+			BufferLength: 100,
+			SendError:    true,
+			Debug:        true,
+			LogFilename:  "rule-test.log",
+		},
+		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                api.AtLeastOnce,

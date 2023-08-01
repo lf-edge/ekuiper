@@ -52,7 +52,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 	if ruleGraph == nil {
 		return nil, errors.New("no graph")
 	}
-	tp, err := topo.NewWithNameAndQos(rule.Id, rule.Options.Qos, rule.Options.CheckpointInterval)
+	tp, err := topo.NewWithNameAndOptions(rule.Id, rule.Options)
 	if err != nil {
 		return nil, err
 	}

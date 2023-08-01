@@ -193,7 +193,7 @@ func SetFileLog(v bool) error {
 		return nil
 	}
 
-	logDir, err := GetLoc(logDir)
+	logDir, err := GetLogLoc()
 	if err != nil {
 		return err
 	}
