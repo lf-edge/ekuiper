@@ -177,7 +177,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	case *OrderPlan:
 		op = Transform(&operator.OrderOp{SortFields: t.SortFields}, fmt.Sprintf("%d_order", newIndex), options)
 	case *ProjectPlan:
-		op = Transform(&operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_project", newIndex), options)
+		op = Transform(&operator.ProjectOp{ColNames: t.colNames, AliasNames: t.aliasNames, AliasFields: t.aliasFields, ExprFields: t.exprFields, ExceptNames: t.exceptNames, IsAggregate: t.isAggregate, AllWildcard: t.allWildcard, WildcardEmitters: t.wildcardEmitters, ExprNames: t.exprNames, SendMeta: t.sendMeta, LimitCount: t.limitCount, EnableLimit: t.enableLimit, WindowFuncNames: t.windowFuncNames}, fmt.Sprintf("%d_project", newIndex), options)
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
 	case *WindowFuncPlan:
@@ -465,8 +465,14 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	windowFuncFields, remained := extractWindowFuncFields(stmt)
-	stmt.Fields = remained
+	windowFuncFields, windowFuncsNames := extractWindowFuncFields(stmt)
+	if len(windowFuncFields) > 0 {
+		p = WindowFuncPlan{
+			windowFuncFields: windowFuncFields,
+		}.Init()
+		p.SetChildren(children)
+		children = []LogicalPlan{p}
+	}
 	srfMapping := extractSRFMapping(stmt)
 	if stmt.Fields != nil {
 		enableLimit := false
@@ -476,11 +482,12 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			limitCount = stmt.Limit.(*ast.LimitExpr).LimitCount.Val
 		}
 		p = ProjectPlan{
-			fields:      stmt.Fields,
-			isAggregate: xsql.WithAggFields(stmt),
-			sendMeta:    opt.SendMetaToSink,
-			enableLimit: enableLimit,
-			limitCount:  limitCount,
+			windowFuncNames: windowFuncsNames,
+			fields:          stmt.Fields,
+			isAggregate:     xsql.WithAggFields(stmt),
+			sendMeta:        opt.SendMetaToSink,
+			enableLimit:     enableLimit,
+			limitCount:      limitCount,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -497,13 +504,6 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			SrfMapping:  srfMapping,
 			enableLimit: enableLimit,
 			limitCount:  limitCount,
-		}.Init()
-		p.SetChildren(children)
-		children = []LogicalPlan{p}
-	}
-	if len(windowFuncFields) > 0 {
-		p = WindowFuncPlan{
-			windowFuncFields: windowFuncFields,
 		}.Init()
 		p.SetChildren(children)
 	}
@@ -537,21 +537,24 @@ func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.
 	return unaryOperator
 }
 
-func extractWindowFuncFields(stmt *ast.SelectStatement) (ast.Fields, ast.Fields) {
+func extractWindowFuncFields(stmt *ast.SelectStatement) (ast.Fields, map[string]struct{}) {
+	windowFuncsName := make(map[string]struct{})
 	windowFuncFields := make([]ast.Field, 0)
 	remained := make([]ast.Field, 0)
 	for _, field := range stmt.Fields {
 		if wf, ok := field.Expr.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
 			windowFuncFields = append(windowFuncFields, field)
+			windowFuncsName[wf.Name] = struct{}{}
 			continue
 		}
 		if ref, ok := field.Expr.(*ast.FieldRef); ok && ref.AliasRef != nil {
 			if wf, ok := ref.AliasRef.Expression.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
 				windowFuncFields = append(windowFuncFields, field)
+				windowFuncsName[ref.Name] = struct{}{}
 				continue
 			}
 		}
 		remained = append(remained, field)
 	}
-	return windowFuncFields, remained
+	return windowFuncFields, windowFuncsName
 }

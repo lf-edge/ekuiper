@@ -107,10 +107,10 @@ func Test_createLogicalPlan(t *testing.T) {
 	}{
 		{
 			sql: "select name, row_number() as index from src1",
-			p: WindowFuncPlan{
+			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
-						ProjectPlan{
+						WindowFuncPlan{
 							baseLogicalPlan: baseLogicalPlan{
 								children: []LogicalPlan{
 									DataSourcePlan{
@@ -127,19 +127,21 @@ func Test_createLogicalPlan(t *testing.T) {
 									}.Init(),
 								},
 							},
-							fields: []ast.Field{
+							windowFuncFields: []ast.Field{
 								{
-									Name: "name",
+									Name:  "row_number",
+									AName: "index",
 									Expr: &ast.FieldRef{
-										StreamName: "src1",
-										Name:       "name",
+										StreamName: ast.AliasStream,
+										Name:       "index",
+										AliasRef:   ref,
 									},
 								},
 							},
 						}.Init(),
 					},
 				},
-				windowFuncFields: []ast.Field{
+				fields: []ast.Field{
 					{
 						Name:  "row_number",
 						AName: "index",
@@ -149,15 +151,25 @@ func Test_createLogicalPlan(t *testing.T) {
 							AliasRef:   ref,
 						},
 					},
+					{
+						Name: "name",
+						Expr: &ast.FieldRef{
+							StreamName: "src1",
+							Name:       "name",
+						},
+					},
+				},
+				windowFuncNames: map[string]struct{}{
+					"index": {},
 				},
 			}.Init(),
 		},
 		{
 			sql: "select name, row_number() from src1",
-			p: WindowFuncPlan{
+			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
-						ProjectPlan{
+						WindowFuncPlan{
 							baseLogicalPlan: baseLogicalPlan{
 								children: []LogicalPlan{
 									DataSourcePlan{
@@ -174,19 +186,26 @@ func Test_createLogicalPlan(t *testing.T) {
 									}.Init(),
 								},
 							},
-							fields: []ast.Field{
+							windowFuncFields: []ast.Field{
 								{
-									Name: "name",
-									Expr: &ast.FieldRef{
-										StreamName: "src1",
-										Name:       "name",
+									Name: "row_number",
+									Expr: &ast.Call{
+										Name:     "row_number",
+										FuncType: ast.FuncTypeWindow,
 									},
 								},
 							},
 						}.Init(),
 					},
 				},
-				windowFuncFields: []ast.Field{
+				fields: []ast.Field{
+					{
+						Name: "name",
+						Expr: &ast.FieldRef{
+							StreamName: "src1",
+							Name:       "name",
+						},
+					},
 					{
 						Name: "row_number",
 						Expr: &ast.Call{
@@ -194,6 +213,9 @@ func Test_createLogicalPlan(t *testing.T) {
 							FuncType: ast.FuncTypeWindow,
 						},
 					},
+				},
+				windowFuncNames: map[string]struct{}{
+					"row_number": {},
 				},
 			}.Init(),
 		},
