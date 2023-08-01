@@ -1887,6 +1887,42 @@ func TestAliasSQL(t *testing.T) {
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
+			Name: "TestAliasSQL",
+			Sql:  `select size + 1 as size, size + 1 as b from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size": float64(4),
+						"b":    float64(5),
+					},
+				},
+				{
+					{
+						"size": float64(7),
+						"b":    float64(8),
+					},
+				},
+				{
+					{
+						"size": float64(3),
+						"b":    float64(4),
+					},
+				},
+				{
+					{
+						"size": float64(5),
+						"b":    float64(6),
+					},
+				},
+				{
+					{
+						"size": float64(2),
+						"b":    float64(3),
+					},
+				},
+			},
+		},
+		{
 			Name: "TestAliasSQL1",
 			Sql:  `select size as a, a + 1 as b from demo`,
 			R: [][]map[string]interface{}{

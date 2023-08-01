@@ -109,6 +109,51 @@ func TestPlannerAlias(t *testing.T) {
 		err string
 	}{
 		{
+			sql: "select a + b as a, a + 1 from src1",
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src1",
+							streamFields: map[string]*ast.JsonStreamField{
+								"a": nil,
+								"b": nil,
+							},
+							streamStmt:   streams["src1"],
+							pruneFields:  []string{},
+							isSchemaless: true,
+							metaFields:   []string{},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						AName: "a",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "a",
+							AliasRef:   aliasRef1,
+						},
+					},
+					{
+						Name: "kuiper_field_0",
+						Expr: &ast.BinaryExpr{
+							OP: ast.ADD,
+							LHS: &ast.FieldRef{
+								Name:       "a",
+								StreamName: ast.AliasStream,
+								AliasRef:   aliasRef1,
+							},
+							RHS: &ast.IntegerLiteral{
+								Val: 1,
+							},
+						},
+					},
+				},
+			}.Init(),
+		},
+		{
 			sql: "select a + b as sum, sum + 1 from src1",
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
