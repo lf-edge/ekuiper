@@ -540,7 +540,6 @@ func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.
 func extractWindowFuncFields(stmt *ast.SelectStatement) (ast.Fields, map[string]struct{}) {
 	windowFuncsName := make(map[string]struct{})
 	windowFuncFields := make([]ast.Field, 0)
-	remained := make([]ast.Field, 0)
 	for _, field := range stmt.Fields {
 		if wf, ok := field.Expr.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
 			windowFuncFields = append(windowFuncFields, field)
@@ -554,7 +553,6 @@ func extractWindowFuncFields(stmt *ast.SelectStatement) (ast.Fields, map[string]
 				continue
 			}
 		}
-		remained = append(remained, field)
 	}
 	return windowFuncFields, windowFuncsName
 }
