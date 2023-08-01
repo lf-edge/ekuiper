@@ -125,14 +125,17 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 // stream starts execution.
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
-		ctxLogger := &logrus.Logger{
-			Out:          conf.Log.Out,
-			Hooks:        conf.Log.Hooks,
-			Level:        conf.Log.Level,
-			Formatter:    conf.Log.Formatter,
-			ReportCaller: conf.Log.ReportCaller,
-			ExitFunc:     conf.Log.ExitFunc,
-			BufferPool:   conf.Log.BufferPool,
+		ctxLogger := conf.Log
+		if s.options.Debug || s.options.LogPath != "" {
+			ctxLogger = &logrus.Logger{
+				Out:          conf.Log.Out,
+				Hooks:        conf.Log.Hooks,
+				Level:        conf.Log.Level,
+				Formatter:    conf.Log.Formatter,
+				ReportCaller: conf.Log.ReportCaller,
+				ExitFunc:     conf.Log.ExitFunc,
+				BufferPool:   conf.Log.BufferPool,
+			}
 		}
 		if conf.Config.Basic.Debug || s.options.Debug {
 			ctxLogger.SetLevel(logrus.DebugLevel)
