@@ -122,6 +122,7 @@ func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
 		contextLogger := conf.Log.WithField("rule", s.name)
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, conf.GetNowInMilli())
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }

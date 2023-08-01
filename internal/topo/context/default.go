@@ -31,7 +31,10 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-const LoggerKey = "$$logger"
+const (
+	LoggerKey    = "$$logger"
+	RuleStartKey = "$$ruleStart"
+)
 
 type DefaultContext struct {
 	ruleId     string
@@ -60,7 +63,7 @@ func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	return parent
 }
 
-// Implement context interface
+// Deadline Implement context interface
 func (c *DefaultContext) Deadline() (deadline time.Time, ok bool) {
 	return c.ctx.Deadline()
 }

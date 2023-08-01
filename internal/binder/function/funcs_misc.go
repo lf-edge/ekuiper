@@ -33,6 +33,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/keyedstate"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -435,6 +436,13 @@ func registerMiscFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			return ctx.GetRuleId(), true
+		},
+		val: ValidateNoArg,
+	}
+	builtins["rule_start"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			return ctx.Value(context.RuleStartKey), true
 		},
 		val: ValidateNoArg,
 	}

@@ -247,13 +247,14 @@ func TestMiscFunc_Apply1(t *testing.T) {
 			}},
 		},
 		{
-			sql: "SELECT rule_id() AS rule_id FROM test",
+			sql: "SELECT rule_id() AS rule_id, rule_start() as rule_start FROM test",
 			data: &xsql.Tuple{
 				Emitter: "test",
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				"rule_id": "rule0",
+				"rule_id":    "rule0",
+				"rule_start": 12345,
 			}},
 		},
 	}
@@ -261,6 +262,7 @@ func TestMiscFunc_Apply1(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestMiscFunc_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx = context.WithValue(ctx, context.RuleStartKey, 12345)
 	ctx = ctx.WithMeta("rule0", "op1", &state.MemoryStore{}).(*context.DefaultContext)
 	for i, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
