@@ -21,7 +21,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/lestrrat-go/file-rotatelogs"
@@ -377,18 +376,13 @@ func gcOutdatedLog(filePath string, maxDuration time.Duration) {
 }
 
 func isLogOutdated(name string, now time.Time, maxDuration time.Duration) bool {
-	prefix := fmt.Sprintf("%s.", logFileName)
-	layout := "2006-01-02_15-04-05"
-	if strings.HasPrefix(name, prefix) {
-		logDate := name[len(prefix):]
-		t, err := time.Parse(layout, logDate)
-		if err != nil {
-			Log.Errorf("parse log %v datetime failed, err:%v", name, err)
-			return false
-		}
-		if int64(now.Sub(t))-int64(maxDuration) > 0 {
-			return true
-		}
+	layout := ".2006-01-02_15-04-05"
+	logDateExt := path.Ext(name)
+	if t, err := time.Parse(layout, logDateExt); err != nil {
+		Log.Errorf("parse log %v datetime failed, err:%v", name, err)
+		return false
+	} else if int64(now.Sub(t))-int64(maxDuration) > 0 {
+		return true
 	}
 	return false
 }
