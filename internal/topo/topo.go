@@ -126,7 +126,7 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
 		contextLogger := conf.Log.WithField("rule", s.name)
-		if s.options.Debug || s.options.LogPath != "" {
+		if s.options.Debug || s.options.LogFilename != "" {
 			contextLogger.Logger = &logrus.Logger{
 				Out:          conf.Log.Out,
 				Hooks:        conf.Log.Hooks,
@@ -139,10 +139,10 @@ func (s *Topo) prepareContext() {
 			if conf.Config.Basic.Debug || s.options.Debug {
 				contextLogger.Logger.SetLevel(logrus.DebugLevel)
 			}
-			if s.options.LogPath != "" {
+			if s.options.LogFilename != "" {
 				logDir, _ := conf.GetLogLoc()
 
-				file := path.Join(logDir, s.options.LogPath)
+				file := path.Join(logDir, path.Base(s.options.LogFilename))
 				output, err := rotatelogs.New(
 					file+".%Y-%m-%d_%H-%M-%S",
 					rotatelogs.WithLinkName(file),

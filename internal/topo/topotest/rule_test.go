@@ -332,7 +332,7 @@ func TestLimitSQL(t *testing.T) {
 			BufferLength: 100,
 			SendError:    true,
 			Debug:        true,
-			LogPath:      "rule-test.log",
+			LogFilename:  "rule-test.log",
 		},
 		{
 			BufferLength:       100,
