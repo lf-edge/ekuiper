@@ -125,9 +125,9 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 // stream starts execution.
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
-		ctxLogger := conf.Log
+		contextLogger := conf.Log.WithField("rule", s.name)
 		if s.options.Debug || s.options.LogPath != "" {
-			ctxLogger = &logrus.Logger{
+			contextLogger.Logger = &logrus.Logger{
 				Out:          conf.Log.Out,
 				Hooks:        conf.Log.Hooks,
 				Level:        conf.Log.Level,
@@ -136,29 +136,29 @@ func (s *Topo) prepareContext() {
 				ExitFunc:     conf.Log.ExitFunc,
 				BufferPool:   conf.Log.BufferPool,
 			}
-		}
-		if conf.Config.Basic.Debug || s.options.Debug {
-			ctxLogger.SetLevel(logrus.DebugLevel)
-		}
-		if s.options.LogPath != "" {
-			logDir, _ := conf.GetLogLoc()
+			if conf.Config.Basic.Debug || s.options.Debug {
+				contextLogger.Logger.SetLevel(logrus.DebugLevel)
+			}
+			if s.options.LogPath != "" {
+				logDir, _ := conf.GetLogLoc()
 
-			file := path.Join(logDir, s.options.LogPath)
-			output, err := rotatelogs.New(
-				file+".%Y-%m-%d_%H-%M-%S",
-				rotatelogs.WithLinkName(file),
-				rotatelogs.WithRotationTime(time.Hour*time.Duration(conf.Config.Basic.RotateTime)),
-				rotatelogs.WithMaxAge(time.Hour*time.Duration(conf.Config.Basic.MaxAge)),
-			)
-			if err != nil {
-				conf.Log.Warnf("Create rule log file failed: %s", file)
-			} else if conf.Config.Basic.ConsoleLog {
-				ctxLogger.SetOutput(io.MultiWriter(output, os.Stdout))
-			} else if !conf.Config.Basic.ConsoleLog {
-				ctxLogger.SetOutput(output)
+				file := path.Join(logDir, s.options.LogPath)
+				output, err := rotatelogs.New(
+					file+".%Y-%m-%d_%H-%M-%S",
+					rotatelogs.WithLinkName(file),
+					rotatelogs.WithRotationTime(time.Hour*time.Duration(conf.Config.Basic.RotateTime)),
+					rotatelogs.WithMaxAge(time.Hour*time.Duration(conf.Config.Basic.MaxAge)),
+				)
+				if err != nil {
+					conf.Log.Warnf("Create rule log file failed: %s", file)
+				} else if conf.Config.Basic.ConsoleLog {
+					contextLogger.Logger.SetOutput(io.MultiWriter(output, os.Stdout))
+				} else if !conf.Config.Basic.ConsoleLog {
+					contextLogger.Logger.SetOutput(output)
+				}
 			}
 		}
-		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, logrus.NewEntry(ctxLogger).WithField("rule", s.name))
+		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
