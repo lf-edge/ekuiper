@@ -86,7 +86,6 @@ select a + 1 as sum1, sum1 + 1 as sum2 from demo
 {"sum1":2, "sum2":3}
 ```
 
-
 值得注意的是，当 alias 的名字与被定义中的 column 同名时，那么这个名字在该 alias 所在的 select field 中的会被解析为 column，而在其他 select field 中则会被解析为 alais 名，以下是一个例子:
 
 ```sql
