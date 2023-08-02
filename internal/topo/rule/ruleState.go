@@ -263,7 +263,8 @@ func (rs *RuleState) startScheduleRule() error {
 	}
 	var cronCtx context.Context
 	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
-	isInRunningSchedule, remainedDuration, err := rs.isInRunningSchedule(d)
+	now := conf.GetNow()
+	isInRunningSchedule, remainedDuration, err := rs.isInRunningSchedule(now, d)
 	if err != nil {
 		return err
 	}
@@ -508,8 +509,7 @@ func isAfterTimeRange(now time.Time, end string) (bool, error) {
 // isInRunningSchedule checks whether the rule should be running, eg:
 // If the duration is 10min, and cron is "0 0 * * *", and the current time is 00:00:02
 // And the rule should be started immediately instead of checking it on the next day.
-func (rs *RuleState) isInRunningSchedule(d time.Duration) (bool, time.Duration, error) {
-	now := conf.GetNow()
+func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, time.Duration, error) {
 	allowed, err := rs.isInAllowedTimeRange(now)
 	if err != nil {
 		return false, 0, err
