@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -517,7 +518,7 @@ func (rs *RuleState) isInRunningSchedule(d time.Duration) (bool, time.Duration, 
 		return false, 0, nil
 	}
 	cronExpr := rs.Rule.Options.Cron
-	if cronExpr == "mockCron" {
+	if strings.HasPrefix(cronExpr, "mock") {
 		return false, 0, nil
 	}
 	s, err := cron.ParseStandard(cronExpr)
