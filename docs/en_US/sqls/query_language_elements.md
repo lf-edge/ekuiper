@@ -73,6 +73,30 @@ Is the name of a column to return.  If the column to specified is a embedded nes
 
 Is an alternative name to replace the column name in the query result set.  Aliases are used also to specify names for the results of expressions. column_alias cannot be used in a WHERE, GROUP BY, or HAVING clause.
 
+column_alias can participate in the calculation of select field, the following is an example:
+
+```sql
+select a + 1 as sum1, sum1 + 1 as sum2 from demo
+```
+
+When a is 1, the result is as follows:
+
+```sql
+{"sum1":2, "sum2":3}
+```
+
+It is worth noting that when the name of an alias has the same name as the column being defined, the name will be parsed as a column in the select field where the alias is located, and it will be parsed as an alais name in other select fields. Here is an example:
+
+```sql
+select a + 1 as a, a + 2 as sum2 from demo
+```
+
+When a is 1, the result is as follows:
+
+```sql
+{"a":2, "sum2":4}
+```
+
 **expression**
 
 Expression is a constant, function, any combination of column names, constants, and functions connected by an operator or operators.

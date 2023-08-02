@@ -210,7 +210,6 @@ func Test_validation(t *testing.T) {
 }
 
 func Test_validationSchemaless(t *testing.T) {
-	tests[10].r = newErrorStruct("invalid argument for func count: aggregate argument is not allowed")
 	store, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
