@@ -262,6 +262,16 @@ func (rs *RuleState) startScheduleRule() error {
 	}
 	var cronCtx context.Context
 	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
+	isInRunningSchedule, remainedDuration, err := rs.isInRunningSchedule(d)
+	if err != nil {
+		return err
+	}
+	if isInRunningSchedule {
+		if err := rs.runScheduleRule(); err != nil {
+			return err
+		}
+		rs.stopAfterDuration(remainedDuration, cronCtx)
+	}
 	entryID, err := backgroundCron.AddFunc(rs.Rule.Options.Cron, func() {
 		var started bool
 		var err error
@@ -274,16 +284,9 @@ func (rs *RuleState) startScheduleRule() error {
 				defer rs.Unlock()
 			}
 			now := conf.GetNow()
-			var err error
-			allowed := true
-			for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
-				allowed, err = isInScheduleRange(now, timeRange.Begin, timeRange.End)
-				if err != nil {
-					return false, err
-				}
-				if allowed {
-					break
-				}
+			allowed, err := rs.isInAllowedTimeRange(now)
+			if err != nil {
+				return false, err
 			}
 			if !allowed {
 				return false, nil
@@ -300,20 +303,7 @@ func (rs *RuleState) startScheduleRule() error {
 			return
 		}
 		if started {
-			after := time.After(d)
-			go func(ctx context.Context) {
-				select {
-				case <-after:
-					rs.Lock()
-					defer rs.Unlock()
-					if err := rs.stop(); err != nil {
-						conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
-					}
-					return
-				case <-cronCtx.Done():
-					return
-				}
-			}(cronCtx)
+			rs.stopAfterDuration(d, cronCtx)
 		}
 	})
 	if err != nil {
@@ -322,6 +312,35 @@ func (rs *RuleState) startScheduleRule() error {
 	rs.cronState.isInSchedule = true
 	rs.cronState.entryID = entryID
 	return nil
+}
+
+func (rs *RuleState) runScheduleRule() error {
+	rs.Lock()
+	defer rs.Unlock()
+	rs.cronState.cron = rs.Rule.Options.Cron
+	rs.cronState.duration = rs.Rule.Options.Duration
+	err := rs.start()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rs *RuleState) stopAfterDuration(d time.Duration, cronCtx context.Context) {
+	after := time.After(d)
+	go func(ctx context.Context) {
+		select {
+		case <-after:
+			rs.Lock()
+			defer rs.Unlock()
+			if err := rs.stop(); err != nil {
+				conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
+			}
+			return
+		case <-cronCtx.Done():
+			return
+		}
+	}(cronCtx)
 }
 
 func (rs *RuleState) start() error {
@@ -483,4 +502,46 @@ func isAfterTimeRange(now time.Time, end string) (bool, error) {
 		return false, err
 	}
 	return now.After(e), nil
+}
+
+// isInRunningSchedule checks whether the rule should be running, eg:
+// If the duration is 10min, and cron is "0 0 * * *", and the current time is 00:00:02
+// And the rule should be started immediately instead of checking it on the next day.
+func (rs *RuleState) isInRunningSchedule(d time.Duration) (bool, time.Duration, error) {
+	now := conf.GetNow()
+	allowed, err := rs.isInAllowedTimeRange(now)
+	if err != nil {
+		return false, 0, err
+	}
+	if !allowed {
+		return false, 0, nil
+	}
+	cronExpr := rs.Rule.Options.Cron
+	if cronExpr == "mockCron" {
+		return false, 0, nil
+	}
+	s, err := cron.ParseStandard(cronExpr)
+	if err != nil {
+		return false, 0, err
+	}
+	previousSchedule := s.Next(now.Add(-d))
+	if now.After(previousSchedule) && now.Before(previousSchedule.Add(d)) {
+		return true, previousSchedule.Add(d).Sub(now), nil
+	}
+	return false, 0, nil
+}
+
+func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
+	allowed := true
+	var err error
+	for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
+		allowed, err = isInScheduleRange(now, timeRange.Begin, timeRange.End)
+		if err != nil {
+			return false, err
+		}
+		if allowed {
+			break
+		}
+	}
+	return allowed, nil
 }

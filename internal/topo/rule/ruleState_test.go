@@ -649,3 +649,52 @@ func TestScheduleRuleInRange(t *testing.T) {
 		}
 	}()
 }
+
+func TestIsRuleInRunningSchedule(t *testing.T) {
+	m := conf.Clock.(*clock.Mock)
+	conf.IsTesting = true
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	// Test rule not triggered
+	r := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: defaultOption,
+	}
+	now, err := time.Parse(layout, "2006-01-02 15:04:01")
+	require.NoError(t, err)
+	m.Set(now)
+	r.Options.Cron = "4 15 * * *"
+	r.Options.Duration = "2s"
+	rs, err := NewRuleState(r)
+	require.NoError(t, err)
+	d, err := time.ParseDuration(r.Options.Duration)
+	require.NoError(t, err)
+	isInRunningSchedule, remainedDuration, err := rs.isInRunningSchedule(d)
+	require.NoError(t, err)
+	require.True(t, isInRunningSchedule)
+	require.Equal(t, remainedDuration, time.Second)
+
+	err = rs.startScheduleRule()
+	require.NoError(t, err)
+	time.Sleep(500 * time.Millisecond)
+	// rule should directly run
+	state, err := rs.GetState()
+	require.NoError(t, err)
+	const ruleStarted = "Running"
+	const ruleStopped = "Stopped: waiting for next schedule."
+	require.Equal(t, ruleStarted, state)
+
+	// after 3 seconds (running 1 seconds), the rule should be auto stopped
+	time.Sleep(3 * time.Second)
+	state, err = rs.GetState()
+	require.NoError(t, err)
+	require.Equal(t, ruleStopped, state)
+}
