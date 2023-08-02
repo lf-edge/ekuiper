@@ -506,9 +506,6 @@ func isAfterTimeRange(now time.Time, end string) (bool, error) {
 	return now.After(e), nil
 }
 
-// isInRunningSchedule checks whether the rule should be running, eg:
-// If the duration is 10min, and cron is "0 0 * * *", and the current time is 00:00:02
-// And the rule should be started immediately instead of checking it on the next day.
 func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, time.Duration, error) {
 	allowed, err := rs.isInAllowedTimeRange(now)
 	if err != nil {
@@ -521,15 +518,7 @@ func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, 
 	if strings.HasPrefix(cronExpr, "mock") {
 		return false, 0, nil
 	}
-	s, err := cron.ParseStandard(cronExpr)
-	if err != nil {
-		return false, 0, err
-	}
-	previousSchedule := s.Next(now.Add(-d))
-	if now.After(previousSchedule) && now.Before(previousSchedule.Add(d)) {
-		return true, previousSchedule.Add(d).Sub(now), nil
-	}
-	return false, 0, nil
+	return isInRunningSchedule(cronExpr, now, d)
 }
 
 func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
@@ -545,4 +534,19 @@ func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
 		}
 	}
 	return allowed, nil
+}
+
+// isInRunningSchedule checks whether the rule should be running, eg:
+// If the duration is 10min, and cron is "0 0 * * *", and the current time is 00:00:02
+// And the rule should be started immediately instead of checking it on the next day.
+func isInRunningSchedule(cronExpr string, now time.Time, d time.Duration) (bool, time.Duration, error) {
+	s, err := cron.ParseStandard(cronExpr)
+	if err != nil {
+		return false, 0, err
+	}
+	previousSchedule := s.Next(now.Add(-d))
+	if now.After(previousSchedule) && now.Before(previousSchedule.Add(d)) {
+		return true, previousSchedule.Add(d).Sub(now), nil
+	}
+	return false, 0, nil
 }

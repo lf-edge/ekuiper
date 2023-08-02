@@ -677,9 +677,9 @@ func TestIsRuleInRunningSchedule(t *testing.T) {
 	require.NoError(t, err)
 	d, err := time.ParseDuration(r.Options.Duration)
 	require.NoError(t, err)
-	isInRunningSchedule, remainedDuration, err := rs.isInRunningSchedule(now, d)
+	isInSchedule, remainedDuration, err := isInRunningSchedule(r.Options.Cron, now, d)
 	require.NoError(t, err)
-	require.True(t, isInRunningSchedule)
+	require.True(t, isInSchedule)
 	require.Equal(t, remainedDuration, time.Second)
 
 	err = rs.startScheduleRule()
