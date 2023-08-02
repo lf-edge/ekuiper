@@ -197,7 +197,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	scheduleOption1 := *defaultOption
-	scheduleOption1.Cron = "mockCron1"
+	scheduleOption1.Cron = "mockCron"
 	scheduleOption1.Duration = "1s"
 	rule1 := &api.Rule{
 		Triggered: false,
@@ -216,7 +216,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	err = rs.startScheduleRule()
 	require.NoError(t, err)
 	require.True(t, rs.cronState.isInSchedule)
-	require.Equal(t, "mockCron1", rs.cronState.cron)
+	require.Equal(t, "mockCron", rs.cronState.cron)
 	require.Equal(t, "1s", rs.cronState.duration)
 
 	scheduleOption2 := *defaultOption
