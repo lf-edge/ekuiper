@@ -648,6 +648,27 @@ func TestScheduleRuleInRange(t *testing.T) {
 			return
 		}
 	}()
+
+	now2, err := time.Parse(layout, "2006-01-02 15:04:01")
+	require.NoError(t, err)
+	r.Options.Cron = "4 15 * * *"
+	r.Options.CronDatetimeRange = nil
+	r.Options.Duration = "2s"
+	m.Set(now2)
+
+	func() {
+		rs, err := NewRuleState(r)
+		require.NoError(t, err)
+		require.NoError(t, rs.startScheduleRule())
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, ruleStarted)
+		time.Sleep(3 * time.Second)
+		state, err = rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, ruleStopped)
+	}()
 }
 
 func TestIsRuleInRunningSchedule(t *testing.T) {
