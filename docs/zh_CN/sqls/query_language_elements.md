@@ -74,6 +74,31 @@ FROM stream1
 
 用替代名称替换查询结果集中的列名称。 别名还用于指定表达式结果的名称。column_alias 不能在 WHERE、GROUP BY 或 HAVING 子句中使用。
 
+column_alias 可以参与到 select field 中的计算，以下是一个例子:
+
+```sql
+select a + 1 as sum1, sum1 + 1 as sum2 from demo
+```
+
+当 a 为 1 时，结果如下:
+
+```sql
+{"sum1":2, "sum2":3}
+```
+
+
+值得注意的是，当 alias 的名字与被定义中的 column 同名时，那么这个名字在该 alias 所在的 select field 中的会被解析为 column，而在其他 select field 中则会被解析为 alais 名，以下是一个例子:
+
+```sql
+select a + 1 as a, a + 2 as sum2 from demo
+```
+
+当 a 为 1 时，结果如下:
+
+```sql
+{"a":2, "sum2":4}
+```
+
 **表达式**
 
 表达式是一个常量、函数、或者由一个或多个运算符连接的列名、常量和函数的任意组合。
