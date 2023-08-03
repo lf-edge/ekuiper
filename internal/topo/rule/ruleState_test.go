@@ -671,13 +671,4 @@ func TestScheduleRuleInRange(t *testing.T) {
 	}()
 }
 
-func TestIsRuleInRunningSchedule(t *testing.T) {
-	now, err := time.Parse(layout, "2006-01-02 15:04:01")
-	require.NoError(t, err)
-	d, err := time.ParseDuration("2s")
-	require.NoError(t, err)
-	isInSchedule, remainedDuration, err := isInRunningSchedule("4 15 * * *", now, d)
-	require.NoError(t, err)
-	require.True(t, isInSchedule)
-	require.Equal(t, remainedDuration, time.Second)
-}
+const layout = "2006-01-02 15:04:05"

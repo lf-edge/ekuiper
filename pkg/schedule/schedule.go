@@ -17,6 +17,8 @@ package schedule
 import (
 	"time"
 
+	"github.com/robfig/cron/v3"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -58,4 +60,19 @@ func IsAfterTimeRange(now time.Time, end string) (bool, error) {
 		return false, err
 	}
 	return now.After(e), nil
+}
+
+// IsInRunningSchedule checks whether the rule should be running, eg:
+// If the duration is 10min, and cron is "0 0 * * *", and the current time is 00:00:02
+// And the rule should be started immediately instead of checking it on the next day.
+func IsInRunningSchedule(cronExpr string, now time.Time, d time.Duration) (bool, time.Duration, error) {
+	s, err := cron.ParseStandard(cronExpr)
+	if err != nil {
+		return false, 0, err
+	}
+	previousSchedule := s.Next(now.Add(-d))
+	if now.After(previousSchedule) && now.Before(previousSchedule.Add(d)) {
+		return true, previousSchedule.Add(d).Sub(now), nil
+	}
+	return false, 0, nil
 }
