@@ -38,8 +38,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
 var (
@@ -145,6 +147,8 @@ func StartUp(Version string) {
 			}
 		}
 	}
+	exit := make(chan struct{})
+	go runScheduleRuleChecker(exit)
 
 	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
@@ -179,6 +183,7 @@ func StartUp(Version string) {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 	<-sigint
+	exit <- struct{}{}
 
 	if err = srvRest.Shutdown(context.TODO()); err != nil {
 		logger.Errorf("rest server shutdown error: %v", err)
@@ -257,4 +262,59 @@ func resetAllStreams() error {
 		}
 	}
 	return nil
+}
+
+func runScheduleRuleChecker(exit <-chan struct{}) {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-exit:
+			return
+		case <-ticker.C:
+			rs, err := getAllRulesWithState()
+			if err != nil {
+				continue
+			}
+			now := conf.GetNow()
+			for _, r := range rs {
+				handleScheduleRuleState(now, r.rule, r.state)
+			}
+		}
+	}
+}
+
+func handleScheduleRuleState(now time.Time, r *api.Rule, state string) {
+	toStart, toStop := handleScheduleRule(now, r, state)
+	if toStart {
+		if err := startRule(r.Id); err != nil {
+			conf.Log.Errorf("start rule %v failed, err:%v", r.Id, err)
+		}
+	} else if toStop {
+		stopRule(r.Id)
+	}
+}
+
+func handleScheduleRule(now time.Time, r *api.Rule, state string) (bool, bool) {
+	options := r.Options
+	if options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
+		var isInRange bool
+		var err error
+		for _, cRange := range options.CronDatetimeRange {
+			isInRange, err = schedule.IsInScheduleRange(now, cRange.Begin, cRange.End)
+			if err != nil {
+				conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
+				return false, false
+			}
+			if isInRange {
+				break
+			}
+		}
+		if isInRange && state != "Running" {
+			return true, false
+		} else if !isInRange && state == "Running" {
+			return false, true
+		}
+	}
+	return false, false
 }

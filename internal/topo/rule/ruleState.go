@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
 type ActionSignal int
@@ -277,7 +278,7 @@ func (rs *RuleState) startScheduleRule() error {
 			var err error
 			allowed := true
 			for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
-				allowed, err = isInScheduleRange(now, timeRange.Begin, timeRange.End)
+				allowed, err = schedule.IsInScheduleRange(now, timeRange.Begin, timeRange.End)
 				if err != nil {
 					return false, err
 				}
@@ -402,7 +403,7 @@ func (rs *RuleState) GetState() (string, error) {
 				result = "Running"
 			case context.Canceled:
 				if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
-					if isAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+					if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 						result = "Stopped: schedule terminated."
 					} else {
 						result = "Stopped: waiting for next schedule."
@@ -417,7 +418,7 @@ func (rs *RuleState) GetState() (string, error) {
 			}
 		} else {
 			if rs.cronState.isInSchedule {
-				if isAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+				if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 					result = "Stopped: schedule terminated."
 				} else {
 					result = "Stopped: waiting for next schedule."
@@ -446,41 +447,3 @@ func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
 }
 
 const layout = "2006-01-02 15:04:05"
-
-func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
-	s, err := time.Parse(layout, start)
-	if err != nil {
-		return false, err
-	}
-	e, err := time.Parse(layout, end)
-	if err != nil {
-		return false, err
-	}
-	isBefore := s.Before(now)
-	isAfter := e.After(now)
-	if isBefore && isAfter {
-		return true, nil
-	}
-	return false, nil
-}
-
-func isAfterTimeRanges(now time.Time, ranges []api.DatetimeRange) bool {
-	if len(ranges) < 1 {
-		return false
-	}
-	for _, r := range ranges {
-		isAfter, err := isAfterTimeRange(now, r.End)
-		if err != nil || !isAfter {
-			return false
-		}
-	}
-	return true
-}
-
-func isAfterTimeRange(now time.Time, end string) (bool, error) {
-	e, err := time.Parse(layout, end)
-	if err != nil {
-		return false, err
-	}
-	return now.After(e), nil
-}
