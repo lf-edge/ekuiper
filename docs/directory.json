@@ -607,6 +607,10 @@
 						{
 							"title": "预定义函数插件",
 							"path": "sqls/functions/custom_functions"
+						},
+						{
+							"title": "窗口函数",
+							"path": "sqls/functions/window_funcs"
 						}
 					]
 				},
@@ -1322,6 +1326,10 @@
 						{
 							"title": "Predefined function plugins",
 							"path": "sqls/functions/custom_functions"
+						},
+						{
+							"title": "Window Functions",
+							"path": "sqls/functions/window_functions"
 						}
 					]
 				},
