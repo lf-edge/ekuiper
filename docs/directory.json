@@ -344,6 +344,10 @@
 				{
 					"title": "车联网",
 					"path": "usecases/iov"
+				},
+				{
+					"title": "公共数据分析应用",
+					"path": "usecases/public_data_analysis"
 				}
 			]
 		},
@@ -1059,6 +1063,10 @@
 				{
 					"title": "IoV case",
 					"path": "usecases/iov"
+				},
+				{
+					"title": "Public data analysis",
+					"path": "usecases/public_data_analysis"
 				}
 			]
 		},
