@@ -197,7 +197,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	scheduleOption1 := *defaultOption
-	scheduleOption1.Cron = "mockCron1"
+	scheduleOption1.Cron = "mockCron"
 	scheduleOption1.Duration = "1s"
 	rule1 := &api.Rule{
 		Triggered: false,
@@ -216,7 +216,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	err = rs.startScheduleRule()
 	require.NoError(t, err)
 	require.True(t, rs.cronState.isInSchedule)
-	require.Equal(t, "mockCron1", rs.cronState.cron)
+	require.Equal(t, "mockCron", rs.cronState.cron)
 	require.Equal(t, "1s", rs.cronState.duration)
 
 	scheduleOption2 := *defaultOption
@@ -648,4 +648,36 @@ func TestScheduleRuleInRange(t *testing.T) {
 			return
 		}
 	}()
+
+	now2, err := time.Parse(layout, "2006-01-02 15:04:01")
+	require.NoError(t, err)
+	r.Options.Cron = "4 15 * * *"
+	r.Options.CronDatetimeRange = nil
+	r.Options.Duration = "2s"
+	m.Set(now2)
+
+	func() {
+		rs, err := NewRuleState(r)
+		require.NoError(t, err)
+		require.NoError(t, rs.startScheduleRule())
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, ruleStarted)
+		time.Sleep(3 * time.Second)
+		state, err = rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, ruleStopped)
+	}()
+}
+
+func TestIsRuleInRunningSchedule(t *testing.T) {
+	now, err := time.Parse(layout, "2006-01-02 15:04:01")
+	require.NoError(t, err)
+	d, err := time.ParseDuration("2s")
+	require.NoError(t, err)
+	isInSchedule, remainedDuration, err := isInRunningSchedule("4 15 * * *", now, d)
+	require.NoError(t, err)
+	require.True(t, isInSchedule)
+	require.Equal(t, remainedDuration, time.Second)
 }
