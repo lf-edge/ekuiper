@@ -244,6 +244,10 @@ func (rs *RuleState) Start() error {
 	if rs.triggered == -1 {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
+	// for long-running schedule rule, we let background ticker to check it
+	if rs.Rule.IsLongRunningScheduleRule() {
+		return nil
+	}
 	if rs.Rule.IsScheduleRule() {
 		return rs.startScheduleRule()
 	}
