@@ -193,6 +193,7 @@ const (
 	FuncTypeAgg
 	FuncTypeCols
 	FuncTypeSrf
+	FuncTypeWindow
 )
 
 type Call struct {

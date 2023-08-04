@@ -54,6 +54,7 @@ func init() {
 	registerObjectFunc()
 	registerGlobalStateFunc()
 	registerGlobalAggFunc()
+	registerWindowFunc()
 }
 
 //var funcWithAsteriskSupportMap = map[string]string{
@@ -73,7 +74,16 @@ var analyticFuncs = map[string]struct{}{
 	"acc_count":   {},
 }
 
+var windowFuncs = map[string]struct{}{
+	"row_number": {},
+}
+
 const AnalyticPrefix = "$$a"
+
+func IsWindowFunc(name string) bool {
+	_, ok := windowFuncs[name]
+	return ok
+}
 
 func IsAnalyticFunc(name string) bool {
 	_, ok := analyticFuncs[name]

@@ -26,6 +26,7 @@ type ProjectPlan struct {
 	aliasNames       []string
 	exprNames        []string
 	exceptNames      []string
+	windowFuncNames  map[string]struct{}
 	wildcardEmitters map[string]bool
 	aliasFields      ast.Fields
 	exprFields       ast.Fields
@@ -62,6 +63,9 @@ func (p ProjectPlan) Init() *ProjectPlan {
 		}
 	}
 	p.baseLogicalPlan.self = &p
+	if len(p.windowFuncNames) < 1 {
+		p.windowFuncNames = nil
+	}
 	return &p
 }
 
