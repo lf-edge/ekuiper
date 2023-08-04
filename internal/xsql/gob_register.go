@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package encoding
+package xsql
 
 import (
-	"bytes"
 	"encoding/gob"
+	"time"
 )
 
-func Encode(value interface{}) ([]byte, error) {
-	var buff bytes.Buffer
-	enc := gob.NewEncoder(&buff)
-	if err := enc.Encode(value); err != nil {
-		return nil, err
-	}
-	return buff.Bytes(), nil
+func init() {
+	gob.Register(time.Time{})
+	gob.Register(make(map[string]interface{}))
+	gob.Register(make(map[string][]*Tuple))
+	gob.Register(Tuple{})
 }

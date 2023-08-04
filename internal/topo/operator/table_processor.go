@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ type TableProcessor struct {
 	emitterName  string
 	// States
 	output       *xsql.WindowTuples // current batched message collection
-	batchEmitted bool               // if batch input, this is the signal for whether the last batch has emitted. If true, reinitialize.
+	batchEmitted bool               // If batch input, this is the signal for whether the last batch has emitted. If true, reinitialize.
 }
 
 func NewTableProcessor(isSchemaless bool, name string, fields map[string]*ast.JsonStreamField, options *ast.Options) (*TableProcessor, error) {
@@ -57,7 +57,7 @@ func NewTableProcessor(isSchemaless bool, name string, fields map[string]*ast.Js
 //
 //	input: *xsql.Tuple or BatchCount
 //	output: WindowTuples
-func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	logger := ctx.GetLogger()
 	tuple, ok := data.(*xsql.Tuple)
 	if !ok {
