@@ -179,17 +179,11 @@ func SetDebugLevel(v bool) {
 	Log.SetLevel(lvl)
 }
 
-func SetConsoleLog(v bool) {
-	out := io.Discard
-	if v {
-		out = os.Stdout
-	}
-	Log.SetOutput(out)
-}
-
-func SetFileLog(v bool) error {
-	if !v {
-		SetConsoleLog(Config.Basic.ConsoleLog)
+func SetConsoleAndFileLog(fileLog, consoleLog bool) error {
+	if !fileLog {
+		if consoleLog {
+			Log.SetOutput(os.Stdout)
+		}
 		return nil
 	}
 
@@ -209,10 +203,10 @@ func SetFileLog(v bool) error {
 	if err != nil {
 		fmt.Printf("Failed to init log file settings: %v", err)
 		Log.Infof("Failed to log to file, using default stderr.")
-	} else if Config.Basic.ConsoleLog {
+	} else if consoleLog {
 		mw := io.MultiWriter(os.Stdout, logWriter)
 		Log.SetOutput(mw)
-	} else if !Config.Basic.ConsoleLog {
+	} else if !consoleLog {
 		Log.SetOutput(logWriter)
 	}
 	gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
@@ -258,12 +252,8 @@ func InitConf() {
 		SetDebugLevel(true)
 	}
 
-	if Config.Basic.FileLog {
-		if err := SetFileLog(true); err != nil {
-			log.Fatal(err)
-		}
-	} else if Config.Basic.ConsoleLog {
-		SetConsoleLog(true)
+	if err := SetConsoleAndFileLog(Config.Basic.FileLog, Config.Basic.ConsoleLog); err != nil {
+		log.Fatal(err)
 	}
 
 	if Config.Basic.TimeZone != "" {
