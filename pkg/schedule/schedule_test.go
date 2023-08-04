@@ -40,8 +40,10 @@ func TestIsInScheduleRange(t *testing.T) {
 	_, err = IsInScheduleRange(now, "2006-01-02 15:04:01", "")
 	require.Error(t, err)
 	isIn, err := IsInScheduleRange(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03")
+	require.NoError(t, err)
 	require.True(t, isIn)
 	isIn, err = IsInScheduleRange(now, "2006-01-02 15:05:00", "2006-01-02 15:05:03")
+	require.NoError(t, err)
 	require.False(t, isIn)
 }
 
@@ -51,8 +53,10 @@ func TestIsAfterTimeRange(t *testing.T) {
 	_, err = IsAfterTimeRange(now, "")
 	require.Error(t, err)
 	isAfter, err := IsAfterTimeRange(now, "2006-01-02 15:04:00")
+	require.NoError(t, err)
 	require.True(t, isAfter)
 	isAfter, err = IsAfterTimeRange(now, "2006-01-02 15:04:06")
+	require.NoError(t, err)
 	require.False(t, isAfter)
 }
 

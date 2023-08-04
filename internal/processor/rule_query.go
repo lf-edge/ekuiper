@@ -28,6 +28,8 @@ func (p *RuleProcessor) ExecQuery(ruleid, sql string) (*topo.Topo, error) {
 	if tp, err := planner.PlanSQLWithSourcesAndSinks(p.getDefaultRule(ruleid, sql), nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)}); err != nil {
 		return nil, err
 	} else {
+		p.GetRuleById(ruleid)
+
 		go func() {
 			err := infra.SafeRun(func() error {
 				select {
