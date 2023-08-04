@@ -284,20 +284,19 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 	}
 }
 
-func handleScheduleRuleState(now time.Time, r *api.Rule, state string) {
+func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
 	toStart, toStop := handleScheduleRule(now, r, state)
 	if toStart {
-		if err := startRule(r.Id); err != nil {
-			conf.Log.Errorf("start rule %v failed, err:%v", r.Id, err)
-		}
+		return startRule(r.Id)
 	} else if toStop {
 		stopRule(r.Id)
 	}
+	return nil
 }
 
 func handleScheduleRule(now time.Time, r *api.Rule, state string) (bool, bool) {
 	options := r.Options
-	if options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
+	if options != nil && options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
 		var isInRange bool
 		var err error
 		for _, cRange := range options.CronDatetimeRange {

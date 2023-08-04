@@ -80,3 +80,32 @@ func TestHandleScheduleRule(t *testing.T) {
 		require.Equal(t, tc.toStop, toStop)
 	}
 }
+
+func TestRunScheduleRuleChecker(t *testing.T) {
+	exit := make(chan struct{})
+	go runScheduleRuleChecker(exit)
+	time.Sleep(1 * time.Second)
+	exit <- struct{}{}
+}
+
+func TestHandleScheduleRuleState(t *testing.T) {
+	r := &api.Rule{}
+	r.Options = &api.RuleOption{}
+	now, err := time.Parse("2006-01-02 15:04:05", "2006-01-02 15:04:05")
+	require.NoError(t, err)
+	require.NoError(t, handleScheduleRuleState(now, r, "Running"))
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: "2006-01-02 15:04:01",
+			End:   "2006-01-02 15:04:06",
+		},
+	}
+	require.NoError(t, handleScheduleRuleState(now, r, "Running"))
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: "2006-01-02 15:04:01",
+			End:   "2006-01-02 15:04:02",
+		},
+	}
+	require.NoError(t, handleScheduleRuleState(now, r, "Running"))
+}
