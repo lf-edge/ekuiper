@@ -52,7 +52,7 @@ func TestIsAfterTimeRange(t *testing.T) {
 	require.Error(t, err)
 	isAfter, err := IsAfterTimeRange(now, "2006-01-02 15:04:00")
 	require.True(t, isAfter)
-	isAfter, err = IsAfterTimeRange(now, "2006-01-02 15:04:00")
+	isAfter, err = IsAfterTimeRange(now, "2006-01-02 15:04:06")
 	require.False(t, isAfter)
 }
 
