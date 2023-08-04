@@ -188,3 +188,23 @@ Response Sample:
   }
 }
 ```
+
+## validate a rule
+
+The API accepts a JSON content and validate a rule.
+
+```shell
+POST http://localhost:9081/rules/validate
+```
+
+Request Sample
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT * FROM demo",
+  "actions": [{
+    "log":  {}
+  }]
+}
+```
