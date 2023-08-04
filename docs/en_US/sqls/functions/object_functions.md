@@ -126,3 +126,21 @@ result:
 ```sql
 {"a":1, "b":2}
 ```
+
+## OBJECT_CONCAT
+
+```text
+object_concat(obj1, obj2, ...)
+```
+
+This function concatenates the input objects and returns a new object. It requires a minimum of two input objects. In cases where there are duplicate attribute names among the input objects, the attribute from the last relevant object in the input list is selected and copied to the output object. To illustrate, here's an example:
+
+```sql
+object_concat({"a": 1}, {"b": 2}, {"b": 3})
+```
+
+result:
+
+```sql
+{"a":1, "b":3}
+```

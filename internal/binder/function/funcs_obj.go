@@ -135,4 +135,24 @@ func registerObjectFunc() {
 		val:   ValidateOneArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["object_concat"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			res := make(map[string]interface{})
+			for i, arg := range args {
+				arg, ok := arg.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("the argument should be map[string]interface{}, got %v", args[i]), false
+				}
+				for k, v := range arg {
+					res[k] = v
+				}
+			}
+			return res, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			return ValidateAtLeast(2, len(args))
+		},
+		check: returnNilIfHasAnyNil,
+	}
 }
