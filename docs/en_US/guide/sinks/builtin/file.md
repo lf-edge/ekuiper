@@ -69,6 +69,7 @@ every 5 seconds.
     {
       "file": {
         "path": "/tmp/result.txt",
+        "checkInterval": 5000,
         "fileType": "lines",
         "format": "json"
       }
