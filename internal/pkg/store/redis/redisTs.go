@@ -45,10 +45,6 @@ type ts struct {
 	key   string
 }
 
-func init() {
-	gob.Register(make(map[string]interface{}))
-}
-
 func createRedisTs(redis *redis.Client, table string) (*ts, error) {
 	key := fmt.Sprintf("%s:%s", TsPrefix, table)
 	lastTs, err := getLast(redis, key, nil)

@@ -26,7 +26,7 @@ import (
 // The tuple clone should be cheap.
 
 /*
- *  Interfaces definition
+ * Interfaces definition
  */
 
 type Wildcarder interface {

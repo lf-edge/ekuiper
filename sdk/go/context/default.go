@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	return parent
 }
 
-// Implement context interface
+// Deadline Implement context interface
 func (c *DefaultContext) Deadline() (deadline time.Time, ok bool) {
 	return c.ctx.Deadline()
 }
