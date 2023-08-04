@@ -206,7 +206,7 @@ The eKuiper project leverages Github actions to run unit test & FVT (functional 
 look at the PR status result, and make sure that all of testcases run successfully.
 
 - Write Golang unit testcases to test your code if necessary.
-- A set of [FVT testcases](../../test/README.md) will be triggered with any PR submission, so please make sure that
+- A set of [FVT testcases](./test/README.md) will be triggered with any PR submission, so please make sure that
   these
   testcases can be run successfully.
 
@@ -351,7 +351,81 @@ The promotion contributions include but not limit to:
 - Integrate of eKuiper to your open source project
 - Organize workshops or meetups about the project
 - Answer questions about the project on issues, slack or maillist
-- Write tutorials for how project can be used
+- Write tutorials for how a project can be used
 - Offer to mentor another contributor
 
 Thank you for taking the time to contribute!
+
+## Roles and responsibilities
+
+### Contributor
+
+Contributors are community members who contribute in concrete ways to the project.
+Anyone can contribute to the project and become a contributor, regardless of their skillset.
+There is no expectation of commitment to the project, no specific skill requirements, and no selection process.
+There are many ways to contribute to the project, which may be one or more of the following (but not limited to):
+
+- Reporting or fixing bugs.
+- Identifying requirements, strengths, and weaknesses.
+- Writing documentation.
+
+For first-time contributors,
+it is recommended to start by going through [code and doc contribution](#code-and-doc-contribution),
+and joining our community Slack channel.
+
+As one continues to contribute to the project and engage with the community,
+he/she may at some point become eligible for an eKuiper committer.
+
+### Committer
+
+Committers are active community members who have shown that they are committed to the continuous development of the
+project through ongoing engagement with the community.
+Committership allows contributors to more easily carry on with their project-related activities by giving them direct
+access to the project’s resources.
+
+Typically, a potential committer needs to show that they have a sufficient understanding of the project, its objectives,
+and its strategy. To become a committer, you are expected to:
+
+- Be a eKuiper contributor.
+- Express interest to the existing maintainers that you are interested in becoming a committer.
+- Have contributed 6 or more substantial PRs.
+- Have an above-average understanding of the project codebase, its goals, and directions.
+
+Contributors that meet the above requirements will be nominated by an existing maintainer to become a committer. It is
+recommended to describe the reasons for the nomination and the contribution of the nominee in the PR. The existing
+maintainers will confer and decide whether to grant committer status or not.
+
+Committers are expected to review issues and PRs. Their LGTM counts towards the required LGTM count to merge a PR. While
+committership indicates a valued member of the community who has demonstrated a healthy respect for the project’s aims
+and objectives, their work continues to be reviewed by the community before acceptance in an official release.
+
+A committer who shows an above-average level of contribution to the project, particularly with respect to its strategic
+direction and long-term health, may be nominated to become a maintainer. This role is described below.
+
+### Maintainer
+
+Maintainers are first and foremost committers that have shown they are committed to the long term success of a project.
+They are the planners and designers of the eKuiper project.
+Maintainership is about building trust with the current maintainers of the project and being a person that they can
+depend on to make decisions in the best interest of the project in a consistent manner.
+
+Committers want to become maintainers are expected to:
+
+- Enable adoptions or ecosystems.
+- Collaborate well.
+- Demonstrate a deep and comprehensive understanding of eKuiper's architecture, technical goals, and directions.
+- Actively engage with major eKuiper feature proposals and implementations.
+
+A new maintainer must be nominated by an existing maintainer. The nominating maintainer will create a PR to update
+the [Maintainer List](https://github.com/lf-edge/ekuiper/blob/master/MAINTAINERS.md). It is recommended to describe the
+reasons for the nomination and the contribution of the nominee in the PR. Upon consensus of incumbent maintainers, the
+PR will be approved and the new maintainer becomes active.
+
+### Nomination process
+
+The following table describes how the nomination is approved.
+
+| Nomination     | Description                                                                  | Approval                                                              | Binding Roles      | Minimum Length (days) |
+|:---------------|:-----------------------------------------------------------------------------|:----------------------------------------------------------------------|:-------------------|:----------------------|
+| New Committer  | When a new committer is proposed, should be only nominated by a maintainer.  | [Lazy Consensus](https://communitymgt.fandom.com/wiki/Lazy_consensus) | Active maintainers | 7                     |
+| New Maintainer | When a new maintainer is proposed, should be only nominated by a maintainer. | Supermajority (2/3) Approval                                          | Active maintainers | 7                     |
