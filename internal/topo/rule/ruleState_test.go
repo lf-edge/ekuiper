@@ -672,3 +672,60 @@ func TestScheduleRuleInRange(t *testing.T) {
 }
 
 const layout = "2006-01-02 15:04:05"
+
+func TestStartLongRunningScheduleRule(t *testing.T) {
+	conf.IsTesting = true
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	now := time.Now()
+	m := conf.Clock.(*clock.Mock)
+	m.Set(now)
+	before := now.AddDate(-10, -10, -10)
+	after := now.Add(10 * time.Second)
+	r := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: defaultOption,
+	}
+	r.Options.Cron = ""
+	r.Options.Duration = ""
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: before.Format(layout),
+			End:   after.Format(layout),
+		},
+	}
+	const ruleStopped = "Stopped: canceled manually."
+	const ruleStarted = "Running"
+	func() {
+		rs, err := NewRuleState(r)
+		require.NoError(t, err)
+		require.NoError(t, rs.Start())
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, ruleStarted)
+	}()
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: before.Format(layout),
+			End:   before.Format(layout),
+		},
+	}
+	func() {
+		rs, err := NewRuleState(r)
+		require.NoError(t, err)
+		require.NoError(t, rs.Start())
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, ruleStopped)
+	}()
+}

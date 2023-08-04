@@ -24,6 +24,19 @@ import (
 
 const layout = "2006-01-02 15:04:05"
 
+func IsInScheduleRanges(now time.Time, timeRanges []api.DatetimeRange) (bool, error) {
+	for _, tRange := range timeRanges {
+		isIn, err := IsInScheduleRange(now, tRange.Begin, tRange.End)
+		if err != nil {
+			return false, err
+		}
+		if isIn {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func IsInScheduleRange(now time.Time, start string, end string) (bool, error) {
 	s, err := time.Parse(layout, start)
 	if err != nil {
