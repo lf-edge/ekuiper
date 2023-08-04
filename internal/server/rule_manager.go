@@ -305,3 +305,12 @@ func getRuleTopo(name string) (string, error) {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
 }
+
+func validateRule(name, ruleJson string) (bool, error) {
+	// Validate the rule json
+	_, err := ruleProcessor.GetRuleByJson(name, ruleJson)
+	if err != nil {
+		return false, fmt.Errorf("invalid rule json: %v", err)
+	}
+	return true, nil
+}

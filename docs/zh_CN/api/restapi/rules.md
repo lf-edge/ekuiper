@@ -159,3 +159,23 @@ GET http://localhost:9081/rules/{id}/status
     ...
 }
 ```
+
+## 验证规则
+
+该 API 用于验证规则。
+
+```shell
+POST http://localhost:9081/rules/validate
+```
+
+请求示例：
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT * FROM demo",
+  "actions": [{
+    "log":  {}
+  }]
+}
+```
