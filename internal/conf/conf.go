@@ -179,7 +179,7 @@ func SetDebugLevel(v bool) {
 	Log.SetLevel(lvl)
 }
 
-func SetConsoleAndFileLog(fileLog, consoleLog bool) error {
+func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	if !fileLog {
 		if consoleLog {
 			Log.SetOutput(os.Stdout)
@@ -252,7 +252,7 @@ func InitConf() {
 		SetDebugLevel(true)
 	}
 
-	if err := SetConsoleAndFileLog(Config.Basic.FileLog, Config.Basic.ConsoleLog); err != nil {
+	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
 		log.Fatal(err)
 	}
 

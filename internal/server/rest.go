@@ -1118,22 +1118,22 @@ func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		conf.Config.Basic.TimeZone = *basic.TimeZone
 	}
 
-	if basic.FileLog != nil || basic.ConsoleLog != nil {
-		fileLog := conf.Config.Basic.FileLog
-		if basic.FileLog != nil {
-			fileLog = *basic.FileLog
-		}
+	if basic.ConsoleLog != nil || basic.FileLog != nil {
 		consoleLog := conf.Config.Basic.ConsoleLog
 		if basic.ConsoleLog != nil {
 			consoleLog = *basic.ConsoleLog
 		}
-		if err := conf.SetConsoleAndFileLog(fileLog, consoleLog); err != nil {
+		fileLog := conf.Config.Basic.FileLog
+		if basic.FileLog != nil {
+			fileLog = *basic.FileLog
+		}
+		if err := conf.SetConsoleAndFileLog(consoleLog, fileLog); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			handleError(w, err, "", logger)
 			return
 		}
-		conf.Config.Basic.FileLog = fileLog
 		conf.Config.Basic.ConsoleLog = consoleLog
+		conf.Config.Basic.FileLog = fileLog
 	}
 
 	w.WriteHeader(http.StatusNoContent)
