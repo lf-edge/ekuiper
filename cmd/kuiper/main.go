@@ -941,6 +941,64 @@ func main() {
 			},
 		},
 		{
+			Name:    "validate",
+			Aliases: []string{"validate"},
+			Usage:   "validate rule $rule_name [$rule_json | -f $rule_def_file]",
+			Subcommands: []cli.Command{
+				{
+					Name:  "rule",
+					Usage: "validate rule $rule_name [$rule_json | -f $rule_def_file]",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:     "file, f",
+							Usage:    "the location of rule definition file",
+							FilePath: "/home/myrule.txt",
+						},
+					},
+					Action: func(c *cli.Context) error {
+						sfile := c.String("file")
+						if sfile != "" {
+							if rule, err := readDef(sfile, "rule"); err != nil {
+								fmt.Printf("%s", err)
+								return nil
+							} else {
+								if len(c.Args()) != 1 {
+									fmt.Printf("Expect rule name.\n")
+									return nil
+								}
+								rname := c.Args()[0]
+								var reply string
+								args := &model.RPCArgDesc{Name: rname, Json: string(rule)}
+								err = client.Call("Server.ValidateRule", args, &reply)
+								if err != nil {
+									fmt.Println(err)
+								} else {
+									fmt.Println(reply)
+								}
+							}
+							return nil
+						} else {
+							if len(c.Args()) != 2 {
+								fmt.Printf("Expect rule name and json.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
+								return nil
+							}
+							rname := c.Args()[0]
+							rjson := c.Args()[1]
+							var reply string
+							args := &model.RPCArgDesc{Name: rname, Json: rjson}
+							err = client.Call("Server.ValidateRule", args, &reply)
+							if err != nil {
+								fmt.Println(err)
+							} else {
+								fmt.Println(reply)
+							}
+							return nil
+						}
+					},
+				},
+			},
+		},
+		{
 			Name:    "register",
 			Aliases: []string{"register"},
 			Usage:   "register plugin function $plugin_name [$plugin_json | -f plugin_def_file]",
