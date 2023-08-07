@@ -95,6 +95,13 @@ basic:
   authentication: false
 ```
 
+## 巡检规则配置
+
+```yaml
+basic:
+  rulePatrolInterval: "10s"
+```
+
 ## Prometheus 配置
 
 如果 `prometheus` 参数设置为 true，eKuiper 将把运行指标暴露到 prometheus。Prometheus 将运行在 `prometheusPort` 参数指定的端口上。

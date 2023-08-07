@@ -201,6 +201,10 @@ When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a
 }
 ```
 
+#### Phase run rules
+
+When `cronDatetimeRange` is configured but `cron` and `duration` are empty, the rule will run according to the time period specified by `cronDatetimeRange` until the time period is exceeded.
+
 ## View rule status
 
 When a rule is deployed to eKuiper, we can use the rule indicator to understand the current running status of the rule.

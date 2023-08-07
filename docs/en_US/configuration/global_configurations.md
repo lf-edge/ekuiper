@@ -97,6 +97,13 @@ basic:
   authentication: false
 ```
 
+## Rule Patrol Configuration
+
+```yaml
+basic:
+  rulePatrolInterval: "10s"
+```
+
 ## Prometheus Configuration
 
 eKuiper can export metrics to prometheus if `prometheus` option is true. The prometheus will be served with the port specified by `prometheusPort` option.
