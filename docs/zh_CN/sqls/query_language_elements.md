@@ -330,7 +330,6 @@ a LIKE "string%"
 select * from demo where a like "prefix%"
 ```
 
-
 **[NOT] IN**
 
 用于测试一个表达式是否属于另一个表达式的条件的运算符。
