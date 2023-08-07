@@ -36,6 +36,12 @@ Specifies that all columns from all input streams in the FROM clause should be r
 
 Select all of fields from source stream.
 
+example:
+
+```sql
+select * from demo;
+```
+
 **\* EXCEPT**
 
 Specify one or more fields to be excluded from the result. It allows excluding one or more specific column names from the query result while still including other columns.
@@ -45,6 +51,12 @@ SELECT * EXCEPT(column_name1, column_name2...)
 FROM stream1
 ```
 
+example:
+
+```sql
+select * except(a,b) from demo;
+```
+
 **\* REPLACE**
 
 Replace specific columns in the result. It allows for the replacement of certain columns in the result by specifying new expressions, while other columns are still included in the output.
@@ -52,6 +64,12 @@ Replace specific columns in the result. It allows for the replacement of certain
 ```sql
 SELECT * REPLACE(expression1 as column_name1, expression2 as column_name2...)
 FROM stream1
+```
+
+example:
+
+```sql
+select * replace(a+b as c) from demo;
 ```
 
 REPLACE and EXCEPT can be used together, but it's important to note that if there is a conflict between these two operations, REPLACE takes precedence. In the following example, the final result will include the column_name1 field.
@@ -206,6 +224,12 @@ WHERE <search_condition>
     { expression { = | < > | ! = | > | > = | < | < = } expression   
 ```
 
+exmaple:
+
+```sql
+select * from demo where a > 10;
+```
+
 ### Arguments
 
 Expression is a constant, function, any combination of column names, constants, and functions connected by an operator or operators.
@@ -218,9 +242,21 @@ Specifies the conditions for the rows returned in the result set for a SELECT st
 
 Combines two conditions and evaluates to TRUE when both of the conditions are TRUE.
 
+example:
+
+```sql
+select * from demo where a > 10 and a < 15;
+```
+
 **OR**
 
 Combines two conditions and evaluates to TRUE when either condition is TRUE.
+
+exmaple:
+
+```sql
+select * from demo where a > 10 or a < 15;
+```
 
 **< predicate >**
 
@@ -266,6 +302,12 @@ Is the operator used to test the condition of one expression in (not) within the
 expression [NOT] BETWEEN expression1 AND expression2
 ```
 
+exmaple:
+
+```sql
+select * from demo where a between 10 and 15;
+```
+
 **[NOT] LIKE**
 
 Is the operator used to check if the STRING in the first operand matches a pattern specified by the second operand. Patterns can contain these characters:
@@ -281,6 +323,12 @@ Example:
 
 ```sql
 a LIKE "string%"
+```
+
+exmaple:
+
+```sql
+select * from demo where a like "prefix%"
 ```
 
 **[NOT] IN**
@@ -338,6 +386,12 @@ FROM stream1
 GROUP BY column_name
 ```
 
+example:
+
+```sql
+select * from demo group by a;
+```
+
 ### HAVING
 
 The HAVING clause was added to SQL because the WHERE keyword could not be used with aggregate functions. Specifies a search condition for a group or an aggregate. HAVING can be used only with the SELECT expression. HAVING is typically used in a GROUP BY clause.
@@ -369,6 +423,12 @@ ORDER BY column1, column2, ... ASC|DESC
 ```
 
 The ORDER BY statement in sql is used to sort the fetched data in either ascending or descending according to one or more columns.
+
+exmaple:
+
+```sql
+select * from demo order by a ASC;
+```
 
 - By default ORDER BY sorts the data in **ascending order.**
 - The keyword DESC is used to sort the data in descending order and the keyword ASC to sort in ascending order.
@@ -402,6 +462,12 @@ LIMIT 1
 The case expression evaluates a list of conditions and returns one of multiple possible result expressions. It let you use IF ... THEN ... ELSE logic in SQL statements without having to invoke procedures.
 
 There are two types of case expression: simple case expression and searched case expression.
+
+exmaple:
+
+```sql
+select * from demo where a > 10 limit 10;
+```
 
 ### Simple Case Expression
 

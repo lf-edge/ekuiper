@@ -37,6 +37,12 @@ SELECT
 
 从源流中选择所有字段。
 
+例子:
+
+```sql
+select * from demo;
+```
+
 **\* EXCEPT**
 
 用于指定一个或多个字段，以便从结果中排除这些字段。它允许在查询结果中排除一个或多个特定的列名，而其他列则仍然包含在查询结果中。
@@ -46,6 +52,12 @@ SELECT * EXCEPT(column_name1, column_name2...)
 FROM stream1
 ```
 
+例子:
+
+```sql
+select * except(a,b) from demo;
+```
+
 **\* REPLACE**
 
 用于在SQL查询结果中替换指定列。它允许通过指定新的表达式来替换查询结果中的某些列，而其他列则仍然包含在查询结果中。
@@ -53,6 +65,12 @@ FROM stream1
 ```sql
 SELECT * REPLACE(expression1 as column_name1, expression2 as column_name2...)
 FROM stream1
+```
+
+例子:
+
+```sql
+select * replace(a+b as c) from demo;
 ```
 
 REPLACE 和 EXCEPT 可以同时使用，但需要注意的是如果这两个操作之间存在冲突，REPLACE 操作具有优先权。比如在下面的例子中，最终的结果包含`column_name1`字段。
@@ -207,6 +225,12 @@ WHERE <search_condition>
     { expression { = | < > | ! = | > | > = | < | < = | NOT IN} expression   
 ```
 
+例子:
+
+```sql
+select * from demo where a > 10;
+```
+
 ### 参数
 
 表达式是一个常量、函数、及由一个或多个运算符连接的列名、常量和函数的任意组合。
@@ -219,9 +243,19 @@ WHERE <search_condition>
 
 组合两个条件，当两个条件都为真时计算为真。
 
+例子:
+
+```sql
+select * from demo where a > 10 and a < 15;
+```
+
 **OR**
 
 组合两个条件，当任一条件为真时计算为真。
+
+```sql
+select * from demo where a > 10 or a < 15;
+```
 
 **< predicate >**
 
@@ -267,6 +301,12 @@ WHERE <search_condition>
 expression [NOT] BETWEEN expression1 AND expression2
 ```
 
+例子:
+
+```sql
+select * from demo where a between 10 and 15;
+```
+
 **[NOT] LIKE**
 
 用于测试字符串是否满足模式。模式可使用以下通配符：
@@ -284,6 +324,13 @@ expression [NOT] LIKE expression1
 a LIKE "string%"
 ```
 
+例子:
+
+```sql
+select * from demo where a like "prefix%"
+```
+
+
 **[NOT] IN**
 
 用于测试一个表达式是否属于另一个表达式的条件的运算符。
@@ -293,10 +340,20 @@ a LIKE "string%"
   expression [NOT] IN (expression2,...n)
 ```
 
+例子:
+
+```sql
+select * from demo where a in (10,11,12);
+```
+
 *注意*： 支持同时设置多个表达式， 但用户须确保每个表达式返回值为单一值
 
 ```sql
   expression [NOT] IN expression2
+```
+
+```sql
+select * from demo where a not in (10,11,12);
 ```
 
 *注意*： 用户须确保 expression2 的返回值为数组
@@ -330,6 +387,12 @@ GROUP BY <group by spec>
 
 指定任何支持 eKuiper 的窗口，有关详细信息，请参阅 [windows](windows.md) 。
 
+例子:
+
+```sql
+select * from demo group by countwindow(2);
+```
+
 **< column_expression >**
 
 执行分组操作的列的表达式或名称。列表达式不能包含在选择列表中定义的列别名。
@@ -338,6 +401,10 @@ GROUP BY <group by spec>
 SELECT column_name(s)
 FROM stream1
 GROUP BY column_name
+```
+
+```sql
+select * from demo group by a;
 ```
 
 ### HAVING
@@ -391,12 +458,24 @@ FROM table_name
 ORDER BY column1, column2, ... ASC|DESC;
 ```
 
+例子:
+
+```sql
+select * from demo order by a ASC;
+```
+
 ## LIMIT
 
 将输出的数据条数进行限制
 
 ```sql
 LIMIT 1
+```
+
+例子:
+
+```sql
+select * from demo where a > 10 limit 10;
 ```
 
 ## Case 表达式
