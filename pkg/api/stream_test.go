@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultSourceTupleResult(t *testing.T) {
@@ -45,4 +46,21 @@ func TestDefaultSourceTupleResult(t *testing.T) {
 	assert.Nil(t, st.Message())
 	assert.Nil(t, st.Meta())
 	assert.NotEqual(t, now, st.Timestamp())
+}
+
+func TestIsLongRunningScheduleRule(t *testing.T) {
+	r := &Rule{}
+	require.False(t, r.IsLongRunningScheduleRule())
+	r.Options = &RuleOption{
+		CronDatetimeRange: []DatetimeRange{
+			{
+				Begin: "1",
+				End:   "2",
+			},
+		},
+	}
+	require.True(t, r.IsLongRunningScheduleRule())
+	r.Options.Cron = "123"
+	r.Options.Duration = "123"
+	require.False(t, r.IsLongRunningScheduleRule())
 }

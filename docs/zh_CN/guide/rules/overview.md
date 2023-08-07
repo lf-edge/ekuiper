@@ -151,7 +151,7 @@ eKuiper 已经内置了丰富的 sink connector 类型，如 mqtt、rest 和 fil
 | restartStrategy    | 结构         | 指定规则运行失败后自动重新启动规则的策略。这可以帮助从可恢复的故障中回复，而无需手动操作。请查看[规则重启策略](#规则重启策略)了解详细的配置项目。                    |
 | cron               | string: "" | 指定规则的周期性触发策略，该周期通过 [cron 表达式](https://zh.wikipedia.org/wiki/Cron) 进行描述。                        |
 | duration           | string: "" | 指定规则的运行持续时间，只有当指定了 cron 后才有效。duration 不应该超过两次 cron 周期之间的时间间隔，否则会引起非预期的行为。                      |
-| cronDatetimeRange  | 结构体数组      | 指定周期性规则的生效时间段，只有当指定了 cron 后才有效。当指定了该参数后，周期性规则只有在这个参数所制定的时间范围内才生效。请查看 [周期性规则](#周期性规则) 了解详细的配置项目 |
+| cronDatetimeRange  | 结构体数组      | 指定周期性规则的生效时间段。当指定了该参数后，周期性规则只有在这个参数所制定的时间范围内才生效。请查看 [周期性规则](#周期性规则) 了解详细的配置项目 |
 
 有关 `qos` 和 `checkpointInterval` 的详细信息，请查看[状态和容错](./state_and_fault_tolerance.md)。
 
@@ -202,6 +202,10 @@ cronDatetimeRange 支持结构体数组，你可以声明一组时间段来表�
     ]
 }
 ```
+
+#### 阶段运行规则
+
+当 `cronDatetimeRange` 配置了但是 `cron` 与 `duration` 为空时，则该规则会按照 `cronDatetimeRange` 所指定的时间阶段内一直运行，直到超出该时间阶段。
 
 ## 查看规则状态
 

@@ -281,6 +281,32 @@ func getAllRulesWithStatus() ([]map[string]interface{}, error) {
 	return result, nil
 }
 
+type ruleWrapper struct {
+	rule  *api.Rule
+	state string
+}
+
+func getAllRulesWithState() ([]ruleWrapper, error) {
+	ruleIds, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(ruleIds)
+	rules := make([]ruleWrapper, 0, len(ruleIds))
+	for _, id := range ruleIds {
+		r, err := ruleProcessor.GetRuleById(id)
+		if err != nil {
+			return nil, err
+		}
+		s, err := getRuleState(id)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, ruleWrapper{rule: r, state: s})
+	}
+	return rules, nil
+}
+
 func getRuleState(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
 		return rs.GetState()

@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
 type ActionSignal int
@@ -243,6 +244,16 @@ func (rs *RuleState) Start() error {
 	if rs.triggered == -1 {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
+	if rs.Rule.IsLongRunningScheduleRule() {
+		isIn, err := schedule.IsInScheduleRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange)
+		if err != nil {
+			return err
+		}
+		// When rule is created, we need to check its schedule range before start it.
+		if !isIn {
+			return nil
+		}
+	}
 	if rs.Rule.IsScheduleRule() {
 		return rs.startScheduleRule()
 	}
@@ -423,7 +434,7 @@ func (rs *RuleState) GetState() (string, error) {
 				result = "Running"
 			case context.Canceled:
 				if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
-					if isAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+					if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 						result = "Stopped: schedule terminated."
 					} else {
 						result = "Stopped: waiting for next schedule."
@@ -438,7 +449,7 @@ func (rs *RuleState) GetState() (string, error) {
 			}
 		} else {
 			if rs.cronState.isInSchedule {
-				if isAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+				if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 					result = "Stopped: schedule terminated."
 				} else {
 					result = "Stopped: waiting for next schedule."
@@ -466,46 +477,6 @@ func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
 	}
 }
 
-const layout = "2006-01-02 15:04:05"
-
-func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
-	s, err := time.Parse(layout, start)
-	if err != nil {
-		return false, err
-	}
-	e, err := time.Parse(layout, end)
-	if err != nil {
-		return false, err
-	}
-	isBefore := s.Before(now)
-	isAfter := e.After(now)
-	if isBefore && isAfter {
-		return true, nil
-	}
-	return false, nil
-}
-
-func isAfterTimeRanges(now time.Time, ranges []api.DatetimeRange) bool {
-	if len(ranges) < 1 {
-		return false
-	}
-	for _, r := range ranges {
-		isAfter, err := isAfterTimeRange(now, r.End)
-		if err != nil || !isAfter {
-			return false
-		}
-	}
-	return true
-}
-
-func isAfterTimeRange(now time.Time, end string) (bool, error) {
-	e, err := time.Parse(layout, end)
-	if err != nil {
-		return false, err
-	}
-	return now.After(e), nil
-}
-
 func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, time.Duration, error) {
 	allowed, err := rs.isInAllowedTimeRange(now)
 	if err != nil {
@@ -518,14 +489,14 @@ func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, 
 	if strings.HasPrefix(cronExpr, "mock") {
 		return false, 0, nil
 	}
-	return isInRunningSchedule(cronExpr, now, d)
+	return schedule.IsInRunningSchedule(cronExpr, now, d)
 }
 
 func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
 	allowed := true
 	var err error
 	for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
-		allowed, err = isInScheduleRange(now, timeRange.Begin, timeRange.End)
+		allowed, err = schedule.IsInScheduleRange(now, timeRange.Begin, timeRange.End)
 		if err != nil {
 			return false, err
 		}
@@ -534,19 +505,4 @@ func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
 		}
 	}
 	return allowed, nil
-}
-
-// isInRunningSchedule checks whether the rule should be running, eg:
-// If the duration is 10min, and cron is "0 0 * * *", and the current time is 00:00:02
-// And the rule should be started immediately instead of checking it on the next day.
-func isInRunningSchedule(cronExpr string, now time.Time, d time.Duration) (bool, time.Duration, error) {
-	s, err := cron.ParseStandard(cronExpr)
-	if err != nil {
-		return false, 0, err
-	}
-	previousSchedule := s.Next(now.Add(-d))
-	if now.After(previousSchedule) && now.Before(previousSchedule.Add(d)) {
-		return true, previousSchedule.Add(d).Sub(now), nil
-	}
-	return false, 0, nil
 }

@@ -38,8 +38,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
 var (
@@ -145,6 +147,8 @@ func StartUp(Version string) {
 			}
 		}
 	}
+	exit := make(chan struct{})
+	go runScheduleRuleChecker(exit)
 
 	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
@@ -179,6 +183,7 @@ func StartUp(Version string) {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 	<-sigint
+	exit <- struct{}{}
 
 	if err = srvRest.Shutdown(context.TODO()); err != nil {
 		logger.Errorf("rest server shutdown error: %v", err)
@@ -257,4 +262,74 @@ func resetAllStreams() error {
 		}
 	}
 	return nil
+}
+
+func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
+	conf.Log.Infof("start patroling schedule rule state")
+	ticker := time.NewTicker(d)
+	defer func() {
+		ticker.Stop()
+		conf.Log.Infof("exit partoling schedule rule state")
+	}()
+	for {
+		select {
+		case <-exit:
+			return
+		case <-ticker.C:
+			rs, err := getAllRulesWithState()
+			if err != nil {
+				conf.Log.Errorf("get all rules with stated failed, err:%v", err)
+				continue
+			}
+			now := conf.GetNow()
+			for _, r := range rs {
+				if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
+					conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
+				}
+			}
+		}
+	}
+}
+
+func runScheduleRuleChecker(exit <-chan struct{}) {
+	d, err := time.ParseDuration(conf.Config.Basic.RulePatrolInterval)
+	if err != nil {
+		conf.Log.Errorf("parse rulePatrolInterval failed, err:%v", err)
+		return
+	}
+	runScheduleRuleCheckerByInterval(d, exit)
+}
+
+func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
+	toStart, toStop := handleScheduleRule(now, r, state)
+	if toStart {
+		return startRule(r.Id)
+	} else if toStop {
+		stopRule(r.Id)
+	}
+	return nil
+}
+
+func handleScheduleRule(now time.Time, r *api.Rule, state string) (bool, bool) {
+	options := r.Options
+	if options != nil && options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
+		var isInRange bool
+		var err error
+		for _, cRange := range options.CronDatetimeRange {
+			isInRange, err = schedule.IsInScheduleRange(now, cRange.Begin, cRange.End)
+			if err != nil {
+				conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
+				return false, false
+			}
+			if isInRange {
+				break
+			}
+		}
+		if isInRange && state != "Running" {
+			return true, false
+		} else if !isInRange && state == "Running" {
+			return false, true
+		}
+	}
+	return false, false
 }
