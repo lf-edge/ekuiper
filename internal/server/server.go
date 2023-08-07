@@ -278,12 +278,13 @@ func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 		case <-ticker.C:
 			rs, err := getAllRulesWithState()
 			if err != nil {
+				conf.Log.Errorf("get all rules with stated failed, err:%v", err)
 				continue
 			}
 			now := conf.GetNow()
 			for _, r := range rs {
 				if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
-					conf.Log.Errorf("handl schedule rule %v state failed, err:%v", r.rule.Id, err)
+					conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
 				}
 			}
 		}
