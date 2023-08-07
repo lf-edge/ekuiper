@@ -255,6 +255,8 @@ func InitConf() {
 		Config.Basic.RestIp = "0.0.0.0"
 	}
 
+	Config.Basic.RulePatrolInterval = "10s"
+
 	if Config.Basic.Debug {
 		SetDebugLevel(true)
 	}
