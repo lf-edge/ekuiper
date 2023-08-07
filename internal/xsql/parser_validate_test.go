@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -122,5 +124,37 @@ func TestParser_ParserSRFStatement(t *testing.T) {
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
 		}
+	}
+}
+
+func TestParser_ParserWindowFunctionStatement(t *testing.T) {
+	tests := []struct {
+		s   string
+		err string
+	}{
+		{
+			s:   "select * from demo where row_number() > 1",
+			err: "window functions shouldn't be in where clause",
+		},
+		{
+			s:   "select * from demo having row_number() > 1",
+			err: "window functions shouldn't be in having clause",
+		},
+		{
+			s:   "select * from demo group by  row_number()",
+			err: "window functions shouldn't be in group by clause",
+		},
+		{
+			s:   "select * from demo left join demo on row_number()",
+			err: "window functions shouldn't be in join clause",
+		},
+		{
+			s:   "select * from demo order by row_number()",
+			err: "window functions shouldn't be in order by clause",
+		},
+	}
+	for _, tt := range tests {
+		_, err := NewParser(strings.NewReader(tt.s)).Parse()
+		require.Equal(t, tt.err, err.Error())
 	}
 }
