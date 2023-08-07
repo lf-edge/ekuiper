@@ -83,7 +83,7 @@ func TestHandleScheduleRule(t *testing.T) {
 
 func TestRunScheduleRuleChecker(t *testing.T) {
 	exit := make(chan struct{})
-	go runScheduleRuleChecker(exit)
+	go runScheduleRuleCheckerByInterval(3*time.Second, exit)
 	time.Sleep(1 * time.Second)
 	exit <- struct{}{}
 }

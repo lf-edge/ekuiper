@@ -264,12 +264,7 @@ func resetAllStreams() error {
 	return nil
 }
 
-func runScheduleRuleChecker(exit <-chan struct{}) {
-	d, err := time.ParseDuration(conf.Config.Basic.RulePatrolInterval)
-	if err != nil {
-		conf.Log.Errorf("parse rulePatrolInterval failed, err:%v", err)
-		return
-	}
+func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 	conf.Log.Infof("start patroling schedule rule state")
 	ticker := time.NewTicker(d)
 	defer func() {
@@ -293,6 +288,15 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 			}
 		}
 	}
+}
+
+func runScheduleRuleChecker(exit <-chan struct{}) {
+	d, err := time.ParseDuration(conf.Config.Basic.RulePatrolInterval)
+	if err != nil {
+		conf.Log.Errorf("parse rulePatrolInterval failed, err:%v", err)
+		return
+	}
+	runScheduleRuleCheckerByInterval(d, exit)
 }
 
 func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
