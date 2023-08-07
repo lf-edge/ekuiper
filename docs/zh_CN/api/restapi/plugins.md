@@ -144,9 +144,14 @@ DELETE http://localhost:9081/plugins/sources/{name}?stop=1
 
 ## 更新插件
 
-仅 portable 插件支持更新操作。正在使用插件的规则将自动热加载新的插件实现。
+该 API 用于更新插件。其中，原生插件更新后的版本需要重启 eKuiper 才能生效。
+而 portable 插件支持热更新，正在使用插件的规则将自动热加载新的插件实现。
+该 API 的请求体格式与创建插件的请求体格式相同。
 
 ```shell
+PUT http://localhost:9081/plugins/sources/{name}
+PUT http://localhost:9081/plugins/sinks/{name}
+PUT http://localhost:9081/plugins/functions/{name}
 PUT http://localhost:9081/plugins/portables/{name}
 ```
 

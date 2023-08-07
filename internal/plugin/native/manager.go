@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ var manager *Manager
 
 const DELETED = "$deleted"
 
-// Manager is append only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
+// Manager is appended only because plugin cannot delete or reload. To delete a plugin, restart the server to reindex
 type Manager struct {
 	sync.RWMutex
 	// 3 maps for source/sink/function. In each map, key is the plugin name, value is the version
@@ -107,11 +107,11 @@ func InitManager() (*Manager, error) {
 	for pf := range plugins[plugin2.FUNCTION] {
 		l := make([]string, 0)
 		if ok, err := func_db.Get(pf, &l); ok {
-			registry.storeSymbols(pf, l)
+			_ = registry.storeSymbols(pf, l)
 		} else if err != nil {
 			return nil, fmt.Errorf("error when querying kv: %s", err)
 		} else {
-			registry.storeSymbols(pf, []string{pf})
+			_ = registry.storeSymbols(pf, []string{pf})
 		}
 	}
 	if manager.hasInstallFlag() {
@@ -143,10 +143,6 @@ func findAll(t plugin2.PluginType, pluginDir string) (result map[string]string, 
 		}
 	}
 	return
-}
-
-func GetManager() *Manager {
-	return manager
 }
 
 func (rr *Manager) get(t plugin2.PluginType, name string) (string, bool) {
@@ -263,7 +259,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 
 	if v, ok := rr.get(t, name); ok {
 		if v == DELETED {
-			return fmt.Errorf("invalid name %s: the plugin is marked as deleted but Kuiper is not restarted for the change to take effect yet", name)
+			conf.Log.Debugf("update the plugin %s is marked as deleted but eKuiper is not restarted for the change to take effect yet", name)
 		} else {
 			return fmt.Errorf("invalid name %s: duplicate", name)
 		}
@@ -273,7 +269,7 @@ func (rr *Manager) Register(t plugin2.PluginType, j plugin2.Plugin) error {
 	zipPath := path.Join(rr.pluginDir, name+".zip")
 
 	// clean up: delete zip file and unzip files in error
-	defer os.Remove(zipPath)
+	defer func(name string) { _ = os.Remove(name) }(zipPath)
 	// download
 	err = httpx.DownloadFile(zipPath, uri)
 	if err != nil {
@@ -358,6 +354,10 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	name = strings.Trim(name, " ")
 	if name == "" {
 		return fmt.Errorf("invalid name %s: should not be empty", name)
+	}
+	if v, ok := rr.get(t, name); ok && v == DELETED {
+		conf.Log.Debugf("plugin %s is already deleted", name)
+		return nil
 	}
 	soPath, err := rr.getSoFilePath(t, name, true)
 	if err != nil {
@@ -456,12 +456,16 @@ func (rr *Manager) GetPluginInfo(t plugin2.PluginType, name string) (map[string]
 func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []string) (string, error) {
 	var filenames []string
 	tempPath := path.Join(rr.pluginDir, "temp", plugin2.PluginTypes[t], name)
-	defer os.RemoveAll(tempPath)
+	defer func(path string) {
+		_ = os.RemoveAll(path)
+	}(tempPath)
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return "", err
 	}
-	defer r.Close()
+	defer func(r *zip.ReadCloser) {
+		_ = r.Close()
+	}(r)
 
 	haveInstallFile := false
 	for _, file := range r.File {
@@ -487,7 +491,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	defer func() {
 		if err != nil {
 			for _, f := range revokeFiles {
-				os.RemoveAll(f)
+				_ = os.RemoveAll(f)
 			}
 		}
 	}()
@@ -592,7 +596,7 @@ func (rr *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string
 		pluginName, _ := rr.GetPluginBySymbol(plugin2.SOURCE, name)
 		installScript := ""
 		pluginKey := plugin2.PluginTypes[plugin2.SOURCE] + "_" + pluginName
-		rr.plgInstallDb.Get(pluginKey, &installScript)
+		_, _ = rr.plgInstallDb.Get(pluginKey, &installScript)
 		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
 	} else {
 		return plugin2.NONE_EXTENSION, "", ""
@@ -643,7 +647,7 @@ func (rr *Manager) SinkPluginInfo(name string) (plugin2.EXTENSION_TYPE, string, 
 		pluginName, _ := rr.GetPluginBySymbol(plugin2.SINK, name)
 		installScript := ""
 		pluginKey := plugin2.PluginTypes[plugin2.SINK] + "_" + pluginName
-		rr.plgInstallDb.Get(pluginKey, &installScript)
+		_, _ = rr.plgInstallDb.Get(pluginKey, &installScript)
 		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
 	} else {
 		return plugin2.NONE_EXTENSION, "", ""
@@ -680,7 +684,7 @@ func (rr *Manager) FunctionPluginInfo(funcName string) (plugin2.EXTENSION_TYPE, 
 	if ok {
 		installScript := ""
 		pluginKey := plugin2.PluginTypes[plugin2.FUNCTION] + "_" + pluginName
-		rr.plgInstallDb.Get(pluginKey, &installScript)
+		_, _ = rr.plgInstallDb.Get(pluginKey, &installScript)
 		return plugin2.NATIVE_EXTENSION, pluginKey, installScript
 	} else {
 		return plugin2.NONE_EXTENSION, "", ""
