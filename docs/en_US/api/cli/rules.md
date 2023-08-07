@@ -222,3 +222,52 @@ Sample result:
   }
 }
 ```
+
+## validate a rule
+
+The command is used for validating a rule.  The rule's definition is specified with JSON format, read [rule](../../guide/rules/overview.md) for more detailed information.
+
+```shell
+validate rule $rule_name '$rule_json' | validate rule $rule_name -f $rule_def_file
+```
+
+There are two ways to validate rules, which are the same as the two ways to create rules.
+
+- Specify the rule definition in command line.
+
+示例：
+
+```shell
+# bin/kuiper validate rule rule1 '{"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}'
+The rule has been successfully validated and is confirmed to be correct.
+```
+
+The command validate a rule named `rule1`.
+
+- Specify the rule definition in file.
+
+Sample:
+
+```shell
+# bin/kuiper validate rule rule1 -f /tmp/rule.txt
+The rule has been successfully validated and is confirmed to be correct.
+```
+
+Below is the contents of `rule.txt`.
+
+```json
+{
+  "sql": "SELECT * from demo",
+  "actions": [
+    {
+      "log": {}
+    },
+    {
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "demoSink"
+      }
+    }
+  ]
+}
+```
