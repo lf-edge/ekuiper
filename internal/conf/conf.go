@@ -130,23 +130,24 @@ type SQLConf struct {
 
 type KuiperConf struct {
 	Basic struct {
-		Debug          bool     `yaml:"debug"`
-		ConsoleLog     bool     `yaml:"consoleLog"`
-		FileLog        bool     `yaml:"fileLog"`
-		RotateTime     int      `yaml:"rotateTime"`
-		MaxAge         int      `yaml:"maxAge"`
-		TimeZone       string   `yaml:"timezone"`
-		Ip             string   `yaml:"ip"`
-		Port           int      `yaml:"port"`
-		RestIp         string   `yaml:"restIp"`
-		RestPort       int      `yaml:"restPort"`
-		RestTls        *tlsConf `yaml:"restTls"`
-		Prometheus     bool     `yaml:"prometheus"`
-		PrometheusPort int      `yaml:"prometheusPort"`
-		PluginHosts    string   `yaml:"pluginHosts"`
-		Authentication bool     `yaml:"authentication"`
-		IgnoreCase     bool     `yaml:"ignoreCase"`
-		SQLConf        *SQLConf `yaml:"sql"`
+		Debug              bool     `yaml:"debug"`
+		ConsoleLog         bool     `yaml:"consoleLog"`
+		FileLog            bool     `yaml:"fileLog"`
+		RotateTime         int      `yaml:"rotateTime"`
+		MaxAge             int      `yaml:"maxAge"`
+		TimeZone           string   `yaml:"timezone"`
+		Ip                 string   `yaml:"ip"`
+		Port               int      `yaml:"port"`
+		RestIp             string   `yaml:"restIp"`
+		RestPort           int      `yaml:"restPort"`
+		RestTls            *tlsConf `yaml:"restTls"`
+		Prometheus         bool     `yaml:"prometheus"`
+		PrometheusPort     int      `yaml:"prometheusPort"`
+		PluginHosts        string   `yaml:"pluginHosts"`
+		Authentication     bool     `yaml:"authentication"`
+		IgnoreCase         bool     `yaml:"ignoreCase"`
+		SQLConf            *SQLConf `yaml:"sql"`
+		RulePatrolInterval string   `yaml:"rulePatrolInterval"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf

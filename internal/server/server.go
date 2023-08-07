@@ -265,8 +265,17 @@ func resetAllStreams() error {
 }
 
 func runScheduleRuleChecker(exit <-chan struct{}) {
-	ticker := time.NewTicker(10 * time.Second)
-	defer ticker.Stop()
+	d, err := time.ParseDuration(conf.Config.Basic.RulePatrolInterval)
+	if err != nil {
+		conf.Log.Errorf("parse rulePatrolInterval failed, err:%v", err)
+		return
+	}
+	conf.Log.Infof("start patroling schedule rule state")
+	ticker := time.NewTicker(d)
+	defer func() {
+		ticker.Stop()
+		conf.Log.Infof("exit partoling schedule rule state")
+	}()
 	for {
 		select {
 		case <-exit:
@@ -278,7 +287,9 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 			}
 			now := conf.GetNow()
 			for _, r := range rs {
-				handleScheduleRuleState(now, r.rule, r.state)
+				if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
+					conf.Log.Errorf("handl schedule rule %v state failed, err:%v", r.rule.Id, err)
+				}
 			}
 		}
 	}
