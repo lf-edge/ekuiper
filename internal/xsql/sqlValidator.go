@@ -113,11 +113,9 @@ func isWindowFunctionExists(node ast.Node) bool {
 	ast.WalkFunc(node, func(n ast.Node) bool {
 		switch f := n.(type) {
 		// skip checking Fields
+		// TODO: support window functions in order by clause lately
 		case ast.Fields:
 			return false
-		// TODO: support window functions in order by clause lately
-		//case ast.SortFields:
-		//	return false
 		case *ast.Call:
 			if f.FuncType == ast.FuncTypeWindow {
 				exists = true
