@@ -427,7 +427,7 @@ GROUP BY column_name
 ```
 
 ```sql
-select * from demo group by a;
+select * from demo group by a, countwindow(5);
 ```
 
 ### HAVING
@@ -504,7 +504,7 @@ LIMIT 1
 例子:
 
 ```sql
-select * from demo where a > 10 limit 10;
+select * from demo where a > 10 group by countwindow(5) limit 10;
 ```
 
 ## Case 表达式
