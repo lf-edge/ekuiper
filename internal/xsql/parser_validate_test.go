@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -121,6 +123,46 @@ func TestParser_ParserSRFStatement(t *testing.T) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
 			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
+		}
+	}
+}
+
+func TestParser_ParserWindowFunctionStatement(t *testing.T) {
+	tests := []struct {
+		s   string
+		err string
+	}{
+		{
+			s:   "select row_number() from demo ",
+			err: "",
+		},
+		{
+			s:   "select * from demo where row_number() > 1",
+			err: "window functions can only be in select fields",
+		},
+		{
+			s:   "select * from demo having row_number() > 1",
+			err: "window functions can only be in select fields",
+		},
+		{
+			s:   "select * from demo group by  row_number()",
+			err: "window functions can only be in select fields",
+		},
+		{
+			s:   "select * from demo left join demo on row_number()",
+			err: "window functions can only be in select fields",
+		},
+		{
+			s:   "select * from demo order by row_number()",
+			err: "window functions can only be in select fields",
+		},
+	}
+	for _, tt := range tests {
+		_, err := NewParser(strings.NewReader(tt.s)).Parse()
+		if len(tt.err) == 0 {
+			require.NoError(t, err)
+		} else {
+			require.Equal(t, tt.err, err.Error())
 		}
 	}
 }

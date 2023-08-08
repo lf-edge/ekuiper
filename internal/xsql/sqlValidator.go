@@ -39,7 +39,17 @@ func Validate(stmt *ast.SelectStatement) error {
 	if err := validateMultiSRFForbidden("select", stmt.Fields); err != nil {
 		return err
 	}
+	if err := validateWindowFunction(stmt); err != nil {
+		return err
+	}
 	return validateSRFForbidden(stmt)
+}
+
+func validateWindowFunction(stmt *ast.SelectStatement) error {
+	if exists := isWindowFunctionExists(stmt); exists {
+		return fmt.Errorf("window functions can only be in select fields")
+	}
+	return nil
 }
 
 func validateSRFNestedForbidden(clause string, node ast.Node) error {
@@ -96,6 +106,25 @@ func isSRFNested(node ast.Node) bool {
 		return true
 	})
 	return srfNested
+}
+
+func isWindowFunctionExists(node ast.Node) bool {
+	exists := false
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		switch f := n.(type) {
+		// skip checking Fields
+		// TODO: support window functions in order by clause lately
+		case ast.Fields:
+			return false
+		case *ast.Call:
+			if f.FuncType == ast.FuncTypeWindow {
+				exists = true
+				return false
+			}
+		}
+		return true
+	})
+	return exists
 }
 
 func isSRFExists(node ast.Node) bool {
