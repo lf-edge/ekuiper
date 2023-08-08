@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter/static"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
@@ -32,7 +33,9 @@ type Converter struct {
 var protoParser *protoparse.Parser
 
 func init() {
-	protoParser = &protoparse.Parser{}
+	etcDir, _ := kconf.GetLoc("etc/schemas/protobuf/")
+	dataDir, _ := kconf.GetLoc("data/schemas/protobuf/")
+	protoParser = &protoparse.Parser{ImportPaths: []string{etcDir, dataDir}}
 }
 
 func NewConverter(schemaFile string, soFile string, messageName string) (message.Converter, error) {
