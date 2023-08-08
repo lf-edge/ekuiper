@@ -133,28 +133,36 @@ func TestParser_ParserWindowFunctionStatement(t *testing.T) {
 		err string
 	}{
 		{
+			s:   "select row_number() from demo ",
+			err: "",
+		},
+		{
 			s:   "select * from demo where row_number() > 1",
-			err: "window functions shouldn't be in where clause",
+			err: "window functions can only be in select fields or order by clause",
 		},
 		{
 			s:   "select * from demo having row_number() > 1",
-			err: "window functions shouldn't be in having clause",
+			err: "window functions can only be in select fields or order by clause",
 		},
 		{
 			s:   "select * from demo group by  row_number()",
-			err: "window functions shouldn't be in group by clause",
+			err: "window functions can only be in select fields or order by clause",
 		},
 		{
 			s:   "select * from demo left join demo on row_number()",
-			err: "window functions shouldn't be in join clause",
+			err: "window functions can only be in select fields or order by clause",
 		},
 		{
 			s:   "select * from demo order by row_number()",
-			err: "window functions shouldn't be in order by clause",
+			err: "window functions can only be in select fields or order by clause",
 		},
 	}
 	for _, tt := range tests {
 		_, err := NewParser(strings.NewReader(tt.s)).Parse()
-		require.Equal(t, tt.err, err.Error())
+		if len(tt.err) == 0 {
+			require.NoError(t, err)
+		} else {
+			require.Equal(t, tt.err, err.Error())
+		}
 	}
 }

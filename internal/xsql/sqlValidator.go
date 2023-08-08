@@ -46,21 +46,8 @@ func Validate(stmt *ast.SelectStatement) error {
 }
 
 func validateWindowFunction(stmt *ast.SelectStatement) error {
-	if exits := isWindowFunctionExists(stmt.Joins); exits {
-		return fmt.Errorf("window functions shouldn't be in join clause")
-	}
-	if exists := isWindowFunctionExists(stmt.Condition); exists {
-		return fmt.Errorf("window functions shouldn't be in where clause")
-	}
-	if exists := isWindowFunctionExists(stmt.Dimensions); exists {
-		return fmt.Errorf("window functions shouldn't be in group by clause")
-	}
-	if exists := isWindowFunctionExists(stmt.Having); exists {
-		return fmt.Errorf("window functions shouldn't be in having clause")
-	}
-	// TODO: support window function in order by clause lately
-	if exists := isWindowFunctionExists(stmt.SortFields); exists {
-		return fmt.Errorf("window functions shouldn't be in order by clause")
+	if exists := isWindowFunctionExists(stmt); exists {
+		return fmt.Errorf("window functions can only be in select fields or order by clause")
 	}
 	return nil
 }
@@ -128,6 +115,9 @@ func isWindowFunctionExists(node ast.Node) bool {
 		// skip checking Fields
 		case ast.Fields:
 			return false
+		// TODO: support window functions in order by clause lately
+		//case ast.SortFields:
+		//	return false
 		case *ast.Call:
 			if f.FuncType == ast.FuncTypeWindow {
 				exists = true
