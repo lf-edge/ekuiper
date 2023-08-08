@@ -161,6 +161,13 @@ LEFT JOIN stream2
 ON stream1.column_name = stream2.column_name;
 ```
 
+example:
+
+```sql
+select * from stream1 left join on stream2 stream1.column = stream2.column group by countwindow(5);
+```
+
+
 **RIGHT**
 
 The RIGHT JOIN keyword returns all records from the right stream (stream2), and the matched records from the left stream (stream1). The result is NULL from the left side, when there is no match.
@@ -170,6 +177,12 @@ SELECT column_name(s)
 FROM stream1
 RIGHT JOIN stream2
 ON stream1.column_name = stream2.column_name;
+```
+
+example:
+
+```sql
+select * from stream1 right join on stream2 stream1.column = stream2.column group by countwindow(5);
 ```
 
 **FULL**
@@ -186,6 +199,12 @@ ON stream1.column_name = stream2.column_name
 WHERE condition;
 ```
 
+example:
+
+```sql
+select * from stream1 full join on stream2 stream1.column = stream2.column group by countwindow(5);
+```
+
 **CROSS**
 
 The CROSS JOIN is used to combine each row of the first stream (stream1) with each row of the second stream (stream2). It is also known as the Cartesian join since it returns the Cartesian product of the sets of rows from the joined tables. Let's say if there are **m** rows in stream1, and **n** rows in stream2, then the result of CROSS  JOIN returns **m*n** rows.
@@ -198,6 +217,12 @@ FROM stream1
 CROSS OUTER JOIN stream2
 ON stream1.column_name = stream2.column_name
 WHERE condition;
+```
+
+example:
+
+```sql
+select * from stream1 cross outer join on stream2 stream1.column = stream2.column group by countwindow(5);
 ```
 
 **source_stream | source_stream_alias**
@@ -412,6 +437,12 @@ Specifies the search condition for the group or the aggregate to meet.
 SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name HAVING count(name) > 3
 ```
 
+example:
+
+```sql
+select * from demo group by countwindow(5) having a > 10;
+```
+
 ## ORDER BY
 
 Order the rows by values of one or more columns.
@@ -427,7 +458,7 @@ The ORDER BY statement in sql is used to sort the fetched data in either ascendi
 exmaple:
 
 ```sql
-select * from demo order by a ASC;
+select * from demo group by countwindow(5) order by a ASC;
 ```
 
 - By default ORDER BY sorts the data in **ascending order.**

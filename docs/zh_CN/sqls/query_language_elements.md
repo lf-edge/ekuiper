@@ -162,6 +162,12 @@ LEFT JOIN stream2
 ON stream1.column_name = stream2.column_name;
 ```
 
+例子:
+
+```sql
+select * from stream1 left join on stream2 stream1.column = stream2.column group by countwindow(5);
+```
+
 **RIGHT**
 
 JOIN 关键字从右侧流（stream2）返回所有记录，并从左侧流（stream1）返回匹配的记录。 如果没有匹配项，则结果从左侧为 NULL。
@@ -171,6 +177,12 @@ SELECT column_name(s)
 FROM stream1
 RIGHT JOIN stream2
 ON stream1.column_name = stream2.column_name;
+```
+
+例子:
+
+```sql
+select * from stream1 right join on stream2 stream1.column = stream2.column group by countwindow(5);
 ```
 
 **FULL**
@@ -187,6 +199,12 @@ ON stream1.column_name = stream2.column_name
 WHERE condition;
 ```
 
+例子:
+
+```sql
+select * from stream1 full join on stream2 stream1.column = stream2.column group by countwindow(5);
+```
+
 **CROSS**
 
 CROSS JOIN 用于将第一个流（stream1）的每一行与第二个流（stream2）的每一行组合。 这也称为笛卡尔联接，因为它从联接表返回行集的笛卡尔乘积。 假设在 stream1中有 m 行，在stream2 中有 n 行，那么 CROSS JOIN 的结果将返回 m * n 行。
@@ -199,6 +217,12 @@ FROM stream1
 CROSS OUTER JOIN stream2
 ON stream1.column_name = stream2.column_name
 WHERE condition;
+```
+
+例子:
+
+```sql
+select * from stream1 cross outer join on stream2 stream1.column = stream2.column group by countwindow(5);
 ```
 
 **source_stream | source_stream_alias**
@@ -426,6 +450,12 @@ select * from demo group by a;
 SELECT temp AS t, name FROM topic/sensor1 WHERE name = "dname" GROUP BY name HAVING count(name) > 3
 ```
 
+例子:
+
+```sql
+select * from demo group by countwindow(5) having a > 10;
+```
+
 ## ORDER BY
 
 按一列或多列的值对行进行排序。
@@ -460,7 +490,7 @@ ORDER BY column1, column2, ... ASC|DESC;
 例子:
 
 ```sql
-select * from demo order by a ASC;
+select * from demo group by countwindow(5) order by a ASC;
 ```
 
 ## LIMIT
