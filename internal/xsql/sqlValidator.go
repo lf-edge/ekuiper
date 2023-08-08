@@ -47,7 +47,7 @@ func Validate(stmt *ast.SelectStatement) error {
 
 func validateWindowFunction(stmt *ast.SelectStatement) error {
 	if exists := isWindowFunctionExists(stmt); exists {
-		return fmt.Errorf("window functions can only be in select fields or order by clause")
+		return fmt.Errorf("window functions can only be in select fields")
 	}
 	return nil
 }

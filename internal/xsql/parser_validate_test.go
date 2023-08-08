@@ -138,23 +138,23 @@ func TestParser_ParserWindowFunctionStatement(t *testing.T) {
 		},
 		{
 			s:   "select * from demo where row_number() > 1",
-			err: "window functions can only be in select fields or order by clause",
+			err: "window functions can only be in select fields",
 		},
 		{
 			s:   "select * from demo having row_number() > 1",
-			err: "window functions can only be in select fields or order by clause",
+			err: "window functions can only be in select fields",
 		},
 		{
 			s:   "select * from demo group by  row_number()",
-			err: "window functions can only be in select fields or order by clause",
+			err: "window functions can only be in select fields",
 		},
 		{
 			s:   "select * from demo left join demo on row_number()",
-			err: "window functions can only be in select fields or order by clause",
+			err: "window functions can only be in select fields",
 		},
 		{
 			s:   "select * from demo order by row_number()",
-			err: "window functions can only be in select fields or order by clause",
+			err: "window functions can only be in select fields",
 		},
 	}
 	for _, tt := range tests {
