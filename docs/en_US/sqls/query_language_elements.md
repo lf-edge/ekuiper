@@ -167,7 +167,6 @@ example:
 select * from stream1 left join on stream2 stream1.column = stream2.column group by countwindow(5);
 ```
 
-
 **RIGHT**
 
 The RIGHT JOIN keyword returns all records from the right stream (stream2), and the matched records from the left stream (stream1). The result is NULL from the left side, when there is no match.
