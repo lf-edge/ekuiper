@@ -325,6 +325,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb
+		cmd.Dir = pluginTarget
 		err = cmd.Run()
 		if err != nil {
 			return fmt.Errorf(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())

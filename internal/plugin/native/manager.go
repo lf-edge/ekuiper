@@ -550,6 +550,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
 		cmd.Stderr = &errb
+		cmd.Dir = tempPath
 		err := cmd.Run()
 		if err != nil {
 			conf.Log.Infof(`err:%v stdout:%s stderr:%s`, err, outb.String(), errb.String())

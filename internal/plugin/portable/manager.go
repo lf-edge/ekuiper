@@ -328,6 +328,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 			shell[0] = spath
 		}
 		cmd := exec.Command("/bin/sh", shell...)
+		cmd.Dir = pluginTarget
 		conf.Log.Infof("run install script %s", strings.Join(shell, " "))
 		var outb, errb bytes.Buffer
 		cmd.Stdout = &outb
