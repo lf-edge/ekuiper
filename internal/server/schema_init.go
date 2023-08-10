@@ -76,7 +76,7 @@ func schemasHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("%s schema %s is created", sch.Type, sch.Name)))
+		fmt.Fprintf(w, "%s schema %s is created", sch.Type, sch.Name)
 	}
 }
 
@@ -103,8 +103,7 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		result := fmt.Sprintf("%s schema %s is deleted", st, name)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "%s schema %s is deleted", st, name)
 	case http.MethodPut:
 		sch := &schema.Info{Type: def.SchemaType(st), Name: name}
 		err := json.NewDecoder(r.Body).Decode(sch)
@@ -126,7 +125,7 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf("%s schema %s is updated", sch.Type, sch.Name)))
+		fmt.Fprintf(w, "%s schema %s is updated", sch.Type, sch.Name)
 	}
 }
 

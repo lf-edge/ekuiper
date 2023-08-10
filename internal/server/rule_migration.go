@@ -320,6 +320,7 @@ func (p *RuleMigrationProcessor) ConfigurationPartialExport(rules []string) ([]b
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 	config.Rules = p.exportRules(rules)
 
@@ -419,6 +420,7 @@ func (p *RuleMigrationProcessor) exportSelected(de *dependencies, config *Config
 		schName, schInfo := getSchemaInstallScript(v)
 		config.Schema[schName] = schInfo
 	}
+	config.Uploads = uploadsExport()
 }
 
 func parsePick(props map[string]interface{}) (*ast.SelectStatement, error) {

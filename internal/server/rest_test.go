@@ -31,6 +31,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
@@ -42,6 +43,8 @@ func init() {
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
+	uploadsDb, _ = store.GetKV("uploads")
+	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
 }
 
 type RestTestSuite struct {
@@ -74,6 +77,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
+	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
@@ -308,6 +312,49 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
+}
+
+func (suite *RestTestSuite) Test_configUpdate() {
+	req, _ := http.NewRequest(http.MethodPatch, "http://localhost:8080/configs", bytes.NewBufferString(""))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	b, _ := json.Marshal(map[string]any{
+		"debug":    true,
+		"timezone": "",
+	})
+	req, _ = http.NewRequest(http.MethodPatch, "http://localhost:8080/configs", bytes.NewBuffer(b))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusNoContent, w.Code)
+
+	b, _ = json.Marshal(map[string]any{
+		"debug":    true,
+		"timezone": "unknown",
+	})
+	req, _ = http.NewRequest(http.MethodPatch, "http://localhost:8080/configs", bytes.NewBuffer(b))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	b, _ = json.Marshal(map[string]any{
+		"debug":   true,
+		"fileLog": true,
+	})
+	req, _ = http.NewRequest(http.MethodPatch, "http://localhost:8080/configs", bytes.NewBuffer(b))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusNoContent, w.Code)
+
+	b, _ = json.Marshal(map[string]any{
+		"debug":      true,
+		"consoleLog": true,
+	})
+	req, _ = http.NewRequest(http.MethodPatch, "http://localhost:8080/configs", bytes.NewBuffer(b))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusNoContent, w.Code)
 }
 
 func (suite *RestTestSuite) Test_ruleSetImport() {

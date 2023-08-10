@@ -209,7 +209,7 @@ func (c *SyncCache) send(ctx api.StreamContext) {
 	}
 	d, ok := c.peakMemCache(ctx)
 	if ok {
-		ctx.GetLogger().Infof("sending cache item %v", d)
+		ctx.GetLogger().Debugf("sending cache item %v", d)
 		c.sendStatus = 1
 		ctx.GetLogger().Debug("send status to 0 after sending tuple")
 		select {
@@ -260,7 +260,7 @@ func (c *SyncCache) addCache(ctx api.StreamContext, item []map[string]interface{
 			ctx.GetLogger().Debugf("added cache to disk buffer page %v", c.diskBufferPage)
 		}
 	} else {
-		ctx.GetLogger().Infof("added cache to mem cache %v", item)
+		ctx.GetLogger().Debugf("added cache to mem cache %v", item)
 	}
 	c.CacheLength++
 	ctx.GetLogger().Debugf("added cache %d", c.CacheLength)

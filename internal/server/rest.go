@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -43,6 +44,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 const (
@@ -50,7 +52,11 @@ const (
 	ContentTypeJSON = "application/json"
 )
 
-var uploadDir string
+var (
+	uploadDir       string
+	uploadsDb       kv.KeyValue
+	uploadsStatusDb kv.KeyValue
+)
 
 type statementDescriptor struct {
 	Sql string `json:"sql,omitempty"`
@@ -123,6 +129,14 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 		panic(err)
 	}
 	uploadDir = filepath.Join(dataDir, "uploads")
+	uploadsDb, err = store.GetKV("uploads")
+	if err != nil {
+		panic(err)
+	}
+	uploadsStatusDb, err = store.GetKV("uploadsStatusDb")
+	if err != nil {
+		panic(err)
+	}
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
@@ -142,6 +156,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
+	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
 	r.HandleFunc("/config/uploads", fileUploadHandler).Methods(http.MethodPost, http.MethodGet)
 	r.HandleFunc("/config/uploads/{name}", fileDeleteHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
@@ -175,6 +190,14 @@ type fileContent struct {
 	FilePath string `json:"file"`
 }
 
+func (f *fileContent) InstallScript() string {
+	marshal, err := json.Marshal(f)
+	if err != nil {
+		return ""
+	}
+	return string(marshal)
+}
+
 func (f *fileContent) Validate() error {
 	if f.Content == "" && f.FilePath == "" {
 		return fmt.Errorf("invalid body: content or FilePath is required")
@@ -188,10 +211,11 @@ func (f *fileContent) Validate() error {
 func upload(file *fileContent) error {
 	err := getFile(file)
 	if err != nil {
+		_ = uploadsStatusDb.Set(file.Name, err.Error())
 		return err
 	}
 
-	return nil
+	return uploadsDb.Set(file.Name, file.InstallScript())
 }
 
 func getFile(file *fileContent) error {
@@ -303,6 +327,8 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, e, "Error deleting the file", logger)
 		return
 	}
+	_ = uploadsDb.Delete(name)
+	_ = uploadsStatusDb.Delete(name)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("ok"))
 }
@@ -469,9 +495,8 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "", logger)
 			return
 		}
-		result := fmt.Sprintf("Rule %s was created successfully.", id)
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "Rule %s was created successfully.", id)
 	case http.MethodGet:
 		content, err := getAllRulesWithStatus()
 		if err != nil {
@@ -525,15 +550,12 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// Update to db after validation
 		_, err = ruleProcessor.ExecUpdate(name, string(body))
-		var result string
 		if err != nil {
 			handleError(w, err, "Update rule error, suggest to delete it and recreate", logger)
 			return
-		} else {
-			result = fmt.Sprintf("Rule %s was updated successfully.", name)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(result))
+		fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
 }
 
@@ -565,7 +587,7 @@ func startRuleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Rule %s was started", name)))
+	fmt.Fprintf(w, "Rule %s was started", name)
 }
 
 // stop a rule
@@ -591,7 +613,7 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Rule %s was restarted", name)))
+	fmt.Fprintf(w, "Rule %s was restarted", name)
 }
 
 // get topo of a rule
@@ -663,7 +685,7 @@ func importHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return nil
 	})
-	w.Write([]byte(fmt.Sprintf("imported %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])))
+	fmt.Fprintf(w, "imported %d streams, %d tables and %d rules", counts[0], counts[1], counts[2])
 }
 
 func exportHandler(w http.ResponseWriter, r *http.Request) {
@@ -689,6 +711,7 @@ type Configuration struct {
 	ConnectionConfig map[string]string `json:"connectionConfig"`
 	Service          map[string]string `json:"Service"`
 	Schema           map[string]string `json:"Schema"`
+	Uploads          map[string]string `json:"uploads"`
 }
 
 func configurationExport() ([]byte, error) {
@@ -703,6 +726,7 @@ func configurationExport() ([]byte, error) {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 	ruleSet := rulesetProcessor.ExportRuleSet()
 	if ruleSet != nil {
@@ -715,6 +739,7 @@ func configurationExport() ([]byte, error) {
 	conf.PortablePlugins = portablePluginExport()
 	conf.Service = serviceExport()
 	conf.Schema = schemaExport()
+	conf.Uploads = uploadsExport()
 
 	yamlCfg := meta.GetConfigurations()
 	conf.SourceConfig = yamlCfg.Sources
@@ -749,6 +774,7 @@ func configurationReset() {
 	serviceReset()
 	schemaReset()
 	meta.ResetConfigs()
+	uploadsReset()
 }
 
 type ImportConfigurationStatus struct {
@@ -768,6 +794,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 
 	importStatus := ImportConfigurationStatus{}
@@ -783,6 +810,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 
 	ResponseNil := Configuration{
@@ -796,6 +824,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 
 	err := json.Unmarshal(data, conf)
@@ -803,6 +832,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		importStatus.ErrorMsg = fmt.Errorf("configuration unmarshal with error %v", err).Error()
 		return importStatus
 	}
+	configResponse.Uploads = uploadsImport(conf.Uploads)
 
 	if reboot {
 		err = pluginImport(conf.NativePlugins)
@@ -818,7 +848,6 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 	}
 
 	configResponse.PortablePlugins = portablePluginImport(conf.PortablePlugins)
-
 	configResponse.Service = serviceImport(conf.Service)
 
 	yamlCfgSet := meta.YamlConfigurationSet{
@@ -882,6 +911,7 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 
 	importStatus := ImportConfigurationStatus{}
@@ -897,6 +927,7 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 
 	ResponseNil := Configuration{
@@ -910,6 +941,7 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 
 	err := json.Unmarshal(data, conf)
@@ -926,6 +958,7 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 
 	confRsp := meta.LoadConfigurationsPartial(yamlCfgSet)
 
+	configResponse.Uploads = uploadsImport(conf.Uploads)
 	configResponse.NativePlugins = pluginPartialImport(conf.NativePlugins)
 	configResponse.Schema = schemaPartialImport(conf.Schema)
 	configResponse.PortablePlugins = portablePluginPartialImport(conf.PortablePlugins)
@@ -1035,6 +1068,7 @@ func configurationStatusExport() Configuration {
 		ConnectionConfig: make(map[string]string),
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
 	}
 	ruleSet := rulesetProcessor.ExportRuleSetStatus()
 	if ruleSet != nil {
@@ -1047,6 +1081,7 @@ func configurationStatusExport() Configuration {
 	conf.PortablePlugins = portablePluginStatusExport()
 	conf.Service = serviceStatusExport()
 	conf.Schema = schemaStatusExport()
+	conf.Uploads = uploadsStatusExport()
 
 	yamlCfgStatus := meta.GetConfigurationStatus()
 	conf.SourceConfig = yamlCfgStatus.Sources
@@ -1054,6 +1089,48 @@ func configurationStatusExport() Configuration {
 	conf.ConnectionConfig = yamlCfgStatus.Connections
 
 	return conf
+}
+
+func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	basic := struct {
+		Debug      *bool   `json:"debug"`
+		ConsoleLog *bool   `json:"consoleLog"`
+		FileLog    *bool   `json:"fileLog"`
+		TimeZone   *string `json:"timezone"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(&basic); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		handleError(w, err, "Invalid JSON", logger)
+		return
+	}
+
+	if basic.Debug != nil {
+		conf.SetDebugLevel(*basic.Debug)
+		conf.Config.Basic.Debug = *basic.Debug
+	}
+
+	if basic.TimeZone != nil {
+		if err := cast.SetTimeZone(*basic.TimeZone); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			handleError(w, err, "Invalid TZ", logger)
+			return
+		}
+		conf.Config.Basic.TimeZone = *basic.TimeZone
+	}
+
+	if basic.FileLog != nil {
+		if err := conf.SetFileLog(*basic.FileLog); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			handleError(w, err, "", logger)
+			return
+		}
+		conf.Config.Basic.FileLog = *basic.FileLog
+	} else if basic.ConsoleLog != nil {
+		conf.SetConsoleLog(*basic.ConsoleLog)
+		conf.Config.Basic.ConsoleLog = *basic.ConsoleLog
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func configurationStatusHandler(w http.ResponseWriter, r *http.Request) {
@@ -1112,4 +1189,48 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 	}
 
 	return ruleSetRsp
+}
+
+func uploadsReset() {
+	_ = uploadsDb.Clean()
+	_ = uploadsStatusDb.Clean()
+}
+
+func uploadsExport() map[string]string {
+	conf, _ := uploadsDb.All()
+	return conf
+}
+
+func uploadsStatusExport() map[string]string {
+	status, _ := uploadsDb.All()
+	return status
+}
+
+func uploadsImport(s map[string]string) map[string]string {
+	errMap := map[string]string{}
+	_ = uploadsStatusDb.Clean()
+	for k, v := range s {
+		fc := &fileContent{}
+		err := json.Unmarshal([]byte(v), fc)
+		if err != nil {
+			errMsg := fmt.Sprintf("invalid body: Error decoding file json: %s", err.Error())
+			errMap[k] = errMsg
+			_ = uploadsStatusDb.Set(k, errMsg)
+			continue
+		}
+
+		err = fc.Validate()
+		if err != nil {
+			errMap[k] = err.Error()
+			_ = uploadsStatusDb.Set(k, err.Error())
+			continue
+		}
+
+		err = upload(fc)
+		if err != nil {
+			errMap[k] = err.Error()
+			continue
+		}
+	}
+	return errMap
 }
