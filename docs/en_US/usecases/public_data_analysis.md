@@ -160,7 +160,7 @@ requirements in various scenarios, even without using extended plugins.
 Since we already have the starting and ending coordinates of the bikes in our data,
 we can calculate the average speed of the bikes by applying the distance formula based on latitude and longitude:
 
-![coordinator](./resources/formula.webp)
+![coordinator](./resources/formula.png)
 
 The explanation of the formula is as follows:
 

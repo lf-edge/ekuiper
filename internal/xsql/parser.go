@@ -1668,7 +1668,7 @@ func (p *Parser) parseOver(c *ast.Call) error {
 	if tok, _ := p.scanIgnoreWhitespace(); tok != ast.OVER {
 		p.unscan()
 		return nil
-	} else if function.IsAnalyticFunc(c.Name) {
+	} else if function.IsAnalyticFunc(c.Name) || function.IsWindowFunc(c.Name) {
 		if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ast.LPAREN {
 			if t, _ := p.scanIgnoreWhitespace(); t == ast.PARTITION {
 				if t1, l1 := p.scanIgnoreWhitespace(); t1 == ast.BY {

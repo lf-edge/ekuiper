@@ -95,6 +95,32 @@ func (suite *ServerTestSuite) TestRule() {
 	}`
 	ruleId := "myRule"
 	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
+	err = suite.s.ValidateRule(args, &reply)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "The rule has been successfully validated and is confirmed to be correct.", reply)
+
+	reply = ""
+	rule = `{
+			  "sql": "SELECT * from test;"
+			}`
+	args = &model.RPCArgDesc{Name: ruleId, Json: rule}
+	err = suite.s.ValidateRule(args, &reply)
+	assert.Nil(suite.T(), err)
+	assert.Equal(suite.T(), "invalid rule json: Missing rule actions.", reply)
+
+	reply = ""
+	rule = `{
+			  "sql": "SELECT * from test;",
+			  "actions": [{
+				"file": {
+				  "path": "../internal/server/rpc_test_data/data/result.txt",
+				  "interval": 5000,
+				  "fileType": "lines",
+				  "format": "json"
+				}
+			  }]
+	}`
+	args = &model.RPCArgDesc{Name: ruleId, Json: rule}
 	err = suite.s.CreateRule(args, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Rule myRule was created successfully, please use 'bin/kuiper getstatus rule myRule' command to get rule status.", reply)

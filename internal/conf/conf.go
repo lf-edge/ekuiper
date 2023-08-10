@@ -21,7 +21,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/lestrrat-go/file-rotatelogs"
@@ -131,23 +130,24 @@ type SQLConf struct {
 
 type KuiperConf struct {
 	Basic struct {
-		Debug          bool     `yaml:"debug"`
-		ConsoleLog     bool     `yaml:"consoleLog"`
-		FileLog        bool     `yaml:"fileLog"`
-		RotateTime     int      `yaml:"rotateTime"`
-		MaxAge         int      `yaml:"maxAge"`
-		TimeZone       string   `yaml:"timezone"`
-		Ip             string   `yaml:"ip"`
-		Port           int      `yaml:"port"`
-		RestIp         string   `yaml:"restIp"`
-		RestPort       int      `yaml:"restPort"`
-		RestTls        *tlsConf `yaml:"restTls"`
-		Prometheus     bool     `yaml:"prometheus"`
-		PrometheusPort int      `yaml:"prometheusPort"`
-		PluginHosts    string   `yaml:"pluginHosts"`
-		Authentication bool     `yaml:"authentication"`
-		IgnoreCase     bool     `yaml:"ignoreCase"`
-		SQLConf        *SQLConf `yaml:"sql"`
+		Debug              bool     `yaml:"debug"`
+		ConsoleLog         bool     `yaml:"consoleLog"`
+		FileLog            bool     `yaml:"fileLog"`
+		RotateTime         int      `yaml:"rotateTime"`
+		MaxAge             int      `yaml:"maxAge"`
+		TimeZone           string   `yaml:"timezone"`
+		Ip                 string   `yaml:"ip"`
+		Port               int      `yaml:"port"`
+		RestIp             string   `yaml:"restIp"`
+		RestPort           int      `yaml:"restPort"`
+		RestTls            *tlsConf `yaml:"restTls"`
+		Prometheus         bool     `yaml:"prometheus"`
+		PrometheusPort     int      `yaml:"prometheusPort"`
+		PluginHosts        string   `yaml:"pluginHosts"`
+		Authentication     bool     `yaml:"authentication"`
+		IgnoreCase         bool     `yaml:"ignoreCase"`
+		SQLConf            *SQLConf `yaml:"sql"`
+		RulePatrolInterval string   `yaml:"rulePatrolInterval"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
@@ -180,21 +180,15 @@ func SetDebugLevel(v bool) {
 	Log.SetLevel(lvl)
 }
 
-func SetConsoleLog(v bool) {
-	out := io.Discard
-	if v {
-		out = os.Stdout
-	}
-	Log.SetOutput(out)
-}
-
-func SetFileLog(v bool) error {
-	if !v {
-		SetConsoleLog(Config.Basic.ConsoleLog)
+func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
+	if !fileLog {
+		if consoleLog {
+			Log.SetOutput(os.Stdout)
+		}
 		return nil
 	}
 
-	logDir, err := GetLoc(logDir)
+	logDir, err := GetLogLoc()
 	if err != nil {
 		return err
 	}
@@ -210,10 +204,10 @@ func SetFileLog(v bool) error {
 	if err != nil {
 		fmt.Printf("Failed to init log file settings: %v", err)
 		Log.Infof("Failed to log to file, using default stderr.")
-	} else if Config.Basic.ConsoleLog {
+	} else if consoleLog {
 		mw := io.MultiWriter(os.Stdout, logWriter)
 		Log.SetOutput(mw)
-	} else if !Config.Basic.ConsoleLog {
+	} else if !consoleLog {
 		Log.SetOutput(logWriter)
 	}
 	gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
@@ -255,16 +249,14 @@ func InitConf() {
 		Config.Basic.RestIp = "0.0.0.0"
 	}
 
+	Config.Basic.RulePatrolInterval = "10s"
+
 	if Config.Basic.Debug {
 		SetDebugLevel(true)
 	}
 
-	if Config.Basic.FileLog {
-		if err := SetFileLog(true); err != nil {
-			log.Fatal(err)
-		}
-	} else if Config.Basic.ConsoleLog {
-		SetConsoleLog(true)
+	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
+		log.Fatal(err)
 	}
 
 	if Config.Basic.TimeZone != "" {
@@ -377,18 +369,13 @@ func gcOutdatedLog(filePath string, maxDuration time.Duration) {
 }
 
 func isLogOutdated(name string, now time.Time, maxDuration time.Duration) bool {
-	prefix := fmt.Sprintf("%s.", logFileName)
-	layout := "2006-01-02_15-04-05"
-	if strings.HasPrefix(name, prefix) {
-		logDate := name[len(prefix):]
-		t, err := time.Parse(layout, logDate)
-		if err != nil {
-			Log.Errorf("parse log %v datetime failed, err:%v", name, err)
-			return false
-		}
-		if int64(now.Sub(t))-int64(maxDuration) > 0 {
-			return true
-		}
+	layout := ".2006-01-02_15-04-05"
+	logDateExt := path.Ext(name)
+	if t, err := time.Parse(layout, logDateExt); err != nil {
+		Log.Errorf("parse log %v datetime failed, err:%v", name, err)
+		return false
+	} else if int64(now.Sub(t))-int64(maxDuration) > 0 {
+		return true
 	}
 	return false
 }

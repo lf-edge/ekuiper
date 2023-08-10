@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
 // limitations under the License.
 
 //go:build plugin || !core
-// +build plugin !core
 
 package server
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"runtime"
 	"strings"
@@ -55,18 +55,18 @@ func (p pluginComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/sinks/prebuild", prebuildSinkPlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/functions/prebuild", prebuildFuncsPlugins).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/sources", sourcesHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet)
+	r.HandleFunc("/plugins/sources/{name}", sourceHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/plugins/sinks", sinksHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete, http.MethodGet)
+	r.HandleFunc("/plugins/sinks/{name}", sinkHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/plugins/functions", functionsHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet)
+	r.HandleFunc("/plugins/functions/{name}", functionHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/plugins/functions/{name}/register", functionRegisterHandler).Methods(http.MethodPost)
 	r.HandleFunc("/plugins/udfs", functionsListHandler).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/udfs/{name}", functionsGetHandler).Methods(http.MethodGet)
 }
 
 func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) { _ = Body.Close() }(r.Body)
 	switch r.Method {
 	case http.MethodGet:
 		content := nativeManager.List(t)
@@ -85,12 +85,12 @@ func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintf(w, "%s plugin %s is created", plugin.PluginTypes[t], sd.GetName())
+		_, _ = fmt.Fprintf(w, "%s plugin %s is created", plugin.PluginTypes[t], sd.GetName())
 	}
 }
 
 func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) { _ = Body.Close() }(r.Body)
 	vars := mux.Vars(r)
 	name := vars["name"]
 	cb := r.URL.Query().Get("stop")
@@ -105,11 +105,11 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) 
 		w.WriteHeader(http.StatusOK)
 		result := fmt.Sprintf("%s plugin %s is deleted", plugin.PluginTypes[t], name)
 		if r {
-			result = fmt.Sprintf("%s and Kuiper will be stopped", result)
+			result = fmt.Sprintf("%s and eKuiper will be stopped", result)
 		} else {
-			result = fmt.Sprintf("%s and Kuiper must restart for the change to take effect.", result)
+			result = fmt.Sprintf("%s and eKuiper must restart for the change to take effect.", result)
 		}
-		w.Write([]byte(result))
+		_, _ = fmt.Fprint(w, result)
 	case http.MethodGet:
 		j, ok := nativeManager.GetPluginInfo(t, name)
 		if !ok {
@@ -117,6 +117,26 @@ func pluginHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) 
 			return
 		}
 		jsonResponse(j, w, logger)
+	case http.MethodPut:
+		sd := plugin.NewPluginByType(t)
+		err := json.NewDecoder(r.Body).Decode(sd)
+		// Problems decoding
+		if err != nil {
+			handleError(w, err, fmt.Sprintf("Invalid body: Error decoding the %s plugin json", plugin.PluginTypes[t]), logger)
+			return
+		}
+		err = nativeManager.Delete(t, name, false)
+		if err != nil {
+			handleError(w, err, fmt.Sprintf("update %s plugin %s error, cannot delete old version", plugin.PluginTypes[t], name), logger)
+			return
+		}
+		err = nativeManager.Register(t, sd)
+		if err != nil {
+			handleError(w, err, fmt.Sprintf("%s plugins create command error", plugin.PluginTypes[t]), logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = fmt.Fprintf(w, "plugin %s is updated and eKuiper must restart for the change to take effect.", sd.GetName())
 	}
 }
 
@@ -145,7 +165,7 @@ func functionsHandler(w http.ResponseWriter, r *http.Request) {
 	pluginsHandler(w, r, plugin.FUNCTION)
 }
 
-// list all user defined functions in all function plugins
+// list all user-defined functions in all function plugins
 func functionsListHandler(w http.ResponseWriter, _ *http.Request) {
 	content := nativeManager.ListSymbols()
 	jsonResponse(content, w, logger)
@@ -171,11 +191,11 @@ type functionList struct {
 	Functions []string `json:"functions,omitempty"`
 }
 
-// register function list for function plugin. If a plugin exports multiple functions, the function list must be registered
+// Register function list for function plugin. If a plugin exports multiple functions, the function list must be registered
 // either by create or register. If the function plugin has been loaded because of auto load through so file, the function
 // list MUST be registered by this API or only the function with the same name as the plugin can be used.
 func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
+	defer func(Body io.ReadCloser) { _ = Body.Close() }(r.Body)
 	vars := mux.Vars(r)
 	name := vars["name"]
 	_, ok := nativeManager.GetPluginInfo(plugin.FUNCTION, name)
@@ -196,7 +216,7 @@ func functionRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "function plugin %s function list is registered", name)
+	_, _ = fmt.Fprintf(w, "function plugin %s function list is registered", name)
 }
 
 func prebuildSourcePlugins(w http.ResponseWriter, r *http.Request) {

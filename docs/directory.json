@@ -344,6 +344,10 @@
 				{
 					"title": "车联网",
 					"path": "usecases/iov"
+				},
+				{
+					"title": "公共数据分析应用",
+					"path": "usecases/public_data_analysis"
 				}
 			]
 		},
@@ -607,6 +611,10 @@
 						{
 							"title": "预定义函数插件",
 							"path": "sqls/functions/custom_functions"
+						},
+						{
+							"title": "窗口函数",
+							"path": "sqls/functions/window_funcs"
 						}
 					]
 				},
@@ -1059,6 +1067,10 @@
 				{
 					"title": "IoV case",
 					"path": "usecases/iov"
+				},
+				{
+					"title": "Public data analysis",
+					"path": "usecases/public_data_analysis"
 				}
 			]
 		},
@@ -1322,6 +1334,10 @@
 						{
 							"title": "Predefined function plugins",
 							"path": "sqls/functions/custom_functions"
+						},
+						{
+							"title": "Window Functions",
+							"path": "sqls/functions/window_functions"
 						}
 					]
 				},

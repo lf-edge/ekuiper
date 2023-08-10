@@ -72,7 +72,7 @@ func (fc *FieldConverter) encodeMap(im *desc.MessageDescriptor, i interface{}) (
 				if field.IsRequired() {
 					return nil, fmt.Errorf("field %s not found", field.GetName())
 				} else {
-					v = field.GetDefaultValue()
+					continue
 				}
 			}
 			fv, err := fc.EncodeField(field, v)
@@ -135,7 +135,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 			result, err = cast.ToBytesSlice(v, cast.STRICT)
 		case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
-				r, err := cast.ToStringMap(v)
+				r, err := cast.ToStringMap(input)
 				if err == nil {
 					return fc.encodeMap(field.GetMessageType(), r)
 				} else {

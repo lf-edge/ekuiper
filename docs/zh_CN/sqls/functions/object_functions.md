@@ -5,7 +5,7 @@
 ## KEYS
 
 ```text
-keys(map\<string, any>)
+keys(obj)
 ```
 
 返回的给定的 map 参数中的所有 key 值, 举例如下:
@@ -23,7 +23,7 @@ keys({"a":1, "b":2})
 ## VALUES
 
 ```text
-values(map\<string, any>)
+values(obj)
 ```
 
 返回给定的 map 参数中的所有 value 值,举例如下:
@@ -41,7 +41,7 @@ values({"a":1, "b":2})
 ## OBJECT
 
 ```text
-object(arr1, arr2)
+object(keys, values)
 ```
 
 接受两个 list 参数来构造 map 对象，第一个 list 作为 map 对象的 key，第二个 list 作为 map 对象的 value。两个 list 参数长度必须相等, 举例如下:
@@ -59,7 +59,7 @@ object(["a","b"],[1,2])
 ## ZIP
 
 ```text
-zip([key, value], ......)
+zip(entries)
 ```
 
 接受一组 list 对象来构造 map 对象，每个 list 元素的长度必须为 2，每个 list 元素内的第一个元素将作为 key，第二个元素将作为
@@ -78,7 +78,7 @@ zip([["a",1],["b":2]])
 ## ITEMS
 
 ```text
-items(map\<string, any>)
+items(obj)
 ```
 
 根据给定的 map 参数构造一个 list 对象，每个元素都为一个长度为 2 的 list 对象，其中第一个元素为 key，第二个元素为 value，举例如下:
@@ -109,4 +109,22 @@ object_construct("a", 1, "b", 2)
 
 ```sql
 {"a":1, "b":2}
+```
+
+## OBJECT_CONCAT
+
+```text
+object_concat(obj1, obj2, ...)
+```
+
+该函数是一个连接输入对象并返回新对象的函数。该函数至少需要两个输入对象作为参数。当输入对象中存在相同属性名称时，函数将选择输入列表中最后一个相关对象的属性，并将其复制到输出对象中。以下是一个示例：
+
+```sql
+object_concat({"a": 1}, {"b": 2}, {"b": 3})
+```
+
+得到如下结果:
+
+```sql
+{"a":1, "b":3}
 ```

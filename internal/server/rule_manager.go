@@ -281,6 +281,32 @@ func getAllRulesWithStatus() ([]map[string]interface{}, error) {
 	return result, nil
 }
 
+type ruleWrapper struct {
+	rule  *api.Rule
+	state string
+}
+
+func getAllRulesWithState() ([]ruleWrapper, error) {
+	ruleIds, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(ruleIds)
+	rules := make([]ruleWrapper, 0, len(ruleIds))
+	for _, id := range ruleIds {
+		r, err := ruleProcessor.GetRuleById(id)
+		if err != nil {
+			return nil, err
+		}
+		s, err := getRuleState(id)
+		if err != nil {
+			return nil, err
+		}
+		rules = append(rules, ruleWrapper{rule: r, state: s})
+	}
+	return rules, nil
+}
+
 func getRuleState(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
 		return rs.GetState()
@@ -304,4 +330,13 @@ func getRuleTopo(name string) (string, error) {
 	} else {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
+}
+
+func validateRule(name, ruleJson string) (bool, error) {
+	// Validate the rule json
+	_, err := ruleProcessor.GetRuleByJson(name, ruleJson)
+	if err != nil {
+		return false, fmt.Errorf("invalid rule json: %v", err)
+	}
+	return true, nil
 }

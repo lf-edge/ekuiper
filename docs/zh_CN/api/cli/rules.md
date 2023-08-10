@@ -193,3 +193,52 @@ getstatus rule $rule_name
     ...
 }
 ```
+
+## 验证规则
+
+如下命令用于验证规则。 规则的定义以 JSON 格式指定，请阅读 [规则](../../guide/rules/overview.md) 以获取更多详细信息。
+
+```shell
+validate rule $rule_name '$rule_json' | validate rule $rule_name -f $rule_def_file
+```
+
+可以通过两种方式验证规则，和创建规则的两种方式相同。
+
+- 在命令行中指定规则定义。
+
+示例：
+
+```shell
+# bin/kuiper validate rule rule1 '{"sql": "SELECT * from demo","actions": [{"log":  {}},{"mqtt":  {"server":"tcp://127.0.0.1:1883", "topic":"demoSink"}}]}'
+The rule has been successfully validated and is confirmed to be correct.
+```
+
+该命令验证一个名为 `rule1` 的规则。
+
+- 在文件中明确规则定义。
+
+示例：
+
+```shell
+# bin/kuiper validate rule rule1 -f /tmp/rule.txt
+The rule has been successfully validated and is confirmed to be correct.
+```
+
+以下是 `rule.txt` 的内容。
+
+```json
+{
+  "sql": "SELECT * from demo",
+  "actions": [
+    {
+      "log": {}
+    },
+    {
+      "mqtt": {
+        "server": "tcp://127.0.0.1:1883",
+        "topic": "demoSink"
+      }
+    }
+  ]
+}
+```

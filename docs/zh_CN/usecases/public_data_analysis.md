@@ -147,7 +147,7 @@ eKuiper 内置了丰富的 SQL 函数，即便在不是用插件拓展的情况�
 
 我们的数据中已经有了单车的起始和结束坐标，所以我们可以根据经纬度计算距离公式，来计算出单车的平均速度：
 
-![coordinator](./resources/formula.webp)
+![coordinator](./resources/formula.png)
 
 其中：
 

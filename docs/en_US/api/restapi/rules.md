@@ -188,3 +188,28 @@ Response Sample:
   }
 }
 ```
+
+## validate a rule
+
+The API accepts a JSON content and validate a rule.
+
+```shell
+POST http://localhost:9081/rules/validate
+```
+
+Request Sample
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT * FROM demo",
+  "actions": [{
+    "log":  {}
+  }]
+}
+```
+
+For the API, here is the explanation of the status codes:
+- If the request body is incorrect, a status code of 400 will be returned, indicating an invalid request.
+- If the rule validation fails, a status code of 422 will be returned, indicating an invalid rule.
+- If the rule validation passes, a status code of 200 will be returned, indicating a valid and successfully validated rule.

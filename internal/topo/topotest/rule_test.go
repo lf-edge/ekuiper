@@ -22,6 +22,348 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
+func TestWindowFuncSQL(t *testing.T) {
+	// Reset
+	streamList := []string{"demo"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: "TestRowNumber1",
+			Sql:  `select size, row_number() from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(3),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(6),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(2),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(4),
+					},
+				},
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(1),
+					},
+				},
+			},
+		},
+		{
+			Name: "TestRowNumber2",
+			Sql:  `select size, row_number() from demo group by countWindow(5)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"row_number": float64(1),
+						"size":       float64(3),
+					},
+					{
+						"row_number": float64(2),
+						"size":       float64(6),
+					},
+					{
+						"row_number": float64(3),
+						"size":       float64(2),
+					},
+					{
+						"row_number": float64(4),
+						"size":       float64(4),
+					},
+					{
+						"row_number": float64(5),
+						"size":       float64(1),
+					},
+				},
+			},
+		},
+	}
+	// Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}
+
+func TestAccAggSQL(t *testing.T) {
+	// Reset
+	streamList := []string{"demo"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: "TestAccAggSql1",
+			Sql:  `select acc_sum(size) over (partition by color), color from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"acc_sum": float64(3),
+						"color":   "red",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(6),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(8),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(4),
+						"color":   "yellow",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(4),
+						"color":   "red",
+					},
+				},
+			},
+		},
+		{
+			Name: "TestAccAggSql2",
+			Sql:  `select acc_sum(size) over (when color = "red"), color from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"acc_sum": float64(3),
+						"color":   "red",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(3),
+						"color":   "yellow",
+					},
+				},
+				{
+					{
+						"acc_sum": float64(4),
+						"color":   "red",
+					},
+				},
+			},
+		},
+		{
+			Name: "TestAccAggSql3",
+			Sql:  `select acc_min(size) over (when color = "red"), color from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"acc_min": float64(3),
+						"color":   "red",
+					},
+				},
+				{
+					{
+						"acc_min": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_min": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_min": float64(3),
+						"color":   "yellow",
+					},
+				},
+				{
+					{
+						"acc_min": float64(1),
+						"color":   "red",
+					},
+				},
+			},
+		},
+		{
+			Name: "TestAccAggSql4",
+			Sql:  `select acc_max(size) over (when color = "red"), color from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"acc_max": float64(3),
+						"color":   "red",
+					},
+				},
+				{
+					{
+						"acc_max": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_max": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_max": float64(3),
+						"color":   "yellow",
+					},
+				},
+				{
+					{
+						"acc_max": float64(3),
+						"color":   "red",
+					},
+				},
+			},
+		},
+		{
+			Name: "TestAccAggSql5",
+			Sql:  `select acc_count(size) over (when color = "red"), color from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"acc_count": float64(1),
+						"color":     "red",
+					},
+				},
+				{
+					{
+						"acc_count": float64(1),
+						"color":     "blue",
+					},
+				},
+				{
+					{
+						"acc_count": float64(1),
+						"color":     "blue",
+					},
+				},
+				{
+					{
+						"acc_count": float64(1),
+						"color":     "yellow",
+					},
+				},
+				{
+					{
+						"acc_count": float64(2),
+						"color":     "red",
+					},
+				},
+			},
+		},
+		{
+			Name: "TestAccAggSql6",
+			Sql:  `select acc_avg(size) over (when color = "red"), color from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"acc_avg": float64(3),
+						"color":   "red",
+					},
+				},
+				{
+					{
+						"acc_avg": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_avg": float64(3),
+						"color":   "blue",
+					},
+				},
+				{
+					{
+						"acc_avg": float64(3),
+						"color":   "yellow",
+					},
+				},
+				{
+					{
+						"acc_avg": float64(2),
+						"color":   "red",
+					},
+				},
+			},
+		},
+	}
+	// Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.AtLeastOnce,
+			CheckpointInterval: 5000,
+		},
+		{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                api.ExactlyOnce,
+			CheckpointInterval: 5000,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}
+
 func TestLimitSQL(t *testing.T) {
 	// Reset
 	streamList := []string{"demo", "demoArr", "demoArr2"}
@@ -80,6 +422,12 @@ func TestLimitSQL(t *testing.T) {
 		{
 			BufferLength: 100,
 			SendError:    true,
+		},
+		{
+			BufferLength: 100,
+			SendError:    true,
+			Debug:        true,
+			LogFilename:  "rule-test.log",
 		},
 		{
 			BufferLength:       100,
@@ -1639,6 +1987,42 @@ func TestAliasSQL(t *testing.T) {
 	streamList := []string{"demo"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
+		{
+			Name: "TestAliasSQL",
+			Sql:  `select size + 1 as size, size + 1 as b from demo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"size": float64(4),
+						"b":    float64(5),
+					},
+				},
+				{
+					{
+						"size": float64(7),
+						"b":    float64(8),
+					},
+				},
+				{
+					{
+						"size": float64(3),
+						"b":    float64(4),
+					},
+				},
+				{
+					{
+						"size": float64(5),
+						"b":    float64(6),
+					},
+				},
+				{
+					{
+						"size": float64(2),
+						"b":    float64(3),
+					},
+				},
+			},
+		},
 		{
 			Name: "TestAliasSQL1",
 			Sql:  `select size as a, a + 1 as b from demo`,

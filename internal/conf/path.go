@@ -55,6 +55,10 @@ func GetConfLoc() (string, error) {
 	return GetLoc(etcDir)
 }
 
+func GetLogLoc() (string, error) {
+	return GetLoc(logDir)
+}
+
 func GetDataLoc() (string, error) {
 	if IsTesting {
 		dataDir, err := GetLoc(dataDir)

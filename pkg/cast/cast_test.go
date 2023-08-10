@@ -892,7 +892,7 @@ func TestToByteA(t *testing.T) {
 		}, {
 			input:  1,
 			output: nil,
-			err:    "cannot convert int(1) to bytes",
+			err:    "cannot convert int(1) to bytea",
 		}, {
 			input:  "c29tZSBkYXRhIHdpdGggACBhbmQg77u/",
 			output: bytea,

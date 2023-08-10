@@ -40,6 +40,7 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.Dimensions)
 		Walk(v, n.Having)
 		Walk(v, n.SortFields)
+		Walk(v, n.Limit)
 
 	case Fields:
 		for _, f := range n {

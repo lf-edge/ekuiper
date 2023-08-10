@@ -58,10 +58,10 @@ array_last_position(array, val)
 
 返回第二个参数在列表参数中最后一次出现的下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1。
 
-## ARRAY_CONTAIN_ANY
+## ARRAY_CONTAINS_ANY
 
 ```text
-array_contain_any(array1, array2)
+array_contains_any(array1, array2)
 ```
 
 返回第一个参数中是否存在第二个参数中的任意一个元素，存在则返回 true，否则返回 false。
@@ -122,6 +122,58 @@ sequence(start, stop[, step])
 
 返回一个从第一个开始参数到第二个结束参数的整数列表，每个元素按照给定的步长递增或递减。若未提供步长，则默认为
 1（如果第一个开始参数小于第二个结束参数），或 -1（如果第一个开始参数大于第二个结束参数），且步长不允许为 0。
+
+## ARRAY_CARDINALITY
+
+```text
+array_cardinality(array)
+```
+
+返回数组中的元素数。数组中的 null 值不计算在内。
+
+## ARRAY_FLATTEN
+
+```text
+array_flatten(array)
+```
+
+返回一个扁平化的数组，即将数组中的数组元素展开。
+
+例如，传入参数为 [[1, 4], [2, 3]]，则返回 [1, 4, 2, 3]。
+
+## ARRAY_DISTINCT
+
+```text
+array_distinct(array)
+```
+
+返回一个去重的数组，即将数组中的重复元素去除。
+
+## ARRAY_MAP
+
+```text
+array_map(function_name, array)
+```
+
+返回一个新的数组，其中包含对给定数组中的每个元素应用给定函数的结果。
+
+## ARRAY_JOIN
+
+```text
+array_join(array, delimiter, null_replacement)
+```
+
+返回一个字符串，其中包含给定数组中的所有元素，元素之间用给定的分隔符分隔。如果数组中的元素为 null，则用给定的 null_replacement 替换。
+
+例如，传入参数为 [1, 2, 3]，delimiter 设置为逗号，则返回 “1,2,3”。
+
+## ARRAY_SHUFFLE
+
+```text
+array_shuffle(array)
+```
+
+返回一个随机排序的数组。
 
 ## ARRAY_CONCAT
 

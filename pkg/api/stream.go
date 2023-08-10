@@ -141,6 +141,8 @@ type Rewindable interface {
 }
 
 type RuleOption struct {
+	Debug              bool             `json:"debug" yaml:"debug"`
+	LogFilename        string           `json:"logFilename" yaml:"logFilename"`
 	IsEventTime        bool             `json:"isEventTime" yaml:"isEventTime"`
 	LateTol            int64            `json:"lateTolerance" yaml:"lateTolerance"`
 	Concurrency        int              `json:"concurrency" yaml:"concurrency"`
@@ -203,6 +205,13 @@ type Rule struct {
 	Graph     *RuleGraph               `json:"graph,omitempty"`
 	Actions   []map[string]interface{} `json:"actions,omitempty"`
 	Options   *RuleOption              `json:"options,omitempty"`
+}
+
+func (r *Rule) IsLongRunningScheduleRule() bool {
+	if r.Options == nil {
+		return false
+	}
+	return len(r.Options.Cron) == 0 && len(r.Options.Duration) == 0 && len(r.Options.CronDatetimeRange) > 0
 }
 
 func (r *Rule) IsScheduleRule() bool {

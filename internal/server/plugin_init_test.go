@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build plugin || !core
-// +build plugin !core
 
 package server
 
@@ -110,6 +109,47 @@ func (suite *PluginTestSuite) TestSinksHandler() {
 func (suite *PluginTestSuite) TestFunctionsHandler() {
 	req, _ := http.NewRequest(http.MethodGet, "/plugins/functions", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *PluginTestSuite) TestFunctionsUpdateHandler() {
+	s := httptest.NewServer(
+		http.FileServer(http.Dir("../plugin/testzips")),
+	)
+	defer s.Close()
+	endpoint := s.URL
+
+	// Test decoding problem
+	req, _ := http.NewRequest(http.MethodPut, "/plugins/functions/echo2", bytes.NewBufferString("\"name\":\"echo2\", \"file\": \""+endpoint+"/functions/echo2.zip\"}"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	// Test plugin not exist problem
+	req, _ = http.NewRequest(http.MethodPut, "/plugins/functions/echo2", bytes.NewBufferString("{\"name\":\"echo2\", \"file\": \""+endpoint+"/functions/echo2.zip\"}"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusNotFound, w.Code)
+
+	req, _ = http.NewRequest(http.MethodPost, "/plugins/functions", bytes.NewBufferString("{\"name\":\"echo2\", \"file\": \""+endpoint+"/functions/echo2.zip\"}"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	// Test plugin create problem
+	req, _ = http.NewRequest(http.MethodPut, "/plugins/functions/echo2", bytes.NewBufferString("{\"name\":\"echo2\", \"file\": \""+endpoint+"/functions/echo22.zip\"}"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	req, _ = http.NewRequest(http.MethodPut, "/plugins/functions/echo2", bytes.NewBufferString("{\"name\":\"echo2\", \"file\": \""+endpoint+"/functions/echo2.zip\"}"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodDelete, "/plugins/functions/echo2", bytes.NewBufferString(""))
+	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }

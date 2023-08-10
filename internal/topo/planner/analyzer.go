@@ -106,6 +106,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			}
 			walkErr = fieldsMap.save(f.AName, ast.AliasStream, ar)
 			for _, subF := range s.Fields {
+				if f.AName == subF.AName {
+					continue
+				}
 				ast.WalkFunc(&subF, func(node ast.Node) bool {
 					switch fr := node.(type) {
 					case *ast.FieldRef:

@@ -210,6 +210,47 @@ func TestObjectFunctions(t *testing.T) {
 			},
 			result: fmt.Errorf("second argument should be string"),
 		},
+		{
+			name: "object_concat",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				map[string]interface{}{
+					"b": 3,
+					"c": 4,
+				},
+				map[string]interface{}{
+					"a": 2,
+					"d": 1,
+				},
+			},
+			result: map[string]interface{}{
+				"a": 2,
+				"b": 3,
+				"c": 4,
+				"d": 1,
+			},
+		},
+		{
+			name: "object_concat",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				map[string]interface{}{
+					"b": 3,
+					"c": 4,
+				},
+				[]interface{}{
+					1,
+					2,
+				},
+			},
+			result: fmt.Errorf("the argument should be map[string]interface{}, got %v", []interface{}{1, 2}),
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]

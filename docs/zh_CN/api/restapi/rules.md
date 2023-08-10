@@ -159,3 +159,28 @@ GET http://localhost:9081/rules/{id}/status
     ...
 }
 ```
+
+## 验证规则
+
+该 API 用于验证规则。
+
+```shell
+POST http://localhost:9081/rules/validate
+```
+
+请求示例：
+
+```json
+{
+  "id": "rule1",
+  "sql": "SELECT * FROM demo",
+  "actions": [{
+    "log":  {}
+  }]
+}
+```
+
+对于 API，以下是状态码的含义说明：
+- 如果请求体不正确，将返回状态码 400，表示发送了一个无效的请求。
+- 如果规则验证未通过，将返回状态码 422，表示规则无效。
+- 如果规则通过验证，将返回状态码 200，表示规则有效且验证通过。

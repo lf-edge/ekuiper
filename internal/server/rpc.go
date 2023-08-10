@@ -248,6 +248,16 @@ func (t *Server) DropRule(name string, reply *string) error {
 	return nil
 }
 
+func (t *Server) ValidateRule(rule *model.RPCArgDesc, reply *string) error {
+	s, err := validateRule(rule.Name, rule.Json)
+	if s {
+		*reply = "The rule has been successfully validated and is confirmed to be correct."
+	} else {
+		*reply = err.Error()
+	}
+	return nil
+}
+
 func (t *Server) Import(file string, reply *string) error {
 	f, err := os.Open(file)
 	if err != nil {

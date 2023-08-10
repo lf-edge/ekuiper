@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
 type ActionSignal int
@@ -242,6 +244,16 @@ func (rs *RuleState) Start() error {
 	if rs.triggered == -1 {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
+	if rs.Rule.IsLongRunningScheduleRule() {
+		isIn, err := schedule.IsInScheduleRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange)
+		if err != nil {
+			return err
+		}
+		// When rule is created, we need to check its schedule range before start it.
+		if !isIn {
+			return nil
+		}
+	}
 	if rs.Rule.IsScheduleRule() {
 		return rs.startScheduleRule()
 	}
@@ -262,6 +274,17 @@ func (rs *RuleState) startScheduleRule() error {
 	}
 	var cronCtx context.Context
 	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
+	now := conf.GetNow()
+	isInRunningSchedule, remainedDuration, err := rs.isInRunningSchedule(now, d)
+	if err != nil {
+		return err
+	}
+	if isInRunningSchedule {
+		if err := rs.runScheduleRule(); err != nil {
+			return err
+		}
+		rs.stopAfterDuration(remainedDuration, cronCtx)
+	}
 	entryID, err := backgroundCron.AddFunc(rs.Rule.Options.Cron, func() {
 		var started bool
 		var err error
@@ -274,16 +297,9 @@ func (rs *RuleState) startScheduleRule() error {
 				defer rs.Unlock()
 			}
 			now := conf.GetNow()
-			var err error
-			allowed := true
-			for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
-				allowed, err = isInScheduleRange(now, timeRange.Begin, timeRange.End)
-				if err != nil {
-					return false, err
-				}
-				if allowed {
-					break
-				}
+			allowed, err := rs.isInAllowedTimeRange(now)
+			if err != nil {
+				return false, err
 			}
 			if !allowed {
 				return false, nil
@@ -300,20 +316,7 @@ func (rs *RuleState) startScheduleRule() error {
 			return
 		}
 		if started {
-			after := time.After(d)
-			go func(ctx context.Context) {
-				select {
-				case <-after:
-					rs.Lock()
-					defer rs.Unlock()
-					if err := rs.stop(); err != nil {
-						conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
-					}
-					return
-				case <-cronCtx.Done():
-					return
-				}
-			}(cronCtx)
+			rs.stopAfterDuration(d, cronCtx)
 		}
 	})
 	if err != nil {
@@ -322,6 +325,35 @@ func (rs *RuleState) startScheduleRule() error {
 	rs.cronState.isInSchedule = true
 	rs.cronState.entryID = entryID
 	return nil
+}
+
+func (rs *RuleState) runScheduleRule() error {
+	rs.Lock()
+	defer rs.Unlock()
+	rs.cronState.cron = rs.Rule.Options.Cron
+	rs.cronState.duration = rs.Rule.Options.Duration
+	err := rs.start()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rs *RuleState) stopAfterDuration(d time.Duration, cronCtx context.Context) {
+	after := time.After(d)
+	go func(ctx context.Context) {
+		select {
+		case <-after:
+			rs.Lock()
+			defer rs.Unlock()
+			if err := rs.stop(); err != nil {
+				conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
+			}
+			return
+		case <-cronCtx.Done():
+			return
+		}
+	}(cronCtx)
 }
 
 func (rs *RuleState) start() error {
@@ -402,7 +434,11 @@ func (rs *RuleState) GetState() (string, error) {
 				result = "Running"
 			case context.Canceled:
 				if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
-					result = "Stopped: waiting for next schedule."
+					if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+						result = "Stopped: schedule terminated."
+					} else {
+						result = "Stopped: waiting for next schedule."
+					}
 				} else {
 					result = "Stopped: canceled manually."
 				}
@@ -413,7 +449,11 @@ func (rs *RuleState) GetState() (string, error) {
 			}
 		} else {
 			if rs.cronState.isInSchedule {
-				result = "Stopped: waiting for next schedule."
+				if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+					result = "Stopped: schedule terminated."
+				} else {
+					result = "Stopped: waiting for next schedule."
+				}
 			} else {
 				result = "Stopped: canceled manually."
 			}
@@ -437,21 +477,32 @@ func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
 	}
 }
 
-const layout = "2006-01-02 15:04:05"
+func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, time.Duration, error) {
+	allowed, err := rs.isInAllowedTimeRange(now)
+	if err != nil {
+		return false, 0, err
+	}
+	if !allowed {
+		return false, 0, nil
+	}
+	cronExpr := rs.Rule.Options.Cron
+	if strings.HasPrefix(cronExpr, "mock") {
+		return false, 0, nil
+	}
+	return schedule.IsInRunningSchedule(cronExpr, now, d)
+}
 
-func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
-	s, err := time.Parse(layout, start)
-	if err != nil {
-		return false, err
+func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
+	allowed := true
+	var err error
+	for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
+		allowed, err = schedule.IsInScheduleRange(now, timeRange.Begin, timeRange.End)
+		if err != nil {
+			return false, err
+		}
+		if allowed {
+			break
+		}
 	}
-	e, err := time.Parse(layout, end)
-	if err != nil {
-		return false, err
-	}
-	isBefore := s.Before(now)
-	isAfter := e.After(now)
-	if isBefore && isAfter {
-		return true, nil
-	}
-	return false, nil
+	return allowed, nil
 }

@@ -154,6 +154,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -629,6 +630,24 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set(ContentType, ContentTypeJSON)
 	w.Write([]byte(content))
+}
+
+// validate a rule
+func validateRuleHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	validate, err := validateRule("", string(body))
+	if !validate {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("The rule has been successfully validated and is confirmed to be correct."))
 }
 
 type rulesetInfo struct {
@@ -1118,16 +1137,22 @@ func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		conf.Config.Basic.TimeZone = *basic.TimeZone
 	}
 
-	if basic.FileLog != nil {
-		if err := conf.SetFileLog(*basic.FileLog); err != nil {
+	if basic.ConsoleLog != nil || basic.FileLog != nil {
+		consoleLog := conf.Config.Basic.ConsoleLog
+		if basic.ConsoleLog != nil {
+			consoleLog = *basic.ConsoleLog
+		}
+		fileLog := conf.Config.Basic.FileLog
+		if basic.FileLog != nil {
+			fileLog = *basic.FileLog
+		}
+		if err := conf.SetConsoleAndFileLog(consoleLog, fileLog); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			handleError(w, err, "", logger)
 			return
 		}
-		conf.Config.Basic.FileLog = *basic.FileLog
-	} else if basic.ConsoleLog != nil {
-		conf.SetConsoleLog(*basic.ConsoleLog)
-		conf.Config.Basic.ConsoleLog = *basic.ConsoleLog
+		conf.Config.Basic.ConsoleLog = consoleLog
+		conf.Config.Basic.FileLog = fileLog
 	}
 
 	w.WriteHeader(http.StatusNoContent)

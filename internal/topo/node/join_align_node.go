@@ -29,13 +29,13 @@ type JoinAlignNode struct {
 	*defaultSinkNode
 	statManager metric.StatManager
 	// states
-	batch map[string][]xsql.TupleRow
+	batch map[string][]*xsql.Tuple
 }
 
 const BatchKey = "$$batchInputs"
 
 func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (*JoinAlignNode, error) {
-	batch := make(map[string][]xsql.TupleRow, len(emitters))
+	batch := make(map[string][]*xsql.Tuple, len(emitters))
 	for _, e := range emitters {
 		batch[e] = nil
 	}
@@ -73,7 +73,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			// restore batch state
 			if s, err := ctx.GetState(BatchKey); err == nil {
 				switch st := s.(type) {
-				case map[string][]xsql.TupleRow:
+				case map[string][]*xsql.Tuple:
 					n.batch = st
 					log.Infof("Restore batch state %+v", st)
 				case nil:
@@ -85,7 +85,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				log.Warnf("Restore batch state fails: %s", err)
 			}
 			if n.batch == nil {
-				n.batch = make(map[string][]xsql.TupleRow)
+				n.batch = make(map[string][]*xsql.Tuple)
 			}
 
 			for {
@@ -111,11 +111,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						_ = n.Broadcast(d)
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %s", d)
-						temp := &xsql.WindowTuples{
-							Content: make([]xsql.TupleRow, 0),
-						}
-						temp = temp.AddTuple(d)
-						n.alignBatch(ctx, temp)
+						n.alignBatch(ctx, d)
 					case *xsql.WindowTuples:
 						if d.WindowRange != nil { // real window
 							log.Debugf("JoinAlignNode receive window input %s", d)
@@ -131,7 +127,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 								n.statManager.IncTotalExceptions(e.Error())
 								break
 							}
-							n.batch[emitter] = d.Content
+							n.batch[emitter] = convertToTupleSlice(d.Content)
 							_ = ctx.PutState(BatchKey, n.batch)
 						}
 					default:
@@ -151,14 +147,33 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (n *JoinAlignNode) alignBatch(_ api.StreamContext, w *xsql.WindowTuples) {
+func convertToTupleSlice(content []xsql.TupleRow) []*xsql.Tuple {
+	tuples := make([]*xsql.Tuple, len(content))
+	for i, v := range content {
+		tuples[i] = v.(*xsql.Tuple)
+	}
+	return tuples
+}
+
+func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {
 	n.statManager.ProcessTimeStart()
-	for _, v := range n.batch {
-		if v != nil {
-			w.Content = append(w.Content, v...)
+	var w *xsql.WindowTuples
+	switch t := input.(type) {
+	case *xsql.Tuple:
+		w = &xsql.WindowTuples{
+			Content: make([]xsql.TupleRow, 0),
+		}
+		w.AddTuple(t)
+	case *xsql.WindowTuples:
+		w = t
+	}
+	for _, contents := range n.batch {
+		if contents != nil {
+			for _, v := range contents {
+				w = w.AddTuple(v)
+			}
 		}
 	}
-
 	_ = n.Broadcast(w)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()

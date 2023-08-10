@@ -5,7 +5,7 @@ Object functions are used to manipulate objects/maps.
 ## KEYS
 
 ```text
-keys(map\<string, interface{}>)
+keys(obj)
 ```
 
 Return an array containing the keys of the map.
@@ -25,7 +25,7 @@ result:
 ## VALUES
 
 ```text
-values(map\<string, interface{}>)
+values(obj)
 ```
 
 example:
@@ -45,7 +45,7 @@ Return an array containing the values of the map.
 ## OBJECT
 
 ```text
-object(array\<string>, array\<interface{}>)
+object(keys, values)
 ```
 
 Construct an object from an array of keys and an array of values. Keys must be an array of strings. Values must be an
@@ -66,7 +66,7 @@ result:
 ## ZIP
 
 ```text
-zip(array\<array\<string, interface{}>>)
+zip(entries)
 ```
 
 Construct an object from an array of entries. Each entry must itself be an array of size 2: the first element is the
@@ -87,7 +87,7 @@ result:
 ## ITEMS
 
 ```text
-items(map\<string, interface{}>)
+items(obj)
 ```
 
 Return an array containing the entries of object. Each entry is a 2-element array; the first is the key, the second is
@@ -125,4 +125,22 @@ result:
 
 ```sql
 {"a":1, "b":2}
+```
+
+## OBJECT_CONCAT
+
+```text
+object_concat(obj1, obj2, ...)
+```
+
+This function concatenates the input objects and returns a new object. It requires a minimum of two input objects. In cases where there are duplicate attribute names among the input objects, the attribute from the last relevant object in the input list is selected and copied to the output object. To illustrate, here's an example:
+
+```sql
+object_concat({"a": 1}, {"b": 2}, {"b": 3})
+```
+
+result:
+
+```sql
+{"a":1, "b":3}
 ```

@@ -555,7 +555,7 @@ func TestMiscFuncNil(t *testing.T) {
 	registerMiscFunc()
 	for name, function := range builtins {
 		switch name {
-		case "compress", "decompress", "newuuid", "tstamp", "rule_id", "window_start", "window_end", "event_time",
+		case "compress", "decompress", "newuuid", "tstamp", "rule_id", "rule_start", "window_start", "window_end", "event_time",
 			"json_path_query", "json_path_query_first", "coalesce", "meta", "json_path_exists":
 			continue
 		case "isnull":
@@ -581,6 +581,118 @@ func TestMiscFuncNil(t *testing.T) {
 			v, b := function.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, v, fmt.Sprintf("%v failed", name))
+		}
+	}
+}
+
+func TestCast(t *testing.T) {
+	f, ok := builtins["cast"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+	}{
+		{ // 0
+			args: []interface{}{
+				"Ynl0ZWE=",
+				"bytea",
+			},
+			result: []byte("bytea"),
+		},
+		{ // 1
+			args: []interface{}{
+				[]byte("bytea"),
+				"bytea",
+			},
+			result: []byte("bytea"),
+		},
+		{ // 2
+			args: []interface{}{
+				1,
+				"bytea",
+			},
+			result: fmt.Errorf("cannot convert int(1) to bytea"),
+		},
+		{ // 3
+			args: []interface{}{
+				101.5,
+				"bigint",
+			},
+			result: 101,
+		},
+		{ // 4
+			args: []interface{}{
+				1,
+				"boolean",
+			},
+			result: true,
+		},
+		{ // 5
+			args: []interface{}{
+				1,
+				"float",
+			},
+			result: float64(1),
+		},
+		{ // 6
+			args: []interface{}{
+				1,
+				"string",
+			},
+			result: "1",
+		},
+	}
+	for _, tt := range tests {
+		result, _ := f.exec(fctx, tt.args)
+		assert.Equal(t, tt.result, result)
+	}
+
+	vtests := []struct {
+		args    []ast.Expr
+		wantErr bool
+	}{
+		{
+			[]ast.Expr{&ast.FieldRef{Name: "foo"}, &ast.StringLiteral{Val: "bytea"}},
+			false,
+		},
+		{
+			[]ast.Expr{&ast.FieldRef{Name: "foo"}},
+			true,
+		},
+		{
+			[]ast.Expr{&ast.FieldRef{Name: "foo"}, &ast.StringLiteral{Val: "bigint"}},
+			false,
+		},
+		{
+			[]ast.Expr{&ast.FieldRef{Name: "foo"}, &ast.StringLiteral{Val: "float"}},
+			false,
+		},
+		{
+			[]ast.Expr{&ast.FieldRef{Name: "foo"}, &ast.StringLiteral{Val: "string"}},
+			false,
+		},
+		{
+			[]ast.Expr{&ast.FieldRef{Name: "foo"}, &ast.StringLiteral{Val: "boolean"}},
+			false,
+		},
+		{
+			[]ast.Expr{&ast.FieldRef{Name: "foo"}, &ast.StringLiteral{Val: "test"}},
+			true,
+		},
+	}
+	for _, vtt := range vtests {
+		err := f.val(fctx, vtt.args)
+		if vtt.wantErr {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
 		}
 	}
 }

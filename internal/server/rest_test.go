@@ -75,6 +75,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -217,12 +218,36 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
-	// create rule with trigger false
+	// validate a rule
 	ruleJson := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
 
 	buf2 := bytes.NewBuffer([]byte(ruleJson))
-	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
 	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	returnVal, _ := io.ReadAll(w2.Result().Body)
+	expect := `The rule has been successfully validated and is confirmed to be correct.`
+	assert.Equal(suite.T(), http.StatusOK, w2.Code)
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// valiadate a wrong rule
+	ruleJson = `{"id": "rule1", "sql": "select * from alert"}`
+
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	returnVal, _ = io.ReadAll(w2.Result().Body)
+	expect = `invalid rule json: Missing rule actions.`
+	assert.Equal(suite.T(), http.StatusUnprocessableEntity, w2.Code)
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// create rule with trigger false
+	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
+
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 
 	// get all rules
@@ -257,8 +282,8 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
-	returnVal, _ := io.ReadAll(w1.Result().Body)
-	expect := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	expect = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// get rule status

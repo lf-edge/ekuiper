@@ -16,6 +16,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 - [分析函数](./analytic_functions.md)
 - [多行函数](./multi_row_functions.md)
 - [多列函数](./multi_column_functions.md)
+- [窗口函数](./window_funcs.md)
 
 eKuiper 也有一组通过插件提供的函数。用户需要在使用之前安装插件。
 

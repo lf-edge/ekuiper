@@ -146,9 +146,15 @@ DELETE http://localhost:9081/plugins/sources/{name}?stop=1
 
 ## update a plugin
 
-Only portable plugins allows to be updated. The rules will hot reload the new plugin automatically.
+Notice that, native plugins can be updated, but the new version will not take effect until the eKuiper server is
+restarted.
+Portable plugins can be updated, and the new version will take effect immediately even for the running rules.
+The request body is the same as the create plugin request.
 
 ```shell
+PUT http://localhost:9081/plugins/sources/{name}
+PUT http://localhost:9081/plugins/sinks/{name}
+PUT http://localhost:9081/plugins/functions/{name}
 PUT http://localhost:9081/plugins/portables/{name}
 ```
 

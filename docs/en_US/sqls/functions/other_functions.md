@@ -54,6 +54,14 @@ rule_id()
 
 Returns the ID of the currently matched rule.
 
+## RULE_START
+
+```text
+rule_start()
+```
+
+Returns the rule start timestamp in int64 format.
+
 ## MQTT
 
 ```text

@@ -56,7 +56,7 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 	sep, ok := args[1].(string)
 	if !ok {
 		logger.Debugf("Exec accumulateWordCountFunc with arg1 %s", sep)
-		return fmt.Errorf("args[1] is not a string, got %v", args[0]), false
+		return fmt.Errorf("args[1] is not a string, got %v", args[1]), false
 	}
 
 	err := ctx.IncrCounter("allwordcount", len(strings.Split(col, sep)))
