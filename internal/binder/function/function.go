@@ -53,6 +53,7 @@ func init() {
 	registerArrayFunc()
 	registerObjectFunc()
 	registerGlobalStateFunc()
+	registerDateTimeFunc()
 }
 
 //var funcWithAsteriskSupportMap = map[string]string{
