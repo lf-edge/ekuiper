@@ -265,8 +265,16 @@ func TestDateTimeFunctions(t *testing.T) {
 			exec: true,
 			args: []interface{}{100},
 			val: func(t interface{}) error {
-				if t.(string) != "1970-01-01 08:01:40" {
-					return fmt.Errorf("mismatch date, expect %s, got %s", "1970-01-01 00:01:40", t.(string))
+				expect := time.Unix(100, 0)
+
+				expectStr, err := cast.FormatTime(expect, "yyyy-MM-dd HH:mm:ss")
+				if err != nil {
+					return err
+				}
+
+				if t.(string) != expectStr {
+					expectStr, _ := cast.FormatTime(expect, "yyyy-MM-dd HH:mm:ss")
+					return fmt.Errorf("mismatch date, expect %s, got %s", expectStr, t.(string))
 				}
 				return nil
 			},
@@ -363,7 +371,7 @@ func TestDateTimeFunctions(t *testing.T) {
 			result = f.val(fctx, test.valArgs)
 		}
 		if err := test.val(result); err != nil {
-			t.Errorf("%d result mismatch: %v", i, err)
+			t.Errorf("%d (%s) result mismatch: %v", i, test.name, err)
 		}
 	}
 }

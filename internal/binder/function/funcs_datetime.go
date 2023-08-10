@@ -24,9 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-var (
-	errTooManyArguments = errors.New("too many arguments")
-)
+var errTooManyArguments = errors.New("too many arguments")
 
 type IntervalUnit string
 
@@ -415,7 +413,6 @@ func registerDateTimeFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			if err := ValidateLen(1, len(args)); err != nil {
 				return err
-
 			}
 			if ast.IsNumericArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) {
 				return ProduceErrInfo(1, "datetime")
@@ -435,11 +432,9 @@ func registerDateTimeFunc() {
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			if err := ValidateLen(1, len(args)); err != nil {
-
 				return err
 			}
 			if ast.IsNumericArg(args[0]) || ast.IsStringArg(args[0]) || ast.IsBooleanArg(args[0]) {
-
 				return ProduceErrInfo(0, "datetime")
 			}
 			return nil
