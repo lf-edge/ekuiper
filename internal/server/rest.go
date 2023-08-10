@@ -641,11 +641,12 @@ func validateRuleHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	validate, err := validateRule("", string(body))
-	w.WriteHeader(http.StatusOK)
 	if !validate {
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte(err.Error()))
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("The rule has been successfully validated and is confirmed to be correct."))
 }
 
