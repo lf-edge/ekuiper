@@ -239,7 +239,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w2, req2)
 	returnVal, _ = io.ReadAll(w2.Result().Body)
 	expect = `invalid rule json: Missing rule actions.`
-	assert.Equal(suite.T(), http.StatusOK, w2.Code)
+	assert.Equal(suite.T(), http.StatusUnprocessableEntity, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// create rule with trigger false
