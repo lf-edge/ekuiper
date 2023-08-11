@@ -29,6 +29,10 @@ func TestIsInTimeRangeWithLoc(t *testing.T) {
 	isIn, err := isInTimeRangeWithLoc(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03", loc)
 	require.NoError(t, err)
 	require.True(t, isIn)
+	_, err = isInTimeRangeWithLoc(now, "123", layout, loc)
+	require.Error(t, err)
+	_, err = isInTimeRangeWithLoc(now, layout, "123", loc)
+	require.Error(t, err)
 }
 
 func TestIsInTimeRange(t *testing.T) {
@@ -37,6 +41,10 @@ func TestIsInTimeRange(t *testing.T) {
 	isIn, err := isInTimeRange(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03")
 	require.NoError(t, err)
 	require.True(t, isIn)
+	_, err = isInTimeRange(now, "123", "2006-01-02 15:04:03")
+	require.Error(t, err)
+	_, err = isInTimeRange(now, "2006-01-02 15:04:00", "13")
+	require.Error(t, err)
 }
 
 func TestIsRuleInRunningSchedule(t *testing.T) {
