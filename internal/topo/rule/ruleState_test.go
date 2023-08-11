@@ -702,7 +702,7 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 			End:   after.Format(layout),
 		},
 	}
-	const ruleStopped = "Stopped: canceled manually."
+	const ruleStopped = "Stopped: schedule terminated."
 	const ruleStarted = "Running"
 	func() {
 		rs, err := NewRuleState(r)

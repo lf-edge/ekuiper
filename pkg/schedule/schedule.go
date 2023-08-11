@@ -20,6 +20,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 const layout = "2006-01-02 15:04:05"
@@ -38,11 +39,15 @@ func IsInScheduleRanges(now time.Time, timeRanges []api.DatetimeRange) (bool, er
 }
 
 func IsInScheduleRange(now time.Time, start string, end string) (bool, error) {
-	s, err := time.Parse(layout, start)
+	return isInTimeRange(now, start, end)
+}
+
+func isInTimeRange(now time.Time, start string, end string) (bool, error) {
+	s, err := cast.InterfaceToTime(start, layout)
 	if err != nil {
 		return false, err
 	}
-	e, err := time.Parse(layout, end)
+	e, err := cast.InterfaceToTime(end, layout)
 	if err != nil {
 		return false, err
 	}

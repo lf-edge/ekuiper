@@ -19,22 +19,18 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func TestIsInScheduleRanges(t *testing.T) {
+func TestIsInTimeRange(t *testing.T) {
 	now, err := time.Parse(layout, "2006-01-02 15:04:01")
 	require.NoError(t, err)
-	rs := []api.DatetimeRange{
-		{
-			Begin: "2006-01-02 15:04:00",
-			End:   "2006-01-02 15:04:03",
-		},
-	}
-	isIn, err := IsInScheduleRanges(now, rs)
+	isIn, err := isInTimeRange(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03")
 	require.NoError(t, err)
 	require.True(t, isIn)
+	_, err = isInTimeRange(now, "123", "2006-01-02 15:04:03")
+	require.Error(t, err)
+	_, err = isInTimeRange(now, "2006-01-02 15:04:00", "13")
+	require.Error(t, err)
 }
 
 func TestIsRuleInRunningSchedule(t *testing.T) {
@@ -46,21 +42,6 @@ func TestIsRuleInRunningSchedule(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, isInSchedule)
 	require.Equal(t, remainedDuration, time.Second)
-}
-
-func TestIsInScheduleRange(t *testing.T) {
-	now, err := time.Parse(layout, "2006-01-02 15:04:01")
-	require.NoError(t, err)
-	_, err = IsInScheduleRange(now, "", "")
-	require.Error(t, err)
-	_, err = IsInScheduleRange(now, "2006-01-02 15:04:01", "")
-	require.Error(t, err)
-	isIn, err := IsInScheduleRange(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03")
-	require.NoError(t, err)
-	require.True(t, isIn)
-	isIn, err = IsInScheduleRange(now, "2006-01-02 15:05:00", "2006-01-02 15:05:03")
-	require.NoError(t, err)
-	require.False(t, isIn)
 }
 
 func TestIsAfterTimeRange(t *testing.T) {
