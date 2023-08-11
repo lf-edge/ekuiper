@@ -293,6 +293,7 @@ func registerDateTimeFunc() {
 			}
 			return nil
 		},
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["hour"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
