@@ -53,6 +53,7 @@ func init() {
 	registerArrayFunc()
 	registerObjectFunc()
 	registerGlobalStateFunc()
+	registerDateTimeFunc()
 	registerGlobalAggFunc()
 	registerWindowFunc()
 }

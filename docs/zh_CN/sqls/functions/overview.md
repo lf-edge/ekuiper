@@ -10,6 +10,7 @@ eKuiper 具有许多内置函数，可以对数据执行计算。
 - [哈希函数](./hashing_functions.md)
 - [转换函数](./transform_functions.md)
 - [JSON 函数](./json_functions.md)
+- [时间日期函数](./datetime_functions.md)
 - [其他函数](./other_functions.md)
 
 - [分析函数](./analytic_functions.md)

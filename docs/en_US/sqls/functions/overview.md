@@ -10,6 +10,7 @@ eKuiper has many built-in functions for performing calculations on data.
 - [Hashing Functions](./hashing_functions.md)
 - [Transform Functions](./transform_functions.md)
 - [JSON Functions](./json_functions.md)
+- [Date and Time Functions](./datetime_functions.md)
 - [Other Functions](./other_functions.md)
 
 - [Analytic Functions](./analytic_functions.md)

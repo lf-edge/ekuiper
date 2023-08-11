@@ -351,3 +351,12 @@ func convertFormat(f string) (string, error) {
 	}
 	return out, nil
 }
+
+// InterfaceToDuration converts an interface to a time.Duration.
+func InterfaceToDuration(i interface{}) (time.Duration, error) {
+	duration, err := ToString(i, STRICT)
+	if err != nil {
+		return 0, fmt.Errorf("given arguments cannot convert to duration: %q", err)
+	}
+	return time.ParseDuration(duration)
+}

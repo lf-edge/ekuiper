@@ -593,6 +593,10 @@
 							"path": "sqls/functions/json_functions"
 						},
 						{
+							"title": "时间日期函数",
+							"path": "sqls/functions/datetime_functions"
+						},
+						{
 							"title": "其他函数",
 							"path": "sqls/functions/other_functions"
 						},
@@ -1314,6 +1318,10 @@
 						{
 							"title": "JSON Functions",
 							"path": "sqls/functions/json_functions"
+						},
+						{
+							"title": "Date and Time Functions",
+							"path": "sqls/functions/datetime_functions"
 						},
 						{
 							"title": "Other Functions",
