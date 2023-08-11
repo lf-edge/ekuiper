@@ -19,8 +19,8 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 const layout = "2006-01-02 15:04:05"
@@ -39,39 +39,15 @@ func IsInScheduleRanges(now time.Time, timeRanges []api.DatetimeRange) (bool, er
 }
 
 func IsInScheduleRange(now time.Time, start string, end string) (bool, error) {
-	if len(conf.Config.Basic.TimeZone) > 0 {
-		loc, err := time.LoadLocation(conf.Config.Basic.TimeZone)
-		if err != nil {
-			return false, err
-		}
-		return isInTimeRangeWithLoc(now, start, end, loc)
-	}
 	return isInTimeRange(now, start, end)
 }
 
-func isInTimeRangeWithLoc(now time.Time, start string, end string, loc *time.Location) (bool, error) {
-	s, err := time.ParseInLocation(layout, start, loc)
-	if err != nil {
-		return false, err
-	}
-	e, err := time.ParseInLocation(layout, end, loc)
-	if err != nil {
-		return false, err
-	}
-	isBefore := s.Before(now)
-	isAfter := e.After(now)
-	if isBefore && isAfter {
-		return true, nil
-	}
-	return false, nil
-}
-
 func isInTimeRange(now time.Time, start string, end string) (bool, error) {
-	s, err := time.Parse(layout, start)
+	s, err := cast.InterfaceToTime(start, layout)
 	if err != nil {
 		return false, err
 	}
-	e, err := time.Parse(layout, end)
+	e, err := cast.InterfaceToTime(end, layout)
 	if err != nil {
 		return false, err
 	}
