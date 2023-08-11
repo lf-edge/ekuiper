@@ -246,7 +246,7 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				StreamFields: nil,
 				Options:      nil,
 			},
-			err: `found "integer", expect valid stream field types(BIGINT | FLOAT | STRINGS | DATETIME | BOOLEAN | BYTEA | ARRAY | STRUCT).`,
+			err: `found "integer", expect valid stream field types(BIGINT | FLOAT | STRING | DATETIME | BOOLEAN | BYTEA | ARRAY | STRUCT).`,
 		},
 
 		{
