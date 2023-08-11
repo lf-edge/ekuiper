@@ -35,6 +35,7 @@ basic:
     # maxConnections indicates the max connections for the certain database instance group by driver and dsn sharing between the sources/sinks
     # 0 indicates unlimited
     maxConnections: 0
+  rulePatrolInterval: 10s
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
