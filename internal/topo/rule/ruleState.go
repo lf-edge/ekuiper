@@ -433,7 +433,7 @@ func (rs *RuleState) GetState() (string, error) {
 			case nil:
 				result = "Running"
 			case context.Canceled:
-				if rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule {
+				if (rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule) || rs.Rule.IsLongRunningScheduleRule() {
 					if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 						result = "Stopped: schedule terminated."
 					} else {
@@ -448,7 +448,7 @@ func (rs *RuleState) GetState() (string, error) {
 				result = fmt.Sprintf("Stopped: %v.", err)
 			}
 		} else {
-			if rs.cronState.isInSchedule {
+			if rs.cronState.isInSchedule || rs.Rule.IsLongRunningScheduleRule() {
 				if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 					result = "Stopped: schedule terminated."
 				} else {
