@@ -19,20 +19,22 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func TestIsInScheduleRanges(t *testing.T) {
+func TestIsInTimeRangeWithLoc(t *testing.T) {
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	require.NoError(t, err)
+	now, err := time.ParseInLocation(layout, "2006-01-02 15:04:01", loc)
+	require.NoError(t, err)
+	isIn, err := isInTimeRangeWithLoc(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03", loc)
+	require.NoError(t, err)
+	require.True(t, isIn)
+}
+
+func TestIsInTimeRange(t *testing.T) {
 	now, err := time.Parse(layout, "2006-01-02 15:04:01")
 	require.NoError(t, err)
-	rs := []api.DatetimeRange{
-		{
-			Begin: "2006-01-02 15:04:00",
-			End:   "2006-01-02 15:04:03",
-		},
-	}
-	isIn, err := IsInScheduleRanges(now, rs)
+	isIn, err := isInTimeRange(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03")
 	require.NoError(t, err)
 	require.True(t, isIn)
 }

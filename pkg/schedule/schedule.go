@@ -39,34 +39,44 @@ func IsInScheduleRanges(now time.Time, timeRanges []api.DatetimeRange) (bool, er
 }
 
 func IsInScheduleRange(now time.Time, start string, end string) (bool, error) {
-	var isBefore, isAfter bool
 	if len(conf.Config.Basic.TimeZone) > 0 {
 		loc, err := time.LoadLocation(conf.Config.Basic.TimeZone)
 		if err != nil {
 			return false, err
 		}
-		s, err := time.ParseInLocation(layout, start, loc)
-		if err != nil {
-			return false, err
-		}
-		e, err := time.ParseInLocation(layout, end, loc)
-		if err != nil {
-			return false, err
-		}
-		isBefore = s.Before(now)
-		isAfter = e.After(now)
-	} else {
-		s, err := time.Parse(layout, start)
-		if err != nil {
-			return false, err
-		}
-		e, err := time.Parse(layout, end)
-		if err != nil {
-			return false, err
-		}
-		isBefore = s.Before(now)
-		isAfter = e.After(now)
+		return isInTimeRangeWithLoc(now, start, end, loc)
 	}
+	return isInTimeRange(now, start, end)
+}
+
+func isInTimeRangeWithLoc(now time.Time, start string, end string, loc *time.Location) (bool, error) {
+	s, err := time.ParseInLocation(layout, start, loc)
+	if err != nil {
+		return false, err
+	}
+	e, err := time.ParseInLocation(layout, end, loc)
+	if err != nil {
+		return false, err
+	}
+	isBefore := s.Before(now)
+	isAfter := e.After(now)
+	if isBefore && isAfter {
+		return true, nil
+	}
+	return false, nil
+}
+
+func isInTimeRange(now time.Time, start string, end string) (bool, error) {
+	s, err := time.Parse(layout, start)
+	if err != nil {
+		return false, err
+	}
+	e, err := time.Parse(layout, end)
+	if err != nil {
+		return false, err
+	}
+	isBefore := s.Before(now)
+	isAfter := e.After(now)
 	if isBefore && isAfter {
 		return true, nil
 	}
