@@ -773,6 +773,52 @@ func TestArrayShuffle(t *testing.T) {
 	}
 }
 
+func TestArrayJoin(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		name   string
+		args   []interface{}
+		result string
+	}{
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"1", "2", "3"}, ":",
+			},
+			result: "1:2:3",
+		},
+		{
+			name: "array_join",
+			args: []interface{}{
+				[]interface{}{"1", nil, "3"}, ":", "nullReplacement",
+			},
+			result: "1:nullReplacement:3",
+		},
+	}
+
+	for i, tt := range tests {
+		f, ok := builtins[tt.name]
+		if !ok {
+			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
+		}
+		result, _ := f.exec(fctx, tt.args)
+		flag := false
+		for _, actual := range tt.result {
+			if reflect.DeepEqual(result, actual) {
+				flag = true
+				break
+			}
+		}
+
+		if !flag {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant in:\t%v", i, result, tt.result)
+		}
+	}
+}
+
 func TestArrayFuncNil(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)

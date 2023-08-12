@@ -28,6 +28,8 @@ import (
 var (
 	errorArrayFirstArgumentNotArrayError   = fmt.Errorf("first argument should be array of interface{}")
 	errorArrayIndex                        = fmt.Errorf("index out of range")
+	errorArrayArgumentNotArrayError        = fmt.Errorf("argument should be array of interface{}")
+	errorArrayArgumentNotStringError       = fmt.Errorf("argument should be string")
 	errorArraySecondArgumentNotArrayError  = fmt.Errorf("second argument should be array of interface{}")
 	errorArrayFirstArgumentNotIntError     = fmt.Errorf("first argument should be int")
 	errorArrayFirstArgumentNotStringError  = fmt.Errorf("first argument should be string")
@@ -37,6 +39,7 @@ var (
 	errorArrayThirdArgumentNotStringError  = fmt.Errorf("third argument should be string")
 	errorArrayNotArrayElementError         = fmt.Errorf("array elements should be array")
 	errorArrayNotStringElementError        = fmt.Errorf("array elements should be string")
+	errorWrongNumberParametersError        = fmt.Errorf("wrong argument number")
 )
 
 func registerArrayFunc() {
@@ -640,6 +643,49 @@ func registerArrayFunc() {
 			}
 
 			return res, true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateAtLeast(1, len(args))
+		},
+		check: returnNilIfHasAnyNil,
+	}
+	// array_join(args[array,delimiter,nullReplacement]) and array accepts only string types.
+	builtins["array_join"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) < 2 {
+				return errorWrongNumberParametersError, false
+			}
+			array, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayArgumentNotArrayError, false
+			}
+			for _, a := range array {
+				if _, ok := a.(string); !ok {
+					return errorArrayArgumentNotStringError, false
+				}
+			}
+			delimiter, ok := args[1].(string)
+			if !ok {
+				return errorArrayArgumentNotStringError, false
+			}
+
+			var nullReplacement string
+			if len(args) == 3 {
+				nullReplacement, ok = args[2].(string)
+				if !ok {
+					return errorArrayArgumentNotStringError, false
+				}
+			}
+
+			joinedArray := make([]string, 0, len(array))
+			for i, arg := range args {
+				if arg == "" || arg == nil {
+					joinedArray[i] = nullReplacement
+				}
+				joinedArray[i] = fmt.Sprintf("%s", arg)
+			}
+			return strings.Join(joinedArray, delimiter), true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateAtLeast(1, len(args))
