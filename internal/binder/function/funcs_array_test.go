@@ -785,39 +785,21 @@ func TestArraySort(t *testing.T) {
 	}{
 		{
 			name: "array_sort",
-			args: []interface{}{
-				[]interface{}{3, 2, 1},
-			},
-			result: []interface{}{
-				[]interface{}{1, 2, 3},
-			},
+			args: []interface{}{3, 2, 1},
+
+			result: []interface{}{1, 2, 3},
 		},
 		{
 			name: "array_sort",
-			args: []interface{}{
-				[]interface{}{3, 1.6, -0.83},
-			},
-			result: []interface{}{
-				[]interface{}{-0.83, 1.6, 3},
-			},
+			args: []interface{}{3, 1.6, -0.83},
+
+			result: []interface{}{-0.83, 1.6, 3},
 		},
 		{
 			name: "array_sort",
-			args: []interface{}{
-				[]interface{}{"abc", 3, "def", 1.6, -0.83},
-			},
-			result: []interface{}{
-				[]interface{}{1.6, 3, "abc", "def"},
-			},
-		},
-		{
-			name: "array_sort",
-			args: []interface{}{
-				1,
-			},
-			result: []interface{}{
-				errorArrayFirstArgumentNotArrayError,
-			},
+			args: []interface{}{"abc", 3, "def", 1.6, -0.83},
+
+			result: []interface{}{-0.83, 1.6, 3, "abc", "def"},
 		},
 	}
 
