@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -148,6 +149,71 @@ func registerObjectFunc() {
 					res[k] = v
 				}
 			}
+			return res, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			return ValidateAtLeast(2, len(args))
+		},
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["merge"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) != 2 {
+				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
+			}
+			res := make(map[string]interface{})
+			for i, arg := range args {
+				arg, ok := arg.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("the argument should be map[string]interface{}, got %v", args[i]), false
+				}
+				for k, v := range arg {
+					res[k] = v
+				}
+			}
+			return res, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			return ValidateAtLeast(2, len(args))
+		},
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["ERASE"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) != 2 {
+				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
+			}
+			res := make(map[string]interface{})
+			argMap, ok := args[0].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("the first argument should be map[string]interface{}, got %v", args[0]), false
+			}
+			eraseArray := make([]string, 0)
+			v := reflect.ValueOf(args[1])
+			switch v.Kind() {
+			case reflect.Slice:
+			case reflect.Array:
+				array := args[1].([]string)
+				eraseArray = append(eraseArray, array...)
+			case reflect.String:
+				str := args[1].(string)
+				for k, v := range argMap {
+					if k != str {
+						res[k] = v
+					}
+				}
+				return res, true
+			}
+			for k, v := range argMap {
+				for _, eraseStr := range eraseArray {
+					if k != eraseStr {
+						res[k] = v
+					}
+				}
+			}
+
 			return res, true
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {

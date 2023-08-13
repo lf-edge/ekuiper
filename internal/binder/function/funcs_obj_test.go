@@ -251,6 +251,70 @@ func TestObjectFunctions(t *testing.T) {
 			},
 			result: fmt.Errorf("the argument should be map[string]interface{}, got %v", []interface{}{1, 2}),
 		},
+		{
+			name: "merge",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				map[string]interface{}{
+					"b": 3,
+					"c": 4,
+				},
+			},
+			result: map[string]interface{}{
+				"a": 1,
+				"b": 3,
+				"c": 4,
+			},
+		},
+		{
+			name: "erase",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				"a",
+			},
+			result: map[string]interface{}{
+				"b": 2,
+			},
+		},
+		{
+			name: "erase",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+				[]string{
+					"a",
+					"b",
+				},
+			},
+			result: map[string]interface{}{
+				"c": 3,
+			},
+		},
+		{
+			name: "erase",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+				[]string{
+					"a",
+					"b",
+				},
+				"c",
+			},
+			result: fmt.Errorf("the argument number should be 2, got 3"),
+		},
 	}
 	for i, tt := range tests {
 		f, ok := builtins[tt.name]
