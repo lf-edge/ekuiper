@@ -812,7 +812,6 @@ func TestArraySort(t *testing.T) {
 		flag := false
 		if reflect.DeepEqual(result, tt.result) {
 			flag = true
-			break
 		}
 
 		if !flag {
