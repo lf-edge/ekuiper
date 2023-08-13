@@ -810,11 +810,9 @@ func TestArraySort(t *testing.T) {
 		}
 		result, _ := f.exec(fctx, tt.args)
 		flag := false
-		for _, actual := range tt.result {
-			if reflect.DeepEqual(result, actual) {
-				flag = true
-				break
-			}
+		if reflect.DeepEqual(result, tt.result) {
+			flag = true
+			break
 		}
 
 		if !flag {
