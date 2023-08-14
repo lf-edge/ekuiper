@@ -16,11 +16,11 @@ package function
 
 import (
 	"fmt"
-	"github.com/spf13/cast"
 	"reflect"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/spf13/cast"
 )
 
 func registerObjectFunc() {
