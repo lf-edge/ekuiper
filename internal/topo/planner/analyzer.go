@@ -256,13 +256,9 @@ func checkAliasReferenceCycle(s *ast.SelectStatement) bool {
 						_, ok := aliasRef[f.Name]
 						if ok {
 							aliasRef[field.AName][f.Name] = struct{}{}
-							v, ok1 := aliasRef[f.Name]
-							if ok1 {
-								_, ok2 := v[field.AName]
-								if ok2 {
-									hasCycleAlias = true
-									return false
-								}
+							if dfsRef(aliasRef, map[string]struct{}{}, f.Name, field.AName) {
+								hasCycleAlias = true
+								return false
 							}
 						}
 					}
@@ -272,6 +268,27 @@ func checkAliasReferenceCycle(s *ast.SelectStatement) bool {
 			if hasCycleAlias {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func dfsRef(aliasRef map[string]map[string]struct{}, walked map[string]struct{}, currentName, targetName string) bool {
+	defer func() {
+		walked[currentName] = struct{}{}
+	}()
+	for refName := range aliasRef[currentName] {
+		if refName == targetName {
+			return true
+		}
+	}
+	for name := range aliasRef[currentName] {
+		_, ok := walked[name]
+		if ok {
+			continue
+		}
+		if dfsRef(aliasRef, walked, name, targetName) {
+			return true
 		}
 	}
 	return false
