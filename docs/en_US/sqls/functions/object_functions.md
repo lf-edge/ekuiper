@@ -150,6 +150,7 @@ result:
 ```text
 erase(obj, k)
 ```
+
 If k is a string, return a new object where the key k is erased. If k is an array of strings, return a new object where the keys in k are erased.
 
 ```sql
