@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"github.com/spf13/cast"
 	"reflect"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -179,7 +180,7 @@ func registerObjectFunc() {
 			v := reflect.ValueOf(args[1])
 			switch v.Kind() {
 			case reflect.Slice, reflect.Array:
-				array := args[1].([]string)
+				array := cast.ToStringSlice(args[1])
 				eraseArray = append(eraseArray, array...)
 			case reflect.String:
 				str := args[1].(string)
