@@ -144,3 +144,20 @@ result:
 ```sql
 {"a":1, "b":3}
 ```
+
+## ERASE
+
+```text
+erase(obj, k)
+```
+If k is a string, return a new object where the key k is erased. If k is an array of strings, return a new object where the keys in k are erased.
+
+```sql
+erase({"baz": [1, 2, 3], "bar": 'hello world',"foo":'emq'}, 'foo')
+```
+
+result:
+
+```sql
+{"baz": [1, 2, 3], "bar": 'hello world'}
+```
