@@ -262,7 +262,7 @@ func registerGlobalAggFunc() {
 			}
 			if v1 == nil && v2 == nil {
 				if args[0] == nil || !validData {
-					return 0, true
+					return 0, false
 				}
 
 				v1 = float64(0)
@@ -317,7 +317,7 @@ func registerGlobalAggFunc() {
 			}
 			if val == nil {
 				if !validData {
-					return nil, false
+					return 0, false
 				}
 				val = float64(math.MinInt64)
 			}
@@ -366,7 +366,7 @@ func registerGlobalAggFunc() {
 			}
 			if val == nil {
 				if !validData {
-					return nil, false
+					return 0, false
 				}
 				val = float64(math.MaxInt64)
 			}
@@ -415,7 +415,7 @@ func registerGlobalAggFunc() {
 			}
 			if val == nil {
 				if !validData {
-					return nil, false
+					return 0, false
 				}
 				val = float64(0)
 			}
@@ -460,7 +460,7 @@ func registerGlobalAggFunc() {
 			}
 			if val == nil {
 				if !validData {
-					return nil, false
+					return 0, false
 				}
 				val = 0
 			}
