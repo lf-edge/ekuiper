@@ -773,6 +773,53 @@ func TestArrayShuffle(t *testing.T) {
 	}
 }
 
+func TestArraySort(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		name   string
+		args   []interface{}
+		result []interface{}
+	}{
+		{
+			name: "array_sort",
+			args: []interface{}{3, 2, 1},
+
+			result: []interface{}{1, 2, 3},
+		},
+		{
+			name: "array_sort",
+			args: []interface{}{3, 1.6, -0.83},
+
+			result: []interface{}{-0.83, 1.6, 3},
+		},
+		{
+			name: "array_sort",
+			args: []interface{}{"abc", 3, "def", 1.6, -0.83},
+
+			result: []interface{}{-0.83, 1.6, 3, "abc", "def"},
+		},
+	}
+
+	for i, tt := range tests {
+		f, ok := builtins[tt.name]
+		if !ok {
+			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
+		}
+		result, _ := f.exec(fctx, tt.args)
+		flag := false
+		if reflect.DeepEqual(result, tt.result) {
+			flag = true
+		}
+
+		if !flag {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant in:\t%v", i, result, tt.result)
+		}
+	}
+}
+
 func TestArrayFuncNil(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)

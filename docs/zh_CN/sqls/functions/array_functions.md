@@ -182,3 +182,21 @@ array_concat(array1, array2, ...)
 ```
 
 用于合并两个或多个数组。此函数不会更改现有数组，而是返回一个新的数组。
+
+## ARRAY_SORT
+
+```text
+array_sort(array)
+```
+
+返回输入数组的排序副本。
+
+```sql
+array_sort([3, 2, "b", "a"])
+```
+
+结果:
+
+```sql
+[2, 3, "a", "b"]
+```

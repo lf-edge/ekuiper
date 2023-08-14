@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -619,6 +620,42 @@ func registerArrayFunc() {
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
+		},
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["array_sort"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			t := reflect.TypeOf(args)
+			k := t.Kind()
+			if k != reflect.Slice && k != reflect.Array {
+				return errorArrayNotArrayElementError, false
+			}
+			inValue := reflect.ValueOf(args)
+			inLen := inValue.Len()
+
+			if inLen <= 1 {
+				return args, true
+			}
+
+			sliceType := reflect.SliceOf(inValue.Index(0).Type())
+			outValue := reflect.MakeSlice(sliceType, inLen, inLen)
+
+			for i := 0; i < inLen; i++ {
+				outValue.Index(i).Set(inValue.Index(i))
+			}
+
+			// Sort the slice if it contains elements that are comparable
+			if inLen > 1 {
+				sort.Slice(outValue.Interface(), func(i, j int) bool {
+					return fmt.Sprint(outValue.Index(i).Interface()) < fmt.Sprint(outValue.Index(j).Interface())
+				})
+			}
+
+			return outValue.Interface(), true
+		},
+		val: func(ctx api.FunctionContext, args []ast.Expr) error {
+			return ValidateAtLeast(1, len(args))
 		},
 		check: returnNilIfHasAnyNil,
 	}
