@@ -474,7 +474,6 @@ func validFspArgs() funcVal {
 
 func execGetCurrentDateTime(timeOnly bool) funcExe {
 	return func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-
 		fsp := 0
 		switch len(args) {
 		case 0:
