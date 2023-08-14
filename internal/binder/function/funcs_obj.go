@@ -159,6 +159,14 @@ func registerObjectFunc() {
 	builtins["erase"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			contains := func(array []string, target string) bool {
+				for _, v := range array {
+					if target == v {
+						return true
+					}
+				}
+				return false
+			}
 			if len(args) != 2 {
 				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
 			}
@@ -170,8 +178,7 @@ func registerObjectFunc() {
 			eraseArray := make([]string, 0)
 			v := reflect.ValueOf(args[1])
 			switch v.Kind() {
-			case reflect.Slice:
-			case reflect.Array:
+			case reflect.Slice, reflect.Array:
 				array := args[1].([]string)
 				eraseArray = append(eraseArray, array...)
 			case reflect.String:
@@ -184,10 +191,8 @@ func registerObjectFunc() {
 				return res, true
 			}
 			for k, v := range argMap {
-				for _, eraseStr := range eraseArray {
-					if k != eraseStr {
-						res[k] = v
-					}
+				if !contains(eraseArray, k) {
+					res[k] = v
 				}
 			}
 
