@@ -64,7 +64,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&loadFileType, "loadFileTye", "", "loadFileType indicates the how to load path")
+	flag.StringVar(&loadFileType, "loadFileType", "", "loadFileType indicates the how to load path")
 	flag.StringVar(&etcPath, "etc", "", "etc indicates the path of etc dir")
 
 	flag.Parse()
