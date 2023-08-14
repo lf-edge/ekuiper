@@ -904,3 +904,13 @@ func TestTimeFunctionWithTZ(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, result.(string), "2023-08-14 14:38:25")
 }
+
+func TestValidateFsp(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	f := validFspArgs()
+	err := f(fctx, []ast.Expr{})
+	require.NoError(t, err)
+}
