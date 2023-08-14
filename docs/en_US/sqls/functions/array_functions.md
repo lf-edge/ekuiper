@@ -183,3 +183,21 @@ array_concat(array1, array2, ...)
 ```
 
 Returns the concatenation of the input arrays, this function does not modify the existing arrays, but returns new one.
+
+## ARRAY_SORT
+
+```text
+array_sort(array)
+```
+
+Returns a sorted copy of the input array.
+
+```sql
+array_sort([3, 2, "b", "a"])
+```
+
+Result:
+
+```sql
+[2, 3, "a", "b"]
+```
