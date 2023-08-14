@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -276,8 +277,7 @@ func registerDateTimeFunc() {
 			if seconds == 0 {
 				return nil, true
 			}
-
-			t := time.Unix(int64(seconds), 0)
+			t := time.Unix(int64(seconds), 0).In(cast.GetLocalTimeZone())
 			result, err := cast.FormatTime(t, "yyyy-MM-dd HH:mm:ss")
 			if err != nil {
 				return err, false
@@ -456,6 +456,10 @@ func execGetCurrentDate() funcExe {
 // validFspArgs returns a function that validates the 'fsp' arg.
 func validFspArgs() funcVal {
 	return func(ctx api.FunctionContext, args []ast.Expr) error {
+		if len(args) < 1 {
+			return nil
+		}
+
 		if len(args) > 1 {
 			return errTooManyArguments
 		}
@@ -470,11 +474,14 @@ func validFspArgs() funcVal {
 
 func execGetCurrentDateTime(timeOnly bool) funcExe {
 	return func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+
 		fsp := 0
-		if len(args) == 1 {
+		switch len(args) {
+		case 0:
+			fsp = 0
+		default:
 			fsp = args[0].(int)
 		}
-
 		formatted, err := getCurrentWithFsp(fsp, timeOnly)
 		if err != nil {
 			return err, false
@@ -486,8 +493,7 @@ func execGetCurrentDateTime(timeOnly bool) funcExe {
 // getCurrentWithFsp returns the current date/time with the specified number of fractional seconds precision.
 func getCurrentWithFsp(fsp int, timeOnly bool) (string, error) {
 	format := "yyyy-MM-dd HH:mm:ss"
-	now := time.Now()
-
+	now := conf.GetNow().In(cast.GetLocalTimeZone())
 	switch fsp {
 	case 1:
 		format += ".S"
