@@ -156,30 +156,7 @@ func registerObjectFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
-	builtins["merge"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if len(args) != 2 {
-				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
-			}
-			res := make(map[string]interface{})
-			for i, arg := range args {
-				arg, ok := arg.(map[string]interface{})
-				if !ok {
-					return fmt.Errorf("the argument should be map[string]interface{}, got %v", args[i]), false
-				}
-				for k, v := range arg {
-					res[k] = v
-				}
-			}
-			return res, true
-		},
-		val: func(_ api.FunctionContext, args []ast.Expr) error {
-			return ValidateAtLeast(2, len(args))
-		},
-		check: returnNilIfHasAnyNil,
-	}
-	builtins["ERASE"] = builtinFunc{
+	builtins["erase"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if len(args) != 2 {
