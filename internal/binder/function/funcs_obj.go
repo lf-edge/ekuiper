@@ -20,7 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/spf13/cast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 func registerObjectFunc() {
@@ -179,8 +179,11 @@ func registerObjectFunc() {
 			eraseArray := make([]string, 0)
 			v := reflect.ValueOf(args[1])
 			switch v.Kind() {
-			case reflect.Slice, reflect.Array:
-				array := cast.ToStringSlice(args[1])
+			case reflect.Slice:
+				array, err := cast.ToStringSlice(args[1], cast.CONVERT_ALL)
+				if err != nil {
+					return err, false
+				}
 				eraseArray = append(eraseArray, array...)
 			case reflect.String:
 				str := args[1].(string)
@@ -190,6 +193,8 @@ func registerObjectFunc() {
 					}
 				}
 				return res, true
+			default:
+				return fmt.Errorf("the augument should be slice or string"), false
 			}
 			for k, v := range argMap {
 				if !contains(eraseArray, k) {
