@@ -15,6 +15,7 @@
 package cast
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
@@ -22,14 +23,16 @@ import (
 )
 
 func TestTimeToAndFromMilli(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		m int64
 		t time.Time
 	}{
-		{int64(1579140864913), time.Date(2020, time.January, 16, 10, 14, 24, 913000000, time.Local)},
-		{int64(4913), time.Date(1970, time.January, 1, 8, 0, 4, 913000000, time.Local)},
-		{int64(2579140864913), time.Date(2051, time.September, 24, 12, 1, 4, 913000000, time.Local)},
-		{int64(-1579140864913), time.Date(1919, time.December, 18, 5, 45, 35, 87000000, time.Local)},
+		{int64(1579140864913), time.Date(2020, time.January, 16, 10, 14, 24, 913000000, GetConfiguredTimeZone())},
+		{int64(4913), time.Date(1970, time.January, 1, 8, 0, 4, 913000000, GetConfiguredTimeZone())},
+		{int64(2579140864913), time.Date(2051, time.September, 24, 12, 1, 4, 913000000, GetConfiguredTimeZone())},
+		{int64(-1579140864913), time.Date(1919, time.December, 18, 5, 45, 35, 87000000, GetConfiguredTimeZone())},
 	}
 	for i, tt := range tests {
 		time := TimeFromUnixMilli(tt.m)
@@ -118,6 +121,8 @@ func TestParseTime(t *testing.T) {
 }
 
 func TestInterfaceToTime(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		i       interface{}
 		f       string
@@ -127,55 +132,55 @@ func TestInterfaceToTime(t *testing.T) {
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 6:22:32.2",
 			"YYYY-MM-dd h:m:sS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 200000000, time.Local),
+			time.Date(2022, time.April, 13, 6, 22, 32, 200000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 6:22:32.23",
 			"YYYY-MM-dd h:m:sSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 230000000, time.Local),
+			time.Date(2022, time.April, 13, 6, 22, 32, 230000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 Wed 06:22:32.233",
 			"YYYY-MM-dd EEE HH:m:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 Wednesday 06:22:32.233",
 			"YYYY-MM-dd EEEE HH:m:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			1649830952233,
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			int64(1649830952233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			float64(1649830952233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
-			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
