@@ -78,6 +78,8 @@ func TestFormatTime(t *testing.T) {
 }
 
 func TestParseTime(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		d       time.Time
 		t       string
@@ -85,19 +87,19 @@ func TestParseTime(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.Local),
+			time.Date(2020, time.January, 16, 2, 14, 24, 913000000, GetConfiguredTimeZone()),
 			"2020-01-16 02:14:24.913",
 			"YYYY-MM-dd HH:mm:ssSSS",
 			false,
 		},
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.Local),
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, GetConfiguredTimeZone()),
 			"2020-01-16 02:14:24",
 			"YYYY-MM-dd HH:mm:ss",
 			false,
 		},
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.Local),
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, GetConfiguredTimeZone()),
 			"2020-01-16 02:14:24",
 			"",
 			false,
@@ -208,6 +210,8 @@ func TestInterfaceToTime(t *testing.T) {
 }
 
 func TestInterfaceToUnixMilli(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		i       interface{}
 		f       string
@@ -217,43 +221,43 @@ func TestInterfaceToUnixMilli(t *testing.T) {
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			1649830952233,
+			1649802152233,
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			int64(1649830952233),
+			int64(1649802152233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			float64(1649830952233),
+			float64(1649802152233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYy-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			true,
 		},
 		{
 			struct{}{},
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			true,
 		},
 	}
