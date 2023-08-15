@@ -1461,4 +1461,41 @@ func TestAccumulateAgg(t *testing.T) {
 			require.Equal(t, test.results[i], result)
 		}
 	}
+
+	tests2 := []struct {
+		name   string
+		result interface{}
+	}{
+		{
+			"acc_sum",
+			float64(0),
+		},
+		{
+			"acc_max",
+			0,
+		},
+		{
+			"acc_min",
+			0,
+		},
+		{
+			"acc_avg",
+			float64(0),
+		},
+		{
+			"acc_count",
+			0,
+		},
+	}
+	for _, test := range tests2 {
+		f, ok := builtins[test.name]
+		require.True(t, ok)
+		contextLogger := conf.Log.WithField("rule", "testExec")
+		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+		fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+		result, b := f.exec(fctx, []interface{}{1, false, fmt.Sprintf("%s_key", test.name)})
+		require.True(t, b)
+		require.Equal(t, test.result, result)
+	}
 }
