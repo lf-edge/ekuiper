@@ -74,7 +74,7 @@ func GetConfiguredTimeZone() *time.Location {
 	return localTimeZone
 }
 
-var localTimeZone = time.UTC
+var localTimeZone = time.Local
 
 func SetTimeZone(name string) error {
 	loc, err := time.LoadLocation(name)
