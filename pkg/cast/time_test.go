@@ -26,10 +26,10 @@ func TestTimeToAndFromMilli(t *testing.T) {
 		m int64
 		t time.Time
 	}{
-		{int64(1579140864913), time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC)},
-		{int64(4913), time.Date(1970, time.January, 1, 0, 0, 4, 913000000, time.UTC)},
-		{int64(2579140864913), time.Date(2051, time.September, 24, 4, 1, 4, 913000000, time.UTC)},
-		{int64(-1579140864913), time.Date(1919, time.December, 17, 21, 45, 35, 87000000, time.UTC)},
+		{int64(1579140864913), time.Date(2020, time.January, 16, 10, 14, 24, 913000000, time.Local)},
+		{int64(4913), time.Date(1970, time.January, 1, 8, 0, 4, 913000000, time.Local)},
+		{int64(2579140864913), time.Date(2051, time.September, 24, 12, 1, 4, 913000000, time.Local)},
+		{int64(-1579140864913), time.Date(1919, time.December, 18, 5, 45, 35, 87000000, time.Local)},
 	}
 	for i, tt := range tests {
 		time := TimeFromUnixMilli(tt.m)
@@ -82,19 +82,19 @@ func TestParseTime(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC),
+			time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.Local),
 			"2020-01-16 02:14:24.913",
 			"YYYY-MM-dd HH:mm:ssSSS",
 			false,
 		},
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.UTC),
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.Local),
 			"2020-01-16 02:14:24",
 			"YYYY-MM-dd HH:mm:ss",
 			false,
 		},
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.UTC),
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.Local),
 			"2020-01-16 02:14:24",
 			"",
 			false,
@@ -127,67 +127,67 @@ func TestInterfaceToTime(t *testing.T) {
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
 			false,
 		},
 		{
 			"2022-04-13 6:22:32.2",
 			"YYYY-MM-dd h:m:sS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 200000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 200000000, time.Local),
 			false,
 		},
 		{
 			"2022-04-13 6:22:32.23",
 			"YYYY-MM-dd h:m:sSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 230000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 230000000, time.Local),
 			false,
 		},
 		{
 			"2022-04-13 Wed 06:22:32.233",
 			"YYYY-MM-dd EEE HH:m:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
 			false,
 		},
 		{
 			"2022-04-13 Wednesday 06:22:32.233",
 			"YYYY-MM-dd EEEE HH:m:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
 			false,
 		},
 		{
 			1649830952233,
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
 			false,
 		},
 		{
 			int64(1649830952233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
 			false,
 		},
 		{
 			float64(1649830952233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
 			false,
 		},
 		{
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
 			false,
 		},
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYy-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
 			true,
 		},
 		{
 			struct{}{},
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
 			true,
 		},
 	}
