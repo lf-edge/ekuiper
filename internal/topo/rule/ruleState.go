@@ -147,6 +147,7 @@ func (rs *RuleState) run() {
 				if ctx != nil {
 					conf.Log.Warnf("rule %s is already started", rs.RuleId)
 				} else {
+					conf.Log.Debugf("rule %v started", rs.RuleId)
 
 					ctx, cancel = context.WithCancel(context.Background())
 					go rs.runTopo(ctx)
@@ -154,6 +155,7 @@ func (rs *RuleState) run() {
 			case ActionSignalStop:
 				// Stop the running loop
 				if cancel != nil {
+					conf.Log.Debugf("rule %v stopped", rs.RuleId)
 					cancel()
 					ctx = nil
 					cancel = nil
