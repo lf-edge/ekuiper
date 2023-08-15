@@ -261,10 +261,9 @@ func registerGlobalAggFunc() {
 				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
 			}
 			if v1 == nil && v2 == nil {
-				if args[0] == nil || !validData {
+				if !validData {
 					return 0, false
 				}
-
 				v1 = float64(0)
 				v2 = float64(0)
 			} else {
