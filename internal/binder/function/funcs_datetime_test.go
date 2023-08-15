@@ -21,6 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/benbjohnson/clock"
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
@@ -862,4 +865,56 @@ func TestDateTimeFunctions(t *testing.T) {
 			t.Errorf("\n%s: %q", test.testCaseName, err)
 		}
 	}
+}
+
+const layout = "2006-01-02 15:04:05"
+
+func TestTimeFunctionWithTZ(t *testing.T) {
+	l1, err := time.LoadLocation("UTC")
+	require.NoError(t, err)
+	l2, err := time.LoadLocation("Asia/Shanghai")
+	require.NoError(t, err)
+	err = cast.SetTimeZone("UTC")
+	require.NoError(t, err)
+	now := time.Now().In(l1)
+	m := conf.Clock.(*clock.Mock)
+	m.Set(now)
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	f, ok := builtins["now"]
+	require.True(t, ok)
+	result, ok := f.exec(fctx, []interface{}{})
+	require.True(t, ok)
+	require.Equal(t, result.(string), now.Format(layout))
+	err = cast.SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
+	result, ok = f.exec(fctx, []interface{}{})
+	require.True(t, ok)
+	require.Equal(t, result.(string), now.In(l2).Format(layout))
+
+	err = cast.SetTimeZone("UTC")
+	require.NoError(t, err)
+	f, ok = builtins["from_unix_time"]
+	require.True(t, ok)
+	result, ok = f.exec(fctx, []interface{}{1691995105})
+	require.True(t, ok)
+	require.Equal(t, result.(string), "2023-08-14 06:38:25")
+
+	err = cast.SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
+	result, ok = f.exec(fctx, []interface{}{1691995105})
+	require.True(t, ok)
+	require.Equal(t, result.(string), "2023-08-14 14:38:25")
+}
+
+func TestValidateFsp(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	f := validFspArgs()
+	err := f(fctx, []ast.Expr{})
+	require.NoError(t, err)
 }

@@ -17,8 +17,8 @@ basic:
   restIp: 0.0.0.0
   # REST service port
   restPort: 9081
-  # The global time zone from the IANA time zone database, or UTC if not set.
-  timezone: UTC
+  # The global time zone from the IANA time zone database, or Local if not set.
+  timezone: Local
   # true|false, when true, will check the RSA jwt token for rest api
   authentication: false
   #  restTls:

@@ -19,17 +19,20 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTimeToAndFromMilli(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		m int64
 		t time.Time
 	}{
-		{int64(1579140864913), time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC)},
-		{int64(4913), time.Date(1970, time.January, 1, 0, 0, 4, 913000000, time.UTC)},
-		{int64(2579140864913), time.Date(2051, time.September, 24, 4, 1, 4, 913000000, time.UTC)},
-		{int64(-1579140864913), time.Date(1919, time.December, 17, 21, 45, 35, 87000000, time.UTC)},
+		{int64(1579140864913), time.Date(2020, time.January, 16, 10, 14, 24, 913000000, GetConfiguredTimeZone())},
+		{int64(4913), time.Date(1970, time.January, 1, 8, 0, 4, 913000000, GetConfiguredTimeZone())},
+		{int64(2579140864913), time.Date(2051, time.September, 24, 12, 1, 4, 913000000, GetConfiguredTimeZone())},
+		{int64(-1579140864913), time.Date(1919, time.December, 18, 5, 45, 35, 87000000, GetConfiguredTimeZone())},
 	}
 	for i, tt := range tests {
 		time := TimeFromUnixMilli(tt.m)
@@ -75,6 +78,8 @@ func TestFormatTime(t *testing.T) {
 }
 
 func TestParseTime(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		d       time.Time
 		t       string
@@ -82,19 +87,19 @@ func TestParseTime(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 913000000, time.UTC),
+			time.Date(2020, time.January, 16, 2, 14, 24, 913000000, GetConfiguredTimeZone()),
 			"2020-01-16 02:14:24.913",
 			"YYYY-MM-dd HH:mm:ssSSS",
 			false,
 		},
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.UTC),
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, GetConfiguredTimeZone()),
 			"2020-01-16 02:14:24",
 			"YYYY-MM-dd HH:mm:ss",
 			false,
 		},
 		{
-			time.Date(2020, time.January, 16, 2, 14, 24, 0, time.UTC),
+			time.Date(2020, time.January, 16, 2, 14, 24, 0, GetConfiguredTimeZone()),
 			"2020-01-16 02:14:24",
 			"",
 			false,
@@ -118,6 +123,8 @@ func TestParseTime(t *testing.T) {
 }
 
 func TestInterfaceToTime(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		i       interface{}
 		f       string
@@ -127,67 +134,67 @@ func TestInterfaceToTime(t *testing.T) {
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 6:22:32.2",
 			"YYYY-MM-dd h:m:sS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 200000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 200000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 6:22:32.23",
 			"YYYY-MM-dd h:m:sSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 230000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 230000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 Wed 06:22:32.233",
 			"YYYY-MM-dd EEE HH:m:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 Wednesday 06:22:32.233",
 			"YYYY-MM-dd EEEE HH:m:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			1649830952233,
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			int64(1649830952233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			float64(1649830952233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, GetConfiguredTimeZone()),
 			false,
 		},
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYy-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.Local),
 			true,
 		},
 		{
 			struct{}{},
 			"YYYY-MM-dd HH:mm:ssSSS",
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 14, 22, 32, 233000000, time.Local),
 			true,
 		},
 	}
@@ -203,6 +210,8 @@ func TestInterfaceToTime(t *testing.T) {
 }
 
 func TestInterfaceToUnixMilli(t *testing.T) {
+	err := SetTimeZone("Asia/Shanghai")
+	require.NoError(t, err)
 	tests := []struct {
 		i       interface{}
 		f       string
@@ -212,43 +221,43 @@ func TestInterfaceToUnixMilli(t *testing.T) {
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			1649830952233,
+			1649802152233,
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			int64(1649830952233),
+			int64(1649802152233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			float64(1649830952233),
+			float64(1649802152233),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
-			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, time.UTC),
+			time.Date(2022, time.April, 13, 6, 22, 32, 233000000, GetConfiguredTimeZone()),
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			false,
 		},
 		{
 			"2022-04-13 06:22:32.233",
 			"YYYy-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			true,
 		},
 		{
 			struct{}{},
 			"YYYY-MM-dd HH:mm:ssSSS",
-			1649830952233,
+			1649802152233,
 			true,
 		},
 	}

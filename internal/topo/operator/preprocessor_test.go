@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
@@ -572,6 +573,8 @@ func TestPreprocessor_Apply(t *testing.T) {
 }
 
 func TestPreprocessorTime_Apply(t *testing.T) {
+	err := cast.SetTimeZone("Local")
+	require.NoError(t, err)
 	tests := []struct {
 		stmt   *ast.StreamStmt
 		data   []byte
@@ -707,7 +710,7 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 			// workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
 			if rt, ok := result.(*xsql.Tuple); ok {
 				if rtt, ok := rt.Message["abc"].(time.Time); ok {
-					rt.Message["abc"] = rtt.UTC()
+					rt.Message["abc"] = rtt.Local()
 				}
 			}
 			if !reflect.DeepEqual(tt.result, result) {
@@ -730,6 +733,8 @@ func convertFields(o ast.StreamFields) []interface{} {
 }
 
 func TestPreprocessorEventtime_Apply(t *testing.T) {
+	err := cast.SetTimeZone("UTC")
+	require.NoError(t, err)
 	tests := []struct {
 		stmt   *ast.StreamStmt
 		data   []byte

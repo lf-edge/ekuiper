@@ -70,7 +70,11 @@ func init() {
 	now.TimeFormats = append(now.TimeFormats, JSISO, ISO8601)
 }
 
-var localTimeZone = time.UTC
+func GetConfiguredTimeZone() *time.Location {
+	return localTimeZone
+}
+
+var localTimeZone = time.Local
 
 func SetTimeZone(name string) error {
 	loc, err := time.LoadLocation(name)

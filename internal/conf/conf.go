@@ -249,7 +249,9 @@ func InitConf() {
 		Config.Basic.RestIp = "0.0.0.0"
 	}
 
-	Config.Basic.RulePatrolInterval = "10s"
+	if len(Config.Basic.RulePatrolInterval) < 1 {
+		Config.Basic.RulePatrolInterval = "10s"
+	}
 
 	if Config.Basic.Debug {
 		SetDebugLevel(true)
@@ -261,6 +263,10 @@ func InitConf() {
 
 	if Config.Basic.TimeZone != "" {
 		if err := cast.SetTimeZone(Config.Basic.TimeZone); err != nil {
+			Log.Fatal(err)
+		}
+	} else {
+		if err := cast.SetTimeZone("Local"); err != nil {
 			Log.Fatal(err)
 		}
 	}
