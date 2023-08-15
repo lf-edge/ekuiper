@@ -318,6 +318,9 @@ func registerGlobalAggFunc() {
 				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
 			}
 			if val == nil {
+				if !validData {
+					return 0, true
+				}
 				val = float64(math.MinInt64)
 			}
 			m := val.(float64)
@@ -364,6 +367,9 @@ func registerGlobalAggFunc() {
 				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
 			}
 			if val == nil {
+				if !validData {
+					return 0, true
+				}
 				val = float64(math.MaxInt64)
 			}
 			m := val.(float64)

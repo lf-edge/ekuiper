@@ -16,7 +16,6 @@ package function
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"testing"
 
@@ -1473,11 +1472,11 @@ func TestAccumulateAgg(t *testing.T) {
 		},
 		{
 			"acc_max",
-			float64(math.MinInt64),
+			0,
 		},
 		{
 			"acc_min",
-			float64(math.MaxInt64),
+			0,
 		},
 		{
 			"acc_avg",
