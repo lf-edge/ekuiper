@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
@@ -572,7 +573,8 @@ func TestPreprocessor_Apply(t *testing.T) {
 }
 
 func TestPreprocessorTime_Apply(t *testing.T) {
-	cast.SetLocalTimeZone(time.Local)
+	err := cast.SetTimeZone("Local")
+	require.NoError(t, err)
 	tests := []struct {
 		stmt   *ast.StreamStmt
 		data   []byte
