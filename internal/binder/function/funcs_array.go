@@ -626,16 +626,17 @@ func registerArrayFunc() {
 	builtins["array_sort"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			t := reflect.TypeOf(args)
+			array := args[0]
+			t := reflect.TypeOf(array)
 			k := t.Kind()
 			if k != reflect.Slice && k != reflect.Array {
 				return errorArrayNotArrayElementError, false
 			}
-			inValue := reflect.ValueOf(args)
+			inValue := reflect.ValueOf(array)
 			inLen := inValue.Len()
 
 			if inLen <= 1 {
-				return args, true
+				return array, true
 			}
 
 			sliceType := reflect.SliceOf(inValue.Index(0).Type())
@@ -655,7 +656,7 @@ func registerArrayFunc() {
 			return outValue.Interface(), true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			return ValidateAtLeast(1, len(args))
+			return ValidateLen(1, len(args))
 		},
 		check: returnNilIfHasAnyNil,
 	}
