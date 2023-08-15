@@ -733,6 +733,8 @@ func convertFields(o ast.StreamFields) []interface{} {
 }
 
 func TestPreprocessorEventtime_Apply(t *testing.T) {
+	err := cast.SetTimeZone("UTC")
+	require.NoError(t, err)
 	tests := []struct {
 		stmt   *ast.StreamStmt
 		data   []byte
