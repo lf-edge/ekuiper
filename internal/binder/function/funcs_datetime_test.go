@@ -902,7 +902,7 @@ func TestTimeFunctionWithTZ(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, result.(string), "2023-08-14 06:38:25")
 
-	err = cast.SetTimeZone("Ais/Shanghai")
+	err = cast.SetTimeZone("Asia/Shanghai")
 	require.NoError(t, err)
 	result, ok = f.exec(fctx, []interface{}{1691995105})
 	require.True(t, ok)
