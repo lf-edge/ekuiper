@@ -16,6 +16,7 @@ package function
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"testing"
 
@@ -1468,19 +1469,19 @@ func TestAccumulateAgg(t *testing.T) {
 	}{
 		{
 			"acc_sum",
-			0,
+			float64(0),
 		},
 		{
 			"acc_max",
-			0,
+			float64(math.MinInt64),
 		},
 		{
 			"acc_min",
-			0,
+			float64(math.MaxInt64),
 		},
 		{
 			"acc_avg",
-			0,
+			float64(0),
 		},
 		{
 			"acc_count",
@@ -1495,7 +1496,7 @@ func TestAccumulateAgg(t *testing.T) {
 		tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
 		fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 		result, b := f.exec(fctx, []interface{}{1, false, fmt.Sprintf("%s_key", test.name)})
-		require.False(t, b)
+		require.True(t, b)
 		require.Equal(t, test.result, result)
 	}
 }
