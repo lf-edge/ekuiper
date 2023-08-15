@@ -277,7 +277,7 @@ func registerDateTimeFunc() {
 			if seconds == 0 {
 				return nil, true
 			}
-			t := time.Unix(int64(seconds), 0).In(cast.GetLocalTimeZone())
+			t := time.Unix(int64(seconds), 0).In(cast.GetConfiguredTimeZone())
 			result, err := cast.FormatTime(t, "yyyy-MM-dd HH:mm:ss")
 			if err != nil {
 				return err, false
@@ -492,7 +492,7 @@ func execGetCurrentDateTime(timeOnly bool) funcExe {
 // getCurrentWithFsp returns the current date/time with the specified number of fractional seconds precision.
 func getCurrentWithFsp(fsp int, timeOnly bool) (string, error) {
 	format := "yyyy-MM-dd HH:mm:ss"
-	now := conf.GetNow().In(cast.GetLocalTimeZone())
+	now := conf.GetNow().In(cast.GetConfiguredTimeZone())
 	switch fsp {
 	case 1:
 		format += ".S"
