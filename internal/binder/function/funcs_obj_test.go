@@ -16,10 +16,10 @@ package function
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -252,6 +252,25 @@ func TestObjectFunctions(t *testing.T) {
 			result: fmt.Errorf("the argument should be map[string]interface{}, got %v", []interface{}{1, 2}),
 		},
 		{
+			name: "object_concat",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				map[string]interface{}{
+					"b": 3,
+					"c": 4,
+				},
+				nil,
+			},
+			result: map[string]interface{}{
+				"a": 1,
+				"b": 3,
+				"c": 4,
+			},
+		},
+		{
 			name: "erase",
 			args: []interface{}{
 				map[string]interface{}{
@@ -298,31 +317,22 @@ func TestObjectFunctions(t *testing.T) {
 			result: fmt.Errorf("the argument number should be 2, got 3"),
 		},
 	}
-	for i, tt := range tests {
-		f, ok := builtins[tt.name]
-		if !ok {
-			t.Fatal(fmt.Sprintf("builtin %v not found", tt.name))
-		}
-		result, _ := f.exec(fctx, tt.args)
-		switch r := result.(type) {
-		case []string:
-			sort.Strings(r)
-			if !reflect.DeepEqual(r, tt.result) {
-				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
+	fe := funcExecutor{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, _ := fe.ExecWithName(tt.args, fctx, tt.name)
+			switch r := result.(type) {
+			case []string:
+				sort.Strings(r)
+			case []interface{}:
+				if m, ok := r[0].(map[string]any); ok {
+					if _, ok := m["b"]; ok {
+						r[0], r[1] = r[1], r[0]
+					}
+				}
 			}
-		case []interface{}:
-			rr := make([]interface{}, len(r))
-			copy(rr, r)
-			rr[0] = r[1]
-			rr[1] = r[0]
-			if !reflect.DeepEqual(r, tt.result) && !reflect.DeepEqual(rr, tt.result) {
-				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, r, tt.result)
-			}
-		default:
-			if !reflect.DeepEqual(result, tt.result) {
-				t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
-			}
-		}
+			assert.Equal(t, tt.result, result)
+		})
 	}
 }
 
@@ -334,8 +344,10 @@ func TestObjectFunctionsNil(t *testing.T) {
 	builtins = map[string]builtinFunc{}
 	registerObjectFunc()
 	for name, function := range builtins {
-		r, b := function.check([]interface{}{nil})
-		require.True(t, b, fmt.Sprintf("%v failed", name))
-		require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		if function.check != nil {
+			r, b := function.check([]interface{}{nil})
+			require.True(t, b, fmt.Sprintf("%v failed", name))
+			require.Nil(t, r, fmt.Sprintf("%v failed", name))
+		}
 	}
 }

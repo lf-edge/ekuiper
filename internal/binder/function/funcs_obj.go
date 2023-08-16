@@ -142,6 +142,9 @@ func registerObjectFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			res := make(map[string]interface{})
 			for i, arg := range args {
+				if arg == nil {
+					continue
+				}
 				arg, ok := arg.(map[string]interface{})
 				if !ok {
 					return fmt.Errorf("the argument should be map[string]interface{}, got %v", args[i]), false
@@ -155,7 +158,6 @@ func registerObjectFunc() {
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			return ValidateAtLeast(2, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["erase"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
