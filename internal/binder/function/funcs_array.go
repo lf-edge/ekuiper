@@ -554,7 +554,7 @@ func registerArrayFunc() {
 	builtins["array_join"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			array, ok := args[0].([]interface{})
+			arr, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
@@ -572,27 +572,21 @@ func registerArrayFunc() {
 				}
 			}
 
-			var index int
-			for _, v := range array {
+			array := make([]string, 0, len(arr))
+			for _, v := range arr {
 				if v == nil {
 					if len(nullReplacement) != 0 {
-						array[index] = nullReplacement
-						index++
+						array = append(array, nullReplacement)
 					}
 				} else {
-					array[index], ok = v.(string)
-					index++
-					if !ok {
+					vs, err := cast.ToString(v, cast.CONVERT_ALL)
+					if err != nil {
 						return errorArrayNotStringElementError, false
 					}
+					array = append(array, vs)
 				}
 			}
-
-			strs, err := cast.ToStringSlice(array[:index], cast.CONVERT_ALL)
-			if err != nil {
-				return err, false
-			}
-			return strings.Join(strs, delimiter), true
+			return strings.Join(array, delimiter), true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			if err := ValidateLen(2, len(args)); err != nil {
