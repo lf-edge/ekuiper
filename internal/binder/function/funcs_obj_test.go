@@ -324,14 +324,12 @@ func TestObjectFunctions(t *testing.T) {
 			switch r := result.(type) {
 			case []string:
 				sort.Strings(r)
+				assert.Equal(t, tt.result, result)
 			case []interface{}:
-				if m, ok := r[0].(map[string]any); ok {
-					if _, ok := m["b"]; ok {
-						r[0], r[1] = r[1], r[0]
-					}
-				}
+				assert.ElementsMatch(t, tt.result, result)
+			default:
+				assert.Equal(t, tt.result, result)
 			}
-			assert.Equal(t, tt.result, result)
 		})
 	}
 }
