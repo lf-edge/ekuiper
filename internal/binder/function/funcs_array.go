@@ -607,11 +607,12 @@ func registerArrayFunc() {
 	builtins["array_shuffle"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			array, ok := args[0].([]interface{})
+			arr, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
 			}
-
+			array := make([]interface{}, len(arr))
+			copy(array, arr)
 			rand.Shuffle(len(array), func(i, j int) {
 				array[i], array[j] = array[j], array[i]
 			})
