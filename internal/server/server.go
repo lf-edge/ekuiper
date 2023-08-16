@@ -302,6 +302,7 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 
 func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
 	toStart, toStop := handleScheduleRule(now, r, state)
+	conf.Log.Debugf("rule %v origin state: %v, going to start:%v, to stop:%v", r.Id, state, toStart, toStop)
 	if toStart {
 		return startRule(r.Id)
 	} else if toStop {
