@@ -28,6 +28,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
 const ConfFileName = "kuiper.yaml"
@@ -346,6 +347,9 @@ func ValidateRuleOption(option *api.RuleOption) error {
 			Log.Warnf("restart jitterFactor must between 0 and 1, set to 0.1")
 			errs = errors.Join(errs, errors.New("invalidRestartJitterFactor:restart jitterFactor must between [0, 1)"))
 		}
+	}
+	if err := schedule.ValidateRanges(option.CronDatetimeRange); err != nil {
+		errs = errors.Join(errs, fmt.Errorf("validate cronDatetimeRange failed, err:%v", err))
 	}
 	return errs
 }

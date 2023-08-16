@@ -147,7 +147,6 @@ func (rs *RuleState) run() {
 				if ctx != nil {
 					conf.Log.Warnf("rule %s is already started", rs.RuleId)
 				} else {
-
 					ctx, cancel = context.WithCancel(context.Background())
 					go rs.runTopo(ctx)
 				}
@@ -369,6 +368,9 @@ func (rs *RuleState) start() error {
 		}
 		rs.triggered = 1
 	}
+	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
+		conf.Log.Debugf("rule %v started", rs.RuleId)
+	}
 	rs.ActionCh <- ActionSignalStart
 	return nil
 }
@@ -377,6 +379,9 @@ func (rs *RuleState) start() error {
 func (rs *RuleState) Stop() error {
 	rs.Lock()
 	defer rs.Unlock()
+	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
+		conf.Log.Debugf("rule %v stopped", rs.RuleId)
+	}
 	rs.stopScheduleRule()
 	return rs.stop()
 }
