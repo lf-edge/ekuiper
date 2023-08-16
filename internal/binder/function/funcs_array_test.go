@@ -614,7 +614,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{123, "b", "c"}, ":", "a",
 			},
-			result: errorArrayNotStringElementError,
+			result: "123:b:c",
 		},
 		{
 			name: "array_join",
