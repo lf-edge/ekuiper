@@ -15,10 +15,13 @@
 package schedule
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func TestIsInTimeRange(t *testing.T) {
@@ -68,4 +71,47 @@ func TestIsInRunningSchedule(t *testing.T) {
 	isIn, _, err = IsInRunningSchedule("4 15 * * *", now, time.Second)
 	require.NoError(t, err)
 	require.False(t, isIn)
+}
+
+func TestValidateSchedule(t *testing.T) {
+	tests := []struct {
+		begin string
+		end   string
+		err   error
+	}{
+		{
+			begin: "123",
+			end:   "123",
+			err:   errors.New("Can't parse string as time: 123"),
+		},
+		{
+			begin: layout,
+			end:   "123",
+			err:   errors.New("Can't parse string as time: 123"),
+		},
+		{
+			begin: "2006-01-02 15:04:02",
+			end:   "2006-01-02 15:04:01",
+			err:   errors.New("begin time shouldn't after end time"),
+		},
+		{
+			begin: "2006-01-02 15:04:00",
+			end:   "2006-01-02 15:04:01",
+			err:   nil,
+		},
+	}
+	for _, tc := range tests {
+		rs := []api.DatetimeRange{
+			{
+				Begin: tc.begin,
+				End:   tc.end,
+			},
+		}
+		err := ValidateRanges(rs)
+		if tc.err != nil {
+			require.Equal(t, err, tc.err)
+		} else {
+			require.NoError(t, err)
+		}
+	}
 }

@@ -15,6 +15,7 @@
 package schedule
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -93,4 +94,31 @@ func IsInRunningSchedule(cronExpr string, now time.Time, d time.Duration) (bool,
 		return true, previousSchedule.Add(d).Sub(now), nil
 	}
 	return false, 0, nil
+}
+
+func ValidateRanges(ranges []api.DatetimeRange) error {
+	if len(ranges) < 1 {
+		return nil
+	}
+	for _, r := range ranges {
+		if err := validateRange(r); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateRange(r api.DatetimeRange) error {
+	s, err := cast.InterfaceToTime(r.Begin, layout)
+	if err != nil {
+		return err
+	}
+	e, err := cast.InterfaceToTime(r.End, layout)
+	if err != nil {
+		return err
+	}
+	if s.After(e) {
+		return fmt.Errorf("begin time shouldn't after end time")
+	}
+	return nil
 }
