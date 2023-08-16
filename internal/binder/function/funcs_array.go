@@ -468,13 +468,13 @@ func registerArrayFunc() {
 			var output []interface{}
 
 			for _, val := range array {
-				innerArr, ok := val.([]interface{})
-				if !ok {
-					return errorArrayNotArrayElementError, false
+				switch vt := val.(type) {
+				case []interface{}:
+					output = append(output, vt...)
+				default:
+					output = append(output, vt)
 				}
-				output = append(output, innerArr...)
 			}
-
 			return output, true
 		},
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
