@@ -27,6 +27,7 @@ import (
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestArrayCommonFunctions(t *testing.T) {
@@ -785,20 +786,25 @@ func TestArraySort(t *testing.T) {
 	}{
 		{
 			name: "array_sort",
-			args: []interface{}{3, 2, 1},
+			args: []any{
+				[]any{3, 2, 1},
+			},
 
 			result: []interface{}{1, 2, 3},
 		},
 		{
 			name: "array_sort",
-			args: []interface{}{3, 1.6, -0.83},
+			args: []any{
+				[]any{3, 1.6, -0.83},
+			},
 
 			result: []interface{}{-0.83, 1.6, 3},
 		},
 		{
 			name: "array_sort",
-			args: []interface{}{"abc", 3, "def", 1.6, -0.83},
-
+			args: []any{
+				[]any{"abc", 3, "def", 1.6, -0.83},
+			},
 			result: []interface{}{-0.83, 1.6, 3, "abc", "def"},
 		},
 	}
@@ -861,5 +867,33 @@ func TestArrayFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
 		}
+	}
+}
+
+func TestArrayFuncVal(t *testing.T) {
+	tests := []struct {
+		name     string
+		funcName string
+		args     []ast.Expr
+		err      error
+	}{
+		{
+			name:     "array sort failure",
+			funcName: "array_sort",
+			args: []ast.Expr{
+				&ast.BooleanLiteral{Val: true},
+				&ast.BooleanLiteral{Val: true},
+			},
+			err: fmt.Errorf("Expect 1 arguments but found 2."),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f, ok := builtins[tt.funcName]
+			assert.True(t, ok)
+			err := f.val(nil, tt.args)
+			assert.Equal(t, tt.err, err)
+		})
 	}
 }
