@@ -1772,11 +1772,6 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": true,
-          "text": "localhost:20499",
-          "value": "localhost:20499"
-        },
         "definition": "label_values(instance)",
         "hide": 0,
         "includeAll": false,
