@@ -1790,11 +1790,6 @@
         "type": "query"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "joinRule",
-          "value": "joinRule"
-        },
         "definition": "label_values(rule)",
         "hide": 0,
         "includeAll": false,
