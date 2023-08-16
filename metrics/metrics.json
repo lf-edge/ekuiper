@@ -117,10 +117,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "code",
           "expr": "(time() - process_start_time_seconds{instance=\"$instance\"})",
           "legendFormat": "{{instance}}",
@@ -207,10 +203,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "go_memstats_heap_sys_bytes{instance=\"$instance\"}",
           "legendFormat": "{{instance}}-heap-sys",
@@ -218,10 +210,6 @@
           "refId": "A"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "go_memstats_alloc_bytes{instance=\"$instance\"}",
           "hide": false,
@@ -230,10 +218,6 @@
           "refId": "B"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "go_memstats_heap_inuse_bytes{instance=\"$instance\"}",
           "hide": false,
@@ -320,10 +304,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "code",
           "expr": "irate(process_cpu_seconds_total{instance=\"$instance\"}[30s])",
           "legendFormat": "{{instance}}",
@@ -409,10 +389,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "go_goroutines",
           "legendFormat": "{{instance}}",
@@ -513,10 +489,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_op_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -604,10 +576,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_op_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -694,10 +662,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_op_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -789,10 +753,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.99, sum by(le, op, exported_instance, instance) (rate(kuiper_op_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -884,10 +844,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_op_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -988,10 +944,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -1079,10 +1031,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -1169,10 +1117,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_sink_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1264,10 +1208,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.99, sum by(le, op, exported_instance, instance) (rate(kuiper_sink_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1359,10 +1299,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_sink_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -1463,10 +1399,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_source_records_in_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -1554,10 +1486,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_source_records_out_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -1644,10 +1572,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.9, sum by(le, op, exported_instance, instance) (rate(kuiper_source_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1739,10 +1663,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "exemplar": false,
           "expr": "histogram_quantile(0.99, sum by(le, op, exported_instance, instance) (rate(kuiper_source_process_latency_us_hist_bucket{rule=\"$rule\", instance=\"$instance\"}[1m])))",
@@ -1834,10 +1754,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "rate(kuiper_source_exceptions_total{rule=\"$rule\", instance=\"$instance\"}[1m])",
           "legendFormat": "{{instance}}-{{op}}-{{exported_instance}}",
@@ -1861,10 +1777,6 @@
           "text": "localhost:20499",
           "value": "localhost:20499"
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-        },
         "definition": "label_values(instance)",
         "hide": 0,
         "includeAll": false,
@@ -1887,10 +1799,6 @@
           "selected": false,
           "text": "joinRule",
           "value": "joinRule"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
         },
         "definition": "label_values(rule)",
         "hide": 0,
