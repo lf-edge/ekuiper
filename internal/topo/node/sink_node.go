@@ -321,15 +321,17 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										receiveQ(data)
 									case data := <-dataOutCh:
 										normalQ(data)
-									case <-ctx.Done():
-										doneQ()
-										return nil
 									default:
 										select {
+										case data := <-m.input:
+											receiveQ(data)
 										case data := <-dataOutCh:
 											normalQ(data)
 										case data := <-rq.Out:
 											resendQ(data)
+										case <-ctx.Done():
+											doneQ()
+											return nil
 										}
 									}
 								}
@@ -340,15 +342,17 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										receiveQ(data)
 									case data := <-rq.Out:
 										resendQ(data)
-									case <-ctx.Done():
-										doneQ()
-										return nil
 									default:
 										select {
+										case data := <-m.input:
+											receiveQ(data)
 										case data := <-dataOutCh:
 											normalQ(data)
 										case data := <-rq.Out:
 											resendQ(data)
+										case <-ctx.Done():
+											doneQ()
+											return nil
 										}
 									}
 								}
