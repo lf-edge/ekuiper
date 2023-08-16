@@ -490,9 +490,9 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_flatten",
 			args: []interface{}{
-				[]interface{}{1, 2, 3}, 4,
+				[]interface{}{1, 2, 3},
 			},
-			result: errorArrayNotArrayElementError,
+			result: []interface{}{1, 2, 3},
 		},
 		{
 			name: "array_flatten",
@@ -503,6 +503,16 @@ func TestArrayCommonFunctions(t *testing.T) {
 				},
 			},
 			result: []interface{}{1, 2, 3, 4, 5, 6},
+		},
+		{
+			name: "array_flatten",
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{1, 2, 3},
+					4,
+				},
+			},
+			result: []interface{}{1, 2, 3, 4},
 		},
 		{
 			name: "array_distinct",
