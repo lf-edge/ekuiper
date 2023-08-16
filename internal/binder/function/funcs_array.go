@@ -494,9 +494,18 @@ func registerArrayFunc() {
 			set := make(map[interface{}]bool)
 
 			for _, val := range array {
-				if !set[val] {
+				switch val.(type) {
+				case int, int8, int16, int32, int64,
+					uint, uint8, uint16, uint32, uint64,
+					float32, float64,
+					string,
+					bool:
+					if !set[val] {
+						output = append(output, val)
+						set[val] = true
+					}
+				default: // all un-hashable types are not deduplicated, including array, map, etc.
 					output = append(output, val)
-					set[val] = true
 				}
 			}
 
