@@ -197,9 +197,14 @@ func reRunRule(name string) error {
 	}
 }
 
-func stopRule(name string) (result string) {
+func stopRule(name string, isInternal bool) (result string) {
+	var err error
 	if rs, ok := registry.Load(name); ok {
-		err := rs.Stop()
+		if isInternal {
+			err = rs.InternalStop()
+		} else {
+			err = rs.Stop()
+		}
 		if err != nil {
 			conf.Log.Warn(err)
 		}
@@ -215,7 +220,7 @@ func stopRule(name string) (result string) {
 }
 
 func restartRule(name string) error {
-	stopRule(name)
+	stopRule(name, false)
 	time.Sleep(1 * time.Millisecond)
 	return startRule(name)
 }

@@ -306,7 +306,7 @@ func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
 	if toStart {
 		return startRule(r.Id)
 	} else if toStop {
-		stopRule(r.Id)
+		stopRule(r.Id, true)
 	}
 	return nil
 }
@@ -326,7 +326,7 @@ func handleScheduleRule(now time.Time, r *api.Rule, state string) (bool, bool) {
 				break
 			}
 		}
-		if isInRange && state != "Running" {
+		if isInRange && state != "Running" && state != "Stopped: canceled manually." {
 			return true, false
 		} else if !isInRange && state == "Running" {
 			return false, true

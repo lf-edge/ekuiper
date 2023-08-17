@@ -556,33 +556,16 @@ func TestScheduleRuleInRange(t *testing.T) {
 			End:   after.Format(layout),
 		},
 	}
-	const ruleStarted = "Running"
-	const ruleStopped = "Stopped: waiting for next schedule."
-	const ruleTerminated = "Stopped: schedule terminated."
 	func() {
 		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err != nil {
-			t.Error(err)
-			return
-		}
+		require.NoError(t, err)
+		err = rs.startScheduleRule()
+		require.NoError(t, err)
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != ruleStarted {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStarted, state)
-			return
-		}
-		if !rs.cronState.isInSchedule {
-			t.Error("cron state should be in schedule")
-			return
-		}
+		require.NoError(t, err)
+		require.Equal(t, RuleStarted, state)
+		require.True(t, rs.cronState.isInSchedule)
 	}()
 
 	r.Options.CronDatetimeRange = []api.DatetimeRange{
@@ -593,28 +576,14 @@ func TestScheduleRuleInRange(t *testing.T) {
 	}
 	func() {
 		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err != nil {
-			t.Error(err)
-			return
-		}
+		require.NoError(t, err)
+		err = rs.startScheduleRule()
+		require.NoError(t, err)
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != ruleStopped {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
-			return
-		}
-		if !rs.cronState.isInSchedule {
-			t.Error("cron state should be in schedule")
-			return
-		}
+		require.NoError(t, err)
+		require.Equal(t, RuleStopped, state)
+		require.True(t, rs.cronState.isInSchedule)
 	}()
 
 	r.Options.CronDatetimeRange = []api.DatetimeRange{
@@ -625,28 +594,14 @@ func TestScheduleRuleInRange(t *testing.T) {
 	}
 	func() {
 		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err != nil {
-			t.Error(err)
-			return
-		}
+		require.NoError(t, err)
+		err = rs.startScheduleRule()
+		require.NoError(t, err)
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != ruleTerminated {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleTerminated, state)
-			return
-		}
-		if !rs.cronState.isInSchedule {
-			t.Error("cron state should be in schedule")
-			return
-		}
+		require.NoError(t, err)
+		require.Equal(t, RuleTerminated, state)
+		require.True(t, rs.cronState.isInSchedule)
 	}()
 
 	now2, err := time.Parse(layout, "2006-01-02 15:04:01")
@@ -663,11 +618,11 @@ func TestScheduleRuleInRange(t *testing.T) {
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
 		require.NoError(t, err)
-		require.Equal(t, state, ruleStarted)
+		require.Equal(t, state, RuleStarted)
 		time.Sleep(3 * time.Second)
 		state, err = rs.GetState()
 		require.NoError(t, err)
-		require.Equal(t, state, ruleStopped)
+		require.Equal(t, state, RuleWait)
 	}()
 }
 
@@ -702,8 +657,6 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 			End:   after.Format(layout),
 		},
 	}
-	const ruleStopped = "Stopped: schedule terminated."
-	const ruleStarted = "Running"
 	func() {
 		rs, err := NewRuleState(r)
 		require.NoError(t, err)
@@ -711,7 +664,7 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
 		require.NoError(t, err)
-		require.Equal(t, state, ruleStarted)
+		require.Equal(t, state, RuleStarted)
 	}()
 	r.Options.CronDatetimeRange = []api.DatetimeRange{
 		{
@@ -726,6 +679,6 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
 		require.NoError(t, err)
-		require.Equal(t, state, ruleStopped)
+		require.Equal(t, state, RuleStopped)
 	}()
 }

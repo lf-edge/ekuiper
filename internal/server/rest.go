@@ -597,7 +597,7 @@ func stopRuleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	result := stopRule(name)
+	result := stopRule(name, false)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(result))
 }
