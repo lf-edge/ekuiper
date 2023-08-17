@@ -93,23 +93,30 @@ func TestRunScheduleRuleChecker(t *testing.T) {
 }
 
 func TestHandleScheduleRuleState(t *testing.T) {
+	defer func() {
+		cast.SetTimeZone(cast.GetConfiguredTimeZone().String())
+	}()
+	err := cast.SetTimeZone("UTC")
 	r := &api.Rule{}
 	r.Options = &api.RuleOption{}
 	now, err := time.Parse("2006-01-02 15:04:05", "2006-01-02 15:04:05")
 	require.NoError(t, err)
-	require.NoError(t, handleScheduleRuleState(now, r, "Running"))
+	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
+	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
 	r.Options.CronDatetimeRange = []api.DatetimeRange{
 		{
 			Begin: "2006-01-02 15:04:01",
 			End:   "2006-01-02 15:04:06",
 		},
 	}
-	require.NoError(t, handleScheduleRuleState(now, r, "Running"))
+	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
+	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
 	r.Options.CronDatetimeRange = []api.DatetimeRange{
 		{
 			Begin: "2006-01-02 15:04:01",
 			End:   "2006-01-02 15:04:02",
 		},
 	}
-	require.NoError(t, handleScheduleRuleState(now, r, "Running"))
+	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
+	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
 }

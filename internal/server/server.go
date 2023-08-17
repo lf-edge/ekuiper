@@ -305,7 +305,7 @@ func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
 	conf.Log.Debugf("rule %v origin state: %v, sginal: %v", r.Id, state, scheduleActionSignal)
 	switch scheduleActionSignal {
 	case scheduleRuleActionStart:
-		return startRule(r.Id)
+		return startRuleInternal(r.Id)
 	case scheduleRuleActionStop:
 		stopRuleInternal(r.Id)
 	}
