@@ -33,10 +33,12 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
-const RuleStarted = "Running"
-const RuleStopped = "Stopped: canceled manually."
-const RuleTerminated = "Stopped: schedule terminated."
-const RuleWait = "Stopped: waiting for next schedule."
+const (
+	RuleStarted    = "Running"
+	RuleStopped    = "Stopped: canceled manually."
+	RuleTerminated = "Stopped: schedule terminated."
+	RuleWait       = "Stopped: waiting for next schedule."
+)
 
 type ActionSignal int
 
