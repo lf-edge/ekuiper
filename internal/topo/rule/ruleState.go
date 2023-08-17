@@ -45,7 +45,6 @@ type ActionSignal int
 const (
 	ActionSignalStart ActionSignal = iota
 	ActionSignalStop
-	ActionSignalInternalStop
 )
 
 type cronInterface interface {
@@ -158,7 +157,7 @@ func (rs *RuleState) run() {
 					ctx, cancel = context.WithCancel(context.Background())
 					go rs.runTopo(ctx)
 				}
-			case ActionSignalStop, ActionSignalInternalStop:
+			case ActionSignalStop:
 				// Stop the running loop
 				if cancel != nil {
 					cancel()
@@ -437,7 +436,7 @@ func (rs *RuleState) internalStop() error {
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
 	}
-	rs.ActionCh <- ActionSignalInternalStop
+	rs.ActionCh <- ActionSignalStop
 	return nil
 }
 
@@ -491,9 +490,9 @@ func (rs *RuleState) getStoppedRuleState() (result string) {
 		result = RuleWait
 	} else if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 		result = RuleTerminated
-	} else if rs.triggered == 0 {
+	} else if rs.triggered == 0 || rs.triggered == -1 {
 		result = RuleStopped
-	} else if rs.Rule.IsLongRunningScheduleRule() {
+	} else if rs.triggered == 2 {
 		result = RuleWait
 	}
 	return result
