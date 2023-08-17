@@ -301,17 +301,26 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 }
 
 func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
-	toStart, toStop := handleScheduleRule(now, r, state)
-	conf.Log.Debugf("rule %v origin state: %v, going to start:%v, to stop:%v", r.Id, state, toStart, toStop)
-	if toStart {
+	scheduleActionSignal := handleScheduleRule(now, r, state)
+	conf.Log.Debugf("rule %v origin state: %v, sginal: %v", r.Id, state, scheduleActionSignal)
+	switch scheduleActionSignal {
+	case scheduleRuleActionStart:
 		return startRule(r.Id)
-	} else if toStop {
+	case scheduleRuleActionStop:
 		stopRuleInternal(r.Id)
 	}
 	return nil
 }
 
-func handleScheduleRule(now time.Time, r *api.Rule, state string) (bool, bool) {
+type scheduleRuleAction int
+
+const (
+	scheduleRuleActionDoNothing scheduleRuleAction = iota
+	scheduleRuleActionStart
+	scheduleRuleActionStop
+)
+
+func handleScheduleRule(now time.Time, r *api.Rule, state string) scheduleRuleAction {
 	options := r.Options
 	if options != nil && options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
 		var isInRange bool
@@ -320,17 +329,17 @@ func handleScheduleRule(now time.Time, r *api.Rule, state string) (bool, bool) {
 			isInRange, err = schedule.IsInScheduleRange(now, cRange.Begin, cRange.End)
 			if err != nil {
 				conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
-				return false, false
+				return scheduleRuleActionDoNothing
 			}
 			if isInRange {
 				break
 			}
 		}
-		if isInRange && state != rule.RuleStarted && state != rule.RuleStopped {
-			return true, false
-		} else if !isInRange && state == rule.RuleStarted {
-			return false, true
+		if isInRange && state == rule.RuleWait && r.Triggered {
+			return scheduleRuleActionStart
+		} else if !isInRange && state == rule.RuleStarted && r.Triggered {
+			return scheduleRuleActionStop
 		}
 	}
-	return false, false
+	return scheduleRuleActionDoNothing
 }

@@ -486,10 +486,10 @@ func (rs *RuleState) GetState() (string, error) {
 }
 
 func (rs *RuleState) getStoppedRuleState() (result string) {
-	if rs.cronState.isInSchedule {
-		result = RuleWait
-	} else if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+	if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 		result = RuleTerminated
+	} else if rs.cronState.isInSchedule {
+		result = RuleWait
 	} else if rs.triggered == 0 || rs.triggered == -1 {
 		result = RuleStopped
 	} else if rs.triggered == 2 {

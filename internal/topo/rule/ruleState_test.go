@@ -582,7 +582,7 @@ func TestScheduleRuleInRange(t *testing.T) {
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
 		require.NoError(t, err)
-		require.Equal(t, RuleStopped, state)
+		require.Equal(t, RuleWait, state)
 		require.True(t, rs.cronState.isInSchedule)
 	}()
 
@@ -679,6 +679,6 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 		time.Sleep(500 * time.Millisecond)
 		state, err := rs.GetState()
 		require.NoError(t, err)
-		require.Equal(t, state, RuleStopped)
+		require.Equal(t, state, RuleTerminated)
 	}()
 }
