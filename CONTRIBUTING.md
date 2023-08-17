@@ -70,8 +70,8 @@ Alternatively, if you use GoLand, you can check `Group` and `Group stdlib import
 - Use `go fmt` to format your code before commit code change. eKuiper Github Action CI pipeline reports error if it's
   not format by `go fmt`.
 - Run static code analysis with `make lint` to make sure there are no stylistic errors and common programming issues.
-    - If you encounter lint errors related to `gofumpt`, run `gofumpt -w .` in the project root directory to solve it.
-    - Check [golangci-lint](https://golangci-lint.run/) for more information on the corresponding lint errors.
+  - If you encounter lint errors related to `gofumpt`, run `gofumpt -w .` in the project root directory to solve it.
+  - Check [golangci-lint](https://golangci-lint.run/) for more information on the corresponding lint errors.
 - Configuration key in config files uses camel case format.
 
 ### Debug your code
@@ -206,8 +206,8 @@ The eKuiper project leverages Github actions to run unit test & FVT (functional 
 look at the PR status result, and make sure that all of testcases run successfully.
 
 - Write Golang unit testcases to test your code if necessary.
-- A set of [FVT testcases](./test/README.md) will be triggered with any PR submission, so please make sure that
-  these
+- A set of [FVT testcases](https://github.com/lf-edge/ekuiper/blob/master/test/README.md) will be triggered with any PR
+  submission, so please make sure that these
   testcases can be run successfully.
 
 ### Licensing
@@ -263,7 +263,7 @@ after all tests passed.
 Each commit message consists of a **header**, a **body** and a **footer**. The header has a special format that includes
 a **type**, a **scope** and a **subject**:
 
-```
+```text
 <type>(<scope>): <subject>
 <BLANK LINE>
 <body>
@@ -282,11 +282,11 @@ a [closing reference to an issue](https://help.github.com/articles/closing-issue
 
 Example 1:
 
-```
+```text
 feat: add Fuji release compose files
 ```
 
-```
+```text
 fix(script): correct run script to use the right ports
 
 Previously device services used wrong port numbers. This commit fixes the port numbers to use the latest port numbers.
@@ -412,7 +412,7 @@ depend on to make decisions in the best interest of the project in a consistent 
 Committers want to become maintainers are expected to:
 
 - Enable adoptions or ecosystems.
-- Collaborate well.
+- Collaborate well. Participate in community meetings and events.
 - Demonstrate a deep and comprehensive understanding of eKuiper's architecture, technical goals, and directions.
 - Actively engage with major eKuiper feature proposals and implementations.
 
