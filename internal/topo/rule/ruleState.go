@@ -33,6 +33,13 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
+const (
+	RuleStarted    = "Running"
+	RuleStopped    = "Stopped: canceled manually."
+	RuleTerminated = "Stopped: schedule terminated."
+	RuleWait       = "Stopped: waiting for next schedule."
+)
+
 type ActionSignal int
 
 const (
@@ -84,7 +91,7 @@ type RuleState struct {
 	Rule *api.Rule
 	// States, create through rule in each rule start
 	Topology *topo.Topo
-	// 0 stop, 1 start, -1 delete, changed in actions
+	// 0 stop, 1 running, -1 delete, 2 internal stop, changed in actions
 	triggered int
 	// temporary storage for topo graph to make sure even rule close, the graph is still available
 	topoGraph *api.PrintableTopo
@@ -338,6 +345,7 @@ func (rs *RuleState) runScheduleRule() error {
 	return nil
 }
 
+// stopAfterDuration only for schedule rule
 func (rs *RuleState) stopAfterDuration(d time.Duration, cronCtx context.Context) {
 	after := time.After(d)
 	go func(ctx context.Context) {
@@ -345,7 +353,7 @@ func (rs *RuleState) stopAfterDuration(d time.Duration, cronCtx context.Context)
 		case <-after:
 			rs.Lock()
 			defer rs.Unlock()
-			if err := rs.stop(); err != nil {
+			if err := rs.internalStop(); err != nil {
 				conf.Log.Errorf("close rule %s failed, err: %v", rs.RuleId, err)
 			}
 			return
@@ -380,7 +388,7 @@ func (rs *RuleState) Stop() error {
 	rs.Lock()
 	defer rs.Unlock()
 	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
-		conf.Log.Debugf("rule %v stopped", rs.RuleId)
+		conf.Log.Debugf("rule %v manual stopped", rs.RuleId)
 	}
 	rs.stopScheduleRule()
 	return rs.stop()
@@ -402,6 +410,31 @@ func (rs *RuleState) stop() error {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
 	rs.triggered = 0
+	if rs.Topology != nil {
+		rs.Topology.Cancel()
+	}
+	rs.ActionCh <- ActionSignalStop
+	return nil
+}
+
+func (rs *RuleState) InternalStop() error {
+	rs.Lock()
+	defer rs.Unlock()
+	if !rs.Rule.IsLongRunningScheduleRule() {
+		err := fmt.Errorf("rule %v isn't allowed to execute Internal stop as it's not long running schedule rule", rs.RuleId)
+		conf.Log.Errorf(err.Error())
+		return err
+	} else {
+		conf.Log.Debugf("rule %v internal stopped", rs.RuleId)
+	}
+	return rs.internalStop()
+}
+
+func (rs *RuleState) internalStop() error {
+	if rs.triggered == -1 {
+		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
+	}
+	rs.triggered = 2
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
 	}
@@ -436,38 +469,35 @@ func (rs *RuleState) GetState() (string, error) {
 			err := c.Err()
 			switch err {
 			case nil:
-				result = "Running"
+				result = RuleStarted
 			case context.Canceled:
-				if (rs.Rule.IsScheduleRule() && rs.cronState.isInSchedule) || rs.Rule.IsLongRunningScheduleRule() {
-					if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
-						result = "Stopped: schedule terminated."
-					} else {
-						result = "Stopped: waiting for next schedule."
-					}
-				} else {
-					result = "Stopped: canceled manually."
-				}
+				result = rs.getStoppedRuleState()
 			case context.DeadlineExceeded:
 				result = "Stopped: deadline exceed."
 			default:
 				result = fmt.Sprintf("Stopped: %v.", err)
 			}
 		} else {
-			if rs.cronState.isInSchedule || rs.Rule.IsLongRunningScheduleRule() {
-				if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
-					result = "Stopped: schedule terminated."
-				} else {
-					result = "Stopped: waiting for next schedule."
-				}
-			} else {
-				result = "Stopped: canceled manually."
-			}
+			result = rs.getStoppedRuleState()
 		}
 	}
 	if rs.Rule.IsScheduleRule() && rs.cronState.startFailedCnt > 0 {
 		result = result + fmt.Sprintf(" Start failed count: %v.", rs.cronState.startFailedCnt)
 	}
 	return result, nil
+}
+
+func (rs *RuleState) getStoppedRuleState() (result string) {
+	if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+		result = RuleTerminated
+	} else if rs.cronState.isInSchedule {
+		result = RuleWait
+	} else if rs.triggered == 0 || rs.triggered == -1 {
+		result = RuleStopped
+	} else if rs.triggered == 2 {
+		result = RuleWait
+	}
+	return result
 }
 
 func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
