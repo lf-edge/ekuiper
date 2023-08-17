@@ -699,11 +699,14 @@ func TestRuleStateInternalStop(t *testing.T) {
 		},
 		Options: defaultOption,
 	}
+	r.Options.Cron = "123"
 	rs, err := NewRuleState(r)
 	require.NoError(t, err)
 	err = rs.InternalStop()
 	require.Error(t, err)
 
+	r.Options.Cron = ""
+	r.Options.Duration = ""
 	r.Options.CronDatetimeRange = []api.DatetimeRange{
 		{
 			Begin: layout,
