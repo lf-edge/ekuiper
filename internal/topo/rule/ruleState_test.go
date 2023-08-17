@@ -682,3 +682,37 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 		require.Equal(t, state, RuleTerminated)
 	}()
 }
+
+func TestRuleStateInternalStop(t *testing.T) {
+	conf.IsTesting = true
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	r := &api.Rule{
+		Triggered: false,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: defaultOption,
+	}
+	rs, err := NewRuleState(r)
+	require.NoError(t, err)
+	err = rs.InternalStop()
+	require.Error(t, err)
+
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: layout,
+			End:   layout,
+		},
+	}
+	rs, err = NewRuleState(r)
+	require.NoError(t, err)
+	err = rs.InternalStop()
+	require.NoError(t, err)
+	require.Equal(t, rs.triggered, 2)
+}
