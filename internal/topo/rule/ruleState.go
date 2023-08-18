@@ -257,6 +257,7 @@ func (rs *RuleState) Start() error {
 		}
 		// When rule is created, we need to check its schedule range before start it.
 		if !isIn {
+			rs.triggered = 2
 			return nil
 		}
 	}
