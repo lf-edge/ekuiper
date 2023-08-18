@@ -681,6 +681,44 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, state, RuleTerminated)
 	}()
+
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: after.Format(layout),
+			End:   after.Format(layout),
+		},
+	}
+	func() {
+		rs, err := NewRuleState(r)
+		require.NoError(t, err)
+		require.NoError(t, rs.Start())
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, RuleWait)
+	}()
+
+	r.Options.CronDatetimeRange = []api.DatetimeRange{
+		{
+			Begin: before.Format(layout),
+			End:   after.Format(layout),
+		},
+	}
+	func() {
+		rs, err := NewRuleState(r)
+		require.NoError(t, err)
+		require.NoError(t, rs.Start())
+		time.Sleep(500 * time.Millisecond)
+		state, err := rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, RuleStarted)
+
+		require.NoError(t, rs.Stop())
+		time.Sleep(500 * time.Millisecond)
+		state, err = rs.GetState()
+		require.NoError(t, err)
+		require.Equal(t, state, RuleStopped)
+	}()
 }
 
 func TestRuleStateInternalStop(t *testing.T) {
