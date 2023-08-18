@@ -224,6 +224,10 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 		}
 	}
 
+	if cc.config.ResendUrl == "" {
+		cc.config.ResendUrl = cc.config.Url
+	}
+
 	return nil
 }
 
