@@ -230,6 +230,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							if resendCh != nil {
 								select {
 								case resendCh <- nil:
+									ctx.GetLogger().Debugf("resend signal sent")
 								case <-ctx.Done():
 								}
 							}
@@ -252,11 +253,15 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 									// Always ack for the normal queue as fail items are handled by the resend queue
 									select {
 									case c.Ack <- true:
+										stats.SetBufferLength(bufferLen(dataCh, c, rq) - 1)
 									case <-ctx.Done():
 									}
 								} else {
 									select {
 									case c.Ack <- ack:
+										if ack { // -1 because the signal length is changed async, just calculate it here
+											stats.SetBufferLength(bufferLen(dataCh, c, rq) - 1)
+										}
 									case <-ctx.Done():
 									}
 								}
@@ -276,6 +281,9 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							ack := checkAck(ctx, data, err)
 							select {
 							case rq.Ack <- ack:
+								if ack {
+									stats.SetBufferLength(bufferLen(dataCh, c, rq) - 1)
+								}
 							case <-ctx.Done():
 							}
 						}
@@ -518,6 +526,7 @@ func sendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, s
 }
 
 func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager) error {
+	ctx.GetLogger().Debugf("start resend")
 	var err error
 	switch st := sink.(type) {
 	case api.ResendSink:
@@ -530,6 +539,7 @@ func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{},
 		return err
 	} else {
 		ctx.GetLogger().Debugf("success resend")
+		stats.IncTotalRecordsOut()
 		return nil
 	}
 }
