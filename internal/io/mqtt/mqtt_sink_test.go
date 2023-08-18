@@ -60,6 +60,7 @@ func TestSinkConfigure(t *testing.T) {
 				Qos:         0,
 				Retained:    false,
 				Compression: "",
+				ResendTopic: "testTopic3",
 			},
 		},
 		{
@@ -76,6 +77,7 @@ func TestSinkConfigure(t *testing.T) {
 				Qos:         1,
 				Retained:    false,
 				Compression: "zlib",
+				ResendTopic: "testTopic4",
 			},
 		},
 	}

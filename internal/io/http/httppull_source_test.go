@@ -288,6 +288,7 @@ func TestConfigure(t *testing.T) {
 			config: &RawConf{
 				Incremental:        true,
 				Url:                "http://localhost:9090/",
+				ResendUrl:          "http://localhost:9090/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
@@ -386,6 +387,7 @@ func TestConfigure(t *testing.T) {
 			},
 			config: &RawConf{
 				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
@@ -436,6 +438,7 @@ func TestConfigure(t *testing.T) {
 			},
 			config: &RawConf{
 				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
@@ -493,6 +496,7 @@ func TestConfigure(t *testing.T) {
 			},
 			config: &RawConf{
 				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
@@ -573,6 +577,7 @@ func TestConfigure(t *testing.T) {
 			},
 			config: &RawConf{
 				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
@@ -645,6 +650,7 @@ func TestConfigure(t *testing.T) {
 			},
 			config: &RawConf{
 				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,
@@ -696,6 +702,7 @@ func TestConfigure(t *testing.T) {
 			},
 			config: &RawConf{
 				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
 				Method:             http.MethodGet,
 				Interval:           DefaultInterval,
 				Timeout:            DefaultTimeout,

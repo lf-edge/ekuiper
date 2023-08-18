@@ -73,6 +73,9 @@ func (s *sink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("keyField is required when rowkindField is set")
 	}
 	s.resendTopic = cfg.ResendTopic
+	if s.resendTopic == "" {
+		s.resendTopic = s.topic
+	}
 	return nil
 }
 
