@@ -70,6 +70,9 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		}
 	}
 	ms.config = ps
+	if adconf.ResendTopic == "" {
+		adconf.ResendTopic = adconf.Tpc
+	}
 	ms.adconf = adconf
 	return nil
 }
