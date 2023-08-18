@@ -4,8 +4,12 @@ We're really glad you're reading this, because we need volunteer developers to h
 
 ## Did you find a bug?
 
-- **Ensure the bug was not already reported** by searching on GitHub under [Issues](https://github.com/lf-edge/ekuiper/issues).
-- If you're unable to find an open issue addressing the problem, [open a new one](https://github.com/lf-edge/ekuiper/issues/new). Be sure to include a **title and clear description**, as much relevant information as possible, and a **code sample** or an **executable test case** demonstrating the expected behavior that is not occurring.
+- **Ensure the bug was not already reported** by searching on GitHub
+  under [Issues](https://github.com/lf-edge/ekuiper/issues).
+- If you're unable to find an open issue addressing the
+  problem, [open a new one](https://github.com/lf-edge/ekuiper/issues/new). Be sure to include a **title and clear
+  description**, as much relevant information as possible, and a **code sample** or an **executable test case**
+  demonstrating the expected behavior that is not occurring.
 
 ## Code and doc contribution
 
@@ -13,7 +17,8 @@ Welcome to contribute code to provide features or fix bugs.
 
 ### One time setup
 
-We use GitHub pull request to review proposed code changes. So you'll need to obtain a GitHub account before making code contribution.
+We use GitHub pull request to review proposed code changes. So you'll need to obtain a GitHub account before making code
+contribution.
 
 1. **Fork** eKuiper to your private repository. Click the `Fork` button in the top right corner of eKuiper repository.
 2. **Clone** the repository locally from your personal fork. `git clone https://github.com/<Github_user>/ekuiper.git`.
@@ -23,11 +28,14 @@ We use GitHub pull request to review proposed code changes. So you'll need to ob
   git remote add upstream https://github.com/lf-edge/ekuiper.git
   ```
 
-You can use your favorite IDE or editor to develop. You can find information in editor support for Go tools in [Editors and IDEs for GO](https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins).
+You can use your favorite IDE or editor to develop. You can find information in editor support for Go tools
+in [Editors and IDEs for GO](https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins).
 
 ### Create a branch in your fork
 
-You’ll work on your contribution in a branch in your own (forked) repository. Create a local branch, initialized with the state of the branch you expect your changes to be merged into. The `master` branch is active development branch, so it's recommended to set `master` as base branch.
+You’ll work on your contribution in a branch in your own (forked) repository. Create a local branch, initialized with
+the state of the branch you expect your changes to be merged into. The `master` branch is active development branch, so
+it's recommended to set `master` as base branch.
 
 ```shell
 $ git fetch upstream
@@ -50,7 +58,8 @@ import (
 )
 ```
 
-In the project root directory, you can run the command `gci write --skip-generated -s standard -s default -s "prefix(github.com/lf-edge/ekuiper)" .` to
+In the project root directory, you can run the
+command `gci write --skip-generated -s standard -s default -s "prefix(github.com/lf-edge/ekuiper)" .` to
 automatically reorder package imports.
 
 Alternatively, if you use GoLand, you can check `Group` and `Group stdlib imports` as well as their sub-options under
@@ -69,45 +78,53 @@ Alternatively, if you use GoLand, you can check `Group` and `Group stdlib import
 
 Take GoLand as an example, developers can debug the code:
 
-1. Debug the whole program. Make sure all directories mentioned in [Makefile](https://github.com/lf-edge/ekuiper/blob/master/Makefile) build_prepare sections are created in your eKuiper root path. Add your breakpoints. Open `cmd/kuiperd/main.go`. In the main function, you'll find a green triangle in the ruler, click it and select debug. Then create your stream/rule that would run through your breakpoint, the debugger will pause there.
-2. To debug a small portion of code, we recommend writing a unit test and debug it. You can go to any test file and find the same green triangle to run in debug mode. For example, `pkg/cast/cast_test.go` TestMapConvert_Funcs can run as debug.
+1. Debug the whole program. Make sure all directories mentioned
+   in [Makefile](https://github.com/lf-edge/ekuiper/blob/master/Makefile) build_prepare sections are created in your
+   eKuiper root path. Add your breakpoints. Open `cmd/kuiperd/main.go`. In the main function, you'll find a green
+   triangle in the ruler, click it and select debug. Then create your stream/rule that would run through your
+   breakpoint, the debugger will pause there.
+2. To debug a small portion of code, we recommend writing a unit test and debug it. You can go to any test file and find
+   the same green triangle to run in debug mode. For example, `pkg/cast/cast_test.go` TestMapConvert_Funcs can run as
+   debug.
 
 #### Debug edgex code
 
-Users can modify edgex source/sink code to meet their requirement. In this case, the best practice is letting the other services running in docker mode but eKuiper run locally.
+Users can modify edgex source/sink code to meet their requirement. In this case, the best practice is letting the other
+services running in docker mode but eKuiper run locally.
 Users can follow these steps to set up the environment.
 
 #### expose message bus
 
-  eKuiper subscribe messages by topic and by default edgex is using redis as message bus. This guide will use redis as example to show how to expose message bus.
-  In the docker-compose file, find the redis service and in ports part change 127.0.0.1:6379
+eKuiper subscribe messages by topic and by default edgex is using redis as message bus. This guide will use redis as
+example to show how to expose message bus.
+In the docker-compose file, find the redis service and in ports part change 127.0.0.1:6379
 to 0.0.0.0:6379, then restart all the services.
 
 ```yaml
  database:
-    container_name: edgex-redis
-    environment:
-      CLIENTS_CORE_COMMAND_HOST: edgex-core-command
-      CLIENTS_CORE_DATA_HOST: edgex-core-data
-      CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
-      CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
-      CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
-      DATABASES_PRIMARY_HOST: edgex-redis
-      EDGEX_SECURITY_SECRET_STORE: "false"
-      REGISTRY_HOST: edgex-core-consul
-    hostname: edgex-redis
-    image: redis:6.2-alpine
-    networks:
-      edgex-network: {}
-    ports:
-    - 0.0.0.0:6379:6379/tcp
-    read_only: true
-    restart: always
-    security_opt:
-    - no-new-privileges:true
-    user: root:root
-    volumes:
-    - db-data:/data:z
+   container_name: edgex-redis
+   environment:
+     CLIENTS_CORE_COMMAND_HOST: edgex-core-command
+     CLIENTS_CORE_DATA_HOST: edgex-core-data
+     CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
+     CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
+     CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
+     DATABASES_PRIMARY_HOST: edgex-redis
+     EDGEX_SECURITY_SECRET_STORE: "false"
+     REGISTRY_HOST: edgex-core-consul
+   hostname: edgex-redis
+   image: redis:6.2-alpine
+   networks:
+     edgex-network: { }
+   ports:
+     - 0.0.0.0:6379:6379/tcp
+   read_only: true
+   restart: always
+   security_opt:
+     - no-new-privileges:true
+   user: root:root
+   volumes:
+     - db-data:/data:z
 
 ```
 
@@ -137,7 +154,8 @@ default:
   messageType: event
 ```
 
-After changing this, redis will listen on the host 6379 port, developers can connect to the machine that edgex runs remotely by the server address.
+After changing this, redis will listen on the host 6379 port, developers can connect to the machine that edgex runs
+remotely by the server address.
 For example, the host ip address is 10.65.38.224 , users can connect to this machine by the ip address.
 
 #### enable eKuiper console log and set rest api port
@@ -180,7 +198,7 @@ basic:
 
 #### run locally
 
-  Use the [former method](./CONTRIBUTING.md#debug-your-code) to run the eKuiper
+Use the [former method](./CONTRIBUTING.md#debug-your-code) to run the eKuiper
 
 ### Testing
 
@@ -188,28 +206,33 @@ The eKuiper project leverages Github actions to run unit test & FVT (functional 
 look at the PR status result, and make sure that all of testcases run successfully.
 
 - Write Golang unit testcases to test your code if necessary.
-- A set of [FVT testcases](../../test/README.md) will be triggered with any PR submission, so please make sure that these
+- A set of [FVT testcases](https://github.com/lf-edge/ekuiper/blob/master/test/README.md) will be triggered with any PR
+  submission, so please make sure that these
   testcases can be run successfully.
 
 ### Licensing
 
-All code contributed to eKuiper will be licensed under Apache License V2. You need to ensure every new files you are adding have the right license header.
+All code contributed to eKuiper will be licensed under Apache License V2. You need to ensure every new files you are
+adding have the right license header.
 
 ### Sign-off commit
 
 The sign-off is to certify the origin of the commit. It is required to commit to this project. If you set
-your `user.name` and `user.email` git configs, you can sign your commit automatically with `git commit -s`. Each commit must be signed off.
+your `user.name` and `user.email` git configs, you can sign your commit automatically with `git commit -s`. Each commit
+must be signed off.
 
 ### Syncing
 
-Periodically while you work, and certainly before submitting a pull request, you should update your branch with the most recent changes to the target branch. We prefer rebase than merge to avoid extraneous merge commits.
+Periodically while you work, and certainly before submitting a pull request, you should update your branch with the most
+recent changes to the target branch. We prefer rebase than merge to avoid extraneous merge commits.
 
 ```shell
 git fetch upstream
 git rebase upstream/master
 ```
 
-Then you can push to your forked repo. Assume the remove name for your forked is the default `origin`. If you have rebased the git history before the last push, add `-f` to force pushing the changes.
+Then you can push to your forked repo. Assume the remove name for your forked is the default `origin`. If you have
+rebased the git history before the last push, add `-f` to force pushing the changes.
 
 ```shell
 git push origin -f
@@ -220,7 +243,10 @@ git push origin -f
 The `master` branch is active development branch, so it's recommended to set `master` as base branch, and also create PR
 against `master` branch.
 
-Organize your commits to make a committer’s job easier when reviewing. Committers normally prefer multiple small pull requests, instead of a single large pull request. Within a pull request, a relatively small number of commits that break the problem into logical steps is preferred. For most pull requests, you'll squash your changes down to 1 commit. You can use the following command to re-order, squash, edit, or change description of individual commits.
+Organize your commits to make a committer’s job easier when reviewing. Committers normally prefer multiple small pull
+requests, instead of a single large pull request. Within a pull request, a relatively small number of commits that break
+the problem into logical steps is preferred. For most pull requests, you'll squash your changes down to 1 commit. You
+can use the following command to re-order, squash, edit, or change description of individual commits.
 
 ```shell
 git rebase -i upstream/master
@@ -228,11 +254,14 @@ git rebase -i upstream/master
 
 Make sure all your commits comply to the [commit message guidelines](#commit-message-guidelines).
 
-You'll then push to your branch on your forked repo and then navigate to eKuiper repo to create a pull request. Our GitHub repo provides automatic testing with GitHub action. Please make sure those tests pass. We will review the code after all tests passed.
+You'll then push to your branch on your forked repo and then navigate to eKuiper repo to create a pull request. Our
+GitHub repo provides automatic testing with GitHub action. Please make sure those tests pass. We will review the code
+after all tests passed.
 
 ### Commit Message Guidelines
 
-Each commit message consists of a **header**, a **body** and a **footer**. The header has a special format that includes a **type**, a **scope** and a **subject**:
+Each commit message consists of a **header**, a **body** and a **footer**. The header has a special format that includes
+a **type**, a **scope** and a **subject**:
 
 ```text
 <type>(<scope>): <subject>
@@ -242,11 +271,14 @@ Each commit message consists of a **header**, a **body** and a **footer**. The h
 <footer>
 ```
 
-The **header** with **type** is mandatory. The **scope** of the header is optional. This repository has no predefined scopes. A custom scope can be used for clarity if desired.
+The **header** with **type** is mandatory. The **scope** of the header is optional. This repository has no predefined
+scopes. A custom scope can be used for clarity if desired.
 
-Any line of the commit message cannot be longer 100 characters! This allows the message to be easier to read on GitHub as well as in various git tools.
+Any line of the commit message cannot be longer 100 characters! This allows the message to be easier to read on GitHub
+as well as in various git tools.
 
-The footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
+The footer should contain
+a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
 
 Example 1:
 
@@ -264,7 +296,8 @@ Closes: #123, #245, #992
 
 #### Revert
 
-If the commit reverts a previous commit, it should begin with `revert:`, followed by the header of the reverted commit. In the body it should say: `This reverts commit <hash>.`, where the hash is the SHA of the commit being reverted.
+If the commit reverts a previous commit, it should begin with `revert:`, followed by the header of the reverted commit.
+In the body it should say: `This reverts commit <hash>.`, where the hash is the SHA of the commit being reverted.
 
 #### Type
 
@@ -278,7 +311,8 @@ Must be one of the following:
 - **chore**: Updating grunt tasks etc; no production code change
 - **perf**: A code change that improves performance
 - **test**: Adding missing tests, refactoring tests; no production code change
-- **build**: Changes that affect the CI/CD pipeline or build system or external dependencies (example scopes: travis, jenkins, makefile)
+- **build**: Changes that affect the CI/CD pipeline or build system or external dependencies (example scopes: travis,
+  jenkins, makefile)
 - **ci**: Changes provided by DevOps for CI purposes.
 - **revert**: Reverts a previous commit.
 
@@ -296,13 +330,16 @@ The subject contains a succinct description of the change:
 
 #### Body
 
-Just as in the **subject**, use the imperative, present tense: "change" not "changed" nor "changes". The body should include the motivation for the change and contrast this with previous behavior.
+Just as in the **subject**, use the imperative, present tense: "change" not "changed" nor "changes". The body should
+include the motivation for the change and contrast this with previous behavior.
 
 #### Footer
 
-The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit **Closes**.
+The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues
+that this commit **Closes**.
 
-**Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit message is then used for this.
+**Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit
+message is then used for this.
 
 ## Community Promotion
 
@@ -314,7 +351,81 @@ The promotion contributions include but not limit to:
 - Integrate of eKuiper to your open source project
 - Organize workshops or meetups about the project
 - Answer questions about the project on issues, slack or maillist
-- Write tutorials for how project can be used
+- Write tutorials for how a project can be used
 - Offer to mentor another contributor
 
 Thank you for taking the time to contribute!
+
+## Roles and responsibilities
+
+### Contributor
+
+Contributors are community members who contribute in concrete ways to the project.
+Anyone can contribute to the project and become a contributor, regardless of their skillset.
+There is no expectation of commitment to the project, no specific skill requirements, and no selection process.
+There are many ways to contribute to the project, which may be one or more of the following (but not limited to):
+
+- Reporting or fixing bugs.
+- Identifying requirements, strengths, and weaknesses.
+- Writing documentation.
+
+For first-time contributors,
+it is recommended to start by going through [code and doc contribution](#code-and-doc-contribution),
+and joining our community Slack channel.
+
+As one continues to contribute to the project and engage with the community,
+he/she may at some point become eligible for an eKuiper committer.
+
+### Committer
+
+Committers are active community members who have shown that they are committed to the continuous development of the
+project through ongoing engagement with the community.
+Committership allows contributors to more easily carry on with their project-related activities by giving them direct
+access to the project’s resources.
+
+Typically, a potential committer needs to show that they have a sufficient understanding of the project, its objectives,
+and its strategy. To become a committer, you are expected to:
+
+- Be a eKuiper contributor.
+- Express interest to the existing maintainers that you are interested in becoming a committer.
+- Have contributed 6 or more substantial PRs.
+- Have an above-average understanding of the project codebase, its goals, and directions.
+
+Contributors that meet the above requirements will be nominated by an existing maintainer to become a committer. It is
+recommended to describe the reasons for the nomination and the contribution of the nominee in the PR. The existing
+maintainers will confer and decide whether to grant committer status or not.
+
+Committers are expected to review issues and PRs. Their LGTM counts towards the required LGTM count to merge a PR. While
+committership indicates a valued member of the community who has demonstrated a healthy respect for the project’s aims
+and objectives, their work continues to be reviewed by the community before acceptance in an official release.
+
+A committer who shows an above-average level of contribution to the project, particularly with respect to its strategic
+direction and long-term health, may be nominated to become a maintainer. This role is described below.
+
+### Maintainer
+
+Maintainers are first and foremost committers that have shown they are committed to the long term success of a project.
+They are the planners and designers of the eKuiper project.
+Maintainership is about building trust with the current maintainers of the project and being a person that they can
+depend on to make decisions in the best interest of the project in a consistent manner.
+
+Committers want to become maintainers are expected to:
+
+- Enable adoptions or ecosystems.
+- Collaborate well. Participate in community meetings and events.
+- Demonstrate a deep and comprehensive understanding of eKuiper's architecture, technical goals, and directions.
+- Actively engage with major eKuiper feature proposals and implementations.
+
+A new maintainer must be nominated by an existing maintainer. The nominating maintainer will create a PR to update
+the [Maintainer List](https://github.com/lf-edge/ekuiper/blob/master/MAINTAINERS.md). It is recommended to describe the
+reasons for the nomination and the contribution of the nominee in the PR. Upon consensus of incumbent maintainers, the
+PR will be approved and the new maintainer becomes active.
+
+### Nomination process
+
+The following table describes how the nomination is approved.
+
+| Nomination     | Description                                                                  | Approval                                                              | Binding Roles      | Minimum Length (days) |
+|:---------------|:-----------------------------------------------------------------------------|:----------------------------------------------------------------------|:-------------------|:----------------------|
+| New Committer  | When a new committer is proposed, should be only nominated by a maintainer.  | [Lazy Consensus](https://communitymgt.fandom.com/wiki/Lazy_consensus) | Active maintainers | 7                     |
+| New Maintainer | When a new maintainer is proposed, should be only nominated by a maintainer. | Supermajority (2/3) Approval                                          | Active maintainers | 7                     |
