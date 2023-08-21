@@ -158,6 +158,9 @@ func (rs *RuleState) run() {
 					ctx, cancel = context.WithCancel(context.Background())
 					go rs.runTopo(ctx)
 				}
+				// wait context be set
+				time.Sleep(50 * time.Millisecond)
+				rs.refreshStateWithLock()
 			case ActionSignalStop:
 				// Stop the running loop
 				if cancel != nil {
@@ -174,10 +177,6 @@ func (rs *RuleState) run() {
 }
 
 func (rs *RuleState) runTopo(ctx context.Context) {
-	defer func() {
-		rs.refreshStateWithLock()
-	}()
-
 	// Load the changeable states once
 	rs.Lock()
 	tp := rs.Topology
@@ -337,6 +336,7 @@ func (rs *RuleState) startScheduleRule() error {
 	}
 	rs.cronState.isInSchedule = true
 	rs.cronState.entryID = entryID
+	rs.refreshState()
 	return nil
 }
 
@@ -499,6 +499,7 @@ func (rs *RuleState) refreshState() {
 	rs.state = result
 	if result != preState {
 		// TODO: state changed hook
+		conf.Log.Debugf("rule %v state changed, previous: %v, now:%v", rs.RuleId, preState, result)
 	}
 }
 
