@@ -158,9 +158,7 @@ func (rs *RuleState) run() {
 					ctx, cancel = context.WithCancel(context.Background())
 					go rs.runTopo(ctx)
 				}
-				// wait context be set
-				time.Sleep(50 * time.Millisecond)
-				rs.refreshStateWithLock()
+				rs.refreshStateStart()
 			case ActionSignalStop:
 				// Stop the running loop
 				if cancel != nil {
@@ -170,7 +168,7 @@ func (rs *RuleState) run() {
 				} else {
 					conf.Log.Warnf("rule %s is already stopped", rs.RuleId)
 				}
-				rs.refreshStateWithLock()
+				rs.refreshStateStop()
 			}
 		}
 	}()
@@ -336,7 +334,7 @@ func (rs *RuleState) startScheduleRule() error {
 	}
 	rs.cronState.isInSchedule = true
 	rs.cronState.entryID = entryID
-	rs.refreshState()
+	rs.state = rs.refreshState()
 	return nil
 }
 
@@ -464,13 +462,21 @@ func (rs *RuleState) Close() error {
 	return nil
 }
 
-func (rs *RuleState) refreshStateWithLock() {
+func (rs *RuleState) refreshStateStart() {
 	rs.Lock()
 	defer rs.Unlock()
-	rs.refreshState()
+	pre := rs.state
+	rs.state = RuleStarted
+	stateChangedHook(rs.RuleId, pre, rs.state)
 }
 
-func (rs *RuleState) refreshState() {
+func (rs *RuleState) refreshStateStop() {
+	rs.Lock()
+	defer rs.Unlock()
+	rs.state = rs.refreshState()
+}
+
+func (rs *RuleState) refreshState() string {
 	preState := rs.state
 	result := ""
 	if rs.Topology == nil {
@@ -496,10 +502,14 @@ func (rs *RuleState) refreshState() {
 	if rs.Rule.IsScheduleRule() && rs.cronState.startFailedCnt > 0 {
 		result = result + fmt.Sprintf(" Start failed count: %v.", rs.cronState.startFailedCnt)
 	}
-	rs.state = result
-	if result != preState {
+	stateChangedHook(rs.RuleId, preState, result)
+	return result
+}
+
+func stateChangedHook(id, pre, now string) {
+	if pre != now {
 		// TODO: state changed hook
-		conf.Log.Debugf("rule %v state changed, previous: %v, now:%v", rs.RuleId, preState, result)
+		conf.Log.Debugf("rule %v state changed, previous: %v, now:%v", id, pre, now)
 	}
 }
 
