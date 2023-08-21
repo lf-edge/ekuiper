@@ -97,6 +97,7 @@ type RuleState struct {
 	topoGraph *api.PrintableTopo
 	sync.RWMutex
 	cronState cronStateCtx
+	state     string
 }
 
 // NewRuleState Create and initialize a rule state.
@@ -166,12 +167,17 @@ func (rs *RuleState) run() {
 				} else {
 					conf.Log.Warnf("rule %s is already stopped", rs.RuleId)
 				}
+				rs.refreshStateWithLock()
 			}
 		}
 	}()
 }
 
 func (rs *RuleState) runTopo(ctx context.Context) {
+	defer func() {
+		rs.refreshStateWithLock()
+	}()
+
 	// Load the changeable states once
 	rs.Lock()
 	tp := rs.Topology
@@ -458,9 +464,14 @@ func (rs *RuleState) Close() error {
 	return nil
 }
 
-func (rs *RuleState) GetState() (string, error) {
-	rs.RLock()
-	defer rs.RUnlock()
+func (rs *RuleState) refreshStateWithLock() {
+	rs.Lock()
+	defer rs.Unlock()
+	rs.refreshState()
+}
+
+func (rs *RuleState) refreshState() {
+	preState := rs.state
 	result := ""
 	if rs.Topology == nil {
 		result = "Stopped: fail to create the topo."
@@ -485,7 +496,16 @@ func (rs *RuleState) GetState() (string, error) {
 	if rs.Rule.IsScheduleRule() && rs.cronState.startFailedCnt > 0 {
 		result = result + fmt.Sprintf(" Start failed count: %v.", rs.cronState.startFailedCnt)
 	}
-	return result, nil
+	rs.state = result
+	if result != preState {
+		// TODO: state changed hook
+	}
+}
+
+func (rs *RuleState) GetState() (string, error) {
+	rs.RLock()
+	defer rs.RUnlock()
+	return rs.state, nil
 }
 
 func (rs *RuleState) getStoppedRuleState() (result string) {
