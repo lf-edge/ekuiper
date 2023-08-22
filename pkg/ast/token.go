@@ -232,6 +232,7 @@ const (
 	SCHEMAID          = "SCHEMAID"
 	KIND              = "KIND"
 	DELIMITER         = "DELIMITER"
+	GROUPOPTION       = "GROUP"
 
 	XBIGINT   = "BIGINT"
 	XFLOAT    = "FLOAT"
@@ -257,6 +258,7 @@ var StreamTokens = map[string]struct{}{
 	SCHEMAID:          {},
 	KIND:              {},
 	DELIMITER:         {},
+	GROUPOPTION:       {},
 }
 
 var StreamDataTypes = map[string]DataType{

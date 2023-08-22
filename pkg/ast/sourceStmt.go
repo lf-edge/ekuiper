@@ -235,6 +235,7 @@ type Options struct {
 	KIND string `json:"kind,omitempty"`
 	// for delimited format only
 	DELIMITER string `json:"delimiter,omitempty"`
+	GROUP     string `json:"group,omitempty"`
 
 	Schema map[string]*JsonStreamField `json:"-"`
 }

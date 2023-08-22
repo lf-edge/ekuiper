@@ -335,6 +335,9 @@ func printOptions(opts *ast.Options, buff *bytes.Buffer) {
 	if opts.TYPE != "" {
 		buff.WriteString(fmt.Sprintf("TYPE: %s\n", opts.TYPE))
 	}
+	if opts.GROUP != "" {
+		buff.WriteString(fmt.Sprintf("GROUP: %s\n", opts.GROUP))
+	}
 }
 
 func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (ast.Statement, error) {
