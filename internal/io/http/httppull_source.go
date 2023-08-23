@@ -58,6 +58,12 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 	ticker := conf.GetTicker(int64(hps.config.Interval))
 	defer ticker.Stop()
 	omd5 := ""
+
+	// Pulling data at initial start
+	logger.Debugf("Pulling data at initial start")
+	tuples := hps.doPull(ctx, time.Now(), &omd5)
+	io.ReceiveTuples(ctx, consumer, tuples)
+
 	for {
 		select {
 		case rcvTime := <-ticker.C:
