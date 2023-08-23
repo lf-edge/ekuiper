@@ -121,6 +121,21 @@
       }
     },
     {
+      "name": "retained",
+      "default": false,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "The Retained for message delivery.",
+        "zh_CN": "转发后的消息是否保留"
+      },
+      "label": {
+        "en_US": "Retained",
+        "zh_CN": "Retained"
+      }
+    },
+    {
       "name": "username",
       "default": "",
       "optional": true,
