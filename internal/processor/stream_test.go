@@ -23,10 +23,12 @@ import (
 	"testing"
 
 	"github.com/gdexlab/go-render/render"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -243,6 +245,25 @@ func TestTableList(t *testing.T) {
 		t.Errorf("Show scan table mismatch:\nexp=%s\ngot=%s", lse, ls)
 		return
 	}
+}
+
+func TestGetStream(t *testing.T) {
+	streamNoGroup := "create stream demo1 () WITH (FORMAT=\"JSON\", DATASOURCE=\"demo\")"
+	streamWithGroup := "create stream demo2 () WITH (FORMAT=\"JSON\", DATASOURCE=\"demo\", GROUP=\"group\")"
+	p := NewStreamProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+	p.ExecStmt(streamNoGroup)
+	defer p.DropStream("demo1", ast.TypeStream)
+	p.ExecStmt(streamWithGroup)
+	defer p.DropStream("demo2", ast.TypeStream)
+
+	vs, err := xsql.GetDataSourceStatement(p.db, "demo1")
+	require.NoError(t, err)
+	require.Equal(t, vs.Group, "")
+	vs, err = xsql.GetDataSourceStatement(p.db, "demo2")
+	require.NoError(t, err)
+	require.Equal(t, vs.Group, "group")
 }
 
 func TestAll(t *testing.T) {

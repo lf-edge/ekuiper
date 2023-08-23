@@ -59,6 +59,7 @@ type StreamInfo struct {
 	StreamType ast.StreamType `json:"streamType"`
 	StreamKind string         `json:"streamKind"`
 	Statement  string         `json:"statement"`
+	Group      string         `json:"group"`
 }
 
 func GetDataSourceStatement(m kv.KeyValue, name string) (*StreamInfo, error) {

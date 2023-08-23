@@ -163,6 +163,7 @@ func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, repla
 		StreamType: stmt.StreamType,
 		Statement:  statement,
 		StreamKind: stmt.Options.KIND,
+		Group:      stmt.Options.GROUP,
 	})
 	if err != nil {
 		return fmt.Errorf("error when saving to db: %v.", err)
