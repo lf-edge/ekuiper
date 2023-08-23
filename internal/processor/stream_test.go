@@ -15,6 +15,7 @@
 package processor
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,6 +35,14 @@ import (
 
 func init() {
 	testx.InitEnv()
+}
+
+func TestPrintOption(t *testing.T) {
+	var buff bytes.Buffer
+	printOptions(&ast.Options{
+		GROUP: "group",
+	}, &buff)
+	require.Equal(t, "GROUP: group\n", buff.String())
 }
 
 func TestStreamCreateProcessor(t *testing.T) {
