@@ -447,6 +447,13 @@ func (suite *RestTestSuite) Test_dataImport() {
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
+	// create rules with group
+	ruleJson := `{"id":"ruleGroup","triggered":false,"sql":"select * from test","actions":[{"log":{}}],"options":{"group":"group"}}`
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/export?group=any", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
