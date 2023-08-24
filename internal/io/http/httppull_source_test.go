@@ -999,8 +999,8 @@ func TestPullUrlTimeRange(t *testing.T) {
 	// Mock time
 	mockclock.ResetClock(143)
 	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(43), "temperature": float64(33)}}, map[string]interface{}{}, time.UnixMilli(143)),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(53), "temperature": float64(43)}}, map[string]interface{}{}, time.UnixMilli(253)),
-		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(63), "temperature": float64(3)}}, map[string]interface{}{}, time.UnixMilli(363)),
 	}
 	c := mockclock.GetMockClock()
 	go func() {
@@ -1029,8 +1029,8 @@ func TestPullBodyTimeRange(t *testing.T) {
 	// Mock time
 	mockclock.ResetClock(143)
 	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(43), "temperature": float64(33)}}, map[string]interface{}{}, time.UnixMilli(143)),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(53), "temperature": float64(43)}}, map[string]interface{}{}, time.UnixMilli(253)),
-		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(63), "temperature": float64(3)}}, map[string]interface{}{}, time.UnixMilli(363)),
 	}
 	c := mockclock.GetMockClock()
 	go func() {

@@ -61,7 +61,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 
 	// Pulling data at initial start
 	logger.Debugf("Pulling data at initial start")
-	tuples := hps.doPull(ctx, time.Now(), &omd5)
+	tuples := hps.doPull(ctx, conf.GetNow(), &omd5)
 	io.ReceiveTuples(ctx, consumer, tuples)
 
 	for {
