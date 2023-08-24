@@ -339,19 +339,14 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	require.NoError(suite.T(), err)
 	_, ok := ruleset["rule2"]
 	require.True(suite.T(), ok)
-	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/data/export?group=group", bytes.NewBufferString("any"))
-	w := httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
 	// delete rule
 	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
 	// drop stream
-	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
-	w = httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 }
 
@@ -448,6 +443,11 @@ func (suite *RestTestSuite) Test_dataImport() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/export", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/export?group=any", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
