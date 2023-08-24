@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
@@ -60,6 +61,7 @@ func (suite *RestTestSuite) SetupTest() {
 		panic(err)
 	}
 	uploadDir = filepath.Join(dataDir, "uploads")
+	meta.InitYamlConfigManager()
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
@@ -340,14 +342,20 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	require.NoError(suite.T(), err)
 	_, ok := ruleset["rule2"]
 	require.True(suite.T(), ok)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/data/export?group=group", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
 	// delete rule
 	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
 	// drop stream
-	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
-	w := httptest.NewRecorder()
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 }
 
@@ -444,18 +452,6 @@ func (suite *RestTestSuite) Test_dataImport() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/export", bytes.NewBufferString("any"))
-	w = httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
-	// create rules with group
-	ruleJson := `{"id":"ruleGroup","triggered":false,"sql":"select * from test","actions":[{"log":{}}],"options":{"group":"group"}}`
-	buf2 = bytes.NewBuffer([]byte(ruleJson))
-	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
-	w2 := httptest.NewRecorder()
-	suite.r.ServeHTTP(w2, req2)
-
-	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/data/export?group=group", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
