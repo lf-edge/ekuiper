@@ -43,6 +43,7 @@ func init() {
 	streamProcessor = processor.NewStreamProcessor()
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
+	ruleMigrationProcessor = NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
