@@ -27,6 +27,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -327,6 +328,17 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 	expect = `Rule rule1 was restarted`
 	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// create rules with group
+	ruleJson = `{"id":"rule2","triggered":false,"sql":"select * from alert","actions":[{"log":{}}],"options":{"group":"group"}}`
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	ruleset, err := ruleProcessor.GetRulesByGroup("group")
+	require.NoError(suite.T(), err)
+	_, ok := ruleset["rule2"]
+	require.True(suite.T(), ok)
 
 	// delete rule
 	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))

@@ -155,6 +155,7 @@ type RuleOption struct {
 	Cron               string           `json:"cron" yaml:"cron"`
 	Duration           string           `json:"duration" yaml:"duration"`
 	CronDatetimeRange  []DatetimeRange  `json:"cronDatetimeRange" yaml:"cronDatetimeRange"`
+	Group              string           `json:"group" yaml:"group"`
 }
 
 type DatetimeRange struct {

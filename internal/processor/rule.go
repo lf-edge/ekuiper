@@ -131,6 +131,24 @@ func (p *RuleProcessor) GetRuleById(id string) (*api.Rule, error) {
 	return p.GetRuleByJsonValidated(s1)
 }
 
+func (p *RuleProcessor) GetRulesByGroup(group string) (map[string]string, error) {
+	all, err := p.db.All()
+	if err != nil {
+		return nil, errorx.NewWithCode(errorx.GENERAL_ERR, err.Error())
+	}
+	rules := make(map[string]string)
+	for _, ruleJson := range all {
+		rule, err := p.GetRuleByJsonValidated(ruleJson)
+		if err != nil {
+			return nil, errorx.NewWithCode(errorx.GENERAL_ERR, err.Error())
+		}
+		if rule.Options.Group == group {
+			rules[rule.Id] = ruleJson
+		}
+	}
+	return rules, nil
+}
+
 func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
 	return &api.Rule{
 		Id:  name,

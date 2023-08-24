@@ -308,6 +308,35 @@ func ruleTraverse(rule *api.Rule, de *dependencies) {
 	}
 }
 
+func (p *RuleMigrationProcessor) ConfigurationPartialExportByGroup(group string) ([]byte, error) {
+	config := &Configuration{
+		Streams:          make(map[string]string),
+		Tables:           make(map[string]string),
+		Rules:            make(map[string]string),
+		NativePlugins:    make(map[string]string),
+		PortablePlugins:  make(map[string]string),
+		SourceConfig:     make(map[string]string),
+		SinkConfig:       make(map[string]string),
+		ConnectionConfig: make(map[string]string),
+		Service:          make(map[string]string),
+		Schema:           make(map[string]string),
+		Uploads:          make(map[string]string),
+	}
+	config.Rules = p.exportRulesByGroup(group)
+
+	de := newDependencies()
+	for id := range config.Rules {
+		rule, _ := p.r.GetRuleById(id)
+		if rule != nil {
+			ruleTraverse(rule, de)
+		}
+	}
+
+	p.exportSelected(de, config)
+
+	return json.Marshal(config)
+}
+
 func (p *RuleMigrationProcessor) ConfigurationPartialExport(rules []string) ([]byte, error) {
 	config := &Configuration{
 		Streams:          make(map[string]string),
@@ -335,6 +364,11 @@ func (p *RuleMigrationProcessor) ConfigurationPartialExport(rules []string) ([]b
 	p.exportSelected(de, config)
 
 	return json.Marshal(config)
+}
+
+func (p *RuleMigrationProcessor) exportRulesByGroup(group string) map[string]string {
+	rules, _ := p.r.GetRulesByGroup(group)
+	return rules
 }
 
 func (p *RuleMigrationProcessor) exportRules(rules []string) map[string]string {

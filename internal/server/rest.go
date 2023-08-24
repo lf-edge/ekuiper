@@ -771,10 +771,16 @@ func configurationExport() ([]byte, error) {
 func configurationExportHandler(w http.ResponseWriter, r *http.Request) {
 	var jsonBytes []byte
 	const name = "ekuiper_export.json"
+	values := r.URL.Query()
+	group := values.Get("group")
 
 	switch r.Method {
 	case http.MethodGet:
-		jsonBytes, _ = configurationExport()
+		if len(group) > 0 {
+			jsonBytes, _ = ruleMigrationProcessor.ConfigurationPartialExportByGroup(group)
+		} else {
+			jsonBytes, _ = configurationExport()
+		}
 	case http.MethodPost:
 		var rules []string
 		_ = json.NewDecoder(r.Body).Decode(&rules)
