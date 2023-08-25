@@ -1,10 +1,14 @@
-# Merge Multiple Devices' Data in Single Stream
-
-To run the case by hand, please check [here](../howto.md).
+# Merge Multiple Devices' Data in a Single Stream
 
 ## Problem
 
 In IoT scenarios, devices such as sensors are often numerous, and usually the acquisition software combines data from all devices into one data stream. Since each sensor has different acquisition and response cycles, the data stream is interspersed with data from various devices, and the data is more fragmented, with each event containing data from only one sensor. For example, if sensor A collects temperature data once per second, sensor B collects humidity data every 5 seconds, and sensor C collects data every 10 seconds, then there will be three kinds of data in the data stream, A, B, and C. Each kind of data is collected at different frequencies, but they are all mixed together. Back-end applications where the settings of the same group of sensors are usually correlated need to merge data from the same group of sensors together for subsequent processing.
+
+::: tip
+
+To run the case by hand, please check [here](../howto.md).
+
+:::
 
 ## Sample input
 
