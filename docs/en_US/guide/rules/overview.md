@@ -1,6 +1,8 @@
 # Rules
 
-Rules are defined by JSON, below is an example.
+eKuiper's stream processing capabilities are powered by its rules. Rules are the backbone of data flow, dictating how data is ingested, transformed, and then exported to external systems.
+
+A rule is a JSON-defined stream processing flow. It bridges the gap between data sources and processing logic before leading to actions that send the data to external systems.
 
 ```json
 {
@@ -20,7 +22,13 @@ Rules are defined by JSON, below is an example.
 }
 ```
 
-The parameters for the rules are:
+Key components of a rule:
+
+- **ID**: A unique identifier.
+- **SQL**: The processing logic, built on eKuiper's extended SQL syntax.
+- **Actions**: List of sink actions dictating where the processed data is sent.
+
+The table below is a detailed explanation of the row component:
 
 | Parameter name | Optional                         | Description                                                                  |
 |----------------|----------------------------------|------------------------------------------------------------------------------|
@@ -33,26 +41,29 @@ The parameters for the rules are:
 
 ## Rule Logic
 
-A rule represents a stream processing flow from data source that ingest data into the flow to various processing logic to actions that engest the data to external systems.
+A rule represents a stream processing flow from a data source that ingest data into the flow to various processing logic to actions that engest the data to external systems.
 
 There are two ways to define the flow aka. business logic of a rule. Either using SQL/actions combination or using the newly added graph API.
 
+1. **SQL Query Approach**: Using a combination of SQL and actions for a more declarative approach.
+2. **Graph API Approach**: Introduced in eKuiper 1.6.0, this method represents the rule as a Directed Acyclic Graph (DAG) in JSON, ideal for graphical user interfaces.
+
 ### SQL Query
 
-By specifying the `sql` and `actions` property, we can define the business logic of a rule in a declarative way. Among these, `sql` defines the SQL query to run against a predefined stream which will transform the data. The output data can then route to multiple locations by `actions`.
+By specifying the `sql` and `actions` property, we can define the business logic of a rule in a declarative way. Among these, `sql` defines the SQL query to run against a predefined stream which will transform the data. The output data can then be routed to multiple locations by `actions`.
 
 #### SQL
 
-THE simplest rule SQL is like `SELECT * FROM demo`. It has ANSI SQL like syntax and can leverage abundant operators and functions provided by eKuiper runtime. See [SQL](../../sqls/overview.md) for more info of eKuiper SQL.
+The simplest rule SQL is like `SELECT * FROM demo`. It has ANSI SQL-like syntax and can leverage abundant operators and functions provided by eKuiper runtime. See [SQL](../../sqls/overview.md) for more information of eKuiper SQL.
 
-Most of the SQL clause are defining the logic except the `FROM` clause, which is responsible to specify the stream. In this example, `demo` is the stream. It is possible to have multiple streams or streams/tables by using join clause. As a streaming engine, there must be at least one stream in a rule.
+Most of the SQL clauses define the logic except the `FROM` clause, which is responsible for specifying the stream. In this example, `demo` is the stream. It is possible to have multiple streams or streams/tables by using a join clause. As a streaming engine, there must be at least one stream in a rule.
 
 Thus, the SQL query here actually defines two parts:
 
 - The stream(s) or table(s) to be processed.
 - How to process.
 
-Before using the SQL rule, the stream must define in prior. Please check [streams](../streams/overview.md) for detail.
+Before using the SQL rule, the stream must be defined in prior. Please check [streams](../streams/overview.md) for details.
 
 #### Actions
 
@@ -128,28 +139,39 @@ Since eKuiper 1.6.0, eKuiper provides graph property in the rule model as an alt
 }
 ```
 
-The `graph` property is a json structure with `nodes` to define the nodes presented in the graph and `topo` to define the edge between nodes. The node type can be built-in node types such as window node and filter node etc. It can also be a user defined node from plugins. Please refer to [graph rule](./graph_rule.md) for more detail.
+The `graph` property is a json structure with `nodes` to define the nodes presented in the graph and `topo` to define the edge between nodes. The node type can be built-in node types such as window node and filter node etc. It can also be a user-defined node from plugins. Please refer to [graph rule](./graph_rule.md) for more detail.
 
-## Options
+## Fine Tuning
 
-The current options includes:
+eKuiper provides a slew of options to fine-tune rule behavior, including:
 
-| Option name        | Type & Default Value | Description                                                                                                                                                                                                                                                                                                                                       |
-|--------------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| debug              | bool:false           | Specify whether to enable the debug level for this rule. By default, it will inherit the Debug configuration parameters in the global configuration.                                                                                                                                                                                              |
-| logFilename        | string: ""           | Specify the name of a separate log file for this rule, and the log will be saved in the global log folder. By default, the log configuration parameters in the global configuration will be used.                                                                                                                                                 |
-| isEventTime        | boolean: false       | Whether to use event time or processing time as the timestamp for an event. If event time is used, the timestamp will be extracted from the payload. The timestamp filed must be specified by the [stream](../../sqls/streams.md) definition.                                                                                                     |
-| lateTolerance      | int64:0              | When working with event-time windowing, it can happen that elements arrive late. LateTolerance can specify by how much time(unit is millisecond) elements can be late before they are dropped. By default, the value is 0 which means late elements are dropped.                                                                                  |
-| concurrency        | int: 1               | A rule is processed by several phases of plans according to the sql statement. This option will specify how many instances will be run for each plan. If the value is bigger than 1, the order of the messages may not be retained.                                                                                                               |
+- **Debugging and Logging**: Control log verbosity and direct logs to specific files.
+- **Event Time**: Choose between event time or processing time for timestamping.
+- **Fault Tolerance**: Define behavior for late-arriving events.
+- **Concurrency**: Manage parallel processing for different rule phases.
+- **Buffering**: Control in-memory message buffering.
+- **QoS and Checkpointing**: Ensure data reliability with Quality of Service levels and periodic state saving.
+- **Restart Strategy**: Define how rules should restart after failures.
+- **Scheduled Rules**: Set up periodic rule execution based on cron expressions.
+
+See the table below for a detailed explanation of each rule behavior:
+
+| Option name        | Type & Default Value | Description                                                  |
+| ------------------ | -------------------- | ------------------------------------------------------------ |
+| debug              | bool: false          | Specify whether to enable the debug level for this rule. By default, it will inherit the Debug configuration parameters in the global configuration. |
+| logFilename        | string: ""           | Specify the name of a separate log file for this rule, and the log will be saved in the global log folder. By default, the log configuration parameters in the global configuration will be used. |
+| isEventTime        | boolean: false       | Whether to use event time or processing time as the timestamp for an event. If event time is used, the timestamp will be extracted from the payload. The timestamp filed must be specified by the [stream](../../sqls/streams.md) definition. |
+| lateTolerance      | int64:0              | When working with event-time windowing, it can happen that elements arrive late. LateTolerance can specify by how much time(unit is millisecond) elements can be late before they are dropped. By default, the value is 0 which means late elements are dropped. |
+| concurrency        | int: 1               | A rule is processed by several phases of plans according to the sql statement. This option will specify how many instances will be run for each plan. If the value is bigger than 1, the order of the messages may not be retained. |
 | bufferLength       | int: 1024            | Specify how many messages can be buffered in memory for each plan. If the buffered messages exceed the limit, the plan will block message receiving until the buffered messages have been sent out so that the buffered size is less than the limit. A bigger value will accommodate more throughput but will also take up more memory footprint. |
-| sendMetaToSink     | bool:false           | Specify whether the meta data of an event will be sent to the sink. If true, the sink can get te meta data information.                                                                                                                                                                                                                           |
-| sendError          | bool: true           | Whether to send the error to sink. If true, any runtime error will be sent through the whole rule into sinks. Otherwise, the error will only be printed out in the log.                                                                                                                                                                           |
-| qos                | int:0                | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors.                                                                                                |
-| checkpointInterval | int:300000           | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0.                                                                                                                                                                                                                              |
-| restartStrategy    | struct               | Specify the strategy to automatic restarting rule after failures. This can help to get over recoverable failures without manual operations. Please check [Rule Restart Strategy](#rule-restart-strategy) for detail configuration items.                                                                                                          |
-| cron               | string: ""           | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron)                                                                                                                                                                                                                    |
-| duration           | string: ""           | Specifies the running duration of the rule, only valid when cron is specified. The duration should not exceed the time interval between two cron cycles, otherwise it will cause unexpected behavior.                                                                                                                                             |
-| cronDatetimeRange  | lists of struct      | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items                                        |
+| sendMetaToSink     | bool:false           | Specify whether the meta data of an event will be sent to the sink. If true, the sink can get te meta data information. |
+| sendError          | bool: true           | Whether to send the error to sink. If true, any runtime error will be sent through the whole rule into sinks. Otherwise, the error will only be printed out in the log. |
+| qos                | int:0                | Specify the qos of the stream. The options are 0: At most once; 1: At least once and 2: Exactly once. If qos is bigger than 0, the checkpoint mechanism will be activated to save states periodically so that the rule can be resumed from errors. |
+| checkpointInterval | int:300000           | Specify the time interval in milliseconds to trigger a checkpoint. This is only effective when qos is bigger than 0. |
+| restartStrategy    | struct               | Specify the strategy to automatic restarting rule after failures. This can help to get over recoverable failures without manual operations. Please check [Rule Restart Strategy](#rule-restart-strategy) for detail configuration items. |
+| cron               | string: ""           | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron) |
+| duration           | string: ""           | Specifies the running duration of the rule, only valid when cron is specified. The duration should not exceed the time interval between two cron cycles, otherwise it will cause unexpected behavior. |
+| cronDatetimeRange  | lists of struct      | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items |
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
@@ -205,15 +227,15 @@ When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a
 
 When `cronDatetimeRange` is configured but `cron` and `duration` are empty, the rule will run according to the time period specified by `cronDatetimeRange` until the time period is exceeded.
 
-## View rule status
+## View Rule Status
 
 When a rule is deployed to eKuiper, we can use the rule indicator to understand the current running status of the rule.
 
-We can get the running status of all rules and the detailed status of a single rule through the rest api.
+We can get the running status of all rules and the detailed status of a single rule through the rest API.
 
-The status of all rules can be obtained through [Show Rules](../../api/restapi/rules.md#show-rules), and the status of a single rule can be obtained through [get the status of a rule](../../api/restapi/rules.md#get-the-status-of-a-rule).
+The status of all rules can be obtained through [Show Rules](../../api/restapi/rules.md#show-rules), and the status of a single rule can be obtained through [getting the status of a rule](../../api/restapi/rules.md#get-the-status-of-a-rule).
 
-### Understanding Status of running rules
+### Understanding Status of Running Rules
 
 For the following rules:
 
