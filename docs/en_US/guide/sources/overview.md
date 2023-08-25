@@ -13,14 +13,14 @@ Each source will support one or both modes. In the source page, a badge will sho
 
 ## Built-in Sources
 
-Users can directly use the built-in sources in the standard eKuiper instance. The list of built-in sources are:
+Users can directly use the built-in sources in the standard eKuiper instance. The list of built-in sources is as follows:
 
-- [Mqtt source](./builtin/mqtt.md): read data from mqtt topics.
+- [MQTT source](./builtin/mqtt.md): read data from MQTT topics.
 - [Neuron source](./builtin/neuron.md): read data from the local neuron instance.
 - [EdgeX source](./builtin/edgex.md): read data from EdgeX foundry.
-- [Http pull source](./builtin/http_pull.md): source to pull data from http servers.
+- [HTTP pull source](./builtin/http_pull.md): source to pull data from HTTP servers.
 - [Http push source](./builtin/http_push.md): push data to eKuiper through http.
-- [Redis source](./builtin/redis.md): source to lookup from redis as a lookup table.
+- [Redis source](./builtin/redis.md): source to lookup from Redis as a lookup table.
 - [File source](./builtin/file.md): source to read from file, usually used as tables.
 - [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
 
@@ -33,6 +33,7 @@ Additionally, these plugins have pre-built binaries for the mainstream cpu archi
 The list of predefined source plugins:
 
 - [SQL source](./plugin/sql.md): a source to periodically fetch data from SQL DB.
+- [Video Source](./plugin/video.md): a source to query video streams. 
 - [Random source](./plugin/random.md): a source to generate random data for testing.
 - [Zero MQ source](./plugin/zmq.md): read data from zero mq.
 

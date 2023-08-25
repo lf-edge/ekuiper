@@ -4,16 +4,16 @@ In the eKuiper source code, there are built-in sinks and sinks in extension.
 
 ## Built-in Sinks
 
-Users can directly use the built-in sinks in the standard eKuiper instance. The list of built-in sinks are:
+Users can directly use the built-in sinks in the standard eKuiper instance. The list of built-in sinks is as follows:
 
-- [Mqtt sink](./builtin/mqtt.md): sink to external mqtt broker.
+- [MQTT sink](./builtin/mqtt.md): sink to external MQTT broker.
 - [Neuron sink](./builtin/neuron.md): sink to the local neuron instance.
-- [EdgeX sink](./builtin/edgex.md): sink to EdgeX Foundry. This sink only exist when enabling edgex build tag.
-- [Rest sink](./builtin/rest.md): sink to external http server.
-- [Redis sink](./builtin/redis.md): sink to redis.
+- [EdgeX sink](./builtin/edgex.md): sink to EdgeX Foundry. This sink only exists when enabling the edgex build tag.
+- [Rest sink](./builtin/rest.md): sink to external HTTP server.
+- [Redis sink](./builtin/redis.md): sink to Redis.
 - [File sink](./builtin/file.md): sink to a file.
 - [Memory sink](./builtin/memory.md): sink to eKuiper memory topic to form rule pipelines.
-- [Log sink](./builtin/log.md): sink to log, usually for debug only.
+- [Log sink](./builtin/log.md): sink to log, usually for debugging only.
 - [Nop sink](./builtin/nop.md): sink to nowhere. It is used for performance testing now.
 
 ## Predefined Sink Plugins
@@ -24,12 +24,12 @@ Additionally, these plugins have pre-built binaries for the mainstream cpu archi
 
 The list of predefined sink plugins:
 
-- [InfluxDB sink](./plugin/influx.md): sink to influx db `v1.x`.
-- [InfluxDBV2 sink](./plugin/influx2.md): sink to influx db `v2.x`.
-- [Tdengine sink](./plugin/tdengine.md): sink to tdengine.
-- [Image sink](./plugin/image.md): sink to an image file. Only used to handle binary result.
-- [Zero MQ sink](./plugin/zmq.md): sink to zero mq.
-- [Kafka sink](./plugin/kafka.md): sink to kafka.
+- [InfluxDB sink](./plugin/influx.md): sink to InfluxDB `v1.x`.
+- [InfluxDBV2 sink](./plugin/influx2.md): sink to InfluxDB `v2.x`.
+- [TDengine sink](./plugin/tdengine.md): sink to TDengine.
+- [Image sink](./plugin/image.md): sink to an image file. Only used to handle binary results.
+- [Zero MQ sink](./plugin/zmq.md): sink to Zero MQ.
+- [Kafka sink](./plugin/kafka.md): sink to Kafka.
 
 ## Updatable Sink
 

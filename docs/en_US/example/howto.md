@@ -1,4 +1,4 @@
-# Run Examples
+# Step-by-Step Guide: Navigating eKuiper with the Management Console UI
 
 This page explains how to use eKuiper to run the examples in this document. Before running the examples, you need to [install eKuiper](../installation.md).
 

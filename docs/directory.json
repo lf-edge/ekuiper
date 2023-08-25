@@ -729,7 +729,70 @@
 	"en": [
 		{
 			"title": "Introduction",
-			"path": "./"
+			"path": "./",
+			"children": [
+				{
+					"title": "Architecture",
+					"path": "concepts/ekuiper"
+				},
+				{
+					"title": "Stream Processing",
+					"path": "concepts/streaming/overview",
+					"children": [
+						{
+							"title": "Time Attribute",
+							"path": "concepts/streaming/time"
+						},
+						{
+							"title": "Windowing",
+							"path": "concepts/streaming/windowing"
+						},
+						{
+							"title": "Join",
+							"path": "concepts/streaming/join"
+						}
+					]
+				},
+				{
+					"title": "Key Concepts",
+					"children": [
+						{
+							"title": "Rules",
+							"path": "concepts/rules"
+						},
+						{
+							"title": "Sources",
+							"path": "concepts/sources/overview",
+							"children": [
+								{
+									"title": "Stream",
+									"path": "concepts/sources/stream"
+								},
+								{
+									"title": "Table",
+									"path": "concepts/sources/table"
+								}
+							]
+						},
+						{
+							"title": "Sinks",
+							"path": "concepts/sinks"
+						},
+						{
+							"title": "SQL Queries",
+							"path": "concepts/sql"
+						},
+						{
+							"title": "Extensions",
+							"path": "concepts/extensions"
+						}
+					]
+				},
+				{
+					"title": "Contribute",
+					"path": "CONTRIBUTING"
+				}
+			]
 		},
 		{
 			"title": "Getting Started",
@@ -751,59 +814,30 @@
 		},
 		{
 			"title": "Installation",
-			"path": "installation"
-		},
-		{
-			"title": "Configuration",
-			"path": "configuration/configuration",
+			"path": "installation",
 			"children": [
 				{
-					"title": "Global Configurations",
-					"path": "configuration/global_configurations"
+					"title": "Buld from Source Code",
+					"path": "operation/compile/compile",
+					"children": [
+						{
+							"title": "Cross Compile",
+							"path": "operation/compile/cross-compile"
+						},
+						{
+							"title": "Compile selected features only",
+							"path": "operation/compile/features"
+						}
+					]
 				}
 			]
 		},
 		{
-			"title": "User Guide",
+			"title": "Connectors",
+			"path": "guide/connector.md",
 			"children": [
 				{
-					"title": "Stream: unbounded series of events",
-					"path": "guide/streams/overview"
-				},
-				{
-					"title": "Table: snapshot of events",
-					"path": "guide/tables/overview",
-					"children": [
-						{
-							"title": "Scan Table",
-							"path": "guide/tables/scan"
-						},
-						{
-							"title": "Lookup Table",
-							"path": "guide/tables/lookup"
-						}
-					]
-				},
-				{
-					"title": "Rule: query and action",
-					"path": "guide/rules/overview",
-					"children": [
-						{
-							"title": "Graph Rule",
-							"path": "guide/rules/graph_rule"
-						},
-						{
-							"title": "Rule Pipeline",
-							"path": "guide/rules/rule_pipeline"
-						},
-						{
-							"title": "State and Fault Tolerance",
-							"path": "guide/rules/state_and_fault_tolerance"
-						}
-					]
-				},
-				{
-					"title": "Source Connectors",
+					"title": "Source Connector",
 					"path": "guide/sources/overview",
 					"children": [
 						{
@@ -844,7 +878,7 @@
 							]
 						},
 						{
-							"title": "Predefined Source Plugins",
+							"title": "Predefined Source PLugins",
 							"children": [
 								{
 									"title": "SQL Source",
@@ -855,100 +889,136 @@
 									"path": "guide/sources/plugin/video"
 								},
 								{
-									"title": "Random Source",
-									"path": "guide/sources/plugin/random"
-								},
-								{
 									"title": "Zero MQ Source",
 									"path": "guide/sources/plugin/zmq"
+								},
+								{
+									"title": "Random Source",
+									"path": "guide/sources/plugin/random"
 								}
 							]
+						},
+						{
+							"title": "Sink Connectors",
+							"path": "guide/sinks/overview",
+							"children": [
+								{
+									"title": "Data Template",
+									"path": "guide/sinks/data_template"
+								},
+								{
+									"title": "Built-in Sinks",
+									"children": [
+										{
+											"title": "MQTT Sink",
+											"path": "guide/sinks/builtin/mqtt"
+										},
+										{
+											"title": "Neuron Sink",
+											"path": "guide/sinks/builtin/neuron"
+										},
+										{
+											"title": "EdgeX Sink",
+											"path": "guide/sinks/builtin/edgex"
+										},
+										{
+											"title": "REST Sink",
+											"path": "guide/sinks/builtin/rest"
+										},
+										{
+											"title": "Redis Sink",
+											"path": "guide/sinks/builtin/redis"
+										},
+										{
+											"title": "File Sink",
+											"path": "guide/sinks/builtin/file"
+										},
+										{
+											"title": "Memory Sink",
+											"path": "guide/sinks/builtin/memory"
+										},
+										{
+											"title": "Log Sink",
+											"path": "guide/sinks/builtin/log"
+										},
+										{
+											"title": "Nop Sink",
+											"path": "guide/sinks/builtin/nop"
+										}
+									]
+								},
+								{
+									"title": "Predefined Sink Plugins",
+									"children": [
+										{
+											"title": "SQL Sink",
+											"path": "guide/sinks/plugin/sql"
+										},
+										{
+											"title": "InfluxDB Sink",
+											"path": "guide/sinks/plugin/influx"
+										},
+										{
+											"title": "InfluxDBV2 Sink",
+											"path": "guide/sinks/plugin/influx2"
+										},
+										{
+											"title": "TDengine Sink",
+											"path": "guide/sinks/plugin/tdengine"
+										},
+										{
+											"title": "Image Sink",
+											"path": "guide/sinks/plugin/image"
+										},
+										{
+											"title": "ZeroMQ Sink",
+											"path": "guide/sinks/plugin/zmq"
+										},
+										{
+											"title": "Kafka Sink",
+											"path": "guide/sinks/plugin/kafka"
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "Rules",
+			"path": "guide/rules/overview",
+			"children": [
+				{
+					"title": "Stream: unbounded series of events",
+					"path": "guide/streams/overview"
+				},
+				{
+					"title": "Table: snapshot of events",
+					"path": "guide/tables/overview",
+					"children": [
+						{
+							"title": "Scan Table",
+							"path": "guide/tables/scan"
+						},
+						{
+							"title": "Lookup Table",
+							"path": "guide/tables/lookup"
 						}
 					]
 				},
 				{
-					"title": "Sink Connectors",
-					"path": "guide/sinks/overview",
-					"children": [
-						{
-							"title": "Data Template",
-							"path": "guide/sinks/data_template"
-						},
-						{
-							"title": "Built-in Sinks",
-							"children": [
-								{
-									"title": "MQTT Sink",
-									"path": "guide/sinks/builtin/mqtt"
-								},
-								{
-									"title": "Neuron Sink",
-									"path": "guide/sinks/builtin/neuron"
-								},
-								{
-									"title": "EdgeX Sink",
-									"path": "guide/sinks/builtin/edgex"
-								},
-								{
-									"title": "REST Sink",
-									"path": "guide/sinks/builtin/rest"
-								},
-								{
-									"title": "Redis Sink",
-									"path": "guide/sinks/builtin/redis"
-								},
-								{
-									"title": "File Sink",
-									"path": "guide/sinks/builtin/file"
-								},
-								{
-									"title": "Memory Sink",
-									"path": "guide/sinks/builtin/memory"
-								},
-								{
-									"title": "Log Sink",
-									"path": "guide/sinks/builtin/log"
-								},
-								{
-									"title": "Nop Sink",
-									"path": "guide/sinks/builtin/nop"
-								}
-							]
-						},
-						{
-							"title": "Predefined Sink Plugins",
-							"children": [
-								{
-									"title": "SQL Sink",
-									"path": "guide/sinks/plugin/sql"
-								},
-								{
-									"title": "InfluxDB Sink",
-									"path": "guide/sinks/plugin/influx"
-								},
-								{
-									"title": "InfluxDBV2 Sink",
-									"path": "guide/sinks/plugin/influx2"
-								},
-								{
-									"title": "TDengine Sink",
-									"path": "guide/sinks/plugin/tdengine"
-								},
-								{
-									"title": "Image Sink",
-									"path": "guide/sinks/plugin/image"
-								},
-								{
-									"title": "ZeroMQ Sink",
-									"path": "guide/sinks/plugin/zmq"
-								},
-								{
-									"title": "Kafka Sink",
-									"path": "guide/sinks/plugin/kafka"
-								}
-							]
-						}
-					]
+					"title": "Graph Rule",
+					"path": "guide/rules/graph_rule"
+				},
+				{
+					"title": "Rule Pipeline",
+					"path": "guide/rules/rule_pipeline"
+				},
+				{
+					"title": "State and Fault Tolerance",
+					"path": "guide/rules/state_and_fault_tolerance"
 				},
 				{
 					"title": "Serialization",
@@ -988,98 +1058,22 @@
 			]
 		},
 		{
-			"title": "Example",
-			"path": "example/howto",
+			"title": "Cookbook",
+			"path": "example/overview",
 			"children": [
 				{
-					"title": "Data Merging",
-					"path": "example/data_merge/overview",
-					"children": [
-						{
-							"title": "Merge multiple devices' data in single stream",
-							"path": "example/data_merge/merge_single_stream"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "Admin Guide",
-			"children": [
-				{
-					"title": "Installation",
-					"path": "installation"
+					"title": "Data Preparation",
+					"path": "example/howto"
 				},
 				{
-					"title": "Configuration",
-					"path": "configuration/configuration",
-					"children": [
-						{
-							"title": "Global Configurations",
-							"path": "configuration/global_configurations"
-						}
-					]
-				},
-				{
-					"title": "Management Console",
-					"children": [
-						{
-							"title": "Introduction",
-							"path": "operation/manager-ui/overview"
-						},
-						{
-							"title": "Plugin Management",
-							"path": "operation/manager-ui/plugins_in_manager"
-						}
-					]
-				},
-				{
-					"title": "Compilation",
-					"children": [
-						{
-							"title": "Compile",
-							"path": "operation/compile/compile"
-						},
-						{
-							"title": "Cross Compile",
-							"path": "operation/compile/cross-compile"
-						},
-						{
-							"title": "Compile selected features only",
-							"path": "operation/compile/features"
-						}
-					]
-				},
-				{
-					"title": "Monitor",
-					"children": [
-						{
-							"title": "Monitor with Prometheus",
-							"path": "operation/usage/monitor_with_prometheus"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "Use Cases",
-			"children": [
-				{
-					"title": "IIoT case",
-					"path": "usecases/iiot"
-				},
-				{
-					"title": "IoV case",
-					"path": "usecases/iov"
-				},
-				{
-					"title": "Public data analysis",
-					"path": "usecases/public_data_analysis"
+					"title": "Merge multiple devices' data in single stream",
+					"path": "example/data_merge/merge_single_stream"
 				}
 			]
 		},
 		{
 			"title": "Integrations",
+			"path": "integrations/overview",
 			"children": [
 				{
 					"title": "Edge Cloud Collaboration",
@@ -1107,7 +1101,7 @@
 					]
 				},
 				{
-					"title": "Processing Data Collected by Neuron ",
+					"title": "Processing Data Collected by Neuron",
 					"path": "integrations/neuron/neuron_integration_tutorial"
 				},
 				{
@@ -1121,75 +1115,144 @@
 			]
 		},
 		{
-			"title": "Architecture Design",
+			"title": "Use Cases",
+			"path": "usecases/overview",
 			"children": [
 				{
-					"title": "Architecture",
-					"path": "concepts/ekuiper"
+					"title": "IIoT case",
+					"path": "usecases/iiot"
 				},
 				{
-					"title": "Key Concepts",
+					"title": "IoV case",
+					"path": "usecases/iov"
+				},
+				{
+					"title": "Public data analysis",
+					"path": "usecases/public_data_analysis"
+				}
+			]
+		},
+		{
+			"title": "Admin Guide",
+			"path": "operation/overview",
+			"children": [
+				{
+					"title": "Configuration Guide",
+					"path": "configuration/configuration",
 					"children": [
 						{
-							"title": "Rules",
-							"path": "concepts/rules"
-						},
-						{
-							"title": "Sources",
-							"children": [
-								{
-									"title": "Overview",
-									"path": "concepts/sources/overview"
-								},
-								{
-									"title": "Stream",
-									"path": "concepts/sources/stream"
-								},
-								{
-									"title": "Table",
-									"path": "concepts/sources/table"
-								}
-							]
-						},
-						{
-							"title": "Sinks",
-							"path": "concepts/sinks"
-						},
-						{
-							"title": "SQL Queries",
-							"path": "concepts/sql"
-						},
-						{
-							"title": "Extensions",
-							"path": "concepts/extensions"
+							"title": "Global Configurations",
+							"path": "configuration/global_configurations",
+							"children": []
 						}
 					]
 				},
 				{
-					"title": "Stream Processing",
+					"title": "Monitor",
+					"path": "operation/usage/monitor_with_prometheus"
+				},
+				{
+					"title": "Management Console",
+					"path": "operation/manager-ui/overview",
 					"children": [
 						{
-							"title": "Overview",
-							"path": "concepts/streaming/overview"
-						},
-						{
-							"title": "Time Attribute",
-							"path": "concepts/streaming/time"
-						},
-						{
-							"title": "Windowing",
-							"path": "concepts/streaming/windowing"
-						},
-						{
-							"title": "Join",
-							"path": "concepts/streaming/join"
+							"title": "Manage Custom Plugins",
+							"path": "operation/manager-ui/plugins_in_manager"
 						}
 					]
 				}
 			]
 		},
 		{
-			"title": "Developer Guide",
+			"title": "API Reference",
+			"path": "api/restapi/overview",
+			"children": [
+				{
+					"title": "Authentication",
+					"path": "api/restapi/authentication"
+				},
+				{
+					"title": "Streams",
+					"path": "api/restapi/streams"
+				},
+				{
+					"title": "Tables",
+					"path": "api/restapi/tables"
+				},
+				{
+					"title": "Rules",
+					"path": "api/restapi/rules"
+				},
+				{
+					"title": "Plugins",
+					"path": "api/restapi/plugins"
+				},
+				{
+					"title": "Source ConfigKey",
+					"path": "api/restapi/configKey"
+				},
+				{
+					"title": "External Services",
+					"path": "api/restapi/services"
+				},
+				{
+					"title": "Schemas",
+					"path": "api/restapi/schemas"
+				},
+				{
+					"title": "Upload files",
+					"path": "api/restapi/uploads"
+				},
+				{
+					"title": "Ruleset",
+					"path": "api/restapi/ruleset"
+				},
+				{
+					"title": "Data Export/Import",
+					"path": "api/restapi/data"
+				}
+			]
+		},
+		{
+			"title": "Command Line Tool",
+			"path": "api/cli/overview",
+			"children": [
+				{
+					"title": "Streams",
+					"path": "api/cli/streams"
+				},
+				{
+					"title": "Rules",
+					"path": "api/cli/rules"
+				},
+				{
+					"title": "Tables",
+					"path": "api/cli/tables"
+				},
+				{
+					"title": "Plugins",
+					"path": "api/cli/plugins"
+				},
+				{
+					"title": "External Services",
+					"path": "api/cli/services"
+				},
+				{
+					"title": "Schemas",
+					"path": "api/cli/schemas"
+				},
+				{
+					"title": "Ruleset",
+					"path": "api/cli/ruleset"
+				},
+				{
+					"title": "Data Export/Import",
+					"path": "api/cli/data"
+				}
+			]
+		},
+		{
+			"title": "Extension Develop Guide",
 			"path": "extension/overview",
 			"children": [
 				{
@@ -1220,11 +1283,8 @@
 				},
 				{
 					"title": "Portable Plugin Development",
+					"path": "extension/portable/overview",
 					"children": [
-						{
-							"title": "Portable Plugin",
-							"path": "extension/portable/overview"
-						},
 						{
 							"title": "GO SDK for Portable Plugin",
 							"path": "extension/portable/go_sdk"
@@ -1236,8 +1296,8 @@
 					]
 				},
 				{
-					"title": "External Function",
-					"path": "extension/external/external_func"
+					"title": "Plugin Management",
+					"path": "operation/manager-ui/plugins_in_manager"
 				},
 				{
 					"title": "Wasm Function",
@@ -1247,6 +1307,7 @@
 		},
 		{
 			"title": "SQL Reference",
+			"path": "sqls/overview",
 			"children": [
 				{
 					"title": "Statements",
@@ -1350,107 +1411,14 @@
 					]
 				},
 				{
+					"title": "External Function",
+					"path": "extension/external/external_func"
+				},
+				{
 					"title": "Windowing",
 					"path": "sqls/windows"
 				}
 			]
-		},
-		{
-			"title": "API Reference",
-			"children": [
-				{
-					"title": "Rest API",
-					"path": "api/restapi/overview",
-					"children": [
-						{
-							"title": "Authentication",
-							"path": "api/restapi/authentication"
-						},
-						{
-							"title": "Streams",
-							"path": "api/restapi/streams"
-						},
-						{
-							"title": "Tables",
-							"path": "api/restapi/tables"
-						},
-						{
-							"title": "Rules",
-							"path": "api/restapi/rules"
-						},
-						{
-							"title": "Plugins",
-							"path": "api/restapi/plugins"
-						},
-						{
-							"title": "Source ConfigKey",
-							"path": "api/restapi/configKey"
-						},
-						{
-							"title": "External Services",
-							"path": "api/restapi/services"
-						},
-						{
-							"title": "Schemas",
-							"path": "api/restapi/schemas"
-						},
-						{
-							"title": "Upload files",
-							"path": "api/restapi/uploads"
-						},
-						{
-							"title": "Ruleset",
-							"path": "api/restapi/ruleset"
-						},
-						{
-							"title": "Data Export/Import",
-							"path": "api/restapi/data"
-						}
-					]
-				},
-				{
-					"title": "Command Line Tool",
-					"path": "api/cli/overview",
-					"children": [
-						{
-							"title": "Streams",
-							"path": "api/cli/streams"
-						},
-						{
-							"title": "Rules",
-							"path": "api/cli/rules"
-						},
-						{
-							"title": "Tables",
-							"path": "api/cli/tables"
-						},
-						{
-							"title": "Plugins",
-							"path": "api/cli/plugins"
-						},
-						{
-							"title": "External Services",
-							"path": "api/cli/services"
-						},
-						{
-							"title": "Schemas",
-							"path": "api/cli/schemas"
-						},
-						{
-							"title": "Ruleset",
-							"path": "api/cli/ruleset"
-						},
-						{
-							"title": "Data Export/Import",
-							"path": "api/cli/data"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "Contribute",
-			"path": "CONTRIBUTING"
 		}
 	]
 }
