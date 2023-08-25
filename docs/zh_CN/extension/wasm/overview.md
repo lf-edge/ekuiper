@@ -152,9 +152,9 @@ bin/kuiper describe plugin wasm fibonacci
 
    ```shell
    bin/kuiper create stream demo_fib '(num float) WITH (FORMAT="JSON", DATASOURCE="demo_fib")'
-   
+ 
    bin/kuiper query
-   
+ 
    select fib(num) from demo_fib
    ```
 

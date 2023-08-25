@@ -196,7 +196,7 @@ By setting the `sendSingle` property of the sink to `true`, the slice data passe
 Assuming that the data content flowing into the sink is as follows:
 
 ```json
-{"device_id":"1", 
+{"device_id":"1",
  "values": [
   {"temperature": 10.5},
   {"temperature": 20.3},
@@ -233,12 +233,12 @@ The data template is relatively complicated, which is explained below:
 :::
 
   ```text
-  {{range $index, $ele := .values}} 
+  {{range $index, $ele := .values}}
     {{if le .temperature 25.0}}
       "fine"
     {{else if gt .temperature 25.0}}
       "high"
-    {{end}} 
+    {{end}}
     {{if eq $loopsize $index}}
       ]
     {{else}}

@@ -12,8 +12,8 @@ There are two kinds of table:
 Table supports almost the same syntax as streams. To create a table, run the below SQL:
 
 ```sql
-CREATE TABLE   
-    table_name   
+CREATE TABLE 
+    table_name 
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```

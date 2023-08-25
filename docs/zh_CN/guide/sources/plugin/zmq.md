@@ -22,7 +22,7 @@
 ```yaml
 #Global Zmq configurations
 default:
-  server: tcp://192.168.2.2:5563  
+  server: tcp://192.168.2.2:5563
 test:
   server: tcp://127.0.0.1:5563
 ```

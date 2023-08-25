@@ -22,11 +22,11 @@ eKuiper 提供了用于构建查询的各种元素。 总结如下。
 ### 句法
 
 ```sql
-SELECT 
+SELECT
     * [EXCEPT | REPLACE]
     | [source_stream.]column_name [AS column_alias]
     | expression
-  
+
 ```
 
 ### 参数
@@ -127,7 +127,7 @@ select a + 1 as a, a + 2 as sum2 from demo
 ### 句法
 
 ```sql
-FROM source_stream | source_stream AS source_stream_alias 
+FROM source_stream | source_stream AS source_stream_alias
 ```
 
 ### 参数
@@ -143,8 +143,8 @@ JOIN 用于合并来自两个或更多输入流的记录。 JOIN 包括 LEFT，R
 ### 句法
 
 ```sql
-LEFT | RIGHT | FULL | CROSS 
-JOIN 
+LEFT | RIGHT | FULL | CROSS
+JOIN
 source_stream | source_stream AS source_stream_alias
 ON <source_stream|source_stream_alias>.column_name =<source_stream|source_stream_alias>.column_name
 ```
@@ -241,12 +241,12 @@ WHERE 指定查询返回的行的搜索条件。 WHERE 子句仅用于提取满�
 
 ```sql
 WHERE <search_condition>
-<search_condition> ::=   
-    { <predicate> | ( <search_condition> ) }   
-    [ { AND | OR } { <predicate> | ( <search_condition> ) } ]   
-[ ,...n ]   
-<predicate> ::=   
-    { expression { = | < > | ! = | > | > = | < | < = | NOT IN} expression   
+<search_condition> ::= 
+    { <predicate> | ( <search_condition> ) } 
+    [ { AND | OR } { <predicate> | ( <search_condition> ) } ] 
+[ ,...n ] 
+<predicate> ::= 
+    { expression { = | < > | ! = | > | > = | < | < = | NOT IN} expression 
 ```
 
 例子:
@@ -394,14 +394,14 @@ GROUP BY 将一组选定的行分组为一组汇总行，这些汇总行按一�
 ### 句法
 
 ```sql
-GROUP BY <group by spec>  
-  
-<group by spec> ::=  
-    <group by item> [ ,...n ]  
-    | <window_type>  
-  
-<group by item> ::=  
-    <column_expression>  
+GROUP BY <group by spec>
+
+<group by spec> ::=
+    <group by item> [ ,...n ]
+    | <window_type>
+
+<group by item> ::=
+    <column_expression>
 ```
 
 ### 参数
@@ -437,7 +437,7 @@ select * from demo group by a, countwindow(5);
 #### 句法
 
 ```sql
-[ HAVING <search condition> ]  
+[ HAVING <search condition> ]
 ```
 
 #### 参数
@@ -520,19 +520,19 @@ Case 表达式有两种类型：简单 Case 表达式和搜索 Case 表达式。
 #### 语法
 
 ```sql
-CASE value   
-     WHEN conditionValue THEN result_expression [ ...n ]   
-     [ ELSE else_result_expression ]   
-END   
+CASE value 
+     WHEN conditionValue THEN result_expression [ ...n ] 
+     [ ELSE else_result_expression ] 
+END 
 ```
 
 **示例**:
 
 ```sql
-SELECT CASE color 
-    WHEN "red" THEN 1 
-    WHEN "yellow" THEN 2 
-    ELSE 3 END as colorInteger, 
+SELECT CASE color
+    WHEN "red" THEN 1
+    WHEN "yellow" THEN 2
+    ELSE 3 END as colorInteger,
 humidity FROM tbl
 ```
 
@@ -543,17 +543,17 @@ humidity FROM tbl
 #### 语法
 
 ```sql
-CASE    
-     WHEN condition THEN result_expression [ ...n ]   
-     [ ELSE else_result_expression ]   
-END 
+CASE  
+     WHEN condition THEN result_expression [ ...n ] 
+     [ ELSE else_result_expression ] 
+END
 ```
 
 **示例**:
 
 ```sql
-SELECT CASE 
-    WHEN size < 150 THEN "S" 
+SELECT CASE
+    WHEN size < 150 THEN "S"
     WHEN size < 170 THEN "M"
     WHEN size < 175 THEN "L"
     ELSE "XL" END as sizeLabel

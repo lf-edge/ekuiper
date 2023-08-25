@@ -183,7 +183,7 @@ Sample:
     "source_demo_0_process_latency_ms":0,
     "source_demo_0_buffer_length":0,
     "source_demo_0_last_invocation":"2020-01-02T11:28:33.054821",
-    ... 
+    ...
     "op_filter_0_records_in_total":5,
     "op_filter_0_records_out_total":2,
     "op_filter_0_exceptions_total":0,

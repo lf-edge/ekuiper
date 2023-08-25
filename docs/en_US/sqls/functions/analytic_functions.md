@@ -267,7 +267,7 @@ _________________________________________________________
 Rule to get the events when temperature has changed but humidity has NOT changed:
 
 ```text
-SQL: SELECT ts, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo
 WHERE HAD_CHANGED(true, temperature) = true AND HAD_CHANGED(true, humidity) = false
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
@@ -287,7 +287,7 @@ _________________________________________________________
 Rule to get the changed values when the temperature had changed to value bigger than 24:
 
 ```text
-SQL: SELECT ts, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo
 WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}

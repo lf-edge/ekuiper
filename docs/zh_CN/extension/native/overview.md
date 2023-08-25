@@ -79,7 +79,7 @@ eKuiper 扩展通过 context 参数暴露了一个基于键值对的状态存储
 
 ```go
 func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-    logger := ctx.GetLogger()    
+    logger := ctx.GetLogger()  
     err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
     if err != nil {
         return err, false

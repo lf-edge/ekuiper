@@ -43,7 +43,7 @@ sudo apt-get install -y kubelet=1.20.8-00 kubeadm=1.20.8-00 kubectl=1.20.8-00
 假设您的云节点的外部 IP 是 `34.209.219.149`。在云节点中，输入以下命令，我们将得到类似下面的结果。
 
 ```shell
-# sudo kubeadm init --control-plane-endpoint 34.209.219.149 --kubernetes-version stable-1.20 
+# sudo kubeadm init --control-plane-endpoint 34.209.219.149 --kubernetes-version stable-1.20
 [init] Using Kubernetes version: v1.20.8
 ...
 Your Kubernetes control-plane has initialized successfully!

@@ -15,7 +15,7 @@ Compared with the schema-free JSON format, Protobuf needs to define the data str
 
 ```protobuf
 message Book {
-  required string title = 1; 
+  required string title = 1;
   required int32 price = 2;
 }
 ```

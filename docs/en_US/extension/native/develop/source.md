@@ -15,7 +15,7 @@ Before starting the development, you must [setup the environment for golang plug
 To develop a source, the _Configure_ method must be implemented. This method will be called once the source is initialized. In this method, you can retrieve the _DATASOURCE_ property of the stream (which is topic for mqtt and other messaging system) from the first parameter. Then in the second parameter, a map that contains the configuration in your _yaml_ file is passed. See [configuration](#deal-with-configuration) for more detail. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this source.
 
 ```go
-//Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml 
+//Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml
 Configure(datasource string, props map[string]interface{}) error
 ```
 
@@ -24,7 +24,7 @@ The main task for a Source is to implement _open_ method. The implementation sho
 ```go
 //Should be sync function for normal case. The container will run it in go func
 Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
-```  
+```
 
 The last method to implement is _Close_ which literally close the connection. It is called when the stream is about to terminate. You could also do any clean up work in this function.
 
@@ -51,7 +51,7 @@ Before starting the development, you must [setup the environment for golang plug
 To develop a lookup source, the _Configure_ method must be implemented. This method will be called once the source is initialized. In this method, you can retrieve the _DATASOURCE_ property of the stream (which is topic for mqtt and other messaging system) from the first parameter. Then in the second parameter, a map that contains the configuration in your _yaml_ file is passed. See [configuration](#deal-with-configuration) for more detail. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this source.
 
 ```go
-//Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml 
+//Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties read from the yaml
 Configure(datasource string, props map[string]interface{}) error
 ```
 
@@ -67,7 +67,7 @@ The main task for a Source is to implement _Lookup_ method. The method will be r
 ```go
 // Lookup receive lookup values to construct the query and return query results
 Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
-```  
+```
 
 The last method to implement is _Close_ which literally close the connection. It is called when the stream is about to terminate. You could also do any clean up work in this function.
 

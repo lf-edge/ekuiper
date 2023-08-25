@@ -94,7 +94,7 @@ Sample:
 The command is used for drop the plugin.
 
 ```shell
-drop plugin $plugin_type $plugin_name -s $stop 
+drop plugin $plugin_type $plugin_name -s $stop
 ```
 
 In which, `-s $stop` is an optional boolean parameter. If it is set to true, the eKuiper server will be stopped for the delete to take effect. The user will need to restart it manually.

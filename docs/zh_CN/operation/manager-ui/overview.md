@@ -38,16 +38,16 @@
   ```shell
   # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.8-slim
   ```
-  
+
   在运行容器时通过 `-e` 选项设置了 MQTT 服务器地址，数据写到了 MQTT 源配置文件中，通过以下命令可以查看：
-  
+
   ```shell
   # docker exec -it kuiper sh
   # cat etc/mqtt_source.yaml
   ```
-  
+
   该文件的部分输出如下所示，`server` 的值被设置为 `tcp://broker.emqx.io:1883`。
-  
+
   ```yaml
   default:
     concurrency: 1

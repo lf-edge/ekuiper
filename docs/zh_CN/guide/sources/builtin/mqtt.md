@@ -16,7 +16,7 @@ default:
   #privateKeyPath: /var/kuiper/xyz-private.pem.key
   kubeedgeVersion: "1.0"
   kubeedgeModelFile: "mqtt_model.json"
-  # 使用指定的压缩方法解压缩。现在支持`gzip`、`zstd` 。                                                                                                                                                                                                                                         
+  # 使用指定的压缩方法解压缩。现在支持`gzip`、`zstd` 。                                                                                                                                                                                                                                       
   # decompression: ""
 
 
@@ -176,7 +176,7 @@ demo (
 #Override the global configurations
 demo_conf: #Conf_key
   qos: 0
-  connectionSelector: mqtt.localConnection 
+  connectionSelector: mqtt.localConnection
   servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
 
 #Override the global configurations

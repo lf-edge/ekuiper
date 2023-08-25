@@ -94,7 +94,7 @@ describe plugin $plugin_type $plugin_name
 该命令用于删除插件。
 
 ```shell
-drop plugin $plugin_type $plugin_name -s $stop 
+drop plugin $plugin_type $plugin_name -s $stop
 ```
 
 其中，`-s $stop` 是可选的布尔参数。 如果将其设置为 true，则 eKuiper 服务器将停止，以使删除生效。 用户将需要手动重新启动它。

@@ -59,7 +59,7 @@ Assume your external IP of cloud node is `34.209.219.149`. In the cloud node, ty
 a similar result as below.
 
 ```shell
-# sudo kubeadm init --control-plane-endpoint 34.209.219.149 --kubernetes-version stable-1.20 
+# sudo kubeadm init --control-plane-endpoint 34.209.219.149 --kubernetes-version stable-1.20
 [init] Using Kubernetes version: v1.20.8
 ...
 Your Kubernetes control-plane has initialized successfully!

@@ -117,7 +117,7 @@ Now the stream is created, it can be tested from `kuiper query` command. The `ku
 
 ```sh
 $ bin/kuiper query
-kuiper > 
+kuiper >
 ```
 
 In the `kuiper` prompt, you can type SQL and validate the SQL against the stream.

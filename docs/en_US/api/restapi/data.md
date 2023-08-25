@@ -130,7 +130,7 @@ Content-Type: application/json
   "streams":{},
   "tables":{},
   "rules":{},
-  "nativePlugins":{    
+  "nativePlugins":{  
     "sinks_tdengine":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sinks/tdengine_amd64.zip: no such file or directory",
     "sources_random":"fail to download file file:///root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: stat /root/ekuiper-jran/_plugins/ubuntu/sources/random_amd64.zip: no such file or directory"},
   "portablePlugins":{},

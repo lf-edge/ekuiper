@@ -50,7 +50,7 @@ HTTP 推送源的配置文件在 `etc/sources/httppush.yaml` 。目前仅一个�
 default:
   # the request method to listen on
   method: "POST"
-    
+  
 #Override the global configurations
 application_conf: #Conf_key
   server: "PUT"

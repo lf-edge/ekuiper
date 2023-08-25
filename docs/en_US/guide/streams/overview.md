@@ -9,8 +9,8 @@ Unlike relational database, eKuiper do not need a pre-built schema. This makes i
 ## Stream Definition
 
 ```sql
-CREATE STREAM   
-    stream_name   
+CREATE STREAM 
+    stream_name 
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```
@@ -60,7 +60,7 @@ Below is the list of data types supported.
 **Example 1,**
 
 ```sql
-my_stream 
+my_stream
   (id bigint, name string, score float)
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
@@ -129,7 +129,7 @@ Used only for logically schema streams. If strict validation is set, the rule wi
 If the data type of the stream is unknown or varying, we can define it without the fields. This is called schema-less. It is defined by leaving the fields empty.
 
 ```sql
-schemaless_stream 
+schemaless_stream
   ()
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```

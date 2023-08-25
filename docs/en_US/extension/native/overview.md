@@ -80,7 +80,7 @@ Below is an example of a function extension to access states. This function will
 
 ```go
 func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-    logger := ctx.GetLogger()    
+    logger := ctx.GetLogger()  
     err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
     if err != nil {
         return err, false

@@ -26,9 +26,9 @@
 
 ```go
 func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-    
+  
     //... 初始化和验证
-    
+  
     // 解码输入图像
     img, _, err := image.Decode(bytes.NewReader(arg[0]))
     if err != nil {
@@ -40,7 +40,7 @@ func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interfac
     })
 
     // 对输入图像运行解释器
-    
+  
     // 返回可能性最大的标签
     return result, true
 }

@@ -29,21 +29,21 @@ The key part of the implementation is the *Exec* function. The pseudo code is li
 
 ```go
 func (f *labelImage) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-    
+  
     //... do some initialization and validation
-    
+  
     // decode the input image
     img, _, err := image.Decode(bytes.NewReader(arg[0]))
     if err != nil {
         return err, false
     }
     var outerErr error
-    f.once.Do(func() {        
+    f.once.Do(func() {      
         // Load labels, tflite model and initialize the tflite interpreter
     })
 
     // Run the interpreter against the input image
-    
+  
     // Return the label with the highest possibility
     return result, true
 }

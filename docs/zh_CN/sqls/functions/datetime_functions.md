@@ -59,7 +59,7 @@ cur_time()
 按照 `HH:mm:ss` 的格式返回当前时间。
 
 ## CURRENT_TIME
-  
+
 ```text
 current_time()
 ```
@@ -129,7 +129,7 @@ day_of_month(date)
 返回 `date` 所在的月份的第几天。
 
 ## DAY
-  
+
 ```text
 day(date)
 ```

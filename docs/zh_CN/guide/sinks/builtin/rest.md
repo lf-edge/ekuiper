@@ -71,12 +71,12 @@ Text mode
 
 ```json
 {"id": "rest1",
-  "sql": "SELECT tele[0].Tag00001 AS temperature, tele[0].Tag00002 AS humidity FROM neuron", 
+  "sql": "SELECT tele[0].Tag00001 AS temperature, tele[0].Tag00002 AS humidity FROM neuron",
   "actions": [
     {
       "rest": {
         "bodyType": "text",
-        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})", 
+        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
         "debugResp": true,
         "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
         "method": "POST",
@@ -105,12 +105,12 @@ Text mode
 
 ```json
 {"id": "rest2",
-  "sql": "SELECT tele[0]->Tag00001 AS temperature, tele[0]->Tag00002 AS humidity, method, concat(\"http://xxx.xxx.xxx.xxx:6041/rest/sql\", urlPostfix) as url FROM neuron", 
+  "sql": "SELECT tele[0]->Tag00001 AS temperature, tele[0]->Tag00002 AS humidity, method, concat(\"http://xxx.xxx.xxx.xxx:6041/rest/sql\", urlPostfix) as url FROM neuron",
   "actions": [
     {
       "rest": {
         "bodyType": "text",
-        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})", 
+        "dataTemplate": "insert into mqtt.kuiper values (now, {{.temperature}}, {{.humidity}})",
         "debugResp": true,
         "headers": {"Authorization": "Basic cm9vdDp0YW9zZGF0YQ=="},
         "method": "{{.method}}",

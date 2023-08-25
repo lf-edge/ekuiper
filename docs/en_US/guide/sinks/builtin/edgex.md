@@ -1,6 +1,6 @@
 # EdgeX Message Bus action
 
-The action is used for publishing output message into EdgeX message bus.  
+The action is used for publishing output message into EdgeX message bus.
 
 **Please notice that, if you're using the ZeorMQ message bus, the action will create a NEW EdgeX message bus (with the address where running eKuiper service), but not by leveraging the original message bus (normally it's the address & port exposed by application service).**
 
@@ -65,7 +65,7 @@ With the default setting, the EdgeX sink will publish to the default redis messa
         "port": 6379,
         "topic": "application",
         "profileName": "ekuiperProfile",
-        "deviceName": "ekuiper",        
+        "deviceName": "ekuiper",      
         "contentType": "application/json"
       }
     }
@@ -140,7 +140,7 @@ Below is a rule that send analysis result to zeromq message bus.
         "port": 5571,
         "topic": "application",
         "profileName": "myprofile",
-        "deviceName": "mydevice",        
+        "deviceName": "mydevice",      
         "contentType": "application/json"
       }
     }
@@ -163,7 +163,7 @@ use the `connectionSelector` to specify the connection to reuse. [more info](../
         "connectionSelector": "edgex.redisMsgBus",
         "topic": "application",
         "profileName": "myprofile",
-        "deviceName": "mydevice",        
+        "deviceName": "mydevice",      
         "contentType": "application/json"
       }
     }
@@ -182,7 +182,7 @@ In this case, the original metadata value (such as `id, profileName, deviceName,
    ```json
    {
      "DeviceName": "demo", "Origin": 000, …
-     "readings": 
+     "readings":
      [
         {"ResourceName": "Temperature", value: "30", "Origin":123 …},
         {"ResourceName": "Humidity", value: "20", "Origin":456 …}
@@ -214,7 +214,7 @@ In this case, the original metadata value (such as `id, profileName, deviceName,
    ```json
    {
      "DeviceName": "kuiper", "ProfileName": "kuiperProfile",  "Origin": 0, …
-     "readings": 
+     "readings":
      [
         {"ResourceName": "t1", value: "90", "Origin": 0 …},
         {"ResourceName": "humidity", value: "20" , "Origin": 0 …}
@@ -238,7 +238,7 @@ Below is an example,
    ```json
    {
      "DeviceName": "demo", "Origin": 000, …
-     "readings": 
+     "readings":
      [
         {"ResourceName": "Temperature", value: "30", "Origin":123 …},
         {"ResourceName": "Humidity", value: "20", "Origin":456 …}
@@ -273,7 +273,7 @@ Below is an example,
    ```json
    {
      "DeviceName": "demo", "Origin": 000, …
-     "readings": 
+     "readings":
      [
         {"ResourceName": "t1", value: "90" , "Origin": 0 …},
         {"ResourceName": "humidity", value: "20", "Origin":456 …}

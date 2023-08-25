@@ -1,9 +1,19 @@
-# HTTP pull source
+# HTTP Pull Source Connector
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper provides built-in support for pulling HTTP source stream, which can pull the message from HTTP server broker and feed into the eKuiper processing pipeline.  The configuration file of HTTP pull source is at `etc/sources/httppull.yaml`. Below is the file format.
+The HTTP Pull source connector allows eKuiper to retrieve data from external HTTP servers, providing a flexible way to pull data on demand or based on a schedule. This section focuses on how to configure and use the HTTP Pull as a source connector.
+
+The HTTP Pull source connector is designed to fetch data by making HTTP requests to external servers. It can be set to pull data based on a specified interval or triggered by certain conditions.
+
+## Configurations
+
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
+
+eKuiper's default HTTP Pull source configuration resides at `$ekuiper/etc/sources/http_pull.yaml`. This configuration file provides a set of default settings, which you can override as needed.
+
+See below for a demo configuration with the global configuration and a customized `application_conf` section.
 
 ```yaml
 #Global httppull configurations
@@ -56,122 +66,146 @@ application_conf: #Conf_key
   url: http://localhost:9090/pull
 ```
 
-## Global HTTP pull configurations
+## Global Configurations
 
 Use can specify the global HTTP pull settings here. The configuration items specified in `default` section will be taken as default settings for all HTTP connections.
 
-### url
+### **HTTP Request Configurations**
 
-The URL where to get the result.
+- `url`: The URL where to get the result.
+- `method`: HTTP method, it could be post, get, put & delete.
+- `interval`: The interval between the requests, time unit is ms.
+- `timeout`: The timeout for http request, time unit is ms.
+- `body`: The body of request, such as `'{"data": "data", "method": 1}'`
+- `bodyType`: Body type, it could be none|text|json|html|xml|javascript|format.
+  headers: The HTTP request headers that you want to send along with the HTTP request.
+- `responseType`: Define how to parse the HTTP response. There are two types defined:
+  - `code`: To check the response status from the HTTP status code.
+  - `body`: To check the response status from the response body. The body must be "application/json" content type and contains a "code" field.
 
-### method
+### Security Configurations
 
-HTTP method, it could be post, get, put & delete.
+#### Certificate Paths
 
-### interval
+- `certificationPath`:  Specifies the path to the certificate, example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
+  - If executed as `bin/kuiperd` from `/var/kuiper`, the base is `/var/kuiper`.
+  - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
 
-The interval between the requests, time unit is ms.
+- `privateKeyPath`: Path to the private key, example `d3807d9fa5-private.pem.key`. Can be an absolute or a relative path. For relative paths, refer to the behavior described under `certificationPath`.
+- `rootCaPath`: Path to the root CA. Can be an absolute or a relative path.
+- `insecureSkipVerify`: Control if to skip the certification verification. If set to `true`, then skip certification verification; Otherwise, verify the certification.
 
-### timeout
+#### OAuth Authentication
 
-The timeout for http request, time unit is ms.
+OAuth 2.0 allows an API client limited access to user data on a web server. The most common OAuth flow is the authorization code, prevalent in server-side and mobile web apps. In this flow, users authenticate with a web app using their account, receiving an authentication code. This code allows the app to request an access token, which may be refreshed after expiration.
 
-### incremental
+The following configurations are designed under the assumption that the authentication code is already known. It allows the user to define the token retrieval process.
 
-If it's set to true, then will compare with last result; If response of two requests are the same, then will skip sending out the result.
+`OAuth`: Defines the authentication flow that follows OAuth standards. For other authentication methods like API keys, the key can be set directly in the header, eliminating the need for this configuration.
 
-### body
+- `access`
 
-The body of request, such as `'{"data": "data", "method": 1}'`
+  - `url`: The url to fetch access token, will always use POST method.
 
-### bodyType
+  - `body`: The request body to fetch access token. Usually, the authorization code is needed here.
 
-Body type, it could be none|text|json|html|xml|javascript|format.
+  - `expire`: Expire time of the token, time unit is second, allow to use template, so it must be a string.
 
-### certificationPath
+- `refresh`
 
-The location of certification path. It can be an absolute path, or a relative path. If it is a relative path, then the base path is where you're executing the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`.  Such as  `d3807d9fa5-certificate.pem`.
+  - `url`: The url to refresh the token, always use POST method.
 
-### privateKeyPath
+  - `headers`: The request header to refresh the token. Usually put the tokens here for authorization.
 
-The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to `certificationPath`. Such as `d3807d9fa5-private.pem.key`.
+  - `body`: The request body to refresh the token. May not need when using header to pass the refresh token.
 
-### rootCaPath
+### Data Processing Configurations
 
-The location of root ca path. It can be an absolute path, or a relative path.
+#### Incremental Data Processing
 
-### insecureSkipVerify
+`incremental`: If it's set to `true`, then will compare with the last result; If the responses of two requests are the same, then will skip sending out the result.
 
-Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification
+#### Dynamic Properties
 
-### headers
+Dynamic properties adapt in real time and can be employed to customize the HTTP request's URL, body, and header. The format for these properties is based on the [data template](../../sinks/data_template.md) syntax.
 
-The HTTP request headers that you want to send along with the HTTP request.
+Key dynamic properties include:
 
-### responseType
+- `PullTime`: The timestamp of the current pull time in int64 format.
+- `LastPullTime`: The timestamp of the last pull time in int64 format.
 
-Define how to parse the HTTP response. There are two types defined:
-
-- code: which means to check the response status from the HTTP status code.
-- body: which means to check the response status from the response body. The body must be "application/json" content type and contains a "code" field.
-
-### OAuth
-
-Define the authentication flow to follow the OAuth style. Other authentication method like apikey can directly set the key to header only, not need to set this configuration.
-
-OAuth 2.0 is an authorization protocol that gives an API client limited access to user data on a web server. The most common flow for oAuth is authorization code, mostly used for server-side and mobile web applications. With this flow, users sign up into a web application using their account and the authentication code is return to the application. After that, the application can use the authentication code to request an access token and possibly refresh the tokens by refresh token after expiration.
-
-In this configuration, we assume the authentication code has already known, and the user just specify the token fetch process which may require that code or just password as an oAuth variant authentication.
-
-There are two parts to configure: access for access code fetch and refresh for token refresh which is optional.
-
-#### access
-
-- url: The url to fetch access token, will always use POST method.
-- body: The request body to fetch access token. Usually, the authorization code is needed here.
-- expire: Expire time of the token, time unit is second, allow to use template, so it must be a string.
-
-#### refresh
-
-- url: the url to refresh the token, always use POST method.
-- headers: the request header to refresh the token. Usually put the tokens here for authorization.
-- body: the request body to refresh the token. May not need when using header to pass the refresh token.
-
-## Dynamic Properties
-
-Dynamic properties are properties that are updated at runtime.
-You can use dynamic attributes to specify the HTTP request's URL, body and header.
-The syntax is based on [data template](../../sinks/data_template.md) format for dynamic attributes.
-
-The attributes that can be used include:
-
-- PullTime: The timestamp of the current pull time in int64 format.
-- LastPullTime: The timestamp of the last pull time in int64 format.
-
-If the target HTTP service supports filtering the start and end times,
-these two properties can be used to implement incremental pulls.
+For HTTP services that allow time-based filtering, `PullTime` and `LastPullTime` can be harnessed for incremental data pulls. Depending on how the service accepts time parameters:
 
 ::: v-pre
 
-- If the target HTTP service passes the start and end times via the url parameter, you can configure the
-  URL, e.g. `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}`.
-- If the target HTTP service passes the start and end times via the body parameter, you can configure the
-  body, e.g. `{"start": {{.LastPullTime}}, "end": {{.PullTime}}`.
+- For URL parameters: `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}`.
+- For body parameters: `{"start": {{.LastPullTime}}, "end": {{.PullTime}}`.
 
 :::
 
-## Override the default settings
+## Custom Configurations
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In
-the previous sample, we create a specific setting named with `application_conf`. Then you can specify the configuration
-with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
+For scenarios where you need to customize certain connection parameters, eKuiper allows the creation of custom configuration profiles. By doing this, you can have multiple sets of configurations, each tailored for a specific use case.
 
-**Sample**
+Here's how to set up a custom configuration:
 
-```text
+```yaml
+#Override the global configurations
+application_conf: #Conf_key
+  incremental: true
+  url: http://localhost:9090/pull
+```
+
+In the above example, a custom configuration named `application_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md)).
+
+**Usage Example**
+
+```json
 demo (
     ...
   ) WITH (DATASOURCE="test/", FORMAT="JSON", TYPE="httppull", KEY="USERID", CONF_KEY="application_conf");
 ```
 
-The configuration keys used for these specific settings are the same as in `default` settings, any values specified in specific settings will overwrite the values in `default` section.
+Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
+
+## Create a Stream Source
+
+Once the connector is defined, the next step is integrating it into eKuiper rules for data processing.
+
+::: tip
+
+HTTP Pull Source connector can function as a [stream source](../../streams/overview.md) or a [scan table](../../tables/scan.md) source. This section illustrates the integration using the HTTP Pull Source connector as a stream source example.
+
+:::
+
+You can define the HTTP Pull source as the data source either by REST API or CLI tool.
+
+### Use REST API
+
+The REST API offers a programmatic way to interact with eKuiper, making it suitable for those who aim to automate tasks or integrate eKuiper operations into other systems.
+
+Example
+
+```sql
+{"sql":"create stream http_stream () WITH (FORMAT="json", TYPE="http_pull"}
+```
+
+For a comprehensive guide, refer to [Streams Management with REST API](https://chat.openai.com/api/restapi/streams.md).
+
+### Use CLI
+
+If you favor a more hands-on approach, the Command Line Interface (CLI) offers direct access to eKuiper's functionalities.
+
+1. Navigate to the eKuiper binary directory:
+
+   ```bash
+   cd path_to_eKuiper_directory/bin
+   ```
+
+2. Use the `create` command to create a rule, specifying the HTTP Pull connector as its source, for example:
+
+   ```bash
+   bin/kuiper create stream http_stream '() WITH (FORMAT="json", TYPE="http_pull")'
+   ```
+
+For a step-by-step guide, check [Streams Management with CLI](https://chat.openai.com/api/cli/streams.md).

@@ -77,7 +77,7 @@ Assuming we have a service named 'sample', we can define a service definition fi
       "functions": [
         {
           "name": "getFeature",
-          "serviceName": "get_feature" 
+          "serviceName": "get_feature"
         },
         {
           "name": "getSimilarity",

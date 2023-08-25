@@ -4,7 +4,7 @@ When data are published into EdgeX message bus, besides the actual device value,
 
 ## Events data model received in EdgeX message bus
 
-The data structure received from EdgeX message bus is list as in below. An `Event` structure encapsulates related metadata (ID, DeviceName, ProfileName, SourceName, Origin, Tags), along with the actual data (in `Readings` field) collected from device service.  
+The data structure received from EdgeX message bus is list as in below. An `Event` structure encapsulates related metadata (ID, DeviceName, ProfileName, SourceName, Origin, Tags), along with the actual data (in `Readings` field) collected from device service.
 
 Similar to `Event`, `Reading` also has some metadata (ID, DeviceName... etc).
 
@@ -28,7 +28,7 @@ Similar to `Event`, `Reading` also has some metadata (ID, DeviceName... etc).
       - ... // The same as in reading[0]
       - ...
     - reading [n] ...
-  
+
 ### Breaking changes from EdgeX v1
 
 If upgrading from eKuiper versions v1.2.0 and before which integrates with EdgeX v1, there will be some breaking changes of the meta datas due to the refactor of EdgeX v2.
@@ -75,7 +75,7 @@ Below are some other samples that extract other metadata through `meta` function
 
    Get 'origin' metadata from reading[1], key with 'humidity'
 
-Please notice that if you want to extract metadata from readings, you need to use `reading-name -> key` operator to access the value. In previous samples, `temperature` & `humidity` are `reading-names`, and `key` is the field names in readings.  
+Please notice that if you want to extract metadata from readings, you need to use `reading-name -> key` operator to access the value. In previous samples, `temperature` & `humidity` are `reading-names`, and `key` is the field names in readings.
 
 However, if you want to get data from `Events`, just need to specify the key directly. As the 1st sample in previous list.
 

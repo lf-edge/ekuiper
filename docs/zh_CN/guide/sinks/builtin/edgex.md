@@ -65,7 +65,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
         "port": 6379,
         "topic": "application",
         "profileName": "ekuiperProfile",
-        "deviceName": "ekuiper",        
+        "deviceName": "ekuiper",      
         "contentType": "application/json"
       }
     }
@@ -140,7 +140,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
         "port": 5571,
         "topic": "application",
         "profileName": "myprofile",
-        "deviceName": "mydevice",        
+        "deviceName": "mydevice",      
         "contentType": "application/json"
       }
     }
@@ -162,7 +162,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
         "connectionSelector": "edgex.redisMsgBus",
         "topic": "application",
         "profileName": "myprofile",
-        "deviceName": "mydevice",        
+        "deviceName": "mydevice",      
         "contentType": "application/json"
       }
     }
@@ -181,7 +181,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
     ```json
     {
       "DeviceName": "demo", "Origin": 000, …
-      "readings": 
+      "readings":
       [
          {"ResourceName": "Temperature", value: "30", "Origin":123 …},
          {"ResourceName": "Humidity", value: "20", "Origin":456 …}
@@ -213,7 +213,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
     ```json
     {
       "DeviceName": "kuiper", "ProfileName": "kuiperProfile",  "Origin": 0, …
-      "readings": 
+      "readings":
       [
          {"ResourceName": "t1", value: "90", "Origin": 0 …},
          {"ResourceName": "humidity", value: "20" , "Origin": 0 …}
@@ -237,7 +237,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
     ```json
     {
       "DeviceName": "demo", "Origin": 000, …
-      "readings": 
+      "readings":
       [
          {"ResourceName": "Temperature", value: "30", "Origin":123 …},
          {"ResourceName": "Humidity", value: "20", "Origin":456 …}
@@ -272,7 +272,7 @@ EdgeX 动作可支持数据模板对结果格式进行变化，但是数据模�
    ```json
    {
      "DeviceName": "demo", "Origin": 000, …
-     "readings": 
+     "readings":
      [
         {"ResourceName": "t1", value: "90" , "Origin": 0 …},
         {"ResourceName": "humidity", value: "20", "Origin":456 …}

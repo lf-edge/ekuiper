@@ -38,9 +38,9 @@ function in the SQL. The argument is a slice of the values for the function para
 calculation. If the calculation is successful, return the result and true; otherwise, return nil and false.
 
 ```go
-//Execute the function, return the result and if execution is successful.If execution fails, return the error and false. 
+//Execute the function, return the result and if execution is successful.If execution fails, return the error and false.
 Exec(args []interface{}) (interface{}, bool)
-```  
+```
 
 As the function itself is a plugin, it must be in the main package. Given the function struct name is myFunction. At last of the file, the source must be exported as a symbol as below. There are [2 types of exported symbol supported](../overview.md#plugin-development). For function extension, if there is no internal state, it is recommended to export a singleton instance.
 

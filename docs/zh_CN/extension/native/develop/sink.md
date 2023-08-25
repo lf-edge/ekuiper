@@ -13,7 +13,7 @@ eKuiper 可以将数据接收到外部系统。 eKuiper具有对  [MQTT 消息�
 要开发 Sink （目标），必须实现 _Configure_ 方法。 接收器初始化后，将调用此方法。 在此方法中，将传入包含 [规则操作定义](../../../guide/sinks/overview.md)中的配置映射，通常，将包含诸如外部系统的主机、端口、用户和密码之类的信息。您可以使用此映射来初始化此 Sink（目标）。
 
 ```go
-//Called during initialization. Configure the sink with the properties from action definition 
+//Called during initialization. Configure the sink with the properties from action definition
 Configure(props map[string]interface{}) error
 ```
 
@@ -92,7 +92,7 @@ Sink 可以配置[缓存和重发策略](../../../guide/sinks/overview.md#缓存
 ```go
 // CollectResend Called when the sink cache resend is triggered
 CollectResend(ctx StreamContext, data interface{}) error
-```  
+```
 
 #### 解析动态属性
 
