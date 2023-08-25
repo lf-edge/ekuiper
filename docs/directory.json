@@ -968,6 +968,114 @@
 									"path": "guide/sources/plugin/random"
 								}
 							]
+						},
+						{
+							"title": "Sink Connectors",
+							"path": "guide/sinks/overview",
+							"children": [
+								{
+									"title": "Data Template",
+									"path": "guide/sinks/data_template"
+								},
+								{
+									"title": "Built-in Sinks",
+									"children": [
+										{
+											"title": "MQTT Sink",
+											"path": "guide/sinks/builtin/mqtt"
+										},
+										{
+											"title": "Neuron Sink",
+											"path": "guide/sinks/builtin/neuron"
+										},
+										{
+											"title": "EdgeX Sink",
+											"path": "guide/sinks/builtin/edgex"
+										},
+										{
+											"title": "REST Sink",
+											"path": "guide/sinks/builtin/rest"
+										},
+										{
+											"title": "Redis Sink",
+											"path": "guide/sinks/builtin/redis"
+										},
+										{
+											"title": "File Sink",
+											"path": "guide/sinks/builtin/file"
+										},
+										{
+											"title": "Memory Sink",
+											"path": "guide/sinks/builtin/memory"
+										},
+										{
+											"title": "Log Sink",
+											"path": "guide/sinks/builtin/log"
+										},
+										{
+											"title": "Nop Sink",
+											"path": "guide/sinks/builtin/nop"
+										}
+									]
+								},
+								{
+									"title": "Predefined Sink Plugins",
+									"children": [
+										{
+											"title": "SQL Sink",
+											"path": "guide/sinks/plugin/sql"
+										},
+										{
+											"title": "InfluxDB Sink",
+											"path": "guide/sinks/plugin/influx"
+										},
+										{
+											"title": "InfluxDBV2 Sink",
+											"path": "guide/sinks/plugin/influx2"
+										},
+										{
+											"title": "TDengine Sink",
+											"path": "guide/sinks/plugin/tdengine"
+										},
+										{
+											"title": "Image Sink",
+											"path": "guide/sinks/plugin/image"
+										},
+										{
+											"title": "ZeroMQ Sink",
+											"path": "guide/sinks/plugin/zmq"
+										},
+										{
+											"title": "Kafka Sink",
+											"path": "guide/sinks/plugin/kafka"
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		},
+		{
+			"title": "Rules",
+			"path": "guide/rules/overview",
+			"children": [
+				{
+					"title": "Stream: unbounded series of events",
+					"path": "guide/streams/overview"
+				},
+				{
+					"title": "Table: snapshot of events",
+					"path": "guide/tables/overview",
+					"children": [
+						{
+							"title": "Scan Table",
+							"path": "guide/tables/scan"
+						},
+						{
+							"title": "Lookup Table",
+							"path": "guide/tables/lookup"
 						}
 					]
 				},
