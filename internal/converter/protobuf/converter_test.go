@@ -218,3 +218,45 @@ func TestStatic(t *testing.T) {
 		}
 	}
 }
+
+func TestDecodeProto3(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test4.proto", "", "Classroom")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		m map[string]interface{}
+		r []byte
+	}{
+		{
+			m: map[string]interface{}{
+				"name":   "test",
+				"number": int64(1),
+				"stu":    []interface{}{},
+			},
+			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01},
+		},
+		{
+			m: map[string]interface{}{
+				"name":   "test",
+				"number": int64(1),
+				"stu": []map[string]interface{}{
+					{
+						"age":  int64(12),
+						"name": "test",
+						"info": nil,
+					},
+				},
+			},
+			r: []byte{0x0a, 0x04, 0x74, 0x65, 0x73, 0x74, 0x10, 0x01, 0x1a, 0x08, 0x08, 0x0c, 0x12, 0x04, 0x74, 0x65, 0x73, 0x74},
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("test %d", i), func(t *testing.T) {
+			a, err := c.Decode(tt.r)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.m, a)
+		})
+	}
+}

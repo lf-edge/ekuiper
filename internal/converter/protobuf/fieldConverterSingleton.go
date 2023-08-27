@@ -336,6 +336,8 @@ func (fc *FieldConverter) DecodeMessage(message *dynamic.Message, outputType *de
 		return message.GetFieldByNumber(1)
 	} else if WrapperVoid == outputType.GetFullyQualifiedName() {
 		return nil
+	} else if message == nil {
+		return nil
 	}
 	result := make(map[string]interface{})
 	for _, field := range outputType.GetFields() {

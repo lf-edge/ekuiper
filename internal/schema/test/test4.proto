@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+message Classroom{
+  message Stu {
+    int32 age = 1;
+    string name = 2;
+    Info info = 3;
+  }
+  message Info {
+    repeated int32 number = 1;
+    repeated string addr = 2;
+  }
+  string name = 1;
+  int32 number = 2;
+  repeated Stu stu = 3;
+}
