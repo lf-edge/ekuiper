@@ -204,7 +204,7 @@ mqtt:
 
 With the connector defined, the next step is integrating it into eKuiper rules to start processing the streamed data.
 
-**Steps to Integrate**:
+**Steps to Integrate:**
 
 1. Define a rule that specifies the MQTT connector as its source.
 2. In the rule, mention the desired MQTT topic and the processing logic.
@@ -221,31 +221,31 @@ You can define the MQTT source as the data source either by REST API or CLI tool
 
 The REST API offers a programmatic way to interact with eKuiper, perfect for those looking to automate tasks or integrate eKuiper operations into other systems.
 
-- Steps to Use
+**Steps to Use**
 
-  1. Use the appropriate REST endpoint to define the MQTT connector.
-  
-  2. Use another endpoint to create a rule that utilizes the MQTT connector, for example
-  
-     ```json
-     {"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
-     ```
-  
-     In the example, the `WITH` clause provides specific configurations for the stream. for detailed explanation of each field, see [Streams management with REST API](../../../api/restapi/streams.md)
+1. Use the appropriate REST endpoint to define the MQTT connector.
+
+2. Use another endpoint to create a rule that utilizes the MQTT connector, for example
+
+   ```json
+   {"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+   ```
+
+   In the example, the `WITH` clause provides specific configurations for the stream. for detailed explanation of each field, see [Streams management with REST API](../../../api/restapi/streams.md)
 
 ### Use CLI
 
 For those who prefer a hands-on approach, the Command Line Interface (CLI) provides direct access to eKuiper's operations.
 
-- Steps to Use
+**Steps to Use**
 
-  1. Use the `create` command to define the MQTT connector.
+1. Use the `create` command to define the MQTT connector.
 
-  2. Use the `rule` command to create a rule, specifying the MQTT connector as its source, for example
-  
-     ```bash
-     bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
-     ```
+2. Use the `rule` command to create a rule, specifying the MQTT connector as its source, for example
+
+   ```bash
+   bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
+   ```
 
 For detailed operating steps, see [Streams management with CLI](../../../api/cli/streams.md).
 
