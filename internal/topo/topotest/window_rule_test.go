@@ -1435,6 +1435,24 @@ func TestEventWindow(t *testing.T) {
 				"sink_mockSink_0_records_out_total":  int64(1),
 			},
 		},
+		{
+			Name: `TestTUMBLINGWindowInterval14`,
+			Sql:  `SELECT temp,ts FROM demoE3 GROUP BY TUMBLINGWINDOW(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(26.0),
+						"ts":   float64(1541152486000),
+					},
+				},
+				{
+					{
+						"temp": float64(27.0),
+						"ts":   float64(1541152487000),
+					},
+				},
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*api.RuleOption{

@@ -554,7 +554,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	length := o.window.Length + o.window.Delay
 	// Sync table
 	for _, tuple := range inputs {
-		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
+		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW || o.window.Type == ast.TUMBLING_WINDOW {
 			diff := triggerTime - tuple.Timestamp
 			if diff > length+delta {
 				log.Debugf("diff: %d, length: %d, delta: %d", diff, length, delta)
