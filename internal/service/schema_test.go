@@ -80,7 +80,9 @@ func TestConvertParams(t *testing.T) {
 					"arbitrary": "world",
 				},
 			},
-			err: "invalid type for string type field 'name': cannot convert map[string]interface {}(map[arbitrary:world]) to string",
+			iresult: []interface{}{nil},
+			jresult: []byte(`{}`),
+			tresult: nil,
 		},
 		{ // 3
 			method: "Compute",
@@ -126,6 +128,17 @@ func TestConvertParams(t *testing.T) {
 			},
 			jresult: []byte("{\"name\":\"encoded json\",\"size\":1}"),
 			tresult: []byte(`value:"{\"name\":\"encoded json\",\"size\":1}"`),
+		},
+		{ // 7
+			method: "RestEncodedJson",
+			params: []interface{}{
+				[]byte("{\"name\":\"encoded json\"}"),
+			},
+			iresult: []interface{}{
+				"{\"name\":\"encoded json\"}",
+			},
+			jresult: []byte("{\"name\":\"encoded json\"}"),
+			tresult: []byte(`value:"{\"name\":\"encoded json\"}"`),
 		},
 	}
 

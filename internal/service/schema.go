@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -158,7 +158,9 @@ func (d *wrappedProtoDescriptor) ConvertParamsToMessage(method string, params []
 		return nil, err
 	}
 	for i, typeParam := range typedParams {
-		message.SetFieldByNumber(i+1, typeParam)
+		if typeParam != nil {
+			message.SetFieldByNumber(i+1, typeParam)
+		}
 	}
 	return message, nil
 }
@@ -296,7 +298,11 @@ func (d *wrappedProtoDescriptor) unfoldMap(ft *desc.MessageDescriptor, i interfa
 		for _, field := range fields {
 			v, ok := m.Value(field.GetName(), "")
 			if !ok {
-				return nil, fmt.Errorf("field %s not found", field.GetName())
+				if field.IsRequired() {
+					return nil, fmt.Errorf("field %s not found", field.GetName())
+				} else {
+					continue
+				}
 			}
 			fv, err := d.fc.EncodeField(field, v)
 			if err != nil {
