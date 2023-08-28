@@ -768,7 +768,7 @@ func TestWindow(t *testing.T) {
 
 func TestEventWindow(t *testing.T) {
 	// Reset
-	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2"}
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2", "demoE3"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
