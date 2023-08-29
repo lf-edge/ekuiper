@@ -38,7 +38,7 @@ demo_conf: #Conf_key
 
 ```
 
-## Global Configuration
+## Global Configurations
 
 Use can specify the global MQTT configurations here. The configuration items specified in `default` section will be taken as default configurations for all MQTT connections.
 
