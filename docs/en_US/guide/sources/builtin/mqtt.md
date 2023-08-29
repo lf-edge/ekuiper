@@ -60,7 +60,7 @@ Use can specify the global MQTT configurations here. The configuration items spe
 
 ### **Connection Reusability**
 
-- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker. For a detailed explanation of the connection selection, see [Connection Selector](../../connector.md#connection-selector). For example,`mqtt.localConnection` in the below example. 
+- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker. For a detailed explanation of the connection selection, see [Connection Selector](../../connector.md#connection-selector). For example, `mqtt.localConnection` in the below example. 
 
   ```yaml
   #Global MQTT configurations
@@ -115,9 +115,20 @@ Use can specify the global MQTT configurations here. The configuration items spe
 
 ## Custom Configurations
 
-For scenarios requiring deviations from the defaults, eKuiper lets you override global settings. For example, with the `demo_conf` configuration. Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info). <!--这里是在讲通过rest api 来配置吗？链接到 stream 是？-->
+For scenarios where you need to customize certain connection parameters, eKuiper allows the creation of custom configuration profiles. By doing this, you can have multiple sets of configurations, each tailored for a specific use case.
 
-**Sample**
+Here's how to set up a custom configuration:
+
+```json
+#Override the global configurations
+demo_conf: #Conf_key
+  qos: 0
+  server: "tcp://10.211.55.6:1883"
+```
+
+In the above example, a custom configuration named `demo_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md) for more info).
+
+**Usage Example**
 
 ```text
 demo (
@@ -125,7 +136,7 @@ demo (
   ) WITH (DATASOURCE="test/", FORMAT="JSON", KEY="USERID", CONF_KEY="demo_conf");
 ```
 
-The configuration keys used for these specific configurations are the same as in `default` configurations, any values specified in specific configurations will overwrite the values in `default` section.
+Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
 ## Integrate MQTT Source with eKuiper Rules
 
@@ -150,7 +161,7 @@ The REST API offers a programmatic way to interact with eKuiper, perfect for tho
 
 Example:
 
-```json
+```sql
 {"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
@@ -162,8 +173,6 @@ More details can be found at [Streams Management with REST API](../../../api/res
 ### Use CLI
 
 For those who prefer a hands-on approach, the Command Line Interface (CLI) provides direct access to eKuiper's operations.
-
-**Steps to Use**
 
 1. Navigate to the eKuiper binary directory:
 

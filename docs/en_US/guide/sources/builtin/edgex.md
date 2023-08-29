@@ -40,44 +40,19 @@ demo1: #Conf_key
 
 Use can specify the global MQTT configurations here. The configuration items specified in `default` section will be taken as default configurations for all EdgeX connections.
 
-protocol:  The protocol connect to EdgeX message bus, default value is `tcp`.
+### Connection Configurations
 
-server: The server address of  EdgeX message bus, default value is `localhost`.
+- `protocol`:  The protocol connects to EdgeX message bus, default value is `tcp`.
+- `server`: The server address of  EdgeX message bus, default value is `localhost`.
+- `port`: The port of EdgeX message bus, default value is `5573`.
 
-port: The port of EdgeX message bus, default value is `5573`.
+### Connection Reusability
 
-connectionSelector: specify the stream to reuse the connection to EdgeX message bus. The connection profile located in `connections/connection.yaml`.
+- `connectionSelector`: Specify the stream to reuse the connection to EdgeX message bus. For example, `edgex.redisMsgBus` in the below example. Note: The connection profile is located in `connections/connection.yaml`. More details can be found at [Connection Selector](../../connector.md#connection-selector).
 
-```yaml
-edgex:
-  redisMsgBus: #connection key
-    protocol: redis
-    server: 127.0.0.1
-    port: 6379
-    type: redis
-    #  Below is optional configurations settings for mqtt
-    #  type: mqtt
-    #  optional:
-    #    ClientId: client1
-    #    Username: user1
-    #    Password: password
-    #    Qos: 1
-    #    KeepAlive: 5000
-    #    Retained: true/false
-    #    ConnectionPayload:
-    #    CertFile:
-    #    KeyFile:
-    #    CertPEMBlock:
-    #    KeyPEMBlock:
-    #    SkipCertVerify: true/false
-```
-
-There is one configuration group for EdgeX message bus in the example, user need use `edgex.redisMsgBus` as the selector.
-For example
-
-```yaml
-#Global Edgex configurations
-default:
+  ```yaml
+  #Global Edgex configurations
+  default:
   protocol: tcp
   server: localhost
   port: 5573
@@ -88,56 +63,59 @@ default:
   #    ClientId: client1
   #    Username: user1
   #    Password: password
-  
-  
-```
+  ```
 
-*Note*: once specify the connectionSelector in specific configuration group , all connection related parameters will be ignored , in this case `protocol: tcp | server: localhost | port: 5573`
+   ::: tip
 
-topic:  The topic name of EdgeX message bus, default value is `rules-events`. Users can subscribe to the topics of message bus
-directly or subscribe to topics exported by EdgeX application service. Notice that, the message type of the two types of
-topics are different, remember to set the appropriate messageType property.
+   If a connectionSelector is specified in a configuration group, all connection-related parameters will be ignored. This includes `protocol`, `server`, and `port`. In this case, the values `protocol: tcp | server: localhost | port: 5573` will not be used.
 
-type: The EdgeX message bus type, currently three types of message buses are supported. If specified other values, then will
-use the default `redis` value.
+   :::
 
-- `zero`: Use ZeroMQ as EdgeX message bus.
-- `mqtt`: Use the MQTT broker as EdgeX message bus.
-- `redis`: Use Redis as EdgeX message bus. When using EdgeX docker compose, the type will be set to this by default.
+### Topic and Message
 
-EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively
+- `topic`:  The topic name of EdgeX message bus, default value is `rules-events`. Users can subscribe to the topics of the message bus directly or subscribe to topics exported by EdgeX application service. Note that, the message types of the two types of topics are different, remember to set the appropriate messageType property.
 
-- `nats-jetstream`
-- `nats-core`
+- `type`: The EdgeX message bus type. Currently, three types of message buses are supported. `Redis` is used by default if no other value is specified.
 
-messageType: The EdgeX message model type. If connected to the topic of EdgeX application service, the message model is an "event".
-Otherwise, if connected to the topic of EdgeX message bus directly to receive the message from device service or core
-data, the message is a "request". There are two available types of messageType property:
+  - `zero`: Use ZeroMQ as EdgeX message bus.
+  - `mqtt`: Use the MQTT broker as EdgeX message bus.
+  - `redis`: Use Redis as the EdgeX message bus. Redis is the default message bus when using EdgeX docker compose.
 
-- `event`: The message will be decoded as a `dtos.Event` type. This is the default.
-- `request`: The message will be decoded as a `requests.AddEventRequest` type.
+  EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively
 
-optional: If MQTT message bus is used, some other optional configurations can be specified. Please notice that all of values in
-optional are **<u>string type</u>**, so values for these configurations should be string - such as `KeepAlive: "5000"`
-. Below optional configurations are supported, please check MQTT specification for the detailed information.
+  - `nats-jetstream`
+  - `nats-core`
 
-- ClientId
+- `messageType`: The EdgeX message model type. If connected to the topic of EdgeX application service, the message model is an "event".
+  Otherwise, if connected to the topic of EdgeX message bus directly to receive the message from device service or core
+  data, the message is a "request". There are two available types of messageType property:
 
-- Username
-- Password
-- Qos
-- KeepAlive
-- Retained
-- ConnectionPayload
-- CertFile
-- KeyFile
-- CertPEMBlock
-- KeyPEMBlock
-- SkipCertVerify
+  - `event`: The message will be decoded as a `dtos.Event` type. This is the default.
+  - `request`: The message will be decoded as a `requests.AddEventRequest` type.
 
-### Custom Configurations
+### Optional Configuration (Specifically for MQTT)
 
-In some cases, maybe you want to consume message from multiple topics from message bus.  eKuiper supports to specify another configuration, and use the `CONF_KEY` to specify the newly created key when you create a stream.
+If the MQTT message bus is used, additional optional configurations can be specified. Note that all optional values are strings, so configuration values should be enclosed in quotes. For example: `KeepAlive: "5000"`. The following optional MQTT configurations are supported. Refer to the MQTT specification for details on each option:
+
+- `ClientId`
+
+- `Username`
+- `Password`
+- `Qos`
+- `KeepAlive`
+- `Retained`
+- `ConnectionPayload`
+- `CertFile`
+- `KeyFile`
+- `CertPEMBlock`
+- `KeyPEMBlock`
+- `SkipCertVerify`
+
+## Custom Configurations
+
+For scenarios where you need to consume messages from multiple topics or customize certain connection parameters, eKuiper allows the creation of custom configuration profiles. By doing this, you can have multiple sets of configurations, each tailored for a specific use case.
+
+Here's how to set up a custom configuration:
 
 ```yaml
 #Override the global configurations
@@ -148,19 +126,61 @@ demo1: #Conf_key
   topic: rules-events
 ```
 
-If you have a specific connection that need to overwrite the default settings, you can create a customized section. In the previous sample, we create a specific setting named with `demo1`.  Then you can specify the configuration with option `CONF_KEY` when creating the stream definition (see [stream specs](../../../sqls/streams.md) for more info).
+In the above example, a custom configuration named `demo1` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md) for more info).
 
-**Sample**
+**Usage Example**
 
 ```sql
 create stream demo1() WITH (FORMAT="JSON", type="edgex", CONF_KEY="demo1");
 ```
 
-The configuration keys used for these specific settings are the same as in `default` settings, any values specified in specific settings will overwrite the values in `default` section.
+Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
-### Stream definition for EdgeX
+## Integrate EdgeX Source with eKuiper Rules
 
-When integrating eKuiper with EdgeX, it's recommended to use schema-less stream definitions, as EdgeX has predefined data structures in its [reading objects](https://docs.edgexfoundry.org/2.0/microservices/core/data/Ch-CoreData/#events-and-readings).
+Having set up the EdgeX source connector, the subsequent step involves its integration into eKuiper rules. This integration facilitates the processing of streamed data from EdgeX.
+
+::: tip
+
+MQTT Source connector can function as a [stream source](../../streams/overview.md) or a [scan table](../../tables/scan.md) source. This section illustrates the integration using the MQTT Source connector as a stream source example.
+
+:::
+
+You can define the MQTT source as the data source either by REST API or CLI tool. 
+
+### Use REST API
+
+The REST API offers a programmatic way to interact with eKuiper, perfect for those looking to automate tasks or integrate eKuiper operations into other systems.
+
+Example:
+
+```sql
+create stream demo1() WITH (FORMAT="JSON", type="edgex", CONF_KEY="demo1");
+```
+
+More details can be found at [Streams Management with REST API](../../../api/restapi/streams.md).
+
+### Use CLI
+
+For those who prefer a hands-on approach, the Command Line Interface (CLI) provides direct access to eKuiper's operations.
+
+1. Navigate to the eKuiper binary directory:
+
+   ```bash
+   cd path_to_eKuiper_directory/bin
+   ```
+
+2. Use the `create` command to create a rule, specifying the MQTT connector as its source, for example: <!--the command need to be further confirmed-->
+
+   ```bash
+   bin/kuiper CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
+   ```
+
+More details can be found at [Streams Management with CLI](../../../api/cli/streams.md).
+
+### Further Reading: Stream Definition for EdgeX
+
+When integrating eKuiper with EdgeX, it's recommended to use [schema-less stream](../../streams/overview.md#schema) definitions, as EdgeX has predefined data structures in its [reading objects](https://docs.edgexfoundry.org/2.0/microservices/core/data/Ch-CoreData/#events-and-readings).
 
 For example, to define a stream in eKuiper that consumes events from EdgeX:
 
@@ -181,29 +201,24 @@ Data Conversion:
 
 The types defined in readings will be converted into related [data types](../../../sqls/streams.md) that are supported in eKuiper.
 
-The table below provides a concise mapping:
-
-|     **EdgeX ValueType**      | **eKuiper Data Type** |
-| :--------------------------: | :-------------------: |
-|             Bool             |        boolean        |
-|    INT8, INT16... UINT64     |        Bigint         |
-|       FLOAT32, FLOAT64       |         Float         |
-|            String            |        String         |
-|          Bool array          |     boolean array     |
-|  INT8 array... UINT64 array  |     Bigint array      |
-| FLOAT32 array, FLOAT64 array |      Float array      |
-
-::: tip 
-
 #### Boolean
 
-If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert to `boolean` type. Following values will be converted into `true`.
+If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert to `boolean` type. 
 
-- "1", "t", "T", "true", "TRUE", "True"
-
-Following will be converted into `false`.
-
-- "0", "f", "F", "false", "FALSE", "False"
+| Value | Converted to |
+| ----- | ------------ |
+| 1     | true         |
+| t     | true         |
+| T     | true         |
+| true  | true         |
+| TRUE  | true         |
+| True  | true         |
+| 0     | false        |
+| f     | false        |
+| F     | false        |
+| false | false        |
+| FALSE | false        |
+| False | false        |
 
 #### Bigint
 
@@ -230,18 +245,4 @@ All of `INT8`, `INT16`, `INT32`, `INT64`, `UINT`, `UINT8`, `UINT16`, `UINT32`, `
 All of `FLOAT32`, `FLOAT64` array types in EdgeX will be converted to `Float` array.
 
 
-
-
-
-## Integrate EdgeX Source with eKuiper Rules
-
-Having set up the EdgeX source connector, the subsequent step involves its integration into eKuiper rules. This integration facilitates the processing of streamed data from EdgeX.
-
-### Using REST API
-
-(Provide steps and example on setting up EdgeX source using eKuiper's REST API.)
-
-### Using CLI
-
-(Provide steps and example on setting up EdgeX source using eKuiper's Command Line Interface.)
 
