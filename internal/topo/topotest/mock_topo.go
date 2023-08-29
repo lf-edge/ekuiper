@@ -270,6 +270,8 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 		var sql string
 		if createOrDrop {
 			switch name {
+			case "demoE3":
+				sql = `CREATE STREAM demoE3 () WITH (DATASOURCE="demoE3", TYPE="mock", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
 			case "demoE2":
 				sql = `CREATE STREAM demoE2 () WITH (DATASOURCE="demoE2", TYPE="mock", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
 			case "demoArr2":

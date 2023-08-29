@@ -768,7 +768,7 @@ func TestWindow(t *testing.T) {
 
 func TestEventWindow(t *testing.T) {
 	// Reset
-	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2"}
+	streamList := []string{"demoE", "demoErr", "demo1E", "sessionDemoE", "demoE2", "demoE3"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
@@ -1433,6 +1433,24 @@ func TestEventWindow(t *testing.T) {
 				"op_3_window_0_records_out_total":    int64(1),
 				"sink_mockSink_0_records_in_total":   int64(1),
 				"sink_mockSink_0_records_out_total":  int64(1),
+			},
+		},
+		{
+			Name: `TestTUMBLINGWindowInterval14`,
+			Sql:  `SELECT temp,ts FROM demoE3 GROUP BY TUMBLINGWINDOW(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"temp": float64(26.0),
+						"ts":   float64(1541152486000),
+					},
+				},
+				{
+					{
+						"temp": float64(27.0),
+						"ts":   float64(1541152487000),
+					},
+				},
 			},
 		},
 	}

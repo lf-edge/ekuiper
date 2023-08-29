@@ -565,10 +565,21 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			// Added back all inputs for non expired events
 			inputs[i] = tuple
 			i++
-		} else if tuple.Timestamp > triggerTime {
-			// Only added back early arrived events
-			inputs[i] = tuple
-			i++
+		} else {
+			// time-related window is left-closed,right-opened, so that we need keep the tuple if its timestamp >= trigger time
+			if o.isTimeRelatedWindow() {
+				if tuple.Timestamp >= triggerTime {
+					// Only added back early arrived events
+					inputs[i] = tuple
+					i++
+				}
+			} else {
+				if tuple.Timestamp > triggerTime {
+					// Only added back early arrived events
+					inputs[i] = tuple
+					i++
+				}
+			}
 		}
 		if o.isTimeRelatedWindow() {
 			if tuple.Timestamp < triggerTime {
