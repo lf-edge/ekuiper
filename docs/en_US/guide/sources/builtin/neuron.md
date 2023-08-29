@@ -15,7 +15,7 @@ The Neuron source connector features an asynchronous dial mechanism, ensuring co
 
 In the eKuiper side, all Neuron source and sink instances share the same connection, thus the events consumed are also the same. 
 
-## Configure Neuron Connector
+## Configurations
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API,](../../../api/restapi/configKey.md) or configuration file. This section focuses on the configuration file approach.
 
@@ -30,6 +30,12 @@ ipc:
 ```
 
 This demo configuration provides two different ways to connect: a default TCP connection to a local service on port 7081, and an IPC mechanism for local inter-process communication using a file-based socket. 
+
+::: tip
+
+The port specified should correspond to the Neuron instance's port. In this example, we use the default Neuron port, 7081. Ensure you adjust this according to your specific configuration.
+
+:::
 
 ## Neuron Event Format
 
@@ -50,7 +56,7 @@ Neuron events typically adopt the following JSON format:
 }
 ```
 
-## Integrate Neuron Source with eKuiper Rules
+## Integrate with eKuiper Rules
 
 Having defined the connector, the next phase involves its integration with eKuiper rules.
 

@@ -7,11 +7,11 @@ eKuiper's EdgeX connector seamlessly integrates with EdgeX instances, allowing f
 
 eKuiper's EdgeX source connector can subscribe to the message from [EdgeX message bus](https://github.com/edgexfoundry/go-mod-messaging) and feed into the eKuiper streaming process pipeline. eKuiper's EdgeX source connector is tailored to consume events directly from EdgeX, ensuring effective stream processing without any manual schema definitions, thanks to EdgeX's predefined data types in its reading objects.
 
-## Configure EdgeX Connector
+## Configurations
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API,](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
-eKuiper's default MQTT source configuration resides at `$ekuiper/etc/sources/edgex.yaml`. This configuration serves as a base for all MQTT connections. However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
+eKuiper's default EdgeX source configuration resides at `$ekuiper/etc/sources/edgex.yaml`. This configuration serves as a base for all EdgeX connections. However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
 
 See below for a demo configuration with the global configuration and a customized `demo1` section. 
 
@@ -38,7 +38,7 @@ demo1: #Conf_key
 
 ## Global Configuration
 
-Use can specify the global MQTT configurations here. The configuration items specified in `default` section will be taken as default configurations for all EdgeX connections.
+Users can specify the global EdgeX configurations here. The configuration items specified in `default` section will be taken as default configurations for all EdgeX connections.
 
 ### Connection Configurations
 
@@ -136,17 +136,17 @@ create stream demo1() WITH (FORMAT="JSON", type="edgex", CONF_KEY="demo1");
 
 Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
-## Integrate EdgeX Source with eKuiper Rules
+## Integrate with eKuiper Rules
 
 Having set up the EdgeX source connector, the subsequent step involves its integration into eKuiper rules. This integration facilitates the processing of streamed data from EdgeX.
 
 ::: tip
 
-MQTT Source connector can function as a [stream source](../../streams/overview.md) or a [scan table](../../tables/scan.md) source. This section illustrates the integration using the MQTT Source connector as a stream source example.
+edgeX Source connector can function as a [stream source](../../streams/overview.md) or a [scan table](../../tables/scan.md) source. This section illustrates the integration using the EdgeX Source connector as a stream source example.
 
 :::
 
-You can define the MQTT source as the data source either by REST API or CLI tool. 
+You can define the edgeX source as the data source either by REST API or CLI tool. 
 
 ### Use REST API
 
@@ -170,7 +170,7 @@ For those who prefer a hands-on approach, the Command Line Interface (CLI) provi
    cd path_to_eKuiper_directory/bin
    ```
 
-2. Use the `create` command to create a rule, specifying the MQTT connector as its source, for example: <!--the command need to be further confirmed-->
+2. Use the `create` command to create a rule, specifying the EdgeX connector as its source, for example: <!--the command need to be further confirmed-->
 
    ```bash
    bin/kuiper CREATE STREAM demo'() with(format="json", datasource="demo" type="edgex")'
