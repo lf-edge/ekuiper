@@ -554,7 +554,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	length := o.window.Length + o.window.Delay
 	// Sync table
 	for _, tuple := range inputs {
-		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW || o.window.Type == ast.TUMBLING_WINDOW {
+		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 			diff := triggerTime - tuple.Timestamp
 			if diff > length+delta {
 				log.Debugf("diff: %d, length: %d, delta: %d", diff, length, delta)
@@ -565,10 +565,21 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 			// Added back all inputs for non expired events
 			inputs[i] = tuple
 			i++
-		} else if tuple.Timestamp > triggerTime {
-			// Only added back early arrived events
-			inputs[i] = tuple
-			i++
+		} else {
+			// time-related window is left-closed,right-opened, so that we need keep the tuple if its timestamp >= trigger time
+			if o.isTimeRelatedWindow() {
+				if tuple.Timestamp >= triggerTime {
+					// Only added back early arrived events
+					inputs[i] = tuple
+					i++
+				}
+			} else {
+				if tuple.Timestamp > triggerTime {
+					// Only added back early arrived events
+					inputs[i] = tuple
+					i++
+				}
+			}
 		}
 		if o.isTimeRelatedWindow() {
 			if tuple.Timestamp < triggerTime {
