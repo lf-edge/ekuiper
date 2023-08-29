@@ -47,6 +47,12 @@ ipc:
 
 This demo configuration provides two different ways to connect: a default TCP connection to a local service on port 7081, and an IPC mechanism for local inter-process communication using a file-based socket. 
 
+::: tip
+
+The port specified should correspond to the Neuron instance's port. In this example, we use the default Neuron port, 7081. Ensure you adjust this according to your specific configuration.
+
+:::
+
 ## Neuron Event Format
 
 Neuron events typically adopt the following JSON format:
