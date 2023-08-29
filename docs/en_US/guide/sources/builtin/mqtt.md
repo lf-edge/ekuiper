@@ -9,11 +9,11 @@ Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broke
 
 ## Configure MQTT Connector
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md) or configuration file. This section focus on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
-eKuiper's default MQTT source configuration resides at `$ekuiper/etc/mqtt_source.yaml`. This configuration serves as a [base for all MQTT connections](#global-mqtt-connector). However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](#connection-selector) further enhances this by allowing connection reuse across configurations.
+eKuiper's default MQTT source configuration resides at `$ekuiper/etc/mqtt_source.yaml`. This configuration serves as a [base for all MQTT connections](#global-configuration). However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
 
-See below for a demo configuration with the global configuration and a customized demo_conf section. 
+See below for a demo configuration with the global configuration and a customized `demo_conf` section. 
 
 ```yaml
 #Global MQTT configurations
@@ -38,7 +38,7 @@ demo_conf: #Conf_key
 
 ```
 
-## Global MQTT Connector
+## Global Configuration
 
 Use can specify the global MQTT configurations here. The configuration items specified in `default` section will be taken as default configurations for all MQTT connections.
 
@@ -60,7 +60,7 @@ Use can specify the global MQTT configurations here. The configuration items spe
 
 ### **Connection Reusability**
 
-- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker. For a detailed explanation of the connection selection, see [Connection Selector](#connection-selector). For example,`mqtt.localConnection` in the below example. 
+- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker. For a detailed explanation of the connection selection, see [Connection Selector](../../connector.md#connection-selector). For example,`mqtt.localConnection` in the below example. 
 
   ```yaml
   #Global MQTT configurations
@@ -127,82 +127,9 @@ demo (
 
 The configuration keys used for these specific configurations are the same as in `default` configurations, any values specified in specific configurations will overwrite the values in `default` section.
 
-## Connection Selector
-
-The connector selector is a powerful feature in eKuiper that allows users to define a connection once and reuse it across multiple configurations. It ensures efficient connection management and reduces redundancy.
-
-To define a global connection configuration, use the `connectionSelector` key to name your connection, e.g., `mqtt.localConnection`. Override global configurations with custom configurations but reference the same `connectionSelector`.
-
-For example, consider the configurations `demo_conf` and `demo2_conf`:
-
-```yaml
-#Override the global configurations
-demo_conf: #Conf_key
-  qos: 0
-  connectionSelector: mqtt.localConnection 
-  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
-
-#Override the global configurations
-demo2_conf: #Conf_key
-  qos: 0
-  connentionSelector: mqtt.localConnection
-  servers: [tcp://10.211.55.6:1883, tcp://127.0.0.1]
-```
-
-Both configurations reference the same `connectionSelector`, indicating that they utilize the same MQTT connection. When streams `demo` and `demo2` are defined based on these configurations:
-
-```text
-demo (
-    ...
-  ) WITH (DATASOURCE="test/", FORMAT="JSON", CONF_KEY="demo_conf");
-
-demo2 (
-    ...
-  ) WITH (DATASOURCE="test2/", FORMAT="JSON", CONF_KEY="demo2_conf");
-
-```
-
-They inherently share the MQTT connection. Specifically:
-
-- The stream `demo` subscribes to the MQTT topic `test/` with a QoS of 0.
-- The stream `demo2` subscribes to `test2/`, also with a QoS of 0.
-
-::: tip
-
-However, if two streams have the same `DATASOURCE` but differing `qos` values, only the rule started first will trigger a subscription.
-
-:::
-
-The actual connection profiles, like `mqtt.localConnection`, are usually defined in a separate file, such as `connections/connection.yaml`. 
-
-Example
-
-```yaml
-mqtt:
-  localConnection: #connection key
-    server: "tcp://127.0.0.1:1883"
-    username: ekuiper
-    password: password
-    #certificationPath: /var/kuiper/xyz-certificate.pem
-    #privateKeyPath: /var/kuiper/xyz-private.pem.ke
-    #insecureSkipVerify: false
-    #protocolVersion: 3
-    clientid: ekuiper
-  cloudConnection: #connection key
-    server: "tcp://broker.emqx.io:1883"
-    username: user1
-    password: password
-    #certificationPath: /var/kuiper/xyz-certificate.pem
-    #privateKeyPath: /var/kuiper/xyz-private.pem.ke
-    #insecureSkipVerify: false
-    #protocolVersion: 3
-```
-
-
-
 ## Integrate MQTT Source with eKuiper Rules
 
-With the connector defined, the next step is integrating it into eKuiper rules to start processing the streamed data.
+Having defined the connector, the next phase involves its integration with eKuiper rules.
 
 **Steps to Integrate:**
 
@@ -221,17 +148,16 @@ You can define the MQTT source as the data source either by REST API or CLI tool
 
 The REST API offers a programmatic way to interact with eKuiper, perfect for those looking to automate tasks or integrate eKuiper operations into other systems.
 
-**Steps to Use**
+Example:
 
-1. Use the appropriate REST endpoint to define the MQTT connector.
+```json
+{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+```
 
-2. Use another endpoint to create a rule that utilizes the MQTT connector, for example
+In the example, the `WITH` clause provides specific configurations for the stream.
 
-   ```json
-   {"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
-   ```
 
-   In the example, the `WITH` clause provides specific configurations for the stream. for detailed explanation of each field, see [Streams management with REST API](../../../api/restapi/streams.md)
+More details can be found at [Streams Management with REST API](../../../api/restapi/streams.md).
 
 ### Use CLI
 
@@ -239,15 +165,19 @@ For those who prefer a hands-on approach, the Command Line Interface (CLI) provi
 
 **Steps to Use**
 
-1. Use the `create` command to define the MQTT connector.
+1. Navigate to the eKuiper binary directory:
 
-2. Use the `rule` command to create a rule, specifying the MQTT connector as its source, for example
+   ```bash
+   cd path_to_eKuiper_directory/bin
+   ```
+
+2. Use the `create` command to create a rule, specifying the MQTT connector as its source, for example:
 
    ```bash
    bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
    ```
 
-For detailed operating steps, see [Streams management with CLI](../../../api/cli/streams.md).
+More details can be found at [Streams Management with CLI](../../../api/cli/streams.md).
 
 ## Migration Guide
 
