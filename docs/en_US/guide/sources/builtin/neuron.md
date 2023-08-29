@@ -21,6 +21,16 @@ The connector in eKuiper can be configured with [environment variables](../../..
 
 The default Neuron connector configuration is found at `$ekuiper/etc/sources/neuron.yaml`. 
 
+```yaml
+default:
+  # The nng connection url to connect to the neuron
+  url: tcp://127.0.0.1:7081
+ipc:
+  url: ipc:///tmp/neuron-ekuiper.ipc
+```
+
+This demo configuration provides two different ways to connect: a default TCP connection to a local service on port 7081, and an IPC mechanism for local inter-process communication using a file-based socket. 
+
 ## Neuron Event Format
 
 Neuron events typically adopt the following JSON format:
@@ -39,8 +49,6 @@ Neuron events typically adopt the following JSON format:
   }
 }
 ```
-
-
 
 ## Integrate Neuron Source with eKuiper Rules
 
@@ -81,9 +89,3 @@ For users who prefer a hands-on approach, the Command Line Interface (CLI) provi
    ```
 
 More details can be found at [Streams Management with CLI](../../../api/cli/streams.md).
-
-There is no configuration properties. An example of creating neuron source:
-
-```text
-CREATE STREAM table1 () WITH (FORMAT="json", TYPE="neuron");
-```
