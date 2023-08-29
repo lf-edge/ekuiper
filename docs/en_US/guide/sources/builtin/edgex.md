@@ -9,7 +9,7 @@ eKuiper's EdgeX source connector can subscribe to the message from [EdgeX messag
 
 ## Configure EdgeX Connector
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API,](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
 eKuiper's default MQTT source configuration resides at `$ekuiper/etc/sources/edgex.yaml`. This configuration serves as a base for all MQTT connections. However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
 
@@ -205,20 +205,10 @@ The types defined in readings will be converted into related [data types](../../
 
 If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert to `boolean` type. 
 
-| Value | Converted to |
-| ----- | ------------ |
-| 1     | true         |
-| t     | true         |
-| T     | true         |
-| true  | true         |
-| TRUE  | true         |
-| True  | true         |
-| 0     | false        |
-| f     | false        |
-| F     | false        |
-| false | false        |
-| FALSE | false        |
-| False | false        |
+**Boolean Conversion:**
+
+- Converted to `true`: "1", "t", "T", "true", "TRUE", "True"
+- Converted to `false`: "0", "f", "F", "false", "FALSE", "False"
 
 #### Bigint
 
@@ -230,7 +220,7 @@ If `ValueType` value of the reading is `FLOAT32`, `FLOAT64`, then eKuiper tries 
 
 #### String
 
-If `ValueType` value of the reading is `String`, then eKuiper tries to convert to `String` type.
+If `ValueType` value of the reading is `String`, then eKuiper tries to convert it to `String` type.
 
 #### Boolean array
 
