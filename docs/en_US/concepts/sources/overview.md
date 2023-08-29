@@ -22,7 +22,7 @@ Where the definition in the schema registry is the physical schema and the data 
 
 ## Stream & Table
 
-The source defines the external system connection. When using the source with a rule, users can define them as a stream or table according to the processing mechanism. Check [stream](stream.md) and [table](table.md) for detail.
+The source defines the external system connection. When using the source with a rule, users can define them as a stream or table according to the processing mechanism. Check [stream](stream.md) and [table](table.md) for details.
 
 ## More Readings
 
