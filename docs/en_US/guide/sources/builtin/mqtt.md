@@ -7,7 +7,7 @@ MQTT (Message Queuing Telemetry Transport) is a protocol optimized for low bandw
 
 Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broker and channels them into its processing pipeline. This integration allows for real-time data processing directly from specified MQTT topics.
 
-## Configure MQTT Connector
+## Configurations
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
@@ -53,7 +53,9 @@ Use can specify the global MQTT configurations here. The configuration items spe
 
 ### Security and Authentication Settings
 
-- `certificationPath`: The location of certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`.  Such as  `d3807d9fa5-certificate.pem`.
+- `certificationPath`:  Specifies the path to the certificate, example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
+  - If executed as `bin/kuiperd` from `/var/kuiper`, the base is `/var/kuiper`.
+  - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
 - `privateKeyPath`: The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to `certificationPath`. Such as `d3807d9fa5-private.pem.key`.
 - `rootCaPath`: The location of root ca path. It can be an absolute path, or a relative path.
 - `insecureSkipVerify`: Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification
@@ -138,7 +140,7 @@ demo (
 
 Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
-## Integrate MQTT Source with eKuiper Rules
+## Integrate with eKuiper Rules
 
 Having defined the connector, the next phase involves its integration with eKuiper rules.
 

@@ -170,7 +170,7 @@ demo (
 
 Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
-## Integrate HTTP Pull Source with eKuiper Rules
+## Integrate with eKuiper Rules
 
 Once the connector is defined, the next step is integrating it into eKuiper rules for data processing.
 
