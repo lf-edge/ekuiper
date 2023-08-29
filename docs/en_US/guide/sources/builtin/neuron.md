@@ -37,6 +37,16 @@ The port specified should correspond to the Neuron instance's port. In this exam
 
 :::
 
+```yaml
+default:
+  # The nng connection url to connect to the neuron
+  url: tcp://127.0.0.1:7081
+ipc:
+  url: ipc:///tmp/neuron-ekuiper.ipc
+```
+
+This demo configuration provides two different ways to connect: a default TCP connection to a local service on port 7081, and an IPC mechanism for local inter-process communication using a file-based socket. 
+
 ## Neuron Event Format
 
 Neuron events typically adopt the following JSON format:
