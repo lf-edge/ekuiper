@@ -13,7 +13,7 @@ The Neuron source connector features an asynchronous dial mechanism, ensuring co
 
 :::
 
-In the eKuiper side, all neuron source and sink instances share the same connection, thus the events consumed are also the same. 
+In the eKuiper side, all Neuron source and sink instances share the same connection, thus the events consumed are also the same. 
 
 ## Configure Neuron Connector
 
@@ -66,7 +66,7 @@ The REST API offers a programmatic way to interact with eKuiper, perfect for use
 
 Example: 
 
-```json
+```sql
 CREATE STREAM neuron_stream () WITH (FORMAT="json", TYPE="neuron");
 ```
 
