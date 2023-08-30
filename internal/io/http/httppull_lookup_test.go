@@ -19,6 +19,11 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 )
 
 func TestConfigureLookup(t *testing.T) {
@@ -31,6 +36,182 @@ func TestConfigureLookup(t *testing.T) {
 		refreshConf *RefreshTokenConf
 		tokens      map[string]interface{}
 	}{
+		// Test oAuth
+		{
+			name: "oAuth with access token and constant expire",
+			props: map[string]interface{}{
+				"url": "http://localhost:52345/",
+				"headers": map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				"oAuth": map[string]interface{}{
+					"access": map[string]interface{}{
+						"url":    "http://localhost:52345/token",
+						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+						"expire": "3600",
+					},
+				},
+			},
+			config: &RawConf{
+				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
+				Method:             http.MethodGet,
+				Interval:           DefaultInterval,
+				Timeout:            DefaultTimeout,
+				BodyType:           "none",
+				ResponseType:       "code",
+				InsecureSkipVerify: true,
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
+					"Authorization": "Bearer {{.token}}",
+				},
+				OAuth: map[string]map[string]interface{}{
+					"access": {
+						"url":    "http://localhost:52345/token",
+						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+						"expire": "3600",
+					},
+				},
+			},
+			accessConf: &AccessTokenConf{
+				Url:            "http://localhost:52345/token",
+				Body:           "{\"username\": \"admin\",\"password\": \"0000\"}",
+				Expire:         "3600",
+				ExpireInSecond: 3600,
+			},
+			tokens: map[string]interface{}{
+				"token":         DefaultToken,
+				"refresh_token": RefreshToken,
+				"client_id":     "test",
+				"expires":       float64(36000),
+			},
+		},
+		{
+			name: "oAuth with access token and dynamic expire",
+			props: map[string]interface{}{
+				"url": "http://localhost:52345/",
+				"headers": map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				"oAuth": map[string]interface{}{
+					"access": map[string]interface{}{
+						"url":    "http://localhost:52345/token",
+						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+						"expire": "{{.expires}}",
+					},
+				},
+			},
+			config: &RawConf{
+				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
+				Method:             http.MethodGet,
+				Interval:           DefaultInterval,
+				Timeout:            DefaultTimeout,
+				BodyType:           "none",
+				ResponseType:       "code",
+				InsecureSkipVerify: true,
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
+					"Authorization": "Bearer {{.token}}",
+				},
+				OAuth: map[string]map[string]interface{}{
+					"access": {
+						"url":    "http://localhost:52345/token",
+						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+						"expire": "{{.expires}}",
+					},
+				},
+			},
+			accessConf: &AccessTokenConf{
+				Url:            "http://localhost:52345/token",
+				Body:           "{\"username\": \"admin\",\"password\": \"0000\"}",
+				Expire:         "{{.expires}}",
+				ExpireInSecond: 36000,
+			},
+			tokens: map[string]interface{}{
+				"token":         DefaultToken,
+				"refresh_token": RefreshToken,
+				"client_id":     "test",
+				"expires":       float64(36000),
+			},
+		},
+		{
+			name: "oAuth with access token and refresh token",
+			props: map[string]interface{}{
+				"url": "http://localhost:52345/",
+				"headers": map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				"oAuth": map[string]interface{}{
+					"access": map[string]interface{}{
+						"url":    "http://localhost:52345/token",
+						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+						"expire": "3600",
+					},
+					"refresh": map[string]interface{}{
+						"url": "http://localhost:52345/refresh",
+						"headers": map[string]interface{}{
+							"Authorization": "Bearer {{.token}}",
+							"RefreshToken":  "{{.refresh_token}}",
+						},
+					},
+				},
+			},
+			config: &RawConf{
+				Url:                "http://localhost:52345/",
+				ResendUrl:          "http://localhost:52345/",
+				Method:             http.MethodGet,
+				Interval:           DefaultInterval,
+				Timeout:            DefaultTimeout,
+				BodyType:           "none",
+				ResponseType:       "code",
+				InsecureSkipVerify: true,
+				Headers: map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+				},
+				HeadersMap: map[string]string{
+					"Authorization": "Bearer {{.token}}",
+				},
+				OAuth: map[string]map[string]interface{}{
+					"access": {
+						"url":    "http://localhost:52345/token",
+						"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+						"expire": "3600",
+					},
+					"refresh": {
+						"url": "http://localhost:52345/refresh",
+						"headers": map[string]interface{}{
+							"Authorization": "Bearer {{.token}}",
+							"RefreshToken":  "{{.refresh_token}}",
+						},
+					},
+				},
+			},
+			accessConf: &AccessTokenConf{
+				Url:            "http://localhost:52345/token",
+				Body:           "{\"username\": \"admin\",\"password\": \"0000\"}",
+				Expire:         "3600",
+				ExpireInSecond: 3600,
+			},
+			refreshConf: &RefreshTokenConf{
+				Url: "http://localhost:52345/refresh",
+				Headers: map[string]string{
+					"Authorization": "Bearer {{.token}}",
+					"RefreshToken":  "{{.refresh_token}}",
+				},
+			},
+			tokens: map[string]interface{}{
+				"token":         DefaultToken,
+				"refresh_token": RefreshToken,
+				"client_id":     "test",
+				"expires":       float64(36000),
+			},
+		},
+		// test default
 		{
 			name: "default",
 			props: map[string]interface{}{
@@ -81,4 +262,72 @@ func TestConfigureLookup(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLookupPull(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
+	r := &lookupSource{}
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+	err := r.Configure("data3", map[string]interface{}{
+		"url":          "http://localhost:52345/",
+		"responseType": "body",
+	})
+	require.NoError(t, err)
+	resp, err := r.pull(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, []map[string]interface{}{
+		{
+			"code": float64(200),
+			"data": map[string]interface{}{
+				"device_id":   "d1",
+				"temperature": float64(25.5),
+				"humidity":    float64(60),
+			},
+		},
+		{
+			"code": float64(200),
+			"data": map[string]interface{}{
+				"device_id":   "d2",
+				"temperature": float64(25.5),
+				"humidity":    float64(60),
+			},
+		},
+	}, resp)
+	fmt.Println(resp)
+}
+
+func TestLookupJoin(t *testing.T) {
+	datas := []map[string]interface{}{
+		{
+			"a": 1,
+			"b": 3,
+			"c": 5,
+		},
+		{
+			"a": 2,
+			"b": 4,
+			"c": 6,
+		},
+	}
+	keys := []string{"a"}
+	values := []interface{}{1}
+	l := &lookupSource{}
+	got := l.lookupJoin(datas, keys, values)
+	require.Equal(t, []map[string]interface{}{
+		{
+			"a": 1,
+			"b": 3,
+			"c": 5,
+		},
+	}, got)
+}
+
+func TestLookupActions(t *testing.T) {
+	r := &lookupSource{}
+	require.NoError(t, r.Open(context.Background()))
+	require.NoError(t, r.Close(context.Background()))
+	require.NotNil(t, GetLookUpSource())
 }

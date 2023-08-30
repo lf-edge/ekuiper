@@ -48,19 +48,11 @@ func (l *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 	if err != nil {
 		return nil, err
 	}
+	matched := l.lookupJoin(resps, keys, values)
 	var results []api.SourceTuple
-	for _, resp := range resps {
-		match := true
-		for i, k := range keys {
-			if val, ok := resp[k]; !ok || val != values[i] {
-				match = false
-				break
-			}
-		}
-		if match {
-			meta := make(map[string]interface{})
-			results = append(results, api.NewDefaultSourceTupleWithTime(resp, meta, conf.GetNow()))
-		}
+	for _, resp := range matched {
+		meta := make(map[string]interface{})
+		results = append(results, api.NewDefaultSourceTupleWithTime(resp, meta, conf.GetNow()))
 	}
 	return results, nil
 }
@@ -69,6 +61,23 @@ func (l *lookupSource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing HTTP pull lookup table")
 	return nil
+}
+
+func (l *lookupSource) lookupJoin(dataMap []map[string]interface{}, keys []string, values []interface{}) []map[string]interface{} {
+	var resps []map[string]interface{}
+	for _, resp := range dataMap {
+		match := true
+		for i, k := range keys {
+			if val, ok := resp[k]; !ok || val != values[i] {
+				match = false
+				break
+			}
+		}
+		if match {
+			resps = append(resps, resp)
+		}
+	}
+	return resps
 }
 
 func (l *lookupSource) pull(ctx api.StreamContext) ([]map[string]interface{}, error) {
