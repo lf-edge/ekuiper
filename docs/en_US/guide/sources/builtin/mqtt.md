@@ -127,7 +127,7 @@ demo_conf: #Conf_key
   server: "tcp://10.211.55.6:1883"
 ```
 
-In the above example, a custom configuration named `demo_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md)).
+In the above example, a custom configuration named `demo_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md).
 
 **Usage Example**
 
@@ -162,7 +162,6 @@ Example:
 ```
 
 In the example, the `WITH` clause provides specific configurations for the stream.
-
 
 More details can be found at [Streams Management with REST API](../../../api/restapi/streams.md).
 

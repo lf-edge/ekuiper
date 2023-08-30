@@ -1,4 +1,4 @@
-## Use Cases
+# Use Cases
 
 This chapter illustrates eKuiper's practical applications in various domains. In this chapter, you'll see how eKuiper fits into different scenarios, demonstrating its adaptability and utility.
 

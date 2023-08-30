@@ -19,7 +19,7 @@ In the eKuiper side, all Neuron source and sink instances share the same connect
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on the configuration file approach.
 
-The default Neuron connector configuration is found at `$ekuiper/etc/sources/neuron.yaml`. 
+The default Neuron connector configuration is found at `$ekuiper/etc/sources/neuron.yaml`.
 
 ```yaml
 default:
@@ -29,7 +29,7 @@ ipc:
   url: ipc:///tmp/neuron-ekuiper.ipc
 ```
 
-This demo configuration provides two different ways to connect: a default TCP connection to a local service on port 7081, and an IPC mechanism for local inter-process communication using a file-based socket. 
+This demo configuration provides two different ways to connect: a default TCP connection to a local service on port 7081, and an IPC mechanism for local inter-process communication using a file-based socket.
 
 ::: tip
 
@@ -66,13 +66,13 @@ Neuron Source connector can function as a [stream source](../../streams/overview
 
 :::
 
-You can define the Neuron source as the data source either by REST API or CLI tool. 
+You can define the Neuron source as the data source either by REST API or CLI tool.
 
 ### Use REST API
 
 The REST API offers a programmatic way to interact with eKuiper, perfect for users looking to automate tasks or integrate eKuiper operations into other systems.
 
-Example: 
+Example:
 
 ```sql
 CREATE STREAM neuron_stream () WITH (FORMAT="json", TYPE="neuron");
