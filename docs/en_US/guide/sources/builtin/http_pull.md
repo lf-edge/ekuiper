@@ -9,7 +9,7 @@ The HTTP Pull source connector is designed to fetch data by making HTTP requests
 
 ## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
 
 eKuiper's default HTTP Pull source configuration resides at `$ekuiper/etc/sources/http_pull.yaml`. This configuration file provides a set of default settings, which you can override as needed.
 
@@ -91,7 +91,7 @@ Use can specify the global HTTP pull settings here. The configuration items spec
   - If executed as `bin/kuiperd` from `/var/kuiper`, the base is `/var/kuiper`.
   - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
 
-- `privateKeyPath`: Path to the private key, example `d3807d9fa5-private.pem.key`. Can be an absolute or a relative path. For relative paths, refer to the behavior described under `certificationPath`. 
+- `privateKeyPath`: Path to the private key, example `d3807d9fa5-private.pem.key`. Can be an absolute or a relative path. For relative paths, refer to the behavior described under `certificationPath`.
 - `rootCaPath`: Path to the root CA. Can be an absolute or a relative path.
 - `insecureSkipVerify`: Control if to skip the certification verification. If set to `true`, then skip certification verification; Otherwise, verify the certification.
 
@@ -123,7 +123,7 @@ The following configurations are designed under the assumption that the authenti
 
 #### Incremental Data Processing
 
-`incremental`: If it's set to `true`, then will compare with the last result; If the responses of two requests are the same, then will skip sending out the result. 
+`incremental`: If it's set to `true`, then will compare with the last result; If the responses of two requests are the same, then will skip sending out the result.
 
 #### Dynamic Properties
 
@@ -178,7 +178,7 @@ HTTP Pull Source connector can function as a [stream source](../../streams/overv
 
 :::
 
-You can define the HTTP Pull source as the data source either by REST API or CLI tool. 
+You can define the HTTP Pull source as the data source either by REST API or CLI tool.
 
 ### Use REST API
 

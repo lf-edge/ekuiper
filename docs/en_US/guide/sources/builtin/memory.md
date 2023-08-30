@@ -76,4 +76,3 @@ Similar to MQTT topics, wildcards are available:
 ## Rule Pipeline with Memory Source
 
 The Memory Source Connector can be instrumental in constructing [rule pipelines](../../rules/rule_pipeline.md). These pipelines enable multiple rules to be chained, where one rule's output can be another's input. The internal format ensures data transfer efficiency, eliminating encoding or decoding needs. It's noteworthy that in this scenario, the `format` attribute of the memory source is ignored, ensuring optimal performance.
-

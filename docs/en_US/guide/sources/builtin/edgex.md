@@ -13,7 +13,7 @@ The connector in eKuiper can be configured with [environment variables](../../..
 
 eKuiper's default EdgeX source configuration resides at `$ekuiper/etc/sources/edgex.yaml`. This configuration serves as a base for all EdgeX connections. However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
 
-See below for a demo configuration with the global configuration and a customized `demo1` section. 
+See below for a demo configuration with the global configuration and a customized `demo1` section.
 
 ```yaml
 #Global Edgex configurations
@@ -81,7 +81,7 @@ Users can specify the global EdgeX configurations here. The configuration items 
   - `mqtt`: Use the MQTT broker as EdgeX message bus. See [Optional Configuration (Specifically for MQTT)](#optional-configuration-specifically-for-mqtt) for more MQTT-related configurations.
   - `redis`: Use Redis as the EdgeX message bus. Redis is the default message bus when using EdgeX docker compose.
 
-  EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively
+  EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively:
 
   - `nats-jetstream`
   - `nats-core`
@@ -126,7 +126,7 @@ demo1: #Conf_key
   topic: rules-events
 ```
 
-In the above example, a custom configuration named `demo1` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md)).
+In the above example, a custom configuration named `demo1` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md).
 
 **Usage Example**
 
@@ -146,7 +146,7 @@ edgeX Source connector can function as a [stream source](../../streams/overview.
 
 :::
 
-You can define the edgeX source as the data source either by REST API or CLI tool. 
+You can define the edgeX source as the data source either by REST API or CLI tool.
 
 ### Use REST API
 
@@ -203,7 +203,7 @@ The types defined in readings will be converted into related [data types](../../
 
 #### Boolean
 
-If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert to `boolean` type. 
+If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert to `boolean` type.
 
 **Boolean Conversion:**
 

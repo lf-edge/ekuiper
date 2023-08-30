@@ -7,7 +7,7 @@ In IoT ecosystems, devices often need to transmit data to processing platforms. 
 
 When configured as an HTTP Push source, eKuiper exposes an HTTP endpoint so devices can push their data. Once the data is received, eKuiper processes it according to the defined rules and streams.
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
 
 ## Basic Configuration
 
@@ -39,7 +39,7 @@ Each [stream](../../streams/overview.md) can have its own unique configuration, 
 
 The HTTP Push source configuration file is located at `etc/sources/httppush.yaml`. The configuration items in the `default` section provide a set of default settings, which you can override as needed.
 
-See below for a demo configuration with the global configuration and a customized `application_conf` section. 
+See below for a demo configuration with the global configuration and a customized `application_conf` section.
 
 ```yaml
 #Global httppush configurations
@@ -68,7 +68,7 @@ HTTP Push connector can function as a [stream source](../../streams/overview.md)
 
 :::
 
-You can define the HTTP Push source as the data source either by REST API or CLI tool. 
+You can define the HTTP Push source as the data source either by REST API or CLI tool.
 
 ### Use REST API
 

@@ -33,7 +33,7 @@ Below are the built-in source connectors provided by eKuiper:
 For scenarios where custom data sources or specific third-party integrations are needed, eKuiper offers the flexibility of plugin-based source connectors:
 
 - [SQL source](./sources/plugin/sql.md): A source to periodically fetch data from SQL DB.
-- [Video Source](./sources/plugin/video.md): A source to query video streams. 
+- [Video Source](./sources/plugin/video.md): A source to query video streams.
 - [Random source](./sources/plugin/random.md): A source to generate random data for testing.
 - [Zero MQ source](./sources/plugin/zmq.md): A source to read data from Zero MQ.
 
@@ -70,7 +70,7 @@ For specialized data dispatch requirements or integrations with particular platf
 
 ### Data Templates in Sink Connectors
 
-[Data templates](./sinks/data_template.md) in eKuiper allow for "secondary processing" of analysis results to cater to the diverse formatting requirements of different sink systems. Utilizing the Golang template system, eKuiper provides mechanisms for dynamic data transformation, conditional outputs, and iterative processing. This ensures compatibility and precise formatting for various sinks. 
+[Data templates](./sinks/data_template.md) in eKuiper allow for "secondary processing" of analysis results to cater to the diverse formatting requirements of different sink systems. Utilizing the Golang template system, eKuiper provides mechanisms for dynamic data transformation, conditional outputs, and iterative processing. This ensures compatibility and precise formatting for various sinks.
 
 ## Connection Selector
 
@@ -120,7 +120,7 @@ For MQTT sources, if two streams have the same `DATASOURCE` but differing `qos` 
 
 **Configuration**
 
-The actual connection profiles, like `mqtt.localConnection`, are usually defined in a separate file, such as `connections/connection.yaml`. 
+The actual connection profiles, like `mqtt.localConnection`, are usually defined in a separate file, such as `connections/connection.yaml`.
 
 Example
 
