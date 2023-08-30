@@ -9,7 +9,7 @@ The File Source Connector allows eKuiper to read data from local files, supporti
 
 - JSON: Files in standard JSON array format.
 - csv: Comma-separated csv files are supported, as well as with custom separators.
-- lines: line-separated file. 
+- lines: line-separated file.
 
 :::: tabs type:card
 

@@ -32,14 +32,14 @@ With this configuration, the table will refer to database 0 in the Redis instanc
 
 - **`addr`**: This specifies the address of the Redis server, a string in the format `hostname:port` or `IP_address:port`.
 - **`datatype`**: This determines the type of data the connector should expect from the Redis key. Currently only `string` and `list` are supported.
-- **`username`**: The username for accessing the Redis server, only needed if authentication is enabled on the server. 
+- **`username`**: The username for accessing the Redis server, only needed if authentication is enabled on the server.
 - **`password`**: The password for accessing the Redis server, only needed if authentication is enabled on the server.
 
 ## Create a Stream Source
 
 To utilize the Redis Source Connector in eKuiper streams, define a stream specifying the Redis source, its configuration, and the data format.
 
-You can define the Redis source as the data source either by REST API or CLI tool. 
+You can define the Redis source as the data source either by REST API or CLI tool.
 
 ### Use REST API
 
