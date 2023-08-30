@@ -13,7 +13,7 @@ The Neuron source connector features an asynchronous dial mechanism, ensuring co
 
 :::
 
-In the eKuiper side, all Neuron source and sink instances share the same connection, thus the events consumed are also the same. 
+In the eKuiper side, all Neuron source and sink instances share the same connection, thus the events consumed are also the same.
 
 ## Configurations
 

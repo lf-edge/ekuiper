@@ -3,7 +3,7 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-MQTT (Message Queuing Telemetry Transport) is a protocol optimized for the low bandwidth scenarios. In eKuiper, the MQTT connector can function as both a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector. 
+MQTT (Message Queuing Telemetry Transport) is a protocol optimized for the low bandwidth scenarios. In eKuiper, the MQTT connector can function as both a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector.
 
 Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broker and channels them into its processing pipeline. This integration allows for real-time data processing directly from specified MQTT topics.
 

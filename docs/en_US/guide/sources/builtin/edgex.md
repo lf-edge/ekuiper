@@ -1,4 +1,4 @@
-## EdgeX Source Connector
+# EdgeX Source Connector
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
@@ -9,7 +9,7 @@ eKuiper's EdgeX source connector can subscribe to the message from [EdgeX messag
 
 ## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
 
 eKuiper's default EdgeX source configuration resides at `$ekuiper/etc/sources/edgex.yaml`. This configuration serves as a base for all EdgeX connections. However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
 
@@ -233,6 +233,3 @@ All of `INT8`, `INT16`, `INT32`, `INT64`, `UINT`, `UINT8`, `UINT16`, `UINT32`, `
 #### Float array
 
 All of `FLOAT32`, `FLOAT64` array types in EdgeX will be converted to `Float` array.
-
-
-
