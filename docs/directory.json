@@ -905,7 +905,7 @@
 		},
 		{
 			"title": "Connectors",
-			"path": "guide/connector.md",
+			"path": "guide/connector",
 			"children": [
 				{
 					"title": "Source Connector",
