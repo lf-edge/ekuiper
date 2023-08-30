@@ -60,6 +60,8 @@ Neuron events typically adopt the following JSON format:
 
 Having defined the connector, the next phase involves its integration with eKuiper rules.
 
+::: tip
+
 Neuron Source connector can function as a [stream source](../../streams/overview.md) or a [scan table](../../tables/scan.md) source. This section illustrates the integration using the Neuron Source connector as a stream source example.
 
 :::
