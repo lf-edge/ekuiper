@@ -1,4 +1,4 @@
-## File Source Connector
+# File Source Connector
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
@@ -77,7 +77,7 @@ When dealing with files that have metadata or non-standard content at the beginn
 
 ## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
 
 The configure file for the file source is located at  `/etc/sources/file.yaml`.
 

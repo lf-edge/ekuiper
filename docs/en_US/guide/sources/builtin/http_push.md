@@ -3,9 +3,9 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-In IoT ecosystems, devices often need to transmit data to processing platforms. The HTTP Push connector in eKuiper allows devices to send their data directly to eKuiper for real-time processing. With eKuiper acting as an endpoint, devices can send data using standard HTTP methods, making integration seamless and straightforward. 
+In IoT ecosystems, devices often need to transmit data to processing platforms. The HTTP Push connector in eKuiper allows devices to send their data directly to eKuiper for real-time processing. With eKuiper acting as an endpoint, devices can send data using standard HTTP methods, making integration seamless and straightforward.
 
-When configured as an HTTP Push source, eKuiper exposes an HTTP endpoint so devices can push their data. Once the data is received, eKuiper processes it according to the defined rules and streams. 
+When configured as an HTTP Push source, eKuiper exposes an HTTP endpoint so devices can push their data. Once the data is received, eKuiper processes it according to the defined rules and streams.
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
@@ -111,6 +111,3 @@ For those who prefer a hands-on approach, the Command Line Interface (CLI) provi
    ```
 
 More details can be found at [Streams Management with CLI](../../../api/cli/streams.md).
-
-
-
