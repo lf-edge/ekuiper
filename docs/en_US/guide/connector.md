@@ -1,8 +1,8 @@
 # Connectors
 
-[LF Edge eKuiper](https://www.lfedge.org/projects/ekuiper/) is an edge lightweight IoT data analytics/streaming software that can be run on all kinds of resource-constrained IoT devices. 
+In the realm of stream processing, the ability to seamlessly interact with various data sources and sinks is of paramount importance. eKuiper, being a lightweight edge stream processing engine, recognizes this necessity and incorporates it through the use of "connectors."
 
-Connectors in eKuiper serve as the interface for data ingestion and dispatch within the stream processing framework. They are categorized into two primary types:
+Connectors in eKuiper serve as the bridge between the processing engine and external systems, including databases, message brokers, or other data stores. By leveraging connectors, eKuiper can ingest data from diverse sources, process it in real-time, and then dispatch the processed data to the desired destinations. This ensures that eKuiper can be integrated into a wide variety of environments and use cases, from IoT edge devices to cloud-based infrastructures. They are categorized into two primary types:
 
 - **Source Connectors**: Responsible for ingesting data into the eKuiper platform from various external sources.
 - **Sink Connectors**: Handle the dispatch of processed data from eKuiper to external sinks or endpoints.
@@ -13,84 +13,60 @@ This chapter details the configuration, usage, and best practices associated wit
 
 ## Source Connectors
 
-[Source connectors](./sources/overview.md) in eKuiper are designed to facilitate data ingestion from various external sources into the platform. Depending on the requirements, users can opt for built-in connectors or extend the system with plugin-based connectors. 
+[Source connectors](./sources/overview.md) in eKuiper are designed to facilitate data ingestion from various external sources into the platform. Within the eKuiper framework, each source can operate in one of two distinct modes: a "Streaming" mode, where data events are streamed sequentially, or a "Reference" mode (often used in the context of 'tables'), where specific external content is fetched based on queries. To leverage these capabilities, users simply integrate these sources into their streams or tables, specifying the desired source type and fine-tuning behavior through configurable attributes.
 
-Each source operates in either a "Scan" mode, streaming data events sequentially, or a "Lookup" mode, referencing external content as needed. To utilize these sources, users define them in streams or tables, specifying the desired source type and configuring attributes to tailor source behavior.
-
-### Built-in Source Connectors
-
-Built-in source connectors are integrated directly within the eKuiper platform. These connectors:
-
-- Provide immediate connectivity to commonly used data sources.
-- Require minimal configuration and setup.
-- Are maintained and updated with the core eKuiper system.
+**Built-in Source Connectors**
 
 Below are the built-in source connectors provided by eKuiper:
 
-- [MQTT source](./sources/builtin/mqtt.md): read data from MQTT topics.
-- [Neuron source](./sources/builtin/neuron.md): read data from the local neuron instance.
-- [EdgeX source](./sources/builtin/edgex.md): read data from EdgeX foundry.
-- [HTTP pull source](./sources/builtin/http_pull.md): source to pull data from HTTP servers.
-- [Http push source](./sources/builtin/http_push.md): push data to eKuiper through http.
-- [Redis source](./sources/builtin/redis.md): source to lookup from Redis as a lookup table.
-- [File source](./sources/builtin/file.md): source to read from file, usually used as tables.
-- [Memory source](./sources/builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
-
-### Plugin-based Source Connectors
-
-For scenarios where custom data sources or specific third-party integrations are needed, eKuiper offers the flexibility of plugin-based source connectors:
-
-- [SQL source](./sources/plugin/sql.md): a source to periodically fetch data from SQL DB.
-- [Video Source](./sources/plugin/video.md): a source to query video streams. 
-- [Random source](./sources/plugin/random.md): a source to generate random data for testing.
-- [Zero MQ source](./sources/plugin/zmq.md): read data from zero MQ.
+- [MQTT source](./sources/builtin/mqtt.md): A source to read data from MQTT topics.
+- [Neuron source](./sources/builtin/neuron.md): A source to read data from the local neuron instance.
+- [EdgeX source](./sources/builtin/edgex.md): A source to read data from EdgeX foundry.
+- [HTTP pull source](./sources/builtin/http_pull.md): A source to pull data from HTTP servers.
+- [HTTP push source](./sources/builtin/http_push.md): A source to push data to eKuiper through HTTP.
+- [File source](./sources/builtin/file.md): A source to read from file, usually used as tables.
+- [Memory source](./sources/builtin/memory.md): A source to read from eKuiper memory topic to form rule pipelines.
+- [Redis source](./sources/builtin/redis.md): A source to lookup from Redis as a lookup table.
 
 **Plugin-based Source Connectors**
 
 For scenarios where custom data sources or specific third-party integrations are needed, eKuiper offers the flexibility of plugin-based source connectors:
 
-- Understand the architecture and lifecycle of a plugin-based connector.
-- Learn the process to integrate third-party or custom source plugins.
-- Explore configuration nuances specific to plugin-based sources.
+- [SQL source](./sources/plugin/sql.md): A source to periodically fetch data from SQL DB.
+- [Video Source](./sources/plugin/video.md): A source to query video streams. 
+- [Random source](./sources/plugin/random.md): A source to generate random data for testing.
+- [Zero MQ source](./sources/plugin/zmq.md): A source to read data from Zero MQ.
 
 ## Sink Connectors
 
-Sink connectors handle the task of dispatching the processed data from eKuiper to various external endpoints or sinks. Similar to source connectors, sink connectors are also categorized into built-in and plugin-based types.
+Sink connectors handle the task of dispatching the processed data from eKuiper to various external endpoints or sinks. These sinks can directly interface with platforms like MQTT, Neuron, and EdgeX, among others, while also offering cache mechanisms to handle network interruptions and ensure data consistency. Additionally, users have the flexibility to customize sink behaviors through dynamic properties and resource reuse, streamlining integration and improving scalability.
 
-These sinks can directly interface with platforms like MQTT, Neuron, and EdgeX, among others, while also offering cache mechanisms to handle network interruptions and ensure data consistency. 
+Similar to source connectors, sink connectors are also categorized into built-in and plugin-based types.
 
-Additionally, users have the flexibility to customize sink behaviors through dynamic properties and resource reuse, streamlining integration and improving scalability.
+**Built-in Sink Connectors**
 
-### Built-in Sink Connectors
+Below are the built-in sink connectors provided by eKuiper:
 
-Directly integrated into eKuiper, built-in sink connectors:
-
-- Enable dispatch to widely used data sinks or platforms.
-- Offer streamlined configuration options.
-- Benefit from direct updates alongside eKuiper's core updates.
-
-Below are the built-in source connectors provided by eKuiper:
-
-- [MQTT sink](./sinks/builtin/mqtt.md): sink to external MQTT broker.
-- [Neuron sink](./sinks/builtin/neuron.md): sink to the local neuron instance.
-- [EdgeX sink](./sinks/builtin/edgex.md): sink to EdgeX Foundry. This sink only exists when enabling the edgex build tag.
-- [Rest sink](./sinks/builtin/rest.md): sink to external HTTP server.
-- [Redis sink](./sinks/builtin/redis.md): sink to Redis.
-- [File sink](./sinks/builtin/file.md): sink to a file.
-- [Memory sink](./sinks/builtin/memory.md): sink to eKuiper memory topic to form rule pipelines.
-- [Log sink](./sinks/builtin/log.md): sink to log, usually for debugging only.
-- [Nop sink](./sinks/builtin/nop.md): sink to nowhere. It is used for performance testing now.
+- [MQTT sink](./sinks/builtin/mqtt.md): A sink to external MQTT broker.
+- [Neuron sink](./sinks/builtin/neuron.md): A sink to the local neuron instance.
+- [EdgeX sink](./sinks/builtin/edgex.md): A sink to EdgeX Foundry. This sink only exists when enabling the edgex build tag.
+- [Rest sink](./sinks/builtin/rest.md): A sink to external HTTP server.
+- [Redis sink](./sinks/builtin/redis.md): A sink to Redis.
+- [File sink](./sinks/builtin/file.md): A sink to a file.
+- [Memory sink](./sinks/builtin/memory.md): A sink to eKuiper memory topic to form rule pipelines.
+- [Log sink](./sinks/builtin/log.md): A sink to log, usually for debugging only.
+- [Nop sink](./sinks/builtin/nop.md): A sink to nowhere. It is used for performance testing now.
 
 ### Plugin-based Sink Connectors
 
 For specialized data dispatch requirements or integrations with particular platforms, eKuiper supports plugin-based sink connectors:
 
-- [InfluxDB sink](./sinks/plugin/influx.md): sink to InfluxDB `v1.x`.
-- [InfluxDBV2 sink](./sinks/plugin/influx2.md): sink to InfluxDB `v2.x`.
-- [TDengine sink](./sinks/plugin/tdengine.md): sink to TDengine.
-- [Image sink](./sinks/plugin/image.md): sink to an image file. Only used to handle binary results.
-- [Zero MQ sink](./sinks/plugin/zmq.md): sink to Zero MQ.
-- [Kafka sink](./sinks/plugin/kafka.md): sink to Kafka.
+- [InfluxDB sink](./sinks/plugin/influx.md): A sink to InfluxDB `v1.x`.
+- [InfluxDBV2 sink](./sinks/plugin/influx2.md): A sink to InfluxDB `v2.x`.
+- [TDengine sink](./sinks/plugin/tdengine.md): A sink to TDengine.
+- [Image sink](./sinks/plugin/image.md): A sink to an image file. Only used to handle binary results.
+- [Zero MQ sink](./sinks/plugin/zmq.md): A sink to Zero MQ.
+- [Kafka sink](./sinks/plugin/kafka.md): A sink to Kafka.
 
 ### Data Templates in Sink Connectors
 
@@ -138,9 +114,11 @@ They inherently share the MQTT connection. Specifically:
 
 ::: tip
 
-However, if two streams have the same `DATASOURCE` but differing `qos` values, only the rule started first will trigger a subscription.
+For MQTT sources, if two streams have the same `DATASOURCE` but differing `qos` values, only the rule started first will trigger a subscription.
 
 :::
+
+**Configuration**
 
 The actual connection profiles, like `mqtt.localConnection`, are usually defined in a separate file, such as `connections/connection.yaml`. 
 

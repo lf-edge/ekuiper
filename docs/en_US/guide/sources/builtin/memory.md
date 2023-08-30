@@ -4,11 +4,11 @@
 <span style="background:green;color:white">scan table source</span>
 <span style="background:green;color:white">lookup table source</span>
 
-The Memory source connector enables eKuiper to retrieve data from in-memory sources, primarily the [memory sink](../../sinks/builtin/memory.md)). This connector plays an essential role in scenarios demanding swift data retrieval without the overhead of disk or external service reads.
+The Memory source connector enables eKuiper to retrieve data from in-memory sources, primarily the [memory sink](../../sinks/builtin/memory.md). This connector plays an essential role in scenarios that require swift data retrieval without the overhead of disk or external service reads.
 
 There's no need for additional configurations when integrating the Memory Source Connector with an eKuiper rule. Moreover, this connector is versatile, performing roles like a stream source, scan table source, or lookup table source.
 
-## Stream Source
+## Create a Stream Source
 
 As a [stream source](../../streams/overview.md), the connector continuously fetches data from a designated in-memory topic, making it ideal for real-time data processing.
 
@@ -24,7 +24,7 @@ CREATE STREAM stream1 (
 
 In this example, a memory stream source is defined to continuously pull data from the `devices/result` in-memory topic.
 
-## Scan Table Source
+## Create a Scan Table Source
 
 For querying or analyzing more static datasets, the Memory Source Connector can act as a [scan table source](../../tables/scan.md).
 
@@ -36,7 +36,7 @@ CREATE TABLE memoryTableDemo () WITH (DATASOURCE="topicB", FORMAT="JSON", TYPE="
 
 In this example, table `memoryTableDemo` allows for querying JSON-formatted data from the `topicB` in-memory topic.
 
-## **Lookup Table Source**
+## Create a Lookup Table Source
 
 This mode allows the Memory Source Connector to serve as a lookup table source, enhancing data enrichment during stream processing.
 
@@ -50,7 +50,7 @@ Besides specifying a `DATASOURCE`, which corresponds to a memory topic, you also
 
 Once set up, the memory lookup table will begin accumulating data from the specified memory topic. This data is indexed by the key field, allowing for rapid retrieval.
 
-### **Key Features**:
+### **Key Features**
 
 - **Independence**: The memory lookup table operates independently of any rules. This means that even if rules are modified or deleted, the data within the memory lookup table remains unaffected.
 - **Data Sharing**: If multiple rules reference the same table or if there are multiple memory tables with identical topic/key pairs, they all share the same data set. This ensures consistency across different rules and streamlines data access.

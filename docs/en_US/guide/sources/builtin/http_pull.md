@@ -3,13 +3,13 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-The HTTP Pull source connector allows eKuiper to retrieve data from external HTTP servers, providing a flexible way to pull data on-demand or based on a schedule. This section focuses on how to configure and use the HTTP Pull as a source connector.
+The HTTP Pull source connector allows eKuiper to retrieve data from external HTTP servers, providing a flexible way to pull data on demand or based on a schedule. This section focuses on how to configure and use the HTTP Pull as a source connector.
 
-HTTP Pull source connector is designed to fetch data by making HTTP requests to external servers. It can be set to pull data based on a specified interval or triggered by certain conditions.
+The HTTP Pull source connector is designed to fetch data by making HTTP requests to external servers. It can be set to pull data based on a specified interval or triggered by certain conditions.
 
-## Configure HTTP Pull Connector
+## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
 eKuiper's default HTTP Pull source configuration resides at `$ekuiper/etc/sources/http_pull.yaml`. This configuration file provides a set of default settings, which you can override as needed.
 
@@ -125,11 +125,11 @@ The following configurations are designed under the assumption that the authenti
 
 #### Incremental Data Processing
 
-`incremental`: If it's set to `true`, then will compare with last result; If response of two requests are the same, then will skip sending out the result. 
+`incremental`: If it's set to `true`, then will compare with the last result; If the responses of two requests are the same, then will skip sending out the result. 
 
 #### Dynamic Properties
 
-Dynamic properties adapt in real-time and can be employed to customize the HTTP request's URL, body, and header. The format for these properties is based on the [data template](../../sinks/data_template.md) syntax.
+Dynamic properties adapt in real time and can be employed to customize the HTTP request's URL, body, and header. The format for these properties is based on the [data template](../../sinks/data_template.md) syntax.
 
 Key dynamic properties include:
 
@@ -158,7 +158,7 @@ application_conf: #Conf_key
   url: http://localhost:9090/pull
 ```
 
-In the above example, a custom configuration named `application_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md) for more info).
+In the above example, a custom configuration named `application_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md)).
 
 **Usage Example**
 
@@ -170,7 +170,7 @@ demo (
 
 Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
-## Integrate with eKuiper Rules
+## Create a Stream Source
 
 Once the connector is defined, the next step is integrating it into eKuiper rules for data processing.
 
@@ -180,7 +180,7 @@ HTTP Pull Source connector can function as a [stream source](../../streams/overv
 
 :::
 
-You can define the MQTT source as the data source either by REST API or CLI tool. 
+You can define the HTTP Pull source as the data source either by REST API or CLI tool. 
 
 ### Use REST API
 
