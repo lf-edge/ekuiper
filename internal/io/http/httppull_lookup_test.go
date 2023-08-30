@@ -296,7 +296,6 @@ func TestLookupPull(t *testing.T) {
 			},
 		},
 	}, resp)
-	fmt.Println(resp)
 }
 
 func TestLookupJoin(t *testing.T) {
@@ -323,6 +322,23 @@ func TestLookupJoin(t *testing.T) {
 			"c": 5,
 		},
 	}, got)
+}
+
+func TestLookup(t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
+	r := &lookupSource{}
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+	err := r.Configure("data3", map[string]interface{}{
+		"url":          "http://localhost:52345/",
+		"responseType": "body",
+	})
+	require.NoError(t, err)
+	tuples, err := r.Lookup(context.Background(), nil, []string{"code"}, []interface{}{float64(200)})
+	require.NoError(t, err)
+	require.Len(t, tuples, 2)
 }
 
 func TestLookupActions(t *testing.T) {
