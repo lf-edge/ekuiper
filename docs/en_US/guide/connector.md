@@ -144,7 +144,6 @@ mqtt:
     #insecureSkipVerify: false
     #protocolVersion: 3
 ```
-
 ## Batch Configuration
 
 For advanced data stream processing, eKuiper offers an array of connectors like Memory, File, MQTT, and more. To streamline the integration, eKuiper’s REST API introduces the capability for batch configuration, allowing users to simultaneously import or export multiple configurations.
