@@ -3,13 +3,13 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper's Neuron connector seamlessly integrates with local Neuron instances, allowing for efficient data ingestion and output. While it can function both as a source and a [sink connector](../../sinks/builtin/neuron.md), this section delves into its capabilities as a source connector.
+eKuiper's Neuron connector seamlessly integrates with Neuron instances, allowing for efficient data ingestion and output. While it can function as both a source and a [sink connector](../../sinks/builtin/neuron.md), this section focuses on using it as a source connector.
 
-The Neuron source connector is designed to consume events from a local Neuron instance. One of the primary characteristics of this source connector is its binding with the local Neuron instance, ensuring communication through the nanomsg IPC (Inter-Process Communication) protocol without network dependencies.
+The Neuron source connector is designed to consume events from Neuron instances. One of the primary characteristics of this source connector is its binding with the local Neuron instance, ensuring communication through the nanomsg IPC (Inter-Process Communication) protocol without network dependencies.
 
 ::: tip Asynchronous Dial Mechanism
 
-The Neuron source connector features an asynchronous dial mechanism, ensuring continuous background connection attempts to Neuron. However, if Neuron is down, a rule using the Neuron sink might not immediately detect the problem. Always monitor the rule's status and message counts during debugging.
+The Neuron source connector features an asynchronous dial mechanism, ensuring continuous background connection attempts to Neuron. However, if the Neuron is down, rules using the Neuron sink may not detect the issue immediately. Always monitor the rule's status and message counts during debugging.
 
 :::
 
@@ -17,7 +17,7 @@ In the eKuiper side, all Neuron source and sink instances share the same connect
 
 ## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API,](../../../api/restapi/configKey.md) or configuration file. This section focuses on the configuration file approach.
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on the configuration file approach.
 
 The default Neuron connector configuration is found at `$ekuiper/etc/sources/neuron.yaml`. 
 
@@ -56,7 +56,7 @@ Neuron events typically adopt the following JSON format:
 }
 ```
 
-## Integrate with eKuiper Rules
+## Create a Stream Source
 
 Having defined the connector, the next phase involves its integration with eKuiper rules.
 
@@ -66,7 +66,7 @@ Neuron Source connector can function as a [stream source](../../streams/overview
 
 :::
 
-You can define the MQTT source as the data source either by REST API or CLI tool. 
+You can define the Neuron source as the data source either by REST API or CLI tool. 
 
 ### Use REST API
 

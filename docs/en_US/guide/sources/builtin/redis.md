@@ -2,7 +2,7 @@
 
 <span style="background:green;color:white">lookup table source</span>
 
-eKuiper provides built-in support for looking up data in Redis. The Redis Source Connector allows eKuiper to ingest data from a Redis instance, enabling real-time stream processing based on Redis data. With its in-memory data structure store capabilities, Redis is a vital tool in many applications' data architectures. Integrating it with eKuiper stream processing expands the realm of possibilities for real-time analytics and decision-making.
+eKuiper provides built-in support for looking up data in Redis. The Redis Source Connector allows eKuiper to ingest data from a Redis instance, enabling real-time stream processing based on Redis data. With its in-memory data structure store capabilities, Redis is a vital tool in many application data architectures. Integrating it with eKuiper stream processing expands the realm of possibilities for real-time analytics and decision-making.
 
 ::: tip
 
@@ -14,7 +14,7 @@ Currently, the Redis source can only be used as a [lookup table](../../tables/lo
 
 Before using the Redis Source Connector, it's essential to configure the connection settings and other relevant parameters. Here are the available configuration options:
 
-The configure file for the redis source is in */etc/sources/redis.yaml* in which the path to the file can be specified.
+The configuration file for the Redis source is located at */etc/sources/redis.yaml*, where you can specify the path to the file.
 
 ```yaml
 default:
@@ -26,7 +26,7 @@ default:
 #  password: ""
 ```
 
-With this configuration, the table will refer to the database 0 in redis instance of address 127.0.0.1:6379. The value type is `string`.
+With this configuration, the table will refer to database 0 in the Redis instance at the address 127.0.0.1:6379.
 
 **Configuration Items**
 
@@ -35,7 +35,7 @@ With this configuration, the table will refer to the database 0 in redis instanc
 - **`username`**: The username for accessing the Redis server, only needed if authentication is enabled on the server. 
 - **`password`**: The password for accessing the Redis server, only needed if authentication is enabled on the server. 
 
-## Integration with eKuiper Rules
+## Create a Stream Source
 
 To utilize the Redis Source Connector in eKuiper streams, define a stream specifying the Redis source, its configuration, and the data format.
 

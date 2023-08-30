@@ -3,13 +3,13 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper's EdgeX connector seamlessly integrates with EdgeX instances, allowing for efficient data ingestion and output. While it can function both as a source and a [sink connector](../../sinks/builtin/edgex.md), this section delves into its capabilities as a source connector.
+eKuiper's EdgeX connector seamlessly integrates with EdgeX instances, allowing for efficient data ingestion and output. While it can function both as a source and a [sink connector](../../sinks/builtin/edgex.md), this section focuses on its role as a source connector.
 
 eKuiper's EdgeX source connector can subscribe to the message from [EdgeX message bus](https://github.com/edgexfoundry/go-mod-messaging) and feed into the eKuiper streaming process pipeline. eKuiper's EdgeX source connector is tailored to consume events directly from EdgeX, ensuring effective stream processing without any manual schema definitions, thanks to EdgeX's predefined data types in its reading objects.
 
 ## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API,](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
 eKuiper's default EdgeX source configuration resides at `$ekuiper/etc/sources/edgex.yaml`. This configuration serves as a base for all EdgeX connections. However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
 
@@ -78,7 +78,7 @@ Users can specify the global EdgeX configurations here. The configuration items 
 - `type`: The EdgeX message bus type. Currently, three types of message buses are supported. `Redis` is used by default if no other value is specified.
 
   - `zero`: Use ZeroMQ as EdgeX message bus.
-  - `mqtt`: Use the MQTT broker as EdgeX message bus.
+  - `mqtt`: Use the MQTT broker as EdgeX message bus. See [Optional Configuration (Specifically for MQTT)](#optional-configuration-specifically-for-mqtt) for more MQTT-related configurations.
   - `redis`: Use Redis as the EdgeX message bus. Redis is the default message bus when using EdgeX docker compose.
 
   EdgeX Levski introduces two types of information message bus, eKuiper supports these two new types from 1.7.1, respectively
@@ -126,7 +126,7 @@ demo1: #Conf_key
   topic: rules-events
 ```
 
-In the above example, a custom configuration named `demo1` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md) for more info).
+In the above example, a custom configuration named `demo1` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md)).
 
 **Usage Example**
 
@@ -136,7 +136,7 @@ create stream demo1() WITH (FORMAT="JSON", type="edgex", CONF_KEY="demo1");
 
 Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
-## Integrate with eKuiper Rules
+## Create a Stream Source
 
 Having set up the EdgeX source connector, the subsequent step involves its integration into eKuiper rules. This integration facilitates the processing of streamed data from EdgeX.
 
@@ -191,9 +191,9 @@ For example, to define a stream in eKuiper that consumes events from EdgeX:
 
 ### Automatic Data Type Conversion
 
-When eKuiper processes events from EdgeX, it automatically manages data type conversions based on EdgeX's 'ValueType' field.
+When eKuiper processes events from EdgeX, it automatically manages data type conversions based on EdgeX's `ValueType` field.
 
-Data Conversion:
+**Data Conversion:**
 
 - If eKuiper identifies a matching type in EdgeX's readings, it converts the data.
 - If no match is found, the original value remains unchanged.
