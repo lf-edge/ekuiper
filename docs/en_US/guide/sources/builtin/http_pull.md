@@ -13,7 +13,7 @@ The connector in eKuiper can be configured with [environment variables](../../..
 
 eKuiper's default HTTP Pull source configuration resides at `$ekuiper/etc/sources/http_pull.yaml`. This configuration file provides a set of default settings, which you can override as needed.
 
-See below for a demo configuration with the global configuration and a customized `application_conf` section. 
+See below for a demo configuration with the global configuration and a customized `application_conf` section.
 
 ```yaml
 #Global httppull configurations
@@ -111,7 +111,6 @@ The following configurations are designed under the assumption that the authenti
 
   - `expire`: Expire time of the token, time unit is second, allow to use template, so it must be a string.
 
-
 - `refresh`
 
   - `url`: The url to refresh the token, always use POST method.
@@ -119,7 +118,6 @@ The following configurations are designed under the assumption that the authenti
   - `headers`: The request header to refresh the token. Usually put the tokens here for authorization.
 
   - `body`: The request body to refresh the token. May not need when using header to pass the refresh token.
-
 
 ### Data Processing Configurations
 

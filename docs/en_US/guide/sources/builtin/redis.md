@@ -33,7 +33,7 @@ With this configuration, the table will refer to database 0 in the Redis instanc
 - **`addr`**: This specifies the address of the Redis server, a string in the format `hostname:port` or `IP_address:port`.
 - **`datatype`**: This determines the type of data the connector should expect from the Redis key. Currently only `string` and `list` are supported.
 - **`username`**: The username for accessing the Redis server, only needed if authentication is enabled on the server. 
-- **`password`**: The password for accessing the Redis server, only needed if authentication is enabled on the server. 
+- **`password`**: The password for accessing the Redis server, only needed if authentication is enabled on the server.
 
 ## Create a Stream Source
 
@@ -45,7 +45,7 @@ You can define the Redis source as the data source either by REST API or CLI too
 
 The REST API offers a programmatic way to interact with eKuiper, perfect for users looking to automate tasks or integrate eKuiper operations into other systems.
 
-Example: 
+Example:
 
 ```sql
 create table table1 () WITH (DATASOURCE="0", FORMAT="json", TYPE="redis", KIND="lookup");
