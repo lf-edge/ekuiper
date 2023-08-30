@@ -371,6 +371,8 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 				) WITH (DATASOURCE="shelves", TYPE="mock", FORMAT="json");`
 			case "mes":
 				sql = `CREATE STREAM mes (message_id string, text string) WITH (DATASOURCE="mes", TYPE="mock", FORMAT="JSON")`
+			case "optional_commands":
+				sql = `CREATE STREAM optional_commands (base64_img string) WITH (DATASOURCE="optional_commands", FORMAT="JSON", TYPE="mock")`
 			default:
 				t.Errorf("create stream %s fail", name)
 			}

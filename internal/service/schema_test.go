@@ -127,6 +127,32 @@ func TestConvertParams(t *testing.T) {
 			jresult: []byte("{\"name\":\"encoded json\",\"size\":1}"),
 			tresult: []byte(`value:"{\"name\":\"encoded json\",\"size\":1}"`),
 		},
+		{ // 7
+			method: "RestEncodedJson",
+			params: []interface{}{
+				[]byte("{\"name\":\"encoded json\"}"),
+			},
+			iresult: []interface{}{
+				"{\"name\":\"encoded json\"}",
+			},
+			jresult: []byte("{\"name\":\"encoded json\"}"),
+			tresult: []byte(`value:"{\"name\":\"encoded json\"}"`),
+		},
+		{ // 8
+			method: "Compute",
+			params: []interface{}{
+				map[string]interface{}{
+					"rid":    "rid",
+					"outlet": nil,
+					"data":   []byte("data"),
+				},
+			},
+			iresult: []interface{}{
+				"rid", nil, nil, nil, []byte("data"), nil,
+			},
+			jresult: []byte(`{"rid":"rid","data":"ZGF0YQ=="}`),
+			tresult: []byte(`rid:"rid" data:"data"`),
+		},
 	}
 
 	for i, descriptor := range descriptors {

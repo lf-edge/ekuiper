@@ -213,7 +213,7 @@ func TestRestService(t *testing.T) {
 
 	defer server.Close()
 	// Reset
-	streamList := []string{"helloStr", "commands", "fakeBin", "shelves", "demo", "mes"}
+	streamList := []string{"helloStr", "commands", "fakeBin", "shelves", "demo", "mes", "optional_commands"}
 	topotest.HandleStream(false, streamList, t)
 	// Data setup
 	tests := []topotest.RuleTest{
@@ -509,6 +509,42 @@ func TestRestService(t *testing.T) {
 				"sink_mockSink_0_records_in_total":  int64(3),
 				"sink_mockSink_0_records_out_total": int64(3),
 			},
+		}, {
+			Name: `TestRestRule12`,
+			Sql:  `SELECT objectDetectFromRest(*) AS res FROM optional_commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"res": map[string]interface{}{
+						"image":  "my image1",
+						"result": " success",
+						"type":   "S",
+					},
+				}},
+				{{
+					"res": map[string]interface{}{
+						"image":  "my image2",
+						"result": " success",
+						"type":   "S",
+					},
+				}},
+				{{
+					"res": map[string]interface{}{
+						"image":  "my image3",
+						"result": " success",
+						"type":   "S",
+					},
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
@@ -740,6 +776,30 @@ func TestGrpcService(t *testing.T) {
 				{{
 					"getStatusFromGrpc": true,
 					"cmd":               "delete",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule5`,
+			Sql:  `SELECT objectDetectFromGrpc(*) -> image AS res FROM optional_commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"res": "my image1",
+				}},
+				{{
+					"res": "my image2",
+				}},
+				{{
+					"res": "my image3",
 				}},
 			},
 			M: map[string]interface{}{
