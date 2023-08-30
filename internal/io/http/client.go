@@ -94,7 +94,7 @@ type bodyResp struct {
 
 var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
-func (cc *ClientConf) InitConf(device string, props map[string]interface{}) error {
+func (cc *ClientConf) InitConf(device string, props map[string]interface{}, needInterval bool) error {
 	c := &RawConf{
 		Url:                "http://localhost",
 		Method:             http.MethodGet,
@@ -116,7 +116,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	default:
 		return fmt.Errorf("Not supported HTTP method %s.", c.Method)
 	}
-	if c.Interval <= 0 {
+	if needInterval && c.Interval <= 0 {
 		return fmt.Errorf("interval must be greater than 0")
 	}
 	if c.Timeout < 0 {
