@@ -3,7 +3,7 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. This is particularly useful in scenarios where data is batch-processed or stored in files that need to be processed in real-time by eKuiper.
+eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. This is useful in scenarios where data is batch-processed or when files need real-time processing by eKuiper.
 
 The File Source Connector allows eKuiper to read data from local files, supporting multiple formats such as JSON, CSV, and line-separated values:
 
@@ -77,7 +77,7 @@ When dealing with files that have metadata or non-standard content at the beginn
 
 ## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API,](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
 The configure file for the file source is located at  `/etc/sources/file.yaml`.
 
@@ -148,7 +148,7 @@ default:
 
 - **`decompression`**: Allows decompression of files. Currently, `gzip` and `zstd` methods are supported.
 
-## Integrating with eKuiper Rules
+## Create a Table Source
 
 After setting up your streams, you can integrate them with eKuiper rules to process the data.
 

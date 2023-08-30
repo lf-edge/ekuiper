@@ -3,11 +3,11 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-In IoT ecosystems, devices often need to transmit data to processing platforms. The HTTP Push connector in eKuiper allows devices to push their data directly to eKuiper for real-time processing. With eKuiper acting as an endpoint, devices can send data using standard HTTP methods, making integration seamless and straightforward. 
+In IoT ecosystems, devices often need to transmit data to processing platforms. The HTTP Push connector in eKuiper allows devices to send their data directly to eKuiper for real-time processing. With eKuiper acting as an endpoint, devices can send data using standard HTTP methods, making integration seamless and straightforward. 
 
-When configured as an HTTP Push source, eKuiper exposes an HTTP endpoint that devices can push their data to. Once the data is received, eKuiper processes it according to the defined rules and streams. 
+When configured as an HTTP Push source, eKuiper exposes an HTTP endpoint so devices can push their data. Once the data is received, eKuiper processes it according to the defined rules and streams. 
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
 ## Basic Configuration
 
@@ -25,7 +25,7 @@ source:
   #    keyfile: /var/https-server.key
 ```
 
-User can specify the following properties:
+Users can specify the following properties:
 
 - `httpServerIp`: IP to bind the HTTP data server.
 - `httpServerPort`: Port to bind the HTTP data server.
@@ -35,9 +35,9 @@ The global server initializes when any rule requiring an HTTP Push source is act
 
 ## Source Configuration
 
-Each [stream](../../streams/overview.md) can have its own unique configuration, allowing it to specify specific URL endpoints and HTTP methods. This flexibility ensures that different streams can handle different types of data and respond to different endpoints as needed.
+Each [stream](../../streams/overview.md) can have its own unique configuration, allowing it to define URL endpoints and HTTP methods. This flexibility ensures that different streams can handle different types of data and respond to different endpoints as needed.
 
-The HTTP Push source configuration file is located at `etc/sources/httppush.yaml`. The configuration items in the `default` section provides a set of default settings, which you can override as needed.
+The HTTP Push source configuration file is located at `etc/sources/httppush.yaml`. The configuration items in the `default` section provide a set of default settings, which you can override as needed.
 
 See below for a demo configuration with the global configuration and a customized `application_conf` section. 
 
@@ -58,7 +58,7 @@ Note: Currently, only the `method` property is available for configuring the HTT
 
 :::
 
-## Integrate with eKuiper Rules
+## Create a Stream Source
 
 Once you've set up your streams with their respective configurations, you can integrate them with eKuiper rules to process and act on the incoming data.
 
@@ -80,7 +80,7 @@ Example:
 CREATE STREAM httpDemo() WITH (FORMAT="json", TYPE="httppush")
 ```
 
-**Creating a Stream with Custom Configuration**
+**Create with Custom Configuration**
 
 You can use the the `endpoint` property corresponds to the `datasource` property in the stream creation statement.
 

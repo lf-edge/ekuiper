@@ -3,13 +3,13 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-MQTT (Message Queuing Telemetry Transport) is a protocol optimized for low bandwidth scenarios. In eKuiper, the MQTT connector can function both as a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector. 
+MQTT (Message Queuing Telemetry Transport) is a protocol optimized for the low bandwidth scenarios. In eKuiper, the MQTT connector can function as both a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector. 
 
 Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broker and channels them into its processing pipeline. This integration allows for real-time data processing directly from specified MQTT topics.
 
 ## Configurations
 
-The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md) or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
+The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file. 
 
 eKuiper's default MQTT source configuration resides at `$ekuiper/etc/mqtt_source.yaml`. This configuration serves as a [base for all MQTT connections](#global-configuration). However, for specific use cases, you might need [custom configurations](#custom-configurations). eKuiper's [connector selector](../../connector.md#connection-selector) further enhances this by allowing connection reuse across configurations.
 
@@ -35,12 +35,11 @@ default:
 demo_conf: #Conf_key
   qos: 0
   server: "tcp://10.211.55.6:1883"
-
 ```
 
 ## Global Configurations
 
-Use can specify the global MQTT configurations here. The configuration items specified in `default` section will be taken as default configurations for all MQTT connections.
+Users can specify the global MQTT configurations here. The configuration items specified in the `default` section will serve as the default configurations for all MQTT connections.
 
 ### Connection Settings
 
@@ -48,17 +47,17 @@ Use can specify the global MQTT configurations here. The configuration items spe
 - `server`: The server for MQTT message broker.
 - `username`: The username for MQTT connection.
 - `password`: The password for MQTT connection.
-- `protocolVersion`: MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4). If not specified, the default value is 3.1.
+- `protocolVersion`: MQTT protocol version. 3.1 (also referred to as MQTT 3) or 3.1.1 (also referred to as MQTT 4). If not specified, the default value is 3.1.
 - `clientid`: The client id for MQTT connection. If not specified, an uuid will be used.
 
 ### Security and Authentication Settings
 
-- `certificationPath`:  Specifies the path to the certificate, example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
+- `certificationPath`:  Specifies the path to the certificate, for example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
   - If executed as `bin/kuiperd` from `/var/kuiper`, the base is `/var/kuiper`.
   - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
-- `privateKeyPath`: The location of private key path. It can be an absolute path, or a relative path.  For more detailed information, please refer to `certificationPath`. Such as `d3807d9fa5-private.pem.key`.
+- `privateKeyPath`: The location of the private key path, for example:  `d3807d9fa5-private.pem.key`. It can be an absolute path or a relative path.  For more detailed information, please refer to `certificationPath`.
 - `rootCaPath`: The location of root ca path. It can be an absolute path, or a relative path.
-- `insecureSkipVerify`: Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification
+- `insecureSkipVerify`: Controls whether to skip certificate verification. If set to `true`, verification is skipped; otherwise, the certificate is verified."
 
 ### **Connection Reusability**
 
@@ -128,7 +127,7 @@ demo_conf: #Conf_key
   server: "tcp://10.211.55.6:1883"
 ```
 
-In the above example, a custom configuration named `demo_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md) for more info).
+In the above example, a custom configuration named `demo_conf` is created. To utilize this configuration when creating a stream, use the `CONF_KEY` option and specify the configuration name. More details can be found at [Stream Statements](../../../sqls/streams.md)).
 
 **Usage Example**
 
@@ -140,14 +139,9 @@ demo (
 
 Parameters defined in a custom configuration will override the corresponding parameters in the `default` configuration. Make sure to set values carefully to ensure the desired behavior.
 
-## Integrate with eKuiper Rules
+## Create a Stream Source
 
-Having defined the connector, the next phase involves its integration with eKuiper rules.
-
-**Steps to Integrate:**
-
-1. Define a rule that specifies the MQTT connector as its source.
-2. In the rule, mention the desired MQTT topic and the processing logic.
+Having defined the connector, the next phase involves its integration with eKuiper rules by creating a stream.
 
 ::: tip
 
@@ -195,4 +189,4 @@ More details can be found at [Streams Management with CLI](../../../api/cli/stre
 Starting from version 1.5.0, eKuiper has modified the MQTT source broker configuration, transitioning from `servers` to `server`. As a result, users can now specify only a single MQTT broker address, as opposed to an array of addresses.
 
 - If you've been using an MQTT broker as a stream source in earlier versions and plan to upgrade to 1.5.0 or subsequent releases, ensure that the `server` configuration in the `etc/mqtt_source.yaml` file is correctly set. 
-- If you've been relying on environment variables to determine the MQTT source address, an adjustment is required. For instance, if your broker address is `tcp://broker.emqx.io:1883`, then the environment variable should be changed from `MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]` to `MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"`."
+- If you've been relying on environment variables to determine the MQTT source address, an adjustment is required. For instance, if your broker address is `tcp://broker.emqx.io:1883`, then the environment variable should be changed from `MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]` to `MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"`
