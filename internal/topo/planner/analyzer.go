@@ -55,7 +55,9 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 		return nil, nil, nil, fmt.Errorf("select fields have cycled alias")
 	}
 	if !isSchemaless {
-		aliasFieldTopoSort(s, streamStmts)
+		if err := aliasFieldTopoSort(s, streamStmts); err != nil {
+			return nil, nil, nil, err
+		}
 	}
 	dsn := ast.DefaultStream
 	if len(streamsFromStmt) == 1 {
@@ -294,7 +296,7 @@ func dfsRef(aliasRef map[string]map[string]struct{}, walked map[string]struct{},
 	return false
 }
 
-func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
+func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) error {
 	nonAliasFields := make([]ast.Field, 0)
 	aliasDegreeMap := make(map[string]*aliasTopoDegree)
 	for _, field := range s.Fields {
@@ -308,10 +310,11 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 			nonAliasFields = append(nonAliasFields, field)
 		}
 	}
+	foundUnknownField := false
+	var err error
 	for !isAliasFieldTopoSortFinish(aliasDegreeMap) {
 		for _, field := range s.Fields {
 			if field.AName != "" && aliasDegreeMap[field.AName].degree < 0 {
-				skip := false
 				degree := 0
 				ast.WalkFunc(field.Expr, func(node ast.Node) bool {
 					switch f := node.(type) {
@@ -323,15 +326,17 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 							return true
 						}
 						if !isFieldRefNameExists(f.Name, streamStmts) {
-							skip = true
+							foundUnknownField = true
+							err = fmt.Errorf("unknown field %s", f.Name)
 							return false
 						}
 					}
 					return true
 				})
-				if !skip {
-					aliasDegreeMap[field.AName].degree = degree
+				if foundUnknownField {
+					return err
 				}
+				aliasDegreeMap[field.AName].degree = degree
 			}
 		}
 	}
@@ -345,6 +350,7 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) {
 		s.Fields = append(s.Fields, d.field)
 	}
 	s.Fields = append(s.Fields, nonAliasFields...)
+	return nil
 }
 
 func isFieldRefNameExists(name string, streamStmts []*streamInfo) bool {
