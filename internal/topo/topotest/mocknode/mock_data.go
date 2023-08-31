@@ -1122,6 +1122,29 @@ var TestData = map[string][]*xsql.Tuple{
 			Timestamp: 1541152489500,
 		},
 	},
+	"optional_commands": {
+		{
+			Emitter: "optional_commands",
+			Message: map[string]interface{}{
+				"base64_img": "my image1",
+			},
+			Timestamp: 1541152486013,
+		},
+		{
+			Emitter: "optional_commands",
+			Message: map[string]interface{}{
+				"base64_img": "my image2",
+			},
+			Timestamp: 1541152487013,
+		},
+		{
+			Emitter: "optional_commands",
+			Message: map[string]interface{}{
+				"base64_img": "my image3",
+			},
+			Timestamp: 1541152488013,
+		},
+	},
 }
 
 var Image, _ = getImg()
