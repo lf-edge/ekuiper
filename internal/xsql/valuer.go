@@ -284,12 +284,9 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 	case *ast.Call:
 		// The analytic functions are calculated prior to all ops, so just get the cached field value
 		if expr.Cached && expr.CachedField != "" {
-			val, ok := v.Valuer.Value(expr.CachedField, "")
-			if ok {
-				return val
-			} else {
-				return fmt.Errorf("call %s error: %v", expr.Name, val)
-			}
+			val, _ := v.Valuer.Value(expr.CachedField, "")
+			// nil is also cached
+			return val
 		}
 		if _, ok := implicitValueFuncs[expr.Name]; ok {
 			if vv, ok := v.Valuer.(FuncValuer); ok {
