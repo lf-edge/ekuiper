@@ -40,7 +40,7 @@ func (l *lookupSource) Configure(datasource string, props map[string]interface{}
 	if l.ClientConf == nil {
 		l.ClientConf = &ClientConf{}
 	}
-	return l.InitConf(datasource, props, false)
+	return l.InitConf(datasource, props)
 }
 
 func (l *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
@@ -50,8 +50,8 @@ func (l *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 	}
 	matched := l.lookupJoin(resps, keys, values)
 	var results []api.SourceTuple
+	meta := make(map[string]interface{})
 	for _, resp := range matched {
-		meta := make(map[string]interface{})
 		results = append(results, api.NewDefaultSourceTupleWithTime(resp, meta, conf.GetNow()))
 	}
 	return results, nil

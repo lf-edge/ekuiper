@@ -32,7 +32,7 @@ type RestSink struct {
 
 func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	conf.Log.Infof("Initialized rest sink with configurations %#v.", ps)
-	return ms.InitConf("", ps, true)
+	return ms.InitConf("", ps)
 }
 
 func (ms *RestSink) Open(ctx api.StreamContext) error {

@@ -94,7 +94,23 @@ type bodyResp struct {
 
 var bodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
-func (cc *ClientConf) InitConf(device string, props map[string]interface{}, needInterval bool) error {
+type ClientConfOption struct {
+	checkInterval bool
+}
+
+type WithClientConfOption func(clientConf *ClientConfOption)
+
+func WithCheckInterval(checkInterval bool) WithClientConfOption {
+	return func(clientConf *ClientConfOption) {
+		clientConf.checkInterval = checkInterval
+	}
+}
+
+func (cc *ClientConf) InitConf(device string, props map[string]interface{}, withOptions ...WithClientConfOption) error {
+	option := &ClientConfOption{}
+	for _, withOption := range withOptions {
+		withOption(option)
+	}
 	c := &RawConf{
 		Url:                "http://localhost",
 		Method:             http.MethodGet,
@@ -116,7 +132,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, need
 	default:
 		return fmt.Errorf("Not supported HTTP method %s.", c.Method)
 	}
-	if needInterval && c.Interval <= 0 {
+	if option.checkInterval && c.Interval <= 0 {
 		return fmt.Errorf("interval must be greater than 0")
 	}
 	if c.Timeout < 0 {
