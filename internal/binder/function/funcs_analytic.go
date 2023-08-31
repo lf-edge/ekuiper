@@ -125,7 +125,7 @@ func registerAnalyticFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			l := len(args) - 2
-			if l != 1 && l != 2 && l != 3 {
+			if l != 1 && l != 2 && l != 3 && l != 4 {
 				return fmt.Errorf("expect one two or three args but got %d", l), false
 			}
 			key := args[len(args)-1].(string)
@@ -136,6 +136,13 @@ func registerAnalyticFunc() {
 			validData, ok := args[len(args)-2].(bool)
 			if !ok {
 				return fmt.Errorf("when arg is not a bool but got %v", args[len(args)-2]), false
+			}
+			ignoreNull := false
+			if l == 4 {
+				ignoreNull, ok = args[3].(bool)
+				if !ok {
+					return fmt.Errorf("The fourth arg is not a bool but got %v", args[0]), false
+				}
 			}
 			paraLen := len(args) - 2
 			var rq *ringqueue = nil
@@ -157,6 +164,7 @@ func registerAnalyticFunc() {
 					}
 				}
 				rq = newRingqueue(size)
+
 				rq.fill(dftVal)
 				err := ctx.PutState(key, rq)
 				if err != nil {
@@ -165,22 +173,22 @@ func registerAnalyticFunc() {
 			} else {
 				rq, _ = v.(*ringqueue)
 			}
-
+			rtnVal, _ = rq.peek()
 			if validData {
-				rtnVal, _ = rq.fetch()
-				rq.append(args[0])
-				err := ctx.PutState(key, rq)
-				if err != nil {
-					return fmt.Errorf("error setting state for %s: %v", key, err), false
+				if !ignoreNull || args[0] != nil {
+					rtnVal, _ = rq.fetch()
+					rq.append(args[0])
+					err := ctx.PutState(key, rq)
+					if err != nil {
+						return fmt.Errorf("error setting state for %s: %v", key, err), false
+					}
 				}
-			} else {
-				rtnVal, _ = rq.peek()
 			}
 			return rtnVal, true
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {
 			l := len(args)
-			if l != 1 && l != 2 && l != 3 {
+			if l != 1 && l != 2 && l != 3 && l != 4 {
 				return fmt.Errorf("expect one two or three args but got %d", l)
 			}
 			if l >= 2 {
@@ -191,6 +199,11 @@ func registerAnalyticFunc() {
 					if s.Val < 0 {
 						return fmt.Errorf("the index should not be a nagtive integer")
 					}
+				}
+			}
+			if l == 4 {
+				if ast.IsNumericArg(args[3]) || ast.IsTimeArg(args[3]) || ast.IsStringArg(args[3]) {
+					return ProduceErrInfo(3, "bool")
 				}
 			}
 			return nil

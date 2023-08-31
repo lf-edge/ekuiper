@@ -25,7 +25,7 @@ AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 ## LAG
 
 ```text
-lag(expr, [offset], [default value])
+lag(expr, [offset], [default value], [ignore null])
 ```
 
 返回表达式前一个值在偏移 offset 处的结果，如果没有找到，则返回默认值，如果没有指定默认值则返回 nil。
@@ -45,7 +45,7 @@ lag(temperature) OVER (PARTITION BY deviceId)
 示例3：ts为时间戳，获取设备状态 statusCode1 和 statusCode2 不相等持续时间
 
 ```text
-select lag(Status) as Status, ts - lag(ts, 1, ts) OVER (WHEN had_changed(true, statusCode)) as duration from demo
+select lag(Status) as Status, ts - lag(ts, 1, ts, true) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
 
 ## LATEST
