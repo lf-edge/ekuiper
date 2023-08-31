@@ -310,11 +310,10 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) error
 			nonAliasFields = append(nonAliasFields, field)
 		}
 	}
-	foundUnknownField := false
-	var err error
 	for !isAliasFieldTopoSortFinish(aliasDegreeMap) {
 		for _, field := range s.Fields {
 			if field.AName != "" && aliasDegreeMap[field.AName].degree < 0 {
+				unknownFieldRefName := ""
 				degree := 0
 				ast.WalkFunc(field.Expr, func(node ast.Node) bool {
 					switch f := node.(type) {
@@ -326,15 +325,28 @@ func aliasFieldTopoSort(s *ast.SelectStatement, streamStmts []*streamInfo) error
 							return true
 						}
 						if !isFieldRefNameExists(f.Name, streamStmts) {
-							foundUnknownField = true
-							err = fmt.Errorf("unknown field %s", f.Name)
+							unknownFieldRefName = f.Name
 							return false
 						}
 					}
 					return true
 				})
-				if foundUnknownField {
-					return err
+
+				if len(unknownFieldRefName) > 0 {
+					unknownField := true
+					for _, otherField := range s.Fields {
+						if field == otherField {
+							continue
+						}
+						// the unknownFieldRef name belongs to a alias
+						if otherField.AName == unknownFieldRefName {
+							unknownField = false
+							break
+						}
+					}
+					if unknownField {
+						return fmt.Errorf("unknown field %s", unknownFieldRefName)
+					}
 				}
 				aliasDegreeMap[field.AName].degree = degree
 			}
