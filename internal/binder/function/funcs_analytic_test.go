@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,12 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -778,6 +780,51 @@ func TestHadChangedPartitionWithWhen(t *testing.T) {
 	}
 }
 
+func TestLagValidation(t *testing.T) {
+	f, ok := builtins["lag"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	tests := []struct {
+		args []ast.Expr
+		err  error
+	}{
+		{
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+			},
+			err: nil,
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.StringLiteral{Val: "bar"},
+			},
+			err: fmt.Errorf("Expect int type for parameter 2"),
+		}, {
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "foo"},
+				&ast.StringLiteral{Val: "bar"},
+				&ast.StringLiteral{Val: "baz"},
+			},
+			err: fmt.Errorf("Expect int type for parameter 2"),
+		}, {
+			args: []ast.Expr{
+				&ast.BooleanLiteral{Val: true},
+				&ast.IntegerLiteral{Val: 23},
+				&ast.StringLiteral{Val: "baz"},
+				&ast.StringLiteral{Val: "baz"},
+			},
+			err: fmt.Errorf("Expect bool type for parameter 4"),
+		},
+	}
+	for i, tt := range tests {
+		err := f.val(nil, tt.args)
+		if !reflect.DeepEqual(err, tt.err) {
+			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, err, tt.err)
+		}
+	}
+}
+
 func TestLagExec(t *testing.T) {
 	f, ok := builtins["lag"]
 	if !ok {
@@ -794,6 +841,9 @@ func TestLagExec(t *testing.T) {
 		{ // 1
 			args: []interface{}{
 				"foo",
+				1,
+				"default",
+				true,
 				true,
 				"self",
 			},
@@ -801,7 +851,10 @@ func TestLagExec(t *testing.T) {
 		},
 		{ // 2
 			args: []interface{}{
-				"bar",
+				nil,
+				1,
+				"default",
+				true,
 				true,
 				"self",
 			},
@@ -810,33 +863,53 @@ func TestLagExec(t *testing.T) {
 		{ // 3
 			args: []interface{}{
 				"bar",
+				1,
+				"default",
 				true,
-				"self",
-			},
-			result: "bar",
-		},
-		{ // 4
-			args: []interface{}{
-				"foo",
-				true,
-				"self",
-			},
-			result: "bar",
-		},
-		{ // 4
-			args: []interface{}{
-				"foo",
 				true,
 				"self",
 			},
 			result: "foo",
 		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				1,
+				"default",
+				true,
+				true,
+				"self",
+			},
+			result: "bar",
+		},
+		{ // 4
+			args: []interface{}{
+				"foo",
+				1,
+				"default",
+				true,
+				true,
+				"self",
+			},
+			result: "foo",
+		},
+		{ // 5
+			args: []interface{}{
+				"foo",
+				1,
+				"default",
+				23,
+				true,
+				"self",
+			},
+			result: errors.New("The fourth arg is not a bool but got foo"),
+		},
 	}
 	for i, tt := range tests {
-		result, _ := f.exec(fctx, tt.args)
-		if !reflect.DeepEqual(result, tt.result) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
-		}
+		t.Run(fmt.Sprintf("test %d", i), func(t *testing.T) {
+			result, _ := f.exec(fctx, tt.args)
+			assert.Equal(t, tt.result, result)
+		})
 	}
 }
 

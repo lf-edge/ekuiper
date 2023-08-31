@@ -30,7 +30,7 @@ AnalyticFuncName(<arguments>...) OVER ([WHEN <Expression>])
 ## LAG
 
 ```text
-lag(expr, [offset], [default value])
+lag(expr, [offset], [default value], [ignore null])
 ```
 
 Return the former result of expression at offset, if not found, return the default value specified, if default value not
@@ -52,7 +52,7 @@ Example function call to calculate duration of events: ts is timestamp, and stat
 status in the same event
 
 ```text
-select lag(Status) as Status, ts - lag(ts, 1, ts) OVER (WHEN had_changed(true, statusCode)) as duration from demo
+select lag(Status) as Status, ts - lag(ts, 1, ts, true) OVER (WHEN had_changed(true, statusCode)) as duration from demo
 ```
 
 ## LATEST
