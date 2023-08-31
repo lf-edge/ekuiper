@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message AllTypesTest {
+  double adouble = 1;
+  float afloat = 2;
+  int32 anint32 = 3;
+  int64 anint64 = 4;
+  uint32 auint32 = 5;
+  uint64 auint64 = 6;
+  bool abool = 7;
+  bytes abytes = 8;
+  repeated double double_list = 9;
+  repeated float float_list = 10;
+  repeated sint32 int32_list = 11;
+  repeated sfixed64 int64_list = 12;
+  repeated fixed32 uint32_list = 13;
+  repeated fixed64 uint64_list = 14;
+  repeated bool bool_list = 15;
+  repeated bytes bytes_list = 16;
+}

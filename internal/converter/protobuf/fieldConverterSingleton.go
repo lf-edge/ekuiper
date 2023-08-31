@@ -95,7 +95,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 		)
 		switch ft {
 		case dpb.FieldDescriptorProto_TYPE_DOUBLE:
-			result, err = cast.ToFloat64Slice(v, cast.STRICT)
+			result, err = cast.ToFloat64Slice(v, cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_FLOAT:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToFloat32(input, sn)
@@ -104,7 +104,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 				} else {
 					return r, nil
 				}
-			}, "float", cast.STRICT)
+			}, "float", cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToInt(input, sn)
@@ -113,9 +113,9 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 				} else {
 					return int32(r), nil
 				}
-			}, "int", cast.STRICT)
+			}, "int", cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
-			result, err = cast.ToInt64Slice(v, cast.STRICT)
+			result, err = cast.ToInt64Slice(v, cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToUint64(input, sn)
@@ -124,15 +124,15 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 				} else {
 					return uint32(r), nil
 				}
-			}, "uint", cast.STRICT)
+			}, "uint", cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
-			result, err = cast.ToUint64Slice(v, cast.STRICT)
+			result, err = cast.ToUint64Slice(v, cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_BOOL:
-			result, err = cast.ToBoolSlice(v, cast.STRICT)
+			result, err = cast.ToBoolSlice(v, cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_STRING:
-			result, err = cast.ToStringSlice(v, cast.STRICT)
+			result, err = cast.ToStringSlice(v, cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_BYTES:
-			result, err = cast.ToBytesSlice(v, cast.STRICT)
+			result, err = cast.ToBytesSlice(v, cast.CONVERT_SAMEKIND)
 		case dpb.FieldDescriptorProto_TYPE_MESSAGE:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToStringMap(input)
@@ -141,7 +141,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 				} else {
 					return nil, fmt.Errorf("invalid type for map type field '%s': %v", fn, err)
 				}
-			}, "map", cast.STRICT)
+			}, "map", cast.CONVERT_SAMEKIND)
 		default:
 			return nil, fmt.Errorf("invalid type for field '%s'", fn)
 		}
@@ -158,63 +158,63 @@ func (fc *FieldConverter) encodeSingleField(field *desc.FieldDescriptor, v inter
 	fn := field.GetName()
 	switch field.GetType() {
 	case dpb.FieldDescriptorProto_TYPE_DOUBLE:
-		r, err := cast.ToFloat64(v, cast.STRICT)
+		r, err := cast.ToFloat64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_FLOAT:
-		r, err := cast.ToFloat32(v, cast.STRICT)
+		r, err := cast.ToFloat32(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for float type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_ENUM:
-		r, err := cast.ToInt(v, cast.STRICT)
+		r, err := cast.ToInt(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return int32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_INT64, dpb.FieldDescriptorProto_TYPE_SFIXED64, dpb.FieldDescriptorProto_TYPE_SINT64:
-		r, err := cast.ToInt64(v, cast.STRICT)
+		r, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for int type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_FIXED32, dpb.FieldDescriptorProto_TYPE_UINT32:
-		r, err := cast.ToUint64(v, cast.STRICT)
+		r, err := cast.ToUint64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return uint32(r), nil
 		} else {
 			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_FIXED64, dpb.FieldDescriptorProto_TYPE_UINT64:
-		r, err := cast.ToUint64(v, cast.STRICT)
+		r, err := cast.ToUint64(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for uint type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BOOL:
-		r, err := cast.ToBool(v, cast.STRICT)
+		r, err := cast.ToBool(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for bool type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_STRING:
-		r, err := cast.ToString(v, cast.STRICT)
+		r, err := cast.ToString(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return r, nil
 		} else {
 			return nil, fmt.Errorf("invalid type for string type field '%s': %v", fn, err)
 		}
 	case dpb.FieldDescriptorProto_TYPE_BYTES:
-		r, err := cast.ToBytes(v, cast.STRICT)
+		r, err := cast.ToBytes(v, cast.CONVERT_SAMEKIND)
 		if err == nil {
 			return r, nil
 		} else {
@@ -341,7 +341,7 @@ func (fc *FieldConverter) DecodeMessage(message *dynamic.Message, outputType *de
 	}
 	result := make(map[string]interface{})
 	for _, field := range outputType.GetFields() {
-		fc.decodeMessageField(message.GetField(field), field, result, cast.STRICT)
+		fc.decodeMessageField(message.GetField(field), field, result, cast.CONVERT_SAMEKIND)
 	}
 	return result
 }
