@@ -92,7 +92,7 @@ stream my_stream dropped
 
 ## query against streams
 
-The command is used for querying data from stream.  
+The command is used for querying data from stream.
 
 ```shell
 query
@@ -102,7 +102,7 @@ Sample:
 
 ```shell
 # bin/kuiper query
-kuiper > 
+kuiper >
 ```
 
 After typing `query` sub-command, it prompts `kuiper >`, then type SQLs (see [eKuiper SQL reference](../../sqls/overview.md) for how to use eKuiper SQL) in the command prompt and press enter.

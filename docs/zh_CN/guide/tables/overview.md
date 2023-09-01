@@ -12,8 +12,8 @@ eKuiper 流是无界且不可变的，任何新数据都会附加到当前流中
 表支持与流几乎相同的语法。要创建表，请运行以下 SQL：
 
 ```sql
-CREATE TABLE   
-    table_name   
+CREATE TABLE 
+    table_name 
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```

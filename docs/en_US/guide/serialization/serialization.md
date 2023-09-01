@@ -66,7 +66,7 @@ When using `custom` format or `protobuf` format, the user can customize the code
     ###
     POST http://{{host}}/schemas/custom
     Content-Type: application/json
-    
+  
     {
       "name": "custom1",
        "soFile": "file:///tmp/custom1.so"
@@ -125,7 +125,7 @@ Static parsing requires the development of a parsing plug-in, which proceeds as 
     ###
     POST http://{{host}}/schemas/protobuf
     Content-Type: application/json
-    
+  
     {
       "name": "helloworld",
       "file": "file:///tmp/helloworld.proto",

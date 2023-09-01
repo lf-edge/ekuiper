@@ -21,11 +21,11 @@ Retrieves rows from input streams and enables the selection of one or many colum
 ### Syntax
 
 ```sql
-SELECT 
+SELECT
     * [EXCEPT | REPLACE]
     | [source_stream.]column_name [AS column_alias]
     | expression
-  
+
 ```
 
 ### Arguments
@@ -126,7 +126,7 @@ Specifies the input stream. The FROM clause is always required for any SELECT st
 ### Syntax
 
 ```sql
-FROM source_stream | source_stream AS source_stream_alias 
+FROM source_stream | source_stream AS source_stream_alias
 ```
 
 ### Arguments
@@ -142,8 +142,8 @@ JOIN is used to combine records from two or more input streams. JOIN includes LE
 ### Syntax
 
 ```sql
-LEFT | RIGHT | FULL | CROSS 
-JOIN 
+LEFT | RIGHT | FULL | CROSS
+JOIN
 source_stream | source_stream AS source_stream_alias
 ON <source_stream|source_stream_alias>.column_name =<source_stream|source_stream_alias>.column_name
 ```
@@ -240,12 +240,12 @@ WHERE specifies the search condition for the rows returned by the query. The WHE
 
 ```text
 WHERE <search_condition>
-<search_condition> ::=   
-    { <predicate> | ( <search_condition> ) }   
-    [ { AND | OR } { <predicate> | ( <search_condition> ) } ]   
-[ ,...n ]   
-<predicate> ::=   
-    { expression { = | < > | ! = | > | > = | < | < = } expression   
+<search_condition> ::= 
+    { <predicate> | ( <search_condition> ) } 
+    [ { AND | OR } { <predicate> | ( <search_condition> ) } ] 
+[ ,...n ] 
+<predicate> ::= 
+    { expression { = | < > | ! = | > | > = | < | < = } expression 
 ```
 
 exmaple:
@@ -384,14 +384,14 @@ GROUP BY groups a selected set of rows into a set of summary rows grouped by the
 ### Syntax
 
 ```sql
-GROUP BY <group by spec>  
-  
-<group by spec> ::=  
-    <group by item> [ ,...n ]  
-    | <window_type>  
-  
-<group by item> ::=  
-    <column_expression>  
+GROUP BY <group by spec>
+
+<group by spec> ::=
+    <group by item> [ ,...n ]
+    | <window_type>
+
+<group by item> ::=
+    <column_expression>
 ```
 
 ## Arguments
@@ -423,7 +423,7 @@ The HAVING clause was added to SQL because the WHERE keyword could not be used w
 #### Syntax
 
 ```sql
-[ HAVING <search condition> ]  
+[ HAVING <search condition> ]
 ```
 
 #### Arguments
@@ -506,19 +506,19 @@ The simple case expression compares an expression to a set of simple expressions
 #### Syntax
 
 ```sql
-CASE value   
-     WHEN conditionValue THEN result_expression [ ...n ]   
-     [ ELSE else_result_expression ]   
-END   
+CASE value 
+     WHEN conditionValue THEN result_expression [ ...n ] 
+     [ ELSE else_result_expression ] 
+END 
 ```
 
 **Example**:
 
 ```sql
-SELECT CASE color 
-    WHEN "red" THEN 1 
-    WHEN "yellow" THEN 2 
-    ELSE 3 END as colorInteger, 
+SELECT CASE color
+    WHEN "red" THEN 1
+    WHEN "yellow" THEN 2
+    ELSE 3 END as colorInteger,
 humidity FROM tbl
 ```
 
@@ -529,17 +529,17 @@ The searched case expression evaluates a set of bool expressions to determine th
 #### Syntax
 
 ```sql
-CASE    
-     WHEN condition THEN result_expression [ ...n ]   
-     [ ELSE else_result_expression ]   
-END 
+CASE  
+     WHEN condition THEN result_expression [ ...n ] 
+     [ ELSE else_result_expression ] 
+END
 ```
 
 **Example**:
 
 ```sql
-SELECT CASE 
-    WHEN size < 150 THEN "S" 
+SELECT CASE
+    WHEN size < 150 THEN "S"
     WHEN size < 170 THEN "M"
     WHEN size < 175 THEN "L"
     ELSE "XL" END as sizeLabel

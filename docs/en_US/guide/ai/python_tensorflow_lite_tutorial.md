@@ -54,14 +54,14 @@ def label(file_bytes):
     # Load the model file
     interpreter = tf.Interpreter(
         model_path= cwd + 'mobilenet_v1_1.0_224.tflite')
-    
+  
     # Preprocess the input image, turn it into tensors. Here the code is omitted.
-    
+  
     # Set model input, call inference, get result tensor
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]['index'])
-    
+  
     # Post process the result and turn it into the output format. Here the code is omitted.
     return result
 ```

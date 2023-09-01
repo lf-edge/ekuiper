@@ -30,7 +30,7 @@
    ```shell
    POST http://localhost:33333/symbol/start
    Content-Type: application/json
-   
+ 
    {
      "symbolName": "pyjson",
      "meta": {

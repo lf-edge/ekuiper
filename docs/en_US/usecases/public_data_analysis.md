@@ -173,16 +173,16 @@ The explanation of the formula is as follows:
 We can use the following `SELECT` statement to calculate the corresponding distance and duration:
 
 ```sql
-SELECT 
+SELECT
     6378.138 * 2 * ASIN(
         SQRT(
             POW(
-                SIN((cast(START_LAT,"float") * PI() / 180 - cast(END_LAT,"float") * PI() / 180) / 2), 2) + 
-                COS(cast(START_LAT,"float") * PI() / 180) * COS(cast(END_LAT,"float") * PI() / 180) * 
+                SIN((cast(START_LAT,"float") * PI() / 180 - cast(END_LAT,"float") * PI() / 180) / 2), 2) +
+                COS(cast(START_LAT,"float") * PI() / 180) * COS(cast(END_LAT,"float") * PI() / 180) *
             POW(
-                SIN((cast(START_LNG,"float") * PI() / 180 - cast(END_LNG,"float") * PI() / 180) / 2), 2))) *1000 
-        AS distance, 
-    (to_seconds(END_TIME) - to_seconds(START_TIME)) 
+                SIN((cast(START_LNG,"float") * PI() / 180 - cast(END_LNG,"float") * PI() / 180) / 2), 2))) *1000
+        AS distance,
+    (to_seconds(END_TIME) - to_seconds(START_TIME))
         AS duration
 FROM pubdata2
 ```

@@ -10,7 +10,7 @@ Neuron 发过来的消息为固定的 json 格式，如下所示：
 ```json
 {
   "timestamp": 1646125996000,
-  "node_name": "node1", 
+  "node_name": "node1",
   "group_name": "group1",
   "values": {
     "tag_name1": 11.22,

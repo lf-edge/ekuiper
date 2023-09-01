@@ -48,7 +48,7 @@ Below is another sample configuration for connecting to AWS IoT by using certifi
         "qos": 1,
         "clientId": "demo_001",
         "certificationPath": "keys/d3807d9fa5-certificate.pem",
-        "privateKeyPath": "keys/d3807d9fa5-private.pem.key", 
+        "privateKeyPath": "keys/d3807d9fa5-private.pem.key",
         "insecureSkipVerify": false,
         "retained": false
       }

@@ -13,7 +13,7 @@ Before starting the development, you must [setup the environment for golang plug
 To develop a sink, the _Configure_ method must be implemented. This method will be called once the sink is initialized. In this method, a map that contains the configuration in the [rule actions definition](../../../guide/sinks/overview.md) is passed in. Typically, there will be information such as host, port, user and password of the external system. You can use this map to initialize this sink.
 
 ```go
-//Called during initialization. Configure the sink with the properties from action definition 
+//Called during initialization. Configure the sink with the properties from action definition
 Configure(props map[string]interface{}) error
 ```
 
@@ -22,7 +22,7 @@ The next task is to implement _open_ method. The implementation should be synchr
 ```go
 //Should be sync function for normal case. The container will run it in go func
 Open(ctx StreamContext) error
-```  
+```
 
 The main task for a Sink is to implement _collect_ method. The function will be invoked when eKuiper feed any data into the sink. As an infinite stream, this function will be invoked continuously. The task of this function is to publish data to the external system. The first parameter is the context, and the second parameter is the data received from eKuiper. The data could be 2 types:
 
@@ -57,7 +57,7 @@ The developer can return any errors. However, to leverage the retry feature of e
 ```go
 //Called when each row of data has transferred to this sink
 Collect(ctx StreamContext, data interface{}) error
-```  
+```
 
 The last method to implement is _Close_ which literally close the connection. It is called when the stream is about to terminate. You could also do any clean up work in this function.
 
@@ -97,7 +97,7 @@ For example, you can resend the data to another topic defined in that property.
 ```go
 // CollectResend Called when the sink cache resend is triggered
 CollectResend(ctx StreamContext, data interface{}) error
-```  
+```
 
 #### Parse dynamic properties
 

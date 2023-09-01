@@ -15,7 +15,7 @@ LF Edge eKuiper 通过 source 和 sink 连接各种通信协议，例如 MQTT，
 
 ```protobuf
 message Book {
-  required string title = 1; 
+  required string title = 1;
   required int32 price = 2;
 }
 ```

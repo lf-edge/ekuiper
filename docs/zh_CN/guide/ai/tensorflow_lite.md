@@ -124,7 +124,7 @@ func bestMatchLabel(keyValue map[string]interface{}) (string, bool) {
     resultArray := keyValue["tfLite"].([]interface{})
     outputArray := resultArray[0].([]byte)
     outputSize := len(outputArray)
-    
+  
     var results []result
     for i := 0; i < outputSize; i++ {
         score := float64(outputArray[i]) / 255.0

@@ -151,7 +151,7 @@ GET http://localhost:9081/plugins/functions/prebuild
 ```yaml
   # 是否开启缓存
   enableCache: false
-  
+
   # 内存缓存的最大存储条数
   memoryCacheThreshold: 1024
 

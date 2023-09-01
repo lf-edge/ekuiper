@@ -9,7 +9,7 @@ The source will query the database periodically to get data stream.
 ## Compile & deploy plugin
 
 This plugin must be used in conjunction with at least a database driver. We are using build tag to determine which driver will be included.
-This [repository](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver) lists all the supported drivers.  
+This [repository](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver) lists all the supported drivers.
 
 This plugin supports `sqlserver\postgres\mysql\sqlite3\oracle` drivers by default. User can compile plugin that only support one driver by himself,
 for example, if he only wants sqlserver, then he can build with build tag `sqlserver`.
@@ -89,7 +89,7 @@ The target database url
 * `table`: table name to query
 * `limit`: how many items need fetch from the result
 * `indexField`: which column for the table act as index to record the offset
-* `indexValue`: initial index value, if user specify this field, the query will use this initial value as query condition, will update next query when get a greater value.  
+* `indexValue`: initial index value, if user specify this field, the query will use this initial value as query condition, will update next query when get a greater value.
 * `indexFieldType`: column type for the indexField, if it is dateTime type, must set this field with `DATETIME`
 * `dateTimeFormat`: data time format for the index field
 

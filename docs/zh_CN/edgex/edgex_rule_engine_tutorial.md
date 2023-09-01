@@ -24,7 +24,7 @@
 
 在不同的微服务之间，EdgeX 使用[消息总线](https://github.com/edgexfoundry/go-mod-messaging)进行数据交换。它包含了一个抽象的消息总线接口，并分别实现了 ZeroMQ 与 MQTT，在不同的微服务之间信息交互的支持。eKuiper 和 EdgeX 的集成工作包含了以下三部分，
 
-- 扩展了一个 EdgeX 消息总线源，支持从 EdgeX 消息总线中接收数据  
+- 扩展了一个 EdgeX 消息总线源，支持从 EdgeX 消息总线中接收数据
 
 - 为了可以分析数据，eKuiper 需知道传入的数据流的格式。一般来说，用户最好在创建流的时候指定被分析的流数据的格式。如下所示，一个 `demo` 流包含了一个名为 `temperature` 的字段。这与在关系型数据库中创建表格定义的时候非常像。在创建了流定义以后，eKuiper 可以在编译或者运行时对进入的数据进行类型检查，相应错误也会报告给用户。
 
@@ -104,7 +104,7 @@ d4b236a7b561   redis:6.2.4-alpine                                              "
       CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__PASSWORD: password
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.mqttMsgBus
   ```
-  
+
 做完这些修改后，请参考这篇[文档](../guide/sinks/builtin/edgex.md#使用连接重用功能发布)了解如何使用连接重用功能
 
 ### 使用 Redis 作为 KV 存储
@@ -177,7 +177,7 @@ default:
   server: localhost
   port: 5566
   topic: events
-.....  
+.....
 ```
 
 更多关于配置文件的信息，请参考[该文档](../guide/sources/builtin/edgex.md).
@@ -252,7 +252,7 @@ Rule rule1 was created successfully, please use 'cli getstatus rule rule1' comma
 
 ```text
 time="2021-07-08 01:03:08" level=info msg="Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. \n" file="server/server.go:144"
-Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. 
+Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720.
 time="2021-07-08 01:08:14" level=info msg="Successfully subscribed to edgex messagebus topic rules-events." file="extensions/edgex_source.go:111" rule=rule1
 time="2021-07-08 01:08:14" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" file="sinks/mqtt_sink.go:182" rule=rule1
 time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Float32\":-2.4369560555943686e+38}]" file="sinks/log_sink.go:16" rule=rule1

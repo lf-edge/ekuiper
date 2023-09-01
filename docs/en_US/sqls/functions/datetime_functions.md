@@ -59,7 +59,7 @@ cur_time()
 Returns the current time in the `HH:mm:ss` format.
 
 ## CURRENT_TIME
-  
+
 ```text
 current_time()
 ```
@@ -133,7 +133,7 @@ day_of_month(date)
 Returns the day of the month for the given `date`.
 
 ## DAY
-  
+
 ```text
 day(date)
 ```

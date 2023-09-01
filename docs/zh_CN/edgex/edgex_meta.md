@@ -63,7 +63,7 @@
 
 以下是使用 `meta` 函数抽取别的元数据的一些例子。
 
-1. `meta(origin)`: 000  
+1. `meta(origin)`: 000
 
    从 Event 结构体中获取 'origin' 元数据
 

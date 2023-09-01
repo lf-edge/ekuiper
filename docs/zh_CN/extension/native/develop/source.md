@@ -15,7 +15,7 @@
 要开发源，必须实现 _Configure_ 方法。 初始化源后，将调用此方法。 在此方法中，您可以从第一个参数检索流的 _DATASOURCE_ 属性（这是 mqtt 和其他消息传递系统的主题）。 然后在第二个参数中，传递包含 _yaml_ 文件中的配置的映射。 有关更多详细信息，请参见 [配置](#处理配置)。 通常，将有外部系统的信息，例如主机、端口、用户和密码。 您可以使用此映射来初始化此源。
 
 ```go
-//在初始化期间调用。 使用数据源（例如，mqtt 的主题）和从 Yaml 读取的属性来配置源 
+//在初始化期间调用。 使用数据源（例如，mqtt 的主题）和从 Yaml 读取的属性来配置源
 Configure(datasource string, props map[string]interface{}) error
 ```
 
@@ -51,7 +51,7 @@ function MySource() api.Source{
 要开发一个查询源，必须实现 _Configure_ 方法。 初始化源后，将调用此方法。 在此方法中，您可以从第一个参数检索流的 _DATASOURCE_ 属性（这是 mqtt 和其他消息传递系统的主题）。 然后在第二个参数中，传递包含 _yaml_ 文件中的配置的映射。 有关更多详细信息，请参见 [配置](#处理配置)。 通常，将有外部系统的信息，例如主机、端口、用户和密码。 您可以使用此映射来初始化此源。
 
 ```go
-//在初始化过程中调用。用数据源（例如mqtt的topic）和从yaml中读取的属性来配置这个源 
+//在初始化过程中调用。用数据源（例如mqtt的topic）和从yaml中读取的属性来配置这个源
 Configure(datasource string, props map[string]interface{}) error
 ```
 
@@ -67,7 +67,7 @@ Open(ctx StreamContext) error
 ```go
 // Lookup 接收查询值以构建查询并返回查询结果
 Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
-```  
+```
 
 最后要实现的方法是 _Close_，它实际上用来关闭连接。当流即将终止时调用它。 您也可以在此功能中执行任何清理工作。
 

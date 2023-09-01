@@ -102,7 +102,7 @@ query
 
 ```shell
 # bin/kuiper query
-kuiper > 
+kuiper >
 ```
 
 键入 `query` 子命令后，它会提示 `kuiper>`，然后在命令提示符中键入 SQLs （有关如何使用eKuiper SQL的信息，请参阅 [eKuiper SQL 参考](../../sqls/overview.md) ），然后按回车。

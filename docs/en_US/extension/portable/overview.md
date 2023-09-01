@@ -32,7 +32,7 @@ You can find the tool in `tools/plugin_test_server`. It only supports to test a 
    ```shell
    POST http://localhost:33333/symbol/start
    Content-Type: application/json
-   
+ 
    {
      "symbolName": "pyjson",
      "meta": {

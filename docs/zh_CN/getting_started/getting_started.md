@@ -117,7 +117,7 @@ default:
 
 ```sh
 $ bin/kuiper query
-kuiper > 
+kuiper >
 ```
 
 在 `kuiper` 提示符下，您可以键入 SQL 并根据流验证 SQL。

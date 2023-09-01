@@ -65,7 +65,7 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
     ###
     POST http://{{host}}/schemas/custom
     Content-Type: application/json
-    
+  
     {
       "name": "custom1",
        "soFile": "file:///tmp/custom1.so"
@@ -123,7 +123,7 @@ eKuiper 计算过程中使用的是基于 Map 的数据结构，因此 source/si
     ###
     POST http://{{host}}/schemas/protobuf
     Content-Type: application/json
-    
+  
     {
       "name": "helloworld",
       "file": "file:///tmp/helloworld.proto",

@@ -160,16 +160,16 @@ eKuiper 内置了丰富的 SQL 函数，即便在不是用插件拓展的情况�
 于是我们可以利用如下 SELECT 语句，计算出相应的路程以及时间：
 
 ```sql
-SELECT 
+SELECT
     6378.138 * 2 * ASIN(
         SQRT(
             POW(
-                SIN((cast(START_LAT,"float") * PI() / 180 - cast(END_LAT,"float") * PI() / 180) / 2), 2) + 
-                COS(cast(START_LAT,"float") * PI() / 180) * COS(cast(END_LAT,"float") * PI() / 180) * 
+                SIN((cast(START_LAT,"float") * PI() / 180 - cast(END_LAT,"float") * PI() / 180) / 2), 2) +
+                COS(cast(START_LAT,"float") * PI() / 180) * COS(cast(END_LAT,"float") * PI() / 180) *
             POW(
-                SIN((cast(START_LNG,"float") * PI() / 180 - cast(END_LNG,"float") * PI() / 180) / 2), 2))) *1000 
-        AS distance, 
-    (to_seconds(END_TIME) - to_seconds(START_TIME)) 
+                SIN((cast(START_LNG,"float") * PI() / 180 - cast(END_LNG,"float") * PI() / 180) / 2), 2))) *1000
+        AS distance,
+    (to_seconds(END_TIME) - to_seconds(START_TIME))
         AS duration
 FROM pubdata2
 ```

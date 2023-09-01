@@ -24,7 +24,7 @@ The tutorial demonstrates how to use eKuiper to process the data from EdgeX mess
 
 EdgeX uses [message bus](https://github.com/edgexfoundry/go-mod-messaging) to exchange information between different micro services. It contains the abstract message bus interface and implementations for ZeroMQ & MQTT. The integration work for eKuiper & EdgeX includes following 3 parts.
 
-- An EdgeX message bus source is extended to support consuming data from EdgeX message bus.  
+- An EdgeX message bus source is extended to support consuming data from EdgeX message bus.
 
 - To analyze the data, eKuiper need to know data types that passed through it. Generally, user would be better to specify data schema for analysis data when a stream is created. Such as in below, a `demo` stream has a field named `temperature` field. It is very similar to create table schema in relational database system. After creating the stream definition, eKuiper can perform type checking during compilation or runtime, and invalid SQLs or data will be reported to user.
 
@@ -94,7 +94,7 @@ add these in `environment` part and make sure the image is `1.4.0` or later.
       CONNECTION__EDGEX__REDISMSGBUS__TYPE: redis
       EDGEX__DEFAULT__CONNECTIONSELECTOR: edgex.redisMsgBus
   ```
-  
+
 - `mqtt/zeromq` messageBus: adjust the parameters accordingly and specify the client credentials if have.
   There is a `mqtt` message bus example, make sure the connection info exists in `etc/connections/connection.yaml`, for [more info](../guide/sources/builtin/edgex.md#connectionselector) please check this.
 
@@ -186,7 +186,7 @@ default:
   server: localhost
   port: 5566
   topic: events
-.....  
+.....
 ```
 
 For more detailed information of configuration file, please refer to [this doc](../guide/sources/builtin/edgex.md).
@@ -226,7 +226,7 @@ curl -X POST \
 
 #### Option 2: Use eKuiper CLI
 
-You can create a rule file with any text editor, and copy following contents into it. Let's say the file name is `rule.txt`.  
+You can create a rule file with any text editor, and copy following contents into it. Let's say the file name is `rule.txt`.
 
 ```json
 {
@@ -265,7 +265,7 @@ to see detailed info of rule.
 
 ```text
 time="2021-07-08 01:03:08" level=info msg="Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. \n" file="server/server.go:144"
-Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720. 
+Serving kuiper (version - 1.2.1) on port 20498, and restful api on http://0.0.0.0:59720.
 time="2021-07-08 01:08:14" level=info msg="Successfully subscribed to edgex messagebus topic rules-events." file="extensions/edgex_source.go:111" rule=rule1
 time="2021-07-08 01:08:14" level=info msg="The connection to server tcp://broker.emqx.io:1883 was established successfully" file="sinks/mqtt_sink.go:182" rule=rule1
 time="2021-07-08 01:08:20" level=info msg="sink result for rule rule1: [{\"Float32\":-2.4369560555943686e+38}]" file="sinks/log_sink.go:16" rule=rule1

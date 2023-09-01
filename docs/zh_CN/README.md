@@ -105,7 +105,7 @@ LF Edge eKuiper 是 Golang 实现的轻量级物联网边缘分析、流式处�
 - 加入 [Slack](https://slack.lfedge.org/) 的 [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) 或者 [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) 频道。
 - 写邮件到 ekuiper [邮件组](mailto:ekuiper+help@lists.lfedge.org)。
 - 加入微信群，扫描二维码，留言 "eKuiper"，工作人员将拉您进群。
-  
+
   <img src="./wechat.png" alt="drawing" width="200"/>
 
 ## 贡献

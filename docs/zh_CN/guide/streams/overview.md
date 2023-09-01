@@ -9,8 +9,8 @@
 ## 流定义
 
 ```sql
-CREATE STREAM   
-    stream_name   
+CREATE STREAM 
+    stream_name 
     ( column_name <data_type> [ ,...n ] )
     WITH ( property_name = expression [, ...] );
 ```
@@ -60,7 +60,7 @@ CREATE STREAM
 **示例1**
 
 ```sql
-my_stream 
+my_stream
   (id bigint, name string, score float)
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```
@@ -129,7 +129,7 @@ demo (
 如果流的数据类型未知或不同，我们可以不使用字段来定义它。 这称为 schema-less。 通过将字段设置为空来定义它。
 
 ```sql
-schemaless_stream 
+schemaless_stream
   ()
 WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id");
 ```

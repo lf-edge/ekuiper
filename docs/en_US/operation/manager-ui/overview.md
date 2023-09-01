@@ -39,16 +39,16 @@ During test, it is more handy to use docker compose to install and deploy both p
   ```shell
   # docker run -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883" lfedge/ekuiper:1.8-slim
   ```
-  
+
   When the container is running, the MQTT server address can be set through the `-e` option, and the data is written to the MQTT source configuration file, which can be viewed by the following command:
-  
+
   ```shell
   # docker exec -it kuiper sh
   # cat etc/mqtt_source.yaml
   ```
-  
+
   Some output of this file is shown below, and the value of `server` is set to `tcp://broker.emqx.io:1883`.
-  
+
   ```yaml
   default:
     concurrency: 1

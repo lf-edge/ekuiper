@@ -107,7 +107,7 @@ message LabelReply {
 ```shell
 #/bin/kuiper query
 
-Connecting to 127.0.0.1:20498... 
+Connecting to 127.0.0.1:20498...
 kuiper >  select label(image) from demo
 
 ```

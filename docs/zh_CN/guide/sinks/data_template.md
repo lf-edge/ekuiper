@@ -196,7 +196,7 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 假设流入 sink 中的数据内容如下所示，
 
 ```json
-{"device_id":"1", 
+{"device_id":"1",
  "values": [
   {"temperature": 10.5},
   {"temperature": 20.3},
@@ -233,12 +233,12 @@ Golang 还内置提供了一些函数，用户可以参考[更多 Golang 内置�
 :::
 
 ```text
-{{range $index, $ele := .values}} 
+{{range $index, $ele := .values}}
   {{if le .temperature 25.0}}
     "fine"
   {{else if gt .temperature 25.0}}
     "high"
-  {{end}} 
+  {{end}}
   {{if eq $loopsize $index}}
     ]
   {{else}}

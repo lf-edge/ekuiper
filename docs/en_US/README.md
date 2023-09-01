@@ -110,7 +110,7 @@ If you get stuck, check out our community support resources.
 - Join our [Slack](https://slack.lfedge.org/), and then join [ekuiper](https://lfedge.slack.com/archives/C024F4P7KCK) or [ekuiper-user](https://lfedge.slack.com/archives/C024F4SMEMR) channel.
 - Mail to eKuiper help [mail list](mailto:ekuiper+help@lists.lfedge.org).
 - Join WeChat group, scan the below QR code and mark "eKuiper".
-  
+
   <img src="./wechat.png" alt="drawing" width="200"/>
 
 ## Contribute

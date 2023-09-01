@@ -51,14 +51,14 @@ def label(file_bytes):
     # 载入模型文件
     interpreter = tf.Interpreter(
         model_path= cwd + 'mobilenet_v1_1.0_224.tflite')
-    
+  
     # 预处理输入图片，将其转换为输入的 tensor 格式，此处代码省略
-    
+  
     # 设置模型输入，调用推理，拿到结果 tensor
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
     output_data = interpreter.get_tensor(output_details[0]['index'])
-    
+  
     # 对结果进行后处理，转换为输出格式，代码省略
     return result
 ```

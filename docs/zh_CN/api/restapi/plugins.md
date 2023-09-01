@@ -57,9 +57,9 @@ POST http://localhost:9081/plugins/portables
 #!/bin/sh
 dir=/usr/local/mysdk
 cur=$(dirname "$0")
-echo "Base path $cur" 
+echo "Base path $cur"
 if [ -d "$dir" ]; then
-    echo "SDK path $dir exists." 
+    echo "SDK path $dir exists."
 else
     echo "Creating SDK path $dir"
     mkdir -p $dir
@@ -68,7 +68,7 @@ fi
 
 apt install --no-upgrade unzip
 if [ -d "$dir/lib" ]; then
-    echo "SDK lib path $dir/lib exists." 
+    echo "SDK lib path $dir/lib exists."
 else
     echo "Unzip SDK lib to path $dir"
     unzip $cur/mysdk.zip -d $dir

@@ -250,7 +250,7 @@ _________________________________________________________
 当 temperature 变化且 humidity 未变化时获取数据:
 
 ```text
-SQL: SELECT ts, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo
 WHERE HAD_CHANGED(true, temperature) = true AND HAD_CHANGED(true, humidity) = false
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}
@@ -270,7 +270,7 @@ _________________________________________________________
 当 temperature 值变化后大于 24 时获取数据:
 
 ```text
-SQL: SELECT ts, temperature, humidity FROM demo 
+SQL: SELECT ts, temperature, humidity FROM demo
 WHERE CHANGED_COL(true, temperature) > 24
 _________________________________________________________
 {"ts":4,temperature":25,"humidity":88}

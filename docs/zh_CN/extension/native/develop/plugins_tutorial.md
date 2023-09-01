@@ -40,9 +40,9 @@ eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松�
 ```text
 extensions
   sinks
-    myplugin           
+    myplugin         
       mysql.go
-  go.mod         
+  go.mod       
 ```
 
 extensions 目录用 Go module 来管理依赖包，用户只需把他们的插件源码放入合适的目录，然后在 go.mod 中更新依赖即可。
@@ -108,10 +108,10 @@ func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
     logger.Error(err)
     return err
   }
-    
+  
   //TODO 生产环境中需要处理item unmarshall后的各种类型。
   // 默认的类型为 []map[string]interface{}
-  // 如果sink的`dataTemplate`属性有设置，则可能为各种其他的类型  
+  // 如果sink的`dataTemplate`属性有设置，则可能为各种其他的类型
   logger.Debugf("mysql sink receive %s", item)
   //TODO 此处列名写死。生产环境中一般可从item中的键值对获取列名
   sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.conf.Table, v)
@@ -121,7 +121,7 @@ func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
     return err
   }
   defer insert.Close()
-  
+
   return nil
 }
 
@@ -146,7 +146,7 @@ func Mysql() api.Sink {
 ```text
 samplePlugin
   sinks           //source code directory of the plugin sink
-    mysql.go  
+    mysql.go
   go.mod          //file go module
 ```
 
@@ -186,7 +186,7 @@ require (
 ```shell
    # compile the eKuiper
    go build -trimpath -o ./_build/$build/bin/kuiperd cmd/kuiperd/main.go
-    
+  
    # compile the plugin that using the extensions folder within eKuiper project
    go build -trimpath --buildmode=plugin -o ./_build/$build/plugins/sinks/Mysql@v1.0.0.so extensions/sinks/mysql/mysql.go
 
@@ -207,7 +207,7 @@ require (
            go.mod
        ```
 
-    2. 在1.9.0 里，我们使用了 go workspace 功能重构了子模块的 go mod 构建方式，所以我们可以使用 go workspace 解决依赖问题。进入 workspace 目录里，创建工作区：  
+    2. 在1.9.0 里，我们使用了 go workspace 功能重构了子模块的 go mod 构建方式，所以我们可以使用 go workspace 解决依赖问题。进入 workspace 目录里，创建工作区：
 
        ```shell
        go work init ./ekuiper ./samplePlugin
@@ -218,7 +218,7 @@ require (
       ```text
         workspace
           ekuiper
-            go.mod             
+            go.mod           
           samplePlugin
             go.mod
           go.work
@@ -269,14 +269,14 @@ eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为
           kuiper
             go.mod
           samplePlugin
-            sinks           
-              mysql.go     
+            sinks         
+              mysql.go   
             go.mod
         go.work
       ```
-  
+
       可以使用如下命令
-  
+
       ```shell
       # In docker instance
       cp -r /go/plugins/samplePlugin /go/samplePlugin
@@ -305,8 +305,8 @@ eKuiper 也提供了精简的 alpine 版本，但是不包含 go 环境。用户
        kuiper
            go.mod
        samplePlugin
-           sinks           
-               mysql.go     
+           sinks         
+               mysql.go   
            go.mod
        go.work
    ```
@@ -370,7 +370,7 @@ eKuiper 生产环境和开发环境如果不同，开发的插件需要重新编
    ```shell
    POST http://{$production_eKuiper_ip}:9081/plugins/sinks
    Content-Type: application/json
-   
+ 
    {"name":"mysql","file":"http://{$http_server_ip}/plugins/sinks/mysqlSink.zip"}
    ```
 
