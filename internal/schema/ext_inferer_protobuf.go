@@ -23,6 +23,7 @@ import (
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 
+	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -32,7 +33,9 @@ var protoParser *protoparse.Parser
 
 func init() {
 	inferes[message.FormatProtobuf] = InferProtobuf
-	protoParser = &protoparse.Parser{}
+	etcDir, _ := kconf.GetLoc("etc/schemas/protobuf/")
+	dataDir, _ := kconf.GetLoc("data/schemas/protobuf/")
+	protoParser = &protoparse.Parser{ImportPaths: []string{etcDir, dataDir}}
 }
 
 // InferProtobuf infers the schema from a protobuf file dynamically in case the schema file changed
