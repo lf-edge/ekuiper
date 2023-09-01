@@ -16,12 +16,14 @@ package planner
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -150,6 +152,53 @@ var tests = []struct {
 	//	sql: `SELECT * FROM src1 GROUP BY SlidingWindow(ss,5) Over (WHEN abs(sum(a)) > 1) HAVING last_agg_hit_count() < 3`,
 	//	r:   newErrorStruct("error compile sql: Not allowed to call aggregate functions in GROUP BY clause."),
 	//},
+}
+
+func TestCheckTopoSort(t *testing.T) {
+	store, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 (
+					id1 BIGINT,
+					temp BIGINT,
+					name string,
+					next STRUCT(NAME STRING, NID BIGINT)
+				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+	}
+	types := map[string]ast.StreamType{
+		"src1": ast.TypeStream,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		require.NoError(t, err)
+		store.Set(name, string(s))
+	}
+	streams := make(map[string]*ast.StreamStmt)
+	for n := range streamSqls {
+		streamStmt, err := xsql.GetDataSource(store, n)
+		if err != nil {
+			t.Errorf("fail to get stream %s, please check if stream is created", n)
+			return
+		}
+		streams[n] = streamStmt
+	}
+	sql := "select latest(a) as a from src1"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	_, err = createLogicalPlan(stmt, &api.RuleOption{
+		IsEventTime:        false,
+		LateTol:            0,
+		Concurrency:        0,
+		BufferLength:       0,
+		SendMetaToSink:     false,
+		Qos:                0,
+		CheckpointInterval: 0,
+		SendError:          true,
+	}, store)
+	require.Equal(t, errors.New("unknown field a"), err)
 }
 
 func Test_validation(t *testing.T) {
