@@ -3,9 +3,9 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-MQTT (Message Queuing Telemetry Transport) is a protocol optimized for the low bandwidth scenarios. In eKuiper, the MQTT connector can function as both a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector.
+MQTT (Message Queuing Telemetry Transport) is a protocol optimized for low bandwidth scenarios. Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broker and channels them into its processing pipeline. This integration allows for real-time data processing directly from specified MQTT topics.
 
-Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broker and channels them into its processing pipeline. This integration allows for real-time data processing directly from specified MQTT topics.
+ In eKuiper, the MQTT connector can function as both a source connector (ingesting data from MQTT brokers) and a [sink connector](../../sinks/builtin/mqtt.md) (publishing data to MQTT brokers). This section specifically focuses on its role as a source connector.
 
 ## Configurations
 
@@ -55,13 +55,13 @@ Users can specify the global MQTT configurations here. The configuration items s
 - `certificationPath`:  Specifies the path to the certificate, for example: `d3807d9fa5-certificate.pem`. This can be an absolute or relative path. The base path for a relative address depends on where the `kuiperd` command is executed.
   - If executed as `bin/kuiperd` from `/var/kuiper`, the base is `/var/kuiper`.
   - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
-- `privateKeyPath`: The location of the private key path, for example:  `d3807d9fa5-private.pem.key`. It can be an absolute path or a relative path.  For more detailed information, please refer to `certificationPath`.
+- `privateKeyPath`: The location of the private key path, for example d3807d9fa5-private.pem.key`. It can be an absolute path or a relative path.  For more detailed information, please refer to `certificationPath`.
 - `rootCaPath`: The location of root ca path. It can be an absolute path, or a relative path.
-- `insecureSkipVerify`: Controls whether to skip certificate verification. If set to `true`, verification is skipped; otherwise, the certificate is verified."
+- `insecureSkipVerify`: Controls whether to skip certificate verification. If set to `true`, verification is skipped; otherwise, the certificate is verified.
 
 ### **Connection Reusability**
 
-- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker. For a detailed explanation of the connection selection, see [Connection Selector](../../connector.md#connection-selector). For example, `mqtt.localConnection` in the below example.
+- `connectionSelector`: Specify the stream to reuse the connection to the MQTT broker, for example, `mqtt.localConnection` in the below example.  Note: The connection profile is located in `connections/connection.yaml`. For a detailed explanation of the connection selection, see [Connection Selector](../../connector.md#connection-selector).
 
   ```yaml
   #Global MQTT configurations

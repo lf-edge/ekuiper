@@ -14,7 +14,7 @@ Currently, the Redis source can only be used as a [lookup table](../../tables/lo
 
 Before using the Redis Source Connector, it's essential to configure the connection settings and other relevant parameters. Here are the available configuration options:
 
-The configuration file for the Redis source is located at */etc/sources/redis.yaml*, where you can specify the path to the file.
+The configuration file for the Redis source is located at */etc/sources/redis.yaml*.
 
 ```yaml
 default:
@@ -35,7 +35,7 @@ With this configuration, the table will refer to database 0 in the Redis instanc
 - **`username`**: The username for accessing the Redis server, only needed if authentication is enabled on the server.
 - **`password`**: The password for accessing the Redis server, only needed if authentication is enabled on the server.
 
-## Create a Stream Source
+## Create a Lookup Table Source
 
 To utilize the Redis Source Connector in eKuiper streams, define a stream specifying the Redis source, its configuration, and the data format.
 
@@ -63,7 +63,7 @@ For users who prefer a hands-on approach, the Command Line Interface (CLI) provi
    cd path_to_eKuiper_directory/bin
    ```
 
-2. Use the `create` command to define a stream for the Neuron source connector:
+2. Use the `create` command to define a stream for the Redis source connector:
 
    ```bash
    ./kuiper create stream neuron_stream ' WITH (DATASOURCE="0", FORMAT="json", TYPE="redis", KIND="lookup")'

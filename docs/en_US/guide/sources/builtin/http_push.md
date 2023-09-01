@@ -9,7 +9,7 @@ When configured as an HTTP Push source, eKuiper exposes an HTTP endpoint so devi
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on configuring eKuiper connectors with the configuration file.
 
-## Basic Configuration
+## Server Configuration
 
 To set up eKuiper as an HTTP endpoint, configure the server settings in `etc/sources/httppush.yaml`.
 

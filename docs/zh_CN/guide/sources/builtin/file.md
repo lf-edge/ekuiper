@@ -1,22 +1,89 @@
-## 文件源
+# 文件数据源
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper 提供了内置支持，可将文件内容读入 eKuiper 处理管道。 文件源通常用作[表格](../../../sqls/tables.md)， 并且采用 create
-table 语句的默认类型。文件源也支持作为用作流，此时通常需要设置 `interval` 参数以定时拉取更新。
+eKuiper 内置支持文件数据源，可将文件内容读入 eKuiper 处理管道，适用于需要对数据进行批量处理或需要对文件进行实时处理的场景。
 
-```sql
-CREATE TABLE table1 (
-    name STRING,
-    size BIGINT,
-    id BIGINT
-) WITH (DATASOURCE="lookup.json", FORMAT="json", TYPE="file");
+eKuiper 支持  JSON、CSV 或以行分隔的文件：
+
+- JSON：标准 JSON 数组格式文件。
+- CSV：支持逗号或其他自定义分隔符的 CSV 文件。
+- lines：以行分隔的文件。
+
+**注意**：文件源支持监控文件或文件夹。如果被监控的位置是一个文件夹，那么该文件夹中的所有文件必须是同一类型。当监测一个文件夹时，它将按照文件名的字母顺序来读取文件。
+
+:::: tabs type:card
+
+::: tab JSON
+
+**描述**：标准 JSON 数组格式文件。
+
+**示例**
+
+```json
+[
+  {"id": 1, "name": "John Doe"},
+  {"id": 2, "name": "Jane Smith"}
+]
 ```
 
-您可以使用 [cli](../../../api/cli/tables.md) 或 [rest api](../../../api/restapi/tables.md) 来管理表。
+**注意**：如果文件格式是一个以行分隔的 JSON 字符串，则需要定义为 `lines` 格式。
 
-文件源的配置文件是 */etc/sources/file.yaml* ，可以在其中指定文件的路径。
+:::
+
+::: tab csv
+
+**描述**：包含逗号分隔符的（CSV）文件。
+
+**示例**
+
+```csv
+id,name,age
+1,John Doe,30
+2,Jane Smith,25
+```
+
+**自定义分隔符**：eKuiper 也支持自定义分隔符，如空格：
+
+```csv
+id name age
+1 John Doe 30
+2 Jane Smith 25
+```
+
+:::
+
+::: tab lines
+
+**描述**：以行分隔的文件。
+
+**示例**
+
+```text
+{"id": 1, "name": "John Doe"}
+{"id": 2, "name": "Jane Smith"}
+```
+
+**提示**：lines 文件类型可以与任何格式相结合。例如，如果你将格式设置为 protobuf，并且配置模式，它可以用来解析包含多个 Protobuf 编码行的数据。
+
+:::
+
+::::
+
+::: tip
+
+在处理具有元数据或非标准内容的文件时，您可以利用 `ignoreStartLines` 和 `ignoreEndLines` 参数来删除非标准的开头和结尾的非标准部分，以便正确解析相关内容。
+
+:::
+
+## 配置
+
+eKuiper 连接器可以通过[环境变量](../../../configuration/configuration.md#environment-variable-syntax)、[REST API](../../../api/restapi/configKey.md) 或配置文件进行配置，本节将介绍配置文件的使用方法。
+
+文件数据源连接器的配置文件位于 `/etc/sources/file.yaml`。
+
+**示例**
 
 ```yaml
 default:
@@ -50,25 +117,70 @@ default:
   decompression: ""
 ```
 
-### 文件源
+### 文件类型和路径
 
-文件源支持监控文件或文件夹。如果被监控的位置是一个文件夹，那么该文件夹中的所有文件必须是同一类型。当监测一个文件夹时，它将按照文件名的字母顺序来读取文件。
+- **`fileType`**：定义文件的类型，可选值为 `json`、`csv` 和 `lines`。
+- **`path`**：指定文件的目录，相对于 eKuiper 根目录的相对路径或绝对路径。注意：这里不要包含文件名，文件名应在流数据源中定义。
 
-支持的文件类型有：
+### 读取和发送间隔
 
-- json：标准的JSON数组格式文件。见[例子](https://github.com/lf-edge/ekuiper/tree/master/internal/io/file/test/test.json)。如果文件格式是一个以行分隔的JSON字符串，它需要以 `lines` 格式定义。
-- csv：支持逗号分隔的 csv 文件，也支持自定义分隔符。
-- lines：以行分隔的文件。每行的解码方法可以通过流定义中的 `format` 参数来定义。例如，对于一个按行分隔的 JSON 字符串文件，文件类型应设置为 `lines`，格式应设置为 `json`，表示单行的格式为 json。
+- **`interval`**：设置文件读取之间的间隔，单位为毫秒。如果设置为0，文件只读取一次。
+- **`sendInterval`**：读取后，两条数据发送的间隔时间，单位为毫秒。
 
-有些文件可能有大部分数据是标准格式，但在文件的开头和结尾行有一些元数据。用户可以使用 `ignoreStartLines` 和 `ignoreEndLines` 参数来删除非标准的开头和结尾的非标准部分，这样上述文件类型就可以被解析了。
+### 并行处理
 
-### 示例
+- **`parallel`**：确定目录中的文件是否应并行读取。如果设置为 `true`，目录中的文件将并行读取。
 
-文件源涉及对文件内容的解析，同时解析格式与数据流中的格式定义相关。我们用一些例子来描述如何结合文件类型和格式设置来解析文件源。
+### 读后操作
+
+- `actionAfterRead`：确定读取文件后的操作：
+  - `0`：保留文件。
+  - `1`：删除文件。
+  - `2`：将文件移至`moveTo`指定的位置。
+- **`moveTo`**：指定读取后将文件移至的路径。仅在`actionAfterRead`设置为 `2` 时有效。
+
+### 文件内容配置 (CSV 格式)
+
+- **`hasHeader`**：指定文件是否有表头行。
+- **`columns`**：定义列名，特别适用于CSV文件。例如，`columns: [id, name]`。
+- **`ignoreStartLines`**：指定文件开始处要忽略的行数。空行将被忽略且不计算在内。
+- **`ignoreEndLines`**：指定文件末尾要忽略的行数。同样，空行将被忽略且不计算在内。
+
+### 解压缩
+
+- **`decompression`**：允许解压缩文件。目前支持 `gzip ` 及 `zstd`。
+
+## 创建表式数据源
+
+完成连接器的配置后，后续可通过创建流将其与 eKuiper 规则集成。文件数据源连接器可以作为 [流式](../../streams/overview.md)或[扫描表类数据源](../../tables/scan.md)使用。当作为流式数据源时，此时通常需要设置 `interval` 参数以定时拉取更新。但文件源更常用作[表格](https://ekuiper.org/docs/zh/latest/sqls/tables.html)， 并且采用 create table 语句的默认类型。
+
+您可通过 [REST API]((../../../api/restapi/streams.md)) 或 [CLI](../../../api/cli/streams.md) 工具在 eKuiper 中创建文件数据源。本节将以表类数据源为例进行说明。
+
+例如，要创建一个名为 `table1` 的表，其中包含三列（`name`、`size `和 `id`），并使用 `lookup.json` 文件作为数据源：
+
+```sql
+create table table1 (
+    name STRING,
+    size BIGINT,
+    id BIGINT
+) WITH (DATASOURCE="lookup.json", FORMAT="json", TYPE="file");
+```
+
+创建完成后，您可将其与 eKuiper 规则集成以处理数据。
+
+```sql
+CREATE RULE rule1 AS SELECT * FROM fileDemo WHERE temperature > 50 INTO mySink;
+```
+
+根据设定规则，我们将选择 `fileDemo ` 数据流中所有温度超过 50 的数据，并将其发送到  `mySink`。
+
+## 教程：解析文件源
+
+文件源涉及对文件内容的解析，同时解析格式与数据流中的格式定义相关。本节将通过一些示例来描述如何结合文件类型和格式设置来解析文件源。
 
 #### 读取自定义分隔符的 CSV 文件
 
-标准的 csv 文件，分隔符是一个逗号，但是有大量的文件使用类 csv 格式，但使用自定义的分隔符。另外，一些类 csv 的文件在第一行定义了列名，而不是数据，如下例所示。
+标准的 csv 文件会采用逗号作为分隔符，但也存在使用自定义分隔符的情况。此外，一些类 csv 的文件会在第一行定义列名，而非数据，如下例所示：
 
 ```csv
 id name age
@@ -76,7 +188,7 @@ id name age
 2 Jane 34
 ```
 
-该文件第一行为文件头，定义了文件的列名。读取这样的文件时，配置文件如下，需要指定文件有一个头。
+因此，我们需要进行如下配置，指定其类型并告知表头信息，在本例中，我们可按如下示例修改 `/etc/sources/file.yaml` 文件：
 
 ```yaml
 csv:
@@ -84,12 +196,16 @@ csv:
   hasHeader: true
 ```
 
-在流定义中，将流数据设置为 `DELIMITED` 格式，用 `DELIMITER` 参数指定分隔符为空格。
+以上配置表明文件是 `csv` 类型，并且有表头。
+
+在定义流时，需要采用 `DELIMITED`格式。`DELIMITER `参数支持我们指定自定义分隔符，即本例中的空格。
 
 ```SQL
 create
 stream cscFileDemo () WITH (FORMAT="DELIMITED", DATASOURCE="abc.csv", TYPE="file", DELIMITER=" ", CONF_KEY="csv"
 ```
+
+通过以上命令，我们创建了一个名为 `csvFileDemo` 的流，该流将从 `abc.csv` 文件中读取数据，预期分隔符为空格。
 
 #### 读取多行 JSON 数据
 
@@ -101,17 +217,17 @@ stream cscFileDemo () WITH (FORMAT="DELIMITED", DATASOURCE="abc.csv", TYPE="file
 {"id": 3, "name": "John Smith"}
 ```
 
-读取这种格式的文件时，配置中的文件类型设置为 `lines`。
+读取这种格式的文件时，应在 `/etc/sources/file.yaml`  文件中进行如下配置：
 
 ```yaml
 jsonlines:
   fileType: lines
 ```
 
-在流定义中，设置流数据为`JSON`格式。
+在定义流时，设置流数据为 `JSON `格式。
 
 ```SQL
-create stream linesFileDemo () WITH (FORMAT="JSON", TYPE="file", CONF_KEY="jsonlines"
+create stream linesFileDemo () WITH (FORMAT="JSON", TYPE="file", CONF_KEY="jsonlines")
 ```
 
-此外，lines 文件类型可以与任何格式相结合。例如，如果你将格式设置为 protobuf，并且配置模式，它可以用来解析包含多个 Protobuf 编码行的数据。
+此命令将创建一个名为 `linesFileDemo` 的流，并从源文件拉取以行分隔的 JSON 数据。
