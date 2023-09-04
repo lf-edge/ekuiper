@@ -92,7 +92,7 @@ application_conf: #Conf_key
   - 如果运行从`/var/kuiper/bin`中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。
 - `privateKeyPath`：私钥路径，示例值：`d3807d9fa5-private.pem.key`。可以是绝对路径，也可以是相对路径，具体可参考 `certificationPath`。
 - `rootCaPath`：根证书路径。可以是绝对路径，也可以是相对路径。
-- `insecureSkipVerify`：是否跳过证书验证。如设置为 `true`，TLS 接受服务器提供的任何证书以及该证书中的任何主机名。注意：此时，TLS 容易受到中间人攻击。默认值：`false`。 
+- `insecureSkipVerify`：是否跳过证书验证。如设置为 `true`，TLS 接受服务器提供的任何证书以及该证书中的任何主机名。注意：此时，TLS 容易受到中间人攻击。默认值：`false`。
 
 #### OAuth 认证
 
@@ -100,7 +100,7 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 
 以下配置假设已经获取认证码，用户只需指定令牌申请，该过程可能需要该认证码或只是密码（OAuth 的变体）。
 
-`OAuth`：定义类 OAuth 的认证流程。其他的认证方式如 apikey 可以直接在 headers 设置密钥，不需要使用这个配置。 
+`OAuth`：定义类 OAuth 的认证流程。其他的认证方式如 apikey 可以直接在 headers 设置密钥，不需要使用这个配置。
 
 - `access`
 
@@ -126,7 +126,7 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 
 #### 动态属性
 
-动态属性是指在运行时会动态更新的属性。 您可以使用动态属性来指定 HTTP 请求的 URL、正文和标头。其语法基于[数据模板](../../sinks/data_template.md)格式的动态属性。
+动态属性是指在运行时会动态更新的属性。您可以使用动态属性来指定 HTTP 请求的 URL、正文和标头。其语法基于[数据模板](../../sinks/data_template.md)格式的动态属性。
 
 可使用的动态属性包括：
 

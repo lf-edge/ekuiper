@@ -5,7 +5,7 @@
 
 eKuiper 内置支持 EdgeX 数据源，支持订阅来自于 [EdgeX 消息总线](https://github.com/edgexfoundry/go-mod-messaging)的数据，并将数据放入 eKuiper 数据处理流水线中。用户可直接通过 EdgeX 数据源消费 EdgeX 中的事件，[无需任何手动模式定义](#拓展阅读-edgex-中的流定义)。
 
-在 eKuiper 中，EdgeX 连接器可以作为源连接器（从 EdgeX 获取数据）或[汇连接器](../../sinks/builtin/mqtt.md)（将数据发布到 EdgeX），本节重点介绍 EdgeX 源连接器。
+在 eKuiper 中，EdgeX 连接器可以作为源连接器（从 EdgeX 获取数据）或[ Sink 连接器](../../sinks/builtin/mqtt.md)（将数据发布到 EdgeX），本节重点介绍 EdgeX 源连接器。
 
 ## Configurations
 
@@ -14,7 +14,7 @@ eKuiper 连接器可以通过[环境变量](../../../configuration/configuration
 EdgeX 源连接器的配置文件位于： `$ekuiper/etc/sources/edgex.yaml`，其中：
 
 - default：对应全局连接配置。
-- 自定义部分：对于需要自定义某些连接参数的场景，该部分的配置将覆盖全局连接配置。
+- 自定义部分：适用于需要自定义连接参数的场景，该部分的配置将覆盖全局连接配置。
 - 连接器重用：eKuiper 还支持通过  [`connectionSelector`](../../connector.md#connection-selector)  配置项在不同的配置中复用某个连接配置。
 
 以下示例包括一个全局配置和自定义配置 `demo1`：
@@ -52,7 +52,7 @@ demo1: #Conf_key
 
 ### 连接重用
 
-- `connectionSelector`：重用 EdgeX 数据源连接，如下方配置示例中的 `edgex.redisMsgBus`。注意：连接配置文件位于 `connections/connection.yaml`。有关连接重用的详细解释，见[连接器的复用](../../connector.md#连接器的复用)。
+- `connectionSelector`：重用 EdgeX 数据源连接，如下方配置示例中的 `edgex.redisMsgBus`。注意：连接配置文件位于 `connections/connection.yaml`。有关连接重用的详细解释，见[连接器的重用](../../connector.md#连接器的重用)。
 
   ```yaml
   #全局 Edgex 配置

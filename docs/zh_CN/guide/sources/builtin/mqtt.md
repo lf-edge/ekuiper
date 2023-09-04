@@ -5,7 +5,7 @@
 
 MQTT（Message Queuing Telemetry Transport）是一种轻量级的通信协议，用于在物联网设备之间进行可靠的消息传递。eKuiper 内置 MQTT 连接器，方便订阅来自 MQTT 代理的消息并输入 eKuiper 处理管道，实现对指定 MQTT 主题的实时数据处理。
 
-在 eKuiper 中，MQTT 连接器可以作为源连接器（从 MQTT 代理获取数据）或[汇连接器](../../sinks/builtin/mqtt.md)（将数据发布到 MQTT 代理），本节重点介绍 MQTT 源连接器。
+在 eKuiper 中，MQTT 连接器可以作为源连接器（从 MQTT 代理获取数据）或 [Sink 连接器](../../sinks/builtin/mqtt.md)（将数据发布到 MQTT 代理），本节重点介绍 MQTT 源连接器。
 
 ## 配置
 
@@ -14,7 +14,7 @@ eKuiper 连接器可以通过[环境变量](../../../configuration/configuration
 MQTT 源连接器的配置文件位于：`$ekuiper/etc/mqtt_source.yaml`，其中：
 
 - default：对应全局连接配置。
-- 自定义部分：对于需要自定义某些连接参数的场景，该部分的配置将覆盖全局连接配置。
+- 自定义部分：适用于需要自定义连接参数的场景，该部分的配置将覆盖全局连接配置。
 - 连接器重用：eKuiper 还支持通过  [`connectionSelector`](../../connector.md#connection-selector)  配置项在不同的配置中复用某个连接配置。
 
 以下示例包括一个全局配置和自定义配置 `demo_conf`：
@@ -31,7 +31,7 @@ default:
   #rootCaPath: /var/kuiper/xyz-rootca.pem
   #insecureSkipVerify: true
   #connectionSelector: mqtt.mqtt_conf1
-  # 使用指定的压缩方法解压缩。现在支持`gzip`、`zstd` 。                                                                                                                                                                                                                                      
+  # 使用指定的压缩方法解压缩。现在支持`gzip`、`zstd`
   # decompression: ""
 
 
@@ -47,12 +47,12 @@ demo_conf: #Conf_key
 
 ### 连接相关配置
 
-- `qos`：默认订阅QoS级别。
-- `server`：MQTT 消息代理的服务器。
+- `qos`：默认订阅 QoS 级别。
+- `server`：MQTT 服务器。
 - `username`：MQTT 连接用户名。
 - `password`：MQTT 连接密码。
-- `protocolVersion`：MQTT 协议版本。可选值：3.1 (MQTT 3) 或 3.1.1 (也被称为 MQTT 4)。 如未指定，则将使用缺省值：3.1。
-- `clientid`：MQTT 连接的客户端 ID。 如未指定，将使用 uuid。
+- `protocolVersion`：MQTT 协议版本。可选值：3.1 (MQTT 3) 或 3.1.1 (也被称为 MQTT 4)。如未指定，则将使用缺省值：3.1。
+- `clientid`：MQTT 连接的客户端 ID。如未指定，将使用 uuid。
 
 ### 安全和认证配置
 
@@ -61,11 +61,11 @@ demo_conf: #Conf_key
   - 如果运行从`/var/kuiper/bin`中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。
 - `privateKeyPath`：私钥路径，示例值：`d3807d9fa5-private.pem.key`。可以是绝对路径，也可以是相对路径，具体可参考 `certificationPath`。
 - `rootCaPath`：根证书路径。可以是绝对路径，也可以是相对路径。
-- `insecureSkipVerify`：是否跳过证书验证。如设置为 `true`，TLS 接受服务器提供的任何证书以及该证书中的任何主机名。注意：此时，TLS 容易受到中间人攻击。默认值：`false`。 
+- `insecureSkipVerify`：是否跳过证书验证。如设置为 `true`，TLS 接受服务器提供的任何证书以及该证书中的任何主机名。注意：此时，TLS 容易受到中间人攻击。默认值：`false`。
 
 ### 连接重用
 
-- `connectionSelector`: 重用 MQTT 数据源连接，如下方配置示例中的 `mqtt.localConnection`。注意：连接配置文件位于 `connections/connection.yaml`。有关连接重用的详细解释，见[连接器的复用](../../connector.md#连接器的复用)。
+- `connectionSelector`: 重用 MQTT 数据源连接，如下方配置示例中的 `mqtt.localConnection`。注意：连接配置文件位于 `connections/connection.yaml`。有关连接重用的详细解释，见[连接器的重用](../../connector.md#连接器的重用)。
 
   ```yaml
   #全局 MQTT 连接
@@ -87,7 +87,7 @@ demo_conf: #Conf_key
 
 ### **负载相关配置**
 
-- `decompression`：使用指定的压缩方法解压缩，支持 `gzip`、`zstd` 。      
+- `decompression`：使用指定的压缩方法解压缩，支持 `gzip`、`zstd`。
 - `bufferLength`：指定最大缓存消息数目。该参数主要用于防止内存溢出。实际内存用量会根据当前缓存消息数目动态变化。增大该参数不会增加初始内存分配量，因此建议设为较大的数值。默认值为102400；如果每条消息为100字节，则默认情况下，缓存最大占用内存量为102400 * 100B ~= 10MB.
 
 ### **KubeEdge 集成**

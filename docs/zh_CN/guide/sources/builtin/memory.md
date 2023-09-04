@@ -4,7 +4,7 @@
 <span style="background:green;color:white">scan table source</span>
 <span style="background:green;color:white">lookup table source</span>
 
-内存源通过主题消费由 [内存目标](../../sinks/builtin/memory.md) 生成的事件，适用于需要快速数据检索而无需磁盘或外部服务读取开销的场景，它的典型使用场景是形成[规则管道](../../rules/rule_pipeline.md)。
+内存源通过主题消费由 [内存 Sink](../../sinks/builtin/memory.md) 生成的事件，适用于需要快速数据检索而无需磁盘或外部服务读取开销的场景，它的典型使用场景是形成[规则管道](../../rules/rule_pipeline.md)。
 
 使用内存数据源时，无需额外配置，支持作为流式数据源、扫描表数据源或查找表数据源来使用。
 
@@ -22,7 +22,7 @@ CREATE STREAM stream1 (
 ) WITH (DATASOURCE="devices/result", FORMAT="json", TYPE="memory");
 ```
 
-在此示例中，我们定义了一个内存流数据源，用于连续从 `devices/result` 内存主题中提取数据。 
+在此示例中，我们定义了一个内存流数据源，用于连续从 `devices/result` 内存主题中提取数据。
 
 ## 创建扫描表数据源
 
@@ -42,8 +42,8 @@ CREATE TABLE memoryTableDemo () WITH (DATASOURCE="topicB", FORMAT="JSON", TYPE="
 
 - **独立性**：内存查找表独立于任何规则操作。即使规则被修改或删除，内存查找表中的数据也不受影响。
 - **数据共享**：如果多个规则引用相同的表，或者存在具有相同主题/键对的多个内存表，则它们全部共享相同的数据集，确保了不同规则之间的一致性，简化了数据访问。
-- **与内存汇聚点集成**：内存查找表可通过与[可更新的内存目标](../../sinks/builtin/memory.md#updatable-sink)集成，保证内容的实时性。
-- **规则管道**：内存查找表可以作为多个规则之间的桥梁，类似于规则管道的概念。它使一个流能够将历史数据存储在内存中，其他流可以访问和利用这些数据。因此非常适用于需要结合历史数据和实时数据进行决策的场景。。
+- **与内存汇聚点集成**：内存查找表可通过与[可更新的内存 Sink](../../sinks/builtin/memory.md#updatable-sink) 集成，保证内容的实时性。
+- **规则管道**：内存查找表可以作为多个规则之间的桥梁，类似于规则管道的概念。它使一个流能够将历史数据存储在内存中，其他流可以访问和利用这些数据，因此适用于需要结合历史数据和实时数据进行决策的场景。
 
 **示例：**
 

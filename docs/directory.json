@@ -191,35 +191,35 @@
               "title": "内置源",
               "children": [
                 {
-                  "title": "MQTT 源",
+                  "title": "MQTT 数据源",
                   "path": "guide/sources/builtin/mqtt"
                 },
                 {
-                  "title": "Neuron 源",
+                  "title": "Neuron 数据源",
                   "path": "guide/sources/builtin/neuron"
                 },
                 {
-                  "title": "EdgeX 源",
+                  "title": "EdgeX 数据源",
                   "path": "guide/sources/builtin/edgex"
                 },
                 {
-                  "title": "HTTP 拉取源",
+                  "title": "HTTP Pull 数据源",
                   "path": "guide/sources/builtin/http_pull"
                 },
                 {
-                  "title": "HTTP 推送源",
+                  "title": "HTTP Push 数据源",
                   "path": "guide/sources/builtin/http_push"
                 },
                 {
-                  "title": "文件源",
+                  "title": "文件数据源",
                   "path": "guide/sources/builtin/file"
                 },
                 {
-                  "title": "内存源",
+                  "title": "内存数据源",
                   "path": "guide/sources/builtin/memory"
                 },
                 {
-                  "title": "Redis 源",
+                  "title": "Redis 数据源",
                   "path": "guide/sources/builtin/redis"
                 }
               ]
@@ -228,15 +228,15 @@
               "title": "预定义插件源",
               "children": [
                 {
-                  "title": "SQL 源",
+                  "title": "SQL 数据源",
                   "path": "guide/sources/plugin/sql"
                 },
                 {
-                  "title": "视频源",
+                  "title": "视频数据源",
                   "path": "guide/sources/plugin/video"
                 },
                 {
-                  "title": "Zero MQ 源",
+                  "title": "Zero MQ 数据源",
                   "path": "guide/sources/plugin/zmq"
                 },
                 {

@@ -92,7 +92,7 @@ default:
   # 文件以 eKuiper 为根目录的目录或文件的绝对路径。
   # 请勿在此处包含文件名。文件名应在流数据源中定义
   path: data
-  # 读取文件的时间间隔，单位为ms。 如果只读取一次，则将其设置为 0
+  # 读取文件的时间间隔，单位为ms。如果只读取一次，则将其设置为 0
   interval: 0
   # 读取后，两条数据发送的间隔时间
   sendInterval: 0
@@ -113,7 +113,7 @@ default:
   ignoreStartLines: 0
   # 忽略结尾多少行的内容。最后的空行不计算在内。
   ignoreEndLines: 0
-  # 使用指定的压缩方法解压缩文件。现在支持`gzip`、`zstd` 方法。                                                                                                                                                                                                                                         |
+  # 使用指定的压缩方法解压缩文件。现在支持`gzip`、`zstd` 方法。
   decompression: ""
 ```
 
@@ -148,15 +148,15 @@ default:
 
 ### 解压缩
 
-- **`decompression`**：允许解压缩文件。目前支持 `gzip ` 及 `zstd`。
+- **`decompression`**：允许解压缩文件。目前支持 `gzip` 及 `zstd`。
 
 ## 创建表式数据源
 
-完成连接器的配置后，后续可通过创建流将其与 eKuiper 规则集成。文件数据源连接器可以作为 [流式](../../streams/overview.md)或[扫描表类数据源](../../tables/scan.md)使用。当作为流式数据源时，此时通常需要设置 `interval` 参数以定时拉取更新。但文件源更常用作[表格](https://ekuiper.org/docs/zh/latest/sqls/tables.html)， 并且采用 create table 语句的默认类型。
+完成连接器的配置后，后续可通过创建流将其与 eKuiper 规则集成。文件数据源连接器可以作为 [流式](../../streams/overview.md)或[扫描表类数据源](../../tables/scan.md)使用。当作为流式数据源时，此时通常需要设置 `interval` 参数以定时拉取更新。但文件源更常用作[表格](../../../sqls/tables.md)， 并且采用 create table 语句的默认类型。
 
-您可通过 [REST API]((../../../api/restapi/streams.md)) 或 [CLI](../../../api/cli/streams.md) 工具在 eKuiper 中创建文件数据源。本节将以表类数据源为例进行说明。
+您可通过 [REST API](../../../api/restapi/streams.md) 或 [CLI](../../../api/cli/streams.md) 工具在 eKuiper 中创建文件数据源。本节将以表类数据源为例进行说明。
 
-例如，要创建一个名为 `table1` 的表，其中包含三列（`name`、`size `和 `id`），并使用 `lookup.json` 文件作为数据源：
+例如，要创建一个名为 `table1` 的表，其中包含三列（`name`、`size`和 `id`），并使用 `lookup.json` 文件作为数据源：
 
 ```sql
 create table table1 (
@@ -172,7 +172,7 @@ create table table1 (
 CREATE RULE rule1 AS SELECT * FROM fileDemo WHERE temperature > 50 INTO mySink;
 ```
 
-根据设定规则，我们将选择 `fileDemo ` 数据流中所有温度超过 50 的数据，并将其发送到  `mySink`。
+根据设定规则，我们将选择 `fileDemo` 数据流中所有温度超过 50 的数据，并将其发送到  `mySink`。
 
 ## 教程：解析文件源
 
@@ -198,7 +198,7 @@ csv:
 
 以上配置表明文件是 `csv` 类型，并且有表头。
 
-在定义流时，需要采用 `DELIMITED`格式。`DELIMITER `参数支持我们指定自定义分隔符，即本例中的空格。
+在定义流时，需要采用 `DELIMITED`格式。`DELIMITER`参数支持我们指定自定义分隔符，即本例中的空格。
 
 ```SQL
 create
@@ -224,7 +224,7 @@ jsonlines:
   fileType: lines
 ```
 
-在定义流时，设置流数据为 `JSON `格式。
+在定义流时，设置流数据为 `JSON`格式。
 
 ```SQL
 create stream linesFileDemo () WITH (FORMAT="JSON", TYPE="file", CONF_KEY="jsonlines")
