@@ -817,7 +817,7 @@
 			"path": "installation",
 			"children": [
 				{
-					"title": "Buld from Source Code",
+					"title": "Build from Source Code",
 					"path": "operation/compile/compile",
 					"children": [
 						{
