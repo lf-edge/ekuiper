@@ -1,4 +1,4 @@
-## Cross-compile binaries
+# Cross Compile
 
 Go supports cross-compiling binaries for multiple platforms which applies to eKuiper as well. Because eKuiper depends on sqlite, CGO_ENABLED must be set to 1 which requires to install and specify the gcc of the target system.
 
