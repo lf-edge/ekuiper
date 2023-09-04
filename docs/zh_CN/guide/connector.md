@@ -75,9 +75,15 @@ eKuiper 汇连接器负责将 eKuiper 处理后的数据发送到各种目标端
 
 eKuiper 的[数据模板](./sinks/data_template.md)允许对分析结果进行"二次处理"，以满足不同接收系统的多样化格式要求。利用 Golang 模板系统，eKuiper 提供了动态数据转换、条件输出和迭代处理的机制，确保了与各种接收器的兼容性和精确格式化。
 
+<<<<<<< HEAD
 ## 连接器的重用
 
 eKuiper 支持通过 `connectionSelector` 对连接器进行重用，用户只需一次定义即可在多个配置中重用，提升连接管理效率，简化配置流程。
+=======
+## 连接器的复用
+
+eKuiper 支持通过 `connectionSelector` 对连接器进行复用，用户只需一次定义即可在多个配置中重用，提升连接管理效率，简化配置流程。
+>>>>>>> origin/refactor-zh-part
 
 **配置**
 
