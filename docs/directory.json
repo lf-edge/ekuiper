@@ -1259,10 +1259,6 @@
 					"path": "extension/native/overview",
 					"children": [
 						{
-							"title": "Develop",
-							"path": "extension/native/develop/overview"
-						},
-						{
 							"title": "Plugin Develop Tutorial",
 							"path": "extension/native/develop/plugins_tutorial"
 						},
