@@ -90,7 +90,7 @@ func TestHeaderConf(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("Test %d: %s", i, tt.name), func(t *testing.T) {
 			r := &ClientConf{}
-			err := r.InitConf("", tt.props)
+			err := r.InitConf("", tt.props, WithCheckInterval(true))
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return

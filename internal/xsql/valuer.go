@@ -777,9 +777,10 @@ func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op ast.Token) interfac
 	// Evaluate if both sides are simple types.
 	switch lhs := lhs.(type) {
 	case bool:
-		rhs, ok := rhs.(bool)
+		originRHS := rhs
+		rhs, ok := originRHS.(bool)
 		if !ok {
-			return invalidOpError(lhs, op, rhs)
+			return invalidOpError(lhs, op, originRHS)
 		}
 		switch op {
 		case ast.AND:
