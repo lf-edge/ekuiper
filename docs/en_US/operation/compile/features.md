@@ -1,4 +1,4 @@
-# Features
+# Compile Selected Features
 
 Except core runtime and REST api, there are some features that are allowed to be enabled or disabled during compilation by [go build constraints](https://pkg.go.dev/go/build#hdr-Build_Constraints). Uses can customize the built binary to include only the desired features to reduce the binary size according to the limit of the target environment.
 
