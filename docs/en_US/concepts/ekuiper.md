@@ -17,7 +17,7 @@ Processors are loosely coupled and communicate asynchronously with Go channels. 
 
 These helps eKuiper to achieve low latency and high throughput data processing.
 
-## Computing components
+## Computing Components
 
 In eKuiper, a computing job is presented as a rule. The rule defines the streaming data sources as the input, the computing logic by SQL and the sinks/actions as the output.
 
