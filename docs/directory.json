@@ -817,7 +817,7 @@
 			"path": "installation",
 			"children": [
 				{
-					"title": "Buld from Source Code",
+					"title": "Compile from Source Code",
 					"path": "operation/compile/compile",
 					"children": [
 						{
@@ -825,7 +825,7 @@
 							"path": "operation/compile/cross-compile"
 						},
 						{
-							"title": "Compile selected features only",
+							"title": "Compile Selected Features",
 							"path": "operation/compile/features"
 						}
 					]
@@ -837,11 +837,11 @@
 			"path": "guide/rules/overview",
 			"children": [
 				{
-					"title": "Stream: unbounded series of events",
+					"title": "Stream: Unbounded Series of Events",
 					"path": "guide/streams/overview"
 				},
 				{
-					"title": "Table: snapshot of events",
+					"title": "Table: Snapshot of Events",
 					"path": "guide/tables/overview",
 					"children": [
 						{
@@ -1119,15 +1119,15 @@
 			"path": "usecases/overview",
 			"children": [
 				{
-					"title": "IIoT case",
+					"title": "IIoT Case",
 					"path": "usecases/iiot"
 				},
 				{
-					"title": "IoV case",
+					"title": "IoV Case",
 					"path": "usecases/iov"
 				},
 				{
-					"title": "Public data analysis",
+					"title": "Public Data Analysis",
 					"path": "usecases/public_data_analysis"
 				}
 			]
@@ -1258,10 +1258,6 @@
 					"title": "Native Plugin Develop",
 					"path": "extension/native/overview",
 					"children": [
-						{
-							"title": "Develop",
-							"path": "extension/native/develop/overview"
-						},
 						{
 							"title": "Plugin Develop Tutorial",
 							"path": "extension/native/develop/plugins_tutorial"
