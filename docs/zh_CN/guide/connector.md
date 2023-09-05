@@ -39,13 +39,13 @@ eKuiper 内置以下数据源连接器：
 
 ## 数据 Sink 连接器
 
-eKuiper 汇连接器负责将 eKuiper 处理后的数据发送到各种目标端点或系统，可直接与 MQTT、Neuron、EdgeX 等平台对接，并提供缓存机制以应对网络中断场景，确保数据的一致性。此外，用户还可通过动态属性和资源重用来定制接收行为，简化集成并提高可伸缩性。
+eKuiper Sink 连接器负责将 eKuiper 处理后的数据发送到各种目标端点或系统，可直接与 MQTT、Neuron、EdgeX 等平台对接，并提供缓存机制以应对网络中断场景，确保数据的一致性。此外，用户还可通过动态属性和资源重用来定制接收行为，简化集成并提高可伸缩性。
 
 与源连接器类似，Sink 连接器也分为内置和插件式两种。
 
-**内置汇连接器**
+**内置 Sink 连接器**
 
-以下是 eKuiper 提供的内置接收连接器：
+以下是 eKuiper 提供的内置 Sink 连接器：
 
 - [MQTT Sink](./sinks/builtin/mqtt.md)：输出到外部 MQTT 服务。
 - [Neuron Sink](./sinks/builtin/neuron.md)：输出到本地的 Neuron 实例。
@@ -57,9 +57,9 @@ eKuiper 汇连接器负责将 eKuiper 处理后的数据发送到各种目标端
 - [Log Sink](./sinks/builtin/log.md)：写入日志，通常只用于调试。
 - [Nop Sink](./sinks/builtin/nop.md)：不输出，用于性能测试。
 
-**插件式汇连接器**
+**插件式 Sink 连接器**
 
-对于特殊的数据分发或特定平台集成需求，eKuiper 支持基于插件的汇连接器：
+对于特殊的数据分发或特定平台集成需求，eKuiper 支持基于插件的 Sink 连接器：
 
 - [InfluxDB Sink](./sinks/plugin/influx.md)：输出到 Influx DB `v1.x`。
 - [InfluxDBV2 Sink](./sinks/plugin/influx2.md)：输出到 Influx DB `v2.x`。
