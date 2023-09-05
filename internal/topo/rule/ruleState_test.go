@@ -204,6 +204,37 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
+func TestUpdateTopoWithLock(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	scheduleOption1 := *defaultOption
+	scheduleOption1.Cron = "mockCron"
+	scheduleOption1.Duration = "1s"
+	rule1 := &api.Rule{
+		Triggered: true,
+		Id:        "test",
+		Sql:       "SELECT ts FROM demo",
+		Actions: []map[string]interface{}{
+			{
+				"log": map[string]interface{}{},
+			},
+		},
+		Options: defaultOption,
+	}
+	rs, err := NewRuleState(rule1)
+	require.NoError(t, err)
+	defer rs.Close()
+	require.NoError(t, rs.Start())
+	err = rs.updateTopoWithLock()
+	require.Equal(t, fmt.Errorf("rule %v should be stopped before updated", rs.RuleId), err)
+	rule1.Sql = "SELECT TS from demo1"
+	require.NoError(t, rs.Stop())
+	rs.Rule = rule1
+	err = rs.updateTopoWithLock()
+	require.Equal(t, errors.New("fail to get stream demo1, please check if stream is created"), err)
+}
+
 func TestUpdateScheduleRule(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
