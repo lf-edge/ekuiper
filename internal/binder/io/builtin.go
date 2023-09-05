@@ -51,7 +51,8 @@ var (
 		"file":        func() api.Sink { return file.File() },
 	}
 	lookupSources = map[string]NewLookupSourceFunc{
-		"memory": func() api.LookupSource { return memory.GetLookupSource() },
+		"memory":   func() api.LookupSource { return memory.GetLookupSource() },
+		"httppull": func() api.LookupSource { return http.GetLookUpSource() },
 	}
 )
 

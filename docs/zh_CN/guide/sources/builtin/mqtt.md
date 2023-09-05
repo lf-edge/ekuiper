@@ -81,7 +81,7 @@ demo_conf: #Conf_key
 
   ::: tip
 
-  指定 `connectionSelector` 参数后，所有关于连接的参数都会被忽略，例如上例中的 `server: "tcp://127.0.0.1:1883"`。
+  指定 `connectionSelector` 参数后，所有关于连接的参数都会被忽略，例如上例中的 `server:"tcp://127.0.0.1:1883"`。
 
   :::
 
@@ -181,4 +181,4 @@ REST API 为 eKuiper 提供了一种可编程的交互方式，适用于自动�
 从 eKuiper 1.5.0 开始，eKuiper 将 MQTT 源地址配置从 `servers` 更改为 `server`，即用户只能配置一个 MQTT 源地址而不是一个地址数组。对需要进行版本升级的用户：
 
 - 如希望通过配置文件配置，请确保 `etc/mqtt_source.yaml` 文件内的 `server` 已正确配置。
-- 如希望通过环境变量配置，例如针对 `tcp://broker.emqx.io:1883` 地址，配置命令应从 `MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883] ` 改为 `MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"`。
+- 如希望通过环境变量配置，例如针对 `tcp://broker.emqx.io:1883` 地址，配置命令应从 `MQTT_SOURCE__DEFAULT__SERVERS=[tcp://broker.emqx.io:1883]` 改为 `MQTT_SOURCE__DEFAULT__SERVER="tcp://broker.emqx.io:1883"`。

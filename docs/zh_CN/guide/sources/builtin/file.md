@@ -178,7 +178,7 @@ CREATE RULE rule1 AS SELECT * FROM fileDemo WHERE temperature > 50 INTO mySink;
 
 文件源涉及对文件内容的解析，同时解析格式与数据流中的格式定义相关。本节将通过一些示例来描述如何结合文件类型和格式设置来解析文件源。
 
-#### 读取自定义分隔符的 CSV 文件
+### 读取自定义分隔符的 CSV 文件
 
 标准的 csv 文件会采用逗号作为分隔符，但也存在使用自定义分隔符的情况。此外，一些类 csv 的文件会在第一行定义列名，而非数据，如下例所示：
 
@@ -207,7 +207,7 @@ stream cscFileDemo () WITH (FORMAT="DELIMITED", DATASOURCE="abc.csv", TYPE="file
 
 通过以上命令，我们创建了一个名为 `csvFileDemo` 的流，该流将从 `abc.csv` 文件中读取数据，预期分隔符为空格。
 
-#### 读取多行 JSON 数据
+### 读取多行 JSON 数据
 
 对于一个标准的 JSON 文件，整个文件应该是一个 JSON 对象或一个数组。在实践中，我们经常需要解析包含多个 JSON 对象的文件。这些文件实际上本身不是合法的 JSON 格式，但每行都是合法的 JSON 格式，可认为是多行JSON数据。
 
