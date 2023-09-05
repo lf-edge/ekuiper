@@ -163,7 +163,7 @@ func updateRule(ruleId, ruleJson string) error {
 		if err != nil {
 			return err
 		}
-		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, true)
+		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, r.Triggered)
 		return err
 	} else {
 		return fmt.Errorf("Rule %s registry not found, try to delete it and recreate", r.Id)

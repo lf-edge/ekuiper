@@ -128,7 +128,15 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 	}
 	time.Sleep(1 * time.Millisecond)
 	rs.Rule = rule
-	return rs.Start()
+	if err := rs.updateTopoWithLock(); err != nil {
+		return err
+	}
+	if rule.Triggered {
+		if err := rs.Start(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Run start to run the two loops, do not access any changeable states
@@ -381,6 +389,24 @@ func (rs *RuleState) start() error {
 		conf.Log.Debugf("rule %v started", rs.RuleId)
 	}
 	rs.ActionCh <- ActionSignalStart
+	return nil
+}
+
+func (rs *RuleState) updateTopoWithLock() error {
+	rs.Lock()
+	defer rs.Unlock()
+	if rs.triggered != 1 {
+		if rs.Topology != nil {
+			rs.Topology.Cancel()
+		}
+		if tp, err := planner.Plan(rs.Rule); err != nil {
+			return err
+		} else {
+			rs.Topology = tp
+		}
+	} else {
+		return fmt.Errorf("rule %v should be stopped before updated", rs.RuleId)
+	}
 	return nil
 }
 

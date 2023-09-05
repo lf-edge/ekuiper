@@ -127,19 +127,14 @@ func TestUpdate(t *testing.T) {
 		},
 		Options: defaultOption,
 	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	require.NoError(t, err)
 	defer rs.Close()
 	err = rs.Start()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	require.NoError(t, err)
 	tests := []struct {
-		r *api.Rule
-		e error
+		r         *api.Rule
+		e         error
+		triggered int
 	}{
 		{
 			r: &api.Rule{
@@ -153,7 +148,8 @@ func TestUpdate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			e:         errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			triggered: 1,
 		},
 		{
 			r: &api.Rule{
@@ -167,7 +163,23 @@ func TestUpdate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("fail to get stream demo1, please check if stream is created"),
+			e:         errors.New("fail to get stream demo1, please check if stream is created"),
+			triggered: 1,
+		},
+		{
+			r: &api.Rule{
+				Triggered: true,
+				Id:        "test",
+				Sql:       "SELECT * FROM demo",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: defaultOption,
+			},
+			e:         nil,
+			triggered: 1,
 		},
 		{
 			r: &api.Rule{
@@ -181,14 +193,14 @@ func TestUpdate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: nil,
+			e:         nil,
+			triggered: 0,
 		},
 	}
-	for i, tt := range tests {
+	for _, tt := range tests {
 		err = rs.UpdateTopo(tt.r)
-		if !reflect.DeepEqual(err, tt.e) {
-			t.Errorf("%d.\n\nerror mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.e, err)
-		}
+		require.Equal(t, tt.e, err)
+		require.Equal(t, tt.triggered, rs.triggered)
 	}
 }
 
