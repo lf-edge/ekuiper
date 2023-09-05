@@ -197,10 +197,10 @@ func TestUpdate(t *testing.T) {
 			triggered: 0,
 		},
 	}
-	for _, tt := range tests {
+	for i, tt := range tests {
 		err = rs.UpdateTopo(tt.r)
-		require.Equal(t, tt.e, err)
-		require.Equal(t, tt.triggered, rs.triggered)
+		require.Equal(t, tt.e, err, fmt.Sprintf("case %v failed", i))
+		require.Equal(t, tt.triggered, rs.triggered, fmt.Sprintf("case %v failed", i))
 	}
 }
 
@@ -212,7 +212,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	scheduleOption1.Cron = "mockCron"
 	scheduleOption1.Duration = "1s"
 	rule1 := &api.Rule{
-		Triggered: false,
+		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
 		Actions: []map[string]interface{}{
@@ -235,7 +235,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	scheduleOption2.Cron = "mockCron2"
 	scheduleOption2.Duration = "2s"
 	rule2 := &api.Rule{
-		Triggered: false,
+		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
 		Actions: []map[string]interface{}{
