@@ -128,7 +128,13 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 	}
 	time.Sleep(1 * time.Millisecond)
 	rs.Rule = rule
-	return rs.Start()
+	// If not triggered, just ignore start the rule
+	if rule.Triggered {
+		if err := rs.Start(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Run start to run the two loops, do not access any changeable states
