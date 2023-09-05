@@ -258,7 +258,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	_, _ = io.ReadAll(w3.Result().Body)
 
 	// update rule, will set rule to triggered
-	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
+	ruleJson = `{"id": "rule1","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
@@ -283,7 +283,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
+	expect = `{"id": "rule1","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// get rule status
