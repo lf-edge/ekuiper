@@ -38,7 +38,7 @@ type PullSource struct {
 
 func (hps *PullSource) Configure(device string, props map[string]interface{}) error {
 	conf.Log.Infof("Initialized Httppull source with configurations %#v.", props)
-	return hps.InitConf(device, props)
+	return hps.InitConf(device, props, WithCheckInterval(true))
 }
 
 func (hps *PullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {

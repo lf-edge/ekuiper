@@ -81,7 +81,7 @@ demo_conf: #Conf_key
 
   ::: tip
 
-  指定 `connectionSelector` 参数后，所有关于连接的参数都会被忽略，例如上例中的 `server: "tcp://127.0.0.1:1883"`。
+  指定 `connectionSelector` 参数后，所有关于连接的参数都会被忽略，例如上例中的 `server:"tcp://127.0.0.1:1883"`。
 
   :::
 
