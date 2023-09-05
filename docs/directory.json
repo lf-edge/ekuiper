@@ -1,1423 +1,1392 @@
 {
-	"cn": [
-		{
-			"title": "概览",
-			"path": "./"
-		},
-		{
-			"title": "快速开始",
-			"path": "getting_started/getting_started",
-			"children": [
-				{
-					"title": "5分钟快速运行",
-					"path": "getting_started/quick_start_docker"
-				},
-				{
-					"title": "作为 EdgeX Foundry 规则引擎运行",
-					"path": "edgex/edgex_rule_engine_tutorial"
-				},
-				{
-					"title": "如何调试规则",
-					"path": "getting_started/debug_rules"
-				}
-			]
-		},
-		{
-			"title": "安装与部署",
-			"path": "installation"
-		},
-		{
-			"title": "配置",
-			"path": "configuration/configuration",
-			"children": [
-				{
-					"title": "全局配置文件",
-					"path": "configuration/global_configurations"
-				}
-			]
-		},
-		{
-			"title": "用户指南",
-			"children": [
-				{
-					"title": "流：无界的事件系列",
-					"path": "guide/streams/overview"
-				},
-				{
-					"title": "表：事件序列的快照",
-					"path": "guide/tables/overview",
-					"children": [
-						{
-							"title": "扫描表",
-							"path": "guide/tables/scan"
-						},
-						{
-							"title": "查询表",
-							"path": "guide/tables/lookup"
-						}
-					]
-				},
-				{
-					"title": "规则：查询和动作",
-					"path": "guide/rules/overview",
-					"children": [
-						{
-							"title": "图规则",
-							"path": "guide/rules/graph_rule"
-						},
-						{
-							"title": "规则流水线",
-							"path": "guide/rules/rule_pipeline"
-						},
-						{
-							"title": "状态和容错",
-							"path": "guide/rules/state_and_fault_tolerance"
-						}
-					]
-				},
-				{
-					"title": "数据源",
-					"path": "guide/sources/overview",
-					"children": [
-						{
-							"title": "内置源",
-							"children": [
-								{
-									"title": "MQTT 源",
-									"path": "guide/sources/builtin/mqtt"
-								},
-								{
-									"title": "Neuron 源",
-									"path": "guide/sources/builtin/neuron"
-								},
-								{
-									"title": "EdgeX 源",
-									"path": "guide/sources/builtin/edgex"
-								},
-								{
-									"title": "HTTP 拉取源",
-									"path": "guide/sources/builtin/http_pull"
-								},
-								{
-									"title": "HTTP 推送源",
-									"path": "guide/sources/builtin/http_push"
-								},
-								{
-									"title": "文件源",
-									"path": "guide/sources/builtin/file"
-								},
-								{
-									"title": "内存源",
-									"path": "guide/sources/builtin/memory"
-								},
-								{
-									"title": "Redis 源",
-									"path": "guide/sources/builtin/redis"
-								}
-							]
-						},
-						{
-							"title": "预定义插件源",
-							"children": [
-								{
-									"title": "SQL 源",
-									"path": "guide/sources/plugin/sql"
-								},
-								{
-									"title": "视频源",
-									"path": "guide/sources/plugin/video"
-								},
-								{
-									"title": "Zero MQ 源",
-									"path": "guide/sources/plugin/zmq"
-								},
-								{
-									"title": "随机数据产生器源",
-									"path": "guide/sources/plugin/random"
-								}
-							]
-						}
-					]
-				},
-				{
-					"title": "数据汇（Sink）",
-					"path": "guide/sinks/overview",
-					"children": [
-						{
-							"title": "数据模板",
-							"path": "guide/sinks/data_template"
-						},
-						{
-							"title": "内置 Sink",
-							"children": [
-								{
-									"title": "MQTT Sink",
-									"path": "guide/sinks/builtin/mqtt"
-								},
-								{
-									"title": "Neuron Sink",
-									"path": "guide/sinks/builtin/neuron"
-								},
-								{
-									"title": "EdgeX Sink",
-									"path": "guide/sinks/builtin/edgex"
-								},
-								{
-									"title": "REST Sink",
-									"path": "guide/sinks/builtin/rest"
-								},
-								{
-									"title": "Redis Sink",
-									"path": "guide/sinks/builtin/redis"
-								},
-								{
-									"title": "File Sink",
-									"path": "guide/sinks/builtin/file"
-								},
-								{
-									"title": "Memory Sink",
-									"path": "guide/sinks/builtin/memory"
-								},
-								{
-									"title": "Log Sink",
-									"path": "guide/sinks/builtin/log"
-								},
-								{
-									"title": "Nop Sink",
-									"path": "guide/sinks/builtin/nop"
-								}
-							]
-						},
-						{
-							"title": "预定义插件 Sink",
-							"children": [
-								{
-									"title": "SQL Sink",
-									"path": "guide/sinks/plugin/sql"
-								},
-								{
-									"title": "InfluxDB Sink",
-									"path": "guide/sinks/plugin/influx"
-								},
-								{
-									"title": "InfluxDBV2 Sink",
-									"path": "guide/sinks/plugin/influx2"
-								},
-								{
-									"title": "TDengine Sink",
-									"path": "guide/sinks/plugin/tdengine"
-								},
-								{
-									"title": "Image Sink",
-									"path": "guide/sinks/plugin/image"
-								},
-								{
-									"title": "ZeroMQ Sink",
-									"path": "guide/sinks/plugin/zmq"
-								},
-								{
-									"title": "Kafka Sink",
-									"path": "guide/sinks/plugin/kafka"
-								}
-							]
-						}
-					]
-				},
-				{
-					"title": "序列化",
-					"path": "guide/serialization/serialization",
-					"children": [
-						{
-							"title": "使用 Protobuf 编解码教程",
-							"path": "guide/serialization/protobuf_tutorial"
-						}
-					]
-				},
-				{
-					"title": "AI/ML",
-					"children": [
-						{
-							"title": "使用原生插件实现 AI 函数",
-							"path": "guide/ai/tensorflow_lite_tutorial"
-						},
-						{
-							"title": "使用 Python 插件实现 AI 函数",
-							"path": "guide/ai/python_tensorflow_lite_tutorial"
-						},
-						{
-							"title": "使用 Python 插件实现 OpenVINO 函数",
-							"path": "guide/ai/python_openvino_tutorial"
-						},
-						{
-							"title": "使用 tensorflow_lite 原生插件调用 AI 模型",
-							"path": "guide/ai/tensorflow_lite"
-						},
-						{
-							"title": "使用外部函数调用 tensorflow_lite AI 模型",
-							"path": "guide/ai/tensorflow_lite_external_function_tutorial"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "案例",
-			"path": "example/howto",
-			"children": [
-				{
-					"title": "数据合并",
-					"path": "example/data_merge/overview",
-					"children": [
-						{
-							"title": "合并单流多设备数据",
-							"path": "example/data_merge/merge_single_stream"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "管理指南",
-			"children": [
-				{
-					"title": "安装与部署",
-					"path": "installation"
-				},
-				{
-					"title": "配置",
-					"path": "configuration/configuration",
-					"children": [
-						{
-							"title": "全局配置文件",
-							"path": "configuration/global_configurations"
-						}
-					]
-				},
-				{
-					"title": "管理控制台",
-					"children": [
-						{
-							"title": "使用教程",
-							"path": "operation/manager-ui/overview"
-						},
-						{
-							"title": "插件管理",
-							"path": "operation/manager-ui/plugins_in_manager"
-						}
-					]
-				},
-				{
-					"title": "编译",
-					"children": [
-						{
-							"title": "源码编译",
-							"path": "operation/compile/compile"
-						},
-						{
-							"title": "交叉编译",
-							"path": "operation/compile/cross-compile"
-						},
-						{
-							"title": "按需编译",
-							"path": "operation/compile/features"
-						}
-					]
-				},
-				{
-					"title": "监控",
-					"children": [
-						{
-							"title": "使用 Prometheus 监控规则运行状态",
-							"path": "operation/usage/monitor_with_prometheus"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "应用场景",
-			"children": [
-				{
-					"title": "工业物联网",
-					"path": "usecases/iiot"
-				},
-				{
-					"title": "车联网",
-					"path": "usecases/iov"
-				},
-				{
-					"title": "公共数据分析应用",
-					"path": "usecases/public_data_analysis"
-				}
-			]
-		},
-		{
-			"title": "集成",
-			"children": [
-				{
-					"title": "边云协同",
-					"path": "integrations/edge_cloud/overview"
-				},
-				{
-					"title": "EdgeX Foundry 的规则引擎",
-					"children": [
-						{
-							"title": "EdgeX Foundry 规则引擎教程",
-							"path": "edgex/edgex_rule_engine_tutorial"
-						},
-						{
-							"title": "使用 EdgeX 流的 meta 函数",
-							"path": "edgex/edgex_meta"
-						},
-						{
-							"title": "EdgeX 规则引擎使用 command 服务",
-							"path": "edgex/edgex_rule_engine_command"
-						},
-						{
-							"title": "EdgeX 源配置教程",
-							"path": "edgex/edgex_source_tutorial"
-						}
-					]
-				},
-				{
-					"title": "分析处理 Neuron 采集的数据",
-					"path": "integrations/neuron/neuron_integration_tutorial"
-				},
-				{
-					"title": "KubeEdge 的分析引擎",
-					"path": "integrations/kubeedge/overview"
-				},
-				{
-					"title": "使用 OpenYurt 部署",
-					"path": "integrations/deploy/openyurt_tutorial"
-				}
-			]
-		},
-		{
-			"title": "架构和设计",
-			"children": [
-				{
-					"title": "架构",
-					"path": "concepts/ekuiper"
-				},
-				{
-					"title": "关键概念",
-					"children": [
-						{
-							"title": "规则",
-							"path": "concepts/rules"
-						},
-						{
-							"title": "Sources 源",
-							"children": [
-								{
-									"title": "概览",
-									"path": "concepts/sources/overview"
-								},
-								{
-									"title": "流",
-									"path": "concepts/sources/stream"
-								},
-								{
-									"title": "表",
-									"path": "concepts/sources/table"
-								}
-							]
-						},
-						{
-							"title": "Sinks 动作",
-							"path": "concepts/sinks"
-						},
-						{
-							"title": "SQL 查询",
-							"path": "concepts/sql"
-						},
-						{
-							"title": "扩展",
-							"path": "concepts/extensions"
-						}
-					]
-				},
-				{
-					"title": "流式处理",
-					"children": [
-						{
-							"title": "概览",
-							"path": "concepts/streaming/overview"
-						},
-						{
-							"title": "时间属性",
-							"path": "concepts/streaming/time"
-						},
-						{
-							"title": "窗口",
-							"path": "concepts/streaming/windowing"
-						},
-						{
-							"title": "连接",
-							"path": "concepts/streaming/join"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "开发者指南",
-			"path": "extension/overview",
-			"children": [
-				{
-					"title": "原生插件开发",
-					"path": "extension/native/overview",
-					"children": [
-						{
-							"title": "原生插件开发",
-							"path": "extension/native/develop/overview"
-						},
-						{
-							"title": "插件开发教程",
-							"path": "extension/native/develop/plugins_tutorial"
-						},
-						{
-							"title": "函数插件开发",
-							"path": "extension/native/develop/function"
-						},
-						{
-							"title": "Sink 插件开发",
-							"path": "extension/native/develop/sink"
-						},
-						{
-							"title": "源插件开发",
-							"path": "extension/native/develop/source"
-						}
-					]
-				},
-				{
-					"title": "Portable 插件开发",
-					"children": [
-						{
-							"title": "Portable 插件简介",
-							"path": "extension/portable/overview"
-						},
-						{
-							"title": "Portable 插件 Go 语言 SDK",
-							"path": "extension/portable/go_sdk"
-						},
-						{
-							"title": "Portable 插件 Python 语言 SDK",
-							"path": "extension/portable/python_sdk"
-						}
-					]
-				},
-				{
-					"title": "外部函数",
-					"path": "extension/external/external_func"
-				},
-				{
-					"title": "Wasm 函数 （beta）",
-					"path": "extension/wasm/overview"
-				}
-			]
-		},
-		{
-			"title": "SQL 参考",
-			"children": [
-				{
-					"title": "语句",
-					"children": [
-						{
-							"title": "流语句",
-							"path": "sqls/streams"
-						},
-						{
-							"title": "表语句",
-							"path": "sqls/tables"
-						},
-						{
-							"title": "查询语句",
-							"path": "sqls/query_language_elements"
-						}
-					]
-				},
-				{
-					"title": "语法",
-					"path": "sqls/overview",
-					"children": [
-						{
-							"title": "词汇元素",
-							"path": "sqls/lexical_elements"
-						},
-						{
-							"title": "数据类型",
-							"path": "sqls/data_types"
-						},
-						{
-							"title": "JSON 表达式",
-							"path": "sqls/json_expr"
-						}
-					]
-				},
-				{
-					"title": "函数",
-					"path": "sqls/functions/overview",
-					"children": [
-						{
-							"title": "聚合函数",
-							"path": "sqls/functions/aggregate_functions"
-						},
-						{
-							"title": "数学函数",
-							"path": "sqls/functions/mathematical_functions"
-						},
-						{
-							"title": "字符串函数",
-							"path": "sqls/functions/string_functions"
-						},
-						{
-							"title": "数组函数",
-							"path": "sqls/functions/array_functions"
-						},
-						{
-							"title": "对象函数",
-							"path": "sqls/functions/object_functions"
-						},
-						{
-							"title": "哈希函数",
-							"path": "sqls/functions/hashing_functions"
-						},
-						{
-							"title": "转换函数",
-							"path": "sqls/functions/transform_functions"
-						},
-						{
-							"title": "JSON 函数",
-							"path": "sqls/functions/json_functions"
-						},
-						{
-							"title": "时间日期函数",
-							"path": "sqls/functions/datetime_functions"
-						},
-						{
-							"title": "其他函数",
-							"path": "sqls/functions/other_functions"
-						},
-						{
-							"title": "分析函数",
-							"path": "sqls/functions/analytic_functions"
-						},
-						{
-							"title": "多行函数",
-							"path": "sqls/functions/multi_row_functions"
-						},
-						{
-							"title": "多列函数",
-							"path": "sqls/functions/multi_column_functions"
-						},
-						{
-							"title": "预定义函数插件",
-							"path": "sqls/functions/custom_functions"
-						},
-						{
-							"title": "窗口函数",
-							"path": "sqls/functions/window_funcs"
-						}
-					]
-				},
-				{
-					"title": "窗口",
-					"path": "sqls/windows"
-				}
-			]
-		},
-		{
-			"title": "API 参考",
-			"children": [
-				{
-					"title": "Rest API 接口",
-					"path": "api/restapi/overview",
-					"children": [
-						{
-							"title": "认证配置",
-							"path": "api/restapi/authentication"
-						},
-						{
-							"title": "流管理",
-							"path": "api/restapi/streams"
-						},
-						{
-							"title": "表管理",
-							"path": "api/restapi/tables"
-						},
-						{
-							"title": "规则管理",
-							"path": "api/restapi/rules"
-						},
-						{
-							"title": "插件管理",
-							"path": "api/restapi/plugins"
-						},
-						{
-							"title": "源配置项管理",
-							"path": "api/restapi/configKey"
-						},
-						{
-							"title": "外部函数管理",
-							"path": "api/restapi/services"
-						},
-						{
-							"title": "模式管理",
-							"path": "api/restapi/schemas"
-						},
-						{
-							"title": "上传文件管理",
-							"path": "api/restapi/uploads"
-						},
-						{
-							"title": "规则集管理",
-							"path": "api/restapi/ruleset"
-						},
-						{
-							"title": "数据导入导出",
-							"path": "api/restapi/data"
-						}
-					]
-				},
-				{
-					"title": "命令行工具",
-					"path": "api/cli/overview",
-					"children": [
-						{
-							"title": "流管理",
-							"path": "api/cli/streams"
-						},
-						{
-							"title": "表管理",
-							"path": "api/cli/tables"
-						},
-						{
-							"title": "规则管理",
-							"path": "api/cli/rules"
-						},
-						{
-							"title": "插件管理",
-							"path": "api/cli/plugins"
-						},
-						{
-							"title": "外部服务",
-							"path": "api/cli/services"
-						},
-						{
-							"title": "模式管理",
-							"path": "api/cli/schemas"
-						},
-						{
-							"title": "规则集管理",
-							"path": "api/cli/ruleset"
-						},
-						{
-							"title": "数据导入导出",
-							"path": "api/cli/data"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "贡献",
-			"path": "CONTRIBUTING"
-		}
-	],
-	"en": [
-		{
-			"title": "Introduction",
-			"path": "./",
-			"children": [
-				{
-					"title": "Architecture",
-					"path": "concepts/ekuiper"
-				},
-				{
-					"title": "Stream Processing",
-					"path": "concepts/streaming/overview",
-					"children": [
-						{
-							"title": "Time Attribute",
-							"path": "concepts/streaming/time"
-						},
-						{
-							"title": "Windowing",
-							"path": "concepts/streaming/windowing"
-						},
-						{
-							"title": "Join",
-							"path": "concepts/streaming/join"
-						}
-					]
-				},
-				{
-					"title": "Key Concepts",
-					"children": [
-						{
-							"title": "Rules",
-							"path": "concepts/rules"
-						},
-						{
-							"title": "Sources",
-							"path": "concepts/sources/overview",
-							"children": [
-								{
-									"title": "Stream",
-									"path": "concepts/sources/stream"
-								},
-								{
-									"title": "Table",
-									"path": "concepts/sources/table"
-								}
-							]
-						},
-						{
-							"title": "Sinks",
-							"path": "concepts/sinks"
-						},
-						{
-							"title": "SQL Queries",
-							"path": "concepts/sql"
-						},
-						{
-							"title": "Extensions",
-							"path": "concepts/extensions"
-						}
-					]
-				},
-				{
-					"title": "Contribute",
-					"path": "CONTRIBUTING"
-				}
-			]
-		},
-		{
-			"title": "Getting Started",
-			"path": "getting_started/getting_started",
-			"children": [
-				{
-					"title": "5 Minutes Quick Start",
-					"path": "getting_started/quick_start_docker"
-				},
-				{
-					"title": "Run eKuiper with EdgeX Foundry",
-					"path": "edgex/edgex_rule_engine_tutorial"
-				},
-				{
-					"title": "How to Debug Rules",
-					"path": "getting_started/debug_rules"
-				}
-			]
-		},
-		{
-			"title": "Installation",
-			"path": "installation",
-			"children": [
-				{
-					"title": "Build from Source Code",
-					"path": "operation/compile/compile",
-					"children": [
-						{
-							"title": "Cross Compile",
-							"path": "operation/compile/cross-compile"
-						},
-						{
-							"title": "Compile selected features only",
-							"path": "operation/compile/features"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "Rules",
-			"path": "guide/rules/overview",
-			"children": [
-				{
-					"title": "Stream: unbounded series of events",
-					"path": "guide/streams/overview"
-				},
-				{
-					"title": "Table: snapshot of events",
-					"path": "guide/tables/overview",
-					"children": [
-						{
-							"title": "Scan Table",
-							"path": "guide/tables/scan"
-						},
-						{
-							"title": "Lookup Table",
-							"path": "guide/tables/lookup"
-						}
-					]
-				},
-				{
-					"title": "Graph Rule",
-					"path": "guide/rules/graph_rule"
-				},
-				{
-					"title": "Rule Pipeline",
-					"path": "guide/rules/rule_pipeline"
-				},
-				{
-					"title": "State and Fault Tolerance",
-					"path": "guide/rules/state_and_fault_tolerance"
-				},
-				{
-					"title": "Serialization",
-					"path": "guide/serialization/serialization",
-					"children": [
-						{
-							"title": "Protobuf Codec Tutorial",
-							"path": "guide/serialization/protobuf_tutorial"
-						}
-					]
-				},
-				{
-					"title": "AI/ML",
-					"children": [
-						{
-							"title": "Running AI Algorithms with Native Plugin",
-							"path": "guide/ai/tensorflow_lite_tutorial"
-						},
-						{
-							"title": "Running AI Algorithms with Python Function Plugin",
-							"path": "guide/ai/python_tensorflow_lite_tutorial"
-						},
-						{
-							"title": "Running OpenVINO Algorithms with Python Function Plugin",
-							"path": "guide/ai/python_openvino_tutorial"
-						},
-						{
-							"title": "Running AI Model with TensorFlow Lite Function Plugin",
-							"path": "guide/ai/tensorflow_lite"
-						},
-						{
-							"title": "Running tensorflow_lite AI Model with External Function",
-							"path": "guide/ai/tensorflow_lite_external_function_tutorial"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "Connectors",
-			"path": "guide/connector",
-			"children": [
-				{
-					"title": "Source Connector",
-					"path": "guide/sources/overview",
-					"children": [
-						{
-							"title": "Built-in Sources",
-							"children": [
-								{
-									"title": "MQTT Source",
-									"path": "guide/sources/builtin/mqtt"
-								},
-								{
-									"title": "Neuron Source",
-									"path": "guide/sources/builtin/neuron"
-								},
-								{
-									"title": "EdgeX Source",
-									"path": "guide/sources/builtin/edgex"
-								},
-								{
-									"title": "HTTP Pull Source",
-									"path": "guide/sources/builtin/http_pull"
-								},
-								{
-									"title": "HTTP Push Source",
-									"path": "guide/sources/builtin/http_push"
-								},
-								{
-									"title": "File Source",
-									"path": "guide/sources/builtin/file"
-								},
-								{
-									"title": "Memory Source",
-									"path": "guide/sources/builtin/memory"
-								},
-								{
-									"title": "Redis Source",
-									"path": "guide/sources/builtin/redis"
-								}
-							]
-						},
-						{
-							"title": "Predefined Source PLugins",
-							"children": [
-								{
-									"title": "SQL Source",
-									"path": "guide/sources/plugin/sql"
-								},
-								{
-									"title": "Video Source",
-									"path": "guide/sources/plugin/video"
-								},
-								{
-									"title": "Zero MQ Source",
-									"path": "guide/sources/plugin/zmq"
-								},
-								{
-									"title": "Random Source",
-									"path": "guide/sources/plugin/random"
-								}
-							]
-						},
-						{
-							"title": "Sink Connectors",
-							"path": "guide/sinks/overview",
-							"children": [
-								{
-									"title": "Data Template",
-									"path": "guide/sinks/data_template"
-								},
-								{
-									"title": "Built-in Sinks",
-									"children": [
-										{
-											"title": "MQTT Sink",
-											"path": "guide/sinks/builtin/mqtt"
-										},
-										{
-											"title": "Neuron Sink",
-											"path": "guide/sinks/builtin/neuron"
-										},
-										{
-											"title": "EdgeX Sink",
-											"path": "guide/sinks/builtin/edgex"
-										},
-										{
-											"title": "REST Sink",
-											"path": "guide/sinks/builtin/rest"
-										},
-										{
-											"title": "Redis Sink",
-											"path": "guide/sinks/builtin/redis"
-										},
-										{
-											"title": "File Sink",
-											"path": "guide/sinks/builtin/file"
-										},
-										{
-											"title": "Memory Sink",
-											"path": "guide/sinks/builtin/memory"
-										},
-										{
-											"title": "Log Sink",
-											"path": "guide/sinks/builtin/log"
-										},
-										{
-											"title": "Nop Sink",
-											"path": "guide/sinks/builtin/nop"
-										}
-									]
-								},
-								{
-									"title": "Predefined Sink Plugins",
-									"children": [
-										{
-											"title": "SQL Sink",
-											"path": "guide/sinks/plugin/sql"
-										},
-										{
-											"title": "InfluxDB Sink",
-											"path": "guide/sinks/plugin/influx"
-										},
-										{
-											"title": "InfluxDBV2 Sink",
-											"path": "guide/sinks/plugin/influx2"
-										},
-										{
-											"title": "TDengine Sink",
-											"path": "guide/sinks/plugin/tdengine"
-										},
-										{
-											"title": "Image Sink",
-											"path": "guide/sinks/plugin/image"
-										},
-										{
-											"title": "ZeroMQ Sink",
-											"path": "guide/sinks/plugin/zmq"
-										},
-										{
-											"title": "Kafka Sink",
-											"path": "guide/sinks/plugin/kafka"
-										}
-									]
-								}
-							]
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "Cookbook",
-			"path": "example/overview",
-			"children": [
-				{
-					"title": "Data Preparation",
-					"path": "example/howto"
-				},
-				{
-					"title": "Merge multiple devices' data in single stream",
-					"path": "example/data_merge/merge_single_stream"
-				}
-			]
-		},
-		{
-			"title": "Integrations",
-			"path": "integrations/overview",
-			"children": [
-				{
-					"title": "Edge Cloud Collaboration",
-					"path": "integrations/edge_cloud/overview"
-				},
-				{
-					"title": "Working with EdgeX Foundry",
-					"children": [
-						{
-							"title": "EdgeX Foundry Rule Engine Tutorial",
-							"path": "edgex/edgex_rule_engine_tutorial"
-						},
-						{
-							"title": "Meta Function for EdgeX Stream",
-							"path": "edgex/edgex_meta"
-						},
-						{
-							"title": "Command EdgeX Device",
-							"path": "edgex/edgex_rule_engine_command"
-						},
-						{
-							"title": "EdgeX Source Configurations",
-							"path": "edgex/edgex_source_tutorial"
-						}
-					]
-				},
-				{
-					"title": "Processing Data Collected by Neuron",
-					"path": "integrations/neuron/neuron_integration_tutorial"
-				},
-				{
-					"title": "Analytic Engine for KubeEdge",
-					"path": "integrations/kubeedge/overview"
-				},
-				{
-					"title": "Deploy by OpenYurt",
-					"path": "integrations/deploy/openyurt_tutorial"
-				}
-			]
-		},
-		{
-			"title": "Use Cases",
-			"path": "usecases/overview",
-			"children": [
-				{
-					"title": "IIoT case",
-					"path": "usecases/iiot"
-				},
-				{
-					"title": "IoV case",
-					"path": "usecases/iov"
-				},
-				{
-					"title": "Public data analysis",
-					"path": "usecases/public_data_analysis"
-				}
-			]
-		},
-		{
-			"title": "Admin Guide",
-			"path": "operation/overview",
-			"children": [
-				{
-					"title": "Configuration Guide",
-					"path": "configuration/configuration",
-					"children": [
-						{
-							"title": "Global Configurations",
-							"path": "configuration/global_configurations"
-						}
-					]
-				},
-				{
-					"title": "Monitor",
-					"path": "operation/usage/monitor_with_prometheus"
-				},
-				{
-					"title": "Management Console",
-					"path": "operation/manager-ui/overview",
-					"children": [
-						{
-							"title": "Manage Custom Plugins",
-							"path": "operation/manager-ui/plugins_in_manager"
-						}
-					]
-				}
-			]
-		},
-		{
-			"title": "API Reference",
-			"path": "api/restapi/overview",
-			"children": [
-				{
-					"title": "Authentication",
-					"path": "api/restapi/authentication"
-				},
-				{
-					"title": "Streams",
-					"path": "api/restapi/streams"
-				},
-				{
-					"title": "Tables",
-					"path": "api/restapi/tables"
-				},
-				{
-					"title": "Rules",
-					"path": "api/restapi/rules"
-				},
-				{
-					"title": "Plugins",
-					"path": "api/restapi/plugins"
-				},
-				{
-					"title": "Source ConfigKey",
-					"path": "api/restapi/configKey"
-				},
-				{
-					"title": "External Services",
-					"path": "api/restapi/services"
-				},
-				{
-					"title": "Schemas",
-					"path": "api/restapi/schemas"
-				},
-				{
-					"title": "Upload files",
-					"path": "api/restapi/uploads"
-				},
-				{
-					"title": "Ruleset",
-					"path": "api/restapi/ruleset"
-				},
-				{
-					"title": "Data Export/Import",
-					"path": "api/restapi/data"
-				}
-			]
-		},
-		{
-			"title": "Command Line Tool",
-			"path": "api/cli/overview",
-			"children": [
-				{
-					"title": "Streams",
-					"path": "api/cli/streams"
-				},
-				{
-					"title": "Rules",
-					"path": "api/cli/rules"
-				},
-				{
-					"title": "Tables",
-					"path": "api/cli/tables"
-				},
-				{
-					"title": "Plugins",
-					"path": "api/cli/plugins"
-				},
-				{
-					"title": "External Services",
-					"path": "api/cli/services"
-				},
-				{
-					"title": "Schemas",
-					"path": "api/cli/schemas"
-				},
-				{
-					"title": "Ruleset",
-					"path": "api/cli/ruleset"
-				},
-				{
-					"title": "Data Export/Import",
-					"path": "api/cli/data"
-				}
-			]
-		},
-		{
-			"title": "Extension Develop Guide",
-			"path": "extension/overview",
-			"children": [
-				{
-					"title": "Native Plugin Develop",
-					"path": "extension/native/overview",
-					"children": [
-						{
-							"title": "Develop",
-							"path": "extension/native/develop/overview"
-						},
-						{
-							"title": "Plugin Develop Tutorial",
-							"path": "extension/native/develop/plugins_tutorial"
-						},
-						{
-							"title": "Function Plugin",
-							"path": "extension/native/develop/function"
-						},
-						{
-							"title": "Sink Plugin",
-							"path": "extension/native/develop/sink"
-						},
-						{
-							"title": "Source Plugin",
-							"path": "extension/native/develop/source"
-						}
-					]
-				},
-				{
-					"title": "Portable Plugin Development",
-					"path": "extension/portable/overview",
-					"children": [
-						{
-							"title": "GO SDK for Portable Plugin",
-							"path": "extension/portable/go_sdk"
-						},
-						{
-							"title": "Python SDK for Portable Plugin",
-							"path": "extension/portable/python_sdk"
-						}
-					]
-				},
-				{
-					"title": "Plugin Management",
-					"path": "operation/manager-ui/plugins_in_manager"
-				},
-				{
-					"title": "Wasm Function",
-					"path": "extension/wasm/overview"
-				}
-			]
-		},
-		{
-			"title": "SQL Reference",
-			"path": "sqls/overview",
-			"children": [
-				{
-					"title": "Statements",
-					"children": [
-						{
-							"title": "Streams",
-							"path": "sqls/streams"
-						},
-						{
-							"title": "Tables",
-							"path": "sqls/tables"
-						},
-						{
-							"title": "Query",
-							"path": "sqls/query_language_elements"
-						}
-					]
-				},
-				{
-					"title": "Syntax",
-					"path": "sqls/overview",
-					"children": [
-						{
-							"title": "Lexical elements",
-							"path": "sqls/lexical_elements"
-						},
-						{
-							"title": "Data types",
-							"path": "sqls/data_types"
-						},
-						{
-							"title": "JSON Expressions",
-							"path": "sqls/json_expr"
-						}
-					]
-				},
-				{
-					"title": "Functions",
-					"path": "sqls/functions/overview",
-					"children": [
-						{
-							"title": "Aggregate Functions",
-							"path": "sqls/functions/aggregate_functions"
-						},
-						{
-							"title": "Mathematical Functions",
-							"path": "sqls/functions/mathematical_functions"
-						},
-						{
-							"title": "String Functions",
-							"path": "sqls/functions/string_functions"
-						},
-						{
-							"title": "Array Functions",
-							"path": "sqls/functions/array_functions"
-						},
-						{
-							"title": "Object Functions",
-							"path": "sqls/functions/object_functions"
-						},
-						{
-							"title": "Hashing Functions",
-							"path": "sqls/functions/hashing_functions"
-						},
-						{
-							"title": "Transform Functions",
-							"path": "sqls/functions/transform_functions"
-						},
-						{
-							"title": "JSON Functions",
-							"path": "sqls/functions/json_functions"
-						},
-						{
-							"title": "Date and Time Functions",
-							"path": "sqls/functions/datetime_functions"
-						},
-						{
-							"title": "Other Functions",
-							"path": "sqls/functions/other_functions"
-						},
-						{
-							"title": "Analytic Functions",
-							"path": "sqls/functions/analytic_functions"
-						},
-						{
-							"title": "Multi-Row Functions",
-							"path": "sqls/functions/multi_row_functions"
-						},
-						{
-							"title": "Multi-Column Functions",
-							"path": "sqls/functions/multi_column_functions"
-						},
-						{
-							"title": "Predefined function plugins",
-							"path": "sqls/functions/custom_functions"
-						},
-						{
-							"title": "Window Functions",
-							"path": "sqls/functions/window_functions"
-						}
-					]
-				},
-				{
-					"title": "External Function",
-					"path": "extension/external/external_func"
-				},
-				{
-					"title": "Windowing",
-					"path": "sqls/windows"
-				}
-			]
-		}
-	]
+"cn": [
+    {
+      "title": "概览",
+      "path": "./",
+      "children": [
+        {
+          "title": "架构和设计",
+          "path": "concepts/ekuiper"
+        },
+        {
+          "title": "流式处理",
+          "path": "concepts/streaming/overview",
+          "children": [
+            {
+              "title": "时间属性",
+              "path": "concepts/streaming/time"
+            },
+            {
+              "title": "窗口",
+              "path": "concepts/streaming/windowing"
+            },
+            {
+              "title": "连接",
+              "path": "concepts/streaming/join"
+            }
+          ]
+        },
+        {
+          "title": "关键概念",
+          "children": [
+            {
+              "title": "规则",
+              "path": "concepts/rules"
+            },
+            {
+              "title": "Sources 源",
+              "path": "concepts/sources/overview",
+              "children": [
+                {
+                  "title": "流",
+                  "path": "concepts/sources/stream"
+                },
+                {
+                  "title": "表",
+                  "path": "concepts/sources/table"
+                }
+              ]
+            },
+            {
+              "title": "Sinks 动作",
+              "path": "concepts/sinks"
+            },
+            {
+              "title": "SQL 查询",
+              "path": "concepts/sql"
+            },
+            {
+              "title": "扩展",
+              "path": "concepts/extensions"
+            }
+          ]
+        },
+        {
+          "title": "贡献",
+          "path": "CONTRIBUTING"
+        }
+      ]
+    },
+    {
+      "title": "快速开始",
+      "path": "getting_started/getting_started",
+      "children": [
+        {
+          "title": "5分钟快速运行",
+          "path": "getting_started/quick_start_docker"
+        },
+        {
+          "title": "作为 EdgeX Foundry 规则引擎运行",
+          "path": "edgex/edgex_rule_engine_tutorial"
+        },
+        {
+          "title": "如何调试规则",
+          "path": "getting_started/debug_rules"
+        }
+      ]
+    },
+    {
+      "title": "安装与部署",
+      "path": "installation",
+      "children": [
+        {
+          "title": "编译安装",
+          "children": [
+            {
+              "title": "源码编译",
+              "path": "operation/compile/compile"
+            },
+            {
+              "title": "交叉编译",
+              "path": "operation/compile/cross-compile"
+            },
+            {
+              "title": "按需编译",
+              "path": "operation/compile/features"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "规则",
+      "path": "guide/rules/overview",
+      "children": [
+        {
+          "title": "流：无界的事件系列",
+          "path": "guide/streams/overview"
+        },
+        {
+          "title": "表：事件序列的快照",
+          "path": "guide/tables/overview",
+          "children": [
+            {
+              "title": "扫描表",
+              "path": "guide/tables/scan"
+            },
+            {
+              "title": "查询表",
+              "path": "guide/tables/lookup"
+            }
+          ]
+        },
+        {
+          "title": "图规则",
+          "path": "guide/rules/graph_rule"
+        },
+        {
+          "title": "规则流水线",
+          "path": "guide/rules/rule_pipeline"
+        },
+        {
+          "title": "状态和容错",
+          "path": "guide/rules/state_and_fault_tolerance"
+        },
+        {
+          "title": "序列化",
+          "path": "guide/serialization/serialization",
+          "children": [
+            {
+              "title": "使用 Protobuf 编解码教程",
+              "path": "guide/serialization/protobuf_tutorial"
+            }
+          ]
+        },
+        {
+          "title": "AI/ML",
+          "children": [
+            {
+              "title": "使用原生插件实现 AI 函数",
+              "path": "guide/ai/tensorflow_lite_tutorial"
+            },
+            {
+              "title": "使用 Python 插件实现 AI 函数",
+              "path": "guide/ai/python_tensorflow_lite_tutorial"
+            },
+            {
+              "title": "使用 Python 插件实现 OpenVINO 函数",
+              "path": "guide/ai/python_openvino_tutorial"
+            },
+            {
+              "title": "使用 tensorflow_lite 原生插件调用 AI 模型",
+              "path": "guide/ai/tensorflow_lite"
+            },
+            {
+              "title": "使用外部函数调用 tensorflow_lite AI 模型",
+              "path": "guide/ai/tensorflow_lite_external_function_tutorial"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "数据连接",
+      "path": "guide/connector",
+      "children": [
+        {
+          "title": "数据源",
+          "path": "guide/sources/overview",
+          "children": [
+            {
+              "title": "内置源",
+              "children": [
+                {
+                  "title": "MQTT 数据源",
+                  "path": "guide/sources/builtin/mqtt"
+                },
+                {
+                  "title": "Neuron 数据源",
+                  "path": "guide/sources/builtin/neuron"
+                },
+                {
+                  "title": "EdgeX 数据源",
+                  "path": "guide/sources/builtin/edgex"
+                },
+                {
+                  "title": "HTTP Pull 数据源",
+                  "path": "guide/sources/builtin/http_pull"
+                },
+                {
+                  "title": "HTTP Push 数据源",
+                  "path": "guide/sources/builtin/http_push"
+                },
+                {
+                  "title": "文件数据源",
+                  "path": "guide/sources/builtin/file"
+                },
+                {
+                  "title": "内存数据源",
+                  "path": "guide/sources/builtin/memory"
+                },
+                {
+                  "title": "Redis 数据源",
+                  "path": "guide/sources/builtin/redis"
+                }
+              ]
+            },
+            {
+              "title": "预定义插件源",
+              "children": [
+                {
+                  "title": "SQL 数据源",
+                  "path": "guide/sources/plugin/sql"
+                },
+                {
+                  "title": "视频数据源",
+                  "path": "guide/sources/plugin/video"
+                },
+                {
+                  "title": "Zero MQ 数据源",
+                  "path": "guide/sources/plugin/zmq"
+                },
+                {
+                  "title": "随机数据产生器源",
+                  "path": "guide/sources/plugin/random"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "数据汇（Sink）",
+          "path": "guide/sinks/overview",
+          "children": [
+            {
+              "title": "数据模板",
+              "path": "guide/sinks/data_template"
+            },
+            {
+              "title": "内置 Sink",
+              "children": [
+                {
+                  "title": "MQTT Sink",
+                  "path": "guide/sinks/builtin/mqtt"
+                },
+                {
+                  "title": "Neuron Sink",
+                  "path": "guide/sinks/builtin/neuron"
+                },
+                {
+                  "title": "EdgeX Sink",
+                  "path": "guide/sinks/builtin/edgex"
+                },
+                {
+                  "title": "REST Sink",
+                  "path": "guide/sinks/builtin/rest"
+                },
+                {
+                  "title": "Redis Sink",
+                  "path": "guide/sinks/builtin/redis"
+                },
+                {
+                  "title": "File Sink",
+                  "path": "guide/sinks/builtin/file"
+                },
+                {
+                  "title": "Memory Sink",
+                  "path": "guide/sinks/builtin/memory"
+                },
+                {
+                  "title": "Log Sink",
+                  "path": "guide/sinks/builtin/log"
+                },
+                {
+                  "title": "Nop Sink",
+                  "path": "guide/sinks/builtin/nop"
+                }
+              ]
+            },
+            {
+              "title": "预定义插件 Sink",
+              "children": [
+                {
+                  "title": "SQL Sink",
+                  "path": "guide/sinks/plugin/sql"
+                },
+                {
+                  "title": "InfluxDB Sink",
+                  "path": "guide/sinks/plugin/influx"
+                },
+                {
+                  "title": "InfluxDBV2 Sink",
+                  "path": "guide/sinks/plugin/influx2"
+                },
+                {
+                  "title": "TDengine Sink",
+                  "path": "guide/sinks/plugin/tdengine"
+                },
+                {
+                  "title": "Image Sink",
+                  "path": "guide/sinks/plugin/image"
+                },
+                {
+                  "title": "ZeroMQ Sink",
+                  "path": "guide/sinks/plugin/zmq"
+                },
+                {
+                  "title": "Kafka Sink",
+                  "path": "guide/sinks/plugin/kafka"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "案例集锦",
+      "path": "example/overview",
+      "children": [
+        {
+          "title": "数据合并",
+          "path": "example/howto",
+          "children": [
+            {
+              "title": "合并单流多设备数据",
+              "path": "example/data_merge/merge_single_stream"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "管理指南",
+      "children": [
+        {
+          "title": "配置",
+          "path": "configuration/configuration",
+          "children": [
+            {
+              "title": "全局配置文件",
+              "path": "configuration/global_configurations"
+            }
+          ]
+        },
+        {
+          "title": "管理控制台",
+          "children": [
+            {
+              "title": "使用教程",
+              "path": "operation/manager-ui/overview"
+            },
+            {
+              "title": "插件管理",
+              "path": "operation/manager-ui/plugins_in_manager"
+            }
+          ]
+        },
+        {
+          "title": "监控",
+          "path": "operation/usage/monitor_with_prometheus"
+        }
+      ]
+    },
+    {
+      "title": "应用场景",
+      "path": "usecases/overview",
+      "children": [
+        {
+          "title": "工业物联网",
+          "path": "usecases/iiot"
+        },
+        {
+          "title": "车联网",
+          "path": "usecases/iov"
+        },
+        {
+          "title": "公共数据分析应用",
+          "path": "usecases/public_data_analysis"
+        }
+      ]
+    },
+    {
+      "title": "生态集成",
+      "children": [
+        {
+          "title": "边云协同",
+          "path": "integrations/edge_cloud/overview"
+        },
+        {
+          "title": "EdgeX Foundry 的规则引擎",
+          "children": [
+            {
+              "title": "EdgeX Foundry 规则引擎教程",
+              "path": "edgex/edgex_rule_engine_tutorial"
+            },
+            {
+              "title": "使用 EdgeX 流的 meta 函数",
+              "path": "edgex/edgex_meta"
+            },
+            {
+              "title": "EdgeX 规则引擎使用 command 服务",
+              "path": "edgex/edgex_rule_engine_command"
+            },
+            {
+              "title": "EdgeX 源配置教程",
+              "path": "edgex/edgex_source_tutorial"
+            }
+          ]
+        },
+        {
+          "title": "分析处理 Neuron 采集的数据",
+          "path": "integrations/neuron/neuron_integration_tutorial"
+        },
+        {
+          "title": "KubeEdge 的分析引擎",
+          "path": "integrations/kubeedge/overview"
+        },
+        {
+          "title": "使用 OpenYurt 部署",
+          "path": "integrations/deploy/openyurt_tutorial"
+        }
+      ]
+    },
+    {
+      "title": "Rest API 参考",
+      "path": "api/restapi/overview",
+      "children": [
+        {
+          "title": "认证配置",
+          "path": "api/restapi/authentication"
+        },
+        {
+          "title": "流管理",
+          "path": "api/restapi/streams"
+        },
+        {
+          "title": "表管理",
+          "path": "api/restapi/tables"
+        },
+        {
+          "title": "规则管理",
+          "path": "api/restapi/rules"
+        },
+        {
+          "title": "插件管理",
+          "path": "api/restapi/plugins"
+        },
+        {
+          "title": "源配置项管理",
+          "path": "api/restapi/configKey"
+        },
+        {
+          "title": "外部函数管理",
+          "path": "api/restapi/services"
+        },
+        {
+          "title": "模式管理",
+          "path": "api/restapi/schemas"
+        },
+        {
+          "title": "上传文件管理",
+          "path": "api/restapi/uploads"
+        },
+        {
+          "title": "规则集管理",
+          "path": "api/restapi/ruleset"
+        },
+        {
+          "title": "数据导入导出",
+          "path": "api/restapi/data"
+        }
+      ]
+    },
+    {
+      "title": "命令行工具",
+      "path": "api/cli/overview",
+      "children": [
+        {
+          "title": "流管理",
+          "path": "api/cli/streams"
+        },
+        {
+          "title": "表管理",
+          "path": "api/cli/tables"
+        },
+        {
+          "title": "规则管理",
+          "path": "api/cli/rules"
+        },
+        {
+          "title": "插件管理",
+          "path": "api/cli/plugins"
+        },
+        {
+          "title": "外部服务",
+          "path": "api/cli/services"
+        },
+        {
+          "title": "模式管理",
+          "path": "api/cli/schemas"
+        },
+        {
+          "title": "规则集管理",
+          "path": "api/cli/ruleset"
+        },
+        {
+          "title": "数据导入导出",
+          "path": "api/cli/data"
+        }
+      ]
+    },
+    {
+      "title": "扩展开发指南",
+      "path": "extension/overview",
+      "children": [
+        {
+          "title": "原生插件开发",
+          "path": "extension/native/overview",
+          "children": [
+            {
+              "title": "原生插件开发",
+              "path": "extension/native/develop/overview"
+            },
+            {
+              "title": "插件开发教程",
+              "path": "extension/native/develop/plugins_tutorial"
+            },
+            {
+              "title": "函数插件开发",
+              "path": "extension/native/develop/function"
+            },
+            {
+              "title": "Sink 插件开发",
+              "path": "extension/native/develop/sink"
+            },
+            {
+              "title": "源插件开发",
+              "path": "extension/native/develop/source"
+            }
+          ]
+        },
+        {
+          "title": "Portable 插件开发",
+          "path": "extension/portable/overview",
+          "children": [
+            {
+              "title": "Portable 插件 Go 语言 SDK",
+              "path": "extension/portable/go_sdk"
+            },
+            {
+              "title": "Portable 插件 Python 语言 SDK",
+              "path": "extension/portable/python_sdk"
+            }
+          ]
+        },
+        {
+          "title": "外部函数",
+          "path": "extension/external/external_func"
+        },
+        {
+          "title": "Wasm 函数 （beta）",
+          "path": "extension/wasm/overview"
+        }
+      ]
+    },
+    {
+      "title": "SQL 参考",
+      "path": "sqls/overview",
+      "children": [
+        {
+          "title": "语句",
+          "children": [
+            {
+              "title": "流语句",
+              "path": "sqls/streams"
+            },
+            {
+              "title": "表语句",
+              "path": "sqls/tables"
+            },
+            {
+              "title": "查询语句",
+              "path": "sqls/query_language_elements"
+            }
+          ]
+        },
+        {
+          "title": "语法",
+          "path": "sqls/overview",
+          "children": [
+            {
+              "title": "词汇元素",
+              "path": "sqls/lexical_elements"
+            },
+            {
+              "title": "数据类型",
+              "path": "sqls/data_types"
+            },
+            {
+              "title": "JSON 表达式",
+              "path": "sqls/json_expr"
+            }
+          ]
+        },
+        {
+          "title": "函数",
+          "path": "sqls/functions/overview",
+          "children": [
+            {
+              "title": "聚合函数",
+              "path": "sqls/functions/aggregate_functions"
+            },
+            {
+              "title": "数学函数",
+              "path": "sqls/functions/mathematical_functions"
+            },
+            {
+              "title": "字符串函数",
+              "path": "sqls/functions/string_functions"
+            },
+            {
+              "title": "数组函数",
+              "path": "sqls/functions/array_functions"
+            },
+            {
+              "title": "对象函数",
+              "path": "sqls/functions/object_functions"
+            },
+            {
+              "title": "哈希函数",
+              "path": "sqls/functions/hashing_functions"
+            },
+            {
+              "title": "转换函数",
+              "path": "sqls/functions/transform_functions"
+            },
+            {
+              "title": "JSON 函数",
+              "path": "sqls/functions/json_functions"
+            },
+            {
+              "title": "时间日期函数",
+              "path": "sqls/functions/datetime_functions"
+            },
+            {
+              "title": "其他函数",
+              "path": "sqls/functions/other_functions"
+            },
+            {
+              "title": "分析函数",
+              "path": "sqls/functions/analytic_functions"
+            },
+            {
+              "title": "多行函数",
+              "path": "sqls/functions/multi_row_functions"
+            },
+            {
+              "title": "多列函数",
+              "path": "sqls/functions/multi_column_functions"
+            },
+            {
+              "title": "预定义函数插件",
+              "path": "sqls/functions/custom_functions"
+            },
+            {
+              "title": "窗口函数",
+              "path": "sqls/functions/window_funcs"
+            }
+          ]
+        },
+        {
+          "title": "窗口",
+          "path": "sqls/windows"
+        }
+      ]
+    }
+  ],
+  "en": [
+    {
+      "title": "Introduction",
+      "path": "./",
+      "children": [
+        {
+          "title": "Architecture",
+          "path": "concepts/ekuiper"
+        },
+        {
+          "title": "Stream Processing",
+          "path": "concepts/streaming/overview",
+          "children": [
+            {
+              "title": "Time Attribute",
+              "path": "concepts/streaming/time"
+            },
+            {
+              "title": "Windowing",
+              "path": "concepts/streaming/windowing"
+            },
+            {
+              "title": "Join",
+              "path": "concepts/streaming/join"
+            }
+          ]
+        },
+        {
+          "title": "Key Concepts",
+          "children": [
+            {
+              "title": "Rules",
+              "path": "concepts/rules"
+            },
+            {
+              "title": "Sources",
+              "path": "concepts/sources/overview",
+              "children": [
+                {
+                  "title": "Stream",
+                  "path": "concepts/sources/stream"
+                },
+                {
+                  "title": "Table",
+                  "path": "concepts/sources/table"
+                }
+              ]
+            },
+            {
+              "title": "Sinks",
+              "path": "concepts/sinks"
+            },
+            {
+              "title": "SQL Queries",
+              "path": "concepts/sql"
+            },
+            {
+              "title": "Extensions",
+              "path": "concepts/extensions"
+            }
+          ]
+        },
+        {
+          "title": "Contribute",
+          "path": "CONTRIBUTING"
+        }
+      ]
+    },
+    {
+      "title": "Getting Started",
+      "path": "getting_started/getting_started",
+      "children": [
+        {
+          "title": "5 Minutes Quick Start",
+          "path": "getting_started/quick_start_docker"
+        },
+        {
+          "title": "Run eKuiper with EdgeX Foundry",
+          "path": "edgex/edgex_rule_engine_tutorial"
+        },
+        {
+          "title": "How to Debug Rules",
+          "path": "getting_started/debug_rules"
+        }
+      ]
+    },
+    {
+      "title": "Installation",
+      "path": "installation",
+      "children": [
+        {
+          "title": "Build from Source Code",
+          "path": "operation/compile/compile",
+          "children": [
+            {
+              "title": "Cross Compile",
+              "path": "operation/compile/cross-compile"
+            },
+            {
+              "title": "Compile selected features only",
+              "path": "operation/compile/features"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Rules",
+      "path": "guide/rules/overview",
+      "children": [
+        {
+          "title": "Stream: unbounded series of events",
+          "path": "guide/streams/overview"
+        },
+        {
+          "title": "Table: snapshot of events",
+          "path": "guide/tables/overview",
+          "children": [
+            {
+              "title": "Scan Table",
+              "path": "guide/tables/scan"
+            },
+            {
+              "title": "Lookup Table",
+              "path": "guide/tables/lookup"
+            }
+          ]
+        },
+        {
+          "title": "Graph Rule",
+          "path": "guide/rules/graph_rule"
+        },
+        {
+          "title": "Rule Pipeline",
+          "path": "guide/rules/rule_pipeline"
+        },
+        {
+          "title": "State and Fault Tolerance",
+          "path": "guide/rules/state_and_fault_tolerance"
+        },
+        {
+          "title": "Serialization",
+          "path": "guide/serialization/serialization",
+          "children": [
+            {
+              "title": "Protobuf Codec Tutorial",
+              "path": "guide/serialization/protobuf_tutorial"
+            }
+          ]
+        },
+        {
+          "title": "AI/ML",
+          "children": [
+            {
+              "title": "Running AI Algorithms with Native Plugin",
+              "path": "guide/ai/tensorflow_lite_tutorial"
+            },
+            {
+              "title": "Running AI Algorithms with Python Function Plugin",
+              "path": "guide/ai/python_tensorflow_lite_tutorial"
+            },
+            {
+              "title": "Running OpenVINO Algorithms with Python Function Plugin",
+              "path": "guide/ai/python_openvino_tutorial"
+            },
+            {
+              "title": "Running AI Model with TensorFlow Lite Function Plugin",
+              "path": "guide/ai/tensorflow_lite"
+            },
+            {
+              "title": "Running tensorflow_lite AI Model with External Function",
+              "path": "guide/ai/tensorflow_lite_external_function_tutorial"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Connectors",
+      "path": "guide/connector",
+      "children": [
+        {
+          "title": "Source Connector",
+          "path": "guide/sources/overview",
+          "children": [
+            {
+              "title": "Built-in Sources",
+              "children": [
+                {
+                  "title": "MQTT Source",
+                  "path": "guide/sources/builtin/mqtt"
+                },
+                {
+                  "title": "Neuron Source",
+                  "path": "guide/sources/builtin/neuron"
+                },
+                {
+                  "title": "EdgeX Source",
+                  "path": "guide/sources/builtin/edgex"
+                },
+                {
+                  "title": "HTTP Pull Source",
+                  "path": "guide/sources/builtin/http_pull"
+                },
+                {
+                  "title": "HTTP Push Source",
+                  "path": "guide/sources/builtin/http_push"
+                },
+                {
+                  "title": "File Source",
+                  "path": "guide/sources/builtin/file"
+                },
+                {
+                  "title": "Memory Source",
+                  "path": "guide/sources/builtin/memory"
+                },
+                {
+                  "title": "Redis Source",
+                  "path": "guide/sources/builtin/redis"
+                }
+              ]
+            },
+            {
+              "title": "Predefined Source Plugins",
+              "children": [
+                {
+                  "title": "SQL Source",
+                  "path": "guide/sources/plugin/sql"
+                },
+                {
+                  "title": "Video Source",
+                  "path": "guide/sources/plugin/video"
+                },
+                {
+                  "title": "Zero MQ Source",
+                  "path": "guide/sources/plugin/zmq"
+                },
+                {
+                  "title": "Random Source",
+                  "path": "guide/sources/plugin/random"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Sink Connectors",
+          "path": "guide/sinks/overview",
+          "children": [
+            {
+              "title": "Data Template",
+              "path": "guide/sinks/data_template"
+            },
+            {
+              "title": "Built-in Sinks",
+              "children": [
+                {
+                  "title": "MQTT Sink",
+                  "path": "guide/sinks/builtin/mqtt"
+                },
+                {
+                  "title": "Neuron Sink",
+                  "path": "guide/sinks/builtin/neuron"
+                },
+                {
+                  "title": "EdgeX Sink",
+                  "path": "guide/sinks/builtin/edgex"
+                },
+                {
+                  "title": "REST Sink",
+                  "path": "guide/sinks/builtin/rest"
+                },
+                {
+                  "title": "Redis Sink",
+                  "path": "guide/sinks/builtin/redis"
+                },
+                {
+                  "title": "File Sink",
+                  "path": "guide/sinks/builtin/file"
+                },
+                {
+                  "title": "Memory Sink",
+                  "path": "guide/sinks/builtin/memory"
+                },
+                {
+                  "title": "Log Sink",
+                  "path": "guide/sinks/builtin/log"
+                },
+                {
+                  "title": "Nop Sink",
+                  "path": "guide/sinks/builtin/nop"
+                }
+              ]
+            },
+            {
+              "title": "Predefined Sink Plugins",
+              "children": [
+                {
+                  "title": "SQL Sink",
+                  "path": "guide/sinks/plugin/sql"
+                },
+                {
+                  "title": "InfluxDB Sink",
+                  "path": "guide/sinks/plugin/influx"
+                },
+                {
+                  "title": "InfluxDBV2 Sink",
+                  "path": "guide/sinks/plugin/influx2"
+                },
+                {
+                  "title": "TDengine Sink",
+                  "path": "guide/sinks/plugin/tdengine"
+                },
+                {
+                  "title": "Image Sink",
+                  "path": "guide/sinks/plugin/image"
+                },
+                {
+                  "title": "ZeroMQ Sink",
+                  "path": "guide/sinks/plugin/zmq"
+                },
+                {
+                  "title": "Kafka Sink",
+                  "path": "guide/sinks/plugin/kafka"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Cookbook",
+      "path": "example/overview",
+      "children": [
+        {
+          "title": "Data Preparation",
+          "path": "example/howto"
+        },
+        {
+          "title": "Merge multiple devices' data in single stream",
+          "path": "example/data_merge/merge_single_stream"
+        }
+      ]
+    },
+    {
+      "title": "Integrations",
+      "path": "integrations/overview",
+      "children": [
+        {
+          "title": "Edge Cloud Collaboration",
+          "path": "integrations/edge_cloud/overview"
+        },
+        {
+          "title": "Working with EdgeX Foundry",
+          "children": [
+            {
+              "title": "EdgeX Foundry Rule Engine Tutorial",
+              "path": "edgex/edgex_rule_engine_tutorial"
+            },
+            {
+              "title": "Meta Function for EdgeX Stream",
+              "path": "edgex/edgex_meta"
+            },
+            {
+              "title": "Command EdgeX Device",
+              "path": "edgex/edgex_rule_engine_command"
+            },
+            {
+              "title": "EdgeX Source Configurations",
+              "path": "edgex/edgex_source_tutorial"
+            }
+          ]
+        },
+        {
+          "title": "Processing Data Collected by Neuron",
+          "path": "integrations/neuron/neuron_integration_tutorial"
+        },
+        {
+          "title": "Analytic Engine for KubeEdge",
+          "path": "integrations/kubeedge/overview"
+        },
+        {
+          "title": "Deploy by OpenYurt",
+          "path": "integrations/deploy/openyurt_tutorial"
+        }
+      ]
+    },
+    {
+      "title": "Use Cases",
+      "path": "usecases/overview",
+      "children": [
+        {
+          "title": "IIoT case",
+          "path": "usecases/iiot"
+        },
+        {
+          "title": "IoV case",
+          "path": "usecases/iov"
+        },
+        {
+          "title": "Public data analysis",
+          "path": "usecases/public_data_analysis"
+        }
+      ]
+    },
+    {
+      "title": "Admin Guide",
+      "path": "operation/overview",
+      "children": [
+        {
+          "title": "Configuration Guide",
+          "path": "configuration/configuration",
+          "children": [
+            {
+              "title": "Global Configurations",
+              "path": "configuration/global_configurations"
+            }
+          ]
+        },
+        {
+          "title": "Monitor",
+          "path": "operation/usage/monitor_with_prometheus"
+        },
+        {
+          "title": "Management Console",
+          "path": "operation/manager-ui/overview",
+          "children": [
+            {
+              "title": "Manage Custom Plugins",
+              "path": "operation/manager-ui/plugins_in_manager"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "API Reference",
+      "path": "api/restapi/overview",
+      "children": [
+        {
+          "title": "Authentication",
+          "path": "api/restapi/authentication"
+        },
+        {
+          "title": "Streams",
+          "path": "api/restapi/streams"
+        },
+        {
+          "title": "Tables",
+          "path": "api/restapi/tables"
+        },
+        {
+          "title": "Rules",
+          "path": "api/restapi/rules"
+        },
+        {
+          "title": "Plugins",
+          "path": "api/restapi/plugins"
+        },
+        {
+          "title": "Source ConfigKey",
+          "path": "api/restapi/configKey"
+        },
+        {
+          "title": "External Services",
+          "path": "api/restapi/services"
+        },
+        {
+          "title": "Schemas",
+          "path": "api/restapi/schemas"
+        },
+        {
+          "title": "Upload files",
+          "path": "api/restapi/uploads"
+        },
+        {
+          "title": "Ruleset",
+          "path": "api/restapi/ruleset"
+        },
+        {
+          "title": "Data Export/Import",
+          "path": "api/restapi/data"
+        }
+      ]
+    },
+    {
+      "title": "Command Line Tool",
+      "path": "api/cli/overview",
+      "children": [
+        {
+          "title": "Streams",
+          "path": "api/cli/streams"
+        },
+        {
+          "title": "Rules",
+          "path": "api/cli/rules"
+        },
+        {
+          "title": "Tables",
+          "path": "api/cli/tables"
+        },
+        {
+          "title": "Plugins",
+          "path": "api/cli/plugins"
+        },
+        {
+          "title": "External Services",
+          "path": "api/cli/services"
+        },
+        {
+          "title": "Schemas",
+          "path": "api/cli/schemas"
+        },
+        {
+          "title": "Ruleset",
+          "path": "api/cli/ruleset"
+        },
+        {
+          "title": "Data Export/Import",
+          "path": "api/cli/data"
+        }
+      ]
+    },
+    {
+      "title": "Extension Develop Guide",
+      "path": "extension/overview",
+      "children": [
+        {
+          "title": "Native Plugin Develop",
+          "path": "extension/native/overview",
+          "children": [
+            {
+              "title": "Develop",
+              "path": "extension/native/develop/overview"
+            },
+            {
+              "title": "Plugin Develop Tutorial",
+              "path": "extension/native/develop/plugins_tutorial"
+            },
+            {
+              "title": "Function Plugin",
+              "path": "extension/native/develop/function"
+            },
+            {
+              "title": "Sink Plugin",
+              "path": "extension/native/develop/sink"
+            },
+            {
+              "title": "Source Plugin",
+              "path": "extension/native/develop/source"
+            }
+          ]
+        },
+        {
+          "title": "Portable Plugin Development",
+          "path": "extension/portable/overview",
+          "children": [
+            {
+              "title": "GO SDK for Portable Plugin",
+              "path": "extension/portable/go_sdk"
+            },
+            {
+              "title": "Python SDK for Portable Plugin",
+              "path": "extension/portable/python_sdk"
+            }
+          ]
+        },
+        {
+          "title": "Plugin Management",
+          "path": "operation/manager-ui/plugins_in_manager"
+        },
+        {
+          "title": "Wasm Function",
+          "path": "extension/wasm/overview"
+        }
+      ]
+    },
+    {
+      "title": "SQL Reference",
+      "path": "sqls/overview",
+      "children": [
+        {
+          "title": "Statements",
+          "children": [
+            {
+              "title": "Streams",
+              "path": "sqls/streams"
+            },
+            {
+              "title": "Tables",
+              "path": "sqls/tables"
+            },
+            {
+              "title": "Query",
+              "path": "sqls/query_language_elements"
+            }
+          ]
+        },
+        {
+          "title": "Syntax",
+          "path": "sqls/overview",
+          "children": [
+            {
+              "title": "Lexical elements",
+              "path": "sqls/lexical_elements"
+            },
+            {
+              "title": "Data types",
+              "path": "sqls/data_types"
+            },
+            {
+              "title": "JSON Expressions",
+              "path": "sqls/json_expr"
+            }
+          ]
+        },
+        {
+          "title": "Functions",
+          "path": "sqls/functions/overview",
+          "children": [
+            {
+              "title": "Aggregate Functions",
+              "path": "sqls/functions/aggregate_functions"
+            },
+            {
+              "title": "Mathematical Functions",
+              "path": "sqls/functions/mathematical_functions"
+            },
+            {
+              "title": "String Functions",
+              "path": "sqls/functions/string_functions"
+            },
+            {
+              "title": "Array Functions",
+              "path": "sqls/functions/array_functions"
+            },
+            {
+              "title": "Object Functions",
+              "path": "sqls/functions/object_functions"
+            },
+            {
+              "title": "Hashing Functions",
+              "path": "sqls/functions/hashing_functions"
+            },
+            {
+              "title": "Transform Functions",
+              "path": "sqls/functions/transform_functions"
+            },
+            {
+              "title": "JSON Functions",
+              "path": "sqls/functions/json_functions"
+            },
+            {
+              "title": "Date and Time Functions",
+              "path": "sqls/functions/datetime_functions"
+            },
+            {
+              "title": "Other Functions",
+              "path": "sqls/functions/other_functions"
+            },
+            {
+              "title": "Analytic Functions",
+              "path": "sqls/functions/analytic_functions"
+            },
+            {
+              "title": "Multi-Row Functions",
+              "path": "sqls/functions/multi_row_functions"
+            },
+            {
+              "title": "Multi-Column Functions",
+              "path": "sqls/functions/multi_column_functions"
+            },
+            {
+              "title": "Predefined function plugins",
+              "path": "sqls/functions/custom_functions"
+            },
+            {
+              "title": "Window Functions",
+              "path": "sqls/functions/window_functions"
+            }
+          ]
+        },
+        {
+          "title": "External Function",
+          "path": "extension/external/external_func"
+        },
+        {
+          "title": "Windowing",
+          "path": "sqls/windows"
+        }
+      ]
+    }
+  ]
 }
