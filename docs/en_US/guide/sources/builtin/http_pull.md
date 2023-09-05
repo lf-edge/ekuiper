@@ -78,7 +78,7 @@ Use can specify the global HTTP pull settings here. The configuration items spec
 - `timeout`: The timeout for http request, time unit is ms.
 - `body`: The body of request, such as `'{"data": "data", "method": 1}'`
 - `bodyType`: Body type, it could be none|text|json|html|xml|javascript|format.
-  headers: The HTTP request headers that you want to send along with the HTTP request.
+- `headers`: The HTTP request headers that you want to send along with the HTTP request.
 - `responseType`: Define how to parse the HTTP response. There are two types defined:
   - `code`: To check the response status from the HTTP status code.
   - `body`: To check the response status from the response body. The body must be "application/json" content type and contains a "code" field.
@@ -138,8 +138,8 @@ For HTTP services that allow time-based filtering, `PullTime` and `LastPullTime`
 
 ::: v-pre
 
-- For URL parameters: `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}`.
-- For body parameters: `{"start": {{.LastPullTime}}, "end": {{.PullTime}}`.
+- From URL parameters: `http://localhost:9090/pull?start={{.LastPullTime}}&end={{.PullTime}}`.
+- From body parameters: `{"start": {{.LastPullTime}}, "end": {{.PullTime}}`.
 
 :::
 
@@ -190,7 +190,7 @@ Example
 {"sql":"create stream http_stream () WITH (FORMAT="json", TYPE="http_pull"}
 ```
 
-For a comprehensive guide, refer to [Streams Management with REST API](https://chat.openai.com/api/restapi/streams.md).
+For a comprehensive guide, refer to [Streams Management with REST API](../../../api/restapi/streams.md).
 
 ### Use CLI
 
@@ -208,4 +208,4 @@ If you favor a more hands-on approach, the Command Line Interface (CLI) offers d
    bin/kuiper create stream http_stream '() WITH (FORMAT="json", TYPE="http_pull")'
    ```
 
-For a step-by-step guide, check [Streams Management with CLI](https://chat.openai.com/api/cli/streams.md).
+For a step-by-step guide, check [Streams Management with CLI](../../../api/cli/streams.md).

@@ -3,12 +3,12 @@
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
 
-eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. This is useful in scenarios where data is batch-processed or when files need real-time processing by eKuiper.
+eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. This is useful in scenarios where data is batch-processed or when files need real-time processing by eKuiper. **Note**: The file source supports monitoring either files or directories. If the monitored location is a directory, all files within that directory must be of the same type. When monitoring a directory, it will read files in alphabetical order by the file names.
 
 The File Source Connector allows eKuiper to read data from local files, supporting multiple formats such as JSON, CSV, and line-separated values:
 
 - JSON: Files in standard JSON array format.
-- csv: Comma-separated csv files are supported, as well as with custom separators.
+- csv: CSV files with comma or custom separators.
 - lines: line-separated file.
 
 :::: tabs type:card
@@ -118,7 +118,7 @@ default:
 ### File Type & Path
 
 - **`fileType`**: Defines the type of file. Supported values are `json`, `csv`, and `lines`.
-- **`path`**: Specifies the directory of the file, either relative to the Kuiper root or an absolute path. The filename should be defined in the stream data source.
+- **`path`**: Specifies the directory of the file, either relative to the Kuiper root or an absolute path. Note: Do not include the file name here. The file name should be defined in the stream data source.
 
 ### Reading & Sending Intervals
 
@@ -154,7 +154,7 @@ After setting up your streams, you can integrate them with eKuiper rules to proc
 
 ::: tip
 
-The File Source connector can operate as either a [stream source](https://chat.openai.com/streams/overview.md) or a [scan table](https://chat.openai.com/tables/scan.md) source. When configured as a stream source, you have the option to set the `interval` parameter, allowing for regular updates at specified intervals. While the file source is commonly utilized as a [table](https://chat.openai.com/sqls/tables.md) — and it's the default configuration for the "create table" statement — this section will primarily demonstrate its integration as a table source.
+The File Source connector can operate as either a [stream source](../../streams/overview.md) or a [scan table](../../tables/scan.md) source. When configured as a stream source, you have the option to set the `interval` parameter, allowing for regular updates at specified intervals. While the file source is commonly utilized as a [table](../../../sqls/tables.md) — and it's the default configuration for the "create table" statement — this section will primarily demonstrate its integration as a table source.
 
 :::
 

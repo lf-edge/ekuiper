@@ -14,7 +14,7 @@
 
 ## 开发
 
-与原生插件不同，portable 插件可以捆绑多个 *Symbol*。每个 Symbol 代表源、汇或功能的扩展。一个符号的实现就是实现类似于原生插件的 source、sink 或者 function 的接口。在 portable 插件模式下，就是用选择的语言来实现接口。
+与原生插件不同，portable 插件可以捆绑多个 *Symbol*。每个 Symbol 代表源、Sink 或功能的扩展。一个符号的实现就是实现类似于原生插件的 source、sink 或者 function 的接口。在 portable 插件模式下，就是用选择的语言来实现接口。
 然后，用户需要创建一个主程序来定义和服务所有的符号。启动插件时将运行主程序。开发因语言而异，详情请查看 [go SDK](go_sdk.md) 和 [python SDK](python_sdk.md)。
 
 ### 调试

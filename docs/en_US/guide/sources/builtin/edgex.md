@@ -86,12 +86,10 @@ Users can specify the global EdgeX configurations here. The configuration items 
   - `nats-jetstream`
   - `nats-core`
 
-- `messageType`: The EdgeX message model type. If connected to the topic of EdgeX application service, the message model is an "event".
-  Otherwise, if connected to the topic of EdgeX message bus directly to receive the message from device service or core
-  data, the message is a "request". There are two available types of messageType property:
-
-  - `event`: The message will be decoded as a `dtos.Event` type. This is the default.
-  - `request`: The message will be decoded as a `requests.AddEventRequest` type.
+- `messageType`: The EdgeX message model type.
+  
+  - `event`:  If connected to the topic of EdgeX application service, the message model is an "event". The message will be decoded as a `dtos.Event` type. This is the default.
+  - `request`: If connected to the topic of EdgeX message bus directly to receive the message from device service or core data, the message is a "request". The message will be decoded as a `requests.AddEventRequest` type.
 
 ### Optional Configuration (Specifically for MQTT)
 
@@ -199,13 +197,9 @@ When eKuiper processes events from EdgeX, it automatically manages data type con
 - If no match is found, the original value remains unchanged.
 - If a conversion fails, the value is dropped, and a warning logs in the system.
 
-The types defined in readings will be converted into related [data types](../../../sqls/streams.md) that are supported in eKuiper.
-
 #### Boolean
 
-If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert to `boolean` type.
-
-**Boolean Conversion:**
+If `ValueType` value of the reading is `Bool`, then eKuiper tries to convert it to `boolean` type.
 
 - Converted to `true`: "1", "t", "T", "true", "TRUE", "True"
 - Converted to `false`: "0", "f", "F", "false", "FALSE", "False"
