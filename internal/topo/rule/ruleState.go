@@ -137,6 +137,9 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 	return nil
 }
 
+// only used for unit test
+var ignoreSignal = false
+
 // Run start to run the two loops, do not access any changeable states
 func (rs *RuleState) run() {
 	var (
@@ -155,6 +158,11 @@ func (rs *RuleState) run() {
 				}
 				return
 			}
+
+			if ignoreSignal {
+				continue
+			}
+
 			switch s {
 			case ActionSignalStart:
 				if ctx != nil {
@@ -385,9 +393,6 @@ func (rs *RuleState) start() error {
 	}
 	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
 		conf.Log.Debugf("rule %v started", rs.RuleId)
-	}
-	if conf.IsTesting {
-		return nil
 	}
 	rs.ActionCh <- ActionSignalStart
 	return nil
