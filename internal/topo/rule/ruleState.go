@@ -386,6 +386,9 @@ func (rs *RuleState) start() error {
 	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
 		conf.Log.Debugf("rule %v started", rs.RuleId)
 	}
+	if conf.IsTesting {
+		return nil
+	}
 	rs.ActionCh <- ActionSignalStart
 	return nil
 }

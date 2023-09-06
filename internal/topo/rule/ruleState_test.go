@@ -113,6 +113,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	conf.IsTesting = true
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
@@ -184,7 +185,7 @@ func TestUpdate(t *testing.T) {
 	}
 	for i, tt := range tests {
 		rs, err := NewRuleState(&api.Rule{
-			Triggered: false,
+			Triggered: true,
 			Id:        "test",
 			Sql:       "SELECT ts FROM demo",
 			Actions: []map[string]interface{}{
@@ -198,7 +199,9 @@ func TestUpdate(t *testing.T) {
 		err = rs.Start()
 		require.NoError(t, err)
 		time.Sleep(5 * time.Millisecond)
+		require.Equal(t, 1, rs.triggered, fmt.Sprintf("case %v failed", i))
 		err = rs.UpdateTopo(tt.r)
+		time.Sleep(5 * time.Millisecond)
 		require.Equal(t, tt.e, err, fmt.Sprintf("case %v failed", i))
 		require.Equal(t, tt.triggered, rs.triggered, fmt.Sprintf("case %v failed", i))
 		rs.Close()
