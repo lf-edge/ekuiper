@@ -197,6 +197,7 @@ func TestUpdate(t *testing.T) {
 		require.NoError(t, err)
 		err = rs.Start()
 		require.NoError(t, err)
+		time.Sleep(5 * time.Millisecond)
 		err = rs.UpdateTopo(tt.r)
 		require.Equal(t, tt.e, err, fmt.Sprintf("case %v failed", i))
 		require.Equal(t, tt.triggered, rs.triggered, fmt.Sprintf("case %v failed", i))
