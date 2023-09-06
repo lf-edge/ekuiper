@@ -137,6 +137,9 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 	return nil
 }
 
+// only used for unit test
+var ignoreSignal = false
+
 // Run start to run the two loops, do not access any changeable states
 func (rs *RuleState) run() {
 	var (
@@ -155,6 +158,11 @@ func (rs *RuleState) run() {
 				}
 				return
 			}
+
+			if ignoreSignal {
+				continue
+			}
+
 			switch s {
 			case ActionSignalStart:
 				if ctx != nil {
