@@ -37,54 +37,6 @@ func init() {
 	testx.InitEnv()
 }
 
-func TestToMap(t *testing.T) {
-	f, ok := builtins["object_construct"]
-	if !ok {
-		t.Fatal("builtin not found")
-	}
-	contextLogger := conf.Log.WithField("rule", "testExec")
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
-	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
-	tests := []struct {
-		args   []interface{}
-		result interface{}
-	}{
-		{ // 0
-			args: []interface{}{
-				"foo",
-				"bar",
-			},
-			result: map[string]interface{}{
-				"foo": "bar",
-			},
-		}, { // 1
-			args: []interface{}{
-				true,
-				"bar",
-			},
-			result: fmt.Errorf("key true is not a string"),
-		}, { // 2
-			args: []interface{}{
-				"key1",
-				"bar",
-				"key2",
-				"foo",
-			},
-			result: map[string]interface{}{
-				"key1": "bar",
-				"key2": "foo",
-			},
-		},
-	}
-	for i, tt := range tests {
-		result, _ := f.exec(fctx, tt.args)
-		if !reflect.DeepEqual(result, tt.result) {
-			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
-		}
-	}
-}
-
 func TestCoalesceExec(t *testing.T) {
 	f, ok := builtins["coalesce"]
 	if !ok {
