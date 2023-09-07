@@ -85,6 +85,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	n.statManager = stats
+	n.statManagers = []metric.StatManager{stats}
 	n.ctx = ctx
 	for i := range n.outputNodes {
 		n.outputNodes[i].ctx = ctx
@@ -162,14 +163,4 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
-}
-
-func (n *SwitchNode) GetMetrics() [][]interface{} {
-	if n.statManager != nil {
-		return [][]interface{}{
-			n.statManager.GetMetrics(),
-		}
-	} else {
-		return nil
-	}
 }

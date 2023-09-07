@@ -68,6 +68,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	n.statManager = stats
+	n.statManagers = []metric.StatManager{stats}
 	go func() {
 		err := infra.SafeRun(func() error {
 			// restore batch state
@@ -178,14 +179,4 @@ func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()
 	n.statManager.SetBufferLength(int64(len(n.input)))
-}
-
-func (n *JoinAlignNode) GetMetrics() [][]interface{} {
-	if n.statManager != nil {
-		return [][]interface{}{
-			n.statManager.GetMetrics(),
-		}
-	} else {
-		return nil
-	}
 }
