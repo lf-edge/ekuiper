@@ -97,6 +97,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	n.statManager = stats
+	n.statManagers = []metric.StatManager{stats}
 	go func() {
 		err := infra.SafeRun(func() error {
 			ns, err := lookup.Attach(n.name)
@@ -243,16 +244,6 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.Fun
 			merged.AddTuple(t)
 			tuples.Content = append(tuples.Content, merged)
 		}
-		return nil
-	}
-}
-
-func (n *LookupNode) GetMetrics() [][]interface{} {
-	if n.statManager != nil {
-		return [][]interface{}{
-			n.statManager.GetMetrics(),
-		}
-	} else {
 		return nil
 	}
 }
