@@ -80,6 +80,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	w.statManager = stats
+	w.statManagers = []metric.StatManager{stats}
 	w.ctx = ctx
 	// restore state
 	if s, err := ctx.GetState(WatermarkKey); err == nil && s != nil {
@@ -231,14 +232,4 @@ func (w *WatermarkOp) computeWatermarkTs() int64 {
 		}
 	}
 	return ts - w.lateTolerance
-}
-
-func (w *WatermarkOp) GetMetrics() [][]interface{} {
-	if w.statManager != nil {
-		return [][]interface{}{
-			w.statManager.GetMetrics(),
-		}
-	} else {
-		return nil
-	}
 }
