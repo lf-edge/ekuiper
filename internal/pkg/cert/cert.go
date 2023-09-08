@@ -20,7 +20,11 @@ func GenerateTLSForClient(
 ) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: Opts.SkipCertVerify,
+		Renegotiation:      tls.RenegotiateOnceAsClient,
+		MinVersion:         tls.VersionTLS12,
 	}
+
+	conf.Log.Infof("=> TLS configs: %v.", tlsConfig)
 
 	if len(Opts.CertFile) <= 0 && len(Opts.KeyFile) <= 0 {
 		tlsConfig.Certificates = nil
