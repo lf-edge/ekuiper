@@ -35,7 +35,10 @@ import (
 
 func init() {
 	testx.InitEnv()
-	InitManager()
+	_, err := InitManager()
+	if err != nil {
+		panic(err)
+	}
 	meta.InitYamlConfigManager()
 }
 
