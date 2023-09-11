@@ -15,7 +15,9 @@ The json configuration file includes the following two parts:
 
 - about: Used to describe the Meta-information of service, including author, detailed description, help document url, etc. For detailed usage, please refer to the example below.
 - interfaces: Used to define a set of service interfaces. Services provided by the same server often have the same service address and can be used as a service interface. Each service interface contains the following attributes:
-  - protocol: The protocol used by the service. "grpc", "rest" are supported currently. The "msgpack-rpc" is not built by default, you need to build it with build tag "msgpack" by yourself. Please refer to [feature compilation](../../operation/compile/features.md#usage) for detail.
+  - protocol: The protocol used by the service. "grpc", "rest" are supported currently. The "msgpack-rpc" is not built
+    by default, you need to build it with build tag "msgpack" by yourself. Please refer
+    to [feature compilation](../../installation.md#compile-with-selected-features) for detail.
   - address: Service address, which must be url. For example, typical rpc service address: "tcp://localhost:50000" or http service address "https://localhost:8000".
   - schemaType: The type of service description file. Only "protobuf" is supported currently .
   - schemaFile: service description file, currently only proto file is supported. The rest and msgpack services also need to be described in proto.
