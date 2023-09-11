@@ -87,26 +87,7 @@
     },
     {
       "title": "安装与部署",
-      "path": "installation",
-      "children": [
-        {
-          "title": "编译安装",
-          "children": [
-            {
-              "title": "源码编译",
-              "path": "operation/compile/compile"
-            },
-            {
-              "title": "交叉编译",
-              "path": "operation/compile/cross-compile"
-            },
-            {
-              "title": "按需编译",
-              "path": "operation/compile/features"
-            }
-          ]
-        }
-      ]
+      "path": "installation"
     },
     {
       "title": "规则",
@@ -783,23 +764,7 @@
     },
     {
       "title": "Installation",
-      "path": "installation",
-      "children": [
-        {
-          "title": "Build from Source Code",
-          "path": "operation/compile/compile",
-          "children": [
-            {
-              "title": "Cross Compile",
-              "path": "operation/compile/cross-compile"
-            },
-            {
-              "title": "Compile selected features only",
-              "path": "operation/compile/features"
-            }
-          ]
-        }
-      ]
+      "path": "installation"
     },
     {
       "title": "Rules",
