@@ -60,7 +60,7 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
-	registry := &registry{
+	reg := &registry{
 		RWMutex:   sync.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
 		sources:   make(map[string]string),
@@ -72,22 +72,22 @@ func InitManager() (*Manager, error) {
 	m := &Manager{
 		pluginDir:     pluginDir,
 		pluginConfDir: dataDir,
-		reg:           registry,
+		reg:           reg,
 	}
 	err = m.syncRegistry()
 	if err != nil {
 		return nil, err
 	}
-	plg_db, err := store.GetKV("portablePlugin")
+	plgDb, err := store.GetKV("portablePlugin")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening portablePlugin: %v", err)
 	}
-	plg_status_db, err := store.GetKV("portablePluginStatus")
+	plgStatusDb, err := store.GetKV("portablePluginStatus")
 	if err != nil {
 		return nil, fmt.Errorf("error when opening portablePluginStatus: %v", err)
 	}
-	m.plgInstallDb = plg_db
-	m.plgStatusDb = plg_status_db
+	m.plgInstallDb = plgDb
+	m.plgStatusDb = plgStatusDb
 	manager = m
 	return m, nil
 }
@@ -97,7 +97,7 @@ func GetManager() *Manager {
 }
 
 func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
-	registry := &registry{
+	reg := &registry{
 		RWMutex:   sync.RWMutex{},
 		plugins:   make(map[string]*PluginInfo),
 		sources:   make(map[string]string),
@@ -109,9 +109,9 @@ func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
 		if err != nil {
 			return nil, err
 		}
-		registry.Set(name, pi)
+		reg.Set(name, pi)
 	}
-	return &Manager{reg: registry}, nil
+	return &Manager{reg: reg}, nil
 }
 
 func (m *Manager) syncRegistry() error {
