@@ -76,3 +76,22 @@ Example, `SELECT TRUE AS field1 FROM demo` , the field `field1` always returns `
 ```text
 DD, HH, MI, SS, MS
 ```
+
+**String Literals**:
+
+```text
+"user", 'user'
+```
+
+Please note that when using single quotes for string literals in the command line, you may encounter the following issue:
+
+```text
+$ bin/kuiper create rule myrule '{"sql": "SELECT lower('abc') FROM demo"...}'
+```
+
+When creating a rule using the above command, the string literal 'abc' within the single quotes will be interpreted as the variable abc. This is due to the referencing mechanism in the Shell:
+
+```text
+$ echo '{"sql": "SELECT lower('abc') FROM demo"}'
+{"sql": "SELECT lower(abc) FROM demo"}
+```
