@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"path"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
@@ -52,7 +53,7 @@ type ConfKeysOperator interface {
 // ConfigOperator define interface to query/add/update/delete the configs in disk
 type ConfigOperator interface {
 	ConfKeysOperator
-	SaveCfgToFile() error
+	SaveCfgToStorage() error
 }
 
 // ConfigKeys implement ConfKeysOperator interface, load the configs from etc/sources/xx.yaml and et/connections/connection.yaml
@@ -300,7 +301,7 @@ type SourceConfigKeysOps struct {
 	*ConfigKeys
 }
 
-func (c *SourceConfigKeysOps) SaveCfgToFile() error {
+func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
 	pluginName := c.pluginName
 	confDir, err := GetDataLoc()
 	if nil != err {
@@ -322,7 +323,7 @@ type SinkConfigKeysOps struct {
 	*ConfigKeys
 }
 
-func (c *SinkConfigKeysOps) SaveCfgToFile() error {
+func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
 	pluginName := c.pluginName
 	confDir, err := GetDataLoc()
 	if nil != err {
@@ -344,7 +345,7 @@ type ConnectionConfigKeysOps struct {
 	*ConfigKeys
 }
 
-func (p *ConnectionConfigKeysOps) SaveCfgToFile() error {
+func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
 	pluginName := p.pluginName
 	confDir, err := GetDataLoc()
 	if nil != err {
@@ -379,8 +380,8 @@ func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 	return c
 }
 
-// NewConfigOperatorFromSourceYaml construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) {
+// NewConfigOperatorFromSourceStorage construct function, Load the configs from etc/sources/xx.yaml
+func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, error) {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
 			lock:       sync.RWMutex{},
@@ -404,16 +405,24 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 	// Just ignore error if yaml not found
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
-	dataDir, err := GetDataLoc()
-	if nil != err {
-		return nil, err
+	if LoadCfgFromKVStorage {
+		prefix := buildKey("source", pluginName, "")
+		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
+		if err != nil {
+			return nil, err
+		}
+		c.dataCfg = dataCfg
+	} else {
+		dataDir, err := GetDataLoc()
+		if nil != err {
+			return nil, err
+		}
+		dir = path.Join(dataDir, "sources")
+		fileName = pluginName
+
+		filePath = path.Join(dir, fileName+`.yaml`)
+		_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 	}
-	dir = path.Join(dataDir, "sources")
-	fileName = pluginName
-
-	filePath = path.Join(dir, fileName+`.yaml`)
-	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
-
 	return c, nil
 }
 
@@ -430,8 +439,8 @@ func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 	return c
 }
 
-// NewConfigOperatorFromSinkYaml construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSinkYaml(pluginName string) (ConfigOperator, error) {
+// NewConfigOperatorFromSinkStorage construct function, Load the configs from etc/sources/xx.yaml
+func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error) {
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
 			lock:       sync.RWMutex{},
@@ -466,8 +475,8 @@ func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 	return c
 }
 
-// NewConfigOperatorFromConnectionYaml construct function, Load the configs from et/connections/connection.yaml
-func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, error) {
+// NewConfigOperatorFromConnectionStorage construct function, Load the configs from et/connections/connection.yaml
+func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, error) {
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
 			lock:       sync.RWMutex{},
@@ -526,4 +535,85 @@ func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, err
 	}
 
 	return c, nil
+}
+
+var (
+	LoadCfgFromKVStorage bool
+)
+
+type cfgKVStorage interface {
+	Set(string, map[string]interface{}) error
+	Delete(string) error
+	Get(string) (map[string]interface{}, bool, error)
+	GetByPrefix(string) (map[string]map[string]interface{}, error)
+}
+
+type kvMemory struct {
+	store map[string]map[string]interface{}
+}
+
+func (m *kvMemory) Set(key string, v map[string]interface{}) error {
+	m.store[key] = v
+	return nil
+}
+
+func (m *kvMemory) Delete(key string) error {
+	delete(m.store, key)
+	return nil
+}
+
+func (m *kvMemory) Get(key string) (map[string]interface{}, bool, error) {
+	got, exists := m.store[key]
+	if !exists {
+		return nil, false, nil
+	}
+	return got, exists, nil
+}
+
+func (m *kvMemory) GetByPrefix(prefix string) (map[string]map[string]interface{}, error) {
+	rm := make(map[string]map[string]interface{})
+	for key, value := range m.store {
+		if strings.HasPrefix(key, prefix) {
+			rm[key] = value
+		}
+	}
+	return rm, nil
+}
+
+var mockMemoryKVStore *kvMemory
+
+func getKVStorage() (cfgKVStorage, error) {
+	if mockMemoryKVStore == nil {
+		mockMemoryKVStore = &kvMemory{}
+		mockMemoryKVStore.store = make(map[string]map[string]interface{})
+	}
+	return mockMemoryKVStore, nil
+}
+
+func saveCfgKeyToKV(key string, cfg map[string]interface{}) error {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return err
+	}
+	return kvStorage.Set(key, cfg)
+}
+
+func delCfgKeyInStorage(key string) error {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return err
+	}
+	return kvStorage.Delete(key)
+}
+
+func getCfgKeyFromStorageByPrefix(prefix string) (map[string]map[string]interface{}, error) {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return nil, err
+	}
+	return kvStorage.GetByPrefix(prefix)
+}
+
+func buildKey(confType string, pluginName string, confKey string) string {
+	return fmt.Sprintf("%s/%s/%s", confType, pluginName, confKey)
 }
