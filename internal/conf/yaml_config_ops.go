@@ -15,6 +15,7 @@
 package conf
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"path"
@@ -64,6 +65,8 @@ type ConfigKeys struct {
 	pluginName string                            // source type, can be mqtt/edgex/httppull
 	etcCfg     map[string]map[string]interface{} // configs defined in etc/sources/yaml
 	dataCfg    map[string]map[string]interface{} // configs defined in etc/sources/
+	delCfgKey  map[string]struct{}
+	saveCfgKey map[string]struct{}
 }
 
 func (c *ConfigKeys) GetPluginName() string {
@@ -215,6 +218,10 @@ func (c *ConfigKeys) DeleteConfKey(confKey string) {
 	defer c.lock.Unlock()
 
 	delete(c.dataCfg, confKey)
+	if c.delCfgKey == nil {
+		c.delCfgKey = make(map[string]struct{})
+	}
+	c.delCfgKey[confKey] = struct{}{}
 }
 
 func (c *ConfigKeys) ClearConfKeys() {
@@ -279,6 +286,10 @@ func (c *ConfigKeys) AddConfKey(confKey string, reqField map[string]interface{})
 
 	c.dataCfg[confKey] = reqField
 
+	if c.saveCfgKey == nil {
+		c.saveCfgKey = make(map[string]struct{})
+	}
+	c.saveCfgKey[confKey] = struct{}{}
 	return nil
 }
 
@@ -302,6 +313,21 @@ type SourceConfigKeysOps struct {
 }
 
 func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
+	if LoadCfgFromKVStorage {
+		for key := range c.saveCfgKey {
+			if err := saveCfgKeyToKV(key, c.dataCfg[key]); err != nil {
+				return err
+			}
+			delete(c.saveCfgKey, key)
+		}
+		for key := range c.delCfgKey {
+			if err := delCfgKeyInStorage(key); err != nil {
+				return err
+			}
+			delete(c.delCfgKey, key)
+		}
+		return nil
+	}
 	pluginName := c.pluginName
 	confDir, err := GetDataLoc()
 	if nil != err {
@@ -375,6 +401,8 @@ func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 			pluginName: pluginName,
 			etcCfg:     map[string]map[string]interface{}{},
 			dataCfg:    map[string]map[string]interface{}{},
+			delCfgKey:  map[string]struct{}{},
+			saveCfgKey: map[string]struct{}{},
 		},
 	}
 	return c
@@ -388,6 +416,8 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 			pluginName: pluginName,
 			etcCfg:     map[string]map[string]interface{}{},
 			dataCfg:    map[string]map[string]interface{}{},
+			delCfgKey:  map[string]struct{}{},
+			saveCfgKey: map[string]struct{}{},
 		},
 	}
 
@@ -406,7 +436,7 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
 	if LoadCfgFromKVStorage {
-		prefix := buildKey("source", pluginName, "")
+		prefix := buildKey("sources", pluginName, "")
 		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
 		if err != nil {
 			return nil, err
@@ -434,6 +464,8 @@ func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 			pluginName: pluginName,
 			etcCfg:     map[string]map[string]interface{}{},
 			dataCfg:    map[string]map[string]interface{}{},
+			delCfgKey:  map[string]struct{}{},
+			saveCfgKey: map[string]struct{}{},
 		},
 	}
 	return c
@@ -447,6 +479,8 @@ func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error)
 			pluginName: pluginName,
 			etcCfg:     map[string]map[string]interface{}{},
 			dataCfg:    map[string]map[string]interface{}{},
+			delCfgKey:  map[string]struct{}{},
+			saveCfgKey: map[string]struct{}{},
 		},
 	}
 
@@ -470,6 +504,8 @@ func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 			pluginName: pluginName,
 			etcCfg:     map[string]map[string]interface{}{},
 			dataCfg:    map[string]map[string]interface{}{},
+			delCfgKey:  map[string]struct{}{},
+			saveCfgKey: map[string]struct{}{},
 		},
 	}
 	return c
@@ -483,6 +519,8 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 			pluginName: pluginName,
 			etcCfg:     map[string]map[string]interface{}{},
 			dataCfg:    map[string]map[string]interface{}{},
+			delCfgKey:  map[string]struct{}{},
+			saveCfgKey: map[string]struct{}{},
 		},
 	}
 
@@ -537,9 +575,7 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 	return c, nil
 }
 
-var (
-	LoadCfgFromKVStorage bool
-)
+var LoadCfgFromKVStorage bool
 
 type cfgKVStorage interface {
 	Set(string, map[string]interface{}) error
@@ -615,5 +651,16 @@ func getCfgKeyFromStorageByPrefix(prefix string) (map[string]map[string]interfac
 }
 
 func buildKey(confType string, pluginName string, confKey string) string {
-	return fmt.Sprintf("%s/%s/%s", confType, pluginName, confKey)
+	bs := bytes.NewBufferString(confType)
+	if len(pluginName) < 1 {
+		return bs.String()
+	}
+	bs.WriteString(".")
+	bs.WriteString(pluginName)
+	if len(confKey) < 1 {
+		return bs.String()
+	}
+	bs.WriteString(".")
+	bs.WriteString(confKey)
+	return bs.String()
 }
