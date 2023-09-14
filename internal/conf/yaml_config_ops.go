@@ -421,14 +421,19 @@ func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 
 // NewConfigOperatorFromSourceStorage construct function, Load the configs from etc/sources/xx.yaml
 func NewConfigOperatorFromSourceStorage(pluginName string, options ...Option) (ConfigOperator, error) {
+	cfgO := &CfgOption{}
+	for _, opt := range options {
+		opt(cfgO)
+	}
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
-			delCfgKey:  map[string]struct{}{},
-			saveCfgKey: map[string]struct{}{},
+			loadCfgFromKV: cfgO.LoadFromKV,
+			lock:          sync.RWMutex{},
+			pluginName:    pluginName,
+			etcCfg:        map[string]map[string]interface{}{},
+			dataCfg:       map[string]map[string]interface{}{},
+			delCfgKey:     map[string]struct{}{},
+			saveCfgKey:    map[string]struct{}{},
 		},
 	}
 
@@ -445,11 +450,6 @@ func NewConfigOperatorFromSourceStorage(pluginName string, options ...Option) (C
 	filePath := path.Join(dir, fileName+`.yaml`)
 	// Just ignore error if yaml not found
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
-
-	cfgO := &CfgOption{}
-	for _, opt := range options {
-		opt(cfgO)
-	}
 
 	if cfgO.LoadFromKV {
 		prefix := buildKey("sources", pluginName, "")
@@ -489,20 +489,20 @@ func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 
 // NewConfigOperatorFromSinkStorage construct function, Load the configs from etc/sources/xx.yaml
 func NewConfigOperatorFromSinkStorage(pluginName string, options ...Option) (ConfigOperator, error) {
-	c := &SinkConfigKeysOps{
-		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
-			delCfgKey:  map[string]struct{}{},
-			saveCfgKey: map[string]struct{}{},
-		},
-	}
-
 	cfgO := &CfgOption{}
 	for _, opt := range options {
 		opt(cfgO)
+	}
+	c := &SinkConfigKeysOps{
+		&ConfigKeys{
+			loadCfgFromKV: cfgO.LoadFromKV,
+			lock:          sync.RWMutex{},
+			pluginName:    pluginName,
+			etcCfg:        map[string]map[string]interface{}{},
+			dataCfg:       map[string]map[string]interface{}{},
+			delCfgKey:     map[string]struct{}{},
+			saveCfgKey:    map[string]struct{}{},
+		},
 	}
 	if cfgO.LoadFromKV {
 		prefix := buildKey("sinks", pluginName, "")
@@ -541,14 +541,19 @@ func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 
 // NewConfigOperatorFromConnectionStorage construct function, Load the configs from et/connections/connection.yaml
 func NewConfigOperatorFromConnectionStorage(pluginName string, options ...Option) (ConfigOperator, error) {
+	cfgO := &CfgOption{}
+	for _, opt := range options {
+		opt(cfgO)
+	}
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
-			delCfgKey:  map[string]struct{}{},
-			saveCfgKey: map[string]struct{}{},
+			loadCfgFromKV: cfgO.LoadFromKV,
+			lock:          sync.RWMutex{},
+			pluginName:    pluginName,
+			etcCfg:        map[string]map[string]interface{}{},
+			dataCfg:       map[string]map[string]interface{}{},
+			delCfgKey:     map[string]struct{}{},
+			saveCfgKey:    map[string]struct{}{},
 		},
 	}
 
@@ -576,11 +581,6 @@ func NewConfigOperatorFromConnectionStorage(pluginName string, options ...Option
 		}
 	} else {
 		return nil, fmt.Errorf("not find the target connection type: %s", c.pluginName)
-	}
-
-	cfgO := &CfgOption{}
-	for _, opt := range options {
-		opt(cfgO)
 	}
 
 	if cfgO.LoadFromKV {
