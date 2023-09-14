@@ -1,0 +1,116 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "XinTong Zhou",
+      "email": "emy120115@gmail.com",
+      "company": "personal"
+    },
+    "description": {
+      "en_US": "This operation is used to publish the output message to the Redis message channel.",
+      "zh_CN": "该操作用于将输出消息发布到redis消息通道。"
+    }
+  },
+  "libs": [
+    "github.com/redis/go-redis/v9"
+  ],
+  "properties": [{
+    "name": "address",
+    "default": "127.0.0.1:6379",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The Redis database address.",
+      "zh_CN": "Redis 数据库地址。"
+    },
+    "label": {
+      "en_US": "Address",
+      "zh_CN": "地址"
+    }
+  }, {
+    "name": "username",
+    "default": "default",
+    "optional": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "Redis database username.",
+      "zh_CN": "redis用户名。"
+    },
+    "label": {
+      "en_US": "Username",
+      "zh_CN": "用户名"
+    }
+  },{
+    "name": "password",
+    "default": "",
+    "optional": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "Redis database password.",
+      "zh_CN": "redis数据库密码。"
+    },
+    "label": {
+      "en_US": "Password",
+      "zh_CN": "密码"
+    }
+  }, {
+    "name": "db",
+    "default": 0,
+    "optional": false,
+    "control": "text",
+    "type": "int",
+    "hint": {
+      "en_US": "Database number (0 to 16).",
+      "zh_CN": "数据库号（0到16）。"
+    },
+    "label": {
+      "en_US": "Database Number",
+      "zh_CN": "数据库号"
+    }
+  }, {
+    "name": "channel",
+    "default": "",
+    "optional": false,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The channels of Redis.",
+      "zh_CN": "redis发布消息通道。"
+    },
+    "label": {
+      "en_US": "Publish Channels",
+      "zh_CN": "发布通道"
+    }
+  },{
+    "name": "compression",
+    "optional": true,
+    "control": "select",
+    "type": "string",
+    "values": [
+      "zlib",
+      "gzip",
+      "flate",
+      "zstd"
+    ],
+    "hint": {
+      "en_US": "Compress the payload with the specified compression method.",
+      "zh_CN": "使用指定的压缩方法压缩 Payload。"
+    },
+    "label": {
+      "en_US": "Compression",
+      "zh_CN": "压缩"
+    }
+  }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "RedisPub",
+      "zh": "RedisPub"
+    }
+  }
+}
