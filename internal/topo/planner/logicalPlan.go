@@ -60,7 +60,7 @@ func (p *baseLogicalPlan) Explain() string {
 	p.ExplainInfo.Children = p.ChildrenID()
 	bf := bytes.NewBuffer([]byte{})
 	jsonEncoder := json.NewEncoder(bf)
-	jsonEncoder.SetEscapeHTML(true)
+	jsonEncoder.SetEscapeHTML(false)
 	jsonEncoder.Encode(p.ExplainInfo)
 	return bf.String()
 }
@@ -137,4 +137,6 @@ const (
 	PROJECT       PlanType = "ProjectPlan"
 	PROJECTSET    PlanType = "ProjectSetPlan"
 	WINDOW        PlanType = "WindowPlan"
+	WINDOWFUNC    PlanType = "WindowFuncPlan"
+	WATERMARK     PlanType = "WatermarkPlan"
 )

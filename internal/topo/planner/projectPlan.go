@@ -14,7 +14,11 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"strconv"
+
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type ProjectPlan struct {
 	baseLogicalPlan
@@ -63,10 +67,32 @@ func (p ProjectPlan) Init() *ProjectPlan {
 		}
 	}
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(PROJECT)
 	if len(p.windowFuncNames) < 1 {
 		p.windowFuncNames = nil
 	}
 	return &p
+}
+
+func (p *ProjectPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.fields != nil && len(p.fields) != 0 {
+		info += "Fields:[ "
+		for i, field := range p.fields {
+			if field.Expr != nil {
+				info += field.Expr.String()
+				if i != len(p.fields)-1 {
+					info += ", "
+				}
+			}
+		}
+		info += " ]"
+	}
+	if p.enableLimit {
+		info += ", Limit:" + strconv.Itoa(p.limitCount)
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 func (p *ProjectPlan) PruneColumns(fields []ast.Expr) error {

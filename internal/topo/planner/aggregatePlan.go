@@ -23,7 +23,27 @@ type AggregatePlan struct {
 
 func (p AggregatePlan) Init() *AggregatePlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(AGGREGATE)
 	return &p
+}
+
+func (p *AggregatePlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.dimensions != nil && len(p.dimensions) != 0 {
+		info += "Dimension:{ "
+		for i, dimension := range p.dimensions {
+			if dimension.Expr != nil {
+				info += dimension.Expr.String()
+				if i != len(p.dimensions)-1 {
+					info += ", "
+				}
+			}
+		}
+		info += " }"
+	}
+
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 func (p *AggregatePlan) PruneColumns(fields []ast.Expr) error {

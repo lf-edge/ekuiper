@@ -14,6 +14,12 @@
 
 package planner
 
+import (
+	"reflect"
+	"strconv"
+	"strings"
+)
+
 type ProjectSetPlan struct {
 	baseLogicalPlan
 	SrfMapping  map[string]struct{}
@@ -23,5 +29,26 @@ type ProjectSetPlan struct {
 
 func (p ProjectSetPlan) Init() *ProjectSetPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(PROJECTSET)
 	return &p
+}
+
+func (p *ProjectSetPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.SrfMapping != nil && len(p.SrfMapping) != 0 {
+		info += "SrfMap:{"
+		for str, s := range p.SrfMapping {
+			ty := reflect.TypeOf(s)
+			arr := strings.Split(ty.String(), ".")
+			if len(arr) == 1 {
+				info += "key:" + str
+			} else {
+				info += "key:" + str + ", " + "value:" + arr[1] + ";"
+			}
+		}
+		info += "}"
+	}
+	info += ", EnableLimit:" + strconv.FormatBool(p.enableLimit)
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }

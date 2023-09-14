@@ -27,7 +27,27 @@ type FilterPlan struct {
 
 func (p FilterPlan) Init() *FilterPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(FILTER)
 	return &p
+}
+
+func (p *FilterPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.condition != nil {
+		info += "Condition:{ " + p.condition.String() + " }, "
+	}
+	if p.stateFuncs != nil && len(p.stateFuncs) != 0 {
+		info += "StateFuncs:["
+		for i := 0; i < len(p.stateFuncs); i++ {
+			info += p.stateFuncs[i].String()
+			if i != len(p.stateFuncs)-1 {
+				info += ", "
+			}
+		}
+		info += "]"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 func (p *FilterPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {
