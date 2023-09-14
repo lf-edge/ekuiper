@@ -22,6 +22,19 @@ create rule $rule_name '$rule_json' | create rule $rule_name -f $rule_def_file
 
 该命令创建一个名为 `rule1` 的规则。
 
+请注意，在命令行中使用单引号字符串字面量时可能会遇到以下问题：
+
+```text
+$ bin/kuiper create rule myrule '{"sql": "SELECT lower('abc') FROM demo"...}'
+```
+
+在使用上述命令创建规则时，单引号字符串字面量中的 'abc' 会被识别为变量 abc，这是由于 Shell 的引用机制导致的：
+
+```text
+$ echo '{"sql": "SELECT lower('abc') FROM demo"}'
+{"sql": "SELECT lower(abc) FROM demo"}
+```
+
 - 在文件中明确规则定义。 如果规则很复杂，或者规则已经以组织良好的格式写在文本文件中，则只需通过 `-f` 选项指定规则定义即可。
 
 示例：
