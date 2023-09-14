@@ -22,6 +22,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
@@ -288,6 +289,26 @@ func TestNewConfigOperatorForConnection(t *testing.T) {
 	if connection.GetPluginName() != "mqtt" {
 		t.Errorf("NewConfigOperatorForSink() fail")
 	}
+}
+
+func TestConfigKeys_LoadFromKV(t *testing.T) {
+	LoadCfgFromKVStorage = true
+	defer func() {
+		LoadCfgFromKVStorage = false
+	}()
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
+	require.NoError(t, err)
+	require.NoError(t, mqttCfg.AddConfKey("key1", map[string]interface{}{
+		"k1": "v1",
+	}))
+	require.NoError(t, mqttCfg.SaveCfgToStorage())
+	mqttCfg2, err := NewConfigOperatorFromSourceStorage("mqtt")
+	require.NoError(t, err)
+	require.Equal(t, map[string]map[string]interface{}{
+		"key1": {
+			"k1": "v1",
+		},
+	}, mqttCfg2.CopyUpdatableConfContent())
 }
 
 func marshalUn(input, output interface{}) error {

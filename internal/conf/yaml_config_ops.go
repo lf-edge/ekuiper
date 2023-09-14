@@ -69,6 +69,23 @@ type ConfigKeys struct {
 	saveCfgKey map[string]struct{}
 }
 
+func (c *ConfigKeys) saveCfgKeysIntoKVStorage(cfgType string) error {
+	for key := range c.saveCfgKey {
+		if err := saveCfgKeyToKV(buildKey(cfgType, c.pluginName, key), c.dataCfg[key]); err != nil {
+			return err
+		}
+		delete(c.saveCfgKey, key)
+	}
+	for key := range c.delCfgKey {
+		if err := delCfgKeyInStorage(buildKey(cfgType, c.pluginName, key)); err != nil {
+			return err
+		}
+		delete(c.delCfgKey, key)
+	}
+	return nil
+
+}
+
 func (c *ConfigKeys) GetPluginName() string {
 	return c.pluginName
 }
@@ -314,19 +331,7 @@ type SourceConfigKeysOps struct {
 
 func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
 	if LoadCfgFromKVStorage {
-		for key := range c.saveCfgKey {
-			if err := saveCfgKeyToKV(key, c.dataCfg[key]); err != nil {
-				return err
-			}
-			delete(c.saveCfgKey, key)
-		}
-		for key := range c.delCfgKey {
-			if err := delCfgKeyInStorage(key); err != nil {
-				return err
-			}
-			delete(c.delCfgKey, key)
-		}
-		return nil
+		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sources")
 	}
 	pluginName := c.pluginName
 	confDir, err := GetDataLoc()
@@ -350,6 +355,9 @@ type SinkConfigKeysOps struct {
 }
 
 func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
+	if LoadCfgFromKVStorage {
+		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sinks")
+	}
 	pluginName := c.pluginName
 	confDir, err := GetDataLoc()
 	if nil != err {
@@ -372,6 +380,9 @@ type ConnectionConfigKeysOps struct {
 }
 
 func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
+	if LoadCfgFromKVStorage {
+		return p.ConfigKeys.saveCfgKeysIntoKVStorage("connections")
+	}
 	pluginName := p.pluginName
 	confDir, err := GetDataLoc()
 	if nil != err {
@@ -483,16 +494,23 @@ func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error)
 			saveCfgKey: map[string]struct{}{},
 		},
 	}
+	if LoadCfgFromKVStorage {
+		prefix := buildKey("sinks", pluginName, "")
+		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
+		if err != nil {
+			return nil, err
+		}
+		c.dataCfg = dataCfg
+	} else {
+		dataDir, err := GetDataLoc()
+		if nil != err {
+			return nil, err
+		}
+		dir := path.Join(dataDir, "sinks")
 
-	dataDir, err := GetDataLoc()
-	if nil != err {
-		return nil, err
+		filePath := path.Join(dir, pluginName+`.yaml`)
+		_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 	}
-	dir := path.Join(dataDir, "sinks")
-
-	filePath := path.Join(dir, pluginName+`.yaml`)
-	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
-
 	return c, nil
 }
 
@@ -550,28 +568,36 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 		return nil, fmt.Errorf("not find the target connection type: %s", c.pluginName)
 	}
 
-	confDir, err = GetDataLoc()
-	if nil != err {
-		return nil, err
-	}
-	yamlPath = path.Join(confDir, "connections/connection.yaml")
-	yamlData = make(map[string]interface{})
-	_ = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
+	if LoadCfgFromKVStorage {
+		prefix := buildKey("connections", pluginName, "")
+		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
+		if err != nil {
+			return nil, err
+		}
+		c.dataCfg = dataCfg
+	} else {
+		confDir, err = GetDataLoc()
+		if nil != err {
+			return nil, err
+		}
+		yamlPath = path.Join(confDir, "connections/connection.yaml")
+		yamlData = make(map[string]interface{})
+		_ = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
 
-	if plgCnfs, ok := yamlData[pluginName]; ok {
-		if cf, ok1 := plgCnfs.(map[string]interface{}); ok1 {
-			for confKey, confVal := range cf {
-				if conf, ok := confVal.(map[string]interface{}); ok {
-					c.dataCfg[confKey] = conf
-				} else {
-					return nil, fmt.Errorf("file content is not right: %s.%v", confKey, confVal)
+		if plgCnfs, ok := yamlData[pluginName]; ok {
+			if cf, ok1 := plgCnfs.(map[string]interface{}); ok1 {
+				for confKey, confVal := range cf {
+					if conf, ok := confVal.(map[string]interface{}); ok {
+						c.dataCfg[confKey] = conf
+					} else {
+						return nil, fmt.Errorf("file content is not right: %s.%v", confKey, confVal)
+					}
 				}
+			} else {
+				return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
 			}
-		} else {
-			return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
 		}
 	}
-
 	return c, nil
 }
 
@@ -647,7 +673,16 @@ func getCfgKeyFromStorageByPrefix(prefix string) (map[string]map[string]interfac
 	if err != nil {
 		return nil, err
 	}
-	return kvStorage.GetByPrefix(prefix)
+	val, err := kvStorage.GetByPrefix(prefix)
+	if err != nil {
+		return nil, err
+	}
+	v := make(map[string]map[string]interface{})
+	for key, value := range val {
+		ss := strings.Split(key, ".")
+		v[ss[2]] = value
+	}
+	return v, nil
 }
 
 func buildKey(confType string, pluginName string, confKey string) string {
