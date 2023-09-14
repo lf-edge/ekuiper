@@ -301,6 +301,9 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 	require.NoError(t, mqttCfg.AddConfKey("key1", map[string]interface{}{
 		"k1": "v1",
 	}))
+	require.NoError(t, mqttCfg.AddConfKey("key2", map[string]interface{}{
+		"k2": "v2",
+	}))
 	require.NoError(t, mqttCfg.SaveCfgToStorage())
 	mqttCfg2, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
@@ -308,7 +311,19 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 		"key1": {
 			"k1": "v1",
 		},
+		"key2": {
+			"k2": "v2",
+		},
 	}, mqttCfg2.CopyUpdatableConfContent())
+	mqttCfg2.DeleteConfKey("key1")
+	require.NoError(t, mqttCfg2.SaveCfgToStorage())
+	mqttCfg3, err := NewConfigOperatorFromSourceStorage("mqtt")
+	require.NoError(t, err)
+	require.Equal(t, map[string]map[string]interface{}{
+		"key2": {
+			"k2": "v2",
+		},
+	}, mqttCfg3.CopyUpdatableConfContent())
 }
 
 func marshalUn(input, output interface{}) error {
