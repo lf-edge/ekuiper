@@ -83,7 +83,6 @@ func (c *ConfigKeys) saveCfgKeysIntoKVStorage(cfgType string) error {
 		delete(c.delCfgKey, key)
 	}
 	return nil
-
 }
 
 func (c *ConfigKeys) GetPluginName() string {
