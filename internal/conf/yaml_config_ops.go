@@ -61,12 +61,13 @@ type ConfigOperator interface {
 // Hold the connection configs for each connection type in etcCfg field
 // Provide method to query/add/update/delete the configs
 type ConfigKeys struct {
-	lock       sync.RWMutex
-	pluginName string                            // source type, can be mqtt/edgex/httppull
-	etcCfg     map[string]map[string]interface{} // configs defined in etc/sources/yaml
-	dataCfg    map[string]map[string]interface{} // configs defined in etc/sources/
-	delCfgKey  map[string]struct{}
-	saveCfgKey map[string]struct{}
+	loadCfgFromKV bool
+	lock          sync.RWMutex
+	pluginName    string                            // source type, can be mqtt/edgex/httppull
+	etcCfg        map[string]map[string]interface{} // configs defined in etc/sources/yaml
+	dataCfg       map[string]map[string]interface{} // configs defined in etc/sources/
+	delCfgKey     map[string]struct{}
+	saveCfgKey    map[string]struct{}
 }
 
 func (c *ConfigKeys) saveCfgKeysIntoKVStorage(cfgType string) error {
@@ -329,7 +330,7 @@ type SourceConfigKeysOps struct {
 }
 
 func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
-	if LoadCfgFromKVStorage {
+	if c.loadCfgFromKV {
 		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sources")
 	}
 	pluginName := c.pluginName
@@ -354,7 +355,7 @@ type SinkConfigKeysOps struct {
 }
 
 func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
-	if LoadCfgFromKVStorage {
+	if c.loadCfgFromKV {
 		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sinks")
 	}
 	pluginName := c.pluginName
@@ -379,7 +380,7 @@ type ConnectionConfigKeysOps struct {
 }
 
 func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
-	if LoadCfgFromKVStorage {
+	if p.loadCfgFromKV {
 		return p.ConfigKeys.saveCfgKeysIntoKVStorage("connections")
 	}
 	pluginName := p.pluginName
@@ -419,7 +420,7 @@ func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 }
 
 // NewConfigOperatorFromSourceStorage construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, error) {
+func NewConfigOperatorFromSourceStorage(pluginName string, options ...Option) (ConfigOperator, error) {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
 			lock:       sync.RWMutex{},
@@ -445,7 +446,12 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 	// Just ignore error if yaml not found
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
-	if LoadCfgFromKVStorage {
+	cfgO := &CfgOption{}
+	for _, opt := range options {
+		opt(cfgO)
+	}
+
+	if cfgO.LoadFromKV {
 		prefix := buildKey("sources", pluginName, "")
 		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
 		if err != nil {
@@ -482,7 +488,7 @@ func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 }
 
 // NewConfigOperatorFromSinkStorage construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error) {
+func NewConfigOperatorFromSinkStorage(pluginName string, options ...Option) (ConfigOperator, error) {
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
 			lock:       sync.RWMutex{},
@@ -493,7 +499,12 @@ func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error)
 			saveCfgKey: map[string]struct{}{},
 		},
 	}
-	if LoadCfgFromKVStorage {
+
+	cfgO := &CfgOption{}
+	for _, opt := range options {
+		opt(cfgO)
+	}
+	if cfgO.LoadFromKV {
 		prefix := buildKey("sinks", pluginName, "")
 		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
 		if err != nil {
@@ -529,7 +540,7 @@ func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 }
 
 // NewConfigOperatorFromConnectionStorage construct function, Load the configs from et/connections/connection.yaml
-func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, error) {
+func NewConfigOperatorFromConnectionStorage(pluginName string, options ...Option) (ConfigOperator, error) {
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
 			lock:       sync.RWMutex{},
@@ -567,7 +578,12 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 		return nil, fmt.Errorf("not find the target connection type: %s", c.pluginName)
 	}
 
-	if LoadCfgFromKVStorage {
+	cfgO := &CfgOption{}
+	for _, opt := range options {
+		opt(cfgO)
+	}
+
+	if cfgO.LoadFromKV {
 		prefix := buildKey("connections", pluginName, "")
 		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
 		if err != nil {
@@ -600,7 +616,17 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 	return c, nil
 }
 
-var LoadCfgFromKVStorage bool
+type CfgOption struct {
+	LoadFromKV bool
+}
+
+type Option func(cfgO *CfgOption)
+
+func WithLoadFromKV(load bool) Option {
+	return func(cfgO *CfgOption) {
+		cfgO.LoadFromKV = load
+	}
+}
 
 type cfgKVStorage interface {
 	Set(string, map[string]interface{}) error
