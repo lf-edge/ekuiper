@@ -631,7 +631,6 @@ func WithLoadFromKV(load bool) Option {
 type cfgKVStorage interface {
 	Set(string, map[string]interface{}) error
 	Delete(string) error
-	Get(string) (map[string]interface{}, bool, error)
 	GetByPrefix(string) (map[string]map[string]interface{}, error)
 }
 
@@ -647,14 +646,6 @@ func (m *kvMemory) Set(key string, v map[string]interface{}) error {
 func (m *kvMemory) Delete(key string) error {
 	delete(m.store, key)
 	return nil
-}
-
-func (m *kvMemory) Get(key string) (map[string]interface{}, bool, error) {
-	got, exists := m.store[key]
-	if !exists {
-		return nil, false, nil
-	}
-	return got, exists, nil
 }
 
 func (m *kvMemory) GetByPrefix(prefix string) (map[string]map[string]interface{}, error) {
