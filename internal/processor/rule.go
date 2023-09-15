@@ -92,25 +92,25 @@ func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
 	return rule, nil
 }
 
-func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (err error) {
+func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (*api.Rule, error) {
 	rule, err := p.GetRuleById(name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	rule.Triggered = triggered
 	ruleJson, err := json.Marshal(rule)
 	if err != nil {
-		return fmt.Errorf("Marshal rule %s error : %s.", name, err)
+		return nil, fmt.Errorf("Marshal rule %s error : %s.", name, err)
 	}
 
 	err = p.db.Set(name, string(ruleJson))
 	if err != nil {
-		return err
+		return nil, err
 	} else {
 		log.Infof("Rule %s is replaced.", name)
 	}
-	return err
+	return rule, err
 }
 
 func (p *RuleProcessor) GetRuleJson(id string) (string, error) {

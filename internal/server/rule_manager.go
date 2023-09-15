@@ -163,7 +163,7 @@ func updateRule(ruleId, ruleJson string) error {
 		if err != nil {
 			return err
 		}
-		err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, r.Triggered)
+		_, err = ruleProcessor.ExecReplaceRuleState(rs.RuleId, r.Triggered)
 		return err
 	} else {
 		return fmt.Errorf("Rule %s registry not found, try to delete it and recreate", r.Id)
@@ -195,8 +195,10 @@ func reRunRule(name string, isInternal bool) error {
 		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
 	} else {
 		if !isInternal {
-			if err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true); err != nil {
+			if rule, err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true); err != nil {
 				return err
+			} else {
+				rs.Rule = rule
 			}
 		}
 		return rs.UpdateTopo(rs.Rule)
@@ -220,7 +222,7 @@ func stopRule(name string) (result string) {
 		if err != nil {
 			conf.Log.Warn(err)
 		}
-		err = ruleProcessor.ExecReplaceRuleState(name, false)
+		_, err = ruleProcessor.ExecReplaceRuleState(name, false)
 		if err != nil {
 			conf.Log.Warnf("stop rule found error: %s", err.Error())
 		}
