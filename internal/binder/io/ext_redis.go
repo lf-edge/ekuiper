@@ -18,10 +18,13 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/internal/io/redis"
+	"github.com/lf-edge/ekuiper/internal/io/redis/pubsub"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func init() {
 	lookupSources["redis"] = func() api.LookupSource { return redis.GetLookupSource() }
 	sinks["redis"] = func() api.Sink { return redis.GetSink() }
+	sinks["redisPub"] = func() api.Sink { return pubsub.RedisPub() }
+	sources["redisSub"] = func() api.Source { return pubsub.RedisSub() }
 }
