@@ -316,8 +316,16 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
+	// update rule, will set rule to triggered
+	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
+
 	expect = `Rule rule1 was stopped.`
 	assert.Equal(suite.T(), expect, string(returnVal))
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	// restart rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/restart", bytes.NewBufferString("any"))
@@ -326,6 +334,15 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
 	expect = `Rule rule1 was restarted`
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// get rule
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	expect = `{"triggered":true,"id":"rule1","sql":"select * from alert","actions":[{"nop":{}}],"options":{"debug":false,"logFilename":"","isEventTime":false,"lateTolerance":1000,"concurrency":1,"bufferLength":1024,"sendMetaToSink":false,"sendError":true,"qos":0,"checkpointInterval":300000,"restartStrategy":{"attempts":0,"delay":1000,"multiplier":2,"maxDelay":30000,"jitter":0.1},"cron":"","duration":"","cronDatetimeRange":null}}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// delete rule
