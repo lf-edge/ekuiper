@@ -95,3 +95,5 @@ When creating a rule using the above command, the string literal 'abc' within th
 $ echo '{"sql": "SELECT lower('abc') FROM demo"}'
 {"sql": "SELECT lower(abc) FROM demo"}
 ```
+
+If you encounter this issue, it is recommended to use double quotes for string literals "abc" instead of single quotes 'abc' to prevent variable substitution from occurring.

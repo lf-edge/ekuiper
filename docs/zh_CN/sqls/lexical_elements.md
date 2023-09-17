@@ -95,3 +95,5 @@ $ bin/kuiper create rule myrule '{"sql": "SELECT lower('abc') FROM demo"...}'
 $ echo '{"sql": "SELECT lower('abc') FROM demo"}'
 {"sql": "SELECT lower(abc) FROM demo"}
 ```
+
+如果遇到以上问题，建议使用双引号字符串字面量 "abc" 来代替单引号字符串字面量 'abc'，以避免变量替代的情况发生。

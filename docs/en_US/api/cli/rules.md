@@ -35,6 +35,8 @@ $ echo '{"sql": "SELECT lower('abc') FROM demo"}'
 {"sql": "SELECT lower(abc) FROM demo"}
 ```
 
+If you encounter this issue, it is recommended to use double quotes for string literals "abc" instead of single quotes 'abc' to prevent variable substitution from occurring.
+
 - Specify the rule definition in file. If the rule is complex, or the rule is already wrote in text files with well organized formats, you can just specify the rule definition through `-f` option.
 
 Sample:
