@@ -231,11 +231,7 @@ func (c *ConfigKeys) GetUpdatableConfKeys() (keys []string) {
 func (c *ConfigKeys) DeleteConfKey(confKey string) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
 	delete(c.dataCfg, confKey)
-	if c.delCfgKey == nil {
-		c.delCfgKey = make(map[string]struct{})
-	}
 	c.delCfgKey[confKey] = struct{}{}
 }
 
@@ -298,12 +294,7 @@ func (c *ConfigKeys) DeleteConfKeyField(confKey string, reqField map[string]inte
 func (c *ConfigKeys) AddConfKey(confKey string, reqField map[string]interface{}) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
 	c.dataCfg[confKey] = reqField
-
-	if c.saveCfgKey == nil {
-		c.saveCfgKey = make(map[string]struct{})
-	}
 	c.saveCfgKey[confKey] = struct{}{}
 	return nil
 }
@@ -407,12 +398,13 @@ func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
 func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
-			delCfgKey:  map[string]struct{}{},
-			saveCfgKey: map[string]struct{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 	return c
@@ -420,13 +412,9 @@ func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 
 // NewConfigOperatorFromSourceStorage construct function, Load the configs from etc/sources/xx.yaml
 func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, error) {
-	st := cfgFileStorage
-	if Config != nil {
-		st = Config.Basic.CfgStorageType
-	}
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
-			storageType: st,
+			storageType: getStorageType(),
 			lock:        sync.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
@@ -475,12 +463,13 @@ func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, erro
 func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
-			delCfgKey:  map[string]struct{}{},
-			saveCfgKey: map[string]struct{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 	return c
@@ -488,13 +477,9 @@ func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 
 // NewConfigOperatorFromSinkStorage construct function, Load the configs from etc/sources/xx.yaml
 func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error) {
-	st := cfgFileStorage
-	if Config != nil {
-		st = Config.Basic.CfgStorageType
-	}
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
-			storageType: st,
+			storageType: getStorageType(),
 			lock:        sync.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
@@ -527,12 +512,13 @@ func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error)
 func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
-			delCfgKey:  map[string]struct{}{},
-			saveCfgKey: map[string]struct{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 	return c
@@ -540,13 +526,9 @@ func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 
 // NewConfigOperatorFromConnectionStorage construct function, Load the configs from et/connections/connection.yaml
 func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, error) {
-	st := cfgFileStorage
-	if Config != nil {
-		st = Config.Basic.CfgStorageType
-	}
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
-			storageType: st,
+			storageType: getStorageType(),
 			lock:        sync.RWMutex{},
 			pluginName:  pluginName,
 			etcCfg:      map[string]map[string]interface{}{},
@@ -613,4 +595,12 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 		}
 	}
 	return c, nil
+}
+
+func getStorageType() string {
+	st := cfgFileStorage
+	if Config != nil && len(Config.Basic.CfgStorageType) > 0 {
+		st = Config.Basic.CfgStorageType
+	}
+	return st
 }

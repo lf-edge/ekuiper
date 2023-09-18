@@ -293,7 +293,7 @@ func InitConf() {
 		Config.Source = &SourceConf{}
 	}
 	if Config.Basic.CfgStorageType == "" {
-		Config.Basic.CfgStorageType = "sqlite"
+		Config.Basic.CfgStorageType = "file"
 	}
 
 	_ = Config.Source.Validate()

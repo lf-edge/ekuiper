@@ -293,6 +293,13 @@ func TestNewConfigOperatorForConnection(t *testing.T) {
 
 func TestConfigKeys_LoadFromKV(t *testing.T) {
 	InitConf()
+	Config.Basic.CfgStorageType = ""
+	InitConf()
+	// assert default
+	require.Equal(t, Config.Basic.CfgStorageType, cfgFileStorage)
+	defer func() {
+		Config.Basic.CfgStorageType = cfgFileStorage
+	}()
 	Config.Basic.CfgStorageType = cfgSQLiteStorage
 	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
@@ -322,6 +329,28 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 			"k2": "v2",
 		},
 	}, mqttCfg3.CopyUpdatableConfContent())
+
+	mSource, ok := mqttCfg3.(*SourceConfigKeysOps)
+	require.True(t, ok)
+	mSource.storageType = "mock"
+	err = mSource.SaveCfgToStorage()
+	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
+
+	mqttCfg4, err := NewConfigOperatorFromSinkStorage("mqtt")
+	require.NoError(t, err)
+	mSinks, ok := mqttCfg4.(*SinkConfigKeysOps)
+	require.True(t, ok)
+	mSinks.storageType = "mock"
+	err = mSinks.SaveCfgToStorage()
+	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
+
+	mqttCfg5, err := NewConfigOperatorFromConnectionStorage("mqtt")
+	require.NoError(t, err)
+	mConn, ok := mqttCfg5.(*ConnectionConfigKeysOps)
+	require.True(t, ok)
+	mConn.storageType = "mock"
+	err = mConn.SaveCfgToStorage()
+	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
 }
 
 func marshalUn(input, output interface{}) error {
