@@ -29,7 +29,11 @@ func Errstring(err error) string {
 
 func InitEnv() {
 	conf.InitConf()
-	err := store.SetupDefault()
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		conf.Log.Fatal(err)
+	}
+	err = store.SetupDefault(dataDir)
 	if err != nil {
 		conf.Log.Fatal(err)
 	}

@@ -15,22 +15,23 @@
 package store
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 )
 
-func SetupDefault() error {
-	dir, err := conf.GetDataLoc()
-	if err != nil {
-		return err
-	}
+type StoreConf struct {
+	Type         string
+	ExtStateType string
+	RedisConfig  definition.RedisConfig
+	SqliteConfig definition.SqliteConfig
+}
 
+func SetupDefault(dataDir string) error {
 	c := definition.Config{
 		Type:         "sqlite",
 		ExtStateType: "sqlite",
 		Redis:        definition.RedisConfig{},
 		Sqlite: definition.SqliteConfig{
-			Path: dir,
+			Path: dataDir,
 			Name: "",
 		},
 	}
@@ -38,24 +39,12 @@ func SetupDefault() error {
 	return Setup(c)
 }
 
-func SetupWithKuiperConfig(kconf *conf.KuiperConf) error {
-	dir, err := conf.GetDataLoc()
-	if err != nil {
-		return err
-	}
+func SetupWithConfig(sc *StoreConf) error {
 	c := definition.Config{
-		Type:         kconf.Store.Type,
-		ExtStateType: kconf.Store.ExtStateType,
-		Redis: definition.RedisConfig{
-			Host:     kconf.Store.Redis.Host,
-			Port:     kconf.Store.Redis.Port,
-			Password: kconf.Store.Redis.Password,
-			Timeout:  kconf.Store.Redis.Timeout,
-		},
-		Sqlite: definition.SqliteConfig{
-			Path: dir,
-			Name: kconf.Store.Sqlite.Name,
-		},
+		Type:         sc.Type,
+		ExtStateType: sc.ExtStateType,
+		Redis:        sc.RedisConfig,
+		Sqlite:       sc.SqliteConfig,
 	}
 	return Setup(c)
 }

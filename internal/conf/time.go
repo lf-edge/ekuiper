@@ -18,11 +18,19 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+
+	"github.com/lf-edge/ekuiper/internal/conf/logger"
 )
 
 var Clock clock.Clock
 
 func InitClock() {
+	if logger.Log == nil {
+		IsTesting = logger.InitLogger()
+	}
+	if Log == nil {
+		Log = logger.Log
+	}
 	if IsTesting {
 		Log.Debugf("running in testing mode")
 		Clock = clock.NewMock()

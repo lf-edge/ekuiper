@@ -24,7 +24,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/conf/logger"
 	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 )
 
@@ -121,7 +121,7 @@ func (kv redisKvStore) All() (map[string]string, error) {
 		key := kv.trimPrefix(k)
 		ok, err := kv.Get(key, &value)
 		if err != nil {
-			conf.Log.Errorf("get %s fail during get all in redi: %v", key, err)
+			logger.Log.Errorf("get %s fail during get all in redi: %v", key, err)
 		}
 		if ok {
 			result[key] = value
