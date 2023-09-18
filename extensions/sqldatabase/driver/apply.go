@@ -22,6 +22,7 @@ func KnownBuildTags() map[string]string {
 		"clickhouse":    "clickhouse",    // github.com/ClickHouse/clickhouse-go
 		"cosmos":        "cosmos",        // github.com/btnguyen2k/gocosmos
 		"couchbase":     "n1ql",          // github.com/couchbase/go_n1ql
+		"databend":      "databend",      // github.com/databendcloud/databend-go
 		"firebird":      "firebird",      // github.com/nakagami/firebirdsql
 		"godror":        "godror",        // github.com/godror/godror
 		"h2":            "h2",            // github.com/jmrobles/h2go

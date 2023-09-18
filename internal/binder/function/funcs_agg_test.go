@@ -278,7 +278,7 @@ func TestConcatExec(t *testing.T) {
 	tests := []struct {
 		name   string
 		args   []interface{}
-		result map[string]interface{}
+		result any
 	}{
 		{ // 0
 			name: "concat wildcard",
@@ -312,13 +312,13 @@ func TestConcatExec(t *testing.T) {
 					int64(200),
 				},
 			},
-			result: map[string]interface{}{},
+			result: nil,
 		}, { // 2
 			name: "concat empty",
 			args: []interface{}{
 				[]interface{}{},
 			},
-			result: map[string]interface{}{},
+			result: nil,
 		},
 	}
 	for _, tt := range tests {

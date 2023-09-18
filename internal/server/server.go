@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
@@ -84,6 +85,28 @@ func createPaths() {
 	}
 }
 
+func getStoreConfigByKuiperConfig(c *conf.KuiperConf) (*store.StoreConf, error) {
+	dataDir, err := conf.GetDataLoc()
+	if err != nil {
+		return nil, err
+	}
+	sc := &store.StoreConf{
+		Type:         c.Store.Type,
+		ExtStateType: c.Store.ExtStateType,
+		RedisConfig: definition.RedisConfig{
+			Host:     c.Store.Redis.Host,
+			Port:     c.Store.Redis.Port,
+			Password: c.Store.Redis.Password,
+			Timeout:  c.Store.Redis.Timeout,
+		},
+		SqliteConfig: definition.SqliteConfig{
+			Path: dataDir,
+			Name: c.Store.Sqlite.Name,
+		},
+	}
+	return sc, nil
+}
+
 func StartUp(Version string) {
 	version = Version
 	startTimeStamp = time.Now().Unix()
@@ -94,7 +117,11 @@ func StartUp(Version string) {
 	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
 	defer undo()
 
-	err := store.SetupWithKuiperConfig(conf.Config)
+	sc, err := getStoreConfigByKuiperConfig(conf.Config)
+	if err != nil {
+		panic(err)
+	}
+	err = store.SetupWithConfig(sc)
 	if err != nil {
 		panic(err)
 	}

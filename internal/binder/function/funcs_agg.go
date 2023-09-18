@@ -136,7 +136,9 @@ func registerAggFunc() {
 						}
 					}
 				}
-				return result, true
+				if len(result) > 0 {
+					return result, true
+				}
 			}
 			return nil, true
 		},

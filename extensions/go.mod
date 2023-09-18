@@ -33,6 +33,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.39
 	github.com/sijms/go-ora/v2 v2.5.33
 	github.com/snowflakedb/gosnowflake v1.6.19
+	github.com/databendcloud/databend-go v0.4.2
 	github.com/stretchr/testify v1.8.2
 	github.com/taosdata/driver-go/v2 v2.0.4
 	github.com/thda/tds v0.1.7
