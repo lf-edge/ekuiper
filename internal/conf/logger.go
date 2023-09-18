@@ -15,11 +15,7 @@
 package conf
 
 import (
-	"os"
-	"strings"
-
-	filename "github.com/keepeye/logrus-filename"
-	"github.com/sirupsen/logrus"
+	"github.com/lf-edge/ekuiper/internal/conf/logger"
 )
 
 const (
@@ -27,34 +23,8 @@ const (
 )
 
 var (
-	Log     *logrus.Logger
-	logFile *os.File
+	Log     = logger.Log
+	logFile = logger.LogFile
 )
 
-func InitLogger() {
-	Log = logrus.New()
-	initSyslog()
-	filenameHook := filename.NewHook()
-	filenameHook.Field = "file"
-	Log.AddHook(filenameHook)
-
-	Log.SetFormatter(&logrus.TextFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-		DisableColors:   true,
-		FullTimestamp:   true,
-	})
-
-	Log.Debugf("init with args %s", os.Args)
-	for _, arg := range os.Args {
-		if strings.HasPrefix(arg, "-test.") {
-			IsTesting = true
-			break
-		}
-	}
-}
-
-func CloseLogger() {
-	if logFile != nil {
-		logFile.Close()
-	}
-}
+var CloseLogger = logger.CloseLogger

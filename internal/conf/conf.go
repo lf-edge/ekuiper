@@ -26,6 +26,7 @@ import (
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
 
+	"github.com/lf-edge/ekuiper/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/schedule"
@@ -355,7 +356,8 @@ func ValidateRuleOption(option *api.RuleOption) error {
 }
 
 func init() {
-	InitLogger()
+	logger.Log.Debugf("conf init")
+	IsTesting = logger.IsTesting
 	InitClock()
 }
 

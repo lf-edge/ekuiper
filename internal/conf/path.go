@@ -33,12 +33,11 @@ type PathConfigure struct {
 }
 
 const (
-	etcDir          = "etc"
-	dataDir         = "data"
-	logDir          = "log"
-	pluginsDir      = "plugins"
-	KuiperBaseKey   = "KuiperBaseKey"
-	KuiperSyslogKey = "KuiperSyslogKey"
+	etcDir        = "etc"
+	dataDir       = "data"
+	logDir        = "log"
+	pluginsDir    = "plugins"
+	KuiperBaseKey = "KuiperBaseKey"
 )
 
 var (

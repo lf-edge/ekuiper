@@ -30,7 +30,11 @@ import (
 )
 
 func TestState(t *testing.T) {
-	err := store.SetupDefault()
+	data, err := conf.GetDataLoc()
+	if err != nil {
+		t.Error(err)
+	}
+	err = store.SetupDefault(data)
 	if err != nil {
 		t.Error(err)
 	}
