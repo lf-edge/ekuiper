@@ -27,6 +27,10 @@ var (
 	LogFile *os.File
 )
 
+func init() {
+	InitLogger()
+}
+
 func InitLogger() (isTesting bool) {
 	Log = logrus.New()
 	initSyslog()
