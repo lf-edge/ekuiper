@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/plugin"
@@ -35,9 +36,13 @@ import (
 
 func init() {
 	testx.InitEnv()
-	_, err := InitManager()
-	if err != nil {
-		panic(err)
+	// Wait for other db tests to finish to avoid db lock
+	for i := 0; i < 10; i++ {
+		if _, err := InitManager(); err != nil {
+			time.Sleep(10 * time.Millisecond)
+		} else {
+			break
+		}
 	}
 	meta.InitYamlConfigManager()
 }
