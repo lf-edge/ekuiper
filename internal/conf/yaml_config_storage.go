@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/conf/confStore"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
 const (
 	cfgFileStorage   = "file"
 	cfgSQLiteStorage = "sqlite"
-	cfgFDBStorage    = "fdb"
 )
 
 type cfgKVStorage interface {
@@ -58,7 +58,10 @@ func (m *kvMemory) GetByPrefix(prefix string) (map[string]map[string]interface{}
 	return rm, nil
 }
 
-var mockMemoryKVStore *kvMemory
+var (
+	mockMemoryKVStore *kvMemory
+	sqliteKVStore     *sqlKVStore
+)
 
 func getKVStorage() (cfgKVStorage, error) {
 	if IsTesting {
@@ -70,11 +73,14 @@ func getKVStorage() (cfgKVStorage, error) {
 	}
 	switch Config.Basic.CfgStorageType {
 	case cfgSQLiteStorage:
-		sqliteKVStorage, err := confStore.NewSqliteKVStore("sqlite3", "../data/tmpData.db")
-		if err != nil {
-			return nil, err
+		if sqliteKVStore == nil {
+			sqliteKVStorage, err := NewSqliteKVStore("confKVStorage")
+			if err != nil {
+				return nil, err
+			}
+			sqliteKVStore = sqliteKVStorage
 		}
-		return sqliteKVStorage, nil
+		return sqliteKVStore, nil
 	}
 	return nil, fmt.Errorf("unknown cfg kv storage type: %v", Config.Basic.CfgStorageType)
 }
@@ -125,4 +131,47 @@ func buildKey(confType string, pluginName string, confKey string) string {
 	bs.WriteString(".")
 	bs.WriteString(confKey)
 	return bs.String()
+}
+
+type sqlKVStore struct {
+	kv kv.KeyValue
+}
+
+func NewSqliteKVStore(table string) (*sqlKVStore, error) {
+	s := &sqlKVStore{}
+	kv, err := store.GetKV(table)
+	if err != nil {
+		return nil, err
+	}
+	s.kv = kv
+	return s, nil
+}
+
+func (s *sqlKVStore) Set(k string, v map[string]interface{}) error {
+	return s.kv.Set(k, v)
+}
+
+func (s *sqlKVStore) Delete(k string) error {
+	return s.kv.Delete(k)
+}
+
+func (s *sqlKVStore) GetByPrefix(prefix string) (map[string]map[string]interface{}, error) {
+	keys, err := s.kv.Keys()
+	if err != nil {
+		return nil, err
+	}
+	r := make(map[string]map[string]interface{})
+	for _, key := range keys {
+		if strings.HasPrefix(key, prefix) {
+			d := map[string]interface{}{}
+			find, err := s.kv.Get(key, &d)
+			if err != nil {
+				return nil, err
+			}
+			if find {
+				r[key] = d
+			}
+		}
+	}
+	return r, nil
 }
