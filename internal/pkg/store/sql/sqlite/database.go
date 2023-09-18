@@ -24,7 +24,7 @@ import (
 	// introduce sqlite
 	_ "modernc.org/sqlite"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 )
 
@@ -35,7 +35,7 @@ type Database struct {
 }
 
 func NewSqliteDatabase(c definition.Config, name string) (definition.Database, error) {
-	conf.Log.Infof("use cgo disabled sqlite as store %v", name)
+	logger.Log.Infof("use cgo disabled sqlite as store %v", name)
 	sqliteConf := c.Sqlite
 	dir := sqliteConf.Path
 	if sqliteConf.Name != "" {
