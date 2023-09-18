@@ -32,6 +32,9 @@ func init() {
 }
 
 func InitLogger() (isTesting bool) {
+	if LogFile != nil {
+		return
+	}
 	Log = logrus.New()
 	initSyslog()
 	filenameHook := filename.NewHook()
