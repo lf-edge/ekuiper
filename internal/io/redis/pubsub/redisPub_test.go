@@ -130,3 +130,61 @@ func TestSinkConnExp(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestSinkConfigure(t *testing.T) {
+	s := RedisPub()
+	prop := map[string]interface{}{
+		"address": "",
+		"db":      "",
+		"channel": DefaultChannel,
+	}
+	expErrStr := fmt.Sprintf("read properties %v fail with error: %v", prop, "1 error(s) decoding:\n\n* 'db' expected type 'int', got unconvertible type 'string', value: ''")
+	err := s.Configure(prop)
+	if err == nil {
+		t.Errorf("should have error")
+		return
+	} else if err.Error() != expErrStr {
+		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	}
+}
+
+func TestSinkDecompressorError(t *testing.T) {
+	s := RedisPub()
+	prop := map[string]interface{}{
+		"address":     "",
+		"db":          0,
+		"channel":     DefaultChannel,
+		"compression": "test",
+	}
+	expErrStr := fmt.Sprintf("invalid compression method test")
+	err := s.Configure(prop)
+	if err == nil {
+		t.Errorf("should have error")
+		return
+	} else if err.Error() != expErrStr {
+		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	}
+}
+
+func TestSinkPingRedisError(t *testing.T) {
+	s := RedisPub()
+	prop := map[string]interface{}{
+		"address": "",
+		"db":      0,
+		"channel": DefaultChannel,
+	}
+	// expErrStr := fmt.Sprintf("Ping Redis failed with error: %v\", err")
+	expErrStr := fmt.Sprintf("Ping Redis failed with error: dial tcp 127.0.0.1:6379: connectex: No connection could be made because the target machine actively refused it.")
+	err := s.Configure(prop)
+	if err != nil {
+		t.Error(err)
+	}
+	ctx := mockContext.NewMockContext("ruleSink", "op1")
+	err = s.Open(ctx)
+	if err == nil {
+		t.Errorf("should have error")
+		return
+	} else if err.Error() != expErrStr {
+		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	}
+}

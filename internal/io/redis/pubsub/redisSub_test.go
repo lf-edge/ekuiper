@@ -15,6 +15,7 @@
 package pubsub
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -77,4 +78,57 @@ func TestConnectFail(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	server.Close()
 	time.Sleep(1 * time.Second)
+}
+
+func TestSourceConfigure(t *testing.T) {
+	s := RedisSub()
+	prop := map[string]interface{}{
+		"address":  "",
+		"db":       "",
+		"channels": []string{DefaultChannel},
+	}
+	expErrStr := fmt.Sprintf("read properties %v fail with error: %v", prop, "1 error(s) decoding:\n\n* 'db' expected type 'int', got unconvertible type 'string', value: ''")
+	err := s.Configure("new", prop)
+	if err == nil {
+		t.Errorf("should have error")
+		return
+	} else if err.Error() != expErrStr {
+		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	}
+}
+
+func TestSourceDecompressorError(t *testing.T) {
+	s := RedisSub()
+	prop := map[string]interface{}{
+		"address":       "",
+		"db":            0,
+		"channels":      []string{DefaultChannel},
+		"decompression": "test",
+	}
+	expErrStr := fmt.Sprintf("get decompressor test fail with error: unsupported decompressor: test")
+	err := s.Configure("new", prop)
+	if err == nil {
+		t.Errorf("should have error")
+		return
+	} else if err.Error() != expErrStr {
+		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	}
+}
+
+func TestSourcePingRedisError(t *testing.T) {
+	s := RedisSub()
+	prop := map[string]interface{}{
+		"address":  "",
+		"db":       0,
+		"channels": []string{DefaultChannel},
+	}
+	// expErrStr := fmt.Sprintf("Ping Redis failed with error: %v\", err")
+	expErrStr := fmt.Sprintf("Ping Redis failed with error: dial tcp 127.0.0.1:6379: connectex: No connection could be made because the target machine actively refused it.")
+	err := s.Configure("new", prop)
+	if err == nil {
+		t.Errorf("should have error")
+		return
+	} else if err.Error() != expErrStr {
+		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	}
 }
