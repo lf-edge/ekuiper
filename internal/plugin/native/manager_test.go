@@ -24,6 +24,7 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
@@ -35,9 +36,16 @@ import (
 func init() {
 	testx.InitEnv()
 	meta.InitYamlConfigManager()
-	nativeManager, err := InitManager()
-	if err != nil {
-		panic(err)
+	var (
+		nativeManager *Manager
+		err           error
+	)
+	for i := 0; i < 10; i++ {
+		if nativeManager, err = InitManager(); err != nil {
+			time.Sleep(10 * time.Millisecond)
+		} else {
+			break
+		}
 	}
 	err = function.Initialize([]binder.FactoryEntry{{Name: "native plugin", Factory: nativeManager}})
 	if err != nil {
