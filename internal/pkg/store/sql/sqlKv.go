@@ -36,8 +36,10 @@ func createSqlKvStore(database Database, table string) (*sqlKvStore, error) {
 		table:    table,
 	}
 	err := store.database.Apply(func(db *sql.DB) error {
+		fmt.Printf("Creating table %s if not exists\n", table)
 		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS '%s'('key' VARCHAR(255) PRIMARY KEY, 'val' BLOB);", table)
 		_, err := db.Exec(query)
+		fmt.Println("Created")
 		return err
 	})
 	if err != nil {
@@ -52,6 +54,7 @@ func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
 		if err != nil {
 			return err
 		}
+		fmt.Printf("Inserting %s into table %s\n", key, kv.table)
 		query := fmt.Sprintf("INSERT INTO '%s'(key,val) values(?,?);", kv.table)
 		stmt, err := db.Prepare(query)
 		if err != nil {
@@ -64,6 +67,7 @@ func (kv *sqlKvStore) Setnx(key string, value interface{}) error {
 				return fmt.Errorf(`Item %s already exists`, key)
 			}
 		}
+		fmt.Println("Inserted")
 		return err
 	})
 }
@@ -74,6 +78,7 @@ func (kv *sqlKvStore) Set(key string, value interface{}) error {
 		return err
 	}
 	err = kv.database.Apply(func(db *sql.DB) error {
+		fmt.Printf("Replacing %s into table %s\n", key, kv.table)
 		query := fmt.Sprintf("REPLACE INTO '%s'(key,val) values(?,?);", kv.table)
 		stmt, err := db.Prepare(query)
 		if err != nil {
@@ -81,6 +86,7 @@ func (kv *sqlKvStore) Set(key string, value interface{}) error {
 		}
 		_, err = stmt.Exec(key, b)
 		stmt.Close()
+		fmt.Println("Replaced")
 		return err
 	})
 	return err
@@ -123,6 +129,7 @@ func (kv *sqlKvStore) GetKeyedState(key string) (interface{}, error) {
 
 func (kv *sqlKvStore) SetKeyedState(key string, value interface{}) error {
 	err := kv.database.Apply(func(db *sql.DB) error {
+		fmt.Printf("Replacing %s into table %s\n", key, kv.table)
 		query := fmt.Sprintf("REPLACE INTO '%s'(key,val) values(?,?);", kv.table)
 		stmt, err := db.Prepare(query)
 		if err != nil {
@@ -130,6 +137,7 @@ func (kv *sqlKvStore) SetKeyedState(key string, value interface{}) error {
 		}
 		_, err = stmt.Exec(key, value)
 		stmt.Close()
+		fmt.Println("Replaced")
 		return err
 	})
 	return err
@@ -137,6 +145,7 @@ func (kv *sqlKvStore) SetKeyedState(key string, value interface{}) error {
 
 func (kv *sqlKvStore) Delete(key string) error {
 	return kv.database.Apply(func(db *sql.DB) error {
+		fmt.Printf("Deleting %s from table %s\n", key, kv.table)
 		query := fmt.Sprintf("SELECT key FROM '%s' WHERE key='%s';", kv.table, key)
 		row := db.QueryRow(query)
 		var tmp []byte
@@ -146,6 +155,7 @@ func (kv *sqlKvStore) Delete(key string) error {
 		}
 		query = fmt.Sprintf("DELETE FROM '%s' WHERE key='%s';", kv.table, key)
 		_, err = db.Exec(query)
+		fmt.Println("Deleted")
 		return err
 	})
 }
@@ -206,16 +216,20 @@ func (kv *sqlKvStore) All() (all map[string]string, err error) {
 
 func (kv *sqlKvStore) Clean() error {
 	return kv.database.Apply(func(db *sql.DB) error {
+		fmt.Printf("Deleting all from table %s\n", kv.table)
 		query := fmt.Sprintf("DELETE FROM '%s'", kv.table)
 		_, err := db.Exec(query)
+		fmt.Println("Deleted all")
 		return err
 	})
 }
 
 func (kv *sqlKvStore) Drop() error {
 	return kv.database.Apply(func(db *sql.DB) error {
+		fmt.Printf("Dropping table %s\n", kv.table)
 		query := fmt.Sprintf("Drop table '%s';", kv.table)
 		_, err := db.Exec(query)
+		fmt.Println("Dropped table")
 		return err
 	})
 }
