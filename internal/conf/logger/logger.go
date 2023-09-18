@@ -27,11 +27,13 @@ var (
 	LogFile *os.File
 )
 
+var IsTesting bool
+
 func init() {
 	InitLogger()
 }
 
-func InitLogger() (isTesting bool) {
+func InitLogger() {
 	if LogFile != nil {
 		return
 	}
@@ -49,11 +51,10 @@ func InitLogger() (isTesting bool) {
 	Log.Debugf("init with args %s", os.Args)
 	for _, arg := range os.Args {
 		if strings.HasPrefix(arg, "-test.") {
-			isTesting = true
+			IsTesting = true
 			break
 		}
 	}
-	return isTesting
 }
 
 func CloseLogger() {

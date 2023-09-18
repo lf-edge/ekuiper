@@ -356,7 +356,8 @@ func ValidateRuleOption(option *api.RuleOption) error {
 }
 
 func init() {
-	IsTesting = logger.InitLogger()
+	logger.Log.Debugf("conf init")
+	IsTesting = logger.IsTesting
 	InitClock()
 }
 
