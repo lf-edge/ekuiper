@@ -154,8 +154,12 @@ func TestLifecycle(t *testing.T) {
 		}
 	)
 	func() {
+		dataDir, err := conf.GetDataLoc()
+		if err != nil {
+			t.Error(err)
+		}
 		cleanStateData()
-		err := store.SetupDefault()
+		err = store.SetupDefault(dataDir)
 		if err != nil {
 			t.Error(err)
 		}
