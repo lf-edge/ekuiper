@@ -292,7 +292,9 @@ func TestNewConfigOperatorForConnection(t *testing.T) {
 }
 
 func TestConfigKeys_LoadFromKV(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt", WithLoadFromKV(true))
+	InitConf()
+	Config.Basic.CfgStorageType = cfgSQLiteStorage
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
 	require.NoError(t, mqttCfg.AddConfKey("key1", map[string]interface{}{
 		"k1": "v1",
@@ -301,7 +303,7 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 		"k2": "v2",
 	}))
 	require.NoError(t, mqttCfg.SaveCfgToStorage())
-	mqttCfg2, err := NewConfigOperatorFromSourceStorage("mqtt", WithLoadFromKV(true))
+	mqttCfg2, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
 	require.Equal(t, map[string]map[string]interface{}{
 		"key1": {
@@ -313,7 +315,7 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 	}, mqttCfg2.CopyUpdatableConfContent())
 	mqttCfg2.DeleteConfKey("key1")
 	require.NoError(t, mqttCfg2.SaveCfgToStorage())
-	mqttCfg3, err := NewConfigOperatorFromSourceStorage("mqtt", WithLoadFromKV(true))
+	mqttCfg3, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
 	require.Equal(t, map[string]map[string]interface{}{
 		"key2": {

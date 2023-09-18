@@ -149,6 +149,7 @@ type KuiperConf struct {
 		IgnoreCase         bool     `yaml:"ignoreCase"`
 		SQLConf            *SQLConf `yaml:"sql"`
 		RulePatrolInterval string   `yaml:"rulePatrolInterval"`
+		CfgStorageType     string   `yaml:"cfgStorageType"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
@@ -290,6 +291,10 @@ func InitConf() {
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
 	}
+	if Config.Basic.CfgStorageType == "" {
+		Config.Basic.CfgStorageType = "sqlite"
+	}
+
 	_ = Config.Source.Validate()
 	if Config.Sink == nil {
 		Config.Sink = &SinkConf{}

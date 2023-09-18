@@ -15,12 +15,10 @@
 package conf
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"path"
 	"reflect"
-	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
@@ -61,13 +59,13 @@ type ConfigOperator interface {
 // Hold the connection configs for each connection type in etcCfg field
 // Provide method to query/add/update/delete the configs
 type ConfigKeys struct {
-	loadCfgFromKV bool
-	lock          sync.RWMutex
-	pluginName    string                            // source type, can be mqtt/edgex/httppull
-	etcCfg        map[string]map[string]interface{} // configs defined in etc/sources/yaml
-	dataCfg       map[string]map[string]interface{} // configs defined in etc/sources/
-	delCfgKey     map[string]struct{}
-	saveCfgKey    map[string]struct{}
+	storageType string
+	lock        sync.RWMutex
+	pluginName  string                            // source type, can be mqtt/edgex/httppull
+	etcCfg      map[string]map[string]interface{} // configs defined in etc/sources/yaml
+	dataCfg     map[string]map[string]interface{} // configs defined in etc/sources/
+	delCfgKey   map[string]struct{}
+	saveCfgKey  map[string]struct{}
 }
 
 func (c *ConfigKeys) saveCfgKeysIntoKVStorage(cfgType string) error {
@@ -330,23 +328,23 @@ type SourceConfigKeysOps struct {
 }
 
 func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
-	if c.loadCfgFromKV {
+	switch c.storageType {
+	case cfgSQLiteStorage, cfgFDBStorage:
 		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sources")
-	}
-	pluginName := c.pluginName
-	confDir, err := GetDataLoc()
-	if nil != err {
-		return err
-	}
+	case cfgFileStorage:
+		pluginName := c.pluginName
+		confDir, err := GetDataLoc()
+		if nil != err {
+			return err
+		}
 
-	dir := path.Join(confDir, "sources")
-	filePath := path.Join(dir, pluginName+".yaml")
-	cfg := c.CopyUpdatableConfContent()
-	err = filex.WriteYamlMarshal(filePath, cfg)
-	if nil != err {
+		dir := path.Join(confDir, "sources")
+		filePath := path.Join(dir, pluginName+".yaml")
+		cfg := c.CopyUpdatableConfContent()
+		err = filex.WriteYamlMarshal(filePath, cfg)
 		return err
 	}
-	return nil
+	return fmt.Errorf("unknown source cfg storage type: %v", c.storageType)
 }
 
 // SinkConfigKeysOps implement ConfOperator interface, load the configs from data/sinks/xx.yaml
@@ -355,23 +353,23 @@ type SinkConfigKeysOps struct {
 }
 
 func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
-	if c.loadCfgFromKV {
+	switch c.storageType {
+	case cfgSQLiteStorage, cfgFDBStorage:
 		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sinks")
-	}
-	pluginName := c.pluginName
-	confDir, err := GetDataLoc()
-	if nil != err {
-		return err
-	}
+	case cfgFileStorage:
+		pluginName := c.pluginName
+		confDir, err := GetDataLoc()
+		if nil != err {
+			return err
+		}
 
-	dir := path.Join(confDir, "sinks")
-	filePath := path.Join(dir, pluginName+".yaml")
-	cfg := c.CopyUpdatableConfContent()
-	err = filex.WriteYamlMarshal(filePath, cfg)
-	if nil != err {
+		dir := path.Join(confDir, "sinks")
+		filePath := path.Join(dir, pluginName+".yaml")
+		cfg := c.CopyUpdatableConfContent()
+		err = filex.WriteYamlMarshal(filePath, cfg)
 		return err
 	}
-	return nil
+	return fmt.Errorf("unknown sinks cfg storage type: %v", c.storageType)
 }
 
 // ConnectionConfigKeysOps implement ConfOperator interface, load the configs from et/connections/connection.yaml
@@ -380,28 +378,29 @@ type ConnectionConfigKeysOps struct {
 }
 
 func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
-	if p.loadCfgFromKV {
+	switch p.storageType {
+	case cfgSQLiteStorage, cfgFDBStorage:
 		return p.ConfigKeys.saveCfgKeysIntoKVStorage("connections")
+	case cfgFileStorage:
+		pluginName := p.pluginName
+		confDir, err := GetDataLoc()
+		if nil != err {
+			return err
+		}
+
+		cfg := p.CopyUpdatableConfContent()
+
+		yamlPath := path.Join(confDir, "connections/connection.yaml")
+
+		yamlData := make(map[string]interface{})
+		err = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
+		if nil != err {
+			return err
+		}
+		yamlData[pluginName] = cfg
+		return filex.WriteYamlMarshal(yamlPath, yamlData)
 	}
-	pluginName := p.pluginName
-	confDir, err := GetDataLoc()
-	if nil != err {
-		return err
-	}
-
-	cfg := p.CopyUpdatableConfContent()
-
-	yamlPath := path.Join(confDir, "connections/connection.yaml")
-
-	yamlData := make(map[string]interface{})
-	err = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
-	if nil != err {
-		return err
-	}
-
-	yamlData[pluginName] = cfg
-
-	return filex.WriteYamlMarshal(yamlPath, yamlData)
+	return fmt.Errorf("unknown connection cfg storage type: %v", p.ConfigKeys.storageType)
 }
 
 // NewConfigOperatorForSource construct function
@@ -420,20 +419,16 @@ func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 }
 
 // NewConfigOperatorFromSourceStorage construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSourceStorage(pluginName string, options ...Option) (ConfigOperator, error) {
-	cfgO := &CfgOption{}
-	for _, opt := range options {
-		opt(cfgO)
-	}
+func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, error) {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
-			loadCfgFromKV: cfgO.LoadFromKV,
-			lock:          sync.RWMutex{},
-			pluginName:    pluginName,
-			etcCfg:        map[string]map[string]interface{}{},
-			dataCfg:       map[string]map[string]interface{}{},
-			delCfgKey:     map[string]struct{}{},
-			saveCfgKey:    map[string]struct{}{},
+			storageType: Config.Basic.CfgStorageType,
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 
@@ -451,7 +446,7 @@ func NewConfigOperatorFromSourceStorage(pluginName string, options ...Option) (C
 	// Just ignore error if yaml not found
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
-	if cfgO.LoadFromKV {
+	if c.storageType != cfgFileStorage {
 		prefix := buildKey("sources", pluginName, "")
 		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
 		if err != nil {
@@ -488,23 +483,19 @@ func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 }
 
 // NewConfigOperatorFromSinkStorage construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSinkStorage(pluginName string, options ...Option) (ConfigOperator, error) {
-	cfgO := &CfgOption{}
-	for _, opt := range options {
-		opt(cfgO)
-	}
+func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error) {
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
-			loadCfgFromKV: cfgO.LoadFromKV,
-			lock:          sync.RWMutex{},
-			pluginName:    pluginName,
-			etcCfg:        map[string]map[string]interface{}{},
-			dataCfg:       map[string]map[string]interface{}{},
-			delCfgKey:     map[string]struct{}{},
-			saveCfgKey:    map[string]struct{}{},
+			storageType: Config.Basic.CfgStorageType,
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
-	if cfgO.LoadFromKV {
+	if c.storageType != cfgFileStorage {
 		prefix := buildKey("sinks", pluginName, "")
 		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
 		if err != nil {
@@ -540,20 +531,16 @@ func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 }
 
 // NewConfigOperatorFromConnectionStorage construct function, Load the configs from et/connections/connection.yaml
-func NewConfigOperatorFromConnectionStorage(pluginName string, options ...Option) (ConfigOperator, error) {
-	cfgO := &CfgOption{}
-	for _, opt := range options {
-		opt(cfgO)
-	}
+func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, error) {
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
-			loadCfgFromKV: cfgO.LoadFromKV,
-			lock:          sync.RWMutex{},
-			pluginName:    pluginName,
-			etcCfg:        map[string]map[string]interface{}{},
-			dataCfg:       map[string]map[string]interface{}{},
-			delCfgKey:     map[string]struct{}{},
-			saveCfgKey:    map[string]struct{}{},
+			storageType: Config.Basic.CfgStorageType,
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 
@@ -583,7 +570,7 @@ func NewConfigOperatorFromConnectionStorage(pluginName string, options ...Option
 		return nil, fmt.Errorf("not find the target connection type: %s", c.pluginName)
 	}
 
-	if cfgO.LoadFromKV {
+	if c.storageType != cfgFileStorage {
 		prefix := buildKey("connections", pluginName, "")
 		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
 		if err != nil {
@@ -614,104 +601,4 @@ func NewConfigOperatorFromConnectionStorage(pluginName string, options ...Option
 		}
 	}
 	return c, nil
-}
-
-type CfgOption struct {
-	LoadFromKV bool
-}
-
-type Option func(cfgO *CfgOption)
-
-func WithLoadFromKV(load bool) Option {
-	return func(cfgO *CfgOption) {
-		cfgO.LoadFromKV = load
-	}
-}
-
-type cfgKVStorage interface {
-	Set(string, map[string]interface{}) error
-	Delete(string) error
-	GetByPrefix(string) (map[string]map[string]interface{}, error)
-}
-
-type kvMemory struct {
-	store map[string]map[string]interface{}
-}
-
-func (m *kvMemory) Set(key string, v map[string]interface{}) error {
-	m.store[key] = v
-	return nil
-}
-
-func (m *kvMemory) Delete(key string) error {
-	delete(m.store, key)
-	return nil
-}
-
-func (m *kvMemory) GetByPrefix(prefix string) (map[string]map[string]interface{}, error) {
-	rm := make(map[string]map[string]interface{})
-	for key, value := range m.store {
-		if strings.HasPrefix(key, prefix) {
-			rm[key] = value
-		}
-	}
-	return rm, nil
-}
-
-var mockMemoryKVStore *kvMemory
-
-func getKVStorage() (cfgKVStorage, error) {
-	if mockMemoryKVStore == nil {
-		mockMemoryKVStore = &kvMemory{}
-		mockMemoryKVStore.store = make(map[string]map[string]interface{})
-	}
-	return mockMemoryKVStore, nil
-}
-
-func saveCfgKeyToKV(key string, cfg map[string]interface{}) error {
-	kvStorage, err := getKVStorage()
-	if err != nil {
-		return err
-	}
-	return kvStorage.Set(key, cfg)
-}
-
-func delCfgKeyInStorage(key string) error {
-	kvStorage, err := getKVStorage()
-	if err != nil {
-		return err
-	}
-	return kvStorage.Delete(key)
-}
-
-func getCfgKeyFromStorageByPrefix(prefix string) (map[string]map[string]interface{}, error) {
-	kvStorage, err := getKVStorage()
-	if err != nil {
-		return nil, err
-	}
-	val, err := kvStorage.GetByPrefix(prefix)
-	if err != nil {
-		return nil, err
-	}
-	v := make(map[string]map[string]interface{})
-	for key, value := range val {
-		ss := strings.Split(key, ".")
-		v[ss[2]] = value
-	}
-	return v, nil
-}
-
-func buildKey(confType string, pluginName string, confKey string) string {
-	bs := bytes.NewBufferString(confType)
-	if len(pluginName) < 1 {
-		return bs.String()
-	}
-	bs.WriteString(".")
-	bs.WriteString(pluginName)
-	if len(confKey) < 1 {
-		return bs.String()
-	}
-	bs.WriteString(".")
-	bs.WriteString(confKey)
-	return bs.String()
 }
