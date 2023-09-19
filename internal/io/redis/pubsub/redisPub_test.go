@@ -17,6 +17,7 @@ package pubsub
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -169,12 +170,11 @@ func TestSinkDecompressorError(t *testing.T) {
 func TestSinkPingRedisError(t *testing.T) {
 	s := RedisPub()
 	prop := map[string]interface{}{
-		"address": "",
+		"address": "127.0.0.1:6379",
 		"db":      0,
 		"channel": DefaultChannel,
 	}
-	// expErrStr := fmt.Sprintf("Ping Redis failed with error: %v\", err")
-	expErrStr := fmt.Sprintf("Ping Redis failed with error: dial tcp 127.0.0.1:6379: connectex: No connection could be made because the target machine actively refused it.")
+	expErrStr := fmt.Sprintf("Ping Redis failed with error")
 	err := s.Configure(prop)
 	if err != nil {
 		t.Error(err)
@@ -184,7 +184,11 @@ func TestSinkPingRedisError(t *testing.T) {
 	if err == nil {
 		t.Errorf("should have error")
 		return
-	} else if err.Error() != expErrStr {
-		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	} else {
+		errorMsg := fmt.Sprintf("%v", err)
+		parts := strings.SplitN(errorMsg, ":", 2)
+		if parts[0] != expErrStr {
+			t.Errorf("error mismatch:\n\nexp=%s\n\ngot=%s\n\n", expErrStr, parts[0])
+		}
 	}
 }
