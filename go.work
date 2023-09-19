@@ -2,4 +2,5 @@ use (
 	./extensions
 	.
 	./tools/kubernetes
+	./app
 )

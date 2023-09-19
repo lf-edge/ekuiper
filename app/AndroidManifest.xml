@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+	xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+	package="com.github.bing_zhub.ekuiper"
+	android:versionCode="31"
+	android:versionName="1.10.11">
+
+    <application android:label="eKuiper">
+	<activity android:name="org.golang.app.GoNativeActivity"
+		android:label="eKuiper"
+		android:configChanges="orientation|keyboardHidden|uiMode"
+		android:theme="@android:style/Theme">
+		<meta-data android:name="android.app.lib_name" android:value="ekuiper" />
+		<intent-filter>
+			<action android:name="android.intent.action.MAIN" />
+			<category android:name="android.intent.category.LAUNCHER" />
+		</intent-filter>
+	</activity>
+	</application>
+
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.INTERNET" />
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+</manifest>
