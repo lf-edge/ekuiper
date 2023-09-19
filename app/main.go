@@ -160,7 +160,6 @@ func main() {
 	if ver, exist := customMetadata["version"]; exist {
 		Version = ver
 	}
-	application.Settings().SetTheme(&myTheme{})
 	application.SetIcon(fyne.NewStaticResource("account", icon))
 	w := application.NewWindow("Lightweight data stream processing engine for IoT edge")
 	application.SetIcon(fyne.NewStaticResource("icon", icon))
