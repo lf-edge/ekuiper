@@ -39,13 +39,13 @@ The environment variables are separated by "__", the content of the first part a
 
 eKuiper supports importing configuration from command line parameters, as follows:
 
-| configuration name | type | configuration role |
-|-----------------|--------|---------------------- --------------------------------|
-| loadFileType | string | Set the way to load files, support "relative" and "absolute" |
-| etc | string | Set absolute path of etc directory, only valid when loadFileType is "absolute" |
-| data | string | Set the absolute path of the data directory, only valid when loadFileType is "absolute" |
-| log | string | Set the absolute path of the log directory, only valid when loadFileType is "absolute" |
-| plugins | string | Set the absolute path of the plugins directory, only valid when loadFileType is "absolute" |
+| configuration name | type   | configuration role                                                                         |
+|--------------------|--------|--------------------------------------------------------------------------------------------|
+| loadFileType       | string | Set the way to load files, support "relative" and "absolute"                               |
+| etc                | string | Set absolute path of etc directory, only valid when loadFileType is "absolute"             |
+| data               | string | Set the absolute path of the data directory, only valid when loadFileType is "absolute"    |
+| log                | string | Set the absolute path of the log directory, only valid when loadFileType is "absolute"     |
+| plugins            | string | Set the absolute path of the plugins directory, only valid when loadFileType is "absolute" |
 
 example:
 
