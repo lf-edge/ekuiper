@@ -469,6 +469,10 @@
         {
           "title": "数据导入导出",
           "path": "api/restapi/data"
+        },
+        {
+            "title": "动态重载配置",
+            "path": "api/restapi/configs"
         }
       ]
     },
@@ -1143,6 +1147,10 @@
         {
           "title": "Data Export/Import",
           "path": "api/restapi/data"
+        },
+        {
+          "title": "Dynamic Reload Configs",
+          "path": "api/restapi/configs"
         }
       ]
     },
