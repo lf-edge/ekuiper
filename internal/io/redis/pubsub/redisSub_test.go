@@ -16,6 +16,7 @@ package pubsub
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -122,13 +123,16 @@ func TestSourcePingRedisError(t *testing.T) {
 		"db":       0,
 		"channels": []string{DefaultChannel},
 	}
-	// expErrStr := fmt.Sprintf("Ping Redis failed with error: %v\", err")
-	expErrStr := fmt.Sprintf("Ping Redis failed with error: dial tcp 127.0.0.1:6379: connectex: No connection could be made because the target machine actively refused it.")
+	expErrStr := fmt.Sprintf("Ping Redis failed with error")
 	err := s.Configure("new", prop)
 	if err == nil {
 		t.Errorf("should have error")
 		return
-	} else if err.Error() != expErrStr {
-		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
+	} else {
+		errorMsg := fmt.Sprintf("%v", err)
+		parts := strings.SplitN(errorMsg, ":", 2)
+		if parts[0] != expErrStr {
+			t.Errorf("error mismatch:\n\nexp=%s\n\ngot=%s\n\n", expErrStr, parts[0])
+		}
 	}
 }
