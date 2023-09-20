@@ -64,8 +64,10 @@ type ConfigKeys struct {
 	pluginName  string                            // source type, can be mqtt/edgex/httppull
 	etcCfg      map[string]map[string]interface{} // configs defined in etc/sources/yaml
 	dataCfg     map[string]map[string]interface{} // configs defined in etc/sources/
-	delCfgKey   map[string]struct{}
-	saveCfgKey  map[string]struct{}
+	// delCfgKey save the config key which needs to be deleted from the storage
+	delCfgKey map[string]struct{}
+	// saveCfgKey save the config key which needs to be saved or updated into the storage
+	saveCfgKey map[string]struct{}
 }
 
 func (c *ConfigKeys) saveCfgKeysIntoKVStorage(cfgType string) error {

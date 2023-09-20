@@ -36,6 +36,7 @@ basic:
     # 0 indicates unlimited
     maxConnections: 0
   rulePatrolInterval: 10s
+  # cfgStorageType indicates the storage type to store the config, support "file","sqlite" and "fdb"
   cfgStorageType: file
 
 # The default options for all rules. Each rule can override this setting by defining its own option
