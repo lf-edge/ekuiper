@@ -64,7 +64,7 @@ const (
 func loadConfigOperatorForSource(pluginName string) {
 	yamlKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, pluginName)
 
-	if cfg, _ := conf.NewConfigOperatorFromSourceYaml(pluginName); cfg != nil {
+	if cfg, _ := conf.NewConfigOperatorFromSourceStorage(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
@@ -78,7 +78,7 @@ func loadConfigOperatorForSource(pluginName string) {
 func loadConfigOperatorForSink(pluginName string) {
 	yamlKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, pluginName)
 
-	if cfg, _ := conf.NewConfigOperatorFromSinkYaml(pluginName); cfg != nil {
+	if cfg, _ := conf.NewConfigOperatorFromSinkStorage(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
@@ -92,7 +92,7 @@ func loadConfigOperatorForSink(pluginName string) {
 func loadConfigOperatorForConnection(pluginName string) {
 	yamlKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, pluginName)
 
-	if cfg, _ := conf.NewConfigOperatorFromConnectionYaml(pluginName); cfg != nil {
+	if cfg, _ := conf.NewConfigOperatorFromConnectionStorage(pluginName); cfg != nil {
 		ConfigManager.lock.Lock()
 		ConfigManager.cfgOperators[yamlKey] = cfg
 		ConfigManager.lock.Unlock()
@@ -111,7 +111,7 @@ func delConfKey(configOperatorKey, confKey, language string) error {
 
 	cfgOps.DeleteConfKey(confKey)
 
-	err := cfgOps.SaveCfgToFile()
+	err := cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
@@ -177,7 +177,7 @@ func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err e
 
 	cfgOps.LoadConfContent(configurations)
 
-	err = cfgOps.SaveCfgToFile()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
 	}
@@ -209,7 +209,7 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 		return err
 	}
 
-	err = cfgOps.SaveCfgToFile()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
@@ -241,7 +241,7 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
 		return err
 	}
 
-	err = cfgOps.SaveCfgToFile()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "write_data_fail"), configOperatorKey, err)
 	}
@@ -265,7 +265,7 @@ func addSinkConfKeys(plgName string, cf YamlConfigurations) error {
 
 	cfgOps.LoadConfContent(cf)
 
-	err := cfgOps.SaveCfgToFile()
+	err := cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
 	}
@@ -297,7 +297,7 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 		return err
 	}
 
-	err = cfgOps.SaveCfgToFile()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
@@ -321,7 +321,7 @@ func addConnectionConfKeys(plgName string, cf YamlConfigurations) error {
 
 	cfgOps.LoadConfContent(cf)
 
-	err := cfgOps.SaveCfgToFile()
+	err := cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
 	}
@@ -381,7 +381,7 @@ func ResetConfigs() {
 
 	for _, ops := range ConfigManager.cfgOperators {
 		ops.ClearConfKeys()
-		_ = ops.SaveCfgToFile()
+		_ = ops.SaveCfgToStorage()
 	}
 }
 

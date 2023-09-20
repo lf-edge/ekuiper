@@ -24,7 +24,7 @@ import (
 func GetSourceConf(sourceType string, options *ast.Options) map[string]interface{} {
 	confkey := options.CONF_KEY
 
-	yamlOps, err := conf.NewConfigOperatorFromSourceYaml(sourceType)
+	yamlOps, err := conf.NewConfigOperatorFromSourceStorage(sourceType)
 	if err != nil {
 		conf.Log.Warnf("fail to parse yaml for source %s. Return error %v", sourceType, err)
 	}
