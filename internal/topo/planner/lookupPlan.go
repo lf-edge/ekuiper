@@ -38,7 +38,7 @@ func (p LookupPlan) Init() *LookupPlan {
 	return &p
 }
 
-func (p *LookupPlan) BuildExplainInfo(id int64) {
+func (p *LookupPlan) BuildExplainInfo() {
 	info := ""
 	if p.conditions != nil {
 		info += "Condition:{ "
@@ -56,7 +56,6 @@ func (p *LookupPlan) BuildExplainInfo(id int64) {
 		}
 		info += " }"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

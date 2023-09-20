@@ -74,7 +74,7 @@ func (p ProjectPlan) Init() *ProjectPlan {
 	return &p
 }
 
-func (p *ProjectPlan) BuildExplainInfo(id int64) {
+func (p *ProjectPlan) BuildExplainInfo() {
 	info := ""
 	if p.fields != nil && len(p.fields) != 0 {
 		info += "Fields:[ "
@@ -91,7 +91,6 @@ func (p *ProjectPlan) BuildExplainInfo(id int64) {
 	if p.enableLimit {
 		info += ", Limit:" + strconv.Itoa(p.limitCount)
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

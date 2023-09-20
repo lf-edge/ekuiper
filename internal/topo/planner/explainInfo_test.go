@@ -71,7 +71,8 @@ func TestDataSourcePlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.self.SetID(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -126,7 +127,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ window:{ windowType:SLIDING_WINDOW, timeUnit: MS  } }\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ window:{ windowType:SLIDING_WINDOW, timeUnit: MS  } }\",\"id\":0,\"children\":[0]}\n",
 			t:   "AggregatePlan",
 		},
 		{
@@ -135,7 +136,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 					ast.Dimension{Expr: &ast.FieldRef{Name: "department", StreamName: ast.DefaultStream}},
 				},
 			},
-			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ $$default.department }\",\"id\":2,\"children\":null}\n",
+			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ $$default.department }\",\"id\":0,\"children\":null}\n",
 			t:   "AggregatePlan",
 		},
 	}
@@ -144,7 +145,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -237,7 +238,7 @@ func TestAnalyticFuncsPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AnalyticFuncsPlan\",\"info\":\"FieldFuncs:[ Call:{ name:lag, args:[src1.id1] }, Call:{ name:lag, args:[src1.temp], when:{ binaryExpr:{ Call:{ name:lag, args:[src1.id1] } > 1 } } } ]\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"AnalyticFuncsPlan\",\"info\":\"FieldFuncs:[ Call:{ name:lag, args:[src1.id1] }, Call:{ name:lag, args:[src1.temp], when:{ binaryExpr:{ Call:{ name:lag, args:[src1.id1] } > 1 } } } ]\",\"id\":0,\"children\":[0]}\n",
 			t:   "AnalyticFuncsPlan",
 		},
 	}
@@ -246,7 +247,7 @@ func TestAnalyticFuncsPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -293,7 +294,7 @@ func TestFilterPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"FilterPlan\",\"info\":\"Condition:{ binaryExpr:{ binaryExpr:{ src1.id1 > 111 } AND binaryExpr:{ src1.temp > 20 } } }, \",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"FilterPlan\",\"info\":\"Condition:{ binaryExpr:{ binaryExpr:{ src1.id1 > 111 } AND binaryExpr:{ src1.temp > 20 } } }, \",\"id\":0,\"children\":[0]}\n",
 			t:   "FilterPlan",
 		},
 	}
@@ -302,7 +303,7 @@ func TestFilterPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -376,7 +377,7 @@ func TestHavingPlanExplainInfo(t *testing.T) {
 					RHS: &ast.IntegerLiteral{Val: 0},
 				},
 			},
-			res: "{\"type\":\"HavingPlan\",\"info\":\"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 0 } }, \",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"HavingPlan\",\"info\":\"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 0 } }, \",\"id\":0,\"children\":[0]}\n",
 			t:   "HavingPlan",
 		},
 	}
@@ -385,7 +386,7 @@ func TestHavingPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -416,7 +417,7 @@ func TestJoinAlignPlanExplainInfo(t *testing.T) {
 			p: &JoinAlignPlan{
 				Emitters: []string{"tableInPlanner"},
 			},
-			res: "{\"type\":\"JoinAlignPlan\",\"info\":\"Emitters:[ tableInPlanner ]\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"JoinAlignPlan\",\"info\":\"Emitters:[ tableInPlanner ]\",\"id\":0,\"children\":[0]}\n",
 			t:   "JoinAlignPlan",
 		},
 	}
@@ -425,7 +426,7 @@ func TestJoinAlignPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -506,7 +507,7 @@ func TestJoinPlanExplainInfo(t *testing.T) {
 					},
 				}},
 			},
-			res: "{\"type\":\"JoinPlan\",\"info\":\"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ t1.cur > 20 } OR binaryExpr:{ t2.pre > 60 } } AND binaryExpr:{ t1.press1 = t2.press2 } } } ]\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"JoinPlan\",\"info\":\"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ t1.cur > 20 } OR binaryExpr:{ t2.pre > 60 } } AND binaryExpr:{ t1.press1 = t2.press2 } } } ]\",\"id\":0,\"children\":[0]}\n",
 			t:   "JoinPlan",
 		},
 	}
@@ -515,7 +516,7 @@ func TestJoinPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -571,7 +572,7 @@ func TestLookupPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"LookupPlan\",\"info\":\"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = 23 } }\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"LookupPlan\",\"info\":\"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = 23 } }\",\"id\":0,\"children\":[0]}\n",
 			t:   "LookupPlan",
 		},
 	}
@@ -580,7 +581,7 @@ func TestLookupPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -732,7 +733,7 @@ func TestProjectPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[1].p.BuildExplainInfo(int64(0))
+		test[1].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -814,7 +815,7 @@ func TestProjectSetPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -878,7 +879,7 @@ func TestWindowPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -911,7 +912,7 @@ func TestWatermarkPlanExplainInfo(t *testing.T) {
 				Emitters:      []string{"campus", "student"},
 				SendWatermark: true,
 			},
-			res: "{\"type\":\"WatermarkPlan\",\"info\":\"Emitters:[ campus, student ], SendWatermark:true\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"WatermarkPlan\",\"info\":\"Emitters:[ campus, student ], SendWatermark:true\",\"id\":0,\"children\":[0]}\n",
 			t:   "WatermarkPlan",
 		},
 	}
@@ -920,7 +921,7 @@ func TestWatermarkPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -978,7 +979,7 @@ func TestWindowFuncPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:AStudent, expr:} ]\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:AStudent, expr:} ]\",\"id\":0,\"children\":[0]}\n",
 			t:   "WindowFuncPlan",
 		},
 	}
@@ -987,7 +988,7 @@ func TestWindowFuncPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()
@@ -1018,7 +1019,7 @@ func TestOrderPlanExplainInfo(t *testing.T) {
 			p: &OrderPlan{
 				SortFields: []ast.SortField{{Uname: "s1\007name", Name: "name", StreamName: ast.StreamName("s1"), Ascending: true, FieldExpr: &ast.FieldRef{Name: "name", StreamName: "s1"}}},
 			},
-			res: "{\"type\":\"OrderPlan\",\"info\":\"SortFields:[ sortField:{ name:name, ascending:true, fieldExpr:{ s1.name } } ]\",\"id\":1,\"children\":[0]}\n",
+			res: "{\"type\":\"OrderPlan\",\"info\":\"SortFields:[ sortField:{ name:name, ascending:true, fieldExpr:{ s1.name } } ]\",\"id\":0,\"children\":[0]}\n",
 			t:   "OrderPlan",
 		},
 	}
@@ -1027,7 +1028,7 @@ func TestOrderPlanExplainInfo(t *testing.T) {
 
 	for i := 0; i < len(test); i++ {
 		test[i].p = test[i].p.Init()
-		test[i].p.BuildExplainInfo(int64(i))
+		test[i].p.BuildExplainInfo()
 		res := test[i].res
 		rty := test[i].t
 		explainInfo := test[i].p.Explain()

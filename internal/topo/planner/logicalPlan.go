@@ -46,7 +46,8 @@ type ExplainInfo interface {
 	Type() string
 	ChildrenID() []int64
 	Explain() string
-	BuildExplainInfo(id int64)
+	BuildExplainInfo()
+	SetID(id int64)
 }
 
 type PlanExplainInfo struct {
@@ -65,8 +66,12 @@ func (p *baseLogicalPlan) Explain() string {
 	return bf.String()
 }
 
-func (p *baseLogicalPlan) BuildExplainInfo(id int64) {
-	p.self.BuildExplainInfo(id)
+func (p *baseLogicalPlan) BuildExplainInfo() {
+	p.self.BuildExplainInfo()
+}
+
+func (p *baseLogicalPlan) SetID(id int64) {
+	p.ExplainInfo.ID = id
 }
 
 func (p *baseLogicalPlan) Type() string {

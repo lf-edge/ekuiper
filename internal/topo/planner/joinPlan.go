@@ -28,7 +28,7 @@ func (p JoinPlan) Init() *JoinPlan {
 	return &p
 }
 
-func (p *JoinPlan) BuildExplainInfo(id int64) {
+func (p *JoinPlan) BuildExplainInfo() {
 	info := ""
 	if p.joins != nil && len(p.joins) != 0 {
 		info += "Joins:[ "
@@ -44,7 +44,6 @@ func (p *JoinPlan) BuildExplainInfo(id int64) {
 		}
 		info += " ]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

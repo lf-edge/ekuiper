@@ -30,7 +30,7 @@ func (p AnalyticFuncsPlan) Init() *AnalyticFuncsPlan {
 	return &p
 }
 
-func (p *AnalyticFuncsPlan) BuildExplainInfo(id int64) {
+func (p *AnalyticFuncsPlan) BuildExplainInfo() {
 	info := ""
 	if p.funcs != nil && len(p.funcs) != 0 {
 		info += "Funcs:[ "
@@ -52,7 +52,6 @@ func (p *AnalyticFuncsPlan) BuildExplainInfo(id int64) {
 		}
 		info += " ]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

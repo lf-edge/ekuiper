@@ -35,6 +35,24 @@ func init() {
 	testx.InitEnv()
 }
 
+var defaultOption = &api.RuleOption{
+	IsEventTime:        false,
+	LateTol:            1000,
+	Concurrency:        1,
+	BufferLength:       1024,
+	SendMetaToSink:     false,
+	SendError:          true,
+	Qos:                api.AtMostOnce,
+	CheckpointInterval: 300000,
+	Restart: &api.RestartStrategy{
+		Attempts:     0,
+		Delay:        1000,
+		Multiplier:   2,
+		MaxDelay:     30000,
+		JitterFactor: 0.1,
+	},
+}
+
 func Test_createLogicalPlan(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	if err != nil {
@@ -4418,5 +4436,114 @@ func TestTransformSourceNode(t *testing.T) {
 				t.Errorf("unexpected result: got %v, want %v", sourceNode, tc.node)
 			}
 		})
+	}
+}
+
+func TestGetLogicalPlanForExplain(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 (
+					id1 BIGINT,
+					temp BIGINT,
+					name string,
+					myarray array(string)
+				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+		"src2": `CREATE STREAM src2 (
+					id2 BIGINT,
+					hum BIGINT
+				) WITH (DATASOURCE="src2", FORMAT="json", KEY="ts", TIMESTAMP_FORMAT="YYYY-MM-dd HH:mm:ss");`,
+		"tableInPlanner": `CREATE TABLE tableInPlanner (
+					id BIGINT,
+					name STRING,
+					value STRING,
+					hum BIGINT
+				) WITH (TYPE="file");`,
+	}
+	types := map[string]ast.StreamType{
+		"src1":           ast.TypeStream,
+		"src2":           ast.TypeStream,
+		"tableInPlanner": ast.TypeTable,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+		err = kv.Set(name, string(s))
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+	}
+	streams := make(map[string]*ast.StreamStmt)
+	for n := range streamSqls {
+		streamStmt, err := xsql.GetDataSource(kv, n)
+		if err != nil {
+			t.Errorf("fail to get stream %s, please check if stream is created", n)
+			return
+		}
+		streams[n] = streamStmt
+	}
+
+	ref := &ast.AliasRef{
+		Expression: &ast.Call{
+			Name:     "row_number",
+			FuncType: ast.FuncTypeWindow,
+		},
+	}
+	ref.SetRefSource([]string{})
+
+	tests := []struct {
+		rule *api.Rule
+		res  string
+		err  string
+	}{
+		{
+			rule: &api.Rule{
+				Triggered: false,
+				Id:        "test",
+				Sql:       "select name, row_number() as index from src1",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: defaultOption,
+			},
+			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ $$alias.index, src1.name ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:index, expr:$$alias.index} ]\",\"id\":1,\"children\":[2]}\n\n         {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: src1, StreamFields:[ name ]\",\"id\":2,\"children\":null}\n\n",
+		},
+		{
+			rule: &api.Rule{
+				Triggered: false,
+				Id:        "test",
+				Sql:       "select name, row_number() from src1",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: defaultOption,
+			},
+			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ src1.name, Call:{ name:row_number } ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:row_number, expr:Call:{ name:row_number }} ]\",\"id\":1,\"children\":[2]}\n\n         {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: src1, StreamFields:[ name ]\",\"id\":2,\"children\":null}\n\n",
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+
+	for i, tt := range tests {
+		explain, err := GetExplainInfoFromLogicalPlan(tt.rule)
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+		if !reflect.DeepEqual(explain, tt.res) {
+			t.Errorf("case %d: expect validate %v but got %v", i, tt.res, explain)
+		}
 	}
 }

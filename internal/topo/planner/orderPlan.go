@@ -27,7 +27,7 @@ func (p OrderPlan) Init() *OrderPlan {
 	return &p
 }
 
-func (p *OrderPlan) BuildExplainInfo(id int64) {
+func (p *OrderPlan) BuildExplainInfo() {
 	info := ""
 	if p.SortFields != nil && len(p.SortFields) != 0 {
 		info += "SortFields:[ "
@@ -39,7 +39,6 @@ func (p *OrderPlan) BuildExplainInfo(id int64) {
 		}
 		info += " ]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
