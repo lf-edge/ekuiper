@@ -300,7 +300,7 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 	defer func() {
 		Config.Basic.CfgStorageType = cfgFileStorage
 	}()
-	Config.Basic.CfgStorageType = cfgSQLiteStorage
+	Config.Basic.CfgStorageType = cfgStoreKVStorage
 	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
 	require.NoError(t, mqttCfg.AddConfKey("key1", map[string]interface{}{

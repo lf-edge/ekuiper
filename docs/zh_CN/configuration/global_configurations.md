@@ -22,7 +22,7 @@ basic:
     maxConnections: 0
   # rulePatrolInterval indicates the patrol interval for the internal checker to reconcile the scheudle rule
   rulePatrolInterval: 10s
-  # cfgStorageType indicates the storage type to store the config, support "file","sqlite" and "fdb"
+  # cfgStorageType indicates the storage type to store the config, support `file` and `kv`. When `cfgStorageType` is file, it will save configuration into File. When `cfgStorageType` is `kv`, it will save configuration into the storage defined in `store`
   cfgStorageType: file
 ```
 
