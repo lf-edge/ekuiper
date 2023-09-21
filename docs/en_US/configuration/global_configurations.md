@@ -20,6 +20,14 @@ basic:
   maxAge: 72
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: false
+  sql:
+    # maxConnections indicates the max connections for the certain database instance group by driver and dsn sharing between the sources/sinks
+    # 0 indicates unlimited
+    maxConnections: 0
+  # rulePatrolInterval indicates the patrol interval for the internal checker to reconcile the scheudle rule
+  rulePatrolInterval: 10s
+  # cfgStorageType indicates the storage type to store the config, support "file","sqlite" and "fdb"
+  cfgStorageType: file
 ```
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
