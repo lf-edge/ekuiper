@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	cfgFileStorage   = "file"
-	cfgSQLiteStorage = "sqlite"
+	cfgFileStorage    = "file"
+	cfgStoreKVStorage = "kv"
 )
 
 type cfgKVStorage interface {
@@ -72,7 +72,7 @@ func getKVStorage() (cfgKVStorage, error) {
 		return mockMemoryKVStore, nil
 	}
 	switch Config.Basic.CfgStorageType {
-	case cfgSQLiteStorage:
+	case cfgStoreKVStorage:
 		if sqliteKVStore == nil {
 			sqliteKVStorage, err := NewSqliteKVStore("confKVStorage")
 			if err != nil {

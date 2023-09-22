@@ -322,7 +322,7 @@ type SourceConfigKeysOps struct {
 
 func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
 	switch c.storageType {
-	case cfgSQLiteStorage:
+	case cfgStoreKVStorage:
 		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sources")
 	case cfgFileStorage:
 		pluginName := c.pluginName
@@ -347,7 +347,7 @@ type SinkConfigKeysOps struct {
 
 func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
 	switch c.storageType {
-	case cfgSQLiteStorage:
+	case cfgStoreKVStorage:
 		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sinks")
 	case cfgFileStorage:
 		pluginName := c.pluginName
@@ -372,7 +372,7 @@ type ConnectionConfigKeysOps struct {
 
 func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
 	switch p.storageType {
-	case cfgSQLiteStorage:
+	case cfgStoreKVStorage:
 		return p.ConfigKeys.saveCfgKeysIntoKVStorage("connections")
 	case cfgFileStorage:
 		pluginName := p.pluginName

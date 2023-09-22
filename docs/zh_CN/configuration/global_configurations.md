@@ -16,6 +16,14 @@ basic:
   maxAge: 72
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: true
+  sql:
+    # maxConnections indicates the max connections for the certain database instance group by driver and dsn sharing between the sources/sinks
+    # 0 indicates unlimited
+    maxConnections: 0
+  # rulePatrolInterval indicates the patrol interval for the internal checker to reconcile the scheudle rule
+  rulePatrolInterval: 10s
+  # cfgStorageType indicates the storage type to store the config, support `file` and `kv`. When `cfgStorageType` is file, it will save configuration into File. When `cfgStorageType` is `kv`, it will save configuration into the storage defined in `store`
+  cfgStorageType: file
 ```
 
 将basic项目下debug的值设置为true是有效的 `KUIPER__BASIC__DEBUG=true`。
@@ -171,6 +179,15 @@ GET http://localhost:9081/plugins/functions/prebuild
 ## 存储配置
 
 可通过配置修改创建的流和规则等状态的存储方式。默认情况下，程序状态存储在 sqlite 数据库中。把存储类型改成 redis，可使用 redis 作为存储方式。
+
+### 配置存储
+
+```yaml
+basic:
+  cfgStorageType: kv
+```
+
+当 basic.cfgStorageType 为 kv 时，他所用的底层存储将会变为 store.type，而 configurations 的文件内容将会以键值对的形式存储在所指定的存储中。
 
 ### Sqlite
 
