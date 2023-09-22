@@ -181,6 +181,15 @@ Configure the default properties of sink, currently mainly used to configure [ca
 
 ## Store configurations
 
+### Configuration Storage
+
+```yaml
+basic:
+  cfgStorageType: kv
+```
+
+When `basic.cfgStorageType` is kv, the underlying storage used by it will become `store.type`, and the contents of configurations will be stored in the specified storage in the form of key-value pairs.
+
 There is possibility to configure storage of state for application. Default storage layer is sqlite database. There is option to set redis as storage.
 In order to use redis as store type property must be changed into redis value.
 
@@ -246,3 +255,4 @@ This section configures the portable plugin runtime.
 ## Ruleset Provision
 
 Support file based stream and rule provisioning on startup. Users can put a [ruleset](../api/restapi/ruleset.md#ruleset-format) file named `init.json` into `data` directory to initialize the ruleset. The ruleset will only be import on the first startup of eKuiper.
+

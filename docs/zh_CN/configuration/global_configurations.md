@@ -180,6 +180,15 @@ GET http://localhost:9081/plugins/functions/prebuild
 
 可通过配置修改创建的流和规则等状态的存储方式。默认情况下，程序状态存储在 sqlite 数据库中。把存储类型改成 redis，可使用 redis 作为存储方式。
 
+### 配置存储
+
+```yaml
+basic:
+  cfgStorageType: kv
+```
+
+当 basic.cfgStorageType 为 kv 时，他所用的底层存储将会变为 store.type，而 configurations 的文件内容将会以键值对的形式存储在所指定的存储中。
+
 ### Sqlite
 
 可配置如下属性：
