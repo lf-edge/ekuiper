@@ -54,7 +54,7 @@ type RawConf struct {
 	CertificationPath    string      `json:"certificationPath"`
 	PrivateKeyPath       string      `json:"privateKeyPath"`
 	RootCaPath           string      `json:"rootCaPath"`
-	TLSMinVersion        string      `json:"TLSMinVersion"`
+	TLSMinVersion        string      `json:"tlsMinVersion"`
 	RenegotiationSupport string      `json:"renegotiationSupport"`
 	Timeout              int         `json:"timeout"`
 	DebugResp            bool        `json:"debugResp"`

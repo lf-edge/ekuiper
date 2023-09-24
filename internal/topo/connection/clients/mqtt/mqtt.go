@@ -38,7 +38,7 @@ type MQTTConnectionConfig struct {
 	Certification        string `json:"certificationPath"`
 	PrivateKPath         string `json:"privateKeyPath"`
 	RootCaPath           string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"TLSMinVersion"`
+	TLSMinVersion        string `json:"tlsMinVersion"`
 	RenegotiationSupport string `json:"renegotiationSupport"`
 	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
 }
