@@ -60,8 +60,6 @@ func GenerateTLSForClient(
 		MinVersion:         getTLSMinVersion(Opts.TLSMinVersion),
 	}
 
-	conf.Log.Infof("=> TLS configs: %v.", tlsConfig)
-
 	if len(Opts.CertFile) <= 0 && len(Opts.KeyFile) <= 0 {
 		tlsConfig.Certificates = nil
 	} else {
