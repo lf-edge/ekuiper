@@ -76,3 +76,24 @@ TRUE, FALSE
 ```text
 DD, HH, MI, SS, MS
 ```
+
+**字符串字面量**：
+
+```text
+"user", 'user'
+```
+
+请注意，在命令行中使用单引号字符串字面量时可能会遇到以下问题：
+
+```text
+$ bin/kuiper create rule myrule '{"sql": "SELECT lower('abc') FROM demo"...}'
+```
+
+在使用上述命令创建规则时，单引号字符串字面量中的 'abc' 会被识别为变量 abc，这是由于 Shell 的引用机制导致的：
+
+```text
+$ echo '{"sql": "SELECT lower('abc') FROM demo"}'
+{"sql": "SELECT lower(abc) FROM demo"}
+```
+
+如果遇到以上问题，建议使用双引号字符串字面量 "abc" 来代替单引号字符串字面量 'abc'，以避免变量替代的情况发生。

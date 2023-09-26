@@ -88,8 +88,42 @@ jobs:
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
     - uses: actions/upload-artifact@v3
       with:
-        name: packages-mac
+        name: packages
         path: _packages/
+
+  build-for-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.20.2'
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r24
+          add-to-path: false
+      - name: prepare
+        run: |
+          cp -r etc app
+          cd app 
+          sudo apt-get install libgl1-mesa-dev xorg-dev
+          go install fyne.io/fyne/v2/cmd/fyne@latest
+      - name: build
+        run: |
+          ver=$(git describe --tags --always)
+          cd app
+          fyne package -os android/arm64 -name ekuiper -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true
+          mkdir -p ../_packages
+          mv ekuiper.apk ../_packages/
+          cd _packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
+      - uses: actions/upload-artifact@v3
+        with:
+          name: packages
+          path: _packages/
 
   build-docker-images:
     runs-on: ubuntu-latest
@@ -337,6 +371,7 @@ jobs:
     needs:
     - build
     - build-on-mac
+    - build-for-android
     - build-plugins
 
     steps:
@@ -344,10 +379,6 @@ jobs:
     - uses: actions/download-artifact@v1
       with:
         name: packages
-        path: _packages
-    - uses: actions/download-artifact@v1
-      with:
-        name: packages-mac
         path: _packages
     - uses: actions/download-artifact@v1
       with:

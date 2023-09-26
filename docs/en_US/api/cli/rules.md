@@ -22,6 +22,21 @@ Sample:
 
 The command create a rule named `rule1`.
 
+Please note that when using single quotes for string literals in the command line, you may encounter the following issue:
+
+```text
+$ bin/kuiper create rule myrule '{"sql": "SELECT lower('abc') FROM demo"...}'
+```
+
+When creating a rule using the above command, the string literal 'abc' within the single quotes will be interpreted as the variable abc. This is due to the referencing mechanism in the Shell:
+
+```text
+$ echo '{"sql": "SELECT lower('abc') FROM demo"}'
+{"sql": "SELECT lower(abc) FROM demo"}
+```
+
+If you encounter this issue, it is recommended to use double quotes for string literals "abc" instead of single quotes 'abc' to prevent variable substitution from occurring.
+
 - Specify the rule definition in file. If the rule is complex, or the rule is already wrote in text files with well organized formats, you can just specify the rule definition through `-f` option.
 
 Sample:

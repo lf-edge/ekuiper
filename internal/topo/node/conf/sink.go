@@ -27,7 +27,7 @@ func GetSinkConf(sinkType string, action map[string]interface{}) map[string]inte
 	}
 	delete(action, ResourceID)
 
-	yamlOps, err := conf.NewConfigOperatorFromSinkYaml(sinkType)
+	yamlOps, err := conf.NewConfigOperatorFromSinkStorage(sinkType)
 	if err != nil {
 		conf.Log.Warnf("fail to parse yaml for sink %s. Return error %v", sinkType, err)
 		return action

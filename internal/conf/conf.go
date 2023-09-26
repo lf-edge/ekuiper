@@ -26,6 +26,7 @@ import (
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
 
+	"github.com/lf-edge/ekuiper/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/schedule"
@@ -149,6 +150,7 @@ type KuiperConf struct {
 		IgnoreCase         bool     `yaml:"ignoreCase"`
 		SQLConf            *SQLConf `yaml:"sql"`
 		RulePatrolInterval string   `yaml:"rulePatrolInterval"`
+		CfgStorageType     string   `yaml:"cfgStorageType"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
@@ -290,6 +292,10 @@ func InitConf() {
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
 	}
+	if Config.Basic.CfgStorageType == "" {
+		Config.Basic.CfgStorageType = "file"
+	}
+
 	_ = Config.Source.Validate()
 	if Config.Sink == nil {
 		Config.Sink = &SinkConf{}
@@ -355,7 +361,8 @@ func ValidateRuleOption(option *api.RuleOption) error {
 }
 
 func init() {
-	InitLogger()
+	logger.Log.Debugf("conf init")
+	IsTesting = logger.IsTesting
 	InitClock()
 }
 
@@ -379,6 +386,9 @@ func gcOutdatedLog(filePath string, maxDuration time.Duration) {
 }
 
 func isLogOutdated(name string, now time.Time, maxDuration time.Duration) bool {
+	if name == logFileName {
+		return false
+	}
 	layout := ".2006-01-02_15-04-05"
 	logDateExt := path.Ext(name)
 	if t, err := time.Parse(layout, logDateExt); err != nil {

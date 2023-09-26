@@ -123,6 +123,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	o.statManager = stats
+	o.statManagers = []metric.StatManager{stats}
 	var inputs []*xsql.Tuple
 	if s, err := ctx.GetState(WindowInputsKey); err == nil {
 		switch st := s.(type) {
@@ -633,13 +634,7 @@ func (o *WindowOperator) calDelta(triggerTime int64, log api.Logger) int64 {
 }
 
 func (o *WindowOperator) GetMetrics() [][]interface{} {
-	if o.statManager != nil {
-		return [][]interface{}{
-			o.statManager.GetMetrics(),
-		}
-	} else {
-		return nil
-	}
+	return o.defaultNode.GetMetrics()
 }
 
 func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) bool {

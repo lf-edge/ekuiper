@@ -24,7 +24,28 @@ type JoinPlan struct {
 
 func (p JoinPlan) Init() *JoinPlan {
 	p.baseLogicalPlan.self = &p
+	p.baseLogicalPlan.setPlanType(JOIN)
 	return &p
+}
+
+func (p *JoinPlan) BuildExplainInfo(id int64) {
+	info := ""
+	if p.joins != nil && len(p.joins) != 0 {
+		info += "Joins:[ "
+		for i, join := range p.joins {
+			info += "{ joinType:" + join.JoinType.String() + ", "
+			if join.Expr != nil {
+				info += join.Expr.String()
+			}
+			info += " }"
+			if i != len(p.joins)-1 {
+				info += ", "
+			}
+		}
+		info += " ]"
+	}
+	p.baseLogicalPlan.ExplainInfo.ID = id
+	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
 func (p *JoinPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPlan) {

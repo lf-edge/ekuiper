@@ -52,17 +52,38 @@ type ConfKeysOperator interface {
 // ConfigOperator define interface to query/add/update/delete the configs in disk
 type ConfigOperator interface {
 	ConfKeysOperator
-	SaveCfgToFile() error
+	SaveCfgToStorage() error
 }
 
 // ConfigKeys implement ConfKeysOperator interface, load the configs from etc/sources/xx.yaml and et/connections/connection.yaml
 // Hold the connection configs for each connection type in etcCfg field
 // Provide method to query/add/update/delete the configs
 type ConfigKeys struct {
-	lock       sync.RWMutex
-	pluginName string                            // source type, can be mqtt/edgex/httppull
-	etcCfg     map[string]map[string]interface{} // configs defined in etc/sources/yaml
-	dataCfg    map[string]map[string]interface{} // configs defined in etc/sources/
+	storageType string
+	lock        sync.RWMutex
+	pluginName  string                            // source type, can be mqtt/edgex/httppull
+	etcCfg      map[string]map[string]interface{} // configs defined in etc/sources/yaml
+	dataCfg     map[string]map[string]interface{} // configs defined in etc/sources/
+	// delCfgKey save the config key which needs to be deleted from the storage
+	delCfgKey map[string]struct{}
+	// saveCfgKey save the config key which needs to be saved or updated into the storage
+	saveCfgKey map[string]struct{}
+}
+
+func (c *ConfigKeys) saveCfgKeysIntoKVStorage(cfgType string) error {
+	for key := range c.saveCfgKey {
+		if err := saveCfgKeyToKV(buildKey(cfgType, c.pluginName, key), c.dataCfg[key]); err != nil {
+			return err
+		}
+		delete(c.saveCfgKey, key)
+	}
+	for key := range c.delCfgKey {
+		if err := delCfgKeyInStorage(buildKey(cfgType, c.pluginName, key)); err != nil {
+			return err
+		}
+		delete(c.delCfgKey, key)
+	}
+	return nil
 }
 
 func (c *ConfigKeys) GetPluginName() string {
@@ -212,8 +233,8 @@ func (c *ConfigKeys) GetUpdatableConfKeys() (keys []string) {
 func (c *ConfigKeys) DeleteConfKey(confKey string) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
 	delete(c.dataCfg, confKey)
+	c.delCfgKey[confKey] = struct{}{}
 }
 
 func (c *ConfigKeys) ClearConfKeys() {
@@ -275,9 +296,8 @@ func (c *ConfigKeys) DeleteConfKeyField(confKey string, reqField map[string]inte
 func (c *ConfigKeys) AddConfKey(confKey string, reqField map[string]interface{}) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
 	c.dataCfg[confKey] = reqField
-
+	c.saveCfgKey[confKey] = struct{}{}
 	return nil
 }
 
@@ -300,21 +320,24 @@ type SourceConfigKeysOps struct {
 	*ConfigKeys
 }
 
-func (c *SourceConfigKeysOps) SaveCfgToFile() error {
-	pluginName := c.pluginName
-	confDir, err := GetDataLoc()
-	if nil != err {
-		return err
-	}
+func (c *SourceConfigKeysOps) SaveCfgToStorage() error {
+	switch c.storageType {
+	case cfgStoreKVStorage:
+		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sources")
+	case cfgFileStorage:
+		pluginName := c.pluginName
+		confDir, err := GetDataLoc()
+		if nil != err {
+			return err
+		}
 
-	dir := path.Join(confDir, "sources")
-	filePath := path.Join(dir, pluginName+".yaml")
-	cfg := c.CopyUpdatableConfContent()
-	err = filex.WriteYamlMarshal(filePath, cfg)
-	if nil != err {
+		dir := path.Join(confDir, "sources")
+		filePath := path.Join(dir, pluginName+".yaml")
+		cfg := c.CopyUpdatableConfContent()
+		err = filex.WriteYamlMarshal(filePath, cfg)
 		return err
 	}
-	return nil
+	return fmt.Errorf("unknown source cfg storage type: %v", c.storageType)
 }
 
 // SinkConfigKeysOps implement ConfOperator interface, load the configs from data/sinks/xx.yaml
@@ -322,21 +345,24 @@ type SinkConfigKeysOps struct {
 	*ConfigKeys
 }
 
-func (c *SinkConfigKeysOps) SaveCfgToFile() error {
-	pluginName := c.pluginName
-	confDir, err := GetDataLoc()
-	if nil != err {
-		return err
-	}
+func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
+	switch c.storageType {
+	case cfgStoreKVStorage:
+		return c.ConfigKeys.saveCfgKeysIntoKVStorage("sinks")
+	case cfgFileStorage:
+		pluginName := c.pluginName
+		confDir, err := GetDataLoc()
+		if nil != err {
+			return err
+		}
 
-	dir := path.Join(confDir, "sinks")
-	filePath := path.Join(dir, pluginName+".yaml")
-	cfg := c.CopyUpdatableConfContent()
-	err = filex.WriteYamlMarshal(filePath, cfg)
-	if nil != err {
+		dir := path.Join(confDir, "sinks")
+		filePath := path.Join(dir, pluginName+".yaml")
+		cfg := c.CopyUpdatableConfContent()
+		err = filex.WriteYamlMarshal(filePath, cfg)
 		return err
 	}
-	return nil
+	return fmt.Errorf("unknown sinks cfg storage type: %v", c.storageType)
 }
 
 // ConnectionConfigKeysOps implement ConfOperator interface, load the configs from et/connections/connection.yaml
@@ -344,49 +370,59 @@ type ConnectionConfigKeysOps struct {
 	*ConfigKeys
 }
 
-func (p *ConnectionConfigKeysOps) SaveCfgToFile() error {
-	pluginName := p.pluginName
-	confDir, err := GetDataLoc()
-	if nil != err {
-		return err
+func (p *ConnectionConfigKeysOps) SaveCfgToStorage() error {
+	switch p.storageType {
+	case cfgStoreKVStorage:
+		return p.ConfigKeys.saveCfgKeysIntoKVStorage("connections")
+	case cfgFileStorage:
+		pluginName := p.pluginName
+		confDir, err := GetDataLoc()
+		if nil != err {
+			return err
+		}
+
+		cfg := p.CopyUpdatableConfContent()
+
+		yamlPath := path.Join(confDir, "connections/connection.yaml")
+
+		yamlData := make(map[string]interface{})
+		err = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
+		if nil != err {
+			return err
+		}
+		yamlData[pluginName] = cfg
+		return filex.WriteYamlMarshal(yamlPath, yamlData)
 	}
-
-	cfg := p.CopyUpdatableConfContent()
-
-	yamlPath := path.Join(confDir, "connections/connection.yaml")
-
-	yamlData := make(map[string]interface{})
-	err = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
-	if nil != err {
-		return err
-	}
-
-	yamlData[pluginName] = cfg
-
-	return filex.WriteYamlMarshal(yamlPath, yamlData)
+	return fmt.Errorf("unknown connection cfg storage type: %v", p.ConfigKeys.storageType)
 }
 
 // NewConfigOperatorForSource construct function
 func NewConfigOperatorForSource(pluginName string) ConfigOperator {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 	return c
 }
 
-// NewConfigOperatorFromSourceYaml construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) {
+// NewConfigOperatorFromSourceStorage construct function, Load the configs from etc/sources/xx.yaml
+func NewConfigOperatorFromSourceStorage(pluginName string) (ConfigOperator, error) {
 	c := &SourceConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 
@@ -404,16 +440,24 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 	// Just ignore error if yaml not found
 	_ = LoadConfigFromPath(filePath, &c.etcCfg)
 
-	dataDir, err := GetDataLoc()
-	if nil != err {
-		return nil, err
+	if c.storageType != cfgFileStorage {
+		prefix := buildKey("sources", pluginName, "")
+		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
+		if err != nil {
+			return nil, err
+		}
+		c.dataCfg = dataCfg
+	} else {
+		dataDir, err := GetDataLoc()
+		if nil != err {
+			return nil, err
+		}
+		dir = path.Join(dataDir, "sources")
+		fileName = pluginName
+
+		filePath = path.Join(dir, fileName+`.yaml`)
+		_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 	}
-	dir = path.Join(dataDir, "sources")
-	fileName = pluginName
-
-	filePath = path.Join(dir, fileName+`.yaml`)
-	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
-
 	return c, nil
 }
 
@@ -421,35 +465,48 @@ func NewConfigOperatorFromSourceYaml(pluginName string) (ConfigOperator, error) 
 func NewConfigOperatorForSink(pluginName string) ConfigOperator {
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 	return c
 }
 
-// NewConfigOperatorFromSinkYaml construct function, Load the configs from etc/sources/xx.yaml
-func NewConfigOperatorFromSinkYaml(pluginName string) (ConfigOperator, error) {
+// NewConfigOperatorFromSinkStorage construct function, Load the configs from etc/sources/xx.yaml
+func NewConfigOperatorFromSinkStorage(pluginName string) (ConfigOperator, error) {
 	c := &SinkConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
+	if c.storageType != cfgFileStorage {
+		prefix := buildKey("sinks", pluginName, "")
+		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
+		if err != nil {
+			return nil, err
+		}
+		c.dataCfg = dataCfg
+	} else {
+		dataDir, err := GetDataLoc()
+		if nil != err {
+			return nil, err
+		}
+		dir := path.Join(dataDir, "sinks")
 
-	dataDir, err := GetDataLoc()
-	if nil != err {
-		return nil, err
+		filePath := path.Join(dir, pluginName+`.yaml`)
+		_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
 	}
-	dir := path.Join(dataDir, "sinks")
-
-	filePath := path.Join(dir, pluginName+`.yaml`)
-	_ = filex.ReadYamlUnmarshal(filePath, &c.dataCfg)
-
 	return c, nil
 }
 
@@ -457,23 +514,29 @@ func NewConfigOperatorFromSinkYaml(pluginName string) (ConfigOperator, error) {
 func NewConfigOperatorForConnection(pluginName string) ConfigOperator {
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 	return c
 }
 
-// NewConfigOperatorFromConnectionYaml construct function, Load the configs from et/connections/connection.yaml
-func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, error) {
+// NewConfigOperatorFromConnectionStorage construct function, Load the configs from et/connections/connection.yaml
+func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, error) {
 	c := &ConnectionConfigKeysOps{
 		&ConfigKeys{
-			lock:       sync.RWMutex{},
-			pluginName: pluginName,
-			etcCfg:     map[string]map[string]interface{}{},
-			dataCfg:    map[string]map[string]interface{}{},
+			storageType: getStorageType(),
+			lock:        sync.RWMutex{},
+			pluginName:  pluginName,
+			etcCfg:      map[string]map[string]interface{}{},
+			dataCfg:     map[string]map[string]interface{}{},
+			delCfgKey:   map[string]struct{}{},
+			saveCfgKey:  map[string]struct{}{},
 		},
 	}
 
@@ -503,27 +566,43 @@ func NewConfigOperatorFromConnectionYaml(pluginName string) (ConfigOperator, err
 		return nil, fmt.Errorf("not find the target connection type: %s", c.pluginName)
 	}
 
-	confDir, err = GetDataLoc()
-	if nil != err {
-		return nil, err
-	}
-	yamlPath = path.Join(confDir, "connections/connection.yaml")
-	yamlData = make(map[string]interface{})
-	_ = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
+	if c.storageType != cfgFileStorage {
+		prefix := buildKey("connections", pluginName, "")
+		dataCfg, err := getCfgKeyFromStorageByPrefix(prefix)
+		if err != nil {
+			return nil, err
+		}
+		c.dataCfg = dataCfg
+	} else {
+		confDir, err = GetDataLoc()
+		if nil != err {
+			return nil, err
+		}
+		yamlPath = path.Join(confDir, "connections/connection.yaml")
+		yamlData = make(map[string]interface{})
+		_ = filex.ReadYamlUnmarshal(yamlPath, &yamlData)
 
-	if plgCnfs, ok := yamlData[pluginName]; ok {
-		if cf, ok1 := plgCnfs.(map[string]interface{}); ok1 {
-			for confKey, confVal := range cf {
-				if conf, ok := confVal.(map[string]interface{}); ok {
-					c.dataCfg[confKey] = conf
-				} else {
-					return nil, fmt.Errorf("file content is not right: %s.%v", confKey, confVal)
+		if plgCnfs, ok := yamlData[pluginName]; ok {
+			if cf, ok1 := plgCnfs.(map[string]interface{}); ok1 {
+				for confKey, confVal := range cf {
+					if conf, ok := confVal.(map[string]interface{}); ok {
+						c.dataCfg[confKey] = conf
+					} else {
+						return nil, fmt.Errorf("file content is not right: %s.%v", confKey, confVal)
+					}
 				}
+			} else {
+				return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
 			}
-		} else {
-			return nil, fmt.Errorf("file content is not right: %v", plgCnfs)
 		}
 	}
-
 	return c, nil
+}
+
+func getStorageType() string {
+	st := cfgFileStorage
+	if Config != nil && len(Config.Basic.CfgStorageType) > 0 {
+		st = Config.Basic.CfgStorageType
+	}
+	return st
 }

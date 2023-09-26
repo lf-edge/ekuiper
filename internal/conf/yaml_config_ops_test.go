@@ -22,32 +22,33 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
 
 func TestConfigKeys_LoadSourceFile(t *testing.T) {
-	_, err := NewConfigOperatorFromSourceYaml("mqtt")
+	_, err := NewConfigOperatorFromSourceStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestConfigKeys_LoadConnectionMqtt(t *testing.T) {
-	_, err := NewConfigOperatorFromConnectionYaml("mqtt")
+	_, err := NewConfigOperatorFromConnectionStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestConfigKeys_LoadConnectionEdgex(t *testing.T) {
-	_, err := NewConfigOperatorFromConnectionYaml("edgex")
+	_, err := NewConfigOperatorFromConnectionStorage("edgex")
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestConfigKeys_Ops(t *testing.T) {
-	httpCfg, err := NewConfigOperatorFromSourceYaml("httppull")
+	httpCfg, err := NewConfigOperatorFromSourceStorage("httppull")
 	if err != nil {
 		t.Error(err)
 	}
@@ -82,7 +83,7 @@ func TestConfigKeys_Ops(t *testing.T) {
 
 func TestConfigKeys_GetPluginName(t *testing.T) {
 	pluginName := "mqtt"
-	mqttCfg, err := NewConfigOperatorFromSourceYaml(pluginName)
+	mqttCfg, err := NewConfigOperatorFromSourceStorage(pluginName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -92,7 +93,7 @@ func TestConfigKeys_GetPluginName(t *testing.T) {
 }
 
 func TestConfigKeys_GetConfContentByte(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -114,7 +115,7 @@ func TestConfigKeys_LoadConfContent(t *testing.T) {
 }
 
 func TestConfigKeys_CopyReadOnlyConfContent(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -127,7 +128,7 @@ func TestConfigKeys_CopyReadOnlyConfContent(t *testing.T) {
 }
 
 func TestConfigKeys_GetConfKeys(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -150,7 +151,7 @@ func TestConfigKeys_GetConfKeys(t *testing.T) {
 }
 
 func TestConfigKeys_GetReadOnlyConfKeys(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -236,8 +237,8 @@ func TestConfigKeys_AddConfKeyField(t *testing.T) {
 	}
 }
 
-func TestSourceConfigKeysOps_SaveCfgToFile(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromSourceYaml("mqtt")
+func TestSourceConfigKeysOps_SaveCfgToStorage(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -249,15 +250,15 @@ func TestSourceConfigKeysOps_SaveCfgToFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = mqttCfg.SaveCfgToFile()
+	err = mqttCfg.SaveCfgToStorage()
 	if err != nil {
 		t.Error(err)
 	}
 	os.RemoveAll("../../data/test/sources/mqtt.yaml")
 }
 
-func TestSinkConfigKeysOps_SaveCfgToFile(t *testing.T) {
-	mqttCfg, err := NewConfigOperatorFromSinkYaml("mqtt")
+func TestSinkConfigKeysOps_SaveCfgToStorage(t *testing.T) {
+	mqttCfg, err := NewConfigOperatorFromSinkStorage("mqtt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -269,7 +270,7 @@ func TestSinkConfigKeysOps_SaveCfgToFile(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = mqttCfg.SaveCfgToFile()
+	err = mqttCfg.SaveCfgToStorage()
 	if err != nil {
 		t.Error(err)
 	}
@@ -288,6 +289,68 @@ func TestNewConfigOperatorForConnection(t *testing.T) {
 	if connection.GetPluginName() != "mqtt" {
 		t.Errorf("NewConfigOperatorForSink() fail")
 	}
+}
+
+func TestConfigKeys_LoadFromKV(t *testing.T) {
+	InitConf()
+	Config.Basic.CfgStorageType = ""
+	InitConf()
+	// assert default
+	require.Equal(t, Config.Basic.CfgStorageType, cfgFileStorage)
+	defer func() {
+		Config.Basic.CfgStorageType = cfgFileStorage
+	}()
+	Config.Basic.CfgStorageType = cfgStoreKVStorage
+	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
+	require.NoError(t, err)
+	require.NoError(t, mqttCfg.AddConfKey("key1", map[string]interface{}{
+		"k1": "v1",
+	}))
+	require.NoError(t, mqttCfg.AddConfKey("key2", map[string]interface{}{
+		"k2": "v2",
+	}))
+	require.NoError(t, mqttCfg.SaveCfgToStorage())
+	mqttCfg2, err := NewConfigOperatorFromSourceStorage("mqtt")
+	require.NoError(t, err)
+	require.Equal(t, map[string]map[string]interface{}{
+		"key1": {
+			"k1": "v1",
+		},
+		"key2": {
+			"k2": "v2",
+		},
+	}, mqttCfg2.CopyUpdatableConfContent())
+	mqttCfg2.DeleteConfKey("key1")
+	require.NoError(t, mqttCfg2.SaveCfgToStorage())
+	mqttCfg3, err := NewConfigOperatorFromSourceStorage("mqtt")
+	require.NoError(t, err)
+	require.Equal(t, map[string]map[string]interface{}{
+		"key2": {
+			"k2": "v2",
+		},
+	}, mqttCfg3.CopyUpdatableConfContent())
+
+	mSource, ok := mqttCfg3.(*SourceConfigKeysOps)
+	require.True(t, ok)
+	mSource.storageType = "mock"
+	err = mSource.SaveCfgToStorage()
+	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
+
+	mqttCfg4, err := NewConfigOperatorFromSinkStorage("mqtt")
+	require.NoError(t, err)
+	mSinks, ok := mqttCfg4.(*SinkConfigKeysOps)
+	require.True(t, ok)
+	mSinks.storageType = "mock"
+	err = mSinks.SaveCfgToStorage()
+	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
+
+	mqttCfg5, err := NewConfigOperatorFromConnectionStorage("mqtt")
+	require.NoError(t, err)
+	mConn, ok := mqttCfg5.(*ConnectionConfigKeysOps)
+	require.True(t, ok)
+	mConn.storageType = "mock"
+	err = mConn.SaveCfgToStorage()
+	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
 }
 
 func marshalUn(input, output interface{}) error {

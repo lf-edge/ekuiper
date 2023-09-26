@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 //go:build !windows
 // +build !windows
 
-package conf
+package logger
 
 import (
 	"log/syslog"
@@ -23,6 +23,8 @@ import (
 
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 )
+
+const KuiperSyslogKey = "KuiperSyslogKey"
 
 func initSyslog() {
 	if "true" == os.Getenv(KuiperSyslogKey) {

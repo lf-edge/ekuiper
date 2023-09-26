@@ -775,7 +775,9 @@ func TestSinkCache(t *testing.T) {
 				if len(tt.resendResult) < minLen {
 					minLen = len(tt.resendResult)
 				}
-				assert.Equal(t, resentResults[:minLen], tt.resendResult[:minLen])
+				if minLen != 0 {
+					assert.Equal(t, resentResults[:minLen], tt.resendResult[:minLen])
+				}
 			}
 		})
 	}

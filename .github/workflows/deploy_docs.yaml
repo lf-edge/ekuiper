@@ -6,6 +6,8 @@ concurrency:
 
 on:
   push:
+    tags:
+      - '*.*.*'
     branches:
       - master
     paths:
@@ -44,9 +46,10 @@ jobs:
       run: |
          BRANCH=$(echo ${{ github.ref }} | sed -r  "s ^refs/heads/|^refs/tags/(.*) \1 g")
          if [ "$BRANCH" = "master" ];then
-         VERSION="latest"
+           VERSION="latest"
          else
-         VERSION=v$BRANCH
+           VERSION=$(echo $BRANCH | sed -E 's/([^.]+\.[^.]+).*/\1/')
+           VERSION="v$VERSION"
          fi
          echo "DOCS_BRANCH=$BRANCH" >> $GITHUB_ENV
          echo "VERSION=$VERSION" >> $GITHUB_ENV
@@ -69,7 +72,13 @@ jobs:
         cp -r docs-files/docs/en_US/* frontend/docs/en/${VERSION}/
         cp -r docs-files/docs/zh_CN/* frontend/docs/zh/${VERSION}/
         cp docs-files/docs/directory.json frontend/docs/.vuepress/config/directory.json
-        echo "[\"latest\"]" > frontend/docs/.vuepress/public/api/${DOCS_TYPE}_versions.json
+
+    - name: generate version config
+      run: |
+        cd docs-files
+        version_list=$(git tag | xargs echo -n)
+        python3 .github/scripts/generate_version.py $version_list > ../frontend/docs/.vuepress/public/api/${DOCS_TYPE}_versions.json
+        cat ../frontend/docs/.vuepress/public/api/${DOCS_TYPE}_versions.json
 
     - name: build docs
       run: |

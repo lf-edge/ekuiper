@@ -20,6 +20,14 @@ basic:
   maxAge: 72
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: false
+  sql:
+    # maxConnections indicates the max connections for the certain database instance group by driver and dsn sharing between the sources/sinks
+    # 0 indicates unlimited
+    maxConnections: 0
+  # rulePatrolInterval indicates the patrol interval for the internal checker to reconcile the scheudle rule
+  rulePatrolInterval: 10s
+  # cfgStorageType indicates the storage type to store the config, support `file` and `kv`. When `cfgStorageType` is file, it will save configuration into File. When `cfgStorageType` is `kv`, it will save configuration into the storage defined in `store`
+  cfgStorageType: file
 ```
 
 for debug option in basic following env is valid `KUIPER__BASIC__DEBUG=true` and if used debug value will be set to true.
@@ -172,6 +180,15 @@ Configure the default properties of sink, currently mainly used to configure [ca
 ```
 
 ## Store configurations
+
+### Configuration Storage
+
+```yaml
+basic:
+  cfgStorageType: kv
+```
+
+When `basic.cfgStorageType` is kv, the underlying storage used by it will become `store.type`, and the contents of configurations will be stored in the specified storage in the form of key-value pairs.
 
 There is possibility to configure storage of state for application. Default storage layer is sqlite database. There is option to set redis as storage.
 In order to use redis as store type property must be changed into redis value.
