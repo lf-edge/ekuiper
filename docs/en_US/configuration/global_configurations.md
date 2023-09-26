@@ -255,4 +255,3 @@ This section configures the portable plugin runtime.
 ## Ruleset Provision
 
 Support file based stream and rule provisioning on startup. Users can put a [ruleset](../api/restapi/ruleset.md#ruleset-format) file named `init.json` into `data` directory to initialize the ruleset. The ruleset will only be import on the first startup of eKuiper.
-
