@@ -2,7 +2,7 @@
 
 源将订阅 Kafka 消息源从而获取信息
 
-### 默认构建命令
+## 默认构建命令
 
 ```shell
 # cd $eKuiper_src

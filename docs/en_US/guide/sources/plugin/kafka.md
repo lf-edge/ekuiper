@@ -2,7 +2,7 @@
 
 The source will query the Kafka periodically to get data stream.
 
-### Default build command
+## Default build command
 
 ```shell
 # cd $eKuiper_src
