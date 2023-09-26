@@ -17,50 +17,32 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
-	"github.com/segmentio/kafka-go"
+	kafkago "github.com/segmentio/kafka-go"
 
+	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type kafkaSource struct {
-	reader     *kafka.Reader
-	sourceConf *kafkaSourceConf
-}
-
-type kafkaSourceConf struct {
-	Brokers   string `json:"brokers"`
-	GroupID   string `json:"groupID"`
-	Partition int    `json:"partition"`
-	MaxBytes  int    `json:"maxBytes"`
-	Offset    int64  `json:"offset"`
+	reader *kafkago.Reader
 }
 
 func (s *kafkaSource) Configure(topic string, props map[string]interface{}) error {
-	sConf := &kafkaSourceConf{}
-	err := cast.MapToStruct(props, sConf)
+	kConf, err := kafka.GenKafkaConf(props)
 	if err != nil {
-		return fmt.Errorf("read properties %v fail with error: %v", props, err)
+		return err
 	}
-	s.sourceConf = sConf
-	if len(sConf.Brokers) < 1 {
-		return fmt.Errorf("brokers should be defined")
+	if err := kConf.ValidateSourceConf(); err != nil {
+		return err
 	}
 	if len(topic) < 1 {
 		return fmt.Errorf("DataSource which indicates the topic should be defined")
 	}
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   strings.Split(sConf.Brokers, ","),
-		GroupID:   sConf.GroupID,
-		Topic:     topic,
-		Partition: sConf.Partition,
-		MaxBytes:  sConf.MaxBytes,
-	})
-	if sConf.Offset != 0 {
-		if err := reader.SetOffset(sConf.Offset); err != nil {
+	reader := kafkago.NewReader(kConf.GetReaderConfig(topic))
+	if kConf.Offset != 0 {
+		if err := reader.SetOffset(kConf.Offset); err != nil {
 			return fmt.Errorf("set kafka offset failed, err:%v", err)
 		}
 	}

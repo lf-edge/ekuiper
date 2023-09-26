@@ -23,21 +23,16 @@ import (
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 type kafkaSink struct {
-	writer *kafkago.Writer
-	c      *sinkConf
+	writer    *kafkago.Writer
+	kafkaConf *kafka.KafkaConf
+	saslConf  *kafka.SaslConf
 }
-
-const (
-	SASL_NONE  = "none"
-	SASL_PLAIN = "plain"
-	SASL_SCRAM = "scram"
-)
 
 type sinkConf struct {
 	Brokers      string `json:"brokers"`
@@ -48,28 +43,22 @@ type sinkConf struct {
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
-	c := &sinkConf{
-		Brokers:      "localhost:9092",
-		Topic:        "",
-		SaslAuthType: SASL_NONE,
-	}
-	if err := cast.MapToStruct(props, c); err != nil {
+	kafkaConf, err := kafka.GenKafkaConf(props)
+	if err != nil {
 		return err
 	}
-	if len(strings.Split(c.Brokers, ",")) == 0 {
-		return fmt.Errorf("brokers can not be empty")
+	if err := kafkaConf.ValidateSinkConf(); err != nil {
+		return err
 	}
-	if c.Topic == "" {
-		return fmt.Errorf("topic can not be empty")
+	m.kafkaConf = kafkaConf
+	saslConf, err := kafka.GenSaslConf(props)
+	if err != nil {
+		return err
 	}
-	if !(c.SaslAuthType == SASL_NONE || c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) {
-		return fmt.Errorf("saslAuthType incorrect")
+	if err := saslConf.Validate(); err != nil {
+		return err
 	}
-	if (c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) && (c.SaslUserName == "" || c.SaslPassword == "") {
-		return fmt.Errorf("username and password can not be empty")
-	}
-
-	m.c = c
+	m.saslConf = saslConf
 	return nil
 }
 
@@ -80,24 +69,24 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	var mechanism sasl.Mechanism
 
 	// sasl authentication type
-	switch m.c.SaslAuthType {
-	case SASL_PLAIN:
+	switch m.saslConf.SaslAuthType {
+	case kafka.SASL_PLAIN:
 		mechanism = plain.Mechanism{
-			Username: m.c.SaslUserName,
-			Password: m.c.SaslPassword,
+			Username: m.saslConf.SaslUserName,
+			Password: m.saslConf.SaslPassword,
 		}
-	case SASL_SCRAM:
-		mechanism, err = scram.Mechanism(scram.SHA512, m.c.SaslUserName, m.c.SaslPassword)
+	case kafka.SASL_SCRAM:
+		mechanism, err = scram.Mechanism(scram.SHA512, m.saslConf.SaslUserName, m.saslConf.SaslPassword)
 		if err != nil {
 			return err
 		}
 	default:
 		mechanism = nil
 	}
-	brokers := strings.Split(m.c.Brokers, ",")
+	brokers := strings.Split(m.kafkaConf.Brokers, ",")
 	w := &kafkago.Writer{
 		Addr:                   kafkago.TCP(brokers...),
-		Topic:                  m.c.Topic,
+		Topic:                  m.kafkaConf.Topic,
 		Balancer:               &kafkago.LeastBytes{},
 		Async:                  false,
 		AllowAutoTopicCreation: true,
