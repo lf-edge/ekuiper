@@ -88,7 +88,7 @@ jobs:
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
     - uses: actions/upload-artifact@v3
       with:
-        name: packages-mac
+        name: packages
         path: _packages/
 
   build-for-android:
@@ -119,9 +119,10 @@ jobs:
           fyne package -os android/arm64 -name ekuiper -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true
           mkdir -p ../_packages
           mv ekuiper.apk ../_packages/
+          cd _packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
       - uses: actions/upload-artifact@v3
         with:
-          name: packages-android
+          name: packages
           path: _packages/
 
   build-docker-images:
@@ -370,6 +371,7 @@ jobs:
     needs:
     - build
     - build-on-mac
+    - build-for-android
     - build-plugins
 
     steps:
@@ -377,10 +379,6 @@ jobs:
     - uses: actions/download-artifact@v1
       with:
         name: packages
-        path: _packages
-    - uses: actions/download-artifact@v1
-      with:
-        name: packages-mac
         path: _packages
     - uses: actions/download-artifact@v1
       with:
