@@ -36,7 +36,64 @@ func TestGenerateTLSForClient(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "set custom tls options",
+			name: "set tls version to TLS1.0",
+			args: args{
+				Opts: TlsConfigurationOptions{
+					SkipCertVerify:       false,
+					CertFile:             "",
+					KeyFile:              "",
+					CaFile:               "",
+					RenegotiationSupport: "freely",
+					TLSMinVersion:        "tls1.0",
+				},
+			},
+			want: &tls.Config{
+				InsecureSkipVerify: false,
+				MinVersion:         tls.VersionTLS10,
+				Renegotiation:      tls.RenegotiateFreelyAsClient,
+			},
+			wantErr: false,
+		},
+		{
+			name: "set tls version to TLS1.1",
+			args: args{
+				Opts: TlsConfigurationOptions{
+					SkipCertVerify:       false,
+					CertFile:             "",
+					KeyFile:              "",
+					CaFile:               "",
+					RenegotiationSupport: "once",
+					TLSMinVersion:        "tls1.1",
+				},
+			},
+			want: &tls.Config{
+				InsecureSkipVerify: false,
+				MinVersion:         tls.VersionTLS11,
+				Renegotiation:      tls.RenegotiateOnceAsClient,
+			},
+			wantErr: false,
+		},
+		{
+			name: "set tls version to TLS1.2",
+			args: args{
+				Opts: TlsConfigurationOptions{
+					SkipCertVerify:       false,
+					CertFile:             "",
+					KeyFile:              "",
+					CaFile:               "",
+					RenegotiationSupport: "never",
+					TLSMinVersion:        "tls1.2",
+				},
+			},
+			want: &tls.Config{
+				InsecureSkipVerify: false,
+				MinVersion:         tls.VersionTLS12,
+				Renegotiation:      tls.RenegotiateNever,
+			},
+			wantErr: false,
+		},
+		{
+			name: "set tls version to TLS1.3",
 			args: args{
 				Opts: TlsConfigurationOptions{
 					SkipCertVerify:       false,
@@ -54,6 +111,26 @@ func TestGenerateTLSForClient(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "set unknown tls options for TLS version and negotiation",
+			args: args{
+				Opts: TlsConfigurationOptions{
+					SkipCertVerify:       false,
+					CertFile:             "",
+					KeyFile:              "",
+					CaFile:               "",
+					RenegotiationSupport: "foo",
+					TLSMinVersion:        "bar",
+				},
+			},
+			want: &tls.Config{
+				InsecureSkipVerify: false,
+				MinVersion:         tls.VersionTLS12,
+				Renegotiation:      tls.RenegotiateNever,
+			},
+			wantErr: false,
+		},
+
 		{
 			name: "no cert/key",
 			args: args{
