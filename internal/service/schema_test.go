@@ -367,7 +367,6 @@ func TestSchemalessConvertParams(t *testing.T) {
 			t.Errorf("%d \n\ntext result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.tresult, tj)
 		}
 	}
-
 }
 
 func TestSchemalessConvertReturns(t *testing.T) {
@@ -434,5 +433,4 @@ func TestSchemalessConvertReturns(t *testing.T) {
 			t.Errorf("%d \n\ntext result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.tresult, rt)
 		}
 	}
-
 }

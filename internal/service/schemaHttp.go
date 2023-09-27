@@ -60,7 +60,7 @@ type field struct {
 	prefix string
 }
 
-func (d *wrappedSchemalessDescriptor) ConvertHttpMapping(method string, params []interface{}) (*httpConnMeta, error) {
+func (d *wrappedSchemalessDescriptor) ConvertHttpMapping(_ string, params []interface{}) (*httpConnMeta, error) {
 	if len(params) < 2 {
 		return nil, fmt.Errorf("the parameter count must be greater than 2")
 	}

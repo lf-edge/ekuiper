@@ -124,10 +124,8 @@ func parse(schema schema, file string, schemaless bool) (descriptor, error) {
 	}
 }
 
-type wrappedSchemalessDescriptor struct {
-}
+type wrappedSchemalessDescriptor struct{}
 
-// GetFunctions TODO support for duplicate names
 func (d *wrappedSchemalessDescriptor) GetFunctions() (result []string) {
 	return
 }
