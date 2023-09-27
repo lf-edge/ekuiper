@@ -29,7 +29,7 @@ func (p WindowFuncPlan) Init() *WindowFuncPlan {
 	return &p
 }
 
-func (p *WindowFuncPlan) BuildExplainInfo(id int64) {
+func (p *WindowFuncPlan) BuildExplainInfo() {
 	info := ""
 	if p.windowFuncFields != nil && len(p.windowFuncFields) != 0 {
 		info += "windowFuncFields:[ "
@@ -45,6 +45,5 @@ func (p *WindowFuncPlan) BuildExplainInfo(id int64) {
 		}
 		info += " ]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

@@ -52,7 +52,7 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 	return &p
 }
 
-func (p *DataSourcePlan) BuildExplainInfo(id int64) {
+func (p *DataSourcePlan) BuildExplainInfo() {
 	info := ""
 	if p.name != "" {
 		info += "StreamName: " + string(p.name)
@@ -87,7 +87,6 @@ func (p *DataSourcePlan) BuildExplainInfo(id int64) {
 		}
 		info += " ]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

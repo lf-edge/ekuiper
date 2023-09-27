@@ -32,7 +32,7 @@ func (p WatermarkPlan) Init() *WatermarkPlan {
 	return &p
 }
 
-func (p *WatermarkPlan) BuildExplainInfo(id int64) {
+func (p *WatermarkPlan) BuildExplainInfo() {
 	info := ""
 	if len(p.Emitters) != 0 {
 		info += "Emitters:[ "
@@ -45,7 +45,6 @@ func (p *WatermarkPlan) BuildExplainInfo(id int64) {
 		info += " ], "
 	}
 	info += "SendWatermark:" + strconv.FormatBool(p.SendWatermark)
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

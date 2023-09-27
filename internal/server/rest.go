@@ -39,6 +39,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
+	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -155,6 +156,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -239,6 +241,28 @@ func getFile(file *fileContent) error {
 		}
 	}
 	return nil
+}
+
+func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	// fetch the rule which will be explained
+	rule, err := ruleProcessor.GetRuleById(name)
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	if rule.Sql == "" {
+		handleError(w, errors.New("only support explain sql now"), "explain rules error", logger)
+	}
+	var explainInfo string
+	explainInfo, err = planner.GetExplainInfoFromLogicalPlan(rule)
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	// resp := planner.BuildExplainResultFromLp(lp, 0)
+	w.Write([]byte(explainInfo))
 }
 
 func fileUploadHandler(w http.ResponseWriter, r *http.Request) {

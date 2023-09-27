@@ -25,7 +25,7 @@ type HavingPlan struct {
 	stateFuncs []*ast.Call
 }
 
-func (p *HavingPlan) BuildExplainInfo(id int64) {
+func (p *HavingPlan) BuildExplainInfo() {
 	info := ""
 	if p.condition != nil {
 		info += "Condition:{ " + p.condition.String() + " }, "
@@ -40,7 +40,6 @@ func (p *HavingPlan) BuildExplainInfo(id int64) {
 		}
 		info += "]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

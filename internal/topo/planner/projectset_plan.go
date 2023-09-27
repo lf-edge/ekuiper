@@ -33,7 +33,7 @@ func (p ProjectSetPlan) Init() *ProjectSetPlan {
 	return &p
 }
 
-func (p *ProjectSetPlan) BuildExplainInfo(id int64) {
+func (p *ProjectSetPlan) BuildExplainInfo() {
 	info := ""
 	if p.SrfMapping != nil && len(p.SrfMapping) != 0 {
 		info += "SrfMap:{"
@@ -49,6 +49,5 @@ func (p *ProjectSetPlan) BuildExplainInfo(id int64) {
 		info += "}"
 	}
 	info += ", EnableLimit:" + strconv.FormatBool(p.enableLimit)
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }

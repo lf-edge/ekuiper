@@ -27,7 +27,7 @@ func (p AggregatePlan) Init() *AggregatePlan {
 	return &p
 }
 
-func (p *AggregatePlan) BuildExplainInfo(id int64) {
+func (p *AggregatePlan) BuildExplainInfo() {
 	info := ""
 	if p.dimensions != nil && len(p.dimensions) != 0 {
 		info += "Dimension:{ "
@@ -42,7 +42,6 @@ func (p *AggregatePlan) BuildExplainInfo(id int64) {
 		info += " }"
 	}
 
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

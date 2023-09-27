@@ -21,7 +21,7 @@ type JoinAlignPlan struct {
 	Emitters []string
 }
 
-func (p *JoinAlignPlan) BuildExplainInfo(id int64) {
+func (p *JoinAlignPlan) BuildExplainInfo() {
 	info := ""
 	if p.Emitters != nil && len(p.Emitters) != 0 {
 		info += "Emitters:[ "
@@ -33,7 +33,6 @@ func (p *JoinAlignPlan) BuildExplainInfo(id int64) {
 		}
 		info += " ]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
