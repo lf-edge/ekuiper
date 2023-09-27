@@ -258,7 +258,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.Plu
 
 var (
 	NativeSourcePlugin   = []string{"random", "zmq", "sql", "video"}
-	NativeSinkPlugin     = []string{"image", "influx", "influx2", "tdengine", "zmq", "kafka", "sql"}
+	NativeSinkPlugin     = []string{"image", "influx", "influx2", "tdengine", "zmq", "sql"}
 	NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage", "tfLite"}
 )
 

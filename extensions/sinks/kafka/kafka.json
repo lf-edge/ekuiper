@@ -99,6 +99,51 @@
         "en_US": "Sasl password",
         "zh_CN": "Sasl 密码"
       }
+    },
+    {
+      "name": "certFile",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "cert file for tls config",
+        "zh_CN": "tls 配置所用的 cert 文件"
+      },
+      "label": {
+        "en_US": "tls cert",
+        "zh_CN": "tls cert"
+      }
+    },
+    {
+      "name": "keyFile",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "key file for tls config",
+        "zh_CN": "tls 配置所用的 key 文件"
+      },
+      "label": {
+        "en_US": "tls key",
+        "zh_CN": "tls key"
+      }
+    },
+    {
+      "name": "caFile",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "ca file for tls config",
+        "zh_CN": "tls 配置所用的 ca 文件"
+      },
+      "label": {
+        "en_US": "tls ca",
+        "zh_CN": "tls ca"
+      }
     }
   ],
   "node": {

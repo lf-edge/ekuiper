@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package kafka
 
 import (
 	"crypto/tls"
@@ -24,6 +24,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -151,6 +152,11 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	}
 
 	err := m.writer.WriteMessages(ctx, messages...)
+	if err != nil {
+		conf.Log.Errorf("sink kafka msg failed, error: %v", err)
+	} else {
+		conf.Log.Debug("sink kafka msg success")
+	}
 	switch err := err.(type) {
 	case kafkago.Error:
 		if err.Temporary() {
