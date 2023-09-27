@@ -119,6 +119,13 @@ func TestInitByFiles(t *testing.T) {
 					"notUsedMsgpack",
 				},
 			},
+			"tsschemaless": {
+				Addr:     "http://localhost:51234",
+				Protocol: REST,
+				Schema: &schemaInfo{
+					Schemaless: true,
+				},
+			},
 		},
 	}
 	funcs := map[string]*functionContainer{
@@ -272,6 +279,11 @@ func TestInitByFiles(t *testing.T) {
 			InterfaceName: "tsmsgpack",
 			MethodName:    "RestEncodedJson",
 		},
+		"tsschemaless": {
+			ServiceName:   "sample",
+			InterfaceName: "tsschemaless",
+			MethodName:    "tsschemaless",
+		},
 	}
 
 	actualService := &serviceInfo{}
@@ -393,7 +405,7 @@ func TestManage(t *testing.T) {
 		t.Errorf("Get all installed service status faile, expect 0 but got %d", len(allServicesStatus))
 	}
 
-	expectedFunctions := []string{"ListShelves", "CreateShelf", "GetShelf", "DeleteShelf", "ListBooks", "createBook", "GetBook", "DeleteBook", "GetMessage", "SearchMessage", "UpdateMessage", "PatchMessage", "helloFromGrpc", "ComputeFromGrpc", "getFeatureFromGrpc", "objectDetectFromGrpc", "getStatusFromGrpc", "notUsedRpc", "helloFromRest", "ComputeFromRest", "getFeatureFromRest", "objectDetectFromRest", "getStatusFromRest", "restEncodedJson", "helloFromMsgpack", "ComputeFromMsgpack", "getFeatureFromMsgpack", "objectDetectFromMsgpack", "getStatusFromMsgpack", "notUsedMsgpack", "SayHello2"}
+	expectedFunctions := []string{"ListShelves", "CreateShelf", "GetShelf", "DeleteShelf", "ListBooks", "createBook", "GetBook", "DeleteBook", "GetMessage", "SearchMessage", "UpdateMessage", "PatchMessage", "helloFromGrpc", "ComputeFromGrpc", "getFeatureFromGrpc", "objectDetectFromGrpc", "getStatusFromGrpc", "notUsedRpc", "helloFromRest", "ComputeFromRest", "getFeatureFromRest", "objectDetectFromRest", "getStatusFromRest", "restEncodedJson", "helloFromMsgpack", "ComputeFromMsgpack", "getFeatureFromMsgpack", "objectDetectFromMsgpack", "getStatusFromMsgpack", "notUsedMsgpack", "SayHello2", "tsschemaless"}
 	sort.Strings(expectedFunctions)
 
 	functions, _ := m.ListFunctions()

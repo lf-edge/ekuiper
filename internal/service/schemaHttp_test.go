@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ func TestBookstoreConvertHttpMapping(t *testing.T) {
 			},
 		},
 	}
-	d, err := parse(PROTOBUFF, "http_bookstore.proto")
+	d, err := parse(PROTOBUFF, "http_bookstore.proto", false)
 	if err != nil {
 		panic(err)
 	}
@@ -140,12 +140,89 @@ func TestMessagingConvertHttpMapping(t *testing.T) {
 			},
 		},
 	}
-	d, err := parse(PROTOBUFF, "http_messaging.proto")
+	d, err := parse(PROTOBUFF, "http_messaging.proto", false)
 	if err != nil {
 		panic(err)
 	}
 	for i, tt := range tests {
 		r, err := d.(httpMapping).ConvertHttpMapping(tt.method, tt.params)
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
+			t.Errorf("%d : interface error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
+		} else if tt.err == "" && !reflect.DeepEqual(tt.result, r) {
+			t.Errorf("%d \n\ninterface result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, r)
+		}
+	}
+}
+
+func TestSchemalessConvertHttpMapping(t *testing.T) {
+	tests := []struct {
+		params []interface{}
+		result *httpConnMeta
+		err    string
+	}{
+		{
+			params: []interface{}{map[string]interface{}{
+				"message_id": "123456",
+				"text":       "Hi!",
+			}},
+			err: "the parameter count must be greater than 2",
+		},
+		{
+			params: []interface{}{"get", "/v1/messages/123456"},
+			result: &httpConnMeta{
+				Method: http.MethodGet,
+				Uri:    "/v1/messages/123456",
+			},
+		},
+		{
+			params: []interface{}{
+				"put",
+				"/v1/messages/123456",
+				map[string]interface{}{
+					"text": "Hi!",
+				},
+			},
+			result: &httpConnMeta{
+				Method: http.MethodPut,
+				Uri:    "/v1/messages/123456",
+				Body:   []byte(`{"text":"Hi!"}`),
+			},
+		},
+		{
+			params: []interface{}{
+				"patch",
+				"/v1/messages/123456",
+				map[string]interface{}{
+					"message_id": "123456",
+					"text":       "Hi!",
+				},
+			},
+			result: &httpConnMeta{
+				Method: http.MethodPatch,
+				Uri:    "/v1/messages/123456",
+				Body:   []byte(`{"message_id":"123456","text":"Hi!"}`),
+			},
+		},
+		{
+			params: []interface{}{
+				"patch",
+				"/v1/messages/123456",
+				"123456",
+				"hi",
+			},
+			result: &httpConnMeta{
+				Method: http.MethodPatch,
+				Uri:    "/v1/messages/123456",
+				Body:   []byte(`["123456","hi"]`),
+			},
+		},
+	}
+	d, err := parse(SCHEMALESS, "", true)
+	if err != nil {
+		panic(err)
+	}
+	for i, tt := range tests {
+		r, err := d.(httpMapping).ConvertHttpMapping("", tt.params)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d : interface error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
 		} else if tt.err == "" && !reflect.DeepEqual(tt.result, r) {

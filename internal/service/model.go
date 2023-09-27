@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ const (
 )
 
 const (
-	PROTOBUFF schema = "protobuf"
+	PROTOBUFF  schema = "protobuf"
+	SCHEMALESS schema = ""
 )
 
 type (
@@ -57,6 +58,7 @@ type (
 		Protocol    protocol               `json:"protocol"`
 		SchemaType  schema                 `json:"schemaType"`
 		SchemaFile  string                 `json:"schemaFile"`
+		Schemaless  bool                   `json:"schemaless"`
 		Functions   []*mapping             `json:"functions"`
 		Options     map[string]interface{} `json:"options"`
 	}
@@ -76,6 +78,7 @@ type serviceInfo struct {
 type schemaInfo struct {
 	SchemaType schema
 	SchemaFile string
+	Schemaless bool
 }
 
 type interfaceInfo struct {
