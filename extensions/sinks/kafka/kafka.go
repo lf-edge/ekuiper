@@ -15,6 +15,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"strings"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -45,6 +47,7 @@ type sinkConf struct {
 	SaslAuthType string `json:"saslAuthType"`
 	SaslUserName string `json:"saslUserName"`
 	SaslPassword string `json:"saslPassword"`
+	tlsConfig    *tls.Config
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -68,7 +71,17 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if (c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) && (c.SaslUserName == "" || c.SaslPassword == "") {
 		return fmt.Errorf("username and password can not be empty")
 	}
-
+	tlsConf := &cert.TlsConfigurationOptions{}
+	if err := cast.MapToStruct(props, tlsConf); err != nil {
+		return err
+	}
+	tlsConfig, err := cert.GenerateTLSForClient(*tlsConf)
+	if err != nil {
+		return err
+	}
+	if len(tlsConfig.Certificates) > 0 {
+		c.tlsConfig = tlsConfig
+	}
 	m.c = c
 	return nil
 }
@@ -106,8 +119,10 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		BatchSize:              1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
+			TLS:  m.c.tlsConfig,
 		},
 	}
+
 	m.writer = w
 	return nil
 }

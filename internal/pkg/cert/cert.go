@@ -9,10 +9,10 @@ import (
 )
 
 type TlsConfigurationOptions struct {
-	SkipCertVerify bool
-	CertFile       string
-	KeyFile        string
-	CaFile         string
+	SkipCertVerify bool   `json:"skipCertVerify"`
+	CertFile       string `json:"certFile"`
+	KeyFile        string `json:"keyFile"`
+	CaFile         string `json:"caFile"`
 }
 
 func GenerateTLSForClient(
