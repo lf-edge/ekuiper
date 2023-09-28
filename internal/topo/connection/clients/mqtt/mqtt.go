@@ -30,15 +30,17 @@ import (
 )
 
 type MQTTConnectionConfig struct {
-	Server             string `json:"server"`
-	PVersion           string `json:"protocolVersion"`
-	ClientId           string `json:"clientid"`
-	Uname              string `json:"username"`
-	Password           string `json:"password"`
-	Certification      string `json:"certificationPath"`
-	PrivateKPath       string `json:"privateKeyPath"`
-	RootCaPath         string `json:"rootCaPath"`
-	InsecureSkipVerify bool   `json:"insecureSkipVerify"`
+	Server               string `json:"server"`
+	PVersion             string `json:"protocolVersion"`
+	ClientId             string `json:"clientid"`
+	Uname                string `json:"username"`
+	Password             string `json:"password"`
+	Certification        string `json:"certificationPath"`
+	PrivateKPath         string `json:"privateKeyPath"`
+	RootCaPath           string `json:"rootCaPath"`
+	TLSMinVersion        string `json:"tlsMinVersion"`
+	RenegotiationSupport string `json:"renegotiationSupport"`
+	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
 }
 
 type MQTTClient struct {
@@ -82,10 +84,12 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	}
 
 	tlsOpts := cert.TlsConfigurationOptions{
-		SkipCertVerify: cfg.InsecureSkipVerify,
-		CertFile:       cfg.Certification,
-		KeyFile:        cfg.PrivateKPath,
-		CaFile:         cfg.RootCaPath,
+		SkipCertVerify:       cfg.InsecureSkipVerify,
+		CertFile:             cfg.Certification,
+		KeyFile:              cfg.PrivateKPath,
+		CaFile:               cfg.RootCaPath,
+		TLSMinVersion:        cfg.TLSMinVersion,
+		RenegotiationSupport: cfg.RenegotiationSupport,
 	}
 	conf.Log.Infof("Connect MQTT broker %s with TLS configs: %v.", ms.srv, tlsOpts)
 	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)

@@ -9,10 +9,46 @@ import (
 )
 
 type TlsConfigurationOptions struct {
-	SkipCertVerify bool
-	CertFile       string
-	KeyFile        string
-	CaFile         string
+	SkipCertVerify       bool
+	CertFile             string
+	KeyFile              string
+	CaFile               string
+	TLSMinVersion        string
+	RenegotiationSupport string
+}
+
+func getTLSMinVersion(userInput string) uint16 {
+	switch userInput {
+	case "tls1.0":
+		return tls.VersionTLS10
+	case "tls1.1":
+		return tls.VersionTLS11
+	case "tls1.2":
+		return tls.VersionTLS12
+	case "tls1.3":
+		return tls.VersionTLS13
+	case "":
+		return tls.VersionTLS12
+	default:
+		conf.Log.Warnf("Unrecognized or unsupported TLS version: %s, defaulting to TLS 1.2", userInput)
+		return tls.VersionTLS12
+	}
+}
+
+func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
+	switch userInput {
+	case "never":
+		return tls.RenegotiateNever
+	case "once":
+		return tls.RenegotiateOnceAsClient
+	case "freely":
+		return tls.RenegotiateFreelyAsClient
+	case "":
+		return tls.RenegotiateNever
+	default:
+		conf.Log.Warnf("Invalid renegotiation option: %s, defaulting to \"never\"", userInput)
+		return tls.RenegotiateNever
+	}
 }
 
 func GenerateTLSForClient(
@@ -20,6 +56,8 @@ func GenerateTLSForClient(
 ) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: Opts.SkipCertVerify,
+		Renegotiation:      getRenegotiationSupport(Opts.RenegotiationSupport),
+		MinVersion:         getTLSMinVersion(Opts.TLSMinVersion),
 	}
 
 	if len(Opts.CertFile) <= 0 && len(Opts.KeyFile) <= 0 {
