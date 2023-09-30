@@ -2,7 +2,8 @@
 
 <span style="background:green;color:white">lookup table source</span>
 
-eKuiper 内置支持 Redis 数据源，支持在 Redis 中进行数据查询。注意，现在 Redis 源只能作为一个[查询表](../../tables/lookup.md)，不支持作为流和扫描表类数据源。
+eKuiper 内置支持 Redis 数据源，支持在 Redis 中进行数据查询。
+注意，现在 Redis 源只能作为一个[查询表](../../tables/lookup.md)，而[RedisSub 数据源](./redisSub.md)可作为流和扫描表类数据源。
 
 ## 配置
 

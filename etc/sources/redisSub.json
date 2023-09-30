@@ -67,8 +67,8 @@
         "control": "text",
         "type": "int",
         "hint": {
-          "en_US": "Database number (0 to 16).",
-          "zh_CN": "数据库号（0到16）。"
+          "en_US": "Database number (0 to 15).",
+          "zh_CN": "数据库号（0到15）。"
         },
         "label": {
           "en_US": "Database Number.",

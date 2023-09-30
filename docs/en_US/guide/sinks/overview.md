@@ -11,6 +11,7 @@ Users can directly use the built-in sinks in the standard eKuiper instance. The 
 - [EdgeX sink](./builtin/edgex.md): sink to EdgeX Foundry. This sink only exists when enabling the edgex build tag.
 - [Rest sink](./builtin/rest.md): sink to external HTTP server.
 - [Redis sink](./builtin/redis.md): sink to Redis.
+- [RedisSub sink](./builtin/redisPub.md): sink to redis channel.
 - [File sink](./builtin/file.md): sink to a file.
 - [Memory sink](./builtin/memory.md): sink to eKuiper memory topic to form rule pipelines.
 - [Log sink](./builtin/log.md): sink to log, usually for debugging only.
