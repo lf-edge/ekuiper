@@ -29,6 +29,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
@@ -40,16 +41,21 @@ type clientConf struct {
 
 const ClientYaml = "client.yaml"
 
-func streamProcess(client *rpc.Client, args string) {
+func streamProcessValue(client *rpc.Client, args string) (string, error) {
 	var reply string
 	if args == "" {
 		args = strings.Join(os.Args[1:], " ")
 	}
 	err := client.Call("Server.Stream", args, &reply)
+	return reply, err
+}
+
+func streamProcess(client *rpc.Client, args string) {
+	s, err := streamProcessValue(client, args)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(reply)
+		fmt.Println(s)
 	}
 }
 
@@ -388,18 +394,52 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
-					Usage: "describe stream $stream_name",
-					// Flags: nflag,
+					Usage: "describe stream $stream_name -json",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "json",
+							Usage: "format output as json",
+						},
+					},
 					Action: func(c *cli.Context) error {
+						useJson := c.Bool("json")
+						if useJson {
+							a := "describe stream " + strings.Join(c.Args(), " ")
+							s, err := streamProcessValue(client, a)
+							if err != nil {
+								fmt.Println(err)
+								return nil
+							}
+							j := processor.DescribeToJson(s)
+							fmt.Println(j)
+							return nil
+						}
 						streamProcess(client, "")
 						return nil
 					},
 				},
 				{
 					Name:  "table",
-					Usage: "describe table $table_name",
-					// Flags: nflag,
+					Usage: "describe table $table_name -json",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "json",
+							Usage: "format output as json",
+						},
+					},
 					Action: func(c *cli.Context) error {
+						useJson := c.Bool("json")
+						if useJson {
+							a := "describe table " + strings.Join(c.Args(), " ")
+							s, err := streamProcessValue(client, a)
+							if err != nil {
+								fmt.Println(err)
+								return nil
+							}
+							j := processor.DescribeToJson(s)
+							fmt.Println(j)
+							return nil
+						}
 						streamProcess(client, "")
 						return nil
 					},
