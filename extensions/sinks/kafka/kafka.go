@@ -15,7 +15,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"os"
@@ -26,6 +25,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -34,6 +34,7 @@ import (
 type kafkaSink struct {
 	writer *kafkago.Writer
 	c      *sinkConf
+	tc     *tlsConf
 }
 
 const (
@@ -43,13 +44,21 @@ const (
 )
 
 type sinkConf struct {
-	Brokers           string `json:"brokers"`
-	Topic             string `json:"topic"`
-	SaslAuthType      string `json:"saslAuthType"`
-	SaslUserName      string `json:"saslUserName"`
-	SaslPassword      string `json:"saslPassword"`
-	CertificationPath string `json:"certificationPath"`
-	MaxAttempts       int    `json:"maxAttempts"`
+	Brokers      string `json:"brokers"`
+	Topic        string `json:"topic"`
+	SaslAuthType string `json:"saslAuthType"`
+	SaslUserName string `json:"saslUserName"`
+	SaslPassword string `json:"saslPassword"`
+	MaxAttempts  int    `json:"maxAttempts"`
+}
+
+type tlsConf struct {
+	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
+	CertificationPath    string `json:"certificationPath"`
+	PrivateKeyPath       string `json:"privateKeyPath"`
+	RootCaPath           string `json:"rootCaPath"`
+	TLSMinVersion        string `json:"tlsMinVersion"`
+	RenegotiationSupport string `json:"renegotiationSupport"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -74,7 +83,11 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if (c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) && (c.SaslUserName == "" || c.SaslPassword == "") {
 		return fmt.Errorf("username and password can not be empty")
 	}
-
+	tc := &tlsConf{}
+	if err := cast.MapToStruct(props, tc); err != nil {
+		return err
+	}
+	m.tc = tc
 	m.c = c
 	return nil
 }
@@ -100,18 +113,17 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	default:
 		mechanism = nil
 	}
-	var tlsConfig *tls.Config
-	if len(m.c.CertificationPath) > 0 {
-		caCert, err := caLoader(m.c.CertificationPath)
-		if err != nil {
-			return fmt.Errorf("load certificationPath failed, err:%v", err)
-		}
-		newTLSConfig := &tls.Config{
-			RootCAs: caCert,
-		}
-		tlsConfig = newTLSConfig
+	tlsConfig, err := cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
+		SkipCertVerify:       m.tc.InsecureSkipVerify,
+		CertFile:             m.tc.CertificationPath,
+		KeyFile:              m.tc.PrivateKeyPath,
+		CaFile:               m.tc.RootCaPath,
+		TLSMinVersion:        m.tc.TLSMinVersion,
+		RenegotiationSupport: m.tc.RenegotiationSupport,
+	})
+	if err != nil {
+		return err
 	}
-
 	brokers := strings.Split(m.c.Brokers, ",")
 	w := &kafkago.Writer{
 		Addr:                   kafkago.TCP(brokers...),
