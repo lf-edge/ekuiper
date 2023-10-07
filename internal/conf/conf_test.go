@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -377,6 +377,44 @@ func TestSinkConf_Validate(t *testing.T) {
 		},
 	}
 
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.sc.Validate()
+			assert.Equal(t, tt.wantErr, err)
+		})
+	}
+}
+
+func TestSyslogConf_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		sc      *syslogConf
+		wantErr error
+	}{
+		{
+			name: "valid config",
+			sc: &syslogConf{
+				Enable:  false,
+				Network: "udp",
+				Address: "localhost:514",
+				Tag:     "kuiper",
+				Level:   "info",
+			},
+			wantErr: nil,
+		},
+		{
+			name: "empty config",
+			sc:   &syslogConf{},
+		},
+		{
+			name: "invalid level",
+			sc: &syslogConf{
+				Enable: false,
+				Level:  "warning",
+			},
+			wantErr: errors.New("invalid syslog level: warning"),
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.sc.Validate()

@@ -130,26 +130,51 @@ type SQLConf struct {
 	MaxConnections int `yaml:"maxConnections"`
 }
 
+type syslogConf struct {
+	Enable  bool   `yaml:"enable"`
+	Network string `yaml:"network"`
+	Address string `yaml:"address"`
+	Tag     string `yaml:"tag"`
+	Level   string `yaml:"level"`
+}
+
+func (s *syslogConf) Validate() error {
+	if s.Network == "" {
+		s.Network = "udp"
+	}
+	if s.Level == "" {
+		s.Level = "info"
+	}
+	switch s.Level {
+	case "debug", "info", "warn", "error":
+		// valid, do nothing
+	default:
+		return fmt.Errorf("invalid syslog level: %s", s.Level)
+	}
+	return nil
+}
+
 type KuiperConf struct {
 	Basic struct {
-		Debug              bool     `yaml:"debug"`
-		ConsoleLog         bool     `yaml:"consoleLog"`
-		FileLog            bool     `yaml:"fileLog"`
-		RotateTime         int      `yaml:"rotateTime"`
-		MaxAge             int      `yaml:"maxAge"`
-		TimeZone           string   `yaml:"timezone"`
-		Ip                 string   `yaml:"ip"`
-		Port               int      `yaml:"port"`
-		RestIp             string   `yaml:"restIp"`
-		RestPort           int      `yaml:"restPort"`
-		RestTls            *tlsConf `yaml:"restTls"`
-		Prometheus         bool     `yaml:"prometheus"`
-		PrometheusPort     int      `yaml:"prometheusPort"`
-		PluginHosts        string   `yaml:"pluginHosts"`
-		Authentication     bool     `yaml:"authentication"`
-		IgnoreCase         bool     `yaml:"ignoreCase"`
-		SQLConf            *SQLConf `yaml:"sql"`
-		RulePatrolInterval string   `yaml:"rulePatrolInterval"`
+		Debug              bool        `yaml:"debug"`
+		ConsoleLog         bool        `yaml:"consoleLog"`
+		FileLog            bool        `yaml:"fileLog"`
+		Syslog             *syslogConf `yaml:"syslog"`
+		RotateTime         int         `yaml:"rotateTime"`
+		MaxAge             int         `yaml:"maxAge"`
+		TimeZone           string      `yaml:"timezone"`
+		Ip                 string      `yaml:"ip"`
+		Port               int         `yaml:"port"`
+		RestIp             string      `yaml:"restIp"`
+		RestPort           int         `yaml:"restPort"`
+		RestTls            *tlsConf    `yaml:"restTls"`
+		Prometheus         bool        `yaml:"prometheus"`
+		PrometheusPort     int         `yaml:"prometheusPort"`
+		PluginHosts        string      `yaml:"pluginHosts"`
+		Authentication     bool        `yaml:"authentication"`
+		IgnoreCase         bool        `yaml:"ignoreCase"`
+		SQLConf            *SQLConf    `yaml:"sql"`
+		RulePatrolInterval string      `yaml:"rulePatrolInterval"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
@@ -259,6 +284,17 @@ func InitConf() {
 		SetDebugLevel(true)
 	}
 
+	if os.Getenv(logger.KuiperSyslogKey) == "true" || Config.Basic.Syslog != nil {
+		c := Config.Basic.Syslog
+		if c == nil {
+			c = &syslogConf{}
+		}
+		err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
 		log.Fatal(err)
 	}
@@ -296,6 +332,10 @@ func InitConf() {
 		Config.Sink = &SinkConf{}
 	}
 	_ = Config.Sink.Validate()
+
+	if Config.Basic.Syslog != nil {
+		_ = Config.Basic.Syslog.Validate()
+	}
 
 	_ = ValidateRuleOption(&Config.Rule)
 }
