@@ -4,7 +4,11 @@
 
 在某些场景里，我们希望 eKuiper 可以通过热更新的方式，创建内部的某个 SQL 函数，将其映射为外部的服务，使其在实际场景运行中可以直接调用外部服务。目前， eKuiper 提供了配置的方式，将外部已有的一个服务，映射为 eKuiper 的一个 SQL 函数。在运行使用外部函数的规则时，可以对数据输入输出进行转换，并调用对应的外部服务。
 
+外部函数分为基于模式（schema）和无模式（schemaless）两种类型。这两种类型的区别在于基于模式的外部函数需要配置模式文件来描述服务的 API 接口，而无模式的外部函数仅适用于 REST 协议且信息较为简单的情况。
+
 ## 配置
+
+### Schema 外部函数
 
 外部函数的配置文件为 json 格式。通常包括两个部分：
 
@@ -20,6 +24,7 @@ json 配置文件包括以下两个部分：
   - adddress: 服务地址，必须为 url。例如，典型 rpc 服务地址："tcp://localhost:50000" 或者 http 服务地址 "<https://localhost:8000"。>
   - schemaType: 服务描述文件类型。目前仅支持 "protobuf"。
   - schemaFile: 服务描述文件，目前仅支持 proto 文件。rest 和 msgpack 服务也需要采用 proto 描述。
+  - schemaless: 服务是否为 schemaless类型，默认为 false。
   - functions: 函数映射数组，用于将 schema 里定义的服务映射到 SQL 函数。主要用于提供函数别名，例如 `{"name":"helloFromMsgpack","serviceName":"SayHello"}` 将服务定义中的 SayHello 服务映射为 SQL 函数 helloFromMsgpack 。未做映射的函数，其定义的服务以原名作为 SQL 函数名。
   - options: 服务接口选项。不同的服务类型有不同的选项。其中， rest 服务可配置的选项包括：
     - headers: 配置 http 头
@@ -124,7 +129,7 @@ message ObjectDetectionResponse {
 
 Protobuf 采用 proto3 格式，详细格式请参考 [proto3-spec](https://developers.google.com/protocol-buffers/docs/reference/proto3-spec) 。
 
-### Http选项
+#### Http选项
 
 为了支持更细粒度的 REST 服务配置，例如配置 http 方法，URL，参数以及请求体，我们支持了基于 *google.api.http* 注解的 grpc 转码配置。在 proto 文件中，用户可通过给每个 rpc 方法添加注解的方式，配置该方法映射的 http 方法，URL 路径，URL 参数以及请求体。
 
@@ -176,7 +181,7 @@ message MessageRequest {
 
 更详细 protobuf http 映射的语法介绍，请参看 [转码映射](https://cloud.google.com/endpoints/docs/grpc/transcoding#adding_transcoding_mappings) 和 [httprule](https://cloud.google.com/endpoints/docs/grpc-service-config/reference/rpc/google.api#httprule).
 
-#### 用法
+##### 用法
 
 使用 http 选项，必须在 proto 文件中导入如下文件：
 
@@ -190,7 +195,7 @@ import "google/api/annotations.proto";
 
 因此，google api proto 文件必须在导入路径上。eKuiper 默认  `etc/services/schemas/google` 搭载了依赖的 proto 文件。用户无需在自定义服务里打包此依赖。
 
-### 映射
+#### 映射
 
 外部服务配置需要1个 json 文件和至少一个 schema（.proto） 文件。配置定义了服务映射的3个层次。
 
@@ -205,7 +210,7 @@ import "google/api/annotations.proto";
 
 需要注意的是，REST 服务调用时参数将会解析为 json。其中，json 的键名来自于 proto 中的 message 定义的键名。Proto message 的键名在解析时会自动转化为小写驼峰格式。如果调用的 REST 服务参数不是这种格式，用户必须在 message 中指定 json_name 选项显式指定键名以防止自动转换。
 
-### 注意事项
+#### 注意事项
 
 由于 REST 和 msgpack-rpc 并非原生采用 protobuf 定义，因此其使用有一些限制。
 
@@ -216,6 +221,64 @@ REST 服务目前默认为 **POST**，且传输格式为 json。用户可通过�
 msgpack-rpc 服务有以下限制：
 
 - 输入不能为空
+
+### Schemaless 外部服务
+
+Schemaless 外部函数不需要配置 schema 文件，只需要一个 json 文件即可。这个 json 文件的定义和内容与 Schema 外部函数中的 JSON 文件相同，不再赘述。
+
+假设我们有一个名为 'sample' 的服务，那么可以定义一个名为 sample.json 的服务定义文件，其内容如下：
+
+```json
+{
+  "about": {
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://github.com/lf-edge/ekuiper/blob/master/docs/en_US/plugins/functions/functions.md",
+      "zh_CN": "https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/plugins/functions/functions.md"
+    },
+    "description": {
+      "en_US": "Sample external services for test only",
+      "zh_CN": "示例外部函数配置，仅供测试"
+    }
+  },
+  "interfaces": {
+    "tsschemaless": {
+      "address": "http://localhost:8090",
+      "protocol": "rest",
+      "options": {
+        "insecureSkipVerify": true,
+        "headers": {
+          "Accept-Charset": "utf-8"
+        }
+      },
+      "schemaless": true
+    }
+  }
+}
+```
+
+该文件定义了 sample 服务，其中包含 1 个服务接口的调用信息:
+
+- tsschemaless: schemaless 类型的服务
+
+#### 映射
+
+与 schema 类型的外部服务不同，schemaless 类型的配置只需要1个 json 文件，因此配置只涉及两个层次的映射：
+
+1. eKuiper 外部服务层: 外部服务名通过 json 文件名定义。这个名字将作为 [REST API](../../api/restapi/services.md) 中描述，删除和更新整体外部服务的键。
+2. 接口层: 定义于 json 文件的 `interfaces` 部分。对于 schemaless 外部函数，该层下仅包含一个服务，其名称与接口的名称相同。在该接口中，可以定义服务的属性，例如访问地址、请求头等。
+
+#### 注意事项
+
+在这个样例中，如果用户在 eKuiper SQL 中调用这个 schemaless 外部服务:
+
+1. 外部函数的名称、服务名称和 `interface` 名称相同。由于 json 文件中定义了 `tsschemaless` interface，所以在这里调用 `tsschemaless` 函数。
+2. 目前 schemaless 外部函数只支持 rest 协议。
 
 ## 注册和管理
 
@@ -247,6 +310,8 @@ eKuiper 启动时，会读取配置文件夹 *etc/services* 里的外部服务�
 
 ## 使用
 
+### Schema 外部函数
+
 服务注册之后，其中定义的所有函数都可以在规则中使用。以上文 sample.json 中定义的 rest 服务函数 object_detection 为例，在 functions 中，映射为 objectDetection 函数。因此，调用该函数的 SQL 为：
 
 ```SQL
@@ -255,7 +320,7 @@ SELECT objectDetection(cmd, img) from comandStream
 
 调用前，需要确保 REST 服务运行于 *<http://localhost:8090>* 且其中有 API *<http://localhost:8090/object_detection>* 。
 
-### 参数展开
+#### 参数展开
 
 ptoto 文件中，一般参数为 message 类型。映射到 eKuiper 中，其参数可接收两种情况：
 
@@ -272,3 +337,21 @@ message ObjectDetectionRequest {
 ```
 
 在 eKuiper 中，用户可传入整个 struct 作为参数，也可以传入两个 string 参数，分别作为 cmd 和 base64_img。
+
+### Schemaless 外部函数
+
+一旦服务注册完成，其中定义的所有函数都可以在规则中使用。以示例中定义的 schemaless 服务函数 tsschemaless 为例，外部函数的名称、服务名称和 interface 名称相同。因此，调用该函数的 SQL 语句如下：
+
+```SQL
+SELECT tsschemaless("post", "/object_detection", *) from schemalessStream
+```
+
+调用前，需要确保 REST 服务运行于 *<http://localhost:8090>* 且其中有 API *<http://localhost:8090/object_detection>* 。
+
+#### 参数展开
+
+在调用 schemaless 类型的外部函数时，它可以具有三个或三个以上的参数，其中前两个参数是与 REST 服务相关的配置，而其余参数将被转换为 JSON 作为请求体：
+
+- 第一个参数是字符串类型，用于指定 HTTP 方法，例如 post、get 等。
+- 第二个参数是字符串类型，用于指定 HTTP 映射的 URL。在上面的示例中，该参数为 "/object_detection"，该方法的请求地址将是接口中定义的地址与此处的 URL 进行拼接，对于这个示例来说，请求地址为 `http://localhost:8090/object_detection` 。
+- 其余参数将被转换为 JSON，作为 HTTP 请求的请求体内容。如果只有一个参数，则转换后的数据将是一个 json 对象；如果有两个或更多参数，则转换后的数据将是一个 json 数组。
