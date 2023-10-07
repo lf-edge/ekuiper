@@ -49,6 +49,7 @@ var (
 	logger                 = conf.Log
 	startTimeStamp         int64
 	version                = ""
+	sysMetrics             *Metrics
 	ruleProcessor          *processor.RuleProcessor
 	streamProcessor        *processor.StreamProcessor
 	rulesetProcessor       *processor.RulesetProcessor
@@ -132,6 +133,7 @@ func StartUp(Version string) {
 	streamProcessor = processor.NewStreamProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 	ruleMigrationProcessor = NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
+	sysMetrics = NewMetrics()
 
 	// register all extensions
 	for k, v := range components {
@@ -369,4 +371,11 @@ func handleScheduleRule(now time.Time, r *api.Rule, state string) scheduleRuleAc
 		}
 	}
 	return scheduleRuleActionDoNothing
+}
+
+func getCpuMemMetrics() (map[string]interface{}, error) {
+	val := map[string]interface{}{}
+	val["cpu"] = sysMetrics.GetCpuUsage()
+	val["mem"] = sysMetrics.GetMemoryUsage()
+	return val, nil
 }
