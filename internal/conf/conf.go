@@ -288,11 +288,16 @@ func InitConf() {
 	if os.Getenv(logger.KuiperSyslogKey) == "true" || Config.Basic.Syslog != nil {
 		c := Config.Basic.Syslog
 		if c == nil {
-			c = &syslogConf{}
+			c = &syslogConf{
+				Enable: true,
+			}
 		}
-		err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag)
-		if err != nil {
-			log.Fatal(err)
+		// Init when env is set OR enable is true
+		if c.Enable {
+			err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 
