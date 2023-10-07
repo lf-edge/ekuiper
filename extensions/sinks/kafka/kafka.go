@@ -15,7 +15,10 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"os"
 	"strings"
 
 	kafkago "github.com/segmentio/kafka-go"
@@ -40,11 +43,13 @@ const (
 )
 
 type sinkConf struct {
-	Brokers      string `json:"brokers"`
-	Topic        string `json:"topic"`
-	SaslAuthType string `json:"saslAuthType"`
-	SaslUserName string `json:"saslUserName"`
-	SaslPassword string `json:"saslPassword"`
+	Brokers           string `json:"brokers"`
+	Topic             string `json:"topic"`
+	SaslAuthType      string `json:"saslAuthType"`
+	SaslUserName      string `json:"saslUserName"`
+	SaslPassword      string `json:"saslPassword"`
+	CertificationPath string `json:"certificationPath"`
+	MaxAttempts       int    `json:"maxAttempts"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -52,6 +57,7 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		Brokers:      "localhost:9092",
 		Topic:        "",
 		SaslAuthType: SASL_NONE,
+		MaxAttempts:  10,
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -94,6 +100,18 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	default:
 		mechanism = nil
 	}
+	var tlsConfig *tls.Config
+	if len(m.c.CertificationPath) > 0 {
+		caCert, err := caLoader(m.c.CertificationPath)
+		if err != nil {
+			return fmt.Errorf("load certificationPath failed, err:%v", err)
+		}
+		newTLSConfig := &tls.Config{
+			RootCAs: caCert,
+		}
+		tlsConfig = newTLSConfig
+	}
+
 	brokers := strings.Split(m.c.Brokers, ",")
 	w := &kafkago.Writer{
 		Addr:                   kafkago.TCP(brokers...),
@@ -101,11 +119,12 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		Balancer:               &kafkago.LeastBytes{},
 		Async:                  false,
 		AllowAutoTopicCreation: true,
-		MaxAttempts:            1,
+		MaxAttempts:            m.c.MaxAttempts,
 		RequiredAcks:           -1,
 		BatchSize:              1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
+			TLS:  tlsConfig,
 		},
 	}
 	m.writer = w
@@ -118,13 +137,11 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	var messages []kafkago.Message
 	switch d := item.(type) {
 	case []map[string]interface{}:
-		for _, el := range d {
-			decodedBytes, _, err := ctx.TransformOutput(el)
-			if err != nil {
-				return fmt.Errorf("kafka sink transform data error: %v", err)
-			}
-			messages = append(messages, kafkago.Message{Value: decodedBytes})
+		decodedBytes, _, err := ctx.TransformOutput(d)
+		if err != nil {
+			return fmt.Errorf("kafka sink transform data error: %v", err)
 		}
+		messages = append(messages, kafkago.Message{Value: decodedBytes})
 	case map[string]interface{}:
 		decodedBytes, _, err := ctx.TransformOutput(d)
 		if err != nil {
@@ -168,4 +185,14 @@ func (m *kafkaSink) Close(ctx api.StreamContext) error {
 
 func Kafka() api.Sink {
 	return &kafkaSink{}
+}
+
+func caLoader(caFilePath string) (*x509.CertPool, error) {
+	pool := x509.NewCertPool()
+	caCrt, err1 := os.ReadFile(caFilePath)
+	if err1 != nil {
+		return nil, err1
+	}
+	pool.AppendCertsFromPEM(caCrt)
+	return pool, err1
 }
