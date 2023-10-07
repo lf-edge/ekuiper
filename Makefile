@@ -76,6 +76,14 @@ build_core: build_prepare
 	@mv ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
 	@echo "Build successfully"
 
+.PHONY: build_full
+build_full: build_prepare
+	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -o kuiper cmd/kuiper/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "full include_nats_messaging" -o kuiperd cmd/kuiperd/main.go
+	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@echo "Build successfully"
+
 .PHONY: pkg_core
 pkg_core: build_core
 	@mkdir -p $(PACKAGES_PATH)
@@ -83,6 +91,14 @@ pkg_core: build_core
 	@cd $(BUILD_PATH) && tar -czf $(PACKAGE_NAME)-core.tar.gz $(PACKAGE_NAME)
 	@mv $(BUILD_PATH)/$(PACKAGE_NAME)-core.zip $(BUILD_PATH)/$(PACKAGE_NAME)-core.tar.gz $(PACKAGES_PATH)
 	@echo "Package core success"
+
+.PHONY: pkg_full
+pkg_full: build_full
+	@mkdir -p $(PACKAGES_PATH)
+	@cd $(BUILD_PATH) && zip -rq $(PACKAGE_NAME)-full.zip $(PACKAGE_NAME)
+	@cd $(BUILD_PATH) && tar -czf $(PACKAGE_NAME)-full.tar.gz $(PACKAGE_NAME)
+	@mv $(BUILD_PATH)/$(PACKAGE_NAME)-full.zip $(BUILD_PATH)/$(PACKAGE_NAME)-full.tar.gz $(PACKAGES_PATH)
+	@echo "Package full success"
 
 .PHONY: real_pkg
 real_pkg:
