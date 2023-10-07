@@ -27,14 +27,14 @@ func init() {
 	if cgroup.InContainer() {
 		m1, err := cgroup.GetMemoryLimit()
 		if err != nil {
-			conf.Log.Warn("get total memory failed, err:%v", err)
+			conf.Log.Warnf("get total memory failed, err:%v", err)
 		} else {
 			MemoryTotal = m1
 		}
 	} else {
 		m2, err := mem.VirtualMemory()
 		if err != nil {
-			conf.Log.Warn("get total memory failed, err:%v", err)
+			conf.Log.Warnf("get total memory failed, err:%v", err)
 		} else {
 			MemoryTotal = m2.Total
 		}

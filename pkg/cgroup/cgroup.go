@@ -84,7 +84,7 @@ func detectCgroupVersion(fields [][]byte, controller string) (_ int, found bool)
 
 	// Due to strange format there can be optional fields in the middle of the set, starting
 	// from the field #7. The end of the fields is marked with "-" field
-	var pos = 6
+	pos := 6
 	for pos < len(fields) {
 		if bytes.Equal(fields[pos], []byte{'-'}) {
 			break

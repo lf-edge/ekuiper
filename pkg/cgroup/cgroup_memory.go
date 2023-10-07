@@ -23,8 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"go.uber.org/zap"
-
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
@@ -44,7 +42,7 @@ func getCgroupDetails(mountInfoPath string, cRoot string, controller string) (st
 	defer func() {
 		err := info.Close()
 		if err != nil {
-			conf.Log.Error("close mountInfoPath", zap.Error(err))
+			conf.Log.Errorf("close mountInfoPath, err:%v", err)
 		}
 	}()
 

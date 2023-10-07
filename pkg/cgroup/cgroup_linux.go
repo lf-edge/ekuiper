@@ -16,9 +16,9 @@
 
 package cgroup
 
-const (
-	procPathCGroup    = "/proc/self/cgroup"
-	procPathMountInfo = "/proc/self/mountinfo"
+import (
+	"os"
+	"strings"
 )
 
 // InContainer returns true if the process is running in a container.
