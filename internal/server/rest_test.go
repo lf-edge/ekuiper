@@ -62,7 +62,6 @@ func (suite *RestTestSuite) SetupTest() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/system/status", getMetricsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
@@ -600,12 +599,4 @@ func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
 	err = suite.s.StartRule(ruleId, &reply)
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), err.Error(), "unknown field a")
-}
-
-func (suite *RestTestSuite) Test_metrcisHandler() {
-	// get scan table
-	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/system/status", bytes.NewBufferString("any"))
-	w := httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
