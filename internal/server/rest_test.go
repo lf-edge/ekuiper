@@ -45,6 +45,7 @@ func init() {
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
+	sysMetrics = NewMetrics()
 }
 
 type RestTestSuite struct {
@@ -603,7 +604,7 @@ func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
 
 func (suite *RestTestSuite) Test_metrcisHandler() {
 	// get scan table
-	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/streams?kind=scan", bytes.NewBufferString("any"))
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/system/status", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
