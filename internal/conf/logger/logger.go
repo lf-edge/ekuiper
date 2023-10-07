@@ -38,7 +38,6 @@ func InitLogger() {
 		return
 	}
 	Log = logrus.New()
-	initSyslog()
 	filenameHook := filename.NewHook()
 	filenameHook.Field = "file"
 	Log.AddHook(filenameHook)
