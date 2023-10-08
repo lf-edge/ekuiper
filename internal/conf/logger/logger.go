@@ -23,11 +23,12 @@ import (
 )
 
 var (
-	Log     *logrus.Logger
-	LogFile *os.File
+	Log       *logrus.Logger
+	LogFile   *os.File
+	IsTesting bool
 )
 
-var IsTesting bool
+const KuiperSyslogKey = "KuiperSyslogKey"
 
 func init() {
 	InitLogger()
