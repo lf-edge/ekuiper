@@ -1249,17 +1249,6 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 	return ruleSetRsp
 }
 
-// get metrics of kuiper
-func getMetricsHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	content, err := getCpuMemMetrics()
-	if err != nil {
-		handleError(w, err, "get rule metrics error", logger)
-		return
-	}
-	jsonResponse(content, w, logger)
-}
-
 func uploadsReset() {
 	_ = uploadsDb.Clean()
 	_ = uploadsStatusDb.Clean()

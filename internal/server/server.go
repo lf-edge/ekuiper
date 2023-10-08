@@ -372,10 +372,3 @@ func handleScheduleRule(now time.Time, r *api.Rule, state string) scheduleRuleAc
 	}
 	return scheduleRuleActionDoNothing
 }
-
-func getCpuMemMetrics() (map[string]interface{}, error) {
-	val := map[string]interface{}{}
-	val["cpu"] = sysMetrics.GetCpuUsage()
-	val["mem"] = sysMetrics.GetMemoryUsage()
-	return val, nil
-}
