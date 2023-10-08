@@ -380,3 +380,55 @@ func TestInferredStream(t *testing.T) {
 		}
 	}
 }
+
+func TestDescribeToJson(t *testing.T) {
+	tests := []struct {
+		s string
+		r string
+	}{
+		{
+			s: "Fields\n--------------------------------------------------------------------------------\n" +
+				"USERID\tbigint\nFIRST_NAME\tstring\nLAST_NAME\tstring\nNICKNAMES\tarray(string)\nGender\tboolean\nADDRESS\t" +
+				"struct(STREET_NAME string, NUMBER bigint)\n\nDATASOURCE: users\nFORMAT: JSON\nKEY: USERID\n",
+			r: `{
+	"Fields": [
+		{
+			"Name": "USERID",
+			"Type": "bigint"
+		},
+		{
+			"Name": "FIRST_NAME",
+			"Type": "string"
+		},
+		{
+			"Name": "LAST_NAME",
+			"Type": "string"
+		},
+		{
+			"Name": "NICKNAMES",
+			"Type": "array(string)"
+		},
+		{
+			"Name": "Gender",
+			"Type": "boolean"
+		},
+		{
+			"Name": "ADDRESS",
+			"Type": "struct(STREET_NAME string, NUMBER bigint)"
+		}
+	],
+	"Options": {
+		"DATASOURCE:": "users",
+		"FORMAT:": "JSON",
+		"KEY:": "USERID"
+	}
+}`,
+		},
+	}
+	for _, tt := range tests {
+		s := DescribeToJson(tt.s)
+		if !reflect.DeepEqual(tt.r, s) {
+			t.Errorf("DescribeToJson mismatch:\nexp=%v\ngot=%v", tt.r, s)
+		}
+	}
+}
