@@ -22,8 +22,6 @@ import (
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 )
 
-const KuiperSyslogKey = "KuiperSyslogKey"
-
 func InitSyslog(network, address, level, tag string) error {
 	p := syslog.LOG_INFO
 	switch level {
