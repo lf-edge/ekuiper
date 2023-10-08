@@ -60,6 +60,29 @@ type field struct {
 	prefix string
 }
 
+func (d *wrappedSchemalessDescriptor) ConvertHttpMapping(_ string, params []interface{}) (*httpConnMeta, error) {
+	if len(params) < 2 {
+		return nil, fmt.Errorf("the parameter count must be greater than 2")
+	}
+	hcm := &httpConnMeta{}
+	method, ok := params[0].(string)
+	if !ok {
+		return nil, fmt.Errorf("param %v must be a string", method)
+	}
+	hcm.Method = strings.ToUpper(method)
+	uri, ok := params[1].(string)
+	if !ok {
+		return nil, fmt.Errorf("param %v must be a string", uri)
+	}
+	hcm.Uri = uri
+	json, err := d.ConvertParamsToJson(method, params[2:])
+	if err != nil {
+		return nil, err
+	}
+	hcm.Body = json
+	return hcm, nil
+}
+
 func (d *wrappedProtoDescriptor) parseHttpOptions() error {
 	optionsMap := make(map[string]*httpOptions)
 	var err error
