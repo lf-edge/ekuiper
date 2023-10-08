@@ -483,3 +483,35 @@ func (p *StreamProcessor) GetAll() (result map[string]map[string]string, e error
 	}
 	return
 }
+
+// DescribeToJson takes the human redable text from execDescribe and converts it to json
+// Intended use is for CLI when passing -json flag
+func DescribeToJson(s string) string {
+	q := strings.Replace(s, "Fields\n--------------------------------------------------------------------------------\n", "", 1)
+	sections := strings.Split(q, "\n\n")
+	fields, options := sections[0], sections[1]
+	type field struct {
+		Name, Type string
+	}
+	type output struct {
+		Fields  []field
+		Options map[string]string
+	}
+	o := output{Options: make(map[string]string)}
+	for _, f := range strings.Split(fields, "\n") {
+		split := strings.Split(f, "\t")
+		n, t := split[0], split[1]
+		o.Fields = append(o.Fields, field{Name: n, Type: t})
+	}
+	for _, f := range strings.Split(strings.Trim(options, "\n"), "\n") {
+		split := strings.Split(f, " ")
+		n, v := split[0], split[1:]
+		o.Options[n] = strings.Join(v, "")
+	}
+	b, err := json.MarshalIndent(o, "", "\t")
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return string(b)
+}
