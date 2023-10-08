@@ -10,6 +10,18 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # syslog settings
+  syslog:
+    # true|false, if it's set to true, then the log will be print to syslog
+    enable: false
+    # The syslog protocol, tcp or udp; Leave empty if no remote syslog server is used
+    network: udp
+    # The syslog server address; Leave empty if no remote syslog server is used
+    address: localhost:514
+    # The syslog level, supports debug, info, warn, error
+    level: info
+    # The syslog tag; Leave empty if no tag is used
+    tag: kuiper
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -42,7 +54,25 @@ basic:
 
 ## 系统日志
 
-用户将名为 KuiperSyslogKey 的环境变量的值设置为 true 时，日志将打印到系统日志中。
+用户将名为 KuiperSyslogKey 的环境变量的值设置为 true 或者 syslog enable 配置为 true 时，日志将打印到系统日志中。更多
+syslog 配置选项如下所示：
+
+```yaml
+# syslog settings
+syslog:
+  # true|false, if it's set to true, then the log will be print to syslog
+  enable: false
+  # The syslog protocol, tcp or udp; Leave empty if no remote syslog server is used
+  network: udp
+  # The syslog server address; Leave empty if no remote syslog server is used
+  address: localhost:514
+  # The syslog level, supports debug, info, warn, error
+  level: info
+  # The syslog tag; Leave empty if no tag is used
+  tag: kuiper
+```
+
+以上选项均为可选。若未设置网络和地址，则使用本地 syslog。若未设置级别，则默认值为 info。若未设置标签，则不使用标签。
 
 ## 时区配置
 
