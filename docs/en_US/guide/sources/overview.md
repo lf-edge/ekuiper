@@ -21,6 +21,7 @@ Users can directly use the built-in sources in the standard eKuiper instance. Th
 - [HTTP pull source](./builtin/http_pull.md): source to pull data from HTTP servers.
 - [Http push source](./builtin/http_push.md): push data to eKuiper through http.
 - [Redis source](./builtin/redis.md): source to lookup from Redis as a lookup table.
+- [RedisSub source](./builtin/redisSub.md): subscribe data from Redis channels.
 - [File source](./builtin/file.md): source to read from file, usually used as tables.
 - [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
 

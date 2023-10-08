@@ -11,6 +11,7 @@
 - [EdgeX sink](./builtin/edgex.md)：输出到 EdgeX Foundry。此动作仅在启用 edgex 编译标签时存在。
 - [Rest sink](./builtin/rest.md)：输出到外部 http 服务器。
 - [Redis sink](./builtin/redis.md): 写入 Redis 。
+- [RedisPub sink](./builtin/redisPub.md): 输出到 Redis 消息频道。
 - [File sink](./builtin/file.md)： 写入文件。
 - [Memory sink](./builtin/memory.md)：输出到 eKuiper 内存主题以形成规则管道。
 - [Log sink](./builtin/log.md)：写入日志，通常只用于调试。
@@ -224,6 +225,7 @@ Sink 缓存的配置有两个层次。`etc/kuiper.yaml` 中的全局配置，定
 - MQTT sink: 该属性表示重传的主题。若未设置，则仍传到原主题。
 - REST sink: 该属性表示重传的 URL 。若未设置，则仍传到原 URL。
 - Memory sink: 该属性表示重传的主题。若未设置，则仍传到原主题。
+- RedisPub sink: 该属性表示重传的频道。若未设置，则仍传到原频道。
 
 对于自定义的 sink，可以实现 `CollectResend`
 函数来自定义重传策略。请参考[自定义重传策略](../../extension/native/develop/sink.md#自定义重传策略)。
