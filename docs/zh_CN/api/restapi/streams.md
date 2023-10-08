@@ -14,7 +14,7 @@ POST http://localhost:9081/streams
 请求示例，请求命令是带有 `sql` 字段的 json 字符串。
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{"sql":"create stream my_stream (id bigint, name string, score float default 0.0) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
 该 API 可以运行任何流 sql 语句，而不仅可以创建流。
@@ -121,7 +121,7 @@ PUT http://localhost:9081/streams/{id}
 请求示例，请求命令是带有 `sql` 字段的 json 字符串。
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{"sql":"create stream my_stream (id bigint, name string, score float default 0.0) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
 ## 删除流

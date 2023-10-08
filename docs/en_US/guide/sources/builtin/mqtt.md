@@ -158,7 +158,7 @@ The REST API offers a programmatic way to interact with eKuiper, perfect for tho
 Example:
 
 ```sql
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{"sql":"create stream my_stream (id bigint, name string, score float default 0.0) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
 In the example, the `WITH` clause provides specific configurations for the stream.

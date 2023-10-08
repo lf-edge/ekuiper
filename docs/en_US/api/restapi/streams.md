@@ -13,7 +13,7 @@ POST http://localhost:9081/streams
 Request sample, the request is a json string with `sql` field.
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{"sql":"create stream my_stream (id bigint, name string, score float default 0.0 ) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
 This API can run any stream sql statements, not only stream creation.
@@ -120,7 +120,7 @@ Path parameter `id` is the id or name of the old stream.
 Request sample, the request is a json string with `sql` field.
 
 ```json
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{"sql":"create stream my_stream (id bigint, name string, score float default 0.0) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
 ## drop a stream

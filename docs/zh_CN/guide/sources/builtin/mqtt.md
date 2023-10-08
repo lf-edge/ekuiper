@@ -153,7 +153,7 @@ REST API 为 eKuiper 提供了一种可编程的交互方式，适用于自动�
 **示例**
 
 ```sql
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{"sql":"create stream my_stream (id bigint, name string, score float default 0.0) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
 详细操作步骤及命令解释，可参考 [通过 REST API 进行流管理](../../../api/restapi/streams.md)。
