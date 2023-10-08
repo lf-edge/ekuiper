@@ -1,4 +1,4 @@
-## RedisSub 数据源
+## RedisSub Source Connector
 
 <span style="background:green;color:white;">stream source</span>
 <span style="background:green;color:white">scan table source</span>
