@@ -15,7 +15,7 @@ create stream $stream_name '$stream_def' | create stream -f $stream_def_file
 Sample:
 
 ```shell
-# bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
+# bin/kuiper create stream my_stream ' (id bigint, name string, score float default 0.0) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
 stream my_stream created
 ```
 
