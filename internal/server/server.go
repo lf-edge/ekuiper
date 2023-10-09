@@ -49,6 +49,7 @@ var (
 	logger                 = conf.Log
 	startTimeStamp         int64
 	version                = ""
+	sysMetrics             *Metrics
 	ruleProcessor          *processor.RuleProcessor
 	streamProcessor        *processor.StreamProcessor
 	rulesetProcessor       *processor.RulesetProcessor
@@ -132,6 +133,7 @@ func StartUp(Version string) {
 	streamProcessor = processor.NewStreamProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 	ruleMigrationProcessor = NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
+	sysMetrics = NewMetrics()
 
 	// register all extensions
 	for k, v := range components {
