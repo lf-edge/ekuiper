@@ -36,12 +36,18 @@ func NewMetrics() *Metrics {
 }
 
 func (m *Metrics) GetCpuUsage() string {
+	if m.kp == nil {
+		return ""
+	}
 	percent, _ := m.kp.CPUPercent()
 	value := fmt.Sprintf("%.2f%%", percent)
 	return value
 }
 
 func (m *Metrics) GetMemoryUsage() string {
+	if m.kp == nil {
+		return ""
+	}
 	mInfo, _ := m.kp.MemoryInfo()
 	used := mInfo.RSS
 	value := fmt.Sprintf("%d", used)

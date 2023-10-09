@@ -364,8 +364,8 @@ type information struct {
 	Os            string `json:"os"`
 	Arch          string `json:"arch"`
 	UpTimeSeconds int64  `json:"upTimeSeconds"`
-	CpuUsage      string `json:"cpuUsage"`
-	MemoryUsed    string `json:"memoryUsed"`
+	CpuUsage      string `json:"cpuUsage,omitempty"`
+	MemoryUsed    string `json:"memoryUsed,omitempty"`
 	MemoryTotal   string `json:"memoryTotal"`
 }
 
