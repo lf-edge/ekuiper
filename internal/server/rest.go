@@ -46,6 +46,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/memory"
 )
 
 const (
@@ -363,6 +364,9 @@ type information struct {
 	Os            string `json:"os"`
 	Arch          string `json:"arch"`
 	UpTimeSeconds int64  `json:"upTimeSeconds"`
+	CpuUsage      string `json:"cpuUsage,omitempty"`
+	MemoryUsed    string `json:"memoryUsed,omitempty"`
+	MemoryTotal   string `json:"memoryTotal"`
 }
 
 // The handler for root
@@ -376,6 +380,11 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		info.UpTimeSeconds = time.Now().Unix() - startTimeStamp
 		info.Os = runtime.GOOS
 		info.Arch = runtime.GOARCH
+		if sysMetrics != nil {
+			info.CpuUsage = sysMetrics.GetCpuUsage()
+			info.MemoryUsed = sysMetrics.GetMemoryUsage()
+		}
+		info.MemoryTotal = fmt.Sprintf("%d", memory.MemoryTotal)
 		byteInfo, _ := json.Marshal(info)
 		w.Write(byteInfo)
 	}
