@@ -158,7 +158,7 @@ The REST API offers a programmatic way to interact with eKuiper, perfect for tho
 Example:
 
 ```sql
-{"sql":"create stream my_stream (id bigint, name string, score float) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
+{"sql":"create stream my_stream (id bigint, name string, score float default 0.0) WITH ( datasource = \"topic/temperature\", FORMAT = \"json\", KEY = \"id\")"}
 ```
 
 In the example, the `WITH` clause provides specific configurations for the stream.
@@ -178,7 +178,7 @@ For those who prefer a hands-on approach, the Command Line Interface (CLI) provi
 2. Use the `create` command to create a rule, specifying the MQTT connector as its source, for example:
 
    ```bash
-   bin/kuiper create stream my_stream '(id bigint, name string, score float) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
+   bin/kuiper create stream my_stream ' (id bigint, name string, score float default 0.0) WITH ( datasource = "topic/temperature", FORMAT = "json", KEY = "id")'
    ```
 
 More details can be found at [Streams Management with CLI](../../../api/cli/streams.md).
