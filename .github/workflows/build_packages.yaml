@@ -110,7 +110,7 @@ jobs:
         run: |
           cp -r etc app
           cd app 
-          sudo apt-get install libgl1-mesa-dev xorg-dev
+          sudo apt-get update && sudo apt-get install libgl1-mesa-dev xorg-dev
           go install fyne.io/fyne/v2/cmd/fyne@latest
       - name: build
         run: |
@@ -119,7 +119,7 @@ jobs:
           fyne package -os android/arm64 -name ekuiper -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true
           mkdir -p ../_packages
           mv ekuiper.apk ../_packages/
-          cd _packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
+          cd ../_packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
       - uses: actions/upload-artifact@v3
         with:
           name: packages
