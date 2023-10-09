@@ -80,7 +80,7 @@ build(){
             ;;
         * )
             go build -trimpath --buildmode=plugin -o extensions/$PLUGIN_TYPE/$PLUGIN_NAME/$PLUGIN_NAME@$VERSION.so extensions/$PLUGIN_TYPE/$PLUGIN_NAME/*.go
-          ;;
+            ;;
     esac
 }
 
