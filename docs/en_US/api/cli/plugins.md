@@ -14,7 +14,7 @@ The command is used for creating a plugin.  The plugin's definition is specified
 create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file
 ```
 
-The plugin can be created with two ways.
+The plugin can be created with three ways.
 
 - Specify the plugin definition in command line.
 
@@ -46,6 +46,14 @@ To create a function plugin with multiple exported functions, specify the export
 
 ```shell
 # bin/kuiper create plugin function mulfuncs "{\"file\":\"file:///tmp/kuiper/plugins/functions/mulfuncs.zip\",\"functions\":[\"func1\",\"func2\"]}"}
+```
+
+- Specify the plugin local path. If you are hosting kuiperd locally you can specify the path to the zip file through `-zf` option.
+
+Sample:
+
+```shell
+# bin/kuiper create plugin sink plugin1 -zf ./plugin1.zip
 ```
 
 ### parameters
