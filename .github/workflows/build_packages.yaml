@@ -49,7 +49,7 @@ jobs:
         --env KUIPER_SOURCE='/ekuiper' \
         --platform ${{ matrix.arch }} \
         ghcr.io/lf-edge/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }} \
-        bash -euc "git config --global --add safe.directory /ekuiper && make pkg && make pkg_core && .github/scripts/test.sh"
+        bash -euc "git config --global --add safe.directory /ekuiper && make pkg && make pkg_core && make pkg_full && .github/scripts/test.sh"
     - name: build
       if: matrix.os == 'centos'
       run: |

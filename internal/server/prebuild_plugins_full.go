@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+//go:build full
 
-import (
-	sql "github.com/lf-edge/ekuiper/extensions/sinks/sql/ext"
-	"github.com/lf-edge/ekuiper/pkg/api"
+package server
+
+var (
+	NativeSourcePlugin   = []string{}
+	NativeSinkPlugin     = []string{"tdengine"}
+	NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage", "tfLite"}
 )
-
-func Sql() api.Sink {
-	return sql.GetSink()
-}
