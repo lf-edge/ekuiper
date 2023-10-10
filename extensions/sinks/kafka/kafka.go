@@ -15,9 +15,7 @@
 package main
 
 import (
-	"crypto/x509"
 	"fmt"
-	"os"
 	"strings"
 
 	kafkago "github.com/segmentio/kafka-go"
@@ -25,6 +23,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -35,6 +34,7 @@ type kafkaSink struct {
 	writer *kafkago.Writer
 	c      *sinkConf
 	tc     *tlsConf
+	kc     *kafkaConf
 }
 
 const (
@@ -49,7 +49,6 @@ type sinkConf struct {
 	SaslAuthType string `json:"saslAuthType"`
 	SaslUserName string `json:"saslUserName"`
 	SaslPassword string `json:"saslPassword"`
-	MaxAttempts  int    `json:"maxAttempts"`
 }
 
 type tlsConf struct {
@@ -61,12 +60,16 @@ type tlsConf struct {
 	RenegotiationSupport string `json:"renegotiationSupport"`
 }
 
+type kafkaConf struct {
+	MaxAttempts int `json:"maxAttempts"`
+	BatchSize   int `json:"batchSize"`
+}
+
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	c := &sinkConf{
 		Brokers:      "localhost:9092",
 		Topic:        "",
 		SaslAuthType: SASL_NONE,
-		MaxAttempts:  10,
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -87,6 +90,14 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if err := cast.MapToStruct(props, tc); err != nil {
 		return err
 	}
+	kc := &kafkaConf{
+		MaxAttempts: 1,
+		BatchSize:   1,
+	}
+	if err := cast.MapToStruct(props, kc); err != nil {
+		return err
+	}
+	m.kc = kc
 	m.tc = tc
 	m.c = c
 	return nil
@@ -131,9 +142,9 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		Balancer:               &kafkago.LeastBytes{},
 		Async:                  false,
 		AllowAutoTopicCreation: true,
-		MaxAttempts:            m.c.MaxAttempts,
+		MaxAttempts:            m.kc.MaxAttempts,
 		RequiredAcks:           -1,
-		BatchSize:              1,
+		BatchSize:              m.kc.BatchSize,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
 			TLS:  tlsConfig,
@@ -165,6 +176,11 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	}
 
 	err := m.writer.WriteMessages(ctx, messages...)
+	if err != nil {
+		conf.Log.Errorf("kafka sink error: %v", err)
+	} else {
+		conf.Log.Debug("sink kafka success")
+	}
 	switch err := err.(type) {
 	case kafkago.Error:
 		if err.Temporary() {
@@ -197,14 +213,4 @@ func (m *kafkaSink) Close(ctx api.StreamContext) error {
 
 func Kafka() api.Sink {
 	return &kafkaSink{}
-}
-
-func caLoader(caFilePath string) (*x509.CertPool, error) {
-	pool := x509.NewCertPool()
-	caCrt, err1 := os.ReadFile(caFilePath)
-	if err1 != nil {
-		return nil, err1
-	}
-	pool.AppendCertsFromPEM(caCrt)
-	return pool, err1
 }
