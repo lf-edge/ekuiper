@@ -142,7 +142,6 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
-	r.HandleFunc("/system/status", getMetricsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
@@ -1248,17 +1247,6 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 	}
 
 	return ruleSetRsp
-}
-
-// get metrics of kuiper
-func getMetricsHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	content, err := getCpuMemMetrics()
-	if err != nil {
-		handleError(w, err, "get rule metrics error", logger)
-		return
-	}
-	jsonResponse(content, w, logger)
 }
 
 func uploadsReset() {
