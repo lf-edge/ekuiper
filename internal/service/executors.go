@@ -78,7 +78,7 @@ func newGrpcExecutor(desc descriptor, opt *interfaceOpt, _ *interfaceInfo) (exec
 // Each interface definition maps to one executor instance. It is supposed to have only one thread running.
 func NewExecutor(i *interfaceInfo) (executor, error) {
 	// No validation here, suppose the validation has been done in json parsing
-	descriptor, err := parse(i.Schema.SchemaType, i.Schema.SchemaFile)
+	descriptor, err := parse(i.Schema.SchemaType, i.Schema.SchemaFile, i.Schema.Schemaless)
 	if err != nil {
 		return nil, err
 	}

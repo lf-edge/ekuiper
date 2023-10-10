@@ -202,6 +202,10 @@
                 {
                   "title": "Redis 数据源",
                   "path": "guide/sources/builtin/redis"
+                },
+                {
+                  "title": "RedisSub 数据源",
+                  "path": "guide/sources/builtin/redisSub"
                 }
               ]
             },
@@ -258,6 +262,10 @@
                 {
                   "title": "Redis Sink",
                   "path": "guide/sinks/builtin/redis"
+                },
+                {
+                  "title": "RedisPub Sink",
+                  "path": "guide/sinks/builtin/redisPub"
                 },
                 {
                   "title": "File Sink",
@@ -883,6 +891,10 @@
                 {
                   "title": "Redis Source",
                   "path": "guide/sources/builtin/redis"
+                },
+                {
+                  "title": "RedisSub Source",
+                  "path": "guide/sources/builtin/redisSub"
                 }
               ]
             },
@@ -939,6 +951,10 @@
                 {
                   "title": "Redis Sink",
                   "path": "guide/sinks/builtin/redis"
+                },
+                {
+                  "title": "RedisPub Sink",
+                  "path": "guide/sinks/builtin/redisPub"
                 },
                 {
                   "title": "File Sink",

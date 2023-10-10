@@ -82,13 +82,25 @@ func ProtoParser() *protoparse.Parser {
 	return protoParser
 }
 
-func parse(schema schema, file string) (descriptor, error) {
+func parse(schema schema, file string, schemaless bool) (descriptor, error) {
 	info := &schemaInfo{
 		SchemaType: schema,
 		SchemaFile: file,
+		Schemaless: schemaless,
 	}
 	switch schema {
+	case SCHEMALESS:
+		if schemaless {
+			if file == "" {
+				return &wrappedSchemalessDescriptor{}, nil
+			}
+			return nil, fmt.Errorf("schemaless type does not support schema files")
+		}
+		return nil, fmt.Errorf("unsupported schema %s for schema type", schema)
 	case PROTOBUFF:
+		if schemaless {
+			return nil, fmt.Errorf("unsupported schema %s for schemaless type", schema)
+		}
 		if v, ok := reg.Load(info); ok {
 			return v.(descriptor), nil
 		}
@@ -110,6 +122,84 @@ func parse(schema schema, file string) (descriptor, error) {
 	default:
 		return nil, fmt.Errorf("unsupported schema %s", schema)
 	}
+}
+
+type wrappedSchemalessDescriptor struct{}
+
+func (d *wrappedSchemalessDescriptor) GetFunctions() (result []string) {
+	return
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertParamsToMessage(_ string, _ []interface{}) (*dynamic.Message, error) {
+	return nil, fmt.Errorf("not supported")
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertReturnMessage(_ string, _ *dynamic.Message) (interface{}, error) {
+	return nil, fmt.Errorf("not supported")
+}
+
+func (d *wrappedSchemalessDescriptor) MethodDescriptor(_ string) *desc.MethodDescriptor {
+	return nil
+}
+
+func (d *wrappedSchemalessDescriptor) MessageFactory() *dynamic.MessageFactory {
+	return nil
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertParamsToJson(_ string, params []interface{}) ([]byte, error) {
+	if len(params) == 0 {
+		return nil, nil
+	} else if len(params) == 1 {
+		return json.Marshal(params[0])
+	}
+	return json.Marshal(params)
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertReturnJson(_ string, returnVal []byte) (interface{}, error) {
+	var data interface{}
+	err := json.Unmarshal(returnVal, &data)
+	return data, err
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertParamsToText(_ string, params []interface{}) ([]byte, error) {
+	var (
+		data []byte
+		err  error
+	)
+	data, err = d.ConvertParamsToJson("", params)
+	if err == nil {
+		return data, err
+	}
+	if len(params) == 1 {
+		switch params[0].(type) {
+		case []byte:
+			res := params[0].([]byte)
+			return res, nil
+		case string:
+			res := params[0].(string)
+			return []byte(res), nil
+		default:
+			return nil, fmt.Errorf("only data in json format is supported")
+		}
+	}
+	return nil, fmt.Errorf("only data in json format is supported")
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertReturnText(_ string, returnVal []byte) (interface{}, error) {
+	var data interface{}
+	err := json.Unmarshal(returnVal, &data)
+	if err == nil {
+		return data, nil
+	}
+	return string(returnVal), nil
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertParams(_ string, params []interface{}) ([]interface{}, error) {
+	return params, nil
+}
+
+func (d *wrappedSchemalessDescriptor) ConvertReturn(_ string, params interface{}) (interface{}, error) {
+	return params, nil
 }
 
 type wrappedProtoDescriptor struct {

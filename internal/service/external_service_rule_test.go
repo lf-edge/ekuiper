@@ -94,6 +94,11 @@ type MessageMessage struct {
 	Text string `json:"text,omitempty"`
 }
 
+type SchemalessShelfMessage struct {
+	Id    int64  `json:"id,omitempty"`
+	Theme string `json:"theme,omitempty"`
+}
+
 func TestRestService(t *testing.T) {
 	// mock server, the port is set in the sample.json
 	l, err := net.Listen("tcp", "127.0.0.1:51234")
@@ -800,6 +805,242 @@ func TestGrpcService(t *testing.T) {
 				}},
 				{{
 					"res": "my image3",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		},
+	}
+	topotest.HandleStream(true, streamList, t)
+	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
+		BufferLength: 100,
+		SendError:    true,
+	}, 0)
+}
+
+func TestSchemalessService(t *testing.T) {
+	// mock server, the port is set in the sample.json
+	l, err := net.Listen("tcp", "127.0.0.1:51234")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	count := 0
+	router := mux.NewRouter()
+	router.HandleFunc("/SayHello", func(w http.ResponseWriter, r *http.Request) {
+		body := &RestHelloRequest{}
+		err := json.NewDecoder(r.Body).Decode(body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		out := &RestHelloReply{Message: body.Name}
+		jsonOut(w, out)
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/object_detection", func(w http.ResponseWriter, r *http.Request) {
+		req := &ObjectDetectRequest{}
+		err := json.NewDecoder(r.Body).Decode(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		if req.Image == "" {
+			http.Error(w, "image is not found", http.StatusBadRequest)
+		}
+		out := &ObjectDetectResponse{
+			Info:   req.Command,
+			Code:   200,
+			Image:  req.Image,
+			Result: req.Command + " success",
+			Type:   "S",
+		}
+		jsonOut(w, out)
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/getStatus", func(w http.ResponseWriter, r *http.Request) {
+		result := count%2 == 0
+		count++
+		io.WriteString(w, fmt.Sprintf("%v", result))
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/RestEncodedJson", func(w http.ResponseWriter, r *http.Request) {
+		req := &EncodedRequest{}
+		err := json.NewDecoder(r.Body).Decode(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		io.WriteString(w, req.Name)
+	}).Methods(http.MethodPost)
+	router.HandleFunc("/bookshelf/v1/shelves", func(w http.ResponseWriter, r *http.Request) {
+		req := &SchemalessShelfMessage{}
+		err := json.NewDecoder(r.Body).Decode(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		if req.Id == 0 || req.Theme == "" {
+			http.Error(w, "empty request", http.StatusBadRequest)
+		}
+		out := ShelfMessageOut{Id: req.Id, Theme: req.Theme}
+		jsonOut(w, out)
+	}).Methods(http.MethodPost)
+	server := httptest.NewUnstartedServer(router)
+	server.Listener.Close()
+	server.Listener = l
+
+	// Start the server.
+	server.Start()
+
+	defer server.Close()
+	// Reset
+	streamList := []string{"helloStr", "schemaless_commands", "shelves"}
+	topotest.HandleStream(false, streamList, t)
+	// Data setup
+	tests := []topotest.RuleTest{
+		{
+			Name: `TestRestRule1`,
+			Sql:  `SELECT tsschemaless("post", "/SayHello", *) as wc FROM helloStr`,
+			R: [][]map[string]interface{}{
+				{{
+					"wc": map[string]interface{}{
+						"message": "world",
+					},
+				}},
+				{{
+					"wc": map[string]interface{}{
+						"message": "golang",
+					},
+				}},
+				{{
+					"wc": map[string]interface{}{
+						"message": "peacock",
+					},
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule2`,
+			Sql:  `SELECT tsschemaless("post", "/object_detection", * EXCEPT(encoded_json))->result FROM schemaless_commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"kuiper_field_0": "get success",
+				}},
+				{{
+					"kuiper_field_0": "detect success",
+				}},
+				{{
+					"kuiper_field_0": "delete success",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule3`,
+			Sql:  `SELECT tsschemaless("post", "/object_detection", *)->result FROM schemaless_commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"kuiper_field_0": "get success",
+				}},
+				{{
+					"kuiper_field_0": "detect success",
+				}},
+				{{
+					"kuiper_field_0": "delete success",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule4`,
+			Sql:  `SELECT tsschemaless("post", "/getStatus"), cmd FROM schemaless_commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"tsschemaless": true,
+					"cmd":          "get",
+				}},
+				{{
+					"tsschemaless": false,
+					"cmd":          "detect",
+				}},
+				{{
+					"tsschemaless": true,
+					"cmd":          "delete",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule5`,
+			Sql:  `SELECT tsschemaless("post", "/RestEncodedJson", encoded_json) as name FROM schemaless_commands`,
+			R: [][]map[string]interface{}{
+				{{
+					"name": "name1",
+				}},
+				{{
+					"name": "name2",
+				}},
+				{{
+					"name": "name3",
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(0),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(3),
+				"op_2_project_0_records_out_total":  int64(3),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(3),
+				"sink_mockSink_0_records_out_total": int64(3),
+			},
+		}, {
+			Name: `TestRestRule6`,
+			Sql:  `SELECT tsschemaless("post", "/bookshelf/v1/shelves", shelf)->theme as theme FROM shelves`,
+			R: [][]map[string]interface{}{
+				{{
+					"theme": "tandra",
+				}},
+				{{
+					"theme": "claro",
+				}},
+				{{
+					"theme": "dark",
 				}},
 			},
 			M: map[string]interface{}{

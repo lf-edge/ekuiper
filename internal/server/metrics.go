@@ -19,6 +19,8 @@ import (
 	"os"
 
 	"github.com/shirou/gopsutil/process"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 )
 
 type Metrics struct {
@@ -28,18 +30,24 @@ type Metrics struct {
 func NewMetrics() *Metrics {
 	kProcess, err := process.NewProcess(int32(os.Getpid()))
 	if err != nil {
-		panic(fmt.Sprintf("Can not initialize process for ekuiperd : %v", err))
+		conf.Log.Warnf("Can not initialize process for ekuiperd : %v", err)
 	}
 	return &Metrics{kp: kProcess}
 }
 
 func (m *Metrics) GetCpuUsage() string {
+	if m.kp == nil {
+		return ""
+	}
 	percent, _ := m.kp.CPUPercent()
 	value := fmt.Sprintf("%.2f%%", percent)
 	return value
 }
 
 func (m *Metrics) GetMemoryUsage() string {
+	if m.kp == nil {
+		return ""
+	}
 	mInfo, _ := m.kp.MemoryInfo()
 	used := mInfo.RSS
 	value := fmt.Sprintf("%d", used)

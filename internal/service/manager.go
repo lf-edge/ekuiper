@@ -147,7 +147,7 @@ func (m *Manager) initFile(baseName string) error {
 		Interfaces: make(map[string]*interfaceInfo),
 	}
 	for name, binding := range serviceConf.Interfaces {
-		desc, err := parse(binding.SchemaType, binding.SchemaFile)
+		desc, err := parse(binding.SchemaType, binding.SchemaFile, binding.Schemaless)
 		if err != nil {
 			return fmt.Errorf("Fail to parse schema file %s: %v", binding.SchemaFile, err)
 		}
@@ -174,18 +174,30 @@ func (m *Manager) initFile(baseName string) error {
 			Schema: &schemaInfo{
 				SchemaType: binding.SchemaType,
 				SchemaFile: binding.SchemaFile,
+				Schemaless: binding.Schemaless,
 			},
-			Functions: functions,
-			Options:   binding.Options,
+			Options: binding.Options,
 		}
-		for i, f := range functions {
-			err := m.functionKV.Set(f, &functionContainer{
+		if !binding.Schemaless {
+			info.Interfaces[name].Functions = functions
+			for i, f := range functions {
+				err := m.functionKV.Set(f, &functionContainer{
+					ServiceName:   serviceName,
+					InterfaceName: name,
+					MethodName:    methods[i],
+				})
+				if err != nil {
+					kconf.Log.Errorf("fail to save the function mapping for %s, the function is not available: %v", f, err)
+				}
+			}
+		} else {
+			err := m.functionKV.Set(name, &functionContainer{
 				ServiceName:   serviceName,
 				InterfaceName: name,
-				MethodName:    methods[i],
+				MethodName:    name,
 			})
 			if err != nil {
-				kconf.Log.Errorf("fail to save the function mapping for %s, the function is not available: %v", f, err)
+				kconf.Log.Errorf("fail to save the function mapping for %s, the function is not available: %v", name, err)
 			}
 		}
 	}

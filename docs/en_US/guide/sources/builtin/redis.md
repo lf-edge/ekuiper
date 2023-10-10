@@ -6,7 +6,8 @@ eKuiper provides built-in support for looking up data in Redis. The Redis Source
 
 ::: tip
 
-Currently, the Redis source can only be used as a [lookup table](../../tables/lookup.md).
+Currently, the Redis source can only be used as a [lookup table](../../tables/lookup.md),
+while the [RedisSub source](./redisSub.md) can be used as both a streaming and scanning table data source,
 
 :::
 

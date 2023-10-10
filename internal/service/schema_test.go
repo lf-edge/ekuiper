@@ -32,7 +32,7 @@ func init() {
 	}
 	descriptors = make([]descriptor, len(schemas))
 	for i, sch := range schemas {
-		d, err := parse(sch.SchemaType, sch.SchemaFile)
+		d, err := parse(sch.SchemaType, sch.SchemaFile, sch.Schemaless)
 		if err != nil {
 			panic(err)
 		}
@@ -291,6 +291,146 @@ func TestConvertReturns(t *testing.T) {
 			} else if tt.jerr == "" && !reflect.DeepEqual(tt.jresult, rj) {
 				t.Errorf("%d.%d \n\njson result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, j, tt.jresult, rj)
 			}
+		}
+	}
+}
+
+func TestSchemalessConvertParams(t *testing.T) {
+	tests := []struct {
+		params  []interface{}
+		iresult []interface{}
+		jresult []byte
+		tresult []byte
+		err     string
+	}{
+		{
+			params: []interface{}{
+				"world",
+			},
+			iresult: []interface{}{
+				"world",
+			},
+			jresult: []byte(`"world"`),
+			tresult: []byte(`"world"`),
+		},
+		{
+			params: []interface{}{
+				"hello",
+				"world",
+			},
+			iresult: []interface{}{
+				"hello",
+				"world",
+			},
+			jresult: []byte(`["hello","world"]`),
+			tresult: []byte(`["hello","world"]`),
+		},
+		{
+			params: []interface{}{
+				map[string]interface{}{
+					"id":      "123",
+					"content": "test",
+				},
+			},
+			iresult: []interface{}{
+				map[string]interface{}{
+					"id":      "123",
+					"content": "test",
+				},
+			},
+			jresult: []byte(`{"content":"test","id":"123"}`),
+			tresult: []byte(`{"content":"test","id":"123"}`),
+		},
+	}
+
+	d, err := parse(SCHEMALESS, "", true)
+	if err != nil {
+		panic(err)
+	}
+	for i, tt := range tests {
+		r, err := d.(interfaceDescriptor).ConvertParams("", tt.params)
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
+			t.Errorf("%d : interface error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
+		} else if tt.err == "" && !reflect.DeepEqual(tt.iresult, r) {
+			t.Errorf("%d \n\ninterface result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.iresult, r)
+		}
+		rj, err := d.(jsonDescriptor).ConvertParamsToJson("", tt.params)
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
+			t.Errorf("%d : json error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
+		} else if tt.err == "" && !reflect.DeepEqual(tt.jresult, rj) {
+			t.Errorf("%d \n\njson result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.jresult, rj)
+		}
+		tj, err := d.(textDescriptor).ConvertParamsToText("", tt.params)
+		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
+			t.Errorf("%d : text error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
+		} else if tt.err == "" && !reflect.DeepEqual(tt.tresult, tj) {
+			t.Errorf("%d \n\ntext result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.tresult, tj)
+		}
+	}
+}
+
+func TestSchemalessConvertReturns(t *testing.T) {
+	tests := []struct {
+		ireturn interface{}
+		iresult interface{}
+		ierr    string
+
+		jreturn []byte
+		jresult interface{}
+		jerr    string
+
+		treturn []byte
+		tresult interface{}
+		terr    string
+	}{
+		{
+			ireturn: map[string]interface{}{"message": "world"},
+			iresult: map[string]interface{}{"message": "world"},
+			jreturn: []byte(`{"message":"world"}`),
+			jresult: map[string]interface{}{"message": "world"},
+			treturn: []byte(`{"message":"world"}`),
+			tresult: map[string]interface{}{"message": "world"},
+		},
+		{
+			ireturn: map[string]interface{}{"code": 200, "msg": "success"},
+			iresult: map[string]interface{}{"code": 200, "msg": "success"},
+			jreturn: []byte(`{"code":200,"msg":"success"}`),
+			jresult: map[string]interface{}{"code": float64(200), "msg": "success"},
+			treturn: []byte(`{"code":200,"msg":"success"}`),
+			tresult: map[string]interface{}{"code": float64(200), "msg": "success"},
+		},
+		{
+			ireturn: []byte("create rule success"),
+			iresult: []byte("create rule success"),
+			jreturn: []byte("create rule success"),
+			jerr:    "invalid character 'c' looking for beginning of value",
+			treturn: []byte("create rule success"),
+			tresult: "create rule success",
+		},
+	}
+
+	d, err := parse(SCHEMALESS, "", true)
+	if err != nil {
+		panic(err)
+	}
+	for i, tt := range tests {
+		r, err := d.(interfaceDescriptor).ConvertReturn("", tt.ireturn)
+		if !reflect.DeepEqual(tt.ierr, testx.Errstring(err)) {
+			t.Errorf("%d : interface error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.ierr, err)
+		} else if tt.ierr == "" && !reflect.DeepEqual(tt.iresult, r) {
+			t.Errorf("%d \n\ninterface result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.iresult, r)
+		}
+		rj, err := d.(jsonDescriptor).ConvertReturnJson("", tt.jreturn)
+		if !reflect.DeepEqual(tt.jerr, testx.Errstring(err)) {
+			t.Errorf("%d : json error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.jerr, err)
+		} else if tt.jerr == "" && !reflect.DeepEqual(tt.jresult, rj) {
+			t.Errorf("%d \n\njson result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.jresult, rj)
+		}
+		rt, err := d.(textDescriptor).ConvertReturnText("", tt.treturn)
+		if !reflect.DeepEqual(tt.terr, testx.Errstring(err)) {
+			t.Errorf("%d : text error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.terr, err)
+		} else if tt.terr == "" && !reflect.DeepEqual(tt.tresult, rt) {
+			t.Errorf("%d \n\ntext result mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.tresult, rt)
 		}
 	}
 }

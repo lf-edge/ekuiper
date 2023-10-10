@@ -373,6 +373,8 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = `CREATE STREAM mes (message_id string, text string) WITH (DATASOURCE="mes", TYPE="mock", FORMAT="JSON")`
 			case "optional_commands":
 				sql = `CREATE STREAM optional_commands (base64_img string) WITH (DATASOURCE="optional_commands", FORMAT="JSON", TYPE="mock")`
+			case "schemaless_commands":
+				sql = `CREATE STREAM schemaless_commands (cmd string, base64_img string, encoded_json STRUCT(name STRING, size BIGINT)) WITH (DATASOURCE="schemaless_commands", FORMAT="JSON", TYPE="mock")`
 			default:
 				t.Errorf("create stream %s fail", name)
 			}

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/rpc"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
@@ -40,16 +42,21 @@ type clientConf struct {
 
 const ClientYaml = "client.yaml"
 
-func streamProcess(client *rpc.Client, args string) {
+func streamProcessValue(client *rpc.Client, args string) (string, error) {
 	var reply string
 	if args == "" {
 		args = strings.Join(os.Args[1:], " ")
 	}
 	err := client.Call("Server.Stream", args, &reply)
+	return reply, err
+}
+
+func streamProcess(client *rpc.Client, args string) {
+	s, err := streamProcessValue(client, args)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(reply)
+		fmt.Println(s)
 	}
 }
 
@@ -282,12 +289,17 @@ func main() {
 				},
 				{
 					Name:  "plugin",
-					Usage: "create plugin $plugin_type $plugin_name [$plugin_json | -f plugin_def_file]",
+					Usage: "create plugin $plugin_type $plugin_name [$plugin_json | -f plugin_def_file | -zf path_to_file]",
 					Flags: []cli.Flag{
 						cli.StringFlag{
 							Name:     "file, f",
 							Usage:    "the location of plugin definition file",
 							FilePath: "/home/myplugin.txt",
+						},
+						cli.StringFlag{
+							Name:     "zipfile, zf",
+							Usage:    "the location of a local zipfile",
+							FilePath: "/plugins/sources/random.zip",
 						},
 					},
 					Action: func(c *cli.Context) error {
@@ -301,14 +313,16 @@ func main() {
 							return nil
 						}
 						pname := c.Args()[1]
-						sfile := c.String("file")
+						sfile, zfile := c.String("file"), c.String("zipfile")
 						args := &model.PluginDesc{
 							RPCArgDesc: model.RPCArgDesc{
 								Name: pname,
 							},
 							Type: ptype,
 						}
-						if sfile != "" {
+						switch {
+						// Use a file.txt with json inside
+						case sfile != "" && zfile == "":
 							if len(c.Args()) != 2 {
 								fmt.Printf("Expect plugin type, name.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
 								return nil
@@ -319,7 +333,29 @@ func main() {
 							} else {
 								args.Json = string(p)
 							}
-						} else {
+						// Use file.zip
+						case sfile == "" && zfile != "":
+							if len(c.Args()) != 2 {
+								fmt.Printf("Expect plugin type, name.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
+								return nil
+							}
+							if !fileExists(zfile) {
+								fmt.Printf("The specified zip file %s could not be found.\n", zfile)
+								return nil
+							}
+							abs, err := filepath.Abs(zfile)
+							if err != nil {
+								fmt.Println(err)
+								return nil
+							}
+							fp := filepath.ToSlash("file:///" + abs)
+							args.Json = fmt.Sprintf(`{"file":"%s"}`, fp)
+						// Reject passing 2 flags
+						case sfile != "" && zfile != "":
+							fmt.Println("Got both zipefile and file flags, should use just one.")
+							return nil
+						// No flag passed, assuming json string
+						default:
 							if len(c.Args()) != 3 {
 								fmt.Printf("Expect plugin type, name and json.\nBut found %d args:%s.\n", len(c.Args()), c.Args())
 								return nil
@@ -388,18 +424,52 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
-					Usage: "describe stream $stream_name",
-					// Flags: nflag,
+					Usage: "describe stream $stream_name -json",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "json",
+							Usage: "format output as json",
+						},
+					},
 					Action: func(c *cli.Context) error {
+						useJson := c.Bool("json")
+						if useJson {
+							a := "describe stream " + strings.Join(c.Args(), " ")
+							s, err := streamProcessValue(client, a)
+							if err != nil {
+								fmt.Println(err)
+								return nil
+							}
+							j := processor.DescribeToJson(s)
+							fmt.Println(j)
+							return nil
+						}
 						streamProcess(client, "")
 						return nil
 					},
 				},
 				{
 					Name:  "table",
-					Usage: "describe table $table_name",
-					// Flags: nflag,
+					Usage: "describe table $table_name -json",
+					Flags: []cli.Flag{
+						cli.BoolFlag{
+							Name:  "json",
+							Usage: "format output as json",
+						},
+					},
 					Action: func(c *cli.Context) error {
+						useJson := c.Bool("json")
+						if useJson {
+							a := "describe table " + strings.Join(c.Args(), " ")
+							s, err := streamProcessValue(client, a)
+							if err != nil {
+								fmt.Println(err)
+								return nil
+							}
+							j := processor.DescribeToJson(s)
+							fmt.Println(j)
+							return nil
+						}
 						streamProcess(client, "")
 						return nil
 					},
@@ -1264,8 +1334,13 @@ func getPluginType(arg string) (ptype int, err error) {
 	return
 }
 
+func fileExists(file string) bool {
+	_, err := os.Stat(file)
+	return !os.IsNotExist(err)
+}
+
 func readDef(sfile string, t string) ([]byte, error) {
-	if _, err := os.Stat(sfile); os.IsNotExist(err) {
+	if !fileExists(sfile) {
 		return nil, fmt.Errorf("The specified %s defenition file %s is not existed.\n", t, sfile)
 	}
 	fmt.Printf("Creating a new %s from file %s.\n", t, sfile)

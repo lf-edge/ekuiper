@@ -117,6 +117,11 @@
           "serviceName": "RestEncodedJson"
         }
       ]
+    },
+    "tsschemaless": {
+      "address": "http://localhost:51234",
+      "protocol": "rest",
+      "schemaless": true
     }
   }
 }

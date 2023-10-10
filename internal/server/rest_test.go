@@ -45,6 +45,7 @@ func init() {
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
+	sysMetrics = NewMetrics()
 }
 
 type RestTestSuite struct {
