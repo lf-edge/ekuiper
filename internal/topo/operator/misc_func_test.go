@@ -822,7 +822,7 @@ func TestJsonPathFunc_Apply1(t *testing.T) {
 					},
 				},
 			},
-			err: "run Select error: call func json_path_query error: invalid data nil for jsonpath",
+			err: "run Select error: alias: a expr: Call:{ name:json_path_query, args:[$$default.equipment, $.arm_right] } meet error, err:call func json_path_query error: invalid data nil for jsonpath",
 		},
 	}
 

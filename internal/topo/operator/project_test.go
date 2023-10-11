@@ -2442,7 +2442,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": "val_a",
 				},
 			},
-			result: errors.New("run Select error: invalid operation string(val_a) * int64(5)"),
+			result: errors.New("run Select error: expr: binaryExpr:{ $$default.a * 5 } meet error, err:invalid operation string(val_a) * int64(5)"),
 		},
 		// 2
 		{
@@ -2453,7 +2453,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": "common string",
 				},
 			},
-			result: errors.New("run Select error: invalid operation string(common string) [] *xsql.BracketEvalResult(&{0 0})"),
+			result: errors.New("run Select error: alias: ab expr: binaryExpr:{ binaryExpr:{ $$default.a[0] } -> jsonFieldName:b } meet error, err:invalid operation string(common string) [] *xsql.BracketEvalResult(&{0 0})"),
 		},
 		// 3
 		{
@@ -2464,7 +2464,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": "common string",
 				},
 			},
-			result: errors.New("run Select error: call func round error: cannot convert string(common string) to float64"),
+			result: errors.New("run Select error: alias: r expr: Call:{ name:round, args:[$$default.a] } meet error, err:call func round error: cannot convert string(common string) to float64"),
 		},
 		// 5
 		{
@@ -2517,7 +2517,7 @@ func TestProjectPlanError(t *testing.T) {
 					},
 				},
 			},
-			result: errors.New("run Select error: call func avg error: requires float64 but found string(dde)"),
+			result: errors.New("run Select error: alias: avg expr: Call:{ name:avg, args:[$$default.a] } meet error, err:call func avg error: requires float64 but found string(dde)"),
 		},
 		// 6
 		{
@@ -2537,7 +2537,7 @@ func TestProjectPlanError(t *testing.T) {
 				},
 			},
 
-			result: errors.New("run Select error: call func sum error: requires int but found string(ddd)"),
+			result: errors.New("run Select error: alias: sum expr: Call:{ name:sum, args:[$$default.a] } meet error, err:call func sum error: requires int but found string(ddd)"),
 		},
 		// 7
 		{
@@ -2548,7 +2548,7 @@ func TestProjectPlanError(t *testing.T) {
 					"a": []map[string]interface{}(nil),
 				},
 			},
-			result: errors.New("run Select error: out of index: 0 of 0"),
+			result: errors.New("run Select error: alias: ab expr: binaryExpr:{ binaryExpr:{ $$default.a[0] } -> jsonFieldName:b } meet error, err:out of index: 0 of 0"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

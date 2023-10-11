@@ -1606,7 +1606,8 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(2),
 			},
-		}, {
+		},
+		{
 			Name: `TestSingleSQLErrorRule2`,
 			Sql:  `SELECT size * 5 FROM ldemo`,
 			R: [][]map[string]interface{}{
@@ -1614,13 +1615,46 @@ func TestSingleSQLError(t *testing.T) {
 					"kuiper_field_0": float64(15),
 				}},
 				{{
-					"error": "run Select error: invalid operation string(string) * int64(5)",
+					"error": "run Select error: expr: binaryExpr:{ ldemo.size * 5 } meet error, err:invalid operation string(string) * int64(5)",
 				}},
 				{{
 					"kuiper_field_0": float64(15),
 				}},
 				{{
 					"kuiper_field_0": float64(10),
+				}},
+				{{}},
+			},
+			M: map[string]interface{}{
+				"op_2_project_0_exceptions_total":   int64(1),
+				"op_2_project_0_process_latency_us": int64(0),
+				"op_2_project_0_records_in_total":   int64(5),
+				"op_2_project_0_records_out_total":  int64(4),
+
+				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_records_in_total":  int64(5),
+				"sink_mockSink_0_records_out_total": int64(5),
+
+				"source_ldemo_0_exceptions_total":  int64(0),
+				"source_ldemo_0_records_in_total":  int64(5),
+				"source_ldemo_0_records_out_total": int64(5),
+			},
+		},
+		{
+			Name: `TestSingleSQLErrorRule3`,
+			Sql:  `SELECT size * 5 as c FROM ldemo`,
+			R: [][]map[string]interface{}{
+				{{
+					"c": float64(15),
+				}},
+				{{
+					"error": "run Select error: alias: c expr: binaryExpr:{ ldemo.size * 5 } meet error, err:invalid operation string(string) * int64(5)",
+				}},
+				{{
+					"c": float64(15),
+				}},
+				{{
+					"c": float64(10),
 				}},
 				{{}},
 			},
