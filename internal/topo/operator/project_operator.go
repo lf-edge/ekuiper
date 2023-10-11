@@ -160,7 +160,7 @@ func (pp *ProjectOp) project(row xsql.Row, ve *xsql.ValuerEval) error {
 		}
 		vi := ve.Eval(f.Expr)
 		if e, ok := vi.(error); ok {
-			return e
+			return fmt.Errorf("expr: %s meet error, err:%v", f.Expr.String(), e)
 		}
 		if vi != nil {
 			switch vt := vi.(type) {
@@ -181,7 +181,11 @@ func (pp *ProjectOp) project(row xsql.Row, ve *xsql.ValuerEval) error {
 		}
 		vi := ve.Eval(f.Expr)
 		if e, ok := vi.(error); ok {
-			return e
+			if ref, ok := f.Expr.(*ast.FieldRef); ok {
+				s := ref.AliasRef.Expression.String()
+				return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, s, e)
+			}
+			return fmt.Errorf("alias: %v expr: %v meet error, err:%v", f.AName, f.Expr.String(), e)
 		}
 		if vi != nil {
 			pp.alias = append(pp.alias, f.AName, vi)
