@@ -23,6 +23,8 @@ import (
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -31,6 +33,8 @@ import (
 type kafkaSink struct {
 	writer *kafkago.Writer
 	c      *sinkConf
+	tc     *tlsConf
+	kc     *kafkaConf
 }
 
 const (
@@ -45,6 +49,20 @@ type sinkConf struct {
 	SaslAuthType string `json:"saslAuthType"`
 	SaslUserName string `json:"saslUserName"`
 	SaslPassword string `json:"saslPassword"`
+}
+
+type tlsConf struct {
+	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
+	CertificationPath    string `json:"certificationPath"`
+	PrivateKeyPath       string `json:"privateKeyPath"`
+	RootCaPath           string `json:"rootCaPath"`
+	TLSMinVersion        string `json:"tlsMinVersion"`
+	RenegotiationSupport string `json:"renegotiationSupport"`
+}
+
+type kafkaConf struct {
+	MaxAttempts int `json:"maxAttempts"`
+	BatchSize   int `json:"batchSize"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -68,7 +86,19 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if (c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) && (c.SaslUserName == "" || c.SaslPassword == "") {
 		return fmt.Errorf("username and password can not be empty")
 	}
-
+	tc := &tlsConf{}
+	if err := cast.MapToStruct(props, tc); err != nil {
+		return err
+	}
+	kc := &kafkaConf{
+		MaxAttempts: 1,
+		BatchSize:   1,
+	}
+	if err := cast.MapToStruct(props, kc); err != nil {
+		return err
+	}
+	m.kc = kc
+	m.tc = tc
 	m.c = c
 	return nil
 }
@@ -95,17 +125,29 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		mechanism = nil
 	}
 	brokers := strings.Split(m.c.Brokers, ",")
+	tlsConfig, err := cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
+		SkipCertVerify:       m.tc.InsecureSkipVerify,
+		CertFile:             m.tc.CertificationPath,
+		KeyFile:              m.tc.PrivateKeyPath,
+		CaFile:               m.tc.RootCaPath,
+		TLSMinVersion:        m.tc.TLSMinVersion,
+		RenegotiationSupport: m.tc.RenegotiationSupport,
+	})
+	if err != nil {
+		return err
+	}
 	w := &kafkago.Writer{
 		Addr:                   kafkago.TCP(brokers...),
 		Topic:                  m.c.Topic,
 		Balancer:               &kafkago.LeastBytes{},
 		Async:                  false,
 		AllowAutoTopicCreation: true,
-		MaxAttempts:            1,
+		MaxAttempts:            m.kc.MaxAttempts,
 		RequiredAcks:           -1,
-		BatchSize:              1,
+		BatchSize:              m.kc.BatchSize,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
+			TLS:  tlsConfig,
 		},
 	}
 	m.writer = w
@@ -118,13 +160,11 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	var messages []kafkago.Message
 	switch d := item.(type) {
 	case []map[string]interface{}:
-		for _, el := range d {
-			decodedBytes, _, err := ctx.TransformOutput(el)
-			if err != nil {
-				return fmt.Errorf("kafka sink transform data error: %v", err)
-			}
-			messages = append(messages, kafkago.Message{Value: decodedBytes})
+		decodedBytes, _, err := ctx.TransformOutput(d)
+		if err != nil {
+			return fmt.Errorf("kafka sink transform data error: %v", err)
 		}
+		messages = append(messages, kafkago.Message{Value: decodedBytes})
 	case map[string]interface{}:
 		decodedBytes, _, err := ctx.TransformOutput(d)
 		if err != nil {
@@ -134,8 +174,12 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	default:
 		return fmt.Errorf("unrecognized format of %s", item)
 	}
-
 	err := m.writer.WriteMessages(ctx, messages...)
+	if err != nil {
+		conf.Log.Errorf("kafka sink error: %v", err)
+	} else {
+		conf.Log.Debug("sink kafka success")
+	}
 	switch err := err.(type) {
 	case kafkago.Error:
 		if err.Temporary() {
