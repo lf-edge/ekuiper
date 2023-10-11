@@ -1494,7 +1494,7 @@ func TestWindowError(t *testing.T) {
 			Sql:  `SELECT size * 3 FROM ldemo GROUP BY TUMBLINGWINDOW(ss, 2)`,
 			R: [][]map[string]interface{}{
 				{{
-					"error": "run Select error: invalid operation string(string) * int64(3)",
+					"error": "run Select error: expr: binaryExpr:{ ldemo.size * 3 } meet error, err:invalid operation string(string) * int64(3)",
 				}}, {{
 					"kuiper_field_0": float64(6),
 				}, {}},
