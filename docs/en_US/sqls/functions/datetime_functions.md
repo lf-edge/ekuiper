@@ -66,6 +66,13 @@ current_time()
 
 Synonym for the `CUR_TIME` function.
 
+## FORMAT
+```text
+format(value, format, culture)
+```
+Formats a value with the specified format and culture in SQL Server.
+
+Formats the `time` according to the specified `format` and returns the formatted string.
 ## FORMAT_TIME
 
 ```text
