@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -138,6 +138,15 @@ func TestComparison(t *testing.T) {
 			r: []interface{}{
 				false, true, errors.New("invalid operation int64(12) = string(string literal)"),
 				false, false, false, true, false, true,
+			},
+		}, { // 12
+			m: map[string]interface{}{
+				"a": uint32(32),
+				"b": int64(72),
+			},
+			r: []interface{}{
+				false, true, errors.New("invalid operation int64(32) = string(string literal)"),
+				false, true, false, true, true, false,
 			},
 		},
 	}
