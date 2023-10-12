@@ -192,6 +192,36 @@
         "en_US": "Max Attempts",
         "zh_CN": "消息发送重发次数"
       }
+    },
+    {
+      "name": "headers",
+      "default": {},
+      "optional": true,
+      "control": "list",
+      "type": "object",
+      "hint": {
+        "en_US": "Message Headers",
+        "zh_CN": "Headers in Kafka Message"
+      },
+      "label": {
+        "en_US": "Headers for the message",
+        "zh_CN": "Kafka 消息 Headers"
+      }
+    },
+    {
+      "name": "key",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Message Key",
+        "zh_CN": "Kafka Message Key"
+      },
+      "label": {
+        "en_US": "key for the message",
+        "zh_CN": "Kafka 消息 Key"
+      }
     }
   ],
   "node": {
