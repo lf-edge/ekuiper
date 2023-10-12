@@ -15,6 +15,7 @@
 package kafka
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -31,10 +32,12 @@ import (
 )
 
 type kafkaSink struct {
-	writer *kafkago.Writer
-	c      *sinkConf
-	tc     *tlsConf
-	kc     *kafkaConf
+	writer         *kafkago.Writer
+	c              *sinkConf
+	tc             *tlsConf
+	kc             *kafkaConf
+	headers        []kafkago.Header
+	headerTemplate string
 }
 
 const (
@@ -61,8 +64,10 @@ type tlsConf struct {
 }
 
 type kafkaConf struct {
-	MaxAttempts int `json:"maxAttempts"`
-	BatchSize   int `json:"batchSize"`
+	MaxAttempts int         `json:"maxAttempts"`
+	BatchSize   int         `json:"batchSize"`
+	Key         string      `json:"key"`
+	Headers     interface{} `json:"headers"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -100,6 +105,9 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	m.kc = kc
 	m.tc = tc
 	m.c = c
+	if err := m.setHeaders(); err != nil {
+		return fmt.Errorf("set kafka header failed, err:%v", err)
+	}
 	return nil
 }
 
@@ -164,13 +172,21 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if err != nil {
 			return fmt.Errorf("kafka sink transform data error: %v", err)
 		}
-		messages = append(messages, kafkago.Message{Value: decodedBytes})
+		msg, err := m.buildMsg(ctx, item, decodedBytes)
+		if err != nil {
+			return err
+		}
+		messages = append(messages, msg)
 	case map[string]interface{}:
 		decodedBytes, _, err := ctx.TransformOutput(d)
 		if err != nil {
 			return fmt.Errorf("kafka sink transform data error: %v", err)
 		}
-		messages = append(messages, kafkago.Message{Value: decodedBytes})
+		msg, err := m.buildMsg(ctx, item, decodedBytes)
+		if err != nil {
+			return err
+		}
+		messages = append(messages, msg)
 	default:
 		return fmt.Errorf("unrecognized format of %s", item)
 	}
@@ -212,4 +228,63 @@ func (m *kafkaSink) Close(ctx api.StreamContext) error {
 
 func GetSink() api.Sink {
 	return &kafkaSink{}
+}
+
+func (m *kafkaSink) buildMsg(ctx api.StreamContext, item interface{}, decodedBytes []byte) (kafkago.Message, error) {
+	msg := kafkago.Message{Value: decodedBytes}
+	if len(m.kc.Key) > 0 {
+		msg.Key = []byte(m.kc.Key)
+	}
+	if len(m.headers) > 0 {
+		msg.Headers = m.headers
+	} else if len(m.headerTemplate) > 0 {
+		headers, err := parseHeaders(ctx, item, m.headerTemplate)
+		if err != nil {
+			return kafkago.Message{}, fmt.Errorf("parse kafka headers error: %v", err)
+		}
+		msg.Headers = headers
+	}
+	return msg, nil
+}
+
+func (m *kafkaSink) setHeaders() error {
+	if m.kc.Headers == nil {
+		return nil
+	}
+	switch h := m.kc.Headers.(type) {
+	case map[string]interface{}:
+		var kafkaHeaders []kafkago.Header
+		for key, value := range h {
+			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
+				Key:   key,
+				Value: []byte(value.(string)),
+			})
+		}
+		m.headers = kafkaHeaders
+		return nil
+	case string:
+		m.headerTemplate = h
+		return nil
+	default:
+		return fmt.Errorf("kafka headers must be a map or a string")
+	}
+}
+
+func parseHeaders(ctx api.StreamContext, data interface{}, headerTemplate string) ([]kafkago.Header, error) {
+	headers := make(map[string]string)
+	s, err := ctx.ParseTemplate(headerTemplate, data)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal([]byte(s), &headers); err != nil {
+		return nil, err
+	}
+	var kafkaHeaders []kafkago.Header
+	for key, value := range headers {
+		kafkaHeaders = append(kafkaHeaders, kafkago.Header{
+			Key:   key,
+			Value: []byte(value),
+		})
+	}
+	return kafkaHeaders, nil
 }
