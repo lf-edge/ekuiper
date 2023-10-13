@@ -178,6 +178,7 @@ jobs:
 
   build-plugins:
     runs-on: ubuntu-latest
+    needs: prepare
 
     strategy:
       fail-fast: false
