@@ -36,7 +36,7 @@ type kafkaSink struct {
 	c              *sinkConf
 	tc             *tlsConf
 	kc             *kafkaConf
-	headers        []kafkago.Header
+	headersMap     map[string]string
 	headerTemplate string
 }
 
@@ -233,17 +233,17 @@ func GetSink() api.Sink {
 func (m *kafkaSink) buildMsg(ctx api.StreamContext, item interface{}, decodedBytes []byte) (kafkago.Message, error) {
 	msg := kafkago.Message{Value: decodedBytes}
 	if len(m.kc.Key) > 0 {
-		msg.Key = []byte(m.kc.Key)
-	}
-	if len(m.headers) > 0 {
-		msg.Headers = m.headers
-	} else if len(m.headerTemplate) > 0 {
-		headers, err := parseHeaders(ctx, item, m.headerTemplate)
+		newKey, err := ctx.ParseTemplate(m.kc.Key, item)
 		if err != nil {
-			return kafkago.Message{}, fmt.Errorf("parse kafka headers error: %v", err)
+			return kafkago.Message{}, fmt.Errorf("parse kafka key error: %v", err)
 		}
-		msg.Headers = headers
+		msg.Key = []byte(newKey)
 	}
+	headers, err := m.parseHeaders(ctx, item)
+	if err != nil {
+		return kafkago.Message{}, fmt.Errorf("parse kafka headers error: %v", err)
+	}
+	msg.Headers = headers
 	return msg, nil
 }
 
@@ -253,14 +253,13 @@ func (m *kafkaSink) setHeaders() error {
 	}
 	switch h := m.kc.Headers.(type) {
 	case map[string]interface{}:
-		var kafkaHeaders []kafkago.Header
+		kafkaHeaders := make(map[string]string)
 		for key, value := range h {
-			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
-				Key:   key,
-				Value: []byte(value.(string)),
-			})
+			if sv, ok := value.(string); ok {
+				kafkaHeaders[key] = sv
+			}
 		}
-		m.headers = kafkaHeaders
+		m.headersMap = kafkaHeaders
 		return nil
 	case string:
 		m.headerTemplate = h
@@ -270,21 +269,37 @@ func (m *kafkaSink) setHeaders() error {
 	}
 }
 
-func parseHeaders(ctx api.StreamContext, data interface{}, headerTemplate string) ([]kafkago.Header, error) {
-	headers := make(map[string]string)
-	s, err := ctx.ParseTemplate(headerTemplate, data)
-	if err != nil {
-		return nil, err
+func (m *kafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kafkago.Header, error) {
+	if len(m.headersMap) > 0 {
+		var kafkaHeaders []kafkago.Header
+		for k, v := range m.headersMap {
+			value, err := ctx.ParseTemplate(v, data)
+			if err != nil {
+				return nil, err
+			}
+			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
+				Key:   k,
+				Value: []byte(value),
+			})
+		}
+		return kafkaHeaders, nil
+	} else if len(m.headerTemplate) > 0 {
+		headers := make(map[string]string)
+		s, err := ctx.ParseTemplate(m.headerTemplate, data)
+		if err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal([]byte(s), &headers); err != nil {
+			return nil, err
+		}
+		var kafkaHeaders []kafkago.Header
+		for key, value := range headers {
+			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
+				Key:   key,
+				Value: []byte(value),
+			})
+		}
+		return kafkaHeaders, nil
 	}
-	if err := json.Unmarshal([]byte(s), &headers); err != nil {
-		return nil, err
-	}
-	var kafkaHeaders []kafkago.Header
-	for key, value := range headers {
-		kafkaHeaders = append(kafkaHeaders, kafkago.Header{
-			Key:   key,
-			Value: []byte(value),
-		})
-	}
-	return kafkaHeaders, nil
+	return nil, nil
 }
