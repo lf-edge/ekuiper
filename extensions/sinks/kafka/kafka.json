@@ -210,10 +210,10 @@
     },
     {
       "name": "key",
-      "default": "",
+      "default": {},
       "optional": true,
-      "control": "text",
-      "type": "string",
+      "control": "list",
+      "type": "object",
       "hint": {
         "en_US": "Message Key",
         "zh_CN": "Kafka Message Key"
