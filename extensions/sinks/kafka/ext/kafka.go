@@ -308,7 +308,7 @@ func (m *kafkaSink) setHeaders() error {
 	}
 	switch h := m.kc.Headers.(type) {
 	case map[string]interface{}:
-		var kafkaHeaders map[string]string
+		kafkaHeaders := make(map[string]string)
 		for key, value := range h {
 			if sv, ok := value.(string); ok {
 				kafkaHeaders[key] = sv
