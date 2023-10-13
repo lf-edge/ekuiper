@@ -170,7 +170,7 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 
 func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
-	logger.Infof("kafka sink receive %s", item)
+	logger.Debugf("kafka sink receive %s", item)
 	var messages []kafkago.Message
 	switch d := item.(type) {
 	case []map[string]interface{}:
