@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ const (
 	SinkCfgOperatorKeyPrefix         = "sinks."
 	ConnectionCfgOperatorKeyTemplate = "connections.%s"
 	ConnectionCfgOperatorKeyPrefix   = "connections."
+	PASSWORD                         = "******"
 )
 
 // loadConfigOperatorForSource
@@ -153,11 +154,24 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 
 	cf := cfgOps.CopyConfContent()
+	cf = hiddenPassword(cf)
 	if b, err = json.Marshal(cf); nil != err {
 		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
 	} else {
 		return b, err
 	}
+}
+
+func hiddenPassword(configkeys map[string]map[string]interface{}) map[string]map[string]interface{} {
+	for key, kvs := range configkeys {
+		for k := range kvs {
+			if strings.ToLower(k) == "password" {
+				kvs[k] = PASSWORD
+			}
+			configkeys[key] = kvs
+		}
+	}
+	return configkeys
 }
 
 func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
