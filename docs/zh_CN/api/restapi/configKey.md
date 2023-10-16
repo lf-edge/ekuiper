@@ -26,7 +26,8 @@ GET http://localhost:9081/metadata/sources/yaml/{name}
         "insecureSkipVerify": false,
         "protocolVersion": "3.1.1",
         "qos": 1,
-        "server": "tcp://122.9.166.75:1883"
+        "server": "tcp://122.9.166.75:1883",
+        "password": "******"
     },
     "default": {
         "qos": 2,
@@ -38,6 +39,8 @@ GET http://localhost:9081/metadata/sources/yaml/{name}
     }
 }
 ```
+
+注意：当获取 Config Key 时，如果属性中包含 password 字段（不区分大小写，例如 Password 等），API 不会返回实际密码值，而会用"******"代替以隐藏密码信息。
 
 ## 删除某个 configKey
 
