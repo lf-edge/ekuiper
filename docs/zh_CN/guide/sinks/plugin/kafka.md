@@ -61,8 +61,50 @@ $(PLUGINS_CUSTOM):
 | saslAuthType      | 否    | sasl 认证类型 , 支持none，plain，scram |
 | saslUserName      | 是    | sasl 用户名                       |
 | saslPassword      | 是    | sasl 密码                        |
+| insecureSkipVerify | 是   | 是否忽略 SSL 验证                  |
+| certificationPath  | 是   | Kafka 客户端 ssl 验证的 crt 文件路径       |
+| privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径       |
+| rootCaPath         | 是   | Kafka 客户端 ssl 验证的 ca 证书文件路径    |
+| maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1  |
+| batchSize          | 是   | Kafka 客户端向 server 发送单批消息的消息条数，默认为 1 |
+| key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息 |
+| headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息 |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
+
+### 设置 key 和 headers
+
+通过 key 和 headers 设置 Kafka 客户端发送消息时的元数据:
+
+```json
+{
+    "key": "keyValue",
+    "headers": {
+        "headerKey1": "headerValue1",
+        "headerKey2": "headerValue2"
+    }
+}
+```
+
+通过 template 模板，动态设置 Kafka 客户端发送消息时的元数据:
+
+```json
+{
+    "key": "{{.data.key}}",
+    "headers": {
+        "headerKey1": "{{.data.col1}}",
+        "headerKey2": "{{.data.col2}}"
+    }
+}
+```
+
+在 Kafka 客户端中设置 map 结构的 key 元数据:
+
+```json
+{
+  "key": "{\"keyMapkey\":\"{{.data.key.value}}\"}"
+}
+```
 
 ## 示例用法
 
