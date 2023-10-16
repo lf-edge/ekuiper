@@ -200,6 +200,8 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	case kafkago.Error:
 		if err.Temporary() {
 			return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+		} else {
+			return err
 		}
 	case kafkago.WriteErrors:
 		count := 0
@@ -215,11 +217,16 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 				}
 			}
 		}
-		if count == len(messages) {
+		if count > 0 {
 			return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+		} else {
+			return err
 		}
+	case nil:
+		return nil
+	default:
+		return fmt.Errorf(`%s: kafka sink fails to send out the data: %v`, errorx.IOErr, err)
 	}
-	return err
 }
 
 func (m *kafkaSink) Close(ctx api.StreamContext) error {
