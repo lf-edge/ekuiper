@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -56,6 +57,7 @@ const (
 	SinkCfgOperatorKeyPrefix         = "sinks."
 	ConnectionCfgOperatorKeyTemplate = "connections.%s"
 	ConnectionCfgOperatorKeyPrefix   = "connections."
+	PASSWORD                         = "******"
 )
 
 // loadConfigOperatorForSource
@@ -153,11 +155,40 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 
 	cf := cfgOps.CopyConfContent()
+	for key, kvs := range cf {
+		cf[key] = hiddenPassword(kvs)
+	}
 	if b, err = json.Marshal(cf); nil != err {
 		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
 	} else {
 		return b, err
 	}
+}
+
+func hiddenPassword(kvs map[string]interface{}) map[string]interface{} {
+	for k, v := range kvs {
+		if m, ok := v.(map[string]interface{}); ok {
+			kvs[k] = hiddenPassword(m)
+		}
+		if strings.ToLower(k) == "password" {
+			kvs[k] = PASSWORD
+		}
+		if strings.ToLower(k) == "url" {
+			if _, ok := v.(string); !ok {
+				continue
+			}
+			u, err := url.Parse(v.(string))
+			if err != nil || u.User == nil {
+				continue
+			}
+			password, _ := u.User.Password()
+			if password != "" {
+				u.User = url.UserPassword(u.User.Username(), PASSWORD)
+				kvs[k] = u.String()
+			}
+		}
+	}
+	return kvs
 }
 
 func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
