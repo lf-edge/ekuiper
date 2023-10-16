@@ -142,6 +142,7 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		RenegotiationSupport: m.tc.RenegotiationSupport,
 	})
 	if err != nil {
+		conf.Log.Errorf("setting kafka tls config failed,err: %v", err)
 		return err
 	}
 	w := &kafkago.Writer{
@@ -174,6 +175,7 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 		msg, err := m.buildMsg(ctx, item, decodedBytes)
 		if err != nil {
+			conf.Log.Errorf("build kafka msg failed, err:%v", err)
 			return err
 		}
 		messages = append(messages, msg)
@@ -184,6 +186,7 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 		msg, err := m.buildMsg(ctx, item, decodedBytes)
 		if err != nil {
+			conf.Log.Errorf("build kafka msg failed, err:%v", err)
 			return err
 		}
 		messages = append(messages, msg)
@@ -265,7 +268,7 @@ func (m *kafkaSink) setHeaders() error {
 		m.headerTemplate = h
 		return nil
 	default:
-		return fmt.Errorf("kafka headers must be a map or a string")
+		return fmt.Errorf("kafka headers must be a map[string]string or a string")
 	}
 }
 
@@ -275,7 +278,7 @@ func (m *kafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 		for k, v := range m.headersMap {
 			value, err := ctx.ParseTemplate(v, data)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("parse kafka header map failed, err:%v", err)
 			}
 			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
 				Key:   k,
@@ -287,7 +290,7 @@ func (m *kafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 		headers := make(map[string]string)
 		s, err := ctx.ParseTemplate(m.headerTemplate, data)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parse kafka header template failed, err:%v", err)
 		}
 		if err := json.Unmarshal([]byte(s), &headers); err != nil {
 			return nil, err
