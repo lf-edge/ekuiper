@@ -17,6 +17,7 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -154,7 +155,9 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 
 	cf := cfgOps.CopyConfContent()
-	cf = hiddenPassword(cf)
+	for key, kvs := range cf {
+		cf[key] = hiddenPassword(kvs)
+	}
 	if b, err = json.Marshal(cf); nil != err {
 		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
 	} else {
@@ -162,16 +165,30 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	}
 }
 
-func hiddenPassword(configkeys map[string]map[string]interface{}) map[string]map[string]interface{} {
-	for key, kvs := range configkeys {
-		for k := range kvs {
-			if strings.ToLower(k) == "password" {
-				kvs[k] = PASSWORD
+func hiddenPassword(kvs map[string]interface{}) map[string]interface{} {
+	for k, v := range kvs {
+		if m, ok := v.(map[string]interface{}); ok {
+			kvs[k] = hiddenPassword(m)
+		}
+		if strings.ToLower(k) == "password" {
+			kvs[k] = PASSWORD
+		}
+		if strings.ToLower(k) == "url" {
+			if _, ok := v.(string); !ok {
+				continue
 			}
-			configkeys[key] = kvs
+			u, err := url.Parse(v.(string))
+			if err != nil || u.User == nil {
+				continue
+			}
+			password, _ := u.User.Password()
+			if password != "" {
+				u.User = url.UserPassword(u.User.Username(), PASSWORD)
+				kvs[k] = u.String()
+			}
 		}
 	}
-	return configkeys
+	return kvs
 }
 
 func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
