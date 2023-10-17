@@ -123,9 +123,10 @@ jobs:
         run: |
           ver=$(git describe --tags --always)
           cd app
-          fyne package -os android/arm64 -name ekuiper -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true
+          fyne package -os android/arm64 -name kuiper-$ver -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true        
           mkdir -p ../_packages
-          mv ekuiper.apk ../_packages/
+          # The version name will be modified by fyne package, convert . and - to _
+          mv kuiper* ../_packages/
           cd ../_packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
       - uses: actions/upload-artifact@v3
         with:
@@ -401,7 +402,7 @@ jobs:
       if: github.event_name == 'release'
       with:
         repo: ekuiper
-        path: "_packages/kuiper-*"
+        path: "_packages/kuiper*"
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: upload packages to s3
       if: github.event_name == 'release'
