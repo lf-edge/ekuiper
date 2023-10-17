@@ -219,7 +219,11 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 					d = option.MaxDelay
 				}
 				if option.JitterFactor > 0 {
-					d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*0.1 + 1)))
+					d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*option.JitterFactor + 1)))
+					// make sure d is always in range
+					for d <= 0 || d > option.MaxDelay {
+						d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*option.JitterFactor + 1)))
+					}
 					conf.Log.Infof("Rule %s will restart with jitterred delay %d", rs.RuleId, d)
 				} else {
 					conf.Log.Infof("Rule %s will restart with delay %d", rs.RuleId, d)
