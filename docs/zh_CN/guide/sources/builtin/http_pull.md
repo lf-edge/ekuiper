@@ -200,3 +200,11 @@ REST API 为 eKuiper 提供了一种可编程的交互方式，适用于自动�
    ```
 
 详细操作步骤及命令解释，可参考 [通过 CLI 进行流管理](../../../api/cli/streams.md)。
+
+## 查询表
+
+httppull 同时也支持成为一个查询表。我们可以使用创建表语句来创建一个 httppull 查询表。它将与实体关系数据库绑定并按需查询:
+
+```text
+CREATE TABLE httppullTable() WITH (DATASOURCE="/url", CONF_KEY="default", TYPE="httppull", KIND="lookup")
+```
