@@ -23,7 +23,7 @@ import (
 
 // InContainer returns true if the process is running in a container.
 func InContainer() bool {
-	v, err := os.ReadFile(procPathCGroup)
+	v, err := os.ReadFile("/proc/self/cgroup")
 	if err != nil {
 		return false
 	}
