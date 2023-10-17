@@ -1,0 +1,56 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "description": {
+      "en_US": "The action is used for publish output message through websocket.",
+      "zh_CN": "该操作用于将输出消息通过 websocket 发布"
+    }
+  },
+  "properties": [
+    {
+      "name": "addr",
+      "default": "127.0.0.1",
+      "optional": false,
+      "control": "text",
+      "connection_related": true,
+      "type": "string",
+      "hint": {
+        "en_US": "The address of websocket target",
+        "zh_CN": "Websocket 目标的地址"
+      },
+      "label": {
+        "en_US": "websocket target address",
+        "zh_CN": "Websocket 目标地址"
+      }
+    },
+    {
+      "name": "path",
+      "optional": false,
+      "control": "text",
+      "default": "",
+      "type": "string",
+      "hint": {
+        "en_US": "The path of websocket target",
+        "zh_CN": "websocket 目标所用的资源路径"
+      },
+      "label": {
+        "en_US": "websocket target path",
+        "zh_CN": "websocket 目标资源路径"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "websocket",
+      "zh": "websocket"
+    }
+  }
+}

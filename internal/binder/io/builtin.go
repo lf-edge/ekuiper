@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/internal/io/sink"
+	"github.com/lf-edge/ekuiper/internal/io/websocket"
 	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -49,6 +50,7 @@ var (
 		"memory":      func() api.Sink { return memory.GetSink() },
 		"neuron":      func() api.Sink { return neuron.GetSink() },
 		"file":        func() api.Sink { return file.File() },
+		"websocket":   func() api.Sink { return &websocket.WebSocketSink{} },
 	}
 	lookupSources = map[string]NewLookupSourceFunc{
 		"memory":   func() api.LookupSource { return memory.GetLookupSource() },
