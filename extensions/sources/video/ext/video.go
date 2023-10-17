@@ -16,8 +16,11 @@ package video
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
@@ -38,6 +41,17 @@ type VideoPullSource struct {
 }
 
 func (rps *VideoPullSource) Configure(_ string, props map[string]interface{}) error {
+	c := exec.Command("ffmpeg", "-version")
+	output, err := c.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("check ffmpeg failed, err:%v", err)
+	}
+	conf.Log.Infof("ffmpeg dependency check result: %s", string(output))
+	if strings.Contains(string(output), "ffmpeg version") {
+		conf.Log.Infof("ffmpeg dependency check success")
+	} else {
+		return errors.New("ffmpeg dependency check failed")
+	}
 	if u, ok := props["url"]; ok {
 		if p, ok := u.(string); ok {
 			rps.url = p
