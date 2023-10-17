@@ -79,12 +79,10 @@ build_core: build_prepare
 PLUGINS_IN_FULL := \
 	extensions/sinks/influx \
 	extensions/sinks/influx2 \
-	extensions/sinks/zmq \
 	extensions/sinks/kafka \
 	extensions/sinks/image \
 	extensions/sinks/sql   \
 	extensions/sources/random \
-	extensions/sources/zmq \
 	extensions/sources/sql \
 	extensions/sources/video
 
