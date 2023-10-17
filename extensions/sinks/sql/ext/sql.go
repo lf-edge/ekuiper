@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/util"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -156,12 +155,6 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		item = tm
-	} else {
-		tm, _, err := transform.TransItem(item, m.conf.DataField, m.conf.Fields)
-		if err != nil {
-			return fmt.Errorf("fail to 1 transform data %v for error %v!!!!!", item, err)
-		}
-		item = tm
 	}
 
 	var (
@@ -174,6 +167,9 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if err != nil {
 			ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
 			return err
+		}
+		if m.conf.DataField != "" {
+			item = v[m.conf.DataField]
 		}
 	case []map[string]interface{}:
 		if len(v) == 0 {
