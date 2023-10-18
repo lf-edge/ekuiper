@@ -15,6 +15,7 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
@@ -35,15 +37,20 @@ import (
 // manage the global http data server
 
 var (
-	refCount int32
-	server   *http.Server
-	router   *mux.Router
-	done     chan struct{}
-	sctx     api.StreamContext
-	lock     sync.RWMutex
+	refCount       int32
+	server         *http.Server
+	router         *mux.Router
+	done           chan struct{}
+	sctx           api.StreamContext
+	lock           sync.RWMutex
+	upgrader       websocket.Upgrader
+	endpointCancel map[string]context.CancelFunc
 )
 
-const TopicPrefix = "$$httppush/"
+const (
+	TopicPrefix     = "$$httppush/"
+	WebSocketPrefix = "$$websocket/"
+)
 
 func init() {
 	contextLogger := conf.Log.WithField("httppush_connection", 0)
@@ -56,6 +63,8 @@ func init() {
 		panic(err)
 	}
 	sctx = ctx.WithMeta(ruleId, opId, store)
+	upgrader = websocket.Upgrader{}
+	endpointCancel = make(map[string]context.CancelFunc)
 }
 
 func registerInit() error {
@@ -70,6 +79,61 @@ func registerInit() error {
 	}
 	refCount++
 	return nil
+}
+
+func process(ctx api.StreamContext, c *websocket.Conn, topic string) {
+	defer c.Close()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		_, message, err := c.ReadMessage()
+		if err != nil {
+			pubsub.ProduceError(sctx, topic, fmt.Errorf("fail to decode data %s: %v", message, err))
+			conf.Log.Errorf("websocket read err: %v", err)
+			continue
+		}
+		m := make(map[string]interface{})
+		if err := json.Unmarshal(message, &m); err != nil {
+			pubsub.ProduceError(sctx, topic, fmt.Errorf("fail to unmarshal data %s: %v", message, err))
+			conf.Log.Errorf("unmarshal websocket data err: %v", err)
+			continue
+		}
+		pubsub.Produce(sctx, topic, m)
+	}
+}
+
+func UnRegisterWebSocketEndpoint(endpoint string) error {
+	lock.Lock()
+	defer lock.Unlock()
+	topic := WebSocketPrefix + endpoint
+	pubsub.RemovePub(topic)
+	refCount--
+	endpointCancel[topic]()
+	delete(endpointCancel, topic)
+	return nil
+}
+
+func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, chan struct{}, error) {
+	topic := WebSocketPrefix + endpoint
+	err := registerInit()
+	if err != nil {
+		return "", nil, err
+	}
+	subCtx, cancelFunc := ctx.WithCancel()
+	endpointCancel[topic] = cancelFunc
+	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+		c, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			conf.Log.Errorf("websocket upgrade error: %v", err)
+			return
+		}
+		pubsub.CreatePub(topic)
+		go process(subCtx, c, topic)
+	})
+	return topic, done, nil
 }
 
 func RegisterEndpoint(endpoint string, method string, _ string) (string, chan struct{}, error) {

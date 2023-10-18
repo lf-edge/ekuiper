@@ -35,12 +35,20 @@ type WebSocketSinkConf struct {
 
 func (wss *WebSocketSink) Open(ctx api.StreamContext) error {
 	u := url.URL{Scheme: "ws", Host: wss.conf.Addr, Path: wss.conf.Path}
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	c, err := openWebsocketConn(u)
 	if err != nil {
 		return err
 	}
 	wss.conn = c
 	return nil
+}
+
+func openWebsocketConn(u url.URL) (*websocket.Conn, error) {
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func (wss *WebSocketSink) Configure(props map[string]interface{}) error {
