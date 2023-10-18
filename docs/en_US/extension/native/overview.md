@@ -96,7 +96,8 @@ func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionConte
 ## Runtime dependencies
 
 Some plugins may need to access dependencies in the file system. Those files are put under
-{{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}} directory. When packaging the plugin, put those files
+<span v-pre>{{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}}</span> directory. When packaging the plugin, put those
+files
 in [etc directory](../../api/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the
 recommended place.
 

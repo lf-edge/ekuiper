@@ -108,7 +108,7 @@ There is a very simple [instruction](https://github.com/tensorflow/tensorflow/tr
 
 6. Install the so files.
    1. Update ldconfig file. `sudo vi /etc/ld.so.conf.d/tflite.conf`.
-   2. Add the path `{{tensorflowPath}}/lib` to tflite.conf then save and exit.
+   2. Add the path <code v-pre>{{tensorflowPath}}/lib</code> to tflite.conf then save and exit.
    3. Run ldconfig: `sudo ldconfig`.
    4. Check installation result: `ldconfig -p | grep libtensorflow`. Make sure the two so files are listed.
 

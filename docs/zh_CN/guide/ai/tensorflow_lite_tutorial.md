@@ -105,7 +105,7 @@ Content-Type: application/json
 
 6. 安装 so 文件。
    1. 更新 ldconfig 文件 `sudo vi / etc / ld.so.conf.d / tflite.conf`。
-   2. 将路径  `{{tensorflowPath}}/lib` 添加到 tflite.conf，然后保存并退出。
+   2. 将路径  <code v-pre>{{tensorflowPath}}/lib</code> 添加到 tflite.conf，然后保存并退出。
    3. 运行 ldconfig: `sudo ldconfig`。
    4. 检查安装结果：`ldconfig -p | grep libtensorflow`。 确保列出了两个so文件。
 
