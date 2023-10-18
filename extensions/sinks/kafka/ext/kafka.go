@@ -15,6 +15,7 @@
 package kafka
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -108,7 +109,35 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if err := m.setHeaders(); err != nil {
 		return fmt.Errorf("set kafka header failed, err:%v", err)
 	}
+	m.tlsConfigLog()
 	return nil
+}
+
+func (m *kafkaSink) tlsConfigLog() {
+	if m.tc == nil {
+		conf.Log.Infof("kafka sink tls not configured")
+		return
+	}
+	if m.tc.InsecureSkipVerify {
+		conf.Log.Infof("kafka sink tls enable insecure skip verify")
+		return
+	}
+	b := bytes.NewBufferString("kafka sink tls enabled")
+	if len(m.tc.CertificationPath) > 0 {
+		b.WriteString(", crt configured")
+	} else {
+		b.WriteString(", crt not configured")
+	}
+	if len(m.tc.PrivateKeyPath) > 0 {
+		b.WriteString(", key configured")
+	} else {
+		b.WriteString(", key not configured")
+	}
+	if len(m.tc.RootCaPath) > 0 {
+		b.WriteString(", root ca configured")
+	} else {
+		b.WriteString(", root ca not configured")
+	}
 }
 
 func (m *kafkaSink) Open(ctx api.StreamContext) error {
