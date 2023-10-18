@@ -167,7 +167,7 @@
       "name": "batchSize",
       "default": true,
       "optional": true,
-      "control": "radio",
+      "control": "text",
       "type": "int",
       "hint": {
         "en_US": "Limit on how many messages will be buffered before being sent to kafka in one request, default 1",
@@ -182,7 +182,7 @@
       "name": "maxAttempts",
       "default": true,
       "optional": true,
-      "control": "radio",
+      "control": "text",
       "type": "int",
       "hint": {
         "en_US": "Limit on how many attempts will be made to deliver a message, default 1",
