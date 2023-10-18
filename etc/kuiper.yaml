@@ -21,6 +21,10 @@ basic:
   rotateTime: 24
   # Maximum file storage hours
   maxAge: 72
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
   # CLI ip
   ip: 0.0.0.0
   # CLI port

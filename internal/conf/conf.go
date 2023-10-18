@@ -21,6 +21,8 @@ import (
 	"log"
 	"os"
 	"path"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/lestrrat-go/file-rotatelogs"
@@ -162,6 +164,8 @@ type KuiperConf struct {
 		Syslog             *syslogConf `yaml:"syslog"`
 		RotateTime         int         `yaml:"rotateTime"`
 		MaxAge             int         `yaml:"maxAge"`
+		RotateSize         int64       `yaml:"rotateSize"`
+		RotateCount        int         `yaml:"rotateCount"`
 		TimeZone           string      `yaml:"timezone"`
 		Ip                 string      `yaml:"ip"`
 		Port               int         `yaml:"port"`
@@ -222,11 +226,21 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	}
 
 	file := path.Join(logDir, logFileName)
+	ro := []rotatelogs.Option{
+		rotatelogs.WithRotationTime(time.Hour * time.Duration(Config.Basic.RotateTime)),
+		rotatelogs.WithRotationSize(Config.Basic.RotateSize),
+	}
+	if Config.Basic.RotateCount > 0 {
+		ro = append(ro, rotatelogs.WithRotationCount(uint(Config.Basic.RotateCount)))
+	} else if Config.Basic.MaxAge > 0 {
+		ro = append(ro, rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)))
+	}
+	if !strings.EqualFold(runtime.GOOS, "windows") {
+		ro = append(ro, rotatelogs.WithLinkName(file))
+	}
 	logWriter, err := rotatelogs.New(
 		file+".%Y-%m-%d_%H-%M-%S",
-		rotatelogs.WithLinkName(file),
-		rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
-		rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
+		ro...,
 	)
 
 	if err != nil {
@@ -238,7 +252,11 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	} else if !consoleLog {
 		Log.SetOutput(logWriter)
 	}
-	gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
+	if Config.Basic.RotateCount > 0 {
+		// gc outdated log files by logrus itself
+	} else if Config.Basic.MaxAge > 0 {
+		gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
+	}
 	return nil
 }
 
