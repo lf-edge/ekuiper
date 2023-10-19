@@ -1,0 +1,110 @@
+#include<stdio.h>
+#include<stdlib.h>
+typedef struct node
+{
+	int coef,pow;
+	struct node *next;
+} node;
+
+node *getnode()
+{
+	node *p;
+	p=(node*)malloc(sizeof(node));
+	return p;
+}
+
+void CreatePoly(node **list)
+{
+	int coef,pow;
+	node *p,*q;
+	do
+	{
+		printf("\nEnter the coef and pow(pow=0 to end)\n");
+		scanf("%d%d",&coef,&pow);
+		p=getnode();
+		p->coef=coef;
+		p->pow=pow;
+		p->next=NULL;
+		if(*list==NULL)
+		{
+			*list=p;
+			q=p;
+		}
+		else
+        {
+		q->next=p;
+		q=p;
+	    }
+	} while(pow!=0);
+}
+
+void display(node *poly)
+{
+	node *p;
+	for(p=poly;p!=NULL;p=p->next)
+    {
+	printf("%dx^%d  ",p->coef,p->pow);
+	if(p->pow!=0)
+	printf("+ ");
+    }
+}
+
+node *AddPoly(node *poly1, node *poly2)
+{
+	node *p, *q, *poly3;
+	poly3=NULL;
+	while(poly1!=NULL && poly2!=NULL)
+	{
+	    p=getnode();
+		p->next=NULL;
+		if(poly1->pow > poly2->pow)
+		{
+			p->coef=poly1->coef;
+			p->pow=poly1->pow;
+			poly1=poly1->next;
+	    }
+	    else if(poly2->pow > poly1->pow)
+	    {
+	    	p->coef=poly2->coef;
+	    	p->pow=poly2->pow;
+	    	poly2=poly2->next;
+		}
+		else
+		{
+			p->coef=poly1->coef + poly2->coef;
+			p->pow=poly1->pow;
+			poly1=poly1->next;
+			poly2=poly2->next;
+		}
+		if(poly3==NULL)
+		{
+			poly3=p;
+			q=p;
+		}
+		else
+		{
+		   q->next=p;
+		   q=p;
+	    }
+	}
+	if(poly1!=NULL)
+	   q->next=poly1;
+	if(poly2!=NULL)
+	   q->next=poly2;
+	return poly3;
+}
+
+void main()
+{
+	node *poly1, *poly2, *poly3;
+	poly1=poly2=poly3=NULL;
+	CreatePoly(&poly1);
+	    printf("Polynomial 1:\n");
+	    display(poly1);
+	CreatePoly(&poly2);
+	    printf("Polynomial 2:\n");
+	    display(poly2);
+	poly3=AddPoly(poly1,poly2);
+	    printf("\nPolynomial 3:\n");
+	    display(poly3);
+}
