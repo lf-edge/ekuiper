@@ -243,7 +243,7 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 				continue
 
 			case kafkago.Error:
-				if err.Temporary() {
+				if err.Temporary() || strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
 					count++
 					continue
 				}
