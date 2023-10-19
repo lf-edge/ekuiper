@@ -238,12 +238,15 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	case kafkago.WriteErrors:
 		count := 0
 		for i := range messages {
+			if strings.Contains(err[i].Error(), "kafka.(*Client).Produce:") {
+				return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+			}
 			switch err := err[i].(type) {
 			case nil:
 				continue
 
 			case kafkago.Error:
-				if err.Temporary() || strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
+				if err.Temporary() {
 					count++
 					continue
 				}
