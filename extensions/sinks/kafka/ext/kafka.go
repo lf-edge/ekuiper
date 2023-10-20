@@ -247,6 +247,10 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 					count++
 					continue
 				}
+			default:
+				if strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
+					return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+				}
 			}
 		}
 		if count > 0 {
