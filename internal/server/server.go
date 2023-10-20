@@ -214,7 +214,9 @@ func StartUp(Version string) {
 	<-sigint
 	exit <- struct{}{}
 
-	if err = srvRest.Shutdown(context.TODO()); err != nil {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+	if err = srvRest.Shutdown(ctx); err != nil {
 		logger.Errorf("rest server shutdown error: %v", err)
 	}
 	logger.Info("rest server successfully shutdown.")
