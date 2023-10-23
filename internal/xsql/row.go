@@ -460,9 +460,7 @@ func (jt *JoinTuple) AddTuple(tuple TupleRow) {
 }
 
 func (jt *JoinTuple) AddTuples(tuples []TupleRow) {
-	for _, t := range tuples {
-		jt.Tuples = append(jt.Tuples, t)
-	}
+	jt.Tuples = append(jt.Tuples, tuples...)
 }
 
 func (jt *JoinTuple) doGetValue(key, table string, isVal bool) (interface{}, bool) {
