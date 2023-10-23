@@ -11,6 +11,7 @@
         {
           "title": "流式处理",
           "path": "concepts/streaming/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "时间属性",
@@ -28,6 +29,7 @@
         },
         {
           "title": "关键概念",
+          "collapsed": true,
           "children": [
             {
               "title": "规则",
@@ -100,6 +102,7 @@
         {
           "title": "表：事件序列的快照",
           "path": "guide/tables/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "扫描表",
@@ -126,6 +129,7 @@
         {
           "title": "序列化",
           "path": "guide/serialization/serialization",
+          "collapsed": true,
           "children": [
             {
               "title": "使用 Protobuf 编解码教程",
@@ -135,6 +139,7 @@
         },
         {
           "title": "AI/ML",
+          "collapsed": true,
           "children": [
             {
               "title": "使用原生插件实现 AI 函数",
@@ -170,6 +175,7 @@
           "children": [
             {
               "title": "内置源",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT 数据源",
@@ -211,6 +217,7 @@
             },
             {
               "title": "预定义插件源",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL 数据源",
@@ -242,6 +249,7 @@
             },
             {
               "title": "内置 Sink",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT Sink",
@@ -287,6 +295,7 @@
             },
             {
               "title": "预定义插件 Sink",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL Sink",
@@ -344,6 +353,7 @@
         {
           "title": "配置",
           "path": "configuration/configuration",
+          "collapsed": true,
           "children": [
             {
               "title": "全局配置文件",
@@ -353,6 +363,7 @@
         },
         {
           "title": "管理控制台",
+          "collapsed": true,
           "children": [
             {
               "title": "使用教程",
@@ -397,6 +408,7 @@
         },
         {
           "title": "EdgeX Foundry 的规则引擎",
+          "collapsed": true,
           "children": [
             {
               "title": "EdgeX Foundry 规则引擎教程",
@@ -433,6 +445,7 @@
     {
       "title": "Rest API 参考",
       "path": "api/restapi/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "认证配置",
@@ -487,6 +500,7 @@
     {
       "title": "命令行工具",
       "path": "api/cli/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "流管理",
@@ -529,6 +543,7 @@
         {
           "title": "原生插件开发",
           "path": "extension/native/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "原生插件开发",
@@ -555,6 +570,7 @@
         {
           "title": "Portable 插件开发",
           "path": "extension/portable/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Portable 插件 Go 语言 SDK",
@@ -582,6 +598,7 @@
       "children": [
         {
           "title": "语句",
+          "collapsed": true,
           "children": [
             {
               "title": "流语句",
@@ -600,6 +617,7 @@
         {
           "title": "语法",
           "path": "sqls/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "词汇元素",
@@ -618,6 +636,7 @@
         {
           "title": "函数",
           "path": "sqls/functions/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "聚合函数",
@@ -700,6 +719,7 @@
         {
           "title": "Stream Processing",
           "path": "concepts/streaming/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Time Attribute",
@@ -717,6 +737,7 @@
         },
         {
           "title": "Key Concepts",
+          "collapsed": true,
           "children": [
             {
               "title": "Rules",
@@ -789,6 +810,7 @@
         {
           "title": "Table: snapshot of events",
           "path": "guide/tables/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Scan Table",
@@ -815,6 +837,7 @@
         {
           "title": "Serialization",
           "path": "guide/serialization/serialization",
+          "collapsed": true,
           "children": [
             {
               "title": "Protobuf Codec Tutorial",
@@ -824,6 +847,7 @@
         },
         {
           "title": "AI/ML",
+          "collapsed": true,
           "children": [
             {
               "title": "Running AI Algorithms with Native Plugin",
@@ -859,6 +883,7 @@
           "children": [
             {
               "title": "Built-in Sources",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT Source",
@@ -900,6 +925,7 @@
             },
             {
               "title": "Predefined Source Plugins",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL Source",
@@ -931,6 +957,7 @@
             },
             {
               "title": "Built-in Sinks",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT Sink",
@@ -976,6 +1003,7 @@
             },
             {
               "title": "Predefined Sink Plugins",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL Sink",
@@ -1035,6 +1063,7 @@
         },
         {
           "title": "Working with EdgeX Foundry",
+          "collapsed": true,
           "children": [
             {
               "title": "EdgeX Foundry Rule Engine Tutorial",
@@ -1093,6 +1122,7 @@
         {
           "title": "Configuration Guide",
           "path": "configuration/configuration",
+          "collapsed": true,
           "children": [
             {
               "title": "Global Configurations",
@@ -1107,6 +1137,7 @@
         {
           "title": "Management Console",
           "path": "operation/manager-ui/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Manage Custom Plugins",
@@ -1119,6 +1150,7 @@
     {
       "title": "API Reference",
       "path": "api/restapi/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "Authentication",
@@ -1173,6 +1205,7 @@
     {
       "title": "Command Line Tool",
       "path": "api/cli/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "Streams",
@@ -1215,6 +1248,7 @@
         {
           "title": "Native Plugin Develop",
           "path": "extension/native/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Develop",
@@ -1241,6 +1275,7 @@
         {
           "title": "Portable Plugin Development",
           "path": "extension/portable/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "GO SDK for Portable Plugin",
@@ -1268,6 +1303,7 @@
       "children": [
         {
           "title": "Statements",
+          "collapsed": true,
           "children": [
             {
               "title": "Streams",
@@ -1286,6 +1322,7 @@
         {
           "title": "Syntax",
           "path": "sqls/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Lexical elements",
@@ -1304,6 +1341,7 @@
         {
           "title": "Functions",
           "path": "sqls/functions/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Aggregate Functions",

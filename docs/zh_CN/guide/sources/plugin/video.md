@@ -1,7 +1,7 @@
 # 视频源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 视频源会通过 `ffmpeg` 命令查询视频流，例如 RTSP 视频流获取图片
 
