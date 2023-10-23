@@ -63,7 +63,11 @@ func init() {
 		panic(err)
 	}
 	sctx = ctx.WithMeta(ruleId, opId, store)
-	upgrader = websocket.Upgrader{}
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  256,
+		WriteBufferSize: 256,
+		WriteBufferPool: &sync.Pool{},
+	}
 	endpointCancel = make(map[string]context.CancelFunc)
 }
 
@@ -89,26 +93,29 @@ func process(ctx api.StreamContext, c *websocket.Conn, topic string) {
 			return
 		default:
 		}
-		_, message, err := c.ReadMessage()
+		msgType, message, err := c.ReadMessage()
 		if err != nil {
 			pubsub.ProduceError(sctx, topic, fmt.Errorf("fail to decode data %s: %v", message, err))
 			conf.Log.Errorf("websocket read err: %v", err)
 			continue
 		}
-		m := make(map[string]interface{})
-		if err := json.Unmarshal(message, &m); err != nil {
-			pubsub.ProduceError(sctx, topic, fmt.Errorf("fail to unmarshal data %s: %v", message, err))
-			conf.Log.Errorf("unmarshal websocket data err: %v", err)
-			continue
+		if msgType == websocket.TextMessage {
+			m := make(map[string]interface{})
+			if err := json.Unmarshal(message, &m); err != nil {
+				pubsub.ProduceError(sctx, topic, fmt.Errorf("fail to unmarshal data %s: %v", message, err))
+				conf.Log.Errorf("unmarshal websocket data err: %v", err)
+				continue
+			}
+			pubsub.Produce(sctx, topic, m)
+		} else {
+			conf.Log.Infof("websocket source recv other message type: %v", msgType)
 		}
-		pubsub.Produce(sctx, topic, m)
 	}
 }
 
-func UnRegisterWebSocketEndpoint(endpoint string) error {
+func UnRegisterWebSocketEndpoint(topic string) error {
 	lock.Lock()
 	defer lock.Unlock()
-	topic := WebSocketPrefix + endpoint
 	pubsub.RemovePub(topic)
 	refCount--
 	endpointCancel[topic]()
@@ -116,8 +123,8 @@ func UnRegisterWebSocketEndpoint(endpoint string) error {
 	return nil
 }
 
-func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, chan struct{}, error) {
-	topic := WebSocketPrefix + endpoint
+func RegisterWebSocketEndpoint(ctx api.StreamContext, id, endpoint string) (string, chan struct{}, error) {
+	topic := WebSocketPrefix + id + endpoint
 	err := registerInit()
 	if err != nil {
 		return "", nil, err

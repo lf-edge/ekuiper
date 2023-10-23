@@ -28,12 +28,12 @@ type WebSocketSource struct {
 }
 
 func (wss *WebSocketSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
-	topic, done, err := httpserver.RegisterWebSocketEndpoint(ctx, wss.endpoint)
+	topic, done, err := httpserver.RegisterWebSocketEndpoint(ctx, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), wss.endpoint)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)
 		return
 	}
-	defer httpserver.UnRegisterWebSocketEndpoint(wss.endpoint)
+	defer httpserver.UnRegisterWebSocketEndpoint(topic)
 	ch := pubsub.CreateSub(topic, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), 1024)
 	defer pubsub.CloseSourceConsumerChannel(topic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 	for {
@@ -61,4 +61,8 @@ func (wss *WebSocketSource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing WebSocket source")
 	return nil
+}
+
+func GetSource() api.Source {
+	return &WebSocketSource{}
 }
