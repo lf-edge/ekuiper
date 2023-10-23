@@ -1,8 +1,8 @@
 # 内存数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
-<span style="background:green;color:white">lookup table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">lookup table source</span>
 
 内存源通过主题消费由 [内存 Sink](../../sinks/builtin/memory.md) 生成的事件，适用于需要快速数据检索而无需磁盘或外部服务读取开销的场景，它的典型使用场景是形成[规则管道](../../rules/rule_pipeline.md)。
 

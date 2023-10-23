@@ -1,7 +1,7 @@
 # Zmq 源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 源将订阅 Zero Mq 主题以将消息导入 eKuiper。
 

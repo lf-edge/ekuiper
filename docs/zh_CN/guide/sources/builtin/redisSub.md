@@ -1,7 +1,7 @@
 ## RedisSub 数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper 内置支持 Redis 数据源，支持在 Redis 中进行数据查询,订阅频道。
 注意，RedisSub 数据源可作为流和扫描表类数据源，而[Redis 源](./redis.md)可作为一个[查询表](../../tables/lookup.md)。

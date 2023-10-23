@@ -1,7 +1,7 @@
 # HTTP Pull 数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper 内置支持 HTTP 数据源。通过 HTTP Pull 数据源连接器，eKuiper 可从外部 HTTP 服务器检索数据，并支持基于指定间隔或由特定条件触发拉取数据。
 
