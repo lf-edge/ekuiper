@@ -189,9 +189,7 @@ func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.F
 	if join.JoinType == ast.FULL_JOIN {
 		if rightJoinSet, err := jp.evalSetWithRightJoin(input, join, true, fv); err == nil {
 			if len(rightJoinSet.Content) > 0 {
-				for _, jt := range rightJoinSet.Content {
-					sets.Content = append(sets.Content, jt)
-				}
+				sets.Content = append(sets.Content, rightJoinSet.Content...)
 			}
 		} else {
 			return nil, err
@@ -328,9 +326,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTuples, input xsql.MergedCollection
 
 	if join.JoinType == ast.FULL_JOIN {
 		if rightJoinSet, err := jp.evalRightJoinSets(set, input, join, true, fv); err == nil && len(rightJoinSet.Content) > 0 {
-			for _, jt := range rightJoinSet.Content {
-				newSets.Content = append(newSets.Content, jt)
-			}
+			newSets.Content = append(newSets.Content, rightJoinSet.Content...)
 		}
 	}
 

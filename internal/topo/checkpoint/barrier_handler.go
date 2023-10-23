@@ -161,9 +161,7 @@ func (h *BarrierAligner) processBarrier(b *Barrier, ctx api.StreamContext) {
 		h.releaseBlocksAndResetBarriers()
 		// clean up all the buffer
 		var temp []*BufferOrEvent
-		for _, d := range h.buffer {
-			temp = append(temp, d)
-		}
+		temp = append(temp, h.buffer...)
 		go infra.SafeRun(func() error {
 			for _, d := range temp {
 				h.output <- d
