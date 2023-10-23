@@ -162,9 +162,7 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 			if len(f.Except) == 0 && len(f.Replace) == 0 {
 				p.isWildCard = true
 			} else {
-				for _, except := range f.Except {
-					p.pruneFields = append(p.pruneFields, except)
-				}
+				p.pruneFields = append(p.pruneFields, f.Except...)
 				for _, replace := range f.Replace {
 					p.pruneFields = append(p.pruneFields, replace.AName)
 				}
