@@ -3599,7 +3599,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 13
+		},
+		{ // 13
 			sql: `SELECT * EXCEPT(id1, name), meta(device) FROM src1`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3641,7 +3642,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: true,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 14
+		},
+		{ // 14
 			sql: `SELECT * REPLACE(temp * 2 AS id1, myarray * 2 AS name), meta(device) FROM src1`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3706,7 +3708,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: true,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 15
+		},
+		{ // 15
 			sql: `SELECT collect( * EXCEPT(id1, name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3754,7 +3757,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 16
+		},
+		{ // 16
 			sql: `SELECT collect( * REPLACE(temp * 2 AS id1, myarray * 2 AS name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3825,7 +3829,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 17
+		},
+		{ // 17
 			sql: `SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* EXCEPT(id1, name)) > 0`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3888,7 +3893,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 18
+		},
+		{ // 18
 			sql: `SELECT temp FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* REPLACE(temp * 2 AS id1, myarray * 2 AS name)) > 0`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
