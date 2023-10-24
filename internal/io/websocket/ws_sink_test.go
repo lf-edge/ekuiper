@@ -15,6 +15,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"sync"
@@ -24,7 +25,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/io/mock/context"
 )
 
 const (
@@ -32,15 +33,35 @@ const (
 	path = "/ws"
 )
 
+var dataCh chan interface{}
+
+func init() {
+	dataCh = make(chan interface{})
+}
+
 func TestWebSocketSink(t *testing.T) {
 	go mockWebSocketServer()
-	time.Sleep(time.Second)
+	// wait mock server started
+	time.Sleep(100 * time.Millisecond)
 	wsSink := &WebSocketSink{}
 	require.NoError(t, wsSink.Configure(map[string]interface{}{
 		"addr": addr,
-		path:   path,
+		"path": path,
 	}))
-	wsSink.Open(context.Background())
+	require.NoError(t, wsSink.Open(context.NewMockContext("r", "o")))
+	data := map[string]interface{}{
+		"a": float64(1),
+	}
+	require.NoError(t, wsSink.Collect(context.NewMockContext("r", "o"), data))
+	v := <-dataCh
+	switch nv := v.(type) {
+	case error:
+		require.NoError(t, nv)
+	case map[string]interface{}:
+		require.Equal(t, data, nv)
+	default:
+		t.Fatal("unknown data")
+	}
 }
 
 func mockWebSocketServer() {
@@ -59,10 +80,16 @@ func process(c *websocket.Conn) {
 	for {
 		_, message, err := c.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
+			dataCh <- err
 			break
 		}
-		log.Printf("recv: %s", message)
+		a := map[string]interface{}{}
+		err = json.Unmarshal(message, &a)
+		if err != nil {
+			dataCh <- err
+			break
+		}
+		dataCh <- a
 	}
 }
 
@@ -75,6 +102,4 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	// Process connection in a new goroutine
 	go process(c)
-
-	// Let the http handler return, the 8k buffer created by it will be garbage collected
 }
