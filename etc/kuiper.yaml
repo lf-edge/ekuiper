@@ -5,6 +5,18 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # syslog settings
+  syslog:
+    # true|false, if it's set to true, then the log will be print to syslog
+    enable: false
+    # The syslog protocol, tcp or udp; Leave empty if no remote syslog server is used
+    network: udp
+    # The syslog server address; Leave empty if no remote syslog server is used
+    address: localhost:514
+    # The syslog level, supports debug, info, warn, error
+    level: info
+    # The syslog tag; Leave empty if no tag is used
+    tag: kuiper
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours

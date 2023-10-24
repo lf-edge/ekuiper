@@ -31,7 +31,7 @@ func (p FilterPlan) Init() *FilterPlan {
 	return &p
 }
 
-func (p *FilterPlan) BuildExplainInfo(id int64) {
+func (p *FilterPlan) BuildExplainInfo() {
 	info := ""
 	if p.condition != nil {
 		info += "Condition:{ " + p.condition.String() + " }, "
@@ -46,7 +46,6 @@ func (p *FilterPlan) BuildExplainInfo(id int64) {
 		}
 		info += "]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 

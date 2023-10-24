@@ -39,12 +39,14 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
+	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/memory"
 )
 
 const (
@@ -155,6 +157,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -239,6 +242,28 @@ func getFile(file *fileContent) error {
 		}
 	}
 	return nil
+}
+
+func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	// fetch the rule which will be explained
+	rule, err := ruleProcessor.GetRuleById(name)
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	if rule.Sql == "" {
+		handleError(w, errors.New("only support explain sql now"), "explain rules error", logger)
+	}
+	var explainInfo string
+	explainInfo, err = planner.GetExplainInfoFromLogicalPlan(rule)
+	if err != nil {
+		handleError(w, err, "explain rules error", logger)
+	}
+	// resp := planner.BuildExplainResultFromLp(lp, 0)
+	w.Write([]byte(explainInfo))
 }
 
 func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -339,6 +364,9 @@ type information struct {
 	Os            string `json:"os"`
 	Arch          string `json:"arch"`
 	UpTimeSeconds int64  `json:"upTimeSeconds"`
+	CpuUsage      string `json:"cpuUsage,omitempty"`
+	MemoryUsed    string `json:"memoryUsed,omitempty"`
+	MemoryTotal   string `json:"memoryTotal"`
 }
 
 // The handler for root
@@ -352,6 +380,11 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		info.UpTimeSeconds = time.Now().Unix() - startTimeStamp
 		info.Os = runtime.GOOS
 		info.Arch = runtime.GOARCH
+		if sysMetrics != nil {
+			info.CpuUsage = sysMetrics.GetCpuUsage()
+			info.MemoryUsed = fmt.Sprintf("%d", memory.GetMemoryUsed())
+		}
+		info.MemoryTotal = fmt.Sprintf("%d", memory.GetMemoryTotal())
 		byteInfo, _ := json.Marshal(info)
 		w.Write(byteInfo)
 	}

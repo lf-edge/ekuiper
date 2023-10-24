@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,35 @@
 // limitations under the License.
 
 //go:build !windows
-// +build !windows
 
 package logger
 
 import (
 	"log/syslog"
-	"os"
 
 	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 )
 
-const KuiperSyslogKey = "KuiperSyslogKey"
-
-func initSyslog() {
-	if "true" == os.Getenv(KuiperSyslogKey) {
-		if hook, err := logrus_syslog.NewSyslogHook("", "", syslog.LOG_INFO, ""); err != nil {
-			Log.Error("Unable to connect to local syslog daemon")
-		} else {
-			Log.AddHook(hook)
-		}
+func InitSyslog(network, address, level, tag string) error {
+	p := syslog.LOG_INFO
+	switch level {
+	case "debug":
+		p = syslog.LOG_DEBUG
+	case "info":
+		p = syslog.LOG_INFO
+	case "warn":
+		p = syslog.LOG_WARNING
+	case "error":
+		p = syslog.LOG_ERR
+	default:
+		p = syslog.LOG_INFO
 	}
+	if hook, err := logrus_syslog.NewSyslogHook(network, address, p, tag); err != nil {
+		Log.Error("Unable to connect to local syslog daemon")
+		return err
+	} else {
+		Log.Infof("Setting up syslog network %s, address %s, level %s, tag %s", network, address, level, tag)
+		Log.AddHook(hook)
+	}
+	return nil
 }

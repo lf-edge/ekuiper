@@ -57,7 +57,7 @@ my_stream
 The command is used for print the detailed definition of stream.
 
 ```shell
-describe stream $stream_name
+describe stream $stream_name | describe stream $stream_name -json
 ```
 
 Sample:
@@ -73,6 +73,35 @@ score  float
 FORMAT: json
 KEY: id
 DATASOURCE: topic/temperature
+```
+
+You can also use the `-json` option to get json formatted output.
+
+Sample:
+
+```shell
+# bin/kuiper describe stream my_stream -json
+'{
+    "Fields": [
+        {
+            "Name": "id",
+            "Type": "bigint"
+        },
+        {
+            "Name": "name",
+            "Type": "string"
+        },
+        {
+            "Name": "score",
+            "Type": "float"
+        }
+    ],
+    "Options": {
+        "DATASOURCE:": "topic/temperature",
+        "FORMAT:": "json",
+        "KEY:": "id"
+    }
+}'
 ```
 
 ## drop a stream

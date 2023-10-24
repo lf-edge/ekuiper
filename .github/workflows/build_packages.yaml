@@ -5,28 +5,35 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  workflow_run:
-    workflows: [ "Run fvt tests","Run test cases" ]
-    types:
-      - completed
-    branches:
-      - master
+  pull_request:
   release:
     types:
       - published
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      arch: ${{ steps.arch.outputs.arch }}
+
+    steps:
+      - id: arch
+        run: |
+          if ${{ github.ref_type == 'tag' }}; then
+            echo "arch=[\"linux/amd64\", \"linux/arm64\", \"linux/arm/v7\"]" >> $GITHUB_OUTPUT
+          else
+            echo "arch=[\"linux/amd64\"]" >> $GITHUB_OUTPUT
+          fi
+
   build:
     runs-on: ubuntu-latest
+    needs: prepare
 
     strategy:
       matrix:
         golang:
           - 1.20.2
-        arch:
-          - linux/amd64
-          - linux/arm64
-          - linux/arm/v7
+        arch: ${{fromJson(needs.prepare.outputs.arch)}}
         os:
           - debian
           - centos
@@ -49,7 +56,7 @@ jobs:
         --env KUIPER_SOURCE='/ekuiper' \
         --platform ${{ matrix.arch }} \
         ghcr.io/lf-edge/ekuiper/base:${{ matrix.golang }}-${{ matrix.os }} \
-        bash -euc "git config --global --add safe.directory /ekuiper && make pkg && make pkg_core && .github/scripts/test.sh"
+        bash -euc "git config --global --add safe.directory /ekuiper && make pkg && make pkg_core && make pkg_full && .github/scripts/test.sh"
     - name: build
       if: matrix.os == 'centos'
       run: |
@@ -88,7 +95,7 @@ jobs:
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
     - uses: actions/upload-artifact@v3
       with:
-        name: packages-mac
+        name: packages
         path: _packages/
 
   build-for-android:
@@ -110,18 +117,20 @@ jobs:
         run: |
           cp -r etc app
           cd app 
-          sudo apt-get install libgl1-mesa-dev xorg-dev
+          sudo apt-get update && sudo apt-get install libgl1-mesa-dev xorg-dev
           go install fyne.io/fyne/v2/cmd/fyne@latest
       - name: build
         run: |
           ver=$(git describe --tags --always)
           cd app
-          fyne package -os android/arm64 -name ekuiper -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true
+          fyne package -os android/arm64 -name kuiper-$ver -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true        
           mkdir -p ../_packages
-          mv ekuiper.apk ../_packages/
+          # The version name will be modified by fyne package, convert . and - to _
+          mv kuiper* ../_packages/
+          cd ../_packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
       - uses: actions/upload-artifact@v3
         with:
-          name: packages-android
+          name: packages
           path: _packages/
 
   build-docker-images:
@@ -191,6 +200,7 @@ jobs:
       if: github.event_name == 'release'
       run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
+      if: github.event_name == 'release'
       uses: docker/build-push-action@v3
       with:
         context: .
@@ -203,6 +213,7 @@ jobs:
 
   build-plugins:
     runs-on: ubuntu-latest
+    needs: prepare
 
     strategy:
       fail-fast: false
@@ -226,15 +237,14 @@ jobs:
           - functions/geohash
           - functions/labelImage
           - functions/tfLite
-        arch:
-          - linux/amd64
-          - linux/arm64
+        arch: ${{fromJson(needs.prepare.outputs.arch)}}
         os:
           - [debian, "slim"]
           - [alpine, "alpine"]
         golang:
           - 1.20.2
         exclude:
+          - arch: linux/arm/v7
           - os: [ alpine,"alpine" ]
             plugin: functions/labelImage
           - os: [ alpine,"alpine" ]
@@ -289,15 +299,15 @@ jobs:
             -X POST \
             -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"shellParas\": [\"2.4.0.18\"]}"
         elif [ "${plugin_name}" = "image" ]; then
-             curl \
-             ${ip_address}:9081/plugins/${plugin_type} \
-             -X POST \
-             -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"resize\",\"thumbnail\"]}"
+            curl \
+            ${ip_address}:9081/plugins/${plugin_type} \
+            -X POST \
+            -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"resize\",\"thumbnail\"]}"
         elif [ "${plugin_name}" = "geohash" ]; then
-             curl \
-             ${ip_address}:9081/plugins/${plugin_type} \
-             -X POST \
-             -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"geohashEncode\", \"geohashEncodeInt\", \"geohashDecode\", \"geohashDecodeInt\", \"geohashBoundingBox\", \"geohashBoundingBoxInt\", \"geohashNeighbor\", \"geohashNeighborInt\", \"geohashNeighbors\", \"geohashNeighborsInt\"]}"
+            curl \
+            ${ip_address}:9081/plugins/${plugin_type} \
+            -X POST \
+            -d "{\"name\":\"${plugin_name}\", \"file\":\"file:///var/plugins/${os}/${plugin_type}/${plugin_name}_amd64.zip\", \"functions\": [\"geohashEncode\", \"geohashEncodeInt\", \"geohashDecode\", \"geohashDecodeInt\", \"geohashBoundingBox\", \"geohashBoundingBoxInt\", \"geohashNeighbor\", \"geohashNeighborInt\", \"geohashNeighbors\", \"geohashNeighborsInt\"]}"
         else
             curl \
             ${ip_address}:9081/plugins/${plugin_type} \
@@ -370,6 +380,7 @@ jobs:
     needs:
     - build
     - build-on-mac
+    - build-for-android
     - build-plugins
 
     steps:
@@ -377,10 +388,6 @@ jobs:
     - uses: actions/download-artifact@v1
       with:
         name: packages
-        path: _packages
-    - uses: actions/download-artifact@v1
-      with:
-        name: packages-mac
         path: _packages
     - uses: actions/download-artifact@v1
       with:
@@ -395,7 +402,7 @@ jobs:
       if: github.event_name == 'release'
       with:
         repo: ekuiper
-        path: "_packages/kuiper-*"
+        path: "_packages/kuiper*"
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: upload packages to s3
       if: github.event_name == 'release'
@@ -413,9 +420,15 @@ jobs:
       run: |
         set -e -x -u
         curl -fvs -w %{http_code} \
-             --insecure \
-             -H "Content-Type: application/json" \
-             -H "token: ${{ secrets.EMQX_IO_TOKEN }}" \
-             -X POST \
-             -d "{\"repo\":\"lf-edge/ekuiper\", \"tag\": \"${{ github.ref_name }}\" }" \
-             ${{ secrets.EMQX_IO_RELEASE_API }}
+          --insecure \
+          -H "Content-Type: application/json" \
+          -H "token: ${{ secrets.EMQX_IO_TOKEN }}" \
+          -X POST \
+          -d "{\"repo\":\"lf-edge/ekuiper\", \"tag\": \"${{ github.ref_name }}\" }" \
+          ${{ secrets.EMQX_IO_RELEASE_API }}
+    - uses: geekyeggo/delete-artifact@v2
+      with:
+        name: packages
+    - uses: geekyeggo/delete-artifact@v2
+      with:
+        name: plugins

@@ -35,6 +35,24 @@ func init() {
 	testx.InitEnv()
 }
 
+var defaultOption = &api.RuleOption{
+	IsEventTime:        false,
+	LateTol:            1000,
+	Concurrency:        1,
+	BufferLength:       1024,
+	SendMetaToSink:     false,
+	SendError:          true,
+	Qos:                api.AtMostOnce,
+	CheckpointInterval: 300000,
+	Restart: &api.RestartStrategy{
+		Attempts:     0,
+		Delay:        1000,
+		Multiplier:   2,
+		MaxDelay:     30000,
+		JitterFactor: 0.1,
+	},
+}
+
 func Test_createLogicalPlan(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	if err != nil {
@@ -100,11 +118,111 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 	ref.SetRefSource([]string{})
 
+	srcHumRef := &ast.AliasRef{
+		Expression: &ast.FieldRef{
+			StreamName: "src2",
+			Name:       "hum",
+		},
+	}
+	srcHumRef.SetRefSource([]string{"src2"})
+
+	tableHumRef := &ast.AliasRef{
+		Expression: &ast.FieldRef{
+			StreamName: "tableInPlanner",
+			Name:       "hum",
+		},
+	}
+	tableHumRef.SetRefSource([]string{"tableInPlanner"})
+
 	tests := []struct {
 		sql string
 		p   LogicalPlan
 		err string
 	}{
+		{
+			sql: "select src2.hum as hum, tableInPlanner.hum as hum2 from src2 left join tableInPlanner on src2.hum = tableInPlanner.hum",
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						//
+						JoinPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									JoinAlignPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												DataSourcePlan{
+													name: "src2",
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
+														},
+													},
+													streamStmt:      streams["src2"],
+													metaFields:      []string{},
+													pruneFields:     []string{},
+													timestampFormat: "YYYY-MM-dd HH:mm:ss",
+												}.Init(),
+												DataSourcePlan{
+													name: "tableInPlanner",
+													streamFields: map[string]*ast.JsonStreamField{
+														"hum": {
+															Type: "bigint",
+														},
+													},
+													streamStmt:  streams["tableInPlanner"],
+													metaFields:  []string{},
+													pruneFields: []string{},
+												}.Init(),
+											},
+										},
+										Emitters: []string{"tableInPlanner"},
+									}.Init(),
+								},
+							},
+							from: &ast.Table{
+								Name: "src2",
+							},
+							joins: ast.Joins{ast.Join{
+								Name:     "tableInPlanner",
+								JoinType: ast.LEFT_JOIN,
+								Expr: &ast.BinaryExpr{
+									OP: ast.EQ,
+									LHS: &ast.FieldRef{
+										StreamName: "src2",
+										Name:       "hum",
+									},
+									RHS: &ast.FieldRef{
+										StreamName: "tableInPlanner",
+										Name:       "hum",
+									},
+								},
+							}},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name:  "hum",
+						AName: "hum",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "hum",
+							AliasRef:   srcHumRef,
+						},
+					},
+					{
+						Name:  "hum",
+						AName: "hum2",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "hum2",
+							AliasRef:   tableHumRef,
+						},
+					},
+				},
+			}.Init(),
+		},
 		{
 			sql: "select name, row_number() as index from src1",
 			p: ProjectPlan{
@@ -2578,7 +2696,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 1 optimize where to data source
+		},
+		{ // 1 optimize where to data source
 			sql: `SELECT temp FROM src1 WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -2629,7 +2748,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 2 condition that cannot be optimized
+		},
+		{ // 2 condition that cannot be optimized
 			sql: `SELECT id1 FROM src1 INNER JOIN src2 on src1.id1 = src2.id2 WHERE src1.temp > 20 OR src2.hum > 60 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -2713,7 +2833,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 3 optimize window filter
+		},
+		{ // 3 optimize window filter
 			sql: `SELECT id1 FROM src1 WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10) FILTER( WHERE temp > 2)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -2773,7 +2894,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 4. do not optimize count window
+		},
+		{ // 4. do not optimize count window
 			sql: `SELECT * FROM src1 WHERE temp > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -2834,7 +2956,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 5. optimize join on
+		},
+		{ // 5. optimize join on
 			sql: `SELECT id1 FROM src1 INNER JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -2937,7 +3060,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 6. optimize outter join on
+		},
+		{ // 6. optimize outter join on
 			sql: `SELECT id1 FROM src1 FULL JOIN src2 on src1.id1 = src2.id2 and src1.temp > 20 and src2.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3037,11 +3161,13 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 7 window error for table
+		},
+		{ // 7 window error for table
 			sql: `SELECT value FROM tableInPlanner WHERE name = "v1" GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p:   nil,
 			err: "cannot run window for TABLE sources",
-		}, { // 8 join table without window
+		},
+		{ // 8 join table without window
 			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and hum < 60 WHERE src1.id1 > 111`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3139,7 +3265,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 9 join table with window
+		},
+		{ // 9 join table with window
 			sql: `SELECT id1 FROM src1 INNER JOIN tableInPlanner on src1.id1 = tableInPlanner.id and src1.temp > 20 and tableInPlanner.hum < 60 WHERE src1.id1 > 111 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3245,7 +3372,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 10 meta
+		},
+		{ // 10 meta
 			sql: `SELECT temp, meta(id) AS eid,meta(Humidity->Device) AS hdevice FROM src1 WHERE meta(device)="demo2"`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3317,7 +3445,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 11 join with same name field and aliased
+		},
+		{ // 11 join with same name field and aliased
 			sql: `SELECT src2.hum AS hum1, tableInPlanner.hum AS hum2 FROM src2 INNER JOIN tableInPlanner on id2 = id WHERE hum1 > hum2`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3429,7 +3558,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 12
+		},
+		{ // 12
 			sql: `SELECT name->first, name->last FROM src1`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3469,7 +3599,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				isAggregate: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 13
+		},
+		{ // 13
 			sql: `SELECT * EXCEPT(id1, name), meta(device) FROM src1`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3511,7 +3642,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: true,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 14
+		},
+		{ // 14
 			sql: `SELECT * REPLACE(temp * 2 AS id1, myarray * 2 AS name), meta(device) FROM src1`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3576,7 +3708,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: true,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 15
+		},
+		{ // 15
 			sql: `SELECT collect( * EXCEPT(id1, name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3624,7 +3757,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 16
+		},
+		{ // 16
 			sql: `SELECT collect( * REPLACE(temp * 2 AS id1, myarray * 2 AS name)) FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3695,7 +3829,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 17
+		},
+		{ // 17
 			sql: `SELECT id1 FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* EXCEPT(id1, name)) > 0`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -3758,7 +3893,8 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 				allWildcard: false,
 				sendMeta:    false,
 			}.Init(),
-		}, { // 18
+		},
+		{ // 18
 			sql: `SELECT temp FROM src1 GROUP BY TUMBLINGWINDOW(ss, 10) HAVING count(* REPLACE(temp * 2 AS id1, myarray * 2 AS name)) > 0`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
@@ -4418,5 +4554,114 @@ func TestTransformSourceNode(t *testing.T) {
 				t.Errorf("unexpected result: got %v, want %v", sourceNode, tc.node)
 			}
 		})
+	}
+}
+
+func TestGetLogicalPlanForExplain(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 (
+					id1 BIGINT,
+					temp BIGINT,
+					name string,
+					myarray array(string)
+				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+		"src2": `CREATE STREAM src2 (
+					id2 BIGINT,
+					hum BIGINT
+				) WITH (DATASOURCE="src2", FORMAT="json", KEY="ts", TIMESTAMP_FORMAT="YYYY-MM-dd HH:mm:ss");`,
+		"tableInPlanner": `CREATE TABLE tableInPlanner (
+					id BIGINT,
+					name STRING,
+					value STRING,
+					hum BIGINT
+				) WITH (TYPE="file");`,
+	}
+	types := map[string]ast.StreamType{
+		"src1":           ast.TypeStream,
+		"src2":           ast.TypeStream,
+		"tableInPlanner": ast.TypeTable,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+		err = kv.Set(name, string(s))
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
+	}
+	streams := make(map[string]*ast.StreamStmt)
+	for n := range streamSqls {
+		streamStmt, err := xsql.GetDataSource(kv, n)
+		if err != nil {
+			t.Errorf("fail to get stream %s, please check if stream is created", n)
+			return
+		}
+		streams[n] = streamStmt
+	}
+
+	ref := &ast.AliasRef{
+		Expression: &ast.Call{
+			Name:     "row_number",
+			FuncType: ast.FuncTypeWindow,
+		},
+	}
+	ref.SetRefSource([]string{})
+
+	tests := []struct {
+		rule *api.Rule
+		res  string
+		err  string
+	}{
+		{
+			rule: &api.Rule{
+				Triggered: false,
+				Id:        "test",
+				Sql:       "select name, row_number() as index from src1",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: defaultOption,
+			},
+			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ $$alias.index, src1.name ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:index, expr:$$alias.index} ]\",\"id\":1,\"children\":[2]}\n\n         {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: src1, StreamFields:[ name ]\",\"id\":2,\"children\":null}\n\n",
+		},
+		{
+			rule: &api.Rule{
+				Triggered: false,
+				Id:        "test",
+				Sql:       "select name, row_number() from src1",
+				Actions: []map[string]interface{}{
+					{
+						"log": map[string]interface{}{},
+					},
+				},
+				Options: defaultOption,
+			},
+			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ src1.name, Call:{ name:row_number } ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:row_number, expr:Call:{ name:row_number }} ]\",\"id\":1,\"children\":[2]}\n\n         {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: src1, StreamFields:[ name ]\",\"id\":2,\"children\":null}\n\n",
+		},
+	}
+	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+
+	for i, tt := range tests {
+		explain, err := GetExplainInfoFromLogicalPlan(tt.rule)
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+		if !reflect.DeepEqual(explain, tt.res) {
+			t.Errorf("case %d: expect validate %v but got %v", i, tt.res, explain)
+		}
 	}
 }

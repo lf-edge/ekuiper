@@ -1,12 +1,13 @@
 ## Redis Source Connector
 
-<span style="background:green;color:white">lookup table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">lookup table source</span>
 
 eKuiper provides built-in support for looking up data in Redis. The Redis Source Connector allows eKuiper to ingest data from a Redis instance, enabling real-time stream processing based on Redis data. With its in-memory data structure store capabilities, Redis is a vital tool in many application data architectures. Integrating it with eKuiper stream processing expands the realm of possibilities for real-time analytics and decision-making.
 
 ::: tip
 
-Currently, the Redis source can only be used as a [lookup table](../../tables/lookup.md).
+Currently, the Redis source can only be used as a [lookup table](../../tables/lookup.md),
+while the [RedisSub source](./redisSub.md) can be used as both a streaming and scanning table data source,
 
 :::
 

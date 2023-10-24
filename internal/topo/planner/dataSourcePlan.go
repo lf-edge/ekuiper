@@ -52,7 +52,7 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 	return &p
 }
 
-func (p *DataSourcePlan) BuildExplainInfo(id int64) {
+func (p *DataSourcePlan) BuildExplainInfo() {
 	info := ""
 	if p.name != "" {
 		info += "StreamName: " + string(p.name)
@@ -87,7 +87,6 @@ func (p *DataSourcePlan) BuildExplainInfo(id int64) {
 		}
 		info += " ]"
 	}
-	p.baseLogicalPlan.ExplainInfo.ID = id
 	p.baseLogicalPlan.ExplainInfo.Info = info
 }
 
@@ -163,9 +162,7 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 			if len(f.Except) == 0 && len(f.Replace) == 0 {
 				p.isWildCard = true
 			} else {
-				for _, except := range f.Except {
-					p.pruneFields = append(p.pruneFields, except)
-				}
+				p.pruneFields = append(p.pruneFields, f.Except...)
 				for _, replace := range f.Replace {
 					p.pruneFields = append(p.pruneFields, replace.AName)
 				}

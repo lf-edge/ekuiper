@@ -1,7 +1,7 @@
 # MQTT 数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 MQTT（Message Queuing Telemetry Transport）是一种轻量级的通信协议，用于在物联网设备之间进行可靠的消息传递。eKuiper 内置 MQTT 连接器，方便订阅来自 MQTT 代理的消息并输入 eKuiper 处理管道，实现对指定 MQTT 主题的实时数据处理。
 

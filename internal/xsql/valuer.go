@@ -1188,59 +1188,26 @@ func invalidOpError(lhs interface{}, op ast.Token, rhs interface{}) error {
 
 func convertNum(para interface{}) interface{} {
 	if isInt(para) {
-		para = toInt64(para)
+		// Already check type of para so that there will be no error, just ignore error
+		para, _ = cast.ToInt64(para, cast.CONVERT_SAMEKIND)
 	} else if isFloat(para) {
-		para = toFloat64(para)
+		para, _ = cast.ToFloat64(para, cast.CONVERT_SAMEKIND)
 	}
 	return para
 }
 
 func isInt(para interface{}) bool {
 	switch para.(type) {
-	case int:
-		return true
-	case int8:
-		return true
-	case int16:
-		return true
-	case int32:
-		return true
-	case int64:
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return true
 	}
 	return false
-}
-
-func toInt64(para interface{}) int64 {
-	if v, ok := para.(int); ok {
-		return int64(v)
-	} else if v, ok := para.(int8); ok {
-		return int64(v)
-	} else if v, ok := para.(int16); ok {
-		return int64(v)
-	} else if v, ok := para.(int32); ok {
-		return int64(v)
-	} else if v, ok := para.(int64); ok {
-		return v
-	}
-	return 0
 }
 
 func isFloat(para interface{}) bool {
 	switch para.(type) {
-	case float32:
-		return true
-	case float64:
+	case float32, float64:
 		return true
 	}
 	return false
-}
-
-func toFloat64(para interface{}) float64 {
-	if v, ok := para.(float32); ok {
-		return float64(v)
-	} else if v, ok := para.(float64); ok {
-		return v
-	}
-	return 0
 }

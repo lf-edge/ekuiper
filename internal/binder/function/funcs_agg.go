@@ -345,15 +345,15 @@ func registerAggFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0, ok := args[0].([]interface{})
 			if !ok {
-				return fmt.Errorf("Invalid argument type found."), false
+				return fmt.Errorf("the first argument to the aggregate function should be []interface but found %[1]T(%[1]v)", args[0]), false
 			}
 			args1, ok := args[1].([]interface{})
 			if !ok {
-				return fmt.Errorf("Invalid argument type found."), false
+				return fmt.Errorf("the second argument to the aggregate function should be []interface but found %[1]T(%[1]v)", args[1]), false
 			}
 			arg1, ok := getFirstValidArg(args1).(bool)
 			if !ok {
-				return fmt.Errorf("Invalid argument type found."), false
+				return fmt.Errorf("the second parameter requires bool but found %[1]T(%[1]v)", getFirstValidArg(args1)), false
 			}
 			if len(arg0) == 0 {
 				return nil, true

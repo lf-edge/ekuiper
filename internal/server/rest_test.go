@@ -45,6 +45,7 @@ func init() {
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
+	sysMetrics = NewMetrics()
 }
 
 type RestTestSuite struct {
@@ -75,6 +76,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
@@ -291,6 +293,14 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/explain", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr := string(returnVal)
+	expect = "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ * ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: alert\",\"id\":1,\"children\":null}\n\n"
+	assert.Equal(suite.T(), expect, returnStr)
 
 	// get rule topo
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/topo", bytes.NewBufferString("any"))

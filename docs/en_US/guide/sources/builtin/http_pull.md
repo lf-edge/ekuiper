@@ -1,7 +1,7 @@
 # HTTP Pull Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 The HTTP Pull source connector allows eKuiper to retrieve data from external HTTP servers, providing a flexible way to pull data on demand or based on a schedule. This section focuses on how to configure and use the HTTP Pull as a source connector.
 
@@ -209,3 +209,11 @@ If you favor a more hands-on approach, the Command Line Interface (CLI) offers d
    ```
 
 For a step-by-step guide, check [Streams Management with CLI](../../../api/cli/streams.md).
+
+## Lookup Table
+
+httppull also supports being a lookup table. We can use the create table statement to create an httppull lookup table. It will be tied to the entity relational database and queried on demand:
+
+```text
+CREATE TABLE httppullTable() WITH (DATASOURCE="/url", CONF_KEY="default", TYPE="httppull", KIND="lookup")
+```

@@ -1,7 +1,7 @@
 # HTTP Pull 数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper 内置支持 HTTP 数据源。通过 HTTP Pull 数据源连接器，eKuiper 可从外部 HTTP 服务器检索数据，并支持基于指定间隔或由特定条件触发拉取数据。
 
@@ -200,3 +200,11 @@ REST API 为 eKuiper 提供了一种可编程的交互方式，适用于自动�
    ```
 
 详细操作步骤及命令解释，可参考 [通过 CLI 进行流管理](../../../api/cli/streams.md)。
+
+## 查询表
+
+httppull 同时也支持成为一个查询表。我们可以使用创建表语句来创建一个 httppull 查询表。它将与实体关系数据库绑定并按需查询:
+
+```text
+CREATE TABLE httppullTable() WITH (DATASOURCE="/url", CONF_KEY="default", TYPE="httppull", KIND="lookup")
+```

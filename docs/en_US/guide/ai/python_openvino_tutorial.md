@@ -20,7 +20,9 @@ Before starting the tutorial, please prepare the following products or environme
 
 For Docker users:
 
-Use the lfedge/ekuiper:<tag>-slim-python Docker image which includes eKuiper and Python environments. If this Docker image lacks the required Python packages, install them using the pip command mentioned earlier, either by extending the Dockerfile or running the command inside the Docker container.
+Use the <span v-pre>lfedge/ekuiper:{{tag}}-slim-python</span> Docker image which includes eKuiper and Python
+environments. If this Docker image lacks the required Python packages, install them using the pip command mentioned
+earlier, either by extending the Dockerfile or running the command inside the Docker container.
 
 ## Develop the Plugin
 

@@ -1,7 +1,7 @@
 # Neuron 数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper 的 Neuron 连接器可订阅本地 Neuron 实例的消息。需要注意的是，该源仅可用于本地的 Neuron，因为与 Neuron 的通信基于 nanomsg IPC 协议，无法通过网络进行。
 

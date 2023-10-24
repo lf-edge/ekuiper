@@ -1,7 +1,7 @@
 # EdgeX Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper's EdgeX connector seamlessly integrates with EdgeX instances, allowing for efficient data ingestion and output. While it can function both as a source and a [sink connector](../../sinks/builtin/edgex.md), this section focuses on its role as a source connector.
 

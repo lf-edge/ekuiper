@@ -1,7 +1,7 @@
 # File Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper provides built-in support for reading file content into the eKuiper processing pipeline. This is useful in scenarios where data is batch-processed or when files need real-time processing by eKuiper. **Note**: The file source supports monitoring either files or directories. If the monitored location is a directory, all files within that directory must be of the same type. When monitoring a directory, it will read files in alphabetical order by the file names.
 

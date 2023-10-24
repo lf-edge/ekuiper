@@ -21,6 +21,7 @@
 - [Http pull source](./builtin/http_pull.md)：从 http 服务器中拉取数据。
 - [Http push source](./builtin/http_push.md)：通过 http 推送数据到 eKuiper。
 - [Redis source](./builtin/redis.md): 从 Redis 中查询数据，用作查询表。
+- [RedisSub source](./builtin/redisSub.md): 从 Redis 频道中订阅数据。
 - [File source](./builtin/file.md)：从文件中读取数据，通常用作表格。
 - [Memory source](./builtin/memory.md)：从 eKuiper 内存主题读取数据以形成规则管道。
 

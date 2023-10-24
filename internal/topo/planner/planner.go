@@ -102,6 +102,60 @@ func createTopo(rule *api.Rule, lp LogicalPlan, sources []*node.SourceNode, sink
 	return tp, nil
 }
 
+func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
+	sql := rule.Sql
+
+	conf.Log.Infof("Init rule with options %+v", rule.Options)
+	stmt, err := xsql.GetStatementFromSql(sql)
+	if err != nil {
+		return "", err
+	}
+	// validation
+	streamsFromStmt := xsql.GetStreams(stmt)
+
+	if rule.Options.SendMetaToSink && (len(streamsFromStmt) > 1 || stmt.Dimensions != nil) {
+		return "", fmt.Errorf("invalid option sendMetaToSink, it can not be applied to window")
+	}
+	store, err := store2.GetKV("stream")
+	if err != nil {
+		return "", err
+	}
+	// Create logical plan and optimize. Logical plans are a linked list
+	lp, err := createLogicalPlan(stmt, rule.Options, store)
+	if err != nil {
+		return "", err
+	}
+	var setId func(p LogicalPlan, id int64)
+	setId = func(p LogicalPlan, id int64) {
+		p.SetID(id)
+		children := p.Children()
+		for i := 0; i < len(children); i++ {
+			id++
+			setId(children[i], id)
+		}
+	}
+	setId(lp, 0)
+	var getExplainInfo func(p LogicalPlan, level int) string
+	getExplainInfo = func(p LogicalPlan, level int) string {
+		tmp := ""
+		res := ""
+		for i := 0; i < level; i++ {
+			tmp += "   "
+		}
+		p.BuildExplainInfo()
+		// Build the explainInfo of the current layer
+		res += tmp + p.Explain() + "\n"
+		if len(p.Children()) != 0 {
+			for _, v := range p.Children() {
+				res += tmp + getExplainInfo(v, level+1)
+			}
+		}
+		return res
+	}
+	res := getExplainInfo(lp, 0)
+	return res, nil
+}
+
 func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []*node.SourceNode, streamsFromStmt []string, index int) (api.Emitter, int, error) {
 	var inputs []api.Emitter
 	newIndex := index

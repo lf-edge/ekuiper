@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
 // limitations under the License.
 
 //go:build windows
-// +build windows
 
 package logger
 
-func initSyslog() {
-	// Not supported in windows, do nothing.
+func InitSyslog(network, address, level, tag string) error {
+	Log.Warnf("Syslog is not supported on windows")
+	return nil
 }

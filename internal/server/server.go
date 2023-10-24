@@ -49,6 +49,7 @@ var (
 	logger                 = conf.Log
 	startTimeStamp         int64
 	version                = ""
+	sysMetrics             *Metrics
 	ruleProcessor          *processor.RuleProcessor
 	streamProcessor        *processor.StreamProcessor
 	rulesetProcessor       *processor.RulesetProcessor
@@ -132,6 +133,7 @@ func StartUp(Version string) {
 	streamProcessor = processor.NewStreamProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
 	ruleMigrationProcessor = NewRuleMigrationProcessor(ruleProcessor, streamProcessor)
+	sysMetrics = NewMetrics()
 
 	// register all extensions
 	for k, v := range components {
@@ -212,7 +214,9 @@ func StartUp(Version string) {
 	<-sigint
 	exit <- struct{}{}
 
-	if err = srvRest.Shutdown(context.TODO()); err != nil {
+	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	defer cancel()
+	if err = srvRest.Shutdown(ctx); err != nil {
 		logger.Errorf("rest server shutdown error: %v", err)
 	}
 	logger.Info("rest server successfully shutdown.")

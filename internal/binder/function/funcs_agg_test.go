@@ -560,21 +560,21 @@ func TestLastValue(t *testing.T) {
 				1,
 				true,
 			},
-			result: fmt.Errorf("Invalid argument type found."),
+			result: fmt.Errorf("the first argument to the aggregate function should be []interface but found int(1)"),
 		},
 		{
 			args: []interface{}{
 				[]interface{}{1},
 				true,
 			},
-			result: fmt.Errorf("Invalid argument type found."),
+			result: fmt.Errorf("the second argument to the aggregate function should be []interface but found bool(true)"),
 		},
 		{
 			args: []interface{}{
 				[]interface{}{1},
 				[]interface{}{1},
 			},
-			result: fmt.Errorf("Invalid argument type found."),
+			result: fmt.Errorf("the second parameter requires bool but found int(1)"),
 		},
 		{
 			args: []interface{}{

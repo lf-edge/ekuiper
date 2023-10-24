@@ -14,6 +14,18 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # syslog settings
+  syslog:
+    # true|false, if it's set to true, then the log will be print to syslog
+    enable: false
+    # The syslog protocol, tcp or udp; Leave empty if no remote syslog server is used
+    network: udp
+    # The syslog server address; Leave empty if no remote syslog server is used
+    address: localhost:514
+    # The syslog level, supports debug, info, warn, error
+    level: info
+    # The syslog tag; Leave empty if no tag is used
+    tag: kuiper
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -50,9 +62,28 @@ basic:
   maxAge: 72
 ```
 
-## system log
+## System log
 
-When the user sets the value of the environment variable named KuiperSyslogKey to true, the log will be printed to the syslog.
+When the user sets the value of the environment variable named KuiperSyslogKey to true or set syslog enable to true, the
+log will be printed to the syslog. Additional syslog settings are as follows:
+
+```yaml
+# syslog settings
+syslog:
+  # true|false, if it's set to true, then the log will be print to syslog
+  enable: false
+  # The syslog protocol, tcp or udp; Leave empty if no remote syslog server is used
+  network: udp
+  # The syslog server address; Leave empty if no remote syslog server is used
+  address: localhost:514
+  # The syslog level, supports debug, info, warn, error
+  level: info
+  # The syslog tag; Leave empty if no tag is used
+  tag: kuiper
+```
+
+All the above settings are optional. If the network and address are not set, the local syslog will be used. If the level
+is not set, the default value is info. If the tag is not set, there will be no tag used.
 
 ## Timezone
 
@@ -255,4 +286,3 @@ This section configures the portable plugin runtime.
 ## Ruleset Provision
 
 Support file based stream and rule provisioning on startup. Users can put a [ruleset](../api/restapi/ruleset.md#ruleset-format) file named `init.json` into `data` directory to initialize the ruleset. The ruleset will only be import on the first startup of eKuiper.
-
