@@ -46,6 +46,7 @@ type WindowOperator struct {
 	*defaultSinkNode
 	window      *WindowConfig
 	interval    int64
+	duration    int64
 	isEventTime bool
 	trigger     *EventTimeTrigger // For event time only
 
@@ -251,6 +252,10 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 	case ast.COUNT_WINDOW:
 		o.interval = o.window.Interval
 	}
+	o.duration = o.interval
+	if o.window.Type == ast.SESSION_WINDOW {
+		o.duration = o.window.Length
+	}
 
 	if firstTicker != nil {
 		firstC = firstTicker.C
@@ -404,30 +409,23 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				o.statManager.IncTotalExceptions(e.Error())
 			}
 		case now := <-firstC:
-			log.Debugf("First tick at %v(%d), defined at %d", now, now.UnixMilli(), firstTime)
-			switch o.window.Type {
-			case ast.TUMBLING_WINDOW:
-				o.ticker = conf.GetTicker(o.window.Length)
-			case ast.HOPPING_WINDOW:
-				o.ticker = conf.GetTicker(o.window.Interval)
-			case ast.SESSION_WINDOW:
-				o.ticker = conf.GetTicker(o.window.Length)
-			}
-			firstTicker = nil
+			log.Infof("First tick at %v(%d), defined at %d", now, now.UnixMilli(), firstTime)
+			firstTicker.Stop()
+			o.setupTicker()
 			c = o.ticker.C
 			inputs = o.tick(ctx, inputs, firstTime, log)
-			if o.window.Type == ast.SESSION_WINDOW {
-				nextTime = firstTime + o.window.Length
-			} else {
-				nextTime = firstTime + o.interval
-			}
+			nextTime = firstTime
 		case now := <-c:
-			log.Debugf("Successive tick at %v(%d)", now, now.UnixMilli())
-			inputs = o.tick(ctx, inputs, nextTime, log)
-			if o.window.Type == ast.SESSION_WINDOW {
-				nextTime += o.window.Length
+			nextTime += o.duration
+			log.Debugf("Successive tick at %v(%d), defined at %d", now, now.UnixMilli(), nextTime)
+			// If the deviation is less than 50ms, then process it. Otherwise, time may change and we'll start a new timer
+			if now.UnixMilli()-nextTime < 50 {
+				inputs = o.tick(ctx, inputs, nextTime, log)
 			} else {
-				nextTime += o.interval
+				log.Infof("Skip the tick at %v(%d) since it's too late", now, now.UnixMilli())
+				o.ticker.Stop()
+				firstTime, firstTicker = getFirstTimer(ctx, o.window.RawInterval, o.window.TimeUnit)
+				firstC = firstTicker.C
 			}
 		case now := <-timeout:
 			if len(inputs) > 0 {
@@ -450,6 +448,17 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			}
 			return
 		}
+	}
+}
+
+func (o *WindowOperator) setupTicker() {
+	switch o.window.Type {
+	case ast.TUMBLING_WINDOW:
+		o.ticker = conf.GetTicker(o.window.Length)
+	case ast.HOPPING_WINDOW:
+		o.ticker = conf.GetTicker(o.window.Interval)
+	case ast.SESSION_WINDOW:
+		o.ticker = conf.GetTicker(o.window.Length)
 	}
 }
 
