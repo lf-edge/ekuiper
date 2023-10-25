@@ -15,18 +15,14 @@
 package kafka
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	kafkago "github.com/segmentio/kafka-go"
-	"github.com/segmentio/kafka-go/sasl"
-	"github.com/segmentio/kafka-go/sasl/plain"
-	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -35,33 +31,16 @@ import (
 type kafkaSink struct {
 	writer         *kafkago.Writer
 	c              *sinkConf
-	tc             *tlsConf
 	kc             *kafkaConf
+	tc             *kafka.TLSConf
+	sc             kafka.SaslConf
 	headersMap     map[string]string
 	headerTemplate string
 }
 
-const (
-	SASL_NONE  = "none"
-	SASL_PLAIN = "plain"
-	SASL_SCRAM = "scram"
-)
-
 type sinkConf struct {
-	Brokers      string `json:"brokers"`
-	Topic        string `json:"topic"`
-	SaslAuthType string `json:"saslAuthType"`
-	SaslUserName string `json:"saslUserName"`
-	SaslPassword string `json:"saslPassword"`
-}
-
-type tlsConf struct {
-	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
-	CertificationPath    string `json:"certificationPath"`
-	PrivateKeyPath       string `json:"privateKeyPath"`
-	RootCaPath           string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"tlsMinVersion"`
-	RenegotiationSupport string `json:"renegotiationSupport"`
+	Brokers string `json:"brokers"`
+	Topic   string `json:"topic"`
 }
 
 type kafkaConf struct {
@@ -73,9 +52,8 @@ type kafkaConf struct {
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	c := &sinkConf{
-		Brokers:      "localhost:9092",
-		Topic:        "",
-		SaslAuthType: SASL_NONE,
+		Brokers: "localhost:9092",
+		Topic:   "",
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -86,13 +64,19 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if c.Topic == "" {
 		return fmt.Errorf("topic can not be empty")
 	}
-	if !(c.SaslAuthType == SASL_NONE || c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) {
-		return fmt.Errorf("saslAuthType incorrect")
+	sc, err := kafka.GetSaslConf(props)
+	if err != nil {
+		return err
 	}
-	if (c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) && (c.SaslUserName == "" || c.SaslPassword == "") {
-		return fmt.Errorf("username and password can not be empty")
+	if err := sc.Validate(); err != nil {
+		return err
 	}
-	tc := &tlsConf{}
+	m.sc = sc
+	tc, err := kafka.GenTLSConf(props)
+	if err != nil {
+		return err
+	}
+
 	if err := cast.MapToStruct(props, tc); err != nil {
 		return err
 	}
@@ -109,67 +93,18 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if err := m.setHeaders(); err != nil {
 		return fmt.Errorf("set kafka header failed, err:%v", err)
 	}
-	m.tlsConfigLog()
+	m.tc.TlsConfigLog("sink")
 	return nil
-}
-
-func (m *kafkaSink) tlsConfigLog() {
-	if m.tc == nil {
-		conf.Log.Infof("kafka sink tls not configured")
-		return
-	}
-	if m.tc.InsecureSkipVerify {
-		conf.Log.Infof("kafka sink tls enable insecure skip verify")
-		return
-	}
-	b := bytes.NewBufferString("kafka sink tls enabled")
-	if len(m.tc.CertificationPath) > 0 {
-		b.WriteString(", crt configured")
-	} else {
-		b.WriteString(", crt not configured")
-	}
-	if len(m.tc.PrivateKeyPath) > 0 {
-		b.WriteString(", key configured")
-	} else {
-		b.WriteString(", key not configured")
-	}
-	if len(m.tc.RootCaPath) > 0 {
-		b.WriteString(", root ca configured")
-	} else {
-		b.WriteString(", root ca not configured")
-	}
 }
 
 func (m *kafkaSink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debug("Opening kafka sink")
-
-	var err error
-	var mechanism sasl.Mechanism
-
-	// sasl authentication type
-	switch m.c.SaslAuthType {
-	case SASL_PLAIN:
-		mechanism = plain.Mechanism{
-			Username: m.c.SaslUserName,
-			Password: m.c.SaslPassword,
-		}
-	case SASL_SCRAM:
-		mechanism, err = scram.Mechanism(scram.SHA512, m.c.SaslUserName, m.c.SaslPassword)
-		if err != nil {
-			return err
-		}
-	default:
-		mechanism = nil
+	mechanism, err := m.sc.GetMechanism()
+	if err != nil {
+		return err
 	}
 	brokers := strings.Split(m.c.Brokers, ",")
-	tlsConfig, err := cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
-		SkipCertVerify:       m.tc.InsecureSkipVerify,
-		CertFile:             m.tc.CertificationPath,
-		KeyFile:              m.tc.PrivateKeyPath,
-		CaFile:               m.tc.RootCaPath,
-		TLSMinVersion:        m.tc.TLSMinVersion,
-		RenegotiationSupport: m.tc.RenegotiationSupport,
-	})
+	tlsConfig, err := m.tc.GetTlsConfig()
 	if err != nil {
 		conf.Log.Errorf("setting kafka tls config failed,err: %v", err)
 		return err
