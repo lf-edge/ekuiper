@@ -732,7 +732,7 @@ func TestConfigure(t *testing.T) {
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
-			err: errors.New("fail to authorize by oAuth: Cannot parse access token response to json: http return code error: 400"),
+			err: errors.New("fail to authorize by oAuth: Cannot parse access token response to json: response code error: 400"),
 		},
 		{
 			name: "oAuth refresh error",
@@ -756,7 +756,7 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("fail to authorize by oAuth: Cannot parse refresh token response to json: http return code error: 400"),
+			err: errors.New("fail to authorize by oAuth: Cannot parse refresh token response to json: response code error: 400"),
 		},
 		{
 			name: "oAuth wrong access expire template",
@@ -1078,7 +1078,7 @@ func TestPullErrorTest(t *testing.T) {
 			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10},
 			exp: []api.SourceTuple{
 				&xsql.ErrorSourceTuple{
-					Error: errors.New("parse response error http return code error: 404"),
+					Error: errors.New("parse response error response code error: 404"),
 				},
 			},
 		}, {
