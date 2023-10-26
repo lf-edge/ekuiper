@@ -164,7 +164,7 @@
       }
     },
     {
-      "name": "batchSize",
+      "name": "kafkaBatchSize",
       "default": true,
       "optional": true,
       "control": "text",
