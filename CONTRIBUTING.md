@@ -1,3 +1,19 @@
+# Contributing to eKuiper
+
+Thank you for considering contributing to the eKuiper project. Your involvement is essential in making this project successful.
+
+## Table of Contents
+- [How to Contribute](#how-to-contribute)
+  - [Reporting Bugs](#reporting-bugs)
+  - [Code and Documentation Contributions](#code-and-documentation-contributions)
+- [Community Promotion](#community-promotion)
+- [Roles and Responsibilities](#roles-and-responsibilities)
+  - [Contributor](#contributor)
+  - [Committer](#committer)
+  - [Maintainer](#maintainer)
+- [Nomination Process](#nomination-process)
+
+
 # How to contribute
 
 We're really glad you're reading this, because we need volunteer developers to help this project come to fruition.
