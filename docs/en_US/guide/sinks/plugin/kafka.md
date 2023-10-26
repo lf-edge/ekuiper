@@ -54,21 +54,21 @@ Restart the eKuiper server to activate the plugin.
 
 ## Properties
 
-| Property name | Optional | Description                                       |
-|---------------|----------|---------------------------------------------------|
-| brokers       | false    | The broker address list ,split with ","           |
-| topic         | false    | The topic of the Kafka                            |
-| saslAuthType  | false    | The Kafka sasl authType, support none,plain,scram |
-| saslUserName  | true     | The sasl user name                                |
-| saslPassword  | true     | The sasl password                                 |
+| Property name      | Optional | Description                                       |
+|--------------------|----------|---------------------------------------------------|
+| brokers            | false    | The broker address list ,split with ","           |
+| topic              | false    | The topic of the Kafka                            |
+| saslAuthType       | false    | The Kafka sasl authType, support none,plain,scram |
+| saslUserName       | true     | The sasl user name                                |
+| saslPassword       | true     | The sasl password                                 |
 | insecureSkipVerify | true | whether to ignore SSL verification |
-| certificationPath   | true | Kafka client ssl verification crt file path |
-| privateKeyPath      | true | Key file path for Kafka client SSL verification |
-| rootCaPath          | true | Kafka client ssl verified ca certificate file path |
+| certificationPath  | true | Kafka client ssl verification crt file path |
+| privateKeyPath     | true | Key file path for Kafka client SSL verification |
+| rootCaPath         | true | Kafka client ssl verified ca certificate file path |
 | maxAttempts        | true | The number of retries the Kafka client sends messages to the server, the default is 1 |
-| batchSize          | true | The number of messages in a single batch sent by the Kafka client to the server, the default is 1 |
+| kafkaBatchSize     | true | The number of messages in a single batch sent by the Kafka client to the server, the default is 1 |
 | key                | true | Key information carried by the Kafka client in messages sent to the server |
-| headers | true     | The header information carried by the Kafka client in the message sent to the server |
+| headers            | true     | The header information carried by the Kafka client in the message sent to the server |
 
 ### Setting Kafka Key and Headers
 

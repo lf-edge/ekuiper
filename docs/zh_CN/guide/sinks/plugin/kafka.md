@@ -54,19 +54,19 @@ $(PLUGINS_CUSTOM):
 
 ## 属性
 
-| 属性名称              | 是否可选 | 说明                             |
-|-------------------|------|--------------------------------|
-| brokers           | 否    | broker地址列表 ,用 "," 分割           |
-| topic             | 否    | kafka 主题                       |
-| saslAuthType      | 否    | sasl 认证类型 , 支持none，plain，scram |
-| saslUserName      | 是    | sasl 用户名                       |
-| saslPassword      | 是    | sasl 密码                        |
+| 属性名称               | 是否可选 | 说明                             |
+|--------------------|------|--------------------------------|
+| brokers            | 否    | broker地址列表 ,用 "," 分割           |
+| topic              | 否    | kafka 主题                       |
+| saslAuthType       | 否    | sasl 认证类型 , 支持none，plain，scram |
+| saslUserName       | 是    | sasl 用户名                       |
+| saslPassword       | 是    | sasl 密码                        |
 | insecureSkipVerify | 是   | 是否忽略 SSL 验证                  |
 | certificationPath  | 是   | Kafka 客户端 ssl 验证的 crt 文件路径       |
 | privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径       |
 | rootCaPath         | 是   | Kafka 客户端 ssl 验证的 ca 证书文件路径    |
 | maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1  |
-| batchSize          | 是   | Kafka 客户端向 server 发送单批消息的消息条数，默认为 1 |
+| kafkaBatchSize     | 是   | Kafka 客户端向 server 发送单批消息的消息条数，默认为 1 |
 | key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息 |
 | headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息 |
 
