@@ -11,8 +11,7 @@ Thank you for considering contributing to the eKuiper project. Your involvement 
   - [Contributor](#contributor)
   - [Committer](#committer)
   - [Maintainer](#maintainer)
-- [Nomination Process](#nomination-process)
-
+- [Nomination Process](#nomination-process)  
 
 # How to contribute
 
