@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/gdexlab/go-render/render"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -1800,7 +1801,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			}.Init(),
 		},
 		{ // 16 analytic function over partition when plan
-			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp WHEN temp > 12), id1 FROM src1 WHERE lag(temp) > temp`,
+			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp WHEN temp > 12), CASE id1 WHEN 1 THEN lag(id1) END FROM src1 WHERE lag(temp) > temp`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -1832,8 +1833,8 @@ func Test_createLogicalPlan(t *testing.T) {
 										funcs: []*ast.Call{
 											{
 												Name:        "lag",
-												FuncId:      2,
-												CachedField: "$$a_lag_2",
+												FuncId:      3,
+												CachedField: "$$a_lag_3",
 												Args: []ast.Expr{&ast.FieldRef{
 													Name:       "temp",
 													StreamName: "src1",
@@ -1847,6 +1848,9 @@ func Test_createLogicalPlan(t *testing.T) {
 											{
 												Name: "latest", FuncId: 1, CachedField: "$$a_latest_1", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.Call{Name: "lag", FuncId: 0, Cached: true, CachedField: "$$a_lag_0", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "name", StreamName: "src1"}}}}, Partition: &ast.PartitionExpr{Exprs: []ast.Expr{&ast.FieldRef{Name: "temp", StreamName: "src1"}}}, WhenExpr: &ast.BinaryExpr{LHS: &ast.FieldRef{Name: "temp", StreamName: "src1"}, OP: ast.GT, RHS: &ast.IntegerLiteral{Val: 12}},
 											},
+											{
+												Name: "lag", FuncId: 2, CachedField: "$$a_lag_2", FuncType: ast.FuncTypeScalar, Args: []ast.Expr{&ast.FieldRef{Name: "id1", StreamName: "src1"}},
+											},
 										},
 									}.Init(),
 								},
@@ -1854,12 +1858,12 @@ func Test_createLogicalPlan(t *testing.T) {
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{
 									Name:   "lag",
-									FuncId: 2,
+									FuncId: 3,
 									Args: []ast.Expr{&ast.FieldRef{
 										Name:       "temp",
 										StreamName: "src1",
 									}},
-									CachedField: "$$a_lag_2",
+									CachedField: "$$a_lag_3",
 									Cached:      true,
 								},
 								OP: ast.GT,
@@ -1892,8 +1896,26 @@ func Test_createLogicalPlan(t *testing.T) {
 						},
 						Name: "latest",
 					}, {
-						Expr: &ast.FieldRef{Name: "id1", StreamName: "src1"},
-						Name: "id1",
+						Expr: &ast.CaseExpr{
+							WhenClauses: []*ast.WhenClause{
+								{
+									Expr: &ast.IntegerLiteral{Val: 1},
+									Result: &ast.Call{
+										Name:        "lag",
+										FuncId:      2,
+										FuncType:    ast.FuncTypeScalar,
+										Args:        []ast.Expr{&ast.FieldRef{Name: "id1", StreamName: "src1"}},
+										CachedField: "$$a_lag_2",
+										Cached:      true,
+									},
+								},
+							},
+							Value: &ast.FieldRef{
+								StreamName: "src1",
+								Name:       "id1",
+							},
+						},
+						Name: "kuiper_field_0",
 					},
 				},
 				isAggregate: false,
@@ -2606,8 +2628,8 @@ func Test_createLogicalPlan(t *testing.T) {
 		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
-		} else if !reflect.DeepEqual(tt.p, p) {
-			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
+		} else {
+			assert.Equal(t, tt.p, p, "plan mismatch")
 		}
 	}
 }
