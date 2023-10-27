@@ -1,4 +1,4 @@
-# Kafka 源
+# Kafka Source
 
 The source will query the Kafka periodically to get data stream.
 
