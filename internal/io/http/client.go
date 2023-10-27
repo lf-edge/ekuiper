@@ -338,13 +338,18 @@ func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data interface{}) (map
 	return headers, nil
 }
 
+const (
+	BODY_ERR = "response body error"
+	CODE_ERR = "response code error"
+)
+
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
 func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, returnBody bool, omd5 *string) ([]map[string]interface{}, []byte, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		c, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, []byte("fail to read body"),
-				fmt.Errorf("http return code error: %d", resp.StatusCode)
+				fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
 		}
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
@@ -352,13 +357,13 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 				conf.Log.Errorf("fail to close the response body: %v", err)
 			}
 		}(resp.Body)
-		return nil, c, fmt.Errorf("http return code error: %d", resp.StatusCode)
+		return nil, c, fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
 	} else if !returnBody { // For rest sink who only need to know if the request is successful
 		return nil, nil, nil
 	}
 	c, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, []byte("fail to read body"), err
+		return nil, nil, fmt.Errorf("%s: %v", BODY_ERR, err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -379,22 +384,28 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	case "code":
 		if returnBody {
 			m, e := decode(ctx, c)
+			if e != nil {
+				return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
+			}
 			return m, c, e
 		}
 		return nil, nil, nil
 	case "body":
 		payloads, err := decode(ctx, c)
 		if err != nil {
+			if err != nil {
+				return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
+			}
 			return nil, c, err
 		}
 		for _, payload := range payloads {
 			ro := &bodyResp{}
 			err = cast.MapToStruct(payload, ro)
 			if err != nil {
-				return nil, c, fmt.Errorf("invalid body response: %v", err)
+				return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
 			}
 			if ro.Code < 200 || ro.Code > 299 {
-				return nil, c, fmt.Errorf("http status code is not 200: %v", ro.Code)
+				return nil, c, fmt.Errorf("%s: %d", CODE_ERR, ro.Code)
 			}
 		}
 		if returnBody {
@@ -402,7 +413,7 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		}
 		return nil, nil, nil
 	default:
-		return nil, c, fmt.Errorf("unsupported response type: %s", cc.config.ResponseType)
+		return nil, c, fmt.Errorf("%s: unsupported response type %s", BODY_ERR, cc.config.ResponseType)
 	}
 }
 

@@ -22,7 +22,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -371,10 +372,17 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 
 func TestRestSinkErrorLog(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		result := `{"data":[],"extra":"Success","returncode":1,"returnmessage":""}`
-		time.Sleep(30 * time.Millisecond)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(result))
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Printf("Error reading body: %v", err)
+			http.Error(w, "can't read body", http.StatusBadRequest)
+			return
+		}
+		if strings.Contains(string(body), "success") {
+			fmt.Fprint(w, "result")
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
 	defer ts.Close()
 
@@ -419,11 +427,34 @@ func TestRestSinkErrorLog(t *testing.T) {
 			{"ab": "hello1"},
 			{"ab": "hello2"},
 		})
+		assert.Error(t, err)
 		fmt.Println(err.Error())
 		if strings.HasPrefix(err.Error(), errorx.IOErr) && !strings.Contains(err.Error(), "404") {
 			t.Errorf("should start with io error, but got %s", err.Error())
 		}
 
+		s.Close(context.Background())
+	})
+
+	t.Run("Test decode error", func(t *testing.T) {
+		s := &RestSink{}
+		config := map[string]interface{}{
+			"url":       ts.URL,
+			"timeout":   float64(10),
+			"method":    "post",
+			"debugResp": true,
+		}
+		s.Configure(config)
+		s.Open(context.Background())
+
+		tf, _ := transform.GenTransform("", "delimited", "", "", "", []string{})
+		vCtx := context.WithValue(context.Background(), context.TransKey, tf)
+		reqBody := map[string]interface{}{
+			"ab": "success",
+		}
+		err := s.Collect(vCtx, reqBody)
+		// for parse error, omit it.
+		assert.NoError(t, err)
 		s.Close(context.Background())
 	})
 }
