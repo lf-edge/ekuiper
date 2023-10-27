@@ -74,10 +74,12 @@ func getSourceConf(props map[string]interface{}) (*kafkaSourceConf, error) {
 
 func (s *KafkaSource) Configure(topic string, props map[string]interface{}) error {
 	if len(topic) < 1 {
+		conf.Log.Error("DataSource which indicates the topic should be defined")
 		return fmt.Errorf("DataSource which indicates the topic should be defined")
 	}
 	kConf, err := getSourceConf(props)
 	if err != nil {
+		conf.Log.Errorf("kafka source config error: %v", err)
 		return err
 	}
 	if err := kConf.validate(); err != nil {
@@ -85,25 +87,31 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 	}
 	tlsConf, err := kafka.GenTLSConf(props)
 	if err != nil {
+		conf.Log.Errorf("kafka tls conf error: %v", err)
 		return err
 	}
 	tlsConf.TlsConfigLog("source")
 	tlsConfig, err := tlsConf.GetTlsConfig()
 	if err != nil {
+		conf.Log.Errorf("kafka tls config error: %v", err)
 		return err
 	}
 	saslConf, err := kafka.GetSaslConf(props)
 	if err != nil {
+		conf.Log.Errorf("kafka sasl error: %v", err)
 		return err
 	}
 	if err := saslConf.Validate(); err != nil {
+		conf.Log.Errorf("kafka validate sasl error: %v", err)
 		return err
 	}
 	mechanism, err := saslConf.GetMechanism()
 	if err != nil {
+		conf.Log.Errorf("kafka sasl mechanism error: %v", err)
 		return err
 	}
 	readerConfig := kConf.GetReaderConfig(topic)
+	conf.Log.Infof("topic: %s, brokers: %v", readerConfig.Topic, readerConfig.Brokers)
 	readerConfig.Dialer = &kafkago.Dialer{
 		Timeout:       10 * time.Second,
 		DualStack:     true,
@@ -113,6 +121,7 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 	reader := kafkago.NewReader(readerConfig)
 	if kConf.Offset != 0 {
 		if err := reader.SetOffset(kConf.Offset); err != nil {
+			conf.Log.Errorf("kafka offset error: %v", err)
 			return fmt.Errorf("set kafka offset failed, err:%v", err)
 		}
 	}

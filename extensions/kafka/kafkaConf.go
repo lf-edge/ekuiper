@@ -82,6 +82,9 @@ func (c *TLSConf) TlsConfigLog(typ string) {
 }
 
 func (c *TLSConf) GetTlsConfig() (*tls.Config, error) {
+	if len(c.CertificationPath) == 0 && len(c.PrivateKeyPath) == 0 && len(c.RootCaPath) == 0 {
+		return nil, nil
+	}
 	return cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
 		SkipCertVerify:       c.InsecureSkipVerify,
 		CertFile:             c.CertificationPath,
@@ -99,8 +102,10 @@ type SaslConf struct {
 }
 
 func GetSaslConf(props map[string]interface{}) (SaslConf, error) {
-	sc := SaslConf{}
-	if err := cast.MapToStruct(props, sc); err != nil {
+	sc := SaslConf{
+		SaslAuthType: SASL_NONE,
+	}
+	if err := cast.MapToStruct(props, &sc); err != nil {
 		return sc, err
 	}
 	return sc, nil
