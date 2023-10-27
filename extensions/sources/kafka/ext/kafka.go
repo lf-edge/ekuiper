@@ -15,7 +15,6 @@
 package kafka
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -145,14 +144,16 @@ func (s *KafkaSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			errCh <- err
 			return
 		}
-		data := make(map[string]interface{})
-		if err := json.Unmarshal(msg.Value, &data); err != nil {
+		dataList, err := ctx.DecodeIntoList(msg.Value)
+		if err != nil {
 			logger.Errorf("unmarshal kafka message value err: %v", err)
 			errCh <- err
 			return
 		}
-		rcvTime := conf.GetNow()
-		consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
+		for _, data := range dataList {
+			rcvTime := conf.GetNow()
+			consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
+		}
 	}
 }
 
