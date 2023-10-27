@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -66,15 +67,19 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
 		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
-		if err != nil {
-			return fmt.Errorf(`%s: http error. | method=%s path="%s" status=%d request_body="%s" response_body="%s"`,
-				err,
-				ms.config.Method,
-				ms.config.Url,
-				resp.StatusCode,
-				decodedData,
-				b,
-			)
+		// do not record response body error as it is not an error in the sink action.
+		if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
+			if strings.HasPrefix(err.Error(), BODY_ERR) {
+				logger.Warnf("rest sink response body error: %v", err)
+			} else {
+				return fmt.Errorf(`parse response error: %s. | method=%s path="%s" status=%d response_body="%s"`,
+					err,
+					ms.config.Method,
+					ms.config.Url,
+					resp.StatusCode,
+					b,
+				)
+			}
 		}
 		if ms.config.DebugResp {
 			logger.Infof("Response raw content: %s\n", string(b))
