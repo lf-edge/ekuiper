@@ -1,0 +1,6 @@
+default:
+  brokers: ""
+  groupID: ""
+  partition: 0
+  maxBytes: 1000000
+  offset: 0
