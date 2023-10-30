@@ -23,9 +23,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
-	"github.com/stretchr/testify/require"
 )
 
 const (
