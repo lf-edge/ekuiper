@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
