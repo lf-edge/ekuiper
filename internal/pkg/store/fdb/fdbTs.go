@@ -19,12 +19,13 @@ package fdb
 
 import (
 	"encoding/gob"
-	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 	"strings"
 
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/directory"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
+
+	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
 )
 
 type ts struct {

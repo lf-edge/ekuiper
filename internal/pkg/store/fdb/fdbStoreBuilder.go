@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build fdb || !core
+// +build fdb !core
+
 package fdb
 
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
+
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
