@@ -16,15 +16,16 @@ package websocket
 
 import (
 	"encoding/json"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mock/context"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"sync"
 	"testing"
 
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/mock/context"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 const (
