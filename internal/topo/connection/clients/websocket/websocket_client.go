@@ -48,7 +48,7 @@ func newWebsocketClientClientWrapper(config *WebSocketConnectionConfig) (clients
 	return cc, nil
 }
 
-func (wcw *websocketClientWrapper) getFinished() bool {
+func (wcw *websocketClientWrapper) isFinished() bool {
 	wcw.Lock()
 	defer wcw.Unlock()
 	return wcw.finished
@@ -66,7 +66,7 @@ func (wcw *websocketClientWrapper) getID(ctx api.StreamContext) string {
 
 func (wcw *websocketClientWrapper) process() {
 	for {
-		if wcw.getFinished() {
+		if wcw.isFinished() {
 			return
 		}
 		msgTyp, data, err := wcw.c.ReadMessage()
