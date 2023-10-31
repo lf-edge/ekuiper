@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,17 +65,43 @@ func (p *LookupPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 	if len(p.children) == 0 {
 		return a, p.self
 	}
-	rest, _ := p.baseLogicalPlan.PushDownPredicate(a)
+	unpushable, pushable := extractLookupCondition(a, p.joinExpr.Name)
+	rest, _ := p.baseLogicalPlan.PushDownPredicate(pushable)
+	restAll := combine(unpushable, rest)
 	// Swallow all filter conditions. If there are other filter plans, there may have multiple filters
-	if rest != nil {
+	if restAll != nil {
 		// Add a filter plan for children
 		f := FilterPlan{
-			condition: rest,
+			condition: restAll,
 		}.Init()
 		f.SetChildren([]LogicalPlan{p})
 		return nil, f
 	}
 	return nil, p.self
+}
+
+// Return the unpushable condition and pushable condition
+func extractLookupCondition(condition ast.Expr, tableName string) (unpushable ast.Expr, pushable ast.Expr) {
+	s, hasDefault := getRefSources(condition)
+	l := len(s)
+	if hasDefault {
+		l += 1
+	}
+	if l == 0 || (l == 1 && s[0] != ast.DefaultStream && s[0] != ast.StreamName(tableName)) {
+		pushable = condition
+		return
+	}
+
+	if be, ok := condition.(*ast.BinaryExpr); ok && be.OP == ast.AND {
+		ul, pl := extractLookupCondition(be.LHS, tableName)
+		ur, pr := extractLookupCondition(be.RHS, tableName)
+		unpushable = combine(ul, ur)
+		pushable = combine(pl, pr)
+		return
+	}
+
+	// default case: all condition are unpushable
+	return condition, nil
 }
 
 // validateAndExtractCondition Make sure the join condition is equi-join and extreact other conditions
