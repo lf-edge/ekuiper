@@ -150,7 +150,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					case *xsql.WindowTuples:
 						log.Debugf("Lookup Node receive window input %s", d)
 						n.statManager.ProcessTimeStart()
-						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
+						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.WindowTuples).GetWindowRange()}
 						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 							tr, ok := r.(xsql.TupleRow)
 							if !ok {
