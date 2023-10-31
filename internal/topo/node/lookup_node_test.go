@@ -200,6 +200,7 @@ func TestLookup(t *testing.T) {
 						},
 					},
 				},
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 			},
 			output: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
@@ -307,6 +308,7 @@ func TestLookup(t *testing.T) {
 						},
 					},
 				},
+				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 			},
 		},
 	}
