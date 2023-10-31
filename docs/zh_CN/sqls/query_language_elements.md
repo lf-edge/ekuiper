@@ -165,7 +165,7 @@ ON stream1.column_name = stream2.column_name;
 例子:
 
 ```sql
-select * from stream1 left join on stream2 stream1.column = stream2.column group by countwindow(5);
+select * from stream1 left join stream2 on stream1.column = stream2.column group by countwindow(5);
 ```
 
 **RIGHT**
@@ -182,7 +182,7 @@ ON stream1.column_name = stream2.column_name;
 例子:
 
 ```sql
-select * from stream1 right join on stream2 stream1.column = stream2.column group by countwindow(5);
+select * from stream1 right join stream2 on stream1.column = stream2.column group by countwindow(5);
 ```
 
 **FULL**
