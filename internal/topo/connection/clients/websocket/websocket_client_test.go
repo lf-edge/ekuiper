@@ -33,7 +33,7 @@ const (
 	path = "/ws"
 )
 
-func TestWebsocketPubSub(t *testing.T) {
+func TestWebsocketClientConnPubSub(t *testing.T) {
 	go mockWebSocketServer()
 	ctx := context.NewMockContext("123", "123")
 	cli, err := newWebsocketClientClientWrapper(&WebSocketConnectionConfig{Addr: addr, Path: path})

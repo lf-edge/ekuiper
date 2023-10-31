@@ -15,6 +15,7 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
@@ -35,15 +37,21 @@ import (
 // manage the global http data server
 
 var (
-	refCount int32
-	server   *http.Server
-	router   *mux.Router
-	done     chan struct{}
-	sctx     api.StreamContext
-	lock     sync.RWMutex
+	refCount         int32
+	server           *http.Server
+	router           *mux.Router
+	done             chan struct{}
+	sctx             api.StreamContext
+	lock             sync.RWMutex
+	upgrader         websocket.Upgrader
+	wsEndpointCancel map[string]context.CancelFunc
+	wsEndpointRefCnt map[string]int
 )
 
-const TopicPrefix = "$$httppush/"
+const (
+	TopicPrefix          = "$$httppush/"
+	WebsocketTopicPrefix = "$$websocket/"
+)
 
 func init() {
 	contextLogger := conf.Log.WithField("httppush_connection", 0)
@@ -56,6 +64,13 @@ func init() {
 		panic(err)
 	}
 	sctx = ctx.WithMeta(ruleId, opId, store)
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  256,
+		WriteBufferSize: 256,
+		WriteBufferPool: &sync.Pool{},
+	}
+	wsEndpointRefCnt = make(map[string]int)
+	wsEndpointCancel = make(map[string]context.CancelFunc)
 }
 
 func registerInit() error {
@@ -70,6 +85,92 @@ func registerInit() error {
 	}
 	refCount++
 	return nil
+}
+
+func UnRegisterWebSocketEndpoint(endpoint string) error {
+	lock.Lock()
+	defer lock.Unlock()
+	refCount--
+	wsEndpointRefCnt[endpoint] = wsEndpointRefCnt[endpoint] - 1
+	if wsEndpointRefCnt[endpoint] < 1 {
+		wsEndpointCancel[endpoint]()
+		delete(wsEndpointCancel, endpoint)
+		delete(wsEndpointRefCnt, endpoint)
+	}
+	if refCount == 0 {
+		shutdown()
+	}
+	return nil
+}
+
+func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
+	topic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
+	pubsub.CreatePub(topic)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+		msgType, data, err := c.ReadMessage()
+		if err != nil {
+			// TODO: handle closed error
+			continue
+		}
+		if msgType == websocket.TextMessage {
+			m := make(map[string]interface{})
+			if err := json.Unmarshal(data, &m); err != nil {
+				continue
+			}
+			pubsub.Produce(ctx, topic, m)
+		}
+	}
+}
+
+func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
+	topic := fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
+	pubsub.CreatePub(topic)
+	subCh := pubsub.CreateSub(topic, nil, "", 1024)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case data := <-subCh:
+			bs, err := json.Marshal(data.Message())
+			if err != nil {
+				continue
+			}
+			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
+				// TODO: handle closed error
+				continue
+			}
+		}
+	}
+}
+
+func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, chan struct{}, error) {
+	err := registerInit()
+	if err != nil {
+		return "", "", nil, err
+	}
+	if cnt, ok := wsEndpointRefCnt[endpoint]; ok {
+		wsEndpointRefCnt[endpoint] = cnt + 1
+		return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint),
+			done, fmt.Errorf("duplicated register websocket endpoint %v", endpoint)
+	}
+	wsEndpointRefCnt[endpoint] = 1
+	subCtx, cancel := ctx.WithCancel()
+	wsEndpointCancel[endpoint] = cancel
+	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+		c, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			conf.Log.Errorf("websocket upgrade error: %v", err)
+			return
+		}
+		go recvProcess(subCtx, c, endpoint)
+		go sendProcess(subCtx, c, endpoint)
+	})
+	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint), done, nil
 }
 
 func RegisterEndpoint(endpoint string, method string, _ string) (string, chan struct{}, error) {
@@ -104,14 +205,18 @@ func UnregisterEndpoint(endpoint string) {
 	refCount--
 	// TODO async close server
 	if refCount == 0 {
-		sctx.GetLogger().Infof("shutting down http data server...")
-		if err := server.Shutdown(sctx); err != nil {
-			sctx.GetLogger().Errorf("shutdown: %s", err)
-		}
-		sctx.GetLogger().Infof("http data server exiting")
-		server = nil
-		router = nil
+		shutdown()
 	}
+}
+
+func shutdown() {
+	sctx.GetLogger().Infof("shutting down http data server...")
+	if err := server.Shutdown(sctx); err != nil {
+		sctx.GetLogger().Errorf("shutdown: %s", err)
+	}
+	sctx.GetLogger().Infof("http data server exiting")
+	server = nil
+	router = nil
 }
 
 // createDataServer creates a new http data server. Must run inside lock

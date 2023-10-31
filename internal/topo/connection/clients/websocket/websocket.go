@@ -74,8 +74,11 @@ func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrappe
 		config.tlsConfig = tConf
 	}
 
-	if len(config.Addr) < 1 || len(config.Path) < 1 {
-		return nil, fmt.Errorf("addr and path should be set")
+	if len(config.Path) < 1 {
+		return nil, fmt.Errorf("path should be set")
+	}
+	if len(config.Addr) < 1 {
+		return newWebsocketServerConnWrapper(config)
 	}
 	return newWebsocketClientClientWrapper(config)
 }
