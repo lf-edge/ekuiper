@@ -4396,66 +4396,169 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 			}.Init(),
 		},
 		{ // 3
-			sql: `SELECT * FROM src1 INNER JOIN table1 ON src1.id = table1.id GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			sql: `SELECT * FROM src1 INNER JOIN table1 ON src1.id = table1.id  WHERE table1.id > 10 GROUP BY TUMBLINGWINDOW(ss, 10)`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
-						LookupPlan{
+						FilterPlan{
 							baseLogicalPlan: baseLogicalPlan{
 								children: []LogicalPlan{
-									WindowPlan{
+									LookupPlan{
 										baseLogicalPlan: baseLogicalPlan{
 											children: []LogicalPlan{
-												DataSourcePlan{
-													baseLogicalPlan: baseLogicalPlan{},
-													name:            "src1",
-													streamStmt:      streams["src1"],
-													streamFields:    map[string]*ast.JsonStreamField{},
-													metaFields:      []string{},
-													isWildCard:      true,
-													isSchemaless:    true,
-													pruneFields:     []string{},
+												WindowPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																baseLogicalPlan: baseLogicalPlan{},
+																name:            "src1",
+																streamStmt:      streams["src1"],
+																streamFields:    map[string]*ast.JsonStreamField{},
+																metaFields:      []string{},
+																isWildCard:      true,
+																isSchemaless:    true,
+																pruneFields:     []string{},
+															}.Init(),
+														},
+													},
+													condition: nil,
+													wtype:     ast.TUMBLING_WINDOW,
+													length:    10,
+													timeUnit:  ast.SS,
+													interval:  0,
+													limit:     0,
 												}.Init(),
 											},
 										},
-										condition: nil,
-										wtype:     ast.TUMBLING_WINDOW,
-										length:    10,
-										timeUnit:  ast.SS,
-										interval:  0,
-										limit:     0,
+										joinExpr: ast.Join{
+											Name:     "table1",
+											Alias:    "",
+											JoinType: ast.INNER_JOIN,
+											Expr: &ast.BinaryExpr{
+												OP: ast.EQ,
+												LHS: &ast.FieldRef{
+													StreamName: "src1",
+													Name:       "id",
+												},
+												RHS: &ast.FieldRef{
+													StreamName: "table1",
+													Name:       "id",
+												},
+											},
+										},
+										keys: []string{"id"},
+										valvars: []ast.Expr{
+											&ast.FieldRef{
+												StreamName: "src1",
+												Name:       "id",
+											},
+										},
+										options: &ast.Options{
+											DATASOURCE: "table1",
+											TYPE:       "sql",
+											KIND:       "lookup",
+										},
+										conditions: nil,
 									}.Init(),
 								},
 							},
-							joinExpr: ast.Join{
-								Name:     "table1",
-								Alias:    "",
-								JoinType: ast.INNER_JOIN,
-								Expr: &ast.BinaryExpr{
-									OP: ast.EQ,
-									LHS: &ast.FieldRef{
-										StreamName: "src1",
-										Name:       "id",
-									},
-									RHS: &ast.FieldRef{
-										StreamName: "table1",
-										Name:       "id",
-									},
-								},
-							},
-							keys: []string{"id"},
-							valvars: []ast.Expr{
-								&ast.FieldRef{
-									StreamName: "src1",
+							condition: &ast.BinaryExpr{
+								OP: ast.GT,
+								LHS: &ast.FieldRef{
+									StreamName: "table1",
 									Name:       "id",
 								},
+								RHS: &ast.IntegerLiteral{Val: 10},
 							},
-							options: &ast.Options{
-								DATASOURCE: "table1",
-								TYPE:       "sql",
-								KIND:       "lookup",
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Expr:  &ast.Wildcard{Token: ast.ASTERISK},
+						Name:  "*",
+						AName: "",
+					},
+				},
+				isAggregate: false,
+				sendMeta:    false,
+			}.Init(),
+		},
+		{ // 4
+			sql: `SELECT * FROM src1 LEFT JOIN table1 ON src1.id = table1.id  WHERE table1.id > 10 GROUP BY TUMBLINGWINDOW(ss, 10)`,
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						FilterPlan{
+							baseLogicalPlan: baseLogicalPlan{
+								children: []LogicalPlan{
+									LookupPlan{
+										baseLogicalPlan: baseLogicalPlan{
+											children: []LogicalPlan{
+												WindowPlan{
+													baseLogicalPlan: baseLogicalPlan{
+														children: []LogicalPlan{
+															DataSourcePlan{
+																baseLogicalPlan: baseLogicalPlan{},
+																name:            "src1",
+																streamStmt:      streams["src1"],
+																streamFields:    map[string]*ast.JsonStreamField{},
+																metaFields:      []string{},
+																isWildCard:      true,
+																isSchemaless:    true,
+																pruneFields:     []string{},
+															}.Init(),
+														},
+													},
+													condition: nil,
+													wtype:     ast.TUMBLING_WINDOW,
+													length:    10,
+													timeUnit:  ast.SS,
+													interval:  0,
+													limit:     0,
+												}.Init(),
+											},
+										},
+										joinExpr: ast.Join{
+											Name:     "table1",
+											Alias:    "",
+											JoinType: ast.LEFT_JOIN,
+											Expr: &ast.BinaryExpr{
+												OP: ast.EQ,
+												LHS: &ast.FieldRef{
+													StreamName: "src1",
+													Name:       "id",
+												},
+												RHS: &ast.FieldRef{
+													StreamName: "table1",
+													Name:       "id",
+												},
+											},
+										},
+										keys: []string{"id"},
+										valvars: []ast.Expr{
+											&ast.FieldRef{
+												StreamName: "src1",
+												Name:       "id",
+											},
+										},
+										options: &ast.Options{
+											DATASOURCE: "table1",
+											TYPE:       "sql",
+											KIND:       "lookup",
+										},
+										conditions: nil,
+									}.Init(),
+								},
 							},
-							conditions: nil,
+							condition: &ast.BinaryExpr{
+								OP: ast.GT,
+								LHS: &ast.FieldRef{
+									StreamName: "table1",
+									Name:       "id",
+								},
+								RHS: &ast.IntegerLiteral{Val: 10},
+							},
 						}.Init(),
 					},
 				},
@@ -4471,27 +4574,25 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 			}.Init(),
 		},
 	}
-	for i, tt := range tests {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		if err != nil {
-			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
-			continue
-		}
-		p, err := createLogicalPlan(stmt, &api.RuleOption{
-			IsEventTime:        false,
-			LateTol:            0,
-			Concurrency:        0,
-			BufferLength:       0,
-			SendMetaToSink:     false,
-			Qos:                0,
-			CheckpointInterval: 0,
-			SendError:          true,
-		}, kv)
-		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
-		} else if !reflect.DeepEqual(tt.p, p) {
-			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
-		}
+	for _, tt := range tests {
+		t.Run(tt.sql, func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			assert.NoError(t, err)
+			p, err := createLogicalPlan(stmt, &api.RuleOption{
+				IsEventTime:        false,
+				LateTol:            0,
+				Concurrency:        0,
+				BufferLength:       0,
+				SendMetaToSink:     false,
+				Qos:                0,
+				CheckpointInterval: 0,
+				SendError:          true,
+			}, kv)
+			assert.Equal(t, tt.err, testx.Errstring(err))
+			if !assert.Equal(t, tt.p, p) {
+				t.Errorf("stmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", render.AsCode(tt.p), render.AsCode(p))
+			}
+		})
 	}
 }
 
