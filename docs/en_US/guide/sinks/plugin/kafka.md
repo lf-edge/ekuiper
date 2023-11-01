@@ -66,9 +66,6 @@ Restart the eKuiper server to activate the plugin.
 | privateKeyPath     | true | Key file path for Kafka client SSL verification |
 | rootCaPath         | true | Kafka client ssl verified ca certificate file path |
 | maxAttempts        | true | The number of retries the Kafka client sends messages to the server, the default is 1 |
-| kafkaBatchSize     | true | Limit on how many messages will be buffered before being sent to kafka, the default is 1 |
-| kafkaBatchBytes    | true   |  Limit the maximum size of a request in bytes before being sent to kafka，default is 1048576 |
-| kafkaBatchTimeout     | true  |  Time limit on how often incomplete message batches will be flushed to kafka, the default is 1s      |
 | key                | true | Key information carried by the Kafka client in messages sent to the server |
 | headers            | true     | The header information carried by the Kafka client in the message sent to the server |
 

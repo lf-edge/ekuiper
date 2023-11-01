@@ -17,10 +17,8 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
-	"time"
-
 	kafkago "github.com/segmentio/kafka-go"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -45,14 +43,9 @@ type sinkConf struct {
 }
 
 type kafkaConf struct {
-	MaxAttempts       int         `json:"maxAttempts"`
-	KafkaBatchSize    int         `json:"kafkaBatchSize"`
-	KafkaBatchBytes   int64       `json:"kafkaBatchBytes"`
-	KafkaBatchTimeout string      `json:"kafkaBatchTimeout"`
-	Key               string      `json:"key"`
-	Headers           interface{} `json:"headers"`
-
-	kafkaBatchTimeoutD time.Duration
+	MaxAttempts int         `json:"maxAttempts"`
+	Key         string      `json:"key"`
+	Headers     interface{} `json:"headers"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -86,19 +79,11 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	kc := &kafkaConf{
-		MaxAttempts:       1,
-		KafkaBatchSize:    1,
-		KafkaBatchBytes:   1048576,
-		KafkaBatchTimeout: "1s",
+		MaxAttempts: 1,
 	}
 	if err := cast.MapToStruct(props, kc); err != nil {
 		return err
 	}
-	d, err := time.ParseDuration(kc.KafkaBatchTimeout)
-	if err != nil {
-		return err
-	}
-	kc.kafkaBatchTimeoutD = d
 	m.kc = kc
 	m.tc = tc
 	m.c = c
@@ -129,9 +114,7 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            m.kc.MaxAttempts,
 		RequiredAcks:           -1,
-		BatchBytes:             m.kc.KafkaBatchBytes,
-		BatchSize:              m.kc.KafkaBatchSize,
-		BatchTimeout:           m.kc.kafkaBatchTimeoutD,
+		BatchSize:              1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
 			TLS:  tlsConfig,
@@ -224,9 +207,6 @@ func GetSink() api.Sink {
 }
 
 func (m *kafkaSink) buildMsg(ctx api.StreamContext, item interface{}, decodedBytes []byte) (kafkago.Message, error) {
-	if int64(len(decodedBytes)) > m.kc.KafkaBatchBytes {
-		conf.Log.Warnf("kafka message bytes %v is bigger than alloed batchBytes %v", len(decodedBytes), m.kc.KafkaBatchBytes)
-	}
 	msg := kafkago.Message{Value: decodedBytes}
 	if len(m.kc.Key) > 0 {
 		newKey, err := ctx.ParseTemplate(m.kc.Key, item)
