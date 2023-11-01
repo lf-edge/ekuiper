@@ -243,7 +243,7 @@ The function is usually used to get the accumulated trigger count of an aggregat
 If the function is used in `HAVING` clause, it will only update the count when the condition is true.
 
 To use the similar functionality in a non-aggregate rule,
-use the [last_hit_count](./other_functions.md#lasthitcount) function.
+use the [last_hit_count](./other_functions.md#last_hit_count) function.
 
 ## LAST_AGG_HIT_TIME
 
@@ -256,4 +256,4 @@ The function is usually used to get the last trigger time of an aggregate rule.
 If the function is used in `HAVING` clause, it will only update the timestamp when the condition is true.
 
 To use the similar functionality in a non-aggregate rule,
-use the [last_hit_time](./other_functions.md#lasthittime) function.
+use the [last_hit_time](./other_functions.md#last_hit_time) function.
