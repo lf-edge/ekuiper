@@ -164,51 +164,6 @@
       }
     },
     {
-      "name": "kafkaBatchSize",
-      "default": true,
-      "optional": true,
-      "control": "text",
-      "type": "int",
-      "hint": {
-        "en_US": "Limit on how many messages will be buffered before being sent to kafka in one request, default 1",
-        "zh_CN": "一次性向 kafka 发送批量消息的数量"
-      },
-      "label": {
-        "en_US": "Batch Size",
-        "zh_CN": "批量消息发送"
-      }
-    },
-    {
-      "name": "kafkaBatchBytes",
-      "default": true,
-      "optional": true,
-      "control": "text",
-      "type": "int",
-      "hint": {
-        "en_US": "Limit the maximum size of a request in bytes before being sent to kafka, default 1048576",
-        "zh_CN": "一次性向 kafka 发送批量消息的 bytes 数量"
-      },
-      "label": {
-        "en_US": "Batch Bytes",
-        "zh_CN": "批量消息容量发送"
-      }
-    },
-    {
-      "name": "kafkaBatchTimeout",
-      "default": true,
-      "optional": true,
-      "control": "text",
-      "type": "string",
-      "hint": {
-        "en_US": "Time limit on how often incomplete message batches will be flushed to kafka",
-        "zh_CN": "消息攒批发送给 kafka 时所等待的最大时间"
-      },
-      "label": {
-        "en_US": "Batch Timeout",
-        "zh_CN": "批量消息攒批发送最大等待时间"
-      }
-    },
-    {
       "name": "maxAttempts",
       "default": true,
       "optional": true,
