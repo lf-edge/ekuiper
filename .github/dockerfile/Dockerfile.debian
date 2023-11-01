@@ -32,8 +32,10 @@ RUN case $(dpkg --print-architecture) in \
     && wget --no-verbose https://golang.org/dl/go$GO_VERSION.linux-$ARCH.tar.gz \
     && tar -C /usr/local -xzf go$GO_VERSION.linux-$ARCH.tar.gz
 
-RUN wget https://github.com/apple/foundationdb/releases/download/7.3.19/foundationdb-clients_7.3.19-1_amd64.deb \
-    && dpkg -i foundationdb-clients_7.3.19-1_amd64.deb
+RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+        wget https://github.com/apple/foundationdb/releases/download/7.3.19/foundationdb-clients_7.3.19-1_amd64.deb \
+        && dpkg -i foundationdb-clients_7.3.19-1_amd64.deb; \
+    fi
 
 ENV PATH=$PATH:/usr/local/go/bin
 
