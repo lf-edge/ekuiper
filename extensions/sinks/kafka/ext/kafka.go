@@ -120,7 +120,6 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 			TLS:  tlsConfig,
 		},
 	}
-	conf.Log.Infof("kafka writer size:%v, bytes:%v, timeout:%v \n", w.BatchSize, w.BatchBytes, w.BatchTimeout)
 	m.writer = w
 	return nil
 }
