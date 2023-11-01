@@ -205,7 +205,7 @@ last_agg_hit_count()
 ```
 
 返回该函数的总命中次数。通常用于获取聚合规则的累计触发次数。如果在 `HAVING` 子句中使用，只有当条件为真时才会更新计数。
-若要在非聚合规则中实现类似功能，请使用 [last_hit_count](./other_functions.md#lasthitcount)。
+若要在非聚合规则中实现类似功能，请使用 [last_hit_count](./other_functions.md#last_hit_count)。
 
 ## LAST_AGG_HIT_TIME
 
@@ -215,4 +215,4 @@ last_agg_hit_time()
 
 返回该函数最后一次命中时的 int64 格式时间戳。通常用于获取聚合规则的最后一次触发时间。如果在 `HAVING`
 子句中使用，只有当条件为真时才会更新时间戳。
-若要在非聚合规则中实现类似功能，请使用 [last_hit_time](./other_functions.md#lasthittime)。
+若要在非聚合规则中实现类似功能，请使用 [last_hit_time](./other_functions.md#last_hit_time)。
