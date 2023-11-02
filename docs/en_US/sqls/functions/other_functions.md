@@ -95,7 +95,7 @@ The function is usually used to get the accumulated trigger count of a continuou
 If the function is used in `WHERE` clause, it will only update the count when the condition is true.
 
 Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
-To get the hit count of an aggregate rule, use [last_agg_hit_count](./aggregate_functions.md#lastagghitcount) instead.
+To get the hit count of an aggregate rule, use [last_agg_hit_count](./aggregate_functions.md#last_agg_hit_count) instead.
 
 If used in a sliding window trigger condition,
 the status will be updated only when the trigger condition is met regardless of the rule trigger result.
@@ -111,7 +111,7 @@ The function is usually used to get the last trigger time of a continuous rule.
 If the function is used in `WHERE` clause, it will only update the timestamp when the condition is true.
 
 Notice that, this function is not supported in aggregate rule except using in `WHEN` clause of a sliding window.
-To get the hit time of an aggregate rule, use [last_agg_hit_time](./aggregate_functions.md#lastagghittime) instead.
+To get the hit time of an aggregate rule, use [last_agg_hit_time](./aggregate_functions.md#last_agg_hit_time) instead.
 
 If used in a sliding window trigger condition,
 the status will be updated only when the trigger condition is met regardless of the rule trigger result.
