@@ -17,8 +17,9 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
-	kafkago "github.com/segmentio/kafka-go"
 	"strings"
+
+	kafkago "github.com/segmentio/kafka-go"
 
 	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
