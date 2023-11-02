@@ -16,6 +16,7 @@ package websocket
 
 import (
 	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
