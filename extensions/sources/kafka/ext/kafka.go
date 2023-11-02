@@ -29,6 +29,7 @@ import (
 
 type KafkaSource struct {
 	reader *kafkago.Reader
+	offset int64
 }
 
 type kafkaSourceConf struct {
@@ -72,6 +73,7 @@ func getSourceConf(props map[string]interface{}) (*kafkaSourceConf, error) {
 }
 
 func (s *KafkaSource) Configure(topic string, props map[string]interface{}) error {
+	s.offset = kafkago.LastOffset
 	if len(topic) < 1 {
 		conf.Log.Error("DataSource which indicates the topic should be defined")
 		return fmt.Errorf("DataSource which indicates the topic should be defined")
@@ -123,6 +125,7 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 			conf.Log.Errorf("kafka offset error: %v", err)
 			return fmt.Errorf("set kafka offset failed, err:%v", err)
 		}
+		s.offset = kConf.Offset
 	}
 	s.reader = reader
 	conf.Log.Infof("kafka source got configured.")
@@ -144,6 +147,7 @@ func (s *KafkaSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			errCh <- err
 			return
 		}
+		s.offset = msg.Offset
 		dataList, err := ctx.DecodeIntoList(msg.Value)
 		if err != nil {
 			logger.Errorf("unmarshal kafka message value err: %v", err)
@@ -159,4 +163,28 @@ func (s *KafkaSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 
 func (s *KafkaSource) Close(_ api.StreamContext) error {
 	return nil
+}
+
+// Rewind
+func (s *KafkaSource) Rewind(offset interface{}) error {
+	offsetV := s.offset
+	switch v := offset.(type) {
+	case int64:
+		offsetV = v
+	case int:
+		offsetV = int64(v)
+	case float64:
+		offsetV = int64(v)
+	}
+	if offsetV != s.offset {
+		if err := s.reader.SetOffset(offsetV); err != nil {
+			conf.Log.Errorf("kafka offset error: %v", err)
+			return fmt.Errorf("set kafka offset failed, err:%v", err)
+		}
+	}
+	return nil
+}
+
+func (s *KafkaSource) GetOffset() (interface{}, error) {
+	return s.offset, nil
 }
