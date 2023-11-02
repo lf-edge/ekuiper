@@ -1,6 +1,11 @@
+go 1.21
+
+toolchain go1.21.0
+
 use (
-	./extensions
 	.
-	./tools/kubernetes
 	./app
+	./extensions
+	./sdk/go
+	./tools/kubernetes
 )
