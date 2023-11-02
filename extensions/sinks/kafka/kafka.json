@@ -164,21 +164,6 @@
       }
     },
     {
-      "name": "kafkaBatchSize",
-      "default": true,
-      "optional": true,
-      "control": "text",
-      "type": "int",
-      "hint": {
-        "en_US": "Limit on how many messages will be buffered before being sent to kafka in one request, default 1",
-        "zh_CN": "一次性向 kafka 发送批量消息的数量"
-      },
-      "label": {
-        "en_US": "Batch Size",
-        "zh_CN": "批量消息发送"
-      }
-    },
-    {
       "name": "maxAttempts",
       "default": true,
       "optional": true,

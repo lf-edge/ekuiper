@@ -44,10 +44,9 @@ type sinkConf struct {
 }
 
 type kafkaConf struct {
-	MaxAttempts    int         `json:"maxAttempts"`
-	KafkaBatchSize int         `json:"kafkaBatchSize"`
-	Key            string      `json:"key"`
-	Headers        interface{} `json:"headers"`
+	MaxAttempts int         `json:"maxAttempts"`
+	Key         string      `json:"key"`
+	Headers     interface{} `json:"headers"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -81,8 +80,7 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	kc := &kafkaConf{
-		MaxAttempts:    1,
-		KafkaBatchSize: 1,
+		MaxAttempts: 1,
 	}
 	if err := cast.MapToStruct(props, kc); err != nil {
 		return err
@@ -117,7 +115,7 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            m.kc.MaxAttempts,
 		RequiredAcks:           -1,
-		BatchSize:              m.kc.KafkaBatchSize,
+		BatchSize:              1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
 			TLS:  tlsConfig,
