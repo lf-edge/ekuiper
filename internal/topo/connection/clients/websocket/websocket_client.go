@@ -37,6 +37,8 @@ type websocketClientWrapper struct {
 	refCount    int
 	conSelector string
 	finished    bool
+
+	processDone bool
 }
 
 func newWebsocketClientClientWrapper(config *WebSocketConnectionConfig) (clients.ClientWrapper, error) {
@@ -70,6 +72,10 @@ func (wcw *websocketClientWrapper) getID(ctx api.StreamContext) string {
 }
 
 func (wcw *websocketClientWrapper) process() {
+	defer func() {
+		wcw.processDone = true
+		wcw.c.Close()
+	}()
 	for {
 		if wcw.isFinished() {
 			return
@@ -123,6 +129,7 @@ func (wcw *websocketClientWrapper) Release(ctx api.StreamContext) bool {
 	delete(wcw.errCh, subID)
 	wcw.refCount--
 	if wcw.refCount == 0 {
+		wcw.c.Close()
 		wcw.finished = true
 		return true
 	}
