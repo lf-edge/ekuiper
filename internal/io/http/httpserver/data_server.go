@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -114,12 +115,17 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 		}
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
-			// TODO: handle closed error
+			if strings.Contains(err.Error(), "close") {
+				conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
+				break
+			}
+			conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 			continue
 		}
 		if msgType == websocket.TextMessage {
 			m := make(map[string]interface{})
 			if err := json.Unmarshal(data, &m); err != nil {
+				conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 				continue
 			}
 			pubsub.Produce(ctx, topic, m)

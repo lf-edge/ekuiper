@@ -45,11 +45,11 @@ func (wsw *websocketServerConnWrapper) isFinish() bool {
 }
 
 func newWebsocketServerConnWrapper(config *WebSocketConnectionConfig) (clients.ClientWrapper, error) {
-	recvTopic, sendTopic, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Path)
+	recvTopic, sendTopic, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Endpoint)
 	if err != nil {
 		return nil, err
 	}
-	wsw := &websocketServerConnWrapper{endpoint: config.Path, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1}
+	wsw := &websocketServerConnWrapper{endpoint: config.Endpoint, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1}
 	return wsw, nil
 }
 
@@ -83,6 +83,9 @@ func (wsw *websocketServerConnWrapper) Subscribe(c api.StreamContext, subChan []
 }
 
 func (wsw *websocketServerConnWrapper) Release(c api.StreamContext) bool {
+	if wsw.isFinish() {
+		return true
+	}
 	isFinished := false
 	wsw.Lock()
 	wsw.refCount--

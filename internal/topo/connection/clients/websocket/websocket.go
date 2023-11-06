@@ -16,7 +16,6 @@ package websocket
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -74,10 +73,7 @@ func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrappe
 		}
 		config.tlsConfig = tConf
 	}
-	if len(config.Path) < 1 {
-		return nil, fmt.Errorf("path should be set")
-	}
-	if len(config.Addr) < 1 {
+	if len(config.Endpoint) > 0 {
 		return newWebsocketServerConnWrapper(config)
 	}
 	return newWebsocketClientClientWrapper(config)

@@ -29,11 +29,12 @@ type WebSocketSink struct {
 
 type WebsocketConf struct {
 	Path string `json:"path"`
+	Addr string `json:"addr"`
 }
 
 func (c *WebsocketConf) validateSinkConf() error {
-	if len(c.Path) < 1 {
-		return fmt.Errorf("websocket sink conf path should be defined")
+	if len(c.Path) < 1 || len(c.Addr) < 1 {
+		return fmt.Errorf("websocket sink conf path and address should be defined")
 	}
 	return nil
 }
