@@ -31,6 +31,7 @@ import (
 type WebSocketConnectionConfig struct {
 	Addr      string `json:"addr"`
 	Path      string `json:"path"`
+	Endpoint  string `json:"endpoint"`
 	tlsConfig *tls.Config
 }
 
@@ -73,7 +74,6 @@ func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrappe
 		}
 		config.tlsConfig = tConf
 	}
-
 	if len(config.Path) < 1 {
 		return nil, fmt.Errorf("path should be set")
 	}

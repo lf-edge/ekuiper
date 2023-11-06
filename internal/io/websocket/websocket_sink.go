@@ -15,13 +15,27 @@
 package websocket
 
 import (
+	"fmt"
+
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type WebSocketSink struct {
 	cli   api.MessageClient
 	props map[string]interface{}
+}
+
+type WebsocketConf struct {
+	Path string `json:"path"`
+}
+
+func (c *WebsocketConf) validateSinkConf() error {
+	if len(c.Path) < 1 {
+		return fmt.Errorf("websocket sink conf path should be defined")
+	}
+	return nil
 }
 
 func (wss *WebSocketSink) Open(ctx api.StreamContext) error {
@@ -35,6 +49,13 @@ func (wss *WebSocketSink) Open(ctx api.StreamContext) error {
 
 func (wss *WebSocketSink) Configure(props map[string]interface{}) error {
 	wss.props = props
+	c := &WebsocketConf{}
+	if err := cast.MapToStruct(props, c); err != nil {
+		return err
+	}
+	if err := c.validateSinkConf(); err != nil {
+		return err
+	}
 	return nil
 }
 

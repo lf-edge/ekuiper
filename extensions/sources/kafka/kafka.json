@@ -2,18 +2,18 @@
   "about": {
     "trial": true,
     "author": {
-      "name": "carlclone",
-      "email": "carlclone@gmail.com",
-      "company": "personal",
-      "website": "https://www.github.com/carlclone"
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
     },
     "helpUrl": {
-      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/kafka.html",
-      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/kafka.html"
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/plugin/kafka.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/plugin/kafka.html"
     },
     "description": {
-      "en_US": "This a sink for Kafka, it can be used for saving the analysis data into Redis.",
-      "zh_CN": "为 Kafka 的持久化插件，可以用于将分析数据存入 Kafka 中"
+      "en_US": "This a source for Kafka, it can be used for consuming the data from Kafka.",
+      "zh_CN": "从 Kafka 中消费消息"
     }
   },
   "libs": [
@@ -22,7 +22,7 @@
   "properties": [
     {
       "name": "brokers",
-      "default": "127.0.0.1:9092,127.0.0.2:9092",
+      "default": "127.0.0.1:9092",
       "optional": false,
       "control": "text",
       "type": "string",
@@ -36,18 +36,78 @@
       }
     },
     {
-      "name": "topic",
+      "name": "groupID",
       "default": "",
-      "optional": false,
+      "optional": true,
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "The topic to publish to.",
-        "zh_CN": "订阅主题"
+        "en_US": "The Kafka consumer group id",
+        "zh_CN": "Kafka 的 consumer group id"
       },
       "label": {
-        "en_US": "Topic",
-        "zh_CN": "主题"
+        "en_US": "groupID",
+        "zh_CN": "groupID"
+      }
+    },
+    {
+      "name": "partition",
+      "default": "0",
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Partition to read messages from",
+        "zh_CN": "设置 Kafka 消息的读取 Partition"
+      },
+      "label": {
+        "en_US": "partition",
+        "zh_CN": "partition"
+      }
+    },
+    {
+      "name": "maxBytes",
+      "default": "0",
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "the maximum batch size that the consumer will accept. Default 1MB",
+        "zh_CN": "Consumer 可以一次性接收的最大 bytes 数，默认为 1MB"
+      },
+      "label": {
+        "en_US": "maxBytes",
+        "zh_CN": "maxBytes"
+      }
+    },
+    {
+      "name": "maxAttempts",
+      "default": true,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Limit of how many attempts to connect will be made before returning the error.",
+        "zh_CN": "建立连接的尝试次数"
+      },
+      "label": {
+        "en_US": "Max Attempts",
+        "zh_CN": "建立连接的尝试次数"
+      }
+    },
+    {
+      "name": "offset",
+      "default": "0",
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "the offset from which the next batch of messages will be read. -1 indicates latest offset and -2 indicates first offset.",
+        "zh_CN": "kafka consumer 的初始 offset, -1 默认为最新 offset, -2 默认为最旧 offset"
+      },
+      "label": {
+        "en_US": "offset",
+        "zh_CN": "offset"
       }
     },
     {
@@ -162,55 +222,10 @@
         "en_US": "Skip Certification verification",
         "zh_CN": "跳过证书验证"
       }
-    },
-    {
-      "name": "maxAttempts",
-      "default": true,
-      "optional": true,
-      "control": "text",
-      "type": "int",
-      "hint": {
-        "en_US": "Limit on how many attempts will be made to deliver a message, default 1",
-        "zh_CN": "发送消息失败的重试次数"
-      },
-      "label": {
-        "en_US": "Max Attempts",
-        "zh_CN": "消息发送重发次数"
-      }
-    },
-    {
-      "name": "headers",
-      "default": {},
-      "optional": true,
-      "control": "list",
-      "type": "object",
-      "hint": {
-        "en_US": "Message Headers",
-        "zh_CN": "Headers in Kafka Message"
-      },
-      "label": {
-        "en_US": "Headers for the message",
-        "zh_CN": "Kafka 消息 Headers"
-      }
-    },
-    {
-      "name": "key",
-      "default": "",
-      "optional": true,
-      "control": "text",
-      "type": "string",
-      "hint": {
-        "en_US": "Message Key",
-        "zh_CN": "Kafka Message Key"
-      },
-      "label": {
-        "en_US": "key for the message",
-        "zh_CN": "Kafka 消息 Key"
-      }
     }
   ],
   "node": {
-    "category": "sink",
+    "category": "source",
     "icon": "iconPath",
     "label": {
       "en": "Kafka",

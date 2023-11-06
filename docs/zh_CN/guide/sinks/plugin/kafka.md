@@ -66,7 +66,6 @@ $(PLUGINS_CUSTOM):
 | privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径       |
 | rootCaPath         | 是   | Kafka 客户端 ssl 验证的 ca 证书文件路径    |
 | maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1  |
-| kafkaBatchSize     | 是   | Kafka 客户端向 server 发送单批消息的消息条数，默认为 1 |
 | key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息 |
 | headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息 |
 

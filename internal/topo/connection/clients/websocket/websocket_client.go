@@ -16,22 +16,29 @@ package websocket
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type websocketClientWrapper struct {
 	sync.Mutex
-	c           *websocket.Conn
+	c *websocket.Conn
+	// We maintained topicChannel for each source_node(ruleID_OpID_InstanceID)
+	// When source_node Subscribed, each message comes from the websocket connection will be delivered into all topic Channel.
+	// When source_node Released, the Topic Channel will be removed by the ID so that the websocket msg won't send data to it anymore.
 	chs         map[string][]api.TopicChannel
 	errCh       map[string]chan error
 	refCount    int
 	conSelector string
 	finished    bool
+
+	processDone bool
 }
 
 func newWebsocketClientClientWrapper(config *WebSocketConnectionConfig) (clients.ClientWrapper, error) {
@@ -65,21 +72,37 @@ func (wcw *websocketClientWrapper) getID(ctx api.StreamContext) string {
 }
 
 func (wcw *websocketClientWrapper) process() {
+	defer func() {
+		wcw.processDone = true
+		wcw.c.Close()
+	}()
 	for {
 		if wcw.isFinished() {
 			return
 		}
 		msgTyp, data, err := wcw.c.ReadMessage()
 		if err != nil {
-			for _, errCh := range wcw.errCh {
-				errCh <- err
+			for key, errCh := range wcw.errCh {
+				select {
+				case errCh <- err:
+				default:
+					conf.Log.Warnf("websocket client connection discard one error for %v", key)
+				}
+			}
+			if strings.Contains(err.Error(), "close") {
+				conf.Log.Info("websocket client closed")
+				return
 			}
 			continue
 		}
 		if msgTyp == websocket.TextMessage {
-			for _, chs := range wcw.chs {
+			for key, chs := range wcw.chs {
 				for _, ch := range chs {
-					ch.Messages <- data
+					select {
+					case ch.Messages <- data:
+					default:
+						conf.Log.Warnf("websocket client connection discard one msg for %v", key)
+					}
 				}
 			}
 		}
@@ -106,6 +129,7 @@ func (wcw *websocketClientWrapper) Release(ctx api.StreamContext) bool {
 	delete(wcw.errCh, subID)
 	wcw.refCount--
 	if wcw.refCount == 0 {
+		wcw.c.Close()
 		wcw.finished = true
 		return true
 	}

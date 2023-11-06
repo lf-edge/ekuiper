@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
@@ -33,11 +34,13 @@ const (
 	path = "/ws"
 )
 
-func TestWebsocketClientConnPubSub(t *testing.T) {
+func TestWebsocketPubSub(t *testing.T) {
 	go mockWebSocketServer()
 	ctx := context.NewMockContext("123", "123")
 	cli, err := newWebsocketClientClientWrapper(&WebSocketConnectionConfig{Addr: addr, Path: path})
 	require.NoError(t, err)
+	cli.SetConnectionSelector("456")
+	require.Equal(t, "456", cli.GetConnectionSelector())
 	data := map[string]interface{}{"a": float64(1)}
 	databytes, err := json.Marshal(data)
 	require.NoError(t, err)
@@ -63,10 +66,11 @@ func TestWebsocketClientConnPubSub(t *testing.T) {
 	cli.Release(ctx)
 	wsCli := cli.(*websocketClientWrapper)
 	require.False(t, wsCli.isFinished())
+	require.False(t, wsCli.processDone)
 	cli.Release(ctx)
 	require.True(t, wsCli.isFinished())
-	cli.SetConnectionSelector("456")
-	require.Equal(t, "456", cli.GetConnectionSelector())
+	time.Sleep(100 * time.Millisecond)
+	require.True(t, wsCli.processDone)
 }
 
 func mockWebSocketServer() {
