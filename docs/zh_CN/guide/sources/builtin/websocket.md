@@ -75,4 +75,5 @@ CREATE STREAM websocketDemo() WITH (DATASOURCE="/api/data", FORMAT="json", TYPE=
    ```bash
    bin/kuiper CREATE STREAM demo'() with(format="json", datasource="/api/data", type="websocket")'
    ```
+
 详细操作步骤及命令解释，可参考 [通过 CLI 进行流管理](../../../api/cli/streams.md)。
