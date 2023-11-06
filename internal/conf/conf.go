@@ -34,7 +34,9 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
-const ConfFileName = "kuiper.yaml"
+const (
+	ConfFileName = "kuiper.yaml"
+)
 
 var (
 	Config    *KuiperConf

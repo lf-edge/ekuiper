@@ -16,6 +16,7 @@ package mqtt
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
@@ -59,6 +60,9 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 
 	if adconf.Tpc == "" {
 		return fmt.Errorf("mqtt sink is missing property topic")
+	}
+	if strings.Contains(adconf.Tpc, "#") || strings.Contains(adconf.Tpc, "+") {
+		return fmt.Errorf("mqtt sink topic shouldn't contain # or +")
 	}
 	if adconf.Qos != 0 && adconf.Qos != 1 && adconf.Qos != 2 {
 		return fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", adconf.Qos)
