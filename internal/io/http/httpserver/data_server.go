@@ -15,7 +15,6 @@
 package httpserver
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -38,21 +37,73 @@ import (
 // manage the global http data server
 
 var (
-	refCount         int32
-	server           *http.Server
-	router           *mux.Router
-	done             chan struct{}
-	sctx             api.StreamContext
-	lock             sync.RWMutex
-	upgrader         websocket.Upgrader
-	wsEndpointCancel map[string]context.CancelFunc
-	wsEndpointRefCnt map[string]int
+	refCount      int32
+	server        *http.Server
+	router        *mux.Router
+	done          chan struct{}
+	sctx          api.StreamContext
+	lock          sync.RWMutex
+	upgrader      websocket.Upgrader
+	wsEndpointCtx map[string]*websocketContext
 )
 
 const (
 	TopicPrefix          = "$$httppush/"
 	WebsocketTopicPrefix = "$$websocket/"
 )
+
+type websocketContext struct {
+	sync.Mutex
+	refCount     int
+	conns        map[*websocket.Conn]struct{}
+	contextClose bool
+}
+
+func (wsctx *websocketContext) deRef() int {
+	wsctx.Lock()
+	defer wsctx.Unlock()
+	if wsctx.contextClose {
+		return 0
+	}
+	wsctx.refCount--
+	return wsctx.refCount
+}
+
+func (wsctx *websocketContext) addRef() {
+	wsctx.Lock()
+	defer wsctx.Unlock()
+	if wsctx.contextClose {
+		return
+	}
+	wsctx.refCount++
+}
+
+func (wsctx *websocketContext) addConn(conn *websocket.Conn) {
+	wsctx.Lock()
+	defer wsctx.Unlock()
+	if wsctx.contextClose {
+		return
+	}
+	wsctx.conns[conn] = struct{}{}
+}
+
+func (wsctx *websocketContext) removeConn(conn *websocket.Conn) {
+	wsctx.Lock()
+	defer wsctx.Unlock()
+	if wsctx.contextClose {
+		return
+	}
+	delete(wsctx.conns, conn)
+}
+
+func (wsctx *websocketContext) close() {
+	wsctx.Lock()
+	defer wsctx.Unlock()
+	for conn := range wsctx.conns {
+		conn.Close()
+	}
+	wsctx.contextClose = true
+}
 
 func init() {
 	contextLogger := conf.Log.WithField("httppush_connection", 0)
@@ -70,8 +121,7 @@ func init() {
 		WriteBufferSize: 256,
 		WriteBufferPool: &sync.Pool{},
 	}
-	wsEndpointRefCnt = make(map[string]int)
-	wsEndpointCancel = make(map[string]context.CancelFunc)
+	wsEndpointCtx = make(map[string]*websocketContext)
 }
 
 func registerInit() error {
@@ -91,12 +141,14 @@ func registerInit() error {
 func UnRegisterWebSocketEndpoint(endpoint string) error {
 	lock.Lock()
 	defer lock.Unlock()
+	if _, ok := wsEndpointCtx[endpoint]; !ok {
+		return nil
+	}
 	refCount--
-	wsEndpointRefCnt[endpoint] = wsEndpointRefCnt[endpoint] - 1
-	if wsEndpointRefCnt[endpoint] < 1 {
-		wsEndpointCancel[endpoint]()
-		delete(wsEndpointCancel, endpoint)
-		delete(wsEndpointRefCnt, endpoint)
+	endPointRefCount := wsEndpointCtx[endpoint].deRef()
+	if endPointRefCount < 1 {
+		wsEndpointCtx[endpoint].close()
+		delete(wsEndpointCtx, endpoint)
 	}
 	if refCount == 0 {
 		shutdown()
@@ -116,6 +168,7 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
 			if strings.Contains(err.Error(), "close") {
+				wsEndpointCtx[endpoint].removeConn(c)
 				conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
 				break
 			}
@@ -147,7 +200,12 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 				continue
 			}
 			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
-				// TODO: handle closed error
+				if strings.Contains(err.Error(), "close") {
+					wsEndpointCtx[endpoint].removeConn(c)
+					conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
+					break
+				}
+				conf.Log.Errorf("websocket endpoint %s send error %s", endpoint, err)
 				continue
 			}
 		}
@@ -155,26 +213,32 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 }
 
 func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, chan struct{}, error) {
-	err := registerInit()
-	if err != nil {
-		return "", "", nil, err
+	lock.Lock()
+	defer lock.Unlock()
+	if server == nil {
+		var err error
+		server, router, err = createDataServer()
+		if err != nil {
+			return "", "", nil, err
+		}
 	}
-	if cnt, ok := wsEndpointRefCnt[endpoint]; ok {
-		wsEndpointRefCnt[endpoint] = cnt + 1
+	refCount++
+	if wsCtx, ok := wsEndpointCtx[endpoint]; ok {
+		wsCtx.addRef()
 		return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint),
-			done, fmt.Errorf("duplicated register websocket endpoint %v", endpoint)
+			done, nil
 	}
-	wsEndpointRefCnt[endpoint] = 1
-	subCtx, cancel := ctx.WithCancel()
-	wsEndpointCancel[endpoint] = cancel
+	wsCtx := &websocketContext{refCount: 1, conns: map[*websocket.Conn]struct{}{}}
+	wsEndpointCtx[endpoint] = wsCtx
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			conf.Log.Errorf("websocket upgrade error: %v", err)
 			return
 		}
-		go recvProcess(subCtx, c, endpoint)
-		go sendProcess(subCtx, c, endpoint)
+		wsCtx.addConn(c)
+		go recvProcess(ctx, c, endpoint)
+		go sendProcess(ctx, c, endpoint)
 	})
 	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint), done, nil
 }

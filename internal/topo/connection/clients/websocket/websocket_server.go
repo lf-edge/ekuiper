@@ -45,11 +45,11 @@ func (wsw *websocketServerConnWrapper) isFinish() bool {
 }
 
 func newWebsocketServerConnWrapper(config *WebSocketConnectionConfig) (clients.ClientWrapper, error) {
-	recvTopic, sendTopic, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Endpoint)
+	recvTopic, sendTopic, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Path)
 	if err != nil {
 		return nil, err
 	}
-	wsw := &websocketServerConnWrapper{endpoint: config.Endpoint, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1}
+	wsw := &websocketServerConnWrapper{endpoint: config.Path, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1}
 	return wsw, nil
 }
 

@@ -37,7 +37,7 @@ func TestWebsocketServerConn(t *testing.T) {
 	serverPubCh = make(chan map[string]interface{})
 
 	conf.InitConf()
-	cli, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Endpoint: "/ws3"})
+	cli, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3"})
 	require.NoError(t, err)
 	require.NotNil(t, cli)
 

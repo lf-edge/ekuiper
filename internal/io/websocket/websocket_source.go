@@ -98,7 +98,7 @@ func buildTuples(ctx api.StreamContext, msg interface{}) ([]api.SourceTuple, err
 }
 
 func (wss *WebsocketSource) Configure(datasource string, props map[string]interface{}) error {
-	props["endpoint"] = datasource
+	props["path"] = datasource
 	wss.props = props
 	return nil
 }
