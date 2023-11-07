@@ -2,7 +2,9 @@
 
 <span style="background:green;color:white;">stream source</span>
 
-eKuiper 内置支持 Websocket 数据源，通过 Websocket 数据源连接器，eKuiper 可从外部 Websocket 客户端中获取数据。
+eKuiper 内置支持 Websocket 数据源，通过 Websocket 数据源连接器，eKuiper 可通过 websocket 连接获取数据。
+
+当 eKuiper 使用 websocket 数据源时，eKuiper 将会从 websocket TextMessage 中获取数据，并将其按 json object 数据形式进行解析。
 
 ## eKuiper 作为 websocket 客户端
 

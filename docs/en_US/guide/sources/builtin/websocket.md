@@ -2,7 +2,9 @@
 
 <span style="background:green;color:white;">stream source</span>
 
-eKuiper has built-in support for Websocket data sources. Through the Websocket data source connector, eKuiper can obtain data from external Websocket clients.
+eKuiper has built-in support for Websocket data sources. Through the Websocket data source connector, eKuiper can obtain data through websocket connection.
+
+When eKuiper uses the websocket data source, eKuiper will get the data from the websocket TextMessage and parse it in the form of json object data.
 
 ## eKuiper serve as websocket client
 
