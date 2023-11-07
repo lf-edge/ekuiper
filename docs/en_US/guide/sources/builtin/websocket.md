@@ -4,7 +4,41 @@
 
 eKuiper has built-in support for Websocket data sources. Through the Websocket data source connector, eKuiper can obtain data from external Websocket clients.
 
-## Server Configuration
+## eKuiper serve as websocket client
+
+eKuiper can serve as a websocket client, initiate a websocket connection to the remote websocket server, and receive data on the websocket connection as a message source.
+
+When you need eKuiper as a websocket client, you need to specify the server address of the websocket connection in the corresponding confKey, and declare the corresponding url in the dataSource of the stream, as follows:
+
+```yaml
+default:
+  addr: 127.0.0.1:8080
+```
+
+```sql
+CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="websocket")'
+```
+
+At this time, eKuiper will act as a websocket client, establish a websocket connection to 127.0.0.1:8080/api/data, and use this connection to receive data as the message source.
+
+## eKuiper serve as websocker server
+
+eKuiper can serve as a websocket server. At this time, the remote websocket client can actively initiate a websocket connection to eKuiper, and eKuiper will receive messages on the websocket connection as the message source.
+
+When you need eKuiper as a websocket server, you need to specify that the websocket server address is empty in the corresponding confKey, and declare the corresponding url in the dataSource of the stream, as follows:
+
+```yaml
+default:
+  addr: ""
+```
+
+```sql
+CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="websocket")'
+```
+
+At this time, eKuiper will serve as the websocket server, use itself as the host, wait for the websocket connection to be established at the URL of /api/data, and use this connection to receive data as the message source.
+
+### Server Configuration
 
 To set up eKuiper as an Websocket endpoint, configure the server settings in `etc/sources/websocket.yaml`.
 

@@ -4,7 +4,41 @@
 
 eKuiper 内置支持 Websocket 数据源，通过 Websocket 数据源连接器，eKuiper 可从外部 Websocket 客户端中获取数据。
 
-## 服务器配置
+## eKuiper 作为 websocket 客户端
+
+eKuiper 可以作为 websocket 客户端，向远端的 websocket 服务器发起 websocket 连接，并在 websocket 连接上接收数据作为消息源。
+
+当需要 eKuiper 作为 websocket 客户端时，你需要在对应的 confKey 中指定该 websocket 连接的服务端地址，并在 stream 的 dataSource 中声明对应的 url，如下:
+
+```yaml
+default:
+  addr: 127.0.0.1:8080
+```
+
+```sql
+CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="websocket")'
+```
+
+此时，eKuiper 将作为 websocket 的客户端，向 127.0.0.1:8080/api/data 建立 websocket 连接，并以该连接接收数据作为消息源。
+
+## eKuiper 作为 websocket 服务端
+
+eKuiper 可以作为 websocket 服务端，此时远端的 websocket 客户端可以主动向 eKuiper 发起 websocket 连接，eKuiper 会在该 websocket 连接上接收消息作为消息源。
+
+当需要 eKuiper 作为 websocket 服务端时，你需要在对应的 confKey 中指定该 websocket 的服务端地址为空，并在 stream 的 dataSource 中声明对应的 url，如下:
+
+```yaml
+default:
+  addr: ""
+```
+
+```sql
+CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="websocket")'
+```
+
+此时，eKuiper 将作为 websocket 的服务端，以自身为 host,并在 /api/data 的 url 处等待 websocket 连接建立，并以该连接接收数据作为消息源。
+
+### 服务器配置
 
 服务器配置在 `etc/kuiper.yaml` 中的 `source` 部分。
 

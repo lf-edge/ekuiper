@@ -13,7 +13,39 @@
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
-### /tmp/websocket.txt
+## ekuiper 作为 websocket 客户端
+
+当 websocket sink 同时定义了 addr 和 path 后，eKuiper 将作为 websocket 客户端向远端建立 websocket 连接，并将消息通过该连接推送。
+
+## eKuiper 作为 websocket 服务端
+
+当 websocket sink 只定义了 path 且 addr 为空时，eKuiper 将作为 websocket 服务端等待远方建立 websocket 连接，并将消息通过该连接推送。
+
+### 服务器配置
+
+服务器配置在 `etc/kuiper.yaml` 中的 `source` 部分。
+
+```yaml
+source:
+  ## Configurations for the global websocket server for websocket source
+  # HTTP data service ip
+  httpServerIp: 0.0.0.0
+  # HTTP data service port
+  httpServerPort: 10081
+  # httpServerTls:
+  #    certfile: /var/https-server.crt
+  #    keyfile: /var/https-server.key
+```
+
+用户可以指定以下属性：
+
+- `httpServerIp`：用于绑定 Websocket 数据服务器的 IP。
+- `httpServerPort`：用于绑定 Websocket 数据服务器的端口。
+- `httpServerTls`：Websocket 服务器 TLS 的配置。
+
+当任何需要 Websocket 源的规则被启动时，全局服务器的设置会初始化。所有关联的规则被关闭后，它就会终止。
+
+## /tmp/websocket.txt
 
 ```json
 {
