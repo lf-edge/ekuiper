@@ -4,6 +4,8 @@ eKuiper 的配置文件位于 `$eKuiper/etc/kuiper.yaml` 中。 配置文件为 
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -46,6 +48,8 @@ basic:
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -59,6 +63,8 @@ basic:
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: false
 ```
+
+当 debug 为 false 时，eKuiper 的日志级别可以通过 logLevel 控制，当 debug 为 true 时，eKuiper 的日志级别将固定为 debug。
 
 ## 系统日志
 

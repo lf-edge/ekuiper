@@ -34,7 +34,15 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
-const ConfFileName = "kuiper.yaml"
+const (
+	ConfFileName  = "kuiper.yaml"
+	DebugLogLevel = "debug"
+	InfoLogLevel  = "info"
+	WarnLogLevel  = "warn"
+	ErrorLogLevel = "error"
+	FatalLogLevel = "fatal"
+	PanicLogLevel = "panic"
+)
 
 var (
 	Config    *KuiperConf
@@ -158,6 +166,7 @@ func (s *syslogConf) Validate() error {
 
 type KuiperConf struct {
 	Basic struct {
+		LogLevel           string      `yaml:"logLevel"`
 		Debug              bool        `yaml:"debug"`
 		ConsoleLog         bool        `yaml:"consoleLog"`
 		FileLog            bool        `yaml:"fileLog"`
@@ -204,12 +213,25 @@ type KuiperConf struct {
 	}
 }
 
-func SetDebugLevel(v bool) {
-	lvl := logrus.InfoLevel
-	if v {
-		lvl = logrus.DebugLevel
+func SetLogLevel(level string, debug bool) {
+	if debug {
+		Log.SetLevel(logrus.DebugLevel)
+		return
 	}
-	Log.SetLevel(lvl)
+	switch level {
+	case DebugLogLevel:
+		Log.SetLevel(logrus.DebugLevel)
+	case InfoLogLevel:
+		Log.SetLevel(logrus.InfoLevel)
+	case WarnLogLevel:
+		Log.SetLevel(logrus.WarnLevel)
+	case ErrorLogLevel:
+		Log.SetLevel(logrus.ErrorLevel)
+	case FatalLogLevel:
+		Log.SetLevel(logrus.FatalLevel)
+	case PanicLogLevel:
+		Log.SetLevel(logrus.PanicLevel)
+	}
 }
 
 func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
@@ -299,9 +321,10 @@ func InitConf() {
 		Config.Basic.RulePatrolInterval = "10s"
 	}
 
-	if Config.Basic.Debug {
-		SetDebugLevel(true)
+	if Config.Basic.LogLevel == "" {
+		Config.Basic.LogLevel = InfoLogLevel
 	}
+	SetLogLevel(Config.Basic.LogLevel, Config.Basic.Debug)
 
 	if os.Getenv(logger.KuiperSyslogKey) == "true" || Config.Basic.Syslog != nil {
 		c := Config.Basic.Syslog
