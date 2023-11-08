@@ -124,6 +124,9 @@ func (wcw *websocketClientWrapper) Subscribe(ctx api.StreamContext, subChan []ap
 func (wcw *websocketClientWrapper) Release(ctx api.StreamContext) bool {
 	wcw.Lock()
 	defer wcw.Unlock()
+	if wcw.finished {
+		return true
+	}
 	subID := wcw.getID(ctx)
 	delete(wcw.chs, subID)
 	delete(wcw.errCh, subID)

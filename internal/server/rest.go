@@ -1145,6 +1145,7 @@ func configurationStatusExport() Configuration {
 
 func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	basic := struct {
+		LogLevel   *string `json:"logLevel"`
 		Debug      *bool   `json:"debug"`
 		ConsoleLog *bool   `json:"consoleLog"`
 		FileLog    *bool   `json:"fileLog"`
@@ -1156,9 +1157,14 @@ func configurationUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if basic.Debug != nil {
-		conf.SetDebugLevel(*basic.Debug)
-		conf.Config.Basic.Debug = *basic.Debug
+	if basic.LogLevel != nil || basic.Debug != nil {
+		if basic.LogLevel != nil {
+			conf.Config.Basic.LogLevel = *basic.LogLevel
+		}
+		if basic.Debug != nil {
+			conf.Config.Basic.Debug = *basic.Debug
+		}
+		conf.SetLogLevel(conf.Config.Basic.LogLevel, conf.Config.Basic.Debug)
 	}
 
 	if basic.TimeZone != nil {
