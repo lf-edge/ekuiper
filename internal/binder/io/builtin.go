@@ -34,12 +34,13 @@ type (
 
 var (
 	sources = map[string]NewSourceFunc{
-		"mqtt":     func() api.Source { return &mqtt.MQTTSource{} },
-		"httppull": func() api.Source { return &http.PullSource{} },
-		"httppush": func() api.Source { return &http.PushSource{} },
-		"file":     func() api.Source { return &file.FileSource{} },
-		"memory":   func() api.Source { return memory.GetSource() },
-		"neuron":   func() api.Source { return neuron.GetSource() },
+		"mqtt":      func() api.Source { return &mqtt.MQTTSource{} },
+		"httppull":  func() api.Source { return &http.PullSource{} },
+		"httppush":  func() api.Source { return &http.PushSource{} },
+		"file":      func() api.Source { return &file.FileSource{} },
+		"memory":    func() api.Source { return memory.GetSource() },
+		"neuron":    func() api.Source { return neuron.GetSource() },
+		"websocket": func() api.Source { return &websocket.WebsocketSource{} },
 	}
 	sinks = map[string]NewSinkFunc{
 		"log":         sink.NewLogSink,

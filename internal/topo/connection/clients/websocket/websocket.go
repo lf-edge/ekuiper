@@ -16,7 +16,6 @@ package websocket
 
 import (
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -73,11 +72,10 @@ func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrappe
 		}
 		config.tlsConfig = tConf
 	}
-
-	if len(config.Addr) < 1 || len(config.Path) < 1 {
-		return nil, fmt.Errorf("addr and path should be set")
+	if len(config.Addr) > 0 && len(config.Path) > 0 {
+		return newWebsocketClientClientWrapper(config)
 	}
-	return newWebsocketClientClientWrapper(config)
+	return newWebsocketServerConnWrapper(config)
 }
 
 func GetWebsocketClientConn(addr, path string, tlsConfig *tls.Config) (*websocket.Conn, error) {
