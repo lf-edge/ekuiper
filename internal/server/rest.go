@@ -673,14 +673,18 @@ func validateRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body", logger)
 		return
 	}
-	validate, err := validateRule("", string(body))
+	sources, validate, err := validateRule("", string(body))
 	if !validate {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte(err.Error()))
 		return
 	}
+	resp := make(map[string]interface{})
+	resp["valid"] = validate
+	resp["sources"] = sources
+	bs, _ := json.Marshal(resp)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("The rule has been successfully validated and is confirmed to be correct."))
+	w.Write(bs)
 }
 
 type rulesetInfo struct {

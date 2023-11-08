@@ -24,7 +24,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -351,11 +353,22 @@ func getRuleTopo(name string) (string, error) {
 	}
 }
 
-func validateRule(name, ruleJson string) (bool, error) {
+func validateRule(name, ruleJson string) ([]string, bool, error) {
 	// Validate the rule json
-	_, err := ruleProcessor.GetRuleByJson(name, ruleJson)
+	rule, err := ruleProcessor.GetRuleByJson(name, ruleJson)
 	if err != nil {
-		return false, fmt.Errorf("invalid rule json: %v", err)
+		return nil, false, fmt.Errorf("invalid rule json: %v", err)
 	}
-	return true, nil
+	stmt, _ := xsql.GetStatementFromSql(rule.Sql)
+	sources := make([]string, 0)
+	ast.WalkFunc(stmt, func(node ast.Node) bool {
+		switch t := node.(type) {
+		case *ast.Table:
+			sources = append(sources, t.Name)
+			return false
+		}
+		return true
+	})
+
+	return sources, true, nil
 }
