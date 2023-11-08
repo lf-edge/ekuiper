@@ -51,6 +51,13 @@ func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
 	return false
 }
 
+func validateMQTTSinkTopic(topic string) error {
+	if strings.Contains(topic, "#") || strings.Contains(topic, "+") {
+		return fmt.Errorf("mqtt sink topic shouldn't contain # or +")
+	}
+	return nil
+}
+
 func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	adconf := &AdConf{}
 	err := cast.MapToStruct(ps, adconf)
@@ -61,8 +68,8 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	if adconf.Tpc == "" {
 		return fmt.Errorf("mqtt sink is missing property topic")
 	}
-	if strings.Contains(adconf.Tpc, "#") || strings.Contains(adconf.Tpc, "+") {
-		return fmt.Errorf("mqtt sink topic shouldn't contain # or +")
+	if err := validateMQTTSinkTopic(adconf.Tpc); err != nil {
+		return err
 	}
 	if adconf.Qos != 0 && adconf.Qos != 1 && adconf.Qos != 2 {
 		return fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", adconf.Qos)
