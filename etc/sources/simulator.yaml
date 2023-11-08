@@ -1,0 +1,4 @@
+default:
+  data: "[{\"temperature\":22.5,\"humidity\":75}]"
+  interval: 10
+  loop: true
