@@ -21,21 +21,27 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo"
+	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 // TrialManager Manager Initialized in the binder
 var TrialManager = &Manager{
-	runs: make(map[string]*topo.Topo),
+	runs: make(map[string]Run),
 }
 
 // Manager In memory manager for all trial rules
 type Manager struct {
 	sync.RWMutex
 	// ruleId -> *Topo
-	runs map[string]*topo.Topo
+	runs map[string]Run
 }
 
-func (m *Manager) AddRule(ruleDef string) error {
+type Run struct {
+	topo   *topo.Topo
+	msgCli api.MessageClient
+}
+
+func (m *Manager) CreateRule(ruleDef string) error {
 	def := &RunDef{}
 	err := json.Unmarshal([]byte(ruleDef), def)
 	if err != nil {
@@ -44,25 +50,39 @@ func (m *Manager) AddRule(ruleDef string) error {
 	m.Lock()
 	defer m.Unlock()
 	// If the rule exists, stop it first
-	if tp, ok := m.runs[def.Id]; ok {
-		tp.Cancel()
+	if r, ok := m.runs[def.Id]; ok {
+		r.topo.Cancel()
 		conf.Log.Warnf("stop last run of test rule %s", def.Id)
 	}
-	t, err := trialRun(def)
+	t, c, err := create(def)
 	if err != nil {
 		return err
 	}
-	m.runs[def.Id] = t
+	m.runs[def.Id] = Run{
+		topo:   t,
+		msgCli: c,
+	}
 	return nil
 }
 
 func (m *Manager) StopRule(ruleId string) {
 	m.Lock()
 	defer m.Unlock()
-	if t, ok := m.runs[ruleId]; ok {
-		t.Cancel()
+	if r, ok := m.runs[ruleId]; ok {
+		r.topo.Cancel()
 		delete(m.runs, ruleId)
 	} else {
 		conf.Log.Warnf("try to stop test rule %s but it is not found", ruleId)
 	}
+}
+
+func (m *Manager) StartRule(ruleId string) error {
+	m.RLock()
+	defer m.RUnlock()
+	if r, ok := m.runs[ruleId]; ok {
+		trialRun(r.topo, r.msgCli)
+	} else {
+		return fmt.Errorf("try to start test rule %s but it is not found", ruleId)
+	}
+	return nil
 }
