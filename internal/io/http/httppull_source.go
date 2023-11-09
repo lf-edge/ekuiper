@@ -86,8 +86,17 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 		// only update last pull time when there is no error
 		hps.t.PullTime = rcvTime.UnixMilli()
 	}
+	// Parse body which may contain dynamic time range and tokens, so merge them
+	var tempProps map[string]any
+	if hps.tokens != nil {
+		tempProps = hps.tokens
+	} else {
+		tempProps = make(map[string]any)
+	}
+	tempProps["LastPullTime"] = hps.t.LastPullTime
+	tempProps["PullTime"] = hps.t.PullTime
 	// Parse url which may contain dynamic time range
-	url, err := ctx.ParseTemplate(hps.config.Url, hps.t)
+	url, err := ctx.ParseTemplate(hps.config.Url, tempProps)
 	if err != nil {
 		return []api.SourceTuple{
 			&xsql.ErrorSourceTuple{
@@ -104,7 +113,7 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 			ctx.GetLogger().Warnf("Refresh HTTP pull token error: %v", err)
 		}
 	}
-	headers, err := hps.parseHeaders(ctx, hps.tokens)
+	headers, err := hps.parseHeaders(ctx, tempProps)
 	if err != nil {
 		return []api.SourceTuple{
 			&xsql.ErrorSourceTuple{
@@ -112,7 +121,7 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 			},
 		}
 	}
-	body, err := ctx.ParseTemplate(hps.config.Body, hps.t)
+	body, err := ctx.ParseTemplate(hps.config.Body, tempProps)
 	if err != nil {
 		return []api.SourceTuple{
 			&xsql.ErrorSourceTuple{
