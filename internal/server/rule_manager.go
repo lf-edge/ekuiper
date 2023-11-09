@@ -23,10 +23,10 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -360,15 +360,16 @@ func validateRule(name, ruleJson string) ([]string, bool, error) {
 		return nil, false, fmt.Errorf("invalid rule json: %v", err)
 	}
 	stmt, _ := xsql.GetStatementFromSql(rule.Sql)
-	sources := make([]string, 0)
-	ast.WalkFunc(stmt, func(node ast.Node) bool {
-		switch t := node.(type) {
-		case *ast.Table:
-			sources = append(sources, t.Name)
-			return false
+	s, err := store.GetKV("stream")
+	if err != nil {
+		return nil, false, err
+	}
+	sources := xsql.GetStreams(stmt)
+	for _, result := range sources {
+		_, err := xsql.GetDataSource(s, result)
+		if err != nil {
+			return nil, false, err
 		}
-		return true
-	})
-
+	}
 	return sources, true, nil
 }
