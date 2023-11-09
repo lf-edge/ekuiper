@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSinkConfigure(t *testing.T) {
@@ -95,5 +97,32 @@ func TestSinkConfigure(t *testing.T) {
 				return
 			}
 		})
+	}
+}
+
+func TestValidateMQTTSinkConf(t *testing.T) {
+	testcases := []struct {
+		topic       string
+		expectError bool
+	}{
+		{
+			topic:       "/123/+",
+			expectError: true,
+		},
+		{
+			topic:       "/123/#",
+			expectError: true,
+		},
+		{
+			topic: "/123/",
+		},
+	}
+	for _, tc := range testcases {
+		err := validateMQTTSinkTopic(tc.topic)
+		if tc.expectError {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
 	}
 }

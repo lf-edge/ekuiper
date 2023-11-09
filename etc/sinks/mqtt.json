@@ -77,7 +77,7 @@
       },
       "label": {
         "en_US": "MQTT ClientID",
-        "zh_CN": "MQTT 客户端标识符(ClinetID)"
+        "zh_CN": "MQTT 客户端标识符(ClientID)"
       }
     },
     {
