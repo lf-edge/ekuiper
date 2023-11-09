@@ -2,6 +2,7 @@ message DrivingData {
   optional DrvgMod drvg_mod = 1;
   optional double average_speed = 2;
   optional BrkPedalStatus brk_pedal_sts = 3;
+  repeated DrvgMod drvg_mod_history = 4;
 
   message BrkPedalStatus {
     optional BrkPedalValid valid = 1;

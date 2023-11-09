@@ -105,7 +105,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 					return r, nil
 				}
 			}, "float", cast.CONVERT_SAMEKIND)
-		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
+		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_ENUM:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToInt(input, sn)
 				if err != nil {
