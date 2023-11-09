@@ -36,8 +36,15 @@ const (
 
 func TestWebsocketPubSub(t *testing.T) {
 	go mockWebSocketServer()
+	time.Sleep(100 * time.Millisecond)
 	ctx := context.NewMockContext("123", "123")
-	cli, err := newWebsocketClientClientWrapper(&WebSocketConnectionConfig{Addr: addr, Path: path})
+	cli, err := newWebsocketClientClientWrapper(&WebSocketConnectionConfig{Addr: addr, Path: path, MaxConnRetry: 3})
+	wsCli := cli.(*websocketClientWrapper)
+	// ensure goroutine closed
+	defer wsCli.Wait()
+	// wait server goroutine process running
+	<-handleCh
+
 	require.NoError(t, err)
 	cli.SetConnectionSelector("456")
 	require.Equal(t, "456", cli.GetConnectionSelector())
@@ -45,14 +52,14 @@ func TestWebsocketPubSub(t *testing.T) {
 	databytes, err := json.Marshal(data)
 	require.NoError(t, err)
 
-	dataCh := make(chan interface{})
+	dataCh := make(chan interface{}, 16)
 	subs := []api.TopicChannel{
 		{
 			Topic:    "",
 			Messages: dataCh,
 		},
 	}
-	errCh := make(chan error)
+	errCh := make(chan error, 16)
 	require.NoError(t, cli.Subscribe(ctx, subs, errCh, map[string]interface{}{}))
 	err = cli.Publish(ctx, "", databytes, map[string]interface{}{})
 	require.NoError(t, err)
@@ -60,17 +67,24 @@ func TestWebsocketPubSub(t *testing.T) {
 	require.Equal(t, data, <-recvDataCh)
 	// assert sub
 	require.Equal(t, databytes, <-dataCh)
-	processDone <- struct{}{}
+	// ensure connection closed
+	<-connCloseCh
+	// wait cli connection reconnect
+	<-handleCh
+
+	err = cli.Publish(ctx, "", databytes, map[string]interface{}{})
+	require.NoError(t, err)
+	// assert pub
+	require.Equal(t, data, <-recvDataCh)
+	// assert sub
+	require.Equal(t, databytes, <-dataCh)
+	<-connCloseCh
 
 	cli.AddRef()
 	cli.Release(ctx)
-	wsCli := cli.(*websocketClientWrapper)
 	require.False(t, wsCli.isFinished())
-	require.False(t, wsCli.processDone)
 	cli.Release(ctx)
 	require.True(t, wsCli.isFinished())
-	time.Sleep(100 * time.Millisecond)
-	require.True(t, wsCli.processDone)
 }
 
 func mockWebSocketServer() {
@@ -80,12 +94,14 @@ func mockWebSocketServer() {
 
 var (
 	recvDataCh  chan interface{}
-	processDone chan struct{}
+	connCloseCh chan struct{}
+	handleCh    chan struct{}
 )
 
 func init() {
 	recvDataCh = make(chan interface{})
-	processDone = make(chan struct{})
+	connCloseCh = make(chan struct{})
+	handleCh = make(chan struct{})
 }
 
 var upgrader = websocket.Upgrader{
@@ -95,7 +111,6 @@ var upgrader = websocket.Upgrader{
 }
 
 func process(c *websocket.Conn) {
-	defer c.Close()
 	_, message, err := c.ReadMessage()
 	if err != nil {
 		recvDataCh <- err
@@ -110,15 +125,18 @@ func process(c *websocket.Conn) {
 	recvDataCh <- a
 
 	c.WriteMessage(websocket.TextMessage, message)
-	<-processDone
+	c.Close()
+	connCloseCh <- struct{}{}
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	conf.Log.Println("handle")
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		conf.Log.Errorf("upgrade: %v", err)
 		return
 	}
-
 	go process(c)
+	time.Sleep(100 * time.Millisecond)
+	handleCh <- struct{}{}
 }
