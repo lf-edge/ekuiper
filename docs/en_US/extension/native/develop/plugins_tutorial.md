@@ -159,7 +159,7 @@ Developing a plugin needs to extend the interface in eKuiper, so it must depend 
 ```go
 module samplePlugin
 
-go 1.20
+go 1.21
 
 require (
   github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -171,7 +171,7 @@ mysql.go also have a dependency for mysql package, so the finial go.mod is this.
  ```go
 module samplePlugin
 
-go 1.20
+go 1.21
 
 require (
   github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
@@ -292,13 +292,13 @@ eKuiper provides different docker images for different purpose. The development 
          go build -trimpath --buildmode=plugin -o ./kuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
        ```
 
-eKuiper offers an Alpine version of its image, but it does not come with the Go environment pre-installed. To compile plugins using the Alpine image, users will need to install the necessary dependencies themselves. Alternatively, users can opt to use the Golang image as their base environment, which includes the Go environment and simplifies the plugin compilation process(If you are using the golang 1.20 version image and want to compile eKuiper plugins, you can use the provided base image (https://github.com/lf-edge/ekuiper/pkgs/container/ekuiper%2Fbase) as the base environment. Plugins compiled using this base image will not encounter the "Error loading shared library libresolve.so.2" when deployed to the alpine version of eKuiper). Here are the specific steps to follow when using the Golang image as the base environment:
+eKuiper offers an Alpine version of its image, but it does not come with the Go environment pre-installed. To compile plugins using the Alpine image, users will need to install the necessary dependencies themselves. Alternatively, users can opt to use the Golang image as their base environment, which includes the Go environment and simplifies the plugin compilation process(If you are using the golang 1.21 version image and want to compile eKuiper plugins, you can use the provided base image (https://github.com/lf-edge/ekuiper/pkgs/container/ekuiper%2Fbase) as the base environment. Plugins compiled using this base image will not encounter the "Error loading shared library libresolve.so.2" when deployed to the alpine version of eKuiper). Here are the specific steps to follow when using the Golang image as the base environment:
 
 1. To use the Golang image as the base environment, you'll need to make sure that you have the correct version of the Golang image installed. Additionally, you'll need to mount the local plugin directory and eKuiper source code into a directory within Docker, so that you can access and compile the plugin project within the Docker environment.
 Assuming that your plugin project is located in the local directory `/var/git`, you can map this directory to the `/go/plugins` directory within Docker using the following command:
 
     ```shell
-    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.20.2 /bin/sh
+    docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.21.3 /bin/sh
     ```
 
 2. Do the necessary steps listed in former compile locally steps, the structure should like this

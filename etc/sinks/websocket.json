@@ -7,13 +7,9 @@
       "company": "EMQ Technologies Co., Ltd",
       "website": "https://www.emqx.io"
     },
-    "helpUrl": {
-      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/builtin/mqtt.html",
-      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/builtin/mqtt.html"
-    },
     "description": {
-      "en_US": "The action is used for publish output message into an MQTT server.",
-      "zh_CN": "该操作用于将输出消息发布到 MQTT 服务器中"
+      "en_US": "The action is used for publish output message through websocket connection.",
+      "zh_CN": "该操作用于将输出消息发布通过 websocket 链接发送"
     }
   },
   "properties": [
@@ -34,137 +30,34 @@
       }
     },
     {
-      "name": "server",
-      "default": "tcp://127.0.0.1:1883",
+      "name": "addr",
+      "default": "",
       "optional": false,
       "control": "text",
       "connection_related": true,
       "type": "string",
       "hint": {
-        "en_US": "The broker address of the MQTT server, such as tcp://127.0.0.1:1883.",
-        "zh_CN": "MQTT 服务器地址，例如 tcp://127.0.0.1:1883"
+        "en_US": "websocket server address. If this address is defined, then eKuiper will apply for a websocket request to this address. If this address is not defined, then eKuiper will act as the websocket server itself.",
+        "zh_CN": "websocket server 端地址，如果定义了该地址，那么 eKuiper 将会向该地址申请 websocket 请求，如果没有定义该地址，那么 eKuiper 将会自己作为 websocket server 端"
       },
       "label": {
-        "en_US": "MQTT broker address",
-        "zh_CN": "MQTT 服务器地址"
+        "en_US": "websocket server address",
+        "zh_CN": "websocket server address"
       }
     },
     {
-      "name": "topic",
+      "name": "path",
       "optional": false,
       "control": "text",
       "default": "",
       "type": "string",
       "hint": {
-        "en_US": "The MQTT topic, such as analysis/result",
-        "zh_CN": "MQTT 主题，例如 analysis/result"
+        "en_US": "\nThe url for websocket to apply for a connection. If addr is defined, then eKuiper will apply for a connection to the path where addr is located. If the addr is not defined, then eKuiper will use this url as the websocket server.",
+        "zh_CN": "websocket 申请连接的 url，如果定义了 addr，那么 eKuiper 将会向 addr 所在 path 端申请连接，如果没有定义 url，那么 eKuiper 将会自身以该 url 作为 websocket server 端"
       },
       "label": {
-        "en_US": "MQTT topic",
-        "zh_CN": "MQTT 主题"
-      }
-    },
-    {
-      "name": "clientId",
-      "optional": true,
-      "control": "text",
-      "connection_related": true,
-      "default": "",
-      "type": "string",
-      "hint": {
-        "en_US": "The client id for MQTT connection. If not specified, an uuid will be used",
-        "zh_CN": "MQTT 连接的客户端 ID。 如果未指定，将使用一个 uuid"
-      },
-      "label": {
-        "en_US": "MQTT ClientID",
-        "zh_CN": "MQTT 客户端标识符(ClientID)"
-      }
-    },
-    {
-      "name": "protocolVersion",
-      "default": "3.1.1",
-      "optional": true,
-      "control": "select",
-      "values": [
-        "3.1",
-        "3.1.1"
-      ],
-      "type": "string",
-      "connection_related": true,
-      "hint": {
-        "en_US": "MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4).  If not specified, the default value is 3.1.",
-        "zh_CN": "MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。"
-      },
-      "label": {
-        "en_US": "MQTT protocol version",
-        "zh_CN": "MQTT 协议版本"
-      }
-    },
-    {
-      "name": "qos",
-      "default": 0,
-      "optional": true,
-      "control": "select",
-      "values": [
-        0,
-        1,
-        2
-      ],
-      "type": "list_int",
-      "hint": {
-        "en_US": "The QoS for message delivery.",
-        "zh_CN": "消息转发的服务质量"
-      },
-      "label": {
-        "en_US": "QoS",
-        "zh_CN": "QoS"
-      }
-    },
-    {
-      "name": "retained",
-      "default": false,
-      "optional": true,
-      "control": "radio",
-      "type": "bool",
-      "hint": {
-        "en_US": "The Retained for message delivery.",
-        "zh_CN": "转发后的消息是否保留"
-      },
-      "label": {
-        "en_US": "Retained",
-        "zh_CN": "Retained"
-      }
-    },
-    {
-      "name": "username",
-      "default": "",
-      "optional": true,
-      "control": "text",
-      "type": "string",
-      "connection_related": true,
-      "hint": {
-        "en_US": "The username for the connection.",
-        "zh_CN": "连接用户名"
-      },
-      "label": {
-        "en_US": "Username",
-        "zh_CN": "用户名"
-      }
-    },
-    {
-      "name": "password",
-      "default": "",
-      "optional": true,
-      "control": "text",
-      "type": "string",
-      "connection_related": true,
-      "hint": {
-        "en_US": "The password for the connection.",
-        "zh_CN": "连接密码。"
-      },
-      "label": {
-        "en_US": "Password",
-        "zh_CN": "密码"
+        "en_US": "websocket path",
+        "zh_CN": "websocket path"
       }
     },
     {
@@ -230,34 +123,14 @@
         "en_US": "Skip Certification verification",
         "zh_CN": "跳过证书验证"
       }
-    },
-    {
-      "name": "compression",
-      "optional": true,
-      "control": "select",
-      "type": "string",
-      "values": [
-        "zlib",
-        "gzip",
-        "flate",
-        "zstd"
-      ],
-      "hint": {
-        "en_US": "Compress the payload with the specified compression method.",
-        "zh_CN": "使用指定的压缩方法压缩 Payload。"
-      },
-      "label": {
-        "en_US": "Compression",
-        "zh_CN": "压缩"
-      }
     }
   ],
   "node": {
     "category": "sink",
     "icon": "iconPath",
     "label": {
-      "en": "MQTT",
-      "zh": "MQTT"
+      "en": "websocket",
+      "zh": "websocket"
     }
   }
 }

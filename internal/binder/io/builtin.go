@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/internal/io/sink"
+	"github.com/lf-edge/ekuiper/internal/io/websocket"
 	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -33,12 +34,13 @@ type (
 
 var (
 	sources = map[string]NewSourceFunc{
-		"mqtt":     func() api.Source { return &mqtt.MQTTSource{} },
-		"httppull": func() api.Source { return &http.PullSource{} },
-		"httppush": func() api.Source { return &http.PushSource{} },
-		"file":     func() api.Source { return &file.FileSource{} },
-		"memory":   func() api.Source { return memory.GetSource() },
-		"neuron":   func() api.Source { return neuron.GetSource() },
+		"mqtt":      func() api.Source { return &mqtt.MQTTSource{} },
+		"httppull":  func() api.Source { return &http.PullSource{} },
+		"httppush":  func() api.Source { return &http.PushSource{} },
+		"file":      func() api.Source { return &file.FileSource{} },
+		"memory":    func() api.Source { return memory.GetSource() },
+		"neuron":    func() api.Source { return neuron.GetSource() },
+		"websocket": func() api.Source { return &websocket.WebsocketSource{} },
 	}
 	sinks = map[string]NewSinkFunc{
 		"log":         sink.NewLogSink,
@@ -49,6 +51,7 @@ var (
 		"memory":      func() api.Sink { return memory.GetSink() },
 		"neuron":      func() api.Sink { return neuron.GetSink() },
 		"file":        func() api.Sink { return file.File() },
+		"websocket":   func() api.Sink { return &websocket.WebSocketSink{} },
 	}
 	lookupSources = map[string]NewLookupSourceFunc{
 		"memory":   func() api.LookupSource { return memory.GetLookupSource() },
