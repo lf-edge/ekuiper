@@ -72,7 +72,6 @@ func getSourceConf(props map[string]interface{}) (*kafkaSourceConf, error) {
 }
 
 func (s *KafkaSource) Configure(topic string, props map[string]interface{}) error {
-	s.offset = kafkago.LastOffset
 	if len(topic) < 1 {
 		conf.Log.Error("DataSource which indicates the topic should be defined")
 		return fmt.Errorf("DataSource which indicates the topic should be defined")
@@ -157,8 +156,8 @@ func (s *KafkaSource) Close(_ api.StreamContext) error {
 	return nil
 }
 
-// Rewind
 func (s *KafkaSource) Rewind(offset interface{}) error {
+	conf.Log.Infof("set kafka source offset: %v", offset)
 	offsetV := s.offset
 	switch v := offset.(type) {
 	case int64:
@@ -167,12 +166,12 @@ func (s *KafkaSource) Rewind(offset interface{}) error {
 		offsetV = int64(v)
 	case float64:
 		offsetV = int64(v)
+	default:
+		return fmt.Errorf("%v can't be set as offset", offset)
 	}
-	if offsetV != s.offset {
-		if err := s.reader.SetOffset(offsetV); err != nil {
-			conf.Log.Errorf("kafka offset error: %v", err)
-			return fmt.Errorf("set kafka offset failed, err:%v", err)
-		}
+	if err := s.reader.SetOffset(offsetV); err != nil {
+		conf.Log.Errorf("kafka offset error: %v", err)
+		return fmt.Errorf("set kafka offset failed, err:%v", err)
 	}
 	return nil
 }
