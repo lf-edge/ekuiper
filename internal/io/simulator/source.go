@@ -53,6 +53,7 @@ func (m *Source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, er
 	ticker := time.NewTicker(time.Duration(m.c.Interval) * time.Millisecond)
 	defer ticker.Stop()
 	index := 0
+	index = m.send(ctx, consumer, index)
 	for {
 		select {
 		case <-ticker.C:
@@ -64,16 +65,21 @@ func (m *Source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, er
 				}
 				index = 0
 			}
-			tuple := api.NewDefaultSourceTupleWithTime(m.c.Data[index], nil, conf.GetNow())
-			select {
-			case consumer <- tuple:
-				index++
-			case <-ctx.Done():
-			}
+			index = m.send(ctx, consumer, index)
 		case <-ctx.Done():
 			return
 		}
 	}
+}
+
+func (m *Source) send(ctx api.StreamContext, consumer chan<- api.SourceTuple, index int) int {
+	tuple := api.NewDefaultSourceTupleWithTime(m.c.Data[index], nil, conf.GetNow())
+	select {
+	case consumer <- tuple:
+		index++
+	case <-ctx.Done():
+	}
+	return index
 }
 
 func (m *Source) Close(_ api.StreamContext) error {

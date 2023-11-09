@@ -221,6 +221,30 @@ func (r *Rule) IsScheduleRule() bool {
 	return len(r.Options.Cron) > 0 && len(r.Options.Duration) > 0
 }
 
+func GetDefaultRule(name, sql string) *Rule {
+	return &Rule{
+		Id:  name,
+		Sql: sql,
+		Options: &RuleOption{
+			IsEventTime:        false,
+			LateTol:            1000,
+			Concurrency:        1,
+			BufferLength:       1024,
+			SendMetaToSink:     false,
+			SendError:          true,
+			Qos:                AtMostOnce,
+			CheckpointInterval: 300000,
+			Restart: &RestartStrategy{
+				Attempts:     0,
+				Delay:        1000,
+				Multiplier:   2,
+				MaxDelay:     30000,
+				JitterFactor: 0.1,
+			},
+		},
+	}
+}
+
 type StreamContext interface {
 	context.Context
 	GetLogger() Logger

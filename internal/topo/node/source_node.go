@@ -67,6 +67,10 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 	}
 }
 
+func (m *SourceNode) SetProps(props map[string]interface{}) {
+	m.props = props
+}
+
 const OffsetKey = "$$offset"
 
 func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
@@ -76,6 +80,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
 		panicOrError := infra.SafeRun(func() error {
 			props := nodeConf.GetSourceConf(m.sourceType, m.options)
+			// merge the props
+			for k, v := range m.props {
+				props[k] = v
+			}
 			m.props = props
 			if c, ok := props["concurrency"]; ok {
 				if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
