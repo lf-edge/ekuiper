@@ -47,7 +47,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
