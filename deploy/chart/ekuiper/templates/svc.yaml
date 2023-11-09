@@ -36,3 +36,25 @@ spec:
     {{- end }}
   selector:
     {{- include "ekuiper.selectorLabels" . | nindent 4 }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ekuiper.fullname" . }}-headless
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ekuiper.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+  - name: {{ .Values.service.ports.restapi.name }}
+    port:  {{ .Values.service.ports.restapi.port | default 9081 }}
+    protocol: TCP
+    targetPort:  restapi
+  - name: {{ .Values.service.ports.ekuiper.name }}
+    port: {{ .Values.service.ports.ekuiper.port | default 20498 }}
+    protocol: TCP
+    targetPort: ekuiper
+  selector:
+    {{- include "ekuiper.selectorLabels" . | nindent 4 }}
