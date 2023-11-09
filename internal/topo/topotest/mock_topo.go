@@ -229,7 +229,6 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
-		sources    []*node.SourceNode
 		datas      [][]*xsql.Tuple
 		dataLength int
 	)
@@ -254,7 +253,7 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 	}
 	mockSink := mocknode.NewMockSink()
 	sink := node.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp, err := planner.PlanSQLWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, sources, []*node.SinkNode{sink})
+	tp, err := planner.PlanSQLWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, nil, []*node.SinkNode{sink})
 	if err != nil {
 		t.Error(err)
 		return nil, 0, nil, nil, nil

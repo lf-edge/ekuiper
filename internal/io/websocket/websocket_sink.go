@@ -33,8 +33,8 @@ type WebsocketConf struct {
 }
 
 func (c *WebsocketConf) validateSinkConf() error {
-	if len(c.Path) < 1 || len(c.Addr) < 1 {
-		return fmt.Errorf("websocket sink conf path and address should be defined")
+	if len(c.Path) < 1 {
+		return fmt.Errorf("websocket sink conf path should be defined")
 	}
 	return nil
 }
@@ -45,6 +45,7 @@ func (wss *WebSocketSink) Open(ctx api.StreamContext) error {
 		return err
 	}
 	wss.cli = cli
+	ctx.GetLogger().Infof("websocket sink is connected")
 	return nil
 }
 
