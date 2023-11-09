@@ -96,21 +96,6 @@
       }
     },
     {
-      "name": "offset",
-      "default": "0",
-      "optional": true,
-      "control": "text",
-      "type": "int",
-      "hint": {
-        "en_US": "the offset from which the next batch of messages will be read. -1 indicates latest offset and -2 indicates first offset.",
-        "zh_CN": "kafka consumer 的初始 offset, -1 默认为最新 offset, -2 默认为最旧 offset"
-      },
-      "label": {
-        "en_US": "offset",
-        "zh_CN": "offset"
-      }
-    },
-    {
       "name": "saslAuthType",
       "default": "none",
       "optional": false,

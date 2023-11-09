@@ -39,7 +39,6 @@ type kafkaSourceConf struct {
 	Partition   int    `json:"partition"`
 	MaxAttempts int    `json:"maxAttempts"`
 	MaxBytes    int    `json:"maxBytes"`
-	Offset      int64  `json:"offset"`
 }
 
 func (c *kafkaSourceConf) validate() error {
@@ -120,13 +119,6 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 		SASLMechanism: mechanism,
 	}
 	reader := kafkago.NewReader(readerConfig)
-	if kConf.Offset != 0 {
-		if err := reader.SetOffset(kConf.Offset); err != nil {
-			conf.Log.Errorf("kafka offset error: %v", err)
-			return fmt.Errorf("set kafka offset failed, err:%v", err)
-		}
-		s.offset = kConf.Offset
-	}
 	s.reader = reader
 	conf.Log.Infof("kafka source got configured.")
 	return nil

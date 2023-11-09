@@ -22,7 +22,6 @@ default:
   groupID: ""
   partition: 0
   maxBytes: 1000000
-  offset: 0
 ```
 
 ### 全局配置
@@ -44,7 +43,3 @@ eKuiper 消费 kafka 消息时所指定的 partition
 ### maxBytes
 
 单个 kafka 消息批次最大所能携带的 bytes 数，默认为 1MB
-
-### offset
-
-eKuiper 启动向 kafka 进行消息消费时所指定的 offset， -1 代表 lastOffset，-2 代表 firstOffset。

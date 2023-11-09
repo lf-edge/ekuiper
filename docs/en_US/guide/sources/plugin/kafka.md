@@ -22,7 +22,6 @@ default:
   groupID: ""
   partition: 0
   maxBytes: 1000000
-  offset: 0
 ```
 
 ### Global configurations
@@ -44,7 +43,3 @@ The partition specified when eKuiper consumes kafka messages
 ### maxBytes
 
 The maximum number of bytes that a single Kafka message batch can carry, the default is 1MB
-
-### offset
-
-The offset specified when eKuiper starts consuming messages from kafka, -1 represents lastOffset, and -2 represents firstOffset.
