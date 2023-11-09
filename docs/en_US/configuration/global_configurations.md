@@ -8,6 +8,8 @@ Example, in case of config:
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -50,6 +52,8 @@ The configuration item **ignoreCase** is used to specify whether case is ignored
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -61,6 +65,8 @@ basic:
   # Maximum file storage hours
   maxAge: 72
 ```
+
+When debug is false, eKuiper's log level can be controlled through logLevel. When debug is true, eKuiper's log level will be fixed to debug.
 
 ## System log
 
