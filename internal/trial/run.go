@@ -34,7 +34,7 @@ type RunDef struct {
 	SinkProps map[string]any            `json:"sinkProps"`
 }
 
-func trialRun(def *RunDef) (*topo.Topo, error) {
+func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 	sinkProps := map[string]any{
 		"path": "/test/" + def.Id,
 	}
@@ -43,13 +43,17 @@ func trialRun(def *RunDef) (*topo.Topo, error) {
 	}
 	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule(def.Id, def.Sql), def.Mock, []*node.SinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
 	if err != nil {
-		return nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
+		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}
 	// Create websocket client to send out control error message together with data
 	cli, err := clients.GetClient("websocket", sinkProps)
 	if err != nil {
-		return nil, fmt.Errorf("fail to create websocket server for rule %s: %s", def.Id, err)
+		return nil, nil, fmt.Errorf("fail to create websocket server for rule %s: %s", def.Id, err)
 	}
+	return tp, cli, nil
+}
+
+func trialRun(tp *topo.Topo, cli api.MessageClient) {
 	go func() {
 		timeout := time.NewTicker(5 * time.Minute)
 		defer timeout.Stop()
@@ -62,8 +66,8 @@ func trialRun(def *RunDef) (*topo.Topo, error) {
 					return err
 				}
 			case <-timeout.C:
+				tp.GetContext().GetLogger().Debugf("trial run stops after timeout")
 				tp.Cancel()
-				conf.Log.Debugf("trial run %s stops after timeout", def.Id)
 			}
 			return nil
 		})
@@ -72,5 +76,4 @@ func trialRun(def *RunDef) (*topo.Topo, error) {
 			_ = cli.Publish(tp.GetContext(), "", []byte(err.Error()), nil)
 		}
 	}()
-	return tp, nil
 }
