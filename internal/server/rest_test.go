@@ -228,7 +228,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	returnVal, _ := io.ReadAll(w2.Result().Body)
-	expect := `The rule has been successfully validated and is confirmed to be correct.`
+	expect := `{"sources":["alert"],"valid":true}`
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
 
