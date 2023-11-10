@@ -130,7 +130,6 @@ func process(c *websocket.Conn) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	conf.Log.Println("handle")
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		conf.Log.Errorf("upgrade: %v", err)
