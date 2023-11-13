@@ -28,9 +28,10 @@ import (
 )
 
 type WebSocketConnectionConfig struct {
-	Addr      string `json:"addr"`
-	Path      string `json:"path"`
-	tlsConfig *tls.Config
+	Addr         string `json:"addr"`
+	Path         string `json:"path"`
+	MaxConnRetry int    `json:"maxConnRetry"`
+	tlsConfig    *tls.Config
 }
 
 type tlsConf struct {
@@ -50,7 +51,7 @@ func (c *tlsConf) isNil() bool {
 }
 
 func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrapper, error) {
-	config := &WebSocketConnectionConfig{}
+	config := &WebSocketConnectionConfig{MaxConnRetry: 3}
 	if err := cast.MapToStruct(props, config); err != nil {
 		return nil, err
 	}
