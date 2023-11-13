@@ -35,7 +35,7 @@ import (
 // Test only install API. Install from file is tested in the integration test in test/portable_rule_test
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("portable")
 	// Wait for other db tests to finish to avoid db lock
 	for i := 0; i < 10; i++ {
 		if _, err := InitManager(); err != nil {

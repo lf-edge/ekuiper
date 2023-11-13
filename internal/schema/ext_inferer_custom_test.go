@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("schema")
 }
 
 func TestInferCustom(t *testing.T) {

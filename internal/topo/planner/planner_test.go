@@ -33,7 +33,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("planner")
 }
 
 var defaultOption = &api.RuleOption{

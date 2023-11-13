@@ -31,7 +31,7 @@ var body = []byte(`{
     }`)
 
 func TestEndpoints(t *testing.T) {
-	testx.InitEnv()
+	testx.InitEnv("httpserver")
 	endpoints := []string{
 		"/ee1", "/eb2", "/ec3",
 	}

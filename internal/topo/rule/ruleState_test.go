@@ -50,7 +50,7 @@ var defaultOption = &api.RuleOption{
 }
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("rule")
 }
 
 func TestCreate(t *testing.T) {

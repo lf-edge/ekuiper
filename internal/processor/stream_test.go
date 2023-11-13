@@ -31,7 +31,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("processor")
 }
 
 func TestStreamCreateProcessor(t *testing.T) {
