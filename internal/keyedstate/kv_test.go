@@ -22,7 +22,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("keyedstate")
 }
 
 func TestGetKeyedState(t *testing.T) {

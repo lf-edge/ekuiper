@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,8 +27,9 @@ func Errstring(err error) string {
 	return ""
 }
 
-func InitEnv() {
+func InitEnv(id string) {
 	conf.InitConf()
+	conf.TestId = id
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		conf.Log.Fatal(err)
