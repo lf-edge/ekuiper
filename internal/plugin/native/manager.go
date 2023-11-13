@@ -497,21 +497,27 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 	}()
 	for _, file := range r.File {
 		fileName := file.Name
-		if yamlFile == fileName {
+		switch {
+		case yamlFile == fileName:
+			// skip yaml file if exists
+			if _, err = os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
+				conf.Log.Infof("skip install %s due to already exists", yamlPath)
+				continue
+			}
 			err = filex.UnzipTo(file, yamlPath)
 			if err != nil {
 				return version, err
 			}
 			revokeFiles = append(revokeFiles, yamlPath)
 			filenames = append(filenames, yamlPath)
-		} else if fileName == name+".json" {
+		case fileName == name+".json":
 			jsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, jsonPath); nil != err {
 				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
 			} else {
 				revokeFiles = append(revokeFiles, jsonPath)
 			}
-		} else if soPrefix.Match([]byte(fileName)) {
+		case soPrefix.Match([]byte(fileName)):
 			soPath = path.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
 			err = filex.UnzipTo(file, soPath)
 			if err != nil {
@@ -520,12 +526,12 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			filenames = append(filenames, soPath)
 			revokeFiles = append(revokeFiles, soPath)
 			soName, version = parseName(fileName)
-		} else if strings.HasPrefix(fileName, "etc/") {
+		case strings.HasPrefix(fileName, "etc/"):
 			err = filex.UnzipTo(file, path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
 				return version, err
 			}
-		} else { // unzip other files
+		default:
 			err = filex.UnzipTo(file, path.Join(tempPath, fileName))
 			if err != nil {
 				return version, err
