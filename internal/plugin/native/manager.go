@@ -500,16 +500,18 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		switch {
 		case yamlFile == fileName:
 			// skip yaml file if exists
-			if _, err = os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
+			if _, err := os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
+				conf.Log.Infof("install %s due to no this file", yamlPath)
+				err = filex.UnzipTo(file, yamlPath)
+				if err != nil {
+					return version, err
+				}
+				revokeFiles = append(revokeFiles, yamlPath)
+				filenames = append(filenames, yamlPath)
+			} else {
 				conf.Log.Infof("skip install %s due to already exists", yamlPath)
 				continue
 			}
-			err = filex.UnzipTo(file, yamlPath)
-			if err != nil {
-				return version, err
-			}
-			revokeFiles = append(revokeFiles, yamlPath)
-			filenames = append(filenames, yamlPath)
 		case fileName == name+".json":
 			jsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, jsonPath); nil != err {
