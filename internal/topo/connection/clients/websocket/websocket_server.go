@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -45,7 +44,7 @@ func (wsw *websocketServerConnWrapper) isFinish() bool {
 }
 
 func newWebsocketServerConnWrapper(config *WebSocketConnectionConfig) (clients.ClientWrapper, error) {
-	recvTopic, sendTopic, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Path)
+	recvTopic, sendTopic, done, err := httpserver.GetWebsocketEndpointCh(config.Path)
 	if err != nil {
 		return nil, err
 	}
