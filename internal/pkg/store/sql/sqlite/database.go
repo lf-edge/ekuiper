@@ -53,6 +53,7 @@ func NewSqliteDatabase(c definition.Config, name string) (definition.Database, e
 }
 
 func (d *Database) Connect() error {
+	fmt.Printf("connect to sqlite db path: %s\n", d.Path)
 	db, err := sql.Open("sqlite", connectionString(d.Path))
 	if err != nil {
 		return err
