@@ -45,9 +45,12 @@ func (wsw *websocketServerConnWrapper) isFinish() bool {
 }
 
 func newWebsocketServerConnWrapper(config *WebSocketConnectionConfig) (clients.ClientWrapper, error) {
-	recvTopic, sendTopic, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Path)
+	recvTopic, sendTopic, connCh, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Path)
 	if err != nil {
 		return nil, err
+	}
+	if connCh != nil {
+		<-connCh
 	}
 	wsw := &websocketServerConnWrapper{endpoint: config.Path, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1}
 	return wsw, nil
