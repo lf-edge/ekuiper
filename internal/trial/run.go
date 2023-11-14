@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -56,7 +57,12 @@ func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 func trialRun(tp *topo.Topo, cli api.MessageClient) {
 	go func() {
 		timeout := time.NewTicker(5 * time.Minute)
-		defer timeout.Stop()
+		defer func() {
+			timeout.Stop()
+			contextLogger := conf.Log.WithField("trial run", 0)
+			ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+			clients.ReleaseClient(ctx, cli)
+		}()
 		err := infra.SafeRun(func() error {
 			select {
 			case err := <-tp.Open():

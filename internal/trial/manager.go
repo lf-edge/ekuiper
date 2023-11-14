@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -41,11 +42,11 @@ type Run struct {
 	msgCli api.MessageClient
 }
 
-func (m *Manager) CreateRule(ruleDef string) error {
+func (m *Manager) CreateRule(ruleDef string) (string, error) {
 	def := &RunDef{}
 	err := json.Unmarshal([]byte(ruleDef), def)
 	if err != nil {
-		return fmt.Errorf("fail to parse rule definition %s: %s", ruleDef, err)
+		return "", fmt.Errorf("fail to parse rule definition %s: %s", ruleDef, err)
 	}
 	m.Lock()
 	defer m.Unlock()
@@ -56,19 +57,20 @@ func (m *Manager) CreateRule(ruleDef string) error {
 	}
 	t, c, err := create(def)
 	if err != nil {
-		return err
+		return "", err
 	}
 	m.runs[def.Id] = Run{
 		topo:   t,
 		msgCli: c,
 	}
-	return nil
+	return def.Id, nil
 }
 
 func (m *Manager) StopRule(ruleId string) {
 	m.Lock()
 	defer m.Unlock()
 	if r, ok := m.runs[ruleId]; ok {
+		clients.ReleaseClient(r.topo.GetContext(), r.msgCli)
 		r.topo.Cancel()
 		delete(m.runs, ruleId)
 	} else {
