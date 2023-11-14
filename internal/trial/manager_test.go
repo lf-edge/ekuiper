@@ -37,7 +37,7 @@ func init() {
 func TestTrialRule(t *testing.T) {
 	// Test 1 wrong rule
 	mockDef1 := `{"id":"rule1","sql":"select * from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":false}},"sinkProps":{"sendSingle":true}}`
-	err := TrialManager.CreateRule(mockDef1)
+	_, err := TrialManager.CreateRule(mockDef1)
 	assert.Error(t, err)
 	assert.Equal(t, "fail to run rule rule1: fail to get stream demo, please check if stream is created", err.Error())
 	p := processor.NewStreamProcessor()
@@ -47,8 +47,9 @@ func TestTrialRule(t *testing.T) {
 	var wg sync.WaitGroup
 
 	// Test 2 valid rule with mock
-	err = TrialManager.CreateRule(mockDef1)
+	id, err := TrialManager.CreateRule(mockDef1)
 	assert.NoError(t, err)
+	assert.Equal(t, "rule1", id)
 	// Read from ws
 	u := url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/rule1"}
 	c1, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
@@ -68,8 +69,9 @@ func TestTrialRule(t *testing.T) {
 
 	// Test 3 Runtime error rule
 	mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":true}},"sinkProps":{"sendSingle":true}}`
-	err = TrialManager.CreateRule(mockDefErr)
+	id, err = TrialManager.CreateRule(mockDefErr)
 	assert.NoError(t, err)
+	assert.Equal(t, "ruleErr", id)
 	// Read from ws
 	u = url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/ruleErr"}
 	c2, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
@@ -86,7 +88,8 @@ func TestTrialRule(t *testing.T) {
 
 	// Test 4 Rule without mock
 	noMockDef := `{"id":"rule2","sql":"select * from demo","sinkProps":{"sendSingle":true}}`
-	err = TrialManager.CreateRule(noMockDef)
+	id, err = TrialManager.CreateRule(noMockDef)
+	assert.Equal(t, "rule2", id)
 	assert.NoError(t, err)
 	// Read from ws
 	u = url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/rule2"}

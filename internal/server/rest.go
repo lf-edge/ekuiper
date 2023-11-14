@@ -40,6 +40,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/internal/trial"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -158,6 +159,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -1302,4 +1306,45 @@ func uploadsImport(s map[string]string) map[string]string {
 		}
 	}
 	return errMap
+}
+
+func testRuleHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	id, err := trial.TrialManager.CreateRule(string(body))
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	result := map[string]any{
+		"id":   id,
+		"port": conf.Config.Source.HttpServerPort,
+	}
+	jsonResponse(result, w, logger)
+}
+
+func testRuleStartHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	id := vars["name"]
+	err := trial.TrialManager.StartRule(id)
+	if err != nil {
+		handleError(w, err, "start rule error", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Test rule %s was started", id)
+}
+
+func testRuleStopHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	id := vars["name"]
+	trial.TrialManager.StopRule(id)
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Test rule %s was stopped", id)
 }
