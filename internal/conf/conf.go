@@ -47,6 +47,7 @@ const (
 var (
 	Config    *KuiperConf
 	IsTesting bool
+	TestId    string
 )
 
 type tlsConf struct {

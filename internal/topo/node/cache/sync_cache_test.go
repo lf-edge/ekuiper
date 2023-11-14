@@ -185,7 +185,7 @@ func TestRun(t *testing.T) {
 			stopPt: 4,
 		},
 	}
-	testx.InitEnv()
+	testx.InitEnv("cache")
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	tempStore, _ := state.CreateStore("mock", api.AtMostOnce)
 	deleteCachedb()

@@ -33,7 +33,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("portable_runtime")
 }
 
 var okMsg = []byte("ok")

@@ -34,7 +34,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("function")
 }
 
 func TestCoalesceExec(t *testing.T) {

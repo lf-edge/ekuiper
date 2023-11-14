@@ -64,7 +64,11 @@ func GetDataLoc() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		d := path.Join(dataDir, "test")
+		dir := "test"
+		if TestId != "" {
+			dir = TestId
+		}
+		d := path.Join(dataDir, dir)
 		if _, err := os.Stat(d); os.IsNotExist(err) {
 			err = os.MkdirAll(d, 0o755)
 			if err != nil {
