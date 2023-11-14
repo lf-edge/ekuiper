@@ -4,12 +4,13 @@
 
 | 属性名称         | 是否必填 | 说明                                       |
 |--------------|------|------------------------------------------|
-| addr         | 是    | websocket server 的地址，如: 127.0.0.1:8080   |
+| addr         | 否    | websocket server 的地址，如: 127.0.0.1:8080   |
 | path     | 是    | websocket server 的 url path，如: /api/data |
-| insecureSkipVerify | 是   | 是否忽略 SSL 验证                              |
-| certificationPath  | 是   | websocket 客户端 ssl 验证的 crt 文件路径           |
-| privateKeyPath     | 是   | websocket 客户端 ssl 验证的 key 文件路径               |
-| rootCaPath         | 是   | websocket 客户端 ssl 验证的 ca 证书文件路径              |
+| insecureSkipVerify | 否   | 是否忽略 SSL 验证                              |
+| certificationPath  | 否   | websocket 客户端 ssl 验证的 crt 文件路径           |
+| privateKeyPath     | 否   | websocket 客户端 ssl 验证的 key 文件路径               |
+| rootCaPath         | 否   | websocket 客户端 ssl 验证的 ca 证书文件路径              |
+| checkConnection    | 否 | 是否检查 websocket endpoint 已经存在连接   |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
@@ -20,6 +21,8 @@
 ## eKuiper 作为 websocket 服务端
 
 当 websocket sink 只定义了 path 且 addr 为空时，eKuiper 将作为 websocket 服务端等待远方建立 websocket 连接，并将消息通过该连接推送。
+
+当 `checkConnection` 为 true 时，建立规则时我们需要保证对应的 websocket enpoint 已经建立，并且已经建立起了 websocket 连接，才能成功创建规则。我们可以通过 REST API 的方式在 eKuiper 中[管理 websocket endpoint](../../../api/restapi/connection.md#websocket-连接管理)。
 
 ### 服务器配置
 
