@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -33,6 +34,22 @@ var (
 )
 
 func TestWebsocketServerConn(t *testing.T) {
+	// no endpoint, create client failed
+	_, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3"})
+	require.Error(t, err)
+
+	conf.InitConf()
+	ctx := context.NewMockContext("123", "123")
+	_, _, _, err = httpserver.RegisterWebSocketEndpoint(ctx, "/ws3")
+	require.NoError(t, err)
+
+	// no connection, create client failed
+	_, err = newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3"})
+	require.Error(t, err)
+
+	c, err := createOneConn()
+	require.NoError(t, err)
+
 	serverRecvCh = make(chan map[string]interface{})
 	serverPubCh = make(chan map[string]interface{})
 
@@ -41,7 +58,6 @@ func TestWebsocketServerConn(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cli)
 
-	ctx := context.NewMockContext("123", "123")
 	dataCh := make(chan interface{})
 	data := map[string]interface{}{"a": float64(1)}
 	subs := []api.TopicChannel{
@@ -54,7 +70,7 @@ func TestWebsocketServerConn(t *testing.T) {
 	go subData(t, dataCh)
 	// assert sub
 	require.NoError(t, cli.Subscribe(ctx, subs, errCh, map[string]interface{}{}))
-	c, err := sendOneWebsocketMsg(data)
+	err = sendOneWebsocketMsg(c, data)
 	require.NoError(t, err)
 	defer c.Close()
 	require.Equal(t, data, <-serverRecvCh)
@@ -87,15 +103,19 @@ func subData(t *testing.T, dataCh chan interface{}) {
 	serverRecvCh <- m
 }
 
-func sendOneWebsocketMsg(data map[string]interface{}) (*websocket.Conn, error) {
+func createOneConn() (*websocket.Conn, error) {
 	u := url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/ws3"}
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
+	return c, nil
+}
+
+func sendOneWebsocketMsg(c *websocket.Conn, data map[string]interface{}) error {
 	msg, err := json.Marshal(data)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return c, c.WriteMessage(websocket.TextMessage, msg)
+	return c.WriteMessage(websocket.TextMessage, msg)
 }

@@ -27,6 +27,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -86,7 +87,20 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
+	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodPost, http.MethodDelete)
 	suite.r = r
+}
+
+func (suite *RestTestSuite) Test_Connection() {
+	req, err := http.NewRequest(http.MethodPost, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
+	require.NoError(suite.T(), err)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	req, err = http.NewRequest(http.MethodDelete, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
+	require.NoError(suite.T(), err)
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *RestTestSuite) Test_rootHandler() {
