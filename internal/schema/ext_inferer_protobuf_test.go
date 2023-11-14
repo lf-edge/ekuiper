@@ -25,12 +25,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestInferProtobuf(t *testing.T) {
-	testx.InitEnv()
 	// Move test schema file to etc dir
 	etcDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -84,7 +82,6 @@ func TestInferProtobuf(t *testing.T) {
 }
 
 func TestInferProtobufWithEmbedType(t *testing.T) {
-	testx.InitEnv()
 	// Move test schema file to etc dir
 	etcDir, err := conf.GetDataLoc()
 	if err != nil {

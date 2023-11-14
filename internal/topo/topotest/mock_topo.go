@@ -39,7 +39,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("topotest")
 }
 
 const POSTLEAP = 1000 // Time change after all data sends out

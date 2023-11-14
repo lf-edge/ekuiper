@@ -38,7 +38,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("server")
 	streamProcessor = processor.NewStreamProcessor()
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)

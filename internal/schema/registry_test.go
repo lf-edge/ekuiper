@@ -23,11 +23,9 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
 )
 
 func TestProtoRegistry(t *testing.T) {
-	testx.InitEnv()
 	// Move test schema file to etc dir
 	etcDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -174,7 +172,6 @@ func TestProtoRegistry(t *testing.T) {
 }
 
 func TestCustomRegistry(t *testing.T) {
-	testx.InitEnv()
 	// Move test schema file to etc dir
 	etcDir, err := conf.GetDataLoc()
 	if err != nil {
