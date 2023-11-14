@@ -23,8 +23,7 @@ When the websocket sink defines both addr and path, eKuiper will act as a websoc
 
 When the websocket sink only defines path and addr is empty, eKuiper will serve as the websocket server and wait for the remote websocket connection to be established and push the message through the connection.
 
-When `checkConnection` is true, when creating a rule we need to ensure that the corresponding websocket enpoint has been established and the websocket connection has been established in order to successfully create the rule. 
-We can [manage websocket endpoint](../../../api/restapi/connection.md/#manage-websocket-connection) in eKuiper through REST API.
+When `checkConnection` is true, when creating a rule we need to ensure that the corresponding websocket enpoint has been established and the websocket connection has been established in order to successfully create the rule. We can [manage websocket endpoint](../../../api/restapi/connection.md/#manage-websocket-connection) in eKuiper through REST API.
 
 ### Server Configuration
 
