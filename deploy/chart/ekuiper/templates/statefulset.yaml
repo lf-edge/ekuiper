@@ -1,12 +1,44 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "ekuiper.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ekuiper.labels" . | nindent 4 }}
 spec:
+  serviceName: {{ include "ekuiper.fullname" . }}-headless
   replicas: 1
+  {{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: ekuiper-data
+        namespace: {{ .Release.Namespace }}
+        labels:
+          {{- include "ekuiper.labels" . | nindent 10 }}
+      spec:
+        {{- if .Values.persistence.storageClassName }}
+        storageClassName: {{ .Values.persistence.storageClassName | quote }}
+        {{- end }}
+        accessModes:
+          - {{ .Values.persistence.accessMode | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size | quote }}
+    - metadata:
+        name: ekuiper-plugins
+        namespace: {{ .Release.Namespace }}
+        labels:
+          {{- include "ekuiper.labels" . | nindent 10 }}
+      spec:
+        {{- if .Values.persistence.storageClassName }}
+        storageClassName: {{ .Values.persistence.storageClassName | quote }}
+        {{- end }}
+        accessModes:
+          - {{ .Values.persistence.accessMode | quote }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size | quote }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "ekuiper.selectorLabels" . | nindent 6 }}
@@ -17,13 +49,24 @@ spec:
     spec:
       serviceAccountName: {{ include "ekuiper.serviceAccountName" . }}
       volumes:
-      - name: ekuiper-data
-        {{- if .Values.persistence.enabled }}
-        persistentVolumeClaim:
-          claimName: {{ (tpl .Values.persistence.existingClaim $) | default (include "ekuiper.fullname" .) }}
-        {{- else }}
+      - name: ekuiper-log
         emptyDir: {}
+      {{- if not .Values.persistence.enabled }}
+      - name: ekuiper-data
+        emptyDir: {}
+      - name: ekuiper-plugins
+      {{- else if .Values.persistence.existingClaim }}
+      - name: ekuiper-data
+        persistentVolumeClaim:
+        {{- with .Values.persistence.existingClaim }}
+          claimName: {{ tpl . $ }}
         {{- end }}
+      - name: ekuiper-plugins
+        persistentVolumeClaim:
+        {{- with .Values.persistence.existingClaim }}
+          claimName: {{ tpl . $ }}
+        {{- end }}
+      {{- end }}
       - name: kuiper-config
         configMap:
           name: {{ include "ekuiper.fullname" . }}
@@ -44,14 +87,19 @@ spec:
         {{- end }}
       containers:
         - name: ekuiper
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.ekuiperEnv.enabled }}
           env:
           - name: {{ .Values.ekuiperEnv.key.mqttDefaultServer }}
             value: {{ .Values.ekuiperEnv.value.mqttDefaultServer }}
           {{- end }}
-          command: ["./bin/kuiperd"]
+          command:
+          - /bin/sh
+          - -c
+          - |
+            mkdir -p /kuiper/plugins/functions /kuiper/plugins/portable /kuiper/plugins/sinks /kuiper/plugins/sources /kuiper/plugins/wasm
+            /kuiper/bin/kuiperd
           readinessProbe:
             httpGet:
               {{- $restPort := index .Values "kuiperConfig" "kuiper.yaml" "basic" "restPort" }}
@@ -66,8 +114,12 @@ spec:
             - name: ekuiper
               containerPort: {{ $port | default 20498 }}
           volumeMounts:
+          - name: ekuiper-log
+            mountPath: "/kuiper/log"
           - name: ekuiper-data
             mountPath: "/kuiper/data"
+          - name: ekuiper-plugins
+            mountPath: "/kuiper/plugins"
           {{- if .Values.tls.enabled }}
           - name: certs
             mountPath: "/var/kuiper/xyz-rootca.pem"
