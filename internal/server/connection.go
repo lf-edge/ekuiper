@@ -15,29 +15,45 @@
 package server
 
 import (
+	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
-
-	"github.com/gorilla/mux"
 
 	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 )
 
+type ConnectionBody struct {
+	Endpoint string `json:"endpoint"`
+}
+
 func connectionHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	vars := mux.Vars(r)
-	endpoint := vars["endpoint"]
-
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	cb := &ConnectionBody{}
+	if err = json.Unmarshal(body, cb); err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	if len(cb.Endpoint) < 1 {
+		handleError(w, errors.New("endpoint should be defined"), "Invalid body", logger)
+		return
+	}
 	switch r.Method {
 	case http.MethodPost:
-		_, _, _, err := httpserver.RegisterWebSocketEndpoint(context.Background(), endpoint)
+		_, _, _, err := httpserver.RegisterWebSocketEndpoint(context.Background(), cb.Endpoint)
 		if err != nil {
 			handleError(w, err, "", logger)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 	case http.MethodDelete:
-		err := httpserver.UnRegisterWebSocketEndpoint(endpoint)
+		err := httpserver.UnRegisterWebSocketEndpoint(cb.Endpoint)
 		if err != nil {
 			handleError(w, err, "", logger)
 			return
