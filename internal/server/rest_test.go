@@ -87,7 +87,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
-	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodPost, http.MethodDelete)
+	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	suite.r = r
 }
 

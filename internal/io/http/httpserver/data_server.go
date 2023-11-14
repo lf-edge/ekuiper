@@ -196,6 +196,16 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 	}
 }
 
+func CheckWebsocketEndpoint(endpoint string) bool {
+	lock.Lock()
+	defer lock.Unlock()
+	if server == nil {
+		return false
+	}
+	_, ok := wsEndpointCtx[endpoint]
+	return ok
+}
+
 func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, chan struct{}, error) {
 	lock.Lock()
 	defer lock.Unlock()
