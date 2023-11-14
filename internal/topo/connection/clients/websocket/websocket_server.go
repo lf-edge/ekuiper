@@ -93,9 +93,6 @@ func (wsw *websocketServerConnWrapper) Release(c api.StreamContext) bool {
 	}
 	isFinished = wsw.isFinished
 	wsw.Unlock()
-	if isFinished {
-		httpserver.UnRegisterWebSocketEndpoint(wsw.endpoint)
-	}
 	return isFinished
 }
 
