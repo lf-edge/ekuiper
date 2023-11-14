@@ -19,6 +19,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -45,6 +46,10 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch r.Method {
+	case http.MethodGet:
+		exists := httpserver.CheckWebsocketEndpoint(cb.Endpoint)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(strconv.FormatBool(exists)))
 	case http.MethodPost:
 		_, _, _, err := httpserver.RegisterWebSocketEndpoint(context.Background(), cb.Endpoint)
 		if err != nil {

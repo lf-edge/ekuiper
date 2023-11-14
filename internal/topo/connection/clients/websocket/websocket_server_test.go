@@ -34,17 +34,21 @@ var (
 )
 
 func TestWebsocketServerConn(t *testing.T) {
+	conf.InitConf()
 	// no endpoint, create client failed
-	_, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3"})
+	_, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: true})
 	require.Error(t, err)
 
-	conf.InitConf()
+	// no endpoint, create client success
+	_, err = newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: false})
+	require.NoError(t, err)
+
 	ctx := context.NewMockContext("123", "123")
 	_, _, _, err = httpserver.RegisterWebSocketEndpoint(ctx, "/ws3")
 	require.NoError(t, err)
 
 	// no connection, create client failed
-	_, err = newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3"})
+	_, err = newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: true})
 	require.Error(t, err)
 
 	c, err := createOneConn()
@@ -54,7 +58,7 @@ func TestWebsocketServerConn(t *testing.T) {
 	serverPubCh = make(chan map[string]interface{})
 
 	conf.InitConf()
-	cli, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3"})
+	cli, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: true})
 	require.NoError(t, err)
 	require.NotNil(t, cli)
 

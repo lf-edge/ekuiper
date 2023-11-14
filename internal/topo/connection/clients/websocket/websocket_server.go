@@ -22,15 +22,17 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 type websocketServerConnWrapper struct {
-	endpoint     string
-	recvTopic    string
-	sendTopic    string
-	connSelector string
-	done         chan struct{}
+	endpoint        string
+	recvTopic       string
+	sendTopic       string
+	connSelector    string
+	done            chan struct{}
+	checkConnection bool
 
 	sync.RWMutex
 	isFinished bool
@@ -44,12 +46,21 @@ func (wsw *websocketServerConnWrapper) isFinish() bool {
 }
 
 func newWebsocketServerConnWrapper(config *WebSocketConnectionConfig) (clients.ClientWrapper, error) {
-	recvTopic, sendTopic, done, err := httpserver.GetWebsocketEndpointCh(config.Path)
-	if err != nil {
-		return nil, err
+	if config.CheckConnection {
+		recvTopic, sendTopic, done, err := httpserver.GetWebsocketEndpointCh(config.Path)
+		if err != nil {
+			return nil, err
+		}
+		wsw := &websocketServerConnWrapper{endpoint: config.Path, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1, checkConnection: true}
+		return wsw, nil
+	} else {
+		recvTopic, sendTopic, done, err := httpserver.RegisterWebSocketEndpoint(context.Background(), config.Path)
+		if err != nil {
+			return nil, err
+		}
+		wsw := &websocketServerConnWrapper{endpoint: config.Path, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1, checkConnection: false}
+		return wsw, nil
 	}
-	wsw := &websocketServerConnWrapper{endpoint: config.Path, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1}
-	return wsw, nil
 }
 
 func (wsw *websocketServerConnWrapper) process(ctx api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) {
