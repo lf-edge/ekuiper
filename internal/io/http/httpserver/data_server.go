@@ -16,9 +16,9 @@ package httpserver
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -151,9 +151,10 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 		}
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
-			if strings.Contains(err.Error(), "close") {
+			var e *websocket.CloseError
+			if errors.As(err, &e) {
 				wsEndpointCtx[endpoint].removeConn(c)
-				conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
+				conf.Log.Infof("websocket endpoint %s connection get closed: %v", endpoint, e)
 				break
 			}
 			conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
@@ -184,7 +185,8 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 				continue
 			}
 			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
-				if strings.Contains(err.Error(), "close") {
+				var e *websocket.CloseError
+				if errors.As(err, &e) {
 					wsEndpointCtx[endpoint].removeConn(c)
 					conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
 					break
