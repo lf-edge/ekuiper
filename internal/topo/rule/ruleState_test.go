@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -301,10 +302,12 @@ func TestMultipleAccess(t *testing.T) {
 		}
 	}
 	wg.Wait()
-	rs.Start()
+	fmt.Printf("before %d:%d\n", 10, rs.triggered)
+	err = rs.Stop()
+	assert.NoError(t, err)
 	fmt.Printf("%d:%d\n", 10, rs.triggered)
-	if rs.triggered != 1 {
-		t.Errorf("triggered mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", 1, rs.triggered)
+	if rs.triggered != 0 {
+		t.Errorf("triggered mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", 0, rs.triggered)
 	}
 }
 
