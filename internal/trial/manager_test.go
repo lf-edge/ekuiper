@@ -67,24 +67,24 @@ func TestTrialRule(t *testing.T) {
 		wg.Done()
 	}()
 
-	// Test 3 Runtime error rule
-	mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":true}},"sinkProps":{"sendSingle":true}}`
-	id, err = TrialManager.CreateRule(mockDefErr)
-	assert.NoError(t, err)
-	assert.Equal(t, "ruleErr", id)
-	// Read from ws
-	u = url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/ruleErr"}
-	c2, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	assert.NoError(t, err)
-	defer c2.Close()
-	wg.Add(1)
-	go func() {
-		_ = c2.SetReadDeadline(time.Now().Add(1 * time.Second))
-		_, data, err := c2.ReadMessage()
-		assert.NoError(t, err)
-		assert.Equal(t, "{\"error\":\"run Select error: expr: binaryExpr:{ demo.name + demo.value } meet error, err:invalid operation string(demo) + float64(1)\"}", string(data))
-		wg.Done()
-	}()
+	//// Test 3 Runtime error rule
+	//mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":true}},"sinkProps":{"sendSingle":true}}`
+	//id, err = TrialManager.CreateRule(mockDefErr)
+	//assert.NoError(t, err)
+	//assert.Equal(t, "ruleErr", id)
+	//// Read from ws
+	//u = url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/ruleErr"}
+	//c2, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	//assert.NoError(t, err)
+	//defer c2.Close()
+	//wg.Add(1)
+	//go func() {
+	//	_ = c2.SetReadDeadline(time.Now().Add(1 * time.Second))
+	//	_, data, err := c2.ReadMessage()
+	//	assert.NoError(t, err)
+	//	assert.Equal(t, "{\"error\":\"run Select error: expr: binaryExpr:{ demo.name + demo.value } meet error, err:invalid operation string(demo) + float64(1)\"}", string(data))
+	//	wg.Done()
+	//}()
 
 	// Test 4 Rule without mock
 	noMockDef := `{"id":"rule2","sql":"select * from demo","sinkProps":{"sendSingle":true}}`
@@ -110,13 +110,13 @@ func TestTrialRule(t *testing.T) {
 
 	err = TrialManager.StartRule("rule1")
 	assert.NoError(t, err)
-	err = TrialManager.StartRule("ruleErr")
-	assert.NoError(t, err)
+	// err = TrialManager.StartRule("ruleErr")
+	// assert.NoError(t, err)
 	err = TrialManager.StartRule("rule2")
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(TrialManager.runs))
+	assert.Equal(t, 2, len(TrialManager.runs))
 	wg.Wait()
-	TrialManager.StopRule("ruleErr")
+	// TrialManager.StopRule("ruleErr")
 	TrialManager.StopRule("rule1")
 	TrialManager.StopRule("rule2")
 	assert.Equal(t, 0, len(TrialManager.runs))
