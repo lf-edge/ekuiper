@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,35 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package definition
+//go:build fdb || full
 
-type Database interface {
-	Connect() error
-	Disconnect() error
+package fdb
+
+import (
+	"github.com/apple/foundationdb/bindings/go/src/fdb"
+
+	"github.com/lf-edge/ekuiper/pkg/kv"
+)
+
+const KVNamespace = "KV"
+
+type StoreBuilder struct {
+	database  *fdb.Database
+	namespace string
 }
 
-type Config struct {
-	Type         string
-	ExtStateType string
-	Redis        RedisConfig
-	Sqlite       SqliteConfig
-	Fdb          FdbConfig
+func NewStoreBuilder(fdb *fdb.Database) StoreBuilder {
+	return StoreBuilder{
+		database:  fdb,
+		namespace: KVNamespace,
+	}
 }
 
-type RedisConfig struct {
-	Host     string
-	Port     int
-	Password string
-	Timeout  int
-}
-
-type SqliteConfig struct {
-	Path string
-	Name string
-}
-
-type FdbConfig struct {
-	Path       string
-	APIVersion int
-	Timeout    int64
+func (b StoreBuilder) CreateStore(table string) (kv.KeyValue, error) {
+	return createFdbKvStore(b.database, b.namespace, table)
 }
