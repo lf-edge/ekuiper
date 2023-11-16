@@ -119,6 +119,9 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 	}
 	reader := kafkago.NewReader(readerConfig)
 	s.reader = reader
+	if err := s.reader.SetOffset(kafkago.LastOffset); err != nil {
+		return err
+	}
 	conf.Log.Infof("kafka source got configured.")
 	return nil
 }
