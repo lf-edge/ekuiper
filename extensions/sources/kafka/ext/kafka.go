@@ -29,6 +29,7 @@ import (
 
 type KafkaSource struct {
 	reader *kafkago.Reader
+	offset int64
 }
 
 type kafkaSourceConf struct {
@@ -38,7 +39,6 @@ type kafkaSourceConf struct {
 	Partition   int    `json:"partition"`
 	MaxAttempts int    `json:"maxAttempts"`
 	MaxBytes    int    `json:"maxBytes"`
-	Offset      int64  `json:"offset"`
 }
 
 func (c *kafkaSourceConf) validate() error {
@@ -118,13 +118,10 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 		SASLMechanism: mechanism,
 	}
 	reader := kafkago.NewReader(readerConfig)
-	if kConf.Offset != 0 {
-		if err := reader.SetOffset(kConf.Offset); err != nil {
-			conf.Log.Errorf("kafka offset error: %v", err)
-			return fmt.Errorf("set kafka offset failed, err:%v", err)
-		}
-	}
 	s.reader = reader
+	if err := s.reader.SetOffset(kafkago.LastOffset); err != nil {
+		return err
+	}
 	conf.Log.Infof("kafka source got configured.")
 	return nil
 }
@@ -144,6 +141,7 @@ func (s *KafkaSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			errCh <- err
 			return
 		}
+		s.offset = msg.Offset
 		dataList, err := ctx.DecodeIntoList(msg.Value)
 		if err != nil {
 			logger.Errorf("unmarshal kafka message value err: %v", err)
@@ -159,4 +157,28 @@ func (s *KafkaSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 
 func (s *KafkaSource) Close(_ api.StreamContext) error {
 	return nil
+}
+
+func (s *KafkaSource) Rewind(offset interface{}) error {
+	conf.Log.Infof("set kafka source offset: %v", offset)
+	offsetV := s.offset //nolint:staticcheck
+	switch v := offset.(type) {
+	case int64:
+		offsetV = v
+	case int:
+		offsetV = int64(v)
+	case float64:
+		offsetV = int64(v)
+	default:
+		return fmt.Errorf("%v can't be set as offset", offset)
+	}
+	if err := s.reader.SetOffset(offsetV); err != nil {
+		conf.Log.Errorf("kafka offset error: %v", err)
+		return fmt.Errorf("set kafka offset failed, err:%v", err)
+	}
+	return nil
+}
+
+func (s *KafkaSource) GetOffset() (interface{}, error) {
+	return s.offset, nil
 }
