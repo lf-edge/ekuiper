@@ -161,7 +161,7 @@ func (s *KafkaSource) Close(_ api.StreamContext) error {
 
 func (s *KafkaSource) Rewind(offset interface{}) error {
 	conf.Log.Infof("set kafka source offset: %v", offset)
-	offsetV := s.offset
+	offsetV := s.offset //nolint:staticcheck
 	switch v := offset.(type) {
 	case int64:
 		offsetV = v
