@@ -34,7 +34,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("native")
 	meta.InitYamlConfigManager()
 	var (
 		nativeManager *Manager

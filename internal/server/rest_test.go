@@ -27,6 +27,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -38,7 +39,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("server")
 	streamProcessor = processor.NewStreamProcessor()
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
@@ -86,7 +87,20 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
+	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	suite.r = r
+}
+
+func (suite *RestTestSuite) Test_Connection() {
+	req, err := http.NewRequest(http.MethodPost, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
+	require.NoError(suite.T(), err)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	req, err = http.NewRequest(http.MethodDelete, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
+	require.NoError(suite.T(), err)
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *RestTestSuite) Test_rootHandler() {
@@ -228,7 +242,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	returnVal, _ := io.ReadAll(w2.Result().Body)
-	expect := `The rule has been successfully validated and is confirmed to be correct.`
+	expect := `{"sources":["alert"],"valid":true}`
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
 

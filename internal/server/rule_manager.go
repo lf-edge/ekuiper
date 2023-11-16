@@ -23,7 +23,10 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -351,11 +354,32 @@ func getRuleTopo(name string) (string, error) {
 	}
 }
 
-func validateRule(name, ruleJson string) (bool, error) {
+func validateRule(name, ruleJson string) ([]string, bool, error) {
 	// Validate the rule json
-	_, err := ruleProcessor.GetRuleByJson(name, ruleJson)
+	rule, err := ruleProcessor.GetRuleByJson(name, ruleJson)
 	if err != nil {
-		return false, fmt.Errorf("invalid rule json: %v", err)
+		return nil, false, fmt.Errorf("invalid rule json: %v", err)
 	}
-	return true, nil
+	var sources []string
+	if len(rule.Sql) > 0 {
+		stmt, _ := xsql.GetStatementFromSql(rule.Sql)
+		s, err := store.GetKV("stream")
+		if err != nil {
+			return nil, false, err
+		}
+		sources = xsql.GetStreams(stmt)
+		for _, result := range sources {
+			_, err := xsql.GetDataSource(s, result)
+			if err != nil {
+				return nil, false, err
+			}
+		}
+	} else if rule.Graph != nil {
+		tp, err := planner.PlanByGraph(rule)
+		if err != nil {
+			return nil, false, fmt.Errorf("invalid rule graph: %v", err)
+		}
+		sources = tp.GetTopo().Sources
+	}
+	return sources, true, nil
 }

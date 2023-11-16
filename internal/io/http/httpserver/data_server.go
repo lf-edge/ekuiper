@@ -54,28 +54,14 @@ const (
 
 type websocketContext struct {
 	sync.Mutex
-	refCount     int
 	conns        map[*websocket.Conn]struct{}
 	contextClose bool
 }
 
-func (wsctx *websocketContext) deRef() int {
+func (wsctx *websocketContext) getConnCount() int {
 	wsctx.Lock()
 	defer wsctx.Unlock()
-	if wsctx.contextClose {
-		return 0
-	}
-	wsctx.refCount--
-	return wsctx.refCount
-}
-
-func (wsctx *websocketContext) addRef() {
-	wsctx.Lock()
-	defer wsctx.Unlock()
-	if wsctx.contextClose {
-		return
-	}
-	wsctx.refCount++
+	return len(wsctx.conns)
 }
 
 func (wsctx *websocketContext) addConn(conn *websocket.Conn) {
@@ -138,22 +124,20 @@ func registerInit() error {
 	return nil
 }
 
-func UnRegisterWebSocketEndpoint(endpoint string) error {
+func GetWebsocketEndpointCh(endpoint string) (string, string, chan struct{}, error) {
 	lock.Lock()
 	defer lock.Unlock()
-	if _, ok := wsEndpointCtx[endpoint]; !ok {
-		return nil
+	if server == nil {
+		return "", "", nil, fmt.Errorf("http server is not initialized")
 	}
-	refCount--
-	endPointRefCount := wsEndpointCtx[endpoint].deRef()
-	if endPointRefCount < 1 {
-		wsEndpointCtx[endpoint].close()
-		delete(wsEndpointCtx, endpoint)
+	if wsCtx, ok := wsEndpointCtx[endpoint]; ok {
+		if wsCtx.getConnCount() < 1 {
+			return "", "", nil, fmt.Errorf("websocket endpoint %s has no connection", endpoint)
+		}
+		return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint),
+			done, nil
 	}
-	if refCount == 0 {
-		shutdown()
-	}
-	return nil
+	return "", "", nil, fmt.Errorf("websocket has no endpoint %s", endpoint)
 }
 
 func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
@@ -212,6 +196,16 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 	}
 }
 
+func CheckWebsocketEndpoint(endpoint string) bool {
+	lock.Lock()
+	defer lock.Unlock()
+	if server == nil {
+		return false
+	}
+	_, ok := wsEndpointCtx[endpoint]
+	return ok
+}
+
 func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, chan struct{}, error) {
 	lock.Lock()
 	defer lock.Unlock()
@@ -222,13 +216,12 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 			return "", "", nil, err
 		}
 	}
-	refCount++
-	if wsCtx, ok := wsEndpointCtx[endpoint]; ok {
-		wsCtx.addRef()
+	if _, ok := wsEndpointCtx[endpoint]; ok {
 		return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint),
 			done, nil
 	}
-	wsCtx := &websocketContext{refCount: 1, conns: map[*websocket.Conn]struct{}{}}
+	refCount++
+	wsCtx := &websocketContext{conns: map[*websocket.Conn]struct{}{}}
 	wsEndpointCtx[endpoint] = wsCtx
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
@@ -241,6 +234,21 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 		go sendProcess(ctx, c, endpoint)
 	})
 	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint), done, nil
+}
+
+func UnRegisterWebSocketEndpoint(endpoint string) error {
+	lock.Lock()
+	defer lock.Unlock()
+	if _, ok := wsEndpointCtx[endpoint]; !ok {
+		return nil
+	}
+	refCount--
+	wsEndpointCtx[endpoint].close()
+	delete(wsEndpointCtx, endpoint)
+	if refCount == 0 {
+		shutdown()
+	}
+	return nil
 }
 
 func RegisterEndpoint(endpoint string, method string, _ string) (string, chan struct{}, error) {

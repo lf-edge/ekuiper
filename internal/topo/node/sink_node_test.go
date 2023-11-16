@@ -38,7 +38,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("node")
 }
 
 func TestBatchSink(t *testing.T) {

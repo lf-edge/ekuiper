@@ -38,7 +38,7 @@ func Plan(rule *api.Rule) (*topo.Topo, error) {
 }
 
 // PlanSQLWithSourcesAndSinks For test only
-func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sinks []*node.SinkNode) (*topo.Topo, error) {
+func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode) (*topo.Topo, error) {
 	sql := rule.Sql
 
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
@@ -63,21 +63,21 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sink
 	if err != nil {
 		return nil, err
 	}
-	tp, err := createTopo(rule, lp, sources, sinks, streamsFromStmt)
+	tp, err := createTopo(rule, lp, mockSourcesProp, sinks, streamsFromStmt)
 	if err != nil {
 		return nil, err
 	}
 	return tp, nil
 }
 
-func createTopo(rule *api.Rule, lp LogicalPlan, sources []*node.SourceNode, sinks []*node.SinkNode, streamsFromStmt []string) (*topo.Topo, error) {
+func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (*topo.Topo, error) {
 	// Create topology
 	tp, err := topo.NewWithNameAndOptions(rule.Id, rule.Options)
 	if err != nil {
 		return nil, err
 	}
 
-	input, _, err := buildOps(lp, tp, rule.Options, sources, streamsFromStmt, 0)
+	input, _, err := buildOps(lp, tp, rule.Options, mockSourcesProp, streamsFromStmt, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
 	return res, nil
 }
 
-func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []*node.SourceNode, streamsFromStmt []string, index int) (api.Emitter, int, error) {
+func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (api.Emitter, int, error) {
 	var inputs []api.Emitter
 	newIndex := index
 	for _, c := range lp.Children() {
@@ -251,23 +251,6 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	return op, newIndex, nil
 }
 
-func convertFromUnit(t ast.Token, v int64) int64 {
-	unit := 1
-	switch t {
-	case ast.DD:
-		unit = 24 * 3600 * 1000
-	case ast.HH:
-		unit = 3600 * 1000
-	case ast.MI:
-		unit = 60 * 1000
-	case ast.SS:
-		unit = 1000
-	case ast.MS:
-		unit = 1
-	}
-	return int64(unit) * v
-}
-
 func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
 	var unit int64 = 1
 	switch t.timeUnit {
@@ -285,8 +268,12 @@ func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
 	return int64(t.length) * unit, int64(t.interval) * unit, t.delay * unit
 }
 
-func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options *api.RuleOption) (*node.SourceNode, error) {
+func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[string]any, options *api.RuleOption) (*node.SourceNode, error) {
 	isSchemaless := t.isSchemaless
+	mockSourceConf, isMock := mockSourcesProp[string(t.name)]
+	if isMock {
+		t.streamStmt.Options.TYPE = "simulator"
+	}
 	switch t.streamStmt.StreamType {
 	case ast.TypeStream:
 		var (
@@ -299,20 +286,13 @@ func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options 
 				return nil, err
 			}
 		}
-		var srcNode *node.SourceNode
-		if len(sources) == 0 {
-			var sourceNode *node.SourceNode
-			schema := t.streamFields
-			if t.isSchemaless {
-				schema = nil
-			}
-			sourceNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
-			srcNode = sourceNode
-		} else {
-			srcNode = getMockSource(sources, string(t.name))
-			if srcNode == nil {
-				return nil, fmt.Errorf("can't find predefined source %s", t.name)
-			}
+		schema := t.streamFields
+		if t.isSchemaless {
+			schema = nil
+		}
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
+		if isMock {
+			srcNode.SetProps(mockSourceConf)
 		}
 		return srcNode, nil
 	case ast.TypeTable:
@@ -320,29 +300,18 @@ func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options 
 		if err != nil {
 			return nil, err
 		}
-		var srcNode *node.SourceNode
-		if len(sources) > 0 {
-			srcNode = getMockSource(sources, string(t.name))
+
+		schema := t.streamFields
+		if t.isSchemaless {
+			schema = nil
 		}
-		if srcNode == nil {
-			schema := t.streamFields
-			if t.isSchemaless {
-				schema = nil
-			}
-			srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
+		if isMock {
+			srcNode.SetProps(mockSourceConf)
 		}
 		return srcNode, nil
 	}
 	return nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
-}
-
-func getMockSource(sources []*node.SourceNode, name string) *node.SourceNode {
-	for _, source := range sources {
-		if name == source.GetName() {
-			return source
-		}
-	}
-	return nil
 }
 
 func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {

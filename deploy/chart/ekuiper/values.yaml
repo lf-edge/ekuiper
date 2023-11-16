@@ -6,7 +6,8 @@
 image:
   repository: lfedge/ekuiper
   pullPolicy: IfNotPresent
-
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -56,7 +57,9 @@ service:
   annotations: {}
 
 persistence:
-  enabled: false
+  enabled: enabled 
+  size: 20Mi
+  storageClassName: ""
   accessMode: ReadWriteOnce
   # -- Existing PersistentVolumeClaims
   # The value is evaluated as a template
