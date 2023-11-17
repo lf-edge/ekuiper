@@ -56,6 +56,7 @@ type websocketContext struct {
 	sync.Mutex
 	conns        map[*websocket.Conn]struct{}
 	contextClose bool
+	endpoint     string
 }
 
 func (wsctx *websocketContext) getConnCount() int {
@@ -88,6 +89,7 @@ func (wsctx *websocketContext) close() {
 	for conn := range wsctx.conns {
 		conn.Close()
 	}
+	conf.Log.Infof("websocket endpoint: %s close connections", wsctx.endpoint)
 	wsctx.contextClose = true
 }
 
@@ -225,6 +227,7 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 	refCount++
 	wsCtx := &websocketContext{conns: map[*websocket.Conn]struct{}{}}
 	wsEndpointCtx[endpoint] = wsCtx
+	wsCtx.endpoint = endpoint
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
