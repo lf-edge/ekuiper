@@ -134,7 +134,7 @@ Key dynamic properties include:
 - `PullTime`: The timestamp of the current pull time in int64 format.
 - `LastPullTime`: The timestamp of the last pull time in int64 format.
 - Properties from oAuth: The properties from the oAuth response body. For example, if access request return json
-  body `{"token": "xxxxxx"}`. Then you can use `{{.token}}` to get the token.
+  body `{"token": "xxxxxx"}`. Then you can use <span v-pre>`{{.token}}`</span> to get the token.
 
 For HTTP services that allow time-based filtering, `PullTime` and `LastPullTime` can be harnessed for incremental data pulls. Depending on how the service accepts time parameters:
 
