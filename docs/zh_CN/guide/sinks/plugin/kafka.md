@@ -66,10 +66,29 @@ $(PLUGINS_CUSTOM):
 | privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径       |
 | rootCaPath         | 是   | Kafka 客户端 ssl 验证的 ca 证书文件路径    |
 | maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1  |
+| kafkaBatchSize     | 是   | Kafka 客户端在本地缓存的消息数量，默认为 1       |
+| kafkaBatchTimeout  | 是   | kafka 客户端在本地缓存的最大超时时间，默认为 1s   |
 | key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息 |
 | headers            | 是   | Kafka 客户端向 server 发送消息所携带的 headers 信息 |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
+
+### 设置 kafka 客户端批量发送设置
+
+当发送到 kafka 的消息过于频繁，流量过大时，我们需要通过设置批量发送设置来使得消息被批量发送至 kafka 服务器:
+
+以批量消息的批次设置为 100 条消息和最大超时时间为 1 秒为例:
+
+```json
+{
+  "batchSize": 50,
+  "lingerInterval": 500,
+  "kafkaBatchSize": 50,
+  "kafkaBatchTimeout": "500ms"
+}
+```
+
+由于我们需要通过二次聚合才能满足 kafka 客户端的实际批量发送需求，所以我们需要分别对上层算子和 kafka 客户端进行聚合设置，单个聚合的设置为实际聚合需求的一半即可。
 
 ### 设置 key 和 headers
 

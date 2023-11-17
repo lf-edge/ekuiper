@@ -179,6 +179,36 @@
       }
     },
     {
+      "name": "kafkaBatchSize",
+      "default": true,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Limit on how many messages will be buffered before sending to kafka",
+        "zh_CN": "kafka 客户端的缓存消息数"
+      },
+      "label": {
+        "en_US": "batchSize",
+        "zh_CN": "缓存消息数"
+      }
+    },
+    {
+      "name": "kafkaBatchTimeout",
+      "default": true,
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Time limit on how often incomplete message batches will be flushed to kafka",
+        "zh_CN": "kafka 客户端的最大缓存时间"
+      },
+      "label": {
+        "en_US": "batchTimeout",
+        "zh_CN": "缓存超时时间"
+      }
+    },
+    {
       "name": "headers",
       "default": {},
       "optional": true,

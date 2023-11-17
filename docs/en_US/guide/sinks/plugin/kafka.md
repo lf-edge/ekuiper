@@ -66,8 +66,27 @@ Restart the eKuiper server to activate the plugin.
 | privateKeyPath     | true | Key file path for Kafka client SSL verification |
 | rootCaPath         | true | Kafka client ssl verified ca certificate file path |
 | maxAttempts        | true | The number of retries the Kafka client sends messages to the server, the default is 1 |
+| kafkaBatchSize     | true   | The number of messages cached locally by the Kafka client, default is 1      |
+| kafkaBatchTimeout  | true   | The maximum timeout for the local cache of the Kafka client, the default is 1s  |
 | key                | true | Key information carried by the Kafka client in messages sent to the server |
 | headers            | true     | The header information carried by the Kafka client in the message sent to the server |
+
+### Set kafka client batch sending settings
+
+When the messages sent to kafka are too frequent, we need to set the batch sending settings to cause the messages to be sent to the kafka server in batches:
+
+Take the batch message batch setting as 100 messages and the maximum timeout as 1 second as an example:
+
+```json
+{
+  "batchSize": 50,
+  "lingerInterval": 500,
+  "kafkaBatchSize": 50,
+  "kafkaBatchTimeout": "500ms"
+}
+```
+
+Since we need double aggregation to meet the actual batch sending requirements of the Kafka client, we need to set the aggregation settings for the upper-layer operator and the Kafka client respectively. The setting of a single aggregation is half of the actual aggregation requirement.
 
 ### Setting Kafka Key and Headers
 

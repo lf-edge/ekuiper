@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	kafkago "github.com/segmentio/kafka-go"
 
@@ -44,9 +45,12 @@ type sinkConf struct {
 }
 
 type kafkaConf struct {
-	MaxAttempts int         `json:"maxAttempts"`
-	Key         string      `json:"key"`
-	Headers     interface{} `json:"headers"`
+	MaxAttempts  int    `json:"maxAttempts"`
+	BatchSize    int    `json:"kafkaBatchSize"`
+	BatchTimeout string `json:"kafkaBatchTimeout"`
+	batchTimeout time.Duration
+	Key          string      `json:"key"`
+	Headers      interface{} `json:"headers"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -80,10 +84,18 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	kc := &kafkaConf{
-		MaxAttempts: 1,
+		MaxAttempts:  1,
+		BatchSize:    1,
+		batchTimeout: time.Second,
 	}
 	if err := cast.MapToStruct(props, kc); err != nil {
 		return err
+	}
+	if len(kc.BatchTimeout) > 0 {
+		kc.batchTimeout, err = time.ParseDuration(kc.BatchTimeout)
+		if err != nil {
+			return err
+		}
 	}
 	m.kc = kc
 	m.tc = tc
@@ -114,8 +126,9 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		Async:                  false,
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            m.kc.MaxAttempts,
-		RequiredAcks:           -1,
-		BatchSize:              1,
+		RequiredAcks:           kafkago.RequireOne,
+		BatchSize:              m.kc.BatchSize,
+		BatchTimeout:           m.kc.batchTimeout,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
 			TLS:  tlsConfig,
