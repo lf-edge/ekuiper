@@ -84,7 +84,8 @@ $(PLUGINS_CUSTOM):
   "batchSize": 50,
   "lingerInterval": 500,
   "kafkaBatchSize": 50,
-  "kafkaBatchTimeout": "500ms"
+  "kafkaBatchTimeout": "500ms",
+  "sendSingle" : true
 }
 ```
 
