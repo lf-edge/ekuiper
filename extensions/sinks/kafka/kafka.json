@@ -165,7 +165,7 @@
     },
     {
       "name": "maxAttempts",
-      "default": true,
+      "default": 1,
       "optional": true,
       "control": "text",
       "type": "int",
