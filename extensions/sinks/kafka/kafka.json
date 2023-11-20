@@ -179,6 +179,21 @@
       }
     },
     {
+      "name": "requiredACKs",
+      "default": -1,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Number of acknowledges from partition replicas required before receiving a response to a produce request, -1 means wait for the full ISR to acknowledge the writes,1 means wait for the leader to acknowledge the writes,0 means fire-and-forget",
+        "zh_CN": "kafka 客户端发送消息确认回复的行为控制，-1 代表等待仅 leader 确认，1 代表等待所有副本确认，0 代表等待无需确认"
+      },
+      "label": {
+        "en_US": "requiredACKs",
+        "zh_CN": "消息发送确认机制"
+      }
+    },
+    {
       "name": "headers",
       "default": {},
       "optional": true,
