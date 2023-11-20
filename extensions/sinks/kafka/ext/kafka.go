@@ -15,6 +15,7 @@
 package kafka
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -44,9 +45,10 @@ type sinkConf struct {
 }
 
 type kafkaConf struct {
-	MaxAttempts int         `json:"maxAttempts"`
-	Key         string      `json:"key"`
-	Headers     interface{} `json:"headers"`
+	MaxAttempts  int         `json:"maxAttempts"`
+	RequiredACKs int         `json:"requiredACKs"`
+	Key          string      `json:"key"`
+	Headers      interface{} `json:"headers"`
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
@@ -80,7 +82,8 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	kc := &kafkaConf{
-		MaxAttempts: 1,
+		RequiredACKs: -1,
+		MaxAttempts:  1,
 	}
 	if err := cast.MapToStruct(props, kc); err != nil {
 		return err
@@ -92,11 +95,10 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("set kafka header failed, err:%v", err)
 	}
 	m.tc.TlsConfigLog("sink")
-	return nil
+	return m.buildKafkaWriter()
 }
 
-func (m *kafkaSink) Open(ctx api.StreamContext) error {
-	ctx.GetLogger().Debug("Opening kafka sink")
+func (m *kafkaSink) buildKafkaWriter() error {
 	mechanism, err := m.sc.GetMechanism()
 	if err != nil {
 		return err
@@ -114,14 +116,24 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		Async:                  false,
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            m.kc.MaxAttempts,
-		RequiredAcks:           -1,
+		RequiredAcks:           kafkago.RequiredAcks(m.kc.RequiredACKs),
 		BatchSize:              1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
 			TLS:  tlsConfig,
 		},
 	}
+	// ping message
+	err = w.WriteMessages(context.Background(), kafkago.Message{})
+	if err != nil {
+		return err
+	}
 	m.writer = w
+	return nil
+}
+
+func (m *kafkaSink) Open(ctx api.StreamContext) error {
+	ctx.GetLogger().Debug("Opening kafka sink")
 	return nil
 }
 
@@ -131,16 +143,18 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	var messages []kafkago.Message
 	switch d := item.(type) {
 	case []map[string]interface{}:
-		decodedBytes, _, err := ctx.TransformOutput(d)
-		if err != nil {
-			return fmt.Errorf("kafka sink transform data error: %v", err)
+		for _, msg := range d {
+			decodedBytes, _, err := ctx.TransformOutput(msg)
+			if err != nil {
+				return fmt.Errorf("kafka sink transform data error: %v", err)
+			}
+			kafkaMsg, err := m.buildMsg(ctx, item, decodedBytes)
+			if err != nil {
+				conf.Log.Errorf("build kafka msg failed, err:%v", err)
+				return err
+			}
+			messages = append(messages, kafkaMsg)
 		}
-		msg, err := m.buildMsg(ctx, item, decodedBytes)
-		if err != nil {
-			conf.Log.Errorf("build kafka msg failed, err:%v", err)
-			return err
-		}
-		messages = append(messages, msg)
 	case map[string]interface{}:
 		decodedBytes, _, err := ctx.TransformOutput(d)
 		if err != nil {
