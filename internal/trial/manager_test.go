@@ -22,6 +22,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -35,12 +36,13 @@ func init() {
 
 // Run two test rules in parallel. Rerun one of the rules
 func TestTrialRule(t *testing.T) {
+	p := processor.NewStreamProcessor()
+	p.ExecStmt("DROP STREAM demo")
 	// Test 1 wrong rule
 	mockDef1 := `{"id":"rule1","sql":"select * from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":false}},"sinkProps":{"sendSingle":true}}`
 	_, err := TrialManager.CreateRule(mockDef1)
 	assert.Error(t, err)
 	assert.Equal(t, "fail to run rule rule1: fail to get stream demo, please check if stream is created", err.Error())
-	p := processor.NewStreamProcessor()
 	_, err = p.ExecStmt("CREATE STREAM demo () WITH (DATASOURCE=\"demo\", TYPE=\"simulator\", FORMAT=\"json\", KEY=\"ts\")")
 	assert.NoError(t, err)
 	defer p.ExecStmt("DROP STREAM demo")
@@ -50,14 +52,19 @@ func TestTrialRule(t *testing.T) {
 	id, err := TrialManager.CreateRule(mockDef1)
 	assert.NoError(t, err)
 	assert.Equal(t, "rule1", id)
+	// wait server ready
+	time.Sleep(10 * time.Millisecond)
 	// Read from ws
 	u := url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/rule1"}
 	c1, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
+	err = TrialManager.StartRule(id)
+	require.NoError(t, err)
+
 	defer c1.Close()
 	wg.Add(1)
 	go func() {
-		_ = c1.SetReadDeadline(time.Now().Add(1 * time.Second))
+		c1.SetReadDeadline(time.Now().Add(5 * time.Second))
 		_, data, err := c1.ReadMessage()
 		assert.NoError(t, err)
 		assert.Equal(t, `{"name":"demo","value":1}`, string(data))
@@ -67,38 +74,46 @@ func TestTrialRule(t *testing.T) {
 		wg.Done()
 	}()
 
-	//// Test 3 Runtime error rule
-	//mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":true}},"sinkProps":{"sendSingle":true}}`
-	//id, err = TrialManager.CreateRule(mockDefErr)
-	//assert.NoError(t, err)
-	//assert.Equal(t, "ruleErr", id)
-	//// Read from ws
-	//u = url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/ruleErr"}
-	//c2, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	//assert.NoError(t, err)
-	//defer c2.Close()
-	//wg.Add(1)
-	//go func() {
-	//	_ = c2.SetReadDeadline(time.Now().Add(1 * time.Second))
-	//	_, data, err := c2.ReadMessage()
-	//	assert.NoError(t, err)
-	//	assert.Equal(t, "{\"error\":\"run Select error: expr: binaryExpr:{ demo.name + demo.value } meet error, err:invalid operation string(demo) + float64(1)\"}", string(data))
-	//	wg.Done()
-	//}()
+	// Test 3 Runtime error rule
+	mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":true}},"sinkProps":{"sendSingle":true}}`
+	id, err = TrialManager.CreateRule(mockDefErr)
+	assert.NoError(t, err)
+	assert.Equal(t, "ruleErr", id)
+	// wait server ready
+	time.Sleep(10 * time.Millisecond)
+	// Read from ws
+	u = url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/ruleErr"}
+	c2, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	assert.NoError(t, err)
+	defer c2.Close()
+	err = TrialManager.StartRule(id)
+	require.NoError(t, err)
+	wg.Add(1)
+	go func() {
+		c2.SetReadDeadline(time.Now().Add(5 * time.Second))
+		_, data, err := c2.ReadMessage()
+		assert.NoError(t, err)
+		assert.Equal(t, "{\"error\":\"run Select error: expr: binaryExpr:{ demo.name + demo.value } meet error, err:invalid operation string(demo) + float64(1)\"}", string(data))
+		wg.Done()
+	}()
 
 	// Test 4 Rule without mock
 	noMockDef := `{"id":"rule2","sql":"select * from demo","sinkProps":{"sendSingle":true}}`
 	id, err = TrialManager.CreateRule(noMockDef)
 	assert.Equal(t, "rule2", id)
 	assert.NoError(t, err)
+	// wait server ready
+	time.Sleep(10 * time.Millisecond)
 	// Read from ws
 	u = url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/test/rule2"}
 	c3, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
 	defer c3.Close()
+	err = TrialManager.StartRule(id)
+	require.NoError(t, err)
 	wg.Add(1)
 	go func() {
-		_ = c3.SetReadDeadline(time.Now().Add(1 * time.Second))
+		c3.SetReadDeadline(time.Now().Add(5 * time.Second))
 		_, data, err := c3.ReadMessage()
 		assert.NoError(t, err)
 		assert.Equal(t, "{\"humidity\":50,\"temperature\":22.5}", string(data))
@@ -107,16 +122,9 @@ func TestTrialRule(t *testing.T) {
 		assert.Equal(t, "{\"humidity\":50,\"temperature\":22.5}", string(data))
 		wg.Done()
 	}()
-
-	err = TrialManager.StartRule("rule1")
-	assert.NoError(t, err)
-	// err = TrialManager.StartRule("ruleErr")
-	// assert.NoError(t, err)
-	err = TrialManager.StartRule("rule2")
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(TrialManager.runs))
+	assert.Equal(t, 3, len(TrialManager.runs))
 	wg.Wait()
-	// TrialManager.StopRule("ruleErr")
+	TrialManager.StopRule("ruleErr")
 	TrialManager.StopRule("rule1")
 	TrialManager.StopRule("rule2")
 	assert.Equal(t, 0, len(TrialManager.runs))

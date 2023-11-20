@@ -16,7 +16,6 @@ package httpserver
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -141,20 +140,25 @@ func GetWebsocketEndpointCh(endpoint string) (string, string, chan struct{}, err
 }
 
 func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
+	defer func() {
+		if r := recover(); r != nil {
+			conf.Log.Infof("websocket recvProcess Process panic recovered, err:%v", r)
+		}
+	}()
+
 	topic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
-	pubsub.CreatePub(topic)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
+
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
-			var e *websocket.CloseError
-			if errors.As(err, &e) {
+			if websocket.IsCloseError(err) {
 				wsEndpointCtx[endpoint].removeConn(c)
-				conf.Log.Infof("websocket endpoint %s connection get closed: %v", endpoint, e)
+				conf.Log.Infof("websocket endpoint %s connection get closed: %v", endpoint, err)
 				break
 			}
 			conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
@@ -172,8 +176,12 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 }
 
 func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
+	defer func() {
+		if r := recover(); r != nil {
+			conf.Log.Infof("websocket sendProcess Process panic recovered, err:%v", r)
+		}
+	}()
 	topic := fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
-	pubsub.CreatePub(topic)
 	subCh := pubsub.CreateSub(topic, nil, "", 1024)
 	for {
 		select {
@@ -185,8 +193,7 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 				continue
 			}
 			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
-				var e *websocket.CloseError
-				if errors.As(err, &e) {
+				if websocket.IsCloseError(err) {
 					wsEndpointCtx[endpoint].removeConn(c)
 					conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
 					break
@@ -225,6 +232,10 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 	refCount++
 	wsCtx := &websocketContext{conns: map[*websocket.Conn]struct{}{}}
 	wsEndpointCtx[endpoint] = wsCtx
+	recvTopic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
+	pubsub.CreatePub(recvTopic)
+	sendTopic := fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
+	pubsub.CreatePub(sendTopic)
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -235,7 +246,8 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 		go recvProcess(ctx, c, endpoint)
 		go sendProcess(ctx, c, endpoint)
 	})
-	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint), done, nil
+	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint),
+		done, nil
 }
 
 func UnRegisterWebSocketEndpoint(endpoint string) error {
@@ -291,10 +303,12 @@ func UnregisterEndpoint(endpoint string) {
 
 func shutdown() {
 	sctx.GetLogger().Infof("shutting down http data server...")
-	if err := server.Shutdown(sctx); err != nil {
-		sctx.GetLogger().Errorf("shutdown: %s", err)
+	if server != nil {
+		if err := server.Shutdown(sctx); err != nil {
+			sctx.GetLogger().Errorf("shutdown: %s", err)
+		}
+		sctx.GetLogger().Infof("http data server exiting")
 	}
-	sctx.GetLogger().Infof("http data server exiting")
 	server = nil
 	router = nil
 }

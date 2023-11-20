@@ -110,8 +110,12 @@ func GetClient(connectionType string, props map[string]interface{}) (api.Message
 }
 
 func ReleaseClient(ctx api.StreamContext, cli api.MessageClient) {
-	log := ctx.GetLogger()
-
+	var log api.Logger
+	if ctx != nil {
+		log = ctx.GetLogger()
+	} else {
+		log = conf.Log
+	}
 	wrapper := cli.(ClientWrapper)
 	sel := wrapper.GetConnectionSelector()
 	ok := wrapper.Release(ctx)
