@@ -84,6 +84,19 @@ tolerations: []
 
 affinity: {}
 
+podSecurityContext:
+  enabled: true
+  fsGroup: 1001
+  fsGroupChangePolicy: Always
+  runAsUser: 1001
+  supplementalGroups:
+    - 1001
+
+containerSecurityContext:
+  enabled: true
+  runAsNonRoot: true
+  runAsUser: 1001
+
 # -- clusterDomain Kubernetes Cluster Domain
 clusterDomain: cluster.local
 

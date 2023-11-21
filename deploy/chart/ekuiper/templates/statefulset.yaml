@@ -48,6 +48,9 @@ spec:
         {{- include "ekuiper.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "ekuiper.serviceAccountName" . }}
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
       volumes:
       - name: ekuiper-log
         emptyDir: {}
@@ -89,6 +92,9 @@ spec:
         - name: ekuiper
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
           {{- if .Values.ekuiperEnv.enabled }}
           env:
           - name: {{ .Values.ekuiperEnv.key.mqttDefaultServer }}
