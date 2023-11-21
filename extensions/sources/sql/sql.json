@@ -61,6 +61,36 @@
         }
       },
       {
+        "name": "maxRetry",
+        "default": 1,
+        "optional": true,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "The max count of retry to connection",
+          "zh_CN": "重新连接数据库的重试次数"
+        },
+        "label": {
+          "en_US": "maxRetry",
+          "zh_CN": "重试次数"
+        }
+      },
+      {
+        "name": "waitInterval",
+        "default": 1000,
+        "optional": true,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "The interval duration between retrying to connect database, unit is ms",
+          "zh_CN": "两次重连之间的等待间隔，单位是 ms"
+        },
+        "label": {
+          "en_US": "waitInterval",
+          "zh_CN": "重试间隔"
+        }
+      },
+      {
         "name": "lookup",
         "default": {
           "cache": {
