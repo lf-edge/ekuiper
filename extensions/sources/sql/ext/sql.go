@@ -16,7 +16,9 @@ package sql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
@@ -28,8 +30,10 @@ import (
 )
 
 type sqlConConfig struct {
-	Interval int    `json:"interval"`
-	Url      string `json:"url"`
+	Interval     int    `json:"interval"`
+	Url          string `json:"url"`
+	MaxRetry     int    `json:"maxRetry"`
+	WaitInterval int    `json:"waitInterval"`
 }
 
 type sqlsource struct {
@@ -40,7 +44,10 @@ type sqlsource struct {
 }
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
-	cfg := &sqlConConfig{}
+	cfg := &sqlConConfig{
+		MaxRetry:     1,
+		WaitInterval: 1000,
+	}
 
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
@@ -89,6 +96,16 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			logger.Debugf("Query the database with %s", query)
 			rows, err := m.db.Query(query)
 			if err != nil {
+				logger.Errorf("sql source meet error, err:%v", err)
+				canReconnect, err2 := m.Reconnect(err)
+				if canReconnect {
+					if err2 == nil {
+						continue
+					} else {
+						logger.Errorf("Run sql query(%s) error %v", query, err2)
+						errCh <- err2
+					}
+				}
 				logger.Errorf("Run sql query(%s) error %v", query, err)
 				errCh <- err
 				return
@@ -142,6 +159,30 @@ func (m *sqlsource) Close(ctx api.StreamContext) error {
 	}
 
 	return nil
+}
+
+func (m *sqlsource) Reconnect(err error) (bool, error) {
+	if !isConnectionError(err) {
+		return false, nil
+	}
+	for i := 0; i < m.conf.MaxRetry; i++ {
+		time.Sleep(time.Duration(m.conf.WaitInterval) * time.Millisecond)
+		db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
+		if err != nil {
+			conf.Log.Warnf("sql source reconnect failed, err:%v", err2)
+			if isConnectionError(err2) {
+				continue
+			}
+			break
+		}
+		m.db = db
+		return true, nil
+	}
+	return false, errors.New("sql source reconnect failed")
+}
+
+func isConnectionError(err error) bool {
+	return strings.Contains(err.Error(), "connection refused")
 }
 
 func GetSource() api.Source {

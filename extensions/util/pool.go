@@ -60,6 +60,22 @@ func (dp *dbPool) getDBConnCount(url string) int {
 	return 0
 }
 
+func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
+	dp.Lock()
+	defer dp.Unlock()
+	newDb, err := openDB(url, dp.isTesting)
+	if err != nil {
+		conf.Log.Errorf("create new database instance %v failed, err:%v", url, err)
+		return nil, err
+	}
+	conf.Log.Infof("create new database instance: %v", url)
+	dp.pool[url] = newDb
+	if _, ok := dp.pool[url]; !ok {
+		dp.connections[url] = 1
+	}
+	return newDb, nil
+}
+
 func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
 	dp.Lock()
 	defer dp.Unlock()
@@ -147,6 +163,10 @@ func ParseDBUrl(urlstr string) (string, string, error) {
 		u.Driver = "sqlite"
 	}
 	return u.Driver, u.DSN, nil
+}
+
+func ReplaceDbForOneNode(pool *dbPool, url string) (*sql.DB, error) {
+	return pool.createAndReplace(url)
 }
 
 func FetchDBToOneNode(pool *dbPool, url string) (*sql.DB, error) {
