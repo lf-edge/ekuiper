@@ -61,7 +61,7 @@
         }
       },
       {
-        "name": "MaxAttempts",
+        "name": "maxAttempts",
         "default": 1,
         "optional": true,
         "control": "text",
@@ -71,7 +71,7 @@
           "zh_CN": "重新连接数据库的重试次数"
         },
         "label": {
-          "en_US": "MaxAttempts",
+          "en_US": "maxAttempts",
           "zh_CN": "重试次数"
         }
       },
