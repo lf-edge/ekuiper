@@ -16,7 +16,7 @@
 
 package logger
 
-func InitSyslog(network, address, level, tag string) error {
+func InitSyslog(network, address, level, tag, tsformat string) error {
 	Log.Warnf("Syslog is not supported on windows")
 	return nil
 }

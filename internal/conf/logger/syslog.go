@@ -18,11 +18,9 @@ package logger
 
 import (
 	"log/syslog"
-
-	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
 )
 
-func InitSyslog(network, address, level, tag string) error {
+func InitSyslog(network, address, level, tag, tsformat string) error {
 	p := syslog.LOG_INFO
 	switch level {
 	case "debug":
@@ -36,7 +34,7 @@ func InitSyslog(network, address, level, tag string) error {
 	default:
 		p = syslog.LOG_INFO
 	}
-	if hook, err := logrus_syslog.NewSyslogHook(network, address, p, tag); err != nil {
+	if hook, err := NewSyslogHook(network, address, p, tag, tsformat); err != nil {
 		Log.Error("Unable to connect to local syslog daemon")
 		return err
 	} else {
