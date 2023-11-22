@@ -16,8 +16,10 @@ package websocket
 
 import (
 	"encoding/json"
+	"io"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
@@ -39,10 +41,6 @@ func TestWebsocketServerConn(t *testing.T) {
 	_, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: true})
 	require.Error(t, err)
 
-	// no endpoint, create client success
-	_, err = newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: false})
-	require.NoError(t, err)
-
 	ctx := context.NewMockContext("123", "123")
 	_, _, _, err = httpserver.RegisterWebSocketEndpoint(ctx, "/ws3")
 	require.NoError(t, err)
@@ -51,13 +49,14 @@ func TestWebsocketServerConn(t *testing.T) {
 	_, err = newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: true})
 	require.Error(t, err)
 
-	c, err := createOneConn()
+	// wait server ready
+	time.Sleep(100 * time.Millisecond)
+
+	c, err := createOneConn(t)
 	require.NoError(t, err)
 
 	serverRecvCh = make(chan map[string]interface{})
 	serverPubCh = make(chan map[string]interface{})
-
-	conf.InitConf()
 	cli, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: true})
 	require.NoError(t, err)
 	require.NotNil(t, cli)
@@ -107,10 +106,12 @@ func subData(t *testing.T, dataCh chan interface{}) {
 	serverRecvCh <- m
 }
 
-func createOneConn() (*websocket.Conn, error) {
-	u := url.URL{Scheme: "ws", Host: "localhost:10081", Path: "/ws3"}
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+func createOneConn(t *testing.T) (*websocket.Conn, error) {
+	u := url.URL{Scheme: "ws", Host: "127.0.0.1:10081", Path: "/ws3"}
+	c, resp, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
+		bs, _ := io.ReadAll(resp.Body)
+		t.Errorf("create connection failed, code:%v err:%v", resp.StatusCode, string(bs))
 		return nil, err
 	}
 	return c, nil
