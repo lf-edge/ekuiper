@@ -30,10 +30,10 @@ import (
 )
 
 type sqlConConfig struct {
-	Interval     int    `json:"interval"`
-	Url          string `json:"url"`
-	MaxAttempts  int    `json:"maxAttempts"`
-	WaitInterval int    `json:"retryWaitInterval"`
+	Interval             int    `json:"interval"`
+	Url                  string `json:"url"`
+	MaxAttempts          int    `json:"maxAttempts"`
+	MaxReconnectInterval int    `json:"maxReconnectInterval"`
 }
 
 type sqlsource struct {
@@ -45,8 +45,8 @@ type sqlsource struct {
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 	cfg := &sqlConConfig{
-		MaxAttempts:  1,
-		WaitInterval: 1000,
+		MaxAttempts:          1,
+		MaxReconnectInterval: 1000,
 	}
 
 	err := cast.MapToStruct(props, cfg)
@@ -166,7 +166,7 @@ func (m *sqlsource) Reconnect(err error) (bool, error) {
 		return false, nil
 	}
 	for i := 0; i < m.conf.MaxAttempts; i++ {
-		time.Sleep(time.Duration(m.conf.WaitInterval) * time.Millisecond)
+		time.Sleep(time.Duration(m.conf.MaxReconnectInterval) * time.Millisecond)
 		db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
 		if err != nil {
 			conf.Log.Warnf("sql source reconnect failed, err:%v", err2)

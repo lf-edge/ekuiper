@@ -76,7 +76,7 @@
         }
       },
       {
-        "name": "retryWaitInterval",
+        "name": "maxReconnectInterval",
         "default": 1000,
         "optional": true,
         "control": "text",
@@ -86,7 +86,7 @@
           "zh_CN": "两次重连之间的等待间隔，单位是 ms"
         },
         "label": {
-          "en_US": "retryWaitInterval",
+          "en_US": "maxReconnectInterval",
           "zh_CN": "重试间隔"
         }
       },
