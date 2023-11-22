@@ -61,7 +61,7 @@
         }
       },
       {
-        "name": "maxRetry",
+        "name": "MaxAttempts",
         "default": 1,
         "optional": true,
         "control": "text",
@@ -71,12 +71,12 @@
           "zh_CN": "重新连接数据库的重试次数"
         },
         "label": {
-          "en_US": "maxRetry",
+          "en_US": "MaxAttempts",
           "zh_CN": "重试次数"
         }
       },
       {
-        "name": "waitInterval",
+        "name": "retryWaitInterval",
         "default": 1000,
         "optional": true,
         "control": "text",
@@ -86,7 +86,7 @@
           "zh_CN": "两次重连之间的等待间隔，单位是 ms"
         },
         "label": {
-          "en_US": "waitInterval",
+          "en_US": "retryWaitInterval",
           "zh_CN": "重试间隔"
         }
       },

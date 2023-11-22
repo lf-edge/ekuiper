@@ -32,8 +32,8 @@ import (
 type sqlConConfig struct {
 	Interval     int    `json:"interval"`
 	Url          string `json:"url"`
-	MaxRetry     int    `json:"maxRetry"`
-	WaitInterval int    `json:"waitInterval"`
+	MaxAttempts  int    `json:"maxAttempts"`
+	WaitInterval int    `json:"retryWaitInterval"`
 }
 
 type sqlsource struct {
@@ -45,7 +45,7 @@ type sqlsource struct {
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 	cfg := &sqlConConfig{
-		MaxRetry:     1,
+		MaxAttempts:  1,
 		WaitInterval: 1000,
 	}
 
@@ -165,7 +165,7 @@ func (m *sqlsource) Reconnect(err error) (bool, error) {
 	if !isConnectionError(err) {
 		return false, nil
 	}
-	for i := 0; i < m.conf.MaxRetry; i++ {
+	for i := 0; i < m.conf.MaxAttempts; i++ {
 		time.Sleep(time.Duration(m.conf.WaitInterval) * time.Millisecond)
 		db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
 		if err != nil {
