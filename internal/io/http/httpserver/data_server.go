@@ -106,6 +106,10 @@ func init() {
 		ReadBufferSize:  256,
 		WriteBufferSize: 256,
 		WriteBufferPool: &sync.Pool{},
+		// always allowed any origin
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 	wsEndpointCtx = make(map[string]*websocketContext)
 }
