@@ -14,7 +14,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.5.0
 	github.com/gdexlab/go-render v1.0.1
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.1.0
 	github.com/golang/protobuf v1.5.3
 	github.com/google/uuid v1.4.0
 	github.com/gorilla/handlers v1.5.1

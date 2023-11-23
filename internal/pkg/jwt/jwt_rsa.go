@@ -1,3 +1,17 @@
+// Copyright 2023 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package jwt
 
 import (
@@ -5,49 +19,21 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const ExpireTimeMinutes = 10
 
 type Token struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
-type ErrorType int8
-
-const (
-	JWT_VALIDATE_ERROR ErrorType = 1
-)
-
-const (
-	JWT_VALIDATE_TEMP = "JWTVAL__ERRCODE:%d__ERRSTR:%s__TOKEN:%s"
-	JWT_OTHER_TEMP    = "JWTOTH__ERRSTR:%s__TOKEN:%s"
-)
-
-type Error struct {
-	errType   ErrorType
-	Inner     error
-	metaToken string
-}
-
-func (e Error) Error() string {
-	switch e.errType {
-	case JWT_VALIDATE_ERROR:
-		if ve, ok := e.Inner.(*jwt.ValidationError); ok {
-			return fmt.Sprintf(JWT_VALIDATE_TEMP, ve.Errors, ve.Error(), e.metaToken)
-		}
-	default:
-		return fmt.Sprintf(JWT_OTHER_TEMP, e.Inner.Error(), e.metaToken)
-	}
-	return "Invalid token " + e.metaToken
-}
-
-func CreateToken(signKeyName, issuer, aud string) (string, error) {
+// CreateToken Only for tests
+func CreateToken(signKeyName, issuer string, aud []string) (string, error) {
 	tk := &Token{}
 	tk.Issuer = issuer
 	tk.Audience = aud
-	tk.ExpiresAt = time.Now().Add(time.Duration(ExpireTimeMinutes) * time.Minute).Unix()
+	tk.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Duration(ExpireTimeMinutes) * time.Minute))
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), tk)
 	signKey, err := GetPrivateKeyWithKeyName(signKeyName)
 	if err != nil {
@@ -70,16 +56,8 @@ func ParseToken(th string) (*Token, error) {
 		}
 		return pubKey, nil
 	})
-	if ve, ok := err.(*jwt.ValidationError); ok {
-		return tk, Error{
-			errType:   JWT_VALIDATE_ERROR,
-			Inner:     ve,
-			metaToken: th,
-		}
-	}
-
 	if err != nil {
-		return nil, err
+		return tk, fmt.Errorf("validate token error: %s", err)
 	}
 	if !token.Valid {
 		return nil, errors.New("invalid token")

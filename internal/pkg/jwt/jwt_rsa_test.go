@@ -1,8 +1,24 @@
+// Copyright 2023 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package jwt
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -10,7 +26,7 @@ var (
 	badFormatToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0"
 )
 
-func genToken(signKeyName, issuer, aud string) string {
+func genToken(signKeyName, issuer string, aud []string) string {
 	tkStr, _ := CreateToken(signKeyName, issuer, aud)
 	return tkStr
 }
@@ -27,7 +43,7 @@ func TestParseToken(t *testing.T) {
 		{
 			name: "pass: have issuer public key",
 			args: args{
-				th: genToken("sample_key", "sample_key.pub", "eKuiper"),
+				th: genToken("sample_key", "sample_key.pub", []string{"eKuiper"}),
 			},
 			wantErr: false,
 		},
@@ -41,14 +57,14 @@ func TestParseToken(t *testing.T) {
 		{
 			name: "fail: token sign error",
 			args: args{
-				th: genToken("sample_key", "sample_key.pub", "eKuiper") + "badSign",
+				th: genToken("sample_key", "sample_key.pub", []string{"eKuiper"}) + "badSign",
 			},
 			wantErr: true,
 		},
 		{
 			name: "fail: do not have issuer's public key",
 			args: args{
-				th: genToken("sample_key", "notexist.pub", "eKuiper"),
+				th: genToken("sample_key", "notexist.pub", []string{"eKuiper"}),
 			},
 			wantErr: true,
 		},
@@ -63,9 +79,10 @@ func TestParseToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ParseToken(tt.args.th)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseToken() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 
 			if err != nil {
