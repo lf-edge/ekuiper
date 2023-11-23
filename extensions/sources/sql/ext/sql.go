@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
@@ -89,9 +90,14 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			logger.Debugf("Query the database with %s", query)
 			rows, err := m.db.Query(query)
 			if err != nil {
-				logger.Errorf("Run sql query(%s) error %v", query, err)
-				errCh <- err
-				return
+				logger.Errorf("sql source meet error, try to reconnection, err:%v", err)
+				err2 := m.Reconnect()
+				if err2 != nil {
+					consumer <- &xsql.ErrorSourceTuple{
+						Error: fmt.Errorf("reconnect failed, reconnect err:%v", err2),
+					}
+				}
+				continue
 			}
 
 			cols, _ := rows.Columns()
@@ -141,6 +147,17 @@ func (m *sqlsource) Close(ctx api.StreamContext) error {
 		return util.ReturnDBFromOneNode(util.GlobalPool, m.conf.Url)
 	}
 
+	return nil
+}
+
+func (m *sqlsource) Reconnect() error {
+	// wait half interval to reconnect
+	time.Sleep(time.Duration(m.conf.Interval) * time.Millisecond / 2)
+	db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
+	if err2 != nil {
+		return err2
+	}
+	m.db = db
 	return nil
 }
 
