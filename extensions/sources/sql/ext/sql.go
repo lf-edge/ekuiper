@@ -16,9 +16,8 @@ package sql
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
-	"strings"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"time"
 
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
@@ -30,10 +29,8 @@ import (
 )
 
 type sqlConConfig struct {
-	Interval             int    `json:"interval"`
-	Url                  string `json:"url"`
-	MaxAttempts          int    `json:"maxAttempts"`
-	MaxReconnectInterval int    `json:"maxReconnectInterval"`
+	Interval int    `json:"interval"`
+	Url      string `json:"url"`
 }
 
 type sqlsource struct {
@@ -44,10 +41,7 @@ type sqlsource struct {
 }
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
-	cfg := &sqlConConfig{
-		MaxAttempts:          1,
-		MaxReconnectInterval: 1000,
-	}
+	cfg := &sqlConConfig{}
 
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
@@ -96,19 +90,14 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			logger.Debugf("Query the database with %s", query)
 			rows, err := m.db.Query(query)
 			if err != nil {
-				logger.Errorf("sql source meet error, err:%v", err)
-				canReconnect, err2 := m.Reconnect(err)
-				if canReconnect {
-					if err2 == nil {
-						continue
-					} else {
-						logger.Errorf("Run sql query(%s) error %v", query, err2)
-						errCh <- err2
+				logger.Errorf("sql source meet error, try to reconnection, err:%v", err)
+				err2 := m.Reconnect()
+				if err2 != nil {
+					consumer <- &xsql.ErrorSourceTuple{
+						Error: fmt.Errorf("reconnect failed, reconnect err:%v", err2),
 					}
 				}
-				logger.Errorf("Run sql query(%s) error %v", query, err)
-				errCh <- err
-				return
+				continue
 			}
 
 			cols, _ := rows.Columns()
@@ -161,28 +150,15 @@ func (m *sqlsource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *sqlsource) Reconnect(err error) (bool, error) {
-	if !isConnectionError(err) {
-		return false, nil
+func (m *sqlsource) Reconnect() error {
+	// wait half interval to reconnect
+	time.Sleep(time.Duration(m.conf.Interval) * time.Millisecond / 2)
+	db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
+	if err2 != nil {
+		return err2
 	}
-	for i := 0; i < m.conf.MaxAttempts; i++ {
-		time.Sleep(time.Duration(m.conf.MaxReconnectInterval) * time.Millisecond)
-		db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
-		if err != nil {
-			conf.Log.Warnf("sql source reconnect failed, err:%v", err2)
-			if isConnectionError(err2) {
-				continue
-			}
-			break
-		}
-		m.db = db
-		return true, nil
-	}
-	return false, errors.New("sql source reconnect failed")
-}
-
-func isConnectionError(err error) bool {
-	return strings.Contains(err.Error(), "connection refused")
+	m.db = db
+	return nil
 }
 
 func GetSource() api.Source {
