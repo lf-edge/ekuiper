@@ -336,7 +336,7 @@ func InitConf() {
 		}
 		// Init when env is set OR enable is true
 		if c.Enable {
-			err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag)
+			err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag, time.RFC3339Nano)
 			if err != nil {
 				log.Fatal(err)
 			}
