@@ -46,11 +46,12 @@ func TestConfig(t *testing.T) {
 				"tags": map[string]interface{}{
 					"tag": "value",
 				},
-				"fields": []interface{}{"temperature"},
+				"fields":      []interface{}{"temperature"},
+				"tsFieldName": "ts",
 			},
 			expected: c{
 				Addr:            "http://192.168.0.3:8086",
-				Token:           "Token_test",
+				Token:           "******",
 				Org:             "admin",
 				Bucket:          "bucket_one",
 				PrecisionStr:    "ms",
@@ -60,7 +61,8 @@ func TestConfig(t *testing.T) {
 				Tags: map[string]string{
 					"tag": "value",
 				},
-				Fields: []string{"temperature"},
+				Fields:      []string{"temperature"},
+				TsFieldName: "ts",
 			},
 		},
 		{
@@ -173,6 +175,7 @@ func TestCollectPoints(t *testing.T) {
 					"tag1": "value1",
 					"tag2": "value2",
 				},
+				PrecisionStr: "s",
 			},
 			data: []map[string]any{
 				{
@@ -209,16 +212,20 @@ func TestCollectPoints(t *testing.T) {
 					"tag1": "value1",
 					"tag2": "value2",
 				},
-				SendSingle: true,
+				SendSingle:   true,
+				PrecisionStr: "s",
+				TsFieldName:  "ts",
 			},
 			data: []map[string]any{
 				{
 					"temperature": 20,
 					"humidity":    50,
+					"ts":          100,
 				},
 				{
 					"temperature": 30,
 					"humidity":    60,
+					"ts":          110,
 				},
 			},
 			result: []*write.Point{
@@ -228,14 +235,16 @@ func TestCollectPoints(t *testing.T) {
 				}, map[string]any{
 					"temperature": 20,
 					"humidity":    50,
-				}, time.UnixMilli(10)),
+					"ts":          100,
+				}, time.Unix(100, 0)),
 				client.NewPoint("test3", map[string]string{
 					"tag1": "value1",
 					"tag2": "value2",
 				}, map[string]any{
 					"temperature": 30,
 					"humidity":    60,
-				}, time.UnixMilli(10)),
+					"ts":          110,
+				}, time.Unix(110, 0)),
 			},
 		},
 		{
@@ -246,7 +255,9 @@ func TestCollectPoints(t *testing.T) {
 					"tag1": "value1",
 					"tag2": "value2",
 				},
-				SendSingle: true,
+				SendSingle:   true,
+				PrecisionStr: "us",
+				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -259,10 +270,12 @@ func TestCollectPoints(t *testing.T) {
 				{
 					"temperature": 20,
 					"humidity":    50,
+					"ts":          100,
 				},
 				{
 					"temperature": 30,
 					"humidity":    60,
+					"ts":          110,
 				},
 			},
 			result: []*write.Point{
@@ -271,13 +284,13 @@ func TestCollectPoints(t *testing.T) {
 					"tag2": "value2",
 				}, map[string]any{
 					"t": 20.0,
-				}, time.UnixMilli(10)),
+				}, time.UnixMicro(100)),
 				client.NewPoint("test4", map[string]string{
 					"tag1": "value1",
 					"tag2": "value2",
 				}, map[string]any{
 					"t": 30.0,
-				}, time.UnixMilli(10)),
+				}, time.UnixMicro(110)),
 			},
 		},
 		{
@@ -288,6 +301,8 @@ func TestCollectPoints(t *testing.T) {
 					"tag1": "value1",
 					"tag2": "value2",
 				},
+				PrecisionStr: "ns",
+				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -299,6 +314,7 @@ func TestCollectPoints(t *testing.T) {
 			data: map[string]any{
 				"temperature": 20,
 				"humidity":    50,
+				"ts":          100,
 			},
 			result: []*write.Point{
 				client.NewPoint("test5", map[string]string{
@@ -306,7 +322,7 @@ func TestCollectPoints(t *testing.T) {
 					"tag2": "value2",
 				}, map[string]any{
 					"humidity": 50,
-				}, time.UnixMilli(10)),
+				}, time.Unix(0, 100)),
 			},
 		},
 		{
@@ -560,7 +576,7 @@ func TestCollectPointsError(t *testing.T) {
 				"temperature": 20,
 				"humidity":    50,
 			},
-			err: "fail to decode data \"t\":<no value>} after applying dataTemplate for error invalid character ':' after top-level value",
+			err: "fail to decode data \"t\":20} after applying dataTemplate for error invalid character ':' after top-level value",
 		},
 		{
 			name: "batch with transform unmarshall error",
@@ -590,6 +606,47 @@ func TestCollectPointsError(t *testing.T) {
 				},
 			},
 			err: "fail to TransItem data [map[humidity:50 temperature:20] map[humidity:60 temperature:30]] for error fail to decode data abc{\"humidity\":50,\"temperature\":20} for error invalid character 'a' looking for beginning of value",
+		},
+		{
+			name: "single without ts field",
+			conf: c{
+				Measurement: "test1",
+				Tags: map[string]string{
+					"tag1": "value1",
+					"tag2": "value2",
+				},
+				TsFieldName: "ts",
+			},
+			data: map[string]any{
+				"temperature": 20,
+				"humidity":    50,
+			},
+			err: "time field ts not found",
+		},
+		{
+			name: "normal batch with incorrect ts field",
+			conf: c{
+				Measurement: "test2",
+				Tags: map[string]string{
+					"tag1": "value1",
+					"tag2": "value2",
+				},
+				PrecisionStr: "s",
+				TsFieldName:  "ts",
+			},
+			data: []map[string]any{
+				{
+					"temperature": 20,
+					"humidity":    50,
+					"ts":          "add",
+				},
+				{
+					"temperature": 30,
+					"humidity":    60,
+					"ts":          "ddd",
+				},
+			},
+			err: "time field ts can not convert to timestamp(int64) : add",
 		},
 	}
 
@@ -655,6 +712,7 @@ func TestCollectLines(t *testing.T) {
 				Tags: map[string]string{
 					"tag2": "value2",
 				},
+				PrecisionStr: "ns",
 			},
 			data: []map[string]any{
 				{
@@ -664,7 +722,7 @@ func TestCollectLines(t *testing.T) {
 					"humidity": 60,
 				},
 			},
-			result: []string{"test2,tag2=value2 temperature=20 10", "test2,tag2=value2 humidity=60 10"},
+			result: []string{"test2,tag2=value2 temperature=20 10000000", "test2,tag2=value2 humidity=60 10000000"},
 		},
 		{
 			name: "normal batch sendSingle",
@@ -673,7 +731,8 @@ func TestCollectLines(t *testing.T) {
 				Tags: map[string]string{
 					"tag1": "value1",
 				},
-				SendSingle: true,
+				SendSingle:   true,
+				PrecisionStr: "us",
 			},
 			data: []map[string]any{
 				{
@@ -683,7 +742,7 @@ func TestCollectLines(t *testing.T) {
 					"temperature": 30,
 				},
 			},
-			result: []string{"test3,tag1=value1 humidity=50 10", "test3,tag1=value1 temperature=30 10"},
+			result: []string{"test3,tag1=value1 humidity=50 10000", "test3,tag1=value1 temperature=30 10000"},
 		},
 		{
 			name: "batch/sendSingle with dataTemplate",
@@ -721,6 +780,8 @@ func TestCollectLines(t *testing.T) {
 				Tags: map[string]string{
 					"tag2": "value2",
 				},
+				PrecisionStr: "s",
+				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -732,8 +793,9 @@ func TestCollectLines(t *testing.T) {
 			data: map[string]any{
 				"temperature": 20,
 				"humidity":    50,
+				"ts":          100,
 			},
-			result: []string{"test5,tag2=value2 humidity=50 10"},
+			result: []string{"test5,tag2=value2 humidity=50 100"},
 		},
 		{
 			name: "batch with fields",
@@ -742,6 +804,8 @@ func TestCollectLines(t *testing.T) {
 				Tags: map[string]string{
 					"tag1": "value1",
 				},
+				PrecisionStr: "ms",
+				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -754,13 +818,15 @@ func TestCollectLines(t *testing.T) {
 				{
 					"temperature": 20,
 					"humidity":    50,
+					"ts":          100,
 				},
 				{
 					"temperature": 30,
 					"humidity":    60,
+					"ts":          110,
 				},
 			},
-			result: []string{"test6,tag1=value1 humidity=50 10", "test6,tag1=value1 humidity=60 10"},
+			result: []string{"test6,tag1=value1 humidity=50 100", "test6,tag1=value1 humidity=60 110"},
 		},
 	}
 
@@ -813,6 +879,41 @@ func TestCollectLinesError(t *testing.T) {
 			},
 			data: []byte{1, 2, 3},
 			err:  "influx2 sink needs map or []map, but receive unsupported data [1 2 3]",
+		},
+		{
+			name: "single wrong ts format",
+			conf: c{
+				Measurement: "test1",
+				Tags: map[string]string{
+					"tag1": "value1",
+				},
+				UseLineProtocol: true,
+				TsFieldName:     "name",
+			},
+			data: map[string]any{
+				"name": "home",
+			},
+			err: "time field name can not convert to timestamp(int64) : home",
+		},
+		{
+			name: "batch wront ts field",
+			conf: c{
+				Measurement: "test2",
+				Tags: map[string]string{
+					"tag2": "value2",
+				},
+				PrecisionStr: "ns",
+				TsFieldName:  "ts",
+			},
+			data: []map[string]any{
+				{
+					"temperature": 20,
+				},
+				{
+					"humidity": 60,
+				},
+			},
+			err: "time field ts not found",
 		},
 	}
 
