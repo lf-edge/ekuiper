@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -197,9 +198,10 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 				continue
 			}
 			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
-				if websocket.IsCloseError(err) {
+				// close sent error can't be captured by IsCloseError
+				if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
 					wsEndpointCtx[endpoint].removeConn(c)
-					conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
+					conf.Log.Infof("websocket endpoint %s connection get closed, err:%v", endpoint, err)
 					break
 				}
 				conf.Log.Errorf("websocket endpoint %s send error %s", endpoint, err)
