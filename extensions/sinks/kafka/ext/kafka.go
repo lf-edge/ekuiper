@@ -17,7 +17,6 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"strings"
 
 	kafkago "github.com/segmentio/kafka-go"
@@ -122,15 +121,6 @@ func (m *kafkaSink) buildKafkaWriter() error {
 			SASL: mechanism,
 			TLS:  tlsConfig,
 		},
-	}
-	// pull metadata to test connection
-	nc, err := net.Dial("tcp", brokers[0])
-	if err != nil {
-		return err
-	}
-	c := kafkago.NewConn(nc, m.c.Topic, 0)
-	if _, err = c.Brokers(); err != nil {
-		return err
 	}
 	m.writer = w
 	return nil
