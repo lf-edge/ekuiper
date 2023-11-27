@@ -78,7 +78,7 @@ func TestManager_Register(t *testing.T) {
 			t:   plugin.SOURCE,
 			n:   "zipMissConf",
 			u:   endpoint + "/sources/zipMissConf.zip",
-			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
+			err: errors.New("fail to install plugin: invalid zip file: expectFiles: 2, got filenames:[/home/runner/work/ekuiper/ekuiper/plugins/sources/ZipMissConf.so], zipFiles: [ZipMissConf.so], yamlFileChecked:false, soFileChecked:true"),
 		}, {
 			t:   plugin.SINK,
 			n:   "urlerror",
@@ -88,12 +88,12 @@ func TestManager_Register(t *testing.T) {
 			t:   plugin.SINK,
 			n:   "zipWrongname",
 			u:   endpoint + "/sinks/zipWrongName.zip",
-			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
+			err: errors.New("fail to install plugin: invalid zip file: expectFiles: 1, got filenames:[], zipFiles: [Random2.so], yamlFileChecked:false, soFileChecked:false"),
 		}, {
 			t:   plugin.FUNCTION,
 			n:   "zipMissSo",
 			u:   endpoint + "/functions/zipMissSo.zip",
-			err: errors.New("fail to install plugin: invalid zip file: so file or conf file is missing"),
+			err: errors.New("fail to install plugin: invalid zip file: expectFiles: 1, got filenames:[], zipFiles: [zipMissSo.yaml], yamlFileChecked:false, soFileChecked:false"),
 		}, {
 			t: plugin.SOURCE,
 			n: "random2",
