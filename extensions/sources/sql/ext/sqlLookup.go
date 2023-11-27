@@ -43,9 +43,10 @@ func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v", s.url, err)
 	}
-	index := strings.Index(s.url, "://")
-	if index > 0 {
-		s.driver = s.url[:]
+	s.driver, err = util.ParseDriver(s.url)
+	if err != nil {
+		conf.Log.Warnf("parse url %v driver failed, err:%v", s.url, err)
+		s.driver = ""
 	}
 	s.db = db
 	return nil
