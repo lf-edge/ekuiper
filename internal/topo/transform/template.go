@@ -120,7 +120,7 @@ func GenTp(dt string) (*template.Template, error) {
 	return template.New("sink").Funcs(conf.FuncMap).Parse(dt)
 }
 
-// If you do not need to convert data to []byte, you can use this function directly. Otherwise, use TransFunc.
+// TransItem If you do not need to convert data to []byte, you can use this function directly. Otherwise, use TransFunc.
 func TransItem(input interface{}, dataField string, fields []string) (interface{}, bool, error) {
 	if dataField == "" && len(fields) == 0 {
 		return input, false, nil

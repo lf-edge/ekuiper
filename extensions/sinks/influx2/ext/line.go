@@ -73,7 +73,7 @@ func (m *influxSink2) transformToLine(ctx api.StreamContext, dd map[string]any) 
 		}
 		return string(jsonBytes), nil
 	} else {
-		od, _, err := transform.TransItem(dd, m.conf.DataField, m.conf.Fields)
+		od, _, err := transform.TransItem(dd, m.conf.DataField, nil)
 		if err != nil {
 			return "", fmt.Errorf("fail to select fields %v for data %v", m.conf.Fields, dd)
 		}
@@ -81,11 +81,11 @@ func (m *influxSink2) transformToLine(ctx api.StreamContext, dd map[string]any) 
 		if !ok {
 			return "", fmt.Errorf("after fields transformation, result is not a map, got %v", d)
 		}
-		return m.mapToLine(d, v64), nil
+		return m.mapToLine(ctx, d, v64)
 	}
 }
 
-func (m *influxSink2) mapToLine(d map[string]any, tt int64) string {
+func (m *influxSink2) mapToLine(ctx api.StreamContext, d map[string]any, tt int64) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(m.conf.Measurement)
 
@@ -93,28 +93,44 @@ func (m *influxSink2) mapToLine(d map[string]any, tt int64) string {
 		builder.WriteString(",")
 		builder.WriteString(k)
 		builder.WriteString("=")
-		builder.WriteString(v)
+		t, err := ctx.ParseTemplate(v, d)
+		if err != nil {
+			return "", fmt.Errorf("parse %s tag template %s failed, err:%v", k, v, err)
+		}
+		builder.WriteString(t)
 	}
 	builder.WriteString(" ")
 	c := 0
-	for k, v := range d {
-		if c > 0 {
-			builder.WriteString(",")
-		}
-		c++
-		builder.WriteString(k)
-		builder.WriteString("=")
-		switch value := v.(type) {
-		case string:
-			builder.WriteString(fmt.Sprintf("\"%s\"", value))
-		default:
-			builder.WriteString(fmt.Sprintf("%v", value))
-		}
 
+	if len(m.conf.Fields) > 0 {
+		for _, k := range m.conf.Fields {
+			c = writeLine(c, &builder, k, d[k])
+		}
+	} else {
+		for k, v := range d {
+			c = writeLine(c, &builder, k, v)
+		}
 	}
+
 	builder.WriteString(" ")
 	builder.WriteString(fmt.Sprintf("%v", tt))
-	return builder.String()
+	return builder.String(), nil
+}
+
+func writeLine(c int, builder *strings.Builder, k string, v any) int {
+	if c > 0 {
+		builder.WriteString(",")
+	}
+	c++
+	builder.WriteString(k)
+	builder.WriteString("=")
+	switch value := v.(type) {
+	case string:
+		builder.WriteString(fmt.Sprintf("\"%s\"", value))
+	default:
+		builder.WriteString(fmt.Sprintf("%v", value))
+	}
+	return c
 }
 
 func (m *influxSink2) transformToLines(ctx api.StreamContext, dd []map[string]any) ([]string, error) {
@@ -135,7 +151,7 @@ func (m *influxSink2) transformToLines(ctx api.StreamContext, dd []map[string]an
 			tts = append(tts, v64)
 		}
 
-		d, _, _ := transform.TransItem(dd, m.conf.DataField, m.conf.Fields)
+		d, _, _ := transform.TransItem(dd, m.conf.DataField, nil)
 		ddd, ok := d.([]map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("after fields transformation, result is not a []map, got %v", d)
@@ -143,7 +159,11 @@ func (m *influxSink2) transformToLines(ctx api.StreamContext, dd []map[string]an
 
 		results := make([]string, 0, len(ddd))
 		for i, d := range ddd {
-			results = append(results, m.mapToLine(d, tts[i]))
+			r, err := m.mapToLine(ctx, d, tts[i])
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, r)
 		}
 		return results, nil
 	}

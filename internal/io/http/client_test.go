@@ -56,7 +56,7 @@ func TestHeaderConf(t *testing.T) {
 				"url":     "http://localhost:9090/",
 				"headers": "{\"custom\":\"{{{.idd}}\",\"sourceCode\":\"1090\",\"serviceCode\":\"1090109107\" }",
 			},
-			err: fmt.Errorf("fail to parse the header template {\"custom\":\"{{{.idd}}\",\"sourceCode\":\"1090\",\"serviceCode\":\"1090109107\" }: template: sink:1: unexpected \"{\" in command"),
+			err: fmt.Errorf("fail to parse the header template {\"custom\":\"{{{.idd}}\",\"sourceCode\":\"1090\",\"serviceCode\":\"1090109107\" }: Template Invalid: template: sink:1: unexpected \"{\" in command"),
 		},
 		{
 			name: "wrong parsed template",
@@ -82,7 +82,7 @@ func TestHeaderConf(t *testing.T) {
 					"custom": "{{{.id}}",
 				},
 			},
-			err: fmt.Errorf("fail to parse the header entry custom: template: sink:1: unexpected \"{\" in command"),
+			err: fmt.Errorf("fail to parse the header entry custom: Template Invalid: template: sink:1: unexpected \"{\" in command"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 // Entry method for transforming data to influxdb points
@@ -62,7 +63,7 @@ func (m *influxSink2) transformPoints(ctx api.StreamContext, dd any) ([]*write.P
 				if err != nil {
 					return nil, err
 				}
-				err = m.mapToPoint(&pts, d, tt)
+				err = m.mapToPoint(ctx, &pts, d, tt)
 				if err != nil {
 					return nil, err
 				}
@@ -84,7 +85,7 @@ func (m *influxSink2) singleMapToPoint(ctx api.StreamContext, pts *[]*write.Poin
 	if err != nil {
 		return err
 	}
-	return m.mapToPoint(pts, mm, tt)
+	return m.mapToPoint(ctx, pts, mm, tt)
 }
 
 // Method of sink transforms for a single map
@@ -101,7 +102,7 @@ func (m *influxSink2) transformToMap(ctx api.StreamContext, dd map[string]any) (
 		}
 		return m, nil
 	} else {
-		d, _, _ := transform.TransItem(dd, m.conf.DataField, m.conf.Fields)
+		d, _, _ := transform.TransItem(dd, m.conf.DataField, nil)
 		if dm, ok := d.(map[string]any); !ok {
 			return nil, nil
 		} else {
@@ -111,8 +112,18 @@ func (m *influxSink2) transformToMap(ctx api.StreamContext, dd map[string]any) (
 }
 
 // Internal method to transform map to influxdb point
-func (m *influxSink2) mapToPoint(pts *[]*write.Point, mm map[string]any, tt time.Time) error {
-	*pts = append(*pts, client.NewPoint(m.conf.Measurement, m.conf.Tags, mm, tt))
+func (m *influxSink2) mapToPoint(ctx api.StreamContext, pts *[]*write.Point, mm map[string]any, tt time.Time) error {
+	for k, v := range m.conf.Tags {
+		vv, err := ctx.ParseTemplate(v, mm)
+		if err != nil {
+			return fmt.Errorf("parse %s tag template %s failed, err:%v", k, v, err)
+		}
+		// convertAll has no error
+		vs, _ := cast.ToString(vv, cast.CONVERT_ALL)
+		m.tagEval[k] = vs
+	}
+
+	*pts = append(*pts, client.NewPoint(m.conf.Measurement, m.tagEval, m.SelectFields(mm), tt))
 	return nil
 }
 
@@ -136,7 +147,7 @@ func (m *influxSink2) transformMapsToMap(ctx api.StreamContext, dds []map[string
 		}
 		return ms, nil
 	} else {
-		d, _, _ := transform.TransItem(dds, m.conf.DataField, m.conf.Fields)
+		d, _, _ := transform.TransItem(dds, m.conf.DataField, nil)
 		if md, ok := d.([]map[string]any); !ok {
 			return nil, nil
 		} else {

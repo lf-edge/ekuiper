@@ -209,7 +209,7 @@ func TestCollectPoints(t *testing.T) {
 			conf: c{
 				Measurement: "test3",
 				Tags: map[string]string{
-					"tag1": "value1",
+					"tag1": "{{.humidity}}",
 					"tag2": "value2",
 				},
 				SendSingle:   true,
@@ -230,7 +230,7 @@ func TestCollectPoints(t *testing.T) {
 			},
 			result: []*write.Point{
 				client.NewPoint("test3", map[string]string{
-					"tag1": "value1",
+					"tag1": "50",
 					"tag2": "value2",
 				}, map[string]any{
 					"temperature": 20,
@@ -238,7 +238,7 @@ func TestCollectPoints(t *testing.T) {
 					"ts":          100,
 				}, time.Unix(100, 0)),
 				client.NewPoint("test3", map[string]string{
-					"tag1": "value1",
+					"tag1": "60",
 					"tag2": "value2",
 				}, map[string]any{
 					"temperature": 30,
@@ -299,7 +299,7 @@ func TestCollectPoints(t *testing.T) {
 				Measurement: "test5",
 				Tags: map[string]string{
 					"tag1": "value1",
-					"tag2": "value2",
+					"tag2": "{{.humidity}}",
 				},
 				PrecisionStr: "ns",
 				TsFieldName:  "ts",
@@ -319,7 +319,7 @@ func TestCollectPoints(t *testing.T) {
 			result: []*write.Point{
 				client.NewPoint("test5", map[string]string{
 					"tag1": "value1",
-					"tag2": "value2",
+					"tag2": "50",
 				}, map[string]any{
 					"humidity": 50,
 				}, time.Unix(0, 100)),
@@ -330,8 +330,8 @@ func TestCollectPoints(t *testing.T) {
 			conf: c{
 				Measurement: "test5",
 				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+					"tag1": "{{.t}}",
+					"tag2": "{{.h}}",
 				},
 			},
 			transforms: struct {
@@ -348,8 +348,8 @@ func TestCollectPoints(t *testing.T) {
 			},
 			result: []*write.Point{
 				client.NewPoint("test5", map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+					"tag1": "20",
+					"tag2": "50",
 				}, map[string]any{
 					"t": 20.0,
 					"h": 50.0,
@@ -362,7 +362,7 @@ func TestCollectPoints(t *testing.T) {
 				Measurement: "test6",
 				Tags: map[string]string{
 					"tag1": "value1",
-					"tag2": "value2",
+					"tag2": "{{.humidity}}",
 				},
 			},
 			transforms: struct {
@@ -385,13 +385,13 @@ func TestCollectPoints(t *testing.T) {
 			result: []*write.Point{
 				client.NewPoint("test6", map[string]string{
 					"tag1": "value1",
-					"tag2": "value2",
+					"tag2": "50",
 				}, map[string]any{
 					"humidity": 50,
 				}, time.UnixMilli(10)),
 				client.NewPoint("test6", map[string]string{
 					"tag1": "value1",
-					"tag2": "value2",
+					"tag2": "60",
 				}, map[string]any{
 					"humidity": 60,
 				}, time.UnixMilli(10)),
@@ -403,7 +403,7 @@ func TestCollectPoints(t *testing.T) {
 				Measurement: "test6",
 				Tags: map[string]string{
 					"tag1": "value1",
-					"tag2": "value2",
+					"tag2": "{{.humidity}}",
 				},
 			},
 			transforms: struct {
@@ -427,7 +427,7 @@ func TestCollectPoints(t *testing.T) {
 			result: []*write.Point{
 				client.NewPoint("test6", map[string]string{
 					"tag1": "value1",
-					"tag2": "value2",
+					"tag2": "50",
 				}, map[string]any{
 					"temperature": 20.0,
 				}, time.UnixMilli(10)),
@@ -481,7 +481,8 @@ func TestCollectPoints(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ifsink := &influxSink2{
-				conf: test.conf,
+				conf:    test.conf,
+				tagEval: make(map[string]string),
 			}
 			if test.transforms.dataTemplate != "" {
 				ifsink.hasTransform = true
@@ -494,8 +495,10 @@ func TestCollectPoints(t *testing.T) {
 			}
 			contextLogger := conf.Log.WithField("rule", test.name)
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, test.transforms.fields)
+			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, nil)
 			vCtx := context.WithValue(ctx, context.TransKey, tf)
+			err := ifsink.parseTemplates(vCtx)
+			assert.NoError(t, err)
 			points, err := ifsink.transformPoints(vCtx, test.data)
 			assert.NoError(t, err)
 			assert.Equal(t, test.result, points)
@@ -605,7 +608,7 @@ func TestCollectPointsError(t *testing.T) {
 					"humidity":    60,
 				},
 			},
-			err: "fail to TransItem data [map[humidity:50 temperature:20] map[humidity:60 temperature:30]] for error fail to decode data abc{\"humidity\":50,\"temperature\":20} for error invalid character 'a' looking for beginning of value",
+			err: "fail to decode data abc{\"humidity\":50,\"temperature\":20} after applying dataTemplate for error invalid character 'a' looking for beginning of value",
 		},
 		{
 			name: "single without ts field",
@@ -667,7 +670,7 @@ func TestCollectPointsError(t *testing.T) {
 			}
 			contextLogger := conf.Log.WithField("rule", test.name)
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, test.transforms.fields)
+			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, nil)
 			vCtx := context.WithValue(ctx, context.TransKey, tf)
 			_, err := ifsink.transformPoints(vCtx, test.data)
 			assert.Error(t, err)
@@ -778,7 +781,7 @@ func TestCollectLines(t *testing.T) {
 			conf: c{
 				Measurement: "test5",
 				Tags: map[string]string{
-					"tag2": "value2",
+					"tag2": "{{.humidity}}",
 				},
 				PrecisionStr: "s",
 				TsFieldName:  "ts",
@@ -795,14 +798,14 @@ func TestCollectLines(t *testing.T) {
 				"humidity":    50,
 				"ts":          100,
 			},
-			result: []string{"test5,tag2=value2 humidity=50 100"},
+			result: []string{"test5,tag2=50 humidity=50 100"},
 		},
 		{
 			name: "batch with fields",
 			conf: c{
 				Measurement: "test6",
 				Tags: map[string]string{
-					"tag1": "value1",
+					"tag1": "{{.temperature}}",
 				},
 				PrecisionStr: "ms",
 				TsFieldName:  "ts",
@@ -826,7 +829,7 @@ func TestCollectLines(t *testing.T) {
 					"ts":          110,
 				},
 			},
-			result: []string{"test6,tag1=value1 humidity=50 100", "test6,tag1=value1 humidity=60 110"},
+			result: []string{"test6,tag1=20 humidity=50 100", "test6,tag1=30 humidity=60 110"},
 		},
 	}
 
@@ -834,7 +837,8 @@ func TestCollectLines(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ifsink := &influxSink2{
-				conf: test.conf,
+				conf:    test.conf,
+				tagEval: make(map[string]string),
 			}
 			if test.transforms.dataTemplate != "" {
 				ifsink.hasTransform = true
@@ -847,7 +851,7 @@ func TestCollectLines(t *testing.T) {
 			}
 			contextLogger := conf.Log.WithField("rule", test.name)
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, test.transforms.fields)
+			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, nil)
 			vCtx := context.WithValue(ctx, context.TransKey, tf)
 			lines, err := ifsink.transformLines(vCtx, test.data)
 			assert.NoError(t, err)
@@ -934,11 +938,65 @@ func TestCollectLinesError(t *testing.T) {
 			}
 			contextLogger := conf.Log.WithField("rule", test.name)
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, test.transforms.fields)
+			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, nil)
 			vCtx := context.WithValue(ctx, context.TransKey, tf)
 			_, err := ifsink.transformLines(vCtx, test.data)
 			assert.Error(t, err)
 			assert.Equal(t, test.err, err.Error())
+		})
+	}
+}
+
+func Test_parseTemplates(t *testing.T) {
+	tests := []struct {
+		name string
+		conf c
+		err  string
+	}{
+		{
+			name: "normal",
+			conf: c{
+				Tags: map[string]string{
+					"tag1": "value1",
+				},
+			},
+		},
+		{
+			name: "normal with template",
+			conf: c{
+				Tags: map[string]string{
+					"tag1": "value1",
+					"tag2": "{{.temperature}}",
+					"tag3": "100",
+				},
+			},
+		},
+		{
+			name: "error template",
+			conf: c{
+				Tags: map[string]string{
+					"tag1": "value1",
+					"tag2": "{{abc .temperature}}",
+					"tag3": "100",
+				},
+			},
+			err: "Template Invalid: template: sink:1: function \"abc\" not defined",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			contextLogger := conf.Log.WithField("rule", tt.name)
+			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+			m := &influxSink2{
+				conf: tt.conf,
+			}
+			err := m.parseTemplates(ctx)
+			if tt.err == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+				assert.Equal(t, tt.err, err.Error())
+			}
 		})
 	}
 }

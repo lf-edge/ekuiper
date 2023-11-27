@@ -120,8 +120,15 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			if err != nil {
 				return err
 			}
-
-			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, sconf.Fields)
+			var tf transform.TransFunc
+			// TODO refactor this, do not use if else
+			switch m.sinkType {
+			// For sink that has different field types like value fields, header field, tag field, ts field etc. Do not transform fields for now.
+			case "influx2":
+				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, nil)
+			default:
+				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, sconf.Fields)
+			}
 			if err != nil {
 				msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
 				logger.Warnf(msg)

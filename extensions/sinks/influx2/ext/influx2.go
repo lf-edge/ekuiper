@@ -27,12 +27,13 @@
 package influx2
 
 import (
-	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	client "github.com/influxdata/influxdb-client-go/v2"
 
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -67,6 +68,8 @@ type influxSink2 struct {
 	conf c
 	// save the token privately
 	token string
+	// temp variables
+	tagEval map[string]string
 	// tagKey    string
 	// tagValue  string
 	// already have
@@ -111,17 +114,34 @@ func (m *influxSink2) Configure(props map[string]any) error {
 	}
 	m.token = m.conf.Token
 	m.conf.Token = "******"
+	m.tagEval = make(map[string]string)
 	return err
+}
+
+func (m *influxSink2) parseTemplates(ctx api.StreamContext) error {
+	for _, v := range m.conf.Tags {
+		_, err := ctx.ParseTemplate(v, nil)
+		if err != nil && strings.HasPrefix(err.Error(), "Template Invalid") {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *influxSink2) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("influx2 sink open with properties %+v", m.conf)
+	err := m.parseTemplates(ctx)
+	if err != nil {
+		return err
+	}
 	if m.conf.BatchSize <= 0 {
 		m.conf.BatchSize = 1
 	}
 	options := client.DefaultOptions().SetPrecision(m.conf.Precision).SetBatchSize(uint(m.conf.BatchSize))
 	m.cli = client.NewClientWithOptions(m.conf.Addr, m.token, options)
-	_, err := m.cli.Ping(context.Background())
+
+	// Test connection
+	_, err = m.cli.Ping(context.Background())
 	return err
 }
 
@@ -171,6 +191,18 @@ func (m *influxSink2) getTS(data map[string]any) (int64, error) {
 		return 0, fmt.Errorf("time field %s can not convert to timestamp(int64) : %v", m.conf.TsFieldName, v)
 	}
 	return v64, nil
+}
+
+func (m *influxSink2) SelectFields(data map[string]any) map[string]any {
+	if len(m.conf.Fields) > 0 {
+		output := make(map[string]any, len(m.conf.Fields))
+		for _, field := range m.conf.Fields {
+			output[field] = data[field]
+		}
+		return output
+	} else {
+		return data
+	}
 }
 
 func GetSink() api.Sink {
