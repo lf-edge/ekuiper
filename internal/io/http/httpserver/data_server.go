@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -197,9 +198,10 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 				continue
 			}
 			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
-				if websocket.IsCloseError(err) {
+				// close sent error can't be captured by IsCloseError
+				if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
 					wsEndpointCtx[endpoint].removeConn(c)
-					conf.Log.Infof("websocket endpoint %s connection get closed", endpoint)
+					conf.Log.Infof("websocket endpoint %s connection get closed, err:%v", endpoint, err)
 					break
 				}
 				conf.Log.Errorf("websocket endpoint %s send error %s", endpoint, err)
@@ -220,6 +222,7 @@ func CheckWebsocketEndpoint(endpoint string) bool {
 }
 
 func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, chan struct{}, error) {
+	conf.Log.Infof("websocket endpoint %v register", endpoint)
 	lock.Lock()
 	defer lock.Unlock()
 	if server == nil {
@@ -247,6 +250,7 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 			return
 		}
 		wsCtx.addConn(c)
+		conf.Log.Infof("websocket endpint %v create connection", endpoint)
 		go recvProcess(ctx, c, endpoint)
 		go sendProcess(ctx, c, endpoint)
 	})
@@ -255,6 +259,7 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 }
 
 func UnRegisterWebSocketEndpoint(endpoint string) error {
+	conf.Log.Infof("websocket endpoint %v unregister", endpoint)
 	lock.Lock()
 	defer lock.Unlock()
 	if _, ok := wsEndpointCtx[endpoint]; !ok {

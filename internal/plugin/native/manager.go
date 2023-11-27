@@ -495,10 +495,15 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			}
 		}
 	}()
+	yamlFileChecked := false
+	soFileChecked := false
+	zipFiles := make([]string, 0)
 	for _, file := range r.File {
+		zipFiles = append(zipFiles, file.Name)
 		fileName := file.Name
 		switch {
 		case yamlFile == fileName:
+			yamlFileChecked = true
 			// skip yaml file if exists
 			if _, err := os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
 				conf.Log.Infof("install %s due to no this file", yamlPath)
@@ -528,6 +533,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			filenames = append(filenames, soPath)
 			revokeFiles = append(revokeFiles, soPath)
 			soName, version = parseName(fileName)
+			soFileChecked = true
 		case strings.HasPrefix(fileName, "etc/"):
 			err = filex.UnzipTo(file, path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
@@ -541,7 +547,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		}
 	}
 	if len(filenames) != expFiles {
-		err = fmt.Errorf("invalid zip file: so file or conf file is missing")
+		err = fmt.Errorf("invalid zip file: expectFiles: %v, got filenames:%v, zipFiles: %v, yamlFileChecked:%v, soFileChecked:%v", expFiles, filenames, zipFiles, yamlFileChecked, soFileChecked)
 		return version, err
 	} else if haveInstallFile {
 		// run install script if there is
