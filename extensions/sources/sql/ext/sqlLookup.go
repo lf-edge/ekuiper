@@ -109,7 +109,13 @@ func GetLookup() api.LookupSource {
 	return &sqlLookupSource{}
 }
 
-func (s *sqlLookupSource) buildQuery(fields []string, keys []string, values []interface{}) string {
+type sqlQueryGen interface {
+	buildQuery(fields []string, keys []string, values []interface{}) string
+}
+
+type defaultSQLGen struct{ table string }
+
+func (g defaultSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
 	query := "SELECT "
 	if len(fields) == 0 {
 		query += "*"
@@ -121,33 +127,55 @@ func (s *sqlLookupSource) buildQuery(fields []string, keys []string, values []in
 			query += f
 		}
 	}
-	query += fmt.Sprintf(" FROM %s WHERE ", s.table)
-
-	switch strings.ToLower(s.driver) {
-	case "sqlserver", "mssql":
-		for i, k := range keys {
-			if i > 0 {
-				query += " AND "
-			}
-			switch v := values[i].(type) {
-			case string:
-				query += fmt.Sprintf("%s = '%s'", k, v)
-			default:
-				query += fmt.Sprintf("%s = %v", k, v)
-			}
+	query += fmt.Sprintf(" FROM %s WHERE ", g.table)
+	for i, k := range keys {
+		if i > 0 {
+			query += " AND "
 		}
-	default:
-		for i, k := range keys {
-			if i > 0 {
-				query += " AND "
-			}
-			switch v := values[i].(type) {
-			case string:
-				query += fmt.Sprintf("`%s` = '%s'", k, v)
-			default:
-				query += fmt.Sprintf("`%s` = %v", k, v)
-			}
+		switch v := values[i].(type) {
+		case string:
+			query += fmt.Sprintf("`%s` = '%s'", k, v)
+		default:
+			query += fmt.Sprintf("`%s` = %v", k, v)
 		}
 	}
 	return query
+}
+
+type sqlServerSQLGen struct{ table string }
+
+func (g sqlServerSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
+	query := "SELECT "
+	if len(fields) == 0 {
+		query += "*"
+	} else {
+		for i, f := range fields {
+			if i > 0 {
+				query += ","
+			}
+			query += f
+		}
+	}
+	query += fmt.Sprintf(" FROM %s WHERE ", g.table)
+	for i, k := range keys {
+		if i > 0 {
+			query += " AND "
+		}
+		switch v := values[i].(type) {
+		case string:
+			query += fmt.Sprintf("%s = '%s'", k, v)
+		default:
+			query += fmt.Sprintf("%s = %v", k, v)
+		}
+	}
+	return query
+}
+
+func (s *sqlLookupSource) buildQuery(fields []string, keys []string, values []interface{}) string {
+	switch strings.ToLower(s.driver) {
+	case "sqlserver", "mssql":
+		return sqlServerSQLGen{table: s.table}.buildQuery(fields, keys, values)
+	default:
+		return defaultSQLGen{table: s.table}.buildQuery(fields, keys, values)
+	}
 }
