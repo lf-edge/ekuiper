@@ -156,8 +156,36 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 			p.fields[p.timestampField] = nil
 		}
 	}
+	arrowFileds := make([]*ast.BinaryExpr, 0)
 	for _, field := range fields {
 		switch f := field.(type) {
+		case *ast.BinaryExpr:
+			if f.OP == ast.ARROW {
+				// only allowed case like a.b.c
+				valid := true
+				ast.WalkFunc(f, func(node ast.Node) bool {
+					switch c := node.(type) {
+					case *ast.BinaryExpr:
+						if c.OP != ast.ARROW {
+							valid = false
+							return false
+						}
+					case *ast.FieldRef:
+						if !c.IsColumn() {
+							valid = false
+							return false
+						}
+					case *ast.JsonFieldRef:
+					default:
+						valid = false
+						return false
+					}
+					return true
+				})
+				if valid {
+					arrowFileds = append(arrowFileds, f)
+				}
+			}
 		case *ast.Wildcard:
 			if len(f.Except) == 0 && len(f.Replace) == 0 {
 				p.isWildCard = true
@@ -206,7 +234,85 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 		}
 	}
 	p.getAllFields()
+	if !p.isSchemaless {
+		p.handleArrowFields(arrowFileds)
+	}
 	return nil
+}
+
+func buildArrowReference(cur ast.Expr, root map[string]interface{}) (map[string]interface{}, string) {
+	switch c := cur.(type) {
+	case *ast.BinaryExpr:
+		node, name := buildArrowReference(c.LHS, root)
+		m := node[name].(map[string]interface{})
+		subName := c.RHS.(*ast.JsonFieldRef).Name
+		_, ok := m[subName]
+		if !ok {
+			m[subName] = map[string]interface{}{}
+		}
+		return m, subName
+	case *ast.FieldRef:
+		_, ok := root[c.Name]
+		if !ok {
+			root[c.Name] = map[string]interface{}{}
+		}
+		return root, c.Name
+	}
+	return nil, ""
+}
+
+// handleArrowFields mark the field and subField for the arrowFields which should be remained
+// Then pruned the field which is not used.
+func (p *DataSourcePlan) handleArrowFields(arrowFields []*ast.BinaryExpr) {
+	root := make(map[string]interface{})
+	for _, af := range arrowFields {
+		buildArrowReference(af, root)
+	}
+	for filedName, node := range root {
+		jsonStreamField, err := p.getField(filedName, true)
+		if err != nil {
+			continue
+		}
+		markPruneJSONStreamField(node, jsonStreamField)
+	}
+	for key, field := range p.streamFields {
+		if field != nil && field.Type == "struct" {
+			if !field.Selected {
+				delete(p.streamFields, key)
+				continue
+			}
+			pruneJSONStreamField(field)
+		}
+	}
+}
+
+func pruneJSONStreamField(cur *ast.JsonStreamField) {
+	cur.Selected = false
+	if cur.Type != "struct" {
+		return
+	}
+	for key, subField := range cur.Properties {
+		if !subField.Selected {
+			delete(cur.Properties, key)
+		}
+		pruneJSONStreamField(subField)
+	}
+}
+
+func markPruneJSONStreamField(cur interface{}, field *ast.JsonStreamField) {
+	field.Selected = true
+	if field.Type != "struct" {
+		return
+	}
+	curM, ok := cur.(map[string]interface{})
+	if !ok || len(curM) < 1 {
+		return
+	}
+	for filedName, v := range curM {
+		if subField, ok := field.Properties[filedName]; ok {
+			markPruneJSONStreamField(v, subField)
+		}
+	}
 }
 
 func (p *DataSourcePlan) getField(name string, strict bool) (*ast.JsonStreamField, error) {
