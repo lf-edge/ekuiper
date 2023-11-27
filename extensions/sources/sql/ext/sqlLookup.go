@@ -17,6 +17,7 @@ package sql
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -29,9 +30,10 @@ type sqlLookupConfig struct {
 }
 
 type sqlLookupSource struct {
-	url   string
-	table string
-	db    *sql.DB
+	url    string
+	table  string
+	db     *sql.DB
+	driver string
 }
 
 // Open establish a connection to the database
@@ -40,6 +42,11 @@ func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	db, err := util.FetchDBToOneNode(util.GlobalPool, s.url)
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v", s.url, err)
+	}
+	s.driver, err = util.ParseDriver(s.url)
+	if err != nil {
+		conf.Log.Warnf("parse url %v driver failed, err:%v", s.url, err)
+		s.driver = ""
 	}
 	s.db = db
 	return nil
@@ -62,29 +69,7 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debug("Start to lookup tuple")
 	rcvTime := conf.GetNow()
-	query := "SELECT "
-	if len(fields) == 0 {
-		query += "*"
-	} else {
-		for i, f := range fields {
-			if i > 0 {
-				query += ","
-			}
-			query += f
-		}
-	}
-	query += fmt.Sprintf(" FROM %s WHERE ", s.table)
-	for i, k := range keys {
-		if i > 0 {
-			query += " AND "
-		}
-		switch v := values[i].(type) {
-		case string:
-			query += fmt.Sprintf("`%s` = '%s'", k, v)
-		default:
-			query += fmt.Sprintf("`%s` = %v", k, v)
-		}
-	}
+	query := s.buildQuery(fields, keys, values)
 	ctx.GetLogger().Debugf("Query is %s", query)
 	rows, err := s.db.Query(query)
 	if err != nil {
@@ -123,4 +108,75 @@ func (s *sqlLookupSource) Close(ctx api.StreamContext) error {
 
 func GetLookup() api.LookupSource {
 	return &sqlLookupSource{}
+}
+
+type sqlQueryGen interface {
+	buildQuery(fields []string, keys []string, values []interface{}) string
+}
+
+type defaultSQLGen struct{ table string }
+
+func (g defaultSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
+	query := "SELECT "
+	if len(fields) == 0 {
+		query += "*"
+	} else {
+		for i, f := range fields {
+			if i > 0 {
+				query += ","
+			}
+			query += f
+		}
+	}
+	query += fmt.Sprintf(" FROM %s WHERE ", g.table)
+	for i, k := range keys {
+		if i > 0 {
+			query += " AND "
+		}
+		switch v := values[i].(type) {
+		case string:
+			query += fmt.Sprintf("`%s` = '%s'", k, v)
+		default:
+			query += fmt.Sprintf("`%s` = %v", k, v)
+		}
+	}
+	return query
+}
+
+type sqlServerSQLGen struct{ table string }
+
+func (g sqlServerSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
+	query := "SELECT "
+	if len(fields) == 0 {
+		query += "*"
+	} else {
+		for i, f := range fields {
+			if i > 0 {
+				query += ","
+			}
+			query += f
+		}
+	}
+	query += fmt.Sprintf(" FROM %s WHERE ", g.table)
+	for i, k := range keys {
+		if i > 0 {
+			query += " AND "
+		}
+		switch v := values[i].(type) {
+		case string:
+			query += fmt.Sprintf("%s = '%s'", k, v)
+		default:
+			query += fmt.Sprintf("%s = %v", k, v)
+		}
+	}
+	return query
+}
+
+func (s *sqlLookupSource) buildQuery(fields []string, keys []string, values []interface{}) string {
+	switch strings.ToLower(s.driver) {
+	case "sqlserver", "mssql":
+		return sqlServerSQLGen{table: s.table}.buildQuery(fields, keys, values)
+	default:
+		return defaultSQLGen{table: s.table}.buildQuery(fields, keys, values)
+	}
 }
