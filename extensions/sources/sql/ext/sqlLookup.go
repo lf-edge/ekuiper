@@ -43,7 +43,10 @@ func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	if err != nil {
 		return fmt.Errorf("connection to %s Open with error %v", s.url, err)
 	}
-	s.driver = s.url[:strings.Index(s.url, "://")]
+	index := strings.Index(s.url, "://")
+	if index > 0 {
+		s.driver = s.url[:]
+	}
 	s.db = db
 	return nil
 }
