@@ -222,6 +222,7 @@ func CheckWebsocketEndpoint(endpoint string) bool {
 }
 
 func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, chan struct{}, error) {
+	conf.Log.Infof("websocket endpoint %v register", endpoint)
 	lock.Lock()
 	defer lock.Unlock()
 	if server == nil {
@@ -249,6 +250,7 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 			return
 		}
 		wsCtx.addConn(c)
+		conf.Log.Infof("websocket endpint %v create connection", endpoint)
 		go recvProcess(ctx, c, endpoint)
 		go sendProcess(ctx, c, endpoint)
 	})
@@ -257,6 +259,7 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 }
 
 func UnRegisterWebSocketEndpoint(endpoint string) error {
+	conf.Log.Infof("websocket endpoint %v unregister", endpoint)
 	lock.Lock()
 	defer lock.Unlock()
 	if _, ok := wsEndpointCtx[endpoint]; !ok {
