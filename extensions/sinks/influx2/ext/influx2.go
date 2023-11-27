@@ -33,6 +33,7 @@ import (
 
 	client "github.com/influxdata/influxdb-client-go/v2"
 
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -49,17 +50,18 @@ type c struct {
 	PrecisionStr string        `json:"precision"`
 	Precision    time.Duration `json:"-"`
 	// http connection
-	// tls
+	// tls conf in cert.go
 	// write options
 	UseLineProtocol bool              `json:"useLineProtocol"` // 0: json, 1: line protocol
 	Measurement     string            `json:"measurement"`
 	Tags            map[string]string `json:"tags"`
 	TsFieldName     string            `json:"tsFieldName"`
 	// common options
-	DataField  string   `json:"dataField"`
-	Fields     []string `json:"fields"`
-	BatchSize  int      `json:"batchSize"`
-	SendSingle bool     `json:"sendSingle"`
+	DataField    string   `json:"dataField"`
+	Fields       []string `json:"fields"`
+	BatchSize    int      `json:"batchSize"`
+	SendSingle   bool     `json:"sendSingle"`
+	DataTemplate string   `json:"dataTemplate"`
 }
 
 // influxSink2 is the sink for influx2.
@@ -112,8 +114,25 @@ func (m *influxSink2) Configure(props map[string]any) error {
 	if len(m.conf.Measurement) == 0 {
 		return fmt.Errorf("measurement is required")
 	}
+	tlsConf, err := cert.GenTLSForClientFromProps(props)
+	if err != nil {
+		return fmt.Errorf("error configuring tls: %s", err)
+	}
+	if m.conf.BatchSize <= 0 {
+		m.conf.BatchSize = 1
+	}
 	m.token = m.conf.Token
 	m.conf.Token = "******"
+
+	options := client.DefaultOptions().SetPrecision(m.conf.Precision).SetBatchSize(uint(m.conf.BatchSize))
+	if tlsConf != nil {
+		options = options.SetTLSConfig(tlsConf)
+	}
+	m.cli = client.NewClientWithOptions(m.conf.Addr, m.token, options)
+	if m.conf.DataTemplate != "" {
+		m.hasTransform = true
+	}
+
 	m.tagEval = make(map[string]string)
 	return err
 }
@@ -134,12 +153,6 @@ func (m *influxSink2) Open(ctx api.StreamContext) error {
 	if err != nil {
 		return err
 	}
-	if m.conf.BatchSize <= 0 {
-		m.conf.BatchSize = 1
-	}
-	options := client.DefaultOptions().SetPrecision(m.conf.Precision).SetBatchSize(uint(m.conf.BatchSize))
-	m.cli = client.NewClientWithOptions(m.conf.Addr, m.token, options)
-
 	// Test connection
 	_, err = m.cli.Ping(context.Background())
 	return err

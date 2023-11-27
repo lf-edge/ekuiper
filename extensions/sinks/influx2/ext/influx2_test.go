@@ -63,6 +63,7 @@ func TestConfig(t *testing.T) {
 				},
 				Fields:      []string{"temperature"},
 				TsFieldName: "ts",
+				BatchSize:   1,
 			},
 		},
 		{
