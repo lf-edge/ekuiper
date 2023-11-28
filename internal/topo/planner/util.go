@@ -78,7 +78,7 @@ func getFields(node ast.Node) []ast.Expr {
 				if !hasMeta {
 					result = append(result, t)
 				}
-				return false
+				return hasMeta
 			}
 		}
 		return true

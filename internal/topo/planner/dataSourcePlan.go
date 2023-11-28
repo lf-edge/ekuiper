@@ -176,6 +176,20 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 							return false
 						}
 					case *ast.JsonFieldRef:
+					case *ast.MetaRef:
+						valid = false
+						if p.allMeta {
+							break
+						}
+						if c.StreamName == ast.DefaultStream || c.StreamName == p.name {
+							if c.Name == "*" {
+								p.allMeta = true
+								p.metaMap = nil
+							} else if !p.allMeta {
+								p.metaMap[strings.ToLower(c.Name)] = c.Name
+							}
+						}
+						return false
 					default:
 						valid = false
 						return false
