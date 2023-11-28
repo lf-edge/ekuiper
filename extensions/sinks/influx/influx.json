@@ -50,7 +50,7 @@
 	}, {
 		"name": "username",
 		"default": "",
-		"optional": false,
+		"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {
@@ -64,7 +64,7 @@
 	}, {
 		"name": "password",
 		"default": "",
-		"optional": false,
+		"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {
@@ -76,7 +76,7 @@
 			"zh_CN": "密码"
 		}
 	}, {
-		"name": "databasename",
+		"name": "database",
 		"default": "db",
 		"optional": true,
 		"control": "text",
@@ -89,33 +89,49 @@
 			"en_US": "DBbase name",
 			"zh_CN": "数据库名"
 		}
-	}, {
-		"name": "tagkey",
-		"default": "tagkey",
-		"optional": true,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "The tag key of the InfluxDB",
-			"zh_CN": "InfluxDB 的标签键"
-		},
-		"label": {
-			"en_US": "Tag",
-			"zh_CN": "标签键"
+	},
+		{
+			"name": "precision",
+			"default": "ms",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "The time precision",
+				"zh_CN": "时间精度"
+			},
+			"label": {
+				"en_US": "Precision",
+				"zh_CN": "时间精度"
 		}
 	}, {
-		"name": "tagvalue",
-		"default": "tagvalue",
+			"name": "tags",
+			"default": "",
 		"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "The tag value of the InfluxDB",
-			"zh_CN": "InfluxDB 的标签值"
+			"en_US": "The tags map",
+			"zh_CN": "标签映射"
 		},
 		"label": {
-			"en_US": "Tag value",
-			"zh_CN": "标签值"
+			"en_US": "Tags",
+			"zh_CN": "标签"
+		}
+		},
+		{
+			"name": "tsFieldName",
+			"default": "",
+		"optional": true,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "Timestamp Field Name",
+			"zh_CN": "时间戳字段名"
+		},
+		"label": {
+			"en_US": "Timestamp Field Name",
+			"zh_CN": "时间戳字段名"
 		}
 	}],
 	"node": {
