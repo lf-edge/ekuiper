@@ -90,33 +90,63 @@
 			"zh_CN": "桶"
 		}
 	}, {
-		"name": "tagKey",
-		"default": "tagKey",
+		"name": "precision",
+		"default": "ms",
 		"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "The tag key of the InfluxDB",
-			"zh_CN": "InfluxDB 的标签键"
+			"en_US": "The time precision",
+			"zh_CN": "时间精度"
 		},
 		"label": {
-			"en_US": "Tag",
-			"zh_CN": "标签键"
+			"en_US": "Precision",
+			"zh_CN": "时间精度"
 		}
+	},
+		{
+			"name": "useLineProtocol",
+			"default": "false",
+			"optional": true,
+			"control": "radio",
+			"type": "bool",
+			"hint": {
+				"en_US": "Use line protocol format or not",
+				"zh_CN": "是否使用行协议写入格式"
+			},
+			"label": {
+				"en_US": "Use Line Protocol",
+				"zh_CN": "使用行协议"
+			}
 	}, {
-		"name": "tagValue",
-		"default": "tagValue",
-		"optional": true,
+			"name": "tags",
+			"default": "",
+			"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "The tag value of the InfluxDB",
-			"zh_CN": "InfluxDB 的标签值"
+			"en_US": "The tags map",
+			"zh_CN": "标签映射"
 		},
 		"label": {
-			"en_US": "Tag value",
-			"zh_CN": "标签值"
+			"en_US": "Tags",
+			"zh_CN": "标签"
 		}
+		},
+		{
+			"name": "tsFieldName",
+			"default": "",
+			"optional": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "Timestamp Field Name",
+				"zh_CN": "时间戳字段名"
+			},
+			"label": {
+				"en_US": "Timestamp Field Name",
+				"zh_CN": "时间戳字段名"
+			}
 	}],
 	"node": {
 		"category": "sink",

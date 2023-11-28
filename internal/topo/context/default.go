@@ -136,7 +136,7 @@ func (c *DefaultContext) ParseTemplate(prop string, data interface{}) (string, e
 		if re.Match([]byte(prop)) {
 			tp, err = transform.GenTp(prop)
 			if err != nil {
-				return fmt.Sprintf("%v", data), err
+				return fmt.Sprintf("%v", data), fmt.Errorf("Template Invalid: %v", err)
 			}
 			c.tpReg.Store(prop, tp)
 		} else {

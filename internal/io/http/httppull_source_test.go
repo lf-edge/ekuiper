@@ -809,7 +809,7 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("fail to authorize by oAuth: fail to parse the expire time for access token: template: sink:1: unexpected . after term \".\""),
+			err: errors.New("fail to authorize by oAuth: fail to parse the expire time for access token: Template Invalid: template: sink:1: unexpected . after term \".\""),
 		},
 		{
 			name: "oAuth wrong access expire type",
@@ -867,7 +867,7 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("fail to authorize by oAuth: fail to parse the header for refresh token request RefreshToken: template: sink:1: unexpected . after term \".\""),
+			err: errors.New("fail to authorize by oAuth: fail to parse the header for refresh token request RefreshToken: Template Invalid: template: sink:1: unexpected . after term \".\""),
 		},
 		{
 			name: "oAuth wrong refresh url",
@@ -1126,7 +1126,7 @@ func TestPullErrorTest(t *testing.T) {
 			conf: map[string]interface{}{"url": "http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime}", "interval": 10},
 			exp: []api.SourceTuple{
 				&xsql.ErrorSourceTuple{
-					Error: errors.New("parse url http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime} error template: sink:1: bad character U+007D '}'"),
+					Error: errors.New("parse url http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime} error Template Invalid: template: sink:1: bad character U+007D '}'"),
 				},
 			},
 		}, {

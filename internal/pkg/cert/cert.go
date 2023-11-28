@@ -1,3 +1,17 @@
+// Copyright 2023 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cert
 
 import (
@@ -6,15 +20,16 @@ import (
 	"os"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type TlsConfigurationOptions struct {
-	SkipCertVerify       bool
-	CertFile             string
-	KeyFile              string
-	CaFile               string
-	TLSMinVersion        string
-	RenegotiationSupport string
+	SkipCertVerify       bool   `json:"insecureSkipVerify"`
+	CertFile             string `json:"certificationPath"`
+	KeyFile              string `json:"privateKeyPath"`
+	CaFile               string `json:"rootCaPath"`
+	TLSMinVersion        string `json:"tlsMinVersion"`
+	RenegotiationSupport string `json:"renegotiationSupport"`
 }
 
 func getTLSMinVersion(userInput string) uint16 {
@@ -49,6 +64,14 @@ func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
 		conf.Log.Warnf("Invalid renegotiation option: %s, defaulting to \"never\"", userInput)
 		return tls.RenegotiateNever
 	}
+}
+
+func GenTLSForClientFromProps(props map[string]interface{}) (*tls.Config, error) {
+	tc := &TlsConfigurationOptions{}
+	if err := cast.MapToStruct(props, tc); err != nil {
+		return nil, err
+	}
+	return GenerateTLSForClient(*tc)
 }
 
 func GenerateTLSForClient(
