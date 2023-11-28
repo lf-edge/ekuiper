@@ -113,6 +113,18 @@ func TestConfig(t *testing.T) {
 			},
 			error: "measurement is required",
 		},
+		{
+			name: "unmarshall error for tls",
+			conf: map[string]interface{}{
+				"addr":        "http://192.168.0.3:8086",
+				"org":         "abc",
+				"bucket":      "bucket_one",
+				"precision":   "ns",
+				"measurement": "mm",
+				"rootCaPath":  12,
+			},
+			error: "error configuring tls: 1 error(s) decoding:\n\n* 'rootCaPath' expected type 'string', got unconvertible type 'int', value: '12'",
+		},
 	}
 
 	for _, test := range tests {

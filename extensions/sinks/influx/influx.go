@@ -30,9 +30,41 @@ import (
 	_ "github.com/influxdata/influxdb1-client/v2"
 
 	influx "github.com/lf-edge/ekuiper/extensions/sinks/influx/ext"
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 func Influx() api.Sink {
 	return influx.GetSink()
+}
+
+// This is for manual test
+func main() {
+	i := Influx()
+	err := i.Configure(map[string]interface{}{
+		"addr":        "http://127.0.0.1:8086",
+		"measurement": "test",
+		"database":    "mydb",
+		"tags": map[string]interface{}{
+			"tag": "{{.humidity}}",
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+	contextLogger := conf.Log.WithField("rule", "ruleInflux")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	err = i.Open(ctx)
+	if err != nil {
+		panic(err)
+	}
+	err = i.Collect(ctx, map[string]interface{}{"temperature": 30, "humidity": 80})
+	if err != nil {
+		panic(err)
+	}
+	err = i.Close(ctx)
+	if err != nil {
+		panic(err)
+	}
 }
