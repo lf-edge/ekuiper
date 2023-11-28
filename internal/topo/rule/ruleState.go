@@ -353,8 +353,6 @@ func (rs *RuleState) startScheduleRule() error {
 }
 
 func (rs *RuleState) runScheduleRule() error {
-	rs.Lock()
-	defer rs.Unlock()
 	rs.cronState.cron = rs.Rule.Options.Cron
 	rs.cronState.duration = rs.Rule.Options.Duration
 	err := rs.start()
