@@ -15,6 +15,7 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -54,7 +55,7 @@ const (
 
 type websocketContext struct {
 	sync.Mutex
-	conns        map[*websocket.Conn]struct{}
+	conns        map[*websocket.Conn]context.CancelFunc
 	contextClose bool
 }
 
@@ -64,22 +65,27 @@ func (wsctx *websocketContext) getConnCount() int {
 	return len(wsctx.conns)
 }
 
-func (wsctx *websocketContext) addConn(conn *websocket.Conn) {
+func (wsctx *websocketContext) addConn(conn *websocket.Conn, cancel context.CancelFunc) {
 	wsctx.Lock()
 	defer wsctx.Unlock()
 	if wsctx.contextClose {
 		return
 	}
-	wsctx.conns[conn] = struct{}{}
+	wsctx.conns[conn] = cancel
 }
 
-func (wsctx *websocketContext) removeConn(conn *websocket.Conn) {
+func (wsctx *websocketContext) removeConn(conn *websocket.Conn, endpoint string) {
 	wsctx.Lock()
 	defer wsctx.Unlock()
 	if wsctx.contextClose {
 		return
 	}
-	delete(wsctx.conns, conn)
+	if cancel, ok := wsctx.conns[conn]; ok {
+		cancel()
+		delete(wsctx.conns, conn)
+		conn.Close()
+		conf.Log.Infof("websocket endpoint %v remove one connection", endpoint)
+	}
 }
 
 func (wsctx *websocketContext) close() {
@@ -146,11 +152,13 @@ func GetWebsocketEndpointCh(endpoint string) (string, string, chan struct{}, err
 
 func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 	defer func() {
+		wsEndpointCtx[endpoint].removeConn(c, endpoint)
 		if r := recover(); r != nil {
 			conf.Log.Infof("websocket recvProcess Process panic recovered, err:%v", r)
 		}
+		conf.Log.Infof("websocket endpoint %v remove stop recvProcess", endpoint)
 	}()
-
+	conf.Log.Infof("websocket endpoint %v start recvProcess", endpoint)
 	topic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
 	for {
 		select {
@@ -161,31 +169,38 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
-			if websocket.IsCloseError(err) {
-				wsEndpointCtx[endpoint].removeConn(c)
+			if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
 				conf.Log.Infof("websocket endpoint %s connection get closed: %v", endpoint, err)
-				break
+				return
 			}
 			conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 			continue
 		}
-		if msgType == websocket.TextMessage {
+		conf.Log.Infof("websocket endpoint %v recv msg success", endpoint)
+		switch msgType {
+		case websocket.TextMessage:
 			m := make(map[string]interface{})
 			if err := json.Unmarshal(data, &m); err != nil {
 				conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 				continue
 			}
 			pubsub.Produce(ctx, topic, m)
+		case websocket.CloseMessage:
+			conf.Log.Infof("websocket endpoint %v recv close message", endpoint)
+			return
 		}
 	}
 }
 
 func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 	defer func() {
+		wsEndpointCtx[endpoint].removeConn(c, endpoint)
 		if r := recover(); r != nil {
 			conf.Log.Infof("websocket sendProcess Process panic recovered, err:%v", r)
 		}
+		conf.Log.Infof("websocket endpoint %v stop sendProcess", endpoint)
 	}()
+	conf.Log.Infof("websocket endpoint %v start sendProcess", endpoint)
 	topic := fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
 	subCh := pubsub.CreateSub(topic, nil, "", 1024)
 	for {
@@ -200,9 +215,8 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
 				// close sent error can't be captured by IsCloseError
 				if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
-					wsEndpointCtx[endpoint].removeConn(c)
 					conf.Log.Infof("websocket endpoint %s connection get closed, err:%v", endpoint, err)
-					break
+					return
 				}
 				conf.Log.Errorf("websocket endpoint %s send error %s", endpoint, err)
 				continue
@@ -233,27 +247,32 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 		}
 	}
 	if _, ok := wsEndpointCtx[endpoint]; ok {
+		conf.Log.Infof("websocker endpoint %v already registered", endpoint)
 		return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint),
 			done, nil
 	}
 	refCount++
-	wsCtx := &websocketContext{conns: map[*websocket.Conn]struct{}{}}
+	wsCtx := &websocketContext{
+		conns: map[*websocket.Conn]context.CancelFunc{},
+	}
 	wsEndpointCtx[endpoint] = wsCtx
 	recvTopic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
 	pubsub.CreatePub(recvTopic)
 	sendTopic := fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
 	pubsub.CreatePub(sendTopic)
+	subCtx, cancel := ctx.WithCancel()
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			conf.Log.Errorf("websocket upgrade error: %v", err)
 			return
 		}
-		wsCtx.addConn(c)
+		wsCtx.addConn(c, cancel)
 		conf.Log.Infof("websocket endpint %v create connection", endpoint)
-		go recvProcess(ctx, c, endpoint)
-		go sendProcess(ctx, c, endpoint)
+		go recvProcess(subCtx, c, endpoint)
+		go sendProcess(subCtx, c, endpoint)
 	})
+	conf.Log.Infof("websocker endpoint %v registered success", endpoint)
 	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint), fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint),
 		done, nil
 }
