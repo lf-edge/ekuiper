@@ -2,61 +2,6 @@
 
 The sink will publish the result into a InfluxDB `V2.X` .
 
-## Compile & deploy plugin
-
-Please make following update before compile the plugin,
-
-- Add Influxdb library reference in `go.mod`.
-- Remove the first line `// +build plugins` of file `plugins/sinks/influx.go`.
-
-### build in shell
-
-```shell
-# cd $eKuiper_src
-# go build -trimpath --buildmode=plugin -o plugins/sinks/influx2.so extensions/sinks/influx/influx2.go
-# zip influx2.zip plugins/sinks/influx2.so
-# cp influx.zip /root/tomcat_path/webapps/ROOT/
-# bin/kuiper create plugin sink influx2 -f /tmp/influxPlugin.txt
-# bin/kuiper create rule influx2 -f /tmp/influxRule.txt
-```
-
-### build with image
-
-```shell
-docker build -t demo/plugins:v1 -f build/plugins/Dockerfile .
-docker run demo/plugins:v1
-docker cp  90eae15a7245:/workspace/_plugins/debian/sinks /tmp
-```
-
-Dockerfile like this：
-
-```dockerfile
-## plase check go version that kuiper used
-ARG GO_VERSION=1.18.5
-FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
-WORKDIR /workspace
-ADD . /workspace/
-RUN go env -w GOPROXY=https://goproxy.cn,direct
-RUN make plugins_c
-CMD ["sleep","3600"]
-```
-
-add this in Makefile：
-
-```dockerfile
-PLUGINS_CUSTOM := sinks/influx2
-
-.PHONY: plugins_c $(PLUGINS_CUSTOM)
-plugins_c: $(PLUGINS_CUSTOM)
-
-$(PLUGINS_CUSTOM): PLUGIN_TYPE = $(word 1, $(subst /, , $@))
-$(PLUGINS_CUSTOM): PLUGIN_NAME = $(word 2, $(subst /, , $@))
-$(PLUGINS_CUSTOM):
-  @$(CURDIR)/build-plugins.sh $(PLUGIN_TYPE) $(PLUGIN_NAME)
-```
-
-Restart the eKuiper server to activate the plugin.
-
 ## Properties
 
 Connection properties:
@@ -79,7 +24,7 @@ Write options:
 | Property name   | Optional | Description                                                                                                                                                                                                                                                                                                                                                     |
 |-----------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | measurement     | false    | The measurement of the InfluxDb (like table name)                                                                                                                                                                                                                                                                                                               |
-| tags            | true     | The tags to write, the format is like {"tag1":"value1"}. The value can be dataTemplate format, like {"tag1":"{{.temperature}}"}                                                                                                                                                                                                                                 |
+| tags            | true     | The tags to write, the format is like {"tag1":"value1"}. The value can be dataTemplate format, like <span v-pre>{"tag1":"{{.temperature}}"}</span>                                                                                                                                                                                                              |
 | fields          | true     | The fields to write, the format is like ["field1", "field2"]. If fields is not set, all fields selected in the SQL will all written to InfluxDB.                                                                                                                                                                                                                |
 | precision       | true     | The precision of the timestamp. Support `ns`, `us`, `ms`, `s`. Default: `ms`.                                                                                                                                                                                                                                                                                   |
 | tsFieldName     | true     | The field name of the timestamp. If set, the written timestamp will use the value of the field. For example, if the data has {"ts": 1888888888} and the tsFieldName is set to ts, then the value 1888888888 will be used when written to InfluxDB. Make sure the value is formatted according to the precision. If not set, the current timestamp will be used. |
@@ -90,9 +35,7 @@ the [sink common properties](../overview.md#common-properties) for more informat
 
 ## Sample usage
 
-Below is a sample for selecting temperature greater than 50 degree, and some profiles only for your reference.
-
-### /tmp/influxRule.txt
+Below is a sample for selecting temperature greater than 50 degree and write into influxDB.
 
 ```json
 {
@@ -113,29 +56,4 @@ Below is a sample for selecting temperature greater than 50 degree, and some pro
     }
   ]
 }
-```
-
-### /tmp/influxPlugin.txt
-
-```json
-{
-   "file":"http://localhost:8080/influx2.zip"
- }
-```
-
-### plugins/go.mod
-
-```go
-module plugins
-
-go 1.18
-
-require (
-        github.com/lf-edge/ekuiper v0.0.0-20220727015637-7d6f5c447110
-        github.com/influxdata/influxdb-client-go/v2 v2.10.0
-        github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
-)
-
-replace github.com/lf-edge/ekuiper => /root/goProject/kuiper
-
 ```
