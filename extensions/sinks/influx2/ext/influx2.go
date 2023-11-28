@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package influx2
 
 import (
@@ -32,7 +20,9 @@ import (
 	"time"
 
 	client "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 
+	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -52,16 +42,10 @@ type c struct {
 	// http connection
 	// tls conf in cert.go
 	// write options
-	UseLineProtocol bool              `json:"useLineProtocol"` // 0: json, 1: line protocol
-	Measurement     string            `json:"measurement"`
-	Tags            map[string]string `json:"tags"`
-	TsFieldName     string            `json:"tsFieldName"`
-	// common options
-	DataField    string   `json:"dataField"`
-	Fields       []string `json:"fields"`
-	BatchSize    int      `json:"batchSize"`
-	SendSingle   bool     `json:"sendSingle"`
-	DataTemplate string   `json:"dataTemplate"`
+	UseLineProtocol bool   `json:"useLineProtocol"` // 0: json, 1: line protocol
+	Measurement     string `json:"measurement"`
+	tspoint.WriteOptions
+	BatchSize int `json:"batchSize"`
 }
 
 // influxSink2 is the sink for influx2.
@@ -70,21 +54,15 @@ type influxSink2 struct {
 	conf c
 	// save the token privately
 	token string
-	// temp variables
-	tagEval map[string]string
-	// tagKey    string
-	// tagValue  string
-	// already have
-	// dataField string
-	// fields    []string
-
-	hasTransform bool
-	cli          client.Client
+	cli   client.Client
 }
 
 func (m *influxSink2) Configure(props map[string]any) error {
 	m.conf = c{
 		PrecisionStr: "ms",
+		WriteOptions: tspoint.WriteOptions{
+			PrecisionStr: "ms",
+		},
 	}
 	err := cast.MapToStruct(props, &m.conf)
 	if err != nil {
@@ -114,6 +92,14 @@ func (m *influxSink2) Configure(props map[string]any) error {
 	if len(m.conf.Measurement) == 0 {
 		return fmt.Errorf("measurement is required")
 	}
+	err = cast.MapToStruct(props, &m.conf.WriteOptions)
+	if err != nil {
+		return fmt.Errorf("error configuring influx2 sink: %s", err)
+	}
+	err = m.conf.WriteOptions.Validate()
+	if err != nil {
+		return err
+	}
 	tlsConf, err := cert.GenTLSForClientFromProps(props)
 	if err != nil {
 		return fmt.Errorf("error configuring tls: %s", err)
@@ -129,11 +115,6 @@ func (m *influxSink2) Configure(props map[string]any) error {
 		options = options.SetTLSConfig(tlsConf)
 	}
 	m.cli = client.NewClientWithOptions(m.conf.Addr, m.token, options)
-	if m.conf.DataTemplate != "" {
-		m.hasTransform = true
-	}
-
-	m.tagEval = make(map[string]string)
 	return err
 }
 
@@ -193,29 +174,82 @@ func (m *influxSink2) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-// Internal method to get timestamp from data
-func (m *influxSink2) getTS(data map[string]any) (int64, error) {
-	v, ok := data[m.conf.TsFieldName]
-	if !ok {
-		return 0, fmt.Errorf("time field %s not found", m.conf.TsFieldName)
-	}
-	v64, err := cast.ToInt64(v, cast.CONVERT_SAMEKIND)
+func (m *influxSink2) transformPoints(ctx api.StreamContext, data any) ([]*write.Point, error) {
+	rawPts, err := tspoint.SinkTransform(ctx, data, &m.conf.WriteOptions)
 	if err != nil {
-		return 0, fmt.Errorf("time field %s can not convert to timestamp(int64) : %v", m.conf.TsFieldName, v)
+		ctx.GetLogger().Error(err)
+		return nil, err
 	}
-	return v64, nil
+	pts := make([]*write.Point, 0, len(rawPts))
+	for _, rawPt := range rawPts {
+		pts = append(pts, client.NewPoint(m.conf.Measurement, rawPt.Tags, rawPt.Fields, rawPt.Tt))
+	}
+	return pts, nil
 }
 
-func (m *influxSink2) SelectFields(data map[string]any) map[string]any {
-	if len(m.conf.Fields) > 0 {
-		output := make(map[string]any, len(m.conf.Fields))
-		for _, field := range m.conf.Fields {
-			output[field] = data[field]
+func (m *influxSink2) transformLines(ctx api.StreamContext, data any) ([]string, error) {
+	var lines []string
+	// Using raw format, do not parsing, just return the raw data
+	if m.conf.WriteOptions.DataTemplate != "" {
+		fmtBytes, err := tspoint.TransformRaw(ctx, data, &m.conf.WriteOptions)
+		if err != nil {
+			ctx.GetLogger().Error(err)
+			return nil, err
 		}
-		return output
+		lines = make([]string, 0, len(fmtBytes))
+		for _, fmtByt := range fmtBytes {
+			lines = append(lines, string(fmtByt))
+		}
 	} else {
-		return data
+		rawPts, err := tspoint.SinkTransform(ctx, data, &m.conf.WriteOptions)
+		if err != nil {
+			ctx.GetLogger().Error(err)
+			return nil, err
+		}
+		lines = make([]string, 0, len(rawPts))
+		for _, rawPt := range rawPts {
+			lines = append(lines, m.rawPtToLine(rawPt))
+		}
 	}
+	return lines, nil
+}
+
+func (m *influxSink2) rawPtToLine(rawPt *tspoint.RawPoint) string {
+	var builder strings.Builder
+	builder.WriteString(m.conf.Measurement)
+
+	for k, v := range rawPt.Tags {
+		builder.WriteString(",")
+		builder.WriteString(k)
+		builder.WriteString("=")
+		builder.WriteString(v)
+	}
+	builder.WriteString(" ")
+	c := 0
+
+	for k, v := range rawPt.Fields {
+		c = writeLine(c, &builder, k, v)
+	}
+
+	builder.WriteString(" ")
+	builder.WriteString(fmt.Sprintf("%d", rawPt.Ts))
+	return builder.String()
+}
+
+func writeLine(c int, builder *strings.Builder, k string, v any) int {
+	if c > 0 {
+		builder.WriteString(",")
+	}
+	c++
+	builder.WriteString(k)
+	builder.WriteString("=")
+	switch value := v.(type) {
+	case string:
+		builder.WriteString(fmt.Sprintf("\"%s\"", value))
+	default:
+		builder.WriteString(fmt.Sprintf("%v", value))
+	}
+	return c
 }
 
 func GetSink() api.Sink {
