@@ -22,6 +22,7 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
@@ -58,12 +59,15 @@ func TestConfig(t *testing.T) {
 				Precision:       time.Millisecond,
 				UseLineProtocol: false,
 				Measurement:     "test",
-				Tags: map[string]string{
-					"tag": "value",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag": "value",
+					},
+					Fields:       []string{"temperature"},
+					TsFieldName:  "ts",
+					PrecisionStr: "ms",
 				},
-				Fields:      []string{"temperature"},
-				TsFieldName: "ts",
-				BatchSize:   1,
+				BatchSize: 1,
 			},
 		},
 		{
@@ -161,9 +165,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "normal",
 			conf: c{
 				Measurement: "test1",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
 				},
 			},
 			data: map[string]any{
@@ -184,9 +190,12 @@ func TestCollectPoints(t *testing.T) {
 			name: "normal batch",
 			conf: c{
 				Measurement: "test2",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					PrecisionStr: "s",
 				},
 				PrecisionStr: "s",
 			},
@@ -221,13 +230,15 @@ func TestCollectPoints(t *testing.T) {
 			name: "normal batch sendSingle",
 			conf: c{
 				Measurement: "test3",
-				Tags: map[string]string{
-					"tag1": "{{.humidity}}",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "{{.humidity}}",
+						"tag2": "value2",
+					},
+					SendSingle:   true,
+					PrecisionStr: "s",
+					TsFieldName:  "ts",
 				},
-				SendSingle:   true,
-				PrecisionStr: "s",
-				TsFieldName:  "ts",
 			},
 			data: []map[string]any{
 				{
@@ -264,13 +275,15 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch/sendSingle with dataTemplate",
 			conf: c{
 				Measurement: "test4",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					SendSingle:   true,
+					PrecisionStr: "us",
+					TsFieldName:  "ts",
 				},
-				SendSingle:   true,
-				PrecisionStr: "us",
-				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -310,12 +323,14 @@ func TestCollectPoints(t *testing.T) {
 			name: "single with fields",
 			conf: c{
 				Measurement: "test5",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{.humidity}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "{{.humidity}}",
+					},
+					PrecisionStr: "ns",
+					TsFieldName:  "ts",
 				},
-				PrecisionStr: "ns",
-				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -342,9 +357,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "single with dataTemplate and dataField",
 			conf: c{
 				Measurement: "test5",
-				Tags: map[string]string{
-					"tag1": "{{.t}}",
-					"tag2": "{{.h}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "{{.t}}",
+						"tag2": "{{.h}}",
+					},
 				},
 			},
 			transforms: struct {
@@ -373,9 +390,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch with fields",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{.humidity}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "{{.humidity}}",
+					},
 				},
 			},
 			transforms: struct {
@@ -414,9 +433,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch with dataTemplate of single output",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{.humidity}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "{{.humidity}}",
+					},
 				},
 			},
 			transforms: struct {
@@ -450,9 +471,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch with dataTemplate of batch output",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
 				},
 			},
 			transforms: struct {
@@ -494,11 +517,10 @@ func TestCollectPoints(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ifsink := &influxSink2{
-				conf:    test.conf,
-				tagEval: make(map[string]string),
+				conf: test.conf,
 			}
 			if test.transforms.dataTemplate != "" {
-				ifsink.hasTransform = true
+				ifsink.conf.DataTemplate = test.transforms.dataTemplate
 			}
 			if test.transforms.dataField != "" {
 				ifsink.conf.DataField = test.transforms.dataField
@@ -535,23 +557,27 @@ func TestCollectPointsError(t *testing.T) {
 			name: "unsupported data",
 			conf: c{
 				Measurement: "test1",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
 				},
 			},
 			data: []byte{1, 2, 3},
-			err:  "influx2 sink needs map or []map, but receive unsupported data [1 2 3]",
+			err:  "sink needs map or []map, but receive unsupported data [1 2 3]",
 		},
 		{
 			name: "transform error",
 			conf: c{
 				Measurement: "test4",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					SendSingle: true,
 				},
-				SendSingle: true,
 			},
 			transforms: struct {
 				dataTemplate string
@@ -576,9 +602,11 @@ func TestCollectPointsError(t *testing.T) {
 			name: "unmarshall after transform error",
 			conf: c{
 				Measurement: "test5",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
 				},
 			},
 			transforms: struct {
@@ -598,9 +626,11 @@ func TestCollectPointsError(t *testing.T) {
 			name: "batch with transform unmarshall error",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
 				},
 			},
 			transforms: struct {
@@ -627,11 +657,13 @@ func TestCollectPointsError(t *testing.T) {
 			name: "single without ts field",
 			conf: c{
 				Measurement: "test1",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					TsFieldName: "ts",
 				},
-				TsFieldName: "ts",
 			},
 			data: map[string]any{
 				"temperature": 20,
@@ -643,12 +675,14 @@ func TestCollectPointsError(t *testing.T) {
 			name: "normal batch with incorrect ts field",
 			conf: c{
 				Measurement: "test2",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					PrecisionStr: "s",
+					TsFieldName:  "ts",
 				},
-				PrecisionStr: "s",
-				TsFieldName:  "ts",
 			},
 			data: []map[string]any{
 				{
@@ -673,7 +707,7 @@ func TestCollectPointsError(t *testing.T) {
 				conf: test.conf,
 			}
 			if test.transforms.dataTemplate != "" {
-				ifsink.hasTransform = true
+				ifsink.conf.DataTemplate = test.transforms.dataTemplate
 			}
 			if test.transforms.dataField != "" {
 				ifsink.conf.DataField = test.transforms.dataField
@@ -711,8 +745,10 @@ func TestCollectLines(t *testing.T) {
 			name: "normal",
 			conf: c{
 				Measurement: "test1",
-				Tags: map[string]string{
-					"tag1": "value1",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+					},
 				},
 				UseLineProtocol: true,
 			},
@@ -725,10 +761,12 @@ func TestCollectLines(t *testing.T) {
 			name: "normal batch",
 			conf: c{
 				Measurement: "test2",
-				Tags: map[string]string{
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag2": "value2",
+					},
+					PrecisionStr: "ns",
 				},
-				PrecisionStr: "ns",
 			},
 			data: []map[string]any{
 				{
@@ -744,11 +782,13 @@ func TestCollectLines(t *testing.T) {
 			name: "normal batch sendSingle",
 			conf: c{
 				Measurement: "test3",
-				Tags: map[string]string{
-					"tag1": "value1",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+					},
+					SendSingle:   true,
+					PrecisionStr: "us",
 				},
-				SendSingle:   true,
-				PrecisionStr: "us",
 			},
 			data: []map[string]any{
 				{
@@ -764,11 +804,13 @@ func TestCollectLines(t *testing.T) {
 			name: "batch/sendSingle with dataTemplate",
 			conf: c{
 				Measurement: "test4",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					SendSingle: true,
 				},
-				SendSingle: true,
 			},
 			transforms: struct {
 				dataTemplate string
@@ -793,11 +835,13 @@ func TestCollectLines(t *testing.T) {
 			name: "single with fields",
 			conf: c{
 				Measurement: "test5",
-				Tags: map[string]string{
-					"tag2": "{{.humidity}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag2": "{{.humidity}}",
+					},
+					PrecisionStr: "s",
+					TsFieldName:  "ts",
 				},
-				PrecisionStr: "s",
-				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -817,11 +861,13 @@ func TestCollectLines(t *testing.T) {
 			name: "batch with fields",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "{{.temperature}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "{{.temperature}}",
+					},
+					PrecisionStr: "ms",
+					TsFieldName:  "ts",
 				},
-				PrecisionStr: "ms",
-				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -850,11 +896,10 @@ func TestCollectLines(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ifsink := &influxSink2{
-				conf:    test.conf,
-				tagEval: make(map[string]string),
+				conf: test.conf,
 			}
 			if test.transforms.dataTemplate != "" {
-				ifsink.hasTransform = true
+				ifsink.conf.DataTemplate = test.transforms.dataTemplate
 			}
 			if test.transforms.dataField != "" {
 				ifsink.conf.DataField = test.transforms.dataField
@@ -889,23 +934,27 @@ func TestCollectLinesError(t *testing.T) {
 			name: "unsupported data",
 			conf: c{
 				Measurement: "test1",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
 				},
 			},
 			data: []byte{1, 2, 3},
-			err:  "influx2 sink needs map or []map, but receive unsupported data [1 2 3]",
+			err:  "sink needs map or []map, but receive unsupported data [1 2 3]",
 		},
 		{
 			name: "single wrong ts format",
 			conf: c{
 				Measurement: "test1",
-				Tags: map[string]string{
-					"tag1": "value1",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+					},
+					TsFieldName: "name",
 				},
 				UseLineProtocol: true,
-				TsFieldName:     "name",
 			},
 			data: map[string]any{
 				"name": "home",
@@ -916,11 +965,13 @@ func TestCollectLinesError(t *testing.T) {
 			name: "batch wront ts field",
 			conf: c{
 				Measurement: "test2",
-				Tags: map[string]string{
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag2": "value2",
+					},
+					PrecisionStr: "ns",
+					TsFieldName:  "ts",
 				},
-				PrecisionStr: "ns",
-				TsFieldName:  "ts",
 			},
 			data: []map[string]any{
 				{
@@ -941,7 +992,7 @@ func TestCollectLinesError(t *testing.T) {
 				conf: test.conf,
 			}
 			if test.transforms.dataTemplate != "" {
-				ifsink.hasTransform = true
+				ifsink.conf.DataTemplate = test.transforms.dataTemplate
 			}
 			if test.transforms.dataField != "" {
 				ifsink.conf.DataField = test.transforms.dataField
@@ -956,60 +1007,6 @@ func TestCollectLinesError(t *testing.T) {
 			_, err := ifsink.transformLines(vCtx, test.data)
 			assert.Error(t, err)
 			assert.Equal(t, test.err, err.Error())
-		})
-	}
-}
-
-func Test_parseTemplates(t *testing.T) {
-	tests := []struct {
-		name string
-		conf c
-		err  string
-	}{
-		{
-			name: "normal",
-			conf: c{
-				Tags: map[string]string{
-					"tag1": "value1",
-				},
-			},
-		},
-		{
-			name: "normal with template",
-			conf: c{
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{.temperature}}",
-					"tag3": "100",
-				},
-			},
-		},
-		{
-			name: "error template",
-			conf: c{
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{abc .temperature}}",
-					"tag3": "100",
-				},
-			},
-			err: "Template Invalid: template: sink:1: function \"abc\" not defined",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			contextLogger := conf.Log.WithField("rule", tt.name)
-			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-			m := &influxSink2{
-				conf: tt.conf,
-			}
-			err := m.parseTemplates(ctx)
-			if tt.err == "" {
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
-				assert.Equal(t, tt.err, err.Error())
-			}
 		})
 	}
 }

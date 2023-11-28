@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package influx
 
 import (
@@ -33,6 +21,7 @@ import (
 	client "github.com/influxdata/influxdb1-client/v2"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
@@ -65,14 +54,8 @@ func TestConfig(t *testing.T) {
 				Username:     "name",
 				Password:     "******",
 				Database:     "db1",
-				PrecisionStr: "ms",
+				WriteOptions: tspoint.WriteOptions{Tags: map[string]string{"tag": "value"}, Fields: []string{"temperature"}, TsFieldName: "ts", PrecisionStr: "ms"},
 				Measurement:  "test",
-				Tags: map[string]string{
-					"tag": "value",
-				},
-				Fields:      []string{"temperature"},
-				TsFieldName: "ts",
-				BatchSize:   1,
 			},
 		},
 		{
@@ -97,11 +80,12 @@ func TestConfig(t *testing.T) {
 		{
 			name: "precision invalid error",
 			conf: map[string]interface{}{
-				"addr":      "http://192.168.0.3:8086",
-				"username":  "user1",
-				"password":  "pass1",
-				"database":  "bucket_one",
-				"precision": "abc",
+				"addr":        "http://192.168.0.3:8086",
+				"username":    "user1",
+				"password":    "pass1",
+				"database":    "bucket_one",
+				"measurement": "mm",
+				"precision":   "abc",
 			},
 			error: "precision abc is not supported",
 		},
@@ -147,12 +131,6 @@ func TestConfig(t *testing.T) {
 	}
 }
 
-type rawPoint struct {
-	fields map[string]any
-	tags   map[string]string
-	tt     time.Time
-}
-
 func TestCollectPoints(t *testing.T) {
 	conf.InitClock()
 	mockclock.ResetClock(10)
@@ -165,34 +143,36 @@ func TestCollectPoints(t *testing.T) {
 			dataField    string
 			fields       []string
 		}
-		points []rawPoint
+		points []tspoint.RawPoint
 	}{
 		{
 			name: "normal",
 			conf: c{
 				Measurement: "test1",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					PrecisionStr: "ms",
 				},
-				PrecisionStr: "ms",
-				Database:     "db1",
+				Database: "db1",
 			},
 			data: map[string]any{
 				"temperature": 20,
 				"humidity":    50,
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 20,
 						"humidity":    50,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "value2",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 			},
 		},
@@ -200,11 +180,13 @@ func TestCollectPoints(t *testing.T) {
 			name: "normal batch",
 			conf: c{
 				Measurement: "test2",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					PrecisionStr: "s",
 				},
-				PrecisionStr: "s",
 			},
 			data: []map[string]any{
 				{
@@ -216,28 +198,28 @@ func TestCollectPoints(t *testing.T) {
 					"humidity":    60,
 				},
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 20,
 						"humidity":    50,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "value2",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 30,
 						"humidity":    60,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "value2",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 			},
 		},
@@ -245,13 +227,15 @@ func TestCollectPoints(t *testing.T) {
 			name: "normal batch sendSingle",
 			conf: c{
 				Measurement: "test3",
-				Tags: map[string]string{
-					"tag1": "{{.humidity}}",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "{{.humidity}}",
+						"tag2": "value2",
+					},
+					SendSingle:   true,
+					PrecisionStr: "s",
+					TsFieldName:  "ts",
 				},
-				SendSingle:   true,
-				PrecisionStr: "s",
-				TsFieldName:  "ts",
 			},
 			data: []map[string]any{
 				{
@@ -265,30 +249,30 @@ func TestCollectPoints(t *testing.T) {
 					"ts":          110,
 				},
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 20,
 						"humidity":    50,
 						"ts":          100,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "50",
 						"tag2": "value2",
 					},
-					tt: time.Unix(100, 0),
+					Tt: time.Unix(100, 0),
 				},
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 30,
 						"humidity":    60,
 						"ts":          110,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "60",
 						"tag2": "value2",
 					},
-					tt: time.Unix(110, 0),
+					Tt: time.Unix(110, 0),
 				},
 			},
 		},
@@ -296,13 +280,15 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch/sendSingle with dataTemplate",
 			conf: c{
 				Measurement: "test4",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
+					SendSingle:   true,
+					PrecisionStr: "us",
+					TsFieldName:  "ts",
 				},
-				SendSingle:   true,
-				PrecisionStr: "us",
-				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -323,26 +309,26 @@ func TestCollectPoints(t *testing.T) {
 					"ts":          110,
 				},
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"t": 20.0,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "value2",
 					},
-					tt: time.UnixMicro(100),
+					Tt: time.UnixMicro(100),
 				},
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"t": 30.0,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "value2",
 					},
-					tt: time.UnixMicro(110),
+					Tt: time.UnixMicro(110),
 				},
 			},
 		},
@@ -350,12 +336,14 @@ func TestCollectPoints(t *testing.T) {
 			name: "single with fields",
 			conf: c{
 				Measurement: "test5",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{.humidity}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "{{.humidity}}",
+					},
+					PrecisionStr: "ns",
+					TsFieldName:  "ts",
 				},
-				PrecisionStr: "ns",
-				TsFieldName:  "ts",
 			},
 			transforms: struct {
 				dataTemplate string
@@ -369,16 +357,16 @@ func TestCollectPoints(t *testing.T) {
 				"humidity":    50,
 				"ts":          100,
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"humidity": 50,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "50",
 					},
-					tt: time.Unix(0, 100),
+					Tt: time.Unix(0, 100),
 				},
 			},
 		},
@@ -386,9 +374,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "single with dataTemplate and dataField",
 			conf: c{
 				Measurement: "test5",
-				Tags: map[string]string{
-					"tag1": "{{.t}}",
-					"tag2": "{{.h}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "{{.t}}",
+						"tag2": "{{.h}}",
+					},
 				},
 			},
 			transforms: struct {
@@ -403,17 +393,17 @@ func TestCollectPoints(t *testing.T) {
 				"temperature": 20,
 				"humidity":    50,
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"t": 20.0,
 						"h": 50.0,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "20",
 						"tag2": "50",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 			},
 		},
@@ -421,9 +411,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch with fields",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{.humidity}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "{{.humidity}}",
+					},
 				},
 			},
 			transforms: struct {
@@ -443,26 +435,26 @@ func TestCollectPoints(t *testing.T) {
 					"humidity":    60,
 				},
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"humidity": 50,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "50",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"humidity": 60,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "60",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 			},
 		},
@@ -470,9 +462,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch with dataTemplate of single output",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "{{.humidity}}",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "{{.humidity}}",
+					},
 				},
 			},
 			transforms: struct {
@@ -493,16 +487,16 @@ func TestCollectPoints(t *testing.T) {
 					"humidity":    60,
 				},
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 20.0,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "50",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 			},
 		},
@@ -510,9 +504,11 @@ func TestCollectPoints(t *testing.T) {
 			name: "batch with dataTemplate of batch output",
 			conf: c{
 				Measurement: "test6",
-				Tags: map[string]string{
-					"tag1": "value1",
-					"tag2": "value2",
+				WriteOptions: tspoint.WriteOptions{
+					Tags: map[string]string{
+						"tag1": "value1",
+						"tag2": "value2",
+					},
 				},
 			},
 			transforms: struct {
@@ -533,26 +529,26 @@ func TestCollectPoints(t *testing.T) {
 					"humidity":    60,
 				},
 			},
-			points: []rawPoint{
+			points: []tspoint.RawPoint{
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 20.0,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "value2",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 				{
-					fields: map[string]any{
+					Fields: map[string]any{
 						"temperature": 30.0,
 					},
-					tags: map[string]string{
+					Tags: map[string]string{
 						"tag1": "value1",
 						"tag2": "value2",
 					},
-					tt: time.UnixMilli(10),
+					Tt: time.UnixMilli(10),
 				},
 			},
 		},
@@ -562,11 +558,12 @@ func TestCollectPoints(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ifsink := &influxSink{
-				conf:    test.conf,
-				tagEval: make(map[string]string),
+				conf: test.conf,
 			}
+			err := ifsink.conf.WriteOptions.Validate()
+			assert.NoError(t, err)
 			if test.transforms.dataTemplate != "" {
-				ifsink.hasTransform = true
+				ifsink.conf.DataTemplate = test.transforms.dataTemplate
 			}
 			if test.transforms.dataField != "" {
 				ifsink.conf.DataField = test.transforms.dataField
@@ -578,7 +575,7 @@ func TestCollectPoints(t *testing.T) {
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, nil)
 			vCtx := context.WithValue(ctx, context.TransKey, tf)
-			err := ifsink.parseTemplates(vCtx)
+			err = ifsink.conf.ValidateTagTemplates(vCtx)
 			assert.NoError(t, err)
 			err = ifsink.transformPoints(vCtx, test.data)
 			assert.NoError(t, err)
@@ -588,7 +585,7 @@ func TestCollectPoints(t *testing.T) {
 			})
 			assert.NoError(t, err)
 			for _, p := range test.points {
-				pt, err := client.NewPoint(test.conf.Measurement, p.tags, p.fields, p.tt)
+				pt, err := client.NewPoint(test.conf.Measurement, p.Tags, p.Fields, p.Tt)
 				assert.NoError(t, err)
 				result.AddPoint(pt)
 			}
