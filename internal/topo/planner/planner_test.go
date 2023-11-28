@@ -2713,9 +2713,6 @@ func Test_createLogicalPlan(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	for i, tt := range tests {
-		if tt.sql != `SELECT temp, meta(id) AS eid,meta(Humidity->Device) AS hdevice FROM src1 WHERE meta(device)="demo2"` {
-			continue
-		}
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
