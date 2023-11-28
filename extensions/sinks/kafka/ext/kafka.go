@@ -142,7 +142,7 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 			if err != nil {
 				return fmt.Errorf("kafka sink transform data error: %v", err)
 			}
-			kafkaMsg, err := m.buildMsg(ctx, item, decodedBytes)
+			kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
 			if err != nil {
 				conf.Log.Errorf("build kafka msg failed, err:%v", err)
 				return err
