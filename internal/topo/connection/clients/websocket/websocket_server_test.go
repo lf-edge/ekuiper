@@ -54,6 +54,11 @@ func TestWebsocketServerConn(t *testing.T) {
 
 	c, err := createOneConn(t)
 	require.NoError(t, err)
+	c.Close()
+	// wait previous connection goroutine closed
+	time.Sleep(10 * time.Millisecond)
+	c, err = createOneConn(t)
+	require.NoError(t, err)
 
 	serverRecvCh = make(chan map[string]interface{})
 	serverPubCh = make(chan map[string]interface{})

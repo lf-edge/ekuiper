@@ -156,7 +156,7 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 		if r := recover(); r != nil {
 			conf.Log.Infof("websocket recvProcess Process panic recovered, err:%v", r)
 		}
-		conf.Log.Infof("websocket endpoint %v remove stop recvProcess", endpoint)
+		conf.Log.Infof("websocket endpoint %v stop recvProcess", endpoint)
 	}()
 	conf.Log.Infof("websocket endpoint %v start recvProcess", endpoint)
 	topic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
@@ -203,6 +203,7 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 	conf.Log.Infof("websocket endpoint %v start sendProcess", endpoint)
 	topic := fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
 	subCh := pubsub.CreateSub(topic, nil, "", 1024)
+	defer pubsub.CloseSourceConsumerChannel(topic, "")
 	for {
 		select {
 		case <-ctx.Done():
@@ -260,13 +261,13 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 	pubsub.CreatePub(recvTopic)
 	sendTopic := fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
 	pubsub.CreatePub(sendTopic)
-	subCtx, cancel := ctx.WithCancel()
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			conf.Log.Errorf("websocket upgrade error: %v", err)
 			return
 		}
+		subCtx, cancel := ctx.WithCancel()
 		wsCtx.addConn(c, cancel)
 		conf.Log.Infof("websocket endpint %v create connection", endpoint)
 		go recvProcess(subCtx, c, endpoint)
