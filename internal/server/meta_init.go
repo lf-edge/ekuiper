@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 )
 
 func init() {
@@ -326,7 +327,7 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-
+	config = replacePasswdForSinkConfig(sinkNm, config)
 	err = node.SinkOpen(sinkNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -334,6 +335,28 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// reload password from resources if the config both include password(as fake password) and resourceId
+func replacePasswdForSinkConfig(sinkType string, config map[string]interface{}) map[string]interface{} {
+	if r, ok := config["resourceId"]; ok {
+		if resourceId, ok := r.(string); ok {
+			configOperatorKey := fmt.Sprintf(meta.SinkCfgOperatorKeyTemplate, sinkType)
+			cfgOp, ok := meta.GetConfOperator(configOperatorKey)
+			if ok {
+				if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceId]; ok {
+					if hiddenPasswd, ok := config["password"]; ok && hiddenPasswd == hidden.PASSWORD {
+						if passwd, ok := resource["password"]; ok {
+							if _, ok := passwd.(string); ok {
+								config["password"] = passwd
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return config
 }
 
 func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
