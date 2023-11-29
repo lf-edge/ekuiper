@@ -167,9 +167,28 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	if _, err := os.Create(path.Join(DataDir, "sinks", "mqtt.yaml")); err != nil {
 		fmt.Println(err)
 	}
+	if _, err := os.Create(path.Join(DataDir, "sinks", "redis.yaml")); err != nil {
+		fmt.Println(err)
+	}
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodPut, "/metadata/sinks/redis/confKeys/test", bytes.NewBufferString(`{"password": "123456"}`))
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	got := replacePasswdForSinkConfig("redis", map[string]interface{}{
+		"resourceId": "test",
+		"a":          "123",
+		"password":   "******",
+	})
+	require.Equal(suite.T(), map[string]interface{}{
+		"resourceId": "test",
+		"a":          "123",
+		"password":   "123456",
+	}, got)
+	os.Remove(path.Join(DataDir, "sinks", "redis.yaml"))
 	os.Remove(path.Join(DataDir, "sinks", "mqtt.yaml"))
 	os.Remove(path.Join(DataDir, "sinks"))
 }
@@ -203,32 +222,4 @@ func (suite *MetaTestSuite) TestHiddenPassword() {
 
 func TestMetaTestSuite(t *testing.T) {
 	suite.Run(t, new(MetaTestSuite))
-}
-
-func (suite *MetaTestSuite) TestSinkConfKeyHandlerPasswd() {
-	suite.T().Skip()
-	DataDir, _ := conf.GetDataLoc()
-	os.Remove(path.Join(DataDir, "sinks", "redis.yaml"))
-	os.Remove(path.Join(DataDir, "sinks"))
-	os.MkdirAll(path.Join(DataDir, "sinks"), 0o755)
-	if _, err := os.Create(path.Join(DataDir, "sinks", "redis.yaml")); err != nil {
-		require.NoError(suite.T(), err)
-	}
-	req, _ := http.NewRequest(http.MethodPut, "/metadata/sinks/redis/confKeys/test", bytes.NewBufferString(`{"password": "123456"}`))
-	w := httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
-	got := replacePasswdForSinkConfig("redis", map[string]interface{}{
-		"resourceId": "test",
-		"a":          "123",
-		"password":   "******",
-	})
-	require.Equal(suite.T(), map[string]interface{}{
-		"resourceId": "test",
-		"a":          "123",
-		"password":   "123456",
-	}, got)
-	os.Remove(path.Join(DataDir, "sinks", "redis.yaml"))
-	os.Remove(path.Join(DataDir, "sinks"))
 }
