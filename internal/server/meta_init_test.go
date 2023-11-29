@@ -161,24 +161,16 @@ func (suite *MetaTestSuite) TestConnectionConfKeyHandler() {
 }
 
 func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
-	req, _ := http.NewRequest(http.MethodPut, "/metadata/sinks/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
+	req, _ := http.NewRequest(http.MethodPut, "/metadata/sinks/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883", "password":"123456"}`))
 	DataDir, _ := conf.GetDataLoc()
 	os.MkdirAll(path.Join(DataDir, "sinks"), 0o755)
 	if _, err := os.Create(path.Join(DataDir, "sinks", "mqtt.yaml")); err != nil {
 		fmt.Println(err)
 	}
-	if _, err := os.Create(path.Join(DataDir, "sinks", "redis.yaml")); err != nil {
-		fmt.Println(err)
-	}
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
-	req, _ = http.NewRequest(http.MethodPut, "/metadata/sinks/redis/confKeys/test", bytes.NewBufferString(`{"password": "123456"}`))
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
-	got := replacePasswdForSinkConfig("redis", map[string]interface{}{
+	got := replacePasswdForSinkConfig("mqtt", map[string]interface{}{
 		"resourceId": "test",
 		"a":          "123",
 		"password":   "******",
@@ -188,7 +180,6 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 		"a":          "123",
 		"password":   "123456",
 	}, got)
-	os.Remove(path.Join(DataDir, "sinks", "redis.yaml"))
 	os.Remove(path.Join(DataDir, "sinks", "mqtt.yaml"))
 	os.Remove(path.Join(DataDir, "sinks"))
 }

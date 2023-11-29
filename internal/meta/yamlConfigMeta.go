@@ -147,8 +147,6 @@ func delYamlConf(configOperatorKey string) {
 func GetConfOperator(configOperatorKey string) (conf.ConfigOperator, bool) {
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
-	x := ConfigManager
-	fmt.Println(x)
 	cfgOps, ok := ConfigManager.cfgOperators[configOperatorKey]
 	return cfgOps, ok
 }
