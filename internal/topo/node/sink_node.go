@@ -124,7 +124,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			// TODO refactor this, do not use if else
 			switch m.sinkType {
 			// For sink that has different field types like value fields, header field, tag field, ts field etc. Do not transform fields for now.
-			case "influx2":
+			case "influx", "influx2":
 				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, nil)
 			default:
 				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, sconf.Fields)
@@ -137,7 +137,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
 
 			m.reset()
-			logger.Infof("open sink node %d instances", m.concurrency)
+			logger.Infof("open sink node %d instances with batchSize", m.concurrency, sconf.BatchSize)
 			for i := 0; i < m.concurrency; i++ { // workers
 				go func(instance int) {
 					panicOrError := infra.SafeRun(func() error {
@@ -184,6 +184,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							c           *cache.SyncCache
 							rq          *cache.SyncCache
 						)
+						logger.Infof("sink node %s instance %d starts with conf %+v", m.name, instance, *sconf)
 
 						if sconf.isBatchSinkEnabled() {
 							sendManager, err = sinkUtil.NewSendManager(sconf.BatchSize, sconf.LingerInterval)
