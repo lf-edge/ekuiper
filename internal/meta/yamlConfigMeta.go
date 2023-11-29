@@ -229,31 +229,6 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	return nil
 }
 
-func AddSinkConfKeyByMap(plgName, confKey, language string, reqField map[string]interface{}) error {
-	ConfigManager.lock.Lock()
-	defer ConfigManager.lock.Unlock()
-
-	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
-	var cfgOps conf.ConfigOperator
-	var found bool
-
-	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
-	if !found {
-		cfgOps = conf.NewConfigOperatorForSink(plgName)
-		ConfigManager.cfgOperators[configOperatorKey] = cfgOps
-	}
-
-	if err := cfgOps.AddConfKey(confKey, reqField); err != nil {
-		return err
-	}
-
-	err := cfgOps.SaveCfgToStorage()
-	if err != nil {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "write_data_fail"), configOperatorKey, err)
-	}
-	return nil
-}
-
 func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
