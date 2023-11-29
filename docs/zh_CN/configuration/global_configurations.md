@@ -56,6 +56,8 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # Whether to disable the log timestamp, useful when output is redirected to logging system like syslog that already adds timestamps.
+  logDisableTimestamp: false
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -87,6 +89,8 @@ syslog:
 ```
 
 以上选项均为可选。若未设置网络和地址，则使用本地 syslog。若未设置级别，则默认值为 info。若未设置标签，则不使用标签。
+
+syslog 已经有自己的时间戳，可以通过将 `logDisableTimestamp` 设置为 true 来禁用日志消息中的时间戳。
 
 ## 时区配置
 
@@ -242,7 +246,7 @@ basic:
 * connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
   * 只适用于 edgex redis 的连接信息
   * 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
-  * [具体信息可参考](../guide/sources/builtin/edgex.md#connectionselector)
+  * [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
 
 ### 外部状态
 

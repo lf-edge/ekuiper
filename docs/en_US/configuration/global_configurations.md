@@ -60,6 +60,8 @@ basic:
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # Whether to disable the log timestamp, useful when output is redirected to logging system like syslog that already adds timestamps.
+  logDisableTimestamp: false
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -90,6 +92,9 @@ syslog:
 
 All the above settings are optional. If the network and address are not set, the local syslog will be used. If the level
 is not set, the default value is info. If the tag is not set, there will be no tag used.
+
+Since syslog already has its own timestamp, the timestamp in the log can be disabled by setting `logDisableTimestamp` to
+true.
 
 ## Timezone
 
@@ -189,7 +194,8 @@ After get the plugin info, users can try these plugins, [more info](../api/resta
 
 ## Rule configurations
 
-Configure the default properties of the rule option. All the configuration can be overridden in rule level. Check [rule options](../guide/rules/overview.md#options) for detail.
+Configure the default properties of the rule option. All the configuration can be overridden in rule level.
+Check [rule options](../guide/rules/overview.md#fine-tuning) for detail.
 
 ## Sink configurations
 
@@ -247,7 +253,7 @@ It has properties
 * connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
   * only applicable to redis connection information
   * the server, port and password in connection info will overwrite the host port and password above
-  * [more info](../guide/sources/builtin/edgex.md#connectionselector)
+  * [more info](../guide/sources/builtin/edgex.md#connection-reusability)
 
 ### External State
 
