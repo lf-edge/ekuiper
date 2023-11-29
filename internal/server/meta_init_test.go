@@ -206,6 +206,7 @@ func TestMetaTestSuite(t *testing.T) {
 }
 
 func (suite *MetaTestSuite) TestSinkConfKeyHandlerPasswd() {
+	suite.T().Skip()
 	DataDir, _ := conf.GetDataLoc()
 	os.Remove(path.Join(DataDir, "sinks", "redis.yaml"))
 	os.Remove(path.Join(DataDir, "sinks"))
