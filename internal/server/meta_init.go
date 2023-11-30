@@ -285,7 +285,7 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		reqField := make(map[string]interface{})
-		err := json.Unmarshal(v, &reqField)
+		err = json.Unmarshal(v, &reqField)
 		if err != nil {
 			handleError(w, err1, "Invalid body", logger)
 			return
