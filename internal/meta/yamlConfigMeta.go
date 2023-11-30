@@ -283,18 +283,11 @@ func addSinkConfKeys(plgName string, cf YamlConfigurations) error {
 	return nil
 }
 
-func AddConnectionConfKey(plgName, confKey, language string, content []byte) error {
+func AddConnectionConfKey(plgName, confKey, language string, reqField map[string]interface{}) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
 	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
-
-	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
-	if nil != err {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
-	}
-
 	var cfgOps conf.ConfigOperator
 	var found bool
 
@@ -308,7 +301,7 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 		return err
 	}
 
-	err = cfgOps.SaveCfgToStorage()
+	err := cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}

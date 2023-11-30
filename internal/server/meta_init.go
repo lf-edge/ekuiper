@@ -284,7 +284,14 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err1, "Invalid body", logger)
 			return
 		}
-		err = meta.AddConnectionConfKey(pluginName, confKey, language, v)
+		reqField := make(map[string]interface{})
+		err := json.Unmarshal(v, &reqField)
+		if err != nil {
+			handleError(w, err1, "Invalid body", logger)
+			return
+		}
+		reqField = replacePasswdForConfig("connection", confKey, reqField)
+		err = meta.AddConnectionConfKey(pluginName, confKey, language, reqField)
 	}
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -327,7 +334,7 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-	config = replacePasswdForSinkConfig(sinkNm, config)
+	config = replacePasswdForConfig("sink", sinkNm, config)
 	err = node.SinkOpen(sinkNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -338,10 +345,18 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // reload password from resources if the config both include password(as fake password) and resourceId
-func replacePasswdForSinkConfig(sinkType string, config map[string]interface{}) map[string]interface{} {
+func replacePasswdForConfig(typ string, name string, config map[string]interface{}) map[string]interface{} {
 	if r, ok := config["resourceId"]; ok {
 		if resourceId, ok := r.(string); ok {
-			configOperatorKey := fmt.Sprintf(meta.SinkCfgOperatorKeyTemplate, sinkType)
+			var configOperatorKey string
+			switch typ {
+			case "sink":
+				configOperatorKey = fmt.Sprintf(meta.SinkCfgOperatorKeyTemplate, name)
+			case "source":
+				configOperatorKey = fmt.Sprintf(meta.SourceCfgOperatorKeyTemplate, name)
+			case "connection":
+				configOperatorKey = fmt.Sprintf(meta.ConnectionCfgOperatorKeyTemplate, name)
+			}
 			cfgOp, ok := meta.GetConfOperator(configOperatorKey)
 			if ok {
 				if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceId]; ok {
@@ -371,7 +386,7 @@ func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-
+	config = replacePasswdForConfig("source", sourceNm, config)
 	err = node.SourceOpen(sourceNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
