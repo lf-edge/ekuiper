@@ -22,6 +22,7 @@ import (
 	influx2 "github.com/lf-edge/ekuiper/extensions/sinks/influx2/ext"
 	kafka "github.com/lf-edge/ekuiper/extensions/sinks/kafka/ext"
 	sqlSink "github.com/lf-edge/ekuiper/extensions/sinks/sql/ext"
+	kafkaSrc "github.com/lf-edge/ekuiper/extensions/sources/kafka/ext"
 	random "github.com/lf-edge/ekuiper/extensions/sources/random/ext"
 	sql "github.com/lf-edge/ekuiper/extensions/sources/sql/ext"
 	video "github.com/lf-edge/ekuiper/extensions/sources/video/ext"
@@ -32,6 +33,7 @@ func init() {
 	sources["random"] = func() api.Source { return random.GetSource() }
 	sources["video"] = func() api.Source { return video.GetSource() }
 	sources["sql"] = func() api.Source { return sql.GetSource() }
+	sources["kafka"] = func() api.Source { return kafkaSrc.GetSource() }
 	lookupSources["sql"] = func() api.LookupSource { return sql.GetLookup() }
 	sinks["image"] = func() api.Sink { return image.GetSink() }
 	sinks["influx"] = func() api.Sink { return influx.GetSink() }

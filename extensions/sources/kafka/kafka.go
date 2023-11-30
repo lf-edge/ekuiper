@@ -20,5 +20,5 @@ import (
 )
 
 func Kafka() api.Source {
-	return &kafka.KafkaSource{}
+	return kafka.GetSource()
 }
