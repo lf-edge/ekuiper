@@ -167,29 +167,30 @@ func (s *syslogConf) Validate() error {
 
 type KuiperConf struct {
 	Basic struct {
-		LogLevel           string      `yaml:"logLevel"`
-		Debug              bool        `yaml:"debug"`
-		ConsoleLog         bool        `yaml:"consoleLog"`
-		FileLog            bool        `yaml:"fileLog"`
-		Syslog             *syslogConf `yaml:"syslog"`
-		RotateTime         int         `yaml:"rotateTime"`
-		MaxAge             int         `yaml:"maxAge"`
-		RotateSize         int64       `yaml:"rotateSize"`
-		RotateCount        int         `yaml:"rotateCount"`
-		TimeZone           string      `yaml:"timezone"`
-		Ip                 string      `yaml:"ip"`
-		Port               int         `yaml:"port"`
-		RestIp             string      `yaml:"restIp"`
-		RestPort           int         `yaml:"restPort"`
-		RestTls            *tlsConf    `yaml:"restTls"`
-		Prometheus         bool        `yaml:"prometheus"`
-		PrometheusPort     int         `yaml:"prometheusPort"`
-		PluginHosts        string      `yaml:"pluginHosts"`
-		Authentication     bool        `yaml:"authentication"`
-		IgnoreCase         bool        `yaml:"ignoreCase"`
-		SQLConf            *SQLConf    `yaml:"sql"`
-		RulePatrolInterval string      `yaml:"rulePatrolInterval"`
-		CfgStorageType     string      `yaml:"cfgStorageType"`
+		LogLevel            string      `yaml:"logLevel"`
+		Debug               bool        `yaml:"debug"`
+		ConsoleLog          bool        `yaml:"consoleLog"`
+		FileLog             bool        `yaml:"fileLog"`
+		LogDisableTimestamp bool        `yaml:"logDisableTimestamp"`
+		Syslog              *syslogConf `yaml:"syslog"`
+		RotateTime          int         `yaml:"rotateTime"`
+		MaxAge              int         `yaml:"maxAge"`
+		RotateSize          int64       `yaml:"rotateSize"`
+		RotateCount         int         `yaml:"rotateCount"`
+		TimeZone            string      `yaml:"timezone"`
+		Ip                  string      `yaml:"ip"`
+		Port                int         `yaml:"port"`
+		RestIp              string      `yaml:"restIp"`
+		RestPort            int         `yaml:"restPort"`
+		RestTls             *tlsConf    `yaml:"restTls"`
+		Prometheus          bool        `yaml:"prometheus"`
+		PrometheusPort      int         `yaml:"prometheusPort"`
+		PluginHosts         string      `yaml:"pluginHosts"`
+		Authentication      bool        `yaml:"authentication"`
+		IgnoreCase          bool        `yaml:"ignoreCase"`
+		SQLConf             *SQLConf    `yaml:"sql"`
+		RulePatrolInterval  string      `yaml:"rulePatrolInterval"`
+		CfgStorageType      string      `yaml:"cfgStorageType"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
@@ -326,7 +327,10 @@ func InitConf() {
 		Config.Basic.LogLevel = InfoLogLevel
 	}
 	SetLogLevel(Config.Basic.LogLevel, Config.Basic.Debug)
-
+	SetLogFormat(Config.Basic.LogDisableTimestamp)
+	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
+		log.Fatal(err)
+	}
 	if os.Getenv(logger.KuiperSyslogKey) == "true" || Config.Basic.Syslog != nil {
 		c := Config.Basic.Syslog
 		if c == nil {
@@ -336,15 +340,11 @@ func InitConf() {
 		}
 		// Init when env is set OR enable is true
 		if c.Enable {
-			err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag, time.RFC3339Nano)
+			err := logger.InitSyslog(c.Network, c.Address, c.Level, c.Tag)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-	}
-
-	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
-		log.Fatal(err)
 	}
 
 	if Config.Basic.TimeZone != "" {
@@ -390,6 +390,10 @@ func InitConf() {
 	}
 
 	_ = ValidateRuleOption(&Config.Rule)
+}
+
+func SetLogFormat(disableTimestamp bool) {
+	Log.Formatter.(*logrus.TextFormatter).DisableTimestamp = disableTimestamp
 }
 
 func ValidateRuleOption(option *api.RuleOption) error {
