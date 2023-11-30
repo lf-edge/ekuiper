@@ -182,3 +182,7 @@ func (s *KafkaSource) Rewind(offset interface{}) error {
 func (s *KafkaSource) GetOffset() (interface{}, error) {
 	return s.offset, nil
 }
+
+func GetSource() api.Source {
+	return &KafkaSource{}
+}
