@@ -155,11 +155,22 @@ func recoverRule(r *api.Rule) string {
 	return fmt.Sprintf("Rule %s was started.", r.Id)
 }
 
-func updateRule(ruleId, ruleJson string) error {
+func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
 	if err != nil {
 		return fmt.Errorf("Invalid rule json: %v", err)
+	}
+	if replacePasswd {
+		for i, action := range r.Actions {
+			for k, v := range action {
+				if m, ok := v.(map[string]interface{}); ok {
+					m = replacePasswdForConfig("sink", k, m)
+					action[k] = m
+				}
+			}
+			r.Actions[i] = action
+		}
 	}
 	if rs, ok := registry.Load(r.Id); ok {
 		err := rs.UpdateTopo(r)

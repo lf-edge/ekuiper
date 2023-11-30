@@ -170,7 +170,7 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	got := replacePasswdForSinkConfig("mqtt", map[string]interface{}{
+	got := replacePasswdForConfig("sink", "mqtt", map[string]interface{}{
 		"resourceId": "test",
 		"a":          "123",
 		"password":   "******",

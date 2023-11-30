@@ -582,7 +582,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = updateRule(name, string(body))
+		err = updateRule(name, string(body), true)
 		if err != nil {
 			handleError(w, err, "Update rule error", logger)
 			return
@@ -1239,7 +1239,7 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 		_, err := ruleProcessor.GetRuleJson(k)
 		if err == nil {
 			// the rule already exist, update
-			err = updateRule(k, v)
+			err = updateRule(k, v, false)
 			if err != nil {
 				ruleSetRsp.Rules[k] = err.Error()
 				continue
