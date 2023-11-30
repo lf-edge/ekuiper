@@ -17,13 +17,13 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
@@ -57,7 +57,6 @@ const (
 	SinkCfgOperatorKeyPrefix         = "sinks."
 	ConnectionCfgOperatorKeyTemplate = "connections.%s"
 	ConnectionCfgOperatorKeyPrefix   = "connections."
-	PASSWORD                         = "******"
 )
 
 // loadConfigOperatorForSource
@@ -145,6 +144,13 @@ func delYamlConf(configOperatorKey string) {
 	}
 }
 
+func GetConfOperator(configOperatorKey string) (conf.ConfigOperator, bool) {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+	cfgOps, ok := ConfigManager.cfgOperators[configOperatorKey]
+	return cfgOps, ok
+}
+
 func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
@@ -156,39 +162,13 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 
 	cf := cfgOps.CopyConfContent()
 	for key, kvs := range cf {
-		cf[key] = hiddenPassword(kvs)
+		cf[key] = hidden.HiddenPassword(kvs)
 	}
 	if b, err = json.Marshal(cf); nil != err {
 		return nil, fmt.Errorf(`%s%v`, getMsg(language, source, "json_marshal_fail"), cf)
 	} else {
 		return b, err
 	}
-}
-
-func hiddenPassword(kvs map[string]interface{}) map[string]interface{} {
-	for k, v := range kvs {
-		if m, ok := v.(map[string]interface{}); ok {
-			kvs[k] = hiddenPassword(m)
-		}
-		if strings.ToLower(k) == "password" {
-			kvs[k] = PASSWORD
-		}
-		if strings.ToLower(k) == "url" {
-			if _, ok := v.(string); !ok {
-				continue
-			}
-			u, err := url.Parse(v.(string))
-			if err != nil || u.User == nil {
-				continue
-			}
-			password, _ := u.User.Password()
-			if password != "" {
-				u.User = url.UserPassword(u.User.Username(), PASSWORD)
-				kvs[k] = u.String()
-			}
-		}
-	}
-	return kvs
 }
 
 func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
@@ -303,18 +283,11 @@ func addSinkConfKeys(plgName string, cf YamlConfigurations) error {
 	return nil
 }
 
-func AddConnectionConfKey(plgName, confKey, language string, content []byte) error {
+func AddConnectionConfKey(plgName, confKey, language string, reqField map[string]interface{}) error {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
 	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
-
-	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
-	if nil != err {
-		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
-	}
-
 	var cfgOps conf.ConfigOperator
 	var found bool
 
@@ -328,7 +301,7 @@ func AddConnectionConfKey(plgName, confKey, language string, content []byte) err
 		return err
 	}
 
-	err = cfgOps.SaveCfgToStorage()
+	err := cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}

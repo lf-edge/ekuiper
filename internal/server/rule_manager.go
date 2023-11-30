@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
@@ -30,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -155,11 +157,47 @@ func recoverRule(r *api.Rule) string {
 	return fmt.Sprintf("Rule %s was started.", r.Id)
 }
 
-func updateRule(ruleId, ruleJson string) error {
+// reload password from resources if the config both include password(as fake password) and resourceId
+func replacePasswdForConfig(typ string, name string, config map[string]interface{}) map[string]interface{} {
+	if r, ok := config["resourceId"]; ok {
+		if resourceId, ok := r.(string); ok {
+			var configOperatorKey string
+			switch typ {
+			case "sink":
+				configOperatorKey = fmt.Sprintf(meta.SinkCfgOperatorKeyTemplate, name)
+			case "source":
+				configOperatorKey = fmt.Sprintf(meta.SourceCfgOperatorKeyTemplate, name)
+			case "connection":
+				configOperatorKey = fmt.Sprintf(meta.ConnectionCfgOperatorKeyTemplate, name)
+			}
+			cfgOp, ok := meta.GetConfOperator(configOperatorKey)
+			if ok {
+				if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceId]; ok {
+					config = hidden.ReplacePasswd(resource, config)
+					config = hidden.ReplaceUrl(resource, config)
+				}
+			}
+		}
+	}
+	return config
+}
+
+func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
 	if err != nil {
 		return fmt.Errorf("Invalid rule json: %v", err)
+	}
+	if replacePasswd {
+		for i, action := range r.Actions {
+			for k, v := range action {
+				if m, ok := v.(map[string]interface{}); ok {
+					m = replacePasswdForConfig("sink", k, m)
+					action[k] = m
+				}
+			}
+			r.Actions[i] = action
+		}
 	}
 	if rs, ok := registry.Load(r.Id); ok {
 		err := rs.UpdateTopo(r)
