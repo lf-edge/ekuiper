@@ -2,7 +2,7 @@
 
 LF Edge eKuiper is an edge lightweight IoT data analytics and stream processing engine. It is a universal edge computing service or middleware designed for resource constrained edge gateways or devices.
 
-eKuiper is written by Go. The architecture of eKuiper is as below:
+eKuiper is written in Go. The architecture of eKuiper is as below:
 
 ![arch](../resources/arch.png)
 
