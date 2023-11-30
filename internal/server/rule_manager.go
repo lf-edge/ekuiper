@@ -174,7 +174,7 @@ func replacePasswdForConfig(typ string, name string, config map[string]interface
 			if ok {
 				if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceId]; ok {
 					config = hidden.ReplacePasswd(resource, config)
-					//config = hidden.ReplaceUrl(resource, config)
+					config = hidden.ReplaceUrl(resource, config)
 				}
 			}
 		}
