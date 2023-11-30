@@ -57,3 +57,33 @@ func HiddenPassword(kvs map[string]interface{}) map[string]interface{} {
 	}
 	return kvs
 }
+
+func ReplacePasswd(resource, config map[string]interface{}) map[string]interface{} {
+	for key := range hiddenPasswdKey {
+		if hiddenPasswd, ok := config[key]; ok && hiddenPasswd == PASSWORD {
+			if passwd, ok := resource[key]; ok {
+				if _, ok := passwd.(string); ok {
+					config[key] = passwd
+				}
+			}
+		}
+	}
+	return config
+}
+
+func ReplaceUrl(resource, config map[string]interface{}) map[string]interface{} {
+	if urlRaw, ok := config["url"]; ok {
+		if urlS, ok := urlRaw.(string); ok {
+			if u, err := url.Parse(urlS); err == nil {
+				if passwd, set := u.User.Password(); set && passwd == PASSWORD {
+					if resourceUrl, ok := resource["url"]; ok {
+						if r, ok := resourceUrl.(string); ok {
+							config["url"] = r
+						}
+					}
+				}
+			}
+		}
+	}
+	return config
+}

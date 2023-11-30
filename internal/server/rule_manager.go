@@ -173,13 +173,8 @@ func replacePasswdForConfig(typ string, name string, config map[string]interface
 			cfgOp, ok := meta.GetConfOperator(configOperatorKey)
 			if ok {
 				if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceId]; ok {
-					if hiddenPasswd, ok := config["password"]; ok && hiddenPasswd == hidden.PASSWORD {
-						if passwd, ok := resource["password"]; ok {
-							if _, ok := passwd.(string); ok {
-								config["password"] = passwd
-							}
-						}
-					}
+					config = hidden.ReplacePasswd(resource, config)
+					config = hidden.ReplaceUrl(resource, config)
 				}
 			}
 		}
