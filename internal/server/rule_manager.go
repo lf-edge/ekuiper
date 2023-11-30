@@ -15,7 +15,6 @@
 package server
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -28,7 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
@@ -248,30 +246,26 @@ func getRuleStatus(name string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		m := map[string]interface{}{}
 		if result == "Running" {
+			m["status"] = "running"
 			keys, values := (*rs.Topology).GetMetrics()
-			metrics := "{"
-			metrics += `"status": "running",`
 			for i, key := range keys {
-				value := values[i]
-				switch value.(type) {
-				case string:
-					metrics += fmt.Sprintf("\"%s\":%q,", key, value)
-				default:
-					metrics += fmt.Sprintf("\"%s\":%v,", key, value)
-				}
-			}
-			metrics = metrics[:len(metrics)-1] + "}"
-			dst := &bytes.Buffer{}
-			if err = json.Indent(dst, cast.StringToBytes(metrics), "", "  "); err != nil {
-				result = metrics
-			} else {
-				result = dst.String()
+				m[key] = values[i]
 			}
 		} else {
-			result = fmt.Sprintf(`{"status": "stopped", "message": "%s"}`, result)
+			m["status"] = "stopped"
+			m["message"] = result
 		}
-		return result, nil
+		lastStart, lastStop, nextStart := rs.GetScheduleTimestamp()
+		m["lastStartTimestamp"] = lastStart
+		m["lastStopTimestamp"] = lastStop
+		m["nextStartTimestamp"] = nextStart
+		content, err := json.Marshal(m)
+		if err != nil {
+			return "", err
+		}
+		return string(content), nil
 	} else {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
