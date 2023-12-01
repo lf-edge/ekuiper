@@ -97,6 +97,9 @@ type RuleState struct {
 	topoGraph *api.PrintableTopo
 	sync.RWMutex
 	cronState cronStateCtx
+
+	lastStartTimestamp int64
+	lastStopTimestamp  int64
 }
 
 // NewRuleState Create and initialize a rule state.
@@ -396,6 +399,7 @@ func (rs *RuleState) start() error {
 	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
 		conf.Log.Debugf("rule %v started", rs.RuleId)
 	}
+	rs.lastStartTimestamp = time.Now().UnixMilli()
 	rs.ActionCh <- ActionSignalStart
 	return nil
 }
@@ -430,6 +434,7 @@ func (rs *RuleState) stop() error {
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
 	}
+	rs.lastStopTimestamp = time.Now().UnixMilli()
 	rs.ActionCh <- ActionSignalStop
 	return nil
 }
@@ -557,4 +562,24 @@ func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
 		}
 	}
 	return allowed, nil
+}
+
+func (rs *RuleState) GetNextScheduleStartTime() int64 {
+	if rs.Rule.IsScheduleRule() && len(rs.Rule.Options.Cron) > 0 {
+		isIn, err := schedule.IsInScheduleRanges(time.Now(), rs.Rule.Options.CronDatetimeRange)
+		if err == nil && isIn {
+			s, err := cron.ParseStandard(rs.Rule.Options.Cron)
+			if err == nil {
+				return s.Next(time.Now()).UnixMilli()
+			}
+		}
+	}
+	return 0
+}
+
+func (rs *RuleState) GetScheduleTimestamp() (int64, int64, int64) {
+	nextStartTimestamp := rs.GetNextScheduleStartTime()
+	rs.Lock()
+	defer rs.Unlock()
+	return rs.lastStartTimestamp, rs.lastStopTimestamp, nextStartTimestamp
 }
