@@ -27,20 +27,50 @@ import (
 const layout = "2006-01-02 15:04:05"
 
 func IsInScheduleRanges(now time.Time, timeRanges []api.DatetimeRange) (bool, error) {
+	if len(timeRanges) < 1 {
+		return true, nil
+	}
 	for _, tRange := range timeRanges {
-		isIn, err := IsInScheduleRange(now, tRange.Begin, tRange.End)
-		if err != nil {
-			return false, err
-		}
-		if isIn {
-			return true, nil
+		if tRange.BeginTimestamp > 0 && tRange.EndTimestamp > 0 {
+			isIn, err := isInScheduleRangeByTS(now, tRange.BeginTimestamp, tRange.EndTimestamp)
+			if err != nil {
+				return false, err
+			}
+			if isIn {
+				return true, nil
+			}
+		} else {
+			isIn, err := isInScheduleRange(now, tRange.Begin, tRange.End)
+			if err != nil {
+				return false, err
+			}
+			if isIn {
+				return true, nil
+			}
 		}
 	}
 	return false, nil
 }
 
-func IsInScheduleRange(now time.Time, start string, end string) (bool, error) {
+func isInScheduleRange(now time.Time, start string, end string) (bool, error) {
 	return isInTimeRange(now, start, end)
+}
+
+func isInScheduleRangeByTS(now time.Time, startTS int64, endTS int64) (bool, error) {
+	s, err := cast.InterfaceToTime(startTS, "")
+	if err != nil {
+		return false, err
+	}
+	e, err := cast.InterfaceToTime(endTS, "")
+	if err != nil {
+		return false, err
+	}
+	isBefore := s.Before(now)
+	isAfter := e.After(now)
+	if isBefore && isAfter {
+		return true, nil
+	}
+	return false, nil
 }
 
 func isInTimeRange(now time.Time, start string, end string) (bool, error) {
@@ -65,20 +95,39 @@ func IsAfterTimeRanges(now time.Time, ranges []api.DatetimeRange) bool {
 		return false
 	}
 	for _, r := range ranges {
-		isAfter, err := IsAfterTimeRange(now, r.End)
-		if err != nil || !isAfter {
-			return false
+		if r.EndTimestamp > 0 {
+			isAfter, err := isAfterTimeByTS(now, r.EndTimestamp)
+			if err != nil || !isAfter {
+				return false
+			}
+		} else {
+			isAfter, err := isAfterTimeRange(now, r.End)
+			if err != nil || !isAfter {
+				return false
+			}
 		}
 	}
 	return true
 }
 
-func IsAfterTimeRange(now time.Time, end string) (bool, error) {
-	e, err := time.Parse(layout, end)
+func isAfterTime(now time.Time, compare time.Time) bool {
+	return now.After(compare)
+}
+
+func isAfterTimeByTS(now time.Time, end int64) (bool, error) {
+	e, err := cast.InterfaceToTime(end, "")
 	if err != nil {
 		return false, err
 	}
-	return now.After(e), nil
+	return isAfterTime(now, e), nil
+}
+
+func isAfterTimeRange(now time.Time, end string) (bool, error) {
+	e, err := cast.InterfaceToTime(end, layout)
+	if err != nil {
+		return false, err
+	}
+	return isAfterTime(now, e), nil
 }
 
 // IsInRunningSchedule checks whether the rule should be running, eg:
@@ -109,6 +158,20 @@ func ValidateRanges(ranges []api.DatetimeRange) error {
 }
 
 func validateRange(r api.DatetimeRange) error {
+	if r.BeginTimestamp > 0 && r.EndTimestamp > 0 {
+		s, err := cast.InterfaceToTime(r.BeginTimestamp, "")
+		if err != nil {
+			return err
+		}
+		e, err := cast.InterfaceToTime(r.EndTimestamp, "")
+		if err != nil {
+			return err
+		}
+		if s.After(e) {
+			return fmt.Errorf("begin time shouldn't after end time")
+		}
+		return nil
+	}
 	s, err := cast.InterfaceToTime(r.Begin, layout)
 	if err != nil {
 		return err

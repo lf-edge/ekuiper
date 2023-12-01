@@ -54,7 +54,12 @@ var (
 	streamProcessor        *processor.StreamProcessor
 	rulesetProcessor       *processor.RulesetProcessor
 	ruleMigrationProcessor *RuleMigrationProcessor
+	stopSignal             chan struct{}
 )
+
+func stopEKuiper() {
+	stopSignal <- struct{}{}
+}
 
 // Create path if mount an empty dir. For edgeX, all the folders must be created priorly
 func createPaths() {
@@ -204,6 +209,7 @@ func StartUp(Version string) {
 	if conf.Config.Basic.RestTls != nil {
 		restHttpType = "https"
 	}
+	stopSignal = make(chan struct{})
 	msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, and restful api on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort))
 	logger.Info(msg)
 	fmt.Println(msg)
@@ -211,9 +217,16 @@ func StartUp(Version string) {
 	// Stop the services
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
-	<-sigint
+	select {
+	case <-sigint:
+		conf.Log.Info("eKuiper stopped by SIGTERM")
+	case <-stopSignal:
+		// sleep 1 sec in order to let stop request got response
+		time.Sleep(time.Second)
+		conf.Log.Info("eKuiper stopped by Stop request")
+	}
 	exit <- struct{}{}
-
+	conf.Log.Info("start to stop rest server")
 	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 	defer cancel()
 	if err = srvRest.Shutdown(ctx); err != nil {
@@ -223,8 +236,9 @@ func StartUp(Version string) {
 
 	// close extend services
 	for k, v := range servers {
-		logger.Infof("close service %s", k)
+		logger.Infof("start to close service %s", k)
 		v.close()
+		logger.Infof("close service %s successfully", k)
 	}
 
 	os.Exit(0)
@@ -354,17 +368,10 @@ const (
 func handleScheduleRule(now time.Time, r *api.Rule, state string) scheduleRuleAction {
 	options := r.Options
 	if options != nil && options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
-		var isInRange bool
-		var err error
-		for _, cRange := range options.CronDatetimeRange {
-			isInRange, err = schedule.IsInScheduleRange(now, cRange.Begin, cRange.End)
-			if err != nil {
-				conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
-				return scheduleRuleActionDoNothing
-			}
-			if isInRange {
-				break
-			}
+		isInRange, err := schedule.IsInScheduleRanges(now, options.CronDatetimeRange)
+		if err != nil {
+			conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
+			return scheduleRuleActionDoNothing
 		}
 		if isInRange && state == rule.RuleWait && r.Triggered {
 			return scheduleRuleActionStart

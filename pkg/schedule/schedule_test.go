@@ -24,16 +24,74 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func TestIsInTimeRange(t *testing.T) {
+func TestIsInScheduleRanges(t *testing.T) {
 	now, err := time.Parse(layout, "2006-01-02 15:04:01")
 	require.NoError(t, err)
-	isIn, err := isInTimeRange(now, "2006-01-02 15:04:00", "2006-01-02 15:04:03")
-	require.NoError(t, err)
-	require.True(t, isIn)
-	_, err = isInTimeRange(now, "123", "2006-01-02 15:04:03")
-	require.Error(t, err)
-	_, err = isInTimeRange(now, "2006-01-02 15:04:00", "13")
-	require.Error(t, err)
+	testcases := []struct {
+		dateRanges []api.DatetimeRange
+		isIn       bool
+	}{
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					Begin: "1999-01-02 15:04:00",
+					End:   "3006-01-02 15:04:03",
+				},
+			},
+			isIn: true,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					Begin: "1999-01-02 15:04:00",
+					End:   "1999-01-02 15:04:03",
+				},
+			},
+			isIn: false,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					Begin: "2999-01-02 15:04:00",
+					End:   "2999-01-02 15:04:03",
+				},
+			},
+			isIn: false,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					BeginTimestamp: 1,
+					EndTimestamp:   2797598229000,
+				},
+			},
+			isIn: true,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					BeginTimestamp: 1,
+					EndTimestamp:   2,
+				},
+			},
+			isIn: false,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					BeginTimestamp: 2697598229000,
+					EndTimestamp:   2797598229000,
+				},
+			},
+			isIn: false,
+		},
+	}
+
+	for _, tc := range testcases {
+		isIn, err := IsInScheduleRanges(now, tc.dateRanges)
+		require.NoError(t, err)
+		require.Equal(t, tc.isIn, isIn)
+	}
 }
 
 func TestIsRuleInRunningSchedule(t *testing.T) {
@@ -47,17 +105,54 @@ func TestIsRuleInRunningSchedule(t *testing.T) {
 	require.Equal(t, remainedDuration, time.Second)
 }
 
-func TestIsAfterTimeRange(t *testing.T) {
+func TestIsAfterTimeRanges(t *testing.T) {
 	now, err := time.Parse(layout, "2006-01-02 15:04:01")
 	require.NoError(t, err)
-	_, err = IsAfterTimeRange(now, "")
-	require.Error(t, err)
-	isAfter, err := IsAfterTimeRange(now, "2006-01-02 15:04:00")
-	require.NoError(t, err)
-	require.True(t, isAfter)
-	isAfter, err = IsAfterTimeRange(now, "2006-01-02 15:04:06")
-	require.NoError(t, err)
-	require.False(t, isAfter)
+	testcases := []struct {
+		dateRanges []api.DatetimeRange
+		isAfter    bool
+	}{
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					Begin: "",
+					End:   "1006-01-02 15:04:00",
+				},
+			},
+			isAfter: true,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					Begin: "",
+					End:   "3006-01-02 15:04:00",
+				},
+			},
+			isAfter: false,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					BeginTimestamp: 1,
+					EndTimestamp:   2,
+				},
+			},
+			isAfter: true,
+		},
+		{
+			dateRanges: []api.DatetimeRange{
+				{
+					BeginTimestamp: 2797598229000,
+					EndTimestamp:   2797598329000,
+				},
+			},
+			isAfter: false,
+		},
+	}
+	for _, tc := range testcases {
+		isAfter := IsAfterTimeRanges(now, tc.dateRanges)
+		require.Equal(t, tc.isAfter, isAfter)
+	}
 }
 
 func TestIsInRunningSchedule(t *testing.T) {

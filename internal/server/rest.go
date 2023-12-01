@@ -143,6 +143,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
@@ -372,6 +373,15 @@ type information struct {
 	CpuUsage      string `json:"cpuUsage,omitempty"`
 	MemoryUsed    string `json:"memoryUsed,omitempty"`
 	MemoryTotal   string `json:"memoryTotal"`
+}
+
+func stopHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodGet, http.MethodPost:
+		stopEKuiper()
+		w.Write([]byte("stop success"))
+	}
 }
 
 // The handler for root
