@@ -25,3 +25,11 @@ PATCH http://localhost:9081/configs
 - `consoleLog`
 - `fileLog`
 - `timezone`
+
+## 关闭 eKuiper
+
+```shell
+POST http://localhost:9081/stop
+```
+
+通过该 API 将 eKuiper 关机。
