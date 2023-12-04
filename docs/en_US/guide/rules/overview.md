@@ -205,6 +205,8 @@ When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a
 |-------------|----------------------|---------------------------------------------------------------------------------------------------|
 | begin       | string               | The begin time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss' |
 | end         | string               | The end time of the effective period of the scheduled rule, the format is `YYYY-MM-DD hh:mm:ss'   |
+| beginTimestamp | int | The starting unix timestamp of the period in which the periodic rule takes effect, in ms |
+| endTimestamp | int | The end unix timestamp of the period in which the periodic rule takes effect, in ms |
 
 `cronDatetimeRange` supports lists of struct, you can declare a set of time ranges to express multiple time ranges for scheduled rules to take effect:
 
@@ -216,8 +218,8 @@ When a periodic rule is stopped by [stop rule](../../api/restapi/rules.md#stop-a
             "end": "2023-06-26 20:00:00"
         },
         {
-            "begin": "2023-06-27 10:00:00",
-            "end": "2023-06-27 20:00:00"
+            "beginTimestamp": 1701401478000,
+            "endTimestamp": 1701401578000
         }
     ]
 }

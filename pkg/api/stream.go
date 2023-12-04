@@ -158,8 +158,10 @@ type RuleOption struct {
 }
 
 type DatetimeRange struct {
-	Begin string `json:"begin" yaml:"begin"`
-	End   string `json:"end" yaml:"end"`
+	Begin          string `json:"begin" yaml:"begin"`
+	End            string `json:"end" yaml:"end"`
+	BeginTimestamp int64  `json:"beginTimestamp"`
+	EndTimestamp   int64  `json:"endTimestamp"`
 }
 
 type RestartStrategy struct {

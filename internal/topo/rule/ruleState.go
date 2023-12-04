@@ -550,18 +550,7 @@ func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, 
 }
 
 func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
-	allowed := true
-	var err error
-	for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
-		allowed, err = schedule.IsInScheduleRange(now, timeRange.Begin, timeRange.End)
-		if err != nil {
-			return false, err
-		}
-		if allowed {
-			break
-		}
-	}
-	return allowed, nil
+	return schedule.IsInScheduleRanges(now, rs.Rule.Options.CronDatetimeRange)
 }
 
 func (rs *RuleState) GetNextScheduleStartTime() int64 {
