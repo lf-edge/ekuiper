@@ -38,6 +38,7 @@ var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, Bu
 type StatManager interface {
 	IncTotalRecordsIn()
 	IncTotalRecordsOut()
+	IncTotalNRecordsOut(n int64)
 	IncTotalExceptions(err string)
 	ProcessTimeStart()
 	ProcessTimeEnd()
@@ -95,6 +96,10 @@ func (sm *DefaultStatManager) IncTotalRecordsIn() {
 
 func (sm *DefaultStatManager) IncTotalRecordsOut() {
 	sm.totalRecordsOut++
+}
+
+func (sm *DefaultStatManager) IncTotalNRecordsOut(n int64) {
+	sm.totalRecordsOut += n
 }
 
 func (sm *DefaultStatManager) IncTotalExceptions(err string) {

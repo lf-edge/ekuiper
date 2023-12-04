@@ -529,7 +529,14 @@ func sendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, s
 		return err
 	} else {
 		ctx.GetLogger().Debugf("success")
-		stats.IncTotalRecordsOut()
+		switch d := outData.(type) {
+		case map[string]interface{}:
+			stats.IncTotalRecordsOut()
+		case []map[string]interface{}:
+			stats.IncTotalNRecordsOut(int64(len(d)))
+		default:
+			stats.IncTotalRecordsOut()
+		}
 		return nil
 	}
 }
