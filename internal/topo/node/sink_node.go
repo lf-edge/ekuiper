@@ -462,7 +462,7 @@ func (m *SinkNode) reset() {
 
 func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs []map[string]interface{}, stats metric.StatManager, isResend bool) error {
 	if !sconf.SendSingle {
-		return doCollectData(ctx, sink, outs, stats, isResend)
+		return doCollectData(ctx, sink, outs, stats, isResend, sconf.isBatchSinkEnabled())
 	} else {
 		var err error
 		for _, d := range outs {
@@ -470,7 +470,7 @@ func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs [
 				ctx.GetLogger().Debugf("receive empty in sink")
 				continue
 			}
-			newErr := doCollectData(ctx, sink, d, stats, isResend)
+			newErr := doCollectData(ctx, sink, d, stats, isResend, sconf.isBatchSinkEnabled())
 			if newErr != nil {
 				err = newErr
 			}
@@ -509,39 +509,41 @@ func itemToMap(item interface{}) []map[string]interface{} {
 }
 
 // doCollectData outData must be map or []map
-func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager, isResend bool) error {
+func doCollectData(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager, isResend, isSendBatchEnabled bool) error {
 	select {
 	case <-ctx.Done():
 		ctx.GetLogger().Infof("sink node %s instance %d stops data resending", ctx.GetOpId(), ctx.GetInstanceId())
 		return nil
 	default:
 		if isResend {
-			return resendDataToSink(ctx, sink, outData, stats)
+			return resendDataToSink(ctx, sink, outData, stats, isSendBatchEnabled)
 		} else {
-			return sendDataToSink(ctx, sink, outData, stats)
+			return sendDataToSink(ctx, sink, outData, stats, isSendBatchEnabled)
 		}
 	}
 }
 
-func sendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager) error {
+func sendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager, isSendBatchEnabled bool) error {
 	if err := sink.Collect(ctx, outData); err != nil {
 		stats.IncTotalExceptions(err.Error())
 		return err
 	} else {
 		ctx.GetLogger().Debugf("success")
-		switch d := outData.(type) {
-		case map[string]interface{}:
-			stats.IncTotalRecordsOut()
-		case []map[string]interface{}:
-			stats.IncTotalNRecordsOut(int64(len(d)))
-		default:
+		if isSendBatchEnabled {
+			switch d := outData.(type) {
+			case []map[string]interface{}:
+				stats.IncTotalNRecordsOut(int64(len(d)))
+			default:
+				stats.IncTotalRecordsOut()
+			}
+		} else {
 			stats.IncTotalRecordsOut()
 		}
 		return nil
 	}
 }
 
-func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager) error {
+func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, stats metric.StatManager, isSendBatchEnabled bool) error {
 	ctx.GetLogger().Debugf("start resend")
 	var err error
 	switch st := sink.(type) {
@@ -555,7 +557,16 @@ func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{},
 		return err
 	} else {
 		ctx.GetLogger().Debugf("success resend")
-		stats.IncTotalRecordsOut()
+		if isSendBatchEnabled {
+			switch d := outData.(type) {
+			case []map[string]interface{}:
+				stats.IncTotalNRecordsOut(int64(len(d)))
+			default:
+				stats.IncTotalRecordsOut()
+			}
+		} else {
+			stats.IncTotalRecordsOut()
+		}
 		return nil
 	}
 }
