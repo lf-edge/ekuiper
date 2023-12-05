@@ -37,7 +37,7 @@ func init() {
 		if err != nil {
 			conf.Log.Warnf("get total memory failed, err:%v", err)
 		} else {
-			conf.Log.Info("set server total memory %v success", m2.Total)
+			conf.Log.Infof("set server total memory %v success", m2.Total)
 			MemoryTotal = m2.Total
 		}
 	}
