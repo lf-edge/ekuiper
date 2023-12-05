@@ -68,6 +68,13 @@ func (s *Topo) GetContext() api.StreamContext {
 	return s.ctx
 }
 
+func (s *Topo) NewTopoWithSucceededCtx() *Topo {
+	n := &Topo{}
+	n.ctx = s.ctx
+	n.cancel = s.cancel
+	return n
+}
+
 // Cancel may be called multiple times so must be idempotent
 func (s *Topo) Cancel() {
 	s.mu.Lock()
