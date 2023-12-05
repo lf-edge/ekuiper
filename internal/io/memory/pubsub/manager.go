@@ -105,6 +105,9 @@ func RemovePub(topic string) {
 	if sinkConsumerChannels, exists := pubTopics[topic]; exists {
 		sinkConsumerChannels.count -= 1
 		if len(sinkConsumerChannels.consumers) == 0 && sinkConsumerChannels.count == 0 {
+			for _, ch := range sinkConsumerChannels.consumers {
+				close(ch)
+			}
 			delete(pubTopics, topic)
 		}
 	}
