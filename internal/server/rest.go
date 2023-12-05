@@ -397,7 +397,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		info.Arch = runtime.GOARCH
 		if sysMetrics != nil {
 			info.CpuUsage = sysMetrics.GetCpuUsage()
-			info.MemoryUsed = fmt.Sprintf("%d", memory.GetMemoryUsed())
+			info.MemoryUsed = sysMetrics.GetMemoryUsage()
 		}
 		info.MemoryTotal = fmt.Sprintf("%d", memory.GetMemoryTotal())
 		byteInfo, _ := json.Marshal(info)
