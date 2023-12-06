@@ -485,7 +485,7 @@
           "refId": "A"
         }
       ],
-      "title": "Server Total Reconds in QPS",
+      "title": "Server Total Records in QPS",
       "type": "timeseries"
     },
     {
@@ -583,7 +583,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 18
       },
       "id": 4,
       "panels": [],
