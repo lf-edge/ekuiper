@@ -451,7 +451,32 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "172.31.24.64:20499-total-records-in"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -479,7 +504,7 @@
             "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
           },
           "editorMode": "builder",
-          "expr": "rate(kuiper_source_records_in_total{instance=\"$instance\"}[1m])",
+          "expr": "sum by(instance) (rate(kuiper_source_records_in_total{instance=\"$instance\"}[1m]))",
           "legendFormat": "{{instance}}-total-records-in",
           "range": true,
           "refId": "A"
@@ -568,8 +593,8 @@
             "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
           },
           "editorMode": "builder",
-          "expr": "sum by(instance) (rate(kuiper_source_records_in_total{instance=\"$instance\"}[1m]))",
-          "legendFormat": "{{instance}}-total-records-in",
+          "expr": "sum by(instance) (rate(kuiper_sink_records_out_total{instance=\"$instance\"}[1m]))",
+          "legendFormat": "{{instance}}-total-records-out",
           "range": true,
           "refId": "A"
         }
