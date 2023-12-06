@@ -77,11 +77,6 @@ func (sm *PrometheusStatManager) IncTotalRecordsOut() {
 	sm.pTotalRecordsOut.Inc()
 }
 
-func (sm *PrometheusStatManager) IncTotalNRecordsOut(n int64) {
-	sm.totalRecordsOut += n
-	sm.pTotalRecordsOut.Add(float64(n))
-}
-
 func (sm *PrometheusStatManager) IncTotalExceptions(err string) {
 	sm.pTotalExceptions.Inc()
 	sm.DefaultStatManager.IncTotalExceptions(err)
