@@ -29,7 +29,7 @@ func init() {
 		if err != nil {
 			conf.Log.Warnf("get total memory failed, err:%v", err)
 		} else {
-			conf.Log.Info("set cgroup memory total success")
+			conf.Log.Infof("get cgroup total memory %v success", m1)
 			MemoryTotal = m1
 		}
 	} else {
@@ -37,7 +37,7 @@ func init() {
 		if err != nil {
 			conf.Log.Warnf("get total memory failed, err:%v", err)
 		} else {
-			conf.Log.Info("set server memory total success")
+			conf.Log.Infof("set server total memory %v success", m2.Total)
 			MemoryTotal = m2.Total
 		}
 	}
@@ -45,30 +45,4 @@ func init() {
 
 func GetMemoryTotal() uint64 {
 	return MemoryTotal
-}
-
-func GetMemoryUsed() uint64 {
-	if cgroup.InContainer() {
-		m, err := cgroup.MemUsedCGroup()
-		if err != nil {
-			conf.Log.Warnf("get cgroup memory used failed, err:%v", err)
-			return 0
-		}
-		return m
-	} else {
-		m, err := memUsedNormal()
-		if err != nil {
-			conf.Log.Warnf("get server memory used failed, err:%v", err)
-			return 0
-		}
-		return m
-	}
-}
-
-func memUsedNormal() (uint64, error) {
-	v, err := mem.VirtualMemory()
-	if err != nil {
-		return v.Used, err
-	}
-	return v.Used, nil
 }
