@@ -90,7 +90,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			logger.Debugf("Query the database with %s", query)
 			rows, err := m.db.Query(query)
 			if err != nil {
-				logger.Errorf("sql source meet error, try to reconnection, err:%v", err)
+				logger.Errorf("sql source meet error, try to reconnection, err:%v, query:%v", err, query)
 				err2 := m.Reconnect()
 				if err2 != nil {
 					consumer <- &xsql.ErrorSourceTuple{

@@ -73,6 +73,7 @@ func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	ctx.GetLogger().Debugf("Query is %s", query)
 	rows, err := s.db.Query(query)
 	if err != nil {
+		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v", err, query)
 		return nil, err
 	}
 	cols, _ := rows.Columns()
