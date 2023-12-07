@@ -174,7 +174,6 @@ GET http://localhost:9081/rules/{id}/status
 }
 ```
 
-
 ## 验证规则
 
 该 API 用于验证规则。
