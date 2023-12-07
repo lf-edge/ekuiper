@@ -21,8 +21,8 @@ jobs:
       - run: python3 -m pip install --user --upgrade setuptools wheel twine
       - name: Upload test pypi
         env:
-          TWINE_USERNAME: ${{ secrets.TEST_PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PASSWORD }}
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         working-directory: "sdk/python"
         run: |
           version=$(grep -E ".+version.+" setup.py | sed -r 's [ \t]*version=(.*), \1 g' | sed $'s/\'//g')
@@ -46,8 +46,8 @@ jobs:
       - name: Upload test pypi
         if: github.event_name == 'release' && !github.event.release.prerelease
         env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         working-directory: "sdk/python"
         run: |
           sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" setup.py
