@@ -28,6 +28,7 @@ Example request to get all Config Keys from an MQTT source:
         "protocolVersion": "3.1.1",
         "qos": 1,
         "server": "tcp://122.9.166.75:1883",
+        "token": "******",
         "password": "******"
     },
     "default": {
@@ -41,7 +42,7 @@ Example request to get all Config Keys from an MQTT source:
 }
 ```
 
-Note: When retrieving Config Keys, if the properties contain a password field (case-insensitive, such as Password), the API will not return the actual password value, but instead replace it with "******" to conceal the password information.
+Note: When retrieving Config Keys, if the properties contain a password/token field (case-insensitive, such as Password), the API will not return the actual password/token value, but instead replace it with "******" to conceal the password/token information.
 
 ## Delete a configKey
 
