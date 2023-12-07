@@ -132,6 +132,7 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
 	ctx.GetLogger().Debugf(*sqlStr)
 	r, err := m.db.Exec(*sqlStr)
 	if err != nil {
+		ctx.GetLogger().Errorf("sql sink writeDB failed, err:%v , sql: %v", err, *sqlStr)
 		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
 	}
 	d, err := r.RowsAffected()
