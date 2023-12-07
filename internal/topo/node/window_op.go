@@ -354,6 +354,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 								select {
 								case <-after:
 									delayCh <- ts
+								case <-ctx.Done():
+									return
 								}
 							}(d.Timestamp + o.window.Delay)
 						} else {
