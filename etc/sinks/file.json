@@ -26,8 +26,8 @@
 			"control": "text",
 			"type": "string",
 			"hint": {
-				"en_US": "The file path for saving the result, could be dynamic like {{.field}}.txt",
-				"zh_CN": "保存结果的文件路径，可为动态路径，例如 {{.field}}.txt"
+				"en_US": "The file path to save the results. The file supports absolute paths and relative paths. The relative path is the installation directory of the software, or it can be a dynamic path, such as {{.field}}.txt",
+				"zh_CN": "保存结果的文件路径，文件支持绝对路径和相对路径，相对路径为软件的安装目录，也可为动态路径，例如 {{.field}}.txt"
 			},
 			"label": {
 				"en_US": "Path of file",
@@ -66,7 +66,21 @@
 				"en_US": "Has header",
 				"zh_CN": "是否包含文件头"
 			}
-		}, {
+		},{
+			"name": "rollingCount",
+			"default": 10000,
+			"optional": true,
+			"control": "text",
+			"type": "int",
+			"hint": {
+				"en_US": "The maximum message counts in a file before rollover.",
+				"zh_CN": "文件翻转前的最大消息计数。"
+			},
+			"label": {
+				"en_US": "Rolling Count",
+				"zh_CN": "Rolling 计数"
+			}
+		},{
 			"name": "rollingInterval",
 			"default": "",
 			"optional": true,
@@ -74,7 +88,7 @@
 			"type": "int",
 			"hint": {
 				"en_US": "The interval in millisecond for checking time based rolling policies. This controls the frequency to check whether a part file should rollover.",
-				"zh_CN": "滚动到新文件的最小时间间隔（以毫秒为单位）。检查频率由checkInterval 控制。"
+				"zh_CN": "滚动到新文件的最小时间间隔（以毫秒为单位）。检查频率由 checkInterval 控制。"
 			},
 			"label": {
 				"en_US": "Rolling Interval",
@@ -95,22 +109,8 @@
 				"zh_CN": "检查间隔"
 			}
 		}, {
-			"name": "rollingCount",
-			"default": "10000",
-			"optional": true,
-			"control": "text",
-			"type": "int",
-			"hint": {
-				"en_US": "The maximum message counts in a file before rollover.",
-				"zh_CN": "文件翻转前的最大消息计数。"
-			},
-			"label": {
-				"en_US": "Rolling Count",
-				"zh_CN": "Rolling 计数"
-			}
-		}, {
 			"name": "rollingNamePattern",
-			"default": "",
+			"default": "suffix",
 			"optional": true,
 			"control": "select",
 			"type": "string",
@@ -120,8 +120,8 @@
 				"none"
 			],
 			"hint": {
-				"en_US": "Define how to named the rolling files by specifying where to put the timestamp during file creation. The value could be \"prefix\", \"suffix\" or \"none\".",
-				"zh_CN": "指定滚动文件创建时如何放置时间戳。时间戳可为“前缀”，“后缀”或“无”。"
+				"en_US": "Define how to named the rolling files by specifying where to put the timestamp during file creation. The value could be \"prefix\", \"suffix\" or \"none\".If \"None\", the file will be overwritten.",
+				"zh_CN": "指定滚动文件创建时如何放置时间戳。时间戳可为“前缀”，“后缀”或“无”。如果为“无”，则文件会被覆盖。"
 			},
 			"label": {
 				"en_US": "Rolling Name Pattern",

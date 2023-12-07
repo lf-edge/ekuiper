@@ -2,6 +2,8 @@
 default:
   qos: 1
   server: "tcp://127.0.0.1:1883"
+  protocolVersion: "3.1.1"
+  insecureSkipVerify: false
   #decompression: zlib
   #username: user1
   #password: password
@@ -13,6 +15,6 @@ default:
   #kubeedgeVersion: 
   #kubeedgeModelFile: ""
 
-demo_conf: #Conf_key
-  qos: 0
-  server: "tcp://10.211.55.6:1883"
+# demo_conf: #Conf_key
+#   qos: 0
+#   server: "tcp://10.211.55.6:1883"

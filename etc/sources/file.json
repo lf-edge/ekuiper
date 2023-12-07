@@ -33,7 +33,7 @@
       {
         "name": "fileType",
         "default": "json",
-        "optional": true,
+        "optional": false,
         "control": "select",
         "type": "string",
         "values": [
@@ -57,7 +57,7 @@
         "type": "string",
         "hint": {
           "en_US": "The directory of the file relative to eKuiper root or an absolute path. Do not include the file name here. The file name should be defined in the stream data source.",
-          "zh_CN": "文件所在文件夹的路径。请勿包含文件名，文件名应该在数据源中定义。"
+          "zh_CN": "指定文件的目录，可以是软件根目录的相对路径，或绝对路径。请勿包含文件名，文件名应该在数据源中定义。"
         },
         "label": {
           "en_US": "Path",
@@ -71,7 +71,7 @@
         "type": "int",
         "hint": {
           "en_US": "The interval between reading the files, time unit is ms. If only read once, set it to 0",
-          "zh_CN": "读取文件的间隔时间，单位为毫秒。如果只需读取一次，设置为0。"
+          "zh_CN": "读取文件的间隔时间，单位为毫秒。如果只需读取一次，设置为 0。"
         },
         "label": {
           "en_US": "Interval",
@@ -104,7 +104,7 @@
         ],
         "hint": {
           "en_US": "The action after read. 0 meas keep the file; 1 means delete the file; 2 means move the file to the path defined in the property 'moveTo'",
-          "zh_CN": "读取后的操作。0表示保留文件；1表示删除文件；2表示将文件移动到属性 'moveTo' 中定义的路径。"
+          "zh_CN": "读取后的操作。0 表示保留文件；1 表示删除文件；2 表示将文件移动到属性 '移动位置' 中定义的路径。"
         },
         "label": {
           "en_US": "Action after read",

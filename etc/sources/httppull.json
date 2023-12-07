@@ -24,7 +24,7 @@
 		},
 		"label": {
 			"en_US": "Data Source (URL Endpoint)",
-			"zh_CN": "数据源（URL拼接路径）"
+			"zh_CN": "数据源（URL 拼接路径）"
 		}
 	},
 	"properties": {
@@ -198,7 +198,7 @@
 			},
 			"label": {
 				"en_US": "HTTP headers",
-				"zh_CN": "HTTP标头"
+				"zh_CN": "HTTP 标头"
 			}
 		},
 		{

@@ -42,9 +42,9 @@ default:
 #        token: '{{.data.token}}'
 #      # Request body
 #      body: ''
-neuron:
+token_conf:
   # url of the request server address
-  url: http://127.0.0.1:7000/api/v2/node/state
+  url: http://127.0.0.1:8085/api/neuron/node/state
   # post, get, put, delete
   method: get
   # The interval between the requests, time unit is ms
@@ -69,12 +69,12 @@ neuron:
     # Access token fetch method
     access:
       # Url to fetch access token, always use POST method
-      url: http://127.0.0.1:7000/api/v2/login
+      url: http://127.0.0.1:8085/api/login
       # Body of the request
       body: '{"name": "admin","pass": "0000"}'
       # Expire time of the token, time unit is second, allow template
       expire: '3600'
 #Override the global configurations
-application_conf: #Conf_key
-  incremental: true
-  url: http://localhost:9090/
+# application_conf: #Conf_key
+#   incremental: true
+#   url: http://localhost:9090/
