@@ -433,6 +433,8 @@ func (rs *RuleState) stop() error {
 	rs.triggered = 0
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
+		// de-reference old Topology in order to release data memory
+		rs.Topology = rs.Topology.NewTopoWithSucceededCtx()
 	}
 	rs.lastStopTimestamp = time.Now().UnixMilli()
 	rs.ActionCh <- ActionSignalStop
@@ -459,6 +461,8 @@ func (rs *RuleState) internalStop() error {
 	rs.triggered = 2
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
+		// de-reference old Topology in order to release data memory
+		rs.Topology = rs.Topology.NewTopoWithSucceededCtx()
 	}
 	rs.ActionCh <- ActionSignalStop
 	return nil

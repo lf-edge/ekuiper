@@ -57,9 +57,9 @@ func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
 		} else {
 			conf.Log.Errorf("runtime error: %v", err)
 		}
-		select {
-		case errCh <- err:
-		default:
-		}
+	}
+	select {
+	case errCh <- err:
+	default:
 	}
 }
