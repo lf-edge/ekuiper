@@ -1,4 +1,6 @@
 basic:
+  # debug | info | warn | error | fatal | panic
+  logLevel: info
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -24,6 +26,10 @@ basic:
   rotateTime: 24
   # Maximum file storage hours
   maxAge: 72
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
   # CLI ip
   ip: 0.0.0.0
   # CLI port
@@ -51,6 +57,8 @@ basic:
     # 0 indicates unlimited
     maxConnections: 0
   rulePatrolInterval: 10s
+  # cfgStorageType indicates the storage type to store the config, support "file","sqlite" and "fdb"
+  cfgStorageType: file
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
