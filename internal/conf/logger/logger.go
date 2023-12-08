@@ -44,9 +44,8 @@ func InitLogger() {
 	Log.AddHook(filenameHook)
 
 	Log.SetFormatter(&logrus.TextFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-		DisableColors:   true,
-		FullTimestamp:   true,
+		DisableColors: true,
+		FullTimestamp: true,
 	})
 	Log.Debugf("init with args %s", os.Args)
 	for _, arg := range os.Args {
