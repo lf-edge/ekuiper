@@ -24,6 +24,10 @@ basic:
     level: info
     # The syslog tag; Leave empty if no tag is used
     tag: kuiper
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -91,6 +95,38 @@ syslog:
 以上选项均为可选。若未设置网络和地址，则使用本地 syslog。若未设置级别，则默认值为 info。若未设置标签，则不使用标签。
 
 syslog 已经有自己的时间戳，可以通过将 `logDisableTimestamp` 设置为 true 来禁用日志消息中的时间戳。
+
+## 日志文件轮转
+
+如果 `fileLog` 设置为 `true`，日志将打印到日志文件中。日志文件轮转支持按大小或时间进行。
+
+### 按大小轮转
+
+以下设置用于控制按大小进行日志文件轮转：
+
+```yaml
+  # 最大文件大小（以字节为单位），如果设置了此项，将忽略 maxAge
+  rotateSize: 10485760 # 10 MB
+  # 最大日志文件数量
+  rotateCount: 3
+```
+
+如果 `rotateSize` 设置为正值，当日志文件的大小超过 `rotateSize` 时，将轮转日志文件。`rotateCount`
+用于控制保留的最大日志文件数量。如果 `rotateCount` 设置为 0，将禁用按大小轮转日志文件。
+
+### 按时间轮转
+
+这些设置用于控制按时间进行日志文件轮转：
+
+```yaml
+  # 分割文件的小时数
+  rotateTime: 24
+  # 最大文件存储小时数
+  maxAge: 72
+```
+
+如果 `rotateTime` 设置为正值，日志文件将每隔 `rotateTime` 小时进行轮转。`maxAge`
+用于控制保留日志文件的最大小时数。如果 `maxAge` 设置为 0，将禁用按时间轮转日志文件。
 
 ## 时区配置
 

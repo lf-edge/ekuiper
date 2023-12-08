@@ -28,6 +28,10 @@ basic:
     level: info
     # The syslog tag; Leave empty if no tag is used
     tag: kuiper
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -95,6 +99,41 @@ is not set, the default value is info. If the tag is not set, there will be no t
 
 Since syslog already has its own timestamp, the timestamp in the log can be disabled by setting `logDisableTimestamp` to
 true.
+
+## Log File Rotation
+
+If the fileLog is set to true, the log will be printed to the log file. The log file rotation is supported by either
+size or time.
+
+### Rotate by size
+
+These settings are used to control the log file rotation by size:
+
+```yaml
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
+```
+
+If the rotateSize is set to a positive value, the log file will be rotated when the size of the log file exceeds the
+rotateSize. The rotateCount is used to control the maximum number of log files to be kept. If the rotateCount is set to
+0, the log file rotation by size will be disabled.
+
+### Rotate by time
+
+These settings are used to control the log file rotation by time:
+
+```yaml
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
+```
+
+If the rotateTime is set to a positive value, the log file will be rotated every rotateTime hours. The maxAge is used to
+control the maximum number of hours to keep the log files. If the maxAge is set to 0, the log file rotation by time will
+be disabled.
 
 ## Timezone
 
