@@ -291,9 +291,9 @@ func getRuleStatus(name string) (string, error) {
 			metrics := "{"
 			metrics += `"status": "running",`
 			lastStart, lastStop, nextStart := rs.GetScheduleTimestamp()
-			metrics += fmt.Sprintf(`"lastStartTimestamp": "%v"`, lastStart)
-			metrics += fmt.Sprintf(`"lastStopTimestamp": "%v"`, lastStop)
-			metrics += fmt.Sprintf(`"nextStopTimestamp": "%v"`, nextStart)
+			metrics += fmt.Sprintf(`"lastStartTimestamp": "%v",`, lastStart)
+			metrics += fmt.Sprintf(`"lastStopTimestamp": "%v",`, lastStop)
+			metrics += fmt.Sprintf(`"nextStopTimestamp": "%v",`, nextStart)
 			for i, key := range keys {
 				value := values[i]
 				switch value.(type) {
