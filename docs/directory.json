@@ -212,6 +212,10 @@
                 {
                   "title": "RedisSub 数据源",
                   "path": "guide/sources/builtin/redisSub"
+                },
+                {
+                  "title": "模拟器数据源",
+                  "path": "guide/sources/builtin/simulator"
                 }
               ]
             },
@@ -494,6 +498,10 @@
         {
             "title": "动态重载配置",
             "path": "api/restapi/configs"
+        },
+        {
+          "title": "规则试运行",
+          "path": "api/restapi/ruletest"
         }
       ]
     },
@@ -920,6 +928,10 @@
                 {
                   "title": "RedisSub Source",
                   "path": "guide/sources/builtin/redisSub"
+                },
+                {
+                  "title": "Simulator Source",
+                  "path": "guide/sources/builtin/simulator"
                 }
               ]
             },
@@ -1199,6 +1211,10 @@
         {
           "title": "Dynamic Reload Configs",
           "path": "api/restapi/configs"
+        },
+        {
+          "title": "Rule Test",
+          "path": "api/restapi/ruletest"
         }
       ]
     },

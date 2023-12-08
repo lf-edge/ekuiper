@@ -24,6 +24,7 @@
 - [RedisSub source](./builtin/redisSub.md): 从 Redis 频道中订阅数据。
 - [File source](./builtin/file.md)：从文件中读取数据，通常用作表格。
 - [Memory source](./builtin/memory.md)：从 eKuiper 内存主题读取数据以形成规则管道。
+- [Simulator source](./builtin/simulator.md)：生成模拟数据，用于测试。
 
 ## 预定义的源插件
 
