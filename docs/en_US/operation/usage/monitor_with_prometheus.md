@@ -132,7 +132,7 @@ eKuiper is predefined in the Grafana panel to help users more clearly and intuit
 ```shell
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
-``
+
 ## Summary
 
 This article introduced the rule metrics in eKuiper and how to use Prometheus to monitor these metrics. Users can further explore more advanced features of Prometheus based on this to improve eKuiper's operation and maintenance.
