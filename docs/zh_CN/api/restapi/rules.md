@@ -143,6 +143,9 @@ GET http://localhost:9081/rules/{id}/status
 
 ```shell
 {
+    "lastStartTimestamp": 0,
+    "lastStopTimestamp":0,
+    "nextStartTimestamp":0,
     "source_demo_0_records_in_total":5,
     "source_demo_0_records_out_total":5,
     "source_demo_0_exceptions_total":0,
@@ -156,6 +159,17 @@ GET http://localhost:9081/rules/{id}/status
     "op_filter_0_process_latency_ms":0,
     "op_filter_0_buffer_length":0,
     "op_filter_0_last_invocation":"2020-01-02T11:28:33.054821",
+    ...
+}
+```
+
+其中，以下状态分别代表了规则上次启停的 unix 时间戳，当规则时周期性规则时，可以通过 `nextStartTimestamp` 查看规则下次启动的 unix 时间戳。
+
+```shell
+{
+    "lastStartTimestamp": 0,
+    "lastStopTimestamp":0,
+    "nextStartTimestamp":0,
     ...
 }
 ```
@@ -184,3 +198,11 @@ POST http://localhost:9081/rules/validate
 - 如果请求体不正确，将返回状态码 400，表示发送了一个无效的请求。
 - 如果规则验证未通过，将返回状态码 422，表示规则无效。
 - 如果规则通过验证，将返回状态码 200，表示规则有效且验证通过。
+
+## 查询规则计划
+
+该 API 用于查询 SQL 所转换的计划
+
+```shell
+GET  http://localhost:9081/rules/{id}/explain
+```

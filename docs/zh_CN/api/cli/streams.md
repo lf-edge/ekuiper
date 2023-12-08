@@ -57,7 +57,7 @@ my_stream
 该命令用于打印流的详细定义。
 
 ```shell
-describe stream $stream_name
+describe stream $stream_name | describe stream $stream_name -json
 ```
 
 示例：
@@ -73,6 +73,35 @@ score float
 FORMAT: json
 KEY: id
 DATASOURCE: topic/temperature
+```
+
+你可以通过 -json 来获取 json 格式的结果
+
+例子:
+
+```shell
+# bin/kuiper describe stream my_stream -json
+'{
+    "Fields": [
+        {
+            "Name": "id",
+            "Type": "bigint"
+        },
+        {
+            "Name": "name",
+            "Type": "string"
+        },
+        {
+            "Name": "score",
+            "Type": "float"
+        }
+    ],
+    "Options": {
+        "DATASOURCE:": "topic/temperature",
+        "FORMAT:": "json",
+        "KEY:": "id"
+    }
+}'
 ```
 
 ## 删除流
