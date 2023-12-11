@@ -25,6 +25,3 @@ default:
   ignoreStartLines: 0
   # How many lines to be ignored in the end. Notice that, empty line will be ignored and not be calculated.
   ignoreEndLines: 0
-
-test:
-  path: test

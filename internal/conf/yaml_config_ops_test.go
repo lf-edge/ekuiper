@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -120,11 +121,9 @@ func TestConfigKeys_CopyReadOnlyConfContent(t *testing.T) {
 		t.Error(err)
 	}
 	cf := make(map[string]map[string]interface{})
-	source := `{"default": {"qos": 1, "server": "tcp://127.0.0.1:1883"}, "demo_conf": {"qos": 0, "server": "tcp://10.211.55.6:1883"}}`
+	source := `{"default": {"qos": 1, "server": "tcp://127.0.0.1:1883","insecureSkipVerify":false, "protocolVersion":"3.1.1"}}`
 	_ = yaml.Unmarshal([]byte(source), &cf)
-	if !reflect.DeepEqual(cf, mqttCfg.CopyReadOnlyConfContent()) {
-		t.Errorf("CopyReadOnlyConfContent() fail")
-	}
+	assert.Equal(t, cf, mqttCfg.CopyReadOnlyConfContent())
 }
 
 func TestConfigKeys_GetConfKeys(t *testing.T) {
@@ -134,7 +133,7 @@ func TestConfigKeys_GetConfKeys(t *testing.T) {
 	}
 	keys := mqttCfg.GetConfKeys()
 	// currently only etcCfg, no dataCfg
-	source := []string{"default", "demo_conf"}
+	source := []string{"default"}
 	if keys == nil {
 		t.Errorf("Not Equal")
 	}
@@ -156,7 +155,7 @@ func TestConfigKeys_GetReadOnlyConfKeys(t *testing.T) {
 		t.Error(err)
 	}
 	keys := mqttCfg.GetReadOnlyConfKeys()
-	source := []string{"default", "demo_conf"}
+	source := []string{"default"}
 	if keys == nil {
 		t.Errorf("Not Equal")
 	}

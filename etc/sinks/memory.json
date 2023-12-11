@@ -55,11 +55,11 @@
       "type": "string",
       "hint": {
         "en_US": "Specify which field represents the key of the message. It is required when rowkindField is specified.",
-        "zh_CN": "指定哪个字段表示消息的key。当指定了动作字段时，该字段是必须的。"
+        "zh_CN": "指定哪个字段表示消息的 key。当指定了动作字段时，该字段是必须的。"
       },
       "label": {
         "en_US": "Key Field",
-        "zh_CN": "Key字段"
+        "zh_CN": "Key 字段"
       }
     }
   ],

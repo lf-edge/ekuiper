@@ -12,8 +12,8 @@
 			"zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/builtin/mqtt.html"
 		},
 		"description": {
-			"en_US": "eKuiper provides built-in support for MQTT source stream, which can subscribe the message from MQTT broker and feed into the eKuiper processing pipeline.",
-			"zh_CN": "eKuiper 为 MQTT 源流提供了内置支持，流可以订阅来自 MQTT 代理的消息并输入 eKuiper 处理管道。"
+			"en_US": "subscribe the message from MQTT broker and feed into the processing pipeline.",
+			"zh_CN": "订阅来自 MQTT 代理的消息并输入处理管道。"
 		}
 	},
 	"libs": [],
@@ -47,7 +47,7 @@
 		}, {
 			"name": "server",
 			"default": "tcp://127.0.0.1:1883",
-			"optional": true,
+			"optional": false,
 			"connection_related": true,
 			"control": "text",
 			"type": "string",
@@ -102,7 +102,7 @@
 			"type": "string",
 			"hint": {
 				"en_US": "MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4). If not specified, the default value is 3.1.",
-				"zh_CN": "MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。 "
+				"zh_CN": "MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 "
 			},
 			"label": {
 				"en_US": "MQTT Protocol Version",
@@ -135,7 +135,7 @@
 				"zh_CN": "默认订阅 QoS 级别"
 			},
 			"label": {
-				"en_US": "Qos level",
+				"en_US": "QoS level",
 				"zh_CN": "QoS 级别"
 			}
 		}, {
@@ -199,34 +199,6 @@
 				"zh_CN": "跳过证书验证"
 			}
 		}, {
-			"name": "kubeedgeVersion",
-			"default": "",
-			"optional": true,
-			"control": "text",
-			"type": "string",
-			"hint": {
-				"en_US": "Kubeedge version number. Different version numbers correspond to different file contents.",
-				"zh_CN": "Kubeedge 版本号，不同的版本号对应的文件内容不同"
-			},
-			"label": {
-				"en_US": "Kubeedge version",
-				"zh_CN": "Kubeedge 版本号"
-			}
-		}, {
-			"name": "kubeedgeModelFile",
-			"default": "",
-			"optional": true,
-			"control": "text",
-			"type": "string",
-			"hint": {
-				"en_US": "The name of KubeEdge template file. The file is located in the specified etc/sources folder.",
-				"zh_CN": "KubeEdge 模版文件名，文件指定放在 etc/sources 文件夹中"
-			},
-			"label": {
-				"en_US": "KubeEdge model file",
-				"zh_CN": "KubeEdge 模型文件"
-			}
-		}, {
 			"name": "decompression",
 			"default": "",
 			"optional": true,
@@ -239,8 +211,8 @@
 				"zstd"
 			],
 			"hint": {
-				"en_US": "Decompress the MQTT payload with the specified compression method.",
-				"zh_CN": "使用指定的压缩方法解压缩 MQTT Payload。"
+				"en_US": "Decompress the MQTT payload with the specified compression method. Leave blank to not decompress.",
+				"zh_CN": "使用指定的压缩方法解压缩 MQTT Payload，留空表示不解压缩。"
 			},
 			"label": {
 				"en_US": "Decompression",

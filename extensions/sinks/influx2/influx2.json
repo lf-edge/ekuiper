@@ -8,9 +8,9 @@
 			"website": "https://github.com/elpsyr"
 		},
 		"helpUrl": {
-          "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/influx2.html",
-          "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/influx2.html"
-        },
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/influx2.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/influx2.html"
+    },
 		"description": {
 			"en_US": "This a sink plugin for InfluxDB2, it can be used for saving the analysis data into InfluxDB V2.X .",
 			"zh_CN": "本插件为 InfluxDB2 的持久化插件，可以用于将分析数据存入 InfluxDB V2.X 中"
@@ -21,59 +21,17 @@
 	],
 	"properties": [{
 		"name": "addr",
-		"default": "http://192.168.100.245:8086",
+		"default": "http://127.0.0.1:8086",
 		"optional": false,
 		"control": "text",
 		"type": "string",
 		"hint": {
 			"en_US": "The addr of the InfluxDB",
-			"zh_CN": "InfluxDB的地址"
+			"zh_CN": "InfluxDB 的地址"
 		},
 		"label": {
 			"en_US": "Addr",
 			"zh_CN": "地址"
-		}
-	}, {
-		"name": "measurement",
-		"default": "test",
-		"optional": true,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "The measurement of the InfluxDB",
-			"zh_CN": "InfluxDB的测量"
-		},
-		"label": {
-			"en_US": "Measurement",
-			"zh_CN": "测量"
-		}
-	}, {
-		"name": "token",
-		"default": "",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "The InfluxDB api token",
-			"zh_CN": "InfluxDB 验证 api token"
-		},
-		"label": {
-			"en_US": "API Token",
-			"zh_CN": "API Token"
-		}
-	}, {
-		"name": "org",
-		"default": "",
-		"optional": false,
-		"control": "text",
-		"type": "string",
-		"hint": {
-			"en_US": "The InfluxDB org",
-			"zh_CN": "InfluxDB org"
-		},
-		"label": {
-			"en_US": "org",
-			"zh_CN": "组织"
 		}
 	}, {
 		"name": "bucket",
@@ -86,67 +44,196 @@
 			"zh_CN": "InfluxDB bucket"
 		},
 		"label": {
-			"en_US": "bucket",
-			"zh_CN": "桶"
+			"en_US": "Bucket",
+			"zh_CN": "Bucket"
 		}
 	}, {
-		"name": "precision",
-		"default": "ms",
-		"optional": true,
+		"name": "token",
+		"default": "",
+		"optional": false,
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "The time precision",
-			"zh_CN": "时间精度"
+			"en_US": "InfluxDB token",
+			"zh_CN": "InfluxDB token"
+		},
+		"label": {
+			"en_US": "Token",
+			"zh_CN": "Token"
+		}
+	}, {
+		"name": "org",
+		"default": "",
+		"optional": false,
+		"control": "text",
+		"type": "string",
+		"hint": {
+			"en_US": "InfluxDB org",
+			"zh_CN": "InfluxDB org"
+		},
+		"label": {
+			"en_US": "org",
+			"zh_CN": "组织"
+		}
+	}, {
+    "name": "certificationPath",
+    "default": "",
+    "optional": true,
+    "connection_related": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The location of certification path. It can be an absolute path, or a relative path.",
+      "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 server 命令的路径。"
+    },
+    "label": {
+      "en_US": "Certification path",
+      "zh_CN": "证书路径"
+    }
+  }, {
+    "name": "privateKeyPath",
+    "default": "",
+    "optional": true,
+    "connection_related": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The location of private key path. It can be an absolute path, or a relative path. ",
+      "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径。"
+    },
+    "label": {
+      "en_US": "Private key path",
+      "zh_CN": "私钥路径"
+    }
+  }, {
+    "name": "rootCaPath",
+    "default": "",
+    "optional": true,
+    "connection_related": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+      "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+    },
+    "label": {
+      "en_US": "Root CA path",
+      "zh_CN": "根证书路径"
+    }
+  }, {
+    "name": "insecureSkipVerify",
+    "default": false,
+    "optional": true,
+    "connection_related": true,
+    "control": "radio",
+    "type": "bool",
+    "hint": {
+      "en_US": "Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification.",
+      "zh_CN": "控制是否跳过证书认证。如果被设置为 true，那么跳过证书认证；否则进行证书验证。"
+    },
+    "label": {
+      "en_US": "Skip Certification verification",
+      "zh_CN": "跳过证书验证"
+    }
+  }, {
+		"name": "precision",
+		"default": "ms",
+		"optional": false,
+		"control": "select",
+		"type": "string",
+    "values": ["s", "ms", "us", "ns"],
+		"hint": {
+			"en_US": "The time precision, can be set to ns, us, ms, s. Default is ms.",
+			"zh_CN": "时间精度，可设置为 ns, us, ms, s。默认为 ms。"
 		},
 		"label": {
 			"en_US": "Precision",
 			"zh_CN": "时间精度"
 		}
-	},
-		{
-			"name": "useLineProtocol",
-			"default": "false",
-			"optional": true,
-			"control": "radio",
-			"type": "bool",
-			"hint": {
-				"en_US": "Use line protocol format or not",
-				"zh_CN": "是否使用行协议写入格式"
-			},
-			"label": {
-				"en_US": "Use Line Protocol",
-				"zh_CN": "使用行协议"
-			}
 	}, {
-			"name": "tags",
-			"default": "",
-			"optional": true,
+    "name": "useLineProtocol",
+    "default": false,
+    "optional": true,
+    "control": "radio",
+    "type": "bool",
+    "hint": {
+      "en_US": "If line protocol is set, the dataTemplate must format to the line protocol format.",
+      "zh_CN": "若使用行协议写入，设置数据模板属性时，其格式化结果应当按照行协议格式进行格式化。"
+    },
+    "label": {
+      "en_US": "Use Line Protocol",
+      "zh_CN": "使用行协议"
+    }
+  }, {
+		"name": "measurement",
+		"default": "",
+		"optional": false,
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "The tags map",
-			"zh_CN": "标签映射"
+			"en_US": "The measurement of the InfluxDB",
+			"zh_CN": "InfluxDB 的 measurement"
+		},
+		"label": {
+			"en_US": "Measurement",
+			"zh_CN": "Measurement"
+		}
+	}, {
+    "name": "tsFieldName",
+    "default": "",
+    "optional": true,
+    "control": "text",
+    "type": "string",
+    "hint": {
+      "en_US": "If set, the written timestamp will use the value of the field. For example, if the data has {\"ts\": 1888888888} and the tsFieldName is set to ts, then the value 1888888888 will be used when written to InfluxDB. Make sure the value is formatted according to the precision. If not set, the current timestamp will be used.",
+      "zh_CN": "若有设置，写入时的时间戳以该字段的值为准。例如，假设数据为 {\"ts\": 1888888888} 且 tsFieldName 属性设置为 ts，则 1888888888 将作为此条数据写入作为的时间戳。此时，需要确保时间戳的值的精度与 precision 的配置相同。 如果该属性未设置，则写入时采用当时的时间戳。"
+    },
+    "label": {
+      "en_US": "Timestamp Field Name",
+      "zh_CN": "时间戳字段名"
+    }
+  }, {
+    "name": "fields",
+    "default": [],
+    "optional": true,
+    "control": "list",
+    "type": "list_string",
+    "hint": {
+      "en_US": "Fields to be sent",
+      "zh_CN": "返回的数据字段。"
+    },
+    "label": {
+      "en_US": "Fields",
+      "zh_CN": "Fields"
+    }
+  }, {
+    "name": "tags",
+    "default": {},
+    "optional": true,
+		"control": "list",
+		"type": "object",
+		"hint": {
+			"en_US": "The tags to write, the format is like {\"tag1\":\"value1\"}. The value can be dataTemplate format, like {\"tag1\":\"{{.temperature}}\"}",
+			"zh_CN": "标签键值对，其格式为 {\"tag1\":\"value1\"}。其中，值可为数据模板格式，例如 {\"tag1\":\"{{.temperature}}\"}"
 		},
 		"label": {
 			"en_US": "Tags",
 			"zh_CN": "标签"
 		}
+	}, {
+    "name": "dataTemplate",
+    "default": "",
+    "optional": true,
+		"control": "textarea",
+		"type": "string",
+		"hint": {
+			"en_US": "The golang template format string to specify the output data format. The input of the template is the sink message which is always an array of map. If no data template is specified, the raw input will be the data.",
+      "zh_CN": "Golang 模板格式字符串，用于指定输出数据格式。 模板的输入是目标消息，该消息始终是 map 数组。 如果未指定数据模板，则将数据作为原始输入。"
 		},
-		{
-			"name": "tsFieldName",
-			"default": "",
-			"optional": true,
-			"control": "text",
-			"type": "string",
-			"hint": {
-				"en_US": "Timestamp Field Name",
-				"zh_CN": "时间戳字段名"
-			},
-			"label": {
-				"en_US": "Timestamp Field Name",
-				"zh_CN": "时间戳字段名"
-			}
+		"label": {
+			"en_US": "Data template",
+			"zh_CN": "数据模版"
+		}
 	}],
 	"node": {
 		"category": "sink",

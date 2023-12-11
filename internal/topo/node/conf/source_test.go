@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
 package conf
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -40,10 +41,12 @@ func TestGetSourceConf(t *testing.T) {
 				},
 			},
 			want: map[string]interface{}{
-				"qos":    1,
-				"server": "tcp://127.0.0.1:1883",
-				"format": "json",
-				"key":    "",
+				"server":             "tcp://127.0.0.1:1883",
+				"format":             "json",
+				"key":                "",
+				"insecureSkipVerify": false,
+				"protocolVersion":    "3.1.1",
+				"qos":                1,
 			},
 		},
 		{
@@ -55,18 +58,19 @@ func TestGetSourceConf(t *testing.T) {
 				},
 			},
 			want: map[string]interface{}{
-				"qos":    0,
-				"server": "tcp://10.211.55.6:1883",
-				"format": "json",
-				"key":    "",
+				"server":             "tcp://127.0.0.1:1883",
+				"format":             "json",
+				"key":                "",
+				"insecureSkipVerify": false,
+				"protocolVersion":    "3.1.1",
+				"qos":                1,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSourceConf(tt.args.sourceType, tt.args.options); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetSourceConf() = %v, want %v", got, tt.want)
-			}
+			got := GetSourceConf(tt.args.sourceType, tt.args.options)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

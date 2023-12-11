@@ -66,12 +66,12 @@
           "cache": {
             "name": "cache",
             "default": true,
-            "optional": false,
+            "optional": true,
             "control": "radio",
             "type": "bool",
             "hint": {
-              "en_US": "Whether to enable cache for lookup",
-              "zh_CN": "是否开启查询缓存"
+              "en_US": "Whether to enable cache",
+              "zh_CN": "是否启用缓存"
             },
             "label": {
               "en_US": "Enable lookup cache",
@@ -85,8 +85,8 @@
             "control": "text",
             "type": "int",
             "hint": {
-              "en_US": "Cache Time To Live",
-              "zh_CN": "缓存时间"
+              "en_US": "The time to live of the cache in seconds",
+              "zh_CN": "缓存的生存时间（s)"
             },
             "label": {
               "en_US": "Cache TTL",
@@ -96,12 +96,12 @@
           "cacheMissingKey": {
             "name": "cacheMissingKey",
             "default": true,
-            "optional": false,
+            "optional": true,
             "control": "radio",
             "type": "bool",
             "hint": {
-              "en_US": "Whether to cache missing lookup of null value",
-              "zh_CN": "是否缓存未命中的空值"
+              "en_US": "Whether to cache nil value for a key",
+              "zh_CN": "是否对空值进行缓存"
             },
             "label": {
               "en_US": "Cache missing key",
@@ -171,7 +171,7 @@
           },
           "limit": {
             "name": "limit",
-            "default": "",
+            "default": 10,
             "optional": true,
             "control": "text",
             "type": "int",
@@ -186,14 +186,14 @@
           },
           "indexFieldType": {
             "name": "indexFieldType",
-            "default": "",
+            "default": "STRING",
             "optional": true,
             "control": "select",
             "type": "string",
             "values": ["DATETIME", "INT", "FLOAT", "STRING"],
             "hint": {
-              "en_US": "is the index datetime type",
-              "zh_CN": "是否为时间格式"
+              "en_US": "Column type for the indexField",
+              "zh_CN": "索引字段的列类型"
             },
             "label": {
               "en_US": "Index Field Type",
@@ -234,12 +234,12 @@
           "TemplateSql": {
             "name": "TemplateSql",
             "default": "",
-            "optional": true,
-            "control": "text",
+            "optional": false,
+            "control": "textarea",
             "type": "string",
             "hint": {
-              "en_US": "query template",
-              "zh_CN": "查询语句模版"
+              "en_US": "SQL statement template",
+              "zh_CN": "SQL 语句模版"
             },
             "label": {
               "en_US": "Query template",
@@ -253,8 +253,8 @@
             "control": "text",
             "type": "string",
             "hint": {
-              "en_US": "index field",
-              "zh_CN": "索引字段名"
+              "en_US": "Which column for the table act as index to record the offset",
+              "zh_CN": "表的哪一列作为索引来记录偏移量"
             },
             "label": {
               "en_US": "Index Field",
@@ -268,8 +268,8 @@
             "control": "text",
             "type": "string",
             "hint": {
-              "en_US": "index init value",
-              "zh_CN": "索引字段初始值"
+              "en_US": "Initial index value",
+              "zh_CN": "初始索引值"
             },
             "label": {
               "en_US": "Index init value",
@@ -278,14 +278,14 @@
           },
           "indexFieldType":{
             "name": "indexFieldType",
-            "default": "",
+            "default": "STRING",
             "optional": true,
             "control": "select",
             "type": "string",
             "values": ["DATETIME", "INT", "FLOAT", "STRING"],
             "hint": {
-              "en_US": "is the index datetime type",
-              "zh_CN": "是否为时间格式"
+              "en_US": "Column type for the indexField",
+              "zh_CN": "索引字段的列类型"
             },
             "label": {
               "en_US": "Index Field Type",
@@ -299,8 +299,8 @@
             "control": "text",
             "type": "string",
             "hint": {
-              "en_US": "dateTimeFormat",
-              "zh_CN": "dateTimeFormat"
+              "en_US": "Data time format for the index field",
+              "zh_CN": "索引字段的时间格式"
             },
             "label": {
               "en_US": "DateTime Format",

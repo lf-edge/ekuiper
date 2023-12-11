@@ -12,8 +12,8 @@
       "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/builtin/log.html"
     },
     "description": {
-      "en_US": "The action is used for print output message into log file, the log file is at $ekuiper_install/log/stream.log by default.",
-      "zh_CN": "该操作用于将输出消息打印到日志文件中，默认情况下，该日志文件位于 $ekuiper_install/log/stream.log 中。"
+      "en_US": "The action is used for print output message into log file",
+      "zh_CN": "该操作用于将输出消息打印到日志文件中"
     }
   },
   "properties": [],
