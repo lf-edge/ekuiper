@@ -3,37 +3,15 @@ default:
   
 mysql_config:
   url: mysql://username:password@127.0.0.1:3306/testdb?parseTime=true
-  # lookup:
-  #   cache: true
-  #   cacheTtl: 600
-  #   cacheMissingKey: true
 
 postgresql_config:
   url: postgres://username:password@127.0.0.1:5432/testdb
-  # templateSqlQueryCfg:
-  #   TemplateSql: "select * from table where entry_date > '{{.entry_date}}'"
-  #   indexField: entry_date
-  #   indexValue: "2022-04-13 06:22:32.233"
-  #   indexFieldType: "DATETIME"
-  #   dateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS"
 
 sqlite_config:
   url: sqlite:/tmp/test.db
-  # lookup:
-  #   cache: true
-  #   cacheTtl: 600
-  #   cacheMissingKey: true
 
 sqlserver_config:
   url: sqlserver://username:password@127.0.0.1:1433/testdb
-  # internalSqlQueryCfg:
-  #   table: Student
-  #   limit: 10
-  #   indexField: id
-  #   indexValue: 1000
-#    indexFieldType: "DATETIME"
-#    dateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS"
-# select top 10 * from Student where id > 1010 order by id ASC
 
 oracle_config:
   url: oracle://username:password@127.0.0.1:1521/testdb

@@ -74,7 +74,3 @@ token_conf:
       body: '{"name": "admin","pass": "0000"}'
       # Expire time of the token, time unit is second, allow template
       expire: '3600'
-#Override the global configurations
-# application_conf: #Conf_key
-#   incremental: true
-#   url: http://localhost:9090/

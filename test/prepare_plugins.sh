@@ -96,7 +96,7 @@ else
 fi
 
 mv ../plugins/sources/Sql.so .
-cp ../extensions/sources/sql/sql.yaml .
+cp yaml_for_test/sql.yaml .
 cp ../extensions/sources/sql/sql.json .
 zip sqlSrc.zip Sql.so sql.yaml sql.json
 rm -rf Sql.so
