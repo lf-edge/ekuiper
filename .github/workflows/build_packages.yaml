@@ -123,6 +123,7 @@ jobs:
         run: |
           ver=$(git describe --tags --always)
           cd app
+          cp -r etc app
           fyne package -os android/arm64 -name kuiper-$ver -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true        
           mkdir -p ../_packages
           # The version name will be modified by fyne package, convert . and - to _
