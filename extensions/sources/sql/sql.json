@@ -282,7 +282,7 @@
             "optional": true,
             "control": "select",
             "type": "string",
-            "values": ["DATETIME", "INT", "FLOAT", "STRING"],
+            "values": ["DATETIME", "INT"],
             "hint": {
               "en_US": "Column type for the indexField",
               "zh_CN": "索引字段的列类型"
