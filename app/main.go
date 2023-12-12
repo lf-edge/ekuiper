@@ -45,7 +45,7 @@ var etc embed.FS
 var (
 	Version       = "unknown"
 	LoadFileType  = "absolute"
-	baseDirectory = "/storage/emulated/0/ekuiper/"
+	baseDirectory = ""
 )
 
 var lblMsg *widget.Label
@@ -168,6 +168,8 @@ func displayMessage(message string) {
 
 func main() {
 	application = app.NewWithID("github.com/lf-edge/eKuiper")
+
+	baseDirectory = application.Storage().RootURI().Path()
 
 	customMetadata := application.Metadata().Custom
 	if ver, exist := customMetadata["version"]; exist {
