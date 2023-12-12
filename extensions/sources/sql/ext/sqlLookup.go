@@ -144,9 +144,9 @@ func (g defaultSQLGen) buildQuery(fields []string, keys []string, values []inter
 	return query
 }
 
-type sqlServerSQLGen struct{ table string }
+type noQuoteSQLGen struct{ table string }
 
-func (g sqlServerSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
+func (g noQuoteSQLGen) buildQuery(fields []string, keys []string, values []interface{}) string {
 	query := "SELECT "
 	if len(fields) == 0 {
 		query += "*"
@@ -175,8 +175,8 @@ func (g sqlServerSQLGen) buildQuery(fields []string, keys []string, values []int
 
 func (s *sqlLookupSource) buildQuery(fields []string, keys []string, values []interface{}) string {
 	switch strings.ToLower(s.driver) {
-	case "sqlserver", "mssql":
-		return sqlServerSQLGen{table: s.table}.buildQuery(fields, keys, values)
+	case "sqlserver", "mssql", "postgres":
+		return noQuoteSQLGen{table: s.table}.buildQuery(fields, keys, values)
 	default:
 		return defaultSQLGen{table: s.table}.buildQuery(fields, keys, values)
 	}
