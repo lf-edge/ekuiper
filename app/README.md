@@ -21,3 +21,7 @@ If you need to support non-ascii characters, please follow these steps.
    ``` go
    application.Settings().SetTheme(&myTheme{})
    ```
+   
+## Notice
+
+The configuration files are now copied to `/storage/emulated/0/ekuiper/`. However, no all Android devices have this directory. If your target device does not support to read and write to this directory, please update `main.go` to change your base directory.
