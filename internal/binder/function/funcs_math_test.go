@@ -17,6 +17,7 @@ package function
 import (
 	"fmt"
 	"math"
+	"math/cmplx"
 	"reflect"
 	"testing"
 
@@ -133,6 +134,10 @@ func TestFuncMath(t *testing.T) {
 	if !ok {
 		t.Fatal("builtin not found")
 	}
+	fCot, ok := builtins["cot"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
@@ -172,6 +177,7 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(-10),
 				math.Floor(-10),
 				math.Pi,
+				real(cmplx.Cot(-10)),
 			},
 		}, { // 1
 			args: []interface{}{
@@ -204,6 +210,7 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(10),
 				math.Floor(10),
 				math.Pi,
+				real(cmplx.Cot(10)),
 			},
 		}, { // 2
 			args: []interface{}{
@@ -236,6 +243,7 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(-10.5),
 				math.Floor(-10.5),
 				math.Pi,
+				real(cmplx.Cot(-10.5)),
 			},
 		}, { // 3
 			args: []interface{}{
@@ -268,6 +276,7 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(10.5),
 				math.Floor(10.5),
 				math.Pi,
+				real(cmplx.Cot(10.5)),
 			},
 		}, { // 4
 			args: []interface{}{
@@ -300,6 +309,7 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(0),
 				float64(0),
 				math.Pi,
+				real(cmplx.Cot(0)),
 			},
 		},
 	}
@@ -407,6 +417,10 @@ func TestFuncMath(t *testing.T) {
 		rPi, _ := fPi.exec(fctx, tt.args)
 		if !reflect.DeepEqual(rPi, tt.res[25]) {
 			t.Errorf("%d.25 exp result mismatch,\ngot:\t%v \nwant:\t%v", i, rPi, tt.res[25])
+		}
+		rCot, _ := fCot.exec(fctx, tt.args)
+		if !reflect.DeepEqual(rCot, tt.res[26]) {
+			t.Errorf("%d.26 cot result mismatch,\ngot:\t%v \nwant:\t%v", i, rCot, tt.res[26])
 		}
 	}
 }

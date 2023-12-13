@@ -231,3 +231,11 @@ tanh(col)
 ```
 
 The hyperbolic tangent of a number.
+
+## COT
+
+```text
+cot(col)
+```
+
+Returns the cotangent of a number.

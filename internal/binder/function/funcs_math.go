@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/cmplx"
 	"math/rand"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -468,6 +469,23 @@ func registerMathFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
 				r := math.Tanh(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
+			} else {
+				return e, false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["cot"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				r := real(cmplx.Cot(complex(v, 0)))
 				if math.IsNaN(r) {
 					return nil, true
 				} else {
