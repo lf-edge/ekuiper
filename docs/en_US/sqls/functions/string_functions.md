@@ -189,3 +189,11 @@ upper(col)
 ```
 
 Returns the uppercase version of the given string.
+
+## FORMAT
+
+```text
+format(col,D)
+```
+
+Formats the number X to a format like '#######.##', rounded to D decimal places, and returns the result as a string.
