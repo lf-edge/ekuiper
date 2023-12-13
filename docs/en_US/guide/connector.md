@@ -36,6 +36,7 @@ For scenarios where custom data sources or specific third-party integrations are
 - [Video Source](./sources/plugin/video.md): A source to query video streams.
 - [Random source](./sources/plugin/random.md): A source to generate random data for testing.
 - [Zero MQ source](./sources/plugin/zmq.md): A source to read data from Zero MQ.
+- [Kafka source](./sources/plugin/kafka.md): A source to read data from Kafka
 
 ## Sink Connectors
 

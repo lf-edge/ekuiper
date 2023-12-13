@@ -36,6 +36,7 @@ eKuiper 内置以下数据源连接器：
 - [视频源](./sources/plugin/video.md)：用于查询视频流。
 - [Random 源](./sources/plugin/random.md)：用于生成随机数据的源，用于测试。
 - [Zero MQ 源](./sources/plugin/zmq.md)：从 Zero MQ 读取数据。
+- [Kafka 源](./sources/plugin/kafka.md): 从 Kafka 读取数据
 
 ## 数据 Sink 连接器
 
