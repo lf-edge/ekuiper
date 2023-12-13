@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -263,7 +264,7 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 		ro = append(ro, rotatelogs.WithLinkName(file))
 	}
 	logWriter, err := rotatelogs.New(
-		file+".%Y-%m-%d_%H-%M-%S",
+		file[:len(file)-len(filepath.Ext(file))]+".%Y-%m-%dT%H-%M-%S"+filepath.Ext(file),
 		ro...,
 	)
 
