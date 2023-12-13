@@ -26,6 +26,11 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
+const (
+	RadToDeg = 180 / math.Pi
+	DegToRad = math.Pi / 180
+)
+
 func registerMathFunc() {
 	builtins["abs"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -500,4 +505,46 @@ func registerMathFunc() {
 		val:   ValidateOneNumberArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["radians"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				r := radians(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
+			} else {
+				return e, false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["degrees"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				r := degrees(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
+			} else {
+				return e, false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+}
+
+func radians(degrees float64) float64 {
+	return degrees * (DegToRad)
+}
+
+func degrees(radians float64) float64 {
+	return radians * (RadToDeg)
 }

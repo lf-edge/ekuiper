@@ -237,3 +237,19 @@ cot(col)
 ```
 
 返回弧度数的余切值。
+
+## RADIANS
+
+```text
+radians(col)
+```
+
+从度转换为弧度
+
+## DEGREES
+
+```text
+degrees(col)
+```
+
+从弧度转换为度
