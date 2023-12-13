@@ -958,6 +958,10 @@
                 {
                   "title": "Random Source",
                   "path": "guide/sources/plugin/random"
+                },
+                {
+                  "title": "Kafka Source",
+                  "path": "guide/sources/plugin/kafka"
                 }
               ]
             }
