@@ -238,6 +238,10 @@
                 {
                   "title": "随机数据产生器源",
                   "path": "guide/sources/plugin/random"
+                },
+                {
+                  "title": "Kafka 数据源",
+                  "path": "guide/sources/plugin/kafka"
                 }
               ]
             }
@@ -954,6 +958,10 @@
                 {
                   "title": "Random Source",
                   "path": "guide/sources/plugin/random"
+                },
+                {
+                  "title": "Kafka Source",
+                  "path": "guide/sources/plugin/kafka"
                 }
               ]
             }

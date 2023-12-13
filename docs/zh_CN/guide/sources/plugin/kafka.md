@@ -1,5 +1,7 @@
 # Kafka 源
 
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+
 源将订阅 Kafka 消息源从而获取信息
 
 ## 默认构建命令

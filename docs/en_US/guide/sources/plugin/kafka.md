@@ -1,5 +1,7 @@
 # Kafka Source
 
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+
 The source will query the Kafka periodically to get data stream.
 
 ## Default build command
