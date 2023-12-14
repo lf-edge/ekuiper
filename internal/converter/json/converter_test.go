@@ -211,7 +211,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, false)
 		v, err := f.Decode(tc.payload)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
@@ -222,7 +222,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -296,7 +296,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					Type: "boolean",
 				},
 			},
-			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:boolean"),
+			err: fmt.Errorf("a has wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":true}`),
@@ -365,7 +365,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:boolean"),
+			err: fmt.Errorf("array has wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":[true]}`),
@@ -382,7 +382,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, false)
 		_, err := f.Decode(tc.payload)
 		require.Error(t, err)
 		require.Equal(t, err, tc.err)
@@ -392,7 +392,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 func TestFastJsonEncode(t *testing.T) {
 	a := make(map[string]int)
 	a["a"] = 1
-	f := NewFastJsonConverter(nil)
+	f := NewFastJsonConverter(nil, false)
 	v, err := f.Encode(a)
 	require.NoError(t, err)
 	require.Equal(t, v, []byte(`{"a":1}`))
@@ -424,7 +424,7 @@ func TestArrayWithArray(t *testing.T) {
 			},
 		},
 	}
-	f := NewFastJsonConverter(schema)
+	f := NewFastJsonConverter(schema, false)
 	v, err := f.Decode(payload)
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -604,7 +604,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -614,7 +614,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema)
+		f := NewFastJsonConverter(tc.schema, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -630,7 +630,7 @@ func TestConvertBytea(t *testing.T) {
 			Type: "bytea",
 		},
 	}
-	f := NewFastJsonConverter(schema)
+	f := NewFastJsonConverter(schema, false)
 	v, err := f.Decode([]byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -646,7 +646,7 @@ func TestConvertBytea(t *testing.T) {
 			},
 		},
 	}
-	f = NewFastJsonConverter(schema)
+	f = NewFastJsonConverter(schema, false)
 	v, err = f.Decode([]byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
