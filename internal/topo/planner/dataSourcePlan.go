@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
@@ -135,6 +136,10 @@ func (p *DataSourcePlan) extract(expr ast.Expr) (ast.Expr, ast.Expr) {
 }
 
 func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
+	for _, field := range fields {
+		conf.Log.Infof("PruneColumns before, datasource:%v, field:%v", p.name, field.String())
+	}
+
 	// init values
 	err := p.getProps()
 	if err != nil {
@@ -206,6 +211,9 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 		}
 	}
 	p.getAllFields()
+	for key := range p.streamFields {
+		conf.Log.Infof("PruneColumns after, datasource:%v, name:%v", p.name, key)
+	}
 	return nil
 }
 

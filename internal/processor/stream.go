@@ -105,6 +105,8 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 		var r string
 		r, err = p.execDrop(s, ast.TypeStream)
 		result = append(result, r)
+		r = fmt.Sprintf("stream %s is dropped.", s.Name)
+		log.Printf("%s", r)
 	case *ast.DropTableStatement:
 		var r string
 		r, err = p.execDrop(s, ast.TypeTable)

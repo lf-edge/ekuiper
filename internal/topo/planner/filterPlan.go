@@ -15,6 +15,7 @@
 package planner
 
 import (
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -71,6 +72,7 @@ func (p *FilterPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 }
 
 func (p *FilterPlan) PruneColumns(fields []ast.Expr) error {
+	conf.Log.Infof("filter PruneColumns, condition:%v", p.condition.String())
 	f := getFields(p.condition)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }

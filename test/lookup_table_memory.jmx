@@ -181,7 +181,7 @@
         &quot;topic&quot;: &quot;alertVal&quot;,&#xd;
         &quot;sendSingle&quot;: true&#xd;
       }&#xd;
-    }&#xd;
+    },{ &quot;log&quot;:{} }&#xd;
   ]&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
@@ -305,7 +305,7 @@
         &quot;topic&quot;: &quot;rule/alert&quot;,&#xd;
         &quot;sendSingle&quot;: true&#xd;
       }&#xd;
-    }&#xd;
+    },{ &quot;log&quot;:{} }&#xd;
   ]&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>

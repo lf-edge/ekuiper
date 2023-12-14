@@ -14,7 +14,10 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 type JoinPlan struct {
 	baseLogicalPlan
@@ -92,6 +95,9 @@ func extractCondition(condition ast.Expr) (unpushable ast.Expr, pushable ast.Exp
 }
 
 func (p *JoinPlan) PruneColumns(fields []ast.Expr) error {
+	for _, j := range p.joins {
+		conf.Log.Infof("join PruneColumns, join:%v", j.Expr.String())
+	}
 	f := getFields(p.joins)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }

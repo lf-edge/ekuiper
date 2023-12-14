@@ -14,7 +14,10 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 func getRefSources(node ast.Node) ([]ast.StreamName, bool) {
 	result := make(map[ast.StreamName]bool)
@@ -60,6 +63,7 @@ func getFields(node ast.Node) []ast.Expr {
 	ast.WalkFunc(node, func(n ast.Node) bool {
 		switch t := n.(type) {
 		case *ast.FieldRef:
+			conf.Log.Infof("getFields fieldRef, field:%v, isColumn:%v", t.String(), t.IsColumn())
 			if t.IsColumn() {
 				result = append(result, t)
 			}
@@ -74,5 +78,9 @@ func getFields(node ast.Node) []ast.Expr {
 		}
 		return true
 	})
+
+	for _, r := range result {
+		conf.Log.Infof("getFields after, field:%v", r.String())
+	}
 	return result
 }

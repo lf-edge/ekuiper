@@ -5,7 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  workflow_call:
+  pull_request:
 
 env:
   DEBIAN_FRONTEND: noninteractive
@@ -90,7 +90,7 @@ jobs:
         ./test/setup_env.sh
         ./test/prepare_plugins.sh
     - name: run fvt tests
-      timeout-minutes: 12
+      timeout-minutes: 2
       run: ./test/run_jmeter.sh with_edgex=true
     - uses: actions/upload-artifact@v3
       if: always()

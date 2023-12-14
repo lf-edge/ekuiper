@@ -20,6 +20,7 @@ import (
 
 	"github.com/valyala/fastjson"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
@@ -64,7 +65,14 @@ func (c *FastJsonConverter) Decode(b []byte) (interface{}, error) {
 	return c.decodeWithSchema(b, c.schema)
 }
 
-func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
+func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (m interface{}, err error) {
+	defer func() {
+		if err != nil {
+			conf.Log.Infof("decodeWithSchema,json:%v, schema:%v,err:%v", string(b), schema, err)
+		} else {
+			conf.Log.Infof("decodeWithSchema,json:%v, schema:%v,map:%v", string(b), schema, m)
+		}
+	}()
 	var p fastjson.Parser
 	v, err := p.ParseBytes(b)
 	if err != nil {
@@ -183,7 +191,7 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				if err != nil {
 					return nil, err
 				}
-				childMap, err := f.decodeObject(childObj, schema[key].Properties)
+				childMap, err := f.decodeObject(childObj, field.Properties)
 				if err != nil {
 					return nil, err
 				}
@@ -197,7 +205,11 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				if err != nil {
 					return nil, err
 				}
-				subList, err := f.decodeArray(childArray, schema[key].Items)
+				var items *ast.JsonStreamField
+				if field != nil {
+					items = field.Items
+				}
+				subList, err := f.decodeArray(childArray, items)
 				if err != nil {
 					return nil, err
 				}
@@ -255,6 +267,7 @@ func extractNumberValue(name string, v *fastjson.Value, field *ast.JsonStreamFie
 		}
 		return bv, nil
 	default:
+		conf.Log.Infof("%v has wrong type:%v, expect:%v", name, fastjson.TypeNumber.String(), field.Type)
 		return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, fastjson.TypeNumber.String(), field.Type)
 	}
 }
@@ -276,6 +289,7 @@ func extractStringValue(name string, v *fastjson.Value, field *ast.JsonStreamFie
 	case field.Type == "boolean":
 		return getBooleanFromValue(v)
 	default:
+		conf.Log.Infof("%v has wrong type:%v, expect:%v", name, fastjson.TypeString.String(), field.Type)
 		return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, fastjson.TypeString.String(), field.Type)
 	}
 }

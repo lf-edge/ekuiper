@@ -17,6 +17,7 @@ package planner
 import (
 	"strconv"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -95,6 +96,9 @@ func (p *ProjectPlan) BuildExplainInfo() {
 }
 
 func (p *ProjectPlan) PruneColumns(fields []ast.Expr) error {
+	for _, field := range fields {
+		conf.Log.Infof("proj PruneColumns, field:%v", field.String())
+	}
 	f := getFields(p.fields)
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }
