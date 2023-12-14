@@ -208,6 +208,9 @@ type KuiperConf struct {
 		Sqlite struct {
 			Name string `yaml:"name"`
 		}
+		Fdb struct {
+			Path string `yaml:"path"`
+		}
 	}
 	Portable struct {
 		PythonBin   string `yaml:"pythonBin"`
