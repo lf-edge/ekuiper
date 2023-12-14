@@ -351,6 +351,7 @@ go get github.com/apple/foundationdb/bindings/go@6.2.0
 
 * Execute `make build_with_fdb` to compile kuiperd
 * Modify the configuration as follows:
+
 ```yaml
     store:
       #Type of store that will be used for keeping state of the application

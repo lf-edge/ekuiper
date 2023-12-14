@@ -338,6 +338,7 @@ go get github.com/apple/foundationdb/bindings/go@6.2.0
 
 * 执行 `make build_with_fdb` 编译 kuiperd
 * 在配置中按照如下修改:
+
 ```yaml
     store:
       #Type of store that will be used for keeping state of the application
