@@ -296,7 +296,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					Type: "boolean",
 				},
 			},
-			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:boolean"),
+			err: fmt.Errorf("a has wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":true}`),
@@ -365,7 +365,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:boolean"),
+			err: fmt.Errorf("array has wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":[true]}`),
