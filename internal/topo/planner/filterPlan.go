@@ -74,6 +74,9 @@ func (p *FilterPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 func (p *FilterPlan) PruneColumns(fields []ast.Expr) error {
 	conf.Log.Infof("filter PruneColumns, condition:%v", p.condition.String())
 	f := getFields(p.condition)
+	for _, field := range append(fields, f...) {
+		conf.Log.Infof("after filer pruneColumns, field:%v", field.String())
+	}
 	return p.baseLogicalPlan.PruneColumns(append(fields, f...))
 }
 

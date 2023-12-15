@@ -96,9 +96,9 @@ func (p *ProjectPlan) BuildExplainInfo() {
 }
 
 func (p *ProjectPlan) PruneColumns(fields []ast.Expr) error {
-	conf.Log.Infof("proj PruneColumns len:%v", len(fields))
-	for _, field := range fields {
-		conf.Log.Infof("proj PruneColumns, field:%v", field.String())
+	conf.Log.Infof("proj PruneColumns len:%v", len(p.fields))
+	for _, field := range p.fields {
+		conf.Log.Infof("proj PruneColumns, field:%v", field.Expr.String())
 	}
 	f := getFields(p.fields)
 	for _, field := range append(fields, f...) {

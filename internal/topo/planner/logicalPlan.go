@@ -17,6 +17,7 @@ package planner
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/lf-edge/ekuiper/internal/conf"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -119,6 +120,7 @@ func (p *baseLogicalPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, Logic
 
 func (p *baseLogicalPlan) PruneColumns(fields []ast.Expr) error {
 	for _, child := range p.children {
+		conf.Log.Infof("after %v pruning,next child prune:%v", p.self.Type(), child.Type())
 		err := child.PruneColumns(fields)
 		if err != nil {
 			return err
