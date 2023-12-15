@@ -51,7 +51,8 @@ func HiddenPassword(kvs map[string]interface{}) map[string]interface{} {
 			password, _ := u.User.Password()
 			if password != "" {
 				u.User = url.UserPassword(u.User.Username(), PASSWORD)
-				kvs[k] = u.String()
+				n, _ := url.QueryUnescape(u.String())
+				kvs[k] = n
 			}
 		}
 	}

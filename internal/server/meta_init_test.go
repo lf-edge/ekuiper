@@ -205,7 +205,7 @@ func (suite *MetaTestSuite) TestHiddenPassword() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	assert.Equal(suite.T(), bytes.NewBufferString(`{"test":{"password":"******","token":"******","url":"sqlserver://username:%2A%2A%2A%2A%2A%2A@140.210.204.147/testdb"}}`), w.Body)
+	assert.Equal(suite.T(), bytes.NewBufferString(`{"test":{"password":"******","token":"******","url":"sqlserver://username:******@140.210.204.147/testdb"}}`), w.Body)
 
 	os.Remove(path.Join(DataDir, "connections", "connection.yaml"))
 	os.Remove(path.Join(DataDir, "connections"))
