@@ -234,7 +234,7 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 			p.fields = append(p.fields, k)
 		}
 	}
-	joinFields := getFields(p.joinExpr)
+	joinFields := getFields(p.joinExpr.Expr)
 	for _, field := range joinFields {
 		conf.Log.Infof("lookup join expr field:%v", field.String())
 	}
