@@ -75,6 +75,15 @@ func getFields(node ast.Node) []ast.Expr {
 			}
 		case *ast.SortField:
 			result = append(result, t)
+		case *ast.BinaryExpr:
+			if t.OP == ast.ARROW {
+				hasMeta := false
+				result, hasMeta = getFieldRef(n, result)
+				if !hasMeta {
+					result = append(result, t)
+				}
+				return hasMeta
+			}
 		}
 		return true
 	})
@@ -83,4 +92,21 @@ func getFields(node ast.Node) []ast.Expr {
 		conf.Log.Infof("getFields after, field:%v", r.String())
 	}
 	return result
+}
+
+func getFieldRef(node ast.Node, result []ast.Expr) ([]ast.Expr, bool) {
+	hasMeta := false
+	ast.WalkFunc(node, func(n ast.Node) bool {
+		switch t := n.(type) {
+		case *ast.FieldRef:
+			if t.IsColumn() {
+				result = append(result, t)
+			}
+		case *ast.MetaRef:
+			hasMeta = true
+			return false
+		}
+		return true
+	})
+	return result, hasMeta
 }
