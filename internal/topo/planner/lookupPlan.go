@@ -15,6 +15,7 @@
 package planner
 
 import (
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/modern-go/reflect2"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -195,6 +196,10 @@ func flatConditions(condition ast.Expr) ([]*ast.BinaryExpr, []ast.Expr) {
 }
 
 func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
+	for _, field := range fields {
+		conf.Log.Infof("before lookup plan prune,field:%v", field.String())
+	}
+
 	newFields := make([]ast.Expr, 0, len(fields))
 	isWildcard := false
 	strName := p.joinExpr.Name
@@ -210,6 +215,7 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 				} else {
 					fieldMap[f.Name] = struct{}{}
 				}
+				conf.Log.Infof("lookup plan PruneColumns, skip field:%v", f.String())
 				continue
 			}
 		case *ast.SortField:

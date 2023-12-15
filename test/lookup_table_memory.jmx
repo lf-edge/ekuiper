@@ -297,7 +297,7 @@
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
   &quot;id&quot;: &quot;ruleAlert&quot;,&#xd;
-  &quot;sql&quot;:&quot;SELECT device, value FROM demoStream INNER JOIN alertTable ON demoStream.deviceKind = alertTable.memKey WHERE demoStream.value &gt; alertTable.alarm&quot;,&#xd;
+  &quot;sql&quot;:&quot;SELECT demoStream.device, demoStream.value FROM demoStream INNER JOIN alertTable ON demoStream.deviceKind = alertTable.memKey WHERE demoStream.value &gt; alertTable.alarm&quot;,&#xd;
   &quot;actions&quot;:[&#xd;
     {&#xd;
       &quot;mqtt&quot;: {&#xd;
