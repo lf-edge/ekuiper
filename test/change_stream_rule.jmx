@@ -181,7 +181,7 @@
         &quot;qos&quot;: 1,&#xd;
         &quot;clientId&quot;: &quot;demo_001&quot;&#xd;
       }&#xd;
-    }&#xd;
+    },{ &quot;log&quot;:{} }&#xd;
   ]&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>

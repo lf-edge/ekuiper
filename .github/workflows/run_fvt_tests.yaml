@@ -5,7 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  workflow_call:
+  pull_request:
 
 env:
   DEBIAN_FRONTEND: noninteractive
