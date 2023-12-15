@@ -15,8 +15,9 @@
 package planner
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/modern-go/reflect2"
+
+	"github.com/lf-edge/ekuiper/internal/conf"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -199,6 +200,7 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 	for _, field := range fields {
 		conf.Log.Infof("before lookup plan prune,field:%v", field.String())
 	}
+	conf.Log.Infof("lookup join expr:%v", p.joinExpr.Expr.String())
 
 	newFields := make([]ast.Expr, 0, len(fields))
 	isWildcard := false
@@ -232,5 +234,9 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 			p.fields = append(p.fields, k)
 		}
 	}
-	return p.baseLogicalPlan.PruneColumns(newFields)
+	joinFields := getFields(p.joinExpr)
+	for _, field := range joinFields {
+		conf.Log.Infof("lookup join expr field:%v", field.String())
+	}
+	return p.baseLogicalPlan.PruneColumns(append(newFields, joinFields...))
 }
