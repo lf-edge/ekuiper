@@ -77,10 +77,16 @@ func Test_createLogicalPlan(t *testing.T) {
 					value STRING,
 					hum BIGINT
 				) WITH (TYPE="file");`,
+		"src3": `CREATE STREAM src3 (
+					a struct(b struct(c bigint,d bigint),e bigint),
+					a1 struct(b struct(c bigint,d bigint),e bigint),
+                    a2 bigint
+				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
 	}
 	types := map[string]ast.StreamType{
 		"src1":           ast.TypeStream,
 		"src2":           ast.TypeStream,
+		"src3":           ast.TypeStream,
 		"tableInPlanner": ast.TypeTable,
 	}
 	for name, sql := range streamSqls {
@@ -135,11 +141,107 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 	tableHumRef.SetRefSource([]string{"tableInPlanner"})
 
+	arrowCRef := &ast.AliasRef{
+		Expression: &ast.BinaryExpr{
+			OP: ast.ARROW,
+			LHS: &ast.BinaryExpr{
+				OP: ast.ARROW,
+				LHS: &ast.FieldRef{
+					StreamName: "src3",
+					Name:       "a",
+				},
+				RHS: &ast.JsonFieldRef{
+					Name: "b",
+				},
+			},
+			RHS: &ast.JsonFieldRef{
+				Name: "c",
+			},
+		},
+	}
+	arrowCRef.SetRefSource([]string{"src3"})
+	arrowPRef := &ast.AliasRef{
+		Expression: &ast.BinaryExpr{
+			OP: ast.ARROW,
+			LHS: &ast.FieldRef{
+				StreamName: "src3",
+				Name:       "a",
+			},
+			RHS: &ast.JsonFieldRef{
+				Name: "e",
+			},
+		},
+	}
+	arrowPRef.SetRefSource([]string{"src3"})
 	tests := []struct {
 		sql string
 		p   LogicalPlan
 		err string
 	}{
+		{
+			sql: "select a.b.c as c, a.e as e, a2 from src3",
+			p: ProjectPlan{
+				baseLogicalPlan: baseLogicalPlan{
+					children: []LogicalPlan{
+						DataSourcePlan{
+							baseLogicalPlan: baseLogicalPlan{},
+							name:            "src3",
+							streamFields: map[string]*ast.JsonStreamField{
+								"a": {
+									Type: "struct",
+									Properties: map[string]*ast.JsonStreamField{
+										"b": {
+											Type: "struct",
+											Properties: map[string]*ast.JsonStreamField{
+												"c": {
+													Type: "bigint",
+												},
+											},
+										},
+										"e": {
+											Type: "bigint",
+										},
+									},
+								},
+								"a2": {
+									Type: "bigint",
+								},
+							},
+							streamStmt:  streams["src3"],
+							metaFields:  []string{},
+							pruneFields: []string{},
+						}.Init(),
+					},
+				},
+				fields: []ast.Field{
+					{
+						Name:  "",
+						AName: "c",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "c",
+							AliasRef:   arrowCRef,
+						},
+					},
+					{
+						Name:  "e",
+						AName: "e",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "e",
+							AliasRef:   arrowPRef,
+						},
+					},
+					{
+						Name: "a2",
+						Expr: &ast.FieldRef{
+							StreamName: "src3",
+							Name:       "a2",
+						},
+					},
+				},
+			}.Init(),
+		},
 		{
 			sql: "select src2.hum as hum, tableInPlanner.hum as hum2 from src2 left join tableInPlanner on src2.hum = tableInPlanner.hum",
 			p: ProjectPlan{
