@@ -200,7 +200,7 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 	for _, field := range fields {
 		conf.Log.Infof("before lookup plan prune,field:%v", field.String())
 	}
-	conf.Log.Infof("lookup join expr:%v", p.joinExpr.Expr.String())
+	conf.Log.Infof("lookup join expr:%v,name:%v", p.joinExpr.Expr.String(), p.joinExpr.Name)
 
 	newFields := make([]ast.Expr, 0, len(fields))
 	isWildcard := false
