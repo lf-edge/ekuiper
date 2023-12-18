@@ -50,7 +50,7 @@
 	}, {
 		"name": "username",
 		"default": "",
-		"optional": false,
+		"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {
@@ -64,7 +64,7 @@
 	}, {
 		"name": "password",
 		"default": "",
-		"optional": false,
+		"optional": true,
 		"control": "text",
 		"type": "string",
 		"hint": {

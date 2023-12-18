@@ -24,8 +24,8 @@
         "control": "radio",
         "type": "bool",
         "hint": {
-          "en_US": "If set to true, multiple pieces of json data defined in data will be sent in a loop.",
-          "zh_CN": "如果设置为 true，则会循环发送 data 中定义的多条 json 数据。"
+          "en_US": "If set to true, multiple pieces of json data defined in messages will be sent in a loop.",
+          "zh_CN": "如果设置为 true，则会循环发送消息内容中定义的多条 json 数据。"
         },
         "label": {
           "en_US": "Loop",
@@ -54,8 +54,8 @@
         "control": "textarea",
         "type": "string",
         "hint": {
-          "en_US": "Customize json format message content and support defining multiple json messages.",
-          "zh_CN": "自定义 json 格式消息内容，支持定义多条 json 消息。"
+          "en_US": "Customize json format message content and support defining multiple json messages. For example, a single piece of json data [{\"a\": 1}], multiple pieces of json data [{\"a\": 1}, {\"b\": 1}].",
+          "zh_CN": "自定义 json 格式消息内容，支持定义多条 json 消息。如单条 json 数据 [{\"a\": 1}]，多条 json 数据 [{\"a\": 1}, {\"b\": 1}]。"
         },
         "label": {
           "en_US": "Messages",
