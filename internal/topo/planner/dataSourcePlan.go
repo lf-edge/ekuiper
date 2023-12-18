@@ -210,7 +210,7 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 				}
 			}
 		case *ast.FieldRef:
-			if !p.isWildCard && (f.StreamName == ast.DefaultStream || f.StreamName == p.name) {
+			if f.StreamName == ast.DefaultStream || f.StreamName == p.name {
 				if _, ok := p.fields[f.Name]; !ok {
 					sf, err := p.getField(f.Name, f.StreamName == p.name)
 					if err != nil {
@@ -363,6 +363,10 @@ func (p *DataSourcePlan) getAllFields() {
 					delete(p.streamFields, pf)
 				}
 			}
+		}
+	} else {
+		for name, fr := range p.fields {
+			p.streamFields[name] = fr
 		}
 	}
 	p.metaFields = make([]string, 0, len(p.metaMap))

@@ -2729,7 +2729,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			SendError:          true,
 		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
+			t.Errorf("%d. %v: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else {
 			assert.Equal(t, tt.p, p, "plan mismatch")
 		}
@@ -3034,9 +3034,11 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													baseLogicalPlan: baseLogicalPlan{
 														children: []LogicalPlan{
 															DataSourcePlan{
-																name:         "src1",
-																isWildCard:   true,
-																streamFields: map[string]*ast.JsonStreamField{},
+																name:       "src1",
+																isWildCard: true,
+																streamFields: map[string]*ast.JsonStreamField{
+																	"temp": nil,
+																},
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
 																isSchemaless: true,
@@ -4127,7 +4129,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else if !reflect.DeepEqual(tt.p, p) {
-			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
+			t.Errorf("%d. %v\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
 		}
 	}
 }
@@ -4189,7 +4191,8 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 										baseLogicalPlan: baseLogicalPlan{},
 										name:            "src1",
 										streamFields: map[string]*ast.JsonStreamField{
-											"a": nil,
+											"a":  nil,
+											"id": nil,
 										},
 										isSchemaless: true,
 										streamStmt:   streams["src1"],
@@ -4271,7 +4274,9 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
 																streamFields: map[string]*ast.JsonStreamField{
-																	"a": nil,
+																	"a":  nil,
+																	"c":  nil,
+																	"id": nil,
 																},
 																isSchemaless: true,
 																streamStmt:   streams["src1"],
@@ -4411,7 +4416,8 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 													baseLogicalPlan: baseLogicalPlan{},
 													name:            "src1",
 													streamFields: map[string]*ast.JsonStreamField{
-														"a": nil,
+														"a":  nil,
+														"id": nil,
 													},
 													isSchemaless: true,
 													streamStmt:   streams["src1"],
@@ -4437,7 +4443,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 											},
 										},
 										keys:   []string{"id"},
-										fields: []string{"b"},
+										fields: []string{"b", "id"},
 										valvars: []ast.Expr{
 											&ast.FieldRef{
 												StreamName: "src1",
@@ -4533,11 +4539,13 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
 																streamStmt:      streams["src1"],
-																streamFields:    map[string]*ast.JsonStreamField{},
-																metaFields:      []string{},
-																isWildCard:      true,
-																isSchemaless:    true,
-																pruneFields:     []string{},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id": nil,
+																},
+																metaFields:   []string{},
+																isWildCard:   true,
+																isSchemaless: true,
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
@@ -4622,11 +4630,13 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
 																streamStmt:      streams["src1"],
-																streamFields:    map[string]*ast.JsonStreamField{},
-																metaFields:      []string{},
-																isWildCard:      true,
-																isSchemaless:    true,
-																pruneFields:     []string{},
+																streamFields: map[string]*ast.JsonStreamField{
+																	"id": nil,
+																},
+																metaFields:   []string{},
+																isWildCard:   true,
+																isSchemaless: true,
+																pruneFields:  []string{},
 															}.Init(),
 														},
 													},
