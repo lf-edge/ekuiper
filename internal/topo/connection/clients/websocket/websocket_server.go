@@ -108,11 +108,9 @@ func (wsw *websocketServerConnWrapper) Release(c api.StreamContext) bool {
 }
 
 func (wsw *websocketServerConnWrapper) Publish(c api.StreamContext, topic string, message []byte, params map[string]interface{}) error {
-	m := make(map[string]interface{})
-	if err := json.Unmarshal(message, &m); err != nil {
-		return err
-	}
-	pubsub.Produce(c, wsw.sendTopic, m)
+	pubsub.Produce(c, wsw.sendTopic, map[string]interface{}{
+		httpserver.WebsocketServerDataKey: message,
+	})
 	return nil
 }
 

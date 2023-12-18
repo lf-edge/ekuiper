@@ -49,8 +49,9 @@ var (
 )
 
 const (
-	TopicPrefix          = "$$httppush/"
-	WebsocketTopicPrefix = "$$websocket/"
+	TopicPrefix            = "$$httppush/"
+	WebsocketTopicPrefix   = "$$websocket/"
+	WebsocketServerDataKey = "$$websocket/server/data"
 )
 
 type websocketContext struct {
@@ -209,8 +210,10 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 		case <-ctx.Done():
 			return
 		case data := <-subCh:
-			bs, err := json.Marshal(data.Message())
-			if err != nil {
+			bsV := data.Message()[WebsocketServerDataKey]
+			bs, ok := bsV.([]byte)
+			if !ok {
+				conf.Log.Warnf("%v should send bytes", WebsocketServerDataKey)
 				continue
 			}
 			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
