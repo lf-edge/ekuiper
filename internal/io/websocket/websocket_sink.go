@@ -25,11 +25,14 @@ import (
 type WebSocketSink struct {
 	cli   api.MessageClient
 	props map[string]interface{}
+	conf  *WebsocketConf
 }
 
 type WebsocketConf struct {
 	Path string `json:"path"`
 	Addr string `json:"addr"`
+	// TODO: move this as a common config for all sinks
+	SendError bool `json:"sendError"`
 }
 
 func (c *WebsocketConf) validateSinkConf() error {
@@ -58,15 +61,23 @@ func (wss *WebSocketSink) Configure(props map[string]interface{}) error {
 	if err := c.validateSinkConf(); err != nil {
 		return err
 	}
+	wss.conf = c
 	return nil
 }
 
 func (wss *WebSocketSink) Collect(ctx api.StreamContext, data interface{}) error {
 	decodeBytes, _, err := ctx.TransformOutput(data)
 	if err != nil {
+		if wss.conf.SendError {
+			_ = wss.cli.Publish(ctx, "", []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())), nil)
+		}
 		return err
 	}
-	return wss.cli.Publish(ctx, "", decodeBytes, nil)
+	err = wss.cli.Publish(ctx, "", decodeBytes, nil)
+	if err != nil && wss.conf.SendError {
+		_ = wss.cli.Publish(ctx, "", []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())), nil)
+	}
+	return err
 }
 
 func (wss *WebSocketSink) Close(ctx api.StreamContext) error {
