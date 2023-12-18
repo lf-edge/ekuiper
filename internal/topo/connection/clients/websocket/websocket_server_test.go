@@ -32,7 +32,7 @@ import (
 
 var (
 	serverRecvCh chan map[string]interface{}
-	serverPubCh  chan map[string]interface{}
+	serverPubCh  chan []byte
 )
 
 func TestWebsocketServerConn(t *testing.T) {
@@ -61,7 +61,7 @@ func TestWebsocketServerConn(t *testing.T) {
 	require.NoError(t, err)
 
 	serverRecvCh = make(chan map[string]interface{})
-	serverPubCh = make(chan map[string]interface{})
+	serverPubCh = make(chan []byte)
 	cli, err := newWebsocketServerConnWrapper(&WebSocketConnectionConfig{Path: "/ws3", CheckConnection: true})
 	require.NoError(t, err)
 	require.NotNil(t, cli)
@@ -88,7 +88,12 @@ func TestWebsocketServerConn(t *testing.T) {
 	bs, err := json.Marshal(data)
 	require.NoError(t, err)
 	require.NoError(t, cli.Publish(ctx, "", bs, map[string]interface{}{}))
-	require.Equal(t, data, <-serverPubCh)
+	require.Equal(t, bs, <-serverPubCh)
+
+	go pubData(t, c)
+	dataValue := []byte("123")
+	require.NoError(t, cli.Publish(ctx, "t", dataValue, map[string]interface{}{}))
+	require.Equal(t, dataValue, <-serverPubCh)
 
 	cli.AddRef()
 	require.False(t, cli.Release(ctx))
@@ -99,9 +104,7 @@ func pubData(t *testing.T, c *websocket.Conn) {
 	msgTyp, msg, err := c.ReadMessage()
 	require.NoError(t, err)
 	require.Equal(t, websocket.TextMessage, msgTyp)
-	m := map[string]interface{}{}
-	require.NoError(t, json.Unmarshal(msg, &m))
-	serverPubCh <- m
+	serverPubCh <- msg
 }
 
 func subData(t *testing.T, dataCh chan interface{}) {
