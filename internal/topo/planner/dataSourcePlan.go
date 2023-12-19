@@ -210,7 +210,7 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 				}
 			}
 		case *ast.FieldRef:
-			if f.StreamName == ast.DefaultStream || f.StreamName == p.name {
+			if !p.isWildCard && (f.StreamName == ast.DefaultStream || f.StreamName == p.name) {
 				if _, ok := p.fields[f.Name]; !ok {
 					sf, err := p.getField(f.Name, f.StreamName == p.name)
 					if err != nil {

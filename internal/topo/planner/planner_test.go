@@ -3034,11 +3034,9 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 													baseLogicalPlan: baseLogicalPlan{
 														children: []LogicalPlan{
 															DataSourcePlan{
-																name:       "src1",
-																isWildCard: true,
-																streamFields: map[string]*ast.JsonStreamField{
-																	"temp": nil,
-																},
+																name:         "src1",
+																isWildCard:   true,
+																streamFields: map[string]*ast.JsonStreamField{},
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
 																isSchemaless: true,
@@ -4539,13 +4537,11 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
 																streamStmt:      streams["src1"],
-																streamFields: map[string]*ast.JsonStreamField{
-																	"id": nil,
-																},
-																metaFields:   []string{},
-																isWildCard:   true,
-																isSchemaless: true,
-																pruneFields:  []string{},
+																streamFields:    map[string]*ast.JsonStreamField{},
+																metaFields:      []string{},
+																isWildCard:      true,
+																isSchemaless:    true,
+																pruneFields:     []string{},
 															}.Init(),
 														},
 													},
@@ -4630,13 +4626,11 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
 																streamStmt:      streams["src1"],
-																streamFields: map[string]*ast.JsonStreamField{
-																	"id": nil,
-																},
-																metaFields:   []string{},
-																isWildCard:   true,
-																isSchemaless: true,
-																pruneFields:  []string{},
+																streamFields:    map[string]*ast.JsonStreamField{},
+																metaFields:      []string{},
+																isWildCard:      true,
+																isSchemaless:    true,
+																pruneFields:     []string{},
 															}.Init(),
 														},
 													},
@@ -4755,7 +4749,7 @@ func TestTransformSourceNode(t *testing.T) {
 			},
 			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 				TYPE: "file",
-			}, false, nil),
+			}, false, false, false, nil),
 		},
 		{
 			name: "schema source node",
@@ -4775,7 +4769,7 @@ func TestTransformSourceNode(t *testing.T) {
 			},
 			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 				TYPE: "file",
-			}, false, schema),
+			}, false, false, false, schema),
 		},
 	}
 	for _, tc := range testCases {
