@@ -47,8 +47,10 @@ func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
 	if t == "" {
 		t = message.FormatJson
 	}
-	if t == message.FormatJson && len(options.Schema) > 0 {
-		return json.NewFastJsonConverter(options.Schema), nil
+	if t == message.FormatJson {
+		if !options.IsWildCard && len(options.Schema) > 1 {
+			return json.NewFastJsonConverter(options.Schema), nil
+		}
 	}
 
 	schemaFile := ""
