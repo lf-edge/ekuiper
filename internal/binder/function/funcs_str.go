@@ -16,8 +16,10 @@ package function
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -339,4 +341,29 @@ func registerStrFunc() {
 		val:   ValidateOneStrArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["format"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			var v1 float64
+			var v2 int
+			var e error
+			if v1, e = cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e != nil {
+				return e, false
+			}
+			if v2, e = cast.ToInt(args[1], cast.STRICT); e != nil {
+				return e, false
+			}
+			if v2 < 0 {
+				return errors.New("the decimal places must greater or equal than 0"), false
+			}
+			return formatNumber(v1, v2), true
+		},
+		val:   ValidateTwoNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+}
+
+func formatNumber(x float64, d int) string {
+	format := "%." + strconv.Itoa(d) + "f"
+	return fmt.Sprintf(format, x)
 }

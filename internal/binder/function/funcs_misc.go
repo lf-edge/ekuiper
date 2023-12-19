@@ -22,6 +22,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"math"
 	"reflect"
@@ -343,6 +344,15 @@ func registerMiscFunc() {
 				return err, false
 			}
 			return fmt.Sprintf("%x", h.Sum(nil)), true
+		},
+		val:   ValidateOneStrArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["crc32"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := cast.ToStringAlways(args[0])
+			return fmt.Sprintf("%x", crc32.ChecksumIEEE([]byte(arg0))), true
 		},
 		val:   ValidateOneStrArg,
 		check: returnNilIfHasAnyNil,

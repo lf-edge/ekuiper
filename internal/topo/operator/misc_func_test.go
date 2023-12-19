@@ -118,6 +118,20 @@ func TestMiscFunc_Apply1(t *testing.T) {
 				"a": strings.ToLower("07E547D9586F6A73F73FBAC0435ED76951218FB7D0C8D788A309D785436BBB642E93A252A954F23912547D1E8A3B5ED6E1BFD7097821233FA0538F3DB854FEE6"),
 			}},
 		},
+		{
+			sql: "SELECT crc32(a) AS a FROM test",
+			data: &xsql.Tuple{
+				Emitter: "test",
+				Message: xsql.Message{
+					"a": "The quick brown fox jumps over the lazy dog",
+					"b": "myb",
+					"c": "myc",
+				},
+			},
+			result: []map[string]interface{}{{
+				"a": strings.ToLower("414FA339"),
+			}},
+		},
 
 		{
 			sql: "SELECT mqtt(topic) AS a FROM test",

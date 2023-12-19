@@ -231,3 +231,27 @@ tanh(col)
 ```
 
 The hyperbolic tangent of a number.
+
+## COT
+
+```text
+cot(col)
+```
+
+Returns the cotangent of a number.
+
+## RADIANS
+
+```text
+radians(col)
+```
+
+converted from degrees to radians.
+
+## DEGREES
+
+```text
+degrees(col)
+```
+
+converted from radians to degrees
