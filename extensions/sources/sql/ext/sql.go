@@ -26,11 +26,14 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 )
 
 type sqlConConfig struct {
 	Interval int    `json:"interval"`
 	Url      string `json:"url"`
+
+	displayURL string
 }
 
 type sqlsource struct {
@@ -56,22 +59,26 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 
 	driver, err := util.ParseDriver(cfg.Url)
 	if err != nil {
-		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
+		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.displayURL, err)
 	}
 
 	generator, err := sqlgen.GetQueryGenerator(driver, props)
 	if err != nil {
-		return fmt.Errorf("GetQueryGenerator %s fail with error: %v", cfg.Url, err)
+		return fmt.Errorf("GetQueryGenerator %s fail with error: %v", cfg.displayURL, err)
 	}
 
 	m.Query = generator
 	m.conf = cfg
 	db, err := util.FetchDBToOneNode(util.GlobalPool, m.conf.Url)
 	if err != nil {
-		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.Url, err, driver2.KnownBuildTags())
+		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.displayURL, err, driver2.KnownBuildTags())
 	}
 	m.db = db
 
+	cfg.displayURL = cfg.Url
+	if hiddenURL, hidden := hidden.HiddenURLPasswd(cfg.Url); hidden {
+		cfg.displayURL = hiddenURL
+	}
 	return nil
 }
 

@@ -44,19 +44,27 @@ func HiddenPassword(kvs map[string]interface{}) map[string]interface{} {
 			if _, ok := v.(string); !ok {
 				continue
 			}
-			u, err := url.Parse(v.(string))
-			if err != nil || u.User == nil {
-				continue
-			}
-			password, _ := u.User.Password()
-			if password != "" {
-				u.User = url.UserPassword(u.User.Username(), PASSWORD)
-				n, _ := url.QueryUnescape(u.String())
-				kvs[k] = n
+			urlValue, hidden := HiddenURLPasswd(v.(string))
+			if hidden {
+				kvs[k] = urlValue
 			}
 		}
 	}
 	return kvs
+}
+
+func HiddenURLPasswd(originURL string) (string, bool) {
+	u, err := url.Parse(originURL)
+	if err != nil || u.User == nil {
+		return originURL, false
+	}
+	password, _ := u.User.Password()
+	if password != "" {
+		u.User = url.UserPassword(u.User.Username(), PASSWORD)
+		n, _ := url.QueryUnescape(u.String())
+		return n, true
+	}
+	return originURL, false
 }
 
 func ReplacePasswd(resource, config map[string]interface{}) map[string]interface{} {
