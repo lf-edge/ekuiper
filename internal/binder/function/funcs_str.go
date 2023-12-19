@@ -283,6 +283,17 @@ func registerStrFunc() {
 			arg0, arg1 := cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1])
 			ss := strings.Split(arg0, arg1)
 			v, _ := cast.ToInt(args[2], cast.STRICT)
+			switch {
+			case v > (len(ss) - 1):
+				return fmt.Errorf("%d out of index array (size = %d)", v, len(ss)), false
+			case v >= 0:
+				return ss[v], true
+			case v < -len(ss):
+				return fmt.Errorf("%d out of index array (size = %d)", v, len(ss)), false
+			case v < 0:
+				return ss[len(ss)+v], true
+			}
+
 			if v > (len(ss) - 1) {
 				return fmt.Errorf("%d out of index array (size = %d)", v, len(ss)), false
 			} else {

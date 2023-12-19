@@ -36,7 +36,7 @@
       "name": "method",
       "optional": true,
       "control": "select",
-      "default": "GET",
+      "default": "POST",
       "type": "string",
       "values": [
         "GET",
@@ -58,7 +58,7 @@
       "name": "bodyType",
       "optional": true,
       "control": "select",
-      "default": "none",
+      "default": "json",
       "type": "string",
       "values": [
         "none",
@@ -86,7 +86,7 @@
       "type": "int",
       "hint": {
         "en_US": "The timeout (milliseconds) for a HTTP request, defaults to 5000 ms",
-        "zh_CN": "HTTP 请求超时的时间（毫秒），默认为5000毫秒"
+        "zh_CN": "HTTP 请求超时的时间（毫秒），默认为 5000 毫秒"
       },
       "label": {
         "en_US": "Timeout(ms)",
@@ -198,7 +198,7 @@
       ],
       "hint": {
         "en_US": "Response type, could be `code` or `body`. If it is `code`, then eKuiper will check the HTTP response code for response status. If it is `body`, then eKuiper will check the HTTP response body with JSON format and examine the value of the code field.",
-        "zh_CN": "响应类型,可以是 `code` 或者 `body`，如果是 `code`，那么 eKuiper 会检查 HTTP 响应码来判断响应状态。如果是 `body`，那么 eKuiper 会检查 HTTP 响应正文，要求其为 JSON 格式，并且检查 code 字段的值。"
+        "zh_CN": "响应类型,可以是 `code` 或者 `body`，如果是 `code`，会检查 HTTP 响应码来判断响应状态。如果是 `body`，会检查 HTTP 响应正文，要求其为 JSON 格式，并且检查 code 字段的值。"
       },
       "label": {
         "en_US": "Response type",

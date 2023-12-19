@@ -28,11 +28,11 @@
       "type": "string",
       "hint": {
         "en_US": "The url of the Kafka broker list",
-        "zh_CN": "Kafka brokers的 URL 列表"
+        "zh_CN": "Kafka brokers 的 URL 列表"
       },
       "label": {
         "en_US": "broker list",
-        "zh_CN": "Broker url 列表"
+        "zh_CN": "Broker URL 列表"
       }
     },
     {
@@ -164,6 +164,21 @@
       }
     },
     {
+      "name": "batchSize",
+      "default": 1,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Limit on how many messages will be buffered before being sent to kafka in one request, default 1",
+        "zh_CN": "一次性向 kafka 发送批量消息的数量"
+      },
+      "label": {
+        "en_US": "Batch Size",
+        "zh_CN": "批量消息发送"
+      }
+    },
+    {
       "name": "maxAttempts",
       "default": 1,
       "optional": true,
@@ -176,21 +191,6 @@
       "label": {
         "en_US": "Max Attempts",
         "zh_CN": "消息发送重发次数"
-      }
-    },
-    {
-      "name": "requiredACKs",
-      "default": -1,
-      "optional": true,
-      "control": "text",
-      "type": "int",
-      "hint": {
-        "en_US": "Number of acknowledges from partition replicas required before receiving a response to a produce request, -1 means wait for the full ISR to acknowledge the writes,1 means wait for the leader to acknowledge the writes,0 means fire-and-forget",
-        "zh_CN": "kafka 客户端发送消息确认回复的行为控制，-1 代表等待仅 leader 确认，1 代表等待所有副本确认，0 代表等待无需确认"
-      },
-      "label": {
-        "en_US": "requiredACKs",
-        "zh_CN": "消息发送确认机制"
       }
     },
     {

@@ -54,6 +54,8 @@ type JsonStreamField struct {
 	Type       string                      `json:"type"`
 	Items      *JsonStreamField            `json:"items,omitempty"`
 	Properties map[string]*JsonStreamField `json:"properties,omitempty"`
+
+	Selected bool
 }
 
 func (u *StreamField) MarshalJSON() ([]byte, error) {

@@ -15,6 +15,7 @@
 package function
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -61,6 +62,48 @@ func TestStrFuncNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		}
+	}
+}
+
+func TestSplitValueFunctions(t *testing.T) {
+	f, ok := builtins["split_value"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	tests := []struct {
+		args   []interface{}
+		result interface{}
+		ok     bool
+	}{
+		{ // 0
+			args:   []interface{}{"a/b/c", "/", 0},
+			result: "a",
+			ok:     true,
+		},
+		{ // 0
+			args:   []interface{}{"a/b/c", "/", -1},
+			result: "c",
+			ok:     true,
+		},
+		{ // 0
+			args:   []interface{}{"a/b/c", "/", 3},
+			result: errors.New("3 out of index array (size = 3)"),
+			ok:     false,
+		},
+		{ // 0
+			args:   []interface{}{"a/b/c", "/", -4},
+			result: errors.New("-4 out of index array (size = 3)"),
+			ok:     false,
+		},
+	}
+	for _, tt := range tests {
+		result, ok := f.exec(fctx, tt.args)
+		require.Equal(t, tt.ok, ok)
+		require.Equal(t, tt.result, result)
 	}
 }
 

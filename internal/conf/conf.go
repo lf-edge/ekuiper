@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -208,6 +209,9 @@ type KuiperConf struct {
 		Sqlite struct {
 			Name string `yaml:"name"`
 		}
+		Fdb struct {
+			Path string `yaml:"path"`
+		}
 	}
 	Portable struct {
 		PythonBin   string `yaml:"pythonBin"`
@@ -263,7 +267,7 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 		ro = append(ro, rotatelogs.WithLinkName(file))
 	}
 	logWriter, err := rotatelogs.New(
-		file+".%Y-%m-%d_%H-%M-%S",
+		file[:len(file)-len(filepath.Ext(file))]+".%Y-%m-%dT%H-%M-%S"+filepath.Ext(file),
 		ro...,
 	)
 

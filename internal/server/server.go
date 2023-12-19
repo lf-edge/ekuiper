@@ -109,6 +109,9 @@ func getStoreConfigByKuiperConfig(c *conf.KuiperConf) (*store.StoreConf, error) 
 			Path: dataDir,
 			Name: c.Store.Sqlite.Name,
 		},
+		FdbConfig: definition.FdbConfig{
+			Path: c.Store.Fdb.Path,
+		},
 	}
 	return sc, nil
 }

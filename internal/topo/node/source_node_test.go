@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -51,15 +53,15 @@ func TestGetConf_Apply(t *testing.T) {
 
 func TestGetConfAndConvert_Apply(t *testing.T) {
 	result := map[string]interface{}{
-		"url":                "http://localhost:9090/",
+		"url":                "http://localhost",
 		"method":             "post",
 		"interval":           10000,
 		"timeout":            5000,
 		"bodyType":           "json",
 		"key":                "",
+		"incremental":        false,
 		"format":             "json",
 		"responseType":       "code",
-		"incremental":        true,
 		"insecureSkipVerify": true,
 		"headers": map[string]interface{}{
 			"accept": "application/json",
@@ -68,20 +70,16 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
-		CONF_KEY:   "application_conf",
 	}, false, nil)
 	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
-	if !reflect.DeepEqual(result, conf) {
-		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
-		return
-	}
+	assert.Equal(t, result, conf)
 
 	r := &httpPullSourceConfig{
-		Url:                "http://localhost:9090/",
+		Url:                "http://localhost",
 		Method:             "post",
 		Interval:           10000,
 		Timeout:            5000,
-		Incremental:        true,
+		Incremental:        false,
 		BodyType:           "json",
 		InsecureSkipVerify: true,
 		Headers: map[string]interface{}{
@@ -96,10 +94,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 		return
 	}
 
-	if !reflect.DeepEqual(r, cfg) {
-		t.Errorf("result mismatch:\n\nexp=%v\n\ngot=%v\n\n", r, cfg)
-		return
-	}
+	assert.Equal(t, r, cfg)
 }
 
 type httpPullSourceConfig struct {

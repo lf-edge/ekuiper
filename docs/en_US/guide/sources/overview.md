@@ -38,6 +38,7 @@ The list of predefined source plugins:
 - [Video Source](./plugin/video.md): a source to query video streams.
 - [Random source](./plugin/random.md): a source to generate random data for testing.
 - [Zero MQ source](./plugin/zmq.md): read data from zero mq.
+- [Kafka source](./plugin/kafka.md): read data from Kafka.
 
 ## Use of Sources
 

@@ -1084,7 +1084,7 @@ func TestSingleSQL(t *testing.T) {
 				},
 			},
 		},
-		{
+		{ // Need to move test/lookup.json to data/lookup.json
 			Name: `TestSingleSQLRule10`,
 			Sql:  "SELECT * FROM demo INNER JOIN table1 on demo.ts = table1.id",
 			R: [][]map[string]interface{}{

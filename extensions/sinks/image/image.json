@@ -52,13 +52,13 @@
 		}
 	},{
 		"name": "maxAge",
-		"default": 1000,
+		"default": 72,
 		"optional": true,
 		"control": "text",
 		"type": "int",
 		"hint": {
 			"en_US": "Maximum file storage time (hours). The default value is 72, which means that the picture can be stored for up to 3 days.",
-			"zh_CN": "最长文件存储时间(小时)。默认值为72，这表示图片最多保存3天。"
+			"zh_CN": "最长文件存储时间(小时)。默认值为 72，这表示图片最多保存3天。"
 		},
 		"label": {
 			"en_US": "maxAge",
@@ -72,7 +72,7 @@
 		"type": "int",
 		"hint": {
 			"en_US": "The maximum number of stored pictures. The default value is 1000. The earlier pictures will be deleted. The relationship with maxAge is OR.",
-			"zh_CN": "存储图片的最大数量，默认值是1000，删除时间较早的图片，与maxAge是或的关系。"
+			"zh_CN": "存储图片的最大数量，默认值是 1000，删除时间较早的图片，与 maxAge 是或的关系。"
 		},
 		"label": {
 			"en_US": "maxCount",

@@ -22,13 +22,13 @@
 	"properties": [
 		{
 			"name": "addr",
-			"default": "10.122.48.17:6379",
+			"default": "127.0.0.1:6379",
 			"optional": false,
 			"control": "text",
 			"type": "string",
 			"hint": {
 				"en_US": "The addr of the Redis,example: 10.122.48.17:6379",
-				"zh_CN": "Redis的地址, 例如: 10.122.48.17:6379"
+				"zh_CN": "Redis的地址, 例如: 127.0.0.1:6379"
 			},
 			"label": {
 				"en_US": "Address",
@@ -58,7 +58,7 @@
 			"type": "int",
 			"hint": {
 				"en_US": "The database of the Redis,example: 0",
-				"zh_CN": "Redis 的数据库,例如0"
+				"zh_CN": "Redis 的数据库，例如 0"
 			},
 			"label": {
 				"en_US": "DataBase name",
@@ -73,7 +73,7 @@
 			"type": "string",
 			"hint": {
 				"en_US": "Select one of the Key, Key and field of Redis data and give priority to field",
-				"zh_CN": "Redis 数据的Key， key与field选择其中一个,优先field"
+				"zh_CN": "Redis 数据的 Key， key 与 field 选择其中一个，优先 field"
 			},
 			"label": {
 				"en_US": "Key",
@@ -88,7 +88,7 @@
 			"type": "string",
 			"hint": {
 				"en_US": "This field must exist and be of type string. Otherwise, use the field character as the key. Note: Do not use a data template to configure this value",
-				"zh_CN": "json数据某一个属性，配置它作为redis数据的key值, 例如 deviceName,该字段必须存在且为string类型，否则以field字符作为key,注意:配置该值不要使用数据模板"
+				"zh_CN": "JSON 数据某一个属性，配置它作为 redis 数据的 key 值, 例如 deviceName,该字段必须存在且为 string 类型，否则以 field 字符作为 key,注意:配置该值不要使用数据模板"
 			},
 			"label": {
 				"en_US": "Key Field",
@@ -97,9 +97,9 @@
 		},
 		{
 			"name": "keyType",
+      "default": "single",
 			"optional": true,
 			"control": "select",
-			"default": "single",
 			"type": "string",
 			"values": [
 				"single",
@@ -126,7 +126,7 @@
 			],
 			"hint": {
 				"en_US": "The default Redis data type is string. Note that the original key must be deleted after the Redis data type is changed. Otherwise, the modification is invalid。",
-				"zh_CN": "Redis 数据的类型, 默认是 string, 注意修改类型之后，需在redis中删除原有key，否则修改无效。"
+				"zh_CN": "Redis 数据的类型, 默认是 string, 注意修改类型之后，需在 redis 中删除原有 key，否则修改无效。"
 			},
 			"label": {
 				"en_US": "Data type",
@@ -141,7 +141,7 @@
 			"type": "int",
 			"hint": {
 				"en_US": "Timeout duration of Redis data. This parameter is valid only for string data in seconds. The default value is -1 ",
-				"zh_CN": "Redis数据的超时时间，仅在string类型数据有效,单位是秒,默认是永久保存-1 "
+				"zh_CN": "Redis 数据的超时时间，仅在 string 类型数据有效，单位是秒，默认是永久保存（-1）"
 			},
 			"label": {
 				"en_US": "Expiration",
