@@ -19,8 +19,8 @@
     "default": [
       {
         "name": "loop",
-        "default": "false",
-        "optional": false,
+        "default": false,
+        "optional": true,
         "control": "radio",
         "type": "bool",
         "hint": {
