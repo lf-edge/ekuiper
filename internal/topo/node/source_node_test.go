@@ -44,7 +44,7 @@ func TestGetConf_Apply(t *testing.T) {
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
-	}, false, nil)
+	}, false, false, false, nil)
 	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
@@ -70,7 +70,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
-	}, false, nil)
+	}, false, false, false, nil)
 	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	assert.Equal(t, result, conf)
 

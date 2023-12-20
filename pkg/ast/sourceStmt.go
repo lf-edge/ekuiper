@@ -238,7 +238,9 @@ type Options struct {
 	// for delimited format only
 	DELIMITER string `json:"delimiter,omitempty"`
 
-	Schema map[string]*JsonStreamField `json:"-"`
+	Schema       map[string]*JsonStreamField `json:"-"`
+	IsWildCard   bool                        `json:"-"`
+	IsSchemaLess bool                        `json:"-"`
 }
 
 func (o Options) node() {}

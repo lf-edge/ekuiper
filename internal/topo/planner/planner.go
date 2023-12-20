@@ -290,7 +290,7 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 		if t.isSchemaless {
 			schema = nil
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, schema)
 		if isMock {
 			srcNode.SetProps(mockSourceConf)
 		}
@@ -305,7 +305,7 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 		if t.isSchemaless {
 			schema = nil
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, schema)
 		if isMock {
 			srcNode.SetProps(mockSourceConf)
 		}
