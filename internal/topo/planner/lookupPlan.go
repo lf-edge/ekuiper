@@ -197,14 +197,14 @@ func flatConditions(condition ast.Expr) ([]*ast.BinaryExpr, []ast.Expr) {
 func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 	newFields := make([]ast.Expr, 0, len(fields))
 	isWildcard := false
-	strName := p.joinExpr.Name
+	lookupTableName := p.joinExpr.Name
 	fieldMap := make(map[string]struct{})
 	for _, field := range fields {
 		switch f := field.(type) {
 		case *ast.Wildcard:
 			isWildcard = true
 		case *ast.FieldRef:
-			if !isWildcard && (f.StreamName == ast.DefaultStream || string(f.StreamName) == strName) {
+			if !isWildcard && (f.StreamName == ast.DefaultStream || string(f.StreamName) == lookupTableName) {
 				if f.Name == "*" {
 					isWildcard = true
 				} else {
@@ -224,6 +224,14 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 		p.fields = make([]string, 0, len(fieldMap))
 		for k := range fieldMap {
 			p.fields = append(p.fields, k)
+		}
+	}
+	for _, f := range getFields(p.joinExpr.Expr) {
+		fr, ok := f.(*ast.FieldRef)
+		if ok {
+			if fr.IsColumn() && string(fr.StreamName) != lookupTableName {
+				newFields = append(newFields, fr)
+			}
 		}
 	}
 	return p.baseLogicalPlan.PruneColumns(newFields)

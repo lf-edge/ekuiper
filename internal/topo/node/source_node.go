@@ -41,9 +41,11 @@ type SourceNode struct {
 	sources      []api.Source
 	preprocessOp UnOperation
 	schema       map[string]*ast.JsonStreamField
+	IsWildcard   bool
+	IsSchemaless bool
 }
 
-func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, sendError bool, schema map[string]*ast.JsonStreamField) *SourceNode {
+func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, sendError, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) *SourceNode {
 	t := options.TYPE
 	if t == "" {
 		if st == ast.TypeStream {
@@ -64,6 +66,8 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 		preprocessOp: op,
 		options:      options,
 		schema:       schema,
+		IsWildcard:   isWildcard,
+		IsSchemaless: isSchemaless,
 	}
 }
 

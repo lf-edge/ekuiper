@@ -364,6 +364,10 @@ func (p *DataSourcePlan) getAllFields() {
 				}
 			}
 		}
+	} else {
+		for name, fr := range p.fields {
+			p.streamFields[name] = fr
+		}
 	}
 	p.metaFields = make([]string, 0, len(p.metaMap))
 	for _, v := range p.metaMap {

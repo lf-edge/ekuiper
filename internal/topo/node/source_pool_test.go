@@ -29,7 +29,7 @@ func TestSourcePool(t *testing.T) {
 		DATASOURCE: "demo",
 		TYPE:       "mock",
 		SHARED:     true,
-	}, false, nil)
+	}, false, false, false, nil)
 	n.concurrency = 2
 	contextLogger := conf.Log.WithField("rule", "mockRule0")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
@@ -39,7 +39,7 @@ func TestSourcePool(t *testing.T) {
 		DATASOURCE: "demo1",
 		TYPE:       "mock",
 		SHARED:     true,
-	}, false, nil)
+	}, false, false, false, nil)
 
 	contextLogger = conf.Log.WithField("rule", "mockRule1")
 	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
@@ -48,7 +48,7 @@ func TestSourcePool(t *testing.T) {
 	n2 := NewSourceNode("test2", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "demo1",
 		TYPE:       "mock",
-	}, false, nil)
+	}, false, false, false, nil)
 	contextLogger = conf.Log.WithField("rule", "mockRule2")
 	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	tempStore, _ = state.CreateStore("mockRule2", api.AtMostOnce)

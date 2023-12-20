@@ -511,7 +511,7 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 			if err != nil {
 				return nil, ILLEGAL, "", err
 			}
-			srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options.SendError, nil)
+			srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options.SendError, false, false, nil)
 			return srcNode, STREAM, nodeName, nil
 		case "table":
 			return nil, ILLEGAL, "", fmt.Errorf("anonymouse table source is not supported, please create it prior to the rule")
