@@ -110,6 +110,8 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			}
 			props["delimiter"] = m.options.DELIMITER
 			m.options.Schema = nil
+			m.options.IsWildCard = m.IsWildcard
+			m.options.IsSchemaLess = m.IsSchemaless
 			if m.schema != nil {
 				m.options.Schema = m.schema
 			}
