@@ -286,7 +286,11 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 				return nil, err
 			}
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, t.streamFields)
+		schema := t.streamFields
+		if t.isSchemaless {
+			schema = nil
+		}
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, schema)
 		if isMock {
 			srcNode.SetProps(mockSourceConf)
 		}
