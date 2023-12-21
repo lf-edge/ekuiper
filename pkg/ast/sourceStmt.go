@@ -238,6 +238,7 @@ type Options struct {
 	// for delimited format only
 	DELIMITER string `json:"delimiter,omitempty"`
 
+	RuleID       string                      `json:"-"`
 	Schema       map[string]*JsonStreamField `json:"-"`
 	IsWildCard   bool                        `json:"-"`
 	IsSchemaLess bool                        `json:"-"`

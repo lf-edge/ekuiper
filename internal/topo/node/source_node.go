@@ -111,6 +111,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			props["delimiter"] = m.options.DELIMITER
 			m.options.Schema = nil
 			if m.schema != nil {
+				m.options.RuleID = ctx.GetRuleId()
 				m.options.Schema = m.schema
 			}
 			converterTool, err := converter.GetOrCreateConverter(m.options)

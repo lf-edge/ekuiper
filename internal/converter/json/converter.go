@@ -17,6 +17,7 @@ package json
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/valyala/fastjson"
 
@@ -47,13 +48,99 @@ func (c *Converter) Decode(b []byte) (interface{}, error) {
 }
 
 type FastJsonConverter struct {
-	schema map[string]*ast.JsonStreamField
+	sync.RWMutex
+	// ruleID -> schema
+	schemaMap map[string]map[string]*ast.JsonStreamField
+	schema    map[string]*ast.JsonStreamField
 }
 
-func NewFastJsonConverter(schema map[string]*ast.JsonStreamField) *FastJsonConverter {
-	return &FastJsonConverter{
-		schema: schema,
+func NewFastJsonConverter(key string, schema map[string]*ast.JsonStreamField) *FastJsonConverter {
+	f := &FastJsonConverter{
+		schemaMap: make(map[string]map[string]*ast.JsonStreamField),
+		schema:    schema,
 	}
+	f.schemaMap[key] = schema
+	return f
+}
+
+func (c *FastJsonConverter) MergeSchema(key string, newSchema map[string]*ast.JsonStreamField) error {
+	c.Lock()
+	defer c.Unlock()
+	_, ok := c.schemaMap[key]
+	if ok {
+		return nil
+	}
+	mergedSchema, err := mergeSchema(c.schema, newSchema)
+	if err != nil {
+		return err
+	}
+	c.schemaMap[key] = newSchema
+	c.schema = mergedSchema
+	return nil
+}
+
+func (c *FastJsonConverter) DetachSchema(key string) error {
+	var err error
+	c.Lock()
+	defer c.Unlock()
+	_, ok := c.schemaMap[key]
+	if ok {
+		delete(c.schemaMap, key)
+		newSchema := make(map[string]*ast.JsonStreamField)
+		for _, schema := range c.schemaMap {
+			newSchema, err = mergeSchema(newSchema, schema)
+			if err != nil {
+				return err
+			}
+		}
+		c.schema = newSchema
+	}
+	return nil
+}
+
+func mergeSchema(originSchema, newSchema map[string]*ast.JsonStreamField) (map[string]*ast.JsonStreamField, error) {
+	resultSchema := make(map[string]*ast.JsonStreamField)
+	for ruleID, oldSchemaField := range originSchema {
+		resultSchema[ruleID] = oldSchemaField
+	}
+	for ruleID, newSchemaField := range newSchema {
+		oldSchemaField, ok := originSchema[ruleID]
+		if ok {
+			switch {
+			case oldSchemaField != nil && newSchemaField != nil:
+				if oldSchemaField.Type != newSchemaField.Type {
+					return nil, fmt.Errorf("column field type %v between current[%v] and new[%v] are not equal", ruleID, oldSchemaField.Type, newSchemaField.Type)
+				}
+				switch oldSchemaField.Type {
+				case "struct":
+					subResultSchema, err := mergeSchema(oldSchemaField.Properties, newSchemaField.Properties)
+					if err != nil {
+						return nil, err
+					}
+					resultSchema[ruleID].Properties = subResultSchema
+				case "array":
+					if oldSchemaField.Items.Type != newSchemaField.Items.Type {
+						return nil, fmt.Errorf("array column field type %v between current[%v] and new[%v] are not equal", ruleID, oldSchemaField.Items.Type, newSchemaField.Items.Type)
+					}
+					if oldSchemaField.Items.Type == "struct" {
+						subResultSchema, err := mergeSchema(oldSchemaField.Items.Properties, newSchemaField.Items.Properties)
+						if err != nil {
+							return nil, err
+						}
+						resultSchema[ruleID].Items.Properties = subResultSchema
+					}
+				}
+			case oldSchemaField != nil && newSchemaField == nil:
+				return nil, fmt.Errorf("array column field type %v between current[%v] and new[%v] are not equal", ruleID, oldSchemaField.Items.Type, "any")
+			case oldSchemaField == nil && newSchemaField != nil:
+				return nil, fmt.Errorf("array column field type %v between current[%v] and new[%v] are not equal", ruleID, "any", newSchemaField.Items.Type)
+			case oldSchemaField == nil && newSchemaField == nil:
+			}
+			continue
+		}
+		resultSchema[ruleID] = newSchemaField
+	}
+	return resultSchema, nil
 }
 
 func (c *FastJsonConverter) Encode(d interface{}) ([]byte, error) {
@@ -61,6 +148,8 @@ func (c *FastJsonConverter) Encode(d interface{}) ([]byte, error) {
 }
 
 func (c *FastJsonConverter) Decode(b []byte) (interface{}, error) {
+	c.RLock()
+	defer c.RUnlock()
 	return c.decodeWithSchema(b, c.schema)
 }
 
