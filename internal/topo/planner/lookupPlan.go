@@ -204,13 +204,22 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 		case *ast.Wildcard:
 			isWildcard = true
 		case *ast.FieldRef:
-			if !isWildcard && (f.StreamName == ast.DefaultStream || string(f.StreamName) == lookupTableName) {
-				if f.Name == "*" {
-					isWildcard = true
-				} else {
-					fieldMap[f.Name] = struct{}{}
+			if !isWildcard {
+				if f.StreamName == ast.DefaultStream {
+					if f.Name == "*" {
+						isWildcard = true
+						continue
+					} else {
+						fieldMap[f.Name] = struct{}{}
+					}
+				} else if string(f.StreamName) == lookupTableName {
+					if f.Name == "*" {
+						isWildcard = true
+					} else {
+						fieldMap[f.Name] = struct{}{}
+					}
+					continue
 				}
-				continue
 			}
 		case *ast.SortField:
 			if !isWildcard {
