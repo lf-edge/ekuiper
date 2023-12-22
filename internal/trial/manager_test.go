@@ -82,7 +82,7 @@ func TestTrialRule(t *testing.T) {
 	}()
 
 	// Test 3 Runtime error rule
-	mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":true}},"sinkProps":{"sendSingle":true}}`
+	mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1}],"interval":1,"loop":true}},"sinkProps":{"sendSingle":true}}`
 	id, err = TrialManager.CreateRule(mockDefErr)
 	assert.NoError(t, err)
 	assert.Equal(t, "ruleErr", id)
