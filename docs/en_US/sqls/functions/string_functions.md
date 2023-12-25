@@ -193,7 +193,19 @@ Returns the uppercase version of the given string.
 ## FORMAT
 
 ```text
-format(col,D)
+format(col,D[,locale])
 ```
 
-Formats the number X to a format like '#######.##', rounded to D decimal places, and returns the result as a string.
+Formats the number X to a format like '#######.##', rounded to D decimal places, and returns the result as a string,
+The optional third parameter enables a locale to be specified to be used for the result number's decimal point.
+
+```sql
+SELECT format(12332.1234567, 4,"en_US");
+-> '12,332.1234'
+```
+
+The supported locales are as shown in the table below:
+
+| **Locale Value** | **Meaning**             |
+| ---------------- | ----------------------- |
+| en_US            | English - United States |

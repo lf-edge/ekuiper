@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -346,24 +345,39 @@ func registerStrFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			var v1 float64
 			var v2 int
-			var e error
-			if v1, e = cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e != nil {
-				return e, false
-			}
-			if v2, e = cast.ToInt(args[1], cast.STRICT); e != nil {
-				return e, false
-			}
+
+			v1, _ = cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND)
+			v2, _ = cast.ToInt(args[1], cast.STRICT)
 			if v2 < 0 {
 				return errors.New("the decimal places must greater or equal than 0"), false
 			}
-			return formatNumber(v1, v2), true
+			if len(args) == 3 {
+				v3 := cast.ToStringAlways(args[2])
+				formatFunction := GetLocaleFormatFunction(v3)
+				res, err := formatFunction(cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1]))
+				if err != nil {
+					return err, false
+				}
+				return res, true
+			} else {
+				return formatNumber(v1, v2), true
+			}
 		},
-		val:   ValidateTwoNumberArg,
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateAtLeast(2, len(args)); err != nil {
+				return err
+			}
+			if !ast.IsNumericArg(args[0]) {
+				return ProduceErrInfo(0, "numeric")
+			}
+			if !ast.IsIntegerArg(args[1]) {
+				return ProduceErrInfo(1, "integer")
+			}
+			if len(args) == 3 && !ast.IsStringArg(args[2]) {
+				return ProduceErrInfo(2, "string")
+			}
+			return nil
+		},
 		check: returnNilIfHasAnyNil,
 	}
-}
-
-func formatNumber(x float64, d int) string {
-	format := "%." + strconv.Itoa(d) + "f"
-	return fmt.Sprintf(format, x)
 }
