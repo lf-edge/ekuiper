@@ -120,6 +120,7 @@ func TestStrFunc(t *testing.T) {
 	registerStrFunc()
 
 	testFormat(t, fctx)
+	testFormatLocale(t, fctx)
 }
 
 func testFormat(t *testing.T, fctx *kctx.DefaultFuncContext) {
@@ -139,6 +140,25 @@ func testFormat(t *testing.T, fctx *kctx.DefaultFuncContext) {
 		got, _ := fFormat.exec(fctx, []interface{}{c.x, c.d})
 		if !reflect.DeepEqual(got, c.want) {
 			t.Errorf("formatNumber(%f, %d) == %s, want %s", c.x, c.d, got, c.want)
+		}
+	}
+}
+
+func testFormatLocale(t *testing.T, fctx *kctx.DefaultFuncContext) {
+	fFormat := builtins["format"]
+	cases := []struct {
+		number    interface{}
+		precision interface{}
+		locale    string
+		ret       interface{}
+	}{
+		{12332.12341111111111111111111111111111111111111, 4, "en_US", "12,332.1234"},
+		{98765.4321, 2, "de_DE", errors.New("not support for the specific locale")},
+	}
+	for _, c := range cases {
+		got, _ := fFormat.exec(fctx, []interface{}{c.number, c.precision, c.locale})
+		if !reflect.DeepEqual(got, c.ret) {
+			t.Errorf("formatNumber(%f, %d,%s) == %s, want %s", c.number, c.precision, c.locale, got, c.ret)
 		}
 	}
 }
