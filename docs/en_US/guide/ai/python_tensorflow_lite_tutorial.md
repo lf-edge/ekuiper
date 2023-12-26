@@ -20,7 +20,7 @@ To run the TensorFlow lite interpreter, we need a trained model. We won't cover 
 Before starting the tutorial, please prepare the following products or environments.
 
 1. Install the Python 3.x environment.
-2. Install the sniffio pynng, ekuiper and tensorflow lite packages via `pip install pynng ekuiper tflite_runtime`.
+2. Install the sniffio pynng, ekuiper and tensorflow lite packages via `pip install sniffio pynng ekuiper tflite_runtime`.
 
 By default, the portable plugin for eKuiper will run with the `python` command. If your environment does not support the `python` command, please use the [configuration file](../../configuration/global_configurations.md#portable-plugin-configurations) to modify the Python command, such as `python3`.
 
