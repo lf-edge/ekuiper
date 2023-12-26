@@ -5,12 +5,12 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  push:
-    tags:
-      - "*"
-    branches:
-      - master
-  pull_request:
+#  push:
+#    tags:
+#      - "*"
+#    branches:
+#      - master
+#  pull_request:
   release:
     types:
       - published

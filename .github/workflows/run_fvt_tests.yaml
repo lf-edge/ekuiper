@@ -8,10 +8,9 @@ on:
   push:
     tags:
       - "*"
+    branches:
+      - master
   pull_request:
-  release:
-    types:
-      - published
 
 env:
   DEBIAN_FRONTEND: noninteractive
@@ -96,7 +95,7 @@ jobs:
         ./test/setup_env.sh
         ./test/prepare_plugins.sh
     - name: run fvt tests
-      timeout-minutes: 12
+      timeout-minutes: 4
       run: ./test/run_jmeter.sh with_edgex=true
     - uses: actions/upload-artifact@v3
       if: always()
