@@ -15,6 +15,8 @@
 package planner
 
 import (
+	"sort"
+
 	"github.com/modern-go/reflect2"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -172,6 +174,7 @@ func (p *LookupPlan) validateAndExtractCondition() bool {
 		for k := range kset {
 			p.keys = append(p.keys, k)
 		}
+		sort.Strings(p.keys)
 		return true
 	}
 	return false
@@ -204,13 +207,22 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 		case *ast.Wildcard:
 			isWildcard = true
 		case *ast.FieldRef:
-			if !isWildcard && (f.StreamName == ast.DefaultStream || string(f.StreamName) == lookupTableName) {
-				if f.Name == "*" {
-					isWildcard = true
-				} else {
-					fieldMap[f.Name] = struct{}{}
+			if !isWildcard {
+				if f.StreamName == ast.DefaultStream {
+					if f.Name == "*" {
+						isWildcard = true
+						continue
+					} else {
+						fieldMap[f.Name] = struct{}{}
+					}
+				} else if string(f.StreamName) == lookupTableName {
+					if f.Name == "*" {
+						isWildcard = true
+					} else {
+						fieldMap[f.Name] = struct{}{}
+					}
+					continue
 				}
-				continue
 			}
 		case *ast.SortField:
 			if !isWildcard {
@@ -225,6 +237,7 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 		for k := range fieldMap {
 			p.fields = append(p.fields, k)
 		}
+		sort.Strings(p.fields)
 	}
 	for _, f := range getFields(p.joinExpr.Expr) {
 		fr, ok := f.(*ast.FieldRef)
