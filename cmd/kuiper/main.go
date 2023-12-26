@@ -60,13 +60,9 @@ func streamProcess(client *rpc.Client, args string) {
 	}
 }
 
-var (
-	Version = "unknown"
-)
+var Version = "unknown"
 
-var (
-	etcPath string
-)
+var etcPath string
 
 func init() {
 	flag.StringVar(&etcPath, "etc", "", "etc indicates the path of etc dir")
