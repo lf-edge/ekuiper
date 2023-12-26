@@ -61,26 +61,16 @@ func streamProcess(client *rpc.Client, args string) {
 }
 
 var (
-	Version      = "unknown"
-	LoadFileType = "relative"
+	Version = "unknown"
 )
 
 var (
-	loadFileType string
-	etcPath      string
+	etcPath string
 )
 
 func init() {
-	flag.StringVar(&loadFileType, "loadFileType", "", "loadFileType indicates the how to load path")
 	flag.StringVar(&etcPath, "etc", "", "etc indicates the path of etc dir")
-
 	flag.Parse()
-
-	if len(loadFileType) > 0 {
-		conf.PathConfig.LoadFileType = loadFileType
-	} else {
-		conf.PathConfig.LoadFileType = LoadFileType
-	}
 	if len(etcPath) > 0 {
 		conf.PathConfig.Dirs["etc"] = etcPath
 	}

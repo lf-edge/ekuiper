@@ -22,32 +22,22 @@ import (
 )
 
 var (
-	Version      = "unknown"
-	LoadFileType = "relative"
+	Version = "unknown"
 )
 
 var (
-	loadFileType string
-	etcPath      string
-	dataPath     string
-	logPath      string
-	pluginsPath  string
+	etcPath     string
+	dataPath    string
+	logPath     string
+	pluginsPath string
 )
 
 func init() {
-	flag.StringVar(&loadFileType, "loadFileType", "", "loadFileType indicates the how to load path")
 	flag.StringVar(&etcPath, "etc", "", "etc indicates the path of etc dir")
 	flag.StringVar(&dataPath, "data", "", "data indicates the path of data dir")
 	flag.StringVar(&logPath, "log", "", "log indicates the path of log dir")
 	flag.StringVar(&pluginsPath, "plugins", "", "plugins indicates the path of plugins dir")
-
 	flag.Parse()
-
-	if len(loadFileType) > 0 {
-		conf.PathConfig.LoadFileType = loadFileType
-	} else {
-		conf.PathConfig.LoadFileType = LoadFileType
-	}
 	if len(etcPath) > 0 {
 		conf.PathConfig.Dirs["etc"] = etcPath
 	}

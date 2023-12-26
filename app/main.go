@@ -44,7 +44,6 @@ var etc embed.FS
 
 var (
 	Version       = "unknown"
-	LoadFileType  = "absolute"
 	baseDirectory = ""
 )
 
@@ -55,7 +54,6 @@ var btnStart *widget.Button
 var application fyne.App
 
 func setDirectory() {
-	conf.PathConfig.LoadFileType = LoadFileType
 	conf.PathConfig.Dirs["etc"] = baseDirectory + "etc"
 	conf.PathConfig.Dirs["data"] = baseDirectory + "data"
 	conf.PathConfig.Dirs["log"] = baseDirectory + "log"
