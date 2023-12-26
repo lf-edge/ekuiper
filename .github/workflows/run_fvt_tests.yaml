@@ -55,7 +55,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pynng
+        pip install pynng==v0.7.2
     - name: install jmeter
       timeout-minutes: 10
       env:
