@@ -60,7 +60,10 @@ func streamProcess(client *rpc.Client, args string) {
 	}
 }
 
-var Version = "unknown"
+var (
+	Version      = "unknown"
+	LoadFileType = "relative"
+)
 
 var etcPath string
 

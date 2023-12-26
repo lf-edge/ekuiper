@@ -44,6 +44,7 @@ var etc embed.FS
 
 var (
 	Version       = "unknown"
+	LoadFileType  = "absolute"
 	baseDirectory = ""
 )
 

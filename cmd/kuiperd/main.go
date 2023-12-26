@@ -21,7 +21,10 @@ import (
 	"github.com/lf-edge/ekuiper/internal/server"
 )
 
-var Version = "unknown"
+var (
+	Version      = "unknown"
+	LoadFileType = "relative"
+)
 
 var (
 	etcPath     string
