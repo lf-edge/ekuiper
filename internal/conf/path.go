@@ -39,9 +39,7 @@ const (
 	KuiperBaseKey = "KuiperBaseKey"
 )
 
-var (
-	PathConfig PathConfigure
-)
+var PathConfig PathConfigure
 
 func GetConfLoc() (string, error) {
 	return GetLoc(etcDir)
