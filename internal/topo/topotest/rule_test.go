@@ -22,6 +22,48 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
+func TestSharedSourceSchemaless(t *testing.T) {
+	streamList := []string{"sharedDemo"}
+	HandleStream(false, streamList, t)
+	tests := []RuleTest{
+		{
+			Name: "rule1",
+			Sql:  `select a,b from sharedDemo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"a": float64(1),
+						"b": float64(2),
+					},
+				},
+			},
+		},
+		{
+			Name: "rule2",
+			Sql:  `select b,c from sharedDemo`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"b": float64(2),
+						"c": float64(3),
+					},
+				},
+			},
+		},
+	}
+	// Data setup
+	HandleStream(true, streamList, t)
+	options := []*api.RuleOption{
+		{
+			BufferLength: 100,
+			SendError:    true,
+		},
+	}
+	for j, opt := range options {
+		DoRuleTest(t, tests, j, opt, 0)
+	}
+}
+
 func TestWindowFuncSQL(t *testing.T) {
 	// Reset
 	streamList := []string{"demo"}
