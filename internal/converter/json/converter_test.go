@@ -813,10 +813,11 @@ func TestMergeSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		rs, err := mergeSchema(tc.originSchema, tc.newSchema)
+		f := NewFastJsonConverter("1", tc.originSchema)
+		err := f.MergeSchema("2", tc.newSchema)
 		if tc.err == nil {
 			require.NoError(t, err)
-			require.Equal(t, tc.resultSchema, rs)
+			require.Equal(t, tc.resultSchema, f.schema)
 		} else {
 			require.Equal(t, tc.err, err)
 		}
