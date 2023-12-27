@@ -50,8 +50,9 @@ func (c *Converter) Decode(b []byte) (interface{}, error) {
 type FastJsonConverter struct {
 	sync.RWMutex
 	// ruleID -> schema
-	schemaMap map[string]map[string]*ast.JsonStreamField
-	schema    map[string]*ast.JsonStreamField
+	schemaMap   map[string]map[string]*ast.JsonStreamField
+	schema      map[string]*ast.JsonStreamField
+	wildcardMap map[string]struct{}
 }
 
 func NewFastJsonConverter(key string, schema map[string]*ast.JsonStreamField) *FastJsonConverter {
@@ -63,19 +64,23 @@ func NewFastJsonConverter(key string, schema map[string]*ast.JsonStreamField) *F
 	return f
 }
 
-func (c *FastJsonConverter) MergeSchema(key string, newSchema map[string]*ast.JsonStreamField) error {
+func (c *FastJsonConverter) MergeSchema(key string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error {
 	c.Lock()
 	defer c.Unlock()
 	_, ok := c.schemaMap[key]
 	if ok {
 		return nil
 	}
-	mergedSchema, err := mergeSchema(c.schema, newSchema)
-	if err != nil {
-		return err
-	}
 	c.schemaMap[key] = newSchema
-	c.schema = mergedSchema
+	if isWildcard {
+		c.wildcardMap[key] = struct{}{}
+	} else {
+		mergedSchema, err := mergeSchema(c.schema, newSchema)
+		if err != nil {
+			return err
+		}
+		c.schema = mergedSchema
+	}
 	return nil
 }
 
@@ -85,6 +90,7 @@ func (c *FastJsonConverter) DetachSchema(key string) error {
 	defer c.Unlock()
 	_, ok := c.schemaMap[key]
 	if ok {
+		delete(c.wildcardMap, key)
 		delete(c.schemaMap, key)
 		newSchema := make(map[string]*ast.JsonStreamField)
 		for _, schema := range c.schemaMap {
@@ -150,6 +156,9 @@ func (c *FastJsonConverter) Encode(d interface{}) ([]byte, error) {
 func (c *FastJsonConverter) Decode(b []byte) (interface{}, error) {
 	c.RLock()
 	defer c.RUnlock()
+	if len(c.wildcardMap) > 0 {
+		return converter.Decode(b)
+	}
 	return c.decodeWithSchema(b, c.schema)
 }
 

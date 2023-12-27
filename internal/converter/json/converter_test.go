@@ -814,7 +814,7 @@ func TestMergeSchema(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		f := NewFastJsonConverter("1", tc.originSchema)
-		err := f.MergeSchema("2", tc.newSchema)
+		err := f.MergeSchema("2", tc.newSchema, false)
 		if tc.err == nil {
 			require.NoError(t, err)
 			require.Equal(t, tc.resultSchema, f.schema)
