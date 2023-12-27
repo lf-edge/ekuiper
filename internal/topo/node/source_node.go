@@ -113,6 +113,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			m.options.IsWildCard = m.IsWildcard
 			m.options.IsSchemaLess = m.IsSchemaless
 			if m.schema != nil {
+				m.options.RuleID = ctx.GetRuleId()
 				m.options.Schema = m.schema
 			}
 			converterTool, err := converter.GetOrCreateConverter(m.options)

@@ -25,6 +25,17 @@ import (
 
 // TestData The time diff must larger than timeleap
 var TestData = map[string][]*xsql.Tuple{
+	"sharedDemo": {
+		{
+			Emitter: "sharedDemo",
+			Message: map[string]interface{}{
+				"a": 1,
+				"b": 2,
+				"c": 3,
+			},
+			Timestamp: 1541152486013,
+		},
+	},
 	"demo": {
 		{
 			Emitter: "demo",
