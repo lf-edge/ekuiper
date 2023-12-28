@@ -57,8 +57,9 @@ type FastJsonConverter struct {
 
 func NewFastJsonConverter(key string, schema map[string]*ast.JsonStreamField) *FastJsonConverter {
 	f := &FastJsonConverter{
-		schemaMap: make(map[string]map[string]*ast.JsonStreamField),
-		schema:    schema,
+		schemaMap:   make(map[string]map[string]*ast.JsonStreamField),
+		schema:      schema,
+		wildcardMap: make(map[string]struct{}),
 	}
 	f.schemaMap[key] = schema
 	return f
