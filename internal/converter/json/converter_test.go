@@ -16,6 +16,7 @@ package json
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -814,7 +815,7 @@ func TestMergeSchema(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		f := NewFastJsonConverter("1", tc.originSchema)
-		err := f.MergeSchema("2", tc.newSchema)
+		err := f.MergeSchema("2", tc.newSchema, false)
 		if tc.err == nil {
 			require.NoError(t, err)
 			require.Equal(t, tc.resultSchema, f.schema)
@@ -822,4 +823,36 @@ func TestMergeSchema(t *testing.T) {
 			require.Equal(t, tc.err, err)
 		}
 	}
+}
+
+func TestMergeWildcardSchema(t *testing.T) {
+	originSchema := map[string]*ast.JsonStreamField{
+		"a": {
+			Type: "bigint",
+		},
+	}
+	f := NewFastJsonConverter("1", originSchema)
+	require.NoError(t, f.MergeSchema("2", nil, true))
+	newSchema := map[string]*ast.JsonStreamField{
+		"b": {
+			Type: "bigint",
+		},
+	}
+	require.NoError(t, f.MergeSchema("3", newSchema, false))
+	data := map[string]interface{}{
+		"a": float64(1),
+		"b": float64(2),
+		"3": float64(3),
+	}
+	bs, _ := json.Marshal(data)
+	d, err := f.Decode(bs)
+	require.NoError(t, err)
+	require.Equal(t, data, d)
+	require.NoError(t, f.DetachSchema("2"))
+	d, err = f.Decode(bs)
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{
+		"a": int64(1),
+		"b": int64(2),
+	}, d)
 }
