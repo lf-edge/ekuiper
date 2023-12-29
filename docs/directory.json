@@ -350,6 +350,10 @@
             {
               "title": "合并单流多设备数据",
               "path": "example/data_merge/merge_single_stream"
+            },
+            {
+              "title": "合并多个数据流",
+              "path": "example/data_merge/merge_multi_stream"
             }
           ]
         }
@@ -1068,8 +1072,12 @@
           "path": "example/howto"
         },
         {
-          "title": "Merge multiple devices' data in single stream",
+          "title": "Merge Multiple Devices' Data in a Single Stream",
           "path": "example/data_merge/merge_single_stream"
+        },
+        {
+          "title": "Merge Data in Multiple Streams",
+          "path": "example/data_merge/merge_multi_stream"
         }
       ]
     },
