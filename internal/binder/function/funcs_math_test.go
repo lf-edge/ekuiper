@@ -507,3 +507,60 @@ func TestDegrees(t *testing.T) {
 		}
 	}
 }
+
+func TestGetValidPrefix(t *testing.T) {
+	v := []struct {
+		s    string
+		base int64
+		ret  string
+	}{
+		{"-123456D1f", 5, "-1234"},
+		{"+12azD", 16, "12a"},
+		{"+", 12, ""},
+	}
+	for _, tt := range v {
+		r := getValidPrefix(tt.s, tt.base)
+		require.Equal(t, tt.ret, r)
+	}
+}
+
+func TestConvFunc(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerMathFunc()
+
+	fConv := builtins["conv"]
+	cases := []struct {
+		args     []interface{}
+		expected interface{}
+		isNil    bool
+		getErr   bool
+	}{
+		{[]interface{}{"a", 16, 2}, "1010", false, false},
+		{[]interface{}{"6E", 18, 8}, "172", false, false},
+		{[]interface{}{"-17", 10, -18}, "-H", false, false},
+		{[]interface{}{"-17", 10, 18}, "2D3FGB0B9CG4BD1H", false, false},
+		{[]interface{}{"+18aZ", 7, 36}, "1", false, false},
+		{[]interface{}{"18446744073709551615", -10, 16}, "7FFFFFFFFFFFFFFF", false, false},
+		{[]interface{}{"12F", -10, 16}, "C", false, false},
+		{[]interface{}{"  FF ", 16, 10}, "255", false, false},
+		{[]interface{}{"aa", 10, 2}, "0", false, false},
+		{[]interface{}{" A", -10, 16}, "0", false, false},
+		{[]interface{}{"random_str", 10, 8}, "0", false, false},
+		{[]interface{}{"a6a", 10, 8}, "0", false, false},
+		{[]interface{}{"a6a", 1, 8}, nil, true, false},
+	}
+	for _, c := range cases {
+		got, _ := fConv.exec(fctx, []interface{}{c.args[0], c.args[1], c.args[2]})
+		if got != c.expected {
+			t.Errorf("%s:Expected %s, but got %s", c.args[0], c.expected, got)
+		}
+	}
+}

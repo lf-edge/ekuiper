@@ -37,7 +37,8 @@ type RunDef struct {
 
 func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 	sinkProps := map[string]any{
-		"path": "/test/" + def.Id,
+		"path":      "/test/" + def.Id,
+		"sendError": true,
 	}
 	for k, v := range def.SinkProps {
 		sinkProps[k] = v
@@ -46,6 +47,24 @@ func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}
+	// Try run
+	// TODO currently some static validations are done in runtime, so start to run to detect them. This adds time penalty for this API.
+	// 	In the future, we should do it in planning.
+	err = infra.SafeRun(func() error {
+		select {
+		case e := <-tp.Open():
+			if e != nil {
+				return e
+			}
+		case <-time.After(10 * time.Millisecond):
+			return nil
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
+	}
+	tp.Cancel()
 	// Create websocket client to send out control error message together with data
 	cli, err := clients.GetClient("websocket", sinkProps)
 	if err != nil {
@@ -67,7 +86,10 @@ func trialRun(tp *topo.Topo, cli api.MessageClient) {
 			select {
 			case err := <-tp.Open():
 				if err != nil {
-					tp.GetContext().SetError(err)
+					conf.Log.Errorf("closing test run for error: %v", err)
+					_ = cli.Publish(tp.GetContext(), "", []byte(err.Error()), nil)
+					// Wait for client connection
+					time.Sleep(1 * time.Second)
 					tp.Cancel()
 					return err
 				}
@@ -78,8 +100,7 @@ func trialRun(tp *topo.Topo, cli api.MessageClient) {
 			return nil
 		})
 		if err != nil {
-			conf.Log.Errorf("closing test run for error: %v", err)
-			_ = cli.Publish(tp.GetContext(), "", []byte(err.Error()), nil)
+			conf.Log.Debugf("trial run error: %v", err)
 		}
 	}()
 }

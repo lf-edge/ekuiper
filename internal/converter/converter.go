@@ -49,7 +49,7 @@ func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
 	}
 	if t == message.FormatJson {
 		if !options.IsWildCard && len(options.Schema) > 1 {
-			return json.NewFastJsonConverter(options.Schema, options.IsSchemaLess), nil
+			return json.NewFastJsonConverter(options.RuleID, options.Schema, options.IsSchemaLess), nil
 		}
 	}
 

@@ -38,7 +38,9 @@ func TestSharedInmemoryNode(t *testing.T) {
 	src := GetSource()
 	snk := GetSink()
 	contextLogger := conf.Log.WithField("rule", "test")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx1 := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx, cancel := ctx1.WithCancel()
+	defer cancel()
 	consumer := make(chan api.SourceTuple)
 	errorChannel := make(chan error)
 	srcProps := make(map[string]interface{})
@@ -58,9 +60,6 @@ func TestSharedInmemoryNode(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	go func() {
-		src.Open(ctx, consumer, errorChannel)
-	}()
 
 	//if _, contains := pubTopics[id]; !contains {
 	//	t.Errorf("there should be memory node for topic")
@@ -76,17 +75,17 @@ func TestSharedInmemoryNode(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	for {
-		select {
-		case res := <-consumer:
-			mc := conf.Clock.(*clock.Mock)
-			expected := api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": "test_id"}, mc.Now())
-			if !reflect.DeepEqual(expected, res) {
-				t.Errorf("result %s should be equal to %s", res, expected)
-			}
-			return
-		default: //nolint
+	go func() {
+		src.Open(ctx, consumer, errorChannel)
+	}()
+	select {
+	case res := <-consumer:
+		mc := conf.Clock.(*clock.Mock)
+		expected := api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": "test_id"}, mc.Now())
+		if !reflect.DeepEqual(expected, res) {
+			t.Errorf("result %s should be equal to %s", res, expected)
 		}
+		return
 	}
 }
 

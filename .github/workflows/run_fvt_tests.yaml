@@ -52,7 +52,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pynng
+        pip install sniffio pynng
     - name: install jmeter
       timeout-minutes: 10
       env:
