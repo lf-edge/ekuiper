@@ -213,7 +213,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("", tc.schema)
+		f := NewFastJsonConverter("", tc.schema, false)
 		v, err := f.Decode(tc.payload)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
@@ -224,7 +224,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", tc.schema)
+		f := NewFastJsonConverter("", tc.schema, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -298,7 +298,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					Type: "boolean",
 				},
 			},
-			err: fmt.Errorf("parse a failed, err:wrong type:object, expect:boolean"),
+			err: fmt.Errorf("a has wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":true}`),
@@ -367,7 +367,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 					},
 				},
 			},
-			err: fmt.Errorf("parse array failed, err:wrong type:object, expect:boolean"),
+			err: fmt.Errorf("array has wrong type:object, expect:boolean"),
 		},
 		{
 			payload: []byte(`{"a":[true]}`),
@@ -384,7 +384,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("", tc.schema)
+		f := NewFastJsonConverter("", tc.schema, false)
 		_, err := f.Decode(tc.payload)
 		require.Error(t, err)
 		require.Equal(t, err, tc.err)
@@ -394,7 +394,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 func TestFastJsonEncode(t *testing.T) {
 	a := make(map[string]int)
 	a["a"] = 1
-	f := NewFastJsonConverter("", nil)
+	f := NewFastJsonConverter("", nil, false)
 	v, err := f.Encode(a)
 	require.NoError(t, err)
 	require.Equal(t, v, []byte(`{"a":1}`))
@@ -426,7 +426,7 @@ func TestArrayWithArray(t *testing.T) {
 			},
 		},
 	}
-	f := NewFastJsonConverter("", schema)
+	f := NewFastJsonConverter("", schema, false)
 	v, err := f.Decode(payload)
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -606,7 +606,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", tc.schema)
+		f := NewFastJsonConverter("", tc.schema, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -616,7 +616,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", tc.schema)
+		f := NewFastJsonConverter("", tc.schema, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -632,7 +632,7 @@ func TestConvertBytea(t *testing.T) {
 			Type: "bytea",
 		},
 	}
-	f := NewFastJsonConverter("", schema)
+	f := NewFastJsonConverter("", schema, false)
 	v, err := f.Decode([]byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -648,7 +648,7 @@ func TestConvertBytea(t *testing.T) {
 			},
 		},
 	}
-	f = NewFastJsonConverter("", schema)
+	f = NewFastJsonConverter("", schema, false)
 	v, err = f.Decode([]byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -814,7 +814,7 @@ func TestMergeSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("1", tc.originSchema)
+		f := NewFastJsonConverter("1", tc.originSchema, false)
 		err := f.MergeSchema("2", tc.newSchema, false)
 		if tc.err == nil {
 			require.NoError(t, err)
@@ -831,7 +831,7 @@ func TestMergeWildcardSchema(t *testing.T) {
 			Type: "bigint",
 		},
 	}
-	f := NewFastJsonConverter("1", originSchema)
+	f := NewFastJsonConverter("1", originSchema, false)
 	require.NoError(t, f.MergeSchema("2", nil, true))
 	newSchema := map[string]*ast.JsonStreamField{
 		"b": {
@@ -842,7 +842,7 @@ func TestMergeWildcardSchema(t *testing.T) {
 	data := map[string]interface{}{
 		"a": float64(1),
 		"b": float64(2),
-		"3": float64(3),
+		"c": float64(3),
 	}
 	bs, _ := json.Marshal(data)
 	d, err := f.Decode(bs)
@@ -855,4 +855,38 @@ func TestMergeWildcardSchema(t *testing.T) {
 		"a": int64(1),
 		"b": int64(2),
 	}, d)
+}
+
+func TestSchemaless(t *testing.T) {
+	originSchema := map[string]*ast.JsonStreamField{
+		"a": nil,
+	}
+	f := NewFastJsonConverter("1", originSchema, true)
+	testcases := []struct {
+		data map[string]interface{}
+	}{
+		{
+			data: map[string]interface{}{
+				"a": float64(1),
+			},
+		},
+		{
+			data: map[string]interface{}{
+				"a": "123",
+			},
+		},
+		{
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": float64(1),
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		bs, _ := json.Marshal(tc.data)
+		v, err := f.Decode(bs)
+		require.NoError(t, err)
+		require.Equal(t, tc.data, v)
+	}
 }
