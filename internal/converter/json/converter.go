@@ -229,7 +229,9 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 			if err != nil {
 				return nil, err
 			}
-			vs[i] = subMap
+			if subMap != nil {
+				vs[i] = subMap
+			}
 		case fastjson.TypeArray:
 			if field != nil && field.Type != "array" {
 				return nil, fmt.Errorf("array has wrong type:%v, expect:%v", fastjson.TypeArray.String(), field.Type)
@@ -246,25 +248,33 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 			if err != nil {
 				return nil, err
 			}
-			vs[i] = subList
+			if subList != nil {
+				vs[i] = subList
+			}
 		case fastjson.TypeString:
-			v, err := extractStringValue("array", item, field)
+			v, err := f.extractStringValue("array", item, field)
 			if err != nil {
 				return nil, err
 			}
-			vs[i] = v
+			if v != nil {
+				vs[i] = v
+			}
 		case fastjson.TypeNumber:
-			v, err := extractNumberValue("array", item, field)
+			v, err := f.extractNumberValue("array", item, field)
 			if err != nil {
 				return nil, err
 			}
-			vs[i] = v
+			if v != nil {
+				vs[i] = v
+			}
 		case fastjson.TypeTrue, fastjson.TypeFalse:
-			v, err := extractBooleanFromValue("array", item, field)
+			v, err := f.extractBooleanFromValue("array", item, field)
 			if err != nil {
 				return nil, err
 			}
-			vs[i] = v
+			if v != nil {
+				vs[i] = v
+			}
 		}
 	}
 	return vs, nil
@@ -272,139 +282,210 @@ func (f *FastJsonConverter) decodeArray(array []*fastjson.Value, field *ast.Json
 
 func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string]*ast.JsonStreamField) (map[string]interface{}, error) {
 	m := make(map[string]interface{})
-	for key, field := range schema {
-		if obj.Get(key) == nil {
-			continue
-		}
-		if !f.isSchemaLess && field == nil {
-			continue
-		}
-
-		v := obj.Get(key)
+	var err error
+	obj.Visit(func(k []byte, v *fastjson.Value) {
+		key := string(k)
 		switch v.Type() {
 		case fastjson.TypeNull:
 			m[key] = nil
 		case fastjson.TypeObject:
-			if field == nil || field.Type == "struct" {
-				childObj, err := obj.Get(key).Object()
-				if err != nil {
-					return nil, err
+			if f.checkSchema(key, "struct", schema) {
+				childObj, err2 := v.Object()
+				if err2 != nil {
+					err = err2
+					return
 				}
 				var props map[string]*ast.JsonStreamField
-				if field != nil {
-					props = field.Properties
+				if schema != nil && schema[key] != nil {
+					props = schema[key].Properties
 				}
-				childMap, err := f.decodeObject(childObj, props)
-				if err != nil {
-					return nil, err
+				childMap, err2 := f.decodeObject(childObj, props)
+				if err2 != nil {
+					err = err2
+					return
 				}
-				m[key] = childMap
+				if childMap != nil {
+					m[key] = childMap
+				}
 			} else {
-				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, v.Type().String(), getType(field))
+				err = fmt.Errorf("%v has wrong type:%v, expect:%v", key, v.Type().String(), getType(schema[key]))
+				return
 			}
 		case fastjson.TypeArray:
-			if field == nil || field.Type == "array" {
-				childArray, err := obj.Get(key).Array()
-				if err != nil {
-					return nil, err
+			if f.checkSchema(key, "array", schema) {
+				childArray, err2 := v.Array()
+				if err2 != nil {
+					err = err2
+					return
 				}
 				var items *ast.JsonStreamField
-				if field != nil {
-					items = field.Items
+				if schema != nil && schema[key] != nil {
+					items = schema[key].Items
 				}
-				subList, err := f.decodeArray(childArray, items)
-				if err != nil {
-					return nil, err
+				subList, err2 := f.decodeArray(childArray, items)
+				if err2 != nil {
+					err = err2
+					return
 				}
-				m[key] = subList
+				if subList != nil {
+					m[key] = subList
+				}
 			} else {
-				return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", key, v.Type().String(), getType(field))
+				err = fmt.Errorf("%v has wrong type:%v, expect:%v", key, v.Type().String(), getType(schema[key]))
+				return
 			}
 		case fastjson.TypeString:
-			v, err := extractStringValue(key, obj.Get(key), field)
-			if err != nil {
-				return nil, err
+			var field *ast.JsonStreamField
+			if schema != nil {
+				field = schema[key]
 			}
-			m[key] = v
+			v, err2 := f.extractStringValue(key, v, field)
+			if err2 != nil {
+				err = err2
+				return
+			}
+			if v != nil {
+				m[key] = v
+			}
 		case fastjson.TypeNumber:
-			v, err := extractNumberValue(key, obj.Get(key), field)
-			if err != nil {
-				return nil, err
+			var field *ast.JsonStreamField
+			if schema != nil {
+				field = schema[key]
 			}
-			m[key] = v
+			v, err2 := f.extractNumberValue(key, v, field)
+			if err2 != nil {
+				err = err2
+				return
+			}
+			if v != nil {
+				m[key] = v
+			}
 		case fastjson.TypeTrue, fastjson.TypeFalse:
-			v, err := extractBooleanFromValue(key, obj.Get(key), field)
-			if err != nil {
-				return nil, err
+			var field *ast.JsonStreamField
+			if schema != nil {
+				field = schema[key]
 			}
-			m[key] = v
+			v, err2 := f.extractBooleanFromValue(key, v, field)
+			if err2 != nil {
+				err = err2
+				return
+			}
+			if v != nil {
+				m[key] = v
+			}
 		}
+	})
+	if err != nil {
+		return nil, err
 	}
 	return m, nil
 }
 
-func extractNumberValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
-	switch {
-	case field == nil, field.Type == "float", field.Type == "datetime":
+func (f *FastJsonConverter) checkSchema(key, typ string, schema map[string]*ast.JsonStreamField) bool {
+	if f.isSchemaLess && (schema == nil || (schema[key] == nil)) {
+		return true
+	}
+	if !f.isSchemaLess && schema[key] != nil && schema[key].Type == typ {
+		return true
+	}
+	return false
+}
+
+func (f *FastJsonConverter) extractNumberValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
+	if f.isSchemaLess && field == nil {
 		f64, err := v.Float64()
 		if err != nil {
 			return nil, err
 		}
 		return f64, nil
-	case field.Type == "bigint":
-		i64, err := v.Int64()
-		if err != nil {
-			return nil, err
-		}
-		return i64, nil
-	case field.Type == "string":
-		f64, err := v.Float64()
-		if err != nil {
-			return nil, err
-		}
-		return cast.ToStringAlways(f64), nil
-	case field.Type == "boolean":
-		bv, err := getBooleanFromValue(v)
-		if err != nil {
-			return nil, err
-		}
-		return bv, nil
-	default:
-		return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, fastjson.TypeNumber.String(), field.Type)
 	}
+	if !f.isSchemaLess {
+		if field == nil {
+			return nil, nil
+		}
+		switch {
+		case field.Type == "float", field.Type == "datetime":
+			f64, err := v.Float64()
+			if err != nil {
+				return nil, err
+			}
+			return f64, nil
+		case field.Type == "bigint":
+			i64, err := v.Int64()
+			if err != nil {
+				return nil, err
+			}
+			return i64, nil
+		case field.Type == "string":
+			f64, err := v.Float64()
+			if err != nil {
+				return nil, err
+			}
+			return cast.ToStringAlways(f64), nil
+		case field.Type == "boolean":
+			bv, err := getBooleanFromValue(v)
+			if err != nil {
+				return nil, err
+			}
+			return bv, nil
+		}
+	}
+	return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, fastjson.TypeNumber.String(), getType(field))
 }
 
-func extractStringValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
-	switch {
-	case field == nil, field.Type == "string", field.Type == "datetime":
+func (f *FastJsonConverter) extractStringValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
+	if f.isSchemaLess && field == nil {
 		bs, err := v.StringBytes()
 		if err != nil {
 			return nil, err
 		}
 		return string(bs), nil
-	case field.Type == "bytea":
-		s, err := v.StringBytes()
-		if err != nil {
-			return nil, err
-		}
-		return cast.ToByteA(string(s), cast.CONVERT_ALL)
-	case field.Type == "boolean":
-		return getBooleanFromValue(v)
-	default:
-		return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, fastjson.TypeString.String(), field.Type)
 	}
+	if !f.isSchemaLess {
+		if field == nil {
+			return nil, nil
+		}
+		switch {
+		case field.Type == "string", field.Type == "datetime":
+			bs, err := v.StringBytes()
+			if err != nil {
+				return nil, err
+			}
+			return string(bs), nil
+		case field.Type == "bytea":
+			s, err := v.StringBytes()
+			if err != nil {
+				return nil, err
+			}
+			return cast.ToByteA(string(s), cast.CONVERT_ALL)
+		case field.Type == "boolean":
+			return getBooleanFromValue(v)
+		}
+	}
+	return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, fastjson.TypeString.String(), getType(field))
 }
 
-func extractBooleanFromValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
-	if field == nil || field.Type == "boolean" {
+func (f *FastJsonConverter) extractBooleanFromValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
+	if f.isSchemaLess && field == nil {
 		s, err := v.Bool()
 		if err != nil {
 			return nil, err
 		}
 		return s, nil
-	} else {
-		return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, v.Type().String(), getType(field))
 	}
+	if !f.isSchemaLess {
+		if field == nil {
+			return nil, nil
+		}
+		if field.Type == "boolean" {
+			s, err := v.Bool()
+			if err != nil {
+				return nil, err
+			}
+			return s, nil
+		}
+	}
+	return nil, fmt.Errorf("%v has wrong type:%v, expect:%v", name, v.Type().String(), getType(field))
 }
 
 func getBooleanFromValue(value *fastjson.Value) (interface{}, error) {
@@ -435,6 +516,14 @@ func getBooleanFromValue(value *fastjson.Value) (interface{}, error) {
 }
 
 func getType(t *ast.JsonStreamField) string {
+	if t == nil {
+		return "null"
+	} else {
+		return t.Type
+	}
+}
+
+func getType2(t *ast.JsonStreamField) string {
 	if t == nil {
 		return "null"
 	} else {

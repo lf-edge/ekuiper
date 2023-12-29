@@ -842,7 +842,7 @@ func TestMergeWildcardSchema(t *testing.T) {
 	data := map[string]interface{}{
 		"a": float64(1),
 		"b": float64(2),
-		"3": float64(3),
+		"c": float64(3),
 	}
 	bs, _ := json.Marshal(data)
 	d, err := f.Decode(bs)
@@ -855,4 +855,38 @@ func TestMergeWildcardSchema(t *testing.T) {
 		"a": int64(1),
 		"b": int64(2),
 	}, d)
+}
+
+func TestSchemaless(t *testing.T) {
+	originSchema := map[string]*ast.JsonStreamField{
+		"a": nil,
+	}
+	f := NewFastJsonConverter("1", originSchema, true)
+	testcases := []struct {
+		data map[string]interface{}
+	}{
+		{
+			data: map[string]interface{}{
+				"a": float64(1),
+			},
+		},
+		{
+			data: map[string]interface{}{
+				"a": "123",
+			},
+		},
+		{
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": float64(1),
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		bs, _ := json.Marshal(tc.data)
+		v, err := f.Decode(bs)
+		require.NoError(t, err)
+		require.Equal(t, tc.data, v)
+	}
 }
