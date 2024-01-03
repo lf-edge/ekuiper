@@ -20,12 +20,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestStrFuncNil(t *testing.T) {
@@ -288,5 +290,81 @@ func testFormatLocale(t *testing.T, fctx *kctx.DefaultFuncContext) {
 		if !reflect.DeepEqual(got, c.ret) {
 			t.Errorf("formatNumber(%f, %d,%s) == %s, want %s", c.number, c.precision, c.locale, got, c.ret)
 		}
+	}
+}
+
+func TestStringFuncVal(t *testing.T) {
+	tests := []struct {
+		name     string
+		funcName string
+		args     []ast.Expr
+		err      error
+	}{
+		{
+			name:     "format failure",
+			funcName: "format",
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "1"},
+			},
+			err: fmt.Errorf("At least has 2 argument but found 1."),
+		},
+		{
+			name:     "format failure",
+			funcName: "format",
+			args: []ast.Expr{
+				&ast.StringLiteral{Val: "1"},
+				&ast.IntegerLiteral{Val: 1},
+			},
+			err: fmt.Errorf("Expect numeric type for parameter 1"),
+		},
+		{
+			name:     "format failure",
+			funcName: "format",
+			args: []ast.Expr{
+				&ast.IntegerLiteral{Val: 1},
+				&ast.StringLiteral{Val: "1"},
+			},
+			err: fmt.Errorf("Expect integer type for parameter 2"),
+		},
+		{
+			name:     "format success",
+			funcName: "format",
+			args: []ast.Expr{
+				&ast.IntegerLiteral{Val: 1},
+				&ast.IntegerLiteral{Val: 0},
+			},
+			err: nil,
+		},
+		{
+			name:     "format failure",
+			funcName: "format",
+			args: []ast.Expr{
+				&ast.IntegerLiteral{Val: 1},
+				&ast.IntegerLiteral{Val: 0},
+				&ast.IntegerLiteral{Val: 0},
+			},
+			err: fmt.Errorf("Expect string type for parameter 3"),
+		},
+		{
+			name:     "format success",
+			funcName: "format",
+			args: []ast.Expr{
+				&ast.IntegerLiteral{Val: 1},
+				&ast.IntegerLiteral{Val: 0},
+				&ast.StringLiteral{Val: "en"},
+			},
+			err: nil,
+		},
+	}
+
+	registerStrFunc()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f, ok := builtins[tt.funcName]
+			assert.True(t, ok)
+			err := f.val(nil, tt.args)
+			assert.Equal(t, tt.err, err)
+		})
 	}
 }
