@@ -189,7 +189,7 @@ func (t *Server) StartRule(name string, reply *string) error {
 }
 
 func (t *Server) StopRule(name string, reply *string) error {
-	_, *reply = stopRule(name)
+	*reply, _ = stopRule(name)
 	return nil
 }
 

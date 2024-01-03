@@ -256,7 +256,7 @@ func stopRuleInternal(name string) {
 	}
 }
 
-func stopRule(name string) (err error, result string) {
+func stopRule(name string) (result string, err error) {
 	if rs, ok := registry.Load(name); ok {
 		err = rs.Stop()
 		if err != nil {

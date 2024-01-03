@@ -645,7 +645,7 @@ func stopRuleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	err, result := stopRule(name)
+	result, err := stopRule(name)
 	if err != nil {
 		handleError(w, err, "stop rule error", logger)
 		return
