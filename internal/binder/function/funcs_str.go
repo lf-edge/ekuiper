@@ -23,6 +23,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/number"
+
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -353,14 +357,20 @@ func registerStrFunc() {
 			}
 			if len(args) == 3 {
 				v3 := cast.ToStringAlways(args[2])
-				formatFunction := GetLocaleFormatFunction(v3)
-				res, err := formatFunction(cast.ToStringAlways(args[0]), cast.ToStringAlways(args[1]))
+
+				tag, err := language.Parse(v3)
 				if err != nil {
-					return err, false
+					return errors.New("not support for the specific locale:" + v3), false
 				}
-				return res, true
+				_, _, r := tag.Raw()
+				if !r.IsCountry() {
+					return errors.New("not support for the specific locale:" + v3), false
+				}
+				p := message.NewPrinter(tag)
+				return p.Sprint(number.Decimal(v1, number.Scale(v2))), true
 			} else {
-				return formatNumber(v1, v2), true
+				p := message.NewPrinter(language.MustParse("en"))
+				return p.Sprint(number.Decimal(v1, number.Scale(v2), number.NoSeparator())), true
 			}
 		},
 		val: func(_ api.FunctionContext, args []ast.Expr) error {

@@ -201,11 +201,15 @@ The optional third parameter enables a locale to be specified to be used for the
 
 ```sql
 SELECT format(12332.1234567, 4,"en_US");
--> '12,332.1234'
+-> '12,332.1235'
 ```
 
-The supported locales are as shown in the table below:
+Depending on the region, the display format of numbers can vary greatly. For example, here are examples to format the number 123456.78 specifically for certain regions:
 
-| **Locale Value** | **Meaning**             |
-| ---------------- | ----------------------- |
-| en_US            | English - United States |
+| **Locale Value** | **Meaning** |
+|------------------|-------------|
+| en_US            | 123,456.78  |
+| de_DE            | 123.456,78  |
+| de_CH            | 123'456.78  |
+
+More regional options: [Supported Locale List](./locale_support.md)
