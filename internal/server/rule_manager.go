@@ -233,7 +233,7 @@ func startRuleInternal(name string) error {
 func reRunRule(name string, isInternal bool) error {
 	rs, ok := registry.Load(name)
 	if !ok {
-		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
+		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	} else {
 		if !isInternal {
 			if rule, err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true); err != nil {
@@ -256,8 +256,7 @@ func stopRuleInternal(name string) {
 	}
 }
 
-func stopRule(name string) (result string) {
-	var err error
+func stopRule(name string) (result string, err error) {
 	if rs, ok := registry.Load(name); ok {
 		err = rs.Stop()
 		if err != nil {
@@ -270,6 +269,7 @@ func stopRule(name string) (result string) {
 		result = fmt.Sprintf("Rule %s was stopped.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
+		err = errorx.NewWithCode(errorx.NOT_FOUND, result)
 	}
 	return
 }

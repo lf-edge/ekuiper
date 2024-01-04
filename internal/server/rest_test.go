@@ -334,21 +334,37 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-
 	expect = `Rule rule1 was started`
 	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// start non-existence rule
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/non-existence-rule/start", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	expect = "start rule error: Rule non-existence-rule is not found in registry, please check if it is created\n"
+	assert.Equal(suite.T(), expect, string(returnVal))
+	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// stop rule
 	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/stop", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
+	expect = `Rule rule1 was stopped.`
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// stop non-existence rule
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/non-existence-rule/stop", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	expect = "stop rule error: Rule non-existence-rule was not found.\n"
+	assert.Equal(suite.T(), expect, string(returnVal))
+	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// update rule, will set rule to triggered
 	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
-
-	expect = `Rule rule1 was stopped.`
-	assert.Equal(suite.T(), expect, string(returnVal))
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
 	w1 = httptest.NewRecorder()
