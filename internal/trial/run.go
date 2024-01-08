@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package trial
 import (
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo"
@@ -43,7 +45,8 @@ func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 	for k, v := range def.SinkProps {
 		sinkProps[k] = v
 	}
-	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule(def.Id, def.Sql), def.Mock, []*node.SinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
+	// Add trial run prefix for rule id to avoid duplicate rule id with real rules in runtime or other trial rule
+	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock, []*node.SinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
 	if err != nil {
 		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}
