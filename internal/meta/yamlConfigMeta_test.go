@@ -15,9 +15,12 @@
 package meta
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 )
@@ -71,4 +74,26 @@ func TestYamlConfigMeta_Ops(t *testing.T) {
 	if err != nil {
 		t.Error("should overwrite exist config key")
 	}
+}
+
+func TestConfKeyReplace(t *testing.T) {
+	a1 := map[string]interface{}{
+		"url": "mysql://root:abcd@127.0.0.1:3306/test",
+		"key": "value",
+	}
+	bs, err := json.Marshal(a1)
+	require.NoError(t, err)
+	err = AddSinkConfKey("sql", "mysql", "", bs)
+	require.NoError(t, err)
+	a2 := map[string]interface{}{
+		"url": "mysql://root:******@127.0.0.1:3306/test",
+		"key": "value",
+	}
+	replaced := replacePasswdForConfig("sink", "sql", "mysql", a2)
+	require.Equal(t, a1, replaced)
+
+	err = AddSourceConfKey("sql", "mysql", "", bs)
+	require.NoError(t, err)
+	replaced = replacePasswdForConfig("source", "sql", "mysql", a2)
+	require.Equal(t, a1, replaced)
 }
