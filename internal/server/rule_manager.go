@@ -31,7 +31,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/hidden"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -161,22 +160,7 @@ func recoverRule(r *api.Rule) string {
 func replacePasswdForConfig(typ string, name string, config map[string]interface{}) map[string]interface{} {
 	if r, ok := config["resourceId"]; ok {
 		if resourceId, ok := r.(string); ok {
-			var configOperatorKey string
-			switch typ {
-			case "sink":
-				configOperatorKey = fmt.Sprintf(meta.SinkCfgOperatorKeyTemplate, name)
-			case "source":
-				configOperatorKey = fmt.Sprintf(meta.SourceCfgOperatorKeyTemplate, name)
-			case "connection":
-				configOperatorKey = fmt.Sprintf(meta.ConnectionCfgOperatorKeyTemplate, name)
-			}
-			cfgOp, ok := meta.GetConfOperator(configOperatorKey)
-			if ok {
-				if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceId]; ok {
-					config = hidden.ReplacePasswd(resource, config)
-					config = hidden.ReplaceUrl(resource, config)
-				}
-			}
+			return meta.ReplacePasswdForConfig(typ, name, resourceId, config)
 		}
 	}
 	return config

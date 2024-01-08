@@ -206,7 +206,7 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
 	}
-
+	reqField = replacePasswdForConfig("source", plgName, confKey, reqField)
 	var cfgOps conf.ConfigOperator
 	var found bool
 
@@ -238,6 +238,7 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "type_conversion_fail"), plgName, err)
 	}
+	reqField = replacePasswdForConfig("sink", plgName, confKey, reqField)
 
 	var cfgOps conf.ConfigOperator
 	var found bool
@@ -653,4 +654,31 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 		}
 	}
 	return configResponse
+}
+
+func ReplacePasswdForConfig(typ, name, resourceID string, config map[string]interface{}) map[string]interface{} {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+	return replacePasswdForConfig(typ, name, resourceID, config)
+}
+
+// replacePasswdForConfig reload password from resources if the config both include password(as fake password) and resourceId
+func replacePasswdForConfig(typ, name, resourceID string, config map[string]interface{}) map[string]interface{} {
+	var configOperatorKey string
+	switch typ {
+	case "sink":
+		configOperatorKey = fmt.Sprintf(SinkCfgOperatorKeyTemplate, name)
+	case "source":
+		configOperatorKey = fmt.Sprintf(SourceCfgOperatorKeyTemplate, name)
+	case "connection":
+		configOperatorKey = fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, name)
+	}
+	cfgOp, ok := ConfigManager.cfgOperators[configOperatorKey]
+	if ok {
+		if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceID]; ok {
+			config = hidden.ReplacePasswd(resource, config)
+			config = hidden.ReplaceUrl(resource, config)
+		}
+	}
+	return config
 }
