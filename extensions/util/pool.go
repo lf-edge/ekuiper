@@ -69,10 +69,14 @@ func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
 		return nil, err
 	}
 	conf.Log.Infof("create new database instance: %v", url)
-	dp.pool[url] = newDb
-	if _, ok := dp.pool[url]; !ok {
+	oldDB, ok := dp.pool[url]
+	if !ok {
 		dp.connections[url] = 1
+	} else {
+		// close oldDB
+		oldDB.Close()
 	}
+	dp.pool[url] = newDb
 	return newDb, nil
 }
 
