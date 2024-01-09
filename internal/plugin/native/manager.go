@@ -514,6 +514,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 				revokeFiles = append(revokeFiles, yamlPath)
 				filenames = append(filenames, yamlPath)
 			} else {
+				filenames = append(filenames, yamlPath)
 				conf.Log.Infof("skip install %s due to already exists", yamlPath)
 				continue
 			}
