@@ -574,11 +574,11 @@
               "path": "extension/native/develop/function"
             },
             {
-              "title": "Sink 插件开发",
+              "title": "目标 (Sink) 插件开发",
               "path": "extension/native/develop/sink"
             },
             {
-              "title": "源插件开发",
+              "title": "源 (Source) 插件开发",
               "path": "extension/native/develop/source"
             }
           ]
