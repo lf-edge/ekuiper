@@ -73,7 +73,6 @@ func (p *DataSourcePlan) BuildSchemaInfo(ruleID string) {
 }
 
 func (p *DataSourcePlan) BuildExplainInfo() {
-
 	info := ""
 	if p.name != "" {
 		info += "StreamName: " + string(p.name)
