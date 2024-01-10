@@ -32,23 +32,8 @@ type WebSocketConnectionConfig struct {
 	Path            string `json:"path"`
 	MaxConnRetry    int    `json:"maxConnRetry"`
 	CheckConnection bool   `json:"checkConnection"`
-	tlsConfig       *tls.Config
-}
-
-type tlsConf struct {
-	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
-	CertificationPath    string `json:"certificationPath"`
-	PrivateKeyPath       string `json:"privateKeyPath"`
-	RootCaPath           string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"tlsMinVersion"`
-	RenegotiationSupport string `json:"renegotiationSupport"`
-}
-
-func (c *tlsConf) isNil() bool {
-	if !c.InsecureSkipVerify && len(c.PrivateKeyPath) < 1 && len(c.CertificationPath) < 1 && len(c.RootCaPath) < 1 {
-		return true
-	}
-	return false
+	*cert.TlsConfigurationOptions
+	tlsConfig *tls.Config
 }
 
 func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrapper, error) {
@@ -56,24 +41,14 @@ func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrappe
 	if err := cast.MapToStruct(props, config); err != nil {
 		return nil, err
 	}
-	tlsConfig := &tlsConf{}
-	if err := cast.MapToStruct(props, tlsConfig); err != nil {
+	tlsConfig, tlsOpts, err := cert.GenTLSConfig(props)
+	if err != nil {
 		return nil, err
 	}
-	if !tlsConfig.isNil() {
-		tConf, err := cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
-			SkipCertVerify:       tlsConfig.InsecureSkipVerify,
-			CertFile:             tlsConfig.CertificationPath,
-			KeyFile:              tlsConfig.PrivateKeyPath,
-			CaFile:               tlsConfig.RootCaPath,
-			TLSMinVersion:        tlsConfig.TLSMinVersion,
-			RenegotiationSupport: tlsConfig.RenegotiationSupport,
-		})
-		if err != nil {
-			return nil, err
-		}
-		config.tlsConfig = tConf
-	}
+	tlsOpts.TlsConfigLog("websocket")
+	config.TlsConfigurationOptions = tlsOpts
+	config.tlsConfig = tlsConfig
+
 	if len(config.Addr) > 0 && len(config.Path) > 0 {
 		return newWebsocketClientClientWrapper(config)
 	}

@@ -30,17 +30,12 @@ import (
 )
 
 type MQTTConnectionConfig struct {
-	Server               string `json:"server"`
-	PVersion             string `json:"protocolVersion"`
-	ClientId             string `json:"clientid"`
-	Uname                string `json:"username"`
-	Password             string `json:"password"`
-	Certification        string `json:"certificationPath"`
-	PrivateKPath         string `json:"privateKeyPath"`
-	RootCaPath           string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"tlsMinVersion"`
-	RenegotiationSupport string `json:"renegotiationSupport"`
-	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
+	Server   string `json:"server"`
+	PVersion string `json:"protocolVersion"`
+	ClientId string `json:"clientid"`
+	Uname    string `json:"username"`
+	Password string `json:"password"`
+	*cert.TlsConfigurationOptions
 }
 
 type MQTTClient struct {
@@ -82,15 +77,11 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	if cfg.PVersion == "3.1" {
 		ms.pVersion = 3
 	}
-
-	tlsOpts := cert.TlsConfigurationOptions{
-		SkipCertVerify:       cfg.InsecureSkipVerify,
-		CertFile:             cfg.Certification,
-		KeyFile:              cfg.PrivateKPath,
-		CaFile:               cfg.RootCaPath,
-		TLSMinVersion:        cfg.TLSMinVersion,
-		RenegotiationSupport: cfg.RenegotiationSupport,
+	tlsOpts, err := cert.GenTlsConfigurationOptions(props)
+	if err != nil {
+		return err
 	}
+	cfg.TlsConfigurationOptions = tlsOpts
 	conf.Log.Infof("Connect MQTT broker %s with TLS configs: %v.", ms.srv, tlsOpts)
 	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
 	if err != nil {
