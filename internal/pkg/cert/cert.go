@@ -140,10 +140,7 @@ func GenTLSForClientFromProps(props map[string]interface{}) (*tls.Config, error)
 }
 
 func isCertDefined(opts *TlsConfigurationOptions) bool {
-	if len(opts.RawCert) == 0 && len(opts.RawKey) == 0 {
-		return false
-	}
-	if len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
+	if len(opts.RawCert) == 0 && len(opts.RawKey) == 0 && len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
 		return false
 	}
 	return true
@@ -163,12 +160,12 @@ func GenerateTLSForClient(
 
 	if !isCertDefined(Opts) {
 		tlsConfig.Certificates = nil
-	}
-
-	if cert, err := buildCert(Opts); err != nil {
-		return nil, err
 	} else {
-		tlsConfig.Certificates = []tls.Certificate{cert}
+		if cert, err := buildCert(Opts); err != nil {
+			return nil, err
+		} else {
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
 	}
 
 	if err := buildCA(Opts, tlsConfig); err != nil {
