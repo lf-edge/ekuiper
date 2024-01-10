@@ -15,6 +15,7 @@
 package kafka
 
 import (
+	"crypto/tls"
 	"fmt"
 	"strings"
 	"time"
@@ -23,13 +24,15 @@ import (
 
 	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type KafkaSource struct {
-	reader *kafkago.Reader
-	offset int64
+	reader    *kafkago.Reader
+	offset    int64
+	tlsConfig *tls.Config
 }
 
 type kafkaSourceConf struct {
@@ -84,17 +87,12 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 	if err := kConf.validate(); err != nil {
 		return err
 	}
-	tlsConf, err := kafka.GenTLSConf(props)
+	tlsConfig, tlsOpt, err := cert.GenTLSConfig(props)
 	if err != nil {
 		conf.Log.Errorf("kafka tls conf error: %v", err)
 		return err
 	}
-	tlsConf.TlsConfigLog("source")
-	tlsConfig, err := tlsConf.GetTlsConfig()
-	if err != nil {
-		conf.Log.Errorf("kafka tls config error: %v", err)
-		return err
-	}
+	tlsOpt.TlsConfigLog("kafka source")
 	saslConf, err := kafka.GetSaslConf(props)
 	if err != nil {
 		conf.Log.Errorf("kafka sasl error: %v", err)

@@ -15,16 +15,12 @@
 package kafka
 
 import (
-	"bytes"
-	"crypto/tls"
 	"fmt"
 
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
@@ -34,66 +30,50 @@ const (
 	SASL_SCRAM = "scram"
 )
 
-type TLSConf struct {
-	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
-	CertificationPath    string `json:"certificationPath"`
-	PrivateKeyPath       string `json:"privateKeyPath"`
-	RootCaPath           string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"tlsMinVersion"`
-	RenegotiationSupport string `json:"renegotiationSupport"`
-}
+//func (c *TLSConf) TlsConfigLog(typ string) {
+//	if c == nil {
+//		conf.Log.Infof("kafka %s tls not configured", typ)
+//		return
+//	}
+//	if c.InsecureSkipVerify {
+//		conf.Log.Infof("kafka %s tls enable insecure skip verify", typ)
+//		return
+//	}
+//	b := bytes.NewBufferString("kafka ")
+//	b.WriteString(typ)
+//	b.WriteString(" tls enabled")
+//	if len(c.CertificationPath) > 0 {
+//		b.WriteString(", crt configured")
+//	} else {
+//		b.WriteString(", crt not configured")
+//	}
+//	if len(c.PrivateKeyPath) > 0 {
+//		b.WriteString(", key configured")
+//	} else {
+//		b.WriteString(", key not configured")
+//	}
+//	if len(c.RootCaPath) > 0 {
+//		b.WriteString(", root ca configured")
+//	} else {
+//		b.WriteString(", root ca not configured")
+//	}
+//	conf.Log.Info(b.String())
+//}
 
-func GenTLSConf(props map[string]interface{}) (*TLSConf, error) {
-	tc := &TLSConf{}
-	if err := cast.MapToStruct(props, tc); err != nil {
-		return nil, err
-	}
-	return tc, nil
-}
-
-func (c *TLSConf) TlsConfigLog(typ string) {
-	if c == nil {
-		conf.Log.Infof("kafka %s tls not configured", typ)
-		return
-	}
-	if c.InsecureSkipVerify {
-		conf.Log.Infof("kafka %s tls enable insecure skip verify", typ)
-		return
-	}
-	b := bytes.NewBufferString("kafka ")
-	b.WriteString(typ)
-	b.WriteString(" tls enabled")
-	if len(c.CertificationPath) > 0 {
-		b.WriteString(", crt configured")
-	} else {
-		b.WriteString(", crt not configured")
-	}
-	if len(c.PrivateKeyPath) > 0 {
-		b.WriteString(", key configured")
-	} else {
-		b.WriteString(", key not configured")
-	}
-	if len(c.RootCaPath) > 0 {
-		b.WriteString(", root ca configured")
-	} else {
-		b.WriteString(", root ca not configured")
-	}
-	conf.Log.Info(b.String())
-}
-
-func (c *TLSConf) GetTlsConfig() (*tls.Config, error) {
-	if len(c.CertificationPath) == 0 && len(c.PrivateKeyPath) == 0 && len(c.RootCaPath) == 0 {
-		return nil, nil
-	}
-	return cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
-		SkipCertVerify:       c.InsecureSkipVerify,
-		CertFile:             c.CertificationPath,
-		KeyFile:              c.PrivateKeyPath,
-		CaFile:               c.RootCaPath,
-		TLSMinVersion:        c.TLSMinVersion,
-		RenegotiationSupport: c.RenegotiationSupport,
-	})
-}
+//
+//func (c *TLSConf) GetTlsConfig() (*tls.Config, error) {
+//	if len(c.CertificationPath) == 0 && len(c.PrivateKeyPath) == 0 && len(c.RootCaPath) == 0 {
+//		return nil, nil
+//	}
+//	return cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
+//		SkipCertVerify:       c.InsecureSkipVerify,
+//		CertFile:             c.CertificationPath,
+//		KeyFile:              c.PrivateKeyPath,
+//		CaFile:               c.RootCaPath,
+//		TLSMinVersion:        c.TLSMinVersion,
+//		RenegotiationSupport: c.RenegotiationSupport,
+//	})
+//}
 
 type SaslConf struct {
 	SaslAuthType string `json:"saslAuthType"`

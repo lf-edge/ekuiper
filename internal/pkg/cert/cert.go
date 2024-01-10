@@ -15,6 +15,7 @@
 package cert
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"os"
@@ -23,8 +24,64 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
+func GenTLSConfig(props map[string]interface{}) (*tls.Config, *TlsConfigurationOptions, error) {
+	opts, err := GenTlsConfigurationOptions(props)
+	if err != nil {
+		return nil, nil, err
+	}
+	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
+		(len(opts.RawCert) < 1 && len(opts.RawKey) < 1 && len(opts.RawCA) < 1) {
+		return nil, nil, nil
+	}
+	tc, err := GenerateTLSForClient(*opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	return tc, opts, nil
+}
+
+func GenTlsConfigurationOptions(props map[string]interface{}) (*TlsConfigurationOptions, error) {
+	opts := &TlsConfigurationOptions{}
+	if err := cast.MapToStruct(props, opts); err != nil {
+		return nil, err
+	}
+	return opts, nil
+}
+
+func (opts *TlsConfigurationOptions) TlsConfigLog(typ string) {
+	if opts == nil {
+		conf.Log.Infof("%s tls disabled", typ)
+	}
+	if opts.SkipCertVerify {
+		conf.Log.Infof("%s tls enable insecure skip verify", typ)
+		return
+	}
+	b := bytes.NewBufferString("")
+	b.WriteString(typ)
+	b.WriteString(" tls enabled")
+	if len(opts.CertFile) > 0 || len(opts.RawCert) > 0 {
+		b.WriteString(", crt configured")
+	} else {
+		b.WriteString(", crt not configured")
+	}
+	if len(opts.KeyFile) > 0 || len(opts.RawKey) > 0 {
+		b.WriteString(", key configured")
+	} else {
+		b.WriteString(", key not configured")
+	}
+	if len(opts.CaFile) > 0 || len(opts.RawCA) > 0 {
+		b.WriteString(", root ca configured")
+	} else {
+		b.WriteString(", root ca not configured")
+	}
+	conf.Log.Info(b.String())
+}
+
 type TlsConfigurationOptions struct {
 	SkipCertVerify       bool   `json:"insecureSkipVerify"`
+	RawCert              string `json:"rawCert"`
+	RawKey               string `json:"rawKey"`
+	RawCA                string `json:"rawCA"`
 	CertFile             string `json:"certificationPath"`
 	KeyFile              string `json:"privateKeyPath"`
 	CaFile               string `json:"rootCaPath"`
@@ -74,6 +131,16 @@ func GenTLSForClientFromProps(props map[string]interface{}) (*tls.Config, error)
 	return GenerateTLSForClient(*tc)
 }
 
+func isCertDefined(opts TlsConfigurationOptions) bool {
+	if len(opts.RawCert) == 0 && len(opts.RawKey) == 0 {
+		return false
+	}
+	if len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
+		return false
+	}
+	return true
+}
+
 func GenerateTLSForClient(
 	Opts TlsConfigurationOptions,
 ) (*tls.Config, error) {
@@ -83,25 +150,32 @@ func GenerateTLSForClient(
 		MinVersion:         getTLSMinVersion(Opts.TLSMinVersion),
 	}
 
+	if !isCertDefined(Opts) {
+		tlsConfig.Certificates = nil
+	}
+
 	if len(Opts.CertFile) <= 0 && len(Opts.KeyFile) <= 0 {
 		tlsConfig.Certificates = nil
 	} else {
-		if cert, err := certLoader(Opts.CertFile, Opts.KeyFile); err != nil {
+		if cert, err := buildCert(Opts); err != nil {
 			return nil, err
 		} else {
 			tlsConfig.Certificates = []tls.Certificate{cert}
 		}
 	}
 
-	if len(Opts.CaFile) > 0 {
-		root, err := caLoader(Opts.CaFile)
-		if err != nil {
-			return nil, err
-		}
-		tlsConfig.RootCAs = root
+	if err := buildCA(Opts, tlsConfig); err != nil {
+		return nil, err
 	}
 
 	return tlsConfig, nil
+}
+
+func buildCert(opts TlsConfigurationOptions) (tls.Certificate, error) {
+	if len(opts.CertFile) > 0 || len(opts.KeyFile) > 0 {
+		return certLoader(opts.CertFile, opts.KeyFile)
+	}
+	return tls.LoadX509KeyPair(opts.RawCert, opts.RawKey)
 }
 
 func certLoader(certFilePath, keyFilePath string) (tls.Certificate, error) {
@@ -120,7 +194,25 @@ func certLoader(certFilePath, keyFilePath string) (tls.Certificate, error) {
 	}
 }
 
+func buildCA(opts TlsConfigurationOptions, tlsConfig *tls.Config) error {
+	if len(opts.CaFile) > 0 {
+		root, err := caLoader(opts.CaFile)
+		if err != nil {
+			return err
+		}
+		tlsConfig.RootCAs = root
+		return nil
+	}
+	if len(opts.RawCA) > 0 {
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM([]byte(opts.RawCA))
+		return nil
+	}
+	return nil
+}
+
 func caLoader(caFilePath string) (*x509.CertPool, error) {
+
 	if cp, err := conf.ProcessPath(caFilePath); err == nil {
 		pool := x509.NewCertPool()
 		caCrt, err1 := os.ReadFile(cp)
