@@ -325,6 +325,7 @@ func (p *RuleMigrationProcessor) ConfigurationPartialExport(rules []string) ([]b
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          map[string]string{},
 	}
 	config.Rules = p.exportRules(rules)
 

@@ -65,6 +65,7 @@ type Configuration struct {
 	Service          map[string]string `json:"Service"`
 	Schema           map[string]string `json:"Schema"`
 	Uploads          map[string]string `json:"uploads"`
+	Scripts          map[string]string `json:"scripts"`
 }
 
 func configurationExport() ([]byte, error) {
@@ -80,6 +81,7 @@ func configurationExport() ([]byte, error) {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 	ruleSet := rulesetProcessor.ExportRuleSet()
 	if ruleSet != nil {
@@ -99,6 +101,9 @@ func configurationExport() ([]byte, error) {
 	}
 	if managers["schema"] != nil {
 		conf.Schema = managers["schema"].Export()
+	}
+	if managers["script"] != nil {
+		conf.Scripts = managers["script"].Export()
 	}
 	conf.Uploads = uploadsExport()
 
@@ -130,17 +135,8 @@ func configurationExportHandler(w http.ResponseWriter, r *http.Request) {
 func configurationReset() {
 	_ = resetAllRules()
 	_ = resetAllStreams()
-	if managers["plugin"] != nil {
-		managers["plugin"].Reset()
-	}
-	if managers["portable"] != nil {
-		managers["portable"].Reset()
-	}
-	if managers["service"] != nil {
-		managers["service"].Reset()
-	}
-	if managers["schema"] != nil {
-		managers["schema"].Reset()
+	for _, v := range managers {
+		v.Reset()
 	}
 	meta.ResetConfigs()
 	uploadsReset()
@@ -164,6 +160,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 
 	importStatus := ImportConfigurationStatus{}
@@ -180,6 +177,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 
 	ResponseNil := Configuration{
@@ -194,6 +192,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 
 	err := json.Unmarshal(data, conf)
@@ -224,6 +223,9 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 	}
 	if managers["service"] != nil {
 		configResponse.Service = managers["service"].Import(conf.Service)
+	}
+	if managers["script"] != nil {
+		configResponse.Scripts = managers["script"].Import(conf.Scripts)
 	}
 
 	yamlCfgSet := meta.YamlConfigurationSet{
@@ -288,6 +290,7 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 
 	importStatus := ImportConfigurationStatus{}
@@ -304,6 +307,7 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 
 	ResponseNil := Configuration{
@@ -318,6 +322,7 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 
 	err := json.Unmarshal(data, conf)
@@ -346,6 +351,9 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 	}
 	if managers["service"] != nil {
 		configResponse.Service = managers["service"].PartialImport(conf.Service)
+	}
+	if managers["script"] != nil {
+		configResponse.Scripts = managers["script"].PartialImport(conf.Scripts)
 	}
 
 	configResponse.SourceConfig = confRsp.Sources
@@ -454,6 +462,7 @@ func configurationStatusExport() Configuration {
 		Service:          make(map[string]string),
 		Schema:           make(map[string]string),
 		Uploads:          make(map[string]string),
+		Scripts:          make(map[string]string),
 	}
 	ruleSet := rulesetProcessor.ExportRuleSetStatus()
 	if ruleSet != nil {
@@ -473,6 +482,9 @@ func configurationStatusExport() Configuration {
 	}
 	if managers["schema"] != nil {
 		conf.Schema = managers["schema"].Export()
+	}
+	if managers["script"] != nil {
+		conf.Scripts = managers["script"].Export()
 	}
 	conf.Uploads = uploadsStatusExport()
 

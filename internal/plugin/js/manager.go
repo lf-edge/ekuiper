@@ -15,6 +15,7 @@
 package js
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/dop251/goja"
@@ -30,7 +31,8 @@ func GetManager() *Manager {
 }
 
 type Manager struct {
-	db kv.KeyValue
+	db             kv.KeyValue
+	importStatusDb kv.KeyValue
 }
 
 type Script struct {
@@ -46,10 +48,28 @@ func InitManager() error {
 	if err != nil {
 		return fmt.Errorf("can not initialize store for the JavaScript function manager at path 'script': %v", err)
 	}
+	importStatusDb, err := store.GetKV("scriptInstallStatus")
+	if err != nil {
+		return fmt.Errorf("can not initialize store for the JavaScript function manager at path 'scriptInstallStatus': %v", err)
+	}
+
 	manager = &Manager{
-		db: db,
+		db:             db,
+		importStatusDb: importStatusDb,
 	}
 	return nil
+}
+
+func (m *Manager) UpsertByJson(k string, v string) error {
+	s := &Script{Id: k}
+	err := json.Unmarshal([]byte(v), s)
+	if err != nil {
+		return fmt.Errorf("fail to unmarshal the script %s: %v", k, err)
+	}
+	if s.Id != k {
+		return fmt.Errorf("the script id %s does not match the key %s", s.Id, k)
+	}
+	return m.Update(s)
 }
 
 func (m *Manager) Create(script *Script) error {
