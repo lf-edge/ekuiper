@@ -10,6 +10,9 @@
 | certificationPath  | 否   | websocket 客户端 ssl 验证的 crt 文件路径           |
 | privateKeyPath     | 否   | websocket 客户端 ssl 验证的 key 文件路径               |
 | rootCaPath         | 否   | websocket 客户端 ssl 验证的 ca 证书文件路径              |
+| rawCert            | 是   | websocket 客户端 ssl 验证的 crt 原文       |
+| rawKey             | 是   | websocket 客户端 ssl 验证的 key 原文       |
+| rawCA              | 是   | websocket 客户端 ssl 验证的 ca 原文        |
 | checkConnection    | 否 | 是否检查 websocket endpoint 已经存在连接   |
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。

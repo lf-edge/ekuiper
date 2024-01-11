@@ -57,6 +57,9 @@ Users can specify the global MQTT configurations here. The configuration items s
   - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
 - `privateKeyPath`: The location of the private key path, for example `d3807d9fa5-private.pem.key`. It can be an absolute path or a relative path.  For more detailed information, see `certificationPath`.
 - `rootCaPath`: The location of root ca path. It can be an absolute path, or a relative path.
+- `rawCert`: original text of Cert.
+- `rawKey`: original text of Key.
+- `rawCA`: original text of CA.
 - `insecureSkipVerify`: Controls whether to skip certificate verification. If set to `true`, verification is skipped; otherwise, the certificate is verified.
 
 ### **Connection Reusability**

@@ -11,6 +11,9 @@ The action is used for publishing output message into websocket channel.
 | certificationPath  | false | websocket client ssl verification crt file path |
 | privateKeyPath     | false | Key file path for websocket client SSL verification |
 | rootCaPath         | false | websocket client ssl verified ca certificate file path |
+| rawCert            | true | original text of cert |
+| rawKey             | true | origin text of key |
+| rawCA              | true | origin text of CA |
 | checkConnection    | false | check wehther websocket connection exists              |
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.

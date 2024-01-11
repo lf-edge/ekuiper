@@ -61,6 +61,9 @@ demo_conf: #Conf_key
   - 如果运行从`/var/kuiper/bin`中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。
 - `privateKeyPath`：私钥路径，示例值：`d3807d9fa5-private.pem.key`。可以是绝对路径，也可以是相对路径，具体可参考 `certificationPath`。
 - `rootCaPath`：根证书路径。可以是绝对路径，也可以是相对路径。
+- `rawCert`: 证书原文。
+- `rawKey`: 密钥原文。
+- `rawCA`: 根证书原文。
 - `insecureSkipVerify`：是否跳过证书验证。如设置为 `true`，TLS 接受服务器提供的任何证书以及该证书中的任何主机名。注意：此时，TLS 容易受到中间人攻击。默认值：`false`。
 
 ### 连接重用
