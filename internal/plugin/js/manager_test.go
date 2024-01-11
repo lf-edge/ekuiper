@@ -64,6 +64,9 @@ func TestCreateScriptWithInvalidFunction(t *testing.T) {
 	err := GetManager().Create(script)
 	assert.NotNil(t, err)
 
+	err = GetManager().UpsertByJson("invalidScript", "{\"id\":\"invalidScript\",\"description\":\"Invalid script\",\"script\":\"function invalidScript() { return 'Hello, World!';\",\"isAgg\":false}")
+	assert.Error(t, err)
+
 	script = &Script{
 		Id:     "invalidName",
 		Desc:   "Invalid script",

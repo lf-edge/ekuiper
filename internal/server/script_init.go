@@ -46,6 +46,10 @@ func (p scriptComp) rest(r *mux.Router) {
 	r.HandleFunc("/udf/javascript/{id}", jsfuncHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 }
 
+func (p scriptComp) exporter() ConfManager {
+	return js.GetManager()
+}
+
 func jsfuncsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	switch r.Method {
