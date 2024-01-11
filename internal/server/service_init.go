@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build service || !core
-// +build service !core
 
 package server
 
@@ -51,6 +50,10 @@ func (s serviceComp) rest(r *mux.Router) {
 	r.HandleFunc("/services/functions", serviceFunctionsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/services/functions/{name}", serviceFunctionHandler).Methods(http.MethodGet)
 	r.HandleFunc("/services/{name}", serviceHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
+}
+
+func (s serviceComp) exporter() ConfManager {
+	return serviceExporter{}
 }
 
 func servicesHandler(w http.ResponseWriter, r *http.Request) {
@@ -140,22 +143,24 @@ func serviceFunctionHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(j, w, logger)
 }
 
-func serviceReset() {
-	serviceManager.UninstallAllServices()
-}
+type serviceExporter struct{}
 
-func serviceExport() map[string]string {
-	return serviceManager.GetAllServices()
-}
-
-func serviceStatusExport() map[string]string {
-	return serviceManager.GetAllServicesStatus()
-}
-
-func serviceImport(services map[string]string) map[string]string {
+func (e serviceExporter) Import(services map[string]string) map[string]string {
 	return serviceManager.ImportServices(services)
 }
 
-func servicePartialImport(services map[string]string) map[string]string {
+func (e serviceExporter) PartialImport(services map[string]string) map[string]string {
 	return serviceManager.ImportPartialServices(services)
+}
+
+func (e serviceExporter) Export() map[string]string {
+	return serviceManager.GetAllServices()
+}
+
+func (e serviceExporter) Status() map[string]string {
+	return serviceManager.GetAllServicesStatus()
+}
+
+func (e serviceExporter) Reset() {
+	serviceManager.UninstallAllServices()
 }

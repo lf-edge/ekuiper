@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,6 +37,10 @@ import (
 type RuleMigrationProcessor struct {
 	r *processor.RuleProcessor
 	s *processor.StreamProcessor
+}
+
+type InstallScriptGetter interface {
+	InstallScript(s string) (string, string)
 }
 
 func NewRuleMigrationProcessor(r *processor.RuleProcessor, s *processor.StreamProcessor) *RuleMigrationProcessor {
@@ -416,10 +420,18 @@ func (p *RuleMigrationProcessor) exportSelected(de *dependencies, config *Config
 	config.ConnectionConfig = configSet.Connections
 
 	// get schema
-	for _, v := range de.schemas {
-		schName, schInfo := getSchemaInstallScript(v)
-		config.Schema[schName] = schInfo
+	if managers["schema"] != nil {
+		f, ok := managers["schema"].(InstallScriptGetter)
+		if ok {
+			for _, v := range de.schemas {
+				schName, schInfo := f.InstallScript(v)
+				config.Schema[schName] = schInfo
+			}
+		} else { // should never happen
+			logger.Errorf("schema manager is not InstallScriptGetter")
+		}
 	}
+
 	config.Uploads = uploadsExport()
 }
 
