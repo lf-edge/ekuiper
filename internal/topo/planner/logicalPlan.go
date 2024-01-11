@@ -50,6 +50,10 @@ type ExplainInfo interface {
 	SetID(id int64)
 }
 
+type RuleRuntimeInfo interface {
+	BuildSchemaInfo(ruleID string)
+}
+
 type PlanExplainInfo struct {
 	T        PlanType `json:"type"`
 	Info     string   `json:"info"`
