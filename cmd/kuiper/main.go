@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -179,7 +179,7 @@ func main() {
 		{
 			Name:    "create",
 			Aliases: []string{"create"},
-			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create table $table_name | create table $table_name -f $table_def_file| create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file | create service $service_name $service_json | create schema $schema_type $schema_name $schema_json",
+			Usage:   "create stream $stream_name | create stream $stream_name -f $stream_def_file | create table $table_name | create table $table_name -f $table_def_file| create rule $rule_name $rule_json | create rule $rule_name -f $rule_def_file | create plugin $plugin_type $plugin_name $plugin_json | create plugin $plugin_type $plugin_name -f $plugin_def_file | create service $service_name $service_json | create schema $schema_type $schema_name $schema_json | create script $script_json",
 
 			Subcommands: []cli.Command{
 				{
@@ -415,12 +415,30 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "script",
+					Usage: "create script $script_json",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) < 1 {
+							fmt.Printf("Expect JavaScript function definition JSON.\n")
+							return nil
+						}
+						var reply string
+						err = client.Call("Server.CreateScript", c.Args()[0], &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 		{
 			Name:    "describe",
 			Aliases: []string{"describe"},
-			Usage:   "describe stream $stream_name | describe table $table_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name | describe udf $udf_name | describe service $service_name | describe service_func $service_func_name | describe schema $schema_type $schema_name",
+			Usage:   "describe stream $stream_name | describe table $table_name | describe rule $rule_name | describe plugin $plugin_type $plugin_name | describe udf $udf_name | describe service $service_name | describe service_func $service_func_name | describe schema $schema_type $schema_name | describe script $script_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -605,13 +623,32 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "script",
+					Usage: "describe script $script_name",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect JavaScript function name.\n")
+							return nil
+						}
+						name := c.Args()[0]
+						var reply string
+						err = client.Call("Server.DescScript", name, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "drop",
 			Aliases: []string{"drop"},
-			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -s $stop | drop service $service_name | drop schema $schema_type $schema_name",
+			Usage:   "drop stream $stream_name | drop table $table_name |drop rule $rule_name | drop plugin $plugin_type $plugin_name -s $stop | drop service $service_name | drop schema $schema_type $schema_name | drop script $script_name",
 			Subcommands: []cli.Command{
 				{
 					Name:  "stream",
@@ -735,13 +772,32 @@ func main() {
 						return nil
 					},
 				},
+				{
+					Name:  "script",
+					Usage: "drop script $script_name",
+					Action: func(c *cli.Context) error {
+						if len(c.Args()) != 1 {
+							fmt.Printf("Expect script name.\n")
+							return nil
+						}
+						name := c.Args()[0]
+						var reply string
+						err = client.Call("Server.DropScript", name, &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
 			},
 		},
 
 		{
 			Name:    "show",
 			Aliases: []string{"show"},
-			Usage:   "show streams | show tables | show rules | show plugins $plugin_type | show services | show service_funcs | show schemas $schema_type",
+			Usage:   "show streams | show tables | show rules | show plugins $plugin_type | show services | show service_funcs | show schemas $schema_type | show scripts",
 
 			Subcommands: []cli.Command{
 				{
@@ -849,6 +905,20 @@ func main() {
 						}
 						var reply string
 						err = client.Call("Server.ShowSchemas", c.Args()[0], &reply)
+						if err != nil {
+							fmt.Println(err)
+						} else {
+							fmt.Println(reply)
+						}
+						return nil
+					},
+				},
+				{
+					Name:  "scripts",
+					Usage: "show scripts",
+					Action: func(c *cli.Context) error {
+						var reply string
+						err = client.Call("Server.ShowScripts", 0, &reply)
 						if err != nil {
 							fmt.Println(err)
 						} else {
