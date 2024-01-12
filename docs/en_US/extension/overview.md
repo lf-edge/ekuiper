@@ -24,6 +24,10 @@ Portable plugin extension aims to provide the equal functionality with native pl
 
 Thus, portable plugin extension is a supplement of native plugin. It is suitable to code with multiple programming languages and want to build once and run against all versions.
 
+## Script Function Extension
+
+Script function extensions provide a minimalist way to extend SQL functions. It does not require tedious compilation and packaging of traditional plug-ins,not to mention the deployment management process. Users only need to provide a script text, which can be used for hot reload of functions through the API, which is very flexible. Script functions use a built-in interpreter without additional dependencies. However, due to the low performance of scripting languages, it is not recommended to use script function extensions in cases with high performance requirements. For detailed usage methods, please refer to [script functions](./script/overview.md).
+
 ## External Function Extension
 
 A configuration method is provided that eKuiper can use SQL to directly call external services in a functional manner, including various rpc services, http services, and so on. This method will greatly improve the ease of eKuiper extensions. External functions will be used as a supplement to the plugin system, and plugins are only recommended for high performance requirements.

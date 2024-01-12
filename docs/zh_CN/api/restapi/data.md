@@ -37,6 +37,9 @@ eKuiper REST api 允许您导入导出数据。
     "Schema":{
     },
     "uploads":{
+    },
+    "scripts":{
+      "area":"{\"id\":\"area\",\"description\":\"calculate area\",\"script\":\"function area(x, y) { return x * y; }\",\"isAgg\":false}"
     }
 }
 ```
@@ -114,7 +117,8 @@ Content-Type: application/json
   "connectionConfig":{},
   "Service":{},
   "Schema":{},
-  "uploads":{}
+  "uploads":{},
+  "scripts":{}
 }
 ```
 
@@ -137,7 +141,8 @@ Content-Type: application/json
   "connectionConfig":{},
   "Service":{},
   "Schema":{},
-  "uploads":{}
+  "uploads":{},
+  "scripts":{}
 }
 ```
 
