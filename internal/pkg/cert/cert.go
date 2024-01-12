@@ -226,6 +226,7 @@ func buildCA(opts *TlsConfigurationOptions, tlsConfig *tls.Config) error {
 	if len(opts.RawCA) > 0 {
 		pool := x509.NewCertPool()
 		pool.AppendCertsFromPEM(opts.rawCABytes)
+		tlsConfig.RootCAs = pool
 		return nil
 	}
 	return nil
