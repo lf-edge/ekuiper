@@ -100,7 +100,7 @@ func (m *influxSink2) Configure(props map[string]any) error {
 	if err != nil {
 		return err
 	}
-	tlsConf, err := cert.GenTLSForClientFromProps(props)
+	tlsConf, _, err := cert.GenTLSConfig(props)
 	if err != nil {
 		return fmt.Errorf("error configuring tls: %s", err)
 	}

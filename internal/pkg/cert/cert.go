@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"os"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -48,9 +49,28 @@ func GenTlsConfigurationOptions(props map[string]interface{}) (*TlsConfiguration
 	if err := cast.MapToStruct(props, opts); err != nil {
 		return nil, err
 	}
+	var err error
 	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
 		(len(opts.RawCert) < 1 && len(opts.RawKey) < 1 && len(opts.RawCA) < 1) {
 		return nil, nil
+	}
+	if len(opts.RawCA) > 0 {
+		opts.rawCABytes, err = base64.StdEncoding.DecodeString(opts.RawCA)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(opts.RawCert) > 0 {
+		opts.rawCertBytes, err = base64.StdEncoding.DecodeString(opts.RawCert)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(opts.RawKey) > 0 {
+		opts.rawKeyBytes, err = base64.StdEncoding.DecodeString(opts.RawKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return opts, nil
 }
@@ -95,6 +115,10 @@ type TlsConfigurationOptions struct {
 	CaFile               string `json:"rootCaPath"`
 	TLSMinVersion        string `json:"tlsMinVersion"`
 	RenegotiationSupport string `json:"renegotiationSupport"`
+
+	rawCABytes   []byte
+	rawCertBytes []byte
+	rawKeyBytes  []byte
 }
 
 func getTLSMinVersion(userInput string) uint16 {
@@ -129,14 +153,6 @@ func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
 		conf.Log.Warnf("Invalid renegotiation option: %s, defaulting to \"never\"", userInput)
 		return tls.RenegotiateNever
 	}
-}
-
-func GenTLSForClientFromProps(props map[string]interface{}) (*tls.Config, error) {
-	tc := &TlsConfigurationOptions{}
-	if err := cast.MapToStruct(props, tc); err != nil {
-		return nil, err
-	}
-	return GenerateTLSForClient(tc)
 }
 
 func isCertDefined(opts *TlsConfigurationOptions) bool {
@@ -179,7 +195,7 @@ func buildCert(opts *TlsConfigurationOptions) (tls.Certificate, error) {
 	if len(opts.CertFile) > 0 || len(opts.KeyFile) > 0 {
 		return certLoader(opts.CertFile, opts.KeyFile)
 	}
-	return tls.LoadX509KeyPair(opts.RawCert, opts.RawKey)
+	return tls.X509KeyPair(opts.rawCertBytes, opts.rawKeyBytes)
 }
 
 func certLoader(certFilePath, keyFilePath string) (tls.Certificate, error) {
@@ -209,7 +225,7 @@ func buildCA(opts *TlsConfigurationOptions, tlsConfig *tls.Config) error {
 	}
 	if len(opts.RawCA) > 0 {
 		pool := x509.NewCertPool()
-		pool.AppendCertsFromPEM([]byte(opts.RawCA))
+		pool.AppendCertsFromPEM(opts.rawCABytes)
 		return nil
 	}
 	return nil
