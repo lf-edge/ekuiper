@@ -484,6 +484,10 @@
           "path": "api/restapi/configKey"
         },
         {
+          "title": "脚本函数管理",
+          "path": "api/restapi/udf"
+        },
+        {
           "title": "外部函数管理",
           "path": "api/restapi/services"
         },
@@ -533,6 +537,10 @@
         {
           "title": "插件管理",
           "path": "api/cli/plugins"
+        },
+        {
+          "title": "脚本函数管理",
+          "path": "api/cli/scripts"
         },
         {
           "title": "外部服务",
@@ -597,6 +605,10 @@
               "path": "extension/portable/python_sdk"
             }
           ]
+        },
+        {
+          "title": "脚本函数",
+          "path": "extension/script/overview"
         },
         {
           "title": "外部函数",
@@ -1205,6 +1217,10 @@
           "path": "api/restapi/configKey"
         },
         {
+          "title": "Script Functions",
+          "path": "api/restapi/udf"
+        },
+        {
           "title": "External Services",
           "path": "api/restapi/services"
         },
@@ -1254,6 +1270,10 @@
         {
           "title": "Plugins",
           "path": "api/cli/plugins"
+        },
+        {
+          "title": "Script Functions",
+          "path": "api/cli/scripts"
         },
         {
           "title": "External Services",
@@ -1318,6 +1338,10 @@
               "path": "extension/portable/python_sdk"
             }
           ]
+        },
+        {
+          "title": "Script Function",
+          "path": "extension/script/overview"
         },
         {
           "title": "Plugin Management",
