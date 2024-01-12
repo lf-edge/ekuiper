@@ -115,6 +115,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			if m.schema != nil {
 				m.options.RuleID = ctx.GetRuleId()
 				m.options.Schema = m.schema
+				m.options.StreamName = m.name
 			}
 			converterTool, err := converter.GetOrCreateConverter(m.options)
 			if err != nil {

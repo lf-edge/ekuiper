@@ -16,7 +16,6 @@ package planner
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -62,13 +61,17 @@ func (p *DataSourcePlan) BuildSchemaInfo(ruleID string) {
 		return
 	}
 	if r.Schema != nil && len(r.Schema[string(p.name)]) > 0 {
-		var b bytes.Buffer
-		bs, err := json.Marshal(r.Schema[string(p.name)])
-		if err == nil {
-			if err := json.Compact(&b, bs); err == nil {
-				p.ExplainInfo.Info += fmt.Sprintf(" schema:%v", b.String())
+		b := bytes.NewBufferString(" Schema:[")
+		i := 0
+		for colName := range r.Schema[string(p.name)] {
+			if i > 0 {
+				b.WriteString(",")
 			}
+			b.WriteString(colName)
+			i++
 		}
+		b.WriteString("]")
+		p.ExplainInfo.Info += b.String()
 	}
 }
 

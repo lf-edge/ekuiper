@@ -63,7 +63,7 @@ func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {
 		if err != nil {
 			return nil, err
 		}
-		s.attachSchema(node.ctx.GetRuleId(), node.options.Schema, node.options.IsWildCard)
+		s.attachSchema(node.ctx.GetRuleId(), node.name, node.options.Schema, node.options.IsWildCard)
 		si = &sourceInstance{
 			source:                 s.source,
 			ctx:                    s.ctx,
@@ -277,12 +277,12 @@ func (ss *sourceSingleton) broadcastError(err error) {
 	wg.Wait()
 }
 
-func (ss *sourceSingleton) attachSchema(ruleID string, schema map[string]*ast.JsonStreamField, isWildCard bool) {
+func (ss *sourceSingleton) attachSchema(ruleID, dataSource string, schema map[string]*ast.JsonStreamField, isWildCard bool) {
 	decodeConverter := ss.ctx.Value(kctx.DecodeKey)
 	if decodeConverter != nil {
 		fastDecoder, ok := decodeConverter.(message.SchemaMergeAbleConverter)
 		if ok {
-			if err := fastDecoder.MergeSchema(ruleID, schema, isWildCard); err != nil {
+			if err := fastDecoder.MergeSchema(ruleID, dataSource, schema, isWildCard); err != nil {
 				conf.Log.Warnf("merge schema for shared stream rule %v failed, err:%v", ruleID, err)
 			}
 		}
