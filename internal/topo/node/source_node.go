@@ -202,6 +202,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								default:
 									_ = m.Broadcast(val)
 									stats.IncTotalRecordsOut()
+									stats.IncTotalMessagesProcessed(1)
 								}
 								stats.SetBufferLength(int64(buffer.GetLength()))
 								if rw, ok := si.source.(api.Rewindable); ok {

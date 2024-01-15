@@ -208,6 +208,7 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 				_ = w.Broadcast(w.events[i])
 				ctx.GetLogger().Debug("send out event", w.events[i].GetTimestamp())
 				w.statManager.IncTotalRecordsOut()
+				w.statManager.IncTotalMessagesProcessed(1)
 				w.statManager.ProcessTimeEnd()
 			}
 			w.events = w.events[c:]

@@ -144,6 +144,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						} else {
 							_ = n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
+							n.statManager.IncTotalMessagesProcessed(int64(sets.Len()))
 						}
 						n.statManager.ProcessTimeEnd()
 						n.statManager.SetBufferLength(int64(len(n.input)))
@@ -277,5 +278,6 @@ func (n *LookupNode) merge(ctx api.StreamContext, d xsql.TupleRow, r []map[strin
 	_ = n.Broadcast(sets)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()
+	n.statManager.IncTotalMessagesProcessed(1)
 	n.statManager.SetBufferLength(int64(len(n.input)))
 }

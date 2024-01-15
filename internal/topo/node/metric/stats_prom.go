@@ -44,6 +44,7 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		mg.BufferLength.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 
 		psm.pTotalRecordsIn = mg.TotalRecordsIn.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		psm.pTotalMessagesProcessed = mg.TotalMessagesProcessed.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pTotalRecordsOut = mg.TotalRecordsOut.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pTotalExceptions = mg.TotalExceptions.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		psm.pProcessLatency = mg.ProcessLatency.WithLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
@@ -59,17 +60,23 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 type PrometheusStatManager struct {
 	DefaultStatManager
 	// prometheus metrics
-	pTotalRecordsIn     prometheus.Counter
-	pTotalRecordsOut    prometheus.Counter
-	pTotalExceptions    prometheus.Counter
-	pProcessLatency     prometheus.Gauge
-	pProcessLatencyHist prometheus.Observer
-	pBufferLength       prometheus.Gauge
+	pTotalMessagesProcessed prometheus.Counter
+	pTotalRecordsIn         prometheus.Counter
+	pTotalRecordsOut        prometheus.Counter
+	pTotalExceptions        prometheus.Counter
+	pProcessLatency         prometheus.Gauge
+	pProcessLatencyHist     prometheus.Observer
+	pBufferLength           prometheus.Gauge
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsIn() {
 	sm.totalRecordsIn++
 	sm.pTotalRecordsIn.Inc()
+}
+
+func (sm *PrometheusStatManager) IncTotalMessagesProcessed(n int64) {
+	sm.totalMessagesProcessed++
+	sm.pTotalMessagesProcessed.Add(float64(n))
 }
 
 func (sm *PrometheusStatManager) IncTotalRecordsOut() {

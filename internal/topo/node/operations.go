@@ -153,12 +153,14 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				stats.ProcessTimeEnd()
 				for _, v := range val {
 					_ = o.Broadcast(v)
+					stats.IncTotalMessagesProcessed(1)
 					stats.IncTotalRecordsOut()
 				}
 				stats.SetBufferLength(int64(len(o.input)))
 			default:
 				stats.ProcessTimeEnd()
 				_ = o.Broadcast(val)
+				stats.IncTotalMessagesProcessed(1)
 				stats.IncTotalRecordsOut()
 				stats.SetBufferLength(int64(len(o.input)))
 			}

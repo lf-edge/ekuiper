@@ -24,6 +24,7 @@ import (
 const (
 	RecordsInTotal       = "records_in_total"
 	RecordsOutTotal      = "records_out_total"
+	MessagesOutTotal     = "messages_out_total"
 	ProcessLatencyUs     = "process_latency_us"
 	ProcessLatencyUsHist = "process_latency_us_hist"
 	LastInvocation       = "last_invocation"
@@ -33,11 +34,12 @@ const (
 	LastExceptionTime    = "last_exception_time"
 )
 
-var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, MessagesOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
 
 type StatManager interface {
 	IncTotalRecordsIn()
 	IncTotalRecordsOut()
+	IncTotalMessagesProcessed(n int64)
 	IncTotalExceptions(err string)
 	ProcessTimeStart()
 	ProcessTimeEnd()
@@ -51,8 +53,10 @@ type StatManager interface {
 // DefaultStatManager The statManager is not thread safe. Make sure it is used in only one instance
 type DefaultStatManager struct {
 	// metrics
-	totalRecordsIn    int64
-	totalRecordsOut   int64
+	totalRecordsIn         int64
+	totalRecordsOut        int64
+	totalMessagesProcessed int64
+
 	processLatency    int64
 	lastInvocation    time.Time
 	bufferLength      int64
@@ -93,6 +97,10 @@ func (sm *DefaultStatManager) IncTotalRecordsIn() {
 	sm.totalRecordsIn++
 }
 
+func (sm *DefaultStatManager) IncTotalMessagesProcessed(n int64) {
+	sm.totalMessagesProcessed += n
+}
+
 func (sm *DefaultStatManager) IncTotalRecordsOut() {
 	sm.totalRecordsOut++
 }
@@ -129,6 +137,7 @@ func (sm *DefaultStatManager) GetMetrics() []interface{} {
 	result := []interface{}{
 		sm.totalRecordsIn,
 		sm.totalRecordsOut,
+		sm.totalMessagesProcessed,
 		sm.processLatency,
 		sm.bufferLength,
 		0,
