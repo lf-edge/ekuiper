@@ -20,6 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -338,4 +341,40 @@ func TestCountWindow(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestGCInputsForConditionNotMatch(t *testing.T) {
+	o := &WindowOperator{
+		defaultSinkNode: &defaultSinkNode{
+			defaultNode: &defaultNode{
+				name: "1",
+			},
+		},
+		window: &WindowConfig{
+			Length: 1000,
+			Type:   ast.SLIDING_WINDOW,
+		},
+	}
+	tuples := []*xsql.Tuple{
+		{
+			Timestamp: 3000,
+		},
+		{
+			Timestamp: 4000,
+		},
+		{
+			Timestamp: 5000,
+		},
+	}
+	o.triggerTime = 1
+	inputs := o.gcInputs(tuples, 4500, context.Background())
+	require.Equal(t, []*xsql.Tuple{
+
+		{
+			Timestamp: 4000,
+		},
+		{
+			Timestamp: 5000,
+		},
+	}, inputs)
 }
