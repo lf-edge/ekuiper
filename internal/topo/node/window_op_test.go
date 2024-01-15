@@ -369,7 +369,6 @@ func TestGCInputsForConditionNotMatch(t *testing.T) {
 	o.triggerTime = 1
 	inputs := o.gcInputs(tuples, 4500, context.Background())
 	require.Equal(t, []*xsql.Tuple{
-
 		{
 			Timestamp: 4000,
 		},
