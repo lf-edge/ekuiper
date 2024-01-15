@@ -361,6 +361,9 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						} else {
 							inputs = o.scan(inputs, d.Timestamp, ctx)
 						}
+					} else {
+						// clear inputs if condition not matched
+						inputs = o.gcInputs(inputs, d.Timestamp, ctx)
 					}
 				case ast.SESSION_WINDOW:
 					if timeoutTicker != nil {
@@ -548,22 +551,16 @@ func (o *WindowOperator) isTimeRelatedWindow() bool {
 	return false
 }
 
-func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
+func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.TupleRow) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
-	var (
-		delta       int64
-		windowStart int64
-		windowEnd   = triggerTime
-	)
+	var delta int64
+	length := o.window.Length + o.window.Delay
 	if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, log)
 	}
-	results := &xsql.WindowTuples{
-		Content: make([]xsql.TupleRow, 0),
-	}
+	content := make([]xsql.TupleRow, 0)
 	i := 0
-	length := o.window.Length + o.window.Delay
 	// Sync table
 	for _, tuple := range inputs {
 		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
@@ -595,15 +592,34 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		}
 		if o.isTimeRelatedWindow() {
 			if tuple.Timestamp < triggerTime {
-				results = results.AddTuple(tuple)
+				content = append(content, tuple)
 			}
 		} else {
 			if tuple.Timestamp <= triggerTime {
-				results = results.AddTuple(tuple)
+				content = append(content, tuple)
 			}
 		}
 	}
+	return inputs[:i], content
+}
 
+func (o *WindowOperator) gcInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
+	inputs, _ = o.handleInputs(inputs, triggerTime, ctx)
+	return inputs
+}
+
+func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {
+	log := ctx.GetLogger()
+	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
+	var (
+		windowStart int64
+		windowEnd   = triggerTime
+	)
+	length := o.window.Length + o.window.Delay
+	inputs, content := o.handleInputs(inputs, triggerTime, ctx)
+	results := &xsql.WindowTuples{
+		Content: content,
+	}
 	switch o.window.Type {
 	case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
 		windowStart = o.triggerTime
@@ -623,7 +639,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 
 	o.triggerTime = triggerTime
 	log.Debugf("new trigger time %d", o.triggerTime)
-	return inputs[:i]
+	return inputs
 }
 
 func (o *WindowOperator) calDelta(triggerTime int64, log api.Logger) int64 {
