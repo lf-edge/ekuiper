@@ -65,9 +65,9 @@ Restart the eKuiper server to activate the plugin.
 | certificationPath  | true | Kafka client ssl verification Cert file path |
 | privateKeyPath     | true | Key file path for Kafka client SSL verification |
 | rootCaPath         | true | Kafka client ssl verified CA certificate file path |
-| rawCert            | true | Kafka client ssl verified Cert base64 encoded original text |
-| rawKey             | true | Kafka client ssl verified Key base64 encoded original text |
-| rawCA              | true | Kafka client ssl verified CA base64 encoded original text |
+| rawCertification            | true | Kafka client ssl verified Cert base64 encoded original text, use `certificationPath` first if both defined |
+| rawPrivateKey             | true | Kafka client ssl verified Key base64 encoded original text, use `privateKeyPath` first if both defined |
+| rawRootCA              | true | Kafka client ssl verified CA base64 encoded original text, use `rootCaPath` first if both defined |
 | maxAttempts        | true | The number of retries the Kafka client sends messages to the server, the default is 1 |
 | requiredACKs       | true | The mechanism for Kafka client to confirm messages, -1 means waiting for leader confirmation, 1 means waiting for confirmation from all replicas, 0 means not waiting for confirmation, default -1 |
 | key                | true | Key information carried by the Kafka client in messages sent to the server |

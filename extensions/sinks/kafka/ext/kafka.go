@@ -34,7 +34,6 @@ type kafkaSink struct {
 	writer         *kafkago.Writer
 	c              *sinkConf
 	kc             *kafkaConf
-	tc             *cert.TlsConfigurationOptions
 	tlsConfig      *tls.Config
 	sc             kafka.SaslConf
 	headersMap     map[string]string
@@ -80,7 +79,6 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	tlsOpts.TlsConfigLog("kafka sink")
-	m.tc = tlsOpts
 	m.tlsConfig = tlsConfig
 	kc := &kafkaConf{
 		RequiredACKs: -1,

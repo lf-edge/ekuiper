@@ -65,9 +65,9 @@ $(PLUGINS_CUSTOM):
 | certificationPath  | 是   | Kafka 客户端 ssl 验证的 crt 文件路径       |
 | privateKeyPath     | 是   | Kafka 客户端 ssl 验证的 key 文件路径       |
 | rootCaPath         | 是   | Kafka 客户端 ssl 验证的 ca 证书文件路径    |
-| rawCert            | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 crt 原文       |
-| rawKey             | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文       |
-| rawCA              | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 ca 原文        |
+| rawCertification            | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 crt 原文,  如果同时定义了 `certificationPath` 将会先用该参数。      |
+| rawPrivateKey             | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 key 原文,  如果同时定义了 `privateKeyPath` 将会先用该参数。      |
+| rawRootCA              | 是   | Kafka 客户端 ssl 验证，经过 base64 编码过的的 ca 原文,  如果同时定义了 `rootCAPath` 将会先用该参数。        |
 | maxAttempts        | 是   | Kafka 客户端向 server 发送消息的重试次数，默认为1  |
 | requiredACKs       | 是   | Kafka 客户端确认消息的机制，-1 代表等待 leader 确认，1 代表等待所有副本确认, 0 代表不等待确认, 默认为 -1|
 | key                | 是   | Kafka 客户端向 server 发送消息所携带的 Key 信息 |

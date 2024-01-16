@@ -26,7 +26,7 @@ import (
 )
 
 func GenTLSConfig(props map[string]interface{}) (*tls.Config, *TlsConfigurationOptions, error) {
-	opts, err := GenTlsConfigurationOptions(props)
+	opts, err := genTlsConfigurationOptions(props)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -34,7 +34,7 @@ func GenTLSConfig(props map[string]interface{}) (*tls.Config, *TlsConfigurationO
 		return nil, nil, nil
 	}
 	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
-		(len(opts.RawCert) < 1 && len(opts.RawKey) < 1 && len(opts.RawCA) < 1) {
+		(len(opts.RawCertification) < 1 && len(opts.RawPrivateKey) < 1 && len(opts.RawRootCA) < 1) {
 		return nil, nil, nil
 	}
 	tc, err := GenerateTLSForClient(opts)
@@ -44,30 +44,30 @@ func GenTLSConfig(props map[string]interface{}) (*tls.Config, *TlsConfigurationO
 	return tc, opts, nil
 }
 
-func GenTlsConfigurationOptions(props map[string]interface{}) (*TlsConfigurationOptions, error) {
+func genTlsConfigurationOptions(props map[string]interface{}) (*TlsConfigurationOptions, error) {
 	opts := &TlsConfigurationOptions{}
 	if err := cast.MapToStruct(props, opts); err != nil {
 		return nil, err
 	}
 	var err error
 	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
-		(len(opts.RawCert) < 1 && len(opts.RawKey) < 1 && len(opts.RawCA) < 1) {
+		(len(opts.RawCertification) < 1 && len(opts.RawPrivateKey) < 1 && len(opts.RawRootCA) < 1) {
 		return nil, nil
 	}
-	if len(opts.RawCA) > 0 {
-		opts.rawCABytes, err = base64.StdEncoding.DecodeString(opts.RawCA)
+	if len(opts.RawRootCA) > 0 {
+		opts.rawCABytes, err = base64.StdEncoding.DecodeString(opts.RawRootCA)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if len(opts.RawCert) > 0 {
-		opts.rawCertBytes, err = base64.StdEncoding.DecodeString(opts.RawCert)
+	if len(opts.RawCertification) > 0 {
+		opts.rawCertBytes, err = base64.StdEncoding.DecodeString(opts.RawCertification)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if len(opts.RawKey) > 0 {
-		opts.rawKeyBytes, err = base64.StdEncoding.DecodeString(opts.RawKey)
+	if len(opts.RawPrivateKey) > 0 {
+		opts.rawKeyBytes, err = base64.StdEncoding.DecodeString(opts.RawPrivateKey)
 		if err != nil {
 			return nil, err
 		}
@@ -87,17 +87,17 @@ func (opts *TlsConfigurationOptions) TlsConfigLog(typ string) {
 	b := bytes.NewBufferString("")
 	b.WriteString(typ)
 	b.WriteString(" tls enabled")
-	if len(opts.CertFile) > 0 || len(opts.RawCert) > 0 {
+	if len(opts.CertFile) > 0 || len(opts.RawCertification) > 0 {
 		b.WriteString(", crt configured")
 	} else {
 		b.WriteString(", crt not configured")
 	}
-	if len(opts.KeyFile) > 0 || len(opts.RawKey) > 0 {
+	if len(opts.KeyFile) > 0 || len(opts.RawPrivateKey) > 0 {
 		b.WriteString(", key configured")
 	} else {
 		b.WriteString(", key not configured")
 	}
-	if len(opts.CaFile) > 0 || len(opts.RawCA) > 0 {
+	if len(opts.CaFile) > 0 || len(opts.RawRootCA) > 0 {
 		b.WriteString(", root ca configured")
 	} else {
 		b.WriteString(", root ca not configured")
@@ -107,9 +107,9 @@ func (opts *TlsConfigurationOptions) TlsConfigLog(typ string) {
 
 type TlsConfigurationOptions struct {
 	SkipCertVerify       bool   `json:"insecureSkipVerify"`
-	RawCert              string `json:"rawCert"`
-	RawKey               string `json:"rawKey"`
-	RawCA                string `json:"rawCA"`
+	RawCertification     string `json:"rawCertification"`
+	RawPrivateKey        string `json:"rawPrivateKey"`
+	RawRootCA            string `json:"rawRootCA"`
 	CertFile             string `json:"certificationPath"`
 	KeyFile              string `json:"privateKeyPath"`
 	CaFile               string `json:"rootCaPath"`
@@ -155,13 +155,6 @@ func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
 	}
 }
 
-func isCertDefined(opts *TlsConfigurationOptions) bool {
-	if len(opts.RawCert) == 0 && len(opts.RawKey) == 0 && len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
-		return false
-	}
-	return true
-}
-
 func GenerateTLSForClient(
 	Opts *TlsConfigurationOptions,
 ) (*tls.Config, error) {
@@ -174,14 +167,10 @@ func GenerateTLSForClient(
 		MinVersion:         getTLSMinVersion(Opts.TLSMinVersion),
 	}
 
-	if !isCertDefined(Opts) {
-		tlsConfig.Certificates = nil
+	if cert, err := buildCert(Opts); err != nil {
+		return nil, err
 	} else {
-		if cert, err := buildCert(Opts); err != nil {
-			return nil, err
-		} else {
-			tlsConfig.Certificates = []tls.Certificate{cert}
-		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
 	if err := buildCA(Opts, tlsConfig); err != nil {
@@ -223,7 +212,7 @@ func buildCA(opts *TlsConfigurationOptions, tlsConfig *tls.Config) error {
 		tlsConfig.RootCAs = root
 		return nil
 	}
-	if len(opts.RawCA) > 0 {
+	if len(opts.RawRootCA) > 0 {
 		pool := x509.NewCertPool()
 		pool.AppendCertsFromPEM(opts.rawCABytes)
 		tlsConfig.RootCAs = pool

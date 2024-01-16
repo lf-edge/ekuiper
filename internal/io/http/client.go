@@ -172,16 +172,11 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 			return fmt.Errorf("headers must be a map or a string")
 		}
 	}
-	tlsOpts, err := cert.GenTlsConfigurationOptions(props)
+	tlscfg, tlsOpts, err := cert.GenTLSConfig(props)
 	if err != nil {
 		return err
 	}
 	c.TlsConfigurationOptions = tlsOpts
-
-	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
-	if err != nil {
-		return err
-	}
 	// validate oAuth. In order to adapt to manager, the validation is closed to allow empty value
 	if c.OAuth != nil {
 		// validate access token

@@ -77,17 +77,13 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	if cfg.PVersion == "3.1" {
 		ms.pVersion = 3
 	}
-	tlsOpts, err := cert.GenTlsConfigurationOptions(props)
+	tlsConfig, tlsOpts, err := cert.GenTLSConfig(props)
 	if err != nil {
 		return err
 	}
 	cfg.TlsConfigurationOptions = tlsOpts
 	conf.Log.Infof("Connect MQTT broker %s with TLS configs: %v.", ms.srv, tlsOpts)
-	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
-	if err != nil {
-		return err
-	}
-	ms.tls = tlscfg
+	ms.tls = tlsConfig
 	ms.uName = cfg.Uname
 	ms.password = strings.Trim(cfg.Password, " ")
 
