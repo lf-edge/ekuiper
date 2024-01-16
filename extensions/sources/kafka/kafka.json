@@ -194,15 +194,15 @@
       }
     },
     {
-      "name": "rawCert",
+      "name": "rawCertification",
       "default": "",
       "optional": true,
       "connection_related": true,
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "original text of the cert",
-        "zh_CN": "证书原文"
+        "en_US": "base64 encoded original text of the cert",
+        "zh_CN": "经过 base64 编码的证书原文"
       },
       "label": {
         "en_US": "Raw Cert",
@@ -210,15 +210,15 @@
       }
     },
     {
-      "name": "rawKey",
+      "name": "rawPrivateKey",
       "default": "",
       "optional": true,
       "connection_related": true,
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "original text of the key",
-        "zh_CN": "密钥原文"
+        "en_US": "base64 encoded original text of the key",
+        "zh_CN": "经过 base64 编码的密钥原文"
       },
       "label": {
         "en_US": "Raw Key",
@@ -226,15 +226,15 @@
       }
     },
     {
-      "name": "rawCA",
+      "name": "rawRootCA",
       "default": "",
       "optional": true,
       "connection_related": true,
       "control": "text",
       "type": "string",
       "hint": {
-        "en_US": "original text of the ca",
-        "zh_CN": "密钥原文"
+        "en_US": "base64 encoded original text of the ca",
+        "zh_CN": "经过 Base64 编码的密钥原文"
       },
       "label": {
         "en_US": "Raw CA",
