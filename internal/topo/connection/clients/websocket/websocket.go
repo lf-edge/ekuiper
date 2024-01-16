@@ -32,8 +32,7 @@ type WebSocketConnectionConfig struct {
 	Path            string `json:"path"`
 	MaxConnRetry    int    `json:"maxConnRetry"`
 	CheckConnection bool   `json:"checkConnection"`
-	*cert.TlsConfigurationOptions
-	tlsConfig *tls.Config
+	tlsConfig       *tls.Config
 }
 
 func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrapper, error) {
@@ -41,14 +40,11 @@ func NewWebSocketConnWrapper(props map[string]interface{}) (clients.ClientWrappe
 	if err := cast.MapToStruct(props, config); err != nil {
 		return nil, err
 	}
-	tlsConfig, tlsOpts, err := cert.GenTLSConfig(props)
+	tlsConfig, err := cert.GenTLSConfig(props, "websocket")
 	if err != nil {
 		return nil, err
 	}
-	tlsOpts.TlsConfigLog("websocket")
-	config.TlsConfigurationOptions = tlsOpts
 	config.tlsConfig = tlsConfig
-
 	if len(config.Addr) > 0 && len(config.Path) > 0 {
 		return newWebsocketClientClientWrapper(config)
 	}

@@ -74,11 +74,10 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	m.sc = sc
-	tlsConfig, tlsOpts, err := cert.GenTLSConfig(props)
+	tlsConfig, err := cert.GenTLSConfig(props, "kafka-sink")
 	if err != nil {
 		return err
 	}
-	tlsOpts.TlsConfigLog("kafka sink")
 	m.tlsConfig = tlsConfig
 	kc := &kafkaConf{
 		RequiredACKs: -1,

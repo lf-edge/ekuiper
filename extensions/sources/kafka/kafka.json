@@ -194,7 +194,7 @@
       }
     },
     {
-      "name": "rawCertification",
+      "name": "certficationRaw",
       "default": "",
       "optional": true,
       "connection_related": true,
@@ -210,7 +210,7 @@
       }
     },
     {
-      "name": "rawPrivateKey",
+      "name": "privateKeyRaw",
       "default": "",
       "optional": true,
       "connection_related": true,
@@ -226,7 +226,7 @@
       }
     },
     {
-      "name": "rawRootCA",
+      "name": "rootCARaw",
       "default": "",
       "optional": true,
       "connection_related": true,

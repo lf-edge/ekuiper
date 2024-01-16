@@ -45,14 +45,13 @@ type ClientConf struct {
 }
 
 type RawConf struct {
-	Url      string      `json:"url"`
-	Method   string      `json:"method"`
-	Body     string      `json:"body"`
-	BodyType string      `json:"bodyType"`
-	Headers  interface{} `json:"headers"`
-	*cert.TlsConfigurationOptions
-	Timeout   int  `json:"timeout"`
-	DebugResp bool `json:"debugResp"`
+	Url       string      `json:"url"`
+	Method    string      `json:"method"`
+	Body      string      `json:"body"`
+	BodyType  string      `json:"bodyType"`
+	Headers   interface{} `json:"headers"`
+	Timeout   int         `json:"timeout"`
+	DebugResp bool        `json:"debugResp"`
 	// Could be code or body
 	ResponseType string                            `json:"responseType"`
 	OAuth        map[string]map[string]interface{} `json:"oauth"`
@@ -172,11 +171,10 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 			return fmt.Errorf("headers must be a map or a string")
 		}
 	}
-	tlscfg, tlsOpts, err := cert.GenTLSConfig(props)
+	tlscfg, err := cert.GenTLSConfig(props, "http")
 	if err != nil {
 		return err
 	}
-	c.TlsConfigurationOptions = tlsOpts
 	// validate oAuth. In order to adapt to manager, the validation is closed to allow empty value
 	if c.OAuth != nil {
 		// validate access token

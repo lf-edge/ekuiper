@@ -25,23 +25,24 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
-func GenTLSConfig(props map[string]interface{}) (*tls.Config, *TlsConfigurationOptions, error) {
+func GenTLSConfig(props map[string]interface{}, typ string) (*tls.Config, error) {
 	opts, err := genTlsConfigurationOptions(props)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	if opts == nil {
-		return nil, nil, nil
+		return nil, nil
 	}
+	opts.TlsConfigLog(typ)
 	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
-		(len(opts.RawCertification) < 1 && len(opts.RawPrivateKey) < 1 && len(opts.RawRootCA) < 1) {
-		return nil, nil, nil
+		(len(opts.CertificationRaw) < 1 && len(opts.PrivateKeyRaw) < 1 && len(opts.RootCARaw) < 1) {
+		return nil, nil
 	}
 	tc, err := GenerateTLSForClient(opts)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return tc, opts, nil
+	return tc, nil
 }
 
 func genTlsConfigurationOptions(props map[string]interface{}) (*TlsConfigurationOptions, error) {
@@ -51,23 +52,23 @@ func genTlsConfigurationOptions(props map[string]interface{}) (*TlsConfiguration
 	}
 	var err error
 	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
-		(len(opts.RawCertification) < 1 && len(opts.RawPrivateKey) < 1 && len(opts.RawRootCA) < 1) {
+		(len(opts.CertificationRaw) < 1 && len(opts.PrivateKeyRaw) < 1 && len(opts.RootCARaw) < 1) {
 		return nil, nil
 	}
-	if len(opts.RawRootCA) > 0 {
-		opts.rawCABytes, err = base64.StdEncoding.DecodeString(opts.RawRootCA)
+	if len(opts.RootCARaw) > 0 {
+		opts.rawCABytes, err = base64.StdEncoding.DecodeString(opts.RootCARaw)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if len(opts.RawCertification) > 0 {
-		opts.rawCertBytes, err = base64.StdEncoding.DecodeString(opts.RawCertification)
+	if len(opts.CertificationRaw) > 0 {
+		opts.rawCertBytes, err = base64.StdEncoding.DecodeString(opts.CertificationRaw)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if len(opts.RawPrivateKey) > 0 {
-		opts.rawKeyBytes, err = base64.StdEncoding.DecodeString(opts.RawPrivateKey)
+	if len(opts.PrivateKeyRaw) > 0 {
+		opts.rawKeyBytes, err = base64.StdEncoding.DecodeString(opts.PrivateKeyRaw)
 		if err != nil {
 			return nil, err
 		}
@@ -87,17 +88,17 @@ func (opts *TlsConfigurationOptions) TlsConfigLog(typ string) {
 	b := bytes.NewBufferString("")
 	b.WriteString(typ)
 	b.WriteString(" tls enabled")
-	if len(opts.CertFile) > 0 || len(opts.RawCertification) > 0 {
+	if len(opts.CertFile) > 0 || len(opts.CertificationRaw) > 0 {
 		b.WriteString(", crt configured")
 	} else {
 		b.WriteString(", crt not configured")
 	}
-	if len(opts.KeyFile) > 0 || len(opts.RawPrivateKey) > 0 {
+	if len(opts.KeyFile) > 0 || len(opts.PrivateKeyRaw) > 0 {
 		b.WriteString(", key configured")
 	} else {
 		b.WriteString(", key not configured")
 	}
-	if len(opts.CaFile) > 0 || len(opts.RawRootCA) > 0 {
+	if len(opts.CaFile) > 0 || len(opts.RootCARaw) > 0 {
 		b.WriteString(", root ca configured")
 	} else {
 		b.WriteString(", root ca not configured")
@@ -107,9 +108,9 @@ func (opts *TlsConfigurationOptions) TlsConfigLog(typ string) {
 
 type TlsConfigurationOptions struct {
 	SkipCertVerify       bool   `json:"insecureSkipVerify"`
-	RawCertification     string `json:"rawCertification"`
-	RawPrivateKey        string `json:"rawPrivateKey"`
-	RawRootCA            string `json:"rawRootCA"`
+	CertificationRaw     string `json:"certificationRaw"`
+	PrivateKeyRaw        string `json:"privateKeyRaw"`
+	RootCARaw            string `json:"rootCARaw"`
 	CertFile             string `json:"certificationPath"`
 	KeyFile              string `json:"privateKeyPath"`
 	CaFile               string `json:"rootCaPath"`
@@ -156,7 +157,7 @@ func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
 }
 
 func isCertDefined(opts *TlsConfigurationOptions) bool {
-	if len(opts.RawCertification) == 0 && len(opts.RawPrivateKey) == 0 && len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
+	if len(opts.CertificationRaw) == 0 && len(opts.PrivateKeyRaw) == 0 && len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
 		return false
 	}
 	return true
@@ -222,7 +223,7 @@ func buildCA(opts *TlsConfigurationOptions, tlsConfig *tls.Config) error {
 		tlsConfig.RootCAs = root
 		return nil
 	}
-	if len(opts.RawRootCA) > 0 {
+	if len(opts.RootCARaw) > 0 {
 		pool := x509.NewCertPool()
 		pool.AppendCertsFromPEM(opts.rawCABytes)
 		tlsConfig.RootCAs = pool

@@ -87,12 +87,11 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 	if err := kConf.validate(); err != nil {
 		return err
 	}
-	tlsConfig, tlsOpt, err := cert.GenTLSConfig(props)
+	tlsConfig, err := cert.GenTLSConfig(props, "kafka-source")
 	if err != nil {
 		conf.Log.Errorf("kafka tls conf error: %v", err)
 		return err
 	}
-	tlsOpt.TlsConfigLog("kafka source")
 	saslConf, err := kafka.GetSaslConf(props)
 	if err != nil {
 		conf.Log.Errorf("kafka sasl error: %v", err)

@@ -35,7 +35,6 @@ type MQTTConnectionConfig struct {
 	ClientId string `json:"clientid"`
 	Uname    string `json:"username"`
 	Password string `json:"password"`
-	*cert.TlsConfigurationOptions
 }
 
 type MQTTClient struct {
@@ -77,12 +76,11 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	if cfg.PVersion == "3.1" {
 		ms.pVersion = 3
 	}
-	tlsConfig, tlsOpts, err := cert.GenTLSConfig(props)
+	tlsConfig, err := cert.GenTLSConfig(props, "mqtt")
 	if err != nil {
 		return err
 	}
-	cfg.TlsConfigurationOptions = tlsOpts
-	conf.Log.Infof("Connect MQTT broker %s with TLS configs: %v.", ms.srv, tlsOpts)
+	conf.Log.Infof("Connect MQTT broker %s with TLS configs", ms.srv)
 	ms.tls = tlsConfig
 	ms.uName = cfg.Uname
 	ms.password = strings.Trim(cfg.Password, " ")
