@@ -155,6 +155,13 @@ func getRenegotiationSupport(userInput string) tls.RenegotiationSupport {
 	}
 }
 
+func isCertDefined(opts *TlsConfigurationOptions) bool {
+	if len(opts.RawCertification) == 0 && len(opts.RawPrivateKey) == 0 && len(opts.CertFile) == 0 && len(opts.KeyFile) == 0 {
+		return false
+	}
+	return true
+}
+
 func GenerateTLSForClient(
 	Opts *TlsConfigurationOptions,
 ) (*tls.Config, error) {
@@ -166,11 +173,14 @@ func GenerateTLSForClient(
 		Renegotiation:      getRenegotiationSupport(Opts.RenegotiationSupport),
 		MinVersion:         getTLSMinVersion(Opts.TLSMinVersion),
 	}
-
-	if cert, err := buildCert(Opts); err != nil {
-		return nil, err
+	if !isCertDefined(Opts) {
+		tlsConfig.Certificates = nil
 	} else {
-		tlsConfig.Certificates = []tls.Certificate{cert}
+		if cert, err := buildCert(Opts); err != nil {
+			return nil, err
+		} else {
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		}
 	}
 
 	if err := buildCA(Opts, tlsConfig); err != nil {
