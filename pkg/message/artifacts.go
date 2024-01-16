@@ -43,7 +43,7 @@ type Converter interface {
 }
 
 type SchemaMergeAbleConverter interface {
-	MergeSchema(key string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error
+	MergeSchema(key, datasource string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error
 	DetachSchema(key string) error
 }
 
