@@ -15,10 +15,12 @@
 package planner
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/internal/converter/merge"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
@@ -50,6 +52,34 @@ func (p DataSourcePlan) Init() *DataSourcePlan {
 	p.baseLogicalPlan.self = &p
 	p.baseLogicalPlan.setPlanType(DATASOURCE)
 	return &p
+}
+
+func (p *DataSourcePlan) BuildSchemaInfo(ruleID string) {
+	schemaInfo := p.buildSchemaInfo(ruleID)
+	if schemaInfo != "" {
+		p.ExplainInfo.Info += schemaInfo
+	}
+}
+
+func (p *DataSourcePlan) buildSchemaInfo(ruleID string) string {
+	r := merge.GetRuleSchema(ruleID)
+	if r.Wildcard != nil && r.Wildcard[string(p.name)] {
+		return " wildcard:true"
+	}
+	if r.Schema != nil && len(r.Schema[string(p.name)]) > 0 {
+		b := bytes.NewBufferString(" Schema:[")
+		i := 0
+		for colName := range r.Schema[string(p.name)] {
+			if i > 0 {
+				b.WriteString(",")
+			}
+			b.WriteString(colName)
+			i++
+		}
+		b.WriteString("]")
+		return b.String()
+	}
+	return ""
 }
 
 func (p *DataSourcePlan) BuildExplainInfo() {

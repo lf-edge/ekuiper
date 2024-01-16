@@ -143,6 +143,9 @@ func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
 			tmp += "   "
 		}
 		p.BuildExplainInfo()
+		if info, ok := p.(RuleRuntimeInfo); ok {
+			info.BuildSchemaInfo(rule.Id)
+		}
 		// Build the explainInfo of the current layer
 		res += tmp + p.Explain() + "\n"
 		if len(p.Children()) != 0 {

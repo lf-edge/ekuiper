@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build portable || !core
-// +build portable !core
 
 package server
 
@@ -51,6 +50,10 @@ func (p portableComp) register() {
 func (p portableComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/portables", portablesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+}
+
+func (p portableComp) exporter() ConfManager {
+	return portableExporter{}
 }
 
 func portablesHandler(w http.ResponseWriter, r *http.Request) {
@@ -119,22 +122,24 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func portablePluginsReset() {
-	portableManager.UninstallAllPlugins()
-}
+type portableExporter struct{}
 
-func portablePluginExport() map[string]string {
-	return portableManager.GetAllPlugins()
-}
-
-func portablePluginStatusExport() map[string]string {
-	return portableManager.GetAllPlugins()
-}
-
-func portablePluginImport(plugins map[string]string) map[string]string {
+func (e portableExporter) Import(plugins map[string]string) map[string]string {
 	return portableManager.PluginImport(plugins)
 }
 
-func portablePluginPartialImport(plugins map[string]string) map[string]string {
+func (e portableExporter) PartialImport(plugins map[string]string) map[string]string {
 	return portableManager.PluginPartialImport(plugins)
+}
+
+func (e portableExporter) Export() map[string]string {
+	return portableManager.GetAllPlugins()
+}
+
+func (e portableExporter) Status() map[string]string {
+	return portableManager.GetAllPluginsStatus()
+}
+
+func (e portableExporter) Reset() {
+	portableManager.UninstallAllPlugins()
 }

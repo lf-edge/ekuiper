@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,6 +63,10 @@ func (p pluginComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/functions/{name}/register", functionRegisterHandler).Methods(http.MethodPost)
 	r.HandleFunc("/plugins/udfs", functionsListHandler).Methods(http.MethodGet)
 	r.HandleFunc("/plugins/udfs/{name}", functionsGetHandler).Methods(http.MethodGet)
+}
+
+func (p pluginComp) exporter() ConfManager {
+	return pluginExporter{}
 }
 
 func pluginsHandler(w http.ResponseWriter, r *http.Request, t plugin.PluginType) {
@@ -286,22 +290,24 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (result map[st
 	return
 }
 
-func pluginReset() {
-	nativeManager.UninstallAllPlugins()
-}
+type pluginExporter struct{}
 
-func pluginExport() map[string]string {
-	return nativeManager.GetAllPlugins()
-}
-
-func pluginStatusExport() map[string]string {
-	return nativeManager.GetAllPluginsStatus()
-}
-
-func pluginImport(plugins map[string]string) error {
+func (e pluginExporter) Import(plugins map[string]string) map[string]string {
 	return nativeManager.PluginImport(plugins)
 }
 
-func pluginPartialImport(plugins map[string]string) map[string]string {
+func (e pluginExporter) PartialImport(plugins map[string]string) map[string]string {
 	return nativeManager.PluginPartialImport(plugins)
+}
+
+func (e pluginExporter) Export() map[string]string {
+	return nativeManager.GetAllPlugins()
+}
+
+func (e pluginExporter) Status() map[string]string {
+	return nativeManager.GetAllPluginsStatus()
+}
+
+func (e pluginExporter) Reset() {
+	nativeManager.UninstallAllPlugins()
 }

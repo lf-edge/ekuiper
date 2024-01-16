@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -854,22 +854,23 @@ func (rr *Manager) GetAllPluginsStatus() map[string]string {
 const BOOT_INSTALL = "$boot_install"
 
 // PluginImport save the plugin install information and wait for restart
-func (rr *Manager) PluginImport(plugins map[string]string) error {
+func (rr *Manager) PluginImport(plugins map[string]string) map[string]string {
+	errMap := map[string]string{}
 	if len(plugins) == 0 {
 		return nil
 	}
 	for k, v := range plugins {
 		err := rr.plgInstallDb.Set(k, v)
 		if err != nil {
-			return err
+			errMap[k] = err.Error()
 		}
 	}
 	// set the flag to install the plugins when eKuiper reboot
 	err := rr.plgInstallDb.Set(BOOT_INSTALL, BOOT_INSTALL)
 	if err != nil {
-		return err
+		errMap["flag"] = err.Error()
 	}
-	return nil
+	return errMap
 }
 
 // PluginPartialImport compare the plugin to be installed and the one in database

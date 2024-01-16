@@ -3,6 +3,9 @@ package planner
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/internal/converter/merge"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -1040,4 +1043,16 @@ func TestOrderPlanExplainInfo(t *testing.T) {
 			t.Errorf("case %d: expect validate %v but got %v", i, rty, ty)
 		}
 	}
+}
+
+func TestSchemaInfo(t *testing.T) {
+	merge.AddRuleSchema("r1", "d1", nil, true)
+	p := DataSourcePlan{
+		name: "d1",
+	}.Init()
+	require.Equal(t, " wildcard:true", p.buildSchemaInfo("r1"))
+	merge.AddRuleSchema("r1", "d1", map[string]*ast.JsonStreamField{
+		"a": {},
+	}, false)
+	require.Equal(t, " Schema:[a]", p.buildSchemaInfo("r1"))
 }

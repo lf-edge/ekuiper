@@ -37,6 +37,9 @@ The file format for importing and exporting Data is JSON, which can contain : `s
   "Schema":{
   },
   "uploads":{
+  },
+  "scripts":{
+    
   }
 }
 ```

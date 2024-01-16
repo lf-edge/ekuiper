@@ -242,6 +242,7 @@ type Options struct {
 	Schema       map[string]*JsonStreamField `json:"-"`
 	IsWildCard   bool                        `json:"-"`
 	IsSchemaLess bool                        `json:"-"`
+	StreamName   string                      `json:"-"`
 }
 
 func (o Options) node() {}
