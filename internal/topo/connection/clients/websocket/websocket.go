@@ -16,6 +16,7 @@ package websocket
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -86,10 +87,44 @@ func GetWebsocketClientConn(addr, path string, tlsConfig *tls.Config) (*websocke
 		HandshakeTimeout: 45 * time.Second,
 		TLSClientConfig:  tlsConfig,
 	}
+	if len(addr) < 1 {
+		return nil, fmt.Errorf("host should be defined")
+	}
 	u := url.URL{Scheme: "ws", Host: addr, Path: path}
 	c, _, err := d.Dial(u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 	return c, nil
+}
+
+func PingWebsocketConn(props map[string]interface{}) error {
+	config := &WebSocketConnectionConfig{MaxConnRetry: 3}
+	if err := cast.MapToStruct(props, config); err != nil {
+		return err
+	}
+	tlsConfig := &tlsConf{}
+	if err := cast.MapToStruct(props, tlsConfig); err != nil {
+		return err
+	}
+	if !tlsConfig.isNil() {
+		tConf, err := cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
+			SkipCertVerify:       tlsConfig.InsecureSkipVerify,
+			CertFile:             tlsConfig.CertificationPath,
+			KeyFile:              tlsConfig.PrivateKeyPath,
+			CaFile:               tlsConfig.RootCaPath,
+			TLSMinVersion:        tlsConfig.TLSMinVersion,
+			RenegotiationSupport: tlsConfig.RenegotiationSupport,
+		})
+		if err != nil {
+			return err
+		}
+		config.tlsConfig = tConf
+	}
+	conn, err := GetWebsocketClientConn(config.Addr, config.Path, config.tlsConfig)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	return conn.WriteMessage(websocket.PingMessage, nil)
 }

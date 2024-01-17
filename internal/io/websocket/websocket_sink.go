@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/websocket"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
@@ -40,6 +41,13 @@ func (c *WebsocketConf) validateSinkConf() error {
 		return fmt.Errorf("websocket sink conf path should be defined")
 	}
 	return nil
+}
+
+func (wss *WebSocketSink) Ping(_ string, props map[string]interface{}) error {
+	if err := wss.Configure(props); err != nil {
+		return err
+	}
+	return websocket.PingWebsocketConn(wss.props)
 }
 
 func (wss *WebSocketSink) Open(ctx api.StreamContext) error {

@@ -94,7 +94,7 @@ type sqlSink struct {
 	db sqldatabase.DB
 }
 
-func (m *sqlSink) Ping(props map[string]interface{}) error {
+func (m *sqlSink) Ping(_ string, props map[string]interface{}) error {
 	if err := m.Configure(props); err != nil {
 		return err
 	}

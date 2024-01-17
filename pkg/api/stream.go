@@ -118,7 +118,7 @@ type Sink interface {
 }
 
 type PingableConn interface {
-	Ping(map[string]interface{}) error
+	Ping(string, map[string]interface{}) error
 }
 
 type ResendSink interface {
