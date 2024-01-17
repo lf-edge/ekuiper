@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 
 	v3 "github.com/edgexfoundry/go-mod-core-contracts/v3/common"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -177,13 +178,18 @@ func TestConfigure(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, test := range tests {
-		ems := EdgexMsgBusSink{}
-		err := ems.Configure(test.conf)
-		if !reflect.DeepEqual(test.error, testx.Errstring(err)) {
-			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, test.error, err)
-		} else if test.error == "" && !reflect.DeepEqual(test.expected, ems.c) {
-			t.Errorf("%d\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, test.expected, ems.c)
-		}
+		t.Run(fmt.Sprintf("test %d", i), func(t *testing.T) {
+			ems := EdgexMsgBusSink{}
+			err := ems.Configure(test.conf)
+			if !reflect.DeepEqual(test.error, testx.Errstring(err)) {
+				t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, test.error, err)
+			} else if test.error == "" {
+				assert.Equal(t, test.expected, ems.c)
+				assert.Equal(t, map[string]any{
+					"contentType": "application/json",
+				}, ems.sendParams)
+			}
+		})
 	}
 }
 
