@@ -15,6 +15,7 @@
 package kafka
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -32,7 +34,7 @@ type kafkaSink struct {
 	writer         *kafkago.Writer
 	c              *sinkConf
 	kc             *kafkaConf
-	tc             *kafka.TLSConf
+	tlsConfig      *tls.Config
 	sc             kafka.SaslConf
 	headersMap     map[string]string
 	headerTemplate string
@@ -72,14 +74,11 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	m.sc = sc
-	tc, err := kafka.GenTLSConf(props)
+	tlsConfig, err := cert.GenTLSConfig(props, "kafka-sink")
 	if err != nil {
 		return err
 	}
-
-	if err := cast.MapToStruct(props, tc); err != nil {
-		return err
-	}
+	m.tlsConfig = tlsConfig
 	kc := &kafkaConf{
 		RequiredACKs: -1,
 		MaxAttempts:  1,
@@ -88,12 +87,10 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 		return err
 	}
 	m.kc = kc
-	m.tc = tc
 	m.c = c
 	if err := m.setHeaders(); err != nil {
 		return fmt.Errorf("set kafka header failed, err:%v", err)
 	}
-	m.tc.TlsConfigLog("sink")
 	return m.buildKafkaWriter()
 }
 
@@ -103,11 +100,6 @@ func (m *kafkaSink) buildKafkaWriter() error {
 		return err
 	}
 	brokers := strings.Split(m.c.Brokers, ",")
-	tlsConfig, err := m.tc.GetTlsConfig()
-	if err != nil {
-		conf.Log.Errorf("setting kafka tls config failed,err: %v", err)
-		return err
-	}
 	w := &kafkago.Writer{
 		Addr:                   kafkago.TCP(brokers...),
 		Topic:                  m.c.Topic,
@@ -119,7 +111,7 @@ func (m *kafkaSink) buildKafkaWriter() error {
 		BatchSize:              1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
-			TLS:  tlsConfig,
+			TLS:  m.tlsConfig,
 		},
 	}
 	m.writer = w

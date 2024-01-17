@@ -93,6 +93,9 @@ Use can specify the global HTTP pull settings here. The configuration items spec
 
 - `privateKeyPath`: Path to the private key, example `d3807d9fa5-private.pem.key`. Can be an absolute or a relative path. For relative paths, refer to the behavior described under `certificationPath`.
 - `rootCaPath`: Path to the root CA. Can be an absolute or a relative path.
+- `certficationRaw`: base64 encoded original text of Cert, use `certificationPath` first if both defined.
+- `privateKeyRaw`: base64 encoded original text of Key, use `privateKeyPath` first if both defined.
+- `rootCARaw`: base64 encoded original text of CA, use `rootCaPath` first if both defined.
 - `insecureSkipVerify`: Control if to skip the certification verification. If set to `true`, then skip certification verification; Otherwise, verify the certification.
 
 #### OAuth Authentication

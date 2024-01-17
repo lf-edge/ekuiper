@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateTLSForClient(t *testing.T) {
@@ -164,7 +166,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateTLSForClient(tt.args.Opts)
+			got, err := GenerateTLSForClient(&tt.args.Opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateTLSForClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -174,4 +176,23 @@ func TestGenerateTLSForClient(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGenTLSConfig(t *testing.T) {
+	m := map[string]interface{}{}
+	c, err := GenTLSConfig(m, "")
+	require.NoError(t, err)
+	require.Nil(t, c)
+
+	var opts *TlsConfigurationOptions
+	opts.TlsConfigLog("")
+	opts = &TlsConfigurationOptions{}
+	opts.TlsConfigLog("")
+	opts.SkipCertVerify = true
+	opts.TlsConfigLog("")
+	opts.SkipCertVerify = false
+	opts.CertificationRaw = "mock"
+	opts.PrivateKeyRaw = "mock"
+	opts.RootCARaw = "mock"
+	opts.TlsConfigLog("")
 }
