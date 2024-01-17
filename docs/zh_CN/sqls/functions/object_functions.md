@@ -146,3 +146,21 @@ erase({"baz": [1, 2, 3], "bar": 'hello world',"foo":'emq'}, 'foo')
 ```sql
 {"baz": [1, 2, 3], "bar": 'hello world'}
 ```
+
+### OBJECT_PICK
+
+```text
+object_pick(obj, k)
+```
+
+如果 k 是一个字符串，则返回一个新对象，其中键 k 被保留。如果 k 是一个字符串数组，则返回一个新对象，其中包含 k 中的键被保留。
+
+```sql
+object_pick({"baz": [1, 2, 3], "bar": 'hello world',"foo":'emq'}, 'foo')
+```
+
+得到如下结果:
+
+```sql
+{"foo":'emq'}
+```

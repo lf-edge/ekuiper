@@ -380,11 +380,13 @@ func TestObjectFunctions(t *testing.T) {
 				map[string]interface{}{
 					"a": 1,
 					"b": 2,
+					"c": 3,
 				},
 				"a",
 			},
 			result: map[string]interface{}{
 				"b": 2,
+				"c": 3,
 			},
 		},
 		{
@@ -417,6 +419,74 @@ func TestObjectFunctions(t *testing.T) {
 					"b",
 				},
 				"c",
+			},
+			result: fmt.Errorf("the argument number should be 2, got 3"),
+		},
+		{
+			name: "object_pick",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+				[]string{
+					"a",
+					"c",
+				},
+			},
+			result: map[string]interface{}{
+				"a": 1,
+				"c": 3,
+			},
+		},
+		{
+			name: "object_pick",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+				"a",
+			},
+			result: map[string]interface{}{
+				"a": 1,
+			},
+		},
+		{
+			name: "object_pick",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+				"d",
+			},
+			result: map[string]interface{}{},
+		},
+		{
+			name: "object_pick",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+			},
+			result: fmt.Errorf("the argument number should be 2, got 1"),
+		},
+		{
+			name: "object_pick",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+					"c": 3,
+				},
+				"a",
+				"b",
 			},
 			result: fmt.Errorf("the argument number should be 2, got 3"),
 		},

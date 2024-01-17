@@ -162,3 +162,21 @@ result:
 ```sql
 {"baz": [1, 2, 3], "bar": 'hello world'}
 ```
+
+## OBJECT_PICK
+
+```text
+object_pick(obj, k)
+```
+
+If k is a string, return a new object where the key k is preserved. If k is an array of strings, return a new object where the keys in k are preserved.
+
+```sql
+erase({"baz": [1, 2, 3], "bar": 'hello world',"foo":'emq'}, 'foo')
+```
+
+result:
+
+```sql
+{"baz": [1, 2, 3], "bar": 'hello world'}
+```
