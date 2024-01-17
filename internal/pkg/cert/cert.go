@@ -34,10 +34,6 @@ func GenTLSConfig(props map[string]interface{}, typ string) (*tls.Config, error)
 		return nil, nil
 	}
 	opts.TlsConfigLog(typ)
-	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
-		(len(opts.CertificationRaw) < 1 && len(opts.PrivateKeyRaw) < 1 && len(opts.RootCARaw) < 1) {
-		return nil, nil
-	}
 	tc, err := GenerateTLSForClient(opts)
 	if err != nil {
 		return nil, err
