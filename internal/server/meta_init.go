@@ -334,7 +334,7 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	config = replacePasswdForConfig("sink", sinkNm, config)
-	err = node.SinkOpen(sinkNm, config)
+	err = node.SinkPing(sinkNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -356,7 +356,7 @@ func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	config = replacePasswdForConfig("source", sourceNm, config)
-	err = node.SourceOpen(sourceNm, config)
+	err = node.SourcePing(sourceNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return

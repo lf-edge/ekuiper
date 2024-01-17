@@ -180,20 +180,26 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
-func SinkOpen(sinkType string, config map[string]interface{}) error {
+func SourcePing(sourceType string, config map[string]interface{}) error {
+	source, err := io.Source(sourceType)
+	if err != nil {
+		return err
+	}
+	if pingAble, ok := source.(api.PingableConn); ok {
+		return pingAble.Ping(config)
+	}
+	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
+}
+
+func SinkPing(sinkType string, config map[string]interface{}) error {
 	sink, err := getSink(sinkType, config)
 	if err != nil {
 		return err
 	}
-
-	contextLogger := conf.Log.WithField("rule", "TestSinkOpen"+"_"+sinkType)
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-
-	defer func() {
-		_ = sink.Close(ctx)
-	}()
-
-	return sink.Open(ctx)
+	if pingAble, ok := sink.(api.PingableConn); ok {
+		return pingAble.Ping(config)
+	}
+	return fmt.Errorf("sink %v doesnt't support ping connection", sinkType)
 }
 
 func SourceOpen(sourceType string, config map[string]interface{}) error {

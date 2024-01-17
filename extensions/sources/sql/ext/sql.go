@@ -43,6 +43,13 @@ type sqlsource struct {
 	db *sql.DB
 }
 
+func (m *sqlsource) Ping(props map[string]interface{}) error {
+	if err := m.Configure("", props); err != nil {
+		return err
+	}
+	return m.db.Ping()
+}
+
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 	cfg := &sqlConConfig{}
 
