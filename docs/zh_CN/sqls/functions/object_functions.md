@@ -147,7 +147,7 @@ erase({"baz": [1, 2, 3], "bar": 'hello world',"foo":'emq'}, 'foo')
 {"baz": [1, 2, 3], "bar": 'hello world'}
 ```
 
-### OBJECT_PICK
+## OBJECT_PICK
 
 ```text
 object_pick(obj, k)

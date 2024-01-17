@@ -191,14 +191,6 @@ func registerObjectFunc() {
 	builtins["erase"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			contains := func(array []string, target string) bool {
-				for _, v := range array {
-					if target == v {
-						return true
-					}
-				}
-				return false
-			}
 			if len(args) != 2 {
 				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
 			}
@@ -228,7 +220,7 @@ func registerObjectFunc() {
 				return fmt.Errorf("the augument should be slice or string"), false
 			}
 			for k, v := range argMap {
-				if !contains(eraseArray, k) {
+				if !sliceStringContains(eraseArray, k) {
 					res[k] = v
 				}
 			}
@@ -243,14 +235,6 @@ func registerObjectFunc() {
 	builtins["object_pick"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			contains := func(array []string, target string) bool {
-				for _, v := range array {
-					if target == v {
-						return true
-					}
-				}
-				return false
-			}
 			if len(args) != 2 {
 				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
 			}
@@ -280,7 +264,7 @@ func registerObjectFunc() {
 				return fmt.Errorf("the augument should be slice or string"), false
 			}
 			for k, v := range argMap {
-				if contains(pickArray, k) {
+				if sliceStringContains(pickArray, k) {
 					res[k] = v
 				}
 			}
@@ -292,4 +276,13 @@ func registerObjectFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+}
+
+func sliceStringContains(s []string, target string) bool {
+	for _, v := range s {
+		if target == v {
+			return true
+		}
+	}
+	return false
 }
