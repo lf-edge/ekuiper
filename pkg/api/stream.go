@@ -318,6 +318,7 @@ type Qos int
 type MessageClient interface {
 	Subscribe(c StreamContext, subChan []TopicChannel, messageErrors chan error, params map[string]interface{}) error
 	Publish(c StreamContext, topic string, message []byte, params map[string]interface{}) error
+	Ping() error
 }
 
 // TopicChannel is the data structure for subscriber

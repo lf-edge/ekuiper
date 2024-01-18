@@ -18,9 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -185,8 +183,12 @@ func SourcePing(sourceType string, config map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
+	dataSource := "/$$TEST_CONNECTION$$"
+	if v, ok := config["DATASOURCE"]; ok {
+		dataSource = v.(string)
+	}
 	if pingAble, ok := source.(api.PingableConn); ok {
-		return pingAble.Ping(config)
+		return pingAble.Ping(dataSource, config)
 	}
 	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
 }
@@ -197,47 +199,7 @@ func SinkPing(sinkType string, config map[string]interface{}) error {
 		return err
 	}
 	if pingAble, ok := sink.(api.PingableConn); ok {
-		return pingAble.Ping(config)
+		return pingAble.Ping("", config)
 	}
 	return fmt.Errorf("sink %v doesnt't support ping connection", sinkType)
-}
-
-func SourceOpen(sourceType string, config map[string]interface{}) error {
-	dataSource := "/$$TEST_CONNECTION$$"
-	if v, ok := config["DATASOURCE"]; ok {
-		dataSource = v.(string)
-	}
-	ns, err := io.Source(sourceType)
-	if err != nil {
-		return err
-	}
-	if ns == nil {
-		lns, err := io.LookupSource(sourceType)
-		if err != nil {
-			return err
-		}
-		if lns == nil {
-			// should not happen
-			return fmt.Errorf("source %s not found", sourceType)
-		}
-		err = lns.Configure(dataSource, config)
-		if err != nil {
-			return err
-		}
-
-		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
-		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-		_ = lns.Close(ctx)
-	} else {
-		err = ns.Configure(dataSource, config)
-		if err != nil {
-			return err
-		}
-
-		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
-		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-		_ = ns.Close(ctx)
-	}
-
-	return nil
 }

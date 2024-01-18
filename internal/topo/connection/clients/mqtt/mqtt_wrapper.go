@@ -15,6 +15,7 @@
 package mqtt
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -136,6 +137,14 @@ func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMq
 				}
 			}
 		}
+	}
+}
+
+func (mc *mqttClientWrapper) Ping() error {
+	if mc.cli.conn.IsConnected() {
+		return nil
+	} else {
+		return errors.New("mqtt ping failed")
 	}
 }
 
