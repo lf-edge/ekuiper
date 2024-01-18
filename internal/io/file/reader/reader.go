@@ -8,9 +8,25 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
+const (
+	TupleError int = iota // display error in tuple
+)
+
+type ReaderError struct {
+	Code    int
+	Message string
+}
+
+func (e ReaderError) Error() string {
+	return e.Message
+}
+
+func BuildError(code int, msg string) *ReaderError {
+	return &ReaderError{code, msg}
+}
+
 type FormatReader interface {
-	/** Reads the next record. Returns EOF when the input has reached its end. */
-	Read() ([]map[string]interface{}, error)
+	Read() (map[string]interface{}, error) //Reads the next record. Returns EOF when the input has reached its end.
 	Close() error
 }
 

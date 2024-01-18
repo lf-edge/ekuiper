@@ -16,6 +16,7 @@ package file
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"io"
 	"os"
 	"path/filepath"
@@ -273,6 +274,60 @@ func TestJsonLines(t *testing.T) {
 	}
 	r := &FileSource{}
 	err = r.Configure("test.lines", p)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestInvalidJsonLines(t *testing.T) {
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	meta := map[string]interface{}{
+		"file": filepath.Join(path, "test", "test_invalid.lines"),
+	}
+	mc := conf.Clock.(*clock.Mock)
+	exp := []api.SourceTuple{
+		&xsql.ErrorSourceTuple{},
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
+	}
+	p := map[string]interface{}{
+		"path":     filepath.Join(path, "test"),
+		"fileType": "lines",
+	}
+	r := &FileSource{}
+	err = r.Configure("test_invalid.lines", p)
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestEmptyListJsonLines(t *testing.T) {
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	meta := map[string]interface{}{
+		"file": filepath.Join(path, "test", "test_empty_list.lines"),
+	}
+	mc := conf.Clock.(*clock.Mock)
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(4), "name": "John Smith"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(5), "name": "John Smith"}, meta, mc.Now()),
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
+	}
+	p := map[string]interface{}{
+		"path":     filepath.Join(path, "test"),
+		"fileType": "lines",
+	}
+	r := &FileSource{}
+	err = r.Configure("test_empty_list.lines", p)
 	if err != nil {
 		t.Errorf(err.Error())
 		return

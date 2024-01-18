@@ -26,7 +26,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/file/common"
+
 	"github.com/lf-edge/ekuiper/internal/io/file/writer"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )

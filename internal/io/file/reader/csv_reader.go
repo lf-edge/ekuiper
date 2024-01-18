@@ -14,10 +14,11 @@ type CsvReader struct {
 	csvR   *csv.Reader
 	config *common.FileSourceConfig
 
-	ctx api.StreamContext
+	ctx  api.StreamContext
+	cols []string
 }
 
-func (r *CsvReader) Read() ([]map[string]interface{}, error) {
+func (r *CsvReader) Read() (map[string]interface{}, error) {
 	record, err := r.csvR.Read()
 	if err == io.EOF {
 		return nil, err
@@ -27,21 +28,21 @@ func (r *CsvReader) Read() ([]map[string]interface{}, error) {
 		return nil, err
 	}
 	r.ctx.GetLogger().Debugf("Read" + strings.Join(record, ","))
-	cols := r.config.Columns
+
 	var m map[string]interface{}
-	if cols == nil {
+	if r.cols == nil {
 		m = make(map[string]interface{}, len(record))
 		for i, v := range record {
 			m["cols"+strconv.Itoa(i)] = v
 		}
 	} else {
-		m = make(map[string]interface{}, len(cols))
-		for i, v := range cols {
+		m = make(map[string]interface{}, len(r.cols))
+		for i, v := range r.cols {
 			m[v] = record[i]
 		}
 	}
 
-	return []map[string]interface{}{m}, nil
+	return m, nil
 }
 
 func (r *CsvReader) Close() error {
@@ -72,6 +73,7 @@ func CreateCsvReader(fileStream io.Reader, config *common.FileSourceConfig, ctx 
 	reader.csvR = r
 	reader.config = config
 	reader.ctx = ctx
+	reader.cols = cols
 
 	return reader, nil
 }

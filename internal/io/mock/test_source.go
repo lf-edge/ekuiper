@@ -16,6 +16,8 @@ package mock
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/xsql"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -43,6 +45,10 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 			assert.Equal(t, exp[i].Meta(), v.Meta())
 		default:
 			assert.Equal(t, exp[i], v)
+		case *xsql.ErrorSourceTuple:
+			expectedType := reflect.TypeOf(exp[i]).Kind()
+			actualType := reflect.TypeOf(v).Kind()
+			assert.Equal(t, expectedType, actualType)
 		}
 	}
 }

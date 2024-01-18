@@ -12,41 +12,27 @@ import (
 type LineReader struct {
 	scanner *bufio.Scanner
 	ctx     api.StreamContext
+	list    []map[string]interface{}
 }
 
-const (
-	TUPLE_ERROR int = iota // Display error in tuple
-)
-
-type ReaderError struct {
-	Code    int
-	Message string
-}
-
-func (e ReaderError) Error() string {
-	return e.Message
-}
-
-func BuildError(code int, msg string) *ReaderError {
-	return &ReaderError{code, msg}
-}
-
-func (r *LineReader) Read() ([]map[string]interface{}, error) {
-	succ := r.scanner.Scan()
-	if !succ {
-		return nil, io.EOF
-	}
-	m, err := r.ctx.DecodeIntoList(r.scanner.Bytes())
-	if err != nil {
-		msg := fmt.Sprintf("Invalid data format, cannot decode %s with error %s", r.scanner.Text(), err)
-		return nil, BuildError(TUPLE_ERROR, msg)
-	} else {
-		var tuples []map[string]interface{}
-		for _, t := range m {
-			tuples = append(tuples, t)
+func (r *LineReader) Read() (map[string]interface{}, error) {
+	for len(r.list) == 0 {
+		succ := r.scanner.Scan()
+		if !succ {
+			return nil, io.EOF
 		}
-		return tuples, nil
+		m, err := r.ctx.DecodeIntoList(r.scanner.Bytes())
+		if err != nil {
+			msg := fmt.Sprintf("Invalid data format, cannot decode %s with error %s", r.scanner.Text(), err)
+			return nil, BuildError(TupleError, msg)
+		}
+		r.list = m
 	}
+
+	mm := r.list[0]
+	r.list = r.list[1:]
+
+	return mm, nil
 }
 
 func (r *LineReader) Close() error {

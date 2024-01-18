@@ -16,6 +16,7 @@ package file
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -23,11 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/io/file/common"
-
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/file/common"
+
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"

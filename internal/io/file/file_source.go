@@ -30,8 +30,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/file/common"
-	"github.com/lf-edge/ekuiper/internal/io/file/reader"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -259,33 +257,30 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 
 	ctx.GetLogger().Debug("Sending tuples")
 
-	var ms []map[string]interface{}
+	var m map[string]interface{}
 	for {
-		var tuples []api.SourceTuple
-		ms, err = r.Read()
+		var tuple api.SourceTuple
+		m, err = r.Read()
 		if err == io.EOF {
 			break
 		}
-		if readerErr, ok := err.(reader.ReaderError); ok {
-			if readerErr.Code == reader.TUPLE_ERROR {
-				tuples = []api.SourceTuple{&xsql.ErrorSourceTuple{Error: fmt.Errorf(readerErr.Message)}}
-			}
+
+		if readerErr, ok := err.(*reader.ReaderError); ok && readerErr.Code == reader.TupleError {
+			tuple = &xsql.ErrorSourceTuple{Error: fmt.Errorf(readerErr.Message)}
 		} else {
 			if err != nil {
 				ctx.GetLogger().Debug(err.Error())
 				break
 			}
-			for _, m := range ms {
-				tuples = append(tuples, api.NewDefaultSourceTupleWithTime(m, meta, rcvTime))
-			}
+			tuple = api.NewDefaultSourceTupleWithTime(m, meta, rcvTime)
 		}
-		for _, tuple := range tuples {
-			select {
-			case consumer <- tuple:
-			case <-ctx.Done():
-				return nil
-			}
+
+		select {
+		case consumer <- tuple:
+		case <-ctx.Done():
+			return nil
 		}
+
 		if fs.config.SendInterval > 0 {
 			time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
 		}

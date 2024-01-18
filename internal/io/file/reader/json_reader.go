@@ -14,13 +14,13 @@ type JsonReader struct {
 	index     int
 }
 
-func (r *JsonReader) Read() ([]map[string]interface{}, error) {
+func (r *JsonReader) Read() (map[string]interface{}, error) {
 	curr := r.index
 	if curr > len(r.resultMap)-1 {
 		return nil, io.EOF
 	}
 	r.index += 1
-	return []map[string]interface{}{r.resultMap[curr]}, nil
+	return r.resultMap[curr], nil
 }
 
 func (r *JsonReader) Close() error {
