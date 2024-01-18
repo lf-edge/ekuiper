@@ -30,7 +30,7 @@
     }
   }, {
     "name": "username",
-    "default": "default",
+    "default": "",
     "optional": true,
     "control": "text",
     "type": "string",
