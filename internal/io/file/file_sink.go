@@ -23,24 +23,27 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type sinkConf struct {
-	RollingInterval    int64    `json:"rollingInterval"`
-	RollingCount       int      `json:"rollingCount"`
-	RollingNamePattern string   `json:"rollingNamePattern"` // where to add the timestamp to the file name
-	CheckInterval      int64    `json:"checkInterval"`
-	Path               string   `json:"path"` // support dynamic property, when rolling, make sure the path is updated
-	FileType           FileType `json:"fileType"`
-	HasHeader          bool     `json:"hasHeader"`
-	Delimiter          string   `json:"delimiter"`
-	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
-	Compression        string   `json:"compression"`
-	Fields             []string `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
+	RollingInterval    int64           `json:"rollingInterval"`
+	RollingCount       int             `json:"rollingCount"`
+	RollingNamePattern string          `json:"rollingNamePattern"` // where to add the timestamp to the file name
+	CheckInterval      int64           `json:"checkInterval"`
+	Path               string          `json:"path"` // support dynamic property, when rolling, make sure the path is updated
+	FileType           common.FileType `json:"fileType"`
+	HasHeader          bool            `json:"hasHeader"`
+	Delimiter          string          `json:"delimiter"`
+	Format             string          `json:"format"` // only use for validation; transformation is done in sink_node
+	Compression        string          `json:"compression"`
+	Fields             []string        `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
 }
 
 type fileSink struct {
@@ -54,7 +57,7 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 	c := &sinkConf{
 		RollingCount:  1000000,
 		Path:          "cache",
-		FileType:      LINES_TYPE,
+		FileType:      common.LINES_TYPE,
 		CheckInterval: (5 * time.Minute).Milliseconds(),
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
@@ -79,10 +82,10 @@ func (m *fileSink) Configure(props map[string]interface{}) error {
 	if c.Path == "" {
 		return fmt.Errorf("path must be set")
 	}
-	if c.FileType != JSON_TYPE && c.FileType != CSV_TYPE && c.FileType != LINES_TYPE {
+	if c.FileType != common.JSON_TYPE && c.FileType != common.CSV_TYPE && c.FileType != common.LINES_TYPE {
 		return fmt.Errorf("fileType must be one of json, csv or lines")
 	}
-	if c.FileType == CSV_TYPE {
+	if c.FileType == common.CSV_TYPE {
 		if c.Format != message.FormatDelimited {
 			return fmt.Errorf("format must be delimited when fileType is csv")
 		}
@@ -202,7 +205,7 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 		var e error
 		// extract header for csv
 		var headers string
-		if m.c.FileType == CSV_TYPE && m.c.HasHeader {
+		if m.c.FileType == common.CSV_TYPE && m.c.HasHeader {
 			var header []string
 			if len(m.c.Fields) > 0 {
 				header = m.c.Fields

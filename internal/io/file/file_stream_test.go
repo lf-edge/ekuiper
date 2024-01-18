@@ -20,10 +20,13 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
+
 	"github.com/benbjohnson/clock"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
@@ -34,27 +37,27 @@ import (
 func TestFileSinkCompress_Collect(t *testing.T) {
 	tests := []struct {
 		name     string
-		ft       FileType
+		ft       common.FileType
 		fname    string
 		content  []byte
 		compress string
 	}{
 		{
 			name:    "lines",
-			ft:      LINES_TYPE,
+			ft:      common.LINES_TYPE,
 			fname:   "test_lines",
 			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 		},
 		{
 			name:    "json",
-			ft:      JSON_TYPE,
+			ft:      common.JSON_TYPE,
 			fname:   "test_json",
 			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
 		},
 
 		{
 			name:     "lines",
-			ft:       LINES_TYPE,
+			ft:       common.LINES_TYPE,
 			fname:    "test_lines",
 			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
@@ -62,7 +65,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 
 		{
 			name:     "json",
-			ft:       JSON_TYPE,
+			ft:       common.JSON_TYPE,
 			fname:    "test_json",
 			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: GZIP,
@@ -70,7 +73,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 
 		{
 			name:     "lines",
-			ft:       LINES_TYPE,
+			ft:       common.LINES_TYPE,
 			fname:    "test_lines",
 			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: ZSTD,
@@ -78,7 +81,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 
 		{
 			name:     "json",
-			ft:       JSON_TYPE,
+			ft:       common.JSON_TYPE,
 			fname:    "test_json",
 			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: ZSTD,
@@ -103,7 +106,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			// Create a file sink with the temporary file path
 			sink := &fileSink{}
 			f := message.FormatJson
-			if tt.ft == CSV_TYPE {
+			if tt.ft == common.CSV_TYPE {
 				f = message.FormatDelimited
 			}
 			err = sink.Configure(map[string]interface{}{

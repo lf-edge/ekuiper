@@ -22,8 +22,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
+
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
 	"github.com/lf-edge/ekuiper/internal/io/file/writer"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -40,7 +43,7 @@ type fileWriter struct {
 	Written bool
 }
 
-func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string) (_ *fileWriter, ge error) {
+func createFileWriter(ctx api.StreamContext, fn string, ft common.FileType, headers string, compressAlgorithm string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
 	fws := &fileWriter{Start: conf.GetNow()}
 	var (
@@ -70,11 +73,11 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 	}()
 	fws.File = f
 	switch ft {
-	case JSON_TYPE:
+	case common.JSON_TYPE:
 		fws.Hook = jsonHooks
-	case CSV_TYPE:
+	case common.CSV_TYPE:
 		fws.Hook = &csvWriterHooks{header: []byte(headers)}
-	case LINES_TYPE:
+	case common.LINES_TYPE:
 		fws.Hook = linesHooks
 	}
 

@@ -14,12 +14,8 @@
 
 package file
 
-type FileType string
-
-const (
-	JSON_TYPE  FileType = "json"
-	CSV_TYPE   FileType = "csv"
-	LINES_TYPE FileType = "lines"
+import (
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
 )
 
 const (
@@ -27,10 +23,10 @@ const (
 	ZSTD = "zstd"
 )
 
-var fileTypes = map[FileType]struct{}{
-	JSON_TYPE:  {},
-	CSV_TYPE:   {},
-	LINES_TYPE: {},
+var fileTypes = map[common.FileType]struct{}{
+	common.JSON_TYPE:  {},
+	common.CSV_TYPE:   {},
+	common.LINES_TYPE: {},
 }
 
 var compressionTypes = map[string]struct{}{

@@ -23,8 +23,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
+
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/file/common"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
@@ -137,7 +140,7 @@ func TestFileSink_Configure(t *testing.T) {
 			c: &sinkConf{
 				CheckInterval: defaultCheckInterval,
 				Path:          "cache",
-				FileType:      LINES_TYPE,
+				FileType:      common.LINES_TYPE,
 				RollingCount:  1000000,
 			},
 			p: map[string]interface{}{},
@@ -147,7 +150,7 @@ func TestFileSink_Configure(t *testing.T) {
 			c: &sinkConf{
 				CheckInterval:      500,
 				Path:               "test",
-				FileType:           CSV_TYPE,
+				FileType:           common.CSV_TYPE,
 				Format:             message.FormatDelimited,
 				Delimiter:          ",",
 				RollingCount:       1000000,
@@ -166,7 +169,7 @@ func TestFileSink_Configure(t *testing.T) {
 			c: &sinkConf{
 				CheckInterval:   defaultCheckInterval,
 				Path:            "cache",
-				FileType:        LINES_TYPE,
+				FileType:        common.LINES_TYPE,
 				RollingInterval: 500,
 				RollingCount:    0,
 			},
@@ -180,7 +183,7 @@ func TestFileSink_Configure(t *testing.T) {
 			c: &sinkConf{
 				CheckInterval:   defaultCheckInterval,
 				Path:            "cache",
-				FileType:        LINES_TYPE,
+				FileType:        common.LINES_TYPE,
 				RollingInterval: 500,
 				RollingCount:    0,
 				Fields:          []string{"c", "a", "b"},
@@ -210,46 +213,46 @@ func TestFileSink_Configure(t *testing.T) {
 func TestFileSink_Collect(t *testing.T) {
 	tests := []struct {
 		name     string
-		ft       FileType
+		ft       common.FileType
 		fname    string
 		content  []byte
 		compress string
 	}{
 		{
 			name:    "lines",
-			ft:      LINES_TYPE,
+			ft:      common.LINES_TYPE,
 			fname:   "test_lines",
 			content: []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 		},
 		{
 			name:    "json",
-			ft:      JSON_TYPE,
+			ft:      common.JSON_TYPE,
 			fname:   "test_json",
 			content: []byte(`[{"key":"value1"},{"key":"value2"}]`),
 		},
 		{
 			name:    "csv",
-			ft:      CSV_TYPE,
+			ft:      common.CSV_TYPE,
 			fname:   "test_csv",
 			content: []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 		},
 		{
 			name:     "lines",
-			ft:       LINES_TYPE,
+			ft:       common.LINES_TYPE,
 			fname:    "test_lines",
 			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
 		},
 		{
 			name:     "json",
-			ft:       JSON_TYPE,
+			ft:       common.JSON_TYPE,
 			fname:    "test_json",
 			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: GZIP,
 		},
 		{
 			name:     "csv",
-			ft:       CSV_TYPE,
+			ft:       common.CSV_TYPE,
 			fname:    "test_csv",
 			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: GZIP,
@@ -257,21 +260,21 @@ func TestFileSink_Collect(t *testing.T) {
 
 		{
 			name:     "lines",
-			ft:       LINES_TYPE,
+			ft:       common.LINES_TYPE,
 			fname:    "test_lines",
 			content:  []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: ZSTD,
 		},
 		{
 			name:     "json",
-			ft:       JSON_TYPE,
+			ft:       common.JSON_TYPE,
 			fname:    "test_json",
 			content:  []byte(`[{"key":"value1"},{"key":"value2"}]`),
 			compress: ZSTD,
 		},
 		{
 			name:     "csv",
-			ft:       CSV_TYPE,
+			ft:       common.CSV_TYPE,
 			fname:    "test_csv",
 			content:  []byte("key\n{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
 			compress: ZSTD,
@@ -296,7 +299,7 @@ func TestFileSink_Collect(t *testing.T) {
 			// Create a file sink with the temporary file path
 			sink := &fileSink{}
 			f := message.FormatJson
-			if tt.ft == CSV_TYPE {
+			if tt.ft == common.CSV_TYPE {
 				f = message.FormatDelimited
 			}
 			err = sink.Configure(map[string]interface{}{
@@ -358,7 +361,7 @@ func TestFileSink_Collect(t *testing.T) {
 func TestFileSinkFields_Collect(t *testing.T) {
 	tests := []struct {
 		name      string
-		ft        FileType
+		ft        common.FileType
 		fname     string
 		format    string
 		delimiter string
@@ -367,7 +370,7 @@ func TestFileSinkFields_Collect(t *testing.T) {
 	}{
 		{
 			name:      "test1",
-			ft:        CSV_TYPE,
+			ft:        common.CSV_TYPE,
 			fname:     "test_csv",
 			format:    "delimited",
 			delimiter: ",",
@@ -376,7 +379,7 @@ func TestFileSinkFields_Collect(t *testing.T) {
 		},
 		{
 			name:      "test2",
-			ft:        CSV_TYPE,
+			ft:        common.CSV_TYPE,
 			fname:     "test_csv",
 			format:    "delimited",
 			delimiter: ",",
@@ -453,14 +456,14 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 	conf.IsTesting = true
 	tests := []struct {
 		name     string
-		ft       FileType
+		ft       common.FileType
 		fname    string
 		contents [2][]byte
 		compress string
 	}{
 		{
 			name:  "lines",
-			ft:    LINES_TYPE,
+			ft:    common.LINES_TYPE,
 			fname: "test_lines.log",
 			contents: [2][]byte{
 				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
@@ -469,7 +472,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 		},
 		{
 			name:  "json",
-			ft:    JSON_TYPE,
+			ft:    common.JSON_TYPE,
 			fname: "test_json.log",
 			contents: [2][]byte{
 				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
@@ -479,7 +482,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 
 		{
 			name:  "lines",
-			ft:    LINES_TYPE,
+			ft:    common.LINES_TYPE,
 			fname: "test_lines_gzip.log",
 			contents: [2][]byte{
 				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
@@ -489,7 +492,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 		},
 		{
 			name:  "json",
-			ft:    JSON_TYPE,
+			ft:    common.JSON_TYPE,
 			fname: "test_json_gzip.log",
 			contents: [2][]byte{
 				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
@@ -500,7 +503,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 
 		{
 			name:  "lines",
-			ft:    LINES_TYPE,
+			ft:    common.LINES_TYPE,
 			fname: "test_lines_zstd.log",
 			contents: [2][]byte{
 				[]byte("{\"key\":\"value0\",\"ts\":460}\n{\"key\":\"value1\",\"ts\":910}\n{\"key\":\"value2\",\"ts\":1360}"),
@@ -510,7 +513,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 		},
 		{
 			name:  "json",
-			ft:    JSON_TYPE,
+			ft:    common.JSON_TYPE,
 			fname: "test_json_zstd.log",
 			contents: [2][]byte{
 				[]byte("[{\"key\":\"value0\",\"ts\":460},{\"key\":\"value1\",\"ts\":910},{\"key\":\"value2\",\"ts\":1360}]"),
@@ -610,14 +613,14 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 	conf.IsTesting = true
 	tests := []struct {
 		name     string
-		ft       FileType
+		ft       common.FileType
 		fname    string
 		contents [3][]byte
 		compress string
 	}{
 		{
 			name:  "csv",
-			ft:    CSV_TYPE,
+			ft:    common.CSV_TYPE,
 			fname: "test_csv_{{.ts}}.dd",
 			contents: [3][]byte{
 				[]byte("key,ts\nvalue0,460"),
@@ -628,7 +631,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 
 		{
 			name:  "csv",
-			ft:    CSV_TYPE,
+			ft:    common.CSV_TYPE,
 			fname: "test_csv_gzip_{{.ts}}.dd",
 			contents: [3][]byte{
 				[]byte("key,ts\nvalue0,460"),
@@ -640,7 +643,7 @@ func TestFileSinkRollingCount_Collect(t *testing.T) {
 
 		{
 			name:  "csv",
-			ft:    CSV_TYPE,
+			ft:    common.CSV_TYPE,
 			fname: "test_csv_zstd_{{.ts}}.dd",
 			contents: [3][]byte{
 				[]byte("key,ts\nvalue0,460"),
@@ -751,7 +754,7 @@ func TestFileSinkReopen(t *testing.T) {
 	sink := &fileSink{}
 	err = sink.Configure(map[string]interface{}{
 		"path":               tmpfile.Name(),
-		"fileType":           LINES_TYPE,
+		"fileType":           common.LINES_TYPE,
 		"format":             "json",
 		"rollingNamePattern": "none",
 	})
@@ -782,7 +785,7 @@ func TestFileSinkReopen(t *testing.T) {
 	sink = &fileSink{}
 	err = sink.Configure(map[string]interface{}{
 		"path":               tmpfile.Name(),
-		"fileType":           LINES_TYPE,
+		"fileType":           common.LINES_TYPE,
 		"hasHeader":          true,
 		"format":             "json",
 		"rollingNamePattern": "none",
