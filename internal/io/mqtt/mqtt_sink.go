@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ type MQTTSink struct {
 	config     map[string]interface{}
 	cli        api.MessageClient
 	compressor message.Compressor
+	sendParams map[string]any
 }
 
 func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
@@ -85,6 +86,10 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		adconf.ResendTopic = adconf.Tpc
 	}
 	ms.adconf = adconf
+	ms.sendParams = map[string]any{
+		"qos":      adconf.Qos,
+		"retained": adconf.Retained,
+	}
 	return nil
 }
 
@@ -127,12 +132,7 @@ func (ms *MQTTSink) collectWithTopic(ctx api.StreamContext, item interface{}, to
 		return err
 	}
 
-	para := map[string]interface{}{
-		"qos":      ms.adconf.Qos,
-		"retained": ms.adconf.Retained,
-	}
-
-	if err := ms.cli.Publish(ctx, tpc, jsonBytes, para); err != nil {
+	if err := ms.cli.Publish(ctx, tpc, jsonBytes, ms.sendParams); err != nil {
 		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
 	}
 	return nil

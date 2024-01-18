@@ -45,19 +45,13 @@ type ClientConf struct {
 }
 
 type RawConf struct {
-	Url                  string      `json:"url"`
-	Method               string      `json:"method"`
-	Body                 string      `json:"body"`
-	BodyType             string      `json:"bodyType"`
-	Headers              interface{} `json:"headers"`
-	InsecureSkipVerify   bool        `json:"insecureSkipVerify"`
-	CertificationPath    string      `json:"certificationPath"`
-	PrivateKeyPath       string      `json:"privateKeyPath"`
-	RootCaPath           string      `json:"rootCaPath"`
-	TLSMinVersion        string      `json:"tlsMinVersion"`
-	RenegotiationSupport string      `json:"renegotiationSupport"`
-	Timeout              int         `json:"timeout"`
-	DebugResp            bool        `json:"debugResp"`
+	Url       string      `json:"url"`
+	Method    string      `json:"method"`
+	Body      string      `json:"body"`
+	BodyType  string      `json:"bodyType"`
+	Headers   interface{} `json:"headers"`
+	Timeout   int         `json:"timeout"`
+	DebugResp bool        `json:"debugResp"`
 	// Could be code or body
 	ResponseType string                            `json:"responseType"`
 	OAuth        map[string]map[string]interface{} `json:"oauth"`
@@ -114,13 +108,13 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 		withOption(option)
 	}
 	c := &RawConf{
-		Url:                "http://localhost",
-		Method:             http.MethodGet,
-		Interval:           DefaultInterval,
-		Timeout:            DefaultTimeout,
-		InsecureSkipVerify: true,
-		ResponseType:       "code",
+		Url:          "http://localhost",
+		Method:       http.MethodGet,
+		Interval:     DefaultInterval,
+		Timeout:      DefaultTimeout,
+		ResponseType: "code",
 	}
+
 	if err := cast.MapToStruct(props, c); err != nil {
 		return fmt.Errorf("fail to parse the properties: %v", err)
 	}
@@ -177,16 +171,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 			return fmt.Errorf("headers must be a map or a string")
 		}
 	}
-	tlsOpts := cert.TlsConfigurationOptions{
-		SkipCertVerify:       c.InsecureSkipVerify,
-		CertFile:             c.CertificationPath,
-		KeyFile:              c.PrivateKeyPath,
-		CaFile:               c.RootCaPath,
-		TLSMinVersion:        c.TLSMinVersion,
-		RenegotiationSupport: c.RenegotiationSupport,
-	}
-
-	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
+	tlscfg, err := cert.GenTLSConfig(props, "http")
 	if err != nil {
 		return err
 	}
