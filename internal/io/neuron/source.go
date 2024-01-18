@@ -15,9 +15,12 @@
 package neuron
 
 import (
+	"errors"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -30,6 +33,22 @@ type sc struct {
 
 type source struct {
 	c *sc
+}
+
+func (s *source) Ping(dataSource string, props map[string]interface{}) error {
+	if err := s.Configure(dataSource, props); err != nil {
+		return err
+	}
+	ctx := context.Background()
+	cli, err := createOrGetConnection(ctx, s.c.Url)
+	if err != nil {
+		return err
+	}
+	defer closeConnection(ctx, s.c.Url)
+	if atomic.LoadInt32(&cli.opened) == 1 {
+		return nil
+	}
+	return errors.New("neuron source ping failed")
 }
 
 func (s *source) Configure(_ string, props map[string]interface{}) error {

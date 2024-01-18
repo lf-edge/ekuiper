@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -55,6 +56,16 @@ type MQTTConfig struct {
 
 func (ms *MQTTSource) WithSchema(_ string) *MQTTSource {
 	return ms
+}
+
+func (ms *MQTTSource) Ping(dataSource string, props map[string]interface{}) error {
+	if err := ms.Configure(dataSource, props); err != nil {
+		return err
+	}
+	defer func() {
+		ms.Close(context.Background())
+	}()
+	return ms.cli.Ping()
 }
 
 func (ms *MQTTSource) Configure(topic string, props map[string]interface{}) error {

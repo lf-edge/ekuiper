@@ -16,10 +16,13 @@ package neuron
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
+	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -44,6 +47,24 @@ type neuronTemplate struct {
 	NodeName  string      `json:"node_name"`
 	TagName   string      `json:"tag_name"`
 	Value     interface{} `json:"value"`
+}
+
+func (s *sink) Ping(_ string, props map[string]interface{}) error {
+	if err := s.Configure(props); err != nil {
+		return err
+	}
+	ctx := context.Background()
+	cli, err := createOrGetConnection(ctx, s.c.Url)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeConnection(ctx, s.c.Url)
+	}()
+	if atomic.LoadInt32(&cli.opened) == 1 {
+		return nil
+	}
+	return errors.New("neuron sink ping failed")
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {
