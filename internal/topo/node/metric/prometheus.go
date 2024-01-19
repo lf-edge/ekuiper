@@ -67,7 +67,7 @@ func newPrometheusMetrics() *PrometheusMetrics {
 			Help: "Total number of messages published by the operation of " + prefix,
 		}, labelNames)
 		totalMessagesProcessed := prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: prefix + "_" + MessagesOutTotal,
+			Name: prefix + "_" + MessagesProcessedTotal,
 			Help: "Total number of messages published by the operation of " + prefix,
 		}, labelNames)
 		totalExceptions := prometheus.NewCounterVec(prometheus.CounterOpts{

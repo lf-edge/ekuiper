@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	RecordsInTotal       = "records_in_total"
-	RecordsOutTotal      = "records_out_total"
-	MessagesOutTotal     = "messages_out_total"
-	ProcessLatencyUs     = "process_latency_us"
-	ProcessLatencyUsHist = "process_latency_us_hist"
-	LastInvocation       = "last_invocation"
-	BufferLength         = "buffer_length"
-	ExceptionsTotal      = "exceptions_total"
-	LastException        = "last_exception"
-	LastExceptionTime    = "last_exception_time"
+	RecordsInTotal         = "records_in_total"
+	RecordsOutTotal        = "records_out_total"
+	MessagesProcessedTotal = "messages_processed_total"
+	ProcessLatencyUs       = "process_latency_us"
+	ProcessLatencyUsHist   = "process_latency_us_hist"
+	LastInvocation         = "last_invocation"
+	BufferLength           = "buffer_length"
+	ExceptionsTotal        = "exceptions_total"
+	LastException          = "last_exception"
+	LastExceptionTime      = "last_exception_time"
 )
 
-var MetricNames = []string{RecordsInTotal, RecordsOutTotal, MessagesOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, MessagesProcessedTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
 
 type StatManager interface {
 	IncTotalRecordsIn()
