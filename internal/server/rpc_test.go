@@ -15,6 +15,7 @@
 package server
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -147,16 +148,19 @@ func (suite *ServerTestSuite) TestRule() {
 	err = suite.s.StopRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Rule myRule was stopped.", reply)
+	fmt.Println("rule stopped")
 
 	reply = ""
 	err = suite.s.StartRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Rule myRule was started", reply)
+	fmt.Println("rule started")
 
 	reply = ""
 	err = suite.s.RestartRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Rule myRule was restarted.", reply)
+	fmt.Println("rule restarted")
 
 	reply = ""
 	err = suite.s.DropRule(ruleId, &reply)

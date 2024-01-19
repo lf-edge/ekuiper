@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package node
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -40,7 +39,6 @@ func (f UnFunc) Apply(ctx api.StreamContext, data interface{}) interface{} {
 type UnaryOperator struct {
 	*defaultSinkNode
 	op        UnOperation
-	mutex     sync.RWMutex
 	cancelled bool
 }
 
@@ -80,20 +78,17 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		o.concurrency = 1
 	}
 	// reset status
-	o.statManagers = nil
+	o.statManager = nil
 
-	for i := 0; i < o.concurrency; i++ { // workers
-		instance := i
-		go func() {
-			err := infra.SafeRun(func() error {
-				o.doOp(ctx.WithInstance(instance), errCh)
-				return nil
-			})
-			if err != nil {
-				infra.DrainError(ctx, err, errCh)
-			}
-		}()
-	}
+	go func() {
+		err := infra.SafeRun(func() error {
+			o.doOp(ctx.WithInstance(0), errCh)
+			return nil
+		})
+		if err != nil {
+			infra.DrainError(ctx, err, errCh)
+		}
+	}()
 }
 
 func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
@@ -109,14 +104,12 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		cancel()
 	}()
 
-	stats, err := metric.NewStatManager(ctx, "op")
+	var err error
+	o.statManager, err = metric.NewStatManager(ctx, "op")
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)
 		return
 	}
-	o.mutex.Lock()
-	o.statManagers = append(o.statManagers, stats)
-	o.mutex.Unlock()
 	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
 
 	for {
@@ -130,15 +123,15 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			switch d := item.(type) {
 			case error:
 				_ = o.Broadcast(d)
-				stats.IncTotalExceptions(d.Error())
+				o.statManager.IncTotalExceptions(d.Error())
 				continue
 			case *xsql.WatermarkTuple:
 				_ = o.Broadcast(d)
 				continue
 			}
 
-			stats.IncTotalRecordsIn()
-			stats.ProcessTimeStart()
+			o.statManager.IncTotalRecordsIn()
+			o.statManager.ProcessTimeStart()
 			result := o.op.Apply(exeCtx, item, fv, afv)
 
 			switch val := result.(type) {
@@ -147,28 +140,25 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
 				_ = o.Broadcast(val)
-				stats.IncTotalExceptions(val.Error())
+				o.statManager.IncTotalExceptions(val.Error())
 				continue
 			case []xsql.TupleRow:
-				stats.ProcessTimeEnd()
+				o.statManager.ProcessTimeEnd()
 				for _, v := range val {
 					_ = o.Broadcast(v)
-					stats.IncTotalRecordsOut()
+					o.statManager.IncTotalRecordsOut()
 				}
-				stats.SetBufferLength(int64(len(o.input)))
+				o.statManager.SetBufferLength(int64(len(o.input)))
 			default:
-				stats.ProcessTimeEnd()
+				o.statManager.ProcessTimeEnd()
 				_ = o.Broadcast(val)
-				stats.IncTotalRecordsOut()
-				stats.SetBufferLength(int64(len(o.input)))
+				o.statManager.IncTotalRecordsOut()
+				o.statManager.SetBufferLength(int64(len(o.input)))
 			}
 		// is cancelling
 		case <-ctx.Done():
 			logger.Infof("unary operator %s instance %d cancelling....", o.name, ctx.GetInstanceId())
-			o.mutex.Lock()
 			cancel()
-			o.cancelled = true
-			o.mutex.Unlock()
 			return
 		}
 	}

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,8 +50,7 @@ type WindowOperator struct {
 	isEventTime bool
 	trigger     *EventTimeTrigger // For event time only
 
-	statManager metric.StatManager
-	ticker      *clock.Ticker // For processing time only
+	ticker *clock.Ticker // For processing time only
 	// states
 	triggerTime      int64
 	msgCount         int
@@ -124,7 +123,6 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	o.statManager = stats
-	o.statManagers = []metric.StatManager{stats}
 	var inputs []*xsql.Tuple
 	if s, err := ctx.GetState(WindowInputsKey); err == nil {
 		switch st := s.(type) {
@@ -658,10 +656,6 @@ func (o *WindowOperator) calDelta(triggerTime int64, log api.Logger) int64 {
 		}
 	}
 	return delta
-}
-
-func (o *WindowOperator) GetMetrics() [][]interface{} {
-	return o.defaultNode.GetMetrics()
 }
 
 func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) bool {
