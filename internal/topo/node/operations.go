@@ -143,22 +143,26 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 
 			switch val := result.(type) {
 			case nil:
+				stats.IncTotalMessagesProcessed(1)
 				continue
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
 				_ = o.Broadcast(val)
+				stats.IncTotalMessagesProcessed(1)
 				stats.IncTotalExceptions(val.Error())
 				continue
 			case []xsql.TupleRow:
 				stats.ProcessTimeEnd()
 				for _, v := range val {
 					_ = o.Broadcast(v)
+					stats.IncTotalMessagesProcessed(1)
 					stats.IncTotalRecordsOut()
 				}
 				stats.SetBufferLength(int64(len(o.input)))
 			default:
 				stats.ProcessTimeEnd()
 				_ = o.Broadcast(val)
+				stats.IncTotalMessagesProcessed(1)
 				stats.IncTotalRecordsOut()
 				stats.SetBufferLength(int64(len(o.input)))
 			}

@@ -178,5 +178,6 @@ func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {
 	_ = n.Broadcast(w)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()
+	n.statManager.IncTotalMessagesProcessed(int64(w.Len()))
 	n.statManager.SetBufferLength(int64(len(n.input)))
 }
