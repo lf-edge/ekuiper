@@ -52,7 +52,8 @@ func newWebsocketClientClientWrapper(config *WebSocketConnectionConfig) (clients
 		return nil, err
 	}
 	cc := &websocketClientWrapper{
-		c: conn, chs: make(map[string][]api.TopicChannel),
+		c:            conn,
+		chs:          make(map[string][]api.TopicChannel),
 		errCh:        make(map[string]chan error),
 		refCount:     1,
 		config:       config,
@@ -132,6 +133,10 @@ func (wcw *websocketClientWrapper) process() {
 			}
 		}
 	}
+}
+
+func (wcw *websocketClientWrapper) Ping() error {
+	return wcw.getConn().WriteMessage(websocket.PingMessage, nil)
 }
 
 func (wcw *websocketClientWrapper) Subscribe(ctx api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, _ map[string]interface{}) error {

@@ -18,9 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -180,58 +178,28 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
-func SinkOpen(sinkType string, config map[string]interface{}) error {
-	sink, err := getSink(sinkType, config)
+func SourcePing(sourceType string, config map[string]interface{}) error {
+	source, err := io.Source(sourceType)
 	if err != nil {
 		return err
 	}
-
-	contextLogger := conf.Log.WithField("rule", "TestSinkOpen"+"_"+sinkType)
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-
-	defer func() {
-		_ = sink.Close(ctx)
-	}()
-
-	return sink.Open(ctx)
-}
-
-func SourceOpen(sourceType string, config map[string]interface{}) error {
 	dataSource := "/$$TEST_CONNECTION$$"
 	if v, ok := config["DATASOURCE"]; ok {
 		dataSource = v.(string)
 	}
-	ns, err := io.Source(sourceType)
+	if pingAble, ok := source.(api.PingableConn); ok {
+		return pingAble.Ping(dataSource, config)
+	}
+	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
+}
+
+func SinkPing(sinkType string, config map[string]interface{}) error {
+	sink, err := getSink(sinkType, config)
 	if err != nil {
 		return err
 	}
-	if ns == nil {
-		lns, err := io.LookupSource(sourceType)
-		if err != nil {
-			return err
-		}
-		if lns == nil {
-			// should not happen
-			return fmt.Errorf("source %s not found", sourceType)
-		}
-		err = lns.Configure(dataSource, config)
-		if err != nil {
-			return err
-		}
-
-		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
-		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-		_ = lns.Close(ctx)
-	} else {
-		err = ns.Configure(dataSource, config)
-		if err != nil {
-			return err
-		}
-
-		contextLogger := conf.Log.WithField("rule", "TestSourceOpen"+"_"+sourceType)
-		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-		_ = ns.Close(ctx)
+	if pingAble, ok := sink.(api.PingableConn); ok {
+		return pingAble.Ping("", config)
 	}
-
-	return nil
+	return fmt.Errorf("sink %v doesnt't support ping connection", sinkType)
 }

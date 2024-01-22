@@ -16,6 +16,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -61,6 +62,10 @@ func newWebsocketServerConnWrapper(config *WebSocketConnectionConfig) (clients.C
 		wsw := &websocketServerConnWrapper{endpoint: config.Path, recvTopic: recvTopic, sendTopic: sendTopic, done: done, refCount: 1, checkConnection: false}
 		return wsw, nil
 	}
+}
+
+func (wsw *websocketServerConnWrapper) Ping() error {
+	return errors.New("websocket server can't ping")
 }
 
 func (wsw *websocketServerConnWrapper) process(ctx api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) {

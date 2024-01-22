@@ -16,6 +16,7 @@ package websocket
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -56,6 +57,9 @@ func GetWebsocketClientConn(addr, path string, tlsConfig *tls.Config) (*websocke
 		Proxy:            http.ProxyFromEnvironment,
 		HandshakeTimeout: 45 * time.Second,
 		TLSClientConfig:  tlsConfig,
+	}
+	if len(addr) < 1 {
+		return nil, fmt.Errorf("host should be defined")
 	}
 	u := url.URL{Scheme: "ws", Host: addr, Path: path}
 	c, _, err := d.Dial(u.String(), nil)

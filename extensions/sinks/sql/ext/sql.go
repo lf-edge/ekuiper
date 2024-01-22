@@ -94,6 +94,17 @@ type sqlSink struct {
 	db sqldatabase.DB
 }
 
+func (m *sqlSink) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Configure(props); err != nil {
+		return err
+	}
+	db, err := util.FetchDBToOneNode(util.GlobalPool, m.conf.Url)
+	if err != nil {
+		return err
+	}
+	return db.Ping()
+}
+
 func (m *sqlSink) Configure(props map[string]interface{}) error {
 	cfg := &sqlConfig{}
 	err := cast.MapToStruct(props, cfg)
