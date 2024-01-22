@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ func init() {
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
 	sysMetrics = NewMetrics()
+	factory.InitClientsFactory()
 }
 
 type RestTestSuite struct {
@@ -250,7 +251,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
 
-	// valiadate a wrong rule
+	// validate a wrong rule
 	ruleJson = `{"id": "rule1", "sql": "select * from alert"}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
@@ -287,7 +288,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
-	// update wron rule
+	// update wrong rule
 	ruleJson = `{"id": "rule1","sql": "select * from alert1","actions": [{"nop": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
@@ -326,7 +327,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
-	expect = `{"sources":["source_alert"],"edges":{"op_2_project":["sink_nop_0"],"source_alert":["op_2_project"]}}`
+	expect = "{\"sources\":[\"source_alert\"],\"edges\":{\"op_2_decoder\":[\"op_2_project\"],\"op_2_project\":[\"sink_nop_0\"],\"source_alert\":[\"op_2_decoder\"]}}"
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// start rule
