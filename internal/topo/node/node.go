@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ type DataSourceNode interface {
 	api.Emitter
 	Open(ctx api.StreamContext, errCh chan<- error)
 	GetName() string
-	GetMetrics() [][]interface{}
+	GetMetrics() []any
 	RemoveMetrics(ruleId string)
 	Broadcast(val interface{}) error
 	GetStreamContext() api.StreamContext
@@ -47,13 +47,13 @@ type DataSourceNode interface {
 }
 
 type defaultNode struct {
-	name         string
-	outputs      map[string]chan<- interface{}
-	concurrency  int
-	sendError    bool
-	statManagers []metric.StatManager
-	ctx          api.StreamContext
-	qos          api.Qos
+	name        string
+	outputs     map[string]chan<- interface{}
+	concurrency int
+	sendError   bool
+	statManager metric.StatManager
+	ctx         api.StreamContext
+	qos         api.Qos
 }
 
 func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
@@ -81,16 +81,16 @@ func (o *defaultNode) SetQos(qos api.Qos) {
 	o.qos = qos
 }
 
-func (o *defaultNode) GetMetrics() (result [][]interface{}) {
-	for _, stats := range o.statManagers {
-		result = append(result, stats.GetMetrics())
+func (o *defaultNode) GetMetrics() []any {
+	if o.statManager != nil {
+		return o.statManager.GetMetrics()
 	}
-	return result
+	return nil
 }
 
 func (o *defaultNode) RemoveMetrics(ruleId string) {
-	for _, stats := range o.statManagers {
-		stats.Clean(ruleId)
+	if o.statManager != nil {
+		o.statManager.Clean(ruleId)
 	}
 }
 
@@ -118,7 +118,7 @@ func (o *defaultNode) doBroadcast(val interface{}) {
 		case <-o.ctx.Done():
 			// rule stop so stop waiting
 		default:
-			o.statManagers[0].IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to %s", o.name, name))
+			o.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to %s", o.name, name))
 			o.ctx.GetLogger().Debugf("drop message from %s to %s", o.name, name)
 		}
 		switch vt := val.(type) {

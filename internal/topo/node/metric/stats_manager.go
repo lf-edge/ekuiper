@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ type StatManager interface {
 	ProcessTimeEnd()
 	SetBufferLength(l int64)
 	SetProcessTimeStart(t time.Time)
-	GetMetrics() []interface{}
+	GetMetrics() []any
 	// Clean remove all metrics history
 	Clean(ruleId string)
 }
@@ -133,7 +133,7 @@ func (sm *DefaultStatManager) SetProcessTimeStart(t time.Time) {
 	sm.lastInvocation = t
 }
 
-func (sm *DefaultStatManager) GetMetrics() []interface{} {
+func (sm *DefaultStatManager) GetMetrics() []any {
 	result := []interface{}{
 		sm.totalRecordsIn,
 		sm.totalRecordsOut,
