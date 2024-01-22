@@ -93,9 +93,10 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 		ec = http.StatusBadRequest
 	}
 
-	http.Error(w, packageInternalErrorCode(err, message), ec)
+	http.Error(w, message, ec)
 }
 
+// TODO: replace error message in future
 func packageInternalErrorCode(err error, msg string) string {
 	if errWithCode, ok := err.(errorx.ErrorWithCode); ok {
 		errCode := errWithCode.Code()
