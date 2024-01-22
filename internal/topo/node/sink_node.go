@@ -16,7 +16,6 @@ package node
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
@@ -402,7 +401,7 @@ func bufferLen(dataCh chan []map[string]interface{}, c *cache.SyncCache, rq *cac
 
 func checkAck(ctx api.StreamContext, data interface{}, err error) bool {
 	if err != nil {
-		if strings.HasPrefix(err.Error(), errorx.IOErr) { // do not log to prevent a lot of logs!
+		if errorx.IsIOError(err) { // do not log to prevent a lot of logs!
 			return false
 		} else {
 			ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), data, err)

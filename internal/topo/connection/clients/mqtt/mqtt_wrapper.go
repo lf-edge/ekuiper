@@ -169,7 +169,7 @@ func (mc *mqttClientWrapper) checkConn() error {
 	mc.subLock.RLock()
 	defer mc.subLock.RUnlock()
 	if !mc.connected {
-		return fmt.Errorf("%s: %s", errorx.IOErr, "mqtt client is not connected")
+		return errorx.NewIOErr("mqtt client is not connected")
 	}
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,31 +14,26 @@
 
 package errorx
 
-type Error struct {
-	msg  string
-	code ErrorCode
+type ErrorCode int
+
+const (
+	GENERAL_ERR ErrorCode = 1001
+	NOT_FOUND   ErrorCode = 1002
+	IOErr       ErrorCode = 1003
+)
+
+var NotFoundErr = newWithCode(NOT_FOUND, "not found")
+
+func NewIOErr(msg string) error {
+	return &Error{
+		code: IOErr,
+		msg:  msg,
+	}
 }
 
-func New(message string) *Error {
-	return &Error{message, GENERAL_ERR}
-}
-
-func NewWithCode(code ErrorCode, message string) *Error {
-	return newWithCode(code, message)
-}
-
-func newWithCode(code ErrorCode, message string) *Error {
-	return &Error{message, code}
-}
-
-func (e *Error) Error() string {
-	return e.msg
-}
-
-func (e *Error) Code() ErrorCode {
-	return e.code
-}
-
-type ErrorWithCode interface {
-	Code() ErrorCode
+func IsIOError(err error) bool {
+	if withCode, ok := err.(ErrorWithCode); ok {
+		return withCode.Code() == IOErr
+	}
+	return false
 }

@@ -15,8 +15,6 @@
 package mocknode
 
 import (
-	"fmt"
-
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
@@ -48,7 +46,7 @@ func (m *MockResendSink) Collect(ctx api.StreamContext, item interface{}) error 
 		m.onHit <- m.count
 	}()
 	if m.count%2 == 0 {
-		return fmt.Errorf("%s: mock io error", errorx.IOErr)
+		return errorx.NewIOErr(`mock io error`)
 	}
 	if v, _, err := ctx.TransformOutput(item); err == nil {
 		logger.Debugf("mock sink receive %s", item)
@@ -62,7 +60,7 @@ func (m *MockResendSink) Collect(ctx api.StreamContext, item interface{}) error 
 func (m *MockResendSink) CollectResend(ctx api.StreamContext, item interface{}) error {
 	logger := ctx.GetLogger()
 	if m.count%3 != 1 {
-		return fmt.Errorf("%s: mock io error", errorx.IOErr)
+		return errorx.NewIOErr(`mock io error`)
 	}
 	if v, _, err := ctx.TransformOutput(item); err == nil {
 		logger.Debugf("mock sink resend %s", item)
