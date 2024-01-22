@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,5 +61,26 @@ func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
 	select {
 	case errCh <- err:
 	default:
+	}
+}
+
+// DrainCtrl a non-block function to send out the signal to the ctrl channel
+// It will retry in blocking mode once the channel is full and make sure it is delivered finally but may lose order
+func DrainCtrl(ctx api.StreamContext, signal any, ctrlCh chan<- any) {
+	select {
+	case ctrlCh <- signal:
+	default:
+		ctx.GetLogger().Warnf("failed to send signal %v to ctrl channel, retry", signal)
+		go func() {
+			ctrlCh <- signal
+		}()
+	}
+}
+
+func SendThrough(ctx api.StreamContext, a api.SourceTuple, consumer chan<- api.SourceTuple) {
+	select {
+	case consumer <- a:
+	default:
+		ctx.GetLogger().Warnf("buffer full from %s to decoder, drop message", ctx.GetOpId())
 	}
 }

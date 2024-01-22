@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,41 +22,50 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/internal/converter"
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
-func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
-	result, err := RunMockSource(r, len(exp))
-	assert.NoError(t, err)
-	assert.Equal(t, exp, result)
-}
+var count atomic.Value
 
-func RunMockSource(r api.Source, limit int) ([]api.SourceTuple, error) {
-	var count atomic.Value
+func TestSourceConnector(t *testing.T, r api.SourceConnector, expected []api.SourceTuple, sender func()) {
+	// init
 	c := count.Load()
 	if c == nil {
 		count.Store(1)
 		c = 0
 	}
 	ctx, cancel := mockContext.NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
-	cv, _ := converter.GetOrCreateConverter(&ast.Options{FORMAT: "json"})
-	ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, cv)
 	count.Store(c.(int) + 1)
 	consumer := make(chan api.SourceTuple)
-	errCh := make(chan error)
-	go r.Open(ctx, consumer, errCh)
-	ticker := time.After(10 * time.Second)
+	ctrlCh := make(chan error)
+	// connect, subscribe and read data
+	err := r.Subscribe(ctx)
+	assert.NoError(t, err)
+	go r.Open(ctx, consumer, ctrlCh)
+	defer func() {
+		err = r.Close(ctx)
+		assert.NoError(t, err)
+	}()
+	// Send data
+	go func() {
+		sender()
+	}()
+	// Receive data
+	limit := len(expected)
+	ticker := time.After(2 * time.Second)
 	var result []api.SourceTuple
 outerloop:
 	for {
 		select {
-		case err := <-errCh:
-			cancel()
-			return nil, err
+		case sg := <-ctrlCh:
+			switch et := sg.(type) {
+			case error:
+				cancel()
+				assert.Fail(t, et.Error())
+			default:
+				fmt.Println("ctrlCh", et)
+			}
 		case tuple := <-consumer:
 			result = append(result, tuple)
 			limit--
@@ -65,13 +74,9 @@ outerloop:
 			}
 		case <-ticker:
 			cancel()
-			return nil, fmt.Errorf("timeout")
+			assert.Fail(t, "timeout")
 		}
 	}
-	err := r.Close(ctx)
-	if err != nil {
-		return nil, err
-	}
 	cancel()
-	return result, nil
+	assert.Equal(t, expected, result)
 }
