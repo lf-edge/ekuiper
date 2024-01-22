@@ -133,7 +133,7 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
 		contextLogger := conf.Log.WithField("rule", s.name)
-		if s.options.Debug || s.options.LogFilename != "" {
+		if s.options != nil && (s.options.Debug || s.options.LogFilename != "") {
 			contextLogger.Logger = &logrus.Logger{
 				Out:          conf.Log.Out,
 				Hooks:        conf.Log.Hooks,
