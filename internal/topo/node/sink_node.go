@@ -160,10 +160,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						sink = m.sink
 					}
 
-					m.statManager, err = metric.NewStatManager(ctx, "sink")
-					if err != nil {
-						return err
-					}
+					m.statManager = metric.NewStatManager(ctx, "sink")
 
 					// The sink flow is: receive -> batch -> cache -> send.
 					// In the outside loop, send received data to batch/cache by dataCh and receive data be dataOutCh
@@ -586,6 +583,6 @@ func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
 }
 
 // Broadcast Override defaultNode
-func (m *SinkNode) Broadcast(_ interface{}) error {
-	return fmt.Errorf("sink %s cannot add broadcast", m.name)
+func (m *SinkNode) Broadcast(_ interface{}) {
+	conf.Log.Errorf("sink %s cannot add broadcast", m.name)
 }

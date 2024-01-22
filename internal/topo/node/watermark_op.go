@@ -73,12 +73,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	var err error
-	w.statManager, err = metric.NewStatManager(ctx, "op")
-	if err != nil {
-		infra.DrainError(ctx, fmt.Errorf("fail to create stat manager"), errCh)
-		return
-	}
+	w.statManager = metric.NewStatManager(ctx, "op")
 	w.ctx = ctx
 	// restore state
 	if s, err := ctx.GetState(WatermarkKey); err == nil && s != nil {
@@ -131,7 +126,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 					switch d := item.(type) {
 					case error:
-						_ = w.Broadcast(d)
+						w.Broadcast(d)
 						w.statManager.IncTotalExceptions(d.Error())
 					case *xsql.Tuple:
 						w.statManager.IncTotalRecordsIn()
@@ -145,7 +140,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						}
 					default:
 						e := fmt.Errorf("run watermark op error: expect *xsql.Tuple type but got %[1]T(%[1]v)", d)
-						_ = w.Broadcast(e)
+						w.Broadcast(e)
 						w.statManager.IncTotalExceptions(e.Error())
 					}
 				}
@@ -203,7 +198,7 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 				if i > 0 { // The first event processing time start at the beginning of event receiving
 					w.statManager.ProcessTimeStart()
 				}
-				_ = w.Broadcast(w.events[i])
+				w.Broadcast(w.events[i])
 				ctx.GetLogger().Debug("send out event", w.events[i].GetTimestamp())
 				w.statManager.IncTotalRecordsOut()
 				w.statManager.IncTotalMessagesProcessed(1)
@@ -214,7 +209,7 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 		}
 		// Update watermark
 		if w.sendWatermark {
-			_ = w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
+			w.Broadcast(&xsql.WatermarkTuple{Timestamp: watermark})
 		}
 		w.lastWatermarkTs = watermark
 		_ = ctx.PutState(WatermarkKey, w.lastWatermarkTs)

@@ -15,7 +15,6 @@
 package metric
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -71,7 +70,7 @@ type DefaultStatManager struct {
 	instanceId       int
 }
 
-func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
+func NewStatManager(ctx api.StreamContext, opType string) StatManager {
 	var prefix string
 	switch opType {
 	case "source":
@@ -80,17 +79,18 @@ func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
 		prefix = "op_"
 	case "sink":
 		prefix = "sink_"
-	default:
-		return nil, fmt.Errorf("invalid opType %s, must be \"source\", \"sink\" or \"op\"", opType)
 	}
-
 	ds := DefaultStatManager{
 		opType:     opType,
 		prefix:     prefix,
 		opId:       ctx.GetOpId(),
 		instanceId: ctx.GetInstanceId(),
 	}
-	return getStatManager(ctx, ds)
+	sm, err := getStatManager(ctx, ds)
+	if err != nil {
+		ctx.GetLogger().Warnf("Fail to create extra stat manager for %s %s: %v", opType, ctx.GetOpId(), err)
+	}
+	return sm
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsIn() {

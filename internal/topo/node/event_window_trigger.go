@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 			}
 			switch d := item.(type) {
 			case error:
-				_ = o.Broadcast(d)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions(d.Error())
 			case *xsql.WatermarkTuple:
 				ctx.GetLogger().Debug("WatermarkTuple", d.GetTimestamp())
@@ -199,7 +199,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				_ = ctx.PutState(WindowInputsKey, inputs)
 			default:
 				e := fmt.Errorf("run Window error: expect xsql.Event type but got %[1]T(%[1]v)", d)
-				_ = o.Broadcast(e)
+				o.Broadcast(e)
 				o.statManager.IncTotalExceptions(e.Error())
 			}
 		// is cancelling
