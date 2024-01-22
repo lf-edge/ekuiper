@@ -403,7 +403,7 @@ func TestRestSinkErrorLog(t *testing.T) {
 		}
 		err := s.Collect(vCtx, reqBody)
 
-		if strings.HasPrefix(err.Error(), errorx.IOErr) && !strings.Contains(err.Error(), "hello1") {
+		if errorx.IsIOError(err) && !strings.Contains(err.Error(), "hello1") {
 			t.Errorf("should include request body, but got %s", err.Error())
 		}
 		fmt.Println(err.Error())
@@ -429,7 +429,7 @@ func TestRestSinkErrorLog(t *testing.T) {
 		})
 		assert.Error(t, err)
 		fmt.Println(err.Error())
-		if strings.HasPrefix(err.Error(), errorx.IOErr) && !strings.Contains(err.Error(), "404") {
+		if errorx.IsIOError(err) && !strings.Contains(err.Error(), "404") {
 			t.Errorf("should start with io error, but got %s", err.Error())
 		}
 

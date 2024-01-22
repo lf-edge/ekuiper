@@ -55,7 +55,9 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 		if urlErr, ok := err.(*url.Error); ok {
 			// consider timeout and temporary error as recoverable
 			if urlErr.Timeout() || urlErr.Temporary() {
-				e = errorx.IOErr
+				return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data: method=%s path="%s" request_body="%s"`, ms.config.Method,
+					ms.config.Url,
+					decodedData))
 			}
 		}
 		return fmt.Errorf(`%s: rest sink fails to send out the data: method=%s path="%s" request_body="%s"`,

@@ -133,7 +133,7 @@ func (ms *MQTTSink) collectWithTopic(ctx api.StreamContext, item interface{}, to
 	}
 
 	if err := ms.cli.Publish(ctx, tpc, jsonBytes, ms.sendParams); err != nil {
-		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
+		return errorx.NewIOErr(err.Error())
 	}
 	return nil
 }

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -342,8 +343,9 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = "start rule error: Rule non-existence-rule is not found in registry, please check if it is created\n"
-	assert.Equal(suite.T(), expect, string(returnVal))
+	equal, err := assertErrorCode(errorx.NOT_FOUND, returnVal)
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), equal)
 	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// stop rule
@@ -359,8 +361,10 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = "stop rule error: Rule non-existence-rule was not found.\n"
-	assert.Equal(suite.T(), expect, string(returnVal))
+	equal, err = assertErrorCode(errorx.NOT_FOUND, returnVal)
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), equal)
+
 	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// update rule, will set rule to triggered
@@ -398,6 +402,17 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
+}
+
+func assertErrorCode(code errorx.ErrorCode, resp []byte) (bool, error) {
+	m := struct {
+		ErrorCode int `json:"errorCode"`
+	}{}
+	err := json.Unmarshal(resp, &m)
+	if err != nil {
+		return false, err
+	}
+	return m.ErrorCode == int(code), nil
 }
 
 func (suite *RestTestSuite) Test_ruleTestHandler() {
