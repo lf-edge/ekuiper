@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import (
 // It sends out the data in time order with watermark.
 type WatermarkOp struct {
 	*defaultSinkNode
-	statManager metric.StatManager
 	// config
 	lateTolerance int64
 	sendWatermark bool
@@ -74,13 +73,12 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	stats, err := metric.NewStatManager(ctx, "op")
+	var err error
+	w.statManager, err = metric.NewStatManager(ctx, "op")
 	if err != nil {
 		infra.DrainError(ctx, fmt.Errorf("fail to create stat manager"), errCh)
 		return
 	}
-	w.statManager = stats
-	w.statManagers = []metric.StatManager{stats}
 	w.ctx = ctx
 	// restore state
 	if s, err := ctx.GetState(WatermarkKey); err == nil && s != nil {

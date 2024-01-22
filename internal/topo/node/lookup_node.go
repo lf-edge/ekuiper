@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,10 +38,9 @@ type LookupConf struct {
 // LookupNode will look up the data from the external source when receiving an event
 type LookupNode struct {
 	*defaultSinkNode
-	statManager metric.StatManager
-	sourceType  string
-	joinType    ast.JoinType
-	vals        []ast.Expr
+	sourceType string
+	joinType   ast.JoinType
+	vals       []ast.Expr
 
 	srcOptions *ast.Options
 	conf       *LookupConf
@@ -97,7 +96,6 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	n.statManager = stats
-	n.statManagers = []metric.StatManager{stats}
 	go func() {
 		err := infra.SafeRun(func() error {
 			ns, err := lookup.Attach(n.name)
