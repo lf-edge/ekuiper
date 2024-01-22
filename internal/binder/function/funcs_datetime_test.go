@@ -279,6 +279,22 @@ func TestDateTimeFunctions(t *testing.T) {
 			},
 		},
 		{
+			testCaseName: "test date_calc() for add 10 hours 2 minutes (10h2m)",
+			funcName:     "date_calc",
+			execTest:     true,
+			execArgs:     []interface{}{"2019-01-01 00:00:00", "10h2m"},
+			valFunc: func(t interface{}) error {
+				parsed, err := cast.ParseTime(t.(string), "yyyy-MM-dd HH:mm:ss")
+				if err != nil {
+					return err
+				}
+				if parsed.Hour() != 10 && parsed.Minute() != 2 {
+					return fmt.Errorf("mismatch hours and minutes, expect %d hours %d minutes, got %d hours %d minutes", 10, 2, parsed.Hour(), parsed.Minute())
+				}
+				return nil
+			},
+		},
+		{
 			testCaseName: "test date_diff with 2 args",
 			funcName:     "date_diff",
 			execTest:     true,
