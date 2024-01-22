@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"strconv"
 	"sync"
 	"time"
 
@@ -245,27 +244,21 @@ func (s *Topo) GetCoordinator() *checkpoint.Coordinator {
 
 func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
 	for _, sn := range s.sources {
-		for ins, metrics := range sn.GetMetrics() {
-			for i, v := range metrics {
-				keys = append(keys, "source_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+metric.MetricNames[i])
-				values = append(values, v)
-			}
+		for i, v := range sn.GetMetrics() {
+			keys = append(keys, "source_"+sn.GetName()+"_0_"+metric.MetricNames[i])
+			values = append(values, v)
 		}
 	}
 	for _, so := range s.ops {
-		for ins, metrics := range so.GetMetrics() {
-			for i, v := range metrics {
-				keys = append(keys, "op_"+so.GetName()+"_"+strconv.Itoa(ins)+"_"+metric.MetricNames[i])
-				values = append(values, v)
-			}
+		for i, v := range so.GetMetrics() {
+			keys = append(keys, "op_"+so.GetName()+"_0_"+metric.MetricNames[i])
+			values = append(values, v)
 		}
 	}
 	for _, sn := range s.sinks {
-		for ins, metrics := range sn.GetMetrics() {
-			for i, v := range metrics {
-				keys = append(keys, "sink_"+sn.GetName()+"_"+strconv.Itoa(ins)+"_"+metric.MetricNames[i])
-				values = append(values, v)
-			}
+		for i, v := range sn.GetMetrics() {
+			keys = append(keys, "sink_"+sn.GetName()+"_0_"+metric.MetricNames[i])
+			values = append(values, v)
 		}
 	}
 	return

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ type SwitchConfig struct {
 type SwitchNode struct {
 	*defaultSinkNode
 	conf        *SwitchConfig
-	statManager metric.StatManager
 	outputNodes []defaultNode
 }
 
@@ -85,7 +84,6 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		return
 	}
 	n.statManager = stats
-	n.statManagers = []metric.StatManager{stats}
 	n.ctx = ctx
 	for i := range n.outputNodes {
 		n.outputNodes[i].ctx = ctx
