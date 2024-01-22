@@ -26,7 +26,7 @@ import (
 
 type OperatorNode interface {
 	api.Operator
-	Broadcast(data interface{}) error
+	Broadcast(data interface{})
 	GetStreamContext() api.StreamContext
 	GetInputCount() int
 	AddInputCount()
@@ -41,7 +41,7 @@ type DataSourceNode interface {
 	GetName() string
 	GetMetrics() []any
 	RemoveMetrics(ruleId string)
-	Broadcast(val interface{}) error
+	Broadcast(val interface{})
 	GetStreamContext() api.StreamContext
 	SetQos(api.Qos)
 }
@@ -94,9 +94,9 @@ func (o *defaultNode) RemoveMetrics(ruleId string) {
 	}
 }
 
-func (o *defaultNode) Broadcast(val interface{}) error {
+func (o *defaultNode) Broadcast(val interface{}) {
 	if _, ok := val.(error); ok && !o.sendError {
-		return nil
+		return
 	}
 	if o.qos >= api.AtLeastOnce {
 		boe := &checkpoint.BufferOrEvent{
@@ -104,10 +104,10 @@ func (o *defaultNode) Broadcast(val interface{}) error {
 			Channel: o.name,
 		}
 		o.doBroadcast(boe)
-		return nil
+		return
 	}
 	o.doBroadcast(val)
-	return nil
+	return
 }
 
 func (o *defaultNode) doBroadcast(val interface{}) {

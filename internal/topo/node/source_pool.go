@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {
 	return si, nil
 }
 
-// removeSourceInstance remove an attach from the sourceSingleton
+// removeSourceInstance remove an attachment from the sourceSingleton
 // If all attaches are removed, close the sourceSingleton and remove it from the pool registry
 // ONLY apply to shared instance
 func removeSourceInstance(node *SourceNode) {
@@ -114,7 +114,7 @@ func removeSourceInstance(node *SourceNode) {
  *	Pool for all keyed source instance.
  *  Create an instance, and start the source go routine when the keyed was hit the first time.
  *  For later hit, create the new set of channels and attach to the instance
- *  When hit a delete (when close a rule), remove the attached channels. If all channels removed, remove the instance from the pool
+ *  When hit a deleted (when close a rule), remove the attached channels. If all channels removed, remove the instance from the pool
  *  For performance reason, the pool only holds the shared instance. Rule specific instance are holden by rule source node itself
  */
 type sourcePool struct {
