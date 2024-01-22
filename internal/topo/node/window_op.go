@@ -117,12 +117,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	stats, err := metric.NewStatManager(ctx, "op")
-	if err != nil {
-		infra.DrainError(ctx, err, errCh)
-		return
-	}
-	o.statManager = stats
+	o.statManager = metric.NewStatManager(ctx, "op")
 	var inputs []*xsql.Tuple
 	if s, err := ctx.GetState(WindowInputsKey); err == nil {
 		switch st := s.(type) {
@@ -336,7 +331,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			}
 			switch d := item.(type) {
 			case error:
-				_ = o.Broadcast(d)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions(d.Error())
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
@@ -396,7 +391,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 							windowEnd := triggerTime
 							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 							log.Debugf("Sent: %v", tsets)
-							_ = o.Broadcast(tsets)
+							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
 						}
 						inputs = tl.getRestTuples()
@@ -408,7 +403,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				_ = ctx.PutState(MsgCountKey, o.msgCount)
 			default:
 				e := fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d)
-				_ = o.Broadcast(e)
+				o.Broadcast(e)
 				o.statManager.IncTotalExceptions(e.Error())
 			}
 		case now := <-firstC:
@@ -632,7 +627,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 	log.Debugf("Sent: %v", results)
-	_ = o.Broadcast(results)
+	o.Broadcast(results)
 	o.statManager.IncTotalRecordsOut()
 
 	o.triggerTime = triggerTime

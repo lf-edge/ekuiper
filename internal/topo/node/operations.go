@@ -104,12 +104,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		cancel()
 	}()
 
-	var err error
-	o.statManager, err = metric.NewStatManager(ctx, "op")
-	if err != nil {
-		infra.DrainError(ctx, err, errCh)
-		return
-	}
+	o.statManager = metric.NewStatManager(ctx, "op")
 	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
 
 	for {
@@ -122,11 +117,11 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			}
 			switch d := item.(type) {
 			case error:
-				_ = o.Broadcast(d)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions(d.Error())
 				continue
 			case *xsql.WatermarkTuple:
-				_ = o.Broadcast(d)
+				o.Broadcast(d)
 				continue
 			}
 
@@ -139,19 +134,19 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				continue
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
-				_ = o.Broadcast(val)
+				o.Broadcast(val)
 				o.statManager.IncTotalExceptions(val.Error())
 				continue
 			case []xsql.TupleRow:
 				o.statManager.ProcessTimeEnd()
 				for _, v := range val {
-					_ = o.Broadcast(v)
+					o.Broadcast(v)
 					o.statManager.IncTotalRecordsOut()
 				}
 				o.statManager.SetBufferLength(int64(len(o.input)))
 			default:
 				o.statManager.ProcessTimeEnd()
-				_ = o.Broadcast(val)
+				o.Broadcast(val)
 				o.statManager.IncTotalRecordsOut()
 				o.statManager.SetBufferLength(int64(len(o.input)))
 			}

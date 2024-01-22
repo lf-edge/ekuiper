@@ -61,12 +61,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	stats, err := metric.NewStatManager(ctx, "op")
-	if err != nil {
-		infra.DrainError(ctx, fmt.Errorf("fail to create stat manager"), errCh)
-		return
-	}
-	n.statManager = stats
+	n.statManager = metric.NewStatManager(ctx, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			// restore batch state
@@ -104,10 +99,10 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 					switch d := item.(type) {
 					case error:
-						_ = n.Broadcast(d)
+						n.Broadcast(d)
 						n.statManager.IncTotalExceptions(d.Error())
 					case *xsql.WatermarkTuple:
-						_ = n.Broadcast(d)
+						n.Broadcast(d)
 					case *xsql.Tuple:
 						log.Debugf("JoinAlignNode receive tuple input %s", d)
 						n.alignBatch(ctx, d)
@@ -122,7 +117,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							_, ok := n.batch[emitter]
 							if !ok {
 								e := fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d)
-								_ = n.Broadcast(e)
+								n.Broadcast(e)
 								n.statManager.IncTotalExceptions(e.Error())
 								break
 							}
@@ -131,7 +126,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						}
 					default:
 						e := fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d)
-						_ = n.Broadcast(e)
+						n.Broadcast(e)
 						n.statManager.IncTotalExceptions(e.Error())
 					}
 				case <-ctx.Done():
@@ -173,7 +168,7 @@ func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {
 			}
 		}
 	}
-	_ = n.Broadcast(w)
+	n.Broadcast(w)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()
 	n.statManager.SetBufferLength(int64(len(n.input)))

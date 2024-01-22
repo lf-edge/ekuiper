@@ -133,10 +133,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						err    error
 					)
 
-					m.statManager, err = metric.NewStatManager(ctx, "source")
-					if err != nil {
-						return err
-					}
+					m.statManager = metric.NewStatManager(ctx, "source")
 
 					si, err = getSourceInstance(m, instance)
 					if err != nil {
@@ -189,10 +186,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								continue
 							case error:
 								logger.Errorf("Source %s preprocess error: %s", ctx.GetOpId(), val)
-								_ = m.Broadcast(val)
+								m.Broadcast(val)
 								m.statManager.IncTotalExceptions(val.Error())
 							default:
-								_ = m.Broadcast(val)
+								m.Broadcast(val)
 								m.statManager.IncTotalRecordsOut()
 							}
 							m.statManager.SetBufferLength(int64(buffer.GetLength()))

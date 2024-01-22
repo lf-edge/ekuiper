@@ -90,12 +90,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	stats, err := metric.NewStatManager(ctx, "op")
-	if err != nil {
-		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
-		return
-	}
-	n.statManager = stats
+	n.statManager = metric.NewStatManager(ctx, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			ns, err := lookup.Attach(n.name)
@@ -127,20 +122,20 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					}
 					switch d := item.(type) {
 					case error:
-						_ = n.Broadcast(d)
+						n.Broadcast(d)
 						n.statManager.IncTotalExceptions(d.Error())
 					case *xsql.WatermarkTuple:
-						_ = n.Broadcast(d)
+						n.Broadcast(d)
 					case xsql.TupleRow:
 						log.Debugf("Lookup Node receive tuple input %s", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 						err := n.lookup(ctx, d, fv, ns, sets, c)
 						if err != nil {
-							_ = n.Broadcast(err)
+							n.Broadcast(err)
 							n.statManager.IncTotalExceptions(err.Error())
 						} else {
-							_ = n.Broadcast(sets)
+							n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
 						}
 						n.statManager.ProcessTimeEnd()
@@ -161,17 +156,17 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							return true, nil
 						})
 						if err != nil {
-							_ = n.Broadcast(err)
+							n.Broadcast(err)
 							n.statManager.IncTotalExceptions(err.Error())
 						} else {
-							_ = n.Broadcast(sets)
+							n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
 						}
 						n.statManager.ProcessTimeEnd()
 						n.statManager.SetBufferLength(int64(len(n.input)))
 					default:
 						e := fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d)
-						_ = n.Broadcast(e)
+						n.Broadcast(e)
 						n.statManager.IncTotalExceptions(e.Error())
 					}
 				case <-ctx.Done():
@@ -272,7 +267,7 @@ func (n *LookupNode) merge(ctx api.StreamContext, d xsql.TupleRow, r []map[strin
 		sets.Content = append(sets.Content, merged)
 	}
 
-	_ = n.Broadcast(sets)
+	n.Broadcast(sets)
 	n.statManager.ProcessTimeEnd()
 	n.statManager.IncTotalRecordsOut()
 	n.statManager.SetBufferLength(int64(len(n.input)))
