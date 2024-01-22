@@ -26,12 +26,27 @@ type SourceTuple interface {
 	Timestamp() time.Time
 }
 
+type RawTuple interface {
+	Raw() []byte
+}
+
 type DefaultSourceTuple struct {
 	Mess map[string]interface{} `json:"message"`
 	M    map[string]interface{} `json:"meta"`
 	Time time.Time              `json:"timestamp"`
+	raw  []byte
 }
 
+// NewDefaultRawTuple creates a new DefaultSourceTuple with raw data. Use this when extend source connector
+func NewDefaultRawTuple(raw []byte, meta map[string]interface{}, ts time.Time) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		M:    meta,
+		Time: ts,
+		raw:  raw,
+	}
+}
+
+// NewDefaultSourceTuple creates a new DefaultSourceTuple with message and metadata. Use this when extend all in one source.
 func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]interface{}) *DefaultSourceTuple {
 	return &DefaultSourceTuple{
 		Mess: message,
@@ -58,6 +73,10 @@ func (t *DefaultSourceTuple) Meta() map[string]interface{} {
 
 func (t *DefaultSourceTuple) Timestamp() time.Time {
 	return t.Time
+}
+
+func (t *DefaultSourceTuple) Raw() []byte {
+	return t.raw
 }
 
 type Logger interface {
@@ -94,6 +113,16 @@ type Source interface {
 	// read from the yaml
 	Configure(datasource string, props map[string]interface{}) error
 	Closable
+}
+
+type SourceConnector interface {
+	Source
+	Connect(ctx StreamContext) error
+	Subscriber
+}
+
+type Subscriber interface {
+	Subscribe(ctx StreamContext) error
 }
 
 type LookupSource interface {

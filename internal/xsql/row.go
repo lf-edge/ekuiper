@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -235,7 +235,8 @@ type Alias struct {
 // Tuple The input row, produced by the source
 type Tuple struct {
 	Emitter   string
-	Message   Message // the original pointer is immutable & big; may be cloned
+	Message   Message // the original pointer is immutable & big; may be cloned. Union with Raw
+	Raw       []byte  // the original raw message, should be deleted after decoded into message.
 	Timestamp int64
 	Metadata  Metadata // immutable
 
