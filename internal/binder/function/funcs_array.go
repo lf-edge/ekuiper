@@ -688,4 +688,34 @@ func registerArrayFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["kvpair_array_to_obj"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arr, ok := args[0].([]interface{})
+			if !ok {
+				return errorArrayFirstArgumentNotArrayError, false
+			}
+
+			obj := make(map[string]interface{}, len(arr))
+			for _, item := range arr {
+				pair, ok := item.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("array item should be map[string]interface{}"), false
+				}
+
+				length := len(pair)
+				k, kExist := pair[kvPairKName]
+				v, vExist := pair[kvPairVName]
+				kInStr, ok := k.(string)
+
+				if length != 2 || !kExist || !vExist || !ok {
+					return fmt.Errorf("array item should be key-value pair"), false
+				}
+				obj[kInStr] = v
+			}
+			return obj, true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
 }

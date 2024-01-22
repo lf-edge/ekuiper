@@ -180,3 +180,21 @@ result:
 ```sql
 {"foo":'emq'}
 ```
+
+## OBJ_TO_KVPAIR_ARRAY
+
+```text
+obj_to_kvpair_array(obj)
+```
+
+Return an array of key-value pairs converted from an object.
+
+```sql
+obj_to_kvpair_array({"key1":1, "key2":2})
+```
+
+result:
+
+```sql
+[{"key":"key1", "value":1},{"key":"key2", "value":2}]
+```

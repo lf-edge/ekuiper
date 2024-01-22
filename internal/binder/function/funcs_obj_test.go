@@ -490,6 +490,30 @@ func TestObjectFunctions(t *testing.T) {
 			},
 			result: fmt.Errorf("the argument number should be 2, got 3"),
 		},
+		{
+			name: "obj_to_kvpair_array",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+				},
+			},
+			result: []map[string]interface{}{
+				{kvPairKName: "a", kvPairVName: 1},
+			},
+		},
+		{
+			name: "obj_to_kvpair_array",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": []string{"foo", "bar"},
+				},
+			},
+			result: []map[string]interface{}{
+				{kvPairKName: "a", kvPairVName: 1},
+				{kvPairKName: "b", kvPairVName: []string{"foo", "bar"}},
+			},
+		},
 	}
 	fe := funcExecutor{}
 	for _, tt := range tests {

@@ -200,3 +200,21 @@ array_sort([3, 2, "b", "a"])
 ```sql
 [2, 3, "a", "b"]
 ```
+
+## KVPAIR_ARRAY_TO_OBJ
+
+```text
+kvpair_array_to_obj(array)
+```
+
+返回一个从键值对数组转换而来的新对象。
+
+```sql
+kvpair_array_to_obj([{"key":"key1", "value":1},{"key":"key2", "value":2}])
+```
+
+结果:
+
+```sql
+{"key1":1, "key2":2}
+```
