@@ -17,9 +17,10 @@ package errorx
 type ErrorCode int
 
 const (
-	GENERAL_ERR ErrorCode = 1001
-	NOT_FOUND   ErrorCode = 1002
-	IOErr       ErrorCode = 1003
+	Undefined_Err ErrorCode = 1000
+	GENERAL_ERR   ErrorCode = 1001
+	NOT_FOUND     ErrorCode = 1002
+	IOErr         ErrorCode = 1003
 )
 
 var NotFoundErr = newWithCode(NOT_FOUND, "not found")
