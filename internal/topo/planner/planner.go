@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
@@ -71,7 +72,13 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	return tp, nil
 }
 
-func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (*topo.Topo, error) {
+func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.ExecutorError, err.Error())
+		}
+	}()
+
 	// Create topology
 	tp, err := topo.NewWithNameAndOptions(rule.Id, rule.Options)
 	if err != nil {
@@ -382,7 +389,12 @@ func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOpt
 	return srcConnNode, ops, nil
 }
 
-func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
+func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.PlanError, err.Error())
+		}
+	}()
 	dimensions := stmt.Dimensions
 	var (
 		p        LogicalPlan

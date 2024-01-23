@@ -36,5 +36,6 @@ func (e *Error) Code() ErrorCode {
 }
 
 type ErrorWithCode interface {
+	Error() string
 	Code() ErrorCode
 }
