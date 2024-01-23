@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 var defaultOption = &api.RuleOption{
@@ -59,8 +60,9 @@ func TestCreate(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	tests := []struct {
-		r *api.Rule
-		e error
+		r    *api.Rule
+		e    error
+		code errorx.ErrorCode
 	}{
 		{
 			r: &api.Rule{
@@ -88,7 +90,8 @@ func TestCreate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			e:    errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			code: errorx.ParserError,
 		},
 		{
 			r: &api.Rule{
@@ -102,11 +105,20 @@ func TestCreate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("fail to get stream demo1, please check if stream is created"),
+			e:    errors.New("fail to get stream demo1, please check if stream is created"),
+			code: errorx.PlanError,
 		},
 	}
 	for i, tt := range tests {
 		_, err := NewRuleState(tt.r)
+		if err != nil {
+			code, ok := errorx.GetErrorCode(err)
+			if tt.code != 0 {
+				require.True(t, ok)
+				require.Equal(t, tt.code, code)
+				continue
+			}
+		}
 		if !reflect.DeepEqual(err, tt.e) {
 			t.Errorf("%d.\n\nerror mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.e, err)
 		}

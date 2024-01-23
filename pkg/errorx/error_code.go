@@ -51,3 +51,10 @@ func NewParserError(msg string) error {
 		msg:  msg,
 	}
 }
+
+func GetErrorCode(err error) (ErrorCode, bool) {
+	if code, ok := err.(ErrorWithCode); ok {
+		return code.Code(), true
+	}
+	return 0, false
+}
