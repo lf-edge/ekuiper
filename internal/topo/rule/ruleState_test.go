@@ -116,6 +116,9 @@ func TestCreate(t *testing.T) {
 			if tt.code != 0 {
 				require.True(t, ok)
 				require.Equal(t, tt.code, code)
+				if !reflect.DeepEqual(err.Error(), tt.e.Error()) {
+					t.Errorf("%d.\n\nerror mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.e, err)
+				}
 				continue
 			}
 		}
@@ -137,6 +140,7 @@ func TestUpdate(t *testing.T) {
 		r         *api.Rule
 		e         error
 		triggered int
+		code      errorx.ErrorCode
 	}{
 		{
 			r: &api.Rule{
@@ -151,6 +155,7 @@ func TestUpdate(t *testing.T) {
 				Options: defaultOption,
 			},
 			e:         errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			code:      errorx.ParserError,
 			triggered: 1,
 		},
 		{
@@ -166,6 +171,7 @@ func TestUpdate(t *testing.T) {
 				Options: defaultOption,
 			},
 			e:         errors.New("fail to get stream demo1, please check if stream is created"),
+			code:      errorx.PlanError,
 			triggered: 1,
 		},
 		{
@@ -218,7 +224,15 @@ func TestUpdate(t *testing.T) {
 		require.Equal(t, 1, rs.triggered, fmt.Sprintf("case %v failed", i))
 		err = rs.UpdateTopo(tt.r)
 		time.Sleep(5 * time.Millisecond)
-		require.Equal(t, tt.e, err, fmt.Sprintf("case %v failed", i))
+		if err != nil {
+			code, ok := errorx.GetErrorCode(err)
+			if tt.code != 0 {
+				require.True(t, ok)
+				require.Equal(t, tt.code, code)
+				require.Equal(t, tt.e.Error(), err.Error(), fmt.Sprintf("case %v failed", i))
+				continue
+			}
+		}
 		require.Equal(t, tt.triggered, rs.triggered, fmt.Sprintf("case %v failed", i))
 		rs.Close()
 	}
