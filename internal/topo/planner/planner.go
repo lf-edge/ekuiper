@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo"
@@ -177,13 +178,21 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 	)
 	switch t := lp.(type) {
 	case *DataSourcePlan:
-		srcNode, err := transformSourceNode(t, sources, options)
+		srcNode, emitters, err := transformSourceNode(t, sources, tp.GetName(), options)
 		if err != nil {
 			return nil, 0, err
 		}
 		tp.AddSrc(srcNode)
 		inputs = []api.Emitter{srcNode}
 		op = srcNode
+		for i, e := range emitters {
+			if i < len(emitters)-1 {
+				inputs = []api.Emitter{e}
+				tp.AddOperator(inputs, e)
+				newIndex++
+			}
+			op = e
+		}
 	case *WatermarkPlan:
 		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
 	case *AnalyticFuncsPlan:
@@ -271,7 +280,7 @@ func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
 	return int64(t.length) * unit, int64(t.interval) * unit, t.delay * unit
 }
 
-func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[string]any, options *api.RuleOption) (*node.SourceNode, error) {
+func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *api.RuleOption) (node.DataSourceNode, []node.OperatorNode, error) {
 	isSchemaless := t.isSchemaless
 	mockSourceConf, isMock := mockSourcesProp[string(t.name)]
 	if isMock {
@@ -279,38 +288,59 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 	}
 	switch t.streamStmt.StreamType {
 	case ast.TypeStream:
-		var (
-			pp  node.UnOperation
-			err error
-		)
+		si, err := io.Source(t.streamStmt.Options.TYPE)
+		if err != nil {
+			return nil, nil, err
+		}
+		var pp node.UnOperation
 		if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || t.isBinary)) {
 			pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, t.streamFields)
-		if isMock {
-			srcNode.SetProps(mockSourceConf)
+		switch ss := si.(type) {
+		case api.SourceConnector:
+			// Create the connector node as source node
+			srcConnNode, err := node.NewSourceConnectorNode(string(t.name), ss, t.streamStmt.Options, options)
+			if err != nil {
+				return nil, nil, err
+			}
+			// Create the decode node
+			decodeNode, err := node.NewDecodeOp("2_decoder", ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
+			if err != nil {
+				return nil, nil, err
+			}
+			ops := []node.OperatorNode{decodeNode}
+			// Create the preprocessor node if needed
+			if pp != nil {
+				ops = append(ops, Transform(pp, fmt.Sprintf("%d_preprocessor", 2), options))
+			}
+			return srcConnNode, ops, nil
+		default:
+			srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, t.streamFields)
+			if isMock {
+				srcNode.SetProps(mockSourceConf)
+			}
+			return srcNode, nil, nil
 		}
-		return srcNode, nil
 	case ast.TypeTable:
 		pp, err := operator.NewTableProcessor(isSchemaless, string(t.name), t.streamFields, t.streamStmt.Options)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		schema := t.streamFields
 		if t.isSchemaless {
 			schema = nil
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, schema)
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, schema)
 		if isMock {
 			srcNode.SetProps(mockSourceConf)
 		}
-		return srcNode, nil
+		return srcNode, nil, nil
 	}
-	return nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
+	return nil, nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
 }
 
 func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
