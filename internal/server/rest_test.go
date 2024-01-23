@@ -328,7 +328,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
-	expect = "{\"sources\":[\"source_alert\"],\"edges\":{\"op_2_decoder\":[\"op_2_project\"],\"op_2_project\":[\"sink_nop_0\"],\"source_alert\":[\"op_2_decoder\"]}}"
+	expect = "{\"sources\":[\"source_alert\"],\"edges\":{\"op_2_decoder\":[\"op_3_project\"],\"op_3_project\":[\"sink_nop_0\"],\"source_alert\":[\"op_2_decoder\"]}}"
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// start rule

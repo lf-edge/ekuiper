@@ -74,6 +74,10 @@ func (s *Topo) NewTopoWithSucceededCtx() *Topo {
 	return n
 }
 
+func (s *Topo) GetName() string {
+	return s.name
+}
+
 // Cancel may be called multiple times so must be idempotent
 func (s *Topo) Cancel() {
 	s.mu.Lock()
