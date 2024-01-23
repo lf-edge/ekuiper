@@ -17,6 +17,7 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
@@ -44,7 +45,7 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
 	stmt, err := xsql.GetStatementFromSql(sql)
 	if err != nil {
-		return nil, err
+		return nil, errorx.NewParserError(err.Error())
 	}
 	// validation
 	streamsFromStmt := xsql.GetStreams(stmt)
@@ -61,11 +62,11 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	// Create the logical plan and optimize. Logical plans are a linked list
 	lp, err := createLogicalPlan(stmt, rule.Options, store)
 	if err != nil {
-		return nil, err
+		return nil, errorx.NewWithCode(errorx.PlanError, err.Error())
 	}
 	tp, err := createTopo(rule, lp, mockSourcesProp, sinks, streamsFromStmt)
 	if err != nil {
-		return nil, err
+		return nil, errorx.NewWithCode(errorx.ExecutorError, err.Error())
 	}
 	return tp, nil
 }
