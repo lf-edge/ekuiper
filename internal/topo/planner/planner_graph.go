@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		if _, ok := ruleGraph.Topo.Edges[srcName]; !ok {
 			return nil, fmt.Errorf("no edge defined for source node %s", srcName)
 		}
-		srcNode, srcType, name, err := parseSource(srcName, gn, rule, store, lookupTableChildren)
+		srcNode, srcType, name, ops, err := parseSource(srcName, gn, rule, store, lookupTableChildren)
 		if err != nil {
 			return nil, fmt.Errorf("parse source %s with %v error: %w", srcName, gn.Props, err)
 		}
@@ -91,6 +91,13 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		if srcNode != nil {
 			nodeMap[srcName] = srcNode
 			tp.AddSrc(srcNode)
+			inputs := []api.Emitter{srcNode}
+			nodeMap[srcName] = srcNode
+			for _, e := range ops {
+				tp.AddOperator(inputs, e)
+				inputs = []api.Emitter{e}
+				nodeMap[srcName] = e
+			}
 		}
 		sources[srcName] = true
 	}
@@ -424,48 +431,48 @@ func genNodesInOrder(toNodes []string, edges map[string][]interface{}, flatRever
 	return i
 }
 
-func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.KeyValue, lookupTableChildren map[string]*ast.Options) (*node.SourceNode, sourceType, string, error) {
+func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.KeyValue, lookupTableChildren map[string]*ast.Options) (node.DataSourceNode, sourceType, string, []node.OperatorNode, error) {
 	sourceMeta := &api.SourceMeta{
 		SourceType: "stream",
 	}
 	err := cast.MapToStruct(gn.Props, sourceMeta)
 	if err != nil {
-		return nil, ILLEGAL, "", err
+		return nil, ILLEGAL, "", nil, err
 	}
 	if sourceMeta.SourceType != "stream" && sourceMeta.SourceType != "table" {
-		return nil, ILLEGAL, "", fmt.Errorf("source type %s not supported", sourceMeta.SourceType)
+		return nil, ILLEGAL, "", nil, fmt.Errorf("source type %s not supported", sourceMeta.SourceType)
 	}
 	// If source name is specified, find the created stream/table from store
 	if sourceMeta.SourceName != "" {
 		if store == nil {
 			store, err = store2.GetKV("stream")
 			if err != nil {
-				return nil, ILLEGAL, "", err
+				return nil, ILLEGAL, "", nil, err
 			}
 		}
 		streamStmt, e := xsql.GetDataSource(store, sourceMeta.SourceName)
 		if e != nil {
-			return nil, ILLEGAL, "", fmt.Errorf("fail to get stream %s, please check if stream is created", sourceMeta.SourceName)
+			return nil, ILLEGAL, "", nil, fmt.Errorf("fail to get stream %s, please check if stream is created", sourceMeta.SourceName)
 		}
 		if streamStmt.StreamType == ast.TypeStream && sourceMeta.SourceType == "table" {
-			return nil, ILLEGAL, "", fmt.Errorf("stream %s is not a table", sourceMeta.SourceName)
+			return nil, ILLEGAL, "", nil, fmt.Errorf("stream %s is not a table", sourceMeta.SourceName)
 		} else if streamStmt.StreamType == ast.TypeTable && sourceMeta.SourceType == "stream" {
-			return nil, ILLEGAL, "", fmt.Errorf("table %s is not a stream", sourceMeta.SourceName)
+			return nil, ILLEGAL, "", nil, fmt.Errorf("table %s is not a stream", sourceMeta.SourceName)
 		}
 		st := streamStmt.Options.TYPE
 		if st == "" {
 			st = "mqtt"
 		}
 		if st != gn.NodeType {
-			return nil, ILLEGAL, "", fmt.Errorf("source type %s does not match the stream type %s", gn.NodeType, st)
+			return nil, ILLEGAL, "", nil, fmt.Errorf("source type %s does not match the stream type %s", gn.NodeType, st)
 		}
 		sInfo, err := convertStreamInfo(streamStmt)
 		if err != nil {
-			return nil, ILLEGAL, "", err
+			return nil, ILLEGAL, "", nil, err
 		}
 		if sInfo.stmt.StreamType == ast.TypeTable && sInfo.stmt.Options.KIND == ast.StreamKindLookup {
 			lookupTableChildren[string(sInfo.stmt.Name)] = sInfo.stmt.Options
-			return nil, LOOKUPTABLE, string(sInfo.stmt.Name), nil
+			return nil, LOOKUPTABLE, string(sInfo.stmt.Name), nil, nil
 		} else {
 			// Use the plan to calculate the schema and other meta info
 			p := DataSourcePlan{
@@ -480,22 +487,22 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 			if sInfo.stmt.StreamType == ast.TypeStream {
 				err = p.PruneColumns(nil)
 				if err != nil {
-					return nil, ILLEGAL, "", err
+					return nil, ILLEGAL, "", nil, err
 				}
-				srcNode, e := transformSourceNode(p, nil, rule.Options)
+				srcNode, ops, e := transformSourceNode(p, nil, rule.Id, rule.Options, 1)
 				if e != nil {
-					return nil, ILLEGAL, "", e
+					return nil, ILLEGAL, "", nil, e
 				}
-				return srcNode, STREAM, string(sInfo.stmt.Name), nil
+				return srcNode, STREAM, string(sInfo.stmt.Name), ops, nil
 			} else {
-				return nil, SCANTABLE, string(sInfo.stmt.Name), nil
+				return nil, SCANTABLE, string(sInfo.stmt.Name), nil, nil
 			}
 		}
 	} else {
 		sourceOption := &ast.Options{}
 		err = cast.MapToStruct(gn.Props, sourceOption)
 		if err != nil {
-			return nil, ILLEGAL, "", err
+			return nil, ILLEGAL, "", nil, err
 		}
 		sourceOption.TYPE = gn.NodeType
 		if sourceOption.SCHEMAID == "" && gn.Props["schemaName"] != nil && gn.Props["schemaMessage"] != nil {
@@ -509,15 +516,15 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 		case "stream":
 			pp, err := operator.NewPreprocessor(true, nil, true, nil, rule.Options.IsEventTime, sourceOption.TIMESTAMP, sourceOption.TIMESTAMP_FORMAT, strings.EqualFold(sourceOption.FORMAT, message.FormatBinary), sourceOption.STRICT_VALIDATION)
 			if err != nil {
-				return nil, ILLEGAL, "", err
+				return nil, ILLEGAL, "", nil, err
 			}
 			srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options, false, false, nil)
-			return srcNode, STREAM, nodeName, nil
+			return srcNode, STREAM, nodeName, nil, nil
 		case "table":
-			return nil, ILLEGAL, "", fmt.Errorf("anonymouse table source is not supported, please create it prior to the rule")
+			return nil, ILLEGAL, "", nil, fmt.Errorf("anonymouse table source is not supported, please create it prior to the rule")
 		}
 	}
-	return nil, ILLEGAL, "", errors.New("invalid source node")
+	return nil, ILLEGAL, "", nil, errors.New("invalid source node")
 }
 
 func parseOrderBy(props map[string]interface{}, sourceNames []string) (*operator.OrderOp, error) {
