@@ -406,7 +406,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 func assertErrorCode(code errorx.ErrorCode, resp []byte) (bool, error) {
 	m := struct {
-		ErrorCode int `json:"errorCode"`
+		ErrorCode int `json:"error"`
 	}{}
 	err := json.Unmarshal(resp, &m)
 	if err != nil {

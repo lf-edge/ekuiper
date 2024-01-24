@@ -24,10 +24,6 @@ func New(message string) *Error {
 }
 
 func NewWithCode(code ErrorCode, message string) *Error {
-	return newWithCode(code, message)
-}
-
-func newWithCode(code ErrorCode, message string) *Error {
 	return &Error{message, code}
 }
 

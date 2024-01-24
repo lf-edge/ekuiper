@@ -23,7 +23,7 @@ const (
 	IOErr         ErrorCode = 1003
 )
 
-var NotFoundErr = newWithCode(NOT_FOUND, "not found")
+var NotFoundErr = NewWithCode(NOT_FOUND, "not found")
 
 func NewIOErr(msg string) error {
 	return &Error{

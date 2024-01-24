@@ -100,7 +100,7 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 func packageInternalErrorCode(err error, msg string) string {
 	if errWithCode, ok := err.(errorx.ErrorWithCode); ok {
 		errCode := errWithCode.Code()
-		return fmt.Sprintf(`{"errorCode":%v,"message":"%v"}`, errCode, msg)
+		return fmt.Sprintf(`{"error":%v,"message":"%v"}`, errCode, msg)
 	}
 	return msg
 }
