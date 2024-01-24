@@ -728,7 +728,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 				[]interface{}{1},
 				nil,
 			},
-			result: nil,
+			result: []interface{}{1},
 		},
 	}
 
