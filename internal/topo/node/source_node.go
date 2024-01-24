@@ -42,7 +42,7 @@ type SourceNode struct {
 	IsSchemaless bool
 }
 
-func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, sendError, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) *SourceNode {
+func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, rOptions *api.RuleOption, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) *SourceNode {
 	t := options.TYPE
 	if t == "" {
 		if st == ast.TypeStream {
@@ -52,14 +52,9 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 		}
 	}
 	return &SourceNode{
-		streamType: st,
-		sourceType: t,
-		defaultNode: &defaultNode{
-			name:        name,
-			outputs:     make(map[string]chan<- interface{}),
-			concurrency: 1,
-			sendError:   sendError,
-		},
+		streamType:   st,
+		sourceType:   t,
+		defaultNode:  newDefaultNode(name, rOptions),
 		preprocessOp: op,
 		options:      options,
 		schema:       schema,

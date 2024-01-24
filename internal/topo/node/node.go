@@ -18,10 +18,12 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type OperatorNode interface {
@@ -48,12 +50,21 @@ type DataSourceNode interface {
 
 type defaultNode struct {
 	name        string
-	outputs     map[string]chan<- interface{}
+	outputs     map[string]chan<- any
 	concurrency int
 	sendError   bool
 	statManager metric.StatManager
 	ctx         api.StreamContext
 	qos         api.Qos
+}
+
+func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
+	return &defaultNode{
+		name:        name,
+		outputs:     make(map[string]chan<- any),
+		concurrency: 1,
+		sendError:   options.SendError,
+	}
 }
 
 func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
@@ -137,9 +148,16 @@ func (o *defaultNode) GetStreamContext() api.StreamContext {
 
 type defaultSinkNode struct {
 	*defaultNode
-	input          chan interface{}
+	input          chan any
 	barrierHandler checkpoint.BarrierHandler
 	inputCount     int
+}
+
+func newDefaultSinkNode(name string, options *api.RuleOption) *defaultSinkNode {
+	return &defaultSinkNode{
+		defaultNode: newDefaultNode(name, options),
+		input:       make(chan any, options.BufferLength),
+	}
 }
 
 func (o *defaultSinkNode) GetInput() (chan<- interface{}, string) {
@@ -202,4 +220,17 @@ func SinkPing(sinkType string, config map[string]interface{}) error {
 		return pingAble.Ping("", config)
 	}
 	return fmt.Errorf("sink %v doesnt't support ping connection", sinkType)
+}
+
+func propsToNodeOption(props map[string]any) *api.RuleOption {
+	options := &api.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+		Qos:          api.AtLeastOnce,
+	}
+	err := cast.MapToStruct(props, options)
+	if err != nil {
+		conf.Log.Warnf("fail to parse rule option %v from props", err)
+	}
+	return options
 }

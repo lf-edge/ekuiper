@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
@@ -44,7 +45,7 @@ func TestGetConf_Apply(t *testing.T) {
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
-	}, false, false, false, nil)
+	}, &api.RuleOption{SendError: false}, false, false, nil)
 	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
@@ -70,7 +71,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
-	}, false, false, false, nil)
+	}, &api.RuleOption{SendError: false}, false, false, nil)
 	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	assert.Equal(t, result, conf)
 

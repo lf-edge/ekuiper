@@ -41,14 +41,7 @@ func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (
 	n := &JoinAlignNode{
 		batch: batch,
 	}
-	n.defaultSinkNode = &defaultSinkNode{
-		input: make(chan interface{}, options.BufferLength),
-		defaultNode: &defaultNode{
-			outputs:   make(map[string]chan<- interface{}),
-			name:      name,
-			sendError: options.SendError,
-		},
-	}
+	n.defaultSinkNode = newDefaultSinkNode(name, options)
 	return n, nil
 }
 

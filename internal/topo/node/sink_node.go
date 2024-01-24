@@ -69,42 +69,20 @@ type SinkNode struct {
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode {
-	bufferLength := 1024
-	if c, ok := props["bufferLength"]; ok {
-		if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
-			// invalid property bufferLength
-		} else {
-			bufferLength = t
-		}
-	}
 	return &SinkNode{
-		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, bufferLength),
-			defaultNode: &defaultNode{
-				name:        name,
-				concurrency: 1,
-				ctx:         nil,
-			},
-		},
-		sinkType: sinkType,
-		options:  props,
+		defaultSinkNode: newDefaultSinkNode(name, propsToNodeOption(props)),
+		sinkType:        sinkType,
+		options:         props,
 	}
 }
 
 // NewSinkNodeWithSink Only for mock source, do not use it in production
 func NewSinkNodeWithSink(name string, sink api.Sink, props map[string]interface{}) *SinkNode {
 	return &SinkNode{
-		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, 1024),
-			defaultNode: &defaultNode{
-				name:        name,
-				concurrency: 1,
-				ctx:         nil,
-			},
-		},
-		options: props,
-		isMock:  true,
-		sink:    sink,
+		defaultSinkNode: newDefaultSinkNode(name, propsToNodeOption(props)),
+		options:         props,
+		isMock:          true,
+		sink:            sink,
 	}
 }
 
