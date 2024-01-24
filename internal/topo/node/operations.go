@@ -45,15 +45,7 @@ type UnaryOperator struct {
 // New NewUnary creates *UnaryOperator value
 func New(name string, options *api.RuleOption) *UnaryOperator {
 	return &UnaryOperator{
-		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, options.BufferLength),
-			defaultNode: &defaultNode{
-				name:        name,
-				outputs:     make(map[string]chan<- interface{}),
-				concurrency: 1,
-				sendError:   options.SendError,
-			},
-		},
+		defaultSinkNode: newDefaultSinkNode(name, options),
 	}
 }
 

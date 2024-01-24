@@ -53,17 +53,10 @@ func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *
 		wms[s] = options.LateTol
 	}
 	return &WatermarkOp{
-		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, options.BufferLength),
-			defaultNode: &defaultNode{
-				outputs:   make(map[string]chan<- interface{}),
-				name:      name,
-				sendError: options.SendError,
-			},
-		},
-		lateTolerance: options.LateTol,
-		sendWatermark: sendWatermark,
-		streamWMs:     wms,
+		defaultSinkNode: newDefaultSinkNode(name, options),
+		lateTolerance:   options.LateTol,
+		sendWatermark:   sendWatermark,
+		streamWMs:       wms,
 	}
 }
 

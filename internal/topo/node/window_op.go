@@ -74,14 +74,7 @@ func init() {
 func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
-	o.defaultSinkNode = &defaultSinkNode{
-		input: make(chan interface{}, options.BufferLength),
-		defaultNode: &defaultNode{
-			outputs:   make(map[string]chan<- interface{}),
-			name:      name,
-			sendError: options.SendError,
-		},
-	}
+	o.defaultSinkNode = newDefaultSinkNode(name, options)
 	o.isEventTime = options.IsEventTime
 	o.window = &w
 	if o.window.Interval == 0 && o.window.Type == ast.COUNT_WINDOW {
