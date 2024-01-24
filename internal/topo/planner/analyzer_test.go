@@ -16,7 +16,6 @@ package planner
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -30,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func init() {
@@ -198,7 +198,10 @@ func TestCheckTopoSort(t *testing.T) {
 		CheckpointInterval: 0,
 		SendError:          true,
 	}, store)
-	require.Equal(t, errors.New("unknown field a"), err)
+	errWithCode, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.PlanError, int(errWithCode.Code()))
+	require.Equal(t, "unknown field a", errWithCode.Error())
 }
 
 func Test_validation(t *testing.T) {
