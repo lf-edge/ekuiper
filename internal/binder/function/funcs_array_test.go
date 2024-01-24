@@ -914,3 +914,148 @@ func TestArrayFuncVal(t *testing.T) {
 		})
 	}
 }
+
+func TestArrayNil(t *testing.T) {
+	tests := []struct {
+		args     []interface{}
+		funcName string
+		result   interface{}
+	}{
+		{
+			args: []interface{}{
+				[]interface{}{1},
+				nil,
+				[]interface{}{2},
+			},
+			funcName: "array_concat",
+			result:   []interface{}{1, 2},
+		},
+		{
+			args: []interface{}{
+				1,
+				nil,
+				2,
+			},
+			funcName: "array_create",
+			result:   []interface{}{1, 2},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				1,
+			},
+			funcName: "array_position",
+			result:   0,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				0,
+			},
+			funcName: "element_at",
+			result:   1,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				1,
+			},
+			funcName: "array_contains",
+			result:   true,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				2,
+			},
+			funcName: "array_remove",
+			result:   []interface{}{1, nil},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2, 1},
+				1,
+			},
+			funcName: "array_last_position",
+			result:   3,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2, 1},
+				[]interface{}{1},
+			},
+			funcName: "array_contains_any",
+			result:   true,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				[]interface{}{1, nil, 3},
+			},
+			funcName: "array_intersect",
+			result:   []interface{}{1, nil},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				[]interface{}{1, nil, 3},
+			},
+			funcName: "array_union",
+			result:   []interface{}{1, nil, 2, 3},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+			},
+			funcName: "array_max",
+			result:   int64(2),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+			},
+			funcName: "array_min",
+			result:   int64(1),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				[]interface{}{1, nil},
+			},
+			funcName: "array_except",
+			result:   []interface{}{2},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+			},
+			funcName: "array_cardinality",
+			result:   2,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{1, nil},
+					[]interface{}{2, 3},
+				},
+			},
+			funcName: "array_flatten",
+			result:   []interface{}{1, nil, 2, 3},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, 1, true, true, nil, nil},
+			},
+			funcName: "array_distinct",
+			result:   []interface{}{1, true, nil},
+		},
+	}
+	for _, tt := range tests {
+		f, ok := builtins[tt.funcName]
+		assert.True(t, ok)
+		r, ok := f.exec(nil, tt.args)
+		require.True(t, ok)
+		require.Equal(t, tt.result, r)
+	}
+
+}

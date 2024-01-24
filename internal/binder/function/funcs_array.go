@@ -131,9 +131,7 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnFalseIfHasAnyNil,
 	}
-
 	builtins["array_remove"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -155,30 +153,7 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
-	builtins["array_position"] = builtinFunc{
-		fType: ast.FuncTypeScalar,
-		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if args[0] == nil {
-				return -1, true
-			}
-			array, ok := args[0].([]interface{})
-			if !ok {
-				return errorArrayFirstArgumentNotArrayError, false
-			}
-			for i, item := range array {
-				if item == args[1] {
-					return i, true
-				}
-			}
-			return -1, true
-		},
-		val: func(ctx api.FunctionContext, args []ast.Expr) error {
-			return ValidateLen(2, len(args))
-		},
-	}
-
 	builtins["array_last_position"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -202,7 +177,6 @@ func registerArrayFunc() {
 			return ValidateLen(2, len(args))
 		},
 	}
-
 	builtins["array_contains_any"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -228,9 +202,7 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnFalseIfHasAnyNil,
 	}
-
 	builtins["array_intersect"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -269,7 +241,6 @@ func registerArrayFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
-
 	builtins["array_union"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
@@ -321,7 +292,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["array_min"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -335,7 +305,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["array_except"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -367,7 +336,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["repeat"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -455,7 +423,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
 		},
-		check: return0IfHasAnyNil,
 	}
 	builtins["array_flatten"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -480,7 +447,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["array_distinct"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -499,7 +465,8 @@ func registerArrayFunc() {
 					uint, uint8, uint16, uint32, uint64,
 					float32, float64,
 					string,
-					bool:
+					bool,
+					nil:
 					if !set[val] {
 						output = append(output, val)
 						set[val] = true
@@ -514,7 +481,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(1, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["array_map"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -670,6 +636,9 @@ func registerArrayFunc() {
 			var res []interface{}
 
 			for _, arg := range args {
+				if arg == nil {
+					continue
+				}
 				v := reflect.ValueOf(arg)
 
 				switch v.Kind() {
@@ -686,6 +655,5 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateAtLeast(1, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 }
