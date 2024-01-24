@@ -100,9 +100,9 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 func packageInternalErrorCode(err error, msg string) string {
 	if errWithCode, ok := err.(errorx.ErrorWithCode); ok {
 		errCode := errWithCode.Code()
-		return fmt.Sprintf(`{"errorCode":%v,"message":"%v"}`, errCode, msg)
+		return fmt.Sprintf(`{"error":%v,"message":"%v"}`, errCode, msg)
 	}
-	return msg
+	return fmt.Sprintf(`{"error":%v,"message":"%v"}`, errorx.Undefined_Err, msg)
 }
 
 func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
@@ -266,14 +266,17 @@ func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
 	rule, err := ruleProcessor.GetRuleById(name)
 	if err != nil {
 		handleError(w, err, "explain rules error", logger)
+		return
 	}
 	if rule.Sql == "" {
 		handleError(w, errors.New("only support explain sql now"), "explain rules error", logger)
+		return
 	}
 	var explainInfo string
 	explainInfo, err = planner.GetExplainInfoFromLogicalPlan(rule)
 	if err != nil {
 		handleError(w, err, "explain rules error", logger)
+		return
 	}
 	// resp := planner.BuildExplainResultFromLp(lp, 0)
 	w.Write([]byte(explainInfo))
