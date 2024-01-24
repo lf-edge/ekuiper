@@ -276,6 +276,26 @@ func registerObjectFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["obj_to_kvpair_array"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			obj, ok := args[0].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("the first argument should be map[string]interface{}, got %v", args[0]), false
+			}
+
+			res := make([]interface{}, 0, len(obj))
+			for k, v := range obj {
+				pair := make(map[string]interface{}, 2)
+				pair[kvPairKName] = k
+				pair[kvPairVName] = v
+				res = append(res, pair)
+			}
+			return res, true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
 }
 
 func sliceStringContains(s []string, target string) bool {

@@ -201,3 +201,21 @@ Result:
 ```sql
 [2, 3, "a", "b"]
 ```
+
+## KVPAIR_ARRAY_TO_OBJ
+
+```text
+kvpair_array_to_obj(array)
+```
+
+Return a new object converted from an array of key-value pairs.
+
+```sql
+kvpair_array_to_obj([{"key":"key1", "value":1},{"key":"key2", "value":2}])
+```
+
+Result:
+
+```sql
+{"key1":1, "key2":2}
+```
