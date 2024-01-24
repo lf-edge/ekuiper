@@ -56,21 +56,10 @@ func NewSwitchNode(name string, conf *SwitchConfig, options *api.RuleOption) (*S
 	sn := &SwitchNode{
 		conf: conf,
 	}
-	sn.defaultSinkNode = &defaultSinkNode{
-		input: make(chan interface{}, options.BufferLength),
-		defaultNode: &defaultNode{
-			outputs:   nil,
-			name:      name,
-			sendError: options.SendError,
-		},
-	}
+	sn.defaultSinkNode = newDefaultSinkNode(name, options)
 	outputs := make([]defaultNode, len(conf.Cases))
 	for i := range conf.Cases {
-		outputs[i] = defaultNode{
-			outputs:   make(map[string]chan<- interface{}),
-			name:      name + fmt.Sprintf("_%d", i),
-			sendError: options.SendError,
-		}
+		outputs[i] = *newDefaultNode(fmt.Sprintf("name_%d", i), options)
 	}
 	sn.outputNodes = outputs
 	return sn, nil
