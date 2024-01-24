@@ -45,7 +45,7 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
 	stmt, err := xsql.GetStatementFromSql(sql)
 	if err != nil {
-		return nil, errorx.NewParserError(err.Error())
+		return nil, err
 	}
 	// validation
 	streamsFromStmt := xsql.GetStreams(stmt)
@@ -62,16 +62,22 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	// Create the logical plan and optimize. Logical plans are a linked list
 	lp, err := createLogicalPlan(stmt, rule.Options, store)
 	if err != nil {
-		return nil, errorx.NewWithCode(errorx.PlanError, err.Error())
+		return nil, err
 	}
 	tp, err := createTopo(rule, lp, mockSourcesProp, sinks, streamsFromStmt)
 	if err != nil {
-		return nil, errorx.NewWithCode(errorx.ExecutorError, err.Error())
+		return nil, err
 	}
 	return tp, nil
 }
 
-func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (*topo.Topo, error) {
+func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.ExecutorError, err.Error())
+		}
+	}()
+
 	// Create topology
 	tp, err := topo.NewWithNameAndOptions(rule.Id, rule.Options)
 	if err != nil {
@@ -314,7 +320,12 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 	return nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
 }
 
-func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
+func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.PlanError, err.Error())
+		}
+	}()
 	dimensions := stmt.Dimensions
 	var (
 		p        LogicalPlan
