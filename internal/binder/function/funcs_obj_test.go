@@ -609,5 +609,4 @@ func TestObjectFuncArgNil(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, tt.result, r, tt.funcName)
 	}
-
 }
