@@ -916,6 +916,7 @@ func TestArrayFuncVal(t *testing.T) {
 }
 
 func TestArrayNil(t *testing.T) {
+	registerArrayFunc()
 	tests := []struct {
 		args     []interface{}
 		funcName string
@@ -931,11 +932,7 @@ func TestArrayNil(t *testing.T) {
 			result:   []interface{}{1, 2},
 		},
 		{
-			args: []interface{}{
-				1,
-				nil,
-				2,
-			},
+			args:     []interface{}{1, nil, 2},
 			funcName: "array_create",
 			result:   []interface{}{1, 2},
 		},
@@ -1057,5 +1054,4 @@ func TestArrayNil(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, tt.result, r)
 	}
-
 }
