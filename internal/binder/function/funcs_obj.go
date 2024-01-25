@@ -100,6 +100,9 @@ func registerObjectFunc() {
 			}
 			m := make(map[string]interface{}, len(lists))
 			for _, item := range lists {
+				if item == nil {
+					continue
+				}
 				a, ok := item.([]interface{})
 				if !ok {
 					return fmt.Errorf("each argument should be [][2]interface{}"), false
@@ -164,7 +167,7 @@ func registerObjectFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			result := make(map[string]interface{})
 			for i := 0; i < len(args); i += 2 {
-				if args[i+1] != nil {
+				if args[i] != nil && args[i+1] != nil {
 					s, err := cast.ToString(args[i], cast.CONVERT_SAMEKIND)
 					if err != nil {
 						return fmt.Errorf("key %v is not a string", args[i]), false
