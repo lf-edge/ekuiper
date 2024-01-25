@@ -120,7 +120,7 @@ func registerDateTimeFunc() {
 				return ProduceErrInfo(0, "datetime")
 			}
 
-			if ast.IsStringArg(args[1]) {
+			if !ast.IsStringArg(args[1]) {
 				return ProduceErrInfo(1, "string")
 			}
 			return nil

@@ -217,7 +217,7 @@ func registerObjectFunc() {
 				}
 				return res, true
 			default:
-				return fmt.Errorf("the augument should be slice or string"), false
+				return fmt.Errorf("the argument should be slice or string"), false
 			}
 			for k, v := range argMap {
 				if !sliceStringContains(eraseArray, k) {
@@ -261,7 +261,7 @@ func registerObjectFunc() {
 				}
 				return res, true
 			default:
-				return fmt.Errorf("the augument should be slice or string"), false
+				return fmt.Errorf("the argument should be slice or string"), false
 			}
 			for k, v := range argMap {
 				if sliceStringContains(pickArray, k) {
