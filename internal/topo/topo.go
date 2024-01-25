@@ -192,18 +192,16 @@ func (s *Topo) Open() <-chan error {
 			if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
 				return fmt.Errorf("topo %s create store error %v", s.name, err)
 			}
-			s.enableCheckpoint()
+			s.enableCheckpoint(s.ctx)
 			// open stream sink, after log sink is ready.
 			for _, snk := range s.sinks {
 				snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
 			}
 
-			// apply operators, if err bail
 			for _, op := range s.ops {
 				op.Exec(s.ctx.WithMeta(s.name, op.GetName(), s.store), s.drain)
 			}
 
-			// open source, if err bail
 			for _, source := range s.sources {
 				source.Open(s.ctx.WithMeta(s.name, source.GetName(), s.store), s.drain)
 			}
@@ -222,13 +220,22 @@ func (s *Topo) Open() <-chan error {
 	return s.drain
 }
 
-func (s *Topo) enableCheckpoint() error {
+func (s *Topo) enableCheckpoint(ctx api.StreamContext) {
 	if s.options.Qos >= api.AtLeastOnce {
-		var sources []checkpoint.StreamTask
+		var (
+			sources []checkpoint.StreamTask
+			ops     []checkpoint.NonSourceTask
+		)
 		for _, r := range s.sources {
-			sources = append(sources, r)
+			switch rt := r.(type) {
+			case checkpoint.StreamTask:
+				sources = append(sources, r.(checkpoint.StreamTask))
+			case checkpoint.SourceSubTopoTask:
+				rt.EnableCheckpoint(&sources, &ops)
+			default: // should never happen
+				ctx.GetLogger().Errorf("source %s is not a checkpoint task", r.GetName())
+			}
 		}
-		var ops []checkpoint.NonSourceTask
 		for _, r := range s.ops {
 			ops = append(ops, r)
 		}
@@ -239,7 +246,6 @@ func (s *Topo) enableCheckpoint() error {
 		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.options.Qos, s.store, s.options.CheckpointInterval, s.ctx)
 		s.coordinator = c
 	}
-	return nil
 }
 
 func (s *Topo) GetCoordinator() *checkpoint.Coordinator {
