@@ -15,8 +15,6 @@
 package node
 
 import (
-	"fmt"
-
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -59,12 +57,6 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.ctx = ctx
 	log := ctx.GetLogger()
 	log.Debugf("Unary operator %s is started", o.name)
-
-	if len(o.outputs) <= 0 {
-		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
-		return
-	}
-
 	// validate p
 	if o.concurrency < 1 {
 		o.concurrency = 1

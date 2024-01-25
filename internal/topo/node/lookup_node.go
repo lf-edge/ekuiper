@@ -78,11 +78,6 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	n.ctx = ctx
 	log := ctx.GetLogger()
 	log.Debugf("LookupNode %s is started", n.name)
-
-	if len(n.outputs) <= 0 {
-		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
-		return
-	}
 	n.statManager = metric.NewStatManager(ctx, "op")
 	go func() {
 		err := infra.SafeRun(func() error {

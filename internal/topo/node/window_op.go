@@ -105,11 +105,6 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.ctx = ctx
 	log := ctx.GetLogger()
 	log.Debugf("Window operator %s is started", o.name)
-
-	if len(o.outputs) <= 0 {
-		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
-		return
-	}
 	o.statManager = metric.NewStatManager(ctx, "op")
 	var inputs []*xsql.Tuple
 	if s, err := ctx.GetState(WindowInputsKey); err == nil {

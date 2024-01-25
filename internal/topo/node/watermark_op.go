@@ -62,10 +62,6 @@ func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *
 
 func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	ctx.GetLogger().Debugf("watermark node %s is started", w.name)
-	if len(w.outputs) <= 0 {
-		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
-		return
-	}
 	w.statManager = metric.NewStatManager(ctx, "op")
 	w.ctx = ctx
 	// restore state
