@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -43,19 +44,17 @@ type DataSourceNode interface {
 	GetName() string
 	GetMetrics() []any
 	RemoveMetrics(ruleId string)
-	Broadcast(val interface{})
-	GetStreamContext() api.StreamContext
-	SetQos(api.Qos)
 }
 
 type defaultNode struct {
 	name        string
-	outputs     map[string]chan<- any
 	concurrency int
 	sendError   bool
 	statManager metric.StatManager
 	ctx         api.StreamContext
 	qos         api.Qos
+	outputMu    sync.RWMutex
+	outputs     map[string]chan<- any
 }
 
 func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
@@ -68,6 +67,8 @@ func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
 }
 
 func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
+	o.outputMu.Lock()
+	defer o.outputMu.Unlock()
 	if _, ok := o.outputs[name]; !ok {
 		o.outputs[name] = output
 	} else {
@@ -122,6 +123,8 @@ func (o *defaultNode) Broadcast(val interface{}) {
 }
 
 func (o *defaultNode) doBroadcast(val interface{}) {
+	o.outputMu.RLock()
+	defer o.outputMu.RUnlock()
 	for name, out := range o.outputs {
 		select {
 		case out <- val:
