@@ -182,16 +182,34 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 		if err != nil {
 			return nil, 0, err
 		}
-		tp.AddSrc(srcNode)
-		inputs = []api.Emitter{srcNode}
-		op = srcNode
-		for i, e := range emitters {
-			if i < len(emitters)-1 {
-				tp.AddOperator(inputs, e)
-				inputs = []api.Emitter{e}
+		// Shared source node will use subtopo
+		if t.streamStmt.Options.SHARED && len(emitters) > 0 {
+			srcSubtopo, existed := topo.GetSubTopo(string(t.name))
+			if !existed {
+				conf.Log.Infof("Create SubTopo %s", string(t.name))
+				srcSubtopo.AddSrc(srcNode)
+				subInputs := []api.Emitter{srcSubtopo}
+				for _, e := range emitters {
+					srcSubtopo.AddOperator(subInputs, e)
+					subInputs = []api.Emitter{e}
+				}
 			}
-			op = e
-			newIndex++
+			tp.AddSrc(srcSubtopo)
+			inputs = []api.Emitter{srcSubtopo}
+			op = srcSubtopo
+			newIndex += len(emitters)
+		} else {
+			tp.AddSrc(srcNode)
+			inputs = []api.Emitter{srcNode}
+			op = srcNode
+			for i, e := range emitters {
+				if i < len(emitters)-1 {
+					tp.AddOperator(inputs, e)
+					inputs = []api.Emitter{e}
+				}
+				op = e
+				newIndex++
+			}
 		}
 	case *WatermarkPlan:
 		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
