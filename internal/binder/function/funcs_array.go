@@ -131,7 +131,7 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnNilIfHasAnyNil,
+		check: returnFalseIfHasAnyNil,
 	}
 	builtins["array_remove"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -204,7 +204,7 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnNilIfHasAnyNil,
+		check: returnFalseIfHasAnyNil,
 	}
 	builtins["array_intersect"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
