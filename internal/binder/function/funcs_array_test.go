@@ -1048,6 +1048,13 @@ func TestArrayNil(t *testing.T) {
 			funcName: "array_distinct",
 			result:   []interface{}{1, true, nil},
 		},
+		{
+			args: []interface{}{
+				nil, []interface{}{1},
+			},
+			funcName: "array_except",
+			result:   nil,
+		},
 	}
 	for _, tt := range tests {
 		f, ok := builtins[tt.funcName]
