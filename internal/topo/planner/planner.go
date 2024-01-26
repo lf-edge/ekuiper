@@ -324,25 +324,7 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 		}
 		switch ss := si.(type) {
 		case api.SourceConnector:
-			// Create the connector node as source node
-			srcConnNode, err := node.NewSourceConnectorNode(string(t.name), ss, t.streamStmt.Options, options)
-			if err != nil {
-				return nil, nil, err
-			}
-			index++
-			// Create the decode node
-			decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
-			if err != nil {
-				return nil, nil, err
-			}
-			index++
-			ops := []node.OperatorNode{decodeNode}
-			// Create the preprocessor node if needed
-			if pp != nil {
-				ops = append(ops, Transform(pp, fmt.Sprintf("%d_preprocessor", index), options))
-				index++
-			}
-			return srcConnNode, ops, nil
+			return splitSource(t, ss, options, index, ruleId, pp)
 		default:
 			srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, t.streamFields)
 			if isMock {
@@ -351,6 +333,10 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 			return srcNode, nil, nil
 		}
 	case ast.TypeTable:
+		si, err := io.Source(t.streamStmt.Options.TYPE)
+		if err != nil {
+			return nil, nil, err
+		}
 		pp, err := operator.NewTableProcessor(isSchemaless, string(t.name), t.streamFields, t.streamStmt.Options)
 		if err != nil {
 			return nil, nil, err
@@ -360,13 +346,40 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 		if t.isSchemaless {
 			schema = nil
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, schema)
-		if isMock {
-			srcNode.SetProps(mockSourceConf)
+		switch ss := si.(type) {
+		case api.SourceConnector:
+			return splitSource(t, ss, options, index, ruleId, pp)
+		default:
+			srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, schema)
+			if isMock {
+				srcNode.SetProps(mockSourceConf)
+			}
+			return srcNode, nil, nil
 		}
-		return srcNode, nil, nil
 	}
 	return nil, nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
+}
+
+func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOption, index int, ruleId string, pp node.UnOperation) (*node.SourceConnectorNode, []node.OperatorNode, error) {
+	// Create the connector node as source node
+	srcConnNode, err := node.NewSourceConnectorNode(string(t.name), ss, t.streamStmt.Options, options)
+	if err != nil {
+		return nil, nil, err
+	}
+	index++
+	// Create the decode node
+	decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
+	if err != nil {
+		return nil, nil, err
+	}
+	index++
+	ops := []node.OperatorNode{decodeNode}
+	// Create the preprocessor node if needed
+	if pp != nil {
+		ops = append(ops, Transform(pp, fmt.Sprintf("%d_preprocessor", index), options))
+		index++
+	}
+	return srcConnNode, ops, nil
 }
 
 func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
