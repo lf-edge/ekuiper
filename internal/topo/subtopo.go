@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -30,10 +31,15 @@ import (
 
 // SrcSubTopo Implements node.SourceNode
 type SrcSubTopo struct {
-	name     string
-	source   node.SourceNode
-	ops      []node.OperatorNode
-	tail     node.OperatorNode
+	name string
+
+	// creation state
+	source node.DataSourceNode
+	ops    []node.OperatorNode
+	tail   api.Emitter
+	topo   *api.PrintableTopo
+
+	// runtime state
 	refCount atomic.Int32
 	refRules sync.Map
 	cancel   context.CancelFunc
@@ -43,7 +49,6 @@ func (s *SrcSubTopo) AddOutput(output chan<- interface{}, name string) error {
 	return s.tail.AddOutput(output, name)
 }
 
-// Open Add refCount and determine
 func (s *SrcSubTopo) Open(ctx api.StreamContext, errCh chan<- error) {
 	ruleId := ctx.GetRuleId()
 	ctx.GetLogger().Infof("Opening sub topo %s by rule %s", s.name, ruleId)
@@ -67,8 +72,26 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, errCh chan<- error) {
 	}
 }
 
+func (s *SrcSubTopo) GetSource() node.DataSourceNode {
+	return s.source
+}
+
 func (s *SrcSubTopo) GetName() string {
 	return s.name
+}
+
+func (s *SrcSubTopo) SubMetrics() (keys []string, values []any) {
+	for i, v := range s.source.GetMetrics() {
+		keys = append(keys, "source_subtopo_"+s.source.GetName()+"_0_"+metric.MetricNames[i])
+		values = append(values, v)
+	}
+	for _, so := range s.ops {
+		for i, v := range so.GetMetrics() {
+			keys = append(keys, "op_subtopo_"+so.GetName()+"_0_"+metric.MetricNames[i])
+			values = append(values, v)
+		}
+	}
+	return
 }
 
 func (s *SrcSubTopo) GetMetrics() []any {
@@ -81,17 +104,19 @@ func (s *SrcSubTopo) GetMetrics() []any {
 
 // RemoveMetrics is called when the rule is deleted
 func (s *SrcSubTopo) RemoveMetrics(ruleId string) {
+	s.refCount.Add(-1)
 	if s.refCount.Load() == 0 {
 		s.cancel()
 		s.source.RemoveMetrics(ruleId)
 		for _, op := range s.ops {
 			op.RemoveMetrics(ruleId)
 		}
+		RemoveSubTopo(s.name)
 	}
 }
 
 func (s *SrcSubTopo) EnableCheckpoint(sources *[]checkpoint.StreamTask, ops *[]checkpoint.NonSourceTask) {
-	*sources = append(*sources, s.source)
+	*sources = append(*sources, s.source.(checkpoint.StreamTask))
 	for _, op := range s.ops {
 		*ops = append(*ops, op)
 	}

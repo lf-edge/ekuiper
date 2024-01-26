@@ -4926,6 +4926,7 @@ func TestPlanTopo(t *testing.T) {
 	}
 	streamSqls := map[string]string{
 		"src1": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt");`,
+		"src2": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{
@@ -4951,6 +4952,24 @@ func TestPlanTopo(t *testing.T) {
 						"op_2_decoder",
 					},
 					"op_2_decoder": {
+						"op_3_project",
+					},
+					"op_3_project": {
+						"sink_sink_memory_log",
+					},
+				},
+			},
+		},
+		{
+			name: "testSharedMqttSplit",
+			sql:  `SELECT * FROM src2`,
+			topo: &api.PrintableTopo{
+				Sources: []string{"subtopo_source_src1"},
+				Edges: map[string][]any{
+					"subtopo_source_src1": {
+						"subtopo_op_2_decoder",
+					},
+					"subtopo_op_2_decoder": {
 						"op_3_project",
 					},
 					"op_3_project": {

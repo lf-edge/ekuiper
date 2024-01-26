@@ -46,6 +46,16 @@ type DataSourceNode interface {
 	RemoveMetrics(ruleId string)
 }
 
+type MergeableTopo interface {
+	GetSource() DataSourceNode
+	// MergeSrc Add child topo as the source with following operators
+	MergeSrc(parentTopo *api.PrintableTopo)
+	// LinkTopo Add printable topo link from the parent topo to the child topo
+	LinkTopo(parentTopo *api.PrintableTopo, parentJointName string)
+	// SubMetrics return the metrics of the sub nodes
+	SubMetrics() ([]string, []any)
+}
+
 type defaultNode struct {
 	name        string
 	concurrency int
@@ -69,11 +79,7 @@ func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
 func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
 	o.outputMu.Lock()
 	defer o.outputMu.Unlock()
-	if _, ok := o.outputs[name]; !ok {
-		o.outputs[name] = output
-	} else {
-		return fmt.Errorf("fail to add output %s, node %s already has an output of the same name", name, o.name)
-	}
+	o.outputs[name] = output
 	return nil
 }
 
@@ -125,6 +131,8 @@ func (o *defaultNode) Broadcast(val interface{}) {
 func (o *defaultNode) doBroadcast(val interface{}) {
 	o.outputMu.RLock()
 	defer o.outputMu.RUnlock()
+	l := len(o.outputs)
+	c := 0
 	for name, out := range o.outputs {
 		select {
 		case out <- val:
@@ -134,6 +142,10 @@ func (o *defaultNode) doBroadcast(val interface{}) {
 		default:
 			o.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to %s", o.name, name))
 			o.ctx.GetLogger().Debugf("drop message from %s to %s", o.name, name)
+		}
+		c++
+		if c == l {
+			break
 		}
 		switch vt := val.(type) {
 		case xsql.Collection:

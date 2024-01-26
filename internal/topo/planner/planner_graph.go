@@ -30,7 +30,6 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
-	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 type genNodeFunc func(name string, props map[string]interface{}, options *api.RuleOption) (api.TopNode, error)
@@ -92,7 +91,6 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			nodeMap[srcName] = srcNode
 			tp.AddSrc(srcNode)
 			inputs := []api.Emitter{srcNode}
-			nodeMap[srcName] = srcNode
 			for _, e := range ops {
 				tp.AddOperator(inputs, e)
 				inputs = []api.Emitter{e}
@@ -512,19 +510,26 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 				sourceOption.SCHEMAID = schemaName + "." + schemaMessage
 			}
 		}
-		switch sourceMeta.SourceType {
-		case "stream":
-			pp, err := operator.NewPreprocessor(true, nil, true, nil, rule.Options.IsEventTime, sourceOption.TIMESTAMP, sourceOption.TIMESTAMP_FORMAT, strings.EqualFold(sourceOption.FORMAT, message.FormatBinary), sourceOption.STRICT_VALIDATION)
-			if err != nil {
-				return nil, ILLEGAL, "", nil, err
-			}
-			srcNode := node.NewSourceNode(nodeName, ast.TypeStream, pp, sourceOption, rule.Options, false, false, nil)
-			return srcNode, STREAM, nodeName, nil, nil
-		case "table":
-			return nil, ILLEGAL, "", nil, fmt.Errorf("anonymouse table source is not supported, please create it prior to the rule")
+		p := DataSourcePlan{
+			name: ast.StreamName(nodeName),
+			streamStmt: &ast.StreamStmt{
+				Name:         ast.StreamName(nodeName),
+				StreamFields: nil,
+				Options:      sourceOption,
+			},
+			streamFields:    nil,
+			isSchemaless:    true,
+			iet:             rule.Options.IsEventTime,
+			allMeta:         rule.Options.SendMetaToSink,
+			timestampField:  sourceOption.TIMESTAMP,
+			timestampFormat: sourceOption.TIMESTAMP_FORMAT,
+		}.Init()
+		srcNode, ops, e := transformSourceNode(p, nil, rule.Id, rule.Options, 1)
+		if e != nil {
+			return nil, ILLEGAL, "", nil, e
 		}
+		return srcNode, STREAM, nodeName, ops, nil
 	}
-	return nil, ILLEGAL, "", nil, errors.New("invalid source node")
 }
 
 func parseOrderBy(props map[string]interface{}, sourceNames []string) (*operator.OrderOp, error) {
