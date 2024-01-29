@@ -107,13 +107,12 @@ The target database url
 * `indexFieldType`: column type for the indexField, if it is dateTime type, must set this field with `DATETIME`
 * `dateTimeFormat`: data time format for the index field
 
-::: v-pre
+
 | TemplateSql                                                                                       | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
 | ------------------------------------------------------------------------------------------------- | ------------ | --------------------- | -------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
 | select * from Student limit 10                                                                    |              |                       |                |                       | select * from Student limit 10                                                                      |
 | select * from Student where stun > {{.stun}} limit 10                                             | stun         | 100                   |                |                       | select * from Student where stun > 100 limit 10                                                     |
 | select * from Student where registerTime > '{{.registerTime}}' order by registerTime ASC limit 10 | registerTime | "2022-04-21 10:23:55" | "DATETIME"     | "YYYY-MM-dd HH:mm:ss" | select * from Student where registerTime > '2022-04-21 10:23:55' order by registerTime ASC limit 10 |
-:::
 
 ### *Note*: users only need set internalSqlQueryCfg or templateSqlQueryCfg, if both set, templateSqlQueryCfg will be used
 
