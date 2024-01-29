@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ type SwitchConfig struct {
 type SwitchNode struct {
 	*defaultSinkNode
 	conf        *SwitchConfig
-	statManager metric.StatManager
 	outputNodes []defaultNode
 }
 
@@ -57,21 +56,10 @@ func NewSwitchNode(name string, conf *SwitchConfig, options *api.RuleOption) (*S
 	sn := &SwitchNode{
 		conf: conf,
 	}
-	sn.defaultSinkNode = &defaultSinkNode{
-		input: make(chan interface{}, options.BufferLength),
-		defaultNode: &defaultNode{
-			outputs:   nil,
-			name:      name,
-			sendError: options.SendError,
-		},
-	}
+	sn.defaultSinkNode = newDefaultSinkNode(name, options)
 	outputs := make([]defaultNode, len(conf.Cases))
 	for i := range conf.Cases {
-		outputs[i] = defaultNode{
-			outputs:   make(map[string]chan<- interface{}),
-			name:      name + fmt.Sprintf("_%d", i),
-			sendError: options.SendError,
-		}
+		outputs[i] = *newDefaultNode(fmt.Sprintf("name_%d", i), options)
 	}
 	sn.outputNodes = outputs
 	return sn, nil
@@ -79,13 +67,7 @@ func NewSwitchNode(name string, conf *SwitchConfig, options *api.RuleOption) (*S
 
 func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	ctx.GetLogger().Infof("SwitchNode %s is started", n.name)
-	stats, err := metric.NewStatManager(ctx, "op")
-	if err != nil {
-		infra.DrainError(ctx, fmt.Errorf("cannot create state for switch node %s", n.name), errCh)
-		return
-	}
-	n.statManager = stats
-	n.statManagers = []metric.StatManager{stats}
+	n.statManager = metric.NewStatManager(ctx, "op")
 	n.ctx = ctx
 	for i := range n.outputNodes {
 		n.outputNodes[i].ctx = ctx
@@ -111,10 +93,10 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					var ve *xsql.ValuerEval
 					switch d := item.(type) {
 					case error:
-						_ = n.Broadcast(d)
+						n.Broadcast(d)
 						n.statManager.IncTotalExceptions(d.Error())
 					case *xsql.WatermarkTuple:
-						_ = n.Broadcast(d)
+						n.Broadcast(d)
 					case xsql.TupleRow:
 						ctx.GetLogger().Debugf("SwitchNode receive tuple input %s", d)
 						ve = &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
@@ -124,7 +106,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						ve = &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(d, fv, d, fv, afv, &xsql.WildcardValuer{Data: d})}
 					default:
 						e := fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d)
-						_ = n.Broadcast(e)
+						n.Broadcast(e)
 						n.statManager.IncTotalExceptions(e.Error())
 						break
 					}
@@ -137,7 +119,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							n.statManager.IncTotalExceptions(r.Error())
 						case bool:
 							if r {
-								_ = n.outputNodes[i].Broadcast(item)
+								n.outputNodes[i].Broadcast(item)
 								if n.conf.StopAtFirstMatch {
 									break caseLoop
 								}

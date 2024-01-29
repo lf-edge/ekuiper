@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -289,7 +289,7 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 				return nil, err
 			}
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, t.streamFields)
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, t.streamFields)
 		if isMock {
 			srcNode.SetProps(mockSourceConf)
 		}
@@ -304,7 +304,7 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 		if t.isSchemaless {
 			schema = nil
 		}
-		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, t.isWildCard, t.isSchemaless, schema)
+		srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, schema)
 		if isMock {
 			srcNode.SetProps(mockSourceConf)
 		}

@@ -16,15 +16,11 @@ package file
 
 import (
 	"bufio"
-	"encoding/csv"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -265,107 +261,43 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
 	ctx.GetLogger().Debug("Start to load")
 	rcvTime := conf.GetNow()
-	switch fs.config.FileType {
-	case JSON_TYPE:
-		r := json.NewDecoder(file)
-		resultMap := make([]map[string]interface{}, 0)
-		err := r.Decode(&resultMap)
-		if err != nil {
-			return fmt.Errorf("loaded %s, check error %s", fs.file, err)
+
+	r, err := GetReader(fs.config.FileType, file, fs.config, ctx)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	ctx.GetLogger().Debug("Sending tuples")
+
+	var m map[string]interface{}
+	for {
+		var tuple api.SourceTuple
+		m, err = r.Read()
+		if err == io.EOF {
+			break
 		}
-		ctx.GetLogger().Debug("Sending tuples")
-		for _, m := range resultMap {
-			select {
-			case consumer <- api.NewDefaultSourceTupleWithTime(m, meta, rcvTime):
-			case <-ctx.Done():
-				return nil
-			}
-			if fs.config.SendInterval > 0 {
-				time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
-			}
-			rcvTime = conf.GetNow()
-		}
-		return nil
-	case CSV_TYPE:
-		r := csv.NewReader(file)
-		r.Comma = rune(fs.config.Delimiter[0])
-		r.TrimLeadingSpace = true
-		r.FieldsPerRecord = -1
-		cols := fs.config.Columns
-		if fs.config.HasHeader {
-			var err error
-			ctx.GetLogger().Debug("Has header")
-			cols, err = r.Read()
-			if err == io.EOF {
+
+		if readerErr, ok := err.(*ReaderError); ok && readerErr.Code == TupleError {
+			tuple = &xsql.ErrorSourceTuple{Error: fmt.Errorf(readerErr.Message)}
+		} else {
+			if err != nil {
+				ctx.GetLogger().Debug(err.Error())
 				break
 			}
-			if err != nil {
-				ctx.GetLogger().Warnf("Read file %s encounter error: %v", fs.file, err)
-				return err
-			}
-			ctx.GetLogger().Debugf("Got header %v", cols)
+			tuple = api.NewDefaultSourceTupleWithTime(m, meta, rcvTime)
 		}
-		for {
-			record, err := r.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				ctx.GetLogger().Warnf("Read file %s encounter error: %v", fs.file, err)
-				continue
-			}
-			ctx.GetLogger().Debugf("Read" + strings.Join(record, ","))
-			var m map[string]interface{}
-			if cols == nil {
-				m = make(map[string]interface{}, len(record))
-				for i, v := range record {
-					m["cols"+strconv.Itoa(i)] = v
-				}
-			} else {
-				m = make(map[string]interface{}, len(cols))
-				for i, v := range cols {
-					m[v] = record[i]
-				}
-			}
-			select {
-			case consumer <- api.NewDefaultSourceTupleWithTime(m, meta, rcvTime):
-			case <-ctx.Done():
-				return nil
-			}
-			if fs.config.SendInterval > 0 {
-				time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
-			}
-			rcvTime = conf.GetNow()
+
+		select {
+		case consumer <- tuple:
+		case <-ctx.Done():
+			return nil
 		}
-	case LINES_TYPE:
-		scanner := bufio.NewScanner(file)
-		scanner.Split(bufio.ScanLines)
-		for scanner.Scan() {
-			var tuples []api.SourceTuple
-			m, err := ctx.DecodeIntoList(scanner.Bytes())
-			if err != nil {
-				tuples = []api.SourceTuple{&xsql.ErrorSourceTuple{
-					Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", scanner.Text(), err),
-				}}
-			} else {
-				for _, t := range m {
-					tuples = append(tuples, api.NewDefaultSourceTupleWithTime(t, meta, rcvTime))
-				}
-			}
-			for _, tuple := range tuples {
-				select {
-				case consumer <- tuple:
-				case <-ctx.Done():
-					return nil
-				}
-			}
-			if fs.config.SendInterval > 0 {
-				time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
-			}
-			rcvTime = conf.GetNow()
+
+		if fs.config.SendInterval > 0 {
+			time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
 		}
-	default:
-		return fmt.Errorf("invalid file type %s", fs.config.FileType)
+		rcvTime = conf.GetNow()
 	}
 	return nil
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,8 +50,7 @@ type WindowOperator struct {
 	isEventTime bool
 	trigger     *EventTimeTrigger // For event time only
 
-	statManager metric.StatManager
-	ticker      *clock.Ticker // For processing time only
+	ticker *clock.Ticker // For processing time only
 	// states
 	triggerTime      int64
 	msgCount         int
@@ -75,14 +74,7 @@ func init() {
 func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
-	o.defaultSinkNode = &defaultSinkNode{
-		input: make(chan interface{}, options.BufferLength),
-		defaultNode: &defaultNode{
-			outputs:   make(map[string]chan<- interface{}),
-			name:      name,
-			sendError: options.SendError,
-		},
-	}
+	o.defaultSinkNode = newDefaultSinkNode(name, options)
 	o.isEventTime = options.IsEventTime
 	o.window = &w
 	if o.window.Interval == 0 && o.window.Type == ast.COUNT_WINDOW {
@@ -118,13 +110,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		infra.DrainError(ctx, fmt.Errorf("no output channel found"), errCh)
 		return
 	}
-	stats, err := metric.NewStatManager(ctx, "op")
-	if err != nil {
-		infra.DrainError(ctx, err, errCh)
-		return
-	}
-	o.statManager = stats
-	o.statManagers = []metric.StatManager{stats}
+	o.statManager = metric.NewStatManager(ctx, "op")
 	var inputs []*xsql.Tuple
 	if s, err := ctx.GetState(WindowInputsKey); err == nil {
 		switch st := s.(type) {
@@ -338,7 +324,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			}
 			switch d := item.(type) {
 			case error:
-				_ = o.Broadcast(d)
+				o.Broadcast(d)
 				o.statManager.IncTotalExceptions(d.Error())
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
@@ -398,7 +384,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 							windowEnd := triggerTime
 							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 							log.Debugf("Sent: %v", tsets)
-							_ = o.Broadcast(tsets)
+							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
 							o.statManager.IncTotalMessagesProcessed(int64(tsets.Len()))
 						}
@@ -411,7 +397,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 				_ = ctx.PutState(MsgCountKey, o.msgCount)
 			default:
 				e := fmt.Errorf("run Window error: expect xsql.Tuple type but got %[1]T(%[1]v)", d)
-				_ = o.Broadcast(e)
+				o.Broadcast(e)
 				o.statManager.IncTotalExceptions(e.Error())
 			}
 		case now := <-firstC:
@@ -635,7 +621,7 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 	log.Debugf("Sent: %v", results)
-	_ = o.Broadcast(results)
+	o.Broadcast(results)
 	o.statManager.IncTotalRecordsOut()
 	o.statManager.IncTotalMessagesProcessed(int64(results.Len()))
 
@@ -660,10 +646,6 @@ func (o *WindowOperator) calDelta(triggerTime int64, log api.Logger) int64 {
 		}
 	}
 	return delta
-}
-
-func (o *WindowOperator) GetMetrics() [][]interface{} {
-	return o.defaultNode.GetMetrics()
 }
 
 func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) bool {

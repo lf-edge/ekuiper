@@ -38,6 +38,8 @@ type builtinFunc struct {
 var (
 	builtins            map[string]builtinFunc
 	builtinStatfulFuncs map[string]func() api.Function
+	kvPairKName         = "key"
+	kvPairVName         = "value"
 )
 
 func init() {

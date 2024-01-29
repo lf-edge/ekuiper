@@ -737,6 +737,60 @@ func TestArrayCommonFunctions(t *testing.T) {
 			},
 			result: []interface{}{1},
 		},
+		{
+			name: "kvpair_array_to_obj",
+			args: []interface{}{
+				[]interface{}{
+					map[string]interface{}{
+						kvPairKName: "a",
+						kvPairVName: 1,
+					},
+					map[string]interface{}{
+						kvPairKName: "b",
+						kvPairVName: []string{"foo", "bar"},
+					},
+				},
+			},
+			result: map[string]interface{}{
+				"a": 1,
+				"b": []string{"foo", "bar"},
+			},
+		},
+		{
+			name: "kvpair_array_to_obj",
+			args: []interface{}{
+				[]interface{}{
+					map[string]interface{}{
+						"wrongKey":  "a",
+						kvPairVName: 1,
+					},
+				},
+			},
+			result: fmt.Errorf("array item should be key-value pair"),
+		},
+		{
+			name: "kvpair_array_to_obj",
+			args: []interface{}{
+				[]interface{}{
+					map[string]interface{}{
+						kvPairKName:  "a",
+						"wrongValue": 1,
+					},
+				},
+			},
+			result: fmt.Errorf("array item should be key-value pair"),
+		},
+		{
+			name: "kvpair_array_to_obj",
+			args: []interface{}{
+				[]interface{}{
+					map[string]interface{}{
+						kvPairKName: "a",
+					},
+				},
+			},
+			result: fmt.Errorf("array item should be key-value pair"),
+		},
 	}
 
 	fe := funcExecutor{}
