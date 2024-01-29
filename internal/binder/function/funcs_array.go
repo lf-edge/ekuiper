@@ -117,6 +117,9 @@ func registerArrayFunc() {
 	builtins["array_contains"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return false, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -131,11 +134,13 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnFalseIfHasAnyNil,
 	}
 	builtins["array_remove"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return nil, true
+			}
 			array, ok := args[0].([]interface{})
 			if !ok {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -154,7 +159,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnNilIfHasAnyNil,
 	}
 	builtins["array_last_position"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
@@ -182,6 +186,9 @@ func registerArrayFunc() {
 	builtins["array_contains_any"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if args[0] == nil {
+				return false, true
+			}
 			array1, ok1 := args[0].([]interface{})
 			if !ok1 {
 				return errorArrayFirstArgumentNotArrayError, false
@@ -204,7 +211,6 @@ func registerArrayFunc() {
 		val: func(ctx api.FunctionContext, args []ast.Expr) error {
 			return ValidateLen(2, len(args))
 		},
-		check: returnFalseIfHasAnyNil,
 	}
 	builtins["array_intersect"] = builtinFunc{
 		fType: ast.FuncTypeScalar,

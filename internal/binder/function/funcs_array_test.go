@@ -215,6 +215,13 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_contains_any",
 			args: []interface{}{
+				nil, []interface{}{4, "hello", 6},
+			},
+			result: false,
+		},
+		{
+			name: "array_contains_any",
+			args: []interface{}{
 				[]interface{}{1, 2, 3}, []interface{}{},
 			},
 			result: false,
@@ -965,6 +972,22 @@ func TestArrayNil(t *testing.T) {
 		{
 			args: []interface{}{
 				[]interface{}{1, nil, 2},
+				nil,
+			},
+			funcName: "array_contains",
+			result:   true,
+		},
+		{
+			args: []interface{}{
+				nil,
+				nil,
+			},
+			funcName: "array_contains",
+			result:   false,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
 				2,
 			},
 			funcName: "array_remove",
@@ -1001,6 +1024,14 @@ func TestArrayNil(t *testing.T) {
 			},
 			funcName: "array_union",
 			result:   []interface{}{1, nil, 2, 3},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, 2},
+				nil,
+			},
+			funcName: "array_union",
+			result:   []interface{}{1, 2},
 		},
 		{
 			args: []interface{}{
