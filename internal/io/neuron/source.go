@@ -43,18 +43,7 @@ func (s *source) Ping(dataSource string, props map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	if u.Scheme == "tcp" {
-		r, err := http.Get(fmt.Sprintf("http://%v/api/v2/ping", u.Host))
-		if err != nil {
-			return err
-		}
-		if r.StatusCode == http.StatusOK {
-			return nil
-		}
-		return fmt.Errorf("neuron ping failed, code:%v", r.StatusCode)
-	}
-
-	return errorx.New("only tcp neuron url support ping")
+	return ping(u)
 }
 
 func (s *source) Configure(_ string, props map[string]interface{}) error {
@@ -99,4 +88,19 @@ func (s *source) Close(ctx api.StreamContext) error {
 
 func GetSource() *source {
 	return &source{}
+}
+
+func ping(u *url.URL) error {
+	if u.Scheme == "tcp" {
+		r, err := http.Get(fmt.Sprintf("http://%v/api/v2/ping", u.Host))
+		if err != nil {
+			return err
+		}
+		if r.StatusCode == http.StatusOK {
+			return nil
+		}
+		return fmt.Errorf("neuron ping failed, code:%v", r.StatusCode)
+	}
+
+	return errorx.New("only tcp neuron url support ping")
 }
