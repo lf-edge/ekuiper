@@ -107,7 +107,6 @@ The target database url
 * `indexFieldType`: column type for the indexField, if it is dateTime type, must set this field with `DATETIME`
 * `dateTimeFormat`: data time format for the index field
 
-
 | TemplateSql                                                                                       | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
 | ------------------------------------------------------------------------------------------------- | ------------ | --------------------- | -------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
 | select * from Student limit 10                                                                    |              |                       |                |                       | select * from Student limit 10                                                                      |

@@ -66,7 +66,7 @@ array, it returns -1. When array is nil, -1 is returned.
 array_contains_any(array1, array2)
 ```
 
-Returns true if array1 and array2 have any elements in common. When array1 is nil, nil is returned.
+Returns true if array1 and array2 have any elements in common. When array1 is nil, false is returned.
 
 ## ARRAY_INTERSECT
 

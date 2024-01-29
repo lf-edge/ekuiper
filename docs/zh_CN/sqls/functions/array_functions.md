@@ -64,7 +64,7 @@ array_last_position(array, val)
 array_contains_any(array1, array2)
 ```
 
-返回第一个参数中是否存在第二个参数中的任意一个元素，存在则返回 true，否则返回 false。array 为 nil 时则固定返回 nil。
+返回第一个参数中是否存在第二个参数中的任意一个元素，存在则返回 true，否则返回 false。array 为 nil 时则固定返回 false。
 
 ## ARRAY_INTERSECT
 
@@ -155,7 +155,7 @@ array_distinct(array)
 array_map(function_name, array)
 ```
 
-返回一个新的数组，其中包含对给定数组中的每个元素应用给定函数的结果。array 为 nil 时则固定返回 0。
+返回一个新的数组，其中包含对给定数组中的每个元素应用给定函数的结果。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_JOIN
 
@@ -165,7 +165,7 @@ array_join(array, delimiter, null_replacement)
 
 返回一个字符串，其中包含给定数组中的所有元素，元素之间用给定的分隔符分隔。如果数组中的元素为 null，则用给定的 null_replacement 替换。
 
-例如，传入参数为 [1, 2, 3]，delimiter 设置为逗号，则返回 “1,2,3”。array 为 nil 时则固定返回 0。
+例如，传入参数为 [1, 2, 3]，delimiter 设置为逗号，则返回 “1,2,3”。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_SHUFFLE
 
@@ -173,7 +173,7 @@ array_join(array, delimiter, null_replacement)
 array_shuffle(array)
 ```
 
-返回一个随机排序的数组。array 为 nil 时则固定返回 0。
+返回一个随机排序的数组。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_CONCAT
 
@@ -189,7 +189,7 @@ array_concat(array1, array2, ...)
 array_sort(array)
 ```
 
-返回输入数组的排序副本。array 为 nil 时则固定返回 0。
+返回输入数组的排序副本。array 为 nil 时则固定返回 nil。
 
 ```sql
 array_sort([3, 2, "b", "a"])
