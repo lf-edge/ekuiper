@@ -15,14 +15,14 @@
 package neuron
 
 import (
-	"errors"
 	"fmt"
-	"sync/atomic"
+	"net/http"
+	"net/url"
 
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -39,16 +39,22 @@ func (s *source) Ping(dataSource string, props map[string]interface{}) error {
 	if err := s.Configure(dataSource, props); err != nil {
 		return err
 	}
-	ctx := context.Background()
-	cli, err := createOrGetConnection(ctx, s.c.Url)
+	u, err := url.Parse(s.c.Url)
 	if err != nil {
 		return err
 	}
-	defer closeConnection(ctx, s.c.Url)
-	if atomic.LoadInt32(&cli.opened) == 1 {
-		return nil
+	if u.Scheme == "tcp" {
+		r, err := http.Get(fmt.Sprintf("http://%v/api/v2/ping", u.Host))
+		if err != nil {
+			return err
+		}
+		if r.StatusCode == http.StatusOK {
+			return nil
+		}
+		return fmt.Errorf("neuron ping failed, code:%v", r.StatusCode)
 	}
-	return errors.New("neuron source ping failed")
+
+	return errorx.New("only tcp neuron url support ping")
 }
 
 func (s *source) Configure(_ string, props map[string]interface{}) error {
