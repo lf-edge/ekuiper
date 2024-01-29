@@ -215,6 +215,13 @@ func TestArrayCommonFunctions(t *testing.T) {
 		{
 			name: "array_contains_any",
 			args: []interface{}{
+				nil, []interface{}{4, "hello", 6},
+			},
+			result: false,
+		},
+		{
+			name: "array_contains_any",
+			args: []interface{}{
 				[]interface{}{1, 2, 3}, []interface{}{},
 			},
 			result: false,
@@ -728,7 +735,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 				[]interface{}{1},
 				nil,
 			},
-			result: nil,
+			result: []interface{}{1},
 		},
 	}
 
@@ -855,34 +862,36 @@ func TestArrayFuncNil(t *testing.T) {
 	builtins = map[string]builtinFunc{}
 	registerArrayFunc()
 	for mathFuncName, mathFunc := range builtins {
-		switch mathFuncName {
-		case "array_create":
-			r, b := mathFunc.exec(fctx, []interface{}{nil})
-			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
-			require.Equal(t, r, nil, fmt.Sprintf("%v failed", mathFuncName))
-			r, b = mathFunc.exec(fctx, []interface{}{nil, 1})
-			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
-			require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
-		case "array_position", "array_last_position":
-			r, b := mathFunc.exec(fctx, []interface{}{nil})
-			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
-			require.Equal(t, r, -1, fmt.Sprintf("%v failed", mathFuncName))
-		case "array_contains", "array_contains_any":
-			r, b := mathFunc.check([]interface{}{nil})
-			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
-			require.False(t, r.(bool), fmt.Sprintf("%v failed", mathFuncName))
-		case "array_union":
-			r, b := mathFunc.exec(fctx, []interface{}{[]interface{}{1}, nil})
-			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
-			require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
-		case "array_cardinality":
-			r, b := mathFunc.check([]interface{}{nil})
-			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
-			require.Equal(t, r, 0, fmt.Sprintf("%v failed", mathFuncName))
-		default:
-			r, b := mathFunc.check([]interface{}{nil})
-			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
-			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
+		if mathFunc.check != nil {
+			switch mathFuncName {
+			case "array_create":
+				r, b := mathFunc.exec(fctx, []interface{}{nil})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.Equal(t, r, nil, fmt.Sprintf("%v failed", mathFuncName))
+				r, b = mathFunc.exec(fctx, []interface{}{nil, 1})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
+			case "array_position", "array_last_position":
+				r, b := mathFunc.exec(fctx, []interface{}{nil})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.Equal(t, r, -1, fmt.Sprintf("%v failed", mathFuncName))
+			case "array_contains", "array_contains_any":
+				r, b := mathFunc.check([]interface{}{nil})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.False(t, r.(bool), fmt.Sprintf("%v failed", mathFuncName))
+			case "array_union":
+				r, b := mathFunc.exec(fctx, []interface{}{[]interface{}{1}, nil})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.Equal(t, r, []interface{}{1}, fmt.Sprintf("%v failed", mathFuncName))
+			case "array_cardinality":
+				r, b := mathFunc.check([]interface{}{nil})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.Equal(t, r, 0, fmt.Sprintf("%v failed", mathFuncName))
+			default:
+				r, b := mathFunc.check([]interface{}{nil})
+				require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
+				require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
+			}
 		}
 	}
 }
@@ -912,5 +921,177 @@ func TestArrayFuncVal(t *testing.T) {
 			err := f.val(nil, tt.args)
 			assert.Equal(t, tt.err, err)
 		})
+	}
+}
+
+func TestArrayNil(t *testing.T) {
+	registerArrayFunc()
+	tests := []struct {
+		args     []interface{}
+		funcName string
+		result   interface{}
+	}{
+		{
+			args: []interface{}{
+				[]interface{}{1},
+				nil,
+				[]interface{}{2},
+			},
+			funcName: "array_concat",
+			result:   []interface{}{1, 2},
+		},
+		{
+			args:     []interface{}{1, nil, 2},
+			funcName: "array_create",
+			result:   []interface{}{1, 2},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				1,
+			},
+			funcName: "array_position",
+			result:   0,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				0,
+			},
+			funcName: "element_at",
+			result:   1,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				1,
+			},
+			funcName: "array_contains",
+			result:   true,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				nil,
+			},
+			funcName: "array_contains",
+			result:   true,
+		},
+		{
+			args: []interface{}{
+				nil,
+				nil,
+			},
+			funcName: "array_contains",
+			result:   false,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				2,
+			},
+			funcName: "array_remove",
+			result:   []interface{}{1, nil},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2, 1},
+				1,
+			},
+			funcName: "array_last_position",
+			result:   3,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2, 1},
+				[]interface{}{1},
+			},
+			funcName: "array_contains_any",
+			result:   true,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				[]interface{}{1, nil, 3},
+			},
+			funcName: "array_intersect",
+			result:   []interface{}{1, nil},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				[]interface{}{1, nil, 3},
+			},
+			funcName: "array_union",
+			result:   []interface{}{1, nil, 2, 3},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, 2},
+				nil,
+			},
+			funcName: "array_union",
+			result:   []interface{}{1, 2},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+			},
+			funcName: "array_max",
+			result:   int64(2),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+			},
+			funcName: "array_min",
+			result:   int64(1),
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+				[]interface{}{1, nil},
+			},
+			funcName: "array_except",
+			result:   []interface{}{2},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, nil, 2},
+			},
+			funcName: "array_cardinality",
+			result:   2,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{
+					[]interface{}{1, nil},
+					[]interface{}{2, 3},
+				},
+			},
+			funcName: "array_flatten",
+			result:   []interface{}{1, nil, 2, 3},
+		},
+		{
+			args: []interface{}{
+				[]interface{}{1, 1, true, true, nil, nil},
+			},
+			funcName: "array_distinct",
+			result:   []interface{}{1, true, nil},
+		},
+		{
+			args: []interface{}{
+				nil, []interface{}{1},
+			},
+			funcName: "array_except",
+			result:   nil,
+		},
+	}
+	for _, tt := range tests {
+		f, ok := builtins[tt.funcName]
+		assert.True(t, ok)
+		r, ok := f.exec(nil, tt.args)
+		require.True(t, ok)
+		require.Equal(t, tt.result, r)
 	}
 }
