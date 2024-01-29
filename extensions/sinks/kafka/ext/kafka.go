@@ -52,6 +52,19 @@ type kafkaConf struct {
 	Headers      interface{} `json:"headers"`
 }
 
+func (m *kafkaSink) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Configure(props); err != nil {
+		return err
+	}
+	for _, broker := range strings.Split(m.c.Brokers, ",") {
+		err := ping(m.tlsConfig, broker)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	c := &sinkConf{
 		Brokers: "localhost:9092",
@@ -278,4 +291,14 @@ func (m *kafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 		return kafkaHeaders, nil
 	}
 	return nil, nil
+}
+
+func ping(tlsConfig *tls.Config, address string) error {
+	d := &kafkago.Dialer{TLS: tlsConfig}
+	c, err := d.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	return nil
 }
