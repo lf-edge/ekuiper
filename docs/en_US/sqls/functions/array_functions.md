@@ -182,8 +182,7 @@ Return a shuffled array, i.e., randomly shuffle the elements in the array. When 
 array_concat(array1, array2, ...)
 ```
 
-Returns the concatenation of the input arrays, this function does not modify the existing arrays, but returns new one. 
-Any array that is nil is treated as an empty array.
+Returns the concatenation of the input arrays, this function does not modify the existing arrays, but returns new one. Any array that is nil is treated as an empty array.
 
 ## ARRAY_SORT
 
