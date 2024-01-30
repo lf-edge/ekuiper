@@ -51,9 +51,14 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, output chan any, channe
 			case data := <-ch:
 				for _, d := range data {
 					node.Broadcast(d)
-					node.statManager.IncTotalRecordsOut()
-					node.statManager.IncTotalMessagesProcessed(1)
+					switch dt := d.(type) {
+					case error:
+						node.statManager.IncTotalExceptions(dt.Error())
+					default:
+						node.statManager.IncTotalRecordsOut()
+					}
 				}
+				node.statManager.IncTotalMessagesProcessed(1)
 			case <-ctx.Done():
 				ctx.GetLogger().Infof("merge done")
 				return
