@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
@@ -259,9 +258,7 @@ func stopRule(name string) (result string, err error) {
 }
 
 func restartRule(name string) error {
-	stopRule(name)
-	time.Sleep(1 * time.Millisecond)
-	return startRule(name)
+	return reRunRule(name, false)
 }
 
 func getRuleStatus(name string) (string, error) {
