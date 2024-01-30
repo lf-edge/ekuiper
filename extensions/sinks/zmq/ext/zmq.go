@@ -99,7 +99,7 @@ func (m *zmqSink) sendToZmq(ctx api.StreamContext, v []byte) error {
 	}
 	if err != nil {
 		ctx.GetLogger().Errorf("send to zmq error %v", err)
-		return fmt.Errorf("%s:%s", errorx.IOErr, err.Error())
+		return errorx.NewIOErr(err.Error())
 	}
 	return nil
 }

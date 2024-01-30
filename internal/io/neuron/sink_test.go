@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/io/mock"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func sinkTest(t *testing.T) {
@@ -113,7 +114,7 @@ func sinkConnExpTest(t *testing.T) {
 	if err == nil {
 		t.Errorf("should have error")
 		return
-	} else if err.Error() != expErrStr {
+	} else if !errorx.IsIOError(err) {
 		t.Errorf("error mismatch:\n\nexp=%s\n\ngot=%s\n\n", expErrStr, err.Error())
 	}
 }

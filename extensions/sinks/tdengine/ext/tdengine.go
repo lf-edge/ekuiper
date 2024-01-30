@@ -279,7 +279,7 @@ func (m *taosSink) writeToDB(ctx api.StreamContext, SqlVal *string) error {
 	ctx.GetLogger().Debugf(finalSql)
 	rows, err := m.db.Query(finalSql)
 	if err != nil {
-		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
+		return errorx.NewIOErr(err.Error())
 	}
 	rows.Close()
 	return nil

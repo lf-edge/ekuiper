@@ -92,7 +92,17 @@ func handleError(w http.ResponseWriter, err error, prefix string, logger api.Log
 	default:
 		ec = http.StatusBadRequest
 	}
-	http.Error(w, message, ec)
+
+	http.Error(w, packageInternalErrorCode(err, message), ec)
+}
+
+// TODO: replace error message in future
+func packageInternalErrorCode(err error, msg string) string {
+	if errWithCode, ok := err.(errorx.ErrorWithCode); ok {
+		errCode := errWithCode.Code()
+		return fmt.Sprintf(`{"error":%v,"message":"%v"}`, errCode, msg)
+	}
+	return msg
 }
 
 func jsonResponse(i interface{}, w http.ResponseWriter, logger api.Logger) {
