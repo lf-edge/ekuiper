@@ -27,48 +27,81 @@ import (
 )
 
 func TestJSON(t *testing.T) {
-	op, err := NewDecodeOp("test", "test1", &api.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil)
-	assert.NoError(t, err)
+	tests := []struct {
+		name        string
+		concurrency int
+	}{
+		{"single", 1},
+		{"multi", 10},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op, err := NewDecodeOp("test", "test1", &api.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil)
+			assert.NoError(t, err)
+			out := make(chan any, 100)
+			err = op.AddOutput(out, "test")
+			assert.NoError(t, err)
+			ctx := mockContext.NewMockContext("test1", "decode_test")
+			errCh := make(chan error)
+			op.Exec(ctx, errCh)
+
+			cases := []any{
+				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				errors.New("go through error"),
+				&xsql.Tuple{Emitter: "test", Raw: []byte("\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Raw: []byte("[\"hello\"]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Raw: []byte("\"hello\""), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				"invalid",
+			}
+			expects := [][]any{
+				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": 1.0, "b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
+				{
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": 1.0, "b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": 3.0, "b": 4.0, "c": "hello"}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				},
+				{errors.New("go through error")},
+				{errors.New("invalid character ':' after top-level value")},
+				{errors.New("only map[string]any inside a list is supported but got: hello")},
+				{errors.New("unsupported decode result: hello")},
+				{errors.New("unsupported data received: invalid")},
+			}
+
+			for i, c := range cases {
+				op.input <- c
+				for _, e := range expects[i] {
+					r := <-out
+					switch tr := r.(type) {
+					case error:
+						assert.EqualError(t, e.(error), tr.Error())
+					default:
+						assert.Equal(t, e, r)
+					}
+				}
+			}
+		})
+	}
+}
+
+// Concurrency 1 - BenchmarkThrougput-16                  1        1548680100 ns/op
+// Concurrency 10 - BenchmarkThrougput-16           1000000000               0.1553 ns/op
+// This is useful when a node is much slower
+func BenchmarkThrougput(b *testing.B) {
+	op, err := NewDecodeOp("test", "test1", &api.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil)
+	assert.NoError(b, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
-	assert.NoError(t, err)
+	assert.NoError(b, err)
 	ctx := mockContext.NewMockContext("test1", "decode_test")
 	errCh := make(chan error)
 	op.Exec(ctx, errCh)
-
-	cases := []any{
-		&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-		&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-		errors.New("go through error"),
-		&xsql.Tuple{Emitter: "test", Raw: []byte("\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-		&xsql.Tuple{Emitter: "test", Raw: []byte("[\"hello\"]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-		&xsql.Tuple{Emitter: "test", Raw: []byte("\"hello\""), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-		"invalid",
-	}
-	expects := [][]any{
-		{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": 1.0, "b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
-		{
-			&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": 1.0, "b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-			&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": 3.0, "b": 4.0, "c": "hello"}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-		},
-		{errors.New("go through error")},
-		{errors.New("invalid character ':' after top-level value")},
-		{errors.New("only map[string]any inside a list is supported but got: hello")},
-		{errors.New("unsupported decode result: hello")},
-		{errors.New("unsupported data received: invalid")},
-	}
-
-	for i, c := range cases {
-		op.input <- c
-		for _, e := range expects[i] {
-			r := <-out
-			switch tr := r.(type) {
-			case error:
-				assert.EqualError(t, e.(error), tr.Error())
-			default:
-				assert.Equal(t, e, r)
-			}
+	go func() {
+		for i := 0; i < 100; i++ {
+			op.input <- &xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}
 		}
+	}()
+	for i := 0; i < 100; i++ {
+		_ = <-out
 	}
 }
 
