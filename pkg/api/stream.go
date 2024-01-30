@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,6 +115,10 @@ type Sink interface {
 	// Collect Called when each row of data has transferred to this sink
 	Collect(ctx StreamContext, data interface{}) error
 	Closable
+}
+
+type PingableConn interface {
+	Ping(string, map[string]interface{}) error
 }
 
 type ResendSink interface {
@@ -285,7 +289,7 @@ type Operator interface {
 	Collector
 	Exec(StreamContext, chan<- error)
 	GetName() string
-	GetMetrics() [][]interface{}
+	GetMetrics() []any
 }
 
 type FunctionContext interface {
@@ -314,6 +318,7 @@ type Qos int
 type MessageClient interface {
 	Subscribe(c StreamContext, subChan []TopicChannel, messageErrors chan error, params map[string]interface{}) error
 	Publish(c StreamContext, topic string, message []byte, params map[string]interface{}) error
+	Ping() error
 }
 
 // TopicChannel is the data structure for subscriber

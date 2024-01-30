@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -57,6 +58,20 @@ func validateMQTTSinkTopic(topic string) error {
 		return fmt.Errorf("mqtt sink topic shouldn't contain # or +")
 	}
 	return nil
+}
+
+func (ms *MQTTSink) Ping(_ string, props map[string]interface{}) error {
+	if err := ms.Configure(props); err != nil {
+		return err
+	}
+	cli, err := clients.GetClient("mqtt", ms.config)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		clients.ReleaseClient(context.Background(), cli)
+	}()
+	return cli.Ping()
 }
 
 func (ms *MQTTSink) Configure(ps map[string]interface{}) error {

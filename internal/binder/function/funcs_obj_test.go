@@ -490,6 +490,30 @@ func TestObjectFunctions(t *testing.T) {
 			},
 			result: fmt.Errorf("the argument number should be 2, got 3"),
 		},
+		{
+			name: "obj_to_kvpair_array",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+				},
+			},
+			result: []map[string]interface{}{
+				{kvPairKName: "a", kvPairVName: 1},
+			},
+		},
+		{
+			name: "obj_to_kvpair_array",
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": []string{"foo", "bar"},
+				},
+			},
+			result: []map[string]interface{}{
+				{kvPairKName: "a", kvPairVName: 1},
+				{kvPairKName: "b", kvPairVName: []string{"foo", "bar"}},
+			},
+		},
 	}
 	fe := funcExecutor{}
 	for _, tt := range tests {
@@ -521,5 +545,92 @@ func TestObjectFunctionsNil(t *testing.T) {
 			require.True(t, b, fmt.Sprintf("%v failed", name))
 			require.Nil(t, r, fmt.Sprintf("%v failed", name))
 		}
+	}
+}
+
+func TestObjectFuncArgNil(t *testing.T) {
+	registerObjectFunc()
+	tests := []struct {
+		funcName string
+		args     []interface{}
+		result   interface{}
+	}{
+		{
+			funcName: "object_pick",
+			args: []interface{}{
+				map[string]interface{}{"k1": nil, "k2": "2"},
+				"k1",
+			},
+			result: map[string]interface{}{
+				"k1": nil,
+			},
+		},
+		{
+			funcName: "erase",
+			args: []interface{}{
+				map[string]interface{}{"k1": nil, "k2": "2"},
+				"k1",
+			},
+			result: map[string]interface{}{
+				"k2": "2",
+			},
+		},
+		{
+			funcName: "object_construct",
+			args: []interface{}{
+				nil, "v1", "k2", "v2",
+			},
+			result: map[string]interface{}{
+				"k2": "v2",
+			},
+		},
+		{
+			funcName: "object_concat",
+			args: []interface{}{
+				map[string]interface{}{"k1": "v1"},
+				nil,
+				map[string]interface{}{"k2": "v2"},
+			},
+			result: map[string]interface{}{
+				"k1": "v1",
+				"k2": "v2",
+			},
+		},
+		{
+			funcName: "items",
+			args: []interface{}{
+				map[string]interface{}{"k2": nil},
+			},
+			result: []interface{}{[]interface{}{"k2", nil}},
+		},
+		{
+			funcName: "zip",
+			args: []interface{}{
+				[]interface{}{[]interface{}{"k1", "v1"}, nil, []interface{}{"k2", "v2"}},
+			},
+			result: map[string]interface{}{"k1": "v1", "k2": "v2"},
+		},
+		{
+			funcName: "object",
+			args: []interface{}{
+				[]interface{}{"k1"},
+				[]interface{}{nil},
+			},
+			result: map[string]interface{}{"k1": nil},
+		},
+		{
+			funcName: "values",
+			args: []interface{}{
+				map[string]interface{}{"k": nil},
+			},
+			result: []interface{}{nil},
+		},
+	}
+	for _, tt := range tests {
+		f, ok := builtins[tt.funcName]
+		require.True(t, ok)
+		r, ok := f.exec(nil, tt.args)
+		require.True(t, ok)
+		require.Equal(t, tt.result, r, tt.funcName)
 	}
 }

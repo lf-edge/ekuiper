@@ -37,4 +37,5 @@ type ClientWrapper interface {
 	SetConnectionSelector(conSelector string)
 	GetConnectionSelector() string
 	AddRef()
+	Ping() error
 }

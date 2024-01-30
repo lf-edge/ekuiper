@@ -16,7 +16,7 @@ cardinality(array)
 array_position(array, value)
 ```
 
-返回第二个参数在列表参数中的索引下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1。
+返回第二个参数在列表参数中的索引下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1。array 为 nil 时则固定返回 -1。
 
 ## ELEMENT_AT
 
@@ -32,7 +32,7 @@ element_at(array, index)
 array_contains(array, value)
 ```
 
-返回给定元素是否存在列表参数中，存在则返回 true，否则返回 false。
+返回给定元素是否存在列表参数中，存在则返回 true，否则返回 false。array 为 nil 时则固定返回 false。
 
 ## ARRAY_CREATE
 
@@ -48,7 +48,7 @@ array_create(value1, ......)
 array_remove(array, value)
 ```
 
-返回删除了所有出现的给定元素的数组。
+返回删除了所有出现的给定元素的数组。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_LAST_POSITION
 
@@ -56,7 +56,7 @@ array_remove(array, value)
 array_last_position(array, val)
 ```
 
-返回第二个参数在列表参数中最后一次出现的下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1。
+返回第二个参数在列表参数中最后一次出现的下标位置，索引下标从 0 开始，若该元素不存在，则返回 -1。array 为 nil 时则固定返回 -1。
 
 ## ARRAY_CONTAINS_ANY
 
@@ -64,7 +64,7 @@ array_last_position(array, val)
 array_contains_any(array1, array2)
 ```
 
-返回第一个参数中是否存在第二个参数中的任意一个元素，存在则返回 true，否则返回 false。
+返回第一个参数中是否存在第二个参数中的任意一个元素，存在则返回 true，否则返回 false。array 为 nil 时则固定返回 false。
 
 ## ARRAY_INTERSECT
 
@@ -88,7 +88,7 @@ array_union(array1, array2)
 array_max(array)
 ```
 
-返回数组中的最大值, 数组元素中的 null 值将被忽略。
+返回数组中的最大值, 数组元素中的 null 值将被忽略。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_MIN
 
@@ -96,7 +96,7 @@ array_max(array)
 array_min(array)
 ```
 
-返回数组中的最小值, 数组元素中的 null 值将被忽略。
+返回数组中的最小值, 数组元素中的 null 值将被忽略。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_EXCEPT
 
@@ -104,7 +104,7 @@ array_min(array)
 array_except(array1, array2)
 ```
 
-返回第一个数组中存在，但第二个数组中不存在的元素，且不包含重复元素。
+返回第一个数组中存在，但第二个数组中不存在的元素，且不包含重复元素。array1 为 nil 时则固定返回 nil。
 
 ## REPEAT
 
@@ -129,7 +129,7 @@ sequence(start, stop[, step])
 array_cardinality(array)
 ```
 
-返回数组中的元素数。数组中的 null 值不计算在内。
+返回数组中的元素数。数组中的 null 值不计算在内。array 为 nil 时则固定返回 0。
 
 ## ARRAY_FLATTEN
 
@@ -139,7 +139,7 @@ array_flatten(array)
 
 返回一个扁平化的数组，即将数组中的数组元素展开。
 
-例如，传入参数为 [[1, 4], [2, 3]]，则返回 [1, 4, 2, 3]。
+例如，传入参数为 [[1, 4], [2, 3]]，则返回 [1, 4, 2, 3]。array 为 nil 时则固定返回 0。
 
 ## ARRAY_DISTINCT
 
@@ -147,7 +147,7 @@ array_flatten(array)
 array_distinct(array)
 ```
 
-返回一个去重的数组，即将数组中的重复元素去除。
+返回一个去重的数组，即将数组中的重复元素去除。array 为 nil 时则固定返回 0。
 
 ## ARRAY_MAP
 
@@ -155,7 +155,7 @@ array_distinct(array)
 array_map(function_name, array)
 ```
 
-返回一个新的数组，其中包含对给定数组中的每个元素应用给定函数的结果。
+返回一个新的数组，其中包含对给定数组中的每个元素应用给定函数的结果。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_JOIN
 
@@ -165,7 +165,7 @@ array_join(array, delimiter, null_replacement)
 
 返回一个字符串，其中包含给定数组中的所有元素，元素之间用给定的分隔符分隔。如果数组中的元素为 null，则用给定的 null_replacement 替换。
 
-例如，传入参数为 [1, 2, 3]，delimiter 设置为逗号，则返回 “1,2,3”。
+例如，传入参数为 [1, 2, 3]，delimiter 设置为逗号，则返回 “1,2,3”。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_SHUFFLE
 
@@ -173,7 +173,7 @@ array_join(array, delimiter, null_replacement)
 array_shuffle(array)
 ```
 
-返回一个随机排序的数组。
+返回一个随机排序的数组。array 为 nil 时则固定返回 nil。
 
 ## ARRAY_CONCAT
 
@@ -189,7 +189,7 @@ array_concat(array1, array2, ...)
 array_sort(array)
 ```
 
-返回输入数组的排序副本。
+返回输入数组的排序副本。array 为 nil 时则固定返回 nil。
 
 ```sql
 array_sort([3, 2, "b", "a"])
@@ -199,4 +199,22 @@ array_sort([3, 2, "b", "a"])
 
 ```sql
 [2, 3, "a", "b"]
+```
+
+## KVPAIR_ARRAY_TO_OBJ
+
+```text
+kvpair_array_to_obj(array)
+```
+
+返回一个从键值对数组转换而来的新对象。
+
+```sql
+kvpair_array_to_obj([{"key":"key1", "value":1},{"key":"key2", "value":2}])
+```
+
+结果:
+
+```sql
+{"key1":1, "key2":2}
 ```

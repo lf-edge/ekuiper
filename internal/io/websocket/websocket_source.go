@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -27,6 +28,18 @@ import (
 type WebsocketSource struct {
 	props map[string]interface{}
 	cli   api.MessageClient
+}
+
+func (wss *WebsocketSource) Ping(dataSource string, props map[string]interface{}) error {
+	if err := wss.Configure(dataSource, props); err != nil {
+		return err
+	}
+	cli, err := clients.GetClient("websocket", wss.props)
+	if err != nil {
+		return err
+	}
+	defer clients.ReleaseClient(context.Background(), cli)
+	return cli.Ping()
 }
 
 func (wss *WebsocketSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {

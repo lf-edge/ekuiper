@@ -145,6 +145,11 @@ func (mc *edgexClientWrapper) newMessageHandler(topic string, sub *edgexSubscrip
 	}
 }
 
+// Ping: TODO: support ping later
+func (mc *edgexClientWrapper) Ping() error {
+	return nil
+}
+
 func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, _ map[string]interface{}) error {
 	log := c.GetLogger()
 
