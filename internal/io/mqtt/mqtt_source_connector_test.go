@@ -15,13 +15,16 @@
 package mqtt
 
 import (
+	"fmt"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/benbjohnson/clock"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
@@ -62,7 +65,7 @@ func TestPing(t *testing.T) {
 			props: map[string]any{
 				"server": "not exist",
 			},
-			err: "found error when connecting for not exist: io error: no servers defined to connect to",
+			err: "found error when connecting for not exist: no servers defined to connect to",
 		},
 	}
 	sc := &SourceConnector{}
@@ -71,7 +74,7 @@ func TestPing(t *testing.T) {
 			err := sc.Ping("demo", tt.props)
 			if tt.err != "" {
 				assert.Error(t, err)
-				assert.Equal(t, tt.err, err.Error()[:len(tt.err)])
+				require.True(t, strings.HasPrefix(err.Error(), tt.err), fmt.Sprintf("actual error: %v", err))
 			} else {
 				assert.NoError(t, err)
 			}
