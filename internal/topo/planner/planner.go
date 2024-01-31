@@ -23,10 +23,12 @@ import (
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
@@ -363,20 +365,41 @@ func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[strin
 	return nil, nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
 }
 
+type SourcePropsForSplit struct {
+	Decompression string `json:"decompression"`
+}
+
 func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOption, index int, ruleId string, pp node.UnOperation) (*node.SourceConnectorNode, []node.OperatorNode, error) {
+	// Get all props
+	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
+	sp := &SourcePropsForSplit{}
+	_ = cast.MapToStruct(props, sp)
+
 	// Create the connector node as source node
-	srcConnNode, err := node.NewSourceConnectorNode(string(t.name), ss, t.streamStmt.Options, options)
+	srcConnNode, err := node.NewSourceConnectorNode(string(t.name), ss, t.streamStmt.Options.DATASOURCE, props, options)
 	if err != nil {
 		return nil, nil, err
 	}
 	index++
+	var ops []node.OperatorNode
+
+	if sp.Decompression != "" {
+		dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
+		if err != nil {
+			return nil, nil, err
+		}
+		index++
+		ops = append(ops, dco)
+	}
+
 	// Create the decode node
 	decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
 	if err != nil {
 		return nil, nil, err
 	}
 	index++
-	ops := []node.OperatorNode{decodeNode}
+	ops = append(ops, decodeNode)
+
 	// Create the preprocessor node if needed
 	if pp != nil {
 		ops = append(ops, Transform(pp, fmt.Sprintf("%d_preprocessor", index), options))
