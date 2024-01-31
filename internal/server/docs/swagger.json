@@ -1,0 +1,83 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "eKuiper API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/": {
+            "get": {
+                "description": "handles root requests",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Server Information",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.information"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "handles root requests",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Server Information",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/server.information"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "server.information": {
+            "type": "object",
+            "properties": {
+                "arch": {
+                    "description": "Architecture (e.g., amd64, arm)",
+                    "type": "string"
+                },
+                "cpuUsage": {
+                    "description": "CPU usage, optional",
+                    "type": "string"
+                },
+                "memoryTotal": {
+                    "description": "Total memory",
+                    "type": "string"
+                },
+                "memoryUsed": {
+                    "description": "Memory used, optional",
+                    "type": "string"
+                },
+                "os": {
+                    "description": "Operating system",
+                    "type": "string"
+                },
+                "upTimeSeconds": {
+                    "description": "Uptime in seconds",
+                    "type": "integer"
+                },
+                "version": {
+                    "description": "The version of the application",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

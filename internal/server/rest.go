@@ -29,12 +29,14 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	_ "github.com/lf-edge/ekuiper/internal/server/docs"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/trial"
@@ -132,6 +134,7 @@ func jsonByteResponse(buffer bytes.Buffer, w http.ResponseWriter, logger api.Log
 	}
 }
 
+// @title           eKuiper API
 func createRestServer(ip string, port int, needToken bool) *http.Server {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -178,6 +181,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
+
+	r.PathPrefix("/swagger").Handler(httpSwagger.Handler())
+
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -371,14 +377,15 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
 
+// Information represents the system information
 type information struct {
-	Version       string `json:"version"`
-	Os            string `json:"os"`
-	Arch          string `json:"arch"`
-	UpTimeSeconds int64  `json:"upTimeSeconds"`
-	CpuUsage      string `json:"cpuUsage,omitempty"`
-	MemoryUsed    string `json:"memoryUsed,omitempty"`
-	MemoryTotal   string `json:"memoryTotal"`
+	Version       string `json:"version"`              // The version of the application
+	Os            string `json:"os"`                   // Operating system
+	Arch          string `json:"arch"`                 // Architecture (e.g., amd64, arm)
+	UpTimeSeconds int64  `json:"upTimeSeconds"`        // Uptime in seconds
+	CpuUsage      string `json:"cpuUsage,omitempty"`   // CPU usage, optional
+	MemoryUsed    string `json:"memoryUsed,omitempty"` // Memory used, optional
+	MemoryTotal   string `json:"memoryTotal"`          // Total memory
 }
 
 func stopHandler(w http.ResponseWriter, r *http.Request) {
@@ -390,7 +397,13 @@ func stopHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// The handler for root
+// @Summary Server Information
+// @Description handles root requests
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} information
+// @Router / [get]
+// @Router / [post]
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	switch r.Method {

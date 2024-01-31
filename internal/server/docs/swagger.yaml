@@ -1,0 +1,56 @@
+definitions:
+  server.information:
+    properties:
+      arch:
+        description: Architecture (e.g., amd64, arm)
+        type: string
+      cpuUsage:
+        description: CPU usage, optional
+        type: string
+      memoryTotal:
+        description: Total memory
+        type: string
+      memoryUsed:
+        description: Memory used, optional
+        type: string
+      os:
+        description: Operating system
+        type: string
+      upTimeSeconds:
+        description: Uptime in seconds
+        type: integer
+      version:
+        description: The version of the application
+        type: string
+    type: object
+info:
+  contact: {}
+  title: eKuiper API
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - application/json
+      description: handles root requests
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.information'
+      summary: Server Information
+    post:
+      consumes:
+      - application/json
+      description: handles root requests
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/server.information'
+      summary: Server Information
+swagger: "2.0"
