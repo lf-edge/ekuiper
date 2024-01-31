@@ -225,7 +225,6 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 	case *WindowPlan:
 		if t.condition != nil {
 			wfilterOp := Transform(&operator.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
-			wfilterOp.SetConcurrency(options.Concurrency)
 			tp.AddOperator(inputs, wfilterOp)
 			inputs = []api.Emitter{wfilterOp}
 		}
@@ -278,9 +277,6 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 	}
 	if err != nil {
 		return nil, 0, err
-	}
-	if uop, ok := op.(*node.UnaryOperator); ok {
-		uop.SetConcurrency(options.Concurrency)
 	}
 	if onode, ok := op.(node.OperatorNode); ok {
 		tp.AddOperator(inputs, onode)
