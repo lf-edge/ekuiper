@@ -21,6 +21,12 @@ const (
 	GENERAL_ERR   ErrorCode = 1001
 	NOT_FOUND     ErrorCode = 1002
 	IOErr         ErrorCode = 1003
+
+	// error code for sql
+
+	ParserError   = 2001
+	PlanError     = 2101
+	ExecutorError = 2201
 )
 
 var NotFoundErr = NewWithCode(NOT_FOUND, "not found")
@@ -37,4 +43,18 @@ func IsIOError(err error) bool {
 		return withCode.Code() == IOErr
 	}
 	return false
+}
+
+func NewParserError(msg string) error {
+	return &Error{
+		code: ParserError,
+		msg:  msg,
+	}
+}
+
+func GetErrorCode(err error) (ErrorCode, bool) {
+	if code, ok := err.(ErrorWithCode); ok {
+		return code.Code(), true
+	}
+	return 0, false
 }

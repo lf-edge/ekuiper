@@ -42,7 +42,12 @@ func GetStreams(stmt *ast.SelectStatement) (result []string) {
 	return
 }
 
-func GetStatementFromSql(sql string) (*ast.SelectStatement, error) {
+func GetStatementFromSql(sql string) (stmt *ast.SelectStatement, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.ParserError, err.Error())
+		}
+	}()
 	parser := NewParser(strings.NewReader(sql))
 	if stmt, err := Language.Parse(parser); err != nil {
 		return nil, fmt.Errorf("Parse SQL %s error: %s.", sql, err)
