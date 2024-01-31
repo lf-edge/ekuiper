@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/io/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func sinkTest(t *testing.T) {
@@ -116,4 +117,13 @@ func sinkConnExpTest(t *testing.T) {
 	} else if err.Error() != expErrStr {
 		t.Errorf("error mismatch:\n\nexp=%s\n\ngot=%s\n\n", expErrStr, err.Error())
 	}
+}
+
+func TestSinkPing(t *testing.T) {
+	config := map[string]interface{}{
+		"url": "non-tcp",
+	}
+	s := &sink{}
+	err := s.Ping("", config)
+	require.Error(t, err)
 }

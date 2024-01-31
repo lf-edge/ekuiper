@@ -28,6 +28,7 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRun(t *testing.T) {
@@ -74,4 +75,13 @@ func connectFailTest(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	server.Close()
 	time.Sleep(1 * time.Second)
+}
+
+func TestSourcePing(t *testing.T) {
+	config := map[string]interface{}{
+		"url": "non-tcp",
+	}
+	s := &source{}
+	err := s.Ping("", config)
+	require.Error(t, err)
 }
