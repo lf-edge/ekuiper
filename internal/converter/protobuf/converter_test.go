@@ -16,18 +16,18 @@ package protobuf
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func TestEncode(t *testing.T) {
