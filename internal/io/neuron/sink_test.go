@@ -129,4 +129,11 @@ func TestSinkPing(t *testing.T) {
 	s := &sink{}
 	err := s.Ping("", config)
 	require.Error(t, err)
+	config = map[string]interface{}{
+		"url": "tcp://127.0.0.1:4313",
+		"raw": true,
+	}
+	s = &sink{}
+	err = s.Ping("", config)
+	require.Error(t, err)
 }

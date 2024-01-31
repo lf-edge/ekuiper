@@ -85,4 +85,11 @@ func TestSourcePing(t *testing.T) {
 	s := &source{}
 	err := s.Ping("", config)
 	require.Error(t, err)
+	config = map[string]interface{}{
+		"url": "tcp://127.0.0.1:4313",
+		"raw": true,
+	}
+	s = &source{}
+	err = s.Ping("", config)
+	require.Error(t, err)
 }
