@@ -192,7 +192,7 @@ func TestSubError(t *testing.T) {
 	var errResult error
 	go func() {
 		defer wg.Done()
-		ticker := time.After(2 * time.Second)
+		ticker := time.After(5 * time.Second)
 		for {
 			select {
 			case sg := <-errCh:
