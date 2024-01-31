@@ -19,9 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/stretchr/testify/require"
 )
 
 func sinkTest(t *testing.T) {
