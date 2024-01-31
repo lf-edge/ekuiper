@@ -80,6 +80,7 @@ func connectFailTest(t *testing.T) {
 func TestSourcePing(t *testing.T) {
 	config := map[string]interface{}{
 		"url": "non-tcp",
+		"raw": true,
 	}
 	s := &source{}
 	err := s.Ping("", config)

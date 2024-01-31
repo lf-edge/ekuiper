@@ -124,6 +124,7 @@ func sinkConnExpTest(t *testing.T) {
 func TestSinkPing(t *testing.T) {
 	config := map[string]interface{}{
 		"url": "non-tcp",
+		"raw": true,
 	}
 	s := &sink{}
 	err := s.Ping("", config)
