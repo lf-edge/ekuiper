@@ -147,10 +147,10 @@ func (sm *DefaultStatManager) GetMetrics() []any {
 	}
 
 	if !sm.lastInvocation.IsZero() {
-		result[4] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
+		result[5] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
 	}
 	if !sm.lastExceptionTime.IsZero() {
-		result[7] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
+		result[8] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
 	}
 	return result
 }
