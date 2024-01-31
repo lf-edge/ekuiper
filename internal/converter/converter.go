@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -42,7 +43,13 @@ var converters = map[string]Instantiator{
 	},
 }
 
-func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
+func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+		}
+	}()
+
 	t := strings.ToLower(options.FORMAT)
 	if t == "" {
 		t = message.FormatJson

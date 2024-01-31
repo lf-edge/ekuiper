@@ -21,6 +21,7 @@ const (
 	GENERAL_ERR   ErrorCode = 1001
 	NOT_FOUND     ErrorCode = 1002
 	IOErr         ErrorCode = 1003
+	CovnerterErr  ErrorCode = 1004
 
 	// error code for sql
 
