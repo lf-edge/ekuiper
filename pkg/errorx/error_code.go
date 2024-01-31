@@ -28,6 +28,9 @@ const (
 	ParserError   = 2001
 	PlanError     = 2101
 	ExecutorError = 2201
+
+	StreamTableRrr = 3000
+	RuleErr        = 4000
 )
 
 var NotFoundErr = NewWithCode(NOT_FOUND, "not found")

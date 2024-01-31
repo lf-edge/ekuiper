@@ -387,7 +387,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 		f := NewFastJsonConverter("", "", tc.schema, false)
 		_, err := f.Decode(tc.payload)
 		require.Error(t, err)
-		require.Equal(t, err, tc.err)
+		require.Equal(t, err.Error(), tc.err.Error())
 	}
 }
 
