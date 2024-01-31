@@ -19,6 +19,10 @@ import (
 	"path"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func TestMessageDecode(t *testing.T) {
@@ -47,4 +51,12 @@ func TestMessageDecode(t *testing.T) {
 			t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
 		}
 	}
+}
+
+func TestError(t *testing.T) {
+	_, err := converter.Encode(nil)
+	require.Error(t, err)
+	errWithCode, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 }
