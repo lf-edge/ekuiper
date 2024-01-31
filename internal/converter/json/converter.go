@@ -37,11 +37,6 @@ func GetConverter() (message.Converter, error) {
 }
 
 func (c *Converter) Encode(d interface{}) (b []byte, err error) {
-	defer func() {
-		if err != nil {
-			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
-		}
-	}()
 	return json.Marshal(d)
 }
 
@@ -145,11 +140,6 @@ func mergeSchema(originSchema, newSchema map[string]*ast.JsonStreamField) (map[s
 }
 
 func (c *FastJsonConverter) Encode(d interface{}) (b []byte, err error) {
-	defer func() {
-		if err != nil {
-			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
-		}
-	}()
 	return json.Marshal(d)
 }
 

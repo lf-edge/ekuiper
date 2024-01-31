@@ -75,11 +75,6 @@ func (c *Converter) Encode(d interface{}) (b []byte, err error) {
 // Decode If the cols is not set, the default key name is col1, col2, col3...
 // The return value is always a map
 func (c *Converter) Decode(b []byte) (ma interface{}, err error) {
-	defer func() {
-		if err != nil {
-			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
-		}
-	}()
 	tokens := strings.Split(string(b), c.delimiter)
 	m := make(map[string]interface{})
 	if len(c.cols) == 0 {

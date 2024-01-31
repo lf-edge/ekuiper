@@ -40,11 +40,6 @@ func (c *Converter) Encode(d interface{}) (b []byte, err error) {
 }
 
 func (c *Converter) Decode(b []byte) (m interface{}, err error) {
-	defer func() {
-		if err != nil {
-			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
-		}
-	}()
 	result := make(map[string]interface{})
 	result[message.DefaultField] = b
 	return result, nil
