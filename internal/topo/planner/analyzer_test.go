@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package planner
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -198,7 +197,7 @@ func TestCheckTopoSort(t *testing.T) {
 		CheckpointInterval: 0,
 		SendError:          true,
 	}, store)
-	require.Equal(t, errors.New("unknown field a"), err)
+	assert.EqualError(t, err, "unknown field a")
 }
 
 func Test_validation(t *testing.T) {

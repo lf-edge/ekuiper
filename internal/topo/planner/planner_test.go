@@ -24,6 +24,7 @@ import (
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
@@ -4726,10 +4727,15 @@ func TestTransformSourceNode(t *testing.T) {
 			Type: "bigint",
 		},
 	}
+	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, &ast.Options{TYPE: "mqtt"}, &api.RuleOption{SendError: false})
+	assert.NoError(t, err)
+	decodeNode, err := node.NewDecodeOp("2_decoder", "test", &api.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
+	assert.NoError(t, err)
 	testCases := []struct {
 		name string
 		plan *DataSourcePlan
-		node *node.SourceNode
+		node node.DataSourceNode
+		ops  []node.OperatorNode
 	}{
 		{
 			name: "normal source node",
@@ -4771,17 +4777,34 @@ func TestTransformSourceNode(t *testing.T) {
 				TYPE: "file",
 			}, &api.RuleOption{SendError: false}, false, false, schema),
 		},
+		{
+			name: "split source node",
+			plan: &DataSourcePlan{
+				name: "test",
+				streamStmt: &ast.StreamStmt{
+					StreamType: ast.TypeStream,
+					Options: &ast.Options{
+						TYPE: "mqtt",
+					},
+				},
+				streamFields: schema,
+				allMeta:      false,
+				metaFields:   []string{},
+				iet:          false,
+				isBinary:     false,
+			},
+			node: srcNode,
+			ops: []node.OperatorNode{
+				decodeNode,
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceNode, err := transformSourceNode(tc.plan, nil, &api.RuleOption{})
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-				return
-			}
-			if !reflect.DeepEqual(sourceNode, tc.node) {
-				t.Errorf("unexpected result: got %v, want %v", sourceNode, tc.node)
-			}
+			sourceNode, ops, err := transformSourceNode(tc.plan, nil, "test", &api.RuleOption{}, 1)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.node, sourceNode)
+			assert.Equal(t, len(tc.ops), len(ops))
 		})
 	}
 }
@@ -4892,5 +4915,75 @@ func TestGetLogicalPlanForExplain(t *testing.T) {
 		if !reflect.DeepEqual(explain, tt.res) {
 			t.Errorf("case %d: expect validate %v but got %v", i, tt.res, explain)
 		}
+	}
+}
+
+func TestPlanTopo(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt");`,
+		"src2": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: ast.TypeStream,
+			Statement:  sql,
+		})
+		assert.NoError(t, err)
+		err = kv.Set(name, string(s))
+		assert.NoError(t, err)
+	}
+	tests := []struct {
+		name string
+		sql  string
+		topo *api.PrintableTopo
+	}{
+		{
+			name: "testMqttSplit",
+			sql:  `SELECT * FROM src1`,
+			topo: &api.PrintableTopo{
+				Sources: []string{"source_src1"},
+				Edges: map[string][]any{
+					"source_src1": {
+						"op_2_decoder",
+					},
+					"op_2_decoder": {
+						"op_3_project",
+					},
+					"op_3_project": {
+						"sink_sink_memory_log",
+					},
+				},
+			},
+		},
+		{
+			name: "testSharedMqttSplit",
+			sql:  `SELECT * FROM src2`,
+			topo: &api.PrintableTopo{
+				Sources: []string{"subtopo_source_src1"},
+				Edges: map[string][]any{
+					"subtopo_source_src1": {
+						"subtopo_op_2_decoder",
+					},
+					"subtopo_op_2_decoder": {
+						"op_3_project",
+					},
+					"op_3_project": {
+						"sink_sink_memory_log",
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			topo, err := PlanSQLWithSourcesAndSinks(api.GetDefaultRule(tt.name, tt.sql), nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)})
+			assert.NoError(t, err)
+			assert.Equal(t, tt.topo, topo.GetTopo())
+		})
 	}
 }

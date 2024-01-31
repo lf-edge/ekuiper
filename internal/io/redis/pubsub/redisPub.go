@@ -108,7 +108,7 @@ func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, c
 	// Publish
 	err = r.conn.Publish(ctx, channel, jsonBytes).Err()
 	if err != nil {
-		return fmt.Errorf("%s: Error occurred while publishing the Redis message to %s", errorx.IOErr, r.conf.Address)
+		return errorx.NewIOErr(fmt.Sprintf(`Error occurred while publishing the Redis message to %s`, r.conf.Address))
 	}
 	return nil
 }

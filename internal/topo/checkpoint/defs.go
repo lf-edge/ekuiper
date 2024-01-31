@@ -33,6 +33,10 @@ type NonSourceTask interface {
 	SetBarrierHandler(BarrierHandler)
 }
 
+type SourceSubTopoTask interface {
+	EnableCheckpoint(sources *[]StreamTask, ops *[]NonSourceTask)
+}
+
 type SinkTask interface {
 	NonSourceTask
 }

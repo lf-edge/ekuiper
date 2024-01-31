@@ -74,6 +74,10 @@ func (s *Topo) NewTopoWithSucceededCtx() *Topo {
 	return n
 }
 
+func (s *Topo) GetName() string {
+	return s.name
+}
+
 // Cancel may be called multiple times so must be idempotent
 func (s *Topo) Cancel() {
 	s.mu.Lock()
@@ -89,7 +93,12 @@ func (s *Topo) Cancel() {
 
 func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 	s.sources = append(s.sources, src)
-	s.topo.Sources = append(s.topo.Sources, fmt.Sprintf("source_%s", src.GetName()))
+	switch rt := src.(type) {
+	case node.MergeableTopo:
+		rt.MergeSrc(s.topo)
+	default:
+		s.topo.Sources = append(s.topo.Sources, fmt.Sprintf("source_%s", src.GetName()))
+	}
 	return s
 }
 
@@ -105,9 +114,16 @@ func (s *Topo) AddSink(inputs []api.Emitter, snk *node.SinkNode) *Topo {
 
 func (s *Topo) AddOperator(inputs []api.Emitter, operator node.OperatorNode) *Topo {
 	for _, input := range inputs {
-		input.AddOutput(operator.GetInput())
+		// add rule id to make operator name unique
+		ch, opName := operator.GetInput()
+		_ = input.AddOutput(ch, fmt.Sprintf("%s_%s", s.name, opName))
 		operator.AddInputCount()
-		s.addEdge(input.(api.TopNode), operator, "op")
+		switch rt := input.(type) {
+		case node.MergeableTopo:
+			rt.LinkTopo(s.topo, operator.GetName())
+		case api.TopNode:
+			s.addEdge(rt, operator, "op")
+		}
 	}
 	s.ops = append(s.ops, operator)
 	return s
@@ -132,7 +148,7 @@ func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 func (s *Topo) prepareContext() {
 	if s.ctx == nil || s.ctx.Err() != nil {
 		contextLogger := conf.Log.WithField("rule", s.name)
-		if s.options.Debug || s.options.LogFilename != "" {
+		if s.options != nil && (s.options.Debug || s.options.LogFilename != "") {
 			contextLogger.Logger = &logrus.Logger{
 				Out:          conf.Log.Out,
 				Hooks:        conf.Log.Hooks,
@@ -188,18 +204,16 @@ func (s *Topo) Open() <-chan error {
 			if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
 				return fmt.Errorf("topo %s create store error %v", s.name, err)
 			}
-			s.enableCheckpoint()
+			s.enableCheckpoint(s.ctx)
 			// open stream sink, after log sink is ready.
 			for _, snk := range s.sinks {
 				snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
 			}
 
-			// apply operators, if err bail
 			for _, op := range s.ops {
 				op.Exec(s.ctx.WithMeta(s.name, op.GetName(), s.store), s.drain)
 			}
 
-			// open source, if err bail
 			for _, source := range s.sources {
 				source.Open(s.ctx.WithMeta(s.name, source.GetName(), s.store), s.drain)
 			}
@@ -218,13 +232,22 @@ func (s *Topo) Open() <-chan error {
 	return s.drain
 }
 
-func (s *Topo) enableCheckpoint() error {
+func (s *Topo) enableCheckpoint(ctx api.StreamContext) {
 	if s.options.Qos >= api.AtLeastOnce {
-		var sources []checkpoint.StreamTask
+		var (
+			sources []checkpoint.StreamTask
+			ops     []checkpoint.NonSourceTask
+		)
 		for _, r := range s.sources {
-			sources = append(sources, r)
+			switch rt := r.(type) {
+			case checkpoint.StreamTask:
+				sources = append(sources, r.(checkpoint.StreamTask))
+			case checkpoint.SourceSubTopoTask:
+				rt.EnableCheckpoint(&sources, &ops)
+			default: // should never happen
+				ctx.GetLogger().Errorf("source %s is not a checkpoint task", r.GetName())
+			}
 		}
-		var ops []checkpoint.NonSourceTask
 		for _, r := range s.ops {
 			ops = append(ops, r)
 		}
@@ -235,18 +258,24 @@ func (s *Topo) enableCheckpoint() error {
 		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.options.Qos, s.store, s.options.CheckpointInterval, s.ctx)
 		s.coordinator = c
 	}
-	return nil
 }
 
 func (s *Topo) GetCoordinator() *checkpoint.Coordinator {
 	return s.coordinator
 }
 
-func (s *Topo) GetMetrics() (keys []string, values []interface{}) {
+func (s *Topo) GetMetrics() (keys []string, values []any) {
 	for _, sn := range s.sources {
-		for i, v := range sn.GetMetrics() {
-			keys = append(keys, "source_"+sn.GetName()+"_0_"+metric.MetricNames[i])
-			values = append(values, v)
+		switch st := sn.(type) {
+		case node.MergeableTopo:
+			skeys, svalues := st.SubMetrics()
+			keys = append(keys, skeys...)
+			values = append(values, svalues...)
+		default:
+			for i, v := range sn.GetMetrics() {
+				keys = append(keys, "source_"+sn.GetName()+"_0_"+metric.MetricNames[i])
+				values = append(values, v)
+			}
 		}
 	}
 	for _, so := range s.ops {

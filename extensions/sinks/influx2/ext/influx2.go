@@ -151,7 +151,7 @@ func (m *influxSink2) Collect(ctx api.StreamContext, data any) error {
 		err = writeAPI.WritePoint(ctx, pts...)
 		if err != nil {
 			logger.Errorf("influx2 sink error: %v", err)
-			return fmt.Errorf(`%s: influx2 sink fails to send out the data . %v`, errorx.IOErr, err)
+			return errorx.NewIOErr(fmt.Sprintf(`influx2 sink fails to send out the data . %v`, err))
 		}
 	} else {
 		lines, err := m.transformLines(ctx, data)
@@ -161,7 +161,7 @@ func (m *influxSink2) Collect(ctx api.StreamContext, data any) error {
 		err = writeAPI.WriteRecord(ctx, lines...)
 		if err != nil {
 			logger.Errorf("influx2 sink error: %v", err)
-			return fmt.Errorf(`%s: influx2 sink fails to send out the data . %v`, errorx.IOErr, err)
+			return errorx.NewIOErr(fmt.Sprintf(`influx2 sink fails to send out the data . %v`, err.Error()))
 		}
 	}
 	logger.Debug("insert data into influxdb2 success")

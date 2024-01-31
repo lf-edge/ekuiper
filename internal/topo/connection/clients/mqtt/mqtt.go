@@ -143,9 +143,9 @@ func (ms *MQTTClient) Publish(topic string, qos byte, retained bool, message []b
 
 func handleToken(token MQTT.Token) error {
 	if !token.WaitTimeout(5 * time.Second) {
-		return fmt.Errorf("%s: timeout", errorx.IOErr)
+		return errorx.NewIOErr("timeout")
 	} else if token.Error() != nil {
-		return fmt.Errorf("%s: %s", errorx.IOErr, token.Error())
+		return errorx.NewIOErr(token.Error().Error())
 	}
 	return nil
 }

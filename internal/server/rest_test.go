@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func init() {
@@ -48,6 +49,7 @@ func init() {
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
 	sysMetrics = NewMetrics()
+	factory.InitClientsFactory()
 }
 
 type RestTestSuite struct {
@@ -250,7 +252,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
 
-	// valiadate a wrong rule
+	// validate a wrong rule
 	ruleJson = `{"id": "rule1", "sql": "select * from alert"}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
@@ -287,7 +289,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
-	// update wron rule
+	// update wrong rule
 	ruleJson = `{"id": "rule1","sql": "select * from alert1","actions": [{"nop": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
@@ -326,7 +328,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
-	expect = `{"sources":["source_alert"],"edges":{"op_2_project":["sink_nop_0"],"source_alert":["op_2_project"]}}`
+	expect = "{\"sources\":[\"source_alert\"],\"edges\":{\"op_2_decoder\":[\"op_3_project\"],\"op_3_project\":[\"sink_nop_0\"],\"source_alert\":[\"op_2_decoder\"]}}"
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// start rule
@@ -342,8 +344,9 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = "start rule error: Rule non-existence-rule is not found in registry, please check if it is created\n"
-	assert.Equal(suite.T(), expect, string(returnVal))
+	equal, err := assertErrorCode(errorx.NOT_FOUND, returnVal)
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), equal)
 	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// stop rule
@@ -359,8 +362,10 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = "stop rule error: Rule non-existence-rule was not found.\n"
-	assert.Equal(suite.T(), expect, string(returnVal))
+	equal, err = assertErrorCode(errorx.NOT_FOUND, returnVal)
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), equal)
+
 	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// update rule, will set rule to triggered
@@ -398,6 +403,17 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
+}
+
+func assertErrorCode(code errorx.ErrorCode, resp []byte) (bool, error) {
+	m := struct {
+		ErrorCode int `json:"error"`
+	}{}
+	err := json.Unmarshal(resp, &m)
+	if err != nil {
+		return false, err
+	}
+	return m.ErrorCode == int(code), nil
 }
 
 func (suite *RestTestSuite) Test_ruleTestHandler() {
