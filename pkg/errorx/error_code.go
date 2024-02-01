@@ -29,7 +29,7 @@ const (
 	PlanError     = 2101
 	ExecutorError = 2201
 
-	StreamTableRrr = 3000
+	StreamTableErr = 3000
 	RuleErr        = 4000
 )
 
