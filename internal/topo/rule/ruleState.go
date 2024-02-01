@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -123,7 +123,8 @@ func NewRuleState(rule *api.Rule) (*RuleState, error) {
 // UpdateTopo update the rule and the topology AND restart the topology
 // Do not need to call restart after update
 func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
-	if _, err := planner.Plan(rule); err != nil {
+	t, err := planner.Plan(rule)
+	if err != nil {
 		return err
 	}
 	if err := rs.Stop(); err != nil {
@@ -131,6 +132,7 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 	}
 	time.Sleep(1 * time.Millisecond)
 	rs.Rule = rule
+	rs.Topology = t
 	// If not triggered, just ignore start the rule
 	if rule.Triggered {
 		if err := rs.Start(); err != nil {
@@ -387,12 +389,14 @@ func (rs *RuleState) start() error {
 	if rs.triggered != 1 {
 		// If the rule has been stopped due to error, the topology is not nil
 		if rs.Topology != nil {
-			rs.Topology.Cancel()
-		}
-		if tp, err := planner.Plan(rs.Rule); err != nil {
-			return err
-		} else {
-			rs.Topology = tp
+			if rs.Topology.HasOpen() {
+				rs.Topology.Cancel()
+				if tp, err := planner.Plan(rs.Rule); err != nil {
+					return err
+				} else {
+					rs.Topology = tp
+				}
+			}
 		}
 		rs.triggered = 1
 	}
