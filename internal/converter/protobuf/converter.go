@@ -22,6 +22,7 @@ import (
 
 	kconf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter/static"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -57,7 +58,12 @@ func NewConverter(schemaFile string, soFile string, messageName string) (message
 	}
 }
 
-func (c *Converter) Encode(d interface{}) ([]byte, error) {
+func (c *Converter) Encode(d interface{}) (b []byte, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+		}
+	}()
 	switch m := d.(type) {
 	case map[string]interface{}:
 		msg, err := c.fc.encodeMap(c.descriptor, m)
@@ -70,9 +76,14 @@ func (c *Converter) Encode(d interface{}) ([]byte, error) {
 	}
 }
 
-func (c *Converter) Decode(b []byte) (interface{}, error) {
+func (c *Converter) Decode(b []byte) (m interface{}, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+		}
+	}()
 	result := mf.NewDynamicMessage(c.descriptor)
-	err := result.Unmarshal(b)
+	err = result.Unmarshal(b)
 	if err != nil {
 		return nil, err
 	}

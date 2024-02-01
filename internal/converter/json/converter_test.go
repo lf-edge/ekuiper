@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func TestMessageDecode(t *testing.T) {
@@ -387,7 +388,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 		f := NewFastJsonConverter("", "", tc.schema, false)
 		_, err := f.Decode(tc.payload)
 		require.Error(t, err)
-		require.Equal(t, err, tc.err)
+		require.Equal(t, err.Error(), tc.err.Error())
 	}
 }
 
@@ -905,4 +906,19 @@ func TestSchemaless(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tc.expect, v)
 	}
+}
+
+func TestJsonError(t *testing.T) {
+	_, err := converter.Decode(nil)
+	require.Error(t, err)
+	errWithCode, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
+	// fastjson
+	c := NewFastJsonConverter("", "", nil, true)
+	_, err = c.Decode(nil)
+	require.Error(t, err)
+	errWithCode, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 }

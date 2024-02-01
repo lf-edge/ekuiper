@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/converter/merge"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -35,13 +36,18 @@ func GetConverter() (message.Converter, error) {
 	return converter, nil
 }
 
-func (c *Converter) Encode(d interface{}) ([]byte, error) {
+func (c *Converter) Encode(d interface{}) (b []byte, err error) {
 	return json.Marshal(d)
 }
 
-func (c *Converter) Decode(b []byte) (interface{}, error) {
+func (c *Converter) Decode(b []byte) (m interface{}, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+		}
+	}()
 	var r0 interface{}
-	err := json.Unmarshal(b, &r0)
+	err = json.Unmarshal(b, &r0)
 	if err != nil {
 		return nil, err
 	}
@@ -133,11 +139,16 @@ func mergeSchema(originSchema, newSchema map[string]*ast.JsonStreamField) (map[s
 	return merge.MergeSchema(originSchema, newSchema)
 }
 
-func (c *FastJsonConverter) Encode(d interface{}) ([]byte, error) {
+func (c *FastJsonConverter) Encode(d interface{}) (b []byte, err error) {
 	return json.Marshal(d)
 }
 
-func (c *FastJsonConverter) Decode(b []byte) (interface{}, error) {
+func (c *FastJsonConverter) Decode(b []byte) (m interface{}, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+		}
+	}()
 	c.RLock()
 	defer c.RUnlock()
 	if len(c.wildcardMap) > 0 {
