@@ -64,6 +64,14 @@ func NewStreamProcessor() *StreamProcessor {
 }
 
 func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
+
 	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
@@ -116,7 +124,14 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 	return
 }
 
-func (p *StreamProcessor) RecoverLookupTable() error {
+func (p *StreamProcessor) RecoverLookupTable() (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	keys, err := p.db.Keys()
 	if err != nil {
 		return fmt.Errorf("error loading data from db: %v.", err)
@@ -175,7 +190,15 @@ func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, repla
 	return err
 }
 
-func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st ast.StreamType) (string, error) {
+func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st ast.StreamType) (info string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
+
 	parser := xsql.NewParser(strings.NewReader(statement))
 	stmt, err := xsql.Language.Parse(parser)
 	if err != nil {
@@ -203,7 +226,14 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 	}
 }
 
-func (p *StreamProcessor) ExecStreamSql(statement string) (string, error) {
+func (p *StreamProcessor) ExecStreamSql(statement string) (info string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	r, err := p.ExecStmt(statement)
 	if err != nil {
 		return "", err
@@ -220,7 +250,15 @@ func (p *StreamProcessor) execShow(st ast.StreamType) ([]string, error) {
 	return keys, err
 }
 
-func (p *StreamProcessor) ShowStream(st ast.StreamType) ([]string, error) {
+func (p *StreamProcessor) ShowStream(st ast.StreamType) (res []string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
+
 	stt := ast.StreamTypeMap[st]
 	keys, err := p.db.Keys()
 	if err != nil {
@@ -241,7 +279,14 @@ func (p *StreamProcessor) ShowStream(st ast.StreamType) ([]string, error) {
 	return result, nil
 }
 
-func (p *StreamProcessor) ShowTable(kind string) ([]string, error) {
+func (p *StreamProcessor) ShowTable(kind string) (res []string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	if kind == "" {
 		return p.ShowStream(ast.TypeTable)
 	}
@@ -268,7 +313,14 @@ func (p *StreamProcessor) ShowTable(kind string) ([]string, error) {
 	return result, nil
 }
 
-func (p *StreamProcessor) GetStream(name string, st ast.StreamType) (string, error) {
+func (p *StreamProcessor) GetStream(name string, st ast.StreamType) (res string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	vs, err := xsql.GetDataSourceStatement(p.db, name)
 	if vs != nil && vs.StreamType == st {
 		return vs.Statement, nil
@@ -279,7 +331,14 @@ func (p *StreamProcessor) GetStream(name string, st ast.StreamType) (string, err
 	return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], name))
 }
 
-func (p *StreamProcessor) execDescribe(stmt ast.NameNode, st ast.StreamType) (string, error) {
+func (p *StreamProcessor) execDescribe(stmt ast.NameNode, st ast.StreamType) (r string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	streamStmt, err := p.DescStream(stmt.GetName(), st)
 	if err != nil {
 		return "", err
@@ -337,7 +396,14 @@ func printOptions(opts *ast.Options, buff *bytes.Buffer) {
 	}
 }
 
-func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (ast.Statement, error) {
+func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (r ast.Statement, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	statement, err := p.GetStream(name, st)
 	if err != nil {
 		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
@@ -350,7 +416,14 @@ func (p *StreamProcessor) DescStream(name string, st ast.StreamType) (ast.Statem
 	return stream, nil
 }
 
-func (p *StreamProcessor) GetInferredSchema(name string, st ast.StreamType) (ast.StreamFields, error) {
+func (p *StreamProcessor) GetInferredSchema(name string, st ast.StreamType) (r ast.StreamFields, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	statement, err := p.GetStream(name, st)
 	if err != nil {
 		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
@@ -371,7 +444,14 @@ func (p *StreamProcessor) GetInferredSchema(name string, st ast.StreamType) (ast
 }
 
 // GetInferredJsonSchema return schema in json schema type
-func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) (map[string]*ast.JsonStreamField, error) {
+func (p *StreamProcessor) GetInferredJsonSchema(name string, st ast.StreamType) (r map[string]*ast.JsonStreamField, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	statement, err := p.GetStream(name, st)
 	if err != nil {
 		return nil, fmt.Errorf("Describe %s fails, %s.", ast.StreamTypeMap[st], err)
@@ -411,14 +491,21 @@ func (p *StreamProcessor) execDrop(stmt ast.NameNode, st ast.StreamType) (string
 	return s, nil
 }
 
-func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (string, error) {
+func (p *StreamProcessor) DropStream(name string, st ast.StreamType) (r string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	if st == ast.TypeTable {
 		err := lookup.DropInstance(name)
 		if err != nil {
 			return "", err
 		}
 	}
-	_, err := p.GetStream(name, st)
+	_, err = p.GetStream(name, st)
 	if err != nil {
 		return "", err
 	}
@@ -460,10 +547,17 @@ func printFieldType(ft ast.FieldType) (result string) {
 }
 
 // GetAll return all streams and tables defined to export.
-func (p *StreamProcessor) GetAll() (result map[string]map[string]string, e error) {
-	defs, err := p.db.All()
-	if err != nil {
-		e = err
+func (p *StreamProcessor) GetAll() (result map[string]map[string]string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
+	defs, e := p.db.All()
+	if e != nil {
+		err = e
 		return
 	}
 	vs := &xsql.StreamInfo{}

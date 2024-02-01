@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 type (
@@ -184,6 +185,13 @@ func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker)
 }
 
 func GetSourceMeta(sourceName, language string) (ptrSourceProperty *uiSource, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
 	gSourcemetaLock.RLock()
 	defer gSourcemetaLock.RUnlock()
 

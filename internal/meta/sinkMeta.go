@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 const (
@@ -264,7 +265,15 @@ func ReadSinkMetaFile(filePath string, installed bool) error {
 	return nil
 }
 
-func GetSinkMeta(pluginName, language string) (*uiSink, error) {
+func GetSinkMeta(pluginName, language string) (s *uiSink, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
+
 	fileName := pluginName + `.json`
 	sinkMetadata := gSinkmetadata
 	data, ok := sinkMetadata[fileName]
