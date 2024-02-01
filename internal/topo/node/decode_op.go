@@ -59,66 +59,8 @@ func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.ctx = ctx
 	go func() {
 		err := infra.SafeRun(func() error {
-			for {
-				o.statManager.SetBufferLength(int64(len(o.input)))
-				select {
-				case <-ctx.Done():
-					ctx.GetLogger().Infof("decode node %s is finished", o.name)
-					return nil
-				case item := <-o.input:
-					processed := false
-					if item, processed = o.preprocess(item); processed {
-						break
-					}
-					switch d := item.(type) {
-					case error:
-						o.Broadcast(d)
-						o.statManager.IncTotalExceptions(d.Error())
-					case *xsql.Tuple:
-						o.statManager.IncTotalRecordsIn()
-						// Start the first event processing.
-						// Later a series of events may send out in order
-						o.statManager.ProcessTimeStart()
-						result, err := o.converter.Decode(d.Raw)
-						if err != nil {
-							o.Broadcast(err)
-							o.statManager.IncTotalExceptions(err.Error())
-							break
-						}
-						switch r := result.(type) {
-						case map[string]interface{}:
-							d.Message = r
-							d.Raw = nil
-							o.Broadcast(d)
-							o.statManager.IncTotalRecordsOut()
-						case []map[string]interface{}:
-							for _, v := range r {
-								o.sendMap(v, d)
-							}
-						case []interface{}:
-							for _, v := range r {
-								if vc, ok := v.(map[string]interface{}); ok {
-									o.sendMap(vc, d)
-								} else {
-									e := fmt.Errorf("only map[string]any inside a list is supported but got: %v", v)
-									o.Broadcast(e)
-									o.statManager.IncTotalExceptions(e.Error())
-								}
-							}
-						default:
-							e := fmt.Errorf("unsupported decode result: %v", r)
-							o.Broadcast(e)
-							o.statManager.IncTotalExceptions(e.Error())
-						}
-					default:
-						e := fmt.Errorf("unsupported data received: %v", d)
-						o.Broadcast(e)
-						o.statManager.IncTotalExceptions(e.Error())
-					}
-					o.statManager.ProcessTimeEnd()
-					o.statManager.IncTotalMessagesProcessed(1)
-				}
-			}
+			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)
+			return nil
 		})
 		if err != nil {
 			infra.DrainError(ctx, err, errCh)
@@ -126,12 +68,51 @@ func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *DecodeOp) sendMap(v map[string]any, d *xsql.Tuple) {
-	o.Broadcast(&xsql.Tuple{
+func (o *DecodeOp) Worker(item any) []any {
+	o.statManager.ProcessTimeStart()
+	defer o.statManager.ProcessTimeEnd()
+	switch d := item.(type) {
+	case error:
+		return []any{d}
+	case *xsql.Tuple:
+		result, err := o.converter.Decode(d.Raw)
+		if err != nil {
+			return []any{err}
+		}
+		switch r := result.(type) {
+		case map[string]interface{}:
+			d.Message = r
+			d.Raw = nil
+			return []any{d}
+		case []map[string]interface{}:
+			rr := make([]any, len(r))
+			for i, v := range r {
+				rr[i] = o.toTuple(v, d)
+			}
+			return rr
+		case []interface{}:
+			rr := make([]any, len(r))
+			for i, v := range r {
+				if vc, ok := v.(map[string]interface{}); ok {
+					rr[i] = o.toTuple(vc, d)
+				} else {
+					rr[i] = fmt.Errorf("only map[string]any inside a list is supported but got: %v", v)
+				}
+			}
+			return rr
+		default:
+			return []any{fmt.Errorf("unsupported decode result: %v", r)}
+		}
+	default:
+		return []any{fmt.Errorf("unsupported data received: %v", d)}
+	}
+}
+
+func (o *DecodeOp) toTuple(v map[string]any, d *xsql.Tuple) *xsql.Tuple {
+	return &xsql.Tuple{
 		Message:   v,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
-	})
-	o.statManager.IncTotalRecordsOut()
+	}
 }

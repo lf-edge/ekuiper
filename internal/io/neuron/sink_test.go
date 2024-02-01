@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
@@ -117,4 +119,21 @@ func sinkConnExpTest(t *testing.T) {
 	} else if !errorx.IsIOError(err) {
 		t.Errorf("error mismatch:\n\nexp=%s\n\ngot=%s\n\n", expErrStr, err.Error())
 	}
+}
+
+func TestSinkPing(t *testing.T) {
+	config := map[string]interface{}{
+		"url": "non-tcp",
+		"raw": true,
+	}
+	s := &sink{}
+	err := s.Ping("", config)
+	require.Error(t, err)
+	config = map[string]interface{}{
+		"url": "tcp://127.0.0.1:4313",
+		"raw": true,
+	}
+	s = &sink{}
+	err = s.Ping("", config)
+	require.Error(t, err)
 }

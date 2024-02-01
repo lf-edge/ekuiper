@@ -21,6 +21,7 @@ import (
 	"os"
 	"path"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
@@ -49,6 +50,7 @@ type Topo struct {
 	coordinator *checkpoint.Coordinator
 	topo        *api.PrintableTopo
 	mu          sync.Mutex
+	hasOpened   atomic.Bool
 }
 
 func NewWithNameAndOptions(name string, options *api.RuleOption) (*Topo, error) {
@@ -188,10 +190,11 @@ func (s *Topo) prepareContext() {
 
 func (s *Topo) Open() <-chan error {
 	// if stream has opened, do nothing
-	if s.ctx != nil && s.ctx.Err() == nil {
+	if s.hasOpened.Load() && !conf.IsTesting {
 		s.ctx.GetLogger().Infoln("rule is already running, do nothing")
 		return s.drain
 	}
+	s.hasOpened.Store(true)
 	s.prepareContext() // ensure context is set
 	s.drain = make(chan error)
 	log := s.ctx.GetLogger()
@@ -230,6 +233,10 @@ func (s *Topo) Open() <-chan error {
 	}()
 
 	return s.drain
+}
+
+func (s *Topo) HasOpen() bool {
+	return s.hasOpened.Load()
 }
 
 func (s *Topo) enableCheckpoint(ctx api.StreamContext) {

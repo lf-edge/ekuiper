@@ -864,20 +864,36 @@ func TestSchemaless(t *testing.T) {
 	}
 	f := NewFastJsonConverter("1", "", originSchema, true)
 	testcases := []struct {
-		data map[string]interface{}
+		data   map[string]interface{}
+		expect map[string]interface{}
 	}{
 		{
 			data: map[string]interface{}{
 				"a": float64(1),
+				"b": float64(2),
+			},
+			expect: map[string]interface{}{
+				"a": float64(1),
 			},
 		},
+
 		{
 			data: map[string]interface{}{
+				"a": "123",
+				"b": "123",
+			},
+			expect: map[string]interface{}{
 				"a": "123",
 			},
 		},
 		{
 			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": float64(1),
+				},
+				"b": 123,
+			},
+			expect: map[string]interface{}{
 				"a": map[string]interface{}{
 					"b": float64(1),
 				},
@@ -888,7 +904,7 @@ func TestSchemaless(t *testing.T) {
 		bs, _ := json.Marshal(tc.data)
 		v, err := f.Decode(bs)
 		require.NoError(t, err)
-		require.Equal(t, tc.data, v)
+		require.Equal(t, tc.expect, v)
 	}
 }
 
