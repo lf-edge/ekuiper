@@ -231,6 +231,7 @@ jobs:
           - sources/zmq
           - sources/sql
           - sources/video
+          - sources/kafka
           - functions/accumulateWordCount
           - functions/countPlusOne
           - functions/echo
