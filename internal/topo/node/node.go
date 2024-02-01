@@ -68,10 +68,14 @@ type defaultNode struct {
 }
 
 func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
+	c := options.Concurrency
+	if c < 1 {
+		c = 1
+	}
 	return &defaultNode{
 		name:        name,
 		outputs:     make(map[string]chan<- any),
-		concurrency: 1,
+		concurrency: c,
 		sendError:   options.SendError,
 	}
 }
@@ -85,14 +89,6 @@ func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
 
 func (o *defaultNode) GetName() string {
 	return o.name
-}
-
-// SetConcurrency sets the concurrency level for the operation
-func (o *defaultNode) SetConcurrency(concurr int) {
-	o.concurrency = concurr
-	if o.concurrency < 1 {
-		o.concurrency = 1
-	}
 }
 
 func (o *defaultNode) SetQos(qos api.Qos) {
@@ -166,10 +162,12 @@ type defaultSinkNode struct {
 	input          chan any
 	barrierHandler checkpoint.BarrierHandler
 	inputCount     int
+	bufferLen      int
 }
 
 func newDefaultSinkNode(name string, options *api.RuleOption) *defaultSinkNode {
 	return &defaultSinkNode{
+		bufferLen:   options.BufferLength,
 		defaultNode: newDefaultNode(name, options),
 		input:       make(chan any, options.BufferLength),
 	}

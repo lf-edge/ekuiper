@@ -33,6 +33,7 @@ type KafkaSource struct {
 	reader    *kafkago.Reader
 	offset    int64
 	tlsConfig *tls.Config
+	sc        *kafkaSourceConf
 }
 
 type kafkaSourceConf struct {
@@ -42,6 +43,19 @@ type kafkaSourceConf struct {
 	Partition   int    `json:"partition"`
 	MaxAttempts int    `json:"maxAttempts"`
 	MaxBytes    int    `json:"maxBytes"`
+}
+
+func (s *KafkaSource) Ping(d string, props map[string]interface{}) error {
+	if err := s.Configure(d, props); err != nil {
+		return err
+	}
+	for _, broker := range strings.Split(s.sc.Brokers, ",") {
+		err := ping(s.tlsConfig, broker)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *kafkaSourceConf) validate() error {
@@ -116,6 +130,7 @@ func (s *KafkaSource) Configure(topic string, props map[string]interface{}) erro
 	}
 	reader := kafkago.NewReader(readerConfig)
 	s.reader = reader
+	s.sc = kConf
 	if err := s.reader.SetOffset(kafkago.LastOffset); err != nil {
 		return err
 	}
@@ -182,4 +197,14 @@ func (s *KafkaSource) GetOffset() (interface{}, error) {
 
 func GetSource() api.Source {
 	return &KafkaSource{}
+}
+
+func ping(tlsConfig *tls.Config, address string) error {
+	d := &kafkago.Dialer{TLS: tlsConfig}
+	c, err := d.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	return nil
 }
