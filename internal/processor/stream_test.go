@@ -459,4 +459,24 @@ func TestErr(t *testing.T) {
 	require.Error(t, err)
 	_, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
+
+	_, err = p.DescStream("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.GetInferredJsonSchema("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.GetInferredSchema("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.execDescribe(&ast.Field{}, 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
 }
