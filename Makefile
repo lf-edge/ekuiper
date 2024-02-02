@@ -96,7 +96,8 @@ PLUGINS_IN_FULL := \
 	extensions/sinks/sql   \
 	extensions/sources/random \
 	extensions/sources/sql \
-	extensions/sources/video
+	extensions/sources/video \
+	extensions/sources/kafka
 
 .PHONY: build_full
 build_full: SHELL:=/bin/bash -euo pipefail
@@ -162,6 +163,7 @@ PLUGINS := sinks/influx \
 	sources/zmq \
 	sources/sql \
 	sources/video \
+	sources/kafka \
 	sinks/tdengine \
 	functions/accumulateWordCount \
 	functions/countPlusOne \

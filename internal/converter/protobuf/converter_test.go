@@ -22,10 +22,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func TestEncode(t *testing.T) {
@@ -327,4 +329,19 @@ func TestEncodeDecodeForAllTypes(t *testing.T) {
 			assert.Equal(t, tt.r, m)
 		})
 	}
+}
+
+func TestErr(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")
+	require.NoError(t, err)
+	_, err = c.Encode("123")
+	require.Error(t, err)
+	errWithCode, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
+	_, err = c.Decode(nil)
+	require.Error(t, err)
+	errWithCode, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 }

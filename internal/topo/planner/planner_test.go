@@ -17,6 +17,8 @@ package planner
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -24,10 +26,13 @@ import (
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mqtt"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -4722,15 +4727,41 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 }
 
 func TestTransformSourceNode(t *testing.T) {
+	// add decompression for meta
+	a1 := map[string]interface{}{
+		"decompression": "gzip",
+	}
+	bs, err := json.Marshal(a1)
+	assert.NoError(t, err)
+	meta.InitYamlConfigManager()
+	dataDir, _ := conf.GetDataLoc()
+	err = os.MkdirAll(filepath.Join(dataDir, "sources"), 0o755)
+	assert.NoError(t, err)
+	err = meta.AddSourceConfKey("mqtt", "testCom", "", bs)
+	assert.NoError(t, err)
+	defer func() {
+		err = meta.DelSourceConfKey("mqtt", "testCom", "")
+		assert.NoError(t, err)
+	}()
+	// create expected nodes
 	schema := map[string]*ast.JsonStreamField{
 		"a": {
 			Type: "bigint",
 		},
 	}
-	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, &ast.Options{TYPE: "mqtt"}, &api.RuleOption{SendError: false})
+	props := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt"})
+	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "", props, &api.RuleOption{SendError: false})
 	assert.NoError(t, err)
 	decodeNode, err := node.NewDecodeOp("2_decoder", "test", &api.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
 	assert.NoError(t, err)
+	decomNode, err := node.NewDecompressOp("2_decompressor", &api.RuleOption{SendError: false}, "gzip")
+	assert.NoError(t, err)
+	decodeNode2, err := node.NewDecodeOp("3_decoder", "test", &api.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
+	assert.NoError(t, err)
+	props2 := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", CONF_KEY: "testCom"})
+	srcNode2, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "", props2, &api.RuleOption{SendError: false})
+	assert.NoError(t, err)
+
 	testCases := []struct {
 		name string
 		plan *DataSourcePlan
@@ -4796,6 +4827,29 @@ func TestTransformSourceNode(t *testing.T) {
 			node: srcNode,
 			ops: []node.OperatorNode{
 				decodeNode,
+			},
+		},
+		{
+			name: "split source node with decompression",
+			plan: &DataSourcePlan{
+				name: "test",
+				streamStmt: &ast.StreamStmt{
+					StreamType: ast.TypeStream,
+					Options: &ast.Options{
+						TYPE:     "mqtt",
+						CONF_KEY: "testCom",
+					},
+				},
+				streamFields: schema,
+				allMeta:      false,
+				metaFields:   []string{},
+				iet:          false,
+				isBinary:     false,
+			},
+			node: srcNode2,
+			ops: []node.OperatorNode{
+				decomNode,
+				decodeNode2,
 			},
 		},
 	}

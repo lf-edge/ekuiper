@@ -17,11 +17,9 @@ package node
 import (
 	"fmt"
 
-	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -36,25 +34,19 @@ type SourceConnectorNode struct {
 }
 
 // NewSourceConnectorNode creates a SourceConnectorNode
-func NewSourceConnectorNode(name string, ss api.SourceConnector, options *ast.Options, rOpt *api.RuleOption) (*SourceConnectorNode, error) {
+func NewSourceConnectorNode(name string, ss api.SourceConnector, dataSource string, props map[string]any, rOpt *api.RuleOption) (*SourceConnectorNode, error) {
 	m := &SourceConnectorNode{
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,
 		buffLen:     rOpt.BufferLength,
 	}
-	return m, m.setup(options)
+	return m, m.setup(dataSource, props)
 }
 
 // Setup read configuration and validate and initialize the sourceConnector
-func (m *SourceConnectorNode) setup(options *ast.Options) error {
-	t := options.TYPE
-	if t == "" {
-		t = "mqtt"
-	}
-	// Get configurations
-	props := nodeConf.GetSourceConf(t, options)
+func (m *SourceConnectorNode) setup(dataSource string, props map[string]any) error {
 	// Initialize sourceConnector
-	err := m.s.Configure(options.DATASOURCE, props)
+	err := m.s.Configure(dataSource, props)
 	if err != nil {
 		return err
 	}

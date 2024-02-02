@@ -21,6 +21,7 @@ const (
 	GENERAL_ERR   ErrorCode = 1001
 	NOT_FOUND     ErrorCode = 1002
 	IOErr         ErrorCode = 1003
+	CovnerterErr  ErrorCode = 1004
 
 	// error code for sql
 
@@ -29,8 +30,8 @@ const (
 	ExecutorError = 2201
 
 	StreamTableError = 3000
-
-	ConfKeyError = 5000
+	RuleError        = 4000
+	ConfKeyError     = 5000
 )
 
 var NotFoundErr = NewWithCode(NOT_FOUND, "not found")

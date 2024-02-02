@@ -17,6 +17,7 @@ package binary
 import (
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -28,11 +29,17 @@ func GetConverter() (message.Converter, error) {
 	return converter, nil
 }
 
-func (c *Converter) Encode(d interface{}) ([]byte, error) {
+func (c *Converter) Encode(d interface{}) (b []byte, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+		}
+	}()
+
 	return nil, fmt.Errorf("not supported")
 }
 
-func (c *Converter) Decode(b []byte) (interface{}, error) {
+func (c *Converter) Decode(b []byte) (m interface{}, err error) {
 	result := make(map[string]interface{})
 	result[message.DefaultField] = b
 	return result, nil
