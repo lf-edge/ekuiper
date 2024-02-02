@@ -103,13 +103,6 @@ func loadConfigOperatorForConnection(pluginName string) {
 }
 
 func delConfKey(configOperatorKey, confKey, language string) (err error) {
-	defer func() {
-		if err != nil {
-			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
-			}
-		}
-	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 

@@ -100,15 +100,9 @@ func TestConfKeyReplace(t *testing.T) {
 }
 
 func TestConfKeyErr(t *testing.T) {
-	err := delConfKey("1", "2", "3")
+	err := DelSourceConfKey("1", "2", "3")
 	require.Error(t, err)
 	ewc, ok := err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-
-	err = DelSourceConfKey("1", "2", "3")
-	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 	require.Equal(t, errorx.ConfKeyError, ewc.Code())
 
@@ -129,4 +123,5 @@ func TestConfKeyErr(t *testing.T) {
 	ewc, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
 }
