@@ -269,7 +269,7 @@ func GetSinkMeta(pluginName, language string) (s *uiSink, err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
 			}
 		}
 	}()

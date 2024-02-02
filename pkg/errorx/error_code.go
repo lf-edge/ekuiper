@@ -22,16 +22,17 @@ const (
 	NOT_FOUND     ErrorCode = 1002
 	IOErr         ErrorCode = 1003
 	CovnerterErr  ErrorCode = 1004
+	SafeRunErr    ErrorCode = 1005
 
 	// error code for sql
 
-	ParserError   = 2001
-	PlanError     = 2101
-	ExecutorError = 2201
+	ParserError   ErrorCode = 2001
+	PlanError     ErrorCode = 2101
+	ExecutorError ErrorCode = 2201
 
-	StreamTableError = 3000
-	RuleError        = 4000
-	ConfKeyError     = 5000
+	StreamTableError ErrorCode = 3000
+	RuleErr          ErrorCode = 4000
+	ConfKeyError     ErrorCode = 5000
 )
 
 var NotFoundErr = NewWithCode(NOT_FOUND, "not found")

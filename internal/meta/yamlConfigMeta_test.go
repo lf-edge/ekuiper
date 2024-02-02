@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func init() {
@@ -96,4 +97,72 @@ func TestConfKeyReplace(t *testing.T) {
 	require.NoError(t, err)
 	replaced = replacePasswdForConfig("source", "sql", "mysql", a2)
 	require.Equal(t, a1, replaced)
+}
+
+func TestConfKeyErr(t *testing.T) {
+	err := delConfKey("1", "2", "3")
+	require.Error(t, err)
+	ewc, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = DelSourceConfKey("1", "2", "3")
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = DelSinkConfKey("1", "2", "3")
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = DelConnectionConfKey("1", "2", "3")
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	_, err = GetYamlConf("1", "2")
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = addSourceConfKeys("123", YamlConfigurations{})
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = AddSourceConfKey("1", "2", "3", nil)
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = AddSinkConfKey("1", "2", "3", nil)
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = addSinkConfKeys("123", YamlConfigurations{})
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = AddConnectionConfKey("1", "2", "3", nil)
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = addConnectionConfKeys("1", YamlConfigurations{})
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
 }

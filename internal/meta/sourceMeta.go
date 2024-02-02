@@ -188,7 +188,7 @@ func GetSourceMeta(sourceName, language string) (ptrSourceProperty *uiSource, er
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
 			}
 		}
 	}()

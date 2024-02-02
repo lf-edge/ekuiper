@@ -98,6 +98,9 @@ func createRule(name, ruleJson string) (string, error) {
 		// Do not store to registry so also delete the KV
 		deleteRule(r.Id)
 		_, _ = ruleProcessor.ExecDrop(r.Id)
+		if ewc, ok := panicOrError.(errorx.ErrorWithCode); ok {
+			return r.Id, errorx.NewWithCode(ewc.Code(), fmt.Sprintf("create rule topo error: %v", panicOrError.Error()))
+		}
 		return r.Id, fmt.Errorf("create rule topo error: %v", panicOrError)
 	}
 	// Start the rule asyncly
