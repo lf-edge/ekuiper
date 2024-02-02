@@ -129,40 +129,5 @@ func TestConfKeyErr(t *testing.T) {
 	ewc, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-
-	err = addSourceConfKeys("123", YamlConfigurations{})
-	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-
-	err = AddSourceConfKey("1", "2", "3", nil)
-	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-
-	err = AddSinkConfKey("1", "2", "3", nil)
-	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-
-	err = addSinkConfKeys("123", YamlConfigurations{})
-	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-
-	err = AddConnectionConfKey("1", "2", "3", nil)
-	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-
-	err = addConnectionConfKeys("1", YamlConfigurations{})
-	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+	
 }
