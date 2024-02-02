@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 // SafeRun will catch and return the panic error together with other errors
@@ -40,11 +39,6 @@ func SafeRun(fn func() error) (err error) {
 				err = x
 			default:
 				err = fmt.Errorf("%#v", x)
-			}
-		}
-		if err != nil {
-			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.SafeRunErr, err.Error())
 			}
 		}
 	}()

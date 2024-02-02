@@ -105,7 +105,7 @@ func TestGetSqlSinkMeta(t *testing.T) {
 }
 
 func TestSourceMeta(t *testing.T) {
-	_, err := GetSourceMeta("mqtt", "123")
+	_, err := GetSourceMeta("123", "123")
 	require.Error(t, err)
 	ewc, ok := err.(errorx.ErrorWithCode)
 	require.True(t, ok)

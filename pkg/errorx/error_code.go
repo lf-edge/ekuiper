@@ -22,7 +22,6 @@ const (
 	NOT_FOUND     ErrorCode = 1002
 	IOErr         ErrorCode = 1003
 	CovnerterErr  ErrorCode = 1004
-	SafeRunErr    ErrorCode = 1005
 
 	// error code for sql
 
