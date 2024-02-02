@@ -110,7 +110,7 @@ func NewRuleState(rule *api.Rule) (rs *RuleState, err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+				err = errorx.NewWithCode(errorx.RuleError, err.Error())
 			}
 		}
 	}()
@@ -136,7 +136,7 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) (err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+				err = errorx.NewWithCode(errorx.RuleError, err.Error())
 			}
 		}
 	}()
@@ -288,7 +288,7 @@ func (rs *RuleState) Start() (err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+				err = errorx.NewWithCode(errorx.RuleError, err.Error())
 			}
 		}
 	}()
@@ -437,7 +437,7 @@ func (rs *RuleState) Stop() (err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+				err = errorx.NewWithCode(errorx.RuleError, err.Error())
 			}
 		}
 	}()
@@ -480,7 +480,7 @@ func (rs *RuleState) InternalStop() (err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+				err = errorx.NewWithCode(errorx.RuleError, err.Error())
 			}
 		}
 	}()
@@ -514,7 +514,7 @@ func (rs *RuleState) Close() (err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+				err = errorx.NewWithCode(errorx.RuleError, err.Error())
 			}
 		}
 	}()
@@ -536,7 +536,7 @@ func (rs *RuleState) GetState() (s string, err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+				err = errorx.NewWithCode(errorx.RuleError, err.Error())
 			}
 		}
 	}()
