@@ -129,5 +129,4 @@ func TestConfKeyErr(t *testing.T) {
 	ewc, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 	require.Equal(t, errorx.ConfKeyError, ewc.Code())
-	
 }
