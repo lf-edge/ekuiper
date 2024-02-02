@@ -200,7 +200,7 @@ func TestCheckTopoSort(t *testing.T) {
 	}, store)
 	errWithCode, ok := err.(errorx.ErrorWithCode)
 	require.True(t, ok)
-	require.Equal(t, errorx.PlanError, int(errWithCode.Code()))
+	require.Equal(t, errorx.PlanError, errWithCode.Code())
 	require.Equal(t, "unknown field a", errWithCode.Error())
 }
 
