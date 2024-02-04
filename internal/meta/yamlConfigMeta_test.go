@@ -126,11 +126,11 @@ func TestConfKeyErr(t *testing.T) {
 
 	err = AddSourceConfKey("1", "2", "3", nil)
 	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
+	_, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 
 	err = AddSinkConfKey("1", "2", "3", nil)
 	require.Error(t, err)
-	ewc, ok = err.(errorx.ErrorWithCode)
+	_, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 }
