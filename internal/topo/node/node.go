@@ -54,6 +54,8 @@ type MergeableTopo interface {
 	LinkTopo(parentTopo *api.PrintableTopo, parentJointName string)
 	// SubMetrics return the metrics of the sub nodes
 	SubMetrics() ([]string, []any)
+	// Close notifies subtopo to deref
+	Close(ruleId string)
 }
 
 type defaultNode struct {
