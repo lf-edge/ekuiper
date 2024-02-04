@@ -479,4 +479,24 @@ func TestErr(t *testing.T) {
 	require.Error(t, err)
 	_, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
+
+	_, err = p.ExecStreamSql("1")
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.ShowStream(11)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.GetStream("1", 11)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.DropStream("1", 11)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
 }

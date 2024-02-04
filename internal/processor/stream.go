@@ -227,13 +227,6 @@ func (p *StreamProcessor) ExecReplaceStream(name string, statement string, st as
 }
 
 func (p *StreamProcessor) ExecStreamSql(statement string) (info string, err error) {
-	defer func() {
-		if err != nil {
-			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
-			}
-		}
-	}()
 	r, err := p.ExecStmt(statement)
 	if err != nil {
 		return "", err
@@ -259,7 +252,10 @@ func (p *StreamProcessor) ShowStream(st ast.StreamType) (res []string, err error
 		}
 	}()
 
-	stt := ast.StreamTypeMap[st]
+	stt, ok := ast.StreamTypeMap[st]
+	if !ok {
+		return nil, fmt.Errorf("show %v fails, %v not found", st, st)
+	}
 	keys, err := p.db.Keys()
 	if err != nil {
 		return nil, fmt.Errorf("Show %ss fails, error when loading data from db: %v.", stt, err)
