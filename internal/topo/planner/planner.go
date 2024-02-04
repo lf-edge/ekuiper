@@ -67,6 +67,11 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, err
 	}
+	// validate logical plan
+	if err := lp.ValidatePlan(); err != nil {
+		return nil, err
+	}
+
 	tp, err := createTopo(rule, lp, mockSourcesProp, sinks, streamsFromStmt)
 	if err != nil {
 		return nil, err

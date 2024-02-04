@@ -15,6 +15,7 @@
 package ast
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -26,6 +27,10 @@ type Node interface {
 type NameNode interface {
 	Node
 	GetName() string
+}
+
+type ValidateAbleExpr interface {
+	ValidateExpr() error
 }
 
 type Expr interface {
@@ -55,6 +60,17 @@ type BracketExpr struct {
 type ColonExpr struct {
 	Start Expr
 	End   Expr
+}
+
+func (c *ColonExpr) ValidateExpr() error {
+	if st, ok := c.Start.(*IntegerLiteral); ok {
+		if end, ok := c.End.(*IntegerLiteral); ok {
+			if st.Val >= end.Val {
+				return errors.New("colon start value can't be greater than end value")
+			}
+		}
+	}
+	return nil
 }
 
 type IndexExpr struct {
@@ -253,6 +269,16 @@ type BinaryExpr struct {
 	OP  Token
 	LHS Expr
 	RHS Expr
+}
+
+func (be *BinaryExpr) ValidateExpr() error {
+	switch be.OP {
+	case SUBSET:
+		if colon, ok := be.RHS.(*ColonExpr); ok {
+			return colon.ValidateExpr()
+		}
+	}
+	return nil
 }
 
 func (be *BinaryExpr) expr() {}
