@@ -125,13 +125,6 @@ func (p *StreamProcessor) ExecStmt(statement string) (result []string, err error
 }
 
 func (p *StreamProcessor) RecoverLookupTable() (err error) {
-	defer func() {
-		if err != nil {
-			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
-			}
-		}
-	}()
 	keys, err := p.db.Keys()
 	if err != nil {
 		return fmt.Errorf("error loading data from db: %v.", err)
@@ -544,13 +537,6 @@ func printFieldType(ft ast.FieldType) (result string) {
 
 // GetAll return all streams and tables defined to export.
 func (p *StreamProcessor) GetAll() (result map[string]map[string]string, err error) {
-	defer func() {
-		if err != nil {
-			if _, ok := err.(errorx.ErrorWithCode); !ok {
-				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
-			}
-		}
-	}()
 	defs, e := p.db.All()
 	if e != nil {
 		err = e
