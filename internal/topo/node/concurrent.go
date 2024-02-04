@@ -23,10 +23,9 @@ type workerFunc func(item any) []any
 func runWithOrder(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wf workerFunc) {
 	workerChans := make([]chan any, numWorkers)
 	workerOutChans := make([]chan []any, numWorkers)
-	bl := node.bufferLen / numWorkers
 	for i := range workerChans {
-		workerChans[i] = make(chan any, bl)
-		workerOutChans[i] = make(chan []any, bl)
+		workerChans[i] = make(chan any)
+		workerOutChans[i] = make(chan []any)
 	}
 
 	// Start worker goroutines
