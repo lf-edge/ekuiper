@@ -40,36 +40,70 @@ type SrcSubTopo struct {
 	topo   *api.PrintableTopo
 
 	// runtime state
+	// Ref state, affect the pool. Update when rule created or stopped
 	refCount atomic.Int32
-	refRules sync.Map
-	cancel   context.CancelFunc
+	refRules sync.Map // map[ruleId]errCh, notify the rule for errors
+	// Runtime state, affect the running loop. Update when any rule opened or all rules stopped
+	opened atomic.Bool
+	cancel context.CancelFunc
 }
 
 func (s *SrcSubTopo) AddOutput(output chan<- interface{}, name string) error {
 	return s.tail.AddOutput(output, name)
 }
 
-func (s *SrcSubTopo) Open(ctx api.StreamContext, errCh chan<- error) {
-	ruleId := ctx.GetRuleId()
-	ctx.GetLogger().Infof("Opening sub topo %s by rule %s", s.name, ruleId)
-	if s.refCount.Load() == 0 {
-		pctx, cancel, err := prepareSharedContext(s.name)
-		if err != nil {
-			infra.DrainError(ctx, err, errCh)
-			return
-		}
-		for _, op := range s.ops {
-			op.Exec(pctx, errCh)
-		}
-		s.source.Open(pctx, errCh)
-		s.cancel = cancel
+func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
+	// Update the ref count
+	if _, loaded := s.refRules.LoadOrStore(ctx.GetRuleId(), parentErrCh); !loaded {
 		s.refCount.Add(1)
-		s.refRules.Store(ruleId, true)
-		ctx.GetLogger().Infof("Sub topo %s opened by rule %s with 1 ref", s.name, ruleId)
-	} else if _, loaded := s.refRules.LoadOrStore(ruleId, true); !loaded {
-		s.refCount.Add(1)
-		ctx.GetLogger().Infof("Sub topo %s opened by rule %s with %d ref", s.name, ruleId, s.refCount.Load())
+		ctx.GetLogger().Infof("Sub topo %s opened by rule %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
 	}
+	// If not opened yet, open it. It may be opened before, but failed to open. In this case, try to open it again.
+	if s.opened.CompareAndSwap(false, true) {
+		poe := infra.SafeRun(func() error {
+			ctx.GetLogger().Infof("Opening sub topo %s by rule %s", s.name, ctx.GetRuleId())
+			pctx, cancel, err := prepareSharedContext(s.name)
+			if err != nil {
+				return err
+			}
+			errCh := make(chan error, 1)
+			for _, op := range s.ops {
+				op.Exec(pctx, errCh)
+			}
+			s.source.Open(pctx, errCh)
+			s.cancel = cancel
+			ctx.GetLogger().Infof("Sub topo %s opened by rule %s with 1 ref", s.name, ctx.GetRuleId())
+			go func() {
+				defer func() {
+					conf.Log.Infof("Sub topo %s closed", s.name)
+					s.opened.Store(false)
+				}()
+				for {
+					select {
+					case e := <-errCh:
+						pctx.GetLogger().Infof("Sub topo %s exit for error %v", s.name, e)
+						s.notifyError(e)
+						return
+					case <-pctx.Done():
+						return
+					}
+				}
+			}()
+			return nil
+		})
+		if poe != nil {
+			s.notifyError(poe)
+		}
+	}
+}
+
+func (s *SrcSubTopo) notifyError(poe error) {
+	// Notify error to all ref rules
+	s.refRules.Range(func(k, v interface{}) bool {
+		conf.Log.Debugf("Notify error %v to rule %s", poe, k.(string))
+		infra.DrainError(nil, poe, v.(chan<- error))
+		return true
+	})
 }
 
 func (s *SrcSubTopo) GetSource() node.DataSourceNode {
@@ -102,16 +136,25 @@ func (s *SrcSubTopo) GetMetrics() []any {
 	return result
 }
 
+func (s *SrcSubTopo) Close(ruleId string) {
+	if _, ok := s.refRules.LoadAndDelete(ruleId); ok {
+		s.refCount.Add(-1)
+		if s.refCount.Load() == 0 {
+			if s.cancel != nil {
+				s.cancel()
+			}
+			RemoveSubTopo(s.name)
+		}
+	}
+}
+
 // RemoveMetrics is called when the rule is deleted
 func (s *SrcSubTopo) RemoveMetrics(ruleId string) {
-	s.refCount.Add(-1)
 	if s.refCount.Load() == 0 {
-		s.cancel()
 		s.source.RemoveMetrics(ruleId)
 		for _, op := range s.ops {
 			op.RemoveMetrics(ruleId)
 		}
-		RemoveSubTopo(s.name)
 	}
 }
 

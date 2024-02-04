@@ -91,6 +91,12 @@ func (s *Topo) Cancel() {
 	}
 	s.store = nil
 	s.coordinator = nil
+	for _, src := range s.sources {
+		switch rt := src.(type) {
+		case node.MergeableTopo:
+			rt.Close(s.name)
+		}
+	}
 }
 
 func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
