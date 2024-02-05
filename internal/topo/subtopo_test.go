@@ -15,8 +15,10 @@
 package topo
 
 import (
+	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -89,10 +91,61 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, []checkpoint.StreamTask{srcNode}, sources)
 	assert.Equal(t, []checkpoint.NonSourceTask{opNode}, ops)
 	// Stop
-	subTopo.RemoveMetrics("rule1")
+	subTopo.Close("rule1")
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, 1, mlen(&subTopoPool))
-	subTopo2.RemoveMetrics("rule2")
+	subTopo2.Close("rule2")
+	assert.Equal(t, int32(0), subTopo.refCount.Load())
+	assert.Equal(t, 0, mlen(&subTopoPool))
+}
+
+// Test when connection fails
+func TestSubtopoRunError(t *testing.T) {
+	assert.Equal(t, 0, mlen(&subTopoPool))
+	subTopo, existed := GetSubTopo("shared")
+	assert.False(t, existed)
+	srcNode := &mockSrc{name: "src1"}
+	opNode := &mockOp{name: "op1", ch: make(chan any)}
+	subTopo.AddSrc(srcNode)
+	subTopo.AddOperator([]api.Emitter{srcNode}, opNode)
+	// create another subtopo
+	subTopo2, existed := GetSubTopo("shared")
+	assert.True(t, existed)
+	assert.Equal(t, subTopo, subTopo2)
+	assert.Equal(t, 1, mlen(&subTopoPool))
+	// Test run firstly, successfully
+	assert.Equal(t, false, subTopo.opened.Load())
+	subTopo.Open(mockContext.NewMockContext("rule1", "abc"), make(chan error))
+	assert.Equal(t, int32(1), subTopo.refCount.Load())
+	assert.Equal(t, true, subTopo.opened.Load())
+	subTopo.Close("rule1")
+	assert.Equal(t, int32(0), subTopo.refCount.Load())
+	assert.Equal(t, 0, mlen(&subTopoPool))
+	time.Sleep(10 * time.Millisecond)
+	assert.Equal(t, false, subTopo.opened.Load())
+	// Test run secondly and thirdly, should fail
+	errCh1 := make(chan error, 1)
+	subTopo.Open(mockContext.NewMockContext("rule1", "abc"), errCh1)
+	assert.Equal(t, int32(1), subTopo.refCount.Load())
+	errCh2 := make(chan error, 1)
+	assert.Equal(t, true, subTopo.opened.Load())
+	subTopo.Open(mockContext.NewMockContext("rule2", "abc"), errCh2)
+	assert.Equal(t, int32(2), subTopo.refCount.Load())
+	select {
+	case err := <-errCh1:
+		assert.Equal(t, assert.AnError, err)
+		subTopo.Close("rule1")
+	case <-time.After(1 * time.Second):
+		assert.Fail(t, "Should receive error")
+	}
+	select {
+	case err := <-errCh2:
+		assert.Equal(t, assert.AnError, err)
+		subTopo2.Close("rule2")
+	case <-time.After(1 * time.Second):
+		assert.Fail(t, "Should receive error")
+	}
+	assert.Equal(t, false, subTopo.opened.Load())
 	assert.Equal(t, int32(0), subTopo.refCount.Load())
 	assert.Equal(t, 0, mlen(&subTopoPool))
 }
@@ -139,8 +192,9 @@ func mlen(m *sync.Map) int {
 }
 
 type mockSrc struct {
-	name    string
-	outputs []chan<- any
+	name     string
+	outputs  []chan<- any
+	runCount int
 }
 
 func (m *mockSrc) Broadcast(data interface{}) {
@@ -164,7 +218,15 @@ func (m *mockSrc) AddOutput(c chan<- interface{}, s string) error {
 }
 
 func (m *mockSrc) Open(ctx api.StreamContext, errCh chan<- error) {
-	// do nothing
+	if m.runCount%3 != 0 {
+		fmt.Printf("sent error for %d \n", m.runCount)
+		select {
+		case errCh <- assert.AnError:
+		default:
+			fmt.Println("error is not sent")
+		}
+	}
+	m.runCount++
 }
 
 func (m *mockSrc) GetName() string {
