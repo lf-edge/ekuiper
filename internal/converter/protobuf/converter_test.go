@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,28 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
 )
+
+func TestOneOfDecode(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test5.proto", "", "Book")
+	require.NoError(t, err)
+	v, err := c.Decode([]byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x1A, 0x04, 0x31, 0x32, 0x33, 0x34})
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{
+		"a": "123", "c": "1234",
+	}, v)
+
+	v, err = c.Decode([]byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x22, 0x04, 0x31, 0x32, 0x33, 0x34})
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{
+		"a": "123", "d": "1234",
+	}, v)
+}
 
 func TestEncode(t *testing.T) {
 	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")

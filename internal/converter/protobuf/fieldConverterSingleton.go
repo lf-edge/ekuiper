@@ -341,7 +341,17 @@ func (fc *FieldConverter) DecodeMessage(message *dynamic.Message, outputType *de
 	}
 	result := make(map[string]interface{})
 	for _, field := range outputType.GetFields() {
-		fc.decodeMessageField(message.GetField(field), field, result, cast.CONVERT_SAMEKIND)
+		if oneOf := field.GetOneOf(); oneOf != nil {
+			fd, v, err := message.TryGetOneOfField(oneOf)
+			if err != nil {
+				return err
+			}
+			if fd != nil && v != nil {
+				fc.decodeMessageField(v, fd, result, cast.CONVERT_SAMEKIND)
+			}
+		} else {
+			fc.decodeMessageField(message.GetField(field), field, result, cast.CONVERT_SAMEKIND)
+		}
 	}
 	return result
 }
