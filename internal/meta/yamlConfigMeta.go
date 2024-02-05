@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/hidden"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
@@ -101,7 +102,7 @@ func loadConfigOperatorForConnection(pluginName string) {
 	}
 }
 
-func delConfKey(configOperatorKey, confKey, language string) error {
+func delConfKey(configOperatorKey, confKey, language string) (err error) {
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
@@ -112,24 +113,45 @@ func delConfKey(configOperatorKey, confKey, language string) error {
 
 	cfgOps.DeleteConfKey(confKey)
 
-	err := cfgOps.SaveCfgToStorage()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
 }
 
-func DelSourceConfKey(plgName, confKey, language string) error {
+func DelSourceConfKey(plgName, confKey, language string) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
 	return delConfKey(configOperatorKey, confKey, language)
 }
 
-func DelSinkConfKey(plgName, confKey, language string) error {
+func DelSinkConfKey(plgName, confKey, language string) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
 	return delConfKey(configOperatorKey, confKey, language)
 }
 
-func DelConnectionConfKey(plgName, confKey, language string) error {
+func DelConnectionConfKey(plgName, confKey, language string) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	configOperatorKey := fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, plgName)
 	return delConfKey(configOperatorKey, confKey, language)
 }
@@ -152,6 +174,13 @@ func GetConfOperator(configOperatorKey string) (conf.ConfigOperator, bool) {
 }
 
 func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
 
@@ -172,6 +201,13 @@ func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 }
 
 func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
@@ -195,14 +231,21 @@ func addSourceConfKeys(plgName string, configurations YamlConfigurations) (err e
 	return nil
 }
 
-func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
+func AddSourceConfKey(plgName, confKey, language string, content []byte) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
 	configOperatorKey := fmt.Sprintf(SourceCfgOperatorKeyTemplate, plgName)
 
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
+	err = json.Unmarshal(content, &reqField)
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
 	}
@@ -227,14 +270,21 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) error {
 	return nil
 }
 
-func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
+func AddSinkConfKey(plgName, confKey, language string, content []byte) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
 	configOperatorKey := fmt.Sprintf(SinkCfgOperatorKeyTemplate, plgName)
 
 	reqField := make(map[string]interface{})
-	err := json.Unmarshal(content, &reqField)
+	err = json.Unmarshal(content, &reqField)
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "type_conversion_fail"), plgName, err)
 	}
@@ -260,7 +310,14 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) error {
 	return nil
 }
 
-func addSinkConfKeys(plgName string, cf YamlConfigurations) error {
+func addSinkConfKeys(plgName string, cf YamlConfigurations) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
@@ -277,14 +334,21 @@ func addSinkConfKeys(plgName string, cf YamlConfigurations) error {
 
 	cfgOps.LoadConfContent(cf)
 
-	err := cfgOps.SaveCfgToStorage()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
 	}
 	return nil
 }
 
-func AddConnectionConfKey(plgName, confKey, language string, reqField map[string]interface{}) error {
+func AddConnectionConfKey(plgName, confKey, language string, reqField map[string]interface{}) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
@@ -302,14 +366,21 @@ func AddConnectionConfKey(plgName, confKey, language string, reqField map[string
 		return err
 	}
 
-	err := cfgOps.SaveCfgToStorage()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
 }
 
-func addConnectionConfKeys(plgName string, cf YamlConfigurations) error {
+func addConnectionConfKeys(plgName string, cf YamlConfigurations) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.Lock()
 	defer ConfigManager.lock.Unlock()
 
@@ -326,7 +397,7 @@ func addConnectionConfKeys(plgName string, cf YamlConfigurations) error {
 
 	cfgOps.LoadConfContent(cf)
 
-	err := cfgOps.SaveCfgToStorage()
+	err = cfgOps.SaveCfgToStorage()
 	if err != nil {
 		return fmt.Errorf(`%s.%v`, configOperatorKey, err)
 	}
@@ -334,6 +405,13 @@ func addConnectionConfKeys(plgName string, cf YamlConfigurations) error {
 }
 
 func GetResources(language string) (b []byte, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.ConfKeyError, err.Error())
+			}
+		}
+	}()
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
 	var srcResources []map[string]string

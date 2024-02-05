@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func init() {
@@ -96,4 +97,40 @@ func TestConfKeyReplace(t *testing.T) {
 	require.NoError(t, err)
 	replaced = replacePasswdForConfig("source", "sql", "mysql", a2)
 	require.Equal(t, a1, replaced)
+}
+
+func TestConfKeyErr(t *testing.T) {
+	err := DelSourceConfKey("1", "2", "3")
+	require.Error(t, err)
+	ewc, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = DelSinkConfKey("1", "2", "3")
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = DelConnectionConfKey("1", "2", "3")
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	_, err = GetYamlConf("1", "2")
+	require.Error(t, err)
+	ewc, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
+
+	err = AddSourceConfKey("1", "2", "3", nil)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	err = AddSinkConfKey("1", "2", "3", nil)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
 }
