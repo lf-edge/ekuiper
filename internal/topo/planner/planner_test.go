@@ -4750,7 +4750,7 @@ func TestTransformSourceNode(t *testing.T) {
 		},
 	}
 	props := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt"})
-	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "", props, &api.RuleOption{SendError: false})
+	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props, &api.RuleOption{SendError: false})
 	assert.NoError(t, err)
 	decodeNode, err := node.NewDecodeOp("2_decoder", "test", &api.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
 	assert.NoError(t, err)
@@ -4759,7 +4759,7 @@ func TestTransformSourceNode(t *testing.T) {
 	decodeNode2, err := node.NewDecodeOp("3_decoder", "test", &api.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
 	assert.NoError(t, err)
 	props2 := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", CONF_KEY: "testCom"})
-	srcNode2, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "", props2, &api.RuleOption{SendError: false})
+	srcNode2, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props2, &api.RuleOption{SendError: false})
 	assert.NoError(t, err)
 
 	testCases := []struct {
@@ -4815,7 +4815,8 @@ func TestTransformSourceNode(t *testing.T) {
 				streamStmt: &ast.StreamStmt{
 					StreamType: ast.TypeStream,
 					Options: &ast.Options{
-						TYPE: "mqtt",
+						TYPE:       "mqtt",
+						DATASOURCE: "topic1",
 					},
 				},
 				streamFields: schema,
@@ -4836,8 +4837,9 @@ func TestTransformSourceNode(t *testing.T) {
 				streamStmt: &ast.StreamStmt{
 					StreamType: ast.TypeStream,
 					Options: &ast.Options{
-						TYPE:     "mqtt",
-						CONF_KEY: "testCom",
+						TYPE:       "mqtt",
+						DATASOURCE: "topic1",
+						CONF_KEY:   "testCom",
 					},
 				},
 				streamFields: schema,
@@ -4855,7 +4857,7 @@ func TestTransformSourceNode(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceNode, ops, err := transformSourceNode(tc.plan, nil, "test", &api.RuleOption{}, 1)
+			sourceNode, ops, _, err := transformSourceNode(tc.plan, nil, "test", &api.RuleOption{}, 1)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.node, sourceNode)
 			assert.Equal(t, len(tc.ops), len(ops))
@@ -4980,7 +4982,9 @@ func TestPlanTopo(t *testing.T) {
 	}
 	streamSqls := map[string]string{
 		"src1": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt");`,
-		"src2": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
+		"src2": `CREATE STREAM src2 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
+		"src3": `CREATE STREAM src3 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSel");`,
+		"src4": `CREATE STREAM src4 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSel",SHARED="true");`,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{
@@ -4991,6 +4995,22 @@ func TestPlanTopo(t *testing.T) {
 		err = kv.Set(name, string(s))
 		assert.NoError(t, err)
 	}
+	// add connectionSelector for meta
+	a1 := map[string]interface{}{
+		"connectionSelector": "mqtt.localConnection",
+	}
+	bs, err := json.Marshal(a1)
+	assert.NoError(t, err)
+	meta.InitYamlConfigManager()
+	dataDir, _ := conf.GetDataLoc()
+	err = os.MkdirAll(filepath.Join(dataDir, "sources"), 0o755)
+	assert.NoError(t, err)
+	err = meta.AddSourceConfKey("mqtt", "testSel", "", bs)
+	assert.NoError(t, err)
+	defer func() {
+		err = meta.DelSourceConfKey("mqtt", "testSel", "")
+		assert.NoError(t, err)
+	}()
 	tests := []struct {
 		name string
 		sql  string
@@ -5018,12 +5038,48 @@ func TestPlanTopo(t *testing.T) {
 			name: "testSharedMqttSplit",
 			sql:  `SELECT * FROM src2`,
 			topo: &api.PrintableTopo{
-				Sources: []string{"subtopo_source_src1"},
+				Sources: []string{"source_src2"},
 				Edges: map[string][]any{
-					"subtopo_source_src1": {
-						"subtopo_op_2_decoder",
+					"source_src2": {
+						"op_src2_2_decoder",
 					},
-					"subtopo_op_2_decoder": {
+					"op_src2_2_decoder": {
+						"op_3_project",
+					},
+					"op_3_project": {
+						"sink_sink_memory_log",
+					},
+				},
+			},
+		},
+		{
+			name: "testSharedConnSplit",
+			sql:  `SELECT * FROM src3`,
+			topo: &api.PrintableTopo{
+				Sources: []string{"source_mqtt.localConnection/topic1"},
+				Edges: map[string][]any{
+					"source_mqtt.localConnection/topic1": {
+						"op_2_decoder",
+					},
+					"op_2_decoder": {
+						"op_3_project",
+					},
+					"op_3_project": {
+						"sink_sink_memory_log",
+					},
+				},
+			},
+		},
+		{
+			name: "testSharedNodeWithSharedConnSplit",
+			sql:  `SELECT * FROM src4`,
+			topo: &api.PrintableTopo{
+				Sources: []string{"source_mqtt.localConnection/topic1"},
+				Edges: map[string][]any{
+					"source_mqtt.localConnection/topic1": {
+						"op_src4_2_decoder",
+					},
+					"op_src4_2_decoder": {
 						"op_3_project",
 					},
 					"op_3_project": {

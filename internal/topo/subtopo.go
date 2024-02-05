@@ -16,6 +16,7 @@ package topo
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -35,9 +36,10 @@ type SrcSubTopo struct {
 
 	// creation state
 	source node.DataSourceNode
-	ops    []node.OperatorNode
-	tail   api.Emitter
-	topo   *api.PrintableTopo
+	// May be empty
+	ops  []node.OperatorNode
+	tail api.Emitter
+	topo *api.PrintableTopo
 
 	// runtime state
 	// Ref state, affect the pool. Update when rule created or stopped
@@ -116,12 +118,12 @@ func (s *SrcSubTopo) GetName() string {
 
 func (s *SrcSubTopo) SubMetrics() (keys []string, values []any) {
 	for i, v := range s.source.GetMetrics() {
-		keys = append(keys, "source_subtopo_"+s.source.GetName()+"_0_"+metric.MetricNames[i])
+		keys = append(keys, fmt.Sprintf("source_%s_0_%s", s.source.GetName(), metric.MetricNames[i]))
 		values = append(values, v)
 	}
 	for _, so := range s.ops {
 		for i, v := range so.GetMetrics() {
-			keys = append(keys, "op_subtopo_"+so.GetName()+"_0_"+metric.MetricNames[i])
+			keys = append(keys, fmt.Sprintf("op_%s_%s_0_%s", s.name, so.GetName(), metric.MetricNames[i]))
 			values = append(values, v)
 		}
 	}

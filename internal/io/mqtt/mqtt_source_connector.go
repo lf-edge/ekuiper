@@ -20,20 +20,22 @@ import (
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
+// SourceConnector is the connector for mqtt source
+// When sharing the same connection, each topic will have one single sourceConnector as the shared source node
 type SourceConnector struct {
 	tpc   string
 	cfg   *Conf
 	props map[string]any
 
-	cli      api.MessageClient
-	messages chan any
+	cli      *Connection
+	consumer chan<- api.SourceTuple
 }
 
 type Conf struct {
@@ -42,6 +44,9 @@ type Conf struct {
 }
 
 func (ms *SourceConnector) Configure(topic string, props map[string]any) error {
+	if topic == "" {
+		return fmt.Errorf("topic cannot be empty")
+	}
 	cfg := &Conf{
 		BufferLen: 10240,
 	}
@@ -49,7 +54,10 @@ func (ms *SourceConnector) Configure(topic string, props map[string]any) error {
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
-	// TODO connection prop validate
+	_, err = validateConfig(props)
+	if err != nil {
+		return err
+	}
 	ms.props = props
 	ms.cfg = cfg
 	ms.tpc = topic
@@ -60,59 +68,73 @@ func (ms *SourceConnector) Ping(dataSource string, props map[string]interface{})
 	if err := ms.Configure(dataSource, props); err != nil {
 		return err
 	}
-	defer func() {
-		_ = ms.Close(context.Background())
-	}()
-	cli, err := clients.GetClient("mqtt", props)
+	cli, err := CreateClient(context.Background(), "", ms.props)
 	if err != nil {
 		return err
 	}
+	defer cli.Close()
 	return cli.Ping()
 }
 
 func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	cli, err := clients.GetClient("mqtt", ms.props)
+	cli, err := GetConnection(ctx, ms.props)
 	ms.cli = cli
 	return err
 }
 
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
+// Run open before subscribe
 func (ms *SourceConnector) Subscribe(ctx api.StreamContext) error {
-	messages := make(chan any, ms.cfg.BufferLen)
-	topics := []api.TopicChannel{{Topic: ms.tpc, Messages: messages}}
-	subParam := map[string]interface{}{
-		"qos": byte(ms.cfg.Qos),
-	}
-	ms.messages = messages
-	return ms.cli.Subscribe(ctx, topics, nil, subParam)
+	return ms.cli.Subscribe(ms.tpc, &SubscriptionInfo{
+		Qos: byte(ms.cfg.Qos),
+		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
+			ms.onMessage(ctx, message)
+		},
+		ErrHandler: func(err error) {
+			ms.onError(ctx, err)
+		},
+	})
 }
 
-// Open is a continuous process, it keeps reading data from mqtt broker
-func (ms *SourceConnector) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
-	ctx.GetLogger().Infof("Successfully subscribed to topic %s.", ms.tpc)
-	for {
-		select {
-		case <-ctx.Done():
-			ctx.GetLogger().Infof("Exit subscription to mqtt messagebus topic %s.", ms.tpc)
-			return
-		case env := <-ms.messages:
-			rcvTime := conf.GetNow()
-			// Paho already guarantee this must be a pahoMqtt.Message
-			msg := env.(pahoMqtt.Message)
-			infra.SendThrough(ctx, api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
-				"topic":     msg.Topic(),
-				"qos":       msg.Qos(),
-				"messageId": msg.MessageID(),
-			}, rcvTime), consumer)
-		}
+func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message) {
+	if ms.consumer == nil {
+		// The consumer is closed, no need to process the message
+		ctx.GetLogger().Debugf("The consumer is closed, skip to process the message %s from topic %s", string(msg.Payload()), msg.Topic())
+		return
 	}
+	ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
+	rcvTime := conf.GetNow()
+	infra.SendThrough(ctx, api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
+		"topic":     msg.Topic(),
+		"qos":       msg.Qos(),
+		"messageId": msg.MessageID(),
+	}, rcvTime), ms.consumer)
+}
+
+func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
+	if ms.consumer == nil {
+		// The consumer is closed, no need to process the message
+		ctx.GetLogger().Debugf("The consumer is closed, skip to send the error")
+		return
+	}
+	infra.SendThrough(ctx, &xsql.ErrorSourceTuple{
+		Error: err,
+	}, ms.consumer)
+}
+
+// Open is a continuous process, it keeps reading data from mqtt broker. It starts a go routine to read data and send to consumer channel
+// Run open then subscribe
+func (ms *SourceConnector) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
+	ctx.GetLogger().Infof("Open connector reader")
+	ms.consumer = consumer
 }
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
-		clients.ReleaseClient(ctx, ms.cli)
+		DetachConnection(ms.cli.GetClientId(), ms.tpc)
+		ms.cli = nil
 	}
 	return nil
 }

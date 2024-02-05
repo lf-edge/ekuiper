@@ -39,13 +39,13 @@ func TestSourceConnector(t *testing.T, r api.SourceConnector, expected []api.Sou
 	// connect, subscribe and read data
 	err := r.Connect(ctx)
 	assert.NoError(t, err)
-	err = r.Subscribe(ctx)
-	assert.NoError(t, err)
 	go r.Open(ctx, consumer, ctrlCh)
 	defer func() {
 		err = r.Close(ctx)
 		assert.NoError(t, err)
 	}()
+	err = r.Subscribe(ctx)
+	assert.NoError(t, err)
 	// Send data
 	go func() {
 		sender()

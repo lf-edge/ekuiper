@@ -487,7 +487,7 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 				if err != nil {
 					return nil, ILLEGAL, "", nil, err
 				}
-				srcNode, ops, e := transformSourceNode(p, nil, rule.Id, rule.Options, 1)
+				srcNode, ops, _, e := transformSourceNode(p, nil, rule.Id, rule.Options, 1)
 				if e != nil {
 					return nil, ILLEGAL, "", nil, e
 				}
@@ -524,7 +524,7 @@ func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.Ke
 			timestampField:  sourceOption.TIMESTAMP,
 			timestampFormat: sourceOption.TIMESTAMP_FORMAT,
 		}.Init()
-		srcNode, ops, e := transformSourceNode(p, nil, rule.Id, rule.Options, 1)
+		srcNode, ops, _, e := transformSourceNode(p, nil, rule.Id, rule.Options, 1)
 		if e != nil {
 			return nil, ILLEGAL, "", nil, e
 		}

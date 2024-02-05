@@ -367,6 +367,7 @@ func (t *Tuple) Clone() CloneAbleRow {
 		Emitter:      t.Emitter,
 		Timestamp:    t.Timestamp,
 		Message:      t.Message,
+		Raw:          t.Raw,
 		Metadata:     t.Metadata,
 		AffiliateRow: t.AffiliateRow.Clone(),
 	}
