@@ -30,6 +30,22 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
+func TestOneOfDecode(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test5.proto", "", "Book")
+	require.NoError(t, err)
+	v, err := c.Decode([]byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x1A, 0x04, 0x31, 0x32, 0x33, 0x34})
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{
+		"a": "123", "c": "1234",
+	}, v)
+
+	v, err = c.Decode([]byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x22, 0x04, 0x31, 0x32, 0x33, 0x34})
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{
+		"a": "123", "d": "1234",
+	}, v)
+}
+
 func TestEncode(t *testing.T) {
 	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")
 	if err != nil {
