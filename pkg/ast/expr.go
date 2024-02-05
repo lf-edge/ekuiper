@@ -65,7 +65,7 @@ type ColonExpr struct {
 func (c *ColonExpr) ValidateExpr() error {
 	if st, ok := c.Start.(*IntegerLiteral); ok {
 		if end, ok := c.End.(*IntegerLiteral); ok {
-			if st.Val >= end.Val {
+			if st.Val >= 0 && end.Val >= 0 && st.Val >= end.Val {
 				return errors.New("colon start value can't be greater than end value")
 			}
 		}
