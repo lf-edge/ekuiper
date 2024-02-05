@@ -76,11 +76,11 @@ func (m *SourceConnectorNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		// subscribe and send data through channel
 		// Align to old code, use a channel to send data
 		buffer := make(chan api.SourceTuple, m.buffLen)
+		go m.s.Open(ctx, buffer, ctrlCh)
 		err = m.s.Subscribe(ctx)
 		if err != nil {
 			return err
 		}
-		go m.s.Open(ctx, buffer, ctrlCh)
 		for {
 			m.statManager.SetBufferLength(int64(len(buffer)))
 			select {
@@ -89,6 +89,10 @@ func (m *SourceConnectorNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 				return nil
 			case vu8 := <-buffer:
 				ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, vu8)
+				if e, ok := vu8.(*xsql.ErrorSourceTuple); ok {
+					m.statManager.IncTotalExceptions(e.Error.Error())
+					break
+				}
 				m.statManager.ProcessTimeStart()
 				m.statManager.IncTotalRecordsIn()
 				if raw, ok := vu8.(api.RawTuple); ok && raw.Raw() != nil {

@@ -15,7 +15,6 @@
 package mqtt
 
 import (
-	"fmt"
 	"log"
 	"strings"
 	"testing"
@@ -58,7 +57,7 @@ func TestPing(t *testing.T) {
 			props: map[string]any{
 				"server": make(chan any),
 			},
-			err: "failed to get config,",
+			err: "1 error(s) decoding:\n\n* 'server' expected type 'string'",
 		},
 		{
 			name: "Runtime error",
@@ -74,7 +73,7 @@ func TestPing(t *testing.T) {
 			err := sc.Ping("demo", tt.props)
 			if tt.err != "" {
 				assert.Error(t, err)
-				require.True(t, strings.HasPrefix(err.Error(), tt.err), fmt.Sprintf("actual error: %v", err))
+				require.True(t, strings.HasPrefix(err.Error(), tt.err))
 			} else {
 				assert.NoError(t, err)
 			}

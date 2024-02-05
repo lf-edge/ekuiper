@@ -33,7 +33,7 @@ func TestSubtopoLC(t *testing.T) {
 	subTopo, existed := GetSubTopo("shared")
 	assert.False(t, existed)
 	// Test creation
-	srcNode := &mockSrc{name: "src1"}
+	srcNode := &mockSrc{name: "shared"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
 	subTopo.AddOperator([]api.Emitter{srcNode}, opNode)
@@ -46,9 +46,9 @@ func TestSubtopoLC(t *testing.T) {
 	var tch chan<- any = opNode.ch
 	assert.Equal(t, tch, srcNode.outputs[0])
 	ptopo := &api.PrintableTopo{
-		Sources: []string{"subtopo_source_src1"},
+		Sources: []string{"source_shared"},
 		Edges: map[string][]any{
-			"subtopo_source_src1": {"subtopo_op_op1"},
+			"source_shared": {"op_shared_op1"},
 		},
 	}
 	assert.Equal(t, ptopo, subTopo.topo)
@@ -64,7 +64,7 @@ func TestSubtopoLC(t *testing.T) {
 	// Metrics test
 	metrics := []any{0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0}
 	assert.Equal(t, metrics, subTopo.GetMetrics())
-	keys := []string{"source_subtopo_src1_0_records_in_total", "source_subtopo_src1_0_records_out_total", "source_subtopo_src1_0_messages_processed_total", "source_subtopo_src1_0_process_latency_us", "source_subtopo_src1_0_buffer_length", "source_subtopo_src1_0_last_invocation", "source_subtopo_src1_0_exceptions_total", "source_subtopo_src1_0_last_exception", "source_subtopo_src1_0_last_exception_time", "op_subtopo_op1_0_records_in_total", "op_subtopo_op1_0_records_out_total", "op_subtopo_op1_0_messages_processed_total", "op_subtopo_op1_0_process_latency_us", "op_subtopo_op1_0_buffer_length", "op_subtopo_op1_0_last_invocation", "op_subtopo_op1_0_exceptions_total", "op_subtopo_op1_0_last_exception", "op_subtopo_op1_0_last_exception_time"}
+	keys := []string{"source_shared_0_records_in_total", "source_shared_0_records_out_total", "source_shared_0_messages_processed_total", "source_shared_0_process_latency_us", "source_shared_0_buffer_length", "source_shared_0_last_invocation", "source_shared_0_exceptions_total", "source_shared_0_last_exception", "source_shared_0_last_exception_time", "op_shared_op1_0_records_in_total", "op_shared_op1_0_records_out_total", "op_shared_op1_0_messages_processed_total", "op_shared_op1_0_process_latency_us", "op_shared_op1_0_buffer_length", "op_shared_op1_0_last_invocation", "op_shared_op1_0_exceptions_total", "op_shared_op1_0_last_exception", "op_shared_op1_0_last_exception_time"}
 	kk, vv := subTopo2.SubMetrics()
 	assert.Equal(t, len(keys), len(metrics))
 	assert.Equal(t, keys, kk)
@@ -152,9 +152,9 @@ func TestSubtopoRunError(t *testing.T) {
 
 func TestSubtopoPrint(t *testing.T) {
 	tt := &api.PrintableTopo{
-		Sources: []string{"subtopo_source_src1"},
+		Sources: []string{"source_shared"},
 		Edges: map[string][]any{
-			"subtopo_source_src1": {"subtopo_op_op1"},
+			"source_shared": {"op_shared_op1"},
 		},
 	}
 	subTopo, _ := GetSubTopo("shared")
@@ -166,15 +166,15 @@ func TestSubtopoPrint(t *testing.T) {
 	}
 	subTopo.MergeSrc(ptopo)
 	assert.Equal(t, &api.PrintableTopo{
-		Sources: []string{"mqtt_src1", "subtopo_source_src1"},
-		Edges:   map[string][]any{"subtopo_source_src1": {"subtopo_op_op1"}},
+		Sources: []string{"mqtt_src1", "source_shared"},
+		Edges:   map[string][]any{"source_shared": {"op_shared_op1"}},
 	}, ptopo)
 	subTopo.LinkTopo(ptopo, "project")
 	assert.Equal(t, &api.PrintableTopo{
-		Sources: []string{"mqtt_src1", "subtopo_source_src1"},
+		Sources: []string{"mqtt_src1", "source_shared"},
 		Edges: map[string][]any{
-			"subtopo_op_op1":      {"op_project"},
-			"subtopo_source_src1": {"subtopo_op_op1"},
+			"op_shared_op1": {"op_project"},
+			"source_shared": {"op_shared_op1"},
 		},
 	}, ptopo)
 }
