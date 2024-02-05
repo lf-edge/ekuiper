@@ -74,20 +74,6 @@ func (p ProjectPlan) Init() *ProjectPlan {
 	return &p
 }
 
-func (p *ProjectPlan) ValidatePlan() error {
-	if err := p.baseLogicalPlan.ValidatePlan(); err != nil {
-		return err
-	}
-	for _, field := range p.fields {
-		if vExpr, ok := field.Expr.(ast.ValidateAbleExpr); ok {
-			if err := vExpr.ValidateExpr(); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 func (p *ProjectPlan) BuildExplainInfo() {
 	info := ""
 	if p.fields != nil && len(p.fields) != 0 {

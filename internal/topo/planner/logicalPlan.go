@@ -23,7 +23,6 @@ import (
 
 type LogicalPlan interface {
 	ExplainInfo
-	ValidatePlan() error
 	Children() []LogicalPlan
 	SetChildren(children []LogicalPlan)
 	// PushDownPredicate pushes down the filter in the filter/where/on/having clauses as deeply as possible.
@@ -69,15 +68,6 @@ func (p *baseLogicalPlan) Explain() string {
 	jsonEncoder.SetEscapeHTML(false)
 	jsonEncoder.Encode(p.ExplainInfo)
 	return bf.String()
-}
-
-func (p *baseLogicalPlan) ValidatePlan() error {
-	for _, child := range p.children {
-		if err := child.ValidatePlan(); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (p *baseLogicalPlan) BuildExplainInfo() {

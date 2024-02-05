@@ -52,6 +52,10 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	}
 	// validation
 	streamsFromStmt := xsql.GetStreams(stmt)
+	// validate stmt
+	if err := validateStmt(stmt); err != nil {
+		return nil, err
+	}
 	//if len(sources) > 0 && len(sources) != len(streamsFromStmt) {
 	//	return nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 	//}
@@ -67,16 +71,25 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, err
 	}
-	// validate logical plan
-	if err := lp.ValidatePlan(); err != nil {
-		return nil, err
-	}
-
 	tp, err := createTopo(rule, lp, mockSourcesProp, sinks, streamsFromStmt)
 	if err != nil {
 		return nil, err
 	}
 	return tp, nil
+}
+
+func validateStmt(stmt *ast.SelectStatement) error {
+	var vErr error
+	ast.WalkFunc(stmt, func(n ast.Node) bool {
+		if validateAbleExpr, ok := n.(ast.ValidateAbleExpr); ok {
+			if err := validateAbleExpr.ValidateExpr(); err != nil {
+				vErr = err
+				return false
+			}
+		}
+		return true
+	})
+	return vErr
 }
 
 func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {

@@ -16,19 +16,16 @@ package planner
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
-func TestPlanValidate(t *testing.T) {
+func TestStmtValidate(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	if err != nil {
 		t.Error(err)
@@ -74,20 +71,9 @@ func TestPlanValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.sql, func(t *testing.T) {
-			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-			assert.NoError(t, err)
-			p, err := createLogicalPlan(stmt, &api.RuleOption{
-				IsEventTime:        false,
-				LateTol:            0,
-				Concurrency:        0,
-				BufferLength:       0,
-				SendMetaToSink:     false,
-				Qos:                0,
-				CheckpointInterval: 0,
-				SendError:          true,
-			}, kv)
+			stmt, err := xsql.GetStatementFromSql(tt.sql)
 			require.NoError(t, err)
-			require.Error(t, p.ValidatePlan())
+			require.Error(t, validateStmt(stmt))
 		})
 	}
 }
