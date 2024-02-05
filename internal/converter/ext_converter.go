@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build schema || !core || full
+//go:build schema || !core
 
 package converter
 
