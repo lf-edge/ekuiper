@@ -46,6 +46,22 @@ func TestOneOfDecode(t *testing.T) {
 	}, v)
 }
 
+func TestOneOfEncode(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test5.proto", "", "Book")
+	require.NoError(t, err)
+	b, err := c.Encode(map[string]interface{}{
+		"a": "123", "c": "1234",
+	})
+	require.NoError(t, err)
+	require.Equal(t, []byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x1A, 0x04, 0x31, 0x32, 0x33, 0x34}, b)
+
+	b, err = c.Encode(map[string]interface{}{
+		"a": "123", "d": "1234",
+	})
+	require.NoError(t, err)
+	require.Equal(t, []byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x22, 0x04, 0x31, 0x32, 0x33, 0x34}, b)
+}
+
 func TestEncode(t *testing.T) {
 	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")
 	if err != nil {

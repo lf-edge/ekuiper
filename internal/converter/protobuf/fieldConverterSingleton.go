@@ -65,8 +65,21 @@ func GetFieldConverter() *FieldConverter {
 func (fc *FieldConverter) encodeMap(im *desc.MessageDescriptor, i interface{}) (*dynamic.Message, error) {
 	result := mf.NewDynamicMessage(im)
 	fields := im.GetFields()
+	alreadySet := make(map[string]struct{})
 	if m, ok := i.(map[string]interface{}); ok {
 		for _, field := range fields {
+			if field.GetOneOf() != nil {
+				alreadySetOtherChoice := false
+				for _, choice := range field.GetOneOf().GetChoices() {
+					if _, ok := alreadySet[choice.GetName()]; ok {
+						alreadySetOtherChoice = true
+						break
+					}
+				}
+				if alreadySetOtherChoice {
+					continue
+				}
+			}
 			v, ok := m[field.GetName()]
 			if !ok {
 				if field.IsRequired() {
@@ -80,6 +93,7 @@ func (fc *FieldConverter) encodeMap(im *desc.MessageDescriptor, i interface{}) (
 				return nil, err
 			}
 			result.SetFieldByName(field.GetName(), fv)
+			alreadySet[field.GetName()] = struct{}{}
 		}
 	}
 	return result, nil
