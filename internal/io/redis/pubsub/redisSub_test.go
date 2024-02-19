@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
@@ -70,6 +71,17 @@ func TestSourceConfigure(t *testing.T) {
 	} else if err.Error() != expErrStr {
 		t.Errorf("error mismatch:\n\nexp=%v\n\ngot=%v\n\n", expErrStr, err.Error())
 	}
+}
+
+func TestRedisDB(t *testing.T) {
+	s := RedisSub()
+	prop := map[string]interface{}{
+		"address":  "",
+		"db":       "20",
+		"channels": []string{DefaultChannel},
+	}
+	err := s.Configure("", prop)
+	require.Error(t, err)
 }
 
 func TestSourceDecompressorError(t *testing.T) {

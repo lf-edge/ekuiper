@@ -51,6 +51,9 @@ func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
+	if cfg.Db < 0 || cfg.Db > 15 {
+		return fmt.Errorf("redisSub db should be in range 0-15")
+	}
 	r.conf = cfg
 	r.conn = redis.NewClient(&redis.Options{
 		Addr:     r.conf.Address,
@@ -66,10 +69,6 @@ func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
 		}
 		r.decompressor = dc
 	}
-	if cfg.Db < 0 || cfg.Db > 15 {
-		return fmt.Errorf("redisSub db should be in range 0-15")
-	}
-
 	// Ping Redis to check if the connection is alive
 	err = r.conn.Ping(context.Background()).Err()
 	if err != nil {
