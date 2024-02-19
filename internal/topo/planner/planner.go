@@ -127,8 +127,10 @@ func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 				if err != nil {
 					return nil, err
 				}
-				if err := s.Configure(props); err != nil {
-					return nil, err
+				if s != nil {
+					if err := s.Configure(props); err != nil {
+						return nil, err
+					}
 				}
 				tp.AddSink(inputs, node.NewSinkNode(fmt.Sprintf("%s_%d", name, i), name, props))
 			}
