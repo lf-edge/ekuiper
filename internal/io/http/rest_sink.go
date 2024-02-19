@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,6 +51,8 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 
 	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
 	if err != nil {
+		originErr := err
+		logger.Errorf("rest sink meet error:%v", originErr.Error())
 		e := err.Error()
 		if urlErr, ok := err.(*url.Error); ok {
 			// consider timeout and temporary error as recoverable
@@ -58,7 +60,8 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 				e = errorx.IOErr
 			}
 		}
-		return fmt.Errorf(`%s: rest sink fails to send out the data: method=%s path="%s" request_body="%s"`,
+		return fmt.Errorf(`%s: rest sink fails to send out the data:err=%s method=%s path="%s" request_body="%s"`,
+			originErr.Error(),
 			e,
 			ms.config.Method,
 			ms.config.Url,

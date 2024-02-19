@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package sql
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
@@ -98,11 +99,19 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			rows, err := m.db.Query(query)
 			if err != nil {
 				logger.Errorf("sql source meet error, try to reconnection, err:%v, query:%v", err, query)
+				if !isConnectionError(err) {
+					consumer <- &xsql.ErrorSourceTuple{
+						Error: err,
+					}
+					continue
+				}
 				err2 := m.Reconnect()
 				if err2 != nil {
 					consumer <- &xsql.ErrorSourceTuple{
 						Error: fmt.Errorf("reconnect failed, reconnect err:%v", err2),
 					}
+				} else {
+					logger.Info("sql source reconnect successfully")
 				}
 				continue
 			}
@@ -170,4 +179,8 @@ func (m *sqlsource) Reconnect() error {
 
 func GetSource() api.Source {
 	return &sqlsource{}
+}
+
+func isConnectionError(err error) bool {
+	return strings.Contains(err.Error(), "connection refused")
 }
