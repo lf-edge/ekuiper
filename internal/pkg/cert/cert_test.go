@@ -137,7 +137,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 			name: "no cert/key",
 			args: args{
 				Opts: TlsConfigurationOptions{
-					SkipCertVerify:       true,
+					SkipCertVerify:       false,
 					CertFile:             "not_exist.crt",
 					KeyFile:              "not_exist.key",
 					CaFile:               "",
@@ -152,7 +152,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 			name: "no cert/key",
 			args: args{
 				Opts: TlsConfigurationOptions{
-					SkipCertVerify:       true,
+					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
 					CaFile:               "not_exist.crt",
@@ -162,6 +162,25 @@ func TestGenerateTLSForClient(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+		},
+		{
+			name: "skip check",
+			args: args{
+				Opts: TlsConfigurationOptions{
+					SkipCertVerify:       true,
+					CertFile:             "",
+					KeyFile:              "",
+					CaFile:               "not_exist.crt",
+					RenegotiationSupport: "",
+					TLSMinVersion:        "",
+				},
+			},
+			want: &tls.Config{
+				InsecureSkipVerify: true,
+				MinVersion:         tls.VersionTLS12,
+				Renegotiation:      tls.RenegotiateNever,
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
