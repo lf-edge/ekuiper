@@ -561,5 +561,5 @@ func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
 
 // Broadcast Override defaultNode
 func (m *SinkNode) Broadcast(_ interface{}) {
-	conf.Log.Errorf("sink %s cannot add broadcast", m.name)
+	// do nothing, may be called by checkpoint
 }
