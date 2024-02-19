@@ -83,6 +83,13 @@ func createRule(name, ruleJson string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid rule json: %v", err)
 	}
+
+	// validate Plan before create rule
+	_, err = planner.Plan(r)
+	if err != nil {
+		return "", err
+	}
+
 	// Store to KV
 	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
 	if err != nil {

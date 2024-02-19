@@ -66,6 +66,9 @@ func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
 		}
 		r.decompressor = dc
 	}
+	if cfg.Db < 0 || cfg.Db > 15 {
+		return fmt.Errorf("redisSub db should be in range 0-15")
+	}
 
 	// Ping Redis to check if the connection is alive
 	err = r.conn.Ping(context.Background()).Err()
