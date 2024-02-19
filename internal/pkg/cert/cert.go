@@ -170,6 +170,10 @@ func GenerateTLSForClient(
 		Renegotiation:      getRenegotiationSupport(Opts.RenegotiationSupport),
 		MinVersion:         getTLSMinVersion(Opts.TLSMinVersion),
 	}
+	if tlsConfig.InsecureSkipVerify {
+		return tlsConfig, nil
+	}
+
 	if !isCertDefined(Opts) {
 		tlsConfig.Certificates = nil
 	} else {
