@@ -77,7 +77,7 @@ func TestRedisDB(t *testing.T) {
 	s := RedisSub()
 	prop := map[string]interface{}{
 		"address":  "",
-		"db":       "20",
+		"db":       20,
 		"channels": []string{DefaultChannel},
 	}
 	err := s.Configure("", prop)
