@@ -640,21 +640,22 @@ func TestRestTestSuite(t *testing.T) {
 }
 
 func (suite *ServerTestSuite) TestCreateInValidSinkRule() {
-	sql := `Create Stream test (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
-	var reply string
-	err := suite.s.Stream(sql, &reply)
+	var sql, reply string
+	var err error
+	sql = `Create Stream test543 (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+	err = suite.s.Stream(sql, &reply)
 	require.NoError(suite.T(), err)
 	reply = ""
-	rule := `{"id":"rule","sql":"select * from test","actions":[{"mqtt":{"server":"tcp://docker.for.mac.host.internal:1883","topic":"collect/labels","qos":100,"clientId":"center","sendSingle":true}}]}`
-	ruleId := "myRule"
+	rule := `{"id":"rule","sql":"select * from test543","actions":[{"mqtt":{"server":"tcp://docker.for.mac.host.internal:1883","topic":"collect/labels","qos":100,"clientId":"center","sendSingle":true}}]}`
+	ruleId := "rule"
 	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
 	err = suite.s.CreateRule(args, &reply)
 	require.Error(suite.T(), err)
 }
 
 func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
+	reply := ""
 	sql := `Create Stream test (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
-	var reply string
 	err := suite.s.Stream(sql, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Stream test is created.\n", reply)
