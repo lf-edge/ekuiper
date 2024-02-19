@@ -390,6 +390,10 @@
         {
           "title": "监控",
           "path": "operation/usage/monitor_with_prometheus"
+        },
+        {
+          "title": "错误码",
+          "path": "operation/usage/error_code"
         }
       ]
     },
