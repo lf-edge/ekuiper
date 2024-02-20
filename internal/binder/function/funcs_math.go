@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -278,7 +278,7 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				r := math.Log2(v)
+				r := math.Log(v)
 				if math.IsNaN(r) {
 					return nil, true
 				} else {
