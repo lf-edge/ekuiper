@@ -82,9 +82,20 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	}
 	conf.Log.Infof("Connect MQTT broker %s with TLS configs", ms.srv)
 	ms.tls = tlsConfig
+	if err := ms.checkMQTTServer(); err != nil {
+		return err
+	}
 	ms.uName = cfg.Uname
 	ms.password = strings.Trim(cfg.Password, " ")
+	return nil
+}
 
+func (ms *MQTTClient) checkMQTTServer() error {
+	if ms.tls != nil && !ms.tls.InsecureSkipVerify {
+		if !strings.HasPrefix(strings.ToLower(ms.srv), "ssl://") {
+			return fmt.Errorf("mqtt server should start with ssl:// when tls enabled")
+		}
+	}
 	return nil
 }
 

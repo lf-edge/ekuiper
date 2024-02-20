@@ -15,9 +15,21 @@
 package mqtt
 
 import (
+	"crypto/tls"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
+
+func TestMQttClient(t *testing.T) {
+	ms := &MQTTClient{}
+	ms.srv = "mock"
+	ms.tls = &tls.Config{InsecureSkipVerify: false}
+	err := ms.checkMQTTServer()
+	require.Error(t, err)
+	require.Equal(t, "mqtt server should start with ssl:// when tls enabled", err.Error())
+}
 
 func TestMQTTClient_CfgValidate(t *testing.T) {
 	type args struct {
