@@ -90,6 +90,7 @@ func createRule(name, ruleJson string) (string, error) {
 		return err
 	})
 	if err != nil {
+		deleteRule(r.Id)
 		return r.Id, err
 	}
 
