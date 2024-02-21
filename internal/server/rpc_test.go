@@ -15,12 +15,14 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/meta"
@@ -219,4 +221,15 @@ func (suite *ServerTestSuite) TearDownTest() {
 
 func TestServerTestSuite(t *testing.T) {
 	suite.Run(t, new(ServerTestSuite))
+}
+
+func TestGetStoppedMessage(t *testing.T) {
+	message := `"123","123","123"`
+	r, err := getStoppedState(message)
+	require.NoError(t, err)
+	v := map[string]string{}
+	err = json.Unmarshal([]byte(r), &v)
+	require.NoError(t, err)
+	require.Equal(t, "stopped", v["status"])
+	require.Equal(t, message, v["message"])
 }
