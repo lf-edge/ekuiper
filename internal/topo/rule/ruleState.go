@@ -121,6 +121,11 @@ func NewRuleState(rule *api.Rule) (rs *RuleState, err error) {
 		ActionCh: make(chan ActionSignal),
 	}
 	rs.run()
+	defer func() {
+		if err != nil {
+			rs.Close()
+		}
+	}()
 	if tp, err := planner.Plan(rule); err != nil {
 		return rs, err
 	} else {
