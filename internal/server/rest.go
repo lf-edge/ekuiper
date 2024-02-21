@@ -1260,7 +1260,6 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 			}
 			// Update to db after validation
 			_, err = ruleProcessor.ExecUpdate(k, v)
-
 			if err != nil {
 				ruleSetRsp.Rules[k] = err.Error()
 				continue
