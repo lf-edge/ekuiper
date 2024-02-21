@@ -20,8 +20,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/hidden"
@@ -253,6 +255,10 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) (err er
 	var cfgOps conf.ConfigOperator
 	var found bool
 
+	if err := validateConf(plgName, reqField, true); err != nil {
+		return err
+	}
+
 	cfgOps, found = ConfigManager.cfgOperators[configOperatorKey]
 	if !found {
 		cfgOps = conf.NewConfigOperatorForSource(plgName)
@@ -268,6 +274,29 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) (err er
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "write_data_fail"), configOperatorKey, err)
 	}
 	return nil
+}
+
+func validateConf(pluginName string, props map[string]interface{}, isSource bool) error {
+	m := io.GetManager()
+	if !isSource {
+		s, err := m.Sink(pluginName)
+		if err != nil {
+			return err
+		}
+		if v, ok := s.(api.PropsValidator); ok {
+			return v.Validate(props)
+		}
+		return nil
+	} else {
+		s, err := m.Source(pluginName)
+		if err != nil {
+			return err
+		}
+		if v, ok := s.(api.PropsValidator); ok {
+			return v.Validate(props)
+		}
+		return nil
+	}
 }
 
 func AddSinkConfKey(plgName, confKey, language string, content []byte) (err error) {
@@ -289,6 +318,9 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) (err erro
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "type_conversion_fail"), plgName, err)
 	}
 	reqField = replacePasswdForConfig("sink", plgName, confKey, reqField)
+	if err := validateConf(plgName, reqField, false); err != nil {
+		return err
+	}
 
 	var cfgOps conf.ConfigOperator
 	var found bool
