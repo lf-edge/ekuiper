@@ -493,3 +493,32 @@ func TestConvertStreamInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateStmt(t *testing.T) {
+	store, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 (
+					id1 BIGINT,
+					temp BIGINT,
+					name string,
+					next STRUCT(NAME STRING, NID BIGINT)
+				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+	}
+	types := map[string]ast.StreamType{
+		"src1": ast.TypeStream,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		require.NoError(t, err)
+		store.Set(name, string(s))
+	}
+	sql := "select a from src1 group by b"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	err = validate(stmt)
+	require.Error(t, err)
+}
