@@ -134,3 +134,8 @@ func TestConfKeyErr(t *testing.T) {
 	_, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 }
+
+func TestValidateConf(t *testing.T) {
+	require.NoError(t, validateConf("websocket", map[string]interface{}{}, true))
+	require.NoError(t, validateConf("websocket", map[string]interface{}{"path": "/123"}, false))
+}
