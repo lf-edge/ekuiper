@@ -43,13 +43,13 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 
 var inResendTest bool
 
-type timeoutError struct{}
+type temporaryError struct{}
 
-func (e *timeoutError) Error() string {
+func (e *temporaryError) Error() string {
 	return "mockTimeoutError"
 }
 
-func (e *timeoutError) Temporary() bool { return true }
+func (e *temporaryError) Temporary() bool { return true }
 
 func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desUrl string) error {
 	logger := ctx.GetLogger()
@@ -61,21 +61,17 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 
 	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
 	if inResendTest {
-		err = &url.Error{Err: &timeoutError{}}
+		err = &url.Error{Err: &temporaryError{}}
 	}
 	if err != nil {
 		originErr := err
 		e := err.Error()
-		recoverAble := false
-		if urlErr, ok := err.(*url.Error); ok {
-			// consider timeout and temporary error as recoverable
-			if urlErr.Timeout() || urlErr.Temporary() {
-				recoverAble = true
-				e = errorx.IOErr
-			}
+		recoverAble := isRecoverAbleError(originErr)
+		if recoverAble {
+			e = errorx.IOErr
 		}
 		logger.Errorf("rest sink meet error:%v, recoverAble:%v, ruleID:%v", originErr.Error(), recoverAble, ctx.GetRuleId())
-		return fmt.Errorf(`%s: rest sink fails to send out the data:err=%s reconverAble=%v method=%s path="%s" request_body="%s"`,
+		return fmt.Errorf(`%s: rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
 			e,
 			originErr.Error(),
 			recoverAble,
@@ -105,6 +101,19 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 		}
 	}
 	return nil
+}
+
+func isRecoverAbleError(err error) bool {
+	if strings.Contains(err.Error(), "connection reset by peer") {
+		return true
+	}
+	if urlErr, ok := err.(*url.Error); ok {
+		// consider timeout and temporary error as recoverable
+		if urlErr.Timeout() || urlErr.Temporary() {
+			return true
+		}
+	}
+	return false
 }
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {

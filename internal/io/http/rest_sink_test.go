@@ -15,10 +15,12 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -527,5 +529,9 @@ func TestRestSinkIOError(t *testing.T) {
 		}
 		s.Close(ctx)
 	}
+}
 
+func TestIsRecoverAbleErr(t *testing.T) {
+	require.True(t, isRecoverAbleError(errors.New("connection reset by peer")))
+	require.True(t, isRecoverAbleError(&url.Error{Err: &temporaryError{}}))
 }
