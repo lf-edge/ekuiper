@@ -41,6 +41,16 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
+var inResendTest bool
+
+type timeoutError struct{}
+
+func (e *timeoutError) Error() string {
+	return "mockTimeoutError"
+}
+
+func (e *timeoutError) Temporary() bool { return true }
+
 func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desUrl string) error {
 	logger := ctx.GetLogger()
 	decodedData, _, err := ctx.TransformOutput(item)
@@ -50,19 +60,25 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 	}
 
 	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
+	if inResendTest {
+		err = &url.Error{Err: &timeoutError{}}
+	}
 	if err != nil {
 		originErr := err
-		logger.Errorf("rest sink meet error:%v", originErr.Error())
 		e := err.Error()
+		recoverAble := false
 		if urlErr, ok := err.(*url.Error); ok {
 			// consider timeout and temporary error as recoverable
 			if urlErr.Timeout() || urlErr.Temporary() {
+				recoverAble = true
 				e = errorx.IOErr
 			}
 		}
-		return fmt.Errorf(`%s: rest sink fails to send out the data:err=%s method=%s path="%s" request_body="%s"`,
-			originErr.Error(),
+		logger.Errorf("rest sink meet error:%v, recoverAble:%v, ruleID:%v", originErr.Error(), recoverAble, ctx.GetRuleId())
+		return fmt.Errorf(`%s: rest sink fails to send out the data:err=%s reconverAble=%v method=%s path="%s" request_body="%s"`,
 			e,
+			originErr.Error(),
+			recoverAble,
 			ms.config.Method,
 			ms.config.Url,
 			decodedData,
