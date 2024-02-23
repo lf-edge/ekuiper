@@ -295,12 +295,24 @@ func getRuleStatus(name string) (string, error) {
 				result = dst.String()
 			}
 		} else {
-			result = fmt.Sprintf(`{"status": "stopped", "message": "%s"}`, result)
+			return getStoppedState(result)
 		}
 		return result, nil
 	} else {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
+}
+
+func getStoppedState(message string) (string, error) {
+	s := map[string]string{
+		"status":  "stopped",
+		"message": message,
+	}
+	re, err := json.Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	return string(re), nil
 }
 
 func getAllRulesWithStatus() ([]map[string]interface{}, error) {
