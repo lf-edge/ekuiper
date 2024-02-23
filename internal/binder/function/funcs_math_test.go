@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -197,7 +197,7 @@ func TestFuncMath(t *testing.T) {
 				10,
 				float64(10),
 				math.Exp(10),
-				math.Log2(10),
+				math.Log(10),
 				math.Log10(10),
 				math.Sqrt(10),
 				float64(100),
@@ -267,7 +267,7 @@ func TestFuncMath(t *testing.T) {
 				10.5,
 				float64(11),
 				math.Exp(10.5),
-				math.Log2(10.5),
+				math.Log(10.5),
 				math.Log10(10.5),
 				math.Sqrt(10.5),
 				110.25,
