@@ -398,7 +398,27 @@ func isAliasFieldTopoSortFinish(aliasDegrees map[string]*aliasTopoDegree) bool {
 	return true
 }
 
-func validate(s *ast.SelectStatement) (err error) {
+type validateOptStmt interface {
+	validate(statement *ast.SelectStatement) error
+}
+
+func validate(stmt *ast.SelectStatement) error {
+	for _, checker := range stmtCheckers {
+		if err := checker.validate(stmt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+var stmtCheckers = []validateOptStmt{
+	&aggFuncChecker{},
+	&groupChecker{},
+}
+
+type aggFuncChecker struct{}
+
+func (c *aggFuncChecker) validate(s *ast.SelectStatement) (err error) {
 	isAggStmt := false
 	if xsql.IsAggregate(s.Condition) {
 		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause.")
@@ -440,6 +460,15 @@ func validate(s *ast.SelectStatement) (err error) {
 		return true
 	})
 	return
+}
+
+type groupChecker struct{}
+
+func (c *groupChecker) validate(s *ast.SelectStatement) error {
+	if len(s.Dimensions.GetGroups()) > 0 && s.Dimensions.GetWindow() == nil {
+		return fmt.Errorf("select stmt group by should be used with window")
+	}
+	return nil
 }
 
 // file-private functions below
