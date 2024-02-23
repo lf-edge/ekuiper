@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xsql
+package encoding
 
 import (
-	"encoding/gob"
-	"time"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-func init() {
-	gob.Register(time.Time{})
-	gob.Register(make(map[string]interface{}))
-	gob.Register(make(map[string][]*Tuple))
-	gob.Register(Tuple{})
-	gob.Register([]interface{}{})
+func TestEncoding(t *testing.T) {
+	_, err := Encode([]interface{}{1, nil, "2"})
+	require.NoError(t, err)
 }
