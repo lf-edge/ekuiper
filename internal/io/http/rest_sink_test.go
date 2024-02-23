@@ -15,15 +15,18 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -457,4 +460,78 @@ func TestRestSinkErrorLog(t *testing.T) {
 		assert.NoError(t, err)
 		s.Close(context.Background())
 	})
+}
+
+func TestRestSinkIOError(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestRestSink_Apply")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	var requests []request
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Printf("Error reading body: %v", err)
+			http.Error(w, "can't read body", http.StatusBadRequest)
+			return
+		}
+
+		requests = append(requests, request{
+			Method:      r.Method,
+			Body:        string(body),
+			ContentType: r.Header.Get("Content-Type"),
+		})
+		contextLogger.Debugf(string(body))
+		fmt.Fprint(w, string(body))
+	}))
+	defer ts.Close()
+
+	tests := []struct {
+		config map[string]interface{}
+		data   [][]byte
+		result []request
+	}{
+		{
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"sendSingle":   true,
+				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
+			},
+			data: [][]byte{[]byte(`{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`), []byte(`{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`)},
+			result: []request{{
+				Method:      "POST",
+				Body:        `{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`,
+				ContentType: "application/json",
+			}, {
+				Method:      "POST",
+				Body:        `{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`,
+				ContentType: "application/json",
+			}},
+		},
+	}
+	inResendTest = true
+	defer func() {
+		inResendTest = false
+	}()
+	for _, tt := range tests {
+		requests = nil
+		s := &RestSink{}
+		tt.config["url"] = ts.URL
+		s.Configure(tt.config)
+		s.Open(ctx)
+		vCtx := context.WithValue(ctx, context.TransKey, transform.TransFunc(func(d interface{}) ([]byte, bool, error) {
+			return d.([]byte), true, nil
+		}))
+		for _, d := range tt.data {
+			err := s.Collect(vCtx, d)
+			require.Error(t, err)
+			require.True(t, strings.HasPrefix(err.Error(), errorx.IOErr))
+		}
+		s.Close(ctx)
+	}
+}
+
+func TestIsRecoverAbleErr(t *testing.T) {
+	require.True(t, isRecoverAbleError(errors.New("connection reset by peer")))
+	require.True(t, isRecoverAbleError(&url.Error{Err: &temporaryError{}}))
 }
