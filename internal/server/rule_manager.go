@@ -96,9 +96,7 @@ func createRule(name, ruleJson string) (string, error) {
 	// Store to KV
 	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
 	if err != nil {
-		if rs != nil {
-			rs.Close()
-		}
+		// Do not store to registry so also delete the KV
 		deleteRule(r.Id)
 		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
