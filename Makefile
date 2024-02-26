@@ -196,4 +196,15 @@ lint:tools/lint/bin/golangci-lint
 	cd sdk/go && ../../tools/lint/bin/golangci-lint run
 
 tools/lint/bin/golangci-lint:
-	GOBIN=$(shell pwd)/tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	GOBIN=tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+tools/bin/failpoint-ctl:
+	GOBIN=tools/failpint/bin $(GO) install github.com/pingcap/failpoint/failpoint-ctl@2eaa328
+
+failpoint-enable: tools/bin/failpoint-ctl
+# Converting gofail failpoints...
+	@$(FAILPOINT_ENABLE)
+
+failpoint-disable: tools/bin/failpoint-ctl
+# Restoring gofail failpoints...
+	@$(FAILPOINT_DISABLE)
