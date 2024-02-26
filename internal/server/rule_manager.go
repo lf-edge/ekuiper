@@ -97,6 +97,7 @@ func createRule(name, ruleJson string) (string, error) {
 	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
 	if err != nil {
 		deleteRule(r.Id)
+		_, _ = ruleProcessor.ExecDrop(r.Id)
 		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
 
@@ -196,7 +197,9 @@ func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
 
 func deleteRule(name string) (result string) {
 	if rs, ok := registry.Delete(name); ok {
-		rs.Close()
+		if rs != nil {
+			rs.Close()
+		}
 		result = fmt.Sprintf("Rule %s was deleted.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
