@@ -116,6 +116,10 @@ func (wss *WebsocketSource) Configure(datasource string, props map[string]interf
 	return nil
 }
 
+func (wss *WebsocketSource) Validate(props map[string]interface{}) error {
+	return nil
+}
+
 func (wss *WebsocketSource) Close(ctx api.StreamContext) error {
 	clients.ReleaseClient(ctx, wss.cli)
 	return nil

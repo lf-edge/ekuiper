@@ -78,6 +78,10 @@ func (wss *WebSocketSink) Configure(props map[string]interface{}) error {
 	return nil
 }
 
+func (wss *WebSocketSink) Validate(props map[string]interface{}) error {
+	return wss.Configure(props)
+}
+
 func (wss *WebSocketSink) Collect(ctx api.StreamContext, data interface{}) error {
 	decodeBytes, _, err := ctx.TransformOutput(data)
 	if err != nil {

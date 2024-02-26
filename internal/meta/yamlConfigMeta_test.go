@@ -134,3 +134,12 @@ func TestConfKeyErr(t *testing.T) {
 	_, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 }
+
+func TestValidateConf(t *testing.T) {
+	c, err := json.Marshal(map[string]interface{}{"path": "/123"})
+	require.NoError(t, err)
+	require.NoError(t, validateConf("websocket", map[string]interface{}{"path": "/123"}, true))
+	require.NoError(t, validateConf("websocket", map[string]interface{}{"path": "/123"}, false))
+	require.NoError(t, AddSinkConfKey("websocket", "k1", "en-us", c))
+	require.NoError(t, AddSourceConfKey("websocket", "k2", "en-us", c))
+}
