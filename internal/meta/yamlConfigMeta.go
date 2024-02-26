@@ -23,7 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/hidden"
@@ -283,7 +283,7 @@ func validateConf(pluginName string, props map[string]interface{}, isSource bool
 		if err != nil {
 			return err
 		}
-		if v, ok := s.(api.PropsValidator); ok {
+		if v, ok := s.(util.PropsValidator); ok {
 			return v.Validate(props)
 		}
 		return nil
@@ -292,7 +292,7 @@ func validateConf(pluginName string, props map[string]interface{}, isSource bool
 		if err != nil {
 			return err
 		}
-		if v, ok := s.(api.PropsValidator); ok {
+		if v, ok := s.(util.PropsValidator); ok {
 			return v.Validate(props)
 		}
 		return nil

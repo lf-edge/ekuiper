@@ -146,14 +146,6 @@ type Sink interface {
 	Closable
 }
 
-type PropsValidator interface {
-	Validate(props map[string]interface{}) error
-}
-
-type PingableConn interface {
-	Ping(string, map[string]interface{}) error
-}
-
 type ResendSink interface {
 	Sink
 	// CollectResend Called when the sink cache resend is triggered
