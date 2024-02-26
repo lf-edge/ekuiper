@@ -101,6 +101,7 @@ type RuleState struct {
 
 	lastStartTimestamp int64
 	lastStopTimestamp  int64
+	isClosed           bool
 }
 
 // NewRuleState Create and initialize a rule state.
@@ -525,6 +526,9 @@ func (rs *RuleState) Close() (err error) {
 	}()
 	rs.Lock()
 	defer rs.Unlock()
+	if rs.isClosed {
+		return nil
+	}
 	if rs.Topology != nil {
 		rs.Topology.RemoveMetrics()
 	}
@@ -534,6 +538,7 @@ func (rs *RuleState) Close() (err error) {
 	rs.triggered = -1
 	rs.stopScheduleRule()
 	close(rs.ActionCh)
+	rs.isClosed = true
 	return nil
 }
 
