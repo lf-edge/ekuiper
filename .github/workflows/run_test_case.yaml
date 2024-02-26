@@ -77,7 +77,9 @@ jobs:
     - name: Run test case
       run: |
         source $HOME/.wasmedge/env
+        make failpoint-enable
         go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/topo/topotest/plugin")
+        make failpoint-disable
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:

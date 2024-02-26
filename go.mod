@@ -31,6 +31,7 @@ require (
 	github.com/montanaflynn/stats v0.7.1
 	github.com/msgpack-rpc/msgpack-rpc-go v0.0.0-20131026060856-c76397e1782b
 	github.com/pebbe/zmq4 v1.2.10
+	github.com/pingcap/failpoint v0.0.0-20220801062533-2eaa32854a6c
 	github.com/prometheus/client_golang v1.17.0
 	github.com/redis/go-redis/v9 v9.3.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -244,6 +245,7 @@ require (
 	github.com/paulmach/orb v0.10.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
+	github.com/pingcap/errors v0.11.4 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

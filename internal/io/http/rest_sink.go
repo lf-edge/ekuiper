@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pingcap/failpoint"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -41,6 +43,14 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
+type temporaryError struct{}
+
+func (e *temporaryError) Error() string {
+	return "mockTimeoutError"
+}
+
+func (e *temporaryError) Temporary() bool { return true }
+
 func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desUrl string) error {
 	logger := ctx.GetLogger()
 	decodedData, _, err := ctx.TransformOutput(item)
@@ -50,25 +60,23 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 	}
 
 	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
+	failpoint.Inject("injectRestTemporaryError", func(val failpoint.Value) {
+		if val.(bool) {
+			err = &url.Error{Err: &temporaryError{}}
+		}
+	})
 	if err != nil {
 		originErr := err
-		logger.Errorf("rest sink meet error:%v", originErr.Error())
-		e := err.Error()
-		if urlErr, ok := err.(*url.Error); ok {
-			// consider timeout and temporary error as recoverable
-			if urlErr.Timeout() || urlErr.Temporary() {
-				return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data: method=%s path="%s" request_body="%s"`, ms.config.Method,
-					ms.config.Url,
-					decodedData))
-			}
+		recoverAble := isRecoverAbleError(originErr)
+		if recoverAble {
+			logger.Errorf("rest sink meet error:%v, recoverAble:%v, ruleID:%v", originErr.Error(), recoverAble, ctx.GetRuleId())
+			return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+				originErr.Error(),
+				recoverAble,
+				ms.config.Method,
+				ms.config.Url,
+				decodedData))
 		}
-		return fmt.Errorf(`%s: rest sink fails to send out the data:err=%s method=%s path="%s" request_body="%s"`,
-			originErr.Error(),
-			e,
-			ms.config.Method,
-			ms.config.Url,
-			decodedData,
-		)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
 		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
@@ -91,6 +99,19 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 		}
 	}
 	return nil
+}
+
+func isRecoverAbleError(err error) bool {
+	if strings.Contains(err.Error(), "connection reset by peer") {
+		return true
+	}
+	if urlErr, ok := err.(*url.Error); ok {
+		// consider timeout and temporary error as recoverable
+		if urlErr.Timeout() || urlErr.Temporary() {
+			return true
+		}
+	}
+	return false
 }
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {

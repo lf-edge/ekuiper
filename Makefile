@@ -7,6 +7,9 @@ OS := $(shell go env GOOS)
 PACKAGE_NAME := kuiper-$(VERSION)-$(OS)-$(ARCH)
 GO              := GO111MODULE=on go
 
+FAILPOINT_ENABLE  := find $$PWD/ -type d | grep -vE "(\.git|tools)" | xargs tools/failpoint/bin/failpoint-ctl enable
+FAILPOINT_DISABLE := find $$PWD/ -type d | grep -vE "(\.git|tools)" | xargs tools/failpoint/bin/failpoint-ctl disable
+
 TARGET ?= lfedge/ekuiper
 
 export KUIPER_SOURCE := $(shell pwd)
@@ -196,4 +199,15 @@ lint:tools/lint/bin/golangci-lint
 	cd sdk/go && ../../tools/lint/bin/golangci-lint run
 
 tools/lint/bin/golangci-lint:
-	GOBIN=$(shell pwd)/tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	GOBIN=tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+tools/failpoint/bin/failpoint-ctl:
+	GOBIN=$(shell pwd)/tools/failpoint/bin $(GO) install github.com/pingcap/failpoint/failpoint-ctl@2eaa328
+
+failpoint-enable: tools/failpoint/bin/failpoint-ctl
+# Converting gofail failpoints...
+	@$(FAILPOINT_ENABLE)
+
+failpoint-disable: tools/failpoint/bin/failpoint-ctl
+# Restoring gofail failpoints...
+	@$(FAILPOINT_DISABLE)
