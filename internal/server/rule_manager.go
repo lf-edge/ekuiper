@@ -196,7 +196,8 @@ func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
 }
 
 func deleteRule(name string) (result string) {
-	if _, ok := registry.Delete(name); ok {
+	if rs, ok := registry.Delete(name); ok {
+		rs.Close()
 		result = fmt.Sprintf("Rule %s was deleted.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
