@@ -15,8 +15,11 @@
 package processor
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -239,5 +242,32 @@ func TestAllRules(t *testing.T) {
 	}
 	if !reflect.DeepEqual(all, expected) {
 		t.Errorf("Expect\t %v\nBut got\t%v", expected, all)
+	}
+}
+
+func TestValidateRuleID(t *testing.T) {
+	testcases := []struct {
+		id  string
+		err error
+	}{
+		{
+			"abc",
+			nil,
+		},
+		{
+			"ABC",
+			nil,
+		},
+		{
+			"123",
+			nil,
+		},
+		{
+			"@@",
+			fmt.Errorf("ruleID:%v invalid", "@@"),
+		},
+	}
+	for _, tc := range testcases {
+		require.Equal(t, tc.err, validateRuleID(tc.id))
 	}
 }
