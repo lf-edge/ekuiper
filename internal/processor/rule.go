@@ -163,6 +163,9 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	if rule.Id == "" {
 		rule.Id = id
 	}
+	if err := validateRuleID(id); err != nil {
+		return nil, err
+	}
 	if rule.Sql != "" {
 		if rule.Graph != nil {
 			return nil, fmt.Errorf("Rule %s has both sql and graph.", rule.Id)
@@ -183,6 +186,25 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 		return nil, fmt.Errorf("Rule %s has invalid options: %s.", rule.Id, err)
 	}
 	return rule, nil
+}
+
+func validateRuleID(id string) error {
+	for _, char := range id {
+		if !isLegalChar(char) {
+			return fmt.Errorf("ruleID:%v invalid", id)
+		}
+	}
+	return nil
+}
+
+func isLegalChar(char rune) bool {
+	if (char >= '0' && char <= '9') ||
+		(char >= 'a' && char <= 'z') ||
+		(char >= 'A' && char <= 'Z') ||
+		char == '-' || char == '_' {
+		return true
+	}
+	return false
 }
 
 func clone(opt api.RuleOption) *api.RuleOption {
