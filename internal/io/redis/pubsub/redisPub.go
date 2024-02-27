@@ -42,11 +42,14 @@ type redisPubConfig struct {
 	ResendChannel string `json:"resendDestination"`
 }
 
-func (r *redisPub) Configure(props map[string]interface{}) error {
+func (r *redisPub) Validate(props map[string]interface{}) error {
 	cfg := &redisPubConfig{}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
+	}
+	if cfg.Db < 0 || cfg.Db > 15 {
+		return fmt.Errorf("redisPub db should be in range 0-15")
 	}
 	if cfg.Channel == "" {
 		return fmt.Errorf("redisPub sink is missing property channel")
@@ -61,8 +64,11 @@ func (r *redisPub) Configure(props map[string]interface{}) error {
 		cfg.ResendChannel = cfg.Channel
 	}
 	r.conf = cfg
-
 	return nil
+}
+
+func (r *redisPub) Configure(props map[string]interface{}) error {
+	return r.Validate(props)
 }
 
 func (r *redisPub) Open(ctx api.StreamContext) error {

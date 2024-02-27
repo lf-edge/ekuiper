@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	econf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -411,4 +413,11 @@ func TestRedisSink_Configure(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRedisSink(t *testing.T) {
+	s := &RedisSink{}
+	err := s.Validate(map[string]interface{}{"db": 199})
+	require.Error(t, err)
+	require.Equal(t, "redisSink db should be in range 0-15", err.Error())
 }

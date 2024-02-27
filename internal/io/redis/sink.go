@@ -56,11 +56,14 @@ type RedisSink struct {
 	cli *redis.Client
 }
 
-func (r *RedisSink) Configure(props map[string]interface{}) error {
+func (r *RedisSink) Validate(props map[string]interface{}) error {
 	c := &config{DataType: "string", Expiration: -1, KeyType: "single"}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
 		return err
+	}
+	if c.Db < 0 || c.Db > 15 {
+		return fmt.Errorf("redisSink db should be in range 0-15")
 	}
 	if c.KeyType == "single" && c.Key == "" && c.Field == "" {
 		return errors.New("redis sink must have key or field when KeyType is single")
@@ -73,6 +76,10 @@ func (r *RedisSink) Configure(props map[string]interface{}) error {
 	}
 	r.c = c
 	return nil
+}
+
+func (r *RedisSink) Configure(props map[string]interface{}) error {
+	return r.Validate(props)
 }
 
 func (r *RedisSink) Open(ctx api.StreamContext) (err error) {

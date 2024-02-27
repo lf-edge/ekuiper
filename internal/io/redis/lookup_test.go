@@ -22,6 +22,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/benbjohnson/clock"
+	"github.com/stretchr/testify/require"
 
 	econf "github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -153,4 +154,11 @@ func deepEqual(a []api.SourceTuple, b []api.SourceTuple) bool {
 		}
 	}
 	return true
+}
+
+func TestLookupSourceDB(t *testing.T) {
+	s := &lookupSource{}
+	err := s.Configure("199", nil)
+	require.Error(t, err)
+	require.Equal(t, "redis lookup source db should be in range 0-15", err.Error())
 }

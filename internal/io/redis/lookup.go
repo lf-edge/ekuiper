@@ -44,16 +44,7 @@ type lookupSource struct {
 	cli *redis.Client
 }
 
-func (s *lookupSource) Configure(datasource string, props map[string]interface{}) error {
-	if datasource != "/$$TEST_CONNECTION$$" {
-		db, err := cast.ToInt(datasource, cast.CONVERT_ALL)
-		if err != nil {
-			return fmt.Errorf("invalid datasource, it must be an integer but got %s", datasource)
-		}
-		s.db = db
-	} else {
-		s.db = 0
-	}
+func (s *lookupSource) Validate(props map[string]interface{}) error {
 	cfg := &conf{}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
@@ -66,13 +57,32 @@ func (s *lookupSource) Configure(datasource string, props map[string]interface{}
 		return errors.New("redis dataType must be string or list")
 	}
 	s.c = cfg
+	return nil
+}
+
+func (s *lookupSource) Configure(datasource string, props map[string]interface{}) error {
+	if datasource != "/$$TEST_CONNECTION$$" {
+		db, err := cast.ToInt(datasource, cast.CONVERT_ALL)
+		if err != nil {
+			return fmt.Errorf("invalid datasource, it must be an integer but got %s", datasource)
+		}
+		s.db = db
+	} else {
+		s.db = 0
+	}
+	if s.db < 0 || s.db > 15 {
+		return fmt.Errorf("redis lookup source db should be in range 0-15")
+	}
+	if err := s.Validate(props); err != nil {
+		return err
+	}
 	s.cli = redis.NewClient(&redis.Options{
 		Addr:     s.c.Addr,
 		Username: s.c.Username,
 		Password: s.c.Password,
 		DB:       s.db,
 	})
-	_, err = s.cli.Ping(context.Background()).Result()
+	_, err := s.cli.Ping(context.Background()).Result()
 	return err
 }
 
