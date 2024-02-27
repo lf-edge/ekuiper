@@ -83,26 +83,24 @@ func createRule(name, ruleJson string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid rule json: %v", err)
 	}
-	// Store to KV
-	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
-	if err != nil {
-		return r.Id, fmt.Errorf("store the rule error: %v", err)
-	}
 
 	// Validate the topo
-	panicOrError := infra.SafeRun(func() error {
+	err = infra.SafeRun(func() error {
 		rs, err = createRuleState(r)
 		return err
 	})
-	if panicOrError != nil {
+	if err != nil {
+		return r.Id, err
+	}
+
+	// Store to KV
+	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
+	if err != nil {
 		// Do not store to registry so also delete the KV
 		deleteRule(r.Id)
-		_, _ = ruleProcessor.ExecDrop(r.Id)
-		if ewc, ok := panicOrError.(errorx.ErrorWithCode); ok {
-			return r.Id, errorx.NewWithCode(ewc.Code(), fmt.Sprintf("create rule topo error: %v", panicOrError.Error()))
-		}
-		return r.Id, fmt.Errorf("create rule topo error: %v", panicOrError)
+		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
+
 	// Start the rule asyncly
 	if r.Triggered {
 		go func() {
