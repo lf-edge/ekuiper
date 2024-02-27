@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/hidden"
@@ -107,16 +106,12 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			if err != nil {
 				logger.Errorf("sql source meet error, try to reconnection, err:%v, query:%v", err, query)
 				if !isConnectionError(err) {
-					consumer <- &xsql.ErrorSourceTuple{
-						Error: err,
-					}
+					errCh <- err
 					continue
 				}
 				err2 := m.Reconnect()
 				if err2 != nil {
-					consumer <- &xsql.ErrorSourceTuple{
-						Error: fmt.Errorf("reconnect failed, reconnect err:%v", err2),
-					}
+					errCh <- fmt.Errorf("reconnect failed, reconnect err:%v", err2)
 				} else {
 					logger.Info("sql source reconnect successfully")
 				}
