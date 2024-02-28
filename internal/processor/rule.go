@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
@@ -163,6 +164,9 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	if rule.Id == "" {
 		rule.Id = id
 	}
+	if err := validateRuleID(id); err != nil {
+		return nil, err
+	}
 	if rule.Sql != "" {
 		if rule.Graph != nil {
 			return nil, fmt.Errorf("Rule %s has both sql and graph.", rule.Id)
@@ -183,6 +187,19 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 		return nil, fmt.Errorf("Rule %s has invalid options: %s.", rule.Id, err)
 	}
 	return rule, nil
+}
+
+var invalidRuleChars = []string{
+	"/",
+}
+
+func validateRuleID(id string) error {
+	for _, invalidChar := range invalidRuleChars {
+		if strings.Contains(id, invalidChar) {
+			return fmt.Errorf("ruleID:%s contains invalidChar:%v", id, invalidChar)
+		}
+	}
+	return nil
 }
 
 func clone(opt api.RuleOption) *api.RuleOption {
