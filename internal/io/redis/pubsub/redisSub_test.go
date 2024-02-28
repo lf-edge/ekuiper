@@ -82,6 +82,7 @@ func TestRedisDB(t *testing.T) {
 	}
 	err := s.Configure("", prop)
 	require.Error(t, err)
+	require.Equal(t, "redisSub db should be in range 0-15", err.Error())
 }
 
 func TestSourceDecompressorError(t *testing.T) {

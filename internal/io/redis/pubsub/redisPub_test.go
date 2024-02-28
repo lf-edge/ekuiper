@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/io/mock"
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
@@ -192,4 +193,14 @@ func TestSinkPingRedisError(t *testing.T) {
 			t.Errorf("error mismatch:\n\nexp=%s\n\ngot=%s\n\n", expErrStr, parts[0])
 		}
 	}
+}
+
+func TestRedisPubDb(t *testing.T) {
+	props := map[string]interface{}{
+		"db": 199,
+	}
+	r := &redisPub{}
+	err := r.Validate(props)
+	require.Error(t, err)
+	require.Equal(t, "redisPub db should be in range 0-15", err.Error())
 }
