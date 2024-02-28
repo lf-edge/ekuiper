@@ -94,7 +94,15 @@ GET http://localhost:9081/services/functions
 结果样例：
 
 ```json
-["func1","func2"]
+[
+  {
+    "ServiceName": "serviceName",
+    "InterfaceName": "interfaceName",
+    "Addr": "http://192.168.2.102:9090",
+    "MethodName": "funcName",
+    "FuncName": "funcName"
+  }
+]
 ```
 
 ### 描述外部函数
@@ -109,7 +117,10 @@ GET http://localhost:9081/services/functions/{name}
 
 ```json
 {
-  "name": "funcName",
-  "serviceName": "serviceName"
+  "ServiceName": "serviceName",
+  "InterfaceName": "interfaceName",
+  "Addr": "http://192.168.2.102:9090",
+  "MethodName": "funcName",
+  "FuncName": "funcName"
 }
 ```
