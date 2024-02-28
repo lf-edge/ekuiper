@@ -33,9 +33,14 @@ type RestSink struct {
 	ClientConf
 }
 
+func (ms *RestSink) Validate(props map[string]interface{}) error {
+	conf.Log.Infof("valiadte rest sink with configurations %#v.", props)
+	return ms.InitConf("", props)
+}
+
 func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	conf.Log.Infof("Initialized rest sink with configurations %#v.", ps)
-	return ms.InitConf("", ps)
+	return ms.Validate(ps)
 }
 
 func (ms *RestSink) Open(ctx api.StreamContext) error {

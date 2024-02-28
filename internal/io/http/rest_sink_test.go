@@ -536,3 +536,9 @@ func TestIsRecoverAbleErr(t *testing.T) {
 	require.True(t, isRecoverAbleError(errors.New("connection reset by peer")))
 	require.True(t, isRecoverAbleError(&url.Error{Err: &temporaryError{}}))
 }
+
+func TestRestSinkMethod(t *testing.T) {
+	rs := &RestSink{}
+	err := rs.Validate(map[string]interface{}{"method": "head"})
+	require.Error(t, err)
+}
