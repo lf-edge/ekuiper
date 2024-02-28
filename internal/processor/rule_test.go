@@ -263,8 +263,8 @@ func TestValidateRuleID(t *testing.T) {
 			nil,
 		},
 		{
-			"@@",
-			fmt.Errorf("ruleID:%v invalid", "@@"),
+			"1/2",
+			fmt.Errorf("ruleID:%s contains invalidChar:%v", "1/2", "/"),
 		},
 	}
 	for _, tc := range testcases {

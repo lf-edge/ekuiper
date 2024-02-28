@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
@@ -188,23 +189,17 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	return rule, nil
 }
 
+var invalidRuleChars = []string{
+	"/",
+}
+
 func validateRuleID(id string) error {
-	for _, char := range id {
-		if !isLegalChar(char) {
-			return fmt.Errorf("ruleID:%v invalid", id)
+	for _, invalidChar := range invalidRuleChars {
+		if strings.Contains(id, invalidChar) {
+			return fmt.Errorf("ruleID:%s contains invalidChar:%v", id, invalidChar)
 		}
 	}
 	return nil
-}
-
-func isLegalChar(char rune) bool {
-	if (char >= '0' && char <= '9') ||
-		(char >= 'a' && char <= 'z') ||
-		(char >= 'A' && char <= 'Z') ||
-		char == '-' || char == '_' {
-		return true
-	}
-	return false
 }
 
 func clone(opt api.RuleOption) *api.RuleOption {
