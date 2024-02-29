@@ -5,6 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  workflow_dispatch:
   pull_request:
   release:
     types:
@@ -19,7 +20,7 @@ jobs:
     steps:
       - id: arch
         run: |
-          if ${{ github.ref_type == 'tag' }}; then
+          if ${{ contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name) }}; then
             echo "arch=[\"linux/amd64\", \"linux/arm64\", \"linux/arm/v7\"]" >> $GITHUB_OUTPUT
           else
             echo "arch=[\"linux/amd64\"]" >> $GITHUB_OUTPUT
@@ -201,7 +202,7 @@ jobs:
       if: github.event_name == 'release'
       run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
-      if: github.event_name == 'release'
+      if: contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name)
       uses: docker/build-push-action@v3
       with:
         context: .
