@@ -94,7 +94,15 @@ GET http://localhost:9081/services/functions
 Result example:
 
 ```json
-["func1","func2"]
+[
+  {
+    "ServiceName": "serviceName",
+    "InterfaceName": "interfaceName",
+    "Addr": "http://192.168.2.102:9090",
+    "MethodName": "funcName",
+    "FuncName": "funcName"
+  }
+]
 ```
 
 ### Describe external functions
@@ -109,7 +117,10 @@ Result example:
 
 ```json
 {
-  "name": "funcName",
-  "serviceName": "serviceName"
+  "ServiceName": "serviceName",
+  "InterfaceName": "interfaceName",
+  "Addr": "http://192.168.2.102:9090",
+  "MethodName": "funcName",
+  "FuncName": "funcName"
 }
 ```

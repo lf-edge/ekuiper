@@ -95,9 +95,11 @@ describe service_func $service_name
 ```shell
 # bin/kuiper describe service_func label
 {
-  "ServiceName": "sample",
-  "InterfaceName": "trueno",
-  "MethodName": "label"
+  "ServiceName": "serviceName",
+  "InterfaceName": "interfaceName",
+  "Addr": "http://192.168.2.102:9090",
+  "MethodName": "funcName",
+  "FuncName": "label"
 }
 ```
 
