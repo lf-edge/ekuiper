@@ -9,5 +9,5 @@ setup(
     author='LF Edge eKuiper team',
     author_email='huangjy@emqx.io',
     description='Python SDK for eKuiper portable plugin',
-    install_requires=["sniffio","pynng==0.7.3"],
+    install_requires=["pynng==0.7.2"],
 )
