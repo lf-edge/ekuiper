@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -175,7 +175,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 			if function.IsAnalyticFunc(f.Name) {
 				f.CachedField = fmt.Sprintf("%s_%s_%d", function.AnalyticPrefix, f.Name, f.FuncId)
 				f.Cached = true
-				analyticFuncs = append(analyticFuncs, &ast.Call{
+				analyticFuncs = append([]*ast.Call{{
 					Name:        f.Name,
 					FuncId:      f.FuncId,
 					FuncType:    f.FuncType,
@@ -183,7 +183,7 @@ func decorateStmt(s *ast.SelectStatement, store kv.KeyValue) ([]*streamInfo, []*
 					CachedField: f.CachedField,
 					Partition:   f.Partition,
 					WhenExpr:    f.WhenExpr,
-				})
+				}}, analyticFuncs...)
 			}
 		}
 		return true
