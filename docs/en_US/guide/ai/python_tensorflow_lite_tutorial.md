@@ -198,10 +198,6 @@ Content-Type: application/json
 {"sql":"CREATE STREAM tfdemo () WITH (DATASOURCE=\"tfdemo\", FORMAT=\"BINARY\")"}
 ```
 
-### 定义规则
-
-通过 eKuiper rest API 定义规则。 我们将创建一个名为 ruleTf 的规则。 我们只是从 tfdemo 流中读取图像，然后对其运行自定义函数 *labelImage*。 返回结果将是 AI 识别的图像的标签数组，包含按照置信度排名的标签。我们的规则取出其中第一个置信度最高的标签，并发送到 MQTT 主题 `ekuiper/labels`。
-
 ### Define the rule
 
 Define the rule by eKuiper rest API.  We will create a rule named ruleTf. We just read the images from tfdemo stream and run the custom function *labelImage* against it. The returned result will be an array of labels of the images recognized by the AI, containing labels ranked by confidence. Our rule takes the first of these labels with the highest confidence and sends it to the MQTT topic `ekuiper/labels`.
