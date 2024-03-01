@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	econf "github.com/lf-edge/ekuiper/internal/conf"
@@ -349,5 +350,25 @@ func prepareValues(values []interface{}, columnTypes []*sql.ColumnType, columns 
 		for idx := range columns {
 			values[idx] = new(interface{})
 		}
+	}
+}
+
+func TestBuildInsertSQL(t *testing.T) {
+	testcases := []struct {
+		driver    string
+		expectSQL string
+	}{
+		{
+			driver:    "oracle",
+			expectSQL: "INSERT INTO t (a,b) values (1,2),(3,4)",
+		},
+		{
+			driver:    "mysql",
+			expectSQL: "INSERT INTO t (a,b) values (1,2),(3,4);",
+		},
+	}
+	for _, tc := range testcases {
+		sql := buildInsertSQL(tc.driver, "t", []string{"a", "b"}, []string{"(1,2)", "(3,4)"})
+		require.Equal(t, tc.expectSQL, sql)
 	}
 }

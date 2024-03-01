@@ -89,7 +89,8 @@ func (t *sqlConfig) getKeyValues(ctx api.StreamContext, mapData map[string]inter
 }
 
 type sqlSink struct {
-	conf *sqlConfig
+	driver string
+	conf   *sqlConfig
 	// The db connection instance
 	db sqldatabase.DB
 }
@@ -124,6 +125,11 @@ func (m *sqlSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("keyField is required when rowkindField is set")
 	}
 	m.conf = cfg
+	sqlDriver, err := util.ParseDriver(m.conf.Url)
+	if err != nil {
+		return err
+	}
+	m.driver = sqlDriver
 	return nil
 }
 
@@ -202,6 +208,15 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if m.conf.RowkindField == "" {
 		switch v := item.(type) {
 		case []map[string]interface{}:
+			if m.driver == "oracle" {
+				// TODO: for now we haven't support oracle bulk insert, thus we send batch data one by one.
+				for _, mapData := range v {
+					if err := m.Collect(ctx, mapData); err != nil {
+						return err
+					}
+				}
+				return nil
+			}
 			for _, mapData := range v {
 				keys, vars, err = m.conf.buildInsertSql(ctx, mapData)
 				if err != nil {
@@ -210,7 +225,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 				values = append(values, vars)
 			}
 			if keys != nil {
-				sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+				sqlStr := buildInsertSQL(m.driver, table, keys, values)
 				return m.writeToDB(ctx, &sqlStr)
 			}
 			return nil
@@ -221,7 +236,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 			values = append(values, vars)
 			if keys != nil {
-				sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+				sqlStr := buildInsertSQL(m.driver, table, keys, values)
 				return m.writeToDB(ctx, &sqlStr)
 			}
 			return nil
@@ -242,7 +257,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 
 			if keys != nil {
-				sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+				sqlStr := buildInsertSQL(m.driver, table, keys, values)
 				return m.writeToDB(ctx, &sqlStr)
 			}
 			return nil
@@ -311,7 +326,7 @@ func (m *sqlSink) save(ctx api.StreamContext, table string, data map[string]inte
 		}
 		values := []string{vars}
 		if keys != nil {
-			sqlStr = fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+			sqlStr = buildInsertSQL(m.driver, table, keys, values)
 		}
 	case ast.RowkindUpdate:
 		keyval, ok := data[m.conf.KeyField]
@@ -352,4 +367,37 @@ func (m *sqlSink) save(ctx api.StreamContext, table string, data map[string]inte
 
 func GetSink() api.Sink {
 	return &sqlSink{}
+}
+
+func buildInsertSQL(driver, table string, keys []string, values []string) string {
+	switch driver {
+	case "oracle":
+		return buildInsertSQLByKV(table, keys, values)
+	default:
+		return buildInsertSQLByKV(table, keys, values, withAddSemiColonOptional(true))
+	}
+}
+
+func buildInsertSQLByKV(table string, keys []string, values []string, withOptions ...WithBuildInsertOption) string {
+	option := &buildInsertOption{}
+	for _, withOption := range withOptions {
+		withOption(option)
+	}
+	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",")
+	if option.addSemiColon {
+		sql = sql + ";"
+	}
+	return sql
+}
+
+type buildInsertOption struct {
+	addSemiColon bool
+}
+
+type WithBuildInsertOption func(o *buildInsertOption)
+
+func withAddSemiColonOptional(add bool) WithBuildInsertOption {
+	return func(clientConf *buildInsertOption) {
+		clientConf.addSemiColon = add
+	}
 }
