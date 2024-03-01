@@ -193,6 +193,7 @@ func (m *Manager) initFile(baseName string) error {
 				}
 			}
 		} else {
+			info.Interfaces[name].Functions = []string{name}
 			err := m.functionKV.Set(name, &functionContainer{
 				FuncName:      name,
 				ServiceName:   serviceName,
