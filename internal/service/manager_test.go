@@ -127,6 +127,9 @@ func TestInitByFiles(t *testing.T) {
 				Schema: &schemaInfo{
 					Schemaless: true,
 				},
+				Functions: []string{
+					"tsschemaless",
+				},
 			},
 		},
 	}
