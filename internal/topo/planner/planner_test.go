@@ -1813,7 +1813,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			}.Init(),
 		},
 		{ // 15 analytic function over partition plan
-			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp), id1 FROM src1 WHERE lag(temp) > temp`,
+			sql: `SELECT latest(lag(name)) OVER (PARTITION BY temp), id1 FROM src1 WHERE latest(lag(temp)) > temp`,
 			p: ProjectPlan{
 				baseLogicalPlan: baseLogicalPlan{
 					children: []LogicalPlan{
@@ -1852,6 +1852,21 @@ func Test_createLogicalPlan(t *testing.T) {
 													StreamName: "src1",
 												}},
 											},
+											{
+												Name:        "latest",
+												FuncId:      3,
+												CachedField: "$$a_latest_3",
+												Args: []ast.Expr{&ast.Call{
+													Name:        "lag",
+													FuncId:      2,
+													CachedField: "$$a_lag_2",
+													Cached:      true,
+													Args: []ast.Expr{&ast.FieldRef{
+														Name:       "temp",
+														StreamName: "src1",
+													}},
+												}},
+											},
 										},
 										fieldFuncs: []*ast.Call{
 											{
@@ -1866,14 +1881,20 @@ func Test_createLogicalPlan(t *testing.T) {
 							},
 							condition: &ast.BinaryExpr{
 								LHS: &ast.Call{
-									Name:   "lag",
-									FuncId: 2,
-									Args: []ast.Expr{&ast.FieldRef{
-										Name:       "temp",
-										StreamName: "src1",
-									}},
-									CachedField: "$$a_lag_2",
+									Name:        "latest",
+									FuncId:      3,
+									CachedField: "$$a_latest_3",
 									Cached:      true,
+									Args: []ast.Expr{&ast.Call{
+										Name:        "lag",
+										FuncId:      2,
+										CachedField: "$$a_lag_2",
+										Args: []ast.Expr{&ast.FieldRef{
+											Name:       "temp",
+											StreamName: "src1",
+										}},
+										Cached: true,
+									}},
 								},
 								OP: ast.GT,
 								RHS: &ast.FieldRef{
@@ -2737,7 +2758,10 @@ func Test_createLogicalPlan(t *testing.T) {
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
 			t.Errorf("%d. %v: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
 		} else {
-			assert.Equal(t, tt.p, p, "plan mismatch")
+			ok := assert.Equal(t, tt.p, p, "%d plan mismatch %s", i)
+			if !ok {
+				t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
+			}
 		}
 	}
 }
