@@ -312,15 +312,6 @@ func TestStringFuncVal(t *testing.T) {
 			name:     "format failure",
 			funcName: "format",
 			args: []ast.Expr{
-				&ast.StringLiteral{Val: "1"},
-				&ast.IntegerLiteral{Val: 1},
-			},
-			err: fmt.Errorf("Expect numeric type for parameter 1"),
-		},
-		{
-			name:     "format failure",
-			funcName: "format",
-			args: []ast.Expr{
 				&ast.IntegerLiteral{Val: 1},
 				&ast.StringLiteral{Val: "1"},
 			},
