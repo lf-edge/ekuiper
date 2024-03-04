@@ -4,6 +4,11 @@ Script functions provide a mechanism for quickly extending functionality. Compar
 
 The system currently supports JavaScript as the scripting language.
 
+> Notice:
+> The script functions are not included in the default (aka. alpine) docker image and precompiled binary. If you want to
+use the script functions, please use the slim or slim-python docker image, or full version binary. To compile with the
+script functions, you need to add the `script` build tag.
+
 ## JavaScript Functions
 
 The software has a built-in JavaScript interpreter [goja](https://github.com/dop251/goja), which allows you to write script functions directly in JavaScript. Due to the large built-in interpreter, the default compiled version does not include the script function extension. Users need to use the precompiled full version or slim version docker image. When compiling yourself, you need to add the `script` build tag.

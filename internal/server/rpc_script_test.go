@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build !core || (rpc && script)
+//go:build full || (rpc && script)
 
 package server
 
