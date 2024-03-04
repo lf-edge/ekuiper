@@ -158,6 +158,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 			ctx.GetLogger().Debugf("adding cache %v", item)
 			// hack here: nil is a signal to continue sending, so not adding nil to cache
 			if item != nil {
+				ctx.GetLogger().Warnf("sync cache drop item")
 				c.addCache(ctx, item)
 			} else {
 				ctx.GetLogger().Debug("nil cache, continue sending")

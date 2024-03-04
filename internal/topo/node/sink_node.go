@@ -222,6 +222,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							stats.SetBufferLength(bufferLen(dataCh, c, rq))
 							outs := itemToMap(data)
 							if sconf.Omitempty && (data == nil || len(outs) == 0) {
+								ctx.GetLogger().Warnf("receiveQ omit empty data")
 								ctx.GetLogger().Debugf("receive empty in sink")
 								return
 							}
