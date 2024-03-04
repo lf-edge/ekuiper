@@ -160,6 +160,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 			if item != nil {
 				c.addCache(ctx, item)
 			} else {
+				ctx.GetLogger().Warnf("sync cache drop item, rule:%v", ctx.GetRuleId())
 				ctx.GetLogger().Debug("nil cache, continue sending")
 			}
 			if c.sendStatus == 2 {

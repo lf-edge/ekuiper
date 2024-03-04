@@ -189,6 +189,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
 						outs := itemToMap(data)
 						if sconf.Omitempty && (data == nil || len(outs) == 0) {
+							ctx.GetLogger().Warnf("omit empty data, rule:%v", ctx.GetRuleId())
 							ctx.GetLogger().Debugf("receive empty in sink")
 							return
 						}
@@ -200,7 +201,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							select {
 							case dataCh <- outs:
 							default:
-								ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v", m.name, instance, outs)
+								ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v, rule:%v", m.name, instance, outs, ctx.GetRuleId())
 							}
 						}
 						if resendCh != nil {
