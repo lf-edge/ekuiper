@@ -427,7 +427,7 @@ func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOpt
 	}
 
 	// Create the decode node
-	decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
+	decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
 	if err != nil {
 		return nil, nil, 0, err
 	}

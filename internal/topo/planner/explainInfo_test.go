@@ -1054,5 +1054,5 @@ func TestSchemaInfo(t *testing.T) {
 	merge.AddRuleSchema("r1", "d1", map[string]*ast.JsonStreamField{
 		"a": {},
 	}, false)
-	require.Equal(t, " Schema:[a]", p.buildSchemaInfo("r1"))
+	require.Equal(t, " ConverterSchema:[a]", p.buildSchemaInfo("r1"))
 }
