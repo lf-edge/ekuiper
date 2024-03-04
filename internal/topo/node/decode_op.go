@@ -31,13 +31,13 @@ type DecodeOp struct {
 	converter message.Converter
 }
 
-func NewDecodeOp(name string, ruleId string, rOpt *api.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) (*DecodeOp, error) {
+func NewDecodeOp(name, StreamName string, ruleId string, rOpt *api.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) (*DecodeOp, error) {
 	options.Schema = nil
 	options.IsWildCard = isWildcard
 	options.IsSchemaLess = isSchemaless
 	if schema != nil {
 		options.Schema = schema
-		options.StreamName = name
+		options.StreamName = StreamName
 	}
 	options.RuleID = ruleId
 	converterTool, err := converter.GetOrCreateConverter(options)

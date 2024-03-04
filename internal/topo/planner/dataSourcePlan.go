@@ -67,7 +67,7 @@ func (p *DataSourcePlan) buildSchemaInfo(ruleID string) string {
 		return " wildcard:true"
 	}
 	if r.Schema != nil && len(r.Schema[string(p.name)]) > 0 {
-		b := bytes.NewBufferString(" Schema:[")
+		b := bytes.NewBufferString(" ConverterSchema:[")
 		i := 0
 		for colName := range r.Schema[string(p.name)] {
 			if i > 0 {
