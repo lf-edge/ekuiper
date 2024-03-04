@@ -563,9 +563,6 @@ func registerMathFunc() {
 			if err := ValidateLen(3, len(args)); err != nil {
 				return err
 			}
-			if !(ast.IsIntegerArg(args[0]) || ast.IsStringArg(args[0])) {
-				return ProduceErrInfo(0, "string or integer")
-			}
 			if !ast.IsIntegerArg(args[1]) {
 				return ProduceErrInfo(1, "integer")
 			}
