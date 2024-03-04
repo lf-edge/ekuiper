@@ -377,9 +377,6 @@ func registerStrFunc() {
 			if err := ValidateAtLeast(2, len(args)); err != nil {
 				return err
 			}
-			if !ast.IsNumericArg(args[0]) {
-				return ProduceErrInfo(0, "numeric")
-			}
 			if !ast.IsIntegerArg(args[1]) {
 				return ProduceErrInfo(1, "integer")
 			}
