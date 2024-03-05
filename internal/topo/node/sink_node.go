@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
 
 			m.reset()
-			logger.Infof("open sink node %d instances with batchSize", m.concurrency, sconf.BatchSize)
+			logger.Infof("open sink node %d instances with batchSize %d", m.concurrency, sconf.BatchSize)
 			for i := 0; i < m.concurrency; i++ { // workers
 				go func(instance int) {
 					panicOrError := infra.SafeRun(func() error {
@@ -222,7 +222,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							stats.SetBufferLength(bufferLen(dataCh, c, rq))
 							outs := itemToMap(data)
 							if sconf.Omitempty && (data == nil || len(outs) == 0) {
-								ctx.GetLogger().Debugf("receive empty in sink")
+								ctx.GetLogger().Warnf("receive empty data in sink, data %v and outs %v", data, outs)
 								return
 							}
 							if sconf.isBatchSinkEnabled() {
@@ -465,15 +465,20 @@ func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs [
 		return doCollectData(ctx, sink, outs, stats, isResend)
 	} else {
 		var err error
+		c := 0
 		for _, d := range outs {
 			if sconf.Omitempty && (d == nil || len(d) == 0) {
 				ctx.GetLogger().Debugf("receive empty in sink")
 				continue
 			}
 			newErr := doCollectData(ctx, sink, d, stats, isResend)
+			c++
 			if newErr != nil {
 				err = newErr
 			}
+		}
+		if c == 0 {
+			ctx.GetLogger().Warnf("receive empty in sink %v", outs)
 		}
 		return err
 	}
