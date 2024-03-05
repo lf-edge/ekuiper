@@ -4,7 +4,7 @@
 
 通过 API 检查 eKuiper 连接的连通性
 
-### sink 端连接检查 
+### sink 端连接检查
 
 ```shell
 POST http://localhost:9081/metadata/sinks/connection/{sink}
