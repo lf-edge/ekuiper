@@ -60,6 +60,10 @@ Below is another sample configuration for connecting to AWS IoT by using certifi
     }
 ```
 
+### Test connectivity
+
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ## Dynamic Topic
 
 If the result data contains the topic name, we can use it as the property of the mqtt action to achieve dynamic topic support. Assume the selected data has a field named `mytopic`, we can use data template syntax to set it as the property value for `topic` as below:

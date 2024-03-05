@@ -26,6 +26,10 @@ default:
   maxBytes: 1000000
 ```
 
+### Test connectivity
+
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ### Global configurations
 
 User can specify the global Kafka source settings here. The configuration items specified in `default` section will be taken as default settings for the source when running this source.

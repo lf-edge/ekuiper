@@ -63,6 +63,10 @@ template_config:
     dateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS"
 ```
 
+### 测试连通性
+
+你可以通过 api 的方式提前检查对应 sink 端点的连通性: [连通性检查](../../../api/restapi/connection.md#连通性检查)
+
 ### 全局配置
 
 用户可以在此处指定全局 sql 源设置。`default` 部分中指定的配置项将在运行此源时作为源的默认设置。

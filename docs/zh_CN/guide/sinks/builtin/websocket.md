@@ -17,6 +17,10 @@
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
+### 测试连通性
+
+你可以通过 api 的方式提前检查对应 sink 端点的连通性: [连通性检查](../../../api/restapi/connection.md#连通性检查)
+
 ## ekuiper 作为 websocket 客户端
 
 当 websocket sink 同时定义了 addr 和 path 后，eKuiper 将作为 websocket 客户端向远端建立 websocket 连接，并将消息通过该连接推送。
