@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -160,7 +160,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 			if item != nil {
 				c.addCache(ctx, item)
 			} else {
-				ctx.GetLogger().Debug("nil cache, continue sending")
+				ctx.GetLogger().Warnf("nil cache %v, continue sending", item)
 			}
 			if c.sendStatus == 2 {
 				c.sendStatus = 0
