@@ -127,12 +127,15 @@ func NewRuleState(rule *api.Rule) (rs *RuleState, err error) {
 			rs.Close()
 		}
 	}()
-	if tp, err := planner.Plan(rule); err != nil {
-		return rs, err
-	} else {
-		rs.Topology = tp
-		return rs, nil
-	}
+	err = infra.SafeRun(func() error {
+		if tp, err := planner.Plan(rule); err != nil {
+			return err
+		} else {
+			rs.Topology = tp
+		}
+		return nil
+	})
+	return rs, err
 }
 
 // UpdateTopo update the rule and the topology AND restart the topology
