@@ -36,6 +36,30 @@ func TestConfig(t *testing.T) {
 		error    string
 	}{
 		{ // 0
+			name: "insecureSkipVerify",
+			conf: map[string]interface{}{
+				"addr":        "http://192.168.0.3:8086",
+				"username":    "name",
+				"password":    "pass",
+				"measurement": "test",
+				"database":    "db1",
+				"tags": map[string]interface{}{
+					"tag": "value",
+				},
+				"fields":             []interface{}{"temperature"},
+				"tsFieldName":        "ts",
+				"insecureSkipVerify": true,
+			},
+			expected: c{
+				Addr:         "http://192.168.0.3:8086",
+				Username:     "name",
+				Password:     "******",
+				Database:     "db1",
+				WriteOptions: tspoint.WriteOptions{Tags: map[string]string{"tag": "value"}, Fields: []string{"temperature"}, TsFieldName: "ts", PrecisionStr: "ms"},
+				Measurement:  "test",
+			},
+		},
+		{ // 0
 			name: "test1",
 			conf: map[string]interface{}{
 				"addr":        "http://192.168.0.3:8086",
