@@ -23,8 +23,6 @@ CREATE STREAM demo'() with(CONF_KEY="default", datasource="/api/data", type="web
 
 At this time, eKuiper will act as a websocket client, establish a websocket connection to 127.0.0.1:8080/api/data, and use this connection to receive data as the message source.
 
-### Test connectivity
-
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
 ## eKuiper serve as websocker server

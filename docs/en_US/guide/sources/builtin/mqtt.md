@@ -84,8 +84,6 @@ Users can specify the global MQTT configurations here. The configuration items s
 
   :::
 
-### Test connectivity
-
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
 ### **Payload Handling**

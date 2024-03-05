@@ -38,8 +38,6 @@ for example, if he only wants mysql, then he can build with build tag `mysql`.
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
-### Test connectivity
-
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
 ## Sample usage

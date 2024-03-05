@@ -26,8 +26,6 @@ default:
   maxBytes: 1000000
 ```
 
-### 测试连通性
-
 你可以通过 api 的方式提前检查对应 sink 端点的连通性: [连通性检查](../../../api/restapi/connection.md#连通性检查)
 
 ### 全局配置

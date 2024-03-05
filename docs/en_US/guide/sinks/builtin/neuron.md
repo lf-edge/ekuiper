@@ -24,8 +24,6 @@ Assume the sink receive result map like:
 }
 ```
 
-### Test connectivity
-
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
 ### Send specify tags to neuron

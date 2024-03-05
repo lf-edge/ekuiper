@@ -60,8 +60,6 @@ Below is another sample configuration for connecting to AWS IoT by using certifi
     }
 ```
 
-### Test connectivity
-
 You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
 
 ## Dynamic Topic
