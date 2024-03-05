@@ -47,7 +47,7 @@ func genTlsConfigurationOptions(props map[string]interface{}) (*TlsConfiguration
 		return nil, err
 	}
 	var err error
-	if (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
+	if !opts.SkipCertVerify && (len(opts.CertFile) < 1 && len(opts.KeyFile) < 1 && len(opts.CaFile) < 1) &&
 		(len(opts.CertificationRaw) < 1 && len(opts.PrivateKeyRaw) < 1 && len(opts.RootCARaw) < 1) {
 		return nil, nil
 	}

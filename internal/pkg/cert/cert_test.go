@@ -215,3 +215,28 @@ func TestGenTLSConfig(t *testing.T) {
 	opts.RootCARaw = "mock"
 	opts.TlsConfigLog("")
 }
+
+func TestGenOptions(t *testing.T) {
+	testcases := []struct {
+		m       map[string]interface{}
+		options *TlsConfigurationOptions
+	}{
+		{
+			m:       map[string]interface{}{},
+			options: nil,
+		},
+		{
+			m: map[string]interface{}{
+				"insecureSkipVerify": true,
+			},
+			options: &TlsConfigurationOptions{
+				SkipCertVerify: true,
+			},
+		},
+	}
+	for _, tc := range testcases {
+		opt, err := genTlsConfigurationOptions(tc.m)
+		require.NoError(t, err)
+		require.Equal(t, tc.options, opt)
+	}
+}
