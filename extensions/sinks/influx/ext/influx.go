@@ -82,7 +82,10 @@ func (m *influxSink) Configure(props map[string]interface{}) error {
 	}
 	m.password = m.conf.Password
 	m.conf.Password = "******"
-	insecureSkip := tlsConf.InsecureSkipVerify
+	var insecureSkip bool
+	if tlsConf != nil {
+		insecureSkip = tlsConf.InsecureSkipVerify
+	}
 
 	m.cli, err = client.NewHTTPClient(client.HTTPConfig{
 		Addr:               m.conf.Addr,
