@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 }
 
 func (ms *RestSink) Open(ctx api.StreamContext) error {
-	ctx.GetLogger().Infof("Opening HTTP pull source with conf %+v", ms.config)
+	ctx.GetLogger().Infof("Opening REST sink with conf %+v", ms.config)
 	return nil
 }
 
@@ -82,6 +82,13 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 				ms.config.Url,
 				decodedData))
 		}
+		return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+			originErr.Error(),
+			recoverAble,
+			ms.config.Method,
+			ms.config.Url,
+			decodedData,
+		)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
 		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)

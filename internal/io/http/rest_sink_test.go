@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -459,6 +459,29 @@ func TestRestSinkErrorLog(t *testing.T) {
 		err := s.Collect(vCtx, reqBody)
 		// for parse error, omit it.
 		assert.NoError(t, err)
+		s.Close(context.Background())
+	})
+
+	t.Run("Test invalid url", func(t *testing.T) {
+		s := &RestSink{}
+		config := map[string]interface{}{
+			"url":       "http://localhost:1234",
+			"timeout":   float64(10),
+			"method":    "post",
+			"debugResp": true,
+		}
+		s.Configure(config)
+		s.Open(context.Background())
+
+		tf, _ := transform.GenTransform("", "delimited", "", "", "", []string{})
+		vCtx := context.WithValue(context.Background(), context.TransKey, tf)
+		reqBody := map[string]interface{}{
+			"ab": "success",
+		}
+		err := s.Collect(vCtx, reqBody)
+		assert.Error(t, err)
+		// Unrecoverable Error
+		assert.False(t, errorx.IsIOError(err))
 		s.Close(context.Background())
 	})
 }
