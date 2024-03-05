@@ -30,6 +30,18 @@ func TestSinkConfigure(t *testing.T) {
 		expectedAdConf *AdConf
 	}{
 		{
+			name: "TLS Error",
+			input: map[string]interface{}{
+				"topic":         "testTopic3",
+				"qos":           0,
+				"retained":      false,
+				"compression":   "",
+				"privateKeyRaw": "MTIz",
+				"server":        "123",
+			},
+			expectedErr: fmt.Errorf("tls: failed to find any PEM data in certificate input"),
+		},
+		{
 			name: "Missing topic",
 			input: map[string]interface{}{
 				"qos":         1,
@@ -92,9 +104,11 @@ func TestSinkConfigure(t *testing.T) {
 				t.Errorf("\n Expected error: \t%v\n \t\t\tgot: \t%v", tt.expectedErr, err)
 				return
 			}
-			if !reflect.DeepEqual(ms.adconf, tt.expectedAdConf) {
-				t.Errorf("\n Expected adConf: \t%v\n \t\t\tgot: \t%v", tt.expectedAdConf, ms.adconf)
-				return
+			if tt.expectedErr == nil {
+				if !reflect.DeepEqual(ms.adconf, tt.expectedAdConf) {
+					t.Errorf("\n Expected adConf: \t%v\n \t\t\tgot: \t%v", tt.expectedAdConf, ms.adconf)
+					return
+				}
 			}
 		})
 	}

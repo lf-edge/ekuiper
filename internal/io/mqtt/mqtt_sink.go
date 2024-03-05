@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	mqttClient "github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -105,7 +106,8 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		"qos":      adconf.Qos,
 		"retained": adconf.Retained,
 	}
-	return nil
+	mc := &mqttClient.MQTTClient{}
+	return mc.CfgValidate(ms.config)
 }
 
 func (ms *MQTTSink) Open(ctx api.StreamContext) error {
