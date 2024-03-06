@@ -27,8 +27,15 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
+
+type schemainfo struct {
+	datasource string
+	schema     map[string]*ast.JsonStreamField
+	isWildcard bool
+}
 
 // SrcSubTopo Implements node.SourceNode
 type SrcSubTopo struct {
@@ -40,6 +47,9 @@ type SrcSubTopo struct {
 	ops  []node.OperatorNode
 	tail api.Emitter
 	topo *api.PrintableTopo
+	// Save the schemainfo for each rule only to use when need to attach schema when the rule is starting.
+	// Get updated if the rule is updated. Never delete it until the subtopo is deleted.
+	schemaReg map[string]schemainfo
 
 	// runtime state
 	// Ref state, affect the pool. Update when rule created or stopped
@@ -59,6 +69,16 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 	if _, loaded := s.refRules.LoadOrStore(ctx.GetRuleId(), parentErrCh); !loaded {
 		s.refCount.Add(1)
 		ctx.GetLogger().Infof("Sub topo %s opened by rule %s with %d ref", s.name, ctx.GetRuleId(), s.refCount.Load())
+	}
+	// Attach schemas
+	for _, op := range s.ops {
+		if so, ok := op.(node.SchemaNode); ok {
+			si, hasSchema := s.schemaReg[ctx.GetRuleId()]
+			if hasSchema {
+				ctx.GetLogger().Infof("attach schema to op %s", op.GetName())
+				so.AttachSchema(ctx, si.datasource, si.schema, si.isWildcard)
+			}
+		}
 	}
 	// If not opened yet, open it. It may be opened before, but failed to open. In this case, try to open it again.
 	if s.opened.CompareAndSwap(false, true) {
@@ -138,6 +158,18 @@ func (s *SrcSubTopo) GetMetrics() []any {
 	return result
 }
 
+func (s *SrcSubTopo) OpsCount() int {
+	return len(s.ops)
+}
+
+func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*ast.JsonStreamField, isWildCard bool) {
+	s.schemaReg[ruleID] = schemainfo{
+		datasource: dataSource,
+		schema:     schema,
+		isWildcard: isWildCard,
+	}
+}
+
 func (s *SrcSubTopo) Close(ruleId string) {
 	if _, ok := s.refRules.LoadAndDelete(ruleId); ok {
 		s.refCount.Add(-1)
@@ -146,6 +178,11 @@ func (s *SrcSubTopo) Close(ruleId string) {
 				s.cancel()
 			}
 			RemoveSubTopo(s.name)
+		}
+		for _, op := range s.ops {
+			if so, ok := op.(node.SchemaNode); ok {
+				so.DetachSchema(ruleId)
+			}
 		}
 	}
 }

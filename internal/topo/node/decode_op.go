@@ -17,6 +17,7 @@ package node
 import (
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -29,6 +30,24 @@ import (
 type DecodeOp struct {
 	*defaultSinkNode
 	converter message.Converter
+}
+
+func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
+	ctx.GetLogger().Infof("attach schema to shared stream")
+	if fastDecoder, ok := o.converter.(message.SchemaMergeAbleConverter); ok {
+		if err := fastDecoder.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
+			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
+		}
+	}
+}
+
+func (o *DecodeOp) DetachSchema(ruleId string) {
+	conf.Log.Infof("detach schema for shared stream rule %v", ruleId)
+	if fastDecoder, ok := o.converter.(message.SchemaMergeAbleConverter); ok {
+		if err := fastDecoder.DetachSchema(ruleId); err != nil {
+			conf.Log.Warnf("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
+		}
+	}
 }
 
 func NewDecodeOp(name, StreamName string, ruleId string, rOpt *api.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) (*DecodeOp, error) {
@@ -116,3 +135,5 @@ func (o *DecodeOp) toTuple(v map[string]any, d *xsql.Tuple) *xsql.Tuple {
 		Emitter:   d.Emitter,
 	}
 }
+
+var _ SchemaNode = &DecodeOp{}

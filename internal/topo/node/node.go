@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
@@ -37,6 +38,13 @@ type OperatorNode interface {
 	SetQos(api.Qos)
 	SetBarrierHandler(checkpoint.BarrierHandler)
 	RemoveMetrics(name string)
+}
+
+type SchemaNode interface {
+	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
+	AttachSchema(api.StreamContext, string, map[string]*ast.JsonStreamField, bool)
+	// DetachSchema detach the schema from the node. The parameters are ruleId
+	DetachSchema(string)
 }
 
 type DataSourceNode interface {

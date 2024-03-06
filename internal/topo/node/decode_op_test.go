@@ -106,6 +106,118 @@ func BenchmarkThrougput(b *testing.B) {
 	}
 }
 
+func TestJSONWithSchema(t *testing.T) {
+	tests := []struct {
+		name        string
+		concurrency int
+		schema      map[string]*ast.JsonStreamField
+	}{
+		{"single", 1, map[string]*ast.JsonStreamField{
+			"b": {
+				Type: "float",
+			},
+		}},
+		{"multi", 10, map[string]*ast.JsonStreamField{
+			"b": {
+				Type: "float",
+			},
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op, err := NewDecodeOp("test", "streamName", "test1", &api.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
+				"a": {
+					Type: "bigint",
+				},
+			})
+			assert.NoError(t, err)
+			out := make(chan any, 100)
+			err = op.AddOutput(out, "test")
+			assert.NoError(t, err)
+			ctx := mockContext.NewMockContext("test1", "decode_test")
+			errCh := make(chan error)
+			op.Exec(ctx, errCh)
+
+			cases := []any{
+				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+			}
+			expects := [][]any{
+				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1)}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
+				{
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1)}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(3)}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				},
+			}
+
+			for i, c := range cases {
+				op.input <- c
+				for _, e := range expects[i] {
+					r := <-out
+					switch tr := r.(type) {
+					case error:
+						assert.EqualError(t, e.(error), tr.Error())
+					default:
+						assert.Equal(t, e, r)
+					}
+				}
+			}
+
+			nctx := mockContext.NewMockContext("test2", "decode_test")
+			op.AttachSchema(nctx, "streamName", tt.schema, false)
+			cases = []any{
+				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+			}
+			expectsWithSchema := [][]any{
+				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1), "b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
+				{
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1), "b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(3), "b": 4.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				},
+			}
+
+			for i, c := range cases {
+				op.input <- c
+				for _, e := range expectsWithSchema[i] {
+					r := <-out
+					switch tr := r.(type) {
+					case error:
+						assert.EqualError(t, e.(error), tr.Error())
+					default:
+						assert.Equal(t, e, r)
+					}
+				}
+			}
+
+			op.DetachSchema(ctx.GetRuleId())
+			cases = []any{
+				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+			}
+			expects = [][]any{
+				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
+				{
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 4.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				},
+			}
+			for i, c := range cases {
+				op.input <- c
+				for _, e := range expects[i] {
+					r := <-out
+					switch tr := r.(type) {
+					case error:
+						assert.EqualError(t, e.(error), tr.Error())
+					default:
+						assert.Equal(t, e, r)
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestValidate(t *testing.T) {
 	_, err := NewDecodeOp("test", "streamName", "test1", &api.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil)
 	assert.Error(t, err)
