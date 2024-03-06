@@ -123,6 +123,7 @@ func (c *FastJsonConverter) DetachSchema(ruleID string) error {
 			}
 		}
 		c.schema = newSchema
+		c.storeSchema()
 	}
 	return nil
 }

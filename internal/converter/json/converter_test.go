@@ -26,6 +26,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/internal/converter/merge"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
@@ -921,4 +922,38 @@ func TestJsonError(t *testing.T) {
 	errWithCode, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
+}
+
+func TestAttachDetachSchema(t *testing.T) {
+	f := NewFastJsonConverter("rule1", "demo", nil, true, true)
+	err := f.MergeSchema("rule2", "demo", map[string]*ast.JsonStreamField{
+		"a": nil,
+	}, false)
+	require.NoError(t, err)
+	r := merge.GetRuleSchema("rule1")
+	er := merge.RuleSchemaResponse{
+		Schema: map[string]map[string]*ast.JsonStreamField{
+			"demo": nil,
+		},
+		Wildcard: map[string]bool{
+			"demo": true,
+		},
+	}
+	require.Equal(t, r, er)
+	r = merge.GetRuleSchema("rule2")
+	require.Equal(t, r, er)
+	// detach rule
+	require.NoError(t, f.DetachSchema("rule1"))
+	r = merge.GetRuleSchema("rule2")
+	er = merge.RuleSchemaResponse{
+		Schema: map[string]map[string]*ast.JsonStreamField{
+			"demo": {
+				"a": nil,
+			},
+		},
+		Wildcard: map[string]bool{
+			"demo": false,
+		},
+	}
+	require.Equal(t, r, er)
 }

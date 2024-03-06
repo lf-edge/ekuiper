@@ -187,7 +187,7 @@ func (p *sourcePool) deleteInstance(k string, node *SourceNode, index int) {
 
 		instanceKey := fmt.Sprintf("%s.%s.%d", k, node.ctx.GetRuleId(), index)
 		end := s.detach(instanceKey)
-		s.detachSchema(s.ctx.GetRuleId())
+		s.detachSchema(node.ctx.GetRuleId())
 		if end {
 			s.cancel()
 
