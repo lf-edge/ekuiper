@@ -55,9 +55,7 @@ func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error)
 		t = message.FormatJson
 	}
 	if t == message.FormatJson {
-		if !options.IsWildCard && len(options.Schema) > 1 {
-			return json.NewFastJsonConverter(options.RuleID, options.StreamName, options.Schema, options.IsSchemaLess), nil
-		}
+		return json.NewFastJsonConverter(options.RuleID, options.StreamName, options.Schema, options.IsWildCard, options.IsSchemaLess), nil
 	}
 
 	schemaFile := ""

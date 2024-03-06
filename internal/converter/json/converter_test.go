@@ -214,7 +214,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("", "", tc.schema, false)
+		f := NewFastJsonConverter("", "", tc.schema, false, false)
 		v, err := f.Decode(tc.payload)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
@@ -225,7 +225,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", "", tc.schema, false)
+		f := NewFastJsonConverter("", "", tc.schema, false, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -385,7 +385,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("", "", tc.schema, false)
+		f := NewFastJsonConverter("", "", tc.schema, false, false)
 		_, err := f.Decode(tc.payload)
 		require.Error(t, err)
 		require.Equal(t, err.Error(), tc.err.Error())
@@ -395,7 +395,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 func TestFastJsonEncode(t *testing.T) {
 	a := make(map[string]int)
 	a["a"] = 1
-	f := NewFastJsonConverter("", "", nil, false)
+	f := NewFastJsonConverter("", "", nil, false, false)
 	v, err := f.Encode(a)
 	require.NoError(t, err)
 	require.Equal(t, v, []byte(`{"a":1}`))
@@ -427,7 +427,7 @@ func TestArrayWithArray(t *testing.T) {
 			},
 		},
 	}
-	f := NewFastJsonConverter("", "", schema, false)
+	f := NewFastJsonConverter("", "", schema, false, false)
 	v, err := f.Decode(payload)
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -607,7 +607,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", "", tc.schema, false)
+		f := NewFastJsonConverter("", "", tc.schema, false, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -617,7 +617,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", "", tc.schema, false)
+		f := NewFastJsonConverter("", "", tc.schema, false, false)
 		v, err := f.Decode(arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -633,7 +633,7 @@ func TestConvertBytea(t *testing.T) {
 			Type: "bytea",
 		},
 	}
-	f := NewFastJsonConverter("", "", schema, false)
+	f := NewFastJsonConverter("", "", schema, false, false)
 	v, err := f.Decode([]byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -649,7 +649,7 @@ func TestConvertBytea(t *testing.T) {
 			},
 		},
 	}
-	f = NewFastJsonConverter("", "", schema, false)
+	f = NewFastJsonConverter("", "", schema, false, false)
 	v, err = f.Decode([]byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -815,7 +815,7 @@ func TestMergeSchema(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("1", "", tc.originSchema, false)
+		f := NewFastJsonConverter("1", "", tc.originSchema, false, false)
 		err := f.MergeSchema("2", "", tc.newSchema, false)
 		if tc.err == nil {
 			require.NoError(t, err)
@@ -832,7 +832,7 @@ func TestMergeWildcardSchema(t *testing.T) {
 			Type: "bigint",
 		},
 	}
-	f := NewFastJsonConverter("1", "", originSchema, false)
+	f := NewFastJsonConverter("1", "", originSchema, false, false)
 	require.NoError(t, f.MergeSchema("2", "", nil, true))
 	newSchema := map[string]*ast.JsonStreamField{
 		"b": {
@@ -862,7 +862,7 @@ func TestSchemaless(t *testing.T) {
 	originSchema := map[string]*ast.JsonStreamField{
 		"a": nil,
 	}
-	f := NewFastJsonConverter("1", "", originSchema, true)
+	f := NewFastJsonConverter("1", "", originSchema, false, true)
 	testcases := []struct {
 		data   map[string]interface{}
 		expect map[string]interface{}
@@ -915,7 +915,7 @@ func TestJsonError(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 	// fastjson
-	c := NewFastJsonConverter("", "", nil, true)
+	c := NewFastJsonConverter("", "", nil, false, true)
 	_, err = c.Decode(nil)
 	require.Error(t, err)
 	errWithCode, ok = err.(errorx.ErrorWithCode)

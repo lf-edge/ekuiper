@@ -59,22 +59,26 @@ type FastJsonConverter struct {
 	isSchemaLess bool
 	// ruleID -> schema
 	schemaMap map[string]map[string]*ast.JsonStreamField
-	// ruleID -> dataSource
-	dataSourceMap map[string]string
-	schema        map[string]*ast.JsonStreamField
-	wildcardMap   map[string]struct{}
+	// ruleID -> StreamName
+	streamMap map[string]string
+	schema    map[string]*ast.JsonStreamField
+	// ruleID -> wildcard
+	wildcardMap map[string]struct{}
 }
 
-func NewFastJsonConverter(ruleID, dataSource string, schema map[string]*ast.JsonStreamField, isSchemaLess bool) *FastJsonConverter {
+func NewFastJsonConverter(ruleID, streamName string, schema map[string]*ast.JsonStreamField, isWildcard, isSchemaLess bool) *FastJsonConverter {
 	f := &FastJsonConverter{
-		schemaMap:     make(map[string]map[string]*ast.JsonStreamField),
-		schema:        schema,
-		wildcardMap:   make(map[string]struct{}),
-		isSchemaLess:  isSchemaLess,
-		dataSourceMap: map[string]string{},
+		schemaMap:    make(map[string]map[string]*ast.JsonStreamField),
+		schema:       schema,
+		wildcardMap:  make(map[string]struct{}),
+		isSchemaLess: isSchemaLess,
+		streamMap:    map[string]string{},
 	}
 	f.schemaMap[ruleID] = schema
-	f.dataSourceMap[ruleID] = dataSource
+	f.streamMap[ruleID] = streamName
+	if isWildcard {
+		f.wildcardMap[ruleID] = struct{}{}
+	}
 	f.storeSchema()
 	return f
 }
@@ -87,7 +91,7 @@ func (c *FastJsonConverter) MergeSchema(ruleID, dataSource string, newSchema map
 		return nil
 	}
 	c.schemaMap[ruleID] = newSchema
-	c.dataSourceMap[ruleID] = dataSource
+	c.streamMap[ruleID] = dataSource
 	if isWildcard {
 		c.wildcardMap[ruleID] = struct{}{}
 	} else {
@@ -108,7 +112,7 @@ func (c *FastJsonConverter) DetachSchema(ruleID string) error {
 	_, ok := c.schemaMap[ruleID]
 	if ok {
 		merge.RemoveRuleSchema(ruleID)
-		delete(c.dataSourceMap, ruleID)
+		delete(c.streamMap, ruleID)
 		delete(c.wildcardMap, ruleID)
 		delete(c.schemaMap, ruleID)
 		newSchema := make(map[string]*ast.JsonStreamField)
@@ -126,12 +130,12 @@ func (c *FastJsonConverter) DetachSchema(ruleID string) error {
 func (c *FastJsonConverter) storeSchema() {
 	if len(c.wildcardMap) > 0 {
 		for ruleID := range c.schemaMap {
-			merge.AddRuleSchema(ruleID, c.dataSourceMap[ruleID], nil, true)
+			merge.AddRuleSchema(ruleID, c.streamMap[ruleID], nil, true)
 		}
 		return
 	}
 	for ruleID := range c.schemaMap {
-		merge.AddRuleSchema(ruleID, c.dataSourceMap[ruleID], c.schema, false)
+		merge.AddRuleSchema(ruleID, c.streamMap[ruleID], c.schema, false)
 	}
 }
 
