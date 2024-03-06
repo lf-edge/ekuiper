@@ -55,6 +55,10 @@ func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error)
 		t = message.FormatJson
 	}
 	if t == message.FormatJson {
+		// it's unit test
+		if options.RuleID == "" || options.StreamName == "" {
+			return json.GetConverter()
+		}
 		return json.NewFastJsonConverter(options.RuleID, options.StreamName, options.Schema, options.IsWildCard, options.IsSchemaLess), nil
 	}
 
