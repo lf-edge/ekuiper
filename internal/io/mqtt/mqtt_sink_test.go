@@ -67,6 +67,7 @@ func TestSinkConfigure(t *testing.T) {
 				"qos":         0,
 				"retained":    false,
 				"compression": "",
+				"server":      "123",
 			},
 			expectedErr: nil,
 			expectedAdConf: &AdConf{
@@ -84,6 +85,7 @@ func TestSinkConfigure(t *testing.T) {
 				"qos":         1,
 				"retained":    false,
 				"compression": "zlib",
+				"server":      "123",
 			},
 			expectedErr: nil,
 			expectedAdConf: &AdConf{
