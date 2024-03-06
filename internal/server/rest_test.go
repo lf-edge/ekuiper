@@ -319,7 +319,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 	returnStr := string(returnVal)
-	expect = "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ * ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: alert\",\"id\":1,\"children\":null}\n\n"
+	expect = "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ * ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: alert wildcard:true\",\"id\":1,\"children\":null}\n\n"
 	assert.Equal(suite.T(), expect, returnStr)
 
 	// get rule topo

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -73,7 +74,7 @@ func TestJSON(t *testing.T) {
 					r := <-out
 					switch tr := r.(type) {
 					case error:
-						assert.EqualError(t, e.(error), tr.Error())
+						require.Equal(t, e.(error).Error(), tr.Error())
 					default:
 						assert.Equal(t, e, r)
 					}
