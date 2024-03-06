@@ -108,6 +108,9 @@ func (t *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]interfac
 				continue
 			}
 			if v, ok := mapData[k]; ok {
+				if v == nil {
+					continue
+				}
 				keys = append(keys, k)
 				if reflect.String == reflect.TypeOf(v).Kind() {
 					vals = append(vals, fmt.Sprintf(`"%v"`, v))
