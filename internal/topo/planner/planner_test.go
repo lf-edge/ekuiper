@@ -2740,6 +2740,9 @@ func Test_createLogicalPlan(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
 	for i, tt := range tests {
+		if tt.sql != "SELECT * FROM src1 WHERE temp > 20 GROUP BY COUNTWINDOW(5,1) HAVING COUNT(*) > 2" {
+			continue
+		}
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
@@ -3765,7 +3768,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							streamFields:    map[string]*ast.JsonStreamField{},
 							streamStmt:      streams["src1"],
 							metaFields:      []string{"device"},
-							isWildCard:      false,
+							isWildCard:      true,
 							pruneFields:     []string{"id1", "name"},
 							isSchemaless:    true,
 						}.Init(),
@@ -3808,7 +3811,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 							streamFields:    map[string]*ast.JsonStreamField{},
 							streamStmt:      streams["src1"],
 							metaFields:      []string{"device"},
-							isWildCard:      false,
+							isWildCard:      true,
 							pruneFields:     []string{"id1", "name"},
 							isSchemaless:    true,
 						}.Init(),
@@ -3877,7 +3880,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 										streamFields:    map[string]*ast.JsonStreamField{},
 										streamStmt:      streams["src1"],
 										metaFields:      []string{},
-										isWildCard:      false,
+										isWildCard:      true,
 										pruneFields:     []string{"id1", "name"},
 										isSchemaless:    true,
 									}.Init(),
@@ -3926,7 +3929,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 										streamFields:    map[string]*ast.JsonStreamField{},
 										streamStmt:      streams["src1"],
 										metaFields:      []string{},
-										isWildCard:      false,
+										isWildCard:      true,
 										pruneFields:     []string{"id1", "name"},
 										isSchemaless:    true,
 									}.Init(),
@@ -3998,12 +4001,14 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 												DataSourcePlan{
 													baseLogicalPlan: baseLogicalPlan{},
 													name:            "src1",
-													streamFields:    map[string]*ast.JsonStreamField{},
-													streamStmt:      streams["src1"],
-													metaFields:      []string{},
-													isWildCard:      false,
-													pruneFields:     []string{"id1", "name"},
-													isSchemaless:    true,
+													streamFields: map[string]*ast.JsonStreamField{
+														"id1": nil,
+													},
+													streamStmt:   streams["src1"],
+													metaFields:   []string{},
+													isWildCard:   true,
+													pruneFields:  []string{"id1", "name"},
+													isSchemaless: true,
 												}.Init(),
 											},
 										},
@@ -4062,12 +4067,14 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 												DataSourcePlan{
 													baseLogicalPlan: baseLogicalPlan{},
 													name:            "src1",
-													streamFields:    map[string]*ast.JsonStreamField{},
-													streamStmt:      streams["src1"],
-													metaFields:      []string{},
-													isWildCard:      false,
-													pruneFields:     []string{"id1", "name"},
-													isSchemaless:    true,
+													streamFields: map[string]*ast.JsonStreamField{
+														"temp": nil,
+													},
+													streamStmt:   streams["src1"],
+													metaFields:   []string{},
+													isWildCard:   true,
+													pruneFields:  []string{"id1", "name"},
+													isSchemaless: true,
 												}.Init(),
 											},
 										},

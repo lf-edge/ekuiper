@@ -231,13 +231,10 @@ func (p *DataSourcePlan) PruneColumns(fields []ast.Expr) error {
 				}
 			}
 		case *ast.Wildcard:
-			if len(f.Except) == 0 && len(f.Replace) == 0 {
-				p.isWildCard = true
-			} else {
-				p.pruneFields = append(p.pruneFields, f.Except...)
-				for _, replace := range f.Replace {
-					p.pruneFields = append(p.pruneFields, replace.AName)
-				}
+			p.isWildCard = true
+			p.pruneFields = append(p.pruneFields, f.Except...)
+			for _, replace := range f.Replace {
+				p.pruneFields = append(p.pruneFields, replace.AName)
 			}
 		case *ast.FieldRef:
 			if !p.isWildCard && (f.StreamName == ast.DefaultStream || f.StreamName == p.name) {
@@ -378,27 +375,25 @@ func (p *DataSourcePlan) getField(name string, strict bool) (*ast.JsonStreamFiel
 // TODO provide field information to the source for it to prune
 func (p *DataSourcePlan) getAllFields() {
 	if !p.isWildCard {
-		if len(p.pruneFields) == 0 {
-			p.streamFields = p.fields
-		} else {
-			for _, pf := range p.pruneFields {
-				prune := true
-				for f := range p.fields {
-					if pf == f {
-						prune = false
-						break
-					}
-				}
-				if prune {
-					delete(p.streamFields, pf)
-				}
-			}
-		}
+		p.streamFields = p.fields
 	} else {
 		for name, fr := range p.fields {
 			p.streamFields[name] = fr
 		}
 	}
+	for _, pf := range p.pruneFields {
+		prune := true
+		for f := range p.fields {
+			if pf == f {
+				prune = false
+				break
+			}
+		}
+		if prune {
+			delete(p.streamFields, pf)
+		}
+	}
+
 	p.metaFields = make([]string, 0, len(p.metaMap))
 	for _, v := range p.metaMap {
 		p.metaFields = append(p.metaFields, v)
