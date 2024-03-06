@@ -37,9 +37,9 @@ func init() {
 }
 
 type RuleSchemaResponse struct {
-	// datasource -> schema
+	// streamName -> schema
 	Schema map[string]map[string]*ast.JsonStreamField `json:"schema"`
-	// datasource -> wildcard
+	// streamName -> wildcard
 	Wildcard map[string]bool `json:"wildcard"`
 }
 
