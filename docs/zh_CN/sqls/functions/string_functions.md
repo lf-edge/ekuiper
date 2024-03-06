@@ -148,7 +148,7 @@ rtrim(col)
 substring(col, start, end)
 ```
 
-返回 String，其中包含从 start 到 end 的子字符串。如果 end 为负数，则从字符串末尾开始计数。
+返回 String，其中包含从 start 到 end 的子字符串。
 
 ## STARTSWITH
 
