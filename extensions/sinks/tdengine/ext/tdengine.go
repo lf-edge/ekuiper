@@ -108,6 +108,9 @@ func (t *taosConfig) buildSql(ctx api.StreamContext, mapData map[string]interfac
 				continue
 			}
 			if v, ok := mapData[k]; ok {
+				if v == nil {
+					continue
+				}
 				keys = append(keys, k)
 				if reflect.String == reflect.TypeOf(v).Kind() {
 					vals = append(vals, fmt.Sprintf(`"%v"`, v))
@@ -218,7 +221,8 @@ func (m *taosSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 		item = tm
 	} else {
-		tm, _, err := transform.TransItem(item, m.conf.DataField, m.conf.Fields)
+		allFields := append(m.conf.TagFields, m.conf.Fields...)
+		tm, _, err := transform.TransItem(item, m.conf.DataField, allFields)
 		if err != nil {
 			return fmt.Errorf("fail to transform data %v for error %v", item, err)
 		}
