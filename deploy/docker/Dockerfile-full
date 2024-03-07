@@ -1,0 +1,47 @@
+# Copyright 2024 EMQ Technologies Co., Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+ARG GO_VERSION=1.21.3
+FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
+
+COPY . /go/kuiper
+
+WORKDIR /go/kuiper
+
+RUN make build_full
+
+FROM debian:bullseye-slim
+
+COPY ./deploy/docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+COPY --from=builder /go/kuiper/_build/kuiper-* /kuiper/
+
+ARG DEBIAN_FRONTEND="noninteractive"
+
+RUN apt-get update \
+    && apt-get install -y wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /kuiper
+
+ENV MAINTAINER="emqx.io"
+ENV KUIPER_HOME /kuiper
+ENV KUIPER__BASIC__CONSOLELOG true
+
+VOLUME ["/kuiper/etc", "/kuiper/data", "/kuiper/plugins", "/kuiper/log"]
+EXPOSE 9081 20498
+
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+
+CMD ["./bin/kuiperd"]
