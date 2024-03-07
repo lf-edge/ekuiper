@@ -183,6 +183,11 @@ This image is based on Debian, and only contains the minimal packages needed to 
 
 This image is the same as slim except that it also contains python environment. It is recommended if using eKuiper python portable plugins.
 
+## `lfedge/ekuiper:<tag>-full`
+
+This image is the same as slim except that it also ship the plugins like SQL source, Kafka sink and more into the
+eKuiper binary. It is recommended if using eKuiper prebuilt plugins.
+
 ## `lfedge/ekuiper:<tag>-dev`
 
 This is the development Docker image, which is based on Debian and it also includes a Golang build environment. If you are unsure about what your needs  are, you probably want to use this one. It is designed to be used both as a throw away container (mount your source code, compile plugins for eKuiper,  and start the  container to run your app), as well as the base to build other images. Please be aware of that this image is the biggest size, and it's usually used for development purpose.

@@ -147,6 +147,7 @@ jobs:
             - "-dev"
             - "-slim"
             - "-slim-python"
+            - "-full"
             golang:
             - 1.21.3
 
