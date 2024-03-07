@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ type AnalyticFuncsOp struct {
 	FieldFuncs []*ast.Call
 }
 
-func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, input xsql.TupleRow) (xsql.TupleRow, error) {
+func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, input xsql.Row) (xsql.Row, error) {
 	for _, call := range calls {
 		f := call
 		result := ve.Eval(f)
@@ -39,7 +39,7 @@ func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, 
 	return input, nil
 }
 
-func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.FunctionValuer, input xsql.SingleCollection) (xsql.SingleCollection, error) {
+func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.FunctionValuer, input xsql.Collection) (xsql.Collection, error) {
 	err := input.RangeSet(func(_ int, row xsql.Row) (bool, error) {
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(row, &xsql.WindowRangeValuer{WindowRange: input.GetWindowRange()}, fv, &xsql.WildcardValuer{Data: row})}
 		for _, call := range calls {
@@ -64,7 +64,7 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 	switch input := data.(type) {
 	case error:
 		return input
-	case xsql.TupleRow:
+	case xsql.Row:
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
 		input, err = p.evalTupleFunc(p.FieldFuncs, ve, input)
 		if err != nil {
@@ -75,7 +75,7 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 			return err
 		}
 		data = input
-	case xsql.SingleCollection:
+	case xsql.Collection:
 		input, err = p.evalCollectionFunc(p.FieldFuncs, fv, input)
 		if err != nil {
 			return err

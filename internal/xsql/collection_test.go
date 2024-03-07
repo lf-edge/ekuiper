@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ func TestCollectionAgg(t *testing.T) {
 		result    [][][]map[string]interface{}
 	}{
 		{
-			collO:     &WindowTuples{Content: []TupleRow{}},
+			collO:     &WindowTuples{Content: []Row{}},
 			set:       [][]map[string]interface{}{},
 			interMaps: [][]map[string]interface{}{},
 			result:    [][][]map[string]interface{}{},
 		},
 		{
-			collO: &WindowTuples{Content: []TupleRow{
+			collO: &WindowTuples{Content: []Row{
 				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
 				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 2, "b": "4"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
 				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 3, "b": "6"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
@@ -88,12 +88,12 @@ func TestCollectionAgg(t *testing.T) {
 		{
 			collO: &JoinTuples{Content: []*JoinTuple{
 				{
-					Tuples: []TupleRow{
+					Tuples: []Row{
 						&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}},
 						&Tuple{Emitter: "src2", Message: Message{"a": 2, "c": "w2"}},
 					},
 				}, {
-					Tuples: []TupleRow{
+					Tuples: []Row{
 						&Tuple{Emitter: "src1", Message: Message{"a": 3, "b": "v2"}},
 						&Tuple{Emitter: "src2", Message: Message{"a": 4, "c": "w1"}},
 					},
@@ -141,12 +141,12 @@ func TestCollectionAgg(t *testing.T) {
 		{
 			collO: &GroupedTuplesSet{Groups: []*GroupedTuples{
 				{
-					Content: []TupleRow{
+					Content: []Row{
 						&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}},
 						&Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "w2"}},
 					},
 				}, {
-					Content: []TupleRow{
+					Content: []Row{
 						&Tuple{Emitter: "src1", Message: Message{"a": 3, "b": "v2"}},
 						&Tuple{Emitter: "src1", Message: Message{"a": 4, "b": "w1"}},
 					},
@@ -206,7 +206,7 @@ func TestCollectionAgg(t *testing.T) {
 		for si, set := range tt.set {
 			wg.Add(1)
 			go func(si int, set []map[string]interface{}) {
-				nr := tt.collO.Clone()
+				nr := tt.collO.Clone().(Collection)
 				nr.RangeSet(func(_ int, row Row) (bool, error) {
 					for k, v := range set[0] {
 						if strings.HasPrefix(k, "@") {
@@ -223,10 +223,8 @@ func TestCollectionAgg(t *testing.T) {
 				for j := 1; j < len(set); j++ {
 					wg2.Add(1)
 					go func(j int) {
-						nnr := nr.Clone()
-						if nnsr, ok := nnr.(SingleCollection); ok {
-							nnsr.SetIsAgg(true)
-						}
+						nnr := nr.Clone().(Collection)
+						nnr.SetIsAgg(true)
 						nnr.GroupRange(func(_ int, aggRow CollectionRow) (bool, error) {
 							for k, v := range set[j] {
 								if strings.HasPrefix(k, "@") {

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@ package operator
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -483,24 +484,21 @@ func TestMathAndConversionFunc_Apply1(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestMathAndConversionFunc_Apply1")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		if err != nil && tt.result == nil {
-			continue
-		} else if err != nil && tt.result != nil {
-			t.Errorf("%d: found error %q", i, err)
-			continue
-		}
-		pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
-		parseStmt(pp, stmt.Fields)
-		fv, afv := xsql.NewFunctionValuersForOp(nil)
-		opResult := pp.Apply(ctx, tt.data, fv, afv)
-		result, err := parseResult(opResult, pp.IsAggregate)
-		if err != nil {
-			t.Errorf("parse result error： %s", err)
-			continue
-		}
-		if !reflect.DeepEqual(tt.result, result) {
-			t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
-		}
+		t.Run(tt.sql, func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			if err != nil && tt.result == nil {
+				return
+			} else if err != nil && tt.result != nil {
+				t.Errorf("%d: found error %q", i, err)
+				return
+			}
+			pp := &ProjectOp{SendMeta: true, IsAggregate: xsql.WithAggFields(stmt)}
+			parseStmt(pp, stmt.Fields)
+			fv, afv := xsql.NewFunctionValuersForOp(nil)
+			opResult := pp.Apply(ctx, tt.data, fv, afv)
+			result, err := parseResult(opResult, pp.IsAggregate)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.result, result)
+		})
 	}
 }

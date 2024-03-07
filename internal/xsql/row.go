@@ -45,7 +45,8 @@ type ReadonlyRow interface {
 	Wildcarder
 }
 
-type Row interface {
+// RawRow is the basic data type for logical row. It could be a row or a collection row.
+type RawRow interface {
 	ReadonlyRow
 	// Del Only for some ops like functionOp * and Alias
 	Del(col string)
@@ -58,15 +59,17 @@ type Row interface {
 	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string)
 }
 
-type CloneAbleRow interface {
-	Row
-	// Clone when broadcast to make sure each row are dealt single threaded
-	Clone() CloneAbleRow
+type Row interface {
+	RawRow
+	Clone() Row
 }
 
-// TupleRow is a mutable row. Function with * could modify the row.
-type TupleRow interface {
-	CloneAbleRow
+type MetaData interface {
+	MetaData() Metadata
+}
+
+// EmittedData is data that is produced by a specific source
+type EmittedData interface {
 	// GetEmitter returns the emitter of the row
 	GetEmitter() string
 }
@@ -74,7 +77,7 @@ type TupleRow interface {
 // CollectionRow is the aggregation row of a non-grouped collection. Thinks of it as a single group.
 // The row data is immutable
 type CollectionRow interface {
-	Row
+	RawRow
 	AggregateData
 	// Clone when broadcast to make sure each row are dealt single threaded
 	// Clone() CollectionRow
@@ -245,7 +248,10 @@ type Tuple struct {
 	cachedMap map[string]interface{} // clone of the row and cached for performance
 }
 
-var _ TupleRow = &Tuple{}
+var (
+	_ Row      = &Tuple{}
+	_ MetaData = &Tuple{}
+)
 
 type WatermarkTuple struct {
 	Timestamp int64
@@ -261,7 +267,7 @@ func (t *WatermarkTuple) IsWatermark() bool {
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
-	Tuples []TupleRow // The content is immutable, but the slice may be add or removed
+	Tuples []Row // The content is immutable, but the slice may be added or removed
 	AffiliateRow
 	lock      sync.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
@@ -271,11 +277,11 @@ func (jt *JoinTuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	return []interface{}{Eval(expr, MultiValuer(jt, v, &WildcardValuer{jt}))}
 }
 
-var _ TupleRow = &JoinTuple{}
+var _ Row = &JoinTuple{}
 
 // GroupedTuples is a collection of tuples grouped by a key
 type GroupedTuples struct {
-	Content []TupleRow
+	Content []Row
 	*WindowRange
 	AffiliateRow
 	lock      sync.Mutex
@@ -362,7 +368,7 @@ func (t *Tuple) All(string) (map[string]interface{}, bool) {
 	return t.Message, true
 }
 
-func (t *Tuple) Clone() CloneAbleRow {
+func (t *Tuple) Clone() Row {
 	return &Tuple{
 		Emitter:      t.Emitter,
 		Timestamp:    t.Timestamp,
@@ -396,6 +402,10 @@ func (t *Tuple) Meta(key, table string) (interface{}, bool) {
 		return map[string]interface{}(t.Metadata), true
 	}
 	return t.Metadata.Value(key, table)
+}
+
+func (t *Tuple) MetaData() Metadata {
+	return t.Metadata
 }
 
 func (t *Tuple) GetEmitter() string {
@@ -457,11 +467,11 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 
 // JoinTuple implementation
 
-func (jt *JoinTuple) AddTuple(tuple TupleRow) {
+func (jt *JoinTuple) AddTuple(tuple Row) {
 	jt.Tuples = append(jt.Tuples, tuple)
 }
 
-func (jt *JoinTuple) AddTuples(tuples []TupleRow) {
+func (jt *JoinTuple) AddTuples(tuples []Row) {
 	jt.Tuples = append(jt.Tuples, tuples...)
 }
 
@@ -483,7 +493,7 @@ func (jt *JoinTuple) doGetValue(key, table string, isVal bool) (interface{}, boo
 	} else {
 		// TODO should use hash here
 		for _, tuple := range tuples {
-			if tuple.GetEmitter() == table {
+			if et, ok := tuple.(EmittedData); ok && et.GetEmitter() == table {
 				return getTupleValue(tuple, key, isVal)
 			}
 		}
@@ -518,7 +528,7 @@ func (jt *JoinTuple) Meta(key, table string) (interface{}, bool) {
 func (jt *JoinTuple) All(stream string) (map[string]interface{}, bool) {
 	if stream != "" {
 		for _, t := range jt.Tuples {
-			if t.GetEmitter() == stream {
+			if et, ok := t.(EmittedData); ok && et.GetEmitter() == stream {
 				return t.All("")
 			}
 		}
@@ -534,10 +544,10 @@ func (jt *JoinTuple) All(stream string) (map[string]interface{}, bool) {
 	return result, true
 }
 
-func (jt *JoinTuple) Clone() CloneAbleRow {
-	ts := make([]TupleRow, len(jt.Tuples))
+func (jt *JoinTuple) Clone() Row {
+	ts := make([]Row, len(jt.Tuples))
 	for i, t := range jt.Tuples {
-		ts[i] = t.Clone().(TupleRow)
+		ts[i] = t.Clone().(Row)
 	}
 	c := &JoinTuple{
 		Tuples:       ts,
@@ -567,10 +577,12 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 	if !allWildcard {
 		if len(cols) > 0 {
 			for i, tuple := range jt.Tuples {
-				if _, ok := wildcardEmitters[tuple.GetEmitter()]; ok {
-					continue
+				if et, ok := tuple.(EmittedData); ok {
+					if _, ok := wildcardEmitters[et.GetEmitter()]; ok {
+						continue
+					}
 				}
-				nt := tuple.Clone().(TupleRow)
+				nt := tuple.Clone().(Row)
 				nt.Pick(allWildcard, cols, wildcardEmitters, except)
 				jt.Tuples[i] = nt
 			}
@@ -621,8 +633,8 @@ func (s *GroupedTuples) ToMap() map[string]interface{} {
 	return s.cachedMap
 }
 
-func (s *GroupedTuples) Clone() CloneAbleRow {
-	ts := make([]TupleRow, len(s.Content))
+func (s *GroupedTuples) Clone() Row {
+	ts := make([]Row, len(s.Content))
 	for i, t := range s.Content {
 		ts[i] = t
 	}
@@ -636,7 +648,7 @@ func (s *GroupedTuples) Clone() CloneAbleRow {
 
 func (s *GroupedTuples) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
 	cols = s.AffiliateRow.Pick(cols)
-	sc := s.Content[0].Clone().(TupleRow)
+	sc := s.Content[0].Clone()
 	sc.Pick(allWildcard, cols, wildcardEmitters, except)
 	s.Content[0] = sc
 }

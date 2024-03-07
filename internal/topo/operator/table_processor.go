@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.
 	logger.Debugf("preprocessor receive %v", tuple)
 	if p.batchEmitted {
 		p.output = &xsql.WindowTuples{
-			Content: make([]xsql.TupleRow, 0),
+			Content: make([]xsql.Row, 0),
 		}
 		p.batchEmitted = false
 	}
@@ -77,12 +77,12 @@ func (p *TableProcessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.
 				return fmt.Errorf("error in preprocessor: %s", err)
 			}
 		}
-		var newTuples []xsql.TupleRow
+		var newTuples []xsql.Row
 		_ = p.output.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 			if p.retainSize > 0 && p.output.Len() == p.retainSize && i == 0 {
 				return true, nil
 			}
-			newTuples = append(newTuples, r.(xsql.TupleRow))
+			newTuples = append(newTuples, r.(xsql.Row))
 			return true, nil
 		})
 		newTuples = append(newTuples, tuple)

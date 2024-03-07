@@ -501,7 +501,7 @@ func (tl *TupleList) count() int {
 
 func (tl *TupleList) nextCountWindow() *xsql.WindowTuples {
 	results := &xsql.WindowTuples{
-		Content: make([]xsql.TupleRow, 0),
+		Content: make([]xsql.Row, 0),
 	}
 	var subT []*xsql.Tuple
 	subT = tl.tuples[len(tl.tuples)-tl.size : len(tl.tuples)]
@@ -533,7 +533,7 @@ func (o *WindowOperator) isTimeRelatedWindow() bool {
 	return false
 }
 
-func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.TupleRow) {
+func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.Row) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
 	var delta int64
@@ -541,7 +541,7 @@ func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, c
 	if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, log)
 	}
-	content := make([]xsql.TupleRow, 0)
+	content := make([]xsql.Row, 0)
 	i := 0
 	// Sync table
 	for _, tuple := range inputs {

@@ -114,7 +114,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.IncTotalExceptions(d.Error())
 					case *xsql.WatermarkTuple:
 						n.Broadcast(d)
-					case xsql.TupleRow:
+					case xsql.Row:
 						log.Debugf("Lookup Node receive tuple input %s", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
@@ -134,7 +134,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.WindowTuples).GetWindowRange()}
 						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
-							tr, ok := r.(xsql.TupleRow)
+							tr, ok := r.(xsql.Row)
 							if !ok {
 								return false, fmt.Errorf("Invalid window element, must be a tuple row but got %v", r)
 							}
@@ -171,7 +171,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 // lookup will lookup the cache firstly, if expires, read the external source
-func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.FunctionValuer, ns api.LookupSource, tuples *xsql.JoinTuples, c *cache.Cache) error {
+func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.FunctionValuer, ns api.LookupSource, tuples *xsql.JoinTuples, c *cache.Cache) error {
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
 	cvs := make([]interface{}, len(n.vals))
 	hasNil := false
@@ -230,7 +230,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.TupleRow, fv *xsql.Fun
 	}
 }
 
-func (n *LookupNode) merge(ctx api.StreamContext, d xsql.TupleRow, r []map[string]interface{}) {
+func (n *LookupNode) merge(ctx api.StreamContext, d xsql.Row, r []map[string]interface{}) {
 	n.statManager.ProcessTimeStart()
 	sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,18 +27,18 @@ type FilterOp struct {
 	StateFuncs []*ast.Call
 }
 
-// Apply
-/*
- *  input: *xsql.Tuple from preprocessor | xsql.WindowTuples from windowOp | xsql.JoinTuples from joinOp
- *  output: *xsql.Tuple | xsql.WindowTuples | xsql.JoinTuples
- */
+// Apply the filter operator to each message in the stream
+// The input data could be a xsql.Row or a xsql.Collection
+// For xsql.Row, apply the condition to the row and return the row if the condition is true
+// For xsql.Collection, apply the condition to each row and return the rows that meet the condition
+// If error happens, return the error
 func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("filter plan receive %v", data)
 	switch input := data.(type) {
 	case error:
 		return input
-	case xsql.TupleRow:
+	case xsql.Row:
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
 		result := ve.Eval(p.Condition)
 		switch r := result.(type) {
@@ -56,7 +56,7 @@ func (p *FilterOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 		default:
 			return fmt.Errorf("run Where error: invalid condition that returns non-bool value %[1]T(%[1]v)", r)
 		}
-	case xsql.SingleCollection:
+	case xsql.Collection:
 		var sel []int
 		err := input.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
 			ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(r, fv)}

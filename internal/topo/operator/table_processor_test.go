@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 			},
 			data: []byte(`[{"a": [{"b" : "hello1"}, {"b" : "hello2"}]},{"a": [{"b" : "hello2"}, {"b" : "hello3"}]},{"a": [{"b" : "hello3"}, {"b" : "hello4"}]}]`),
 			result: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": []interface{}{
@@ -85,7 +85,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 			},
 			data: []byte(`[{"a": {"b" : "hello", "c": {"d": 35.2}}},{"a": {"b" : "world", "c": {"d": 65.2}}}]`),
 			result: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Message: xsql.Message{
 							"a": map[string]interface{}{
@@ -121,7 +121,7 @@ func TestTableProcessor_Apply(t *testing.T) {
 		pp := &TableProcessor{isBatchInput: true, emitterName: "demo", checkSchema: true}
 		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 		pp.output = &xsql.WindowTuples{
-			Content: make([]xsql.TupleRow, 0),
+			Content: make([]xsql.Row, 0),
 		}
 
 		var dm []map[string]interface{}

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -209,7 +209,7 @@ outterFor:
 func TestCollection(t *testing.T) {
 	inputs := []*xsql.WindowTuples{
 		{
-			Content: []xsql.TupleRow{
+			Content: []xsql.Row{
 				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f1": "v1",
@@ -224,7 +224,7 @@ func TestCollection(t *testing.T) {
 				},
 			},
 		}, {
-			Content: []xsql.TupleRow{
+			Content: []xsql.Row{
 				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f1": "v2",
@@ -245,7 +245,7 @@ func TestCollection(t *testing.T) {
 				},
 			},
 		}, {
-			Content: []xsql.TupleRow{
+			Content: []xsql.Row{
 				&xsql.Tuple{
 					Message: map[string]interface{}{
 						"f1": "v1",
@@ -270,7 +270,7 @@ func TestCollection(t *testing.T) {
 	outputs := [][]*xsql.WindowTuples{
 		{ // avg(f2) > 50
 			{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Message: map[string]interface{}{
 							"f1": "v1",
@@ -285,7 +285,7 @@ func TestCollection(t *testing.T) {
 					},
 				},
 			}, {
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Message: map[string]interface{}{
 							"f1": "v1",
@@ -309,7 +309,7 @@ func TestCollection(t *testing.T) {
 		},
 		{ // else
 			{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Message: map[string]interface{}{
 							"f1": "v2",

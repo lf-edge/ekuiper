@@ -97,13 +97,20 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.IncTotalExceptions(d.Error())
 					case *xsql.WatermarkTuple:
 						n.Broadcast(d)
-					case xsql.TupleRow:
+					case xsql.Row:
 						ctx.GetLogger().Debugf("SwitchNode receive tuple input %s", d)
 						ve = &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
-					case xsql.SingleCollection:
+					case xsql.Collection:
 						ctx.GetLogger().Debugf("SwitchNode receive window input %s", d)
-						afv.SetData(d)
-						ve = &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(d, fv, d, fv, afv, &xsql.WildcardValuer{Data: d})}
+						if cr, ok := d.(xsql.CollectionRow); ok {
+							afv.SetData(cr)
+							ve = &xsql.ValuerEval{Valuer: xsql.MultiAggregateValuer(cr, fv, cr, fv, afv, &xsql.WildcardValuer{Data: cr})}
+						} else {
+							e := fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d)
+							n.Broadcast(e)
+							n.statManager.IncTotalExceptions(e.Error())
+							break
+						}
 					default:
 						e := fmt.Errorf("run switch node error: invalid input type but got %[1]T(%[1]v)", d)
 						n.Broadcast(e)

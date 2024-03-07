@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ type Filter struct {
 
 type Select struct {
 	Fields []string `json:"fields"`
+	IsAgg  bool     `json:"isAgg"`
 }
 
 type Watermark struct {
