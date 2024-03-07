@@ -100,17 +100,19 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 							n.alignBatch(ctx, d)
 						} else { // table window
 							log.Debugf("JoinAlignNode receive batch source %s", d)
-							emitter := d.Content[0].GetEmitter()
-							// Buffer and update batch inputs
-							_, ok := n.batch[emitter]
-							if !ok {
-								e := fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d)
-								n.Broadcast(e)
-								n.statManager.IncTotalExceptions(e.Error())
-								break
+							if et, ok := d.Content[0].(xsql.EmittedData); ok {
+								emitter := et.GetEmitter()
+								// Buffer and update batch inputs
+								_, ok := n.batch[emitter]
+								if !ok {
+									e := fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d)
+									n.Broadcast(e)
+									n.statManager.IncTotalExceptions(e.Error())
+									break
+								}
+								n.batch[emitter] = convertToTupleSlice(d.Content)
+								_ = ctx.PutState(BatchKey, n.batch)
 							}
-							n.batch[emitter] = convertToTupleSlice(d.Content)
-							_ = ctx.PutState(BatchKey, n.batch)
 						}
 					default:
 						e := fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d)
@@ -129,7 +131,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func convertToTupleSlice(content []xsql.TupleRow) []*xsql.Tuple {
+func convertToTupleSlice(content []xsql.Row) []*xsql.Tuple {
 	tuples := make([]*xsql.Tuple, len(content))
 	for i, v := range content {
 		tuples[i] = v.(*xsql.Tuple)
@@ -143,7 +145,7 @@ func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {
 	switch t := input.(type) {
 	case *xsql.Tuple:
 		w = &xsql.WindowTuples{
-			Content: make([]xsql.TupleRow, 0),
+			Content: make([]xsql.Row, 0),
 		}
 		w.AddTuple(t)
 	case *xsql.WindowTuples:

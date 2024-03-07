@@ -123,7 +123,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				o.statManager.IncTotalMessagesProcessed(1)
 				o.statManager.IncTotalExceptions(val.Error())
 				continue
-			case []xsql.TupleRow:
+			case []xsql.Row:
 				o.statManager.ProcessTimeEnd()
 				for _, v := range val {
 					o.Broadcast(v)

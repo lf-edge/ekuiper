@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ func TestCollectionRow(t *testing.T) {
 			wildcard: []string{""},
 			result:   []interface{}{4, "b1", 3, map[string]interface{}{"a": 1, "b": "2"}},
 		}, {
-			rowC: &JoinTuple{Tuples: []TupleRow{
+			rowC: &JoinTuple{Tuples: []Row{
 				&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}},
 				&Tuple{Emitter: "src2", Message: Message{"a": 2, "c": "w2"}},
 			}},
@@ -52,7 +52,7 @@ func TestCollectionRow(t *testing.T) {
 			wildcard: []string{"", "src1"},
 			result:   []interface{}{1, 2, "v1", "w2", map[string]interface{}{"a": 2, "b": "v1", "c": "w2"}, map[string]interface{}{"a": 1, "b": "v1"}},
 		}, {
-			rowC: &JoinTuple{Tuples: []TupleRow{
+			rowC: &JoinTuple{Tuples: []Row{
 				&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}},
 				&Tuple{Emitter: "src2", Message: Message{"a": 2, "c": "w2"}},
 			}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
@@ -60,22 +60,22 @@ func TestCollectionRow(t *testing.T) {
 			wildcard: []string{"", "src1"},
 			result:   []interface{}{4, 2, "v1", "w2", 4, map[string]interface{}{"a": 2, "b": "v1", "c": "w2"}, map[string]interface{}{"a": 1, "b": "v1"}},
 		}, {
-			rowC:     &GroupedTuples{Content: []TupleRow{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}},
+			rowC:     &GroupedTuples{Content: []Row{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}},
 			value:    []string{"a", "b"},
 			wildcard: []string{""},
 			result:   []interface{}{1, "v1", map[string]interface{}{"a": 1, "b": "v1"}},
 		}, {
-			rowC:     &GroupedTuples{Content: []TupleRow{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
+			rowC:     &GroupedTuples{Content: []Row{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
 			value:    []string{"a", "b", "d"},
 			wildcard: []string{""},
 			result:   []interface{}{4, "v1", 4, map[string]interface{}{"a": 1, "b": "v1"}},
 		}, {
-			rowC:     &WindowTuples{Content: []TupleRow{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
+			rowC:     &WindowTuples{Content: []Row{&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}}, &Tuple{Emitter: "src1", Message: Message{"a": 2, "b": "v2"}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
 			value:    []string{"a", "b", "d"},
 			wildcard: []string{""},
 			result:   []interface{}{4, "v1", 4, map[string]interface{}{"a": 1, "b": "v1"}},
 		}, {
-			rowC: &JoinTuples{Content: []*JoinTuple{{Tuples: []TupleRow{
+			rowC: &JoinTuples{Content: []*JoinTuple{{Tuples: []Row{
 				&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"b": "v2", "$$lag_a": 1}}},
 				&Tuple{Emitter: "src2", Message: Message{"a": 2, "c": "w2"}},
 			}}}, AffiliateRow: AffiliateRow{CalCols: map[string]interface{}{"a": 4, "d": 3}, AliasMap: map[string]interface{}{"d": 4}}},
@@ -117,10 +117,10 @@ func TestCollectionRow(t *testing.T) {
 	}
 }
 
-func TestTupleRow(t *testing.T) {
+func TestRow(t *testing.T) {
 	// broadcast(clone) -> set -> broadcast -> set -> compare
 	tests := []struct {
-		rowO TupleRow
+		rowO Row
 		// The multiple values to set or alias; The first value is set in the first broadcast. the next values are set in the second broadcast.
 		set    [][]map[string]interface{}
 		result [][]map[string]interface{}
@@ -153,7 +153,7 @@ func TestTupleRow(t *testing.T) {
 				},
 			},
 		}, {
-			rowO: &JoinTuple{Tuples: []TupleRow{
+			rowO: &JoinTuple{Tuples: []Row{
 				&Tuple{Emitter: "src1", Message: Message{"a": 1, "b": "v1"}},
 				&Tuple{Emitter: "src2", Message: Message{"a": 2, "c": "w2"}},
 			}},

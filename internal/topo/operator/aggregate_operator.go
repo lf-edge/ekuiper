@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,12 +38,12 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 		switch input := data.(type) {
 		case error:
 			return input
-		case xsql.SingleCollection:
+		case xsql.Collection:
 			wr := input.GetWindowRange()
 			result := make(map[string]*xsql.GroupedTuples)
 			err := input.Range(func(i int, ir xsql.ReadonlyRow) (bool, error) {
 				var name string
-				tr := ir.(xsql.TupleRow)
+				tr := ir.(xsql.Row)
 				ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(tr, &xsql.WindowRangeValuer{WindowRange: wr}, fv)}
 				for _, d := range p.Dimensions {
 					r := ve.Eval(d.Expr)
@@ -54,7 +54,7 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 					}
 				}
 				if ts, ok := result[name]; !ok {
-					result[name] = &xsql.GroupedTuples{Content: []xsql.TupleRow{tr}, WindowRange: wr}
+					result[name] = &xsql.GroupedTuples{Content: []xsql.Row{tr}, WindowRange: wr}
 				} else {
 					ts.Content = append(ts.Content, tr)
 				}

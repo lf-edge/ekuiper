@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ func (ms *MultiSorter) Swap(i, j int) {
 	ms.SortingData.Swap(i, j)
 }
 
-// Sort sorts the argument slice according to the less functions passed to OrderedBy.
+// Sort sorts the argument slice according to the fewer functions passed to OrderedBy.
 func (ms *MultiSorter) Sort(data SortingData) error {
 	ms.SortingData = data
 	types := make([]string, len(ms.fields))
@@ -84,10 +84,17 @@ func (ms *MultiSorter) Sort(data SortingData) error {
 	switch input := data.(type) {
 	case error:
 		return input
-	case SingleCollection:
+	case Collection:
 		err := input.RangeSet(func(i int, row Row) (bool, error) {
+			var vep *ValuerEval
+			if aggRow, ok := row.(AggregateData); ok {
+				ms.aggValuer.SetData(aggRow)
+				vep = &ValuerEval{Valuer: MultiAggregateValuer(aggRow, ms.valuer, row, ms.aggValuer, &WildcardValuer{Data: row})}
+			} else {
+				vep = &ValuerEval{Valuer: MultiValuer(ms.valuer, row, ms.valuer, &WildcardValuer{Data: row})}
+			}
 			ms.values[i] = make(map[string]interface{})
-			vep := &ValuerEval{Valuer: MultiValuer(ms.valuer, row, ms.valuer, &WildcardValuer{Data: row})}
+
 			for j, field := range ms.fields {
 				vp := vep.Eval(field.FieldExpr)
 				if types[j] == "" && vp != nil {
@@ -104,27 +111,8 @@ func (ms *MultiSorter) Sort(data SortingData) error {
 		if err != nil {
 			return err
 		}
-	case GroupedCollection:
-		err := input.GroupRange(func(i int, aggRow CollectionRow) (bool, error) {
-			ms.values[i] = make(map[string]interface{})
-			ms.aggValuer.SetData(aggRow)
-			vep := &ValuerEval{Valuer: MultiAggregateValuer(aggRow, ms.valuer, aggRow, ms.aggValuer, &WildcardValuer{Data: aggRow})}
-			for j, field := range ms.fields {
-				vp := vep.Eval(field.FieldExpr)
-				if types[j] == "" && vp != nil {
-					types[j] = fmt.Sprintf("%T", vp)
-				}
-				if err := validate(types[j], vp); err != nil {
-					return false, err
-				} else {
-					ms.values[i][field.Uname] = vp
-				}
-			}
-			return true, nil
-		})
-		if err != nil {
-			return err
-		}
+	default:
+		return nil
 	}
 	sort.Sort(ms)
 	return nil

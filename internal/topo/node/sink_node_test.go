@@ -514,7 +514,7 @@ func Test_itemToMap(t *testing.T) {
 		{
 			name: "test4",
 			args: args{
-				item: xsql.Collection(&xsql.WindowTuples{Content: []xsql.TupleRow{
+				item: xsql.Collection(&xsql.WindowTuples{Content: []xsql.Row{
 					&xsql.Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
 				}}),
 			},

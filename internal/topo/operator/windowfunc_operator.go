@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ type WindowFuncOperator struct {
 }
 
 type windowFuncHandle interface {
-	handleTuple(input xsql.TupleRow)
+	handleTuple(input xsql.Row)
 	handleCollection(input xsql.Collection)
 }
 
@@ -35,7 +35,7 @@ type rowNumberFuncHandle struct {
 	name string
 }
 
-func (rh *rowNumberFuncHandle) handleTuple(input xsql.TupleRow) {
+func (rh *rowNumberFuncHandle) handleTuple(input xsql.Row) {
 	input.Set(rh.name, 1)
 }
 
@@ -66,7 +66,7 @@ func (wf *WindowFuncOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 			return err
 		}
 		switch input := data.(type) {
-		case xsql.TupleRow:
+		case xsql.Row:
 			wh.handleTuple(input)
 		case xsql.Collection:
 			wh.handleCollection(input)

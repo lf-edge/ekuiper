@@ -158,7 +158,7 @@ func (o *defaultNode) doBroadcast(val interface{}) {
 		case xsql.Collection:
 			val = vt.Clone()
 			break
-		case xsql.TupleRow:
+		case xsql.Row:
 			val = vt.Clone()
 		}
 	}

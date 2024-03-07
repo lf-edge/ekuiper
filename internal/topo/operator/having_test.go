@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 		{
 			sql: `SELECT id1 FROM src1 HAVING avg(id1) > 1`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -50,7 +50,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 				WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 			},
 			result: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -68,7 +68,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 		{
 			sql: `SELECT id1 FROM src1 HAVING sum(id1) > 1`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -81,7 +81,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 		{
 			sql: `SELECT id1 FROM src1 HAVING sum(id1) = 1`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -89,7 +89,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 				},
 			},
 			result: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -101,7 +101,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 		{
 			sql: `SELECT id1 FROM src1 HAVING max(id1) > 10`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -113,7 +113,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 		{
 			sql: `SELECT id1 FROM src1 HAVING max(id1) = 1`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -121,7 +121,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 				},
 			},
 			result: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -134,7 +134,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -147,7 +147,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 					},
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -160,7 +160,7 @@ func TestHavingPlan_Apply(t *testing.T) {
 			result: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 2, "f1": "v2"},
@@ -176,15 +176,15 @@ func TestHavingPlan_Apply(t *testing.T) {
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
 								},
 							},
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
 								},
@@ -193,15 +193,15 @@ func TestHavingPlan_Apply(t *testing.T) {
 						WindowRange: xsql.NewWindowRange(1541152486013, 1541152487013),
 					},
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 2, "color": "w1"}},
 								},
 							},
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 4, "a": 14.6}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 4, "color": "w1"}},
 								},
@@ -214,15 +214,15 @@ func TestHavingPlan_Apply(t *testing.T) {
 			result: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
 								},
 							},
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
 								},
@@ -262,7 +262,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 		{
 			sql: `SELECT avg(id1) as a FROM src1 HAVING a > 1`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1", "a": 8 / 3},
@@ -276,7 +276,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 				},
 			},
 			result: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1", "a": 8 / 3},
@@ -293,7 +293,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 		{
 			sql: `SELECT sum(id1) as s FROM src1 HAVING s > 1`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1", "s": 1},
@@ -307,7 +307,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": "v1", "c": 2},
@@ -319,7 +319,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 						},
 					},
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 2, "f1": "v2", "c": 1},
@@ -331,7 +331,7 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			result: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": "v1", "c": 2},
@@ -350,15 +350,15 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33, "c": 2}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
 								},
 							},
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
 								},
@@ -366,9 +366,9 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 						},
 					},
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 2, "a": 89.03, "c": 1}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 2, "color": "w1"}},
 								},
@@ -380,15 +380,15 @@ func TestHavingPlanAlias_Apply(t *testing.T) {
 			result: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 1, "a": 122.33, "c": 2}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 1, "color": "w2"}},
 								},
 							},
 							&xsql.JoinTuple{
-								Tuples: []xsql.TupleRow{
+								Tuples: []xsql.Row{
 									&xsql.Tuple{Emitter: "test", Message: xsql.Message{"id": 5, "a": 177.51}},
 									&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id": 5, "color": "w2"}},
 								},
@@ -427,7 +427,7 @@ func TestHavingPlanError(t *testing.T) {
 		{
 			sql: `SELECT id1 FROM src1 HAVING avg(id1) > "str"`,
 			data: &xsql.WindowTuples{
-				Content: []xsql.TupleRow{
+				Content: []xsql.Row{
 					&xsql.Tuple{
 						Emitter: "src1",
 						Message: xsql.Message{"id1": 1, "f1": "v1"},
@@ -450,7 +450,7 @@ func TestHavingPlanError(t *testing.T) {
 			data: &xsql.GroupedTuplesSet{
 				Groups: []*xsql.GroupedTuples{
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 1, "f1": 3},
@@ -462,7 +462,7 @@ func TestHavingPlanError(t *testing.T) {
 						},
 					},
 					{
-						Content: []xsql.TupleRow{
+						Content: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "src1",
 								Message: xsql.Message{"id1": 2, "f1": "v2"},

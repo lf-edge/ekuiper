@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -155,7 +155,7 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.TupleRow{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Message: map[string]interface{}{
 								"f1": "v1",
@@ -216,7 +216,7 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.TupleRow{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Message: map[string]interface{}{
 								"f3": "v3",
@@ -257,7 +257,7 @@ func TestCountWindow(t *testing.T) {
 			expWinCount: 1,
 			winTupleSets: []xsql.WindowTuples{
 				{
-					Content: []xsql.TupleRow{
+					Content: []xsql.Row{
 						&xsql.Tuple{
 							Message: map[string]interface{}{
 								"f4": "v4",

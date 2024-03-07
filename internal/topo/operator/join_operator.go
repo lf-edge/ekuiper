@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,16 +28,18 @@ type JoinOp struct {
 	Joins ast.Joins
 }
 
-// Apply
-// input:  MergedCollection, the Row must be a Tuple
-// output: Collection
+// Apply JoinOp to join two streams. If running in continuous query, the inner join will always return empty result because there is only one stream data.
 func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
-	var input xsql.MergedCollection
+	var input xsql.Collection
 	switch v := data.(type) {
 	case error:
 		return v
-	case xsql.MergedCollection:
+	case xsql.Row:
+		input = &xsql.WindowTuples{
+			Content: []xsql.Row{v},
+		}
+	case xsql.Collection:
 		input = v
 		log.Debugf("join plan receive %v", data)
 	default:
@@ -108,7 +110,7 @@ func (jp *JoinOp) getStreamNames(join *ast.Join) ([]string, error) {
 	return srcs, nil
 }
 
-func (jp *JoinOp) evalSet(ctx api.StreamContext, input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
+func (jp *JoinOp) evalSet(ctx api.StreamContext, input xsql.Collection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	var leftStream, rightStream string
 
 	if join.JoinType != ast.CROSS_JOIN {
@@ -132,7 +134,7 @@ func (jp *JoinOp) evalSet(ctx api.StreamContext, input xsql.MergedCollection, jo
 		}
 	}
 
-	var lefts, rights []xsql.TupleRow
+	var lefts, rights []xsql.Row
 
 	lefts = input.GetBySrc(leftStream)
 	rights = input.GetBySrc(rightStream)
@@ -220,14 +222,14 @@ func evalOn(join ast.Join, ve *xsql.ValuerEval, left interface{}, right xsql.Row
 	return result
 }
 
-func (jp *JoinOp) evalSetWithRightJoin(input xsql.MergedCollection, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
+func (jp *JoinOp) evalSetWithRightJoin(input xsql.Collection, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	streams, err := jp.getStreamNames(&join)
 	if err != nil {
 		return nil, err
 	}
 	leftStream := streams[0]
 	rightStream := streams[1]
-	var lefts, rights []xsql.TupleRow
+	var lefts, rights []xsql.Row
 
 	lefts = input.GetBySrc(leftStream)
 	rights = input.GetBySrc(rightStream)
@@ -272,7 +274,7 @@ func (jp *JoinOp) evalSetWithRightJoin(input xsql.MergedCollection, join ast.Joi
 	return sets, nil
 }
 
-func (jp *JoinOp) evalJoinSets(set *xsql.JoinTuples, input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (interface{}, error) {
+func (jp *JoinOp) evalJoinSets(set *xsql.JoinTuples, input xsql.Collection, join ast.Join, fv *xsql.FunctionValuer) (interface{}, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name
@@ -343,7 +345,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTuples, input xsql.MergedCollection
 	return newSets, nil
 }
 
-func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTuples, input xsql.MergedCollection, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
+func (jp *JoinOp) evalRightJoinSets(set *xsql.JoinTuples, input xsql.Collection, join ast.Join, excludeJoint bool, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	var rightStream string
 	if join.Alias == "" {
 		rightStream = join.Name

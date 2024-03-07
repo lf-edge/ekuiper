@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2023 EMQ Technologies Co., Ltd.
+  ~ Copyright 2023-2024 EMQ Technologies Co., Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -206,6 +206,7 @@
         &quot;type&quot;: &quot;operator&quot;,&#xd;
         &quot;nodeType&quot;: &quot;pick&quot;,&#xd;
         &quot;props&quot;: {&#xd;
+                    "isAgg":true,&#xd;
                     &quot;fields&quot;: [&quot;device_id&quot;, &quot;count&quot;]&#xd;
                     }&#xd;
                     },&#xd;
