@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestSubtopoLC(t *testing.T) {
@@ -37,10 +38,18 @@ func TestSubtopoLC(t *testing.T) {
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
 	subTopo.AddOperator([]api.Emitter{srcNode}, opNode)
+	subTopo.StoreSchema("rule1", "shared", map[string]*ast.JsonStreamField{
+		"field1": {Type: "string"},
+	}, false)
 	assert.Equal(t, 1, mlen(&subTopoPool))
 	assert.Equal(t, srcNode, subTopo.GetSource())
 	assert.Equal(t, []node.OperatorNode{opNode}, subTopo.ops)
 	assert.Equal(t, opNode, subTopo.tail)
+	assert.Equal(t, 1, subTopo.OpsCount())
+	assert.Equal(t, 1, len(subTopo.schemaReg))
+	assert.Equal(t, schemainfo{"shared", map[string]*ast.JsonStreamField{
+		"field1": {Type: "string"},
+	}, false}, subTopo.schemaReg["rule1"])
 	// Test linkage
 	assert.Equal(t, 1, len(srcNode.outputs))
 	var tch chan<- any = opNode.ch
@@ -55,12 +64,17 @@ func TestSubtopoLC(t *testing.T) {
 	// Test run
 	subTopo.Open(mockContext.NewMockContext("rule1", "abc"), make(chan error))
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
+	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
 	subTopo2, existed := GetSubTopo("shared")
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
+	subTopo.StoreSchema("rule2", "shared", map[string]*ast.JsonStreamField{
+		"field2": {Type: "string"},
+	}, false)
 	subTopo2.Open(mockContext.NewMockContext("rule2", "abc"), make(chan error))
 	assert.Equal(t, int32(2), subTopo.refCount.Load())
+	assert.Equal(t, 2, opNode.schemaCount)
 	// Metrics test
 	metrics := []any{0, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0, 0, 0, 0, "", 0}
 	assert.Equal(t, metrics, subTopo.GetMetrics())
@@ -97,6 +111,8 @@ func TestSubtopoLC(t *testing.T) {
 	subTopo2.Close("rule2")
 	assert.Equal(t, int32(0), subTopo.refCount.Load())
 	assert.Equal(t, 0, mlen(&subTopoPool))
+	assert.Equal(t, 2, len(subTopo.schemaReg))
+	assert.Equal(t, 0, opNode.schemaCount)
 }
 
 // Test when connection fails
@@ -244,10 +260,11 @@ func (m *mockSrc) RemoveMetrics(ruleId string) {
 var _ checkpoint.StreamTask = &mockSrc{}
 
 type mockOp struct {
-	name    string
-	ch      chan any
-	outputs []chan<- any
-	inputC  int
+	name        string
+	ch          chan any
+	outputs     []chan<- any
+	inputC      int
+	schemaCount int
 }
 
 func (m *mockOp) AddOutput(c chan<- interface{}, s string) error {
@@ -302,4 +319,12 @@ func (m *mockOp) SetBarrierHandler(handler checkpoint.BarrierHandler) {
 
 func (m *mockOp) RemoveMetrics(name string) {
 	// do nothing
+}
+
+func (m *mockOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
+	m.schemaCount++
+}
+
+func (m *mockOp) DetachSchema(ruleId string) {
+	m.schemaCount--
 }

@@ -385,11 +385,18 @@ type SourcePropsForSplit struct {
 }
 
 func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
+	if t.streamStmt.Options.SHARED {
+		srcSubtopo, existed := topo.GetSubTopo(string(t.name))
+		if existed {
+			srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
+			return srcSubtopo, nil, srcSubtopo.OpsCount(), nil
+		}
+	}
+
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
 	sp := &SourcePropsForSplit{}
 	_ = cast.MapToStruct(props, sp)
-
 	// Create the connector node as source node
 	var (
 		err         error
@@ -441,16 +448,16 @@ func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOpt
 	}
 
 	if t.streamStmt.Options.SHARED && len(ops) > 0 {
-		srcSubtopo, existed := topo.GetSubTopo(string(t.name))
-		if !existed {
-			conf.Log.Infof("Create SubTopo %s", string(t.name))
-			srcSubtopo.AddSrc(srcConnNode)
-			subInputs := []api.Emitter{srcSubtopo}
-			for _, e := range ops {
-				srcSubtopo.AddOperator(subInputs, e)
-				subInputs = []api.Emitter{e}
-			}
+		// should not exist
+		srcSubtopo, _ := topo.GetSubTopo(string(t.name))
+		conf.Log.Infof("Create SubTopo %s", string(t.name))
+		srcSubtopo.AddSrc(srcConnNode)
+		subInputs := []api.Emitter{srcSubtopo}
+		for _, e := range ops {
+			srcSubtopo.AddOperator(subInputs, e)
+			subInputs = []api.Emitter{e}
 		}
+		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
 		return srcSubtopo, nil, len(ops), nil
 	}
 	return srcConnNode, ops, 0, nil

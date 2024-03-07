@@ -32,6 +32,7 @@ func GetSubTopo(name string) (*SrcSubTopo, bool) {
 			Sources: make([]string, 0),
 			Edges:   make(map[string][]any),
 		},
+		schemaReg: make(map[string]schemainfo),
 	})
 	return ac.(*SrcSubTopo), ok
 }
