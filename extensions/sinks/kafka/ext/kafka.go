@@ -57,7 +57,7 @@ func (m *kafkaSink) Ping(_ string, props map[string]interface{}) error {
 		return err
 	}
 	for _, broker := range strings.Split(m.c.Brokers, ",") {
-		err := ping(m.tlsConfig, broker)
+		err := m.ping(broker)
 		if err != nil {
 			return err
 		}
@@ -293,8 +293,15 @@ func (m *kafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 	return nil, nil
 }
 
-func ping(tlsConfig *tls.Config, address string) error {
-	d := &kafkago.Dialer{TLS: tlsConfig}
+func (m *kafkaSink) ping(address string) error {
+	mechanism, err := m.sc.GetMechanism()
+	if err != nil {
+		return err
+	}
+	d := &kafkago.Dialer{
+		TLS:           m.tlsConfig,
+		SASLMechanism: mechanism,
+	}
 	c, err := d.Dial("tcp", address)
 	if err != nil {
 		return err
