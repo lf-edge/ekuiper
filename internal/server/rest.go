@@ -265,14 +265,21 @@ func explainRuleHandler(w http.ResponseWriter, r *http.Request) {
 	rule, err := ruleProcessor.GetRuleById(name)
 	if err != nil {
 		handleError(w, err, "explain rules error", logger)
+		return
+	}
+	if rule == nil {
+		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "rule not found"), "", logger)
+		return
 	}
 	if rule.Sql == "" {
 		handleError(w, errors.New("only support explain sql now"), "explain rules error", logger)
+		return
 	}
 	var explainInfo string
 	explainInfo, err = planner.GetExplainInfoFromLogicalPlan(rule)
 	if err != nil {
 		handleError(w, err, "explain rules error", logger)
+		return
 	}
 	// resp := planner.BuildExplainResultFromLp(lp, 0)
 	w.Write([]byte(explainInfo))
