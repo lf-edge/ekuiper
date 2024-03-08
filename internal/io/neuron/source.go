@@ -92,7 +92,7 @@ func GetSource() *source {
 
 func ping(u *url.URL) error {
 	if u.Scheme == "tcp" {
-		r, err := http.Get(fmt.Sprintf("http://%v/api/v2/ping", u.Host))
+		r, err := http.Post(fmt.Sprintf("http://%v/api/v2/ping", u.Host), "application/json", nil)
 		if err != nil {
 			return err
 		}
