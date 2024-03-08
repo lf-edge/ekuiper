@@ -7,6 +7,8 @@
 此插件必须与至少一个数据库驱动程序一起使用。我们使用构建标签来确定将包含哪个驱动程序。[eKuiper - SQL 数据库插件 GitHub 页面](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver)列出了所有支持的驱动程序。
 该插件默认支持 `sqlserver\postgres\mysql\sqlite3\oracle` 驱动。用户可以自己编译只支持一个驱动的插件，例如如果他只想要 MySQL，那么他可以用 build tag mysql 构建。
 
+当使用 `sqlserver` 作为目标 source 时，需要确认该 `sqlserver` 暴露了 1434 端口。
+
 ### 默认构建指令
 
 ```shell

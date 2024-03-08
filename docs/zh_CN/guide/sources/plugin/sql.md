@@ -12,6 +12,8 @@
 
 该插件默认支持 `sqlserver\postgres\mysql\sqlite3\oracle` 驱动。用户可以自己编译只支持一个驱动的插件，例如如果他只想要sqlserver，那么他可以用 build tag sqlserver 构建。
 
+当使用 `sqlserver` 作为目标时，需要确认该 `sqlserver` 暴露了 1434 端口。
+
 ### 默认构建命令
 
 ```shell
