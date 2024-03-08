@@ -10,6 +10,8 @@ This [repository](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqld
 This plugin supports `sqlserver\postgres\mysql\sqlite3\oracle` drivers by default. User can compile plugin that only support one driver by himself,
 for example, if he only wants mysql, then he can build with build tag `mysql`.
 
+When using `sqlserver` as the target, you need to confirm that the `sqlserver` exposes port 1434.
+
 ### Default build command
 
 ```shell
