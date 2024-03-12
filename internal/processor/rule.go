@@ -164,7 +164,7 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	if rule.Id == "" {
 		rule.Id = id
 	}
-	if err := validateRuleID(id); err != nil {
+	if err := validateRuleID(rule.Id); err != nil {
 		return nil, err
 	}
 	if rule.Sql != "" {
