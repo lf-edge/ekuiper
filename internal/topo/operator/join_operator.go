@@ -45,6 +45,11 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	}
 	result := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 	for i, join := range jp.Joins {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
 		if i == 0 {
 			v, err := jp.evalSet(input, join, fv)
 			if err != nil {
