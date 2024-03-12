@@ -20,7 +20,6 @@ import (
 	"runtime/debug"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -75,15 +74,5 @@ func DrainCtrl(ctx api.StreamContext, signal any, ctrlCh chan<- any) {
 		go func() {
 			ctrlCh <- signal
 		}()
-	}
-}
-
-func SendThrough(ctx api.StreamContext, a api.SourceTuple, consumer chan<- api.SourceTuple, stats metric.StatManager) {
-	select {
-	case consumer <- a:
-	default:
-		if stats != nil {
-			stats.IncTotalExceptions(fmt.Sprintf("buffer full from %s to decoder, drop message", ctx.GetOpId()))
-		}
 	}
 }

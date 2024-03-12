@@ -25,7 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/send"
 )
 
 // SourceConnector is the connector for mqtt source
@@ -111,7 +111,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 	}
 	ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	rcvTime := conf.GetNow()
-	infra.SendThrough(ctx, api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
+	send.SendThrough(ctx, api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
@@ -124,7 +124,7 @@ func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
 		ctx.GetLogger().Debugf("The consumer is closed, skip to send the error")
 		return
 	}
-	infra.SendThrough(ctx, &xsql.ErrorSourceTuple{
+	send.SendThrough(ctx, &xsql.ErrorSourceTuple{
 		Error: err,
 	}, ms.consumer, ms.stats)
 }
