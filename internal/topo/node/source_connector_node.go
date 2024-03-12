@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/stats"
 )
 
 // SourceConnectorNode is a node that connects to an external source
@@ -63,6 +64,9 @@ func (m *SourceConnectorNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 	ctx.GetLogger().Infof("Opening source connector %s", m.name)
 	// create stat manager
 	m.statManager = metric.NewStatManager(ctx, "source")
+	if able, ok := m.s.(stats.StatAble); ok {
+		able.SetupStat(m.statManager)
+	}
 	go m.Run(ctx, ctrlCh)
 }
 

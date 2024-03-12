@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -36,6 +37,7 @@ type SourceConnector struct {
 
 	cli      *Connection
 	consumer chan<- api.SourceTuple
+	stats    metric.StatManager
 }
 
 type Conf struct {
@@ -76,6 +78,10 @@ func (ms *SourceConnector) Ping(dataSource string, props map[string]interface{})
 	return cli.Ping()
 }
 
+func (ms *SourceConnector) SetupStat(stats metric.StatManager) {
+	ms.stats = stats
+}
+
 func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	cli, err := GetConnection(ctx, ms.props)
@@ -109,7 +115,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
-	}, rcvTime), ms.consumer)
+	}, rcvTime), ms.consumer, ms.stats)
 }
 
 func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
@@ -120,7 +126,7 @@ func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
 	}
 	infra.SendThrough(ctx, &xsql.ErrorSourceTuple{
 		Error: err,
-	}, ms.consumer)
+	}, ms.consumer, ms.stats)
 }
 
 // Open is a continuous process, it keeps reading data from mqtt broker. It starts a go routine to read data and send to consumer channel
