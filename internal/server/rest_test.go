@@ -265,6 +265,18 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// create rule with trigger false
+	ruleJson = `{"id": "rule3/21","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
+
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	returnVal, _ = io.ReadAll(w2.Result().Body)
+	expect = `{"error":1000,"message":"invalid rule json: ruleID:rule3/21 contains invalidChar:/"}`
+	expect = expect + "\n"
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// create rule with trigger false
 	ruleJson = `{"id": "rule321","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
