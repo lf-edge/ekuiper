@@ -21,10 +21,10 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
 // SourceConnector is the connector for mqtt source
@@ -36,11 +36,16 @@ type SourceConnector struct {
 
 	cli      *Connection
 	consumer chan<- api.SourceTuple
+	stats    metric.StatManager
 }
 
 type Conf struct {
 	Qos       int `json:"qos"`
 	BufferLen int `json:"bufferLength"`
+}
+
+func (ms *SourceConnector) SetupStats(stats metric.StatManager) {
+	ms.stats = stats
 }
 
 func (ms *SourceConnector) Configure(topic string, props map[string]any) error {
@@ -105,11 +110,15 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 	}
 	ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	rcvTime := conf.GetNow()
-	infra.SendThrough(ctx, api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
+	select {
+	case ms.consumer <- api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
-	}, rcvTime), ms.consumer)
+	}, rcvTime):
+	default:
+		ms.stats.IncTotalExceptions("buffer full from mqtt connector, drop message")
+	}
 }
 
 func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
@@ -118,9 +127,13 @@ func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
 		ctx.GetLogger().Debugf("The consumer is closed, skip to send the error")
 		return
 	}
-	infra.SendThrough(ctx, &xsql.ErrorSourceTuple{
+	select {
+	case ms.consumer <- &xsql.ErrorSourceTuple{
 		Error: err,
-	}, ms.consumer)
+	}:
+	default:
+		ms.stats.IncTotalExceptions("buffer full from mqtt connector, drop err")
+	}
 }
 
 // Open is a continuous process, it keeps reading data from mqtt broker. It starts a go routine to read data and send to consumer channel
