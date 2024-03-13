@@ -44,6 +44,10 @@ type Conf struct {
 	BufferLen int `json:"bufferLength"`
 }
 
+func (ms *SourceConnector) SetupStats(stats metric.StatManager) {
+	ms.stats = stats
+}
+
 func (ms *SourceConnector) Configure(topic string, props map[string]any) error {
 	if topic == "" {
 		return fmt.Errorf("topic cannot be empty")
