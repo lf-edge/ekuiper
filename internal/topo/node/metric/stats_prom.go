@@ -37,6 +37,7 @@ func getStatManager(ctx api.StreamContext, dsm DefaultStatManager) (StatManager,
 		mg := GetPrometheusMetrics().GetMetricsGroup(dsm.opType)
 		strInId := strconv.Itoa(dsm.instanceId)
 		mg.TotalRecordsIn.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
+		mg.TotalMessagesProcessed.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.TotalRecordsOut.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.TotalExceptions.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
 		mg.ProcessLatency.DeleteLabelValues(ctx.GetRuleId(), dsm.opType, dsm.opId, strInId)
@@ -108,8 +109,10 @@ func (sm *PrometheusStatManager) Clean(ruleId string) {
 		strInId := strconv.Itoa(sm.instanceId)
 		mg.TotalRecordsIn.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
 		mg.TotalRecordsOut.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+		mg.TotalMessagesProcessed.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
 		mg.TotalExceptions.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
 		mg.ProcessLatency.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
 		mg.BufferLength.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)
+		conf.Log.Infof("finish removing rule:%v, opType:%v, opId:%v, InId:%v prometheus metrics", ruleId, sm.opType, sm.opId, strInId)
 	}
 }

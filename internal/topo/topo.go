@@ -308,6 +308,7 @@ func (s *Topo) GetMetrics() (keys []string, values []any) {
 }
 
 func (s *Topo) RemoveMetrics() {
+	conf.Log.Infof("start removing %v metrics", s.name)
 	for _, sn := range s.sources {
 		sn.RemoveMetrics(s.name)
 	}
@@ -317,6 +318,7 @@ func (s *Topo) RemoveMetrics() {
 	for _, sn := range s.sinks {
 		sn.RemoveMetrics(s.name)
 	}
+	conf.Log.Infof("finish removing %v metrics", s.name)
 }
 
 func (s *Topo) GetTopo() *api.PrintableTopo {
