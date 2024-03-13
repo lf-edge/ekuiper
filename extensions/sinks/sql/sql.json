@@ -25,8 +25,8 @@
 		"control": "text",
 		"type": "string",
 		"hint": {
-			"en_US": "The url of the database, it is important to note that the password in the URL is url-encoded characters. For example, the database address of mysql is mysql://username:password@127.0.0.1:3306/testdb?parseTime=true, if the original password is 123:#?, the password here should be filled in with 123%3A%23%3F",
-			"zh_CN": "数据库服务器的 URL，需要特别注意的是 URL 中的密码为 url 编码后的字符。例如，mysql 的数据库地址为 mysql://username:password@127.0.0.1:3306/testdb?parseTime=true，若原始密码为 123:#?，则这里的 password 应填入 123%3A%23%3F"
+			"en_US": "The url of the database, it is important to note that the password in the URL is url-encoded characters, and you need to re-enter the password when editing. For example, the database address of mysql is mysql://username:password@127.0.0.1:3306/testdb?parseTime=true, if the original password is 123:#?, the password here should be filled in with 123%3A%23%3F",
+			"zh_CN": "数据库服务器的 URL，需要特别注意的是 URL 中的密码为 url 编码后的字符，并且编辑时需要重新输入密码。例如，mysql 的数据库地址为 mysql://username:password@127.0.0.1:3306/testdb?parseTime=true，若原始密码为 123:#?，则这里的 password 应填入 123%3A%23%3F"
 		},
 		"label": {
 			"en_US": "server address",
