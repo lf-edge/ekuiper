@@ -76,11 +76,3 @@ func DrainCtrl(ctx api.StreamContext, signal any, ctrlCh chan<- any) {
 		}()
 	}
 }
-
-func SendThrough(ctx api.StreamContext, a api.SourceTuple, consumer chan<- api.SourceTuple) {
-	select {
-	case consumer <- a:
-	default:
-		ctx.GetLogger().Warnf("buffer full from %s to decoder, drop message", ctx.GetOpId())
-	}
-}

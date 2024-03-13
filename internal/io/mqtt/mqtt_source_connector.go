@@ -113,7 +113,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		"messageId": msg.MessageID(),
 	}, rcvTime):
 	default:
-		ms.stats.IncTotalExceptions(fmt.Sprintf("buffer full from %s to decoder, drop message", ctx.GetOpId()))
+		ms.stats.IncTotalExceptions("buffer full from mqtt connector, drop message")
 	}
 }
 
@@ -128,7 +128,7 @@ func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
 		Error: err,
 	}:
 	default:
-		ms.stats.IncTotalExceptions(fmt.Sprintf("buffer full from %s to decoder, drop message", ctx.GetOpId()))
+		ms.stats.IncTotalExceptions("buffer full from mqtt connector, drop err")
 	}
 }
 
