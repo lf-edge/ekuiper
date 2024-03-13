@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -189,13 +189,16 @@ func (c *ConfigKeys) CopyUpdatableConfContentFor(configKeys []string) map[string
 	defer c.lock.RUnlock()
 
 	for _, key := range configKeys {
-		aux := make(map[string]interface{})
+		if key == "" {
+			key = "default"
+		}
 		if kvs, ok := c.dataCfg[key]; ok {
+			aux := make(map[string]interface{})
 			for k, v := range kvs {
 				aux[k] = v
 			}
+			cf[key] = aux
 		}
-		cf[key] = aux
 	}
 	return cf
 }

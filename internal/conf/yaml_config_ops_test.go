@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -407,4 +408,45 @@ func isAddData(js string, cf map[string]interface{}) error {
 		}
 	}
 	return nil
+}
+
+func TestCopyUpdatableContent(t *testing.T) {
+	ck := &ConfigKeys{
+		storageType: getStorageType(),
+		lock:        sync.RWMutex{},
+		pluginName:  "neuron",
+		etcCfg:      map[string]map[string]interface{}{},
+		dataCfg:     map[string]map[string]interface{}{"mock": {"mock": "mock"}},
+		delCfgKey:   map[string]struct{}{},
+		saveCfgKey:  map[string]struct{}{},
+	}
+
+	tests := []struct {
+		name   string
+		key    string
+		result map[string]map[string]interface{}
+	}{
+		{
+			name:   "default",
+			key:    "default",
+			result: map[string]map[string]interface{}{},
+		},
+		{
+			name:   "empty",
+			key:    "",
+			result: map[string]map[string]interface{}{},
+		},
+		{
+			name:   "mock",
+			key:    "mock",
+			result: map[string]map[string]interface{}{"mock": {"mock": "mock"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ck.CopyUpdatableConfContentFor([]string{tt.key})
+			assert.Equal(t, tt.result, result)
+		})
+	}
 }
