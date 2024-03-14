@@ -111,6 +111,8 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 	ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	rcvTime := conf.GetNow()
 	select {
+	case <-ctx.Done():
+		return
 	case ms.consumer <- api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
@@ -128,6 +130,8 @@ func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
 		return
 	}
 	select {
+	case <-ctx.Done():
+		return
 	case ms.consumer <- &xsql.ErrorSourceTuple{
 		Error: err,
 	}:
