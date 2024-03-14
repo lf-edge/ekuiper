@@ -190,10 +190,13 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 }
 
 var invalidRuleChars = []string{
-	"/",
+	"/", "#", "%",
 }
 
 func validateRuleID(id string) error {
+	if id != strings.TrimSpace(id) {
+		return fmt.Errorf("ruleID: %v should be trimed", id)
+	}
 	for _, invalidChar := range invalidRuleChars {
 		if strings.Contains(id, invalidChar) {
 			return fmt.Errorf("ruleID:%s contains invalidChar:%v", id, invalidChar)
