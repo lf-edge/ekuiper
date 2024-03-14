@@ -243,7 +243,7 @@ func SinkPing(sinkType string, config map[string]interface{}) error {
 	if pingAble, ok := sink.(util.PingableConn); ok {
 		return pingAble.Ping("", config)
 	}
-	return fmt.Errorf("sink %v doesnt't support ping connection", sinkType)
+	return fmt.Errorf("sink %v doesn't support ping connection", sinkType)
 }
 
 func propsToNodeOption(props map[string]any) *api.RuleOption {
