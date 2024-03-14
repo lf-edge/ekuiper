@@ -84,7 +84,8 @@ lower(col)
 lpad(col, padNum)
 ```
 
-返回 String，在左侧用第二个参数指定的空格数填充。
+返回 String，在左侧用第二个参数指定的空格数填充。请注意，若第二个参数很大，返回的字符串会占据很多内存。尽量避免使用大的长度参数，若参数为变量，可通过
+WHERE 语句等方式进行过滤，例如 `SELECT lpad(col, len) from source WHERE len < 999999`。
 
 ## LTRIM
 
@@ -132,7 +133,8 @@ regexp_substr(col, regex)
 rpad(col, padNum)
 ```
 
-返回 String，在右侧填充第二个参数指定的空格数。
+返回 String，在右侧填充第二个参数指定的空格数。请注意，若第二个参数很大，返回的字符串会占据很多内存。尽量避免使用大的长度参数，若参数为变量，可通过
+WHERE 语句等方式进行过滤，例如 `SELECT rpad(col, len) from source WHERE len < 999999`。
 
 ## RTRIM
 

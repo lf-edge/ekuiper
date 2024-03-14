@@ -86,7 +86,9 @@ Returns the lowercase version of the given string.
 lpad(col, 2)
 ```
 
-Returns the string argument, padded on the left side with the number of spaces specified by the second argument.
+Returns the string argument, padded on the left side with the number of spaces specified by the second argument. Notice
+that, if the second argument is big, the string will take up a lot of memory. Avoid using a big number as the second
+argument, for example, use where clause to filter `SELECT lpad(col, len) from source WHERE len < 999`
 
 ## LTRIM
 
@@ -134,7 +136,9 @@ Returns the first substring of the specified string value that matches regexp.
 rpad(col, 2)
 ```
 
-Returns the string argument, padded on the right side with the number of spaces specified by the second argument.
+Returns the string argument, padded on the right side with the number of spaces specified by the second argument. Notice
+that, if the second argument is big, the string will take up a lot of memory. Avoid using a big number as the second
+argument, for example, use where clause to filter `SELECT rpad(col, len) from source WHERE len < 999999`
 
 ## RTRIM
 
