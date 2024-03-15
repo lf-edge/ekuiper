@@ -16,13 +16,10 @@ package neuron
 
 import (
 	"fmt"
-	"net/http"
-	"net/url"
 
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -33,17 +30,6 @@ type sc struct {
 
 type source struct {
 	c *sc
-}
-
-func (s *source) Ping(dataSource string, props map[string]interface{}) error {
-	if err := s.Configure(dataSource, props); err != nil {
-		return err
-	}
-	u, err := url.Parse(s.c.Url)
-	if err != nil {
-		return err
-	}
-	return ping(u)
 }
 
 func (s *source) Configure(_ string, props map[string]interface{}) error {
@@ -88,19 +74,4 @@ func (s *source) Close(ctx api.StreamContext) error {
 
 func GetSource() *source {
 	return &source{}
-}
-
-func ping(u *url.URL) error {
-	if u.Scheme == "tcp" {
-		r, err := http.Post(fmt.Sprintf("http://%v/api/v2/ping", u.Host), "application/json", nil)
-		if err != nil {
-			return err
-		}
-		if r.StatusCode == http.StatusOK {
-			return nil
-		}
-		return fmt.Errorf("neuron ping failed, code:%v", r.StatusCode)
-	}
-
-	return errorx.New("only tcp neuron url support ping")
 }

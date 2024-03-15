@@ -17,7 +17,6 @@ package neuron
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"sort"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -45,17 +44,6 @@ type neuronTemplate struct {
 	NodeName  string      `json:"node_name"`
 	TagName   string      `json:"tag_name"`
 	Value     interface{} `json:"value"`
-}
-
-func (s *sink) Ping(_ string, props map[string]interface{}) error {
-	if err := s.Configure(props); err != nil {
-		return err
-	}
-	u, err := url.Parse(s.c.Url)
-	if err != nil {
-		return err
-	}
-	return ping(u)
 }
 
 func (s *sink) Configure(props map[string]interface{}) error {

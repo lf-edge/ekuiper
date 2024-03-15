@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/stretchr/testify/require"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -75,21 +74,4 @@ func connectFailTest(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	server.Close()
 	time.Sleep(1 * time.Second)
-}
-
-func TestSourcePing(t *testing.T) {
-	config := map[string]interface{}{
-		"url": "non-tcp",
-		"raw": true,
-	}
-	s := &source{}
-	err := s.Ping("", config)
-	require.Error(t, err)
-	config = map[string]interface{}{
-		"url": "tcp://127.0.0.1:4313",
-		"raw": true,
-	}
-	s = &source{}
-	err = s.Ping("", config)
-	require.Error(t, err)
 }
