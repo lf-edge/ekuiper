@@ -51,7 +51,7 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 		default:
 		}
 		if i == 0 {
-			v, err := jp.evalSet(input, join, fv)
+			v, err := jp.evalSet(ctx, input, join, fv)
 			if err != nil {
 				return fmt.Errorf("run Join error: %s", err)
 			}
@@ -108,7 +108,7 @@ func (jp *JoinOp) getStreamNames(join *ast.Join) ([]string, error) {
 	return srcs, nil
 }
 
-func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
+func (jp *JoinOp) evalSet(ctx api.StreamContext, input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	var leftStream, rightStream string
 
 	if join.JoinType != ast.CROSS_JOIN {
@@ -143,6 +143,11 @@ func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.F
 		return jp.evalSetWithRightJoin(input, join, false, fv)
 	}
 	for _, left := range lefts {
+		select {
+		case <-ctx.Done():
+			return nil, nil
+		default:
+		}
 		leftJoined := false
 		for index, right := range rights {
 			tupleJoined := false

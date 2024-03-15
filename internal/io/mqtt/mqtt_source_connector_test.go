@@ -22,13 +22,16 @@ import (
 
 	"github.com/benbjohnson/clock"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/mock"
+	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -117,4 +120,56 @@ func TestOpen(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestOnMsgCancel(t *testing.T) {
+	sc := &SourceConnector{}
+	sc.consumer = make(chan<- api.SourceTuple, 10)
+	sc.onMessage(mockContext.NewMockContext("1", "1"), MockMessage{})
+	sc.onError(mockContext.NewMockContext("1", "1"), nil)
+
+	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/internal/io/mqtt/ctxCancel", "return(ture)"))
+	defer func() {
+		failpoint.Disable("github.com/lf-edge/ekuiper/internal/io/mqtt/ctxCancel")
+	}()
+	ctx, cancel := context.Background().WithCancel()
+	cancel()
+	time.Sleep(100 * time.Millisecond)
+	sc.onMessage(ctx, nil)
+	sc.onError(ctx, nil)
+}
+
+// MockMessage implements the Message interface and allows for control over the returned data when a MessageHandler is
+// invoked.
+type MockMessage struct {
+	payload []byte
+	topic   string
+}
+
+func (mm MockMessage) Payload() []byte {
+	return mm.payload
+}
+
+func (MockMessage) Duplicate() bool {
+	panic("function not expected to be invoked")
+}
+
+func (MockMessage) Qos() byte {
+	return 0
+}
+
+func (MockMessage) Retained() bool {
+	panic("function not expected to be invoked")
+}
+
+func (mm MockMessage) Topic() string {
+	return mm.topic
+}
+
+func (MockMessage) MessageID() uint16 {
+	return 0
+}
+
+func (MockMessage) Ack() {
+	panic("function not expected to be invoked")
 }
