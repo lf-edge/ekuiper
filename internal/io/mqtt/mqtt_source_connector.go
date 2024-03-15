@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -103,16 +104,27 @@ func (ms *SourceConnector) Subscribe(ctx api.StreamContext) error {
 }
 
 func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+	failpoint.Inject("ctxCancel", func(val failpoint.Value) {
+		if val.(bool) {
+			panic("shouldn't run")
+		}
+	})
+
 	if ms.consumer == nil {
 		// The consumer is closed, no need to process the message
 		ctx.GetLogger().Debugf("The consumer is closed, skip to process the message %s from topic %s", string(msg.Payload()), msg.Topic())
 		return
 	}
-	ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
+	if msg != nil {
+		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
+	}
 	rcvTime := conf.GetNow()
 	select {
-	case <-ctx.Done():
-		return
 	case ms.consumer <- api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
@@ -124,14 +136,23 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 }
 
 func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+	failpoint.Inject("ctxCancel", func(val failpoint.Value) {
+		if val.(bool) {
+			panic("shouldn't run")
+		}
+	})
+
 	if ms.consumer == nil {
 		// The consumer is closed, no need to process the message
 		ctx.GetLogger().Debugf("The consumer is closed, skip to send the error")
 		return
 	}
 	select {
-	case <-ctx.Done():
-		return
 	case ms.consumer <- &xsql.ErrorSourceTuple{
 		Error: err,
 	}:

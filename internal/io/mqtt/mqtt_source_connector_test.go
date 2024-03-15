@@ -22,6 +22,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/mock"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -117,4 +119,18 @@ func TestOpen(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestOnMsgCancel(t *testing.T) {
+	sc := &SourceConnector{}
+	sc.consumer = make(chan<- api.SourceTuple)
+	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/internal/io/mqtt/ctxCancel", "return(ture)"))
+	defer func() {
+		failpoint.Disable("github.com/lf-edge/ekuiper/internal/io/mqtt/ctxCancel")
+	}()
+	ctx, cancel := context.Background().WithCancel()
+	cancel()
+	time.Sleep(100 * time.Millisecond)
+	sc.onMessage(ctx, nil)
+	sc.onError(ctx, nil)
 }
