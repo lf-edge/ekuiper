@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@ package sqlgen
 
 import (
 	"fmt"
-
-	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 type SqlServerQueryGenerator struct {
@@ -37,33 +35,13 @@ func (q *SqlServerQueryGenerator) getSelect() string {
 }
 
 func (q *SqlServerQueryGenerator) getCondition() (string, error) {
-	var val string
-	if q.IndexField != "" {
-		if q.IndexFieldType == DATETIME_TYPE && q.DateTimeFormat != "" {
-			t, err := cast.InterfaceToTime(q.IndexValue, q.DateTimeFormat)
-			if err != nil {
-				err = fmt.Errorf("SqlQueryStatement InterfaceToTime datetime convert got error %v", err)
-				return "", err
-			}
-			val, err = cast.FormatTime(t, q.DateTimeFormat)
-			if err != nil {
-				err = fmt.Errorf("SqlQueryStatement FormatTime datetime convert got error %v", err)
-				return "", err
-			}
-		} else {
-			val = fmt.Sprintf("%v", q.IndexValue)
-		}
-		return "where " + q.IndexField + " > " + q.quoteIdentifier(val) + " ", nil
-	}
-
-	return "", nil
+	return getCondition(q.InternalSqlQueryCfg, q.quoteIdentifier)
 }
 
 func (q *SqlServerQueryGenerator) getOrderby() string {
-	if q.IndexField != "" {
-		return "order by " + q.IndexField + " ASC"
-	}
-	return ""
+	return getOrderBy(q.InternalSqlQueryCfg, func(s string) string {
+		return s
+	})
 }
 
 func NewSqlServerQuery(cfg *InternalSqlQueryCfg) SqlQueryGenerator {
@@ -83,11 +61,5 @@ func (q *SqlServerQueryGenerator) SqlQueryStatement() (string, error) {
 
 func (q *SqlServerQueryGenerator) UpdateMaxIndexValue(row map[string]interface{}) {
 	// since internal sql have asc clause, so the last element is largest
-	if q.IndexField != "" {
-		v, found := row[q.IndexField]
-		if !found {
-			return
-		}
-		q.IndexValue = v
-	}
+	updateMaxIndexValue(q.InternalSqlQueryCfg, row)
 }
