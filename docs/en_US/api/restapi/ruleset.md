@@ -4,7 +4,7 @@ eKuiper REST api allows to import or export the stream and rule configurations.
 
 ## Ruleset Format
 
-The file format for importing and exporting ruleset is JSON, which can contain three parts: `streams`, `tables` and `rules`. Each type holds the the key-value pair of the name and the creation statement. In the following example file, we define a stream and two rules.
+The file format for importing and exporting ruleset is JSON, which can contain three parts: `streams`, `tables` and `rules`. Each type holds the key-value pair of the name and the creation statement. In the following example file, we define a stream and two rules.
 
 ```json
 {

@@ -306,7 +306,7 @@ docker logs edgex-kuiper
 
 ## Explore the Results
 
-You can also explore the eKuiper analysis that caused the commands to be sent to the service. To see the the data from
+You can also explore the eKuiper analysis that caused the commands to be sent to the service. To see the data from
 the analysis, use the SQL below to query eKuiper filtering data.
 
 ``` sql
