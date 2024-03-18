@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -173,11 +174,18 @@ func updateRule(ruleId, ruleJson string) error {
 func deleteRule(name string) (result string) {
 	if rs, ok := registry.Delete(name); ok {
 		rs.Close()
+		deleteRuleMetrics(name)
 		result = fmt.Sprintf("Rule %s was deleted.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
 	}
 	return
+}
+
+func deleteRuleMetrics(name string) {
+	if conf.Config != nil && conf.Config.Basic.Prometheus {
+		promMetrics.RemoveRuleStatus(name)
+	}
 }
 
 func startRule(name string) error {

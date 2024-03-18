@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/internal/processor"
+	"github.com/lf-edge/ekuiper/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -199,6 +200,10 @@ func StartUp(Version string) {
 		v.serve()
 	}
 
+	if conf.Config.Basic.Prometheus {
+		promMetrics.RegisterMetrics()
+	}
+
 	// Startup message
 	restHttpType := "http"
 	if conf.Config.Basic.RestTls != nil {
@@ -311,11 +316,8 @@ func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 				continue
 			}
 			now := conf.GetNow()
-			for _, r := range rs {
-				if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
-					conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
-				}
-			}
+			handleAllRuleStatusMetrics(rs)
+			handleAllScheduleRuleState(now, rs)
 		}
 	}
 }
@@ -327,6 +329,33 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 		return
 	}
 	runScheduleRuleCheckerByInterval(d, exit)
+}
+
+func handleAllRuleStatusMetrics(rs []ruleWrapper) {
+	if conf.Config != nil && conf.Config.Basic.Prometheus {
+		var runningCount int
+		var stopCount int
+		for _, r := range rs {
+			id := r.rule.Id
+			isRunning := r.state == rule.RuleStarted
+			if isRunning {
+				runningCount++
+			} else {
+				stopCount++
+			}
+			promMetrics.SetRuleStatus(id, isRunning)
+		}
+		promMetrics.SetRuleStatusCountGauge(true, runningCount)
+		promMetrics.SetRuleStatusCountGauge(false, stopCount)
+	}
+}
+
+func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
+	for _, r := range rs {
+		if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
+			conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
+		}
+	}
 }
 
 func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
