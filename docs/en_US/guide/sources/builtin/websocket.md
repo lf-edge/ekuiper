@@ -88,7 +88,7 @@ CREATE STREAM websocketDemo() WITH (FORMAT="json", TYPE="websocket")
 
 **Create with Custom Configuration**
 
-You can use the the `endpoint` property corresponds to the `datasource` property in the stream creation statement.
+You can use the `endpoint` property corresponds to the `datasource` property in the stream creation statement.
 
 Example
 
