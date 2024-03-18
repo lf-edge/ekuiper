@@ -82,7 +82,7 @@ CREATE STREAM httpDemo() WITH (FORMAT="json", TYPE="httppush")
 
 **Create with Custom Configuration**
 
-You can use the the `endpoint` property corresponds to the `datasource` property in the stream creation statement.
+You can use the `endpoint` property corresponds to the `datasource` property in the stream creation statement.
 
 Example
 

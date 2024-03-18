@@ -4,7 +4,7 @@ The eKuiper rule command line tools allows to import and export the Data.
 
 ## Data Format
 
-The file format for importing and exporting Data is JSON, which can contain : `streams`, `tables`, `rules`, `plugin`, `source yaml` and so on. Each type holds the the key-value pair of the name and the creation statement. In the following example file, we define stream 、rules、table、plugin、source config、sink config
+The file format for importing and exporting Data is JSON, which can contain : `streams`, `tables`, `rules`, `plugin`, `source yaml` and so on. Each type holds the key-value pair of the name and the creation statement. In the following example file, we define stream 、rules、table、plugin、source config、sink config
 
 ```json
 {
