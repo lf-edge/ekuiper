@@ -21,6 +21,9 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/lestrrat-go/file-rotatelogs"
@@ -32,11 +35,20 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
 
-const ConfFileName = "kuiper.yaml"
+const (
+	ConfFileName  = "kuiper.yaml"
+	DebugLogLevel = "debug"
+	InfoLogLevel  = "info"
+	WarnLogLevel  = "warn"
+	ErrorLogLevel = "error"
+	FatalLogLevel = "fatal"
+	PanicLogLevel = "panic"
+)
 
 var (
 	Config    *KuiperConf
 	IsTesting bool
+	TestId    string
 )
 
 type tlsConf struct {
@@ -156,26 +168,30 @@ func (s *syslogConf) Validate() error {
 
 type KuiperConf struct {
 	Basic struct {
-		Debug              bool        `yaml:"debug"`
-		ConsoleLog         bool        `yaml:"consoleLog"`
-		FileLog            bool        `yaml:"fileLog"`
-		Syslog             *syslogConf `yaml:"syslog"`
-		RotateTime         int         `yaml:"rotateTime"`
-		MaxAge             int         `yaml:"maxAge"`
-		TimeZone           string      `yaml:"timezone"`
-		Ip                 string      `yaml:"ip"`
-		Port               int         `yaml:"port"`
-		RestIp             string      `yaml:"restIp"`
-		RestPort           int         `yaml:"restPort"`
-		RestTls            *tlsConf    `yaml:"restTls"`
-		Prometheus         bool        `yaml:"prometheus"`
-		PrometheusPort     int         `yaml:"prometheusPort"`
-		PluginHosts        string      `yaml:"pluginHosts"`
-		Authentication     bool        `yaml:"authentication"`
-		IgnoreCase         bool        `yaml:"ignoreCase"`
-		SQLConf            *SQLConf    `yaml:"sql"`
-		RulePatrolInterval string      `yaml:"rulePatrolInterval"`
-		CfgStorageType     string      `yaml:"cfgStorageType"`
+		LogLevel            string      `yaml:"logLevel"`
+		Debug               bool        `yaml:"debug"`
+		ConsoleLog          bool        `yaml:"consoleLog"`
+		FileLog             bool        `yaml:"fileLog"`
+		LogDisableTimestamp bool        `yaml:"logDisableTimestamp"`
+		Syslog              *syslogConf `yaml:"syslog"`
+		RotateTime          int         `yaml:"rotateTime"`
+		MaxAge              int         `yaml:"maxAge"`
+		RotateSize          int64       `yaml:"rotateSize"`
+		RotateCount         int         `yaml:"rotateCount"`
+		TimeZone            string      `yaml:"timezone"`
+		Ip                  string      `yaml:"ip"`
+		Port                int         `yaml:"port"`
+		RestIp              string      `yaml:"restIp"`
+		RestPort            int         `yaml:"restPort"`
+		RestTls             *tlsConf    `yaml:"restTls"`
+		Prometheus          bool        `yaml:"prometheus"`
+		PrometheusPort      int         `yaml:"prometheusPort"`
+		PluginHosts         string      `yaml:"pluginHosts"`
+		Authentication      bool        `yaml:"authentication"`
+		IgnoreCase          bool        `yaml:"ignoreCase"`
+		SQLConf             *SQLConf    `yaml:"sql"`
+		RulePatrolInterval  string      `yaml:"rulePatrolInterval"`
+		CfgStorageType      string      `yaml:"cfgStorageType"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
@@ -193,6 +209,9 @@ type KuiperConf struct {
 		Sqlite struct {
 			Name string `yaml:"name"`
 		}
+		Fdb struct {
+			Path string `yaml:"path"`
+		}
 	}
 	Portable struct {
 		PythonBin   string `yaml:"pythonBin"`
@@ -200,12 +219,25 @@ type KuiperConf struct {
 	}
 }
 
-func SetDebugLevel(v bool) {
-	lvl := logrus.InfoLevel
-	if v {
-		lvl = logrus.DebugLevel
+func SetLogLevel(level string, debug bool) {
+	if debug {
+		Log.SetLevel(logrus.DebugLevel)
+		return
 	}
-	Log.SetLevel(lvl)
+	switch level {
+	case DebugLogLevel:
+		Log.SetLevel(logrus.DebugLevel)
+	case InfoLogLevel:
+		Log.SetLevel(logrus.InfoLevel)
+	case WarnLogLevel:
+		Log.SetLevel(logrus.WarnLevel)
+	case ErrorLogLevel:
+		Log.SetLevel(logrus.ErrorLevel)
+	case FatalLogLevel:
+		Log.SetLevel(logrus.FatalLevel)
+	case PanicLogLevel:
+		Log.SetLevel(logrus.PanicLevel)
+	}
 }
 
 func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
@@ -222,11 +254,21 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	}
 
 	file := path.Join(logDir, logFileName)
+	ro := []rotatelogs.Option{
+		rotatelogs.WithRotationTime(time.Hour * time.Duration(Config.Basic.RotateTime)),
+		rotatelogs.WithRotationSize(Config.Basic.RotateSize),
+	}
+	if Config.Basic.RotateCount > 0 {
+		ro = append(ro, rotatelogs.WithRotationCount(uint(Config.Basic.RotateCount)))
+	} else if Config.Basic.MaxAge > 0 {
+		ro = append(ro, rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)))
+	}
+	if !strings.EqualFold(runtime.GOOS, "windows") {
+		ro = append(ro, rotatelogs.WithLinkName(file))
+	}
 	logWriter, err := rotatelogs.New(
-		file+".%Y-%m-%d_%H-%M-%S",
-		rotatelogs.WithLinkName(file),
-		rotatelogs.WithRotationTime(time.Hour*time.Duration(Config.Basic.RotateTime)),
-		rotatelogs.WithMaxAge(time.Hour*time.Duration(Config.Basic.MaxAge)),
+		file[:len(file)-len(filepath.Ext(file))]+".%Y-%m-%dT%H-%M-%S"+filepath.Ext(file),
+		ro...,
 	)
 
 	if err != nil {
@@ -238,7 +280,11 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	} else if !consoleLog {
 		Log.SetOutput(logWriter)
 	}
-	gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
+	if Config.Basic.RotateCount > 0 {
+		// gc outdated log files by logrus itself
+	} else if Config.Basic.MaxAge > 0 {
+		gcOutdatedLog(logDir, time.Hour*time.Duration(Config.Basic.MaxAge))
+	}
 	return nil
 }
 
@@ -281,10 +327,14 @@ func InitConf() {
 		Config.Basic.RulePatrolInterval = "10s"
 	}
 
-	if Config.Basic.Debug {
-		SetDebugLevel(true)
+	if Config.Basic.LogLevel == "" {
+		Config.Basic.LogLevel = InfoLogLevel
 	}
-
+	SetLogLevel(Config.Basic.LogLevel, Config.Basic.Debug)
+	SetLogFormat(Config.Basic.LogDisableTimestamp)
+	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
+		log.Fatal(err)
+	}
 	if os.Getenv(logger.KuiperSyslogKey) == "true" || Config.Basic.Syslog != nil {
 		c := Config.Basic.Syslog
 		if c == nil {
@@ -299,10 +349,6 @@ func InitConf() {
 				log.Fatal(err)
 			}
 		}
-	}
-
-	if err := SetConsoleAndFileLog(Config.Basic.ConsoleLog, Config.Basic.FileLog); err != nil {
-		log.Fatal(err)
 	}
 
 	if Config.Basic.TimeZone != "" {
@@ -348,6 +394,10 @@ func InitConf() {
 	}
 
 	_ = ValidateRuleOption(&Config.Rule)
+}
+
+func SetLogFormat(disableTimestamp bool) {
+	Log.Formatter.(*logrus.TextFormatter).DisableTimestamp = disableTimestamp
 }
 
 func ValidateRuleOption(option *api.RuleOption) error {

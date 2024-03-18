@@ -146,3 +146,39 @@ erase({"baz": [1, 2, 3], "bar": 'hello world',"foo":'emq'}, 'foo')
 ```sql
 {"baz": [1, 2, 3], "bar": 'hello world'}
 ```
+
+## OBJECT_PICK
+
+```text
+object_pick(obj, k)
+```
+
+如果 k 是一个字符串，则返回一个新对象，其中键 k 被保留。如果 k 是一个字符串数组，则返回一个新对象，其中包含 k 中的键被保留。
+
+```sql
+object_pick({"baz": [1, 2, 3], "bar": 'hello world',"foo":'emq'}, 'foo')
+```
+
+得到如下结果:
+
+```sql
+{"foo":'emq'}
+```
+
+## OBJ_TO_KVPAIR_ARRAY
+
+```text
+obj_to_kvpair_array(obj)
+```
+
+返回一个从对象转换而来的键值对数组。
+
+```sql
+obj_to_kvpair_array({"key1":1, "key2":2})
+```
+
+得到如下结果:
+
+```sql
+[{"key":"key1", "value":1},{"key":"key2", "value":2}]
+```

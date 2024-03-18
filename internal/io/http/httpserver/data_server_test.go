@@ -31,7 +31,7 @@ var body = []byte(`{
     }`)
 
 func TestEndpoints(t *testing.T) {
-	testx.InitEnv()
+	testx.InitEnv("httpserver")
 	endpoints := []string{
 		"/ee1", "/eb2", "/ec3",
 	}
@@ -63,6 +63,7 @@ func TestEndpoints(t *testing.T) {
 	client := &http.Client{}
 
 	RegisterEndpoint(endpoints[0], "POST", "application/json")
+	time.Sleep(10 * time.Millisecond)
 	_, _, err := RegisterEndpoint(endpoints[0], "PUT", "application/json")
 	if err != nil {
 		t.Error("RegisterEndpoint should not return error for same endpoint")

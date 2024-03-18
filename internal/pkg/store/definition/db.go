@@ -24,6 +24,7 @@ type Config struct {
 	ExtStateType string
 	Redis        RedisConfig
 	Sqlite       SqliteConfig
+	Fdb          FdbConfig
 }
 
 type RedisConfig struct {
@@ -36,4 +37,10 @@ type RedisConfig struct {
 type SqliteConfig struct {
 	Path string
 	Name string
+}
+
+type FdbConfig struct {
+	Path       string
+	APIVersion int
+	Timeout    int64
 }

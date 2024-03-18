@@ -17,6 +17,7 @@ package sql
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
@@ -25,11 +26,14 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 )
 
 type sqlConConfig struct {
 	Interval int    `json:"interval"`
 	Url      string `json:"url"`
+
+	displayURL string
 }
 
 type sqlsource struct {
@@ -37,6 +41,13 @@ type sqlsource struct {
 	Query sqlgen.SqlQueryGenerator
 	// The db connection instance
 	db *sql.DB
+}
+
+func (m *sqlsource) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Configure("", props); err != nil {
+		return err
+	}
+	return m.db.Ping()
 }
 
 func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
@@ -55,22 +66,26 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 
 	driver, err := util.ParseDriver(cfg.Url)
 	if err != nil {
-		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.Url, err)
+		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.displayURL, err)
 	}
 
 	generator, err := sqlgen.GetQueryGenerator(driver, props)
 	if err != nil {
-		return fmt.Errorf("GetQueryGenerator %s fail with error: %v", cfg.Url, err)
+		return fmt.Errorf("GetQueryGenerator %s fail with error: %v", cfg.displayURL, err)
 	}
 
 	m.Query = generator
 	m.conf = cfg
 	db, err := util.FetchDBToOneNode(util.GlobalPool, m.conf.Url)
 	if err != nil {
-		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.Url, err, driver2.KnownBuildTags())
+		return fmt.Errorf("connection to %s Open with error %v, support build tags are %v", m.conf.displayURL, err, driver2.KnownBuildTags())
 	}
 	m.db = db
 
+	cfg.displayURL = cfg.Url
+	if hiddenURL, hidden := hidden.HiddenURLPasswd(cfg.Url); hidden {
+		cfg.displayURL = hiddenURL
+	}
 	return nil
 }
 
@@ -89,9 +104,18 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			logger.Debugf("Query the database with %s", query)
 			rows, err := m.db.Query(query)
 			if err != nil {
-				logger.Errorf("Run sql query(%s) error %v", query, err)
-				errCh <- err
-				return
+				logger.Errorf("sql source meet error, try to reconnection, err:%v, query:%v", err, query)
+				if !isConnectionError(err) {
+					errCh <- err
+					continue
+				}
+				err2 := m.Reconnect()
+				if err2 != nil {
+					errCh <- fmt.Errorf("reconnect failed, reconnect err:%v", err2)
+				} else {
+					logger.Info("sql source reconnect successfully")
+				}
+				continue
 			}
 
 			cols, _ := rows.Columns()
@@ -144,6 +168,21 @@ func (m *sqlsource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
+func (m *sqlsource) Reconnect() error {
+	// wait half interval to reconnect
+	time.Sleep(time.Duration(m.conf.Interval) * time.Millisecond / 2)
+	db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
+	if err2 != nil {
+		return err2
+	}
+	m.db = db
+	return nil
+}
+
 func GetSource() api.Source {
 	return &sqlsource{}
+}
+
+func isConnectionError(err error) bool {
+	return strings.Contains(err.Error(), "connection refused")
 }

@@ -30,17 +30,11 @@ import (
 )
 
 type MQTTConnectionConfig struct {
-	Server               string `json:"server"`
-	PVersion             string `json:"protocolVersion"`
-	ClientId             string `json:"clientid"`
-	Uname                string `json:"username"`
-	Password             string `json:"password"`
-	Certification        string `json:"certificationPath"`
-	PrivateKPath         string `json:"privateKeyPath"`
-	RootCaPath           string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"tlsMinVersion"`
-	RenegotiationSupport string `json:"renegotiationSupport"`
-	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
+	Server   string `json:"server"`
+	PVersion string `json:"protocolVersion"`
+	ClientId string `json:"clientid"`
+	Uname    string `json:"username"`
+	Password string `json:"password"`
 }
 
 type MQTTClient struct {
@@ -82,24 +76,26 @@ func (ms *MQTTClient) CfgValidate(props map[string]interface{}) error {
 	if cfg.PVersion == "3.1" {
 		ms.pVersion = 3
 	}
-
-	tlsOpts := cert.TlsConfigurationOptions{
-		SkipCertVerify:       cfg.InsecureSkipVerify,
-		CertFile:             cfg.Certification,
-		KeyFile:              cfg.PrivateKPath,
-		CaFile:               cfg.RootCaPath,
-		TLSMinVersion:        cfg.TLSMinVersion,
-		RenegotiationSupport: cfg.RenegotiationSupport,
-	}
-	conf.Log.Infof("Connect MQTT broker %s with TLS configs: %v.", ms.srv, tlsOpts)
-	tlscfg, err := cert.GenerateTLSForClient(tlsOpts)
+	tlsConfig, err := cert.GenTLSConfig(props, "mqtt")
 	if err != nil {
 		return err
 	}
-	ms.tls = tlscfg
+	conf.Log.Infof("Connect MQTT broker %s with TLS configs", ms.srv)
+	ms.tls = tlsConfig
+	if err := ms.checkMQTTServer(); err != nil {
+		return err
+	}
 	ms.uName = cfg.Uname
 	ms.password = strings.Trim(cfg.Password, " ")
+	return nil
+}
 
+func (ms *MQTTClient) checkMQTTServer() error {
+	if ms.tls != nil && !ms.tls.InsecureSkipVerify {
+		if !strings.HasPrefix(strings.ToLower(ms.srv), "ssl://") {
+			return fmt.Errorf("mqtt server should start with ssl:// when tls enabled")
+		}
+	}
 	return nil
 }
 
@@ -158,9 +154,9 @@ func (ms *MQTTClient) Publish(topic string, qos byte, retained bool, message []b
 
 func handleToken(token MQTT.Token) error {
 	if !token.WaitTimeout(5 * time.Second) {
-		return fmt.Errorf("%s: timeout", errorx.IOErr)
+		return errorx.NewIOErr("timeout")
 	} else if token.Error() != nil {
-		return fmt.Errorf("%s: %s", errorx.IOErr, token.Error())
+		return errorx.NewIOErr(token.Error().Error())
 	}
 	return nil
 }

@@ -54,6 +54,8 @@ type JsonStreamField struct {
 	Type       string                      `json:"type"`
 	Items      *JsonStreamField            `json:"items,omitempty"`
 	Properties map[string]*JsonStreamField `json:"properties,omitempty"`
+
+	Selected bool
 }
 
 func (u *StreamField) MarshalJSON() ([]byte, error) {
@@ -236,7 +238,11 @@ type Options struct {
 	// for delimited format only
 	DELIMITER string `json:"delimiter,omitempty"`
 
-	Schema map[string]*JsonStreamField `json:"-"`
+	RuleID       string                      `json:"-"`
+	Schema       map[string]*JsonStreamField `json:"-"`
+	IsWildCard   bool                        `json:"-"`
+	IsSchemaLess bool                        `json:"-"`
+	StreamName   string                      `json:"-"`
 }
 
 func (o Options) node() {}

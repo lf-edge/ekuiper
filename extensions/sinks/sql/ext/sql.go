@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/util"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -90,9 +89,21 @@ func (t *sqlConfig) getKeyValues(ctx api.StreamContext, mapData map[string]inter
 }
 
 type sqlSink struct {
-	conf *sqlConfig
+	driver string
+	conf   *sqlConfig
 	// The db connection instance
 	db sqldatabase.DB
+}
+
+func (m *sqlSink) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Configure(props); err != nil {
+		return err
+	}
+	db, err := util.FetchDBToOneNode(util.GlobalPool, m.conf.Url)
+	if err != nil {
+		return err
+	}
+	return db.Ping()
 }
 
 func (m *sqlSink) Configure(props map[string]interface{}) error {
@@ -114,6 +125,11 @@ func (m *sqlSink) Configure(props map[string]interface{}) error {
 		return fmt.Errorf("keyField is required when rowkindField is set")
 	}
 	m.conf = cfg
+	sqlDriver, err := util.ParseDriver(m.conf.Url)
+	if err != nil {
+		return err
+	}
+	m.driver = sqlDriver
 	return nil
 }
 
@@ -133,7 +149,8 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
 	ctx.GetLogger().Debugf(*sqlStr)
 	r, err := m.db.Exec(*sqlStr)
 	if err != nil {
-		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
+		ctx.GetLogger().Errorf("sql sink writeDB failed, err:%v , sql: %v", err, *sqlStr)
+		return errorx.NewIOErr(err.Error())
 	}
 	d, err := r.RowsAffected()
 	if err != nil {
@@ -156,12 +173,6 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
 		}
 		item = tm
-	} else {
-		tm, _, err := transform.TransItem(item, m.conf.DataField, m.conf.Fields)
-		if err != nil {
-			return fmt.Errorf("fail to 1 transform data %v for error %v!!!!!", item, err)
-		}
-		item = tm
 	}
 
 	var (
@@ -174,6 +185,9 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if err != nil {
 			ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
 			return err
+		}
+		if m.conf.DataField != "" {
+			item = v[m.conf.DataField]
 		}
 	case []map[string]interface{}:
 		if len(v) == 0 {
@@ -194,6 +208,15 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 	if m.conf.RowkindField == "" {
 		switch v := item.(type) {
 		case []map[string]interface{}:
+			if m.driver == "oracle" {
+				// TODO: for now we haven't support oracle bulk insert, thus we send batch data one by one.
+				for _, mapData := range v {
+					if err := m.Collect(ctx, mapData); err != nil {
+						return err
+					}
+				}
+				return nil
+			}
 			for _, mapData := range v {
 				keys, vars, err = m.conf.buildInsertSql(ctx, mapData)
 				if err != nil {
@@ -202,7 +225,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 				values = append(values, vars)
 			}
 			if keys != nil {
-				sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+				sqlStr := buildInsertSQL(m.driver, table, keys, values)
 				return m.writeToDB(ctx, &sqlStr)
 			}
 			return nil
@@ -213,7 +236,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 			values = append(values, vars)
 			if keys != nil {
-				sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+				sqlStr := buildInsertSQL(m.driver, table, keys, values)
 				return m.writeToDB(ctx, &sqlStr)
 			}
 			return nil
@@ -234,7 +257,7 @@ func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 
 			if keys != nil {
-				sqlStr := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+				sqlStr := buildInsertSQL(m.driver, table, keys, values)
 				return m.writeToDB(ctx, &sqlStr)
 			}
 			return nil
@@ -303,7 +326,7 @@ func (m *sqlSink) save(ctx api.StreamContext, table string, data map[string]inte
 		}
 		values := []string{vars}
 		if keys != nil {
-			sqlStr = fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",") + ";"
+			sqlStr = buildInsertSQL(m.driver, table, keys, values)
 		}
 	case ast.RowkindUpdate:
 		keyval, ok := data[m.conf.KeyField]
@@ -344,4 +367,37 @@ func (m *sqlSink) save(ctx api.StreamContext, table string, data map[string]inte
 
 func GetSink() api.Sink {
 	return &sqlSink{}
+}
+
+func buildInsertSQL(driver, table string, keys []string, values []string) string {
+	switch driver {
+	case "oracle":
+		return buildInsertSQLByKV(table, keys, values)
+	default:
+		return buildInsertSQLByKV(table, keys, values, withAddSemiColonOptional(true))
+	}
+}
+
+func buildInsertSQLByKV(table string, keys []string, values []string, withOptions ...WithBuildInsertOption) string {
+	option := &buildInsertOption{}
+	for _, withOption := range withOptions {
+		withOption(option)
+	}
+	sql := fmt.Sprintf("INSERT INTO %s (%s) values ", table, strings.Join(keys, ",")) + strings.Join(values, ",")
+	if option.addSemiColon {
+		sql = sql + ";"
+	}
+	return sql
+}
+
+type buildInsertOption struct {
+	addSemiColon bool
+}
+
+type WithBuildInsertOption func(o *buildInsertOption)
+
+func withAddSemiColonOptional(add bool) WithBuildInsertOption {
+	return func(clientConf *buildInsertOption) {
+		clientConf.addSemiColon = add
+	}
 }

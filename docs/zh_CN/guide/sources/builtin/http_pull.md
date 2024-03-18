@@ -1,7 +1,7 @@
 # HTTP Pull 数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper 内置支持 HTTP 数据源。通过 HTTP Pull 数据源连接器，eKuiper 可从外部 HTTP 服务器检索数据，并支持基于指定间隔或由特定条件触发拉取数据。
 
@@ -92,6 +92,9 @@ application_conf: #Conf_key
   - 如果运行从`/var/kuiper/bin`中运行`./kuiperd`，那么父目录为 `/var/kuiper/bin`。
 - `privateKeyPath`：私钥路径，示例值：`d3807d9fa5-private.pem.key`。可以是绝对路径，也可以是相对路径，具体可参考 `certificationPath`。
 - `rootCaPath`：根证书路径。可以是绝对路径，也可以是相对路径。
+- `certficationRaw`: 经过 base64 编码过的证书原文, 如果同时定义了 `certificationPath` 将会先用该参数。
+- `privateKeyRaw`: 经过 base64 编码过的密钥原文， 如果同时定义了 `privateKeyPath` 将会先用该参数。
+- `rootCARaw`: 经过 base64 编码过的根证书原文， 如果同时定义了 `rootCaPath` 将会先用该参数。
 - `insecureSkipVerify`：是否跳过证书验证。如设置为 `true`，TLS 接受服务器提供的任何证书以及该证书中的任何主机名。注意：此时，TLS 容易受到中间人攻击。默认值：`false`。
 
 #### OAuth 认证
@@ -132,6 +135,9 @@ OAuth 2.0 是一个授权协议，让 API 客户端有限度地访问网络服�
 
 - `PullTime`：本次拉取的 int64 格式时间戳。
 - `LastPullTime`：上次拉取的 int64 格式时间戳。
+- 来自 oAuth 的属性：oAuth 返回体的属性也可以使用。 例如，假设返回体为 `{"token": "xxxxxx"}`
+  ，则可通过 <span v-pre>`{{.token}}`</span> 访问
+  token 。
 
 若目标 HTTP 服务支持过滤开始和结束时间，可以使用这两个属性来实现增量拉取。
 
@@ -200,3 +206,11 @@ REST API 为 eKuiper 提供了一种可编程的交互方式，适用于自动�
    ```
 
 详细操作步骤及命令解释，可参考 [通过 CLI 进行流管理](../../../api/cli/streams.md)。
+
+## 查询表
+
+httppull 同时也支持成为一个查询表。我们可以使用创建表语句来创建一个 httppull 查询表。它将与实体关系数据库绑定并按需查询:
+
+```text
+CREATE TABLE httppullTable() WITH (DATASOURCE="/url", CONF_KEY="default", TYPE="httppull", KIND="lookup")
+```

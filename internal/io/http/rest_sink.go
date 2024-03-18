@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
@@ -30,15 +33,28 @@ type RestSink struct {
 	ClientConf
 }
 
+func (ms *RestSink) Validate(props map[string]interface{}) error {
+	conf.Log.Infof("valiadte rest sink with configurations %#v.", props)
+	return ms.InitConf("", props)
+}
+
 func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	conf.Log.Infof("Initialized rest sink with configurations %#v.", ps)
-	return ms.InitConf("", ps)
+	return ms.Validate(ps)
 }
 
 func (ms *RestSink) Open(ctx api.StreamContext) error {
-	ctx.GetLogger().Infof("Opening HTTP pull source with conf %+v", ms.config)
+	ctx.GetLogger().Infof("Opening REST sink with conf %+v", ms.config)
 	return nil
 }
+
+type temporaryError struct{}
+
+func (e *temporaryError) Error() string {
+	return "mockTimeoutError"
+}
+
+func (e *temporaryError) Temporary() bool { return true }
 
 func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desUrl string) error {
 	logger := ctx.GetLogger()
@@ -49,16 +65,26 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 	}
 
 	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
-	if err != nil {
-		e := err.Error()
-		if urlErr, ok := err.(*url.Error); ok {
-			// consider timeout and temporary error as recoverable
-			if urlErr.Timeout() || urlErr.Temporary() {
-				e = errorx.IOErr
-			}
+	failpoint.Inject("injectRestTemporaryError", func(val failpoint.Value) {
+		if val.(bool) {
+			err = &url.Error{Err: &temporaryError{}}
 		}
-		return fmt.Errorf(`%s: rest sink fails to send out the data: method=%s path="%s" request_body="%s"`,
-			e,
+	})
+	if err != nil {
+		originErr := err
+		recoverAble := isRecoverAbleError(originErr)
+		if recoverAble {
+			logger.Errorf("rest sink meet error:%v, recoverAble:%v, ruleID:%v", originErr.Error(), recoverAble, ctx.GetRuleId())
+			return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+				originErr.Error(),
+				recoverAble,
+				ms.config.Method,
+				ms.config.Url,
+				decodedData))
+		}
+		return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+			originErr.Error(),
+			recoverAble,
 			ms.config.Method,
 			ms.config.Url,
 			decodedData,
@@ -66,21 +92,38 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
 		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
-		if err != nil {
-			return fmt.Errorf(`%s: http error. | method=%s path="%s" status=%d request_body="%s" response_body="%s"`,
-				err,
-				ms.config.Method,
-				ms.config.Url,
-				resp.StatusCode,
-				decodedData,
-				b,
-			)
+		// do not record response body error as it is not an error in the sink action.
+		if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
+			if strings.HasPrefix(err.Error(), BODY_ERR) {
+				logger.Warnf("rest sink response body error: %v", err)
+			} else {
+				return fmt.Errorf(`parse response error: %s. | method=%s path="%s" status=%d response_body="%s"`,
+					err,
+					ms.config.Method,
+					ms.config.Url,
+					resp.StatusCode,
+					b,
+				)
+			}
 		}
 		if ms.config.DebugResp {
 			logger.Infof("Response raw content: %s\n", string(b))
 		}
 	}
 	return nil
+}
+
+func isRecoverAbleError(err error) bool {
+	if strings.Contains(err.Error(), "connection reset by peer") {
+		return true
+	}
+	if urlErr, ok := err.(*url.Error); ok {
+		// consider timeout and temporary error as recoverable
+		if urlErr.Timeout() || urlErr.Temporary() {
+			return true
+		}
+	}
+	return false
 }
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {

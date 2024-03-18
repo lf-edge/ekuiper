@@ -41,3 +41,11 @@ sha512(col)
 ```
 
 Return sha512 hashed value of the argument.
+
+## CRC32
+
+```text
+crc32(col)
+```
+
+Return crc32 hashed value of the argument.

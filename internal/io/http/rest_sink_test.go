@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,19 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/pingcap/failpoint"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -371,10 +376,17 @@ func TestRestSinkTemplate_Apply(t *testing.T) {
 
 func TestRestSinkErrorLog(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		result := `{"data":[],"extra":"Success","returncode":1,"returnmessage":""}`
-		time.Sleep(30 * time.Millisecond)
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(result))
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Printf("Error reading body: %v", err)
+			http.Error(w, "can't read body", http.StatusBadRequest)
+			return
+		}
+		if strings.Contains(string(body), "success") {
+			fmt.Fprint(w, "result")
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
 	}))
 	defer ts.Close()
 
@@ -395,7 +407,7 @@ func TestRestSinkErrorLog(t *testing.T) {
 		}
 		err := s.Collect(vCtx, reqBody)
 
-		if strings.HasPrefix(err.Error(), errorx.IOErr) && !strings.Contains(err.Error(), "hello1") {
+		if errorx.IsIOError(err) && !strings.Contains(err.Error(), "hello1") {
 			t.Errorf("should include request body, but got %s", err.Error())
 		}
 		fmt.Println(err.Error())
@@ -419,11 +431,137 @@ func TestRestSinkErrorLog(t *testing.T) {
 			{"ab": "hello1"},
 			{"ab": "hello2"},
 		})
+		assert.Error(t, err)
 		fmt.Println(err.Error())
-		if strings.HasPrefix(err.Error(), errorx.IOErr) && !strings.Contains(err.Error(), "404") {
+		if errorx.IsIOError(err) && !strings.Contains(err.Error(), "404") {
 			t.Errorf("should start with io error, but got %s", err.Error())
 		}
 
 		s.Close(context.Background())
 	})
+
+	t.Run("Test decode error", func(t *testing.T) {
+		s := &RestSink{}
+		config := map[string]interface{}{
+			"url":       ts.URL,
+			"timeout":   float64(10),
+			"method":    "post",
+			"debugResp": true,
+		}
+		s.Configure(config)
+		s.Open(context.Background())
+
+		tf, _ := transform.GenTransform("", "delimited", "", "", "", []string{})
+		vCtx := context.WithValue(context.Background(), context.TransKey, tf)
+		reqBody := map[string]interface{}{
+			"ab": "success",
+		}
+		err := s.Collect(vCtx, reqBody)
+		// for parse error, omit it.
+		assert.NoError(t, err)
+		s.Close(context.Background())
+	})
+
+	t.Run("Test invalid url", func(t *testing.T) {
+		s := &RestSink{}
+		config := map[string]interface{}{
+			"url":       "http://localhost:1234",
+			"timeout":   float64(10),
+			"method":    "post",
+			"debugResp": true,
+		}
+		s.Configure(config)
+		s.Open(context.Background())
+
+		tf, _ := transform.GenTransform("", "delimited", "", "", "", []string{})
+		vCtx := context.WithValue(context.Background(), context.TransKey, tf)
+		reqBody := map[string]interface{}{
+			"ab": "success",
+		}
+		err := s.Collect(vCtx, reqBody)
+		assert.Error(t, err)
+		// Unrecoverable Error
+		assert.False(t, errorx.IsIOError(err))
+		s.Close(context.Background())
+	})
+}
+
+func TestRestSinkIOError(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "TestRestSink_Apply")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	var requests []request
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			fmt.Printf("Error reading body: %v", err)
+			http.Error(w, "can't read body", http.StatusBadRequest)
+			return
+		}
+
+		requests = append(requests, request{
+			Method:      r.Method,
+			Body:        string(body),
+			ContentType: r.Header.Get("Content-Type"),
+		})
+		contextLogger.Debugf(string(body))
+		fmt.Fprint(w, string(body))
+	}))
+	defer ts.Close()
+
+	tests := []struct {
+		config map[string]interface{}
+		data   [][]byte
+		result []request
+	}{
+		{
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"sendSingle":   true,
+				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
+			},
+			data: [][]byte{[]byte(`{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`), []byte(`{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`)},
+			result: []request{{
+				Method:      "POST",
+				Body:        `{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`,
+				ContentType: "application/json",
+			}, {
+				Method:      "POST",
+				Body:        `{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`,
+				ContentType: "application/json",
+			}},
+		},
+	}
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/io/http/injectRestTemporaryError", "return(ture)")
+	defer func() {
+		failpoint.Disable("github.com/lf-edge/ekuiper/internal/io/http/injectRestTemporaryError")
+	}()
+	for _, tt := range tests {
+		requests = nil
+		s := &RestSink{}
+		tt.config["url"] = ts.URL
+		s.Configure(tt.config)
+		s.Open(ctx)
+		vCtx := context.WithValue(ctx, context.TransKey, transform.TransFunc(func(d interface{}) ([]byte, bool, error) {
+			return d.([]byte), true, nil
+		}))
+		for _, d := range tt.data {
+			err := s.Collect(vCtx, d)
+			require.Error(t, err)
+			require.True(t, errorx.IsIOError(err))
+		}
+		s.Close(ctx)
+	}
+}
+
+func TestIsRecoverAbleErr(t *testing.T) {
+	require.True(t, isRecoverAbleError(errors.New("connection reset by peer")))
+	require.True(t, isRecoverAbleError(&url.Error{Err: &temporaryError{}}))
+}
+
+func TestRestSinkMethod(t *testing.T) {
+	rs := &RestSink{}
+	err := rs.Validate(map[string]interface{}{"method": "head"})
+	require.Error(t, err)
 }

@@ -1,0 +1,1 @@
+message Book {required string a = 1; oneof b {string c = 3;string d = 4; }}

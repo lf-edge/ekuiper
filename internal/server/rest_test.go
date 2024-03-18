@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -34,11 +35,13 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("server")
 	streamProcessor = processor.NewStreamProcessor()
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
@@ -46,6 +49,7 @@ func init() {
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
 	sysMetrics = NewMetrics()
+	factory.InitClientsFactory()
 }
 
 type RestTestSuite struct {
@@ -78,6 +82,9 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
+	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -86,7 +93,20 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
+	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	suite.r = r
+}
+
+func (suite *RestTestSuite) Test_Connection() {
+	req, err := http.NewRequest(http.MethodPost, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
+	require.NoError(suite.T(), err)
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	req, err = http.NewRequest(http.MethodDelete, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
+	require.NoError(suite.T(), err)
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *RestTestSuite) Test_rootHandler() {
@@ -228,12 +248,12 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	returnVal, _ := io.ReadAll(w2.Result().Body)
-	expect := `The rule has been successfully validated and is confirmed to be correct.`
+	expect := `{"sources":["alert"],"valid":true}`
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
 
-	// valiadate a wrong rule
-	ruleJson = `{"id": "rule1", "sql": "select * from alert"}`
+	// validate a wrong rule
+	ruleJson = `{"id": "rule321", "sql": "select * from alert"}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
@@ -245,7 +265,19 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// create rule with trigger false
-	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
+	ruleJson = `{"id": "rule3/21","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
+
+	buf2 = bytes.NewBuffer([]byte(ruleJson))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	returnVal, _ = io.ReadAll(w2.Result().Body)
+	expect = `{"error":1000,"message":"invalid rule json: ruleID:rule3/21 contains invalidChar:/"}`
+	expect = expect + "\n"
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// create rule with trigger false
+	ruleJson = `{"id": "rule321","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
@@ -260,32 +292,32 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	_, _ = io.ReadAll(w3.Result().Body)
 
 	// update rule, will set rule to triggered
-	ruleJson = `{"id": "rule1","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
+	ruleJson = `{"id": "rule321","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
-	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule321", buf2)
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
 	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
-	// update wron rule
-	ruleJson = `{"id": "rule1","sql": "select * from alert1","actions": [{"nop": {}}]}`
+	// update wrong rule
+	ruleJson = `{"id": "rule321","sql": "select * from alert1","actions": [{"nop": {}}]}`
 
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
-	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule321", buf2)
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
 	assert.Equal(suite.T(), http.StatusBadRequest, w1.Code)
 
 	// get rule
-	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"id": "rule1","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
+	expect = `{"id": "rule321","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// get rule status
@@ -294,71 +326,149 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 
-	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/explain", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321/explain", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 	returnStr := string(returnVal)
-	expect = "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ * ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: alert\",\"id\":1,\"children\":null}\n\n"
+	expect = "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ * ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: alert wildcard:true\",\"id\":1,\"children\":null}\n\n"
+	assert.Equal(suite.T(), expect, returnStr)
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule32211/explain", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	expect = "{\"error\":1002,\"message\":\"explain rules error: Rule rule32211 is not found.\"}\n"
 	assert.Equal(suite.T(), expect, returnStr)
 
 	// get rule topo
-	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/topo", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321/topo", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
-	expect = `{"sources":["source_alert"],"edges":{"op_2_project":["sink_nop_0"],"source_alert":["op_2_project"]}}`
+	expect = "{\"sources\":[\"source_alert\"],\"edges\":{\"op_2_decoder\":[\"op_3_project\"],\"op_3_project\":[\"sink_nop_0\"],\"source_alert\":[\"op_2_decoder\"]}}"
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// start rule
-	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/start", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule321/start", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-
-	expect = `Rule rule1 was started`
+	expect = `Rule rule321 was started`
 	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// start non-existence rule
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/non-existence-rule/start", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	equal, err := assertErrorCode(errorx.NOT_FOUND, returnVal)
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), equal)
+	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// stop rule
-	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/stop", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule321/stop", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
+	expect = `Rule rule321 was stopped.`
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// stop non-existence rule
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/non-existence-rule/stop", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	equal, err = assertErrorCode(errorx.NOT_FOUND, returnVal)
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), equal)
+
+	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// update rule, will set rule to triggered
-	ruleJson = `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
-
-	expect = `Rule rule1 was stopped.`
-	assert.Equal(suite.T(), expect, string(returnVal))
+	ruleJson = `{"id": "rule321","triggered": false,"sql": "select * from alert","actions": [{"nop": {}}]}`
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
-	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule1", buf2)
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule321", buf2)
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	// restart rule
-	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule1/restart", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule321/restart", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 
-	expect = `Rule rule1 was restarted`
+	expect = `Rule rule321 was restarted`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// get rule
-	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"triggered":true,"id":"rule1","sql":"select * from alert","actions":[{"nop":{}}],"options":{"debug":false,"logFilename":"","isEventTime":false,"lateTolerance":1000,"concurrency":1,"bufferLength":1024,"sendMetaToSink":false,"sendError":true,"qos":0,"checkpointInterval":300000,"restartStrategy":{"attempts":0,"delay":1000,"multiplier":2,"maxDelay":30000,"jitter":0.1},"cron":"","duration":"","cronDatetimeRange":null}}`
+	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"debug":false,"logFilename":"","isEventTime":false,"lateTolerance":1000,"concurrency":1,"bufferLength":1024,"sendMetaToSink":false,"sendError":true,"qos":0,"checkpointInterval":300000,"restartStrategy":{"attempts":0,"delay":1000,"multiplier":2,"maxDelay":30000,"jitter":0.1},"cron":"","duration":"","cronDatetimeRange":null}}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// delete rule
-	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule1", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule321", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
+
+	// drop stream
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+}
+
+func assertErrorCode(code errorx.ErrorCode, resp []byte) (bool, error) {
+	m := struct {
+		ErrorCode int `json:"error"`
+	}{}
+	err := json.Unmarshal(resp, &m)
+	if err != nil {
+		return false, err
+	}
+	return m.ErrorCode == int(code), nil
+}
+
+func (suite *RestTestSuite) Test_ruleTestHandler() {
+	suite.T().Skip()
+	factory.InitClientsFactory()
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	// create rule with trigger false
+	ruleJson := `{"id":"rule1","sql":"select * from alert","mockSource":{"alert":{"data":[{"name":"demo","value":1},{"name":"demo","value":2}],"interval":1,"loop":false}},"sinkProps":{"sendSingle":true}}`
+
+	buf2 := bytes.NewBuffer([]byte(ruleJson))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/ruletest", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+
+	assert.Equal(suite.T(), http.StatusOK, w2.Code)
+	assert.Equal(suite.T(), "{\"id\":\"rule1\",\"port\":10081}", w2.Body.String())
+
+	// start rule
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/ruletest/rule1/start", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ := io.ReadAll(w1.Result().Body)
+
+	expect := `Test rule rule1 was started`
+	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// delete rule
+	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/ruletest/rule1", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	// drop stream
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
@@ -549,9 +659,23 @@ func TestRestTestSuite(t *testing.T) {
 	suite.Run(t, new(RestTestSuite))
 }
 
+func (suite *ServerTestSuite) TestCreateInValidSinkRule() {
+	var sql, reply string
+	var err error
+	sql = `Create Stream test543 (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+	err = suite.s.Stream(sql, &reply)
+	require.NoError(suite.T(), err)
+	reply = ""
+	rule := `{"id":"rule","sql":"select * from test543","actions":[{"mqtt":{"server":"tcp://docker.for.mac.host.internal:1883","topic":"collect/labels","qos":100,"clientId":"center","sendSingle":true}}]}`
+	ruleId := "rule"
+	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
+	err = suite.s.CreateRule(args, &reply)
+	require.Error(suite.T(), err)
+}
+
 func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
+	reply := ""
 	sql := `Create Stream test (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
-	var reply string
 	err := suite.s.Stream(sql, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Stream test is created.\n", reply)

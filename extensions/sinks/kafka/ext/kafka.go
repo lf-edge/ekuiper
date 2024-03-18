@@ -15,15 +15,14 @@
 package kafka
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	kafkago "github.com/segmentio/kafka-go"
-	"github.com/segmentio/kafka-go/sasl"
-	"github.com/segmentio/kafka-go/sasl/plain"
-	"github.com/segmentio/kafka-go/sasl/scram"
 
+	"github.com/lf-edge/ekuiper/extensions/kafka"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -34,47 +33,42 @@ import (
 type kafkaSink struct {
 	writer         *kafkago.Writer
 	c              *sinkConf
-	tc             *tlsConf
 	kc             *kafkaConf
-	headers        []kafkago.Header
+	tlsConfig      *tls.Config
+	sc             kafka.SaslConf
+	headersMap     map[string]string
 	headerTemplate string
 }
 
-const (
-	SASL_NONE  = "none"
-	SASL_PLAIN = "plain"
-	SASL_SCRAM = "scram"
-)
-
 type sinkConf struct {
-	Brokers      string `json:"brokers"`
-	Topic        string `json:"topic"`
-	SaslAuthType string `json:"saslAuthType"`
-	SaslUserName string `json:"saslUserName"`
-	SaslPassword string `json:"saslPassword"`
-}
-
-type tlsConf struct {
-	InsecureSkipVerify   bool   `json:"insecureSkipVerify"`
-	CertificationPath    string `json:"certificationPath"`
-	PrivateKeyPath       string `json:"privateKeyPath"`
-	RootCaPath           string `json:"rootCaPath"`
-	TLSMinVersion        string `json:"tlsMinVersion"`
-	RenegotiationSupport string `json:"renegotiationSupport"`
+	Brokers string `json:"brokers"`
+	Topic   string `json:"topic"`
 }
 
 type kafkaConf struct {
-	MaxAttempts int         `json:"maxAttempts"`
-	BatchSize   int         `json:"batchSize"`
-	Key         string      `json:"key"`
-	Headers     interface{} `json:"headers"`
+	MaxAttempts  int         `json:"maxAttempts"`
+	RequiredACKs int         `json:"requiredACKs"`
+	Key          string      `json:"key"`
+	Headers      interface{} `json:"headers"`
+}
+
+func (m *kafkaSink) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Configure(props); err != nil {
+		return err
+	}
+	for _, broker := range strings.Split(m.c.Brokers, ",") {
+		err := m.ping(broker)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	c := &sinkConf{
-		Brokers:      "localhost:9092",
-		Topic:        "",
-		SaslAuthType: SASL_NONE,
+		Brokers: "localhost:9092",
+		Topic:   "",
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -85,65 +79,40 @@ func (m *kafkaSink) Configure(props map[string]interface{}) error {
 	if c.Topic == "" {
 		return fmt.Errorf("topic can not be empty")
 	}
-	if !(c.SaslAuthType == SASL_NONE || c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) {
-		return fmt.Errorf("saslAuthType incorrect")
-	}
-	if (c.SaslAuthType == SASL_SCRAM || c.SaslAuthType == SASL_PLAIN) && (c.SaslUserName == "" || c.SaslPassword == "") {
-		return fmt.Errorf("username and password can not be empty")
-	}
-	tc := &tlsConf{}
-	if err := cast.MapToStruct(props, tc); err != nil {
+	sc, err := kafka.GetSaslConf(props)
+	if err != nil {
 		return err
 	}
+	if err := sc.Validate(); err != nil {
+		return err
+	}
+	m.sc = sc
+	tlsConfig, err := cert.GenTLSConfig(props, "kafka-sink")
+	if err != nil {
+		return err
+	}
+	m.tlsConfig = tlsConfig
 	kc := &kafkaConf{
-		MaxAttempts: 1,
-		BatchSize:   1,
+		RequiredACKs: -1,
+		MaxAttempts:  1,
 	}
 	if err := cast.MapToStruct(props, kc); err != nil {
 		return err
 	}
 	m.kc = kc
-	m.tc = tc
 	m.c = c
 	if err := m.setHeaders(); err != nil {
 		return fmt.Errorf("set kafka header failed, err:%v", err)
 	}
-	return nil
+	return m.buildKafkaWriter()
 }
 
-func (m *kafkaSink) Open(ctx api.StreamContext) error {
-	ctx.GetLogger().Debug("Opening kafka sink")
-
-	var err error
-	var mechanism sasl.Mechanism
-
-	// sasl authentication type
-	switch m.c.SaslAuthType {
-	case SASL_PLAIN:
-		mechanism = plain.Mechanism{
-			Username: m.c.SaslUserName,
-			Password: m.c.SaslPassword,
-		}
-	case SASL_SCRAM:
-		mechanism, err = scram.Mechanism(scram.SHA512, m.c.SaslUserName, m.c.SaslPassword)
-		if err != nil {
-			return err
-		}
-	default:
-		mechanism = nil
-	}
-	brokers := strings.Split(m.c.Brokers, ",")
-	tlsConfig, err := cert.GenerateTLSForClient(cert.TlsConfigurationOptions{
-		SkipCertVerify:       m.tc.InsecureSkipVerify,
-		CertFile:             m.tc.CertificationPath,
-		KeyFile:              m.tc.PrivateKeyPath,
-		CaFile:               m.tc.RootCaPath,
-		TLSMinVersion:        m.tc.TLSMinVersion,
-		RenegotiationSupport: m.tc.RenegotiationSupport,
-	})
+func (m *kafkaSink) buildKafkaWriter() error {
+	mechanism, err := m.sc.GetMechanism()
 	if err != nil {
 		return err
 	}
+	brokers := strings.Split(m.c.Brokers, ",")
 	w := &kafkago.Writer{
 		Addr:                   kafkago.TCP(brokers...),
 		Topic:                  m.c.Topic,
@@ -151,14 +120,19 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 		Async:                  false,
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            m.kc.MaxAttempts,
-		RequiredAcks:           -1,
-		BatchSize:              m.kc.BatchSize,
+		RequiredAcks:           kafkago.RequiredAcks(m.kc.RequiredACKs),
+		BatchSize:              1,
 		Transport: &kafkago.Transport{
 			SASL: mechanism,
-			TLS:  tlsConfig,
+			TLS:  m.tlsConfig,
 		},
 	}
 	m.writer = w
+	return nil
+}
+
+func (m *kafkaSink) Open(ctx api.StreamContext) error {
+	ctx.GetLogger().Debug("Opening kafka sink")
 	return nil
 }
 
@@ -168,15 +142,18 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	var messages []kafkago.Message
 	switch d := item.(type) {
 	case []map[string]interface{}:
-		decodedBytes, _, err := ctx.TransformOutput(d)
-		if err != nil {
-			return fmt.Errorf("kafka sink transform data error: %v", err)
+		for _, msg := range d {
+			decodedBytes, _, err := ctx.TransformOutput(msg)
+			if err != nil {
+				return fmt.Errorf("kafka sink transform data error: %v", err)
+			}
+			kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
+			if err != nil {
+				conf.Log.Errorf("build kafka msg failed, err:%v", err)
+				return err
+			}
+			messages = append(messages, kafkaMsg)
 		}
-		msg, err := m.buildMsg(ctx, item, decodedBytes)
-		if err != nil {
-			return err
-		}
-		messages = append(messages, msg)
 	case map[string]interface{}:
 		decodedBytes, _, err := ctx.TransformOutput(d)
 		if err != nil {
@@ -184,6 +161,7 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 		msg, err := m.buildMsg(ctx, item, decodedBytes)
 		if err != nil {
+			conf.Log.Errorf("build kafka msg failed, err:%v", err)
 			return err
 		}
 		messages = append(messages, msg)
@@ -199,7 +177,9 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	switch err := err.(type) {
 	case kafkago.Error:
 		if err.Temporary() {
-			return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+			return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
+		} else {
+			return err
 		}
 	case kafkago.WriteErrors:
 		count := 0
@@ -213,13 +193,22 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 					count++
 					continue
 				}
+			default:
+				if strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
+					return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
+				}
 			}
 		}
-		if count == len(messages) {
-			return fmt.Errorf(`%s: kafka sink fails to send out the data . %v`, errorx.IOErr, err)
+		if count > 0 {
+			return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
+		} else {
+			return err
 		}
+	case nil:
+		return nil
+	default:
+		return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data: %v`, err.Error()))
 	}
-	return err
 }
 
 func (m *kafkaSink) Close(ctx api.StreamContext) error {
@@ -233,17 +222,17 @@ func GetSink() api.Sink {
 func (m *kafkaSink) buildMsg(ctx api.StreamContext, item interface{}, decodedBytes []byte) (kafkago.Message, error) {
 	msg := kafkago.Message{Value: decodedBytes}
 	if len(m.kc.Key) > 0 {
-		msg.Key = []byte(m.kc.Key)
-	}
-	if len(m.headers) > 0 {
-		msg.Headers = m.headers
-	} else if len(m.headerTemplate) > 0 {
-		headers, err := parseHeaders(ctx, item, m.headerTemplate)
+		newKey, err := ctx.ParseTemplate(m.kc.Key, item)
 		if err != nil {
-			return kafkago.Message{}, fmt.Errorf("parse kafka headers error: %v", err)
+			return kafkago.Message{}, fmt.Errorf("parse kafka key error: %v", err)
 		}
-		msg.Headers = headers
+		msg.Key = []byte(newKey)
 	}
+	headers, err := m.parseHeaders(ctx, item)
+	if err != nil {
+		return kafkago.Message{}, fmt.Errorf("parse kafka headers error: %v", err)
+	}
+	msg.Headers = headers
 	return msg, nil
 }
 
@@ -253,38 +242,70 @@ func (m *kafkaSink) setHeaders() error {
 	}
 	switch h := m.kc.Headers.(type) {
 	case map[string]interface{}:
-		var kafkaHeaders []kafkago.Header
+		kafkaHeaders := make(map[string]string)
 		for key, value := range h {
-			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
-				Key:   key,
-				Value: []byte(value.(string)),
-			})
+			if sv, ok := value.(string); ok {
+				kafkaHeaders[key] = sv
+			}
 		}
-		m.headers = kafkaHeaders
+		m.headersMap = kafkaHeaders
 		return nil
 	case string:
 		m.headerTemplate = h
 		return nil
 	default:
-		return fmt.Errorf("kafka headers must be a map or a string")
+		return fmt.Errorf("kafka headers must be a map[string]string or a string")
 	}
 }
 
-func parseHeaders(ctx api.StreamContext, data interface{}, headerTemplate string) ([]kafkago.Header, error) {
-	headers := make(map[string]string)
-	s, err := ctx.ParseTemplate(headerTemplate, data)
+func (m *kafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kafkago.Header, error) {
+	if len(m.headersMap) > 0 {
+		var kafkaHeaders []kafkago.Header
+		for k, v := range m.headersMap {
+			value, err := ctx.ParseTemplate(v, data)
+			if err != nil {
+				return nil, fmt.Errorf("parse kafka header map failed, err:%v", err)
+			}
+			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
+				Key:   k,
+				Value: []byte(value),
+			})
+		}
+		return kafkaHeaders, nil
+	} else if len(m.headerTemplate) > 0 {
+		headers := make(map[string]string)
+		s, err := ctx.ParseTemplate(m.headerTemplate, data)
+		if err != nil {
+			return nil, fmt.Errorf("parse kafka header template failed, err:%v", err)
+		}
+		if err := json.Unmarshal([]byte(s), &headers); err != nil {
+			return nil, err
+		}
+		var kafkaHeaders []kafkago.Header
+		for key, value := range headers {
+			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
+				Key:   key,
+				Value: []byte(value),
+			})
+		}
+		return kafkaHeaders, nil
+	}
+	return nil, nil
+}
+
+func (m *kafkaSink) ping(address string) error {
+	mechanism, err := m.sc.GetMechanism()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err := json.Unmarshal([]byte(s), &headers); err != nil {
-		return nil, err
+	d := &kafkago.Dialer{
+		TLS:           m.tlsConfig,
+		SASLMechanism: mechanism,
 	}
-	var kafkaHeaders []kafkago.Header
-	for key, value := range headers {
-		kafkaHeaders = append(kafkaHeaders, kafkago.Header{
-			Key:   key,
-			Value: []byte(value),
-		})
+	c, err := d.Dial("tcp", address)
+	if err != nil {
+		return err
 	}
-	return kafkaHeaders, nil
+	defer c.Close()
+	return nil
 }

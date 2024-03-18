@@ -4,6 +4,8 @@ eKuiper 的配置文件位于 `$eKuiper/etc/kuiper.yaml` 中。 配置文件为 
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -22,6 +24,10 @@ basic:
     level: info
     # The syslog tag; Leave empty if no tag is used
     tag: kuiper
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -46,12 +52,16 @@ basic:
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # Whether to disable the log timestamp, useful when output is redirected to logging system like syslog that already adds timestamps.
+  logDisableTimestamp: false
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -59,6 +69,8 @@ basic:
   # Whether to ignore case in SQL processing. Note that, the name of customized function by plugins are case-sensitive.
   ignoreCase: false
 ```
+
+当 debug 为 false 时，eKuiper 的日志级别可以通过 logLevel 控制，当 debug 为 true 时，eKuiper 的日志级别将固定为 debug。
 
 ## 系统日志
 
@@ -81,6 +93,40 @@ syslog:
 ```
 
 以上选项均为可选。若未设置网络和地址，则使用本地 syslog。若未设置级别，则默认值为 info。若未设置标签，则不使用标签。
+
+syslog 已经有自己的时间戳，可以通过将 `logDisableTimestamp` 设置为 true 来禁用日志消息中的时间戳。
+
+## 日志文件轮转
+
+如果 `fileLog` 设置为 `true`，日志将打印到日志文件中。日志文件轮转支持按大小或时间进行。
+
+### 按大小轮转
+
+以下设置用于控制按大小进行日志文件轮转：
+
+```yaml
+  # 最大文件大小（以字节为单位），如果设置了此项，将忽略 maxAge
+  rotateSize: 10485760 # 10 MB
+  # 最大日志文件数量
+  rotateCount: 3
+```
+
+如果 `rotateSize` 设置为正值，当日志文件的大小超过 `rotateSize` 时，将轮转日志文件。`rotateCount`
+用于控制保留的最大日志文件数量。如果 `rotateCount` 设置为 0，将禁用按大小轮转日志文件。
+
+### 按时间轮转
+
+这些设置用于控制按时间进行日志文件轮转：
+
+```yaml
+  # 分割文件的小时数
+  rotateTime: 24
+  # 最大文件存储小时数
+  maxAge: 72
+```
+
+如果 `rotateTime` 设置为正值，日志文件将每隔 `rotateTime` 小时进行轮转。`maxAge`
+用于控制保留日志文件的最大小时数。如果 `maxAge` 设置为 0，将禁用按时间轮转日志文件。
 
 ## 时区配置
 
@@ -236,7 +282,7 @@ basic:
 * connectionSelector - 重用 etc/connections/connection.yaml 中定义的连接信息, 主要用在 edgex redis 配置了认证系统时
   * 只适用于 edgex redis 的连接信息
   * 连接信息中的 server，port 和 password 会覆盖以上定义的 host，port 和 password
-  * [具体信息可参考](../guide/sources/builtin/edgex.md#connectionselector)
+  * [具体信息可参考](../guide/sources/builtin/edgex.md#连接重用)
 
 ### 外部状态
 
@@ -278,3 +324,26 @@ SQL 中的 [get_keyed_state](../sqls/functions/other_functions.md#getkeyedstate)
 ## 初始化规则集
 
 支持基于文件的流和规则的启动时配置。用户可以将名为 `init.json` 的[规则集](../api/restapi/ruleset.md#规则集格式)文件放入 `data` 目录，以初始化规则集。该规则集只在eKuiper 第一次启动时被导入。
+
+## 配置 FoundationDB 作为存储
+
+eKuiper 默认使用 sqlite 来存储一些元信息，同时 eKuiper 也支持使用 FoundationDB 来作为元存储数据，我们可以通过以下步骤实现:
+
+* 确认 eKuiper 所在环境已经安装并启动 FoundationDB，并确认 FoundationDB 所使用的存储 Path. 可参考[官方文档](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+* 确认 eKuiper 宿主机所使用的 fdb c 语言库的 APIVersion 版本，并将 eKuiper 依赖库替换为相应版本，以 APIVersion 6.2.0 为例，在 eKuiper 主目录执行以下命令:
+
+```shell
+go get github.com/apple/foundationdb/bindings/go@6.2.0
+```
+
+* 执行 `make build_with_fdb` 编译 kuiperd
+* 在配置中按照如下修改:
+
+```yaml
+    store:
+      #Type of store that will be used for keeping state of the application
+      type: fdb
+      extStateType: fdb
+      fdb:
+        path: <path-of-fdb-cluster-file>
+```

@@ -20,11 +20,14 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/server/promMetrics"
+	"github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -81,23 +84,24 @@ func createRule(name, ruleJson string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("invalid rule json: %v", err)
 	}
-	// Store to KV
-	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
-	if err != nil {
-		return r.Id, fmt.Errorf("store the rule error: %v", err)
-	}
 
 	// Validate the topo
-	panicOrError := infra.SafeRun(func() error {
+	err = infra.SafeRun(func() error {
 		rs, err = createRuleState(r)
 		return err
 	})
-	if panicOrError != nil {
+	if err != nil {
+		return r.Id, err
+	}
+
+	// Store to KV
+	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
+	if err != nil {
 		// Do not store to registry so also delete the KV
 		deleteRule(r.Id)
-		_, _ = ruleProcessor.ExecDrop(r.Id)
-		return r.Id, fmt.Errorf("create rule topo error: %v", panicOrError)
+		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
+
 	// Start the rule asyncly
 	if r.Triggered {
 		go func() {
@@ -153,11 +157,32 @@ func recoverRule(r *api.Rule) string {
 	return fmt.Sprintf("Rule %s was started.", r.Id)
 }
 
-func updateRule(ruleId, ruleJson string) error {
+// reload password from resources if the config both include password(as fake password) and resourceId
+func replacePasswdForConfig(typ string, name string, config map[string]interface{}) map[string]interface{} {
+	if r, ok := config["resourceId"]; ok {
+		if resourceId, ok := r.(string); ok {
+			return meta.ReplacePasswdForConfig(typ, name, resourceId, config)
+		}
+	}
+	return config
+}
+
+func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
 	if err != nil {
 		return fmt.Errorf("Invalid rule json: %v", err)
+	}
+	if replacePasswd {
+		for i, action := range r.Actions {
+			for k, v := range action {
+				if m, ok := v.(map[string]interface{}); ok {
+					m = replacePasswdForConfig("sink", k, m)
+					action[k] = m
+				}
+			}
+			r.Actions[i] = action
+		}
 	}
 	if rs, ok := registry.Load(r.Id); ok {
 		err := rs.UpdateTopo(r)
@@ -200,7 +225,7 @@ func startRuleInternal(name string) error {
 func reRunRule(name string, isInternal bool) error {
 	rs, ok := registry.Load(name)
 	if !ok {
-		return fmt.Errorf("Rule %s is not found in registry, please check if it is created", name)
+		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", name))
 	} else {
 		if !isInternal {
 			if rule, err := ruleProcessor.ExecReplaceRuleState(rs.RuleId, true); err != nil {
@@ -223,8 +248,7 @@ func stopRuleInternal(name string) {
 	}
 }
 
-func stopRule(name string) (result string) {
-	var err error
+func stopRule(name string) (result string, err error) {
 	if rs, ok := registry.Load(name); ok {
 		err = rs.Stop()
 		if err != nil {
@@ -237,14 +261,13 @@ func stopRule(name string) (result string) {
 		result = fmt.Sprintf("Rule %s was stopped.", name)
 	} else {
 		result = fmt.Sprintf("Rule %s was not found.", name)
+		err = errorx.NewWithCode(errorx.NOT_FOUND, result)
 	}
 	return
 }
 
 func restartRule(name string) error {
-	stopRule(name)
-	time.Sleep(1 * time.Millisecond)
-	return startRule(name)
+	return reRunRule(name, false)
 }
 
 func getRuleStatus(name string) (string, error) {
@@ -257,6 +280,10 @@ func getRuleStatus(name string) (string, error) {
 			keys, values := (*rs.Topology).GetMetrics()
 			metrics := "{"
 			metrics += `"status": "running",`
+			lastStart, lastStop, nextStart := rs.GetScheduleTimestamp()
+			metrics += fmt.Sprintf(`"lastStartTimestamp": "%v",`, lastStart)
+			metrics += fmt.Sprintf(`"lastStopTimestamp": "%v",`, lastStop)
+			metrics += fmt.Sprintf(`"nextStopTimestamp": "%v",`, nextStart)
 			for i, key := range keys {
 				value := values[i]
 				switch value.(type) {
@@ -274,12 +301,24 @@ func getRuleStatus(name string) (string, error) {
 				result = dst.String()
 			}
 		} else {
-			result = fmt.Sprintf(`{"status": "stopped", "message": "%s"}`, result)
+			return getStoppedState(result)
 		}
 		return result, nil
 	} else {
 		return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
 	}
+}
+
+func getStoppedState(message string) (string, error) {
+	s := map[string]string{
+		"status":  "stopped",
+		"message": message,
+	}
+	re, err := json.Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	return string(re), nil
 }
 
 func getAllRulesWithStatus() ([]map[string]interface{}, error) {
@@ -359,11 +398,32 @@ func getRuleTopo(name string) (string, error) {
 	}
 }
 
-func validateRule(name, ruleJson string) (bool, error) {
+func validateRule(name, ruleJson string) ([]string, bool, error) {
 	// Validate the rule json
-	_, err := ruleProcessor.GetRuleByJson(name, ruleJson)
+	rule, err := ruleProcessor.GetRuleByJson(name, ruleJson)
 	if err != nil {
-		return false, fmt.Errorf("invalid rule json: %v", err)
+		return nil, false, fmt.Errorf("invalid rule json: %v", err)
 	}
-	return true, nil
+	var sources []string
+	if len(rule.Sql) > 0 {
+		stmt, _ := xsql.GetStatementFromSql(rule.Sql)
+		s, err := store.GetKV("stream")
+		if err != nil {
+			return nil, false, err
+		}
+		sources = xsql.GetStreams(stmt)
+		for _, result := range sources {
+			_, err := xsql.GetDataSource(s, result)
+			if err != nil {
+				return nil, false, err
+			}
+		}
+	} else if rule.Graph != nil {
+		tp, err := planner.PlanByGraph(rule)
+		if err != nil {
+			return nil, false, fmt.Errorf("invalid rule graph: %v", err)
+		}
+		sources = tp.GetTopo().Sources
+	}
+	return sources, true, nil
 }

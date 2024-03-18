@@ -24,6 +24,7 @@ Users can directly use the built-in sources in the standard eKuiper instance. Th
 - [RedisSub source](./builtin/redisSub.md): subscribe data from Redis channels.
 - [File source](./builtin/file.md): source to read from file, usually used as tables.
 - [Memory source](./builtin/memory.md): source to read from eKuiper memory topic to form rule pipelines.
+- [Simulator source](./builtin/simulator.md): source to generate mock data for testing.
 
 ## Predefined Source Plugins
 
@@ -37,6 +38,7 @@ The list of predefined source plugins:
 - [Video Source](./plugin/video.md): a source to query video streams.
 - [Random source](./plugin/random.md): a source to generate random data for testing.
 - [Zero MQ source](./plugin/zmq.md): read data from zero mq.
+- [Kafka source](./plugin/kafka.md): read data from Kafka.
 
 ## Use of Sources
 

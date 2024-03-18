@@ -45,11 +45,14 @@ type redisSubConfig struct {
 	Decompression string   `json:"decompression"`
 }
 
-func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
+func (r *redisSub) Validate(props map[string]interface{}) error {
 	cfg := &redisSubConfig{}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
+	}
+	if cfg.Db < 0 || cfg.Db > 15 {
+		return fmt.Errorf("redisSub db should be in range 0-15")
 	}
 	r.conf = cfg
 	r.conn = redis.NewClient(&redis.Options{
@@ -66,9 +69,15 @@ func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
 		}
 		r.decompressor = dc
 	}
+	return nil
+}
 
+func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
+	if err := r.Validate(props); err != nil {
+		return err
+	}
 	// Ping Redis to check if the connection is alive
-	err = r.conn.Ping(context.Background()).Err()
+	err := r.conn.Ping(context.Background()).Err()
 	if err != nil {
 		return fmt.Errorf("Ping Redis failed with error: %v", err)
 	}

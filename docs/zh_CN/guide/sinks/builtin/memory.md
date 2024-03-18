@@ -1,6 +1,6 @@
 # 内存动作
 
-<span style="background:green;color:white">updatable</span>
+<span style="background:green;color:white;padding:1px;margin:2px">updatable</span>
 
 该动作用于将结果刷新到内存中的主题中，以便 [内存源](../../sources/builtin/memory.md) 可以使用它。 该主题类似于 pubsub 主题，例如 mqtt，因此可能有多个内存目标发布到同一主题，也可能有多个内存源订阅同一主题。 内存动作的典型用途是形成[规则管道](../../rules/rule_pipeline.md)。
 

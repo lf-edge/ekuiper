@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
@@ -125,6 +127,9 @@ func TestInitByFiles(t *testing.T) {
 				Schema: &schemaInfo{
 					Schemaless: true,
 				},
+				Functions: []string{
+					"tsschemaless",
+				},
 			},
 		},
 	}
@@ -133,156 +138,218 @@ func TestInitByFiles(t *testing.T) {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
 			MethodName:    "ListShelves",
+			FuncName:      "ListShelves",
+			Addr:          "http://localhost:51234/bookshelf",
 		},
 		"CreateShelf": {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
+			Addr:          "http://localhost:51234/bookshelf",
 			MethodName:    "CreateShelf",
+			FuncName:      "CreateShelf",
 		},
 		"GetShelf": {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
+			Addr:          "http://localhost:51234/bookshelf",
 			MethodName:    "GetShelf",
+			FuncName:      "GetShelf",
 		},
 		"DeleteShelf": {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
+			Addr:          "http://localhost:51234/bookshelf",
 			MethodName:    "DeleteShelf",
+			FuncName:      "DeleteShelf",
 		},
 		"ListBooks": {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
+			Addr:          "http://localhost:51234/bookshelf",
 			MethodName:    "ListBooks",
+			FuncName:      "ListBooks",
 		},
 		"createBook": {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
+			Addr:          "http://localhost:51234/bookshelf",
 			MethodName:    "CreateBook",
+			FuncName:      "createBook",
 		},
 		"GetBook": {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
+			Addr:          "http://localhost:51234/bookshelf",
 			MethodName:    "GetBook",
+			FuncName:      "GetBook",
 		},
 		"DeleteBook": {
 			ServiceName:   "httpSample",
 			InterfaceName: "bookshelf",
+			Addr:          "http://localhost:51234/bookshelf",
 			MethodName:    "DeleteBook",
+			FuncName:      "DeleteBook",
 		},
 		"GetMessage": {
 			ServiceName:   "httpSample",
 			InterfaceName: "messaging",
+			Addr:          "http://localhost:51234/messaging",
 			MethodName:    "GetMessage",
+			FuncName:      "GetMessage",
 		},
 		"SearchMessage": {
 			ServiceName:   "httpSample",
 			InterfaceName: "messaging",
+			Addr:          "http://localhost:51234/messaging",
 			MethodName:    "SearchMessage",
+			FuncName:      "SearchMessage",
 		},
 		"UpdateMessage": {
 			ServiceName:   "httpSample",
 			InterfaceName: "messaging",
+			Addr:          "http://localhost:51234/messaging",
 			MethodName:    "UpdateMessage",
+			FuncName:      "UpdateMessage",
 		},
 		"PatchMessage": {
 			ServiceName:   "httpSample",
 			InterfaceName: "messaging",
+			Addr:          "http://localhost:51234/messaging",
 			MethodName:    "PatchMessage",
+			FuncName:      "PatchMessage",
 		},
 		"helloFromGrpc": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrpc",
+			Addr:          "tcp://localhost:50051",
 			MethodName:    "SayHello",
+			FuncName:      "helloFromGrpc",
 		},
 		"helloFromRest": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrest",
+			Addr:          "http://localhost:51234",
 			MethodName:    "SayHello",
+			FuncName:      "helloFromRest",
 		},
 		"helloFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
+			Addr:          "tcp://localhost:50000",
 			MethodName:    "SayHello",
+			FuncName:      "helloFromMsgpack",
 		},
 		"objectDetectFromGrpc": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrpc",
+			Addr:          "tcp://localhost:50051",
 			MethodName:    "object_detection",
+			FuncName:      "objectDetectFromGrpc",
 		},
 		"objectDetectFromRest": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrest",
+			Addr:          "http://localhost:51234",
 			MethodName:    "object_detection",
+			FuncName:      "objectDetectFromRest",
 		},
 		"objectDetectFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
+			Addr:          "tcp://localhost:50000",
 			MethodName:    "object_detection",
+			FuncName:      "objectDetectFromMsgpack",
 		},
 		"getFeatureFromGrpc": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrpc",
+			Addr:          "tcp://localhost:50051",
 			MethodName:    "get_feature",
+			FuncName:      "getFeatureFromGrpc",
 		},
 		"getFeatureFromRest": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrest",
+			Addr:          "http://localhost:51234",
 			MethodName:    "get_feature",
+			FuncName:      "getFeatureFromRest",
 		},
 		"getFeatureFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
+			Addr:          "tcp://localhost:50000",
 			MethodName:    "get_feature",
+			FuncName:      "getFeatureFromMsgpack",
 		},
 		"getStatusFromGrpc": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrpc",
+			Addr:          "tcp://localhost:50051",
 			MethodName:    "getStatus",
+			FuncName:      "getStatusFromGrpc",
 		},
 		"getStatusFromRest": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrest",
+			Addr:          "http://localhost:51234",
 			MethodName:    "getStatus",
+			FuncName:      "getStatusFromRest",
 		},
 		"getStatusFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
+			Addr:          "tcp://localhost:50000",
 			MethodName:    "getStatus",
+			FuncName:      "getStatusFromMsgpack",
 		},
 		"ComputeFromGrpc": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrpc",
+			Addr:          "tcp://localhost:50051",
 			MethodName:    "Compute",
+			FuncName:      "ComputeFromGrpc",
 		},
 		"ComputeFromRest": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrest",
+			Addr:          "http://localhost:51234",
 			MethodName:    "Compute",
+			FuncName:      "ComputeFromRest",
 		},
 		"ComputeFromMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
+			Addr:          "tcp://localhost:50000",
 			MethodName:    "Compute",
+			FuncName:      "ComputeFromMsgpack",
 		},
 		"notUsedRpc": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrpc",
+			Addr:          "tcp://localhost:50051",
 			MethodName:    "RestEncodedJson",
+			FuncName:      "notUsedRpc",
 		},
 		"restEncodedJson": {
 			ServiceName:   "sample",
 			InterfaceName: "tsrest",
+			Addr:          "http://localhost:51234",
 			MethodName:    "RestEncodedJson",
+			FuncName:      "restEncodedJson",
 		},
 		"notUsedMsgpack": {
 			ServiceName:   "sample",
 			InterfaceName: "tsmsgpack",
+			Addr:          "tcp://localhost:50000",
 			MethodName:    "RestEncodedJson",
+			FuncName:      "notUsedMsgpack",
 		},
 		"tsschemaless": {
 			ServiceName:   "sample",
+			Addr:          "http://localhost:51234",
 			InterfaceName: "tsschemaless",
 			MethodName:    "tsschemaless",
+			FuncName:      "tsschemaless",
 		},
 	}
 
@@ -315,9 +382,7 @@ func TestInitByFiles(t *testing.T) {
 			t.Errorf("function %s not found", f)
 			break
 		}
-		if !reflect.DeepEqual(c, actualFunc) {
-			t.Errorf("func info mismatch, expect %v but got %v", c, actualFunc)
-		}
+		assert.Equal(t, c, actualFunc, "func info mismatch")
 	}
 }
 
@@ -408,11 +473,13 @@ func TestManage(t *testing.T) {
 	expectedFunctions := []string{"ListShelves", "CreateShelf", "GetShelf", "DeleteShelf", "ListBooks", "createBook", "GetBook", "DeleteBook", "GetMessage", "SearchMessage", "UpdateMessage", "PatchMessage", "helloFromGrpc", "ComputeFromGrpc", "getFeatureFromGrpc", "objectDetectFromGrpc", "getStatusFromGrpc", "notUsedRpc", "helloFromRest", "ComputeFromRest", "getFeatureFromRest", "objectDetectFromRest", "getStatusFromRest", "restEncodedJson", "helloFromMsgpack", "ComputeFromMsgpack", "getFeatureFromMsgpack", "objectDetectFromMsgpack", "getStatusFromMsgpack", "notUsedMsgpack", "SayHello2", "tsschemaless"}
 	sort.Strings(expectedFunctions)
 
-	functions, _ := m.ListFunctions()
-	sort.Strings(functions)
-	if !reflect.DeepEqual(expectedFunctions, functions) {
-		t.Errorf("Get all installed functions faile \nexpect\t\t%v, \nbut got\t\t%v", expectedFunctions, functions)
+	fs, _ := m.ListFunctions()
+	funList := make([]string, len(fs))
+	for i, f := range fs {
+		funList[i] = f.FuncName
 	}
+	sort.Strings(funList)
+	assert.Equal(t, expectedFunctions, funList, "Get all functions error")
 
 	err = m.Update(&ServiceCreationRequest{
 		Name: "dynamic",

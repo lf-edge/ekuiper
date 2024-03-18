@@ -1,7 +1,7 @@
 ## RedisSub Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper has built-in support for Redis data sources, allowing data querying and channel subscription within Redis.Please note that the RedisSub source can be used as both a streaming and scanning table data source,while the [Redis source](./redis.md) can be used as a [lookup table](../../tables/lookup.md).
 

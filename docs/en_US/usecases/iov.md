@@ -21,10 +21,16 @@ The most mature usage is to achieve flexible data collection, we will learn abou
 2. Agile smart analytic. Without cloud connection, locally eKuiper can help automatically wire data and AI model (currently TF Lite) without coding. Also feed data to training model on the vehicle.
    Typical scenario: Predict and suggest drive mode by real-time data like speed, tire pressures locally (even without network connection).
 3. Edge computing to reduce transfer bandwidth and reduce cloud side computing pressure. Parse, reformat and transform the data. Such as calculate the average speed for a time window to save
-4. Heterogeneous data aggregation. Parse data from various protocol (TCP,UDP,HTTP,MQTT) and various format (CAN, JSON, CSV etc.) and merge them by flexible rules.
+4. Heterogeneous data aggregation. Parse data from various protocol (TCP, UDP, HTTP, MQTT) and various format (CAN, JSON, CSV etc.) and merge them by flexible rules.
 5. Message routing: decide which data to send to the cloud and which to save locally to be leveraged by other vehicle side app. For example, based on GDPR or some whitelist to determine the routing
 
 Among these, data collection is the core of all the applications. Once data collected, eKuiper can leverage it locally inside the vehicle or transfer it to the cloud.
+
+::: Notice
+
+Some of the features related to the CAN bus described in this document are not open source. You can experiment with these features by utilizing [ek-can](https://hub.docker.com/r/emqx/ek-can), which extends CAN bus capabilities on top of eKuiper
+
+:::
 
 ## Flexible Data Collection
 

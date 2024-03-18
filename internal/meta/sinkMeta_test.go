@@ -19,7 +19,10 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func TestHintWhenModifySink(t *testing.T) {
@@ -39,4 +42,12 @@ func TestHintWhenModifySink(t *testing.T) {
 	}
 
 	fmt.Printf("%+v", showMeta)
+}
+
+func TestMetaError(t *testing.T) {
+	_, err := GetSinkMeta("sql", "123")
+	require.Error(t, err)
+	ewc, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
 }

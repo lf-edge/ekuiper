@@ -39,7 +39,7 @@ import (
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("topotest")
 }
 
 const POSTLEAP = 1000 // Time change after all data sends out
@@ -229,7 +229,6 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
-		sources    []*node.SourceNode
 		datas      [][]*xsql.Tuple
 		dataLength int
 	)
@@ -254,7 +253,7 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 	}
 	mockSink := mocknode.NewMockSink()
 	sink := node.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp, err := planner.PlanSQLWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, sources, []*node.SinkNode{sink})
+	tp, err := planner.PlanSQLWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, nil, []*node.SinkNode{sink})
 	if err != nil {
 		t.Error(err)
 		return nil, 0, nil, nil, nil
@@ -270,6 +269,8 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 		var sql string
 		if createOrDrop {
 			switch name {
+			case "sharedDemo":
+				sql = `CREATE STREAM sharedDemo () WITH (DATASOURCE="sharedDemo", TYPE="mock", FORMAT="json", SHARED="true");`
 			case "demoE3":
 				sql = `CREATE STREAM demoE3 () WITH (DATASOURCE="demoE3", TYPE="mock", FORMAT="json", KEY="ts", TIMESTAMP="ts");`
 			case "demoE2":

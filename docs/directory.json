@@ -11,6 +11,7 @@
         {
           "title": "流式处理",
           "path": "concepts/streaming/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "时间属性",
@@ -28,6 +29,7 @@
         },
         {
           "title": "关键概念",
+          "collapsed": true,
           "children": [
             {
               "title": "规则",
@@ -100,6 +102,7 @@
         {
           "title": "表：事件序列的快照",
           "path": "guide/tables/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "扫描表",
@@ -126,6 +129,7 @@
         {
           "title": "序列化",
           "path": "guide/serialization/serialization",
+          "collapsed": true,
           "children": [
             {
               "title": "使用 Protobuf 编解码教程",
@@ -135,6 +139,7 @@
         },
         {
           "title": "AI/ML",
+          "collapsed": true,
           "children": [
             {
               "title": "使用原生插件实现 AI 函数",
@@ -170,6 +175,7 @@
           "children": [
             {
               "title": "内置源",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT 数据源",
@@ -206,11 +212,16 @@
                 {
                   "title": "RedisSub 数据源",
                   "path": "guide/sources/builtin/redisSub"
+                },
+                {
+                  "title": "模拟器数据源",
+                  "path": "guide/sources/builtin/simulator"
                 }
               ]
             },
             {
               "title": "预定义插件源",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL 数据源",
@@ -227,6 +238,10 @@
                 {
                   "title": "随机数据产生器源",
                   "path": "guide/sources/plugin/random"
+                },
+                {
+                  "title": "Kafka 数据源",
+                  "path": "guide/sources/plugin/kafka"
                 }
               ]
             }
@@ -242,6 +257,7 @@
             },
             {
               "title": "内置 Sink",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT Sink",
@@ -287,6 +303,7 @@
             },
             {
               "title": "预定义插件 Sink",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL Sink",
@@ -333,6 +350,10 @@
             {
               "title": "合并单流多设备数据",
               "path": "example/data_merge/merge_single_stream"
+            },
+            {
+              "title": "合并多个数据流",
+              "path": "example/data_merge/merge_multi_stream"
             }
           ]
         }
@@ -344,6 +365,7 @@
         {
           "title": "配置",
           "path": "configuration/configuration",
+          "collapsed": true,
           "children": [
             {
               "title": "全局配置文件",
@@ -353,6 +375,7 @@
         },
         {
           "title": "管理控制台",
+          "collapsed": true,
           "children": [
             {
               "title": "使用教程",
@@ -367,6 +390,10 @@
         {
           "title": "监控",
           "path": "operation/usage/monitor_with_prometheus"
+        },
+        {
+          "title": "错误码",
+          "path": "operation/usage/error_code"
         }
       ]
     },
@@ -397,6 +424,7 @@
         },
         {
           "title": "EdgeX Foundry 的规则引擎",
+          "collapsed": true,
           "children": [
             {
               "title": "EdgeX Foundry 规则引擎教程",
@@ -433,6 +461,7 @@
     {
       "title": "Rest API 参考",
       "path": "api/restapi/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "认证配置",
@@ -459,6 +488,10 @@
           "path": "api/restapi/configKey"
         },
         {
+          "title": "脚本函数管理",
+          "path": "api/restapi/udf"
+        },
+        {
           "title": "外部函数管理",
           "path": "api/restapi/services"
         },
@@ -481,12 +514,17 @@
         {
             "title": "动态重载配置",
             "path": "api/restapi/configs"
+        },
+        {
+          "title": "规则试运行",
+          "path": "api/restapi/ruletest"
         }
       ]
     },
     {
       "title": "命令行工具",
       "path": "api/cli/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "流管理",
@@ -503,6 +541,10 @@
         {
           "title": "插件管理",
           "path": "api/cli/plugins"
+        },
+        {
+          "title": "脚本函数管理",
+          "path": "api/cli/scripts"
         },
         {
           "title": "外部服务",
@@ -529,6 +571,7 @@
         {
           "title": "原生插件开发",
           "path": "extension/native/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "原生插件开发",
@@ -543,11 +586,11 @@
               "path": "extension/native/develop/function"
             },
             {
-              "title": "Sink 插件开发",
+              "title": "目标 (Sink) 插件开发",
               "path": "extension/native/develop/sink"
             },
             {
-              "title": "源插件开发",
+              "title": "源 (Source) 插件开发",
               "path": "extension/native/develop/source"
             }
           ]
@@ -555,6 +598,7 @@
         {
           "title": "Portable 插件开发",
           "path": "extension/portable/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Portable 插件 Go 语言 SDK",
@@ -565,6 +609,10 @@
               "path": "extension/portable/python_sdk"
             }
           ]
+        },
+        {
+          "title": "脚本函数",
+          "path": "extension/script/overview"
         },
         {
           "title": "外部函数",
@@ -582,6 +630,7 @@
       "children": [
         {
           "title": "语句",
+          "collapsed": true,
           "children": [
             {
               "title": "流语句",
@@ -600,6 +649,7 @@
         {
           "title": "语法",
           "path": "sqls/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "词汇元素",
@@ -618,6 +668,7 @@
         {
           "title": "函数",
           "path": "sqls/functions/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "聚合函数",
@@ -700,6 +751,7 @@
         {
           "title": "Stream Processing",
           "path": "concepts/streaming/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Time Attribute",
@@ -717,6 +769,7 @@
         },
         {
           "title": "Key Concepts",
+          "collapsed": true,
           "children": [
             {
               "title": "Rules",
@@ -789,6 +842,7 @@
         {
           "title": "Table: snapshot of events",
           "path": "guide/tables/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Scan Table",
@@ -815,6 +869,7 @@
         {
           "title": "Serialization",
           "path": "guide/serialization/serialization",
+          "collapsed": true,
           "children": [
             {
               "title": "Protobuf Codec Tutorial",
@@ -824,6 +879,7 @@
         },
         {
           "title": "AI/ML",
+          "collapsed": true,
           "children": [
             {
               "title": "Running AI Algorithms with Native Plugin",
@@ -859,6 +915,7 @@
           "children": [
             {
               "title": "Built-in Sources",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT Source",
@@ -895,11 +952,16 @@
                 {
                   "title": "RedisSub Source",
                   "path": "guide/sources/builtin/redisSub"
+                },
+                {
+                  "title": "Simulator Source",
+                  "path": "guide/sources/builtin/simulator"
                 }
               ]
             },
             {
               "title": "Predefined Source Plugins",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL Source",
@@ -916,6 +978,10 @@
                 {
                   "title": "Random Source",
                   "path": "guide/sources/plugin/random"
+                },
+                {
+                  "title": "Kafka Source",
+                  "path": "guide/sources/plugin/kafka"
                 }
               ]
             }
@@ -931,6 +997,7 @@
             },
             {
               "title": "Built-in Sinks",
+              "collapsed": true,
               "children": [
                 {
                   "title": "MQTT Sink",
@@ -976,6 +1043,7 @@
             },
             {
               "title": "Predefined Sink Plugins",
+              "collapsed": true,
               "children": [
                 {
                   "title": "SQL Sink",
@@ -1020,8 +1088,12 @@
           "path": "example/howto"
         },
         {
-          "title": "Merge multiple devices' data in single stream",
+          "title": "Merge Multiple Devices' Data in a Single Stream",
           "path": "example/data_merge/merge_single_stream"
+        },
+        {
+          "title": "Merge Data in Multiple Streams",
+          "path": "example/data_merge/merge_multi_stream"
         }
       ]
     },
@@ -1035,6 +1107,7 @@
         },
         {
           "title": "Working with EdgeX Foundry",
+          "collapsed": true,
           "children": [
             {
               "title": "EdgeX Foundry Rule Engine Tutorial",
@@ -1093,6 +1166,7 @@
         {
           "title": "Configuration Guide",
           "path": "configuration/configuration",
+          "collapsed": true,
           "children": [
             {
               "title": "Global Configurations",
@@ -1107,6 +1181,7 @@
         {
           "title": "Management Console",
           "path": "operation/manager-ui/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Manage Custom Plugins",
@@ -1119,6 +1194,7 @@
     {
       "title": "API Reference",
       "path": "api/restapi/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "Authentication",
@@ -1145,6 +1221,10 @@
           "path": "api/restapi/configKey"
         },
         {
+          "title": "Script Functions",
+          "path": "api/restapi/udf"
+        },
+        {
           "title": "External Services",
           "path": "api/restapi/services"
         },
@@ -1167,12 +1247,17 @@
         {
           "title": "Dynamic Reload Configs",
           "path": "api/restapi/configs"
+        },
+        {
+          "title": "Rule Test",
+          "path": "api/restapi/ruletest"
         }
       ]
     },
     {
       "title": "Command Line Tool",
       "path": "api/cli/overview",
+      "collapsed": true,
       "children": [
         {
           "title": "Streams",
@@ -1189,6 +1274,10 @@
         {
           "title": "Plugins",
           "path": "api/cli/plugins"
+        },
+        {
+          "title": "Script Functions",
+          "path": "api/cli/scripts"
         },
         {
           "title": "External Services",
@@ -1215,6 +1304,7 @@
         {
           "title": "Native Plugin Develop",
           "path": "extension/native/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Develop",
@@ -1241,6 +1331,7 @@
         {
           "title": "Portable Plugin Development",
           "path": "extension/portable/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "GO SDK for Portable Plugin",
@@ -1251,6 +1342,10 @@
               "path": "extension/portable/python_sdk"
             }
           ]
+        },
+        {
+          "title": "Script Function",
+          "path": "extension/script/overview"
         },
         {
           "title": "Plugin Management",
@@ -1268,6 +1363,7 @@
       "children": [
         {
           "title": "Statements",
+          "collapsed": true,
           "children": [
             {
               "title": "Streams",
@@ -1286,6 +1382,7 @@
         {
           "title": "Syntax",
           "path": "sqls/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Lexical elements",
@@ -1304,6 +1401,7 @@
         {
           "title": "Functions",
           "path": "sqls/functions/overview",
+          "collapsed": true,
           "children": [
             {
               "title": "Aggregate Functions",

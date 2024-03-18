@@ -12,8 +12,8 @@
       "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/builtin/neuron.html"
     },
     "description": {
-      "en_US": "The source consumes events from the local neuron.",
-      "zh_CN": "从本地的 neuron 中消费消息。"
+      "en_US": "Consume data from the data collection engine.",
+      "zh_CN": "从数采引擎中消费数据。"
     }
   },
   "libs": [],
@@ -27,8 +27,8 @@
         "control": "text",
         "type": "string",
         "hint": {
-          "en_US": "The nng url to connect to neuron.",
-          "zh_CN": "连接 Neuron 的 nng url"
+          "en_US": "The url to connect to data collection engine.",
+          "zh_CN": "连接数采引擎的 URL"
         },
         "label": {
           "en_US": "URL",

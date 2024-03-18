@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build schema || !core
-// +build schema !core
 
 package server
 
@@ -45,6 +44,10 @@ func (sc schemaComp) register() {
 func (sc schemaComp) rest(r *mux.Router) {
 	r.HandleFunc("/schemas/{type}", schemasHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/schemas/{type}/{name}", schemaHandler).Methods(http.MethodPut, http.MethodDelete, http.MethodGet)
+}
+
+func (sc schemaComp) exporter() ConfManager {
+	return schemaExporter{}
 }
 
 func schemasHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,26 +132,28 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func schemaReset() {
-	schema.UninstallAllSchema()
-}
+type schemaExporter struct{}
 
-func schemaExport() map[string]string {
-	return schema.GetAllSchema()
-}
-
-func schemaStatusExport() map[string]string {
-	return schema.GetAllSchemaStatus()
-}
-
-func schemaImport(s map[string]string) error {
+func (e schemaExporter) Import(s map[string]string) map[string]string {
 	return schema.ImportSchema(s)
 }
 
-func schemaPartialImport(s map[string]string) map[string]string {
+func (e schemaExporter) PartialImport(s map[string]string) map[string]string {
 	return schema.SchemaPartialImport(s)
 }
 
-func getSchemaInstallScript(s string) (string, string) {
+func (e schemaExporter) Export() map[string]string {
+	return schema.GetAllSchema()
+}
+
+func (e schemaExporter) Status() map[string]string {
+	return schema.GetAllSchemaStatus()
+}
+
+func (e schemaExporter) Reset() {
+	schema.UninstallAllSchema()
+}
+
+func (e schemaExporter) InstallScript(s string) (string, string) {
 	return schema.GetSchemaInstallScript(s)
 }

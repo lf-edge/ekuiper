@@ -100,6 +100,9 @@ func registerObjectFunc() {
 			}
 			m := make(map[string]interface{}, len(lists))
 			for _, item := range lists {
+				if item == nil {
+					continue
+				}
 				a, ok := item.([]interface{})
 				if !ok {
 					return fmt.Errorf("each argument should be [][2]interface{}"), false
@@ -164,7 +167,7 @@ func registerObjectFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			result := make(map[string]interface{})
 			for i := 0; i < len(args); i += 2 {
-				if args[i+1] != nil {
+				if args[i] != nil && args[i+1] != nil {
 					s, err := cast.ToString(args[i], cast.CONVERT_SAMEKIND)
 					if err != nil {
 						return fmt.Errorf("key %v is not a string", args[i]), false
@@ -191,14 +194,6 @@ func registerObjectFunc() {
 	builtins["erase"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			contains := func(array []string, target string) bool {
-				for _, v := range array {
-					if target == v {
-						return true
-					}
-				}
-				return false
-			}
 			if len(args) != 2 {
 				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
 			}
@@ -225,10 +220,10 @@ func registerObjectFunc() {
 				}
 				return res, true
 			default:
-				return fmt.Errorf("the augument should be slice or string"), false
+				return fmt.Errorf("the argument should be slice or string"), false
 			}
 			for k, v := range argMap {
-				if !contains(eraseArray, k) {
+				if !sliceStringContains(eraseArray, k) {
 					res[k] = v
 				}
 			}
@@ -240,4 +235,77 @@ func registerObjectFunc() {
 		},
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["object_pick"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if len(args) != 2 {
+				return fmt.Errorf("the argument number should be 2, got %v", len(args)), false
+			}
+			res := make(map[string]interface{})
+			argMap, ok := args[0].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("the first argument should be map[string]interface{}, got %v", args[0]), false
+			}
+			pickArray := make([]string, 0)
+			v := reflect.ValueOf(args[1])
+			switch v.Kind() {
+			case reflect.Slice:
+				array, err := cast.ToStringSlice(args[1], cast.CONVERT_ALL)
+				if err != nil {
+					return err, false
+				}
+				pickArray = append(pickArray, array...)
+			case reflect.String:
+				str := args[1].(string)
+				for k, v := range argMap {
+					if k == str {
+						res[k] = v
+					}
+				}
+				return res, true
+			default:
+				return fmt.Errorf("the argument should be slice or string"), false
+			}
+			for k, v := range argMap {
+				if sliceStringContains(pickArray, k) {
+					res[k] = v
+				}
+			}
+
+			return res, true
+		},
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			return ValidateLen(2, len(args))
+		},
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["obj_to_kvpair_array"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			obj, ok := args[0].(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("the first argument should be map[string]interface{}, got %v", args[0]), false
+			}
+
+			res := make([]interface{}, 0, len(obj))
+			for k, v := range obj {
+				pair := make(map[string]interface{}, 2)
+				pair[kvPairKName] = k
+				pair[kvPairVName] = v
+				res = append(res, pair)
+			}
+			return res, true
+		},
+		val:   ValidateOneArg,
+		check: returnNilIfHasAnyNil,
+	}
+}
+
+func sliceStringContains(s []string, target string) bool {
+	for _, v := range s {
+		if target == v {
+			return true
+		}
+	}
+	return false
 }

@@ -28,11 +28,11 @@
       "type": "string",
       "hint": {
         "en_US": "The url of the Kafka broker list",
-        "zh_CN": "Kafka brokers的 URL 列表"
+        "zh_CN": "Kafka brokers 的 URL 列表"
       },
       "label": {
         "en_US": "broker list",
-        "zh_CN": "Broker url 列表"
+        "zh_CN": "Broker URL 列表"
       }
     },
     {
@@ -165,9 +165,9 @@
     },
     {
       "name": "batchSize",
-      "default": true,
+      "default": 1,
       "optional": true,
-      "control": "radio",
+      "control": "text",
       "type": "int",
       "hint": {
         "en_US": "Limit on how many messages will be buffered before being sent to kafka in one request, default 1",
@@ -180,9 +180,9 @@
     },
     {
       "name": "maxAttempts",
-      "default": true,
+      "default": 1,
       "optional": true,
-      "control": "radio",
+      "control": "text",
       "type": "int",
       "hint": {
         "en_US": "Limit on how many attempts will be made to deliver a message, default 1",

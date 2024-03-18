@@ -25,10 +25,11 @@ var MemoryTotal uint64
 
 func init() {
 	if cgroup.InContainer() {
-		m1, err := cgroup.GetMemoryLimit()
+		m1, err := cgroup.MemTotalCGroup()
 		if err != nil {
 			conf.Log.Warnf("get total memory failed, err:%v", err)
 		} else {
+			conf.Log.Infof("get cgroup total memory %v success", m1)
 			MemoryTotal = m1
 		}
 	} else {
@@ -36,7 +37,12 @@ func init() {
 		if err != nil {
 			conf.Log.Warnf("get total memory failed, err:%v", err)
 		} else {
+			conf.Log.Infof("set server total memory %v success", m2.Total)
 			MemoryTotal = m2.Total
 		}
 	}
+}
+
+func GetMemoryTotal() uint64 {
+	return MemoryTotal
 }

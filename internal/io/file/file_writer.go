@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/io/file/writer"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -34,7 +35,7 @@ type fileWriter struct {
 	Start      time.Time
 	Count      int
 	Compress   string
-	fileBuffer *bufio.Writer
+	fileBuffer *writer.BufioWrapWriter
 	// Whether the file has written any data. It is only used to determine if new line is needed when writing data.
 	Written bool
 }
@@ -80,9 +81,9 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 	fws.Compress = compressAlgorithm
 
 	if compressAlgorithm == "" {
-		fws.Writer = bufio.NewWriter(f)
+		fws.Writer = writer.NewBufioWrapWriter(bufio.NewWriter(f))
 	} else {
-		fws.fileBuffer = bufio.NewWriter(f)
+		fws.fileBuffer = writer.NewBufioWrapWriter(bufio.NewWriter(f))
 		fws.Writer, err = compressor.GetCompressWriter(compressAlgorithm, fws.fileBuffer)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get compress writer for %s: %v", compressAlgorithm, err)
@@ -113,7 +114,7 @@ func (fw *fileWriter) Close(ctx api.StreamContext) error {
 				ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
 			}
 		} else {
-			err = fw.Writer.(*bufio.Writer).Flush()
+			err = fw.Writer.(*writer.BufioWrapWriter).Flush()
 			if err != nil {
 				ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
 			}

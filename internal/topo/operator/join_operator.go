@@ -45,8 +45,13 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	}
 	result := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 	for i, join := range jp.Joins {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
 		if i == 0 {
-			v, err := jp.evalSet(input, join, fv)
+			v, err := jp.evalSet(ctx, input, join, fv)
 			if err != nil {
 				return fmt.Errorf("run Join error: %s", err)
 			}
@@ -103,7 +108,7 @@ func (jp *JoinOp) getStreamNames(join *ast.Join) ([]string, error) {
 	return srcs, nil
 }
 
-func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
+func (jp *JoinOp) evalSet(ctx api.StreamContext, input xsql.MergedCollection, join ast.Join, fv *xsql.FunctionValuer) (*xsql.JoinTuples, error) {
 	var leftStream, rightStream string
 
 	if join.JoinType != ast.CROSS_JOIN {
@@ -138,6 +143,11 @@ func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.F
 		return jp.evalSetWithRightJoin(input, join, false, fv)
 	}
 	for _, left := range lefts {
+		select {
+		case <-ctx.Done():
+			return nil, nil
+		default:
+		}
 		leftJoined := false
 		for index, right := range rights {
 			tupleJoined := false
@@ -189,9 +199,7 @@ func (jp *JoinOp) evalSet(input xsql.MergedCollection, join ast.Join, fv *xsql.F
 	if join.JoinType == ast.FULL_JOIN {
 		if rightJoinSet, err := jp.evalSetWithRightJoin(input, join, true, fv); err == nil {
 			if len(rightJoinSet.Content) > 0 {
-				for _, jt := range rightJoinSet.Content {
-					sets.Content = append(sets.Content, jt)
-				}
+				sets.Content = append(sets.Content, rightJoinSet.Content...)
 			}
 		} else {
 			return nil, err
@@ -328,9 +336,7 @@ func (jp *JoinOp) evalJoinSets(set *xsql.JoinTuples, input xsql.MergedCollection
 
 	if join.JoinType == ast.FULL_JOIN {
 		if rightJoinSet, err := jp.evalRightJoinSets(set, input, join, true, fv); err == nil && len(rightJoinSet.Content) > 0 {
-			for _, jt := range rightJoinSet.Content {
-				newSets.Content = append(newSets.Content, jt)
-			}
+			newSets.Content = append(newSets.Content, rightJoinSet.Content...)
 		}
 	}
 

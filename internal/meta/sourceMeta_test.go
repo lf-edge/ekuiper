@@ -19,7 +19,10 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func TestGetMqttSourceMeta(t *testing.T) {
@@ -99,4 +102,12 @@ func TestGetSqlSinkMeta(t *testing.T) {
 			t.Errorf("value %v type field shoud not be empty", value)
 		}
 	}
+}
+
+func TestSourceMeta(t *testing.T) {
+	_, err := GetSourceMeta("123", "123")
+	require.Error(t, err)
+	ewc, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.ConfKeyError, ewc.Code())
 }

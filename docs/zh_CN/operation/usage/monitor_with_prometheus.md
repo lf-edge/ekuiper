@@ -123,6 +123,16 @@ scrape_configs:
 
 点击 `Add Panel`，通过同样的配置方式，可监控更多的指标。
 
+### 通过 Grafana 查看面板
+
+Grafana 是一个监控仪表系统，它是由Grafana Labs 公司开源的的一个系统监测工具，它可以大大帮助我们简化监控的复杂度，我们只需要提供需要监控的数据，它就可以帮助生成各种可视化仪表。
+
+eKuiper 预定义了在 Grafana 面板用于帮助用户更加清晰直观的从 Prometheus 监控数据中观察 eKuiper 目前的运行状态，你可以通过 Grafama Dashboard Import 的功能将以下链接中的 json 内容复制 grafana 中，从而获取面板。
+
+```shell
+https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
+```
+
 ## 总结
 
 本文介绍了 eKuiper 中的规则状态指标以及如何使用 Prometheus 简单地监控这些状态指标。用户朋友可以基于此进一步探索 Prometheus 的更多高级功能，更好地实现 eKuiper 的运维。

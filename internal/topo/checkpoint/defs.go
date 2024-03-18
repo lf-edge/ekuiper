@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 )
 
 type StreamTask interface {
-	Broadcast(data interface{}) error
+	Broadcast(data interface{})
 	GetName() string
 	GetStreamContext() api.StreamContext
 	SetQos(api.Qos)
@@ -31,6 +31,10 @@ type NonSourceTask interface {
 	AddInputCount()
 
 	SetBarrierHandler(BarrierHandler)
+}
+
+type SourceSubTopoTask interface {
+	EnableCheckpoint(sources *[]StreamTask, ops *[]NonSourceTask)
 }
 
 type SinkTask interface {

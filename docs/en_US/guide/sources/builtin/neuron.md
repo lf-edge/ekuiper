@@ -1,7 +1,7 @@
 # Neuron Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper's Neuron connector seamlessly integrates with Neuron instances, allowing for efficient data ingestion and output. While it can function as both a source and a [sink connector](../../sinks/builtin/neuron.md), this section focuses on using it as a source connector.
 

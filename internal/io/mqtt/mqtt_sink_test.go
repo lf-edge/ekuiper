@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestSinkConfigure(t *testing.T) {
@@ -27,6 +29,18 @@ func TestSinkConfigure(t *testing.T) {
 		expectedErr    error
 		expectedAdConf *AdConf
 	}{
+		{
+			name: "TLS Error",
+			input: map[string]interface{}{
+				"topic":         "testTopic3",
+				"qos":           0,
+				"retained":      false,
+				"compression":   "",
+				"privateKeyRaw": "MTIz",
+				"server":        "123",
+			},
+			expectedErr: fmt.Errorf("tls: failed to find any PEM data in certificate input"),
+		},
 		{
 			name: "Missing topic",
 			input: map[string]interface{}{
@@ -53,6 +67,7 @@ func TestSinkConfigure(t *testing.T) {
 				"qos":         0,
 				"retained":    false,
 				"compression": "",
+				"server":      "123",
 			},
 			expectedErr: nil,
 			expectedAdConf: &AdConf{
@@ -70,6 +85,7 @@ func TestSinkConfigure(t *testing.T) {
 				"qos":         1,
 				"retained":    false,
 				"compression": "zlib",
+				"server":      "123",
 			},
 			expectedErr: nil,
 			expectedAdConf: &AdConf{
@@ -90,10 +106,39 @@ func TestSinkConfigure(t *testing.T) {
 				t.Errorf("\n Expected error: \t%v\n \t\t\tgot: \t%v", tt.expectedErr, err)
 				return
 			}
-			if !reflect.DeepEqual(ms.adconf, tt.expectedAdConf) {
-				t.Errorf("\n Expected adConf: \t%v\n \t\t\tgot: \t%v", tt.expectedAdConf, ms.adconf)
-				return
+			if tt.expectedErr == nil {
+				if !reflect.DeepEqual(ms.adconf, tt.expectedAdConf) {
+					t.Errorf("\n Expected adConf: \t%v\n \t\t\tgot: \t%v", tt.expectedAdConf, ms.adconf)
+					return
+				}
 			}
 		})
+	}
+}
+
+func TestValidateMQTTSinkConf(t *testing.T) {
+	testcases := []struct {
+		topic       string
+		expectError bool
+	}{
+		{
+			topic:       "/123/+",
+			expectError: true,
+		},
+		{
+			topic:       "/123/#",
+			expectError: true,
+		},
+		{
+			topic: "/123/",
+		},
+	}
+	for _, tc := range testcases {
+		err := validateMQTTSinkTopic(tc.topic)
+		if tc.expectError {
+			require.Error(t, err)
+		} else {
+			require.NoError(t, err)
+		}
 	}
 }

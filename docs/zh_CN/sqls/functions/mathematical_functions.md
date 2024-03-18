@@ -229,3 +229,45 @@ tanh(col)
 ```
 
 返回弧度数的双曲正切值。
+
+## COT
+
+```text
+cot(col)
+```
+
+返回弧度数的余切值。
+
+## RADIANS
+
+```text
+radians(col)
+```
+
+从度转换为弧度
+
+## DEGREES
+
+```text
+degrees(col)
+```
+
+从弧度转换为度
+
+## CONV
+
+```text
+conv(N,from_base,to_base)
+```
+
+将不同进制的数字进行转换。将数字 N 从 from_base 进制转换为 to_base 进制，并返回其字符串表示。如果任何参数为 NULL，则返回 NULL。
+参数 N 被解析为整数，但可以指定为整数或字符串。最小进制为 2，最大进制为 36。
+
+```sql
+ekuiper> select conv('a',16,2);
+        -> '1010'
+ekuiper> select conv('6E',18,8);
+        -> '172'
+ekuiper> select conv(-17,10,-18);
+        -> '-H'
+```

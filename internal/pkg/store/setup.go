@@ -23,6 +23,7 @@ type StoreConf struct {
 	ExtStateType string
 	RedisConfig  definition.RedisConfig
 	SqliteConfig definition.SqliteConfig
+	FdbConfig    definition.FdbConfig
 }
 
 func SetupDefault(dataDir string) error {
@@ -34,6 +35,7 @@ func SetupDefault(dataDir string) error {
 			Path: dataDir,
 			Name: "",
 		},
+		Fdb: definition.FdbConfig{},
 	}
 
 	return Setup(c)
@@ -45,6 +47,7 @@ func SetupWithConfig(sc *StoreConf) error {
 		ExtStateType: sc.ExtStateType,
 		Redis:        sc.RedisConfig,
 		Sqlite:       sc.SqliteConfig,
+		Fdb:          sc.FdbConfig,
 	}
 	return Setup(c)
 }

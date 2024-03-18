@@ -5,6 +5,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  workflow_dispatch:
   pull_request:
   release:
     types:
@@ -19,7 +20,7 @@ jobs:
     steps:
       - id: arch
         run: |
-          if ${{ github.ref_type == 'tag' }}; then
+          if ${{ contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name) }}; then
             echo "arch=[\"linux/amd64\", \"linux/arm64\", \"linux/arm/v7\"]" >> $GITHUB_OUTPUT
           else
             echo "arch=[\"linux/amd64\"]" >> $GITHUB_OUTPUT
@@ -32,7 +33,7 @@ jobs:
     strategy:
       matrix:
         golang:
-          - 1.20.2
+          - 1.21.3
         arch: ${{fromJson(needs.prepare.outputs.arch)}}
         os:
           - debian
@@ -84,7 +85,7 @@ jobs:
         fetch-depth: 0
     - uses: actions/setup-go@v3
       with:
-        go-version: '1.20.2'
+        go-version: '1.21.3'
     - name: prepare
       run: |
           brew install curl zip unzip gnu-sed pkg-config zmq
@@ -107,7 +108,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v3
         with:
-          go-version: '1.20.2'
+          go-version: '1.21.3'
       - uses: nttld/setup-ndk@v1
         id: setup-ndk
         with:
@@ -123,9 +124,11 @@ jobs:
         run: |
           ver=$(git describe --tags --always)
           cd app
-          fyne package -os android/arm64 -name ekuiper -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true
+          cp -r etc app
+          fyne package -os android/arm64 -name kuiper-$ver -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true        
           mkdir -p ../_packages
-          mv ekuiper.apk ../_packages/
+          # The version name will be modified by fyne package, convert . and - to _
+          mv kuiper* ../_packages/
           cd ../_packages && for var in $(ls); do echo $(sha256sum $var | awk '{print $1}') > $var.sha256; done && cd -
       - uses: actions/upload-artifact@v3
         with:
@@ -144,8 +147,9 @@ jobs:
             - "-dev"
             - "-slim"
             - "-slim-python"
+            - "-full"
             golang:
-            - 1.20.2
+            - 1.21.3
 
     steps:
     - uses: actions/checkout@v3
@@ -199,7 +203,7 @@ jobs:
       if: github.event_name == 'release'
       run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
-      if: github.event_name == 'release'
+      if: contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name)
       uses: docker/build-push-action@v3
       with:
         context: .
@@ -212,6 +216,7 @@ jobs:
 
   build-plugins:
     runs-on: ubuntu-latest
+    needs: prepare
 
     strategy:
       fail-fast: false
@@ -228,6 +233,7 @@ jobs:
           - sources/zmq
           - sources/sql
           - sources/video
+          - sources/kafka
           - functions/accumulateWordCount
           - functions/countPlusOne
           - functions/echo
@@ -240,7 +246,7 @@ jobs:
           - [debian, "slim"]
           - [alpine, "alpine"]
         golang:
-          - 1.20.2
+          - 1.21.3
         exclude:
           - arch: linux/arm/v7
           - os: [ alpine,"alpine" ]
@@ -400,7 +406,7 @@ jobs:
       if: github.event_name == 'release'
       with:
         repo: ekuiper
-        path: "_packages/kuiper-*"
+        path: "_packages/kuiper*"
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: upload packages to s3
       if: github.event_name == 'release'

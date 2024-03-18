@@ -1,0 +1,268 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sources/plugin/kafka.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sources/plugin/kafka.html"
+    },
+    "description": {
+      "en_US": "This a source for Kafka, it can be used for consuming the data from Kafka.",
+      "zh_CN": "从 Kafka 中消费消息"
+    }
+  },
+  "libs": [
+    "github.com/segmentio/kafka-go@v0.4.39"
+  ],
+  "properties": [
+    {
+      "name": "brokers",
+      "default": "127.0.0.1:9092",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The url of the Kafka broker list",
+        "zh_CN": "Kafka brokers的 URL 列表"
+      },
+      "label": {
+        "en_US": "broker list",
+        "zh_CN": "Broker url 列表"
+      }
+    },
+    {
+      "name": "groupID",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The Kafka consumer group id",
+        "zh_CN": "Kafka 的 consumer group id"
+      },
+      "label": {
+        "en_US": "groupID",
+        "zh_CN": "groupID"
+      }
+    },
+    {
+      "name": "partition",
+      "default": "0",
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Partition to read messages from",
+        "zh_CN": "设置 Kafka 消息的读取 Partition"
+      },
+      "label": {
+        "en_US": "partition",
+        "zh_CN": "partition"
+      }
+    },
+    {
+      "name": "maxBytes",
+      "default": "0",
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "the maximum batch size that the consumer will accept. Default 1MB",
+        "zh_CN": "Consumer 可以一次性接收的最大 bytes 数，默认为 1MB"
+      },
+      "label": {
+        "en_US": "maxBytes",
+        "zh_CN": "maxBytes"
+      }
+    },
+    {
+      "name": "maxAttempts",
+      "default": true,
+      "optional": true,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "Limit of how many attempts to connect will be made before returning the error.",
+        "zh_CN": "建立连接的尝试次数"
+      },
+      "label": {
+        "en_US": "Max Attempts",
+        "zh_CN": "建立连接的尝试次数"
+      }
+    },
+    {
+      "name": "saslAuthType",
+      "default": "none",
+      "optional": false,
+      "control": "select",
+      "values": [
+        "none",
+        "plain",
+        "scram"
+      ],
+      "type": "string",
+      "hint": {
+        "en_US": "Sasl auth type of Kafka",
+        "zh_CN": "Kafka 的 Sasl 认证类型"
+      },
+      "label": {
+        "en_US": "Sasl auth type",
+        "zh_CN": "Sasl 认证类型"
+      }
+    },
+    {
+      "name": "saslUserName",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Sasl username for authentication",
+        "zh_CN": "Sasl 认证使用的用户名"
+      },
+      "label": {
+        "en_US": "Sasl username",
+        "zh_CN": "Sasl 用户名"
+      }
+    },
+    {
+      "name": "saslPassword",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Sasl password for authentication",
+        "zh_CN": "Sasl 认证使用的密码"
+      },
+      "label": {
+        "en_US": "Sasl password",
+        "zh_CN": "Sasl 密码"
+      }
+    },
+    {
+      "name": "certificationPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of certification path. It can be an absolute path, or a relative path.",
+        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 server 命令的路径。"
+      },
+      "label": {
+        "en_US": "Certification path",
+        "zh_CN": "证书路径"
+      }
+    },
+    {
+      "name": "privateKeyPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of private key path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Private key path",
+        "zh_CN": "私钥路径"
+      }
+    },
+    {
+      "name": "rootCaPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Root CA path",
+        "zh_CN": "根证书路径"
+      }
+    },
+    {
+      "name": "certficationRaw",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "base64 encoded original text of the cert",
+        "zh_CN": "经过 base64 编码的证书原文"
+      },
+      "label": {
+        "en_US": "Raw Cert",
+        "zh_CN": "证书原文"
+      }
+    },
+    {
+      "name": "privateKeyRaw",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "base64 encoded original text of the key",
+        "zh_CN": "经过 base64 编码的密钥原文"
+      },
+      "label": {
+        "en_US": "Raw Key",
+        "zh_CN": "密钥原文"
+      }
+    },
+    {
+      "name": "rootCARaw",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "base64 encoded original text of the ca",
+        "zh_CN": "经过 Base64 编码的密钥原文"
+      },
+      "label": {
+        "en_US": "Raw CA",
+        "zh_CN": "根证书原文"
+      }
+    },
+    {
+      "name": "insecureSkipVerify",
+      "default": true,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification.",
+        "zh_CN": "控制是否跳过证书认证。如果被设置为 true，那么跳过证书认证；否则进行证书验证。"
+      },
+      "label": {
+        "en_US": "Skip Certification verification",
+        "zh_CN": "跳过证书验证"
+      }
+    }
+  ],
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en": "Kafka",
+      "zh": "Kafka"
+    }
+  }
+}

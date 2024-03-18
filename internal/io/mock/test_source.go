@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package mock
 
 import (
 	"fmt"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -25,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/converter"
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
@@ -41,6 +43,9 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 		case *api.DefaultSourceTuple:
 			assert.Equal(t, exp[i].Message(), v.Message())
 			assert.Equal(t, exp[i].Meta(), v.Meta())
+		case *xsql.ErrorSourceTuple:
+			assert.Equal(t, reflect.TypeOf(exp[i]), reflect.TypeOf(v))
+			assert.Equal(t, exp[i].(*xsql.ErrorSourceTuple).Error, v.(*xsql.ErrorSourceTuple).Error)
 		default:
 			assert.Equal(t, exp[i], v)
 		}

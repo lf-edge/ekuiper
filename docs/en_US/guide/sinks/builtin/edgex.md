@@ -40,7 +40,9 @@ Below optional configurations are supported, please check MQTT specification for
   - SkipCertVerify
 
 ::: v-pre
-Notice that, the edgex action can support data templates to vary the result format, but the result of the data template must be in the object form of a JSON string, e.g. `"{\"key\":\"{{.key}}\"}"`. JSON strings in the form of arrays or non-JSON strings are not supported.
+Notice that, the edgex action can support data templates to vary the result format, but the result of the data template
+must be in the object form of a JSON string, e.g. <code v-pre>"{\"key\":\"{{.key}}\"}"</code>. JSON strings in the form
+of arrays or non-JSON strings are not supported.
 :::
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.

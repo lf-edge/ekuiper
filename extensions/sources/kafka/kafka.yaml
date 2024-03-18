@@ -1,0 +1,4 @@
+default:
+  brokers: "127.0.0.1:9092"
+  partition: 0
+  maxBytes: 1000000

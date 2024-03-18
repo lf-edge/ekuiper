@@ -23,15 +23,17 @@ import (
 	"testing"
 
 	"github.com/gdexlab/go-render/render"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("processor")
 }
 
 func TestStreamCreateProcessor(t *testing.T) {
@@ -431,4 +433,70 @@ func TestDescribeToJson(t *testing.T) {
 			t.Errorf("DescribeToJson mismatch:\nexp=%v\ngot=%v", tt.r, s)
 		}
 	}
+}
+
+func TestErr(t *testing.T) {
+	p := NewStreamProcessor()
+	p.db.Clean()
+	defer p.db.Clean()
+
+	_, err := p.ExecReplaceStream("1", "2", 1)
+	require.Error(t, err)
+	_, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.ExecStreamSql("1")
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.GetStream("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.DescStream("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.DescStream("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.GetInferredJsonSchema("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.GetInferredSchema("1", 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.execDescribe(&ast.Field{}, 1)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.ExecStreamSql("1")
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.ShowStream(11)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.GetStream("1", 11)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+
+	_, err = p.DropStream("1", 11)
+	require.Error(t, err)
+	_, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
 }

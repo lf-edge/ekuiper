@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package function
 import (
 	"fmt"
 	"math"
+	"math/cmplx"
 	"reflect"
 	"testing"
 
@@ -133,6 +134,18 @@ func TestFuncMath(t *testing.T) {
 	if !ok {
 		t.Fatal("builtin not found")
 	}
+	fCot, ok := builtins["cot"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	fRadians, ok := builtins["radians"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
+	fDegrees, ok := builtins["degrees"]
+	if !ok {
+		t.Fatal("builtin not found")
+	}
 	contextLogger := conf.Log.WithField("rule", "testExec")
 	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
@@ -172,6 +185,9 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(-10),
 				math.Floor(-10),
 				math.Pi,
+				real(cmplx.Cot(-10)),
+				radians(-10),
+				degrees(-10),
 			},
 		}, { // 1
 			args: []interface{}{
@@ -181,7 +197,7 @@ func TestFuncMath(t *testing.T) {
 				10,
 				float64(10),
 				math.Exp(10),
-				math.Log2(10),
+				math.Log(10),
 				math.Log10(10),
 				math.Sqrt(10),
 				float64(100),
@@ -204,6 +220,9 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(10),
 				math.Floor(10),
 				math.Pi,
+				real(cmplx.Cot(10)),
+				radians(10),
+				degrees(10),
 			},
 		}, { // 2
 			args: []interface{}{
@@ -236,6 +255,9 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(-10.5),
 				math.Floor(-10.5),
 				math.Pi,
+				real(cmplx.Cot(-10.5)),
+				radians(-10.5),
+				degrees(-10.5),
 			},
 		}, { // 3
 			args: []interface{}{
@@ -245,7 +267,7 @@ func TestFuncMath(t *testing.T) {
 				10.5,
 				float64(11),
 				math.Exp(10.5),
-				math.Log2(10.5),
+				math.Log(10.5),
 				math.Log10(10.5),
 				math.Sqrt(10.5),
 				110.25,
@@ -268,6 +290,9 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(10.5),
 				math.Floor(10.5),
 				math.Pi,
+				real(cmplx.Cot(10.5)),
+				radians(10.5),
+				degrees(10.5),
 			},
 		}, { // 4
 			args: []interface{}{
@@ -300,6 +325,9 @@ func TestFuncMath(t *testing.T) {
 				math.Tanh(0),
 				float64(0),
 				math.Pi,
+				fmt.Errorf("out-of-range error"),
+				radians(0),
+				degrees(0),
 			},
 		},
 	}
@@ -408,6 +436,18 @@ func TestFuncMath(t *testing.T) {
 		if !reflect.DeepEqual(rPi, tt.res[25]) {
 			t.Errorf("%d.25 exp result mismatch,\ngot:\t%v \nwant:\t%v", i, rPi, tt.res[25])
 		}
+		rCot, _ := fCot.exec(fctx, tt.args)
+		if !reflect.DeepEqual(rCot, tt.res[26]) {
+			t.Errorf("%d.26 cot result mismatch,\ngot:\t%v \nwant:\t%v", i, rCot, tt.res[26])
+		}
+		rRadians, _ := fRadians.exec(fctx, tt.args)
+		if !reflect.DeepEqual(rRadians, tt.res[27]) {
+			t.Errorf("%d.27 radians result mismatch,\ngot:\t%v \nwant:\t%v", i, rCot, tt.res[27])
+		}
+		rDegrees, _ := fDegrees.exec(fctx, tt.args)
+		if !reflect.DeepEqual(rDegrees, tt.res[28]) {
+			t.Errorf("%d.28 degrees result mismatch,\ngot:\t%v \nwant:\t%v", i, rCot, tt.res[28])
+		}
 	}
 }
 
@@ -426,6 +466,101 @@ func TestFuncMathNil(t *testing.T) {
 			r, b := mathFunc.check([]interface{}{nil})
 			require.True(t, b, fmt.Sprintf("%v failed", mathFuncName))
 			require.Nil(t, r, fmt.Sprintf("%v failed", mathFuncName))
+		}
+	}
+}
+
+func TestRadians(t *testing.T) {
+	cases := []struct {
+		degrees float64
+		want    float64
+	}{
+		{90, math.Pi / 2},
+		{180, math.Pi},
+		{45, math.Pi / 4},
+		{0, 0},
+	}
+
+	for _, c := range cases {
+		got := radians(c.degrees)
+		if got != c.want {
+			t.Errorf("radians(%f) == %f, want %f", c.degrees, got, c.want)
+		}
+	}
+}
+
+func TestDegrees(t *testing.T) {
+	cases := []struct {
+		radians float64
+		want    float64
+	}{
+		{math.Pi / 2, 90},
+		{math.Pi, 180},
+		{math.Pi / 4, 45},
+		{0, 0},
+	}
+
+	for _, c := range cases {
+		got := degrees(c.radians)
+		if got != c.want {
+			t.Errorf("degrees(%f) == %f, want %f", c.radians, got, c.want)
+		}
+	}
+}
+
+func TestGetValidPrefix(t *testing.T) {
+	v := []struct {
+		s    string
+		base int64
+		ret  string
+	}{
+		{"-123456D1f", 5, "-1234"},
+		{"+12azD", 16, "12a"},
+		{"+", 12, ""},
+	}
+	for _, tt := range v {
+		r := getValidPrefix(tt.s, tt.base)
+		require.Equal(t, tt.ret, r)
+	}
+}
+
+func TestConvFunc(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	oldBuiltins := builtins
+	defer func() {
+		builtins = oldBuiltins
+	}()
+	builtins = map[string]builtinFunc{}
+	registerMathFunc()
+
+	fConv := builtins["conv"]
+	cases := []struct {
+		args     []interface{}
+		expected interface{}
+		isNil    bool
+		getErr   bool
+	}{
+		{[]interface{}{"a", 16, 2}, "1010", false, false},
+		{[]interface{}{"6E", 18, 8}, "172", false, false},
+		{[]interface{}{"-17", 10, -18}, "-H", false, false},
+		{[]interface{}{"-17", 10, 18}, "2D3FGB0B9CG4BD1H", false, false},
+		{[]interface{}{"+18aZ", 7, 36}, "1", false, false},
+		{[]interface{}{"18446744073709551615", -10, 16}, "7FFFFFFFFFFFFFFF", false, false},
+		{[]interface{}{"12F", -10, 16}, "C", false, false},
+		{[]interface{}{"  FF ", 16, 10}, "255", false, false},
+		{[]interface{}{"aa", 10, 2}, "0", false, false},
+		{[]interface{}{" A", -10, 16}, "0", false, false},
+		{[]interface{}{"random_str", 10, 8}, "0", false, false},
+		{[]interface{}{"a6a", 10, 8}, "0", false, false},
+		{[]interface{}{"a6a", 1, 8}, nil, true, false},
+	}
+	for _, c := range cases {
+		got, _ := fConv.exec(fctx, []interface{}{c.args[0], c.args[1], c.args[2]})
+		if got != c.expected {
+			t.Errorf("%s:Expected %s, but got %s", c.args[0], c.expected, got)
 		}
 	}
 }

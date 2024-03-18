@@ -37,12 +37,13 @@ func GetPrometheusMetrics() *PrometheusMetrics {
 }
 
 type MetricGroup struct {
-	TotalRecordsIn     *prometheus.CounterVec
-	TotalRecordsOut    *prometheus.CounterVec
-	TotalExceptions    *prometheus.CounterVec
-	ProcessLatencyHist *prometheus.HistogramVec
-	ProcessLatency     *prometheus.GaugeVec
-	BufferLength       *prometheus.GaugeVec
+	TotalRecordsIn         *prometheus.CounterVec
+	TotalRecordsOut        *prometheus.CounterVec
+	TotalMessagesProcessed *prometheus.CounterVec
+	TotalExceptions        *prometheus.CounterVec
+	ProcessLatencyHist     *prometheus.HistogramVec
+	ProcessLatency         *prometheus.GaugeVec
+	BufferLength           *prometheus.GaugeVec
 }
 
 type PrometheusMetrics struct {
@@ -65,6 +66,10 @@ func newPrometheusMetrics() *PrometheusMetrics {
 			Name: prefix + "_" + RecordsOutTotal,
 			Help: "Total number of messages published by the operation of " + prefix,
 		}, labelNames)
+		totalMessagesProcessed := prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: prefix + "_" + MessagesProcessedTotal,
+			Help: "Total number of messages published by the operation of " + prefix,
+		}, labelNames)
 		totalExceptions := prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: prefix + "_" + ExceptionsTotal,
 			Help: "Total number of user exceptions of " + prefix,
@@ -82,14 +87,15 @@ func newPrometheusMetrics() *PrometheusMetrics {
 			Name: prefix + "_" + BufferLength,
 			Help: "The length of the plan buffer which is shared by all instances of " + prefix,
 		}, labelNames)
-		prometheus.MustRegister(totalRecordsIn, totalRecordsOut, totalExceptions, processLatency, processLatencyHist, bufferLength)
+		prometheus.MustRegister(totalRecordsIn, totalRecordsOut, totalMessagesProcessed, totalExceptions, processLatency, processLatencyHist, bufferLength)
 		vecs = append(vecs, &MetricGroup{
-			TotalRecordsIn:     totalRecordsIn,
-			TotalRecordsOut:    totalRecordsOut,
-			TotalExceptions:    totalExceptions,
-			ProcessLatency:     processLatency,
-			ProcessLatencyHist: processLatencyHist,
-			BufferLength:       bufferLength,
+			TotalRecordsIn:         totalRecordsIn,
+			TotalRecordsOut:        totalRecordsOut,
+			TotalMessagesProcessed: totalMessagesProcessed,
+			TotalExceptions:        totalExceptions,
+			ProcessLatency:         processLatency,
+			ProcessLatencyHist:     processLatencyHist,
+			BufferLength:           bufferLength,
 		})
 	}
 	return &PrometheusMetrics{vecs: vecs}

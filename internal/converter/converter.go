@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/internal/converter/json"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
@@ -42,13 +43,23 @@ var converters = map[string]Instantiator{
 	},
 }
 
-func GetOrCreateConverter(options *ast.Options) (message.Converter, error) {
+func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
+		}
+	}()
+
 	t := strings.ToLower(options.FORMAT)
 	if t == "" {
 		t = message.FormatJson
 	}
-	if t == message.FormatJson && len(options.Schema) > 0 {
-		return json.NewFastJsonConverter(options.Schema), nil
+	if t == message.FormatJson {
+		// it's unit test
+		if options.RuleID == "" || options.StreamName == "" {
+			return json.GetConverter()
+		}
+		return json.NewFastJsonConverter(options.RuleID, options.StreamName, options.Schema, options.IsWildCard, options.IsSchemaLess), nil
 	}
 
 	schemaFile := ""

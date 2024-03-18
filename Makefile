@@ -7,6 +7,9 @@ OS := $(shell go env GOOS)
 PACKAGE_NAME := kuiper-$(VERSION)-$(OS)-$(ARCH)
 GO              := GO111MODULE=on go
 
+FAILPOINT_ENABLE  := find $$PWD/ -type d | grep -vE "(\.git|tools)" | xargs tools/failpoint/bin/failpoint-ctl enable
+FAILPOINT_DISABLE := find $$PWD/ -type d | grep -vE "(\.git|tools)" | xargs tools/failpoint/bin/failpoint-ctl disable
+
 TARGET ?= lfedge/ekuiper
 
 export KUIPER_SOURCE := $(shell pwd)
@@ -69,6 +72,18 @@ build_with_edgex_and_script: build_prepare
 pkg_with_edgex: build_with_edgex
 	@make real_pkg
 
+.PHONY: build_with_fdb
+build_with_fdb: build_prepare
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "fdb" -o kuiper cmd/kuiper/main.go
+	GO111MODULE=on CGO_ENABLED=1 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags "fdb" -o kuiperd cmd/kuiperd/main.go
+	@if [ "$$(uname -s)" = "Linux" ] && [ ! -z $$(which upx) ]; then upx ./kuiper; upx ./kuiperd; fi
+	@mv ./kuiper ./kuiperd $(BUILD_PATH)/$(PACKAGE_NAME)/bin
+	@echo "Build successfully"
+
+.PHONY: pkg_with_fdb
+pkg_with_fdb: build_with_fdb
+	@make real_pkg
+
 .PHONY: build_core
 build_core: build_prepare
 	GO111MODULE=on CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.Version=$(VERSION) -X main.LoadFileType=relative" -tags core -o kuiperd cmd/kuiperd/main.go
@@ -79,14 +94,13 @@ build_core: build_prepare
 PLUGINS_IN_FULL := \
 	extensions/sinks/influx \
 	extensions/sinks/influx2 \
-	extensions/sinks/zmq \
 	extensions/sinks/kafka \
 	extensions/sinks/image \
 	extensions/sinks/sql   \
 	extensions/sources/random \
-	extensions/sources/zmq \
 	extensions/sources/sql \
-	extensions/sources/video
+	extensions/sources/video \
+	extensions/sources/kafka
 
 .PHONY: build_full
 build_full: SHELL:=/bin/bash -euo pipefail
@@ -140,6 +154,7 @@ build_with_wasm: build_prepare
 docker:
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION) -f deploy/docker/Dockerfile . --load
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-slim -f deploy/docker/Dockerfile-slim . --load
+	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-full -f deploy/docker/Dockerfile-full . --load
 	docker buildx build --no-cache --platform=linux/amd64 -t $(TARGET):$(VERSION)-dev -f deploy/docker/Dockerfile-dev . --load
 
 PLUGINS := sinks/influx \
@@ -152,6 +167,7 @@ PLUGINS := sinks/influx \
 	sources/zmq \
 	sources/sql \
 	sources/video \
+	sources/kafka \
 	sinks/tdengine \
 	functions/accumulateWordCount \
 	functions/countPlusOne \
@@ -184,4 +200,15 @@ lint:tools/lint/bin/golangci-lint
 	cd sdk/go && ../../tools/lint/bin/golangci-lint run
 
 tools/lint/bin/golangci-lint:
-	GOBIN=$(shell pwd)/tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	GOBIN=tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+tools/failpoint/bin/failpoint-ctl:
+	GOBIN=$(shell pwd)/tools/failpoint/bin $(GO) install github.com/pingcap/failpoint/failpoint-ctl@2eaa328
+
+failpoint-enable: tools/failpoint/bin/failpoint-ctl
+# Converting gofail failpoints...
+	@$(FAILPOINT_ENABLE)
+
+failpoint-disable: tools/failpoint/bin/failpoint-ctl
+# Restoring gofail failpoints...
+	@$(FAILPOINT_DISABLE)

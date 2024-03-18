@@ -283,7 +283,14 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err1, "Invalid body", logger)
 			return
 		}
-		err = meta.AddConnectionConfKey(pluginName, confKey, language, v)
+		reqField := make(map[string]interface{})
+		err = json.Unmarshal(v, &reqField)
+		if err != nil {
+			handleError(w, err1, "Invalid body", logger)
+			return
+		}
+		reqField = replacePasswdForConfig("connection", confKey, reqField)
+		err = meta.AddConnectionConfKey(pluginName, confKey, language, reqField)
 	}
 	if err != nil {
 		handleError(w, err, "", logger)
@@ -326,8 +333,8 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-
-	err = node.SinkOpen(sinkNm, config)
+	config = replacePasswdForConfig("sink", sinkNm, config)
+	err = node.SinkPing(sinkNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
@@ -348,8 +355,8 @@ func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-
-	err = node.SourceOpen(sourceNm, config)
+	config = replacePasswdForConfig("source", sourceNm, config)
+	err = node.SourcePing(sourceNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return

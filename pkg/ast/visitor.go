@@ -152,6 +152,7 @@ func Walk(v Visitor, node Node) {
 
 	case *WhenClause:
 		Walk(v, n.Expr)
+		Walk(v, n.Result)
 	}
 }
 

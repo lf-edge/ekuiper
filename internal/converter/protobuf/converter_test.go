@@ -22,11 +22,29 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
+
+func TestOneOfDecode(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test5.proto", "", "Book")
+	require.NoError(t, err)
+	v, err := c.Decode([]byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x1A, 0x04, 0x31, 0x32, 0x33, 0x34})
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{
+		"a": "123", "c": "1234",
+	}, v)
+
+	v, err = c.Decode([]byte{0x0A, 0x03, 0x31, 0x32, 0x33, 0x22, 0x04, 0x31, 0x32, 0x33, 0x34})
+	require.NoError(t, err)
+	require.Equal(t, map[string]interface{}{
+		"a": "123", "d": "1234",
+	}, v)
+}
 
 func TestEncode(t *testing.T) {
 	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")
@@ -84,32 +102,36 @@ func TestEmbedType(t *testing.T) {
 		m map[string]interface{}
 		r []byte
 		e string
+		d map[string]interface{}
 	}{
 		{
 			m: map[string]interface{}{
-				"drvg_mod": int64(1),
+				"drvg_mod":         1,
+				"drvg_mod_history": []any{1, 2, 3},
 				"brk_pedal_sts": map[string]interface{}{
 					"valid": int64(0),
 				},
 				"average_speed": 90.56,
 			},
-			r: []byte{0x08, 0x01, 0x11, 0xa4, 0x70, 0x3d, 0x0a, 0xd7, 0xa3, 0x56, 0x40, 0x1a, 0x02, 0x08, 0x00},
+			r: []byte{0x08, 0x01, 0x11, 0xa4, 0x70, 0x3d, 0x0a, 0xd7, 0xa3, 0x56, 0x40, 0x1a, 0x02, 0x08, 0x00, 0x20, 0x01, 0x20, 0x02, 0x20, 0x03},
+			d: map[string]interface{}{
+				"drvg_mod":         int64(1),
+				"drvg_mod_history": []int64{1, 2, 3},
+				"brk_pedal_sts": map[string]interface{}{
+					"valid": int64(0),
+				},
+				"average_speed": 90.56,
+			},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	for i, tt := range tests {
+	for _, tt := range tests {
 		a, err := c.Encode(tt.m)
-		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
-			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
-		} else if tt.e == "" && !reflect.DeepEqual(tt.r, a) {
-			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%x\n\ngot=%x\n\n", i, tt.r, a)
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, tt.r, a)
 		m, err := c.Decode(a)
-		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
-			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
-		} else if tt.e == "" && !reflect.DeepEqual(tt.m, m) {
-			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, m)
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, tt.d, m)
 	}
 }
 
@@ -323,4 +345,19 @@ func TestEncodeDecodeForAllTypes(t *testing.T) {
 			assert.Equal(t, tt.r, m)
 		})
 	}
+}
+
+func TestErr(t *testing.T) {
+	c, err := NewConverter("../../schema/test/test1.proto", "", "Person")
+	require.NoError(t, err)
+	_, err = c.Encode("123")
+	require.Error(t, err)
+	errWithCode, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
+	_, err = c.Decode(nil)
+	require.Error(t, err)
+	errWithCode, ok = err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 }

@@ -123,6 +123,16 @@ Monitor the number of messages received by the sink for all rules. You can enter
 
 Click `Add Panel` to monitor more metrics in the same way.
 
+### View the dashboard via Grafana
+
+Grafana is a monitoring instrument system. It is a system monitoring tool open sourced by Grafana Labs. It can greatly help us simplify the complexity of monitoring. We only need to provide the data that needs to be monitored, and it can help generate various visual instruments. .
+
+eKuiper is predefined in the Grafana panel to help users more clearly and intuitively observe the current running status of eKuiper from Prometheus monitoring data. You can use the Grafama Dashboard Import function to copy the json content in the following link into grafana to obtain the panel.
+
+```shell
+https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
+```
+
 ## Summary
 
 This article introduced the rule metrics in eKuiper and how to use Prometheus to monitor these metrics. Users can further explore more advanced features of Prometheus based on this to improve eKuiper's operation and maintenance.

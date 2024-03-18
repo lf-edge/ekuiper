@@ -1,7 +1,7 @@
 # 文件数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper 内置支持文件数据源，可将文件内容读入 eKuiper 处理管道，适用于需要对数据进行批量处理或需要对文件进行实时处理的场景。
 

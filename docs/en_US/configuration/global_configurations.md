@@ -8,6 +8,8 @@ Example, in case of config:
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
@@ -26,6 +28,10 @@ basic:
     level: info
     # The syslog tag; Leave empty if no tag is used
     tag: kuiper
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
@@ -50,17 +56,23 @@ The configuration item **ignoreCase** is used to specify whether case is ignored
 
 ```yaml
 basic:
+  # debug | info | warn | error | fatal | panic
+  loglevel: info 
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # Whether to disable the log timestamp, useful when output is redirected to logging system like syslog that already adds timestamps.
+  logDisableTimestamp: false
   # How many hours to split the file
   rotateTime: 24
   # Maximum file storage hours
   maxAge: 72
 ```
+
+When debug is false, eKuiper's log level can be controlled through logLevel. When debug is true, eKuiper's log level will be fixed to debug.
 
 ## System log
 
@@ -84,6 +96,44 @@ syslog:
 
 All the above settings are optional. If the network and address are not set, the local syslog will be used. If the level
 is not set, the default value is info. If the tag is not set, there will be no tag used.
+
+Since syslog already has its own timestamp, the timestamp in the log can be disabled by setting `logDisableTimestamp` to
+true.
+
+## Log File Rotation
+
+If the fileLog is set to true, the log will be printed to the log file. The log file rotation is supported by either
+size or time.
+
+### Rotate by size
+
+These settings are used to control the log file rotation by size:
+
+```yaml
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
+```
+
+If the rotateSize is set to a positive value, the log file will be rotated when the size of the log file exceeds the
+rotateSize. The rotateCount is used to control the maximum number of log files to be kept. If the rotateCount is set to
+0, the log file rotation by size will be disabled.
+
+### Rotate by time
+
+These settings are used to control the log file rotation by time:
+
+```yaml
+  # How many hours to split the file
+  rotateTime: 24
+  # Maximum file storage hours
+  maxAge: 72
+```
+
+If the rotateTime is set to a positive value, the log file will be rotated every rotateTime hours. The maxAge is used to
+control the maximum number of hours to keep the log files. If the maxAge is set to 0, the log file rotation by time will
+be disabled.
 
 ## Timezone
 
@@ -183,7 +233,8 @@ After get the plugin info, users can try these plugins, [more info](../api/resta
 
 ## Rule configurations
 
-Configure the default properties of the rule option. All the configuration can be overridden in rule level. Check [rule options](../guide/rules/overview.md#options) for detail.
+Configure the default properties of the rule option. All the configuration can be overridden in rule level.
+Check [rule options](../guide/rules/overview.md#fine-tuning) for detail.
 
 ## Sink configurations
 
@@ -241,7 +292,7 @@ It has properties
 * connectionSelector - reuse the connection info defined in etc/connections/connection.yaml, mainly used for edgeX redis in secure mode
   * only applicable to redis connection information
   * the server, port and password in connection info will overwrite the host port and password above
-  * [more info](../guide/sources/builtin/edgex.md#connectionselector)
+  * [more info](../guide/sources/builtin/edgex.md#connection-reusability)
 
 ### External State
 
@@ -286,3 +337,26 @@ This section configures the portable plugin runtime.
 ## Ruleset Provision
 
 Support file based stream and rule provisioning on startup. Users can put a [ruleset](../api/restapi/ruleset.md#ruleset-format) file named `init.json` into `data` directory to initialize the ruleset. The ruleset will only be import on the first startup of eKuiper.
+
+## Configure FoundationDB as storage
+
+eKuiper uses sqlite by default to store some meta-information. At the same time, eKuiper also supports using FoundationDB as meta-storage data. We can achieve this through the following steps:
+
+* Confirm that the environment where eKuiper is located has installed and started FoundationDB, and confirm the storage path used by FoundationDB. Please refer to [Official Document](https://apple.github.io/foundationdb/administration.html#default-cluster-file)
+* Confirm the APIVersion of the fdb c language library used by the eKuiper host, and replace the eKuiper dependent library with the corresponding version. Taking APIVersion 6.2.0 as an example, execute the following command in the eKuiper home directory:
+
+```shell
+go get github.com/apple/foundationdb/bindings/go@6.2.0
+```
+
+* Execute `make build_with_fdb` to compile kuiperd
+* Modify the configuration as follows:
+
+```yaml
+    store:
+      #Type of store that will be used for keeping state of the application
+      type: fdb
+      extStateType: fdb
+      fdb:
+        path: <path-of-fdb-cluster-file>
+```

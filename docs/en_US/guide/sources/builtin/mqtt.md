@@ -1,7 +1,7 @@
 # MQTT Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 MQTT (Message Queuing Telemetry Transport) is a protocol optimized for low bandwidth scenarios. Using the MQTT source stream, eKuiper subscribes to messages from the MQTT broker and channels them into its processing pipeline. This integration allows for real-time data processing directly from specified MQTT topics.
 
@@ -57,6 +57,9 @@ Users can specify the global MQTT configurations here. The configuration items s
   - If executed as `./kuiperd` from `/var/kuiper/bin`, the base is `/var/kuiper/bin`.
 - `privateKeyPath`: The location of the private key path, for example `d3807d9fa5-private.pem.key`. It can be an absolute path or a relative path.  For more detailed information, see `certificationPath`.
 - `rootCaPath`: The location of root ca path. It can be an absolute path, or a relative path.
+- `certficationRaw`: base64 encoded original text of Cert, use `certificationPath` first if both defined.
+- `privateKeyRaw`: base64 encoded original text of Key, use `privateKeyPath` first if both defined.
+- `rootCARaw`: base64 encoded original text of CA, use `rootCaPath` first if both defined.
 - `insecureSkipVerify`: Controls whether to skip certificate verification. If set to `true`, verification is skipped; otherwise, the certificate is verified.
 
 ### **Connection Reusability**

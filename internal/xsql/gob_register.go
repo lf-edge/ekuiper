@@ -24,4 +24,5 @@ func init() {
 	gob.Register(make(map[string]interface{}))
 	gob.Register(make(map[string][]*Tuple))
 	gob.Register(Tuple{})
+	gob.Register([]interface{}{})
 }

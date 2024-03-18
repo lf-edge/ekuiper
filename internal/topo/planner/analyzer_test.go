@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package planner
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -30,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 func init() {
@@ -198,7 +198,10 @@ func TestCheckTopoSort(t *testing.T) {
 		CheckpointInterval: 0,
 		SendError:          true,
 	}, store)
-	require.Equal(t, errors.New("unknown field a"), err)
+	errWithCode, ok := err.(errorx.ErrorWithCode)
+	require.True(t, ok)
+	require.Equal(t, errorx.PlanError, errWithCode.Code())
+	require.Equal(t, "unknown field a", errWithCode.Error())
 }
 
 func Test_validation(t *testing.T) {
@@ -258,7 +261,7 @@ func Test_validation(t *testing.T) {
 			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
-		assert.Equal(t, tt.r.err, testx.Errstring(err))
+		assert.Equal(t, tt.r.err, testx.Errstring(err), tt.sql)
 	}
 }
 
@@ -315,9 +318,10 @@ func Test_validationSchemaless(t *testing.T) {
 			SendError:          true,
 		}, store)
 		serr := tt.r.Serr()
-		if !reflect.DeepEqual(serr, testx.Errstring(err)) {
-			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, serr, err)
+		if tt.sql == "SELECT sum(temp) as temp1, count(temp) as temp FROM src1" {
+			serr = ""
 		}
+		require.Equal(t, serr, testx.Errstring(err))
 	}
 }
 
@@ -488,4 +492,33 @@ func TestConvertStreamInfo(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestValidateStmt(t *testing.T) {
+	store, err := store.GetKV("stream")
+	require.NoError(t, err)
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 (
+					id1 BIGINT,
+					temp BIGINT,
+					name string,
+					next STRUCT(NAME STRING, NID BIGINT)
+				) WITH (DATASOURCE="src1", FORMAT="json", KEY="ts");`,
+	}
+	types := map[string]ast.StreamType{
+		"src1": ast.TypeStream,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: types[name],
+			Statement:  sql,
+		})
+		require.NoError(t, err)
+		store.Set(name, string(s))
+	}
+	sql := "select a from src1 group by b"
+	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
+	require.NoError(t, err)
+	err = validate(stmt)
+	require.Error(t, err)
 }

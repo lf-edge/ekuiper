@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2023 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 package planner
 
 import (
+	"sort"
+
 	"github.com/modern-go/reflect2"
 
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -65,17 +67,43 @@ func (p *LookupPlan) PushDownPredicate(condition ast.Expr) (ast.Expr, LogicalPla
 	if len(p.children) == 0 {
 		return a, p.self
 	}
-	rest, _ := p.baseLogicalPlan.PushDownPredicate(a)
+	unpushable, pushable := extractLookupCondition(a, p.joinExpr.Name)
+	rest, _ := p.baseLogicalPlan.PushDownPredicate(pushable)
+	restAll := combine(unpushable, rest)
 	// Swallow all filter conditions. If there are other filter plans, there may have multiple filters
-	if rest != nil {
+	if restAll != nil {
 		// Add a filter plan for children
 		f := FilterPlan{
-			condition: rest,
+			condition: restAll,
 		}.Init()
 		f.SetChildren([]LogicalPlan{p})
 		return nil, f
 	}
 	return nil, p.self
+}
+
+// Return the unpushable condition and pushable condition
+func extractLookupCondition(condition ast.Expr, tableName string) (unpushable ast.Expr, pushable ast.Expr) {
+	s, hasDefault := getRefSources(condition)
+	l := len(s)
+	if hasDefault {
+		l += 1
+	}
+	if l == 0 || (l == 1 && s[0] != ast.DefaultStream && s[0] != ast.StreamName(tableName)) {
+		pushable = condition
+		return
+	}
+
+	if be, ok := condition.(*ast.BinaryExpr); ok && be.OP == ast.AND {
+		ul, pl := extractLookupCondition(be.LHS, tableName)
+		ur, pr := extractLookupCondition(be.RHS, tableName)
+		unpushable = combine(ul, ur)
+		pushable = combine(pl, pr)
+		return
+	}
+
+	// default case: all condition are unpushable
+	return condition, nil
 }
 
 // validateAndExtractCondition Make sure the join condition is equi-join and extreact other conditions
@@ -146,6 +174,7 @@ func (p *LookupPlan) validateAndExtractCondition() bool {
 		for k := range kset {
 			p.keys = append(p.keys, k)
 		}
+		sort.Strings(p.keys)
 		return true
 	}
 	return false
@@ -171,20 +200,29 @@ func flatConditions(condition ast.Expr) ([]*ast.BinaryExpr, []ast.Expr) {
 func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 	newFields := make([]ast.Expr, 0, len(fields))
 	isWildcard := false
-	strName := p.joinExpr.Name
+	lookupTableName := p.joinExpr.Name
 	fieldMap := make(map[string]struct{})
 	for _, field := range fields {
 		switch f := field.(type) {
 		case *ast.Wildcard:
 			isWildcard = true
 		case *ast.FieldRef:
-			if !isWildcard && (f.StreamName == ast.DefaultStream || string(f.StreamName) == strName) {
-				if f.Name == "*" {
-					isWildcard = true
-				} else {
-					fieldMap[f.Name] = struct{}{}
+			if !isWildcard {
+				if f.StreamName == ast.DefaultStream {
+					if f.Name == "*" {
+						isWildcard = true
+						continue
+					} else {
+						fieldMap[f.Name] = struct{}{}
+					}
+				} else if string(f.StreamName) == lookupTableName {
+					if f.Name == "*" {
+						isWildcard = true
+					} else {
+						fieldMap[f.Name] = struct{}{}
+					}
+					continue
 				}
-				continue
 			}
 		case *ast.SortField:
 			if !isWildcard {
@@ -198,6 +236,15 @@ func (p *LookupPlan) PruneColumns(fields []ast.Expr) error {
 		p.fields = make([]string, 0, len(fieldMap))
 		for k := range fieldMap {
 			p.fields = append(p.fields, k)
+		}
+		sort.Strings(p.fields)
+	}
+	for _, f := range getFields(p.joinExpr.Expr) {
+		fr, ok := f.(*ast.FieldRef)
+		if ok {
+			if fr.IsColumn() && string(fr.StreamName) != lookupTableName {
+				newFields = append(newFields, fr)
+			}
 		}
 	}
 	return p.baseLogicalPlan.PruneColumns(newFields)

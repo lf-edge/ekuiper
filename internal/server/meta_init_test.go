@@ -25,6 +25,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -160,7 +161,7 @@ func (suite *MetaTestSuite) TestConnectionConfKeyHandler() {
 }
 
 func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
-	req, _ := http.NewRequest(http.MethodPut, "/metadata/sinks/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
+	req, _ := http.NewRequest(http.MethodPut, "/metadata/sinks/mqtt/confKeys/test", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883", "password":"123456"}`))
 	DataDir, _ := conf.GetDataLoc()
 	os.MkdirAll(path.Join(DataDir, "sinks"), 0o755)
 	if _, err := os.Create(path.Join(DataDir, "sinks", "mqtt.yaml")); err != nil {
@@ -169,6 +170,16 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	got := replacePasswdForConfig("sink", "mqtt", map[string]interface{}{
+		"resourceId": "test",
+		"a":          "123",
+		"password":   "******",
+	})
+	require.Equal(suite.T(), map[string]interface{}{
+		"resourceId": "test",
+		"a":          "123",
+		"password":   "123456",
+	}, got)
 	os.Remove(path.Join(DataDir, "sinks", "mqtt.yaml"))
 	os.Remove(path.Join(DataDir, "sinks"))
 }
@@ -178,6 +189,26 @@ func (suite *MetaTestSuite) TestResourcesHandler() {
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *MetaTestSuite) TestHiddenPassword() {
+	req, _ := http.NewRequest(http.MethodPut, "/metadata/connections/test/confKeys/test", bytes.NewBufferString(`{"password": "123456","token":"123456","url": "sqlserver://username:password123456@140.210.204.147/testdb"}`))
+	w := httptest.NewRecorder()
+	DataDir, _ := conf.GetDataLoc()
+	os.MkdirAll(path.Join(DataDir, "connections"), 0o755)
+	if _, err := os.Create(path.Join(DataDir, "connections", "connection.yaml")); err != nil {
+		fmt.Println(err)
+	}
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	req, _ = http.NewRequest(http.MethodGet, "/metadata/connections/yaml/test", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	assert.Equal(suite.T(), bytes.NewBufferString(`{"test":{"password":"******","token":"******","url":"sqlserver://username:******@140.210.204.147/testdb"}}`), w.Body)
+
+	os.Remove(path.Join(DataDir, "connections", "connection.yaml"))
+	os.Remove(path.Join(DataDir, "connections"))
 }
 
 func TestMetaTestSuite(t *testing.T) {

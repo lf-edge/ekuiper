@@ -15,6 +15,7 @@
 package mqtt
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -139,6 +140,14 @@ func (mc *mqttClientWrapper) newMessageHandler(sub *mqttSubscriptionInfo) pahoMq
 	}
 }
 
+func (mc *mqttClientWrapper) Ping() error {
+	if mc.cli.conn.IsConnected() {
+		return nil
+	} else {
+		return errors.New("mqtt ping failed")
+	}
+}
+
 func (mc *mqttClientWrapper) Publish(_ api.StreamContext, topic string, message []byte, params map[string]interface{}) error {
 	err := mc.checkConn()
 	if err != nil {
@@ -169,7 +178,7 @@ func (mc *mqttClientWrapper) checkConn() error {
 	mc.subLock.RLock()
 	defer mc.subLock.RUnlock()
 	if !mc.connected {
-		return fmt.Errorf("%s: %s", errorx.IOErr, "mqtt client is not connected")
+		return errorx.NewIOErr("mqtt client is not connected")
 	}
 	return nil
 }

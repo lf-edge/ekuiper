@@ -257,6 +257,42 @@ func mockAuthServer() *httptest.Server {
 		jsonOut(w, out)
 	}).Methods(http.MethodPost)
 
+	router.HandleFunc("/data6", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Failed to read request body", http.StatusBadRequest)
+			return
+		}
+
+		// Create a Person struct to hold the JSON data
+		var ddd struct {
+			Device string `json:"device"`
+			Token  string `json:"token"`
+		}
+
+		// Unmarshal the JSON data into the Person struct
+		err = json.Unmarshal(body, &ddd)
+		if err != nil {
+			http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
+			return
+		}
+
+		if ddd.Token != DefaultToken {
+			http.Error(w, "invalid token", http.StatusBadRequest)
+		}
+
+		out := &struct {
+			DeviceId    string  `json:"device_id"`
+			Temperature float64 `json:"temperature"`
+			Humidity    float64 `json:"humidity"`
+		}{
+			DeviceId:    "device1",
+			Temperature: 25.5,
+			Humidity:    60.0,
+		}
+		jsonOut(w, out)
+	}).Methods(http.MethodPost)
+
 	server := httptest.NewUnstartedServer(router)
 	err := server.Listener.Close()
 	if err != nil {
@@ -286,15 +322,14 @@ func TestConfigure(t *testing.T) {
 				"url":         "http://localhost:9090/",
 			},
 			config: &RawConf{
-				Incremental:        true,
-				Url:                "http://localhost:9090/",
-				ResendUrl:          "http://localhost:9090/",
-				Method:             http.MethodGet,
-				Interval:           DefaultInterval,
-				Timeout:            DefaultTimeout,
-				BodyType:           "none",
-				ResponseType:       "code",
-				InsecureSkipVerify: true,
+				Incremental:  true,
+				Url:          "http://localhost:9090/",
+				ResendUrl:    "http://localhost:9090/",
+				Method:       http.MethodGet,
+				Interval:     DefaultInterval,
+				Timeout:      DefaultTimeout,
+				BodyType:     "none",
+				ResponseType: "code",
 			},
 		},
 		// Test wrong properties
@@ -386,14 +421,13 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			config: &RawConf{
-				Url:                "http://localhost:52345/",
-				ResendUrl:          "http://localhost:52345/",
-				Method:             http.MethodGet,
-				Interval:           DefaultInterval,
-				Timeout:            DefaultTimeout,
-				BodyType:           "none",
-				ResponseType:       "code",
-				InsecureSkipVerify: true,
+				Url:          "http://localhost:52345/",
+				ResendUrl:    "http://localhost:52345/",
+				Method:       http.MethodGet,
+				Interval:     DefaultInterval,
+				Timeout:      DefaultTimeout,
+				BodyType:     "none",
+				ResponseType: "code",
 				Headers: map[string]interface{}{
 					"Authorization": "Bearer {{.token}}",
 				},
@@ -437,14 +471,13 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			config: &RawConf{
-				Url:                "http://localhost:52345/",
-				ResendUrl:          "http://localhost:52345/",
-				Method:             http.MethodGet,
-				Interval:           DefaultInterval,
-				Timeout:            DefaultTimeout,
-				BodyType:           "none",
-				ResponseType:       "code",
-				InsecureSkipVerify: true,
+				Url:          "http://localhost:52345/",
+				ResendUrl:    "http://localhost:52345/",
+				Method:       http.MethodGet,
+				Interval:     DefaultInterval,
+				Timeout:      DefaultTimeout,
+				BodyType:     "none",
+				ResponseType: "code",
 				Headers: map[string]interface{}{
 					"Authorization": "Bearer {{.token}}",
 				},
@@ -495,14 +528,13 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			config: &RawConf{
-				Url:                "http://localhost:52345/",
-				ResendUrl:          "http://localhost:52345/",
-				Method:             http.MethodGet,
-				Interval:           DefaultInterval,
-				Timeout:            DefaultTimeout,
-				BodyType:           "none",
-				ResponseType:       "code",
-				InsecureSkipVerify: true,
+				Url:          "http://localhost:52345/",
+				ResendUrl:    "http://localhost:52345/",
+				Method:       http.MethodGet,
+				Interval:     DefaultInterval,
+				Timeout:      DefaultTimeout,
+				BodyType:     "none",
+				ResponseType: "code",
 				Headers: map[string]interface{}{
 					"Authorization": "Bearer {{.token}}",
 				},
@@ -576,14 +608,13 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			config: &RawConf{
-				Url:                "http://localhost:52345/",
-				ResendUrl:          "http://localhost:52345/",
-				Method:             http.MethodGet,
-				Interval:           DefaultInterval,
-				Timeout:            DefaultTimeout,
-				BodyType:           "none",
-				ResponseType:       "code",
-				InsecureSkipVerify: true,
+				Url:          "http://localhost:52345/",
+				ResendUrl:    "http://localhost:52345/",
+				Method:       http.MethodGet,
+				Interval:     DefaultInterval,
+				Timeout:      DefaultTimeout,
+				BodyType:     "none",
+				ResponseType: "code",
 				Headers: map[string]interface{}{
 					"Authorization": "Bearer {{.token}}",
 				},
@@ -649,14 +680,13 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			config: &RawConf{
-				Url:                "http://localhost:52345/",
-				ResendUrl:          "http://localhost:52345/",
-				Method:             http.MethodGet,
-				Interval:           DefaultInterval,
-				Timeout:            DefaultTimeout,
-				BodyType:           "none",
-				ResponseType:       "code",
-				InsecureSkipVerify: true,
+				Url:          "http://localhost:52345/",
+				ResendUrl:    "http://localhost:52345/",
+				Method:       http.MethodGet,
+				Interval:     DefaultInterval,
+				Timeout:      DefaultTimeout,
+				BodyType:     "none",
+				ResponseType: "code",
 				Headers: map[string]interface{}{
 					"Authorization": "Bearer {{.token}}",
 				},
@@ -701,14 +731,13 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			config: &RawConf{
-				Url:                "http://localhost:52345/",
-				ResendUrl:          "http://localhost:52345/",
-				Method:             http.MethodGet,
-				Interval:           DefaultInterval,
-				Timeout:            DefaultTimeout,
-				BodyType:           "json",
-				ResponseType:       "code",
-				InsecureSkipVerify: true,
+				Url:          "http://localhost:52345/",
+				ResendUrl:    "http://localhost:52345/",
+				Method:       http.MethodGet,
+				Interval:     DefaultInterval,
+				Timeout:      DefaultTimeout,
+				BodyType:     "json",
+				ResponseType: "code",
 				Headers: map[string]string{
 					"Authorization": "Bearer {{.token}}",
 				},
@@ -732,7 +761,7 @@ func TestConfigure(t *testing.T) {
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
-			err: errors.New("fail to authorize by oAuth: Cannot parse access token response to json: http return code error: 400"),
+			err: errors.New("fail to authorize by oAuth: Cannot parse access token response to json: response code error: 400"),
 		},
 		{
 			name: "oAuth refresh error",
@@ -756,7 +785,7 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("fail to authorize by oAuth: Cannot parse refresh token response to json: http return code error: 400"),
+			err: errors.New("fail to authorize by oAuth: Cannot parse refresh token response to json: response code error: 400"),
 		},
 		{
 			name: "oAuth wrong access expire template",
@@ -773,7 +802,7 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("fail to authorize by oAuth: fail to parse the expire time for access token: template: sink:1: unexpected . after term \".\""),
+			err: errors.New("fail to authorize by oAuth: fail to parse the expire time for access token: Template Invalid: template: sink:1: unexpected . after term \".\""),
 		},
 		{
 			name: "oAuth wrong access expire type",
@@ -831,7 +860,7 @@ func TestConfigure(t *testing.T) {
 					},
 				},
 			},
-			err: errors.New("fail to authorize by oAuth: fail to parse the header for refresh token request RefreshToken: template: sink:1: unexpected . after term \".\""),
+			err: errors.New("fail to authorize by oAuth: fail to parse the header for refresh token request RefreshToken: Template Invalid: template: sink:1: unexpected . after term \".\""),
 		},
 		{
 			name: "oAuth wrong refresh url",
@@ -906,6 +935,42 @@ func TestPullWithAuth(t *testing.T) {
 		"headers": map[string]interface{}{
 			"Authorization": "Bearer {{.token}}",
 		},
+		"oAuth": map[string]interface{}{
+			"access": map[string]interface{}{
+				"url":    "http://localhost:52345/token",
+				"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+				"expire": "10",
+			},
+			"refresh": map[string]interface{}{
+				"url": "http://localhost:52345/refresh",
+				"headers": map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+					"RefreshToken":  "{{.refresh_token}}",
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+	mc := conf.Clock
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}, map[string]interface{}{}, mc.Now()),
+	}
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestPullBodyAuth(t *testing.T) {
+	r := &PullSource{}
+	server := mockAuthServer()
+	server.Start()
+	defer server.Close()
+	err := r.Configure("data6", map[string]interface{}{
+		"method":   "POST",
+		"body":     `{"device": "d1", "token": "{{.token}}"}`,
+		"url":      "http://localhost:52345/",
+		"interval": 100,
 		"oAuth": map[string]interface{}{
 			"access": map[string]interface{}{
 				"url":    "http://localhost:52345/token",
@@ -1054,7 +1119,7 @@ func TestPullErrorTest(t *testing.T) {
 			conf: map[string]interface{}{"url": "http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime}", "interval": 10},
 			exp: []api.SourceTuple{
 				&xsql.ErrorSourceTuple{
-					Error: errors.New("parse url http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime} error template: sink:1: bad character U+007D '}'"),
+					Error: errors.New("parse url http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime} error Template Invalid: template: sink:1: bad character U+007D '}'"),
 				},
 			},
 		}, {
@@ -1069,16 +1134,14 @@ func TestPullErrorTest(t *testing.T) {
 			name: "wrong body template",
 			conf: map[string]interface{}{"url": "http://localhost:52345/data4", "interval": 10, "body": `{"device": "d1", "start": {{.LastPullTime}}, "end": {{.pullTime}}}`},
 			exp: []api.SourceTuple{
-				&xsql.ErrorSourceTuple{
-					Error: errors.New("parse body {\"device\": \"d1\", \"start\": {{.LastPullTime}}, \"end\": {{.pullTime}}} error template: sink:1:54: executing \"sink\" at <.pullTime>: can't evaluate field pullTime in type *http.pullTimeMeta"),
-				},
+				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "", "humidity": float64(0), "temperature": float64(0)}}, map[string]interface{}{}, time.UnixMilli(143)),
 			},
 		}, {
 			name: "wrong response",
 			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10},
 			exp: []api.SourceTuple{
 				&xsql.ErrorSourceTuple{
-					Error: errors.New("parse response error http return code error: 404"),
+					Error: errors.New("parse response error response code error: 404"),
 				},
 			},
 		}, {

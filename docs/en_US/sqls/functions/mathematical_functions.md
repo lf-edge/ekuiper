@@ -231,3 +231,46 @@ tanh(col)
 ```
 
 The hyperbolic tangent of a number.
+
+## COT
+
+```text
+cot(col)
+```
+
+Returns the cotangent of a number.
+
+## RADIANS
+
+```text
+radians(col)
+```
+
+converted from degrees to radians.
+
+## DEGREES
+
+```text
+degrees(col)
+```
+
+converted from radians to degrees
+
+## CONV
+
+```text
+conv(N,from_base,to_base)
+```
+
+converts numbers between different number bases. Returns a string representation of the number N, converted
+from base from_base to base to_base. Returns NULL if any argument is NULL. The argument N is interpreted as an integer,
+but may be specified as an integer or a string. The minimum base is 2 and the maximum base is 36.
+
+```sql
+ekuiper> select conv('a',16,2);
+        -> '1010'
+ekuiper> select conv('6E',18,8);
+        -> '172'
+ekuiper> select conv(-17,10,-18);
+        -> '-H'
+```

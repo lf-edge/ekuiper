@@ -14,6 +14,8 @@
 
 package message
 
+import "github.com/lf-edge/ekuiper/pkg/ast"
+
 const (
 	FormatBinary    = "binary"
 	FormatJson      = "json"
@@ -38,6 +40,11 @@ func IsFormatSupported(format string) bool {
 type Converter interface {
 	Encode(d interface{}) ([]byte, error)
 	Decode(b []byte) (interface{}, error)
+}
+
+type SchemaMergeAbleConverter interface {
+	MergeSchema(key, datasource string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error
+	DetachSchema(key string) error
 }
 
 type ColumnSetter interface {

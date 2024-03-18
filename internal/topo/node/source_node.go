@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package node
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
@@ -37,13 +36,13 @@ type SourceNode struct {
 	options      *ast.Options
 	bufferLength int
 	props        map[string]interface{}
-	mutex        sync.RWMutex
-	sources      []api.Source
 	preprocessOp UnOperation
 	schema       map[string]*ast.JsonStreamField
+	IsWildcard   bool
+	IsSchemaless bool
 }
 
-func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, sendError bool, schema map[string]*ast.JsonStreamField) *SourceNode {
+func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, rOptions *api.RuleOption, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) *SourceNode {
 	t := options.TYPE
 	if t == "" {
 		if st == ast.TypeStream {
@@ -53,18 +52,19 @@ func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.
 		}
 	}
 	return &SourceNode{
-		streamType: st,
-		sourceType: t,
-		defaultNode: &defaultNode{
-			name:        name,
-			outputs:     make(map[string]chan<- interface{}),
-			concurrency: 1,
-			sendError:   sendError,
-		},
+		streamType:   st,
+		sourceType:   t,
+		defaultNode:  newDefaultNode(name, rOptions),
 		preprocessOp: op,
 		options:      options,
 		schema:       schema,
+		IsWildcard:   isWildcard,
+		IsSchemaless: isSchemaless,
 	}
+}
+
+func (m *SourceNode) SetProps(props map[string]interface{}) {
+	m.props = props
 }
 
 const OffsetKey = "$$offset"
@@ -76,6 +76,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
 		panicOrError := infra.SafeRun(func() error {
 			props := nodeConf.GetSourceConf(m.sourceType, m.options)
+			// merge the props
+			for k, v := range m.props {
+				props[k] = v
+			}
 			m.props = props
 			if c, ok := props["concurrency"]; ok {
 				if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
@@ -98,8 +102,12 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			}
 			props["delimiter"] = m.options.DELIMITER
 			m.options.Schema = nil
+			m.options.IsWildCard = m.IsWildcard
+			m.options.IsSchemaLess = m.IsSchemaless
 			if m.schema != nil {
+				m.options.RuleID = ctx.GetRuleId()
 				m.options.Schema = m.schema
+				m.options.StreamName = m.name
 			}
 			converterTool, err := converter.GetOrCreateConverter(m.options)
 			if err != nil {
@@ -110,104 +118,95 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 			ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, converterTool)
 			m.reset()
 			logger.Infof("open source node with props %v, concurrency: %d, bufferLength: %d", conf.Printable(m.props), m.concurrency, m.bufferLength)
-			for i := 0; i < m.concurrency; i++ { // workers
-				go func(instance int) {
-					poe := infra.SafeRun(func() error {
-						// Do open source instances
-						var (
-							si     *sourceInstance
-							buffer *DynamicChannelBuffer
-							err    error
-						)
 
-						stats, err := metric.NewStatManager(ctx, "source")
-						if err != nil {
+			go func(instance int) {
+				poe := infra.SafeRun(func() error {
+					// Do open source instances
+					var (
+						si     *sourceInstance
+						buffer *DynamicChannelBuffer
+						err    error
+					)
+
+					m.statManager = metric.NewStatManager(ctx, "source")
+
+					si, err = getSourceInstance(m, instance)
+					if err != nil {
+						return err
+					}
+					buffer = si.dataCh
+
+					defer func() {
+						logger.Infof("source %s done", m.name)
+						m.close()
+						buffer.Close()
+					}()
+					logger.Infof("Start source %s instance %d successfully", m.name, instance)
+					for {
+						select {
+						case <-ctx.Done():
+							// We should clear the schema after we close the topo in order to avoid the following problem:
+							// 1. stop the rule
+							// 2. change the schema
+							// 3. restart the rule
+							// As the schema has changed, it will be error if we hold the old schema here
+							// TODO: fetch the latest stream schema after we open the topo
+							m.schema = nil
+							return nil
+						case err := <-si.errorCh:
 							return err
-						}
-						m.mutex.Lock()
-						m.statManagers = append(m.statManagers, stats)
-						m.mutex.Unlock()
-
-						si, err = getSourceInstance(m, instance)
-						if err != nil {
-							return err
-						}
-						m.mutex.Lock()
-						m.sources = append(m.sources, si.source)
-						m.mutex.Unlock()
-						buffer = si.dataCh
-
-						defer func() {
-							logger.Infof("source %s done", m.name)
-							m.close()
-							buffer.Close()
-						}()
-						logger.Infof("Start source %s instance %d successfully", m.name, instance)
-						for {
-							select {
-							case <-ctx.Done():
-								// We should clear the schema after we close the topo in order to avoid the following problem:
-								// 1. stop the rule
-								// 2. change the schema
-								// 3. restart the rule
-								// As the schema has changed, it will be error if we hold the old schema here
-								// TODO: fetch the latest stream schema after we open the topo
-								m.schema = nil
-								return nil
-							case err := <-si.errorCh:
-								return err
-							case data := <-buffer.Out:
-								if t, ok := data.(*xsql.ErrorSourceTuple); ok {
-									logger.Errorf("Source %s error: %v", ctx.GetOpId(), t.Error)
-									stats.IncTotalExceptions(t.Error.Error())
-									continue
-								}
-								stats.IncTotalRecordsIn()
-								rcvTime := conf.GetNow()
-								if !data.Timestamp().IsZero() {
-									rcvTime = data.Timestamp()
-								}
-								stats.SetProcessTimeStart(rcvTime)
-								tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: rcvTime.UnixMilli(), Metadata: data.Meta()}
-								var processedData interface{}
-								if m.preprocessOp != nil {
-									processedData = m.preprocessOp.Apply(ctx, tuple, nil, nil)
+						case data := <-buffer.Out:
+							if t, ok := data.(*xsql.ErrorSourceTuple); ok {
+								logger.Errorf("Source %s error: %v", ctx.GetOpId(), t.Error)
+								m.statManager.IncTotalExceptions(t.Error.Error())
+								continue
+							}
+							m.statManager.IncTotalRecordsIn()
+							rcvTime := conf.GetNow()
+							if !data.Timestamp().IsZero() {
+								rcvTime = data.Timestamp()
+							}
+							m.statManager.SetProcessTimeStart(rcvTime)
+							tuple := &xsql.Tuple{Emitter: m.name, Message: data.Message(), Timestamp: rcvTime.UnixMilli(), Metadata: data.Meta()}
+							var processedData interface{}
+							if m.preprocessOp != nil {
+								processedData = m.preprocessOp.Apply(ctx, tuple, nil, nil)
+							} else {
+								processedData = tuple
+							}
+							m.statManager.ProcessTimeEnd()
+							// blocking
+							switch val := processedData.(type) {
+							case nil:
+								continue
+							case error:
+								logger.Errorf("Source %s preprocess error: %s", ctx.GetOpId(), val)
+								m.Broadcast(val)
+								m.statManager.IncTotalExceptions(val.Error())
+							default:
+								m.Broadcast(val)
+								m.statManager.IncTotalRecordsOut()
+								m.statManager.IncTotalMessagesProcessed(1)
+							}
+							m.statManager.SetBufferLength(int64(buffer.GetLength()))
+							if rw, ok := si.source.(api.Rewindable); ok {
+								if offset, err := rw.GetOffset(); err != nil {
+									infra.DrainError(ctx, err, errCh)
 								} else {
-									processedData = tuple
-								}
-								stats.ProcessTimeEnd()
-								// blocking
-								switch val := processedData.(type) {
-								case nil:
-									continue
-								case error:
-									logger.Errorf("Source %s preprocess error: %s", ctx.GetOpId(), val)
-									_ = m.Broadcast(val)
-									stats.IncTotalExceptions(val.Error())
-								default:
-									_ = m.Broadcast(val)
-									stats.IncTotalRecordsOut()
-								}
-								stats.SetBufferLength(int64(buffer.GetLength()))
-								if rw, ok := si.source.(api.Rewindable); ok {
-									if offset, err := rw.GetOffset(); err != nil {
-										infra.DrainError(ctx, err, errCh)
-									} else {
-										err = ctx.PutState(OffsetKey, offset)
-										if err != nil {
-											return err
-										}
-										logger.Debugf("Source save offset %v", offset)
+									err = ctx.PutState(OffsetKey, offset)
+									if err != nil {
+										return err
 									}
+									logger.Debugf("Source save offset %v", offset)
 								}
 							}
 						}
-					})
-					if poe != nil {
-						infra.DrainError(ctx, poe, errCh)
 					}
-				}(i)
-			}
+				})
+				if poe != nil {
+					infra.DrainError(ctx, poe, errCh)
+				}
+			}(0)
 			return nil
 		})
 		if panicOrError != nil {
@@ -217,7 +216,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (m *SourceNode) reset() {
-	m.statManagers = nil
+	m.statManager = nil
 }
 
 func (m *SourceNode) close() {

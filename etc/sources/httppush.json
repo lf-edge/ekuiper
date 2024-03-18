@@ -20,19 +20,19 @@
 	"dataSource": {
 		"default": "/api/data",
 		"hint": {
-			"en_US": "The URL endpoint to append to the http server URL, e.g. /api/data",
-			"zh_CN": "URL 的路径部分，与配置的 HTTP 服务器地址拼接成最终 URL， 例如 /api/data"
+			"en_US": "The path part of the URL is concatenated with the configured HTTP server address to form the final URL. The default HTTP server address is http://localhost:10081  For example, if you enter /api/data, will listen http://localhost:10081/api/data",
+			"zh_CN": "URL 的路径部分，与配置的 HTTP 服务器地址拼接成最终 URL，HTTP 服务器地址默认为 http://localhost:10081 例如输入 /api/data，则将监听 http://localhost:10081/api/data"
 		},
 		"label": {
 			"en_US": "Data Source (URL Endpoint)",
-			"zh_CN": "数据源（URL拼接路径）"
+			"zh_CN": "数据源（URL 拼接路径）"
 		}
 	},
 	"properties": {
 		"default": [{
 			"name": "method",
 			"default": "POST",
-			"optional": true,
+			"optional": false,
 			"control": "select",
 			"type": "string",
 			"values": ["POST","PUT"],

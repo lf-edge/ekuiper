@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,12 +26,27 @@ type SourceTuple interface {
 	Timestamp() time.Time
 }
 
+type RawTuple interface {
+	Raw() []byte
+}
+
 type DefaultSourceTuple struct {
 	Mess map[string]interface{} `json:"message"`
 	M    map[string]interface{} `json:"meta"`
 	Time time.Time              `json:"timestamp"`
+	raw  []byte
 }
 
+// NewDefaultRawTuple creates a new DefaultSourceTuple with raw data. Use this when extend source connector
+func NewDefaultRawTuple(raw []byte, meta map[string]interface{}, ts time.Time) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		M:    meta,
+		Time: ts,
+		raw:  raw,
+	}
+}
+
+// NewDefaultSourceTuple creates a new DefaultSourceTuple with message and metadata. Use this when extend all in one source.
 func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]interface{}) *DefaultSourceTuple {
 	return &DefaultSourceTuple{
 		Mess: message,
@@ -58,6 +73,10 @@ func (t *DefaultSourceTuple) Meta() map[string]interface{} {
 
 func (t *DefaultSourceTuple) Timestamp() time.Time {
 	return t.Time
+}
+
+func (t *DefaultSourceTuple) Raw() []byte {
+	return t.raw
 }
 
 type Logger interface {
@@ -94,6 +113,16 @@ type Source interface {
 	// read from the yaml
 	Configure(datasource string, props map[string]interface{}) error
 	Closable
+}
+
+type SourceConnector interface {
+	Source
+	Connect(ctx StreamContext) error
+	Subscriber
+}
+
+type Subscriber interface {
+	Subscribe(ctx StreamContext) error
 }
 
 type LookupSource interface {
@@ -158,8 +187,10 @@ type RuleOption struct {
 }
 
 type DatetimeRange struct {
-	Begin string `json:"begin" yaml:"begin"`
-	End   string `json:"end" yaml:"end"`
+	Begin          string `json:"begin" yaml:"begin"`
+	End            string `json:"end" yaml:"end"`
+	BeginTimestamp int64  `json:"beginTimestamp"`
+	EndTimestamp   int64  `json:"endTimestamp"`
 }
 
 type RestartStrategy struct {
@@ -221,6 +252,30 @@ func (r *Rule) IsScheduleRule() bool {
 	return len(r.Options.Cron) > 0 && len(r.Options.Duration) > 0
 }
 
+func GetDefaultRule(name, sql string) *Rule {
+	return &Rule{
+		Id:  name,
+		Sql: sql,
+		Options: &RuleOption{
+			IsEventTime:        false,
+			LateTol:            1000,
+			Concurrency:        1,
+			BufferLength:       1024,
+			SendMetaToSink:     false,
+			SendError:          true,
+			Qos:                AtMostOnce,
+			CheckpointInterval: 300000,
+			Restart: &RestartStrategy{
+				Attempts:     0,
+				Delay:        1000,
+				Multiplier:   2,
+				MaxDelay:     30000,
+				JitterFactor: 0.1,
+			},
+		},
+	}
+}
+
 type StreamContext interface {
 	context.Context
 	GetLogger() Logger
@@ -259,7 +314,7 @@ type Operator interface {
 	Collector
 	Exec(StreamContext, chan<- error)
 	GetName() string
-	GetMetrics() [][]interface{}
+	GetMetrics() []any
 }
 
 type FunctionContext interface {
@@ -288,6 +343,7 @@ type Qos int
 type MessageClient interface {
 	Subscribe(c StreamContext, subChan []TopicChannel, messageErrors chan error, params map[string]interface{}) error
 	Publish(c StreamContext, topic string, message []byte, params map[string]interface{}) error
+	Ping() error
 }
 
 // TopicChannel is the data structure for subscriber

@@ -1,7 +1,7 @@
 # Neuron 数据源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 eKuiper 的 Neuron 连接器可订阅本地 Neuron 实例的消息。需要注意的是，该源仅可用于本地的 Neuron，因为与 Neuron 的通信基于 nanomsg IPC 协议，无法通过网络进行。
 
@@ -17,7 +17,7 @@ eKuiper 的 Neuron 连接器可订阅本地 Neuron 实例的消息。需要注�
 
 eKuiper 连接器可以通过[环境变量](../../../configuration/configuration.md#environment-variable-syntax)、[REST API](../../../api/restapi/configKey.md) 或配置文件进行配置，本节将介绍配置文件的使用方法。
 
-Neuron 源连接器的配置文件位于：`$ekuiper/etc/mqtt_source.yaml`。
+Neuron 源连接器的配置文件位于：`$ekuiper/etc/sources/neuron.yaml`。
 
 ```yaml
 default:

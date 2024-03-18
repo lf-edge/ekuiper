@@ -24,6 +24,7 @@
 - [RedisSub source](./builtin/redisSub.md): 从 Redis 频道中订阅数据。
 - [File source](./builtin/file.md)：从文件中读取数据，通常用作表格。
 - [Memory source](./builtin/memory.md)：从 eKuiper 内存主题读取数据以形成规则管道。
+- [Simulator source](./builtin/simulator.md)：生成模拟数据，用于测试。
 
 ## 预定义的源插件
 
@@ -36,6 +37,7 @@
 - [SQL source](./plugin/sql.md): 定期从关系数据库中拉取数据。
 - [Random source](./plugin/random.md): 一个生成随机数据的源，用于测试。
 - [Zero MQ source](./plugin/zmq.md)：从 Zero MQ 读取数据。
+- [Kafka source](./plugin/kafka.md)： 从 Kafka 中读取数据
 
 ## 源的使用
 

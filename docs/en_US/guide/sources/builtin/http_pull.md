@@ -1,7 +1,7 @@
 # HTTP Pull Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 The HTTP Pull source connector allows eKuiper to retrieve data from external HTTP servers, providing a flexible way to pull data on demand or based on a schedule. This section focuses on how to configure and use the HTTP Pull as a source connector.
 
@@ -93,6 +93,9 @@ Use can specify the global HTTP pull settings here. The configuration items spec
 
 - `privateKeyPath`: Path to the private key, example `d3807d9fa5-private.pem.key`. Can be an absolute or a relative path. For relative paths, refer to the behavior described under `certificationPath`.
 - `rootCaPath`: Path to the root CA. Can be an absolute or a relative path.
+- `certficationRaw`: base64 encoded original text of Cert, use `certificationPath` first if both defined.
+- `privateKeyRaw`: base64 encoded original text of Key, use `privateKeyPath` first if both defined.
+- `rootCARaw`: base64 encoded original text of CA, use `rootCaPath` first if both defined.
 - `insecureSkipVerify`: Control if to skip the certification verification. If set to `true`, then skip certification verification; Otherwise, verify the certification.
 
 #### OAuth Authentication
@@ -133,6 +136,8 @@ Key dynamic properties include:
 
 - `PullTime`: The timestamp of the current pull time in int64 format.
 - `LastPullTime`: The timestamp of the last pull time in int64 format.
+- Properties from oAuth: The properties from the oAuth response body. For example, if access request return json
+  body `{"token": "xxxxxx"}`. Then you can use <span v-pre>`{{.token}}`</span> to get the token.
 
 For HTTP services that allow time-based filtering, `PullTime` and `LastPullTime` can be harnessed for incremental data pulls. Depending on how the service accepts time parameters:
 
@@ -209,3 +214,11 @@ If you favor a more hands-on approach, the Command Line Interface (CLI) offers d
    ```
 
 For a step-by-step guide, check [Streams Management with CLI](../../../api/cli/streams.md).
+
+## Lookup Table
+
+httppull also supports being a lookup table. We can use the create table statement to create an httppull lookup table. It will be tied to the entity relational database and queried on demand:
+
+```text
+CREATE TABLE httppullTable() WITH (DATASOURCE="/url", CONF_KEY="default", TYPE="httppull", KIND="lookup")
+```

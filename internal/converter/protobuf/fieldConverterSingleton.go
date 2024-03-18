@@ -105,7 +105,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 					return r, nil
 				}
 			}, "float", cast.CONVERT_SAMEKIND)
-		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32:
+		case dpb.FieldDescriptorProto_TYPE_INT32, dpb.FieldDescriptorProto_TYPE_SFIXED32, dpb.FieldDescriptorProto_TYPE_SINT32, dpb.FieldDescriptorProto_TYPE_ENUM:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToInt(input, sn)
 				if err != nil {
@@ -341,7 +341,17 @@ func (fc *FieldConverter) DecodeMessage(message *dynamic.Message, outputType *de
 	}
 	result := make(map[string]interface{})
 	for _, field := range outputType.GetFields() {
-		fc.decodeMessageField(message.GetField(field), field, result, cast.CONVERT_SAMEKIND)
+		if oneOf := field.GetOneOf(); oneOf != nil {
+			fd, v, err := message.TryGetOneOfField(oneOf)
+			if err != nil {
+				return err
+			}
+			if fd != nil && v != nil {
+				fc.decodeMessageField(v, fd, result, cast.CONVERT_SAMEKIND)
+			}
+		} else {
+			fc.decodeMessageField(message.GetField(field), field, result, cast.CONVERT_SAMEKIND)
+		}
 	}
 	return result
 }

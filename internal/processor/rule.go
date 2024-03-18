@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
@@ -131,30 +132,6 @@ func (p *RuleProcessor) GetRuleById(id string) (*api.Rule, error) {
 	return p.GetRuleByJsonValidated(s1)
 }
 
-func (p *RuleProcessor) getDefaultRule(name, sql string) *api.Rule {
-	return &api.Rule{
-		Id:  name,
-		Sql: sql,
-		Options: &api.RuleOption{
-			IsEventTime:        false,
-			LateTol:            1000,
-			Concurrency:        1,
-			BufferLength:       1024,
-			SendMetaToSink:     false,
-			SendError:          true,
-			Qos:                api.AtMostOnce,
-			CheckpointInterval: 300000,
-			Restart: &api.RestartStrategy{
-				Attempts:     0,
-				Delay:        1000,
-				Multiplier:   2,
-				MaxDelay:     30000,
-				JitterFactor: 0.1,
-			},
-		},
-	}
-}
-
 // GetRuleByJsonValidated called when the json is getting from trusted source like db
 func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*api.Rule, error) {
 	opt := conf.Config.Rule
@@ -187,6 +164,9 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 	if rule.Id == "" {
 		rule.Id = id
 	}
+	if err := validateRuleID(rule.Id); err != nil {
+		return nil, err
+	}
 	if rule.Sql != "" {
 		if rule.Graph != nil {
 			return nil, fmt.Errorf("Rule %s has both sql and graph.", rule.Id)
@@ -207,6 +187,22 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
 		return nil, fmt.Errorf("Rule %s has invalid options: %s.", rule.Id, err)
 	}
 	return rule, nil
+}
+
+var invalidRuleChars = []string{
+	"/", "#", "%",
+}
+
+func validateRuleID(id string) error {
+	if id != strings.TrimSpace(id) {
+		return fmt.Errorf("ruleID: %v should be trimed", id)
+	}
+	for _, invalidChar := range invalidRuleChars {
+		if strings.Contains(id, invalidChar) {
+			return fmt.Errorf("ruleID:%s contains invalidChar:%v", id, invalidChar)
+		}
+	}
+	return nil
 }
 
 func clone(opt api.RuleOption) *api.RuleOption {

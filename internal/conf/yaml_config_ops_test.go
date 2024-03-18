@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@ import (
 	"os"
 	"reflect"
 	"sort"
+	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 )
@@ -120,11 +122,9 @@ func TestConfigKeys_CopyReadOnlyConfContent(t *testing.T) {
 		t.Error(err)
 	}
 	cf := make(map[string]map[string]interface{})
-	source := `{"default": {"qos": 1, "server": "tcp://127.0.0.1:1883"}, "demo_conf": {"qos": 0, "server": "tcp://10.211.55.6:1883"}}`
+	source := `{"default": {"qos": 1, "server": "tcp://127.0.0.1:1883","insecureSkipVerify":false, "protocolVersion":"3.1.1"}}`
 	_ = yaml.Unmarshal([]byte(source), &cf)
-	if !reflect.DeepEqual(cf, mqttCfg.CopyReadOnlyConfContent()) {
-		t.Errorf("CopyReadOnlyConfContent() fail")
-	}
+	assert.Equal(t, cf, mqttCfg.CopyReadOnlyConfContent())
 }
 
 func TestConfigKeys_GetConfKeys(t *testing.T) {
@@ -134,7 +134,7 @@ func TestConfigKeys_GetConfKeys(t *testing.T) {
 	}
 	keys := mqttCfg.GetConfKeys()
 	// currently only etcCfg, no dataCfg
-	source := []string{"default", "demo_conf"}
+	source := []string{"default"}
 	if keys == nil {
 		t.Errorf("Not Equal")
 	}
@@ -156,7 +156,7 @@ func TestConfigKeys_GetReadOnlyConfKeys(t *testing.T) {
 		t.Error(err)
 	}
 	keys := mqttCfg.GetReadOnlyConfKeys()
-	source := []string{"default", "demo_conf"}
+	source := []string{"default"}
 	if keys == nil {
 		t.Errorf("Not Equal")
 	}
@@ -408,4 +408,45 @@ func isAddData(js string, cf map[string]interface{}) error {
 		}
 	}
 	return nil
+}
+
+func TestCopyUpdatableContent(t *testing.T) {
+	ck := &ConfigKeys{
+		storageType: getStorageType(),
+		lock:        sync.RWMutex{},
+		pluginName:  "neuron",
+		etcCfg:      map[string]map[string]interface{}{},
+		dataCfg:     map[string]map[string]interface{}{"mock": {"mock": "mock"}},
+		delCfgKey:   map[string]struct{}{},
+		saveCfgKey:  map[string]struct{}{},
+	}
+
+	tests := []struct {
+		name   string
+		key    string
+		result map[string]map[string]interface{}
+	}{
+		{
+			name:   "default",
+			key:    "default",
+			result: map[string]map[string]interface{}{},
+		},
+		{
+			name:   "empty",
+			key:    "",
+			result: map[string]map[string]interface{}{},
+		},
+		{
+			name:   "mock",
+			key:    "mock",
+			result: map[string]map[string]interface{}{"mock": {"mock": "mock"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ck.CopyUpdatableConfContentFor([]string{tt.key})
+			assert.Equal(t, tt.result, result)
+		})
+	}
 }

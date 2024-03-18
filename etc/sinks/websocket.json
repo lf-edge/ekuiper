@@ -1,0 +1,136 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "description": {
+      "en_US": "The action is used for publish output message through websocket connection.",
+      "zh_CN": "该操作用于将输出消息发布通过 websocket 链接发送"
+    }
+  },
+  "properties": [
+    {
+      "name": "connectionSelector",
+      "default": "",
+      "optional": true,
+      "control": "select",
+      "type": "string",
+      "values": [],
+      "hint": {
+        "en_US": "specify the source to reuse the connection defined in connection configuration.",
+        "zh_CN": "复用 connection 中定义的连接"
+      },
+      "label": {
+        "en_US": "Connection selector",
+        "zh_CN": "复用连接信息"
+      }
+    },
+    {
+      "name": "addr",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "connection_related": true,
+      "type": "string",
+      "hint": {
+        "en_US": "websocket server address. If this address is defined, then eKuiper will apply for a websocket request to this address. If this address is not defined, then eKuiper will act as the websocket server itself.",
+        "zh_CN": "websocket server 端地址，如果定义了该地址，那么 eKuiper 将会向该地址申请 websocket 请求，如果没有定义该地址，那么 eKuiper 将会自己作为 websocket server 端"
+      },
+      "label": {
+        "en_US": "websocket server address",
+        "zh_CN": "websocket server address"
+      }
+    },
+    {
+      "name": "path",
+      "optional": false,
+      "control": "text",
+      "default": "",
+      "type": "string",
+      "hint": {
+        "en_US": "\nThe url for websocket to apply for a connection. If addr is defined, then eKuiper will apply for a connection to the path where addr is located. If the addr is not defined, then eKuiper will use this url as the websocket server.",
+        "zh_CN": "websocket 申请连接的 url，如果定义了 addr，那么 eKuiper 将会向 addr 所在 path 端申请连接，如果没有定义 url，那么 eKuiper 将会自身以该 url 作为 websocket server 端"
+      },
+      "label": {
+        "en_US": "websocket path",
+        "zh_CN": "websocket path"
+      }
+    },
+    {
+      "name": "certificationPath",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "connection_related": true,
+      "hint": {
+        "en_US": "The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you excuting the kuiperd command. For example, if you run bin/kuiperd from /var/kuiper, then the base path is /var/kuiper; If you run ./kuiperd from /var/kuiper/bin, then the base path is /var/kuiper/bin.",
+        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 kuiperd 命令的路径。比如，如果你在 /var/kuiper 中运行 bin/kuiperd ，那么父目录为 /var/kuiper; 如果运行从 /var/kuiper/bin 中运行./kuiperd，那么父目录为 /var/kuiper/bin"
+      },
+      "label": {
+        "en_US": "Certification path",
+        "zh_CN": "证书路径"
+      }
+    },
+    {
+      "name": "privateKeyPath",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "connection_related": true,
+      "hint": {
+        "en_US": "The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.",
+        "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径，相对路径的用法与 certificationPath 类似"
+      },
+      "label": {
+        "en_US": "Private key path",
+        "zh_CN": "私钥路径"
+      }
+    },
+    {
+      "name": "rootCaPath",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "connection_related": true,
+      "hint": {
+        "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Root Ca path",
+        "zh_CN": "根证书路径"
+      }
+    },
+    {
+      "name": "insecureSkipVerify",
+      "default": false,
+      "optional": true,
+      "control": "radio",
+      "type": "bool",
+      "connection_related": true,
+      "hint": {
+        "en_US": "If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is false. The configuration item can only be used with TLS connections.",
+        "zh_CN": "如果 InsecureSkipVerify 设置为 true, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为false。配置项只能用于TLS连接。"
+      },
+      "label": {
+        "en_US": "Skip Certification verification",
+        "zh_CN": "跳过证书验证"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "websocket",
+      "zh": "websocket"
+    }
+  }
+}

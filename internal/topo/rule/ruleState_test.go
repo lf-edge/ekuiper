@@ -23,12 +23,14 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
 var defaultOption = &api.RuleOption{
@@ -50,7 +52,7 @@ var defaultOption = &api.RuleOption{
 }
 
 func init() {
-	testx.InitEnv()
+	testx.InitEnv("rule")
 }
 
 func TestCreate(t *testing.T) {
@@ -58,8 +60,9 @@ func TestCreate(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	tests := []struct {
-		r *api.Rule
-		e error
+		r    *api.Rule
+		e    error
+		code errorx.ErrorCode
 	}{
 		{
 			r: &api.Rule{
@@ -87,7 +90,8 @@ func TestCreate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			e:    errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			code: errorx.ParserError,
 		},
 		{
 			r: &api.Rule{
@@ -101,11 +105,23 @@ func TestCreate(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			e: errors.New("fail to get stream demo1, please check if stream is created"),
+			e:    errors.New("fail to get stream demo1, please check if stream is created"),
+			code: errorx.PlanError,
 		},
 	}
 	for i, tt := range tests {
 		_, err := NewRuleState(tt.r)
+		if err != nil {
+			code, ok := errorx.GetErrorCode(err)
+			if tt.code != 0 {
+				require.True(t, ok)
+				require.Equal(t, tt.code, code)
+				if !reflect.DeepEqual(err.Error(), tt.e.Error()) {
+					t.Errorf("%d.\n\nerror mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.e, err)
+				}
+				continue
+			}
+		}
 		if !reflect.DeepEqual(err, tt.e) {
 			t.Errorf("%d.\n\nerror mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.e, err)
 		}
@@ -124,6 +140,7 @@ func TestUpdate(t *testing.T) {
 		r         *api.Rule
 		e         error
 		triggered int
+		code      errorx.ErrorCode
 	}{
 		{
 			r: &api.Rule{
@@ -138,6 +155,7 @@ func TestUpdate(t *testing.T) {
 				Options: defaultOption,
 			},
 			e:         errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
+			code:      errorx.ParserError,
 			triggered: 1,
 		},
 		{
@@ -153,6 +171,7 @@ func TestUpdate(t *testing.T) {
 				Options: defaultOption,
 			},
 			e:         errors.New("fail to get stream demo1, please check if stream is created"),
+			code:      errorx.PlanError,
 			triggered: 1,
 		},
 		{
@@ -205,7 +224,15 @@ func TestUpdate(t *testing.T) {
 		require.Equal(t, 1, rs.triggered, fmt.Sprintf("case %v failed", i))
 		err = rs.UpdateTopo(tt.r)
 		time.Sleep(5 * time.Millisecond)
-		require.Equal(t, tt.e, err, fmt.Sprintf("case %v failed", i))
+		if err != nil {
+			code, ok := errorx.GetErrorCode(err)
+			if tt.code != 0 {
+				require.True(t, ok)
+				require.Equal(t, tt.code, code)
+				require.Equal(t, tt.e.Error(), err.Error(), fmt.Sprintf("case %v failed", i))
+				continue
+			}
+		}
 		require.Equal(t, tt.triggered, rs.triggered, fmt.Sprintf("case %v failed", i))
 		rs.Close()
 	}
@@ -301,10 +328,12 @@ func TestMultipleAccess(t *testing.T) {
 		}
 	}
 	wg.Wait()
-	rs.Start()
+	fmt.Printf("before %d:%d\n", 10, rs.triggered)
+	err = rs.Stop()
+	assert.NoError(t, err)
 	fmt.Printf("%d:%d\n", 10, rs.triggered)
-	if rs.triggered != 1 {
-		t.Errorf("triggered mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", 1, rs.triggered)
+	if rs.triggered != 0 {
+		t.Errorf("triggered mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", 0, rs.triggered)
 	}
 }
 

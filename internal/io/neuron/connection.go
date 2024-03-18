@@ -177,5 +177,5 @@ func publish(ctx api.StreamContext, data []byte, info *conninfo) error {
 	if info.sock != nil && atomic.LoadInt32(&info.opened) == 1 {
 		return info.sock.Send(data)
 	}
-	return fmt.Errorf("%s: neuron connection is not established", errorx.IOErr)
+	return errorx.NewIOErr(`neuron connection is not established`)
 }

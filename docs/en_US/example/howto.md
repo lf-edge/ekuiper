@@ -27,15 +27,23 @@ To run an example, we recommend that you use File source as input for ease of de
 When running an example, most examples will follow these conventions, and the following will not be repeated.
 
 - We will create a data stream, the data source is file source, the data stream name is `demoStream`. Through the file source, we can conveniently **"replay"** the data prepared in the first step.
-- The output action of the rule is MQTT sink, which outputs the data to the `result/{{ruleId}}` topic.
+- The output action of the rule is MQTT sink, which outputs the data to the <code v-pre>result/{{ruleId}}</code> topic.
 
 Next, we will introduce how to use the eKuiper manager UI to run an example. When we open an example document, the steps to run the example are as follows:
 
 1. Prepare data: Read the input sample part, **copy the sample data to a file**, or [use your own data](#record-data) and save it to a file.
 2. Upload data: In the eKuiper manager UI, click **Configuration** in the navigation bar to enter the configuration management page, select the **Files Management** tab, click **Create File**, upload the saved file, such as `mock.lines`.
 3. Create file stream: In the eKuiper manager UI, click **Source** in the navigation bar to enter the stream management page. Click **Create stream**, in the pop-up dialog box, set stream name to `demoStream`,select **file** for stream type and fill in the data source as the file name uploaded in the second step. ![replay_source.png](./resources/replay_source.png) Click **Add configuration key** button, in the stream configuration, set **File path** to the path of the file uploaded in the files management. ![replay_conf.png](./resources/replay_conf.png) Click **OK** to create the stream.
-4. Subscribe to the result: Use [MQTT X](https://mqttx.app/), subscribe to the `result/{{ruleId}}` topic, and prepare to view the output results of the rule.
-5. Create rule: In the eKuiper manager UI, click **Rules** in the navigation bar to enter the rule management page. Click **Create rule**, and in the pop-up dialog box, fill in the RuleId, Rule Name and Rule SQL. **The rule SQL is the SQL in the specific example document.** ![replay_sql.png](./resources/replay_sql.png) At the rule actions section, click **Add** to enter the action editing dialog. Select Sink as `mqtt`, and fill in the MQTT topic as `result/{{ruleId}}`. By this way, the rule result will be sent to that topic so that we can view it in MQTT X. ![replay_action.png](./resources/replay_action.png) Click **OK** to create the rule. Back in the rule list page, make sure the rule status is **Running**. Click on the rule status to make sure the rule has received and processed data.
+4. Subscribe to the result: Use [MQTT X](https://mqttx.app/), subscribe to the <code v-pre>result/{{ruleId}}</code>
+   topic, and prepare to view the output results of the rule.
+5. Create rule: In the eKuiper manager UI, click **Rules** in the navigation bar to enter the rule management page.
+   Click **Create rule**, and in the pop-up dialog box, fill in the RuleId, Rule Name and Rule SQL. **The rule SQL is
+   the SQL in the specific example document.** ![replay_sql.png](./resources/replay_sql.png) At the rule actions
+   section, click **Add** to enter the action editing dialog. Select Sink as `mqtt`, and fill in the MQTT topic
+   as <code v-pre>result/{{ruleId}}</code>. By this way, the rule result will be sent to that topic so that we can view
+   it in MQTT X. ![replay_action.png](./resources/replay_action.png) Click **OK** to create the rule. Back in the rule
+   list page, make sure the rule status is **Running**. Click on the rule status to make sure the rule has received and
+   processed data.
 6. View result: Use MQTT X to view the output result of the rule.
 
 ## Summary

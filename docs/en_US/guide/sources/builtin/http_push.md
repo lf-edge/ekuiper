@@ -1,7 +1,7 @@
 # HTTP Push Source Connector
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
 
 In IoT ecosystems, devices often need to transmit data to processing platforms. The HTTP Push connector in eKuiper allows devices to send their data directly to eKuiper for real-time processing. With eKuiper acting as an endpoint, devices can send data using standard HTTP methods, making integration seamless and straightforward.
 

@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,13 +51,28 @@ func SafeRun(fn func() error) (err error) {
 // Thus the latter error will just skip
 // It is usually the error outlet of a op/rule.
 func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
-	if ctx != nil {
-		ctx.GetLogger().Errorf("runtime error: %v", err)
-	} else {
-		conf.Log.Errorf("runtime error: %v", err)
+	if err != nil {
+		if ctx != nil {
+			ctx.GetLogger().Errorf("runtime error: %v", err)
+		} else {
+			conf.Log.Errorf("runtime error: %v", err)
+		}
 	}
 	select {
 	case errCh <- err:
 	default:
+	}
+}
+
+// DrainCtrl a non-block function to send out the signal to the ctrl channel
+// It will retry in blocking mode once the channel is full and make sure it is delivered finally but may lose order
+func DrainCtrl(ctx api.StreamContext, signal any, ctrlCh chan<- any) {
+	select {
+	case ctrlCh <- signal:
+	default:
+		ctx.GetLogger().Warnf("failed to send signal %v to ctrl channel, retry", signal)
+		go func() {
+			ctrlCh <- signal
+		}()
 	}
 }

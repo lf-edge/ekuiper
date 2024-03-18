@@ -1,8 +1,8 @@
 # Sql 源
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
-<span style="background:green;color:white">lookup table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">lookup table source</span>
 
 源将定期查询数据库以获取数据流。
 
@@ -11,6 +11,8 @@
 此插件必须与至少一个数据库驱动程序一起使用。我们使用构建标签来确定将包含哪个驱动程序。[此处](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqldatabase/driver)列出了所有支持的驱动程序。
 
 该插件默认支持 `sqlserver\postgres\mysql\sqlite3\oracle` 驱动。用户可以自己编译只支持一个驱动的插件，例如如果他只想要sqlserver，那么他可以用 build tag sqlserver 构建。
+
+当使用 `sqlserver` 作为目标时，需要确认该 `sqlserver` 暴露了 1434 端口。
 
 ### 默认构建命令
 
@@ -107,11 +109,13 @@ template_config:
 * `dateTimeFormat`: 同上
 
 ::: v-pre
+
 | TemplateSql                                                                                       | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
 | ------------------------------------------------------------------------------------------------- | ------------ | --------------------- | -------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
 | select * from Student limit 10                                                                    |              |                       |                |                       | select * from Student limit 10                                                                      |
 | select * from Student where stun > {{.stun}} limit 10                                             | stun         | 100                   |                |                       | select * from Student where stun > 100 limit 10                                                     |
 | select * from Student where registerTime > '{{.registerTime}}' order by registerTime ASC limit 10 | registerTime | "2022-04-21 10:23:55" | "DATETIME"     | "YYYY-MM-dd HH:mm:ss" | select * from Student where registerTime > '2022-04-21 10:23:55' order by registerTime ASC limit 10 |
+
 :::
 
 ### *注意*: 用户只需要设置 internalSqlQueryCfg 或 templateSqlQueryCfg，如果两者都设置，将使用 templateSqlQueryCfg

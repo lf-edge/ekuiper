@@ -1,8 +1,8 @@
 # Sql Source
 
-<span style="background:green;color:white;">stream source</span>
-<span style="background:green;color:white">scan table source</span>
-<span style="background:green;color:white">lookup table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">stream source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">scan table source</span>
+<span style="background:green;color:white;padding:1px;margin:2px">lookup table source</span>
 
 The source will query the database periodically to get data stream.
 
@@ -13,6 +13,8 @@ This [repository](https://github.com/lf-edge/ekuiper/tree/master/extensions/sqld
 
 This plugin supports `sqlserver\postgres\mysql\sqlite3\oracle` drivers by default. User can compile plugin that only support one driver by himself,
 for example, if he only wants sqlserver, then he can build with build tag `sqlserver`.
+
+When using `sqlserver` as the target, you need to confirm that the `sqlserver` exposes port 1434.
 
 ### Default build command
 
@@ -108,11 +110,13 @@ The target database url
 * `dateTimeFormat`: data time format for the index field
 
 ::: v-pre
+
 | TemplateSql                                                                                       | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
 | ------------------------------------------------------------------------------------------------- | ------------ | --------------------- | -------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
 | select * from Student limit 10                                                                    |              |                       |                |                       | select * from Student limit 10                                                                      |
 | select * from Student where stun > {{.stun}} limit 10                                             | stun         | 100                   |                |                       | select * from Student where stun > 100 limit 10                                                     |
 | select * from Student where registerTime > '{{.registerTime}}' order by registerTime ASC limit 10 | registerTime | "2022-04-21 10:23:55" | "DATETIME"     | "YYYY-MM-dd HH:mm:ss" | select * from Student where registerTime > '2022-04-21 10:23:55' order by registerTime ASC limit 10 |
+
 :::
 
 ### *Note*: users only need set internalSqlQueryCfg or templateSqlQueryCfg, if both set, templateSqlQueryCfg will be used

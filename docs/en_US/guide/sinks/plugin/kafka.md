@@ -54,13 +54,58 @@ Restart the eKuiper server to activate the plugin.
 
 ## Properties
 
-| Property name | Optional | Description                                       |
-|---------------|----------|---------------------------------------------------|
-| brokers       | false    | The broker address list ,split with ","           |
-| topic         | false    | The topic of the Kafka                            |
-| saslAuthType  | false    | The Kafka sasl authType, support none,plain,scram |
-| saslUserName  | true     | The sasl user name                                |
-| saslPassword  | true     | The sasl password                                 |
+| Property name      | Optional | Description                                       |
+|--------------------|----------|---------------------------------------------------|
+| brokers            | false    | The broker address list ,split with ","           |
+| topic              | false    | The topic of the Kafka                            |
+| saslAuthType       | false    | The Kafka sasl authType, support none,plain,scram |
+| saslUserName       | true     | The sasl user name                                |
+| saslPassword       | true     | The sasl password                                 |
+| insecureSkipVerify | true | whether to ignore SSL verification |
+| certificationPath  | true | Kafka client ssl verification Cert file path |
+| privateKeyPath     | true | Key file path for Kafka client SSL verification |
+| rootCaPath         | true | Kafka client ssl verified CA certificate file path |
+| certficationRaw    | true | Kafka client ssl verified Cert base64 encoded original text, use `certificationPath` first if both defined |
+| privateKeyRaw      | true | Kafka client ssl verified Key base64 encoded original text, use `privateKeyPath` first if both defined |
+| rootCARaw          | true | Kafka client ssl verified CA base64 encoded original text, use `rootCaPath` first if both defined |
+| maxAttempts        | true | The number of retries the Kafka client sends messages to the server, the default is 1 |
+| requiredACKs       | true | The mechanism for Kafka client to confirm messages, -1 means waiting for leader confirmation, 1 means waiting for confirmation from all replicas, 0 means not waiting for confirmation, default -1 |
+| key                | true | Key information carried by the Kafka client in messages sent to the server |
+| headers            | true     | The header information carried by the Kafka client in the message sent to the server |
+
+### Setting Kafka Key and Headers
+
+Set the metadata when the Kafka client sends messages through keys and headers:
+
+```json
+{
+    "key": "keyValue",
+    "headers": {
+        "headerKey1": "headerValue1",
+        "headerKey2": "headerValue2"
+    }
+}
+```
+
+Through the template template, dynamically set the metadata when the Kafka client sends a message:
+
+```json
+{
+    "key": "{{.data.key}}",
+    "headers": {
+        "headerKey1": "{{.data.col1}}",
+        "headerKey2": "{{.data.col2}}"
+    }
+}
+```
+
+Set the key metadata of the map structure in the Kafka client:
+
+```json
+{
+  "key": "{\"keyMapkey\":\"{{.data.key.value}}\"}"
+}
+```
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 

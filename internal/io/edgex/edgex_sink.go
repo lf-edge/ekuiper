@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,7 +54,8 @@ type EdgexMsgBusSink struct {
 	config map[string]interface{}
 	topic  string
 
-	cli api.MessageClient
+	cli        api.MessageClient
+	sendParams map[string]any
 }
 
 func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
@@ -83,7 +84,9 @@ func (ems *EdgexMsgBusSink) Configure(ps map[string]interface{}) error {
 	}
 	ems.c = c
 	ems.config = ps
-
+	ems.sendParams = map[string]any{
+		"contentType": ems.c.ContentType,
+	}
 	return nil
 }
 
@@ -509,12 +512,9 @@ func (ems *EdgexMsgBusSink) Collect(ctx api.StreamContext, item interface{}) err
 		topic = ems.topic
 	}
 
-	para := map[string]interface{}{
-		"contentType": ems.c.ContentType,
-	}
-	if e := ems.cli.Publish(ctx, topic, data, para); e != nil {
+	if e := ems.cli.Publish(ctx, topic, data, ems.sendParams); e != nil {
 		logger.Errorf("%s: found error %s when publish to EdgeX message bus.\n", e.Error(), e.Error())
-		return fmt.Errorf("%s:%s", errorx.IOErr, e.Error())
+		return errorx.NewIOErr(e.Error())
 	}
 	logger.Debugf("Published %+v to EdgeX message bus topic %s", evt, topic)
 

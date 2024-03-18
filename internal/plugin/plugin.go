@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -110,4 +110,5 @@ const (
 	PORTABLE_EXTENSION
 	SERVICE_EXTENSION
 	WASM_EXTENSION
+	JS_EXTENSION
 )

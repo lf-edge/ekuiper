@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@ package mqtt
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	mqttClient "github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -39,6 +42,7 @@ type MQTTSink struct {
 	config     map[string]interface{}
 	cli        api.MessageClient
 	compressor message.Compressor
+	sendParams map[string]any
 }
 
 func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
@@ -50,6 +54,27 @@ func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
 	return false
 }
 
+func validateMQTTSinkTopic(topic string) error {
+	if strings.Contains(topic, "#") || strings.Contains(topic, "+") {
+		return fmt.Errorf("mqtt sink topic shouldn't contain # or +")
+	}
+	return nil
+}
+
+func (ms *MQTTSink) Ping(_ string, props map[string]interface{}) error {
+	if err := ms.Configure(props); err != nil {
+		return err
+	}
+	cli, err := clients.GetClient("mqtt", ms.config)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		clients.ReleaseClient(context.Background(), cli)
+	}()
+	return cli.Ping()
+}
+
 func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	adconf := &AdConf{}
 	err := cast.MapToStruct(ps, adconf)
@@ -59,6 +84,9 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 
 	if adconf.Tpc == "" {
 		return fmt.Errorf("mqtt sink is missing property topic")
+	}
+	if err := validateMQTTSinkTopic(adconf.Tpc); err != nil {
+		return err
 	}
 	if adconf.Qos != 0 && adconf.Qos != 1 && adconf.Qos != 2 {
 		return fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", adconf.Qos)
@@ -74,7 +102,12 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 		adconf.ResendTopic = adconf.Tpc
 	}
 	ms.adconf = adconf
-	return nil
+	ms.sendParams = map[string]any{
+		"qos":      adconf.Qos,
+		"retained": adconf.Retained,
+	}
+	mc := &mqttClient.MQTTClient{}
+	return mc.CfgValidate(ms.config)
 }
 
 func (ms *MQTTSink) Open(ctx api.StreamContext) error {
@@ -116,13 +149,8 @@ func (ms *MQTTSink) collectWithTopic(ctx api.StreamContext, item interface{}, to
 		return err
 	}
 
-	para := map[string]interface{}{
-		"qos":      ms.adconf.Qos,
-		"retained": ms.adconf.Retained,
-	}
-
-	if err := ms.cli.Publish(ctx, tpc, jsonBytes, para); err != nil {
-		return fmt.Errorf("%s: %s", errorx.IOErr, err.Error())
+	if err := ms.cli.Publish(ctx, tpc, jsonBytes, ms.sendParams); err != nil {
+		return errorx.NewIOErr(err.Error())
 	}
 	return nil
 }

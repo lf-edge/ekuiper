@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -495,23 +495,37 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			}
 		}
 	}()
+	yamlFileChecked := false
+	soFileChecked := false
+	zipFiles := make([]string, 0)
 	for _, file := range r.File {
+		zipFiles = append(zipFiles, file.Name)
 		fileName := file.Name
-		if yamlFile == fileName {
-			err = filex.UnzipTo(file, yamlPath)
-			if err != nil {
-				return version, err
+		switch {
+		case yamlFile == fileName:
+			yamlFileChecked = true
+			// skip yaml file if exists
+			if _, err := os.Stat(yamlPath); err != nil && os.IsNotExist(err) {
+				conf.Log.Infof("install %s due to no this file", yamlPath)
+				err = filex.UnzipTo(file, yamlPath)
+				if err != nil {
+					return version, err
+				}
+				revokeFiles = append(revokeFiles, yamlPath)
+				filenames = append(filenames, yamlPath)
+			} else {
+				filenames = append(filenames, yamlPath)
+				conf.Log.Infof("skip install %s due to already exists", yamlPath)
+				continue
 			}
-			revokeFiles = append(revokeFiles, yamlPath)
-			filenames = append(filenames, yamlPath)
-		} else if fileName == name+".json" {
+		case fileName == name+".json":
 			jsonPath := path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], fileName)
 			if err := filex.UnzipTo(file, jsonPath); nil != err {
 				conf.Log.Errorf("Failed to decompress the metadata %s file", fileName)
 			} else {
 				revokeFiles = append(revokeFiles, jsonPath)
 			}
-		} else if soPrefix.Match([]byte(fileName)) {
+		case soPrefix.Match([]byte(fileName)):
 			soPath = path.Join(rr.pluginDir, plugin2.PluginTypes[t], fileName)
 			err = filex.UnzipTo(file, soPath)
 			if err != nil {
@@ -520,12 +534,13 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 			filenames = append(filenames, soPath)
 			revokeFiles = append(revokeFiles, soPath)
 			soName, version = parseName(fileName)
-		} else if strings.HasPrefix(fileName, "etc/") {
+			soFileChecked = true
+		case strings.HasPrefix(fileName, "etc/"):
 			err = filex.UnzipTo(file, path.Join(rr.pluginConfDir, plugin2.PluginTypes[t], strings.Replace(fileName, "etc", name, 1)))
 			if err != nil {
 				return version, err
 			}
-		} else { // unzip other files
+		default:
 			err = filex.UnzipTo(file, path.Join(tempPath, fileName))
 			if err != nil {
 				return version, err
@@ -533,7 +548,7 @@ func (rr *Manager) install(t plugin2.PluginType, name, src string, shellParas []
 		}
 	}
 	if len(filenames) != expFiles {
-		err = fmt.Errorf("invalid zip file: so file or conf file is missing")
+		err = fmt.Errorf("invalid zip file: expectFiles: %v, got filenames:%v, zipFiles: %v, yamlFileChecked:%v, soFileChecked:%v", expFiles, filenames, zipFiles, yamlFileChecked, soFileChecked)
 		return version, err
 	} else if haveInstallFile {
 		// run install script if there is
@@ -839,22 +854,23 @@ func (rr *Manager) GetAllPluginsStatus() map[string]string {
 const BOOT_INSTALL = "$boot_install"
 
 // PluginImport save the plugin install information and wait for restart
-func (rr *Manager) PluginImport(plugins map[string]string) error {
+func (rr *Manager) PluginImport(plugins map[string]string) map[string]string {
+	errMap := map[string]string{}
 	if len(plugins) == 0 {
 		return nil
 	}
 	for k, v := range plugins {
 		err := rr.plgInstallDb.Set(k, v)
 		if err != nil {
-			return err
+			errMap[k] = err.Error()
 		}
 	}
 	// set the flag to install the plugins when eKuiper reboot
 	err := rr.plgInstallDb.Set(BOOT_INSTALL, BOOT_INSTALL)
 	if err != nil {
-		return err
+		errMap["flag"] = err.Error()
 	}
-	return nil
+	return errMap
 }
 
 // PluginPartialImport compare the plugin to be installed and the one in database

@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateTLSForClient(t *testing.T) {
@@ -135,7 +137,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 			name: "no cert/key",
 			args: args{
 				Opts: TlsConfigurationOptions{
-					SkipCertVerify:       true,
+					SkipCertVerify:       false,
 					CertFile:             "not_exist.crt",
 					KeyFile:              "not_exist.key",
 					CaFile:               "",
@@ -150,7 +152,7 @@ func TestGenerateTLSForClient(t *testing.T) {
 			name: "no cert/key",
 			args: args{
 				Opts: TlsConfigurationOptions{
-					SkipCertVerify:       true,
+					SkipCertVerify:       false,
 					CertFile:             "",
 					KeyFile:              "",
 					CaFile:               "not_exist.crt",
@@ -161,10 +163,29 @@ func TestGenerateTLSForClient(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "skip check",
+			args: args{
+				Opts: TlsConfigurationOptions{
+					SkipCertVerify:       true,
+					CertFile:             "",
+					KeyFile:              "",
+					CaFile:               "not_exist.crt",
+					RenegotiationSupport: "",
+					TLSMinVersion:        "",
+				},
+			},
+			want: &tls.Config{
+				InsecureSkipVerify: true,
+				MinVersion:         tls.VersionTLS12,
+				Renegotiation:      tls.RenegotiateNever,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateTLSForClient(tt.args.Opts)
+			got, err := GenerateTLSForClient(&tt.args.Opts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateTLSForClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -173,5 +194,49 @@ func TestGenerateTLSForClient(t *testing.T) {
 				t.Errorf("GenerateTLSForClient() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestGenTLSConfig(t *testing.T) {
+	m := map[string]interface{}{}
+	c, err := GenTLSConfig(m, "")
+	require.NoError(t, err)
+	require.Nil(t, c)
+
+	var opts *TlsConfigurationOptions
+	opts.TlsConfigLog("")
+	opts = &TlsConfigurationOptions{}
+	opts.TlsConfigLog("")
+	opts.SkipCertVerify = true
+	opts.TlsConfigLog("")
+	opts.SkipCertVerify = false
+	opts.CertificationRaw = "mock"
+	opts.PrivateKeyRaw = "mock"
+	opts.RootCARaw = "mock"
+	opts.TlsConfigLog("")
+}
+
+func TestGenOptions(t *testing.T) {
+	testcases := []struct {
+		m       map[string]interface{}
+		options *TlsConfigurationOptions
+	}{
+		{
+			m:       map[string]interface{}{},
+			options: nil,
+		},
+		{
+			m: map[string]interface{}{
+				"insecureSkipVerify": true,
+			},
+			options: &TlsConfigurationOptions{
+				SkipCertVerify: true,
+			},
+		},
+	}
+	for _, tc := range testcases {
+		opt, err := genTlsConfigurationOptions(tc.m)
+		require.NoError(t, err)
+		require.Equal(t, tc.options, opt)
 	}
 }

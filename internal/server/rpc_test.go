@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/meta"
@@ -147,16 +150,19 @@ func (suite *ServerTestSuite) TestRule() {
 	err = suite.s.StopRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Rule myRule was stopped.", reply)
+	fmt.Println("rule stopped")
 
 	reply = ""
 	err = suite.s.StartRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Rule myRule was started", reply)
+	fmt.Println("rule started")
 
 	reply = ""
 	err = suite.s.RestartRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Rule myRule was restarted.", reply)
+	fmt.Println("rule restarted")
 
 	reply = ""
 	err = suite.s.DropRule(ruleId, &reply)
@@ -178,7 +184,7 @@ func (suite *ServerTestSuite) TestImportAndExport() {
 	os.Remove(file)
 }
 
-func (suite *ServerTestSuite) TestConfigurarion() {
+func (suite *ServerTestSuite) TestConfiguration() {
 	importArg := model.ImportDataDesc{
 		FileName: "rpc_test_data/import_configuration.json",
 		Stop:     false,
@@ -187,12 +193,12 @@ func (suite *ServerTestSuite) TestConfigurarion() {
 	var reply string
 	err := suite.s.ImportConfiguration(&importArg, &reply)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "{\n  \"ErrorMsg\": \"\",\n  \"ConfigResponse\": {\n    \"streams\": {},\n    \"tables\": {},\n    \"rules\": {},\n    \"nativePlugins\": {},\n    \"portablePlugins\": {},\n    \"sourceConfig\": {},\n    \"sinkConfig\": {},\n    \"connectionConfig\": {},\n    \"Service\": {},\n    \"Schema\": {},\n    \"uploads\": {}\n  }\n}", reply)
+	assert.Equal(suite.T(), "{\n  \"ErrorMsg\": \"\",\n  \"ConfigResponse\": {\n    \"streams\": {},\n    \"tables\": {},\n    \"rules\": {},\n    \"nativePlugins\": {},\n    \"portablePlugins\": {},\n    \"sourceConfig\": {},\n    \"sinkConfig\": {},\n    \"connectionConfig\": {},\n    \"Service\": {},\n    \"Schema\": {},\n    \"uploads\": {},\n    \"scripts\": {}\n  }\n}", reply)
 
 	reply = ""
 	err = suite.s.GetStatusImport(1, &reply)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "{\n  \"streams\": {},\n  \"tables\": {},\n  \"rules\": {},\n  \"nativePlugins\": {},\n  \"portablePlugins\": {},\n  \"sourceConfig\": {},\n  \"sinkConfig\": {},\n  \"connectionConfig\": {},\n  \"Service\": {},\n  \"Schema\": {},\n  \"uploads\": {}\n}", reply)
+	assert.Equal(suite.T(), "{\n  \"streams\": {},\n  \"tables\": {},\n  \"rules\": {},\n  \"nativePlugins\": {},\n  \"portablePlugins\": {},\n  \"sourceConfig\": {},\n  \"sinkConfig\": {},\n  \"connectionConfig\": {},\n  \"Service\": {},\n  \"Schema\": {},\n  \"uploads\": {},\n  \"scripts\": {}\n}", reply)
 
 	reply = ""
 	exportArg := model.ExportDataDesc{
@@ -215,4 +221,15 @@ func (suite *ServerTestSuite) TearDownTest() {
 
 func TestServerTestSuite(t *testing.T) {
 	suite.Run(t, new(ServerTestSuite))
+}
+
+func TestGetStoppedMessage(t *testing.T) {
+	message := `"123","123","123"`
+	r, err := getStoppedState(message)
+	require.NoError(t, err)
+	v := map[string]string{}
+	err = json.Unmarshal([]byte(r), &v)
+	require.NoError(t, err)
+	require.Equal(t, "stopped", v["status"])
+	require.Equal(t, message, v["message"])
 }

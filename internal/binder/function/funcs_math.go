@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,20 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"math/cmplx"
 	"math/rand"
+	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+)
+
+const (
+	RadToDeg = 180 / math.Pi
+	DegToRad = math.Pi / 180
 )
 
 func registerMathFunc() {
@@ -269,7 +278,7 @@ func registerMathFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
-				r := math.Log2(v)
+				r := math.Log(v)
 				if math.IsNaN(r) {
 					return nil, true
 				} else {
@@ -480,4 +489,198 @@ func registerMathFunc() {
 		val:   ValidateOneNumberArg,
 		check: returnNilIfHasAnyNil,
 	}
+	builtins["cot"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				r := real(cmplx.Cot(complex(v, 0)))
+				if math.IsNaN(r) {
+					return nil, true
+				} else if math.IsInf(r, 0) {
+					return errors.New("out-of-range error"), false
+				} else {
+					return r, true
+				}
+			} else {
+				return e, false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["radians"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				r := radians(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
+			} else {
+				return e, false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["degrees"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			if v, e := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND); e == nil {
+				r := degrees(v)
+				if math.IsNaN(r) {
+					return nil, true
+				} else {
+					return r, true
+				}
+			} else {
+				return e, false
+			}
+		},
+		val:   ValidateOneNumberArg,
+		check: returnNilIfHasAnyNil,
+	}
+	builtins["conv"] = builtinFunc{
+		fType: ast.FuncTypeScalar,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0 := cast.ToStringAlways(args[0])
+			arg1, _ := cast.ToInt64(args[1], cast.CONVERT_SAMEKIND)
+			arg2, _ := cast.ToInt64(args[2], cast.CONVERT_SAMEKIND)
+
+			res, isNull, err := conv(arg0, arg1, arg2)
+			if err != nil {
+				return err, false
+			}
+			if isNull {
+				return nil, true
+			}
+			return res, true
+		},
+
+		val: func(_ api.FunctionContext, args []ast.Expr) error {
+			if err := ValidateLen(3, len(args)); err != nil {
+				return err
+			}
+			if !ast.IsIntegerArg(args[1]) {
+				return ProduceErrInfo(1, "integer")
+			}
+			if !ast.IsIntegerArg(args[2]) {
+				return ProduceErrInfo(2, "integer")
+			}
+			return nil
+		},
+		check: returnNilIfHasAnyNil,
+	}
+}
+
+func radians(degrees float64) float64 {
+	return degrees * (DegToRad)
+}
+
+func degrees(radians float64) float64 {
+	return radians * (RadToDeg)
+}
+
+func conv(str string, fromBase, toBase int64) (res string, isNull bool, err error) {
+	var (
+		signed     bool
+		negative   bool
+		ignoreSign bool
+	)
+	if fromBase < 0 {
+		fromBase = -fromBase
+		signed = true
+	}
+
+	if toBase < 0 {
+		toBase = -toBase
+		ignoreSign = true
+	}
+
+	if fromBase > 36 || fromBase < 2 || toBase > 36 || toBase < 2 {
+		return res, true, nil
+	}
+
+	str = getValidPrefix(strings.TrimSpace(str), fromBase)
+	if len(str) == 0 {
+		return "0", false, nil
+	}
+
+	if str[0] == '-' {
+		negative = true
+		str = str[1:]
+	}
+
+	val, err := strconv.ParseUint(str, int(fromBase), 64)
+	if err != nil {
+		return res, false, err
+	}
+	if signed {
+		if negative && val > -math.MinInt64 {
+			val = -math.MinInt64
+		}
+		if !negative && val > math.MaxInt64 {
+			val = math.MaxInt64
+		}
+	}
+	if negative {
+		val = -val
+	}
+
+	if int64(val) < 0 {
+		negative = true
+	} else {
+		negative = false
+	}
+	if ignoreSign && negative {
+		val = 0 - val
+	}
+
+	s := strconv.FormatUint(val, int(toBase))
+	if negative && ignoreSign {
+		s = "-" + s
+	}
+	res = strings.ToUpper(s)
+	return res, false, nil
+}
+
+// getValidPrefix gets a prefix of string which can parsed to a number with base. the minimum base is 2 and the maximum is 36.
+func getValidPrefix(s string, base int64) string {
+	var (
+		validLen int
+		upper    rune
+	)
+	switch {
+	case base >= 2 && base <= 9:
+		upper = rune('0' + base)
+	case base <= 36:
+		upper = rune('A' + base - 10)
+	default:
+		return ""
+	}
+Loop:
+	for i := 0; i < len(s); i++ {
+		c := rune(s[i])
+		switch {
+		case unicode.IsDigit(c) || unicode.IsLower(c) || unicode.IsUpper(c):
+			c = unicode.ToUpper(c)
+			if c < upper {
+				validLen = i + 1
+			} else {
+				break Loop
+			}
+		case c == '+' || c == '-':
+			if i != 0 {
+				break Loop
+			}
+		default:
+			break Loop
+		}
+	}
+	if validLen > 1 && s[0] == '+' {
+		return s[1:validLen]
+	}
+	return s[:validLen]
 }

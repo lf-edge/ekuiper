@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -347,6 +347,9 @@ func registerAggFunc() {
 			if !ok {
 				return fmt.Errorf("the first argument to the aggregate function should be []interface but found %[1]T(%[1]v)", args[0]), false
 			}
+			if len(arg0) == 0 {
+				return nil, true
+			}
 			args1, ok := args[1].([]interface{})
 			if !ok {
 				return fmt.Errorf("the second argument to the aggregate function should be []interface but found %[1]T(%[1]v)", args[1]), false
@@ -354,9 +357,6 @@ func registerAggFunc() {
 			arg1, ok := getFirstValidArg(args1).(bool)
 			if !ok {
 				return fmt.Errorf("the second parameter requires bool but found %[1]T(%[1]v)", getFirstValidArg(args1)), false
-			}
-			if len(arg0) == 0 {
-				return nil, true
 			}
 			if arg1 {
 				for i := len(arg0) - 1; i >= 0; i-- {

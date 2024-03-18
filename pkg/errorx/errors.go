@@ -14,17 +14,6 @@
 
 package errorx
 
-type ErrorCode int
-
-const (
-	GENERAL_ERR ErrorCode = iota
-	NOT_FOUND
-)
-
-const IOErr = "io error"
-
-var NotFoundErr = NewWithCode(NOT_FOUND, "not found")
-
 type Error struct {
 	msg  string
 	code ErrorCode
@@ -44,4 +33,9 @@ func (e *Error) Error() string {
 
 func (e *Error) Code() ErrorCode {
 	return e.code
+}
+
+type ErrorWithCode interface {
+	Error() string
+	Code() ErrorCode
 }

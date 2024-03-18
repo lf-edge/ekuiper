@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -182,8 +182,10 @@ func (m *Manager) initFile(baseName string) error {
 			info.Interfaces[name].Functions = functions
 			for i, f := range functions {
 				err := m.functionKV.Set(f, &functionContainer{
+					FuncName:      f,
 					ServiceName:   serviceName,
 					InterfaceName: name,
+					Addr:          info.Interfaces[name].Addr,
 					MethodName:    methods[i],
 				})
 				if err != nil {
@@ -191,9 +193,12 @@ func (m *Manager) initFile(baseName string) error {
 				}
 			}
 		} else {
+			info.Interfaces[name].Functions = []string{name}
 			err := m.functionKV.Set(name, &functionContainer{
+				FuncName:      name,
 				ServiceName:   serviceName,
 				InterfaceName: name,
+				Addr:          info.Interfaces[name].Addr,
 				MethodName:    name,
 			})
 			if err != nil {
@@ -447,8 +452,17 @@ func (m *Manager) unzip(name, src string) error {
 	return nil
 }
 
-func (m *Manager) ListFunctions() ([]string, error) {
-	return m.functionKV.Keys()
+func (m *Manager) ListFunctions() ([]*functionContainer, error) {
+	keys, err := m.functionKV.Keys()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*functionContainer, len(keys))
+	for i, k := range keys {
+		f, _ := m.GetFunction(k)
+		result[i] = f
+	}
+	return result, nil
 }
 
 func (m *Manager) GetFunction(name string) (*functionContainer, error) {

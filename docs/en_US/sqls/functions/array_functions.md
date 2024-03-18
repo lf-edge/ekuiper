@@ -17,7 +17,7 @@ array_position(array, value)
 ```
 
 Return a 0-based index of the first occurrence of val if it is found within an array. If val does not exist within the
-array, it returns -1.
+array, it returns -1. When array is nil, -1 is returned.
 
 ## ELEMENT_AT
 
@@ -25,7 +25,7 @@ array, it returns -1.
 element_at(array, index)
 ```
 
-Returns element of the array at index val. If val < 0, this function accesses elements from the last to the first.
+Returns element of the array at index val. If val < 0, this function accesses elements from the last to the first. When array is nil, nil is returned.
 
 ## ARRAY_CONTAINS
 
@@ -33,7 +33,7 @@ Returns element of the array at index val. If val < 0, this function accesses el
 array_contains(array, value)
 ```
 
-Returns true if array contains the element.
+Returns true if array contains the element. When array is nil, nil is returned.
 
 ## ARRAY_CREATE
 
@@ -49,7 +49,7 @@ Construct an array from literals.
 array_remove(array, value)
 ```
 
-Returns the array with all occurrences of value removed.
+Returns the array with all occurrences of value removed. When array is nil, nil is returned.
 
 ## ARRAY_LAST_POSITION
 
@@ -58,7 +58,7 @@ array_last_position(array, val)
 ```
 
 Return a 0-based index of the last occurrence of val if it is found within the array. If val does not exist within the
-array, it returns -1.
+array, it returns -1. When array is nil, -1 is returned.
 
 ## ARRAY_CONTAINS_ANY
 
@@ -66,7 +66,7 @@ array, it returns -1.
 array_contains_any(array1, array2)
 ```
 
-Returns true if array1 and array2 have any elements in common.
+Returns true if array1 and array2 have any elements in common. When array1 is nil, false is returned.
 
 ## ARRAY_INTERSECT
 
@@ -74,7 +74,7 @@ Returns true if array1 and array2 have any elements in common.
 array_intersect(array1, array2)
 ```
 
-Returns an intersection of the two arrays, with all duplicates removed.
+Returns an intersection of the two arrays, with all duplicates removed. When array is nil, nil is returned.
 
 ## ARRAY_UNION
 
@@ -90,7 +90,7 @@ Returns a union of the two arrays, with all duplicates removed.
 array_max(array)
 ```
 
-Returns an element which is greater than or equal to all other elements of the array. The null element will be ignored.
+Returns an element which is greater than or equal to all other elements of the array. The null element will be ignored. When array is nil, nil is returned.
 
 ## ARRAY_MIN
 
@@ -98,7 +98,7 @@ Returns an element which is greater than or equal to all other elements of the a
 array_min(array)
 ```
 
-Returns an element which is less than or equal to all other elements of the array. The null element will be ignored.
+Returns an element which is less than or equal to all other elements of the array. The null element will be ignored. When array is nil, nil is returned.
 
 ## ARRAY_EXCEPT
 
@@ -106,7 +106,7 @@ Returns an element which is less than or equal to all other elements of the arra
 array_except(array1, array2)
 ```
 
-Returns an array of elements that are in array1 but not in array2, without duplicates.
+Returns an array of elements that are in array1 but not in array2, without duplicates. When array1 is nil, nil is returned.
 
 ## REPEAT
 
@@ -130,7 +130,7 @@ Returns an array of integers from start to stop, incrementing by step.
 array_cardinality(array)
 ```
 
-Return the number of elements in the array. The null value will be ignored.
+Return the number of elements in the array. The null value will be ignored. When array is nil, 0 is returned.
 
 ## ARRAY_FLATTEN
 
@@ -140,7 +140,7 @@ array_flatten(array)
 
 Return a flattened array, i.e., expand the array elements in the array.
 
-For example, if the input is [[1, 4], [2, 3]], then the output is [1, 4, 2, 3].
+For example, if the input is [[1, 4], [2, 3]], then the output is [1, 4, 2, 3]. When array is nil, nil is returned.
 
 ## ARRAY_DISTINCT
 
@@ -148,7 +148,7 @@ For example, if the input is [[1, 4], [2, 3]], then the output is [1, 4, 2, 3].
 array_distinct(array)
 ```
 
-Return a distinct array, i.e., remove the duplicate elements in the array.
+Return a distinct array, i.e., remove the duplicate elements in the array. When array is nil, nil is returned.
 
 ## ARRAY_MAP
 
@@ -156,7 +156,7 @@ Return a distinct array, i.e., remove the duplicate elements in the array.
 array_map(function_name, array)
 ```
 
-Return a new array by applying a function to each element of the array.
+Return a new array by applying a function to each element of the array. When array is nil, nil is returned.
 
 ## ARRAY_JOIN
 
@@ -166,7 +166,7 @@ array_join(array, delimiter, null_replacement)
 
 Return a string that concatenates all elements of the array and uses the delimiter and an optional string to replace null values.
 
-For example, if the input is [1, 2, 3], delimiter is set to comma, then the output is "1,2,3".
+For example, if the input is [1, 2, 3], delimiter is set to comma, then the output is "1,2,3". When array is nil, nil is returned.
 
 ## ARRAY_SHUFFLE
 
@@ -174,7 +174,7 @@ For example, if the input is [1, 2, 3], delimiter is set to comma, then the outp
 array_shuffle(array)
 ```
 
-Return a shuffled array, i.e., randomly shuffle the elements in the array.
+Return a shuffled array, i.e., randomly shuffle the elements in the array. When array is nil, nil is returned.
 
 ## ARRAY_CONCAT
 
@@ -182,7 +182,7 @@ Return a shuffled array, i.e., randomly shuffle the elements in the array.
 array_concat(array1, array2, ...)
 ```
 
-Returns the concatenation of the input arrays, this function does not modify the existing arrays, but returns new one.
+Returns the concatenation of the input arrays, this function does not modify the existing arrays, but returns new one. Any array that is nil is treated as an empty array.
 
 ## ARRAY_SORT
 
@@ -190,7 +190,7 @@ Returns the concatenation of the input arrays, this function does not modify the
 array_sort(array)
 ```
 
-Returns a sorted copy of the input array.
+Returns a sorted copy of the input array. When array is nil, nil is returned.
 
 ```sql
 array_sort([3, 2, "b", "a"])
@@ -200,4 +200,22 @@ Result:
 
 ```sql
 [2, 3, "a", "b"]
+```
+
+## KVPAIR_ARRAY_TO_OBJ
+
+```text
+kvpair_array_to_obj(array)
+```
+
+Return a new object converted from an array of key-value pairs.
+
+```sql
+kvpair_array_to_obj([{"key":"key1", "value":1},{"key":"key2", "value":2}])
+```
+
+Result:
+
+```sql
+{"key1":1, "key2":2}
 ```

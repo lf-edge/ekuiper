@@ -1,0 +1,84 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {},
+    "description": {
+      "en_US": "Generate simulated data for consumption.",
+      "zh_CN": "生成模拟数据供消费。"
+    }
+  },
+  "libs": [],
+  "dataSource": {},
+  "properties": {
+    "default": [
+      {
+        "name": "loop",
+        "default": false,
+        "optional": true,
+        "control": "radio",
+        "type": "bool",
+        "hint": {
+          "en_US": "If set to true, multiple pieces of json data defined in messages will be sent in a loop.",
+          "zh_CN": "如果设置为 true，则会循环发送消息内容中定义的多条 json 数据。"
+        },
+        "label": {
+          "en_US": "Loop",
+          "zh_CN": "循环发送"
+        }
+      },
+      {
+        "name": "interval",
+        "default": 1000,
+        "optional": false,
+        "control": "text",
+        "type": "int",
+        "hint": {
+          "en_US": "Message sending interval.",
+          "zh_CN": "发出消息的间隔。"
+        },
+        "label": {
+          "en_US": "Interval(ms)",
+          "zh_CN": "时间间隔（ms)"
+        }
+      },
+      {
+        "name": "data",
+        "default": "",
+        "optional": false,
+        "control": "textarea",
+        "type": "string",
+        "hint": {
+          "en_US": "Customize json format message content and support defining multiple json messages. For example, a single piece of json data [{\"a\": 1}], multiple pieces of json data [{\"a\": 1}, {\"b\": 1}].",
+          "zh_CN": "自定义 json 格式消息内容，支持定义多条 json 消息。如单条 json 数据 [{\"a\": 1}]，多条 json 数据 [{\"a\": 1}, {\"b\": 1}]。"
+        },
+        "label": {
+          "en_US": "Messages",
+          "zh_CN": "消息内容"
+        }
+      }
+    ]
+  },
+  "outputs": [
+    {
+      "label": {
+        "en_US": "Output",
+        "zh_CN": "输出"
+      },
+      "value": "signal"
+    }
+  ],
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en_US": "Simulator",
+      "zh_CN": "Simulator"
+    }
+  }
+}

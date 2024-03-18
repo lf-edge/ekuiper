@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -478,7 +478,7 @@ func TestLastValue(t *testing.T) {
 					true,
 				},
 			},
-			result: int(1),
+			result: 1,
 		},
 		{
 			args: []interface{}{
@@ -580,6 +580,13 @@ func TestLastValue(t *testing.T) {
 			args: []interface{}{
 				[]interface{}{},
 				[]interface{}{true},
+			},
+			result: nil,
+		},
+		{
+			args: []interface{}{
+				[]interface{}{},
+				true,
 			},
 			result: nil,
 		},

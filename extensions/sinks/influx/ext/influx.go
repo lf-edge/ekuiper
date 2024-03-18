@@ -12,183 +12,157 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package influx
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	_ "github.com/influxdata/influxdb1-client/v2"
 	client "github.com/influxdata/influxdb1-client/v2"
 
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
+	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
+// c is the configuration for influx2 sink
+type c struct {
+	// connection
+	Addr     string `json:"addr"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	// http connection
+	// tls conf in cert.go
+	// write options
+	Database    string `json:"database"`
+	Measurement string `json:"measurement"`
+	tspoint.WriteOptions
+}
+
 type influxSink struct {
-	addr         string
-	username     string
-	password     string
-	measurement  string
-	databaseName string
-	tagKey       string
-	tagValue     string
-	dataField    string
-	fields       []string
-	cli          client.Client
-	fieldMap     map[string]interface{}
-	hasTransform bool
+	conf c
+	// internal conf value
+	password string
+	// temp variables
+	bp  client.BatchPoints
+	cli client.Client
 }
 
 func (m *influxSink) Configure(props map[string]interface{}) error {
-	if i, ok := props["addr"]; ok {
-		if i, ok := i.(string); ok {
-			m.addr = i
-		}
+	m.conf = c{
+		WriteOptions: tspoint.WriteOptions{
+			PrecisionStr: "ms",
+		},
 	}
-	if i, ok := props["username"]; ok {
-		if i, ok := i.(string); ok {
-			m.username = i
-		}
-	}
-	if i, ok := props["password"]; ok {
-		if i, ok := i.(string); ok {
-			m.password = i
-		}
-	}
-	if i, ok := props["measurement"]; ok {
-		if i, ok := i.(string); ok {
-			m.measurement = i
-		}
-	}
-	if i, ok := props["databasename"]; ok {
-		if i, ok := i.(string); ok {
-			m.databaseName = i
-		}
-	}
-	if i, ok := props["tagkey"]; ok {
-		if i, ok := i.(string); ok {
-			m.tagKey = i
-		}
-	}
-	if i, ok := props["tagvalue"]; ok {
-		if i, ok := i.(string); ok {
-			m.tagValue = i
-		}
-	}
-	if i, ok := props["dataField"]; ok {
-		if i, ok := i.(string); ok {
-			m.dataField = i
-		}
-	}
-	if i, ok := props["fields"]; ok {
-		if i, ok := i.([]interface{}); ok {
-			for _, v := range i {
-				if v, ok := v.(string); ok {
-					m.fields = append(m.fields, v)
-				}
-			}
-		}
-	}
-	if i, ok := props["dataTemplate"]; ok {
-		if i, ok := i.(string); ok && i != "" {
-			m.hasTransform = true
-		}
-	}
-	return nil
-}
-
-func (m *influxSink) Open(ctx api.StreamContext) (err error) {
-	logger := ctx.GetLogger()
-	logger.Debug("Opening influx sink")
-	m.cli, err = client.NewHTTPClient(client.HTTPConfig{
-		Addr:     m.addr,
-		Username: m.username,
-		Password: m.password,
-	})
+	err := cast.MapToStruct(props, &m.conf)
 	if err != nil {
-		logger.Debug(err)
+		return fmt.Errorf("error configuring influx2 sink: %s", err)
+	}
+	if len(m.conf.Addr) == 0 {
+		return fmt.Errorf("addr is required")
+	}
+	if len(m.conf.Database) == 0 {
+		return fmt.Errorf("database is required")
+	}
+	if len(m.conf.Measurement) == 0 {
+		return fmt.Errorf("measurement is required")
+	}
+	err = cast.MapToStruct(props, &m.conf.WriteOptions)
+	if err != nil {
+		return fmt.Errorf("error configuring influx sink: %s", err)
+	}
+	err = m.conf.WriteOptions.Validate()
+	if err != nil {
 		return err
 	}
+	tlsConf, err := cert.GenTLSConfig(props, "influx-sink")
+	if err != nil {
+		return fmt.Errorf("error configuring tls: %s", err)
+	}
+	m.password = m.conf.Password
+	m.conf.Password = "******"
+	var insecureSkip bool
+	if tlsConf != nil {
+		insecureSkip = tlsConf.InsecureSkipVerify
+	}
+
+	m.cli, err = client.NewHTTPClient(client.HTTPConfig{
+		Addr:               m.conf.Addr,
+		Username:           m.conf.Username,
+		Password:           m.password,
+		InsecureSkipVerify: insecureSkip,
+		TLSConfig:          tlsConf,
+	})
+	if err != nil {
+		return fmt.Errorf("error creating influx client: %s", err)
+	}
+	return err
+}
+
+func (m *influxSink) Open(ctx api.StreamContext) error {
+	ctx.GetLogger().Infof("influx sink open with properties %+v", m.conf)
+	err := m.conf.WriteOptions.ValidateTagTemplates(ctx)
+	if err != nil {
+		return err
+	}
+	// Test connection. Put it here to avoid server connection when running test in Configure
+	_, _, err = m.cli.Ping(time.Second * 10)
+	if err != nil {
+		return fmt.Errorf("error pinging influx server: %s", err)
+	}
+	m.bp, err = client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  m.conf.Database,
+		Precision: m.conf.PrecisionStr,
+	})
+	return err
+}
+
+func (m *influxSink) Collect(ctx api.StreamContext, data any) error {
+	logger := ctx.GetLogger()
+	err := m.transformPoints(ctx, data)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	// Write the batch
+	err = m.cli.Write(m.bp)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Debug("influx insert success")
 	return nil
 }
 
-func (m *influxSink) Collect(ctx api.StreamContext, data interface{}) error {
-	logger := ctx.GetLogger()
-	if m.hasTransform {
-		jsonBytes, _, err := ctx.TransformOutput(data)
+func (m *influxSink) transformPoints(ctx api.StreamContext, data any) error {
+	var err error
+	m.bp, err = client.NewBatchPoints(client.BatchPointsConfig{
+		Database:  m.conf.Database,
+		Precision: m.conf.PrecisionStr,
+	})
+	if err != nil {
+		return err
+	}
+
+	rawPts, err := tspoint.SinkTransform(ctx, data, &m.conf.WriteOptions)
+	if err != nil {
+		ctx.GetLogger().Error(err)
+		return err
+	}
+	for _, rawPt := range rawPts {
+		pt, err := client.NewPoint(m.conf.Measurement, rawPt.Tags, rawPt.Fields, rawPt.Tt)
 		if err != nil {
 			return err
 		}
-		m := make(map[string]interface{})
-		err = json.Unmarshal(jsonBytes, &m)
-		if err != nil {
-			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
-		}
-		data = m
-	} else {
-		d, _, err := transform.TransItem(data, m.dataField, m.fields)
-		if err != nil {
-			return fmt.Errorf("fail to select fields %v for data %v", m.fields, data)
-		}
-		data = d
+		m.bp.AddPoint(pt)
 	}
-	var output map[string]interface{}
-	switch v := data.(type) {
-	case map[string]interface{}:
-		output = v
-	case []map[string]interface{}:
-		if len(v) > 0 {
-			output = v[0]
-		} else {
-			ctx.GetLogger().Warnf("Get empty data %v, just return", data)
-			return nil
-		}
-	}
-
-	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
-		Database:  m.databaseName,
-		Precision: "ns",
-	})
-	if err != nil {
-		logger.Debug(err)
-		return err
-	}
-	tags := map[string]string{m.tagKey: m.tagValue}
-	m.fieldMap = output
-
-	pt, err := client.NewPoint(m.measurement, tags, m.fieldMap, time.Now())
-	if err != nil {
-		logger.Debug(err)
-		return err
-	}
-	bp.AddPoint(pt)
-	err = m.cli.Write(bp)
-	if err != nil {
-		logger.Debug(err)
-		return err
-	}
-	logger.Debug("insert success")
-
 	return nil
 }
 
 func (m *influxSink) Close(ctx api.StreamContext) error {
-	m.cli.Close()
-	return nil
+	ctx.GetLogger().Infof("influx sink close")
+	return m.cli.Close()
 }
 
 func GetSink() api.Sink {

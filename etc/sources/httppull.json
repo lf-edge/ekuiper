@@ -24,7 +24,7 @@
 		},
 		"label": {
 			"en_US": "Data Source (URL Endpoint)",
-			"zh_CN": "数据源（URL拼接路径）"
+			"zh_CN": "数据源（URL 拼接路径）"
 		}
 	},
 	"properties": {
@@ -173,6 +173,53 @@
 				"zh_CN": "根证书路径"
 			}
 		}, {
+			"name": "certficationRaw",
+			"default": "",
+			"optional": true,
+			"connection_related": true,
+			"control": "text",
+			"type": "string",
+			"hint": {
+				"en_US": "base64 encoded original text of the cert",
+				"zh_CN": "经过 base64 编码的证书原文"
+			},
+			"label": {
+				"en_US": "Raw Cert",
+				"zh_CN": "证书原文"
+			}
+		},
+			{
+				"name": "privateKeyRaw",
+				"default": "",
+				"optional": true,
+				"connection_related": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "base64 encoded original text of the key",
+					"zh_CN": "经过 base64 编码的密钥原文"
+				},
+				"label": {
+					"en_US": "Raw Key",
+					"zh_CN": "密钥原文"
+				}
+			},
+			{
+				"name": "rootCARaw",
+				"default": "",
+				"optional": true,
+				"connection_related": true,
+				"control": "text",
+				"type": "string",
+				"hint": {
+					"en_US": "base64 encoded original text of the ca",
+					"zh_CN": "经过 Base64 编码的密钥原文"
+				},
+				"label": {
+					"en_US": "Raw CA",
+					"zh_CN": "根证书原文"
+				}
+			}, {
 			"name": "insecureSkipVerify",
 			"default": true,
 			"optional": true,
@@ -198,7 +245,7 @@
 			},
 			"label": {
 				"en_US": "HTTP headers",
-				"zh_CN": "HTTP标头"
+				"zh_CN": "HTTP 标头"
 			}
 		},
 		{

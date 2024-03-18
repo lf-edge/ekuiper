@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@ import (
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/message"
 )
 
 //// Package vars and funcs
@@ -61,6 +63,7 @@ func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {
 		if err != nil {
 			return nil, err
 		}
+		s.attachSchema(node.ctx.GetRuleId(), node.name, node.options.Schema, node.options.IsWildCard)
 		si = &sourceInstance{
 			source:                 s.source,
 			ctx:                    s.ctx,
@@ -95,7 +98,7 @@ func getSourceInstance(node *SourceNode, index int) (*sourceInstance, error) {
 	return si, nil
 }
 
-// removeSourceInstance remove an attach from the sourceSingleton
+// removeSourceInstance remove an attachment from the sourceSingleton
 // If all attaches are removed, close the sourceSingleton and remove it from the pool registry
 // ONLY apply to shared instance
 func removeSourceInstance(node *SourceNode) {
@@ -111,7 +114,7 @@ func removeSourceInstance(node *SourceNode) {
  *	Pool for all keyed source instance.
  *  Create an instance, and start the source go routine when the keyed was hit the first time.
  *  For later hit, create the new set of channels and attach to the instance
- *  When hit a delete (when close a rule), remove the attached channels. If all channels removed, remove the instance from the pool
+ *  When hit a deleted (when close a rule), remove the attached channels. If all channels removed, remove the instance from the pool
  *  For performance reason, the pool only holds the shared instance. Rule specific instance are holden by rule source node itself
  */
 type sourcePool struct {
@@ -181,8 +184,10 @@ func (p *sourcePool) deleteInstance(k string, node *SourceNode, index int) {
 	defer p.Unlock()
 	s, ok := p.registry[k]
 	if ok {
+
 		instanceKey := fmt.Sprintf("%s.%s.%d", k, node.ctx.GetRuleId(), index)
 		end := s.detach(instanceKey)
+		s.detachSchema(node.ctx.GetRuleId())
 		if end {
 			s.cancel()
 
@@ -272,6 +277,18 @@ func (ss *sourceSingleton) broadcastError(err error) {
 	wg.Wait()
 }
 
+func (ss *sourceSingleton) attachSchema(ruleID, dataSource string, schema map[string]*ast.JsonStreamField, isWildCard bool) {
+	decodeConverter := ss.ctx.Value(kctx.DecodeKey)
+	if decodeConverter != nil {
+		fastDecoder, ok := decodeConverter.(message.SchemaMergeAbleConverter)
+		if ok {
+			if err := fastDecoder.MergeSchema(ruleID, dataSource, schema, isWildCard); err != nil {
+				conf.Log.Warnf("merge schema for shared stream rule %v failed, err:%v", ruleID, err)
+			}
+		}
+	}
+}
+
 func (ss *sourceSingleton) attach(instanceKey string, bl int) error {
 	retry := 10
 	var err error
@@ -294,6 +311,18 @@ func (ss *sourceSingleton) attach(instanceKey string, bl int) error {
 		time.Sleep(time.Millisecond * 100)
 	}
 	return err
+}
+
+func (ss *sourceSingleton) detachSchema(ruleID string) {
+	decodeConverter := ss.ctx.Value(kctx.DecodeKey)
+	if decodeConverter != nil {
+		fastDecoder, ok := decodeConverter.(message.SchemaMergeAbleConverter)
+		if ok {
+			if err := fastDecoder.DetachSchema(ruleID); err != nil {
+				conf.Log.Warnf("detach schema for rule %v failed, err:%v", ruleID, err.Error())
+			}
+		}
+	}
 }
 
 // detach Detach an instance and return if the singleton is ended

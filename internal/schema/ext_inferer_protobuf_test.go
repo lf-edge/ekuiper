@@ -25,12 +25,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
 func TestInferProtobuf(t *testing.T) {
-	testx.InitEnv()
 	// Move test schema file to etc dir
 	etcDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -84,7 +82,6 @@ func TestInferProtobuf(t *testing.T) {
 }
 
 func TestInferProtobufWithEmbedType(t *testing.T) {
-	testx.InitEnv()
 	// Move test schema file to etc dir
 	etcDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -127,6 +124,7 @@ func TestInferProtobufWithEmbedType(t *testing.T) {
 		{Name: "brk_pedal_sts", FieldType: &ast.RecType{StreamFields: []ast.StreamField{
 			{Name: "valid", FieldType: &ast.BasicType{Type: ast.BIGINT}},
 		}}},
+		{Name: "drvg_mod_history", FieldType: &ast.ArrayType{Type: ast.BIGINT}},
 	}
 	if !assert.Equal(t, expected, result) {
 		t.Errorf("InferProtobuf result is not expected, got %v, expected %v", result, expected)

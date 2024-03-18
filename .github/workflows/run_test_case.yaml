@@ -20,12 +20,16 @@ on:
 jobs:
   run_unit_tests:
     runs-on: ubuntu-latest
-
+    services:
+      emqx:
+        image: emqx/emqx:4.3.10
+        ports:
+          - 1883:1883
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v4
       with:
-        go-version: '1.20'
+        go-version: '1.21'
     - uses: actions/setup-python@v4
       with:
         python-version: '3.x'
@@ -33,10 +37,10 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        pip3 install pynng && sudo apt-get update && sudo apt-get install libzmq3-dev -y
+        pip3 install pynng==0.7.2 && sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: Build plugins
       run: |
-        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.12.1 > /dev/null
+        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.4 > /dev/null
 
         curl -sSfL -O https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/wasmedge_rustls_plugin_ubuntu-22.04.zip
         unzip wasmedge_rustls_plugin_ubuntu-22.04.zip
@@ -55,7 +59,11 @@ jobs:
         go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
         go build --buildmode=plugin -o data/test/helloworld.so internal/converter/protobuf/test/*.go
         go build --buildmode=plugin -o data/myFormat.so internal/converter/custom/test/*.go
-        cp data/myFormat.so data/test/myFormat.so
+        cp test/lookup.json data/lookup.json
+        mkdir -p data/custom
+        cp data/myFormat.so data/custom/myFormat.so
+        mkdir -p data/schema
+        cp data/myFormat.so data/schema/myFormat.so
         mkdir -p plugins/portable/mirror
         cd sdk/go/example/mirror
         go build -o ../../../../plugins/portable/mirror/mirror .
@@ -69,7 +77,9 @@ jobs:
     - name: Run test case
       run: |
         source $HOME/.wasmedge/env
+        make failpoint-enable
         go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/internal/topo/topotest/plugin")
+        make failpoint-disable
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:

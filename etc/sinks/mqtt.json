@@ -77,7 +77,7 @@
       },
       "label": {
         "en_US": "MQTT ClientID",
-        "zh_CN": "MQTT 客户端标识符(ClinetID)"
+        "zh_CN": "MQTT 客户端标识符(ClientID)"
       }
     },
     {
@@ -92,8 +92,8 @@
       "type": "string",
       "connection_related": true,
       "hint": {
-        "en_US": "MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4).  If not specified, the default value is 3.1.",
-        "zh_CN": "MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。 如果未指定，缺省值为 3.1。"
+        "en_US": "MQTT protocol version. 3.1 (also refer as MQTT 3) or 3.1.1 (also refer as MQTT 4). ",
+        "zh_CN": "MQTT 协议版本。3.1 (也被称为 MQTT 3) 或者 3.1.1 (也被称为 MQTT 4)。"
       },
       "label": {
         "en_US": "MQTT protocol version",
@@ -224,7 +224,7 @@
       "connection_related": true,
       "hint": {
         "en_US": "If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is false. The configuration item can only be used with TLS connections.",
-        "zh_CN": "如果 InsecureSkipVerify 设置为 true, TLS接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS容易受到中间人攻击。默认值为false。配置项只能用于TLS连接。"
+        "zh_CN": "如果 InsecureSkipVerify 设置为 true, TLS 接受服务器提供的任何证书以及该证书中的任何主机名。 在这种模式下，TLS 容易受到中间人攻击。默认值为 false。配置项只能用于 TLS 连接。"
       },
       "label": {
         "en_US": "Skip Certification verification",
@@ -243,8 +243,8 @@
         "zstd"
       ],
       "hint": {
-        "en_US": "Compress the payload with the specified compression method.",
-        "zh_CN": "使用指定的压缩方法压缩 Payload。"
+        "en_US": "Compress the payload with the specified compression method. Leave blank to indicate no compression.",
+        "zh_CN": "使用指定的压缩方法压缩 Payload，留空表示不压缩。"
       },
       "label": {
         "en_US": "Compression",

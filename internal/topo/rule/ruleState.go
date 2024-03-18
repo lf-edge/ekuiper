@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
@@ -97,30 +98,59 @@ type RuleState struct {
 	topoGraph *api.PrintableTopo
 	sync.RWMutex
 	cronState cronStateCtx
+
+	lastStartTimestamp int64
+	lastStopTimestamp  int64
+	isClosed           bool
 }
 
 // NewRuleState Create and initialize a rule state.
 // Errors are possible during plan the topo.
 // If error happens return immediately without add it to the registry
-func NewRuleState(rule *api.Rule) (*RuleState, error) {
-	rs := &RuleState{
+func NewRuleState(rule *api.Rule) (rs *RuleState, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
+		}
+	}()
+
+	rs = &RuleState{
 		RuleId:   rule.Id,
 		Rule:     rule,
 		ActionCh: make(chan ActionSignal),
 	}
 	rs.run()
-	if tp, err := planner.Plan(rule); err != nil {
-		return rs, err
-	} else {
-		rs.Topology = tp
-		return rs, nil
-	}
+	defer func() {
+		if err != nil {
+			rs.Close()
+		}
+	}()
+	err = infra.SafeRun(func() error {
+		if tp, err := planner.Plan(rule); err != nil {
+			return err
+		} else {
+			rs.Topology = tp
+		}
+		return nil
+	})
+	return rs, err
 }
 
 // UpdateTopo update the rule and the topology AND restart the topology
 // Do not need to call restart after update
-func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
-	if _, err := planner.Plan(rule); err != nil {
+
+func (rs *RuleState) UpdateTopo(rule *api.Rule) (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
+		}
+	}()
+	t, err := planner.Plan(rule)
+	if err != nil {
 		return err
 	}
 	if err := rs.Stop(); err != nil {
@@ -128,6 +158,7 @@ func (rs *RuleState) UpdateTopo(rule *api.Rule) error {
 	}
 	time.Sleep(1 * time.Millisecond)
 	rs.Rule = rule
+	rs.Topology = t
 	// If not triggered, just ignore start the rule
 	if rule.Triggered {
 		if err := rs.Start(); err != nil {
@@ -219,7 +250,11 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 					d = option.MaxDelay
 				}
 				if option.JitterFactor > 0 {
-					d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*0.1 + 1)))
+					d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*option.JitterFactor + 1)))
+					// make sure d is always in range
+					for d <= 0 || d > option.MaxDelay {
+						d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*option.JitterFactor + 1)))
+					}
 					conf.Log.Infof("Rule %s will restart with jitterred delay %d", rs.RuleId, d)
 				} else {
 					conf.Log.Infof("Rule %s will restart with delay %d", rs.RuleId, d)
@@ -258,7 +293,14 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 
 // The action functions are state machine.
 
-func (rs *RuleState) Start() error {
+func (rs *RuleState) Start() (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
+		}
+	}()
 	rs.Lock()
 	defer rs.Unlock()
 	if rs.triggered == -1 {
@@ -349,8 +391,6 @@ func (rs *RuleState) startScheduleRule() error {
 }
 
 func (rs *RuleState) runScheduleRule() error {
-	rs.Lock()
-	defer rs.Unlock()
 	rs.cronState.cron = rs.Rule.Options.Cron
 	rs.cronState.duration = rs.Rule.Options.Duration
 	err := rs.start()
@@ -382,24 +422,34 @@ func (rs *RuleState) start() error {
 	if rs.triggered != 1 {
 		// If the rule has been stopped due to error, the topology is not nil
 		if rs.Topology != nil {
-			rs.Topology.Cancel()
-		}
-		if tp, err := planner.Plan(rs.Rule); err != nil {
-			return err
-		} else {
-			rs.Topology = tp
+			if rs.Topology.HasOpen() {
+				rs.Topology.Cancel()
+				if tp, err := planner.Plan(rs.Rule); err != nil {
+					return err
+				} else {
+					rs.Topology = tp
+				}
+			}
 		}
 		rs.triggered = 1
 	}
 	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
 		conf.Log.Debugf("rule %v started", rs.RuleId)
 	}
+	rs.lastStartTimestamp = time.Now().UnixMilli()
 	rs.ActionCh <- ActionSignalStart
 	return nil
 }
 
 // Stop remove the Topology
-func (rs *RuleState) Stop() error {
+func (rs *RuleState) Stop() (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
+		}
+	}()
 	rs.Lock()
 	defer rs.Unlock()
 	if rs.Rule.IsScheduleRule() || rs.Rule.IsLongRunningScheduleRule() {
@@ -427,12 +477,22 @@ func (rs *RuleState) stop() error {
 	rs.triggered = 0
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
+		// de-reference old Topology in order to release data memory
+		rs.Topology = rs.Topology.NewTopoWithSucceededCtx()
 	}
+	rs.lastStopTimestamp = time.Now().UnixMilli()
 	rs.ActionCh <- ActionSignalStop
 	return nil
 }
 
-func (rs *RuleState) InternalStop() error {
+func (rs *RuleState) InternalStop() (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
+		}
+	}()
 	rs.Lock()
 	defer rs.Unlock()
 	if !rs.Rule.IsLongRunningScheduleRule() {
@@ -452,14 +512,26 @@ func (rs *RuleState) internalStop() error {
 	rs.triggered = 2
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
+		// de-reference old Topology in order to release data memory
+		rs.Topology = rs.Topology.NewTopoWithSucceededCtx()
 	}
 	rs.ActionCh <- ActionSignalStop
 	return nil
 }
 
-func (rs *RuleState) Close() error {
+func (rs *RuleState) Close() (err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
+		}
+	}()
 	rs.Lock()
 	defer rs.Unlock()
+	if rs.isClosed {
+		return nil
+	}
 	if rs.Topology != nil {
 		rs.Topology.RemoveMetrics()
 	}
@@ -469,10 +541,18 @@ func (rs *RuleState) Close() error {
 	rs.triggered = -1
 	rs.stopScheduleRule()
 	close(rs.ActionCh)
+	rs.isClosed = true
 	return nil
 }
 
-func (rs *RuleState) GetState() (string, error) {
+func (rs *RuleState) GetState() (s string, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.RuleErr, err.Error())
+			}
+		}
+	}()
 	rs.RLock()
 	defer rs.RUnlock()
 	result := ""
@@ -543,16 +623,25 @@ func (rs *RuleState) isInRunningSchedule(now time.Time, d time.Duration) (bool, 
 }
 
 func (rs *RuleState) isInAllowedTimeRange(now time.Time) (bool, error) {
-	allowed := true
-	var err error
-	for _, timeRange := range rs.Rule.Options.CronDatetimeRange {
-		allowed, err = schedule.IsInScheduleRange(now, timeRange.Begin, timeRange.End)
-		if err != nil {
-			return false, err
-		}
-		if allowed {
-			break
+	return schedule.IsInScheduleRanges(now, rs.Rule.Options.CronDatetimeRange)
+}
+
+func (rs *RuleState) GetNextScheduleStartTime() int64 {
+	if rs.Rule.IsScheduleRule() && len(rs.Rule.Options.Cron) > 0 {
+		isIn, err := schedule.IsInScheduleRanges(time.Now(), rs.Rule.Options.CronDatetimeRange)
+		if err == nil && isIn {
+			s, err := cron.ParseStandard(rs.Rule.Options.Cron)
+			if err == nil {
+				return s.Next(time.Now()).UnixMilli()
+			}
 		}
 	}
-	return allowed, nil
+	return 0
+}
+
+func (rs *RuleState) GetScheduleTimestamp() (int64, int64, int64) {
+	nextStartTimestamp := rs.GetNextScheduleStartTime()
+	rs.Lock()
+	defer rs.Unlock()
+	return rs.lastStartTimestamp, rs.lastStopTimestamp, nextStartTimestamp
 }

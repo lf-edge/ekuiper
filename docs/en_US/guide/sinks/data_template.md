@@ -8,7 +8,9 @@ The Golang template applies a piece of logic to the data, and then formats and o
 
 > Templates are executed by applying them to a data structure. Annotations in the template refer to elements of the data structure (typically a field of a struct or a key in a map) to control execution and derive values to be displayed. Execution of the template walks the structure and sets the cursor, represented by a period '.' and called "dot", to the value at the current location in the structure as execution proceeds.
 >
-> The input text for a template is UTF-8-encoded text in any format. "Actions"--data evaluations or control structures--are delimited by "{{" and "}}"; all text outside actions is copied to the output unchanged. Except for raw strings, actions may not span newlines, although comments can.
+> The input text for a template is UTF-8-encoded text in any format. "Actions"--data evaluations or control
+> structures--are delimited by <span v-pre>"{{" and "}}"</span>; all text outside actions is copied to the output
+> unchanged. Except for raw strings, actions may not span newlines, although comments can.
 
 ## Simple Template
 
@@ -101,7 +103,10 @@ The Golang  template provides some [built-in actions](https://golang.org/pkg/tex
 {{range pipeline}} T1 {{else}} T0 {{end}}
 ```
 
-Readers can see that actions are delimited by `{{}}`. During the use of eKuiper’s data templates, the output is generally in JSON format, and the JSON format is delimited by `{}`. Therefore, if the readers are not familiar with it, they will find it difficult to understand the functions of eKuiper's data templates. For example, in the following example,
+Readers can see that actions are delimited by <code v-pre>{{}}</code>. During the use of eKuiper’s data templates, the
+output is generally in JSON format, and the JSON format is delimited by `{}`. Therefore, if the readers are not familiar
+with it, they will find it difficult to understand the functions of eKuiper's data templates. For example, in the
+following example,
 
 ```text
 {{if pipeline}} {"field1": true} {{else}}  {"field1": false} {{end}}
@@ -162,7 +167,10 @@ Assuming that the target sink still needs JSON data, the content of the data tem
 ```
 
 ::: v-pre
-In the above data template, the built-in actions of  `{{if pipeline}} T1 {{else if pipeline}} T0 {{end}}` are used, which looks more complicated. We can do a little adjustment, remove the escape and add abbreviation. The typesetting afterwards is as follows (note: when generating eKuiper rules, the following optimized typesetting rules cannot be passed in).
+In the above data template, the built-in actions of <code v-pre>{{if pipeline}} T1 {{else if pipeline}} T0
+{{end}}</code> are used, which looks more complicated. We can do a little adjustment, remove the escape and add
+abbreviation. The typesetting afterwards is as follows (note: when generating eKuiper rules, the following optimized
+typesetting rules cannot be passed in).
 :::
 
 ```text

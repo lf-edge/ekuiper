@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,35 +15,36 @@
 package metric
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
 const (
-	RecordsInTotal       = "records_in_total"
-	RecordsOutTotal      = "records_out_total"
-	ProcessLatencyUs     = "process_latency_us"
-	ProcessLatencyUsHist = "process_latency_us_hist"
-	LastInvocation       = "last_invocation"
-	BufferLength         = "buffer_length"
-	ExceptionsTotal      = "exceptions_total"
-	LastException        = "last_exception"
-	LastExceptionTime    = "last_exception_time"
+	RecordsInTotal         = "records_in_total"
+	RecordsOutTotal        = "records_out_total"
+	MessagesProcessedTotal = "messages_processed_total"
+	ProcessLatencyUs       = "process_latency_us"
+	ProcessLatencyUsHist   = "process_latency_us_hist"
+	LastInvocation         = "last_invocation"
+	BufferLength           = "buffer_length"
+	ExceptionsTotal        = "exceptions_total"
+	LastException          = "last_exception"
+	LastExceptionTime      = "last_exception_time"
 )
 
-var MetricNames = []string{RecordsInTotal, RecordsOutTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
+var MetricNames = []string{RecordsInTotal, RecordsOutTotal, MessagesProcessedTotal, ProcessLatencyUs, BufferLength, LastInvocation, ExceptionsTotal, LastException, LastExceptionTime}
 
 type StatManager interface {
 	IncTotalRecordsIn()
 	IncTotalRecordsOut()
+	IncTotalMessagesProcessed(n int64)
 	IncTotalExceptions(err string)
 	ProcessTimeStart()
 	ProcessTimeEnd()
 	SetBufferLength(l int64)
 	SetProcessTimeStart(t time.Time)
-	GetMetrics() []interface{}
+	GetMetrics() []any
 	// Clean remove all metrics history
 	Clean(ruleId string)
 }
@@ -51,8 +52,10 @@ type StatManager interface {
 // DefaultStatManager The statManager is not thread safe. Make sure it is used in only one instance
 type DefaultStatManager struct {
 	// metrics
-	totalRecordsIn    int64
-	totalRecordsOut   int64
+	totalRecordsIn         int64
+	totalRecordsOut        int64
+	totalMessagesProcessed int64
+
 	processLatency    int64
 	lastInvocation    time.Time
 	bufferLength      int64
@@ -67,7 +70,7 @@ type DefaultStatManager struct {
 	instanceId       int
 }
 
-func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
+func NewStatManager(ctx api.StreamContext, opType string) StatManager {
 	var prefix string
 	switch opType {
 	case "source":
@@ -76,21 +79,26 @@ func NewStatManager(ctx api.StreamContext, opType string) (StatManager, error) {
 		prefix = "op_"
 	case "sink":
 		prefix = "sink_"
-	default:
-		return nil, fmt.Errorf("invalid opType %s, must be \"source\", \"sink\" or \"op\"", opType)
 	}
-
 	ds := DefaultStatManager{
 		opType:     opType,
 		prefix:     prefix,
 		opId:       ctx.GetOpId(),
 		instanceId: ctx.GetInstanceId(),
 	}
-	return getStatManager(ctx, ds)
+	sm, err := getStatManager(ctx, ds)
+	if err != nil {
+		ctx.GetLogger().Warnf("Fail to create extra stat manager for %s %s: %v", opType, ctx.GetOpId(), err)
+	}
+	return sm
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsIn() {
 	sm.totalRecordsIn++
+}
+
+func (sm *DefaultStatManager) IncTotalMessagesProcessed(n int64) {
+	sm.totalMessagesProcessed += n
 }
 
 func (sm *DefaultStatManager) IncTotalRecordsOut() {
@@ -125,10 +133,11 @@ func (sm *DefaultStatManager) SetProcessTimeStart(t time.Time) {
 	sm.lastInvocation = t
 }
 
-func (sm *DefaultStatManager) GetMetrics() []interface{} {
+func (sm *DefaultStatManager) GetMetrics() []any {
 	result := []interface{}{
 		sm.totalRecordsIn,
 		sm.totalRecordsOut,
+		sm.totalMessagesProcessed,
 		sm.processLatency,
 		sm.bufferLength,
 		0,
@@ -138,10 +147,10 @@ func (sm *DefaultStatManager) GetMetrics() []interface{} {
 	}
 
 	if !sm.lastInvocation.IsZero() {
-		result[4] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
+		result[5] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
 	}
 	if !sm.lastExceptionTime.IsZero() {
-		result[7] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
+		result[8] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
 	}
 	return result
 }

@@ -17,7 +17,7 @@
 package server
 
 var (
-	NativeSourcePlugin   = []string{}
-	NativeSinkPlugin     = []string{"tdengine"}
+	NativeSourcePlugin   = []string{"zmq"}
+	NativeSinkPlugin     = []string{"tdengine", "zmq"}
 	NativeFunctionPlugin = []string{"accumulateWordCount", "countPlusOne", "echo", "geohash", "image", "labelImage", "tfLite"}
 )

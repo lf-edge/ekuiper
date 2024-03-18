@@ -49,7 +49,8 @@ POST http://localhost:9081/plugins/portables
 4. install.sh 的各种依赖文件/文件夹
    - mysdk.zip
    - myconfig.conf
-5. etc 目录：插件的运行时配置文件或依赖文件。插件安装后，该目录将重名为插件名并复制到 {{eKuiperPath}}/etc/{{pluginType}} 目录下。
+5. etc 目录：插件的运行时配置文件或依赖文件。插件安装后，该目录将重名为插件名并复制到 <span v-pre>
+   {{eKuiperPath}}/etc/{{pluginType}}</span> 目录下。
 
 请注意，将在系统可能已经具有库或软件包的情况下运行 install.sh。 确保在运行之前检查路径。 下面是一个示例 install.sh，用于安装示例 sdk 库。
 

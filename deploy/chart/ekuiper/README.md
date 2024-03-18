@@ -5,7 +5,7 @@ A lightweight IoT edge analytic software
 
 ## Install the Chart
 
-- From Github
+- From GitHub
 ```
 git clone https://github.com/lf-edge/ekuiper.git
 cd deploy/chart/ekuiper
@@ -33,9 +33,13 @@ helm uninstall my-ekuiper
 | ekuiperEnv | object | `{"enabled":true,"key":{"mqttDefaultServer":"MQTT_SOURCE__DEFAULT__SERVER"},"value":{"mqttDefaultServer":"tcp://broker.emqx.io:1883"}}` | remove this when the mqtt_source configmap is available |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"lfedge/ekuiper"` |  |
+| image.tag | string | `""` | Overrides the image tag whose default is the chart appVersion. |
 | nodeSelector | object | `{}` |  |
-| persistence.accessMode | string | `"ReadWriteOnce"` |  |
 | persistence.enabled | bool | `false` |  |
+| persistence.storageClass | string | ""  | Storage class of backing PVC|
+| persistence.existingClaim| string | "" | EMQX data Persistent Volume existing claim name, evaluated as a template |
+| persistence.accessMode   | string | ReadWriteOnce | PVC Access Mode for volume |
+| persistence.size` | string | 20Mi | PVC Storage Request for EMQX volume |
 | persistence.existingClaim | string | `""` | Existing PersistentVolumeClaims The value is evaluated as a template So, for example, the name can depend on .Release or .Chart |
 | resources | object | `{}` |  |
 | service.annotations | object | `{}` | Provide any additional annotations which may be required. Evaluated as a template |

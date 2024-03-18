@@ -1,10 +1,15 @@
 basic:
+  # debug | info | warn | error | fatal | panic
+  logLevel: info
   # true|false, with debug level, it prints more debug info
   debug: false
   # true|false, if it's set to true, then the log will be print to console
   consoleLog: false
   # true|false, if it's set to true, then the log will be print to log file
   fileLog: true
+  # Whether to disable the log timestamp, useful when output is redirected to logging
+  #	system like syslog that already adds timestamps.
+  logDisableTimestamp: false
   # syslog settings
   syslog:
     # true|false, if it's set to true, then the log will be print to syslog
@@ -21,6 +26,10 @@ basic:
   rotateTime: 24
   # Maximum file storage hours
   maxAge: 72
+  # Maximum file size in bytes, if this is set, maxAge will be ignored
+  rotateSize: 10485760 # 10 MB
+  # Maximum log file count
+  rotateCount: 3
   # CLI ip
   ip: 0.0.0.0
   # CLI port

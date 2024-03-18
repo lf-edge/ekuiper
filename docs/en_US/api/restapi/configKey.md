@@ -27,7 +27,9 @@ Example request to get all Config Keys from an MQTT source:
         "insecureSkipVerify": false,
         "protocolVersion": "3.1.1",
         "qos": 1,
-        "server": "tcp://122.9.166.75:1883"
+        "server": "tcp://122.9.166.75:1883",
+        "token": "******",
+        "password": "******"
     },
     "default": {
         "qos": 2,
@@ -39,6 +41,8 @@ Example request to get all Config Keys from an MQTT source:
     }
 }
 ```
+
+Note: When retrieving Config Keys, if the properties contain a password/token field (case-insensitive, such as Password), the API will not return the actual password/token value, but instead replace it with "******" to conceal the password/token information.
 
 ## Delete a configKey
 

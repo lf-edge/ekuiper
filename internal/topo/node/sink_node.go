@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@ package node
 
 import (
 	"fmt"
-	"strings"
-	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -62,51 +60,28 @@ type SinkNode struct {
 	*defaultSinkNode
 	// static
 	sinkType string
-	mutex    sync.RWMutex
 	// configs (also static for sinks)
 	options map[string]interface{}
 	isMock  bool
 	// states varies after restart
-	sinks []api.Sink
+	sink api.Sink
 }
 
 func NewSinkNode(name string, sinkType string, props map[string]interface{}) *SinkNode {
-	bufferLength := 1024
-	if c, ok := props["bufferLength"]; ok {
-		if t, err := cast.ToInt(c, cast.STRICT); err != nil || t <= 0 {
-			// invalid property bufferLength
-		} else {
-			bufferLength = t
-		}
-	}
 	return &SinkNode{
-		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, bufferLength),
-			defaultNode: &defaultNode{
-				name:        name,
-				concurrency: 1,
-				ctx:         nil,
-			},
-		},
-		sinkType: sinkType,
-		options:  props,
+		defaultSinkNode: newDefaultSinkNode(name, propsToNodeOption(props)),
+		sinkType:        sinkType,
+		options:         props,
 	}
 }
 
 // NewSinkNodeWithSink Only for mock source, do not use it in production
 func NewSinkNodeWithSink(name string, sink api.Sink, props map[string]interface{}) *SinkNode {
 	return &SinkNode{
-		defaultSinkNode: &defaultSinkNode{
-			input: make(chan interface{}, 1024),
-			defaultNode: &defaultNode{
-				name:        name,
-				concurrency: 1,
-				ctx:         nil,
-			},
-		},
-		sinks:   []api.Sink{sink},
-		options: props,
-		isMock:  true,
+		defaultSinkNode: newDefaultSinkNode(name, propsToNodeOption(props)),
+		options:         props,
+		isMock:          true,
+		sink:            sink,
 	}
 }
 
@@ -120,8 +95,15 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			if err != nil {
 				return err
 			}
-
-			tf, err := transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, sconf.Fields)
+			var tf transform.TransFunc
+			// TODO refactor this, do not use if else
+			switch m.sinkType {
+			// For sink that has different field types like value fields, header field, tag field, ts field etc. Do not transform fields for now.
+			case "influx", "influx2":
+				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, nil)
+			default:
+				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, sconf.Fields)
+			}
 			if err != nil {
 				msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
 				logger.Warnf(msg)
@@ -130,187 +112,200 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
 
 			m.reset()
-			logger.Infof("open sink node %d instances", m.concurrency)
-			for i := 0; i < m.concurrency; i++ { // workers
-				go func(instance int) {
-					panicOrError := infra.SafeRun(func() error {
-						var (
-							sink api.Sink
-							err  error
-						)
-						if !m.isMock {
-							logger.Debugf("Trying to get sink for rule %s with options %v\n", ctx.GetRuleId(), m.options)
-							sink, err = getSink(m.sinkType, m.options)
-							if err != nil {
-								return err
-							}
-							logger.Debugf("Successfully get the sink %s", m.sinkType)
-							m.mutex.Lock()
-							m.sinks = append(m.sinks, sink)
-							m.mutex.Unlock()
-							logger.Debugf("Now is to open sink for rule %s.\n", ctx.GetRuleId())
-							if err := sink.Open(ctx); err != nil {
-								return err
-							}
-							logger.Debugf("Successfully open sink for rule %s.\n", ctx.GetRuleId())
-						} else {
-							sink = m.sinks[instance]
-						}
+			logger.Infof("open sink node %d instances with batchSize", m.concurrency, sconf.BatchSize)
 
-						stats, err := metric.NewStatManager(ctx, "sink")
+			go func(instance int) {
+				panicOrError := infra.SafeRun(func() error {
+					var (
+						sink api.Sink
+						err  error
+					)
+					if !m.isMock {
+						logger.Debugf("Trying to get sink for rule %s with options %v\n", ctx.GetRuleId(), m.options)
+						sink, err = getSink(m.sinkType, m.options)
 						if err != nil {
 							return err
 						}
-						m.mutex.Lock()
-						m.statManagers = append(m.statManagers, stats)
-						m.mutex.Unlock()
-
-						// The sink flow is: receive -> batch -> cache -> send.
-						// In the outside loop, send received data to batch/cache by dataCh and receive data be dataOutCh
-						// Only need to deal with dataOutCh in the outer loop
-						dataCh := make(chan []map[string]interface{}, sconf.BufferLength)
-						var (
-							dataOutCh <-chan []map[string]interface{}
-							resendCh  chan []map[string]interface{}
-
-							sendManager *sinkUtil.SendManager
-							c           *cache.SyncCache
-							rq          *cache.SyncCache
-						)
-
-						if sconf.isBatchSinkEnabled() {
-							sendManager, err = sinkUtil.NewSendManager(sconf.BatchSize, sconf.LingerInterval)
-							if err != nil {
-								return err
-							}
-							go sendManager.Run(ctx)
+						logger.Debugf("Successfully get the sink %s", m.sinkType)
+						m.sink = sink
+						logger.Debugf("Now is to open sink for rule %s.\n", ctx.GetRuleId())
+						if err := sink.Open(ctx); err != nil {
+							return err
 						}
+						logger.Debugf("Successfully open sink for rule %s.\n", ctx.GetRuleId())
+					} else {
+						sink = m.sink
+					}
 
-						if !sconf.EnableCache {
-							if sendManager != nil {
-								dataOutCh = sendManager.GetOutputChan()
-							} else {
-								dataOutCh = dataCh
+					m.statManager = metric.NewStatManager(ctx, "sink")
+
+					// The sink flow is: receive -> batch -> cache -> send.
+					// In the outside loop, send received data to batch/cache by dataCh and receive data be dataOutCh
+					// Only need to deal with dataOutCh in the outer loop
+					dataCh := make(chan []map[string]interface{}, sconf.BufferLength)
+					var (
+						dataOutCh <-chan []map[string]interface{}
+						resendCh  chan []map[string]interface{}
+
+						sendManager *sinkUtil.SendManager
+						c           *cache.SyncCache
+						rq          *cache.SyncCache
+					)
+					logger.Infof("sink node %s instance %d starts with conf %+v", m.name, instance, *sconf)
+
+					if sconf.isBatchSinkEnabled() {
+						sendManager, err = sinkUtil.NewSendManager(sconf.BatchSize, sconf.LingerInterval)
+						if err != nil {
+							return err
+						}
+						go sendManager.Run(ctx)
+					}
+
+					if !sconf.EnableCache {
+						if sendManager != nil {
+							dataOutCh = sendManager.GetOutputChan()
+						} else {
+							dataOutCh = dataCh
+						}
+					} else {
+						if sendManager != nil {
+							c = cache.NewSyncCache(ctx, sendManager.GetOutputChan(), result, &sconf.SinkConf, sconf.BufferLength)
+						} else {
+							c = cache.NewSyncCache(ctx, dataCh, result, &sconf.SinkConf, sconf.BufferLength)
+						}
+						if sconf.ResendAlterQueue {
+							resendCh = make(chan []map[string]interface{}, sconf.BufferLength)
+							rq = cache.NewSyncCache(ctx, resendCh, result, &sconf.SinkConf, sconf.BufferLength)
+						}
+						dataOutCh = c.Out
+					}
+
+					receiveQ := func(data interface{}) {
+						processed := false
+						if data, processed = m.preprocess(data); processed {
+							return
+						}
+						m.statManager.IncTotalRecordsIn()
+						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
+						outs := itemToMap(data)
+						if sconf.Omitempty && (data == nil || len(outs) == 0) {
+							ctx.GetLogger().Debugf("receive empty in sink")
+							return
+						}
+						if sconf.isBatchSinkEnabled() {
+							for _, out := range outs {
+								sendManager.RecvData(out)
 							}
 						} else {
-							if sendManager != nil {
-								c = cache.NewSyncCache(ctx, sendManager.GetOutputChan(), result, &sconf.SinkConf, sconf.BufferLength)
-							} else {
-								c = cache.NewSyncCache(ctx, dataCh, result, &sconf.SinkConf, sconf.BufferLength)
+							select {
+							case dataCh <- outs:
+							default:
+								ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v", m.name, instance, outs)
 							}
-							if sconf.ResendAlterQueue {
-								resendCh = make(chan []map[string]interface{}, sconf.BufferLength)
-								rq = cache.NewSyncCache(ctx, resendCh, result, &sconf.SinkConf, sconf.BufferLength)
-							}
-							dataOutCh = c.Out
 						}
-
-						receiveQ := func(data interface{}) {
-							processed := false
-							if data, processed = m.preprocess(data); processed {
-								return
+						if resendCh != nil {
+							select {
+							case resendCh <- nil:
+								ctx.GetLogger().Debugf("resend signal sent")
+							case <-ctx.Done():
 							}
-							stats.IncTotalRecordsIn()
-							stats.SetBufferLength(bufferLen(dataCh, c, rq))
-							outs := itemToMap(data)
-							if sconf.Omitempty && (data == nil || len(outs) == 0) {
-								ctx.GetLogger().Debugf("receive empty in sink")
-								return
-							}
-							if sconf.isBatchSinkEnabled() {
-								for _, out := range outs {
-									sendManager.RecvData(out)
+						}
+					}
+					normalQ := func(data []map[string]interface{}) {
+						m.statManager.ProcessTimeStart()
+						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
+						ctx.GetLogger().Debugf("sending data: %v", data)
+						err := doCollectMaps(ctx, sink, sconf, data, m.statManager, false)
+						if sconf.EnableCache {
+							ack := checkAck(ctx, data, err)
+							if sconf.ResendAlterQueue {
+								// If ack is false, add it to the resend queue
+								if !ack {
+									select {
+									case resendCh <- data:
+									case <-ctx.Done():
+									}
+								}
+								// Always ack for the normal queue as fail items are handled by the resend queue
+								select {
+								case c.Ack <- true:
+									m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq) - 1)
+								case <-ctx.Done():
 								}
 							} else {
 								select {
-								case dataCh <- outs:
-								default:
-									ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v", m.name, instance, outs)
-								}
-							}
-							if resendCh != nil {
-								select {
-								case resendCh <- nil:
-									ctx.GetLogger().Debugf("resend signal sent")
+								case c.Ack <- ack:
+									if ack { // -1 because the signal length is changed async, just calculate it here
+										m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq) - 1)
+									}
 								case <-ctx.Done():
 								}
 							}
 						}
-						normalQ := func(data []map[string]interface{}) {
-							stats.ProcessTimeStart()
-							stats.SetBufferLength(bufferLen(dataCh, c, rq))
-							ctx.GetLogger().Debugf("sending data: %v", data)
-							err := doCollectMaps(ctx, sink, sconf, data, stats, false)
-							if sconf.EnableCache {
-								ack := checkAck(ctx, data, err)
-								if sconf.ResendAlterQueue {
-									// If ack is false, add it to the resend queue
-									if !ack {
-										select {
-										case resendCh <- data:
-										case <-ctx.Done():
-										}
-									}
-									// Always ack for the normal queue as fail items are handled by the resend queue
-									select {
-									case c.Ack <- true:
-										stats.SetBufferLength(bufferLen(dataCh, c, rq) - 1)
-									case <-ctx.Done():
-									}
-								} else {
-									select {
-									case c.Ack <- ack:
-										if ack { // -1 because the signal length is changed async, just calculate it here
-											stats.SetBufferLength(bufferLen(dataCh, c, rq) - 1)
-										}
-									case <-ctx.Done():
-									}
-								}
-							}
-							stats.ProcessTimeEnd()
-						}
+						m.statManager.ProcessTimeEnd()
+					}
 
-						resendQ := func(data []map[string]interface{}) {
-							ctx.GetLogger().Debugf("resend data: %v", data)
-							stats.SetBufferLength(bufferLen(dataCh, c, rq))
-							if sconf.ResendIndicatorField != "" {
-								for _, item := range data {
-									item[sconf.ResendIndicatorField] = true
-								}
+					resendQ := func(data []map[string]interface{}) {
+						ctx.GetLogger().Debugf("resend data: %v", data)
+						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
+						if sconf.ResendIndicatorField != "" {
+							for _, item := range data {
+								item[sconf.ResendIndicatorField] = true
 							}
-							err := doCollectMaps(ctx, sink, sconf, data, stats, true)
-							ack := checkAck(ctx, data, err)
+						}
+						err := doCollectMaps(ctx, sink, sconf, data, m.statManager, true)
+						ack := checkAck(ctx, data, err)
+						select {
+						case rq.Ack <- ack:
+							if ack {
+								m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq) - 1)
+							}
+						case <-ctx.Done():
+						}
+					}
+
+					doneQ := func() {
+						logger.Infof("sink node %s instance %d done", m.name, instance)
+						if err := sink.Close(ctx); err != nil {
+							logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
+						}
+					}
+
+					if resendCh == nil { // no resend strategy
+						for {
 							select {
-							case rq.Ack <- ack:
-								if ack {
-									stats.SetBufferLength(bufferLen(dataCh, c, rq) - 1)
-								}
+							case data := <-m.input:
+								receiveQ(data)
+							case data := <-dataOutCh:
+								normalQ(data)
 							case <-ctx.Done():
+								doneQ()
+								return nil
 							}
 						}
-
-						doneQ := func() {
-							logger.Infof("sink node %s instance %d done", m.name, instance)
-							if err := sink.Close(ctx); err != nil {
-								logger.Warnf("close sink node %s instance %d fails: %v", m.name, instance, err)
-							}
-						}
-
-						if resendCh == nil { // no resend strategy
+					} else {
+						if sconf.ResendPriority == 0 {
 							for {
 								select {
 								case data := <-m.input:
 									receiveQ(data)
 								case data := <-dataOutCh:
 									normalQ(data)
+								case data := <-rq.Out:
+									resendQ(data)
 								case <-ctx.Done():
 									doneQ()
 									return nil
 								}
 							}
-						} else {
-							if sconf.ResendPriority == 0 {
-								for {
+						} else if sconf.ResendPriority < 0 { // normal queue has higher priority
+							for {
+								select {
+								case data := <-m.input:
+									receiveQ(data)
+								case data := <-dataOutCh:
+									normalQ(data)
+								default:
 									select {
 									case data := <-m.input:
 										receiveQ(data)
@@ -323,56 +318,36 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 										return nil
 									}
 								}
-							} else if sconf.ResendPriority < 0 { // normal queue has higher priority
-								for {
+							}
+						} else {
+							for {
+								select {
+								case data := <-m.input:
+									receiveQ(data)
+								case data := <-rq.Out:
+									resendQ(data)
+								default:
 									select {
 									case data := <-m.input:
 										receiveQ(data)
 									case data := <-dataOutCh:
 										normalQ(data)
-									default:
-										select {
-										case data := <-m.input:
-											receiveQ(data)
-										case data := <-dataOutCh:
-											normalQ(data)
-										case data := <-rq.Out:
-											resendQ(data)
-										case <-ctx.Done():
-											doneQ()
-											return nil
-										}
-									}
-								}
-							} else {
-								for {
-									select {
-									case data := <-m.input:
-										receiveQ(data)
 									case data := <-rq.Out:
 										resendQ(data)
-									default:
-										select {
-										case data := <-m.input:
-											receiveQ(data)
-										case data := <-dataOutCh:
-											normalQ(data)
-										case data := <-rq.Out:
-											resendQ(data)
-										case <-ctx.Done():
-											doneQ()
-											return nil
-										}
+									case <-ctx.Done():
+										doneQ()
+										return nil
 									}
 								}
 							}
 						}
-					})
-					if panicOrError != nil {
-						infra.DrainError(ctx, panicOrError, result)
 					}
-				}(i)
-			}
+				})
+				if panicOrError != nil {
+					infra.DrainError(ctx, panicOrError, result)
+				}
+			}(0)
+
 			return nil
 		})
 		if err != nil {
@@ -381,8 +356,11 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	}()
 }
 
-func bufferLen(dataCh chan []map[string]interface{}, c *cache.SyncCache, rq *cache.SyncCache) int64 {
+func bufferLen(dataCh chan []map[string]interface{}, dataOutCh <-chan []map[string]interface{}, c *cache.SyncCache, rq *cache.SyncCache) int64 {
 	l := len(dataCh)
+	if dataCh != dataOutCh {
+		l += len(dataOutCh)
+	}
 	if c != nil {
 		l += c.CacheLength
 	}
@@ -394,7 +372,7 @@ func bufferLen(dataCh chan []map[string]interface{}, c *cache.SyncCache, rq *cac
 
 func checkAck(ctx api.StreamContext, data interface{}, err error) bool {
 	if err != nil {
-		if strings.HasPrefix(err.Error(), errorx.IOErr) { // do not log to prevent a lot of logs!
+		if errorx.IsIOError(err) { // do not log to prevent a lot of logs!
 			return false
 		} else {
 			ctx.GetLogger().Warnf("sink node %s instance %d publish %s error: %v", ctx.GetOpId(), ctx.GetInstanceId(), data, err)
@@ -447,9 +425,9 @@ func (m *SinkNode) parseConf(logger api.Logger) (*SinkConf, error) {
 
 func (m *SinkNode) reset() {
 	if !m.isMock {
-		m.sinks = nil
+		m.sink = nil
 	}
-	m.statManagers = nil
+	m.statManager = nil
 }
 
 func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs []map[string]interface{}, stats metric.StatManager, isResend bool) error {
@@ -522,6 +500,12 @@ func sendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{}, s
 	} else {
 		ctx.GetLogger().Debugf("success")
 		stats.IncTotalRecordsOut()
+		switch outs := outData.(type) {
+		case []map[string]interface{}:
+			stats.IncTotalMessagesProcessed(int64(len(outs)))
+		default:
+			stats.IncTotalMessagesProcessed(1)
+		}
 		return nil
 	}
 }
@@ -541,6 +525,12 @@ func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{},
 	} else {
 		ctx.GetLogger().Debugf("success resend")
 		stats.IncTotalRecordsOut()
+		switch outs := outData.(type) {
+		case []map[string]interface{}:
+			stats.IncTotalMessagesProcessed(int64(len(outs)))
+		default:
+			stats.IncTotalMessagesProcessed(1)
+		}
 		return nil
 	}
 }
@@ -573,6 +563,6 @@ func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
 }
 
 // Broadcast Override defaultNode
-func (m *SinkNode) Broadcast(_ interface{}) error {
-	return fmt.Errorf("sink %s cannot add broadcast", m.name)
+func (m *SinkNode) Broadcast(_ interface{}) {
+	// do nothing, may be called by checkpoint
 }

@@ -23,7 +23,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.20'
+          go-version: '1.21'
 
       - name: Check licenses
         run: |
@@ -41,13 +41,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.20'
+          go-version: '1.21'
 
       - name: Install dependencies
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends pkg-config libzmq3-dev
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3

@@ -2,43 +2,39 @@
 
 The sink will publish the result into a InfluxDB.
 
-## Compile & deploy plugin
-
-Please make following update before compile the plugin,
-
-- Add Influxdb library reference in `go.mod`.
-- Remove the first line `// +build plugins` of file `plugins/sinks/influx.go`.
-
-```shell
-# cd $eKuiper_src
-# go build -trimpath --buildmode=plugin -o plugins/sinks/Influx.so extensions/sinks/influx/influx.go
-# zip influx.zip plugins/sinks/Influx.so
-# cp influx.zip /root/tomcat_path/webapps/ROOT/
-# bin/kuiper create plugin sink influx -f /tmp/influxPlugin.txt
-# bin/kuiper create rule influx -f /tmp/influxRule.txt
-```
-
-Restart the eKuiper server to activate the plugin.
-
 ## Properties
 
-| Property name | Optional | Description                                       |
-|---------------|----------|---------------------------------------------------|
-| addr          | true     | The addr of the InfluxDB                          |
-| measurement   | true     | The measurement of the InfluxDb (like table name) |
-| username      | false    | The InfluxDB login username                       |
-| password      | false    | The InfluxDB login password                       |
-| databasename  | true     | The database of the InfluxDB                      |
-| tagkey        | true     | The tag key of the InfluxDB                       |
-| tagvalue      | true     | The tag value of the InfluxDB                     |
+Connection properties:
 
-Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
+| Property name        | Optional | Description                                                                                                                                                                                                                                                                                                                                                |
+|----------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| addr                 | false    | The addr of the InfluxDB                                                                                                                                                                                                                                                                                                                                   |
+| username             | true     | The InfluxDB login username                                                                                                                                                                                                                                                                                                                                |
+| password             | true     | The InfluxDB login password                                                                                                                                                                                                                                                                                                                                |
+| database             | false    | The database of the InfluxDB                                                                                                                                                                                                                                                                                                                               |
+| certificationPath    | true     | The certification path. It can be an absolute path, or a relative path. If it is an relative path, then the base path is where you executing the `kuiperd` command. For example, if you run `bin/kuiperd` from `/var/kuiper`, then the base path is `/var/kuiper`; If you run `./kuiperd` from `/var/kuiper/bin`, then the base path is `/var/kuiper/bin`. |
+| privateKeyPath       | true     | The private key path. It can be either absolute path, or relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                      |
+| rootCaPath           | true     | The location of root ca path. It can be an absolute path, or a relative path, which is similar to use of certificationPath.                                                                                                                                                                                                                                |
+| tlsMinVersion        | true     | Specifies the minimum version of the TLS protocol that will be negotiated with the client. Accept values are `tls1.0`, `tls1.1`, `tls1.2` and `tls1.3`. Default: `tls1.2`.                                                                                                                                                                                 |
+| renegotiationSupport | true     | Determines how and when the client handles server-initiated renegotiation requests. Support `never`, `once` or `freely` options. Default: `never`.                                                                                                                                                                                                         |
+| insecureSkipVerify   | true     | If InsecureSkipVerify is `true`, TLS accepts any certificate presented by the server and any host name in that certificate.  In this mode, TLS is susceptible to man-in-the-middle attacks. The default value is `false`. The configuration item can only be used with TLS connections.                                                                    |
+
+Write options:
+
+| Property name | Optional | Description                                                                                                                                                                                                                                                                                                                                                     |
+|---------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| measurement   | false    | The measurement of the InfluxDb (like table name)                                                                                                                                                                                                                                                                                                               |
+| tags          | true     | The tags to write, the format is like {"tag1":"value1"}. The value can be dataTemplate format, like <span v-pre>{"tag1":"{{.temperature}}"}</span>                                                                                                                                                                                                              |
+| fields        | true     | The fields to write, the format is like ["field1", "field2"]. If fields is not set, all fields selected in the SQL will all written to InfluxDB.                                                                                                                                                                                                                |
+| precision     | true     | The precision of the timestamp. Support `ns`, `us`, `ms`, `s`. Default: `ms`.                                                                                                                                                                                                                                                                                   |
+| tsFieldName   | true     | The field name of the timestamp. If set, the written timestamp will use the value of the field. For example, if the data has {"ts": 1888888888} and the tsFieldName is set to ts, then the value 1888888888 will be used when written to InfluxDB. Make sure the value is formatted according to the precision. If not set, the current timestamp will be used. |
+
+Other common sink properties including batch settings are supported. Please refer to
+the [sink common properties](../overview.md#common-properties) for more information.
 
 ## Sample usage
 
-Below is a sample for selecting temperature great than 50 degree, and some profiles only for your reference.
-
-### /tmp/influxRule.txt
+Below is a sample for selecting temperature greater than 50 degree and write into influxDB.
 
 ```json
 {
@@ -52,37 +48,11 @@ Below is a sample for selecting temperature great than 50 degree, and some profi
        "username": "",
        "password": "",
        "measurement": "test",
-       "databasename": "databasename",
-       "tagkey": "tagkey",
-       "tagvalue": "tagvalue",
+        "database": "databasename",
+        "tags": "{\"tag1\":\"value1\"}",
        "fields": ["humidity", "temperature", "pressure"]
       }
     }
   ]
 }
-```
-
-### /tmp/influxPlugin.txt
-
-```json
-{
-   "file":"http://localhost:8080/influx.zip"
- }
-```
-
-### plugins/go.mod
-
-```go
-module plugins
-
-go 1.14
-
-require (
-        github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
-        github.com/influxdata/influxdb-client-go v1.2.0
-        github.com/influxdata/influxdb1-client v0.0.0-20200515024757-02f0bf5dbca3 // indirect
-)
-
-replace github.com/lf-edge/ekuiper => /root/goProject/kuiper
-
 ```

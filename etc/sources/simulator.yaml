@@ -1,0 +1,6 @@
+default:
+  data:
+    - temperature: 22.5
+      humidity: 50
+  interval: 1000
+  loop: true

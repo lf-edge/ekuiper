@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,14 +18,18 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	store2 "github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/topo"
 	"github.com/lf-edge/ekuiper/internal/topo/node"
+	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 )
 
@@ -38,7 +42,7 @@ func Plan(rule *api.Rule) (*topo.Topo, error) {
 }
 
 // PlanSQLWithSourcesAndSinks For test only
-func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sinks []*node.SinkNode) (*topo.Topo, error) {
+func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode) (*topo.Topo, error) {
 	sql := rule.Sql
 
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
@@ -48,6 +52,10 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sink
 	}
 	// validation
 	streamsFromStmt := xsql.GetStreams(stmt)
+	// validate stmt
+	if err := validateStmt(stmt); err != nil {
+		return nil, err
+	}
 	//if len(sources) > 0 && len(sources) != len(streamsFromStmt) {
 	//	return nil, fmt.Errorf("Invalid parameter sources or streams, the length cannot match the statement, expect %d sources.", len(streamsFromStmt))
 	//}
@@ -63,21 +71,41 @@ func PlanSQLWithSourcesAndSinks(rule *api.Rule, sources []*node.SourceNode, sink
 	if err != nil {
 		return nil, err
 	}
-	tp, err := createTopo(rule, lp, sources, sinks, streamsFromStmt)
+	tp, err := createTopo(rule, lp, mockSourcesProp, sinks, streamsFromStmt)
 	if err != nil {
 		return nil, err
 	}
 	return tp, nil
 }
 
-func createTopo(rule *api.Rule, lp LogicalPlan, sources []*node.SourceNode, sinks []*node.SinkNode, streamsFromStmt []string) (*topo.Topo, error) {
+func validateStmt(stmt *ast.SelectStatement) error {
+	var vErr error
+	ast.WalkFunc(stmt, func(n ast.Node) bool {
+		if validateAbleExpr, ok := n.(ast.ValidateAbleExpr); ok {
+			if err := validateAbleExpr.ValidateExpr(); err != nil {
+				vErr = err
+				return false
+			}
+		}
+		return true
+	})
+	return vErr
+}
+
+func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.ExecutorError, err.Error())
+		}
+	}()
+
 	// Create topology
 	tp, err := topo.NewWithNameAndOptions(rule.Id, rule.Options)
 	if err != nil {
 		return nil, err
 	}
 
-	input, _, err := buildOps(lp, tp, rule.Options, sources, streamsFromStmt, 0)
+	input, _, err := buildOps(lp, tp, rule.Options, mockSourcesProp, streamsFromStmt, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +116,21 @@ func createTopo(rule *api.Rule, lp LogicalPlan, sources []*node.SourceNode, sink
 			tp.AddSink(inputs, sink)
 		}
 	} else {
+		manager := io.GetManager()
 		for i, m := range rule.Actions {
 			for name, action := range m {
 				props, ok := action.(map[string]interface{})
 				if !ok {
 					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
+				}
+				s, err := manager.Sink(name)
+				if err != nil {
+					return nil, err
+				}
+				if s != nil {
+					if err := s.Configure(props); err != nil {
+						return nil, err
+					}
 				}
 				tp.AddSink(inputs, node.NewSinkNode(fmt.Sprintf("%s_%d", name, i), name, props))
 			}
@@ -143,6 +181,9 @@ func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
 			tmp += "   "
 		}
 		p.BuildExplainInfo()
+		if info, ok := p.(RuleRuntimeInfo); ok {
+			info.BuildSchemaInfo(rule.Id)
+		}
 		// Build the explainInfo of the current layer
 		res += tmp + p.Explain() + "\n"
 		if len(p.Children()) != 0 {
@@ -156,7 +197,7 @@ func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
 	return res, nil
 }
 
-func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []*node.SourceNode, streamsFromStmt []string, index int) (api.Emitter, int, error) {
+func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (api.Emitter, int, error) {
 	var inputs []api.Emitter
 	newIndex := index
 	for _, c := range lp.Children() {
@@ -174,13 +215,25 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	)
 	switch t := lp.(type) {
 	case *DataSourcePlan:
-		srcNode, err := transformSourceNode(t, sources, options)
+		srcNode, emitters, indexInc, err := transformSourceNode(t, sources, tp.GetName(), options, newIndex)
 		if err != nil {
 			return nil, 0, err
 		}
 		tp.AddSrc(srcNode)
 		inputs = []api.Emitter{srcNode}
 		op = srcNode
+		if len(emitters) > 0 {
+			for i, e := range emitters {
+				if i < len(emitters)-1 {
+					tp.AddOperator(inputs, e)
+					inputs = []api.Emitter{e}
+				}
+				op = e
+				newIndex++
+			}
+		} else {
+			newIndex += indexInc
+		}
 	case *WatermarkPlan:
 		op = node.NewWatermarkOp(fmt.Sprintf("%d_watermark", newIndex), t.SendWatermark, t.Emitters, options)
 	case *AnalyticFuncsPlan:
@@ -188,7 +241,6 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	case *WindowPlan:
 		if t.condition != nil {
 			wfilterOp := Transform(&operator.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
-			wfilterOp.SetConcurrency(options.Concurrency)
 			tp.AddOperator(inputs, wfilterOp)
 			inputs = []api.Emitter{wfilterOp}
 		}
@@ -242,30 +294,10 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources []
 	if err != nil {
 		return nil, 0, err
 	}
-	if uop, ok := op.(*node.UnaryOperator); ok {
-		uop.SetConcurrency(options.Concurrency)
-	}
 	if onode, ok := op.(node.OperatorNode); ok {
 		tp.AddOperator(inputs, onode)
 	}
 	return op, newIndex, nil
-}
-
-func convertFromUnit(t ast.Token, v int64) int64 {
-	unit := 1
-	switch t {
-	case ast.DD:
-		unit = 24 * 3600 * 1000
-	case ast.HH:
-		unit = 3600 * 1000
-	case ast.MI:
-		unit = 60 * 1000
-	case ast.SS:
-		unit = 1000
-	case ast.MS:
-		unit = 1
-	}
-	return int64(unit) * v
 }
 
 func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
@@ -285,67 +317,158 @@ func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
 	return int64(t.length) * unit, int64(t.interval) * unit, t.delay * unit
 }
 
-func transformSourceNode(t *DataSourcePlan, sources []*node.SourceNode, options *api.RuleOption) (*node.SourceNode, error) {
+func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *api.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	isSchemaless := t.isSchemaless
+	mockSourceConf, isMock := mockSourcesProp[string(t.name)]
+	if isMock {
+		t.streamStmt.Options.TYPE = "simulator"
+	}
 	switch t.streamStmt.StreamType {
 	case ast.TypeStream:
-		var (
-			pp  node.UnOperation
-			err error
-		)
+		strType := t.streamStmt.Options.TYPE
+		if strType == "" {
+			strType = "mqtt"
+			t.streamStmt.Options.TYPE = strType
+		}
+		si, err := io.Source(strType)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		var pp node.UnOperation
 		if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || t.isBinary)) {
 			pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
 			if err != nil {
-				return nil, err
+				return nil, nil, 0, err
 			}
 		}
-		var srcNode *node.SourceNode
-		if len(sources) == 0 {
-			var sourceNode *node.SourceNode
-			schema := t.streamFields
-			if t.isSchemaless {
-				schema = nil
+		switch ss := si.(type) {
+		case api.SourceConnector:
+			return splitSource(t, ss, options, index, ruleId, pp)
+		default:
+			srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, t.streamFields)
+			if isMock {
+				srcNode.SetProps(mockSourceConf)
 			}
-			sourceNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
-			srcNode = sourceNode
-		} else {
-			srcNode = getMockSource(sources, string(t.name))
-			if srcNode == nil {
-				return nil, fmt.Errorf("can't find predefined source %s", t.name)
-			}
+			return srcNode, nil, 0, nil
 		}
-		return srcNode, nil
 	case ast.TypeTable:
+		si, err := io.Source(t.streamStmt.Options.TYPE)
+		if err != nil {
+			return nil, nil, 0, err
+		}
 		pp, err := operator.NewTableProcessor(isSchemaless, string(t.name), t.streamFields, t.streamStmt.Options)
 		if err != nil {
-			return nil, err
+			return nil, nil, 0, err
 		}
-		var srcNode *node.SourceNode
-		if len(sources) > 0 {
-			srcNode = getMockSource(sources, string(t.name))
+
+		schema := t.streamFields
+		if t.isSchemaless {
+			schema = nil
 		}
-		if srcNode == nil {
-			schema := t.streamFields
-			if t.isSchemaless {
-				schema = nil
+		switch ss := si.(type) {
+		case api.SourceConnector:
+			return splitSource(t, ss, options, index, ruleId, pp)
+		default:
+			srcNode := node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options, t.isWildCard, t.isSchemaless, schema)
+			if isMock {
+				srcNode.SetProps(mockSourceConf)
 			}
-			srcNode = node.NewSourceNode(string(t.name), t.streamStmt.StreamType, pp, t.streamStmt.Options, options.SendError, schema)
-		}
-		return srcNode, nil
-	}
-	return nil, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
-}
-
-func getMockSource(sources []*node.SourceNode, name string) *node.SourceNode {
-	for _, source := range sources {
-		if name == source.GetName() {
-			return source
+			return srcNode, nil, 0, nil
 		}
 	}
-	return nil
+	return nil, nil, 0, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
 }
 
-func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (LogicalPlan, error) {
+type SourcePropsForSplit struct {
+	Decompression string `json:"decompression"`
+	SelId         string `json:"connectionSelector"`
+}
+
+func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
+	if t.streamStmt.Options.SHARED {
+		srcSubtopo, existed := topo.GetSubTopo(string(t.name))
+		if existed {
+			srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
+			return srcSubtopo, nil, srcSubtopo.OpsCount(), nil
+		}
+	}
+
+	// Get all props
+	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
+	sp := &SourcePropsForSplit{}
+	_ = cast.MapToStruct(props, sp)
+	// Create the connector node as source node
+	var (
+		err         error
+		srcConnNode node.DataSourceNode
+	)
+	if sp.SelId == "" {
+		srcConnNode, err = node.NewSourceConnectorNode(string(t.name), ss, t.streamStmt.Options.DATASOURCE, props, options)
+	} else { // connection selector is set as a one node sub_topo
+		selName := fmt.Sprintf("%s/%s", sp.SelId, t.streamStmt.Options.DATASOURCE)
+		srcSubtopo, existed := topo.GetSubTopo(selName)
+		if !existed {
+			var scn node.DataSourceNode
+			scn, err = node.NewSourceConnectorNode(selName, ss, t.streamStmt.Options.DATASOURCE, props, options)
+			if err == nil {
+				conf.Log.Infof("Create SubTopo %s for shared connection", selName)
+				srcSubtopo.AddSrc(scn)
+			}
+		}
+		srcConnNode = srcSubtopo
+	}
+
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	index++
+	var ops []node.OperatorNode
+
+	if sp.Decompression != "" {
+		dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		index++
+		ops = append(ops, dco)
+	}
+
+	// Create the decode node
+	decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	index++
+	ops = append(ops, decodeNode)
+
+	// Create the preprocessor node if needed
+	if pp != nil {
+		ops = append(ops, Transform(pp, fmt.Sprintf("%d_preprocessor", index), options))
+		index++
+	}
+
+	if t.streamStmt.Options.SHARED && len(ops) > 0 {
+		// should not exist
+		srcSubtopo, _ := topo.GetSubTopo(string(t.name))
+		conf.Log.Infof("Create SubTopo %s", string(t.name))
+		srcSubtopo.AddSrc(srcConnNode)
+		subInputs := []api.Emitter{srcSubtopo}
+		for _, e := range ops {
+			srcSubtopo.AddOperator(subInputs, e)
+			subInputs = []api.Emitter{e}
+		}
+		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
+		return srcSubtopo, nil, len(ops), nil
+	}
+	return srcConnNode, ops, 0, nil
+}
+
+func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
+	defer func() {
+		if err != nil {
+			err = errorx.NewWithCode(errorx.PlanError, err.Error())
+		}
+	}()
 	dimensions := stmt.Dimensions
 	var (
 		p        LogicalPlan

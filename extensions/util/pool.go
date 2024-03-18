@@ -22,6 +22,7 @@ import (
 	"github.com/xo/dburl"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 )
 
 var GlobalPool *dbPool
@@ -60,7 +61,29 @@ func (dp *dbPool) getDBConnCount(url string) int {
 	return 0
 }
 
+func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
+	hiddenURL, _ := hidden.HiddenURLPasswd(url)
+	dp.Lock()
+	defer dp.Unlock()
+	newDb, err := openDB(url, dp.isTesting)
+	if err != nil {
+		conf.Log.Errorf("create new database instance %v failed, err:%v", hiddenURL, err)
+		return nil, err
+	}
+	conf.Log.Infof("create new database instance: %v", hiddenURL)
+	oldDB, ok := dp.pool[url]
+	if !ok {
+		dp.connections[url] = 1
+	} else {
+		// close oldDB
+		oldDB.Close()
+	}
+	dp.pool[url] = newDb
+	return newDb, nil
+}
+
 func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
+	hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	db, ok := dp.pool[url]
@@ -70,10 +93,10 @@ func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
 	}
 	newDb, err := openDB(url, dp.isTesting)
 	if err != nil {
-		conf.Log.Errorf("create new database instance %v failed, err:%v", url, err)
+		conf.Log.Errorf("create new database instance %v failed, err:%v", hiddenURL, err)
 		return nil, err
 	}
-	conf.Log.Infof("create new database instance: %v", url)
+	conf.Log.Infof("create new database instance: %v", hiddenURL)
 	dp.pool[url] = newDb
 	dp.connections[url] = 1
 	return newDb, nil
@@ -114,6 +137,7 @@ func openDMDB(url string) (*sql.DB, error) {
 }
 
 func (dp *dbPool) closeOneConn(url string) error {
+	hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	connCount, ok := dp.connections[url]
@@ -125,7 +149,7 @@ func (dp *dbPool) closeOneConn(url string) error {
 		dp.connections[url] = connCount
 		return nil
 	}
-	conf.Log.Infof("drop database instance: %v", url)
+	conf.Log.Infof("drop database instance: %v", hiddenURL)
 	db := dp.pool[url]
 	// remove db instance from map in order to avoid memory leak
 	delete(dp.pool, url)
@@ -147,6 +171,10 @@ func ParseDBUrl(urlstr string) (string, string, error) {
 		u.Driver = "sqlite"
 	}
 	return u.Driver, u.DSN, nil
+}
+
+func ReplaceDbForOneNode(pool *dbPool, url string) (*sql.DB, error) {
+	return pool.createAndReplace(url)
 }
 
 func FetchDBToOneNode(pool *dbPool, url string) (*sql.DB, error) {

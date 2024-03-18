@@ -45,7 +45,7 @@ var etc embed.FS
 var (
 	Version       = "unknown"
 	LoadFileType  = "absolute"
-	baseDirectory = "/storage/emulated/0/ekuiper/"
+	baseDirectory = ""
 )
 
 var lblMsg *widget.Label
@@ -73,26 +73,25 @@ func initService() {
 	for _, dir := range neededDirs {
 		err := os.MkdirAll(baseDirectory+dir, os.ModePerm)
 		if err != nil {
-			lblMsg.SetText(err.Error())
+			displayErrorMessage(err.Error())
 			mkAllDirSucceed = false
 			break
 		}
 	}
 
 	if mkAllDirSucceed {
-		lblMsg.SetText("Create all dirs Successfully!")
+		displayMessage("Created all directories successfully!")
 	}
 
 	err := walkAndCopy("etc", baseDirectory)
 	if err != nil {
-		lblMsg.SetText(err.Error() + ": Please check if have the right permission!")
+		displayErrorMessage(err.Error() + ": Please check if you have the right permissions!")
 	} else {
-		lblMsg.SetText("Init Successfully! You can start the kuiperd!")
+		displayMessage("Initialization successful! You can start the kuiperd!")
 		application.Preferences().SetBool("initialized", true)
 		btnInit.Hide()
 		btnStart.Show()
 	}
-
 }
 
 func getClientIp() (string, error) {
@@ -110,22 +109,28 @@ func getClientIp() (string, error) {
 		}
 	}
 
-	return "0.0.0.0", errors.New("can not find the client ip address")
+	return "0.0.0.0", errors.New("cannot find the client IP address")
 }
 
 func walkAndCopy(path, dest string) error {
 	dir, err := etc.ReadDir(path)
 	if err != nil {
-		fmt.Println("read dir failed: ", path)
-		return err
+		return fmt.Errorf("read dir failed: %s", path)
 	}
+
 	for _, file := range dir {
 		if file.IsDir() {
 			_ = walkAndCopy(path+"/"+file.Name(), dest)
 		} else {
 			tmpPath := path + "/" + file.Name()
-			dest, _ := os.Create(baseDirectory + tmpPath)
-			sour, _ := etc.ReadFile(tmpPath)
+			dest, err := os.Create(baseDirectory + tmpPath)
+			if err != nil {
+				return err
+			}
+			sour, err := etc.ReadFile(tmpPath)
+			if err != nil {
+				return err
+			}
 			if _, err := dest.Write(sour); err != nil {
 				return err
 			}
@@ -146,15 +151,25 @@ func startService() {
 			restHttpType = "https"
 		}
 		localIPAddr, _ := getClientIp()
-		msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, \nrestful api on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(localIPAddr, conf.Config.Basic.RestPort))
-		lblMsg.SetText(msg)
+		msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, \nrestful API on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(localIPAddr, conf.Config.Basic.RestPort))
+		displayMessage(msg)
 		btnStart.Hide()
 		btnQuit.Show()
 	}()
 }
 
+func displayErrorMessage(message string) {
+	lblMsg.SetText(message)
+}
+
+func displayMessage(message string) {
+	lblMsg.SetText(message)
+}
+
 func main() {
 	application = app.NewWithID("github.com/lf-edge/eKuiper")
+
+	baseDirectory = application.Storage().RootURI().Path()
 
 	customMetadata := application.Metadata().Custom
 	if ver, exist := customMetadata["version"]; exist {
