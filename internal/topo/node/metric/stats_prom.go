@@ -104,7 +104,7 @@ func (sm *PrometheusStatManager) SetBufferLength(l int64) {
 }
 
 func (sm *PrometheusStatManager) Clean(ruleId string) {
-	if conf.Config != nil && conf.Config.Basic.Prometheus && !conf.Config.Basic.RemainRuleStats {
+	if conf.Config != nil && conf.Config.Basic.Prometheus && !conf.Config.Basic.RetainRuleStats {
 		mg := GetPrometheusMetrics().GetMetricsGroup(sm.opType)
 		strInId := strconv.Itoa(sm.instanceId)
 		mg.TotalRecordsIn.DeleteLabelValues(ruleId, sm.opType, sm.opId, strInId)

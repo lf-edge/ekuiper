@@ -23,7 +23,7 @@ import (
 func TestClean(t *testing.T) {
 	conf.InitConf()
 	conf.Config.Basic.Prometheus = true
-	conf.Config.Basic.RemainRuleStats = true
+	conf.Config.Basic.RetainRuleStats = true
 	psm := &PrometheusStatManager{}
 	psm.Clean("1")
 }
