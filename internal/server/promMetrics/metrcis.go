@@ -33,7 +33,7 @@ func InitServerMetrics() {
 	RuleStatusCountGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kuiper",
 		Subsystem: "rule",
-		Name:      "status_count",
+		Name:      "count",
 		Help:      "gauge of rule status count",
 	}, []string{LblStatusType})
 
