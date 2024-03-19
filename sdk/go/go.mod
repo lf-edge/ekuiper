@@ -1,6 +1,6 @@
 module github.com/lf-edge/ekuiper/sdk/go
 
-go 1.21
+go 1.22
 
 require (
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1

@@ -342,8 +342,8 @@ require (
 	sqlflow.org/gomaxcompute v0.0.0-20210805062559-c14ae028b44c // indirect
 )
 
-go 1.21
+go 1.22
 
-toolchain go1.21.0
+toolchain go1.22.1
 
 replace github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba => ./extensions
