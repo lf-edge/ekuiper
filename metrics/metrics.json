@@ -518,10 +518,6 @@
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "ad687d3e-23e5-4418-bb75-0dfb04fb4721"
-          },
           "editorMode": "builder",
           "expr": "sum by(instance) (rate(kuiper_source_records_in_total{instance=\"$instance\"}[1m]))",
           "legendFormat": "{{instance}}",
@@ -590,7 +586,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 25
+        "y": 18
       },
       "id": 31,
       "options": {
@@ -677,7 +673,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 25
+        "y": 18
       },
       "id": 32,
       "options": {
