@@ -187,18 +187,15 @@ func TestGenerateTemplateWithMultiIndex(t *testing.T) {
 		{
 			cfg: &TemplateSqlQueryCfg{
 				TemplateSql: "select * from table where col1 > `{{.col1}}` AND col2 > `{{.col2}}` order by co1 ASC, co2 ASC",
-				store: &store.IndexFieldStore{
-					IndexFieldValueList: []*store.IndexField{
-						{
-							IndexFieldName:  "col1",
-							IndexFieldValue: 1,
-						},
-						{
-							IndexFieldName:  "col2",
-							IndexFieldValue: 2,
-						},
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
 					},
-				},
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
+					}),
 			},
 			sql: "select * from table where col1 > `1` AND col2 > `2` order by co1 ASC, co2 ASC",
 		},

@@ -137,62 +137,52 @@ func TestGenerateSQLWithMultiIndex(t *testing.T) {
 		{
 			cfg: &InternalSqlQueryCfg{
 				Table: "t",
-				store: &store.IndexFieldStore{
-					IndexFieldValueList: []*store.IndexField{
-						{
-							IndexFieldName:  "col1",
-							IndexFieldValue: 1,
-						},
-						{
-							IndexFieldName:  "col2",
-							IndexFieldValue: 2,
-						},
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
 					},
-				},
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
+					}),
 			},
 			sql: `select * from t where col1 > '1' AND col2 > '2' order by 'col1' ASC, 'col2' ASC`,
 		},
 		{
 			cfg: &InternalSqlQueryCfg{
 				Table: "t",
-				store: &store.IndexFieldStore{
-					IndexFieldValueList: []*store.IndexField{
-						{
-							IndexFieldName:  "col2",
-							IndexFieldValue: 2,
-						},
-						{
-							IndexFieldName:  "col1",
-							IndexFieldValue: 1,
-						},
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
 					},
-				},
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
+					}),
 			},
-			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC `,
+			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC`,
 		},
 		{
 			cfg: &InternalSqlQueryCfg{
 				Table: "t",
 				Limit: 3,
-				store: &store.IndexFieldStore{
-					IndexFieldValueList: []*store.IndexField{
-						{
-							IndexFieldName:  "col2",
-							IndexFieldValue: 2,
-						},
-						{
-							IndexFieldName:  "col1",
-							IndexFieldValue: 1,
-						},
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
 					},
-				},
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
+					}),
 			},
 			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC limit 3`,
 		},
 	}
 
 	for _, tc := range testcases {
-		tc.cfg.store.LoadFromList()
 		g := NewCommonSqlQuery(tc.cfg)
 		s, err := g.SqlQueryStatement()
 		require.NoError(t, err)

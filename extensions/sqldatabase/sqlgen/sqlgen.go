@@ -42,18 +42,18 @@ type InternalSqlQueryCfg struct {
 	IndexFieldDataType       string      `json:"indexFieldType"`
 	IndexFieldDateTimeFormat string      `json:"dateTimeFormat"`
 
-	store *store.IndexFieldStore
+	store *store.IndexFieldStoreWrap
 }
 
 func (i *InternalSqlQueryCfg) InitIndexFieldStore() {
-	i.store = &store.IndexFieldStore{}
+	i.store = &store.IndexFieldStoreWrap{}
 	i.store.Init(i.IndexFieldName, i.IndexFieldValue, i.IndexFieldDataType, i.IndexFieldDateTimeFormat)
 }
 
 func (i *InternalSqlQueryCfg) SetIndexValue(v interface{}) {
 	switch vv := v.(type) {
 	case *store.IndexFieldStore:
-		i.store = vv
+		i.store.InitByStore(vv)
 		i.store.LoadFromList()
 	default:
 		i.IndexFieldValue = vv
@@ -62,7 +62,7 @@ func (i *InternalSqlQueryCfg) SetIndexValue(v interface{}) {
 }
 
 func (i *InternalSqlQueryCfg) GetIndexValue() interface{} {
-	return i.store
+	return i.store.GetStore()
 }
 
 type sqlConfig struct {

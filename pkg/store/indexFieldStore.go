@@ -14,6 +14,8 @@
 
 package store
 
+import "sync"
+
 type IndexField struct {
 	IndexFieldName           string      `json:"indexField"`
 	IndexFieldValue          interface{} `json:"indexValue"`
@@ -21,12 +23,41 @@ type IndexField struct {
 	IndexFieldDateTimeFormat string      `json:"dateTimeFormat"`
 }
 
+type IndexFieldStoreWrap struct {
+	// use mutex to modify value in future
+	sync.RWMutex
+	store *IndexFieldStore
+}
+
 type IndexFieldStore struct {
 	IndexFieldValueList []*IndexField          `json:"indexFieldValueList"`
 	IndexFieldValueMap  map[string]*IndexField `json:"indexFieldValueMap"`
 }
 
-func (store *IndexFieldStore) Init(name string, value interface{}, dataType string, format string) {
+func NewIndexFieldWrap(fields ...*IndexField) *IndexFieldStoreWrap {
+	wrap := &IndexFieldStoreWrap{}
+	wrap.store = &IndexFieldStore{}
+	wrap.store.IndexFieldValueList = make([]*IndexField, 0)
+	for _, f := range fields {
+		wrap.store.IndexFieldValueList = append(wrap.store.IndexFieldValueList, f)
+	}
+	wrap.LoadFromList()
+	return wrap
+}
+
+func (wrap *IndexFieldStoreWrap) InitByStore(store *IndexFieldStore) {
+	wrap.store = store
+}
+
+func (wrap *IndexFieldStoreWrap) GetStore() *IndexFieldStore {
+	wrap.RLock()
+	defer wrap.RUnlock()
+	return wrap.store
+}
+
+func (wrap *IndexFieldStoreWrap) Init(name string, value interface{}, dataType string, format string) {
+	store := &IndexFieldStore{}
+	wrap.store = store
 	store.IndexFieldValueList = make([]*IndexField, 0)
 	store.IndexFieldValueMap = make(map[string]*IndexField)
 	if name != "" {
@@ -41,25 +72,33 @@ func (store *IndexFieldStore) Init(name string, value interface{}, dataType stri
 	}
 }
 
-func (store *IndexFieldStore) GetFieldList() []*IndexField {
-	return store.IndexFieldValueList
+func (wrap *IndexFieldStoreWrap) GetFieldList() []*IndexField {
+	wrap.RLock()
+	defer wrap.RUnlock()
+	return wrap.store.IndexFieldValueList
 }
 
-func (store *IndexFieldStore) GetFieldMap() map[string]*IndexField {
-	return store.IndexFieldValueMap
+func (wrap *IndexFieldStoreWrap) GetFieldMap() map[string]*IndexField {
+	wrap.RLock()
+	defer wrap.RUnlock()
+	return wrap.store.IndexFieldValueMap
 }
 
-func (store *IndexFieldStore) UpdateFieldValue(name string, value interface{}) {
-	w, ok := store.IndexFieldValueMap[name]
+func (wrap *IndexFieldStoreWrap) UpdateFieldValue(name string, value interface{}) {
+	wrap.Lock()
+	defer wrap.Unlock()
+	w, ok := wrap.store.IndexFieldValueMap[name]
 	if !ok {
 		return
 	}
 	w.IndexFieldValue = value
 }
 
-func (store *IndexFieldStore) LoadFromList() {
-	store.IndexFieldValueMap = make(map[string]*IndexField)
-	for _, field := range store.GetFieldList() {
-		store.IndexFieldValueMap[field.IndexFieldName] = field
+func (wrap *IndexFieldStoreWrap) LoadFromList() {
+	wrap.Lock()
+	defer wrap.Unlock()
+	wrap.store.IndexFieldValueMap = make(map[string]*IndexField)
+	for _, field := range wrap.store.IndexFieldValueList {
+		wrap.store.IndexFieldValueMap[field.IndexFieldName] = field
 	}
 }
