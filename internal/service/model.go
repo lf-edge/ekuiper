@@ -14,6 +14,8 @@
 
 package service
 
+import "time"
+
 type (
 	protocol string
 	schema   string
@@ -93,6 +95,10 @@ type interfaceInfo struct {
 type restOption struct {
 	InsecureSkipVerify bool              `json:"insecureSkipVerify"`
 	Headers            map[string]string `json:"headers"`
+	RetryCount         int               `json:"retryCount"`
+	RetryInterval      string            `json:"retryInterval"`
+
+	retryIntervalDuration time.Duration `json:"-"`
 }
 
 type functionContainer struct {

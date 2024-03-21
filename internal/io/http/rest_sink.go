@@ -114,16 +114,7 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 }
 
 func isRecoverAbleError(err error) bool {
-	if strings.Contains(err.Error(), "connection reset by peer") {
-		return true
-	}
-	if urlErr, ok := err.(*url.Error); ok {
-		// consider timeout and temporary error as recoverable
-		if urlErr.Timeout() || urlErr.Temporary() {
-			return true
-		}
-	}
-	return false
+	return errorx.IsRestRecoverAbleError(err)
 }
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {
