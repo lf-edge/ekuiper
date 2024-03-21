@@ -24,11 +24,13 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 func init() {
 	gob.Register(map[string]interface{}{})
 	gob.Register(checkpoint.BufferOrEvent{})
+	gob.Register(&store.IndexFieldStore{})
 }
 
 // KVStore The manager for checkpoint storage.

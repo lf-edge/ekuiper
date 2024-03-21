@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"github.com/posener/order"
 
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 type templateSqlQuery struct {
@@ -53,23 +54,24 @@ func (t *templateSqlQuery) init() error {
 
 func (t *templateSqlQuery) SqlQueryStatement() (string, error) {
 	var val string
-	if t.IndexFieldType == DATETIME_TYPE && t.DateTimeFormat != "" {
-		time, err := cast.InterfaceToTime(t.IndexValue, t.DateTimeFormat)
-		if err != nil {
-			err = fmt.Errorf("SqlQueryStatement InterfaceToTime datetime convert got error %v", err)
-			return "", err
+	input := make(map[string]interface{})
+	fieldMap := t.store.GetFieldMap()
+	for _, w := range fieldMap {
+		if w.IndexFieldDataType == DATETIME_TYPE && w.IndexFieldDateTimeFormat != "" {
+			time, err := cast.InterfaceToTime(w.IndexFieldValue, w.IndexFieldDateTimeFormat)
+			if err != nil {
+				err = fmt.Errorf("SqlQueryStatement InterfaceToTime datetime convert got error %v", err)
+				return "", err
+			}
+			val, err = cast.FormatTime(time, w.IndexFieldDateTimeFormat)
+			if err != nil {
+				err = fmt.Errorf("SqlQueryStatement FormatTime datetime convert got error %v", err)
+				return "", err
+			}
+		} else {
+			val = fmt.Sprintf("%v", w.IndexFieldValue)
 		}
-		val, err = cast.FormatTime(time, t.DateTimeFormat)
-		if err != nil {
-			err = fmt.Errorf("SqlQueryStatement FormatTime datetime convert got error %v", err)
-			return "", err
-		}
-	} else {
-		val = fmt.Sprintf("%v", t.IndexValue)
-	}
-
-	input := map[string]interface{}{
-		t.IndexField: val,
+		input[w.IndexFieldName] = val
 	}
 
 	var output bytes.Buffer
@@ -81,13 +83,44 @@ func (t *templateSqlQuery) SqlQueryStatement() (string, error) {
 }
 
 func (t *templateSqlQuery) UpdateMaxIndexValue(row map[string]interface{}) {
-	if t.IndexField != "" {
-		v, found := row[t.IndexField]
+	fieldMap := t.store.GetFieldMap()
+	for _, w := range fieldMap {
+		v, found := row[w.IndexFieldName]
 		if !found {
 			return
 		}
-		if val := order.Is(v); val.Greater(t.IndexValue) {
-			t.IndexValue = v
+		if val := order.Is(v); val.Greater(w.IndexFieldValue) {
+			t.store.UpdateFieldValue(w.IndexFieldName, v)
 		}
 	}
+}
+
+type TemplateSqlQueryCfg struct {
+	TemplateSql              string      `json:"templateSql"`
+	IndexFieldName           string      `json:"indexField"`
+	IndexFieldValue          interface{} `json:"indexValue"`
+	IndexFieldDataType       string      `json:"indexFieldType"`
+	IndexFieldDateTimeFormat string      `json:"dateTimeFormat"`
+
+	store *store.IndexFieldStoreWrap
+}
+
+func (t *TemplateSqlQueryCfg) InitIndexFieldStore() {
+	t.store = &store.IndexFieldStoreWrap{}
+	t.store.Init(t.IndexFieldName, t.IndexFieldValue, t.IndexFieldDataType, t.IndexFieldDateTimeFormat)
+}
+
+func (t *TemplateSqlQueryCfg) SetIndexValue(v interface{}) {
+	switch vv := v.(type) {
+	case *store.IndexFieldStore:
+		t.store.InitByStore(vv)
+		t.store.LoadFromList()
+	default:
+		t.IndexFieldValue = vv
+		t.InitIndexFieldStore()
+	}
+}
+
+func (t *TemplateSqlQueryCfg) GetIndexValue() interface{} {
+	return t.store.GetStore()
 }

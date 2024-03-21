@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
@@ -37,12 +39,12 @@ func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
 			fields: fields{
 				indexSlice: nil,
 				InternalSqlQueryCfg: &InternalSqlQueryCfg{
-					Table:          "table",
-					Limit:          2,
-					IndexField:     "responseTime",
-					IndexValue:     10,
-					IndexFieldType: "",
-					DateTimeFormat: "",
+					Table:                    "table",
+					Limit:                    2,
+					IndexFieldName:           "responseTime",
+					IndexFieldValue:          10,
+					IndexFieldDataType:       "",
+					IndexFieldDateTimeFormat: "",
 				},
 			},
 			want:    "select top 2 * from table where responseTime > '10' order by responseTime ASC",
@@ -53,12 +55,12 @@ func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
 			fields: fields{
 				indexSlice: nil,
 				InternalSqlQueryCfg: &InternalSqlQueryCfg{
-					Table:          "table",
-					Limit:          2,
-					IndexField:     "responseTime",
-					IndexValue:     "2022-04-13 06:22:32.233",
-					IndexFieldType: "DATETIME",
-					DateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS",
+					Table:                    "table",
+					Limit:                    2,
+					IndexFieldName:           "responseTime",
+					IndexFieldValue:          "2022-04-13 06:22:32.233",
+					IndexFieldDataType:       "DATETIME",
+					IndexFieldDateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS",
 				},
 			},
 			want:    "select top 2 * from table where responseTime > '2022-04-13 06:22:32.233' order by responseTime ASC",
@@ -66,6 +68,7 @@ func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt.fields.InternalSqlQueryCfg.InitIndexFieldStore()
 		t.Run(tt.name, func(t *testing.T) {
 			q := &SqlServerQueryGenerator{
 				InternalSqlQueryCfg: tt.fields.InternalSqlQueryCfg,
@@ -83,22 +86,26 @@ func TestQueryGenerator_SqlQueryStatement(t *testing.T) {
 }
 
 func TestOracleQuery(t *testing.T) {
-	s := NewOracleQueryGenerate(&InternalSqlQueryCfg{
+	cfg := &InternalSqlQueryCfg{
 		Table: "t",
 		Limit: 1,
-	})
+	}
+	cfg.InitIndexFieldStore()
+	s := NewOracleQueryGenerate(cfg)
 	query, err := s.SqlQueryStatement()
 	require.NoError(t, err)
 	require.Equal(t, query, "select * from (select * from t ) where rownum <= 1")
 }
 
 func TestInternalQuery(t *testing.T) {
-	s := NewSqlServerQuery(&InternalSqlQueryCfg{
-		Table:      "table",
-		Limit:      10,
-		IndexField: "responseTime",
-		IndexValue: 10,
-	})
+	cfg := &InternalSqlQueryCfg{
+		Table:           "table",
+		Limit:           10,
+		IndexFieldName:  "responseTime",
+		IndexFieldValue: 10,
+	}
+	cfg.InitIndexFieldStore()
+	s := NewSqlServerQuery(cfg)
 
 	s.UpdateMaxIndexValue(map[string]interface{}{
 		"responseTime": 20,
@@ -119,5 +126,66 @@ func TestInternalQuery(t *testing.T) {
 
 	if !reflect.DeepEqual(nextSqlStr, want) {
 		t.Errorf("SqlQueryStatement() = %v, want %v", nextSqlStr, want)
+	}
+}
+
+func TestGenerateSQLWithMultiIndex(t *testing.T) {
+	testcases := []struct {
+		cfg *InternalSqlQueryCfg
+		sql string
+	}{
+		{
+			cfg: &InternalSqlQueryCfg{
+				Table: "t",
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
+					},
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
+					}),
+			},
+			sql: `select * from t where col1 > '1' AND col2 > '2' order by 'col1' ASC, 'col2' ASC`,
+		},
+		{
+			cfg: &InternalSqlQueryCfg{
+				Table: "t",
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
+					},
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
+					}),
+			},
+			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC`,
+		},
+		{
+			cfg: &InternalSqlQueryCfg{
+				Table: "t",
+				Limit: 3,
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
+					},
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
+					}),
+			},
+			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC limit 3`,
+		},
+	}
+
+	for _, tc := range testcases {
+		g := NewCommonSqlQuery(tc.cfg)
+		s, err := g.SqlQueryStatement()
+		require.NoError(t, err)
+		require.Equal(t, tc.sql, s)
 	}
 }
