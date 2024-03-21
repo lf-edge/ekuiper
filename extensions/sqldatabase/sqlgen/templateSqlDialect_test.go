@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 func Test_templateSqlQueryCfg_getSqlQueryStatement(t1 *testing.T) {
@@ -68,10 +72,11 @@ func Test_templateSqlQueryCfg_getSqlQueryStatement(t1 *testing.T) {
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
 			cfg := &TemplateSqlQueryCfg{
-				TemplateSql: tt.fields.TemplateSql,
-				IndexField:  tt.fields.FieldName,
-				IndexValue:  tt.fields.FieldValue,
+				TemplateSql:     tt.fields.TemplateSql,
+				IndexFieldName:  tt.fields.FieldName,
+				IndexFieldValue: tt.fields.FieldValue,
 			}
+			cfg.InitIndexFieldStore()
 			query, _ := NewTemplateSqlQuery(cfg)
 
 			got1, got := query.SqlQueryStatement()
@@ -92,12 +97,13 @@ func getDatetimeFromstring(dateStr string) time.Time {
 
 func TestTemplateQuery(t *testing.T) {
 	cfg := &TemplateSqlQueryCfg{
-		TemplateSql:    "select * from table where responseTime > `{{.responseTime}}`",
-		IndexField:     "responseTime",
-		IndexValue:     getDatetimeFromstring("2008-10-25 14:56:59"),
-		IndexFieldType: DATETIME_TYPE,
-		DateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS",
+		TemplateSql:              "select * from table where responseTime > `{{.responseTime}}`",
+		IndexFieldName:           "responseTime",
+		IndexFieldValue:          getDatetimeFromstring("2008-10-25 14:56:59"),
+		IndexFieldDataType:       DATETIME_TYPE,
+		IndexFieldDateTimeFormat: "YYYY-MM-dd HH:mm:ssSSS",
 	}
+	cfg.InitIndexFieldStore()
 
 	s, _ := NewTemplateSqlQuery(cfg)
 
@@ -170,5 +176,37 @@ func TestTemplateQuery_DateTime(t *testing.T) {
 
 	if !reflect.DeepEqual(nextSqlStr, want) {
 		t.Errorf("SqlQueryStatement() = %v, want %v", nextSqlStr, want)
+	}
+}
+
+func TestGenerateTemplateWithMultiIndex(t *testing.T) {
+	testcases := []struct {
+		cfg *TemplateSqlQueryCfg
+		sql string
+	}{
+		{
+			cfg: &TemplateSqlQueryCfg{
+				TemplateSql: "select * from table where col1 > `{{.col1}}` AND col2 > `{{.col2}}` order by co1 ASC, co2 ASC",
+				store: store.NewIndexFieldWrap(
+					&store.IndexField{
+						IndexFieldName:  "col1",
+						IndexFieldValue: 1,
+					},
+					&store.IndexField{
+						IndexFieldName:  "col2",
+						IndexFieldValue: 2,
+					}),
+			},
+			sql: "select * from table where col1 > `1` AND col2 > `2` order by co1 ASC, co2 ASC",
+		},
+	}
+
+	for _, tc := range testcases {
+		tc.cfg.store.LoadFromList()
+		g, err := NewTemplateSqlQuery(tc.cfg)
+		require.NoError(t, err)
+		s, err := g.SqlQueryStatement()
+		require.NoError(t, err)
+		require.Equal(t, tc.sql, s)
 	}
 }
