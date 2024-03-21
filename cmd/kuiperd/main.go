@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package main
 import (
 	"flag"
 
+	"github.com/lf-edge/ekuiper/cmd"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/server"
 )
 
 var (
@@ -63,5 +63,5 @@ func init() {
 }
 
 func main() {
-	server.StartUp(Version)
+	cmd.Main(Version)
 }
