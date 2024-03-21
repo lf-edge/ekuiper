@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 type SqlQueryGenerator interface {
@@ -34,36 +35,34 @@ type IndexValuer interface {
 const DATETIME_TYPE = "DATETIME"
 
 type InternalSqlQueryCfg struct {
-	Table          string      `json:"table"`
-	Limit          int         `json:"limit"`
-	IndexField     string      `json:"indexField"`
-	IndexValue     interface{} `json:"indexValue"`
-	IndexFieldType string      `json:"indexFieldType"`
-	DateTimeFormat string      `json:"dateTimeFormat"`
+	Table                    string      `json:"table"`
+	Limit                    int         `json:"limit"`
+	IndexFieldName           string      `json:"indexField"`
+	IndexFieldValue          interface{} `json:"indexValue"`
+	IndexFieldDataType       string      `json:"indexFieldType"`
+	IndexFieldDateTimeFormat string      `json:"dateTimeFormat"`
+
+	store *store.IndexFieldStoreWrap
 }
 
-func (i *InternalSqlQueryCfg) SetIndexValue(val interface{}) {
-	i.IndexValue = val
+func (i *InternalSqlQueryCfg) InitIndexFieldStore() {
+	i.store = &store.IndexFieldStoreWrap{}
+	i.store.Init(i.IndexFieldName, i.IndexFieldValue, i.IndexFieldDataType, i.IndexFieldDateTimeFormat)
+}
+
+func (i *InternalSqlQueryCfg) SetIndexValue(v interface{}) {
+	switch vv := v.(type) {
+	case *store.IndexFieldStore:
+		i.store.InitByStore(vv)
+		i.store.LoadFromList()
+	default:
+		i.IndexFieldValue = vv
+		i.InitIndexFieldStore()
+	}
 }
 
 func (i *InternalSqlQueryCfg) GetIndexValue() interface{} {
-	return i.IndexValue
-}
-
-type TemplateSqlQueryCfg struct {
-	TemplateSql    string      `json:"templateSql"`
-	IndexField     string      `json:"indexField"`
-	IndexValue     interface{} `json:"indexValue"`
-	IndexFieldType string      `json:"indexFieldType"`
-	DateTimeFormat string      `json:"dateTimeFormat"`
-}
-
-func (i *TemplateSqlQueryCfg) SetIndexValue(val interface{}) {
-	i.IndexValue = val
-}
-
-func (i *TemplateSqlQueryCfg) GetIndexValue() interface{} {
-	return i.IndexValue
+	return i.store.GetStore()
 }
 
 type sqlConfig struct {
@@ -81,22 +80,29 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
 
-	if cfg.TemplateSqlQueryCfg != nil && cfg.TemplateSqlQueryCfg.IndexFieldType == DATETIME_TYPE && cfg.TemplateSqlQueryCfg.DateTimeFormat != "" {
-		t, err := cast.InterfaceToTime(cfg.TemplateSqlQueryCfg.IndexValue, cfg.TemplateSqlQueryCfg.DateTimeFormat)
-		if err != nil {
-			err = fmt.Errorf("TemplateSqlQueryCfg InterfaceToTime datetime convert got error %v", err)
-			return err
+	if cfg.TemplateSqlQueryCfg != nil {
+		if cfg.TemplateSqlQueryCfg.IndexFieldDataType == DATETIME_TYPE && cfg.TemplateSqlQueryCfg.IndexFieldDateTimeFormat != "" {
+			t, err := cast.InterfaceToTime(cfg.TemplateSqlQueryCfg.IndexFieldValue, cfg.TemplateSqlQueryCfg.IndexFieldDateTimeFormat)
+			if err != nil {
+				err = fmt.Errorf("TemplateSqlQueryCfg InterfaceToTime datetime convert got error %v", err)
+				return err
+			}
+			cfg.TemplateSqlQueryCfg.IndexFieldValue = t
 		}
-		cfg.TemplateSqlQueryCfg.IndexValue = t
+		cfg.TemplateSqlQueryCfg.InitIndexFieldStore()
 	}
 
-	if cfg.InternalSqlQueryCfg != nil && cfg.InternalSqlQueryCfg.IndexFieldType == DATETIME_TYPE && cfg.InternalSqlQueryCfg.DateTimeFormat != "" {
-		t, err := cast.InterfaceToTime(cfg.InternalSqlQueryCfg.IndexValue, cfg.InternalSqlQueryCfg.DateTimeFormat)
-		if err != nil {
-			err = fmt.Errorf("InternalSqlQueryCfg InterfaceToTime datetime convert got error %v", err)
-			return err
+	if cfg.InternalSqlQueryCfg != nil {
+		if cfg.InternalSqlQueryCfg.IndexFieldDataType == DATETIME_TYPE &&
+			cfg.InternalSqlQueryCfg.IndexFieldDateTimeFormat != "" {
+			t, err := cast.InterfaceToTime(cfg.InternalSqlQueryCfg.IndexFieldValue, cfg.InternalSqlQueryCfg.IndexFieldDateTimeFormat)
+			if err != nil {
+				err = fmt.Errorf("InternalSqlQueryCfg InterfaceToTime datetime convert got error %v", err)
+				return err
+			}
+			cfg.InternalSqlQueryCfg.IndexFieldValue = t
 		}
-		cfg.InternalSqlQueryCfg.IndexValue = t
+		cfg.InternalSqlQueryCfg.InitIndexFieldStore()
 	}
 
 	return nil
