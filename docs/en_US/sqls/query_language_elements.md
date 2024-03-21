@@ -201,7 +201,7 @@ WHERE condition;
 example:
 
 ```sql
-select * from stream1 full join on stream2 stream1.column = stream2.column group by countwindow(5);
+select * from stream1 full join stream2 on stream1.column = stream2.column group by countwindow(5);
 ```
 
 **CROSS**
