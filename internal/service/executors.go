@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 	"github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/jhump/protoreflect/dynamic"
 	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
+	"github.com/pingcap/failpoint"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -211,6 +212,12 @@ func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 			time.Sleep(h.restOpt.retryIntervalDuration)
 		}
 		result, err = h.invokeFunction(ctx, name, params)
+		failpoint.Inject("httpExecutorRetry", func(val failpoint.Value) {
+			if val.(bool) {
+				err = &url.Error{Err: &errorx.MockTemporaryError{}}
+				failpoint.Disable("github.com/lf-edge/ekuiper/internal/service/httpExecutorRetry")
+			}
+		})
 		if err == nil {
 			return result, nil
 		}
@@ -222,6 +229,12 @@ func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 }
 
 func (h *httpExecutor) invokeFunction(ctx api.FunctionContext, name string, params []interface{}) (interface{}, error) {
+	failpoint.Inject("httpExecutorRetry", func(val failpoint.Value) {
+		if val.(bool) {
+			failpoint.Return(nil, nil)
+		}
+	})
+
 	if h.conn == nil {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: h.restOpt.InsecureSkipVerify},
