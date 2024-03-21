@@ -25,53 +25,44 @@ import (
 	"github.com/lf-edge/ekuiper/internal/io/websocket"
 	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
-type (
-	NewSourceFunc       func() api.Source
-	NewLookupSourceFunc func() api.LookupSource
-	NewSinkFunc         func() api.Sink
-)
+func init() {
+	modules.RegisterSource("mqtt", func() api.Source { return &mqtt.SourceConnector{} })
+	modules.RegisterSource("httppull", func() api.Source { return &http.PullSource{} })
+	modules.RegisterSource("httppush", func() api.Source { return &http.PushSource{} })
+	modules.RegisterSource("file", func() api.Source { return &file.FileSource{} })
+	modules.RegisterSource("memory", func() api.Source { return memory.GetSource() })
+	modules.RegisterSource("neuron", func() api.Source { return neuron.GetSource() })
+	modules.RegisterSource("websocket", func() api.Source { return &websocket.WebsocketSource{} })
+	modules.RegisterSource("simulator", func() api.Source { return &simulator.Source{} })
 
-var (
-	sources = map[string]NewSourceFunc{
-		"mqtt":      func() api.Source { return &mqtt.SourceConnector{} },
-		"httppull":  func() api.Source { return &http.PullSource{} },
-		"httppush":  func() api.Source { return &http.PushSource{} },
-		"file":      func() api.Source { return &file.FileSource{} },
-		"memory":    func() api.Source { return memory.GetSource() },
-		"neuron":    func() api.Source { return neuron.GetSource() },
-		"websocket": func() api.Source { return &websocket.WebsocketSource{} },
-		"simulator": func() api.Source { return &simulator.Source{} },
-	}
-	sinks = map[string]NewSinkFunc{
-		"log":         sink.NewLogSink,
-		"logToMemory": sink.NewLogSinkToMemory,
-		"mqtt":        func() api.Sink { return &mqtt.MQTTSink{} },
-		"rest":        func() api.Sink { return &http.RestSink{} },
-		"nop":         func() api.Sink { return &sink.NopSink{} },
-		"memory":      func() api.Sink { return memory.GetSink() },
-		"neuron":      func() api.Sink { return neuron.GetSink() },
-		"file":        func() api.Sink { return file.File() },
-		"websocket":   func() api.Sink { return &websocket.WebSocketSink{} },
-	}
-	lookupSources = map[string]NewLookupSourceFunc{
-		"memory":   func() api.LookupSource { return memory.GetLookupSource() },
-		"httppull": func() api.LookupSource { return http.GetLookUpSource() },
-	}
-)
+	modules.RegisterSink("log", sink.NewLogSink)
+	modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
+	modules.RegisterSink("mqtt", func() api.Sink { return &mqtt.MQTTSink{} })
+	modules.RegisterSink("rest", func() api.Sink { return &http.RestSink{} })
+	modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
+	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
+	modules.RegisterSink("neuron", func() api.Sink { return neuron.GetSink() })
+	modules.RegisterSink("file", func() api.Sink { return file.File() })
+	modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
+
+	modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
+	modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
+}
 
 type Manager struct{}
 
 func (m *Manager) Source(name string) (api.Source, error) {
-	if s, ok := sources[name]; ok {
+	if s, ok := modules.Sources[name]; ok {
 		return s(), nil
 	}
 	return nil, nil
 }
 
 func (m *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
-	if _, ok := sources[name]; ok {
+	if _, ok := modules.Sources[name]; ok {
 		return plugin2.INTERNAL, "", ""
 	} else {
 		return plugin2.NONE_EXTENSION, "", ""
@@ -79,21 +70,21 @@ func (m *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string,
 }
 
 func (m *Manager) LookupSource(name string) (api.LookupSource, error) {
-	if s, ok := lookupSources[name]; ok {
+	if s, ok := modules.LookupSources[name]; ok {
 		return s(), nil
 	}
 	return nil, nil
 }
 
 func (m *Manager) Sink(name string) (api.Sink, error) {
-	if s, ok := sinks[name]; ok {
+	if s, ok := modules.Sinks[name]; ok {
 		return s(), nil
 	}
 	return nil, nil
 }
 
 func (m *Manager) SinkPluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
-	if _, ok := sinks[name]; ok {
+	if _, ok := modules.Sinks[name]; ok {
 		return plugin2.INTERNAL, "", ""
 	} else {
 		return plugin2.NONE_EXTENSION, "", ""

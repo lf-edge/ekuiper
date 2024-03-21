@@ -26,9 +26,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
-	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
 )
 
 func TestSCNLC(t *testing.T) {

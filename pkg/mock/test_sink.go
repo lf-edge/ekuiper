@@ -12,19 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build redisdb || !core
-
-package io
+package mock
 
 import (
-	"github.com/lf-edge/ekuiper/internal/io/redis"
-	"github.com/lf-edge/ekuiper/internal/io/redis/pubsub"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"fmt"
+	"time"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
+	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
 )
 
-func init() {
-	modules.RegisterLookupSource("redis", redis.GetLookupSource)
-	modules.RegisterSink("redis", redis.GetSink)
-	modules.RegisterSink("redisPub", pubsub.RedisPub)
-	modules.RegisterSource("redisSub", pubsub.RedisSub)
+func RunSinkCollect(s api.Sink, data []interface{}) error {
+	ctx := mockContext.NewMockContext("ruleSink", "op1")
+	err := s.Open(ctx)
+	if err != nil {
+		return err
+	}
+	time.Sleep(time.Second)
+	for _, e := range data {
+		err := s.Collect(ctx, e)
+		if err != nil {
+			return err
+		}
+	}
+	time.Sleep(time.Second)
+	fmt.Println("closing sink")
+	return s.Close(ctx)
 }

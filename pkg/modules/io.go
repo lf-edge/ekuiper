@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,30 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mock
+package modules
 
 import (
-	"fmt"
-	"time"
-
-	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
-func RunSinkCollect(s api.Sink, data []interface{}) error {
-	ctx := mockContext.NewMockContext("ruleSink", "op1")
-	err := s.Open(ctx)
-	if err != nil {
-		return err
-	}
-	time.Sleep(time.Second)
-	for _, e := range data {
-		err := s.Collect(ctx, e)
-		if err != nil {
-			return err
-		}
-	}
-	time.Sleep(time.Second)
-	fmt.Println("closing sink")
-	return s.Close(ctx)
+type (
+	NewSourceFunc       func() api.Source
+	NewLookupSourceFunc func() api.LookupSource
+	NewSinkFunc         func() api.Sink
+)
+
+var (
+	Sources       = map[string]NewSourceFunc{}
+	Sinks         = map[string]NewSinkFunc{}
+	LookupSources = map[string]NewLookupSourceFunc{}
+)
+
+func RegisterSource(name string, f NewSourceFunc) {
+	Sources[name] = f
+}
+
+func RegisterSink(name string, f NewSinkFunc) {
+	Sinks[name] = f
+}
+
+func RegisterLookupSource(name string, f NewLookupSourceFunc) {
+	LookupSources[name] = f
 }
