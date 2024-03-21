@@ -31,4 +31,18 @@ func TestIndexFieldStore(t *testing.T) {
 	s.UpdateFieldValue("col", 2)
 	require.Equal(t, 2, s.GetFieldMap()["col"].IndexFieldValue)
 	require.Equal(t, 2, s.GetFieldList()[0].IndexFieldValue)
+	s.UpdateFieldValue("col123", 3)
+
+	require.NotNil(t, s.GetStore())
+	s = &IndexFieldStoreWrap{}
+	s.store = &IndexFieldStore{}
+	s.store.IndexFieldValueList = make([]*IndexField, 0)
+	s.store.IndexFieldValueList = append(s.store.IndexFieldValueList, &IndexField{
+		IndexFieldName:  "col",
+		IndexFieldValue: 1,
+	})
+	s.LoadFromList()
+	require.Len(t, s.GetFieldList(), 1)
+	require.Len(t, s.GetFieldMap(), 1)
+	require.Equal(t, s.GetFieldList()[0], s.GetFieldMap()["col"])
 }
