@@ -139,13 +139,13 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 func formatIndexFieldsDatetime(indexFields []*store.IndexField) error {
 	for _, field := range indexFields {
 		if field.IndexFieldDataType == DATETIME_TYPE && field.IndexFieldDateTimeFormat != "" {
+			t, err := cast.InterfaceToTime(field.IndexFieldValue, field.IndexFieldDateTimeFormat)
+			if err != nil {
+				err = fmt.Errorf("InterfaceToTime datetime convert got error %v", err)
+				return err
+			}
+			field.IndexFieldValue = t
 		}
-		t, err := cast.InterfaceToTime(field.IndexFieldValue, field.IndexFieldDateTimeFormat)
-		if err != nil {
-			err = fmt.Errorf("InterfaceToTime datetime convert got error %v", err)
-			return err
-		}
-		field.IndexFieldValue = t
 	}
 	return nil
 }
