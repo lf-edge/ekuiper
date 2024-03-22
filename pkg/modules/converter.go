@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package message
+package modules
 
-import (
-	"testing"
+import "github.com/lf-edge/ekuiper/pkg/message"
 
-	"github.com/stretchr/testify/assert"
-)
+var Converters = map[string]message.ConverterProvider{}
 
-func TestIsFormatSupported(t *testing.T) {
-	formats := []string{
-		FormatBinary, FormatJson, FormatProtobuf, FormatDelimited, FormatCustom,
-	}
-	for _, format := range formats {
-		assert.True(t, IsFormatSupported(format))
-	}
+// RegisterConverter registers a converter with the given name.
+func RegisterConverter(name string, provider message.ConverterProvider) {
+	Converters[name] = provider
+}
 
-	badFormats := []string{
-		"BINARY", "Json", "DIY",
-	}
-	for _, format := range badFormats {
-		assert.False(t, IsFormatSupported(format))
-	}
+func IsFormatSupported(format string) bool {
+	_, ok := Converters[format]
+	return ok
 }

@@ -22,12 +22,13 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 func init() {
-	converters["mock"] = func(_ string, _ string, _ string) (message.Converter, error) {
+	modules.RegisterConverter("mock", func(_ string, _ string, _ string) (message.Converter, error) {
 		return &MockConverter{}, nil
-	}
+	})
 }
 
 // MockConverter mocks a slow converter for benchmark test

@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@
 
 package message
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import (
+	"github.com/lf-edge/ekuiper/pkg/ast"
+)
 
 const (
 	FormatBinary    = "binary"
@@ -27,20 +29,15 @@ const (
 	MetaKey      = "__meta"
 )
 
-func IsFormatSupported(format string) bool {
-	switch format {
-	case FormatBinary, FormatJson, FormatProtobuf, FormatCustom, FormatDelimited:
-		return true
-	default:
-		return false
-	}
-}
-
 // Converter converts bytes & map or []map according to the schema
 type Converter interface {
 	Encode(d interface{}) ([]byte, error)
 	Decode(b []byte) (interface{}, error)
 }
+
+// ConverterProvider The format, schema information are passed in by stream options
+// The columns information is defined in the source side, like file source
+type ConverterProvider func(schemaFileName string, SchemaMessageName string, delimiter string) (Converter, error)
 
 type SchemaMergeAbleConverter interface {
 	MergeSchema(key, datasource string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error

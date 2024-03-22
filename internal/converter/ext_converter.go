@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,15 +22,16 @@ import (
 	"github.com/lf-edge/ekuiper/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/internal/schema"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 func init() {
-	converters[message.FormatProtobuf] = func(schemaFileName string, schemaMessageName string, _ string) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatProtobuf, func(schemaFileName string, schemaMessageName string, _ string) (message.Converter, error) {
 		ffs, err := schema.GetSchemaFile(def.PROTOBUF, schemaFileName)
 		if err != nil {
 			return nil, err
 		}
 		return protobuf.NewConverter(ffs.SchemaFile, ffs.SoFile, schemaMessageName)
-	}
-	converters[message.FormatCustom] = custom.LoadConverter
+	})
+	modules.RegisterConverter(message.FormatCustom, custom.LoadConverter)
 }

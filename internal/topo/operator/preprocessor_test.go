@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
 package operator
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
-	"os"
-	"path"
 	"reflect"
 	"testing"
 	"time"
@@ -32,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -993,15 +991,7 @@ func TestPreprocessorError(t *testing.T) {
 }
 
 func TestPreprocessorForBinary(t *testing.T) {
-	docsFolder, err := conf.GetLoc("docs/")
-	if err != nil {
-		t.Errorf("Cannot find docs folder: %v", err)
-	}
-	image, err := os.ReadFile(path.Join(docsFolder, "cover.jpg"))
-	if err != nil {
-		t.Errorf("Cannot read image: %v", err)
-	}
-	b64img := base64.StdEncoding.EncodeToString(image)
+	image, b64img := mocknode.GetImg()
 	tests := []struct {
 		stmt   *ast.StreamStmt
 		data   []byte
