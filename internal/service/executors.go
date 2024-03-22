@@ -201,6 +201,8 @@ type httpExecutor struct {
 	conn *http.Client
 }
 
+var testIndex int
+
 func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, params []interface{}) (interface{}, error) {
 	if h.restOpt.RetryCount < 1 {
 		return h.invokeFunction(ctx, name, params)
@@ -214,8 +216,10 @@ func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 		result, err = h.invokeFunction(ctx, name, params)
 		failpoint.Inject("httpExecutorRetry", func(val failpoint.Value) {
 			if val.(bool) {
-				err = &url.Error{Err: &errorx.MockTemporaryError{}}
-				failpoint.Disable("github.com/lf-edge/ekuiper/internal/service/httpExecutorRetry")
+				if testIndex < 1 {
+					err = &url.Error{Err: &errorx.MockTemporaryError{}}
+					testIndex++
+				}
 			}
 		})
 		if err == nil {
