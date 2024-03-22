@@ -715,7 +715,7 @@ func (p *Parser) parseUnaryExpr(isSubField bool) (ast.Expr, error) {
 		return &ast.StringLiteral{Val: lit}, nil
 	} else if tok == ast.INTEGER {
 		val, _ := strconv.Atoi(lit)
-		return &ast.IntegerLiteral{Val: val}, nil
+		return &ast.IntegerLiteral{Val: int64(val)}, nil
 	} else if tok == ast.NUMBER {
 		if v, err := strconv.ParseFloat(lit, 64); err != nil {
 			return nil, fmt.Errorf("found %q, invalid number value.", lit)
@@ -787,10 +787,10 @@ func (p *Parser) parseBracketExpr() (ast.Expr, error) {
 		}
 		if tok3, _ := p.scanIgnoreWhitespace(); tok3 == ast.RBRACKET {
 			// Such as field[2]
-			return &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: start}}, nil
+			return &ast.IndexExpr{Index: &ast.IntegerLiteral{Val: int64(start)}}, nil
 		} else if tok3 == ast.COLON {
 			// Such as field[2:] or field[2:4]
-			return p.parseColonExpr(&ast.IntegerLiteral{Val: start})
+			return p.parseColonExpr(&ast.IntegerLiteral{Val: int64(start)})
 		}
 	} else if tok2 == ast.COLON {
 		// Such as field[:3] or [:]
@@ -821,7 +821,7 @@ func (p *Parser) parseColonExpr(start ast.Expr) (ast.Expr, error) {
 		}
 
 		if tok1, lit1 := p.scanIgnoreWhitespace(); tok1 == ast.RBRACKET {
-			return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: end}}, nil
+			return &ast.ColonExpr{Start: start, End: &ast.IntegerLiteral{Val: int64(end)}}, nil
 		} else {
 			return nil, fmt.Errorf("Found %q, expected right bracket.", lit1)
 		}
