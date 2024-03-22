@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@ package mocknode
 
 import (
 	"encoding/base64"
-	"os"
-	"path"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 )
 
@@ -1187,17 +1184,10 @@ var TestData = map[string][]*xsql.Tuple{
 	},
 }
 
-var Image, _ = getImg()
+var Image, _ = GetImg()
 
-func getImg() ([]byte, string) {
-	docsFolder, err := conf.GetLoc("docs/")
-	if err != nil {
-		conf.Log.Fatalf("Cannot find docs folder: %v", err)
-	}
-	image, err := os.ReadFile(path.Join(docsFolder, "cover.jpg"))
-	if err != nil {
-		conf.Log.Fatalf("Cannot read image: %v", err)
-	}
-	b64img := base64.StdEncoding.EncodeToString(image)
+func GetImg() ([]byte, string) {
+	b64img := "iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAA2ElEQVR4nADIADf/BC0WH5nMXfXHJV5I6UzACsst5FWwnirr5ACEv1em5DJEytIpPnKs3g91xCvGpd4hE5gDZYFg109pkvLp4R9Dxcjo8hyb1QCEiMkUArLqIWvHEgIkyCl6Iefgs/I1EOoH2ch98gLoWT0RcAjxv4G05nKc5BDoz+xuQwM3490Ax3L9MTmNm7YCUfjfuW2T7loUJy/9QMN4BK765ATI+UPcFsvYLHyEvjGaqzUIQWkIpQRpQ/Ok1bjz57qgxd7NH+xIQnMxsPgKw4QBAAD//1xYZo1yq5mgAAAAAElFTkSuQmCC"
+	image, _ := base64.StdEncoding.DecodeString(b64img)
 	return image, b64img
 }

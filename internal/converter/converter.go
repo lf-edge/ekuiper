@@ -24,23 +24,19 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
-// Instantiator The format, schema information are passed in by stream options
-// The columns information is defined in the source side, like file source
-type Instantiator func(schemaFileName string, SchemaMessageName string, delimiter string) (message.Converter, error)
-
-// init once and read only
-var converters = map[string]Instantiator{
-	message.FormatJson: func(_ string, _ string, _ string) (message.Converter, error) {
+func init() {
+	modules.RegisterConverter(message.FormatJson, func(_ string, _ string, _ string) (message.Converter, error) {
 		return json.GetConverter()
-	},
-	message.FormatBinary: func(_ string, _ string, _ string) (message.Converter, error) {
+	})
+	modules.RegisterConverter(message.FormatBinary, func(_ string, _ string, _ string) (message.Converter, error) {
 		return binary.GetConverter()
-	},
-	message.FormatDelimited: func(_ string, _ string, delimiter string) (message.Converter, error) {
+	})
+	modules.RegisterConverter(message.FormatDelimited, func(_ string, _ string, delimiter string) (message.Converter, error) {
 		return delimited.NewConverter(delimiter)
-	},
+	})
 }
 
 func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error) {
@@ -66,13 +62,12 @@ func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error)
 	schemaName := options.SCHEMAID
 	if schemaName != "" {
 		r := strings.Split(schemaName, ".")
-		if len(r) != 2 {
-			return nil, fmt.Errorf("invalid schemaId: %s", schemaName)
-		}
 		schemaFile = r[0]
-		schemaName = r[1]
+		if len(r) >= 2 {
+			schemaName = r[1]
+		}
 	}
-	if c, ok := converters[t]; ok {
+	if c, ok := modules.Converters[t]; ok {
 		return c(schemaFile, schemaName, options.DELIMITER)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)

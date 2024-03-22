@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 type Parser struct {
@@ -1193,7 +1194,7 @@ func validateStream(stmt *ast.StreamStmt) error {
 			return fmt.Errorf("'binary' format stream can have only one field")
 		}
 	default:
-		if !message.IsFormatSupported(lf) {
+		if !modules.IsFormatSupported(lf) {
 			return fmt.Errorf("option 'format=%s' is invalid", f)
 		}
 	}
