@@ -1,4 +1,4 @@
-// Copyright 2023-2023 emy120115@gmail.com
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/io/mock"
-	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/mock"
+	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
 )
 
 func TestRedisPub(t *testing.T) {

@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
+	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
 )
 
 func TestConnectionLC(t *testing.T) {

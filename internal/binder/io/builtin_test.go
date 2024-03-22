@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 func TestLookupSources(t *testing.T) {
-	_, ok := lookupSources["memory"]
+	_, ok := modules.LookupSources["memory"]
 	require.True(t, ok)
-	_, ok = lookupSources["httppull"]
+	_, ok = modules.LookupSources["httppull"]
 	require.True(t, ok)
 }

@@ -19,8 +19,9 @@ package io
 import (
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 func init() {
-	sources["mock"] = func() api.Source { return &mocknode.MockSource{} }
+	modules.RegisterSource("mock", func() api.Source { return &mocknode.MockSource{} })
 }
