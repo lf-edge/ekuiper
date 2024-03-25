@@ -34,11 +34,15 @@ func init() {
 
 func IsHiddenNecessary(m string) bool {
 	lm := strings.ToLower(m)
-	if lm == "url" {
+	if strings.Contains(lm, "url") {
 		return true
 	}
-	_, ok := hiddenPasswdKey[lm]
-	return ok
+	for k := range hiddenPasswdKey {
+		if strings.Contains(lm, k) {
+			return true
+		}
+	}
+	return false
 }
 
 func HiddenPassword(kvs map[string]interface{}) map[string]interface{} {

@@ -241,10 +241,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
-	buf1 = bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
-	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
-	w1 = httptest.NewRecorder()
-	suite.r.ServeHTTP(w1, req1)
+	suite.assertGetRuleHiddenPassword()
 
 	// validate a rule
 	ruleJson := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
@@ -270,7 +267,10 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	assert.Equal(suite.T(), http.StatusUnprocessableEntity, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
 
-	suite.assertGetRuleHiddenPassword()
+	// delete rule
+	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule3442551", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
 
 	// create rule with trigger false
 	ruleJson = `{"id": "rule3/21","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`

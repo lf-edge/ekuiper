@@ -596,6 +596,7 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			w.Header().Add(ContentType, ContentTypeJSON)
 			w.Write(bs)
+			return
 		} else {
 			w.Header().Add(ContentType, ContentTypeJSON)
 			w.Write([]byte(rule))
