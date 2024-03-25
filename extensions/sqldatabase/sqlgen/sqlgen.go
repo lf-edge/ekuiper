@@ -35,19 +35,32 @@ type IndexValuer interface {
 const DATETIME_TYPE = "DATETIME"
 
 type InternalSqlQueryCfg struct {
-	Table                    string      `json:"table"`
-	Limit                    int         `json:"limit"`
-	IndexFieldName           string      `json:"indexField"`
-	IndexFieldValue          interface{} `json:"indexValue"`
-	IndexFieldDataType       string      `json:"indexFieldType"`
-	IndexFieldDateTimeFormat string      `json:"dateTimeFormat"`
+	Table                    string              `json:"table"`
+	Limit                    int                 `json:"limit"`
+	IndexFieldName           string              `json:"indexField"`
+	IndexFieldValue          interface{}         `json:"indexValue"`
+	IndexFieldDataType       string              `json:"indexFieldType"`
+	IndexFieldDateTimeFormat string              `json:"dateTimeFormat"`
+	IndexFields              []*store.IndexField `json:"indexFields"`
 
 	store *store.IndexFieldStoreWrap
 }
 
 func (i *InternalSqlQueryCfg) InitIndexFieldStore() {
 	i.store = &store.IndexFieldStoreWrap{}
-	i.store.Init(i.IndexFieldName, i.IndexFieldValue, i.IndexFieldDataType, i.IndexFieldDateTimeFormat)
+	if i.IndexFieldName != "" {
+		f := &store.IndexField{
+			IndexFieldName:           i.IndexFieldName,
+			IndexFieldValue:          i.IndexFieldValue,
+			IndexFieldDataType:       i.IndexFieldDataType,
+			IndexFieldDateTimeFormat: i.IndexFieldDateTimeFormat,
+		}
+		i.store.Init(f)
+		return
+	}
+	if len(i.IndexFields) > 0 {
+		i.store.Init(i.IndexFields...)
+	}
 }
 
 func (i *InternalSqlQueryCfg) SetIndexValue(v interface{}) {
@@ -81,6 +94,10 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 	}
 
 	if cfg.TemplateSqlQueryCfg != nil {
+		if len(cfg.TemplateSqlQueryCfg.IndexFields) > 0 && cfg.TemplateSqlQueryCfg.IndexFieldName != "" {
+			return fmt.Errorf("indexFields and indexField can't be defined at the same time")
+		}
+
 		if cfg.TemplateSqlQueryCfg.IndexFieldDataType == DATETIME_TYPE && cfg.TemplateSqlQueryCfg.IndexFieldDateTimeFormat != "" {
 			t, err := cast.InterfaceToTime(cfg.TemplateSqlQueryCfg.IndexFieldValue, cfg.TemplateSqlQueryCfg.IndexFieldDateTimeFormat)
 			if err != nil {
@@ -89,10 +106,18 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 			}
 			cfg.TemplateSqlQueryCfg.IndexFieldValue = t
 		}
+		if err := formatIndexFieldsDatetime(cfg.TemplateSqlQueryCfg.IndexFields); err != nil {
+			return err
+		}
+
 		cfg.TemplateSqlQueryCfg.InitIndexFieldStore()
 	}
 
 	if cfg.InternalSqlQueryCfg != nil {
+		if len(cfg.InternalSqlQueryCfg.IndexFields) > 0 && cfg.InternalSqlQueryCfg.IndexFieldName != "" {
+			return fmt.Errorf("indexFields and indexField can't be defined at the same time")
+		}
+
 		if cfg.InternalSqlQueryCfg.IndexFieldDataType == DATETIME_TYPE &&
 			cfg.InternalSqlQueryCfg.IndexFieldDateTimeFormat != "" {
 			t, err := cast.InterfaceToTime(cfg.InternalSqlQueryCfg.IndexFieldValue, cfg.InternalSqlQueryCfg.IndexFieldDateTimeFormat)
@@ -102,9 +127,26 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 			}
 			cfg.InternalSqlQueryCfg.IndexFieldValue = t
 		}
+		if err := formatIndexFieldsDatetime(cfg.InternalSqlQueryCfg.IndexFields); err != nil {
+			return err
+		}
 		cfg.InternalSqlQueryCfg.InitIndexFieldStore()
 	}
 
+	return nil
+}
+
+func formatIndexFieldsDatetime(indexFields []*store.IndexField) error {
+	for _, field := range indexFields {
+		if field.IndexFieldDataType == DATETIME_TYPE && field.IndexFieldDateTimeFormat != "" {
+			t, err := cast.InterfaceToTime(field.IndexFieldValue, field.IndexFieldDateTimeFormat)
+			if err != nil {
+				err = fmt.Errorf("InterfaceToTime datetime convert got error %v", err)
+				return err
+			}
+			field.IndexFieldValue = t
+		}
+	}
 	return nil
 }
 
