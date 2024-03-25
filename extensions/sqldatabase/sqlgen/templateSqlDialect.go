@@ -96,18 +96,31 @@ func (t *templateSqlQuery) UpdateMaxIndexValue(row map[string]interface{}) {
 }
 
 type TemplateSqlQueryCfg struct {
-	TemplateSql              string      `json:"templateSql"`
-	IndexFieldName           string      `json:"indexField"`
-	IndexFieldValue          interface{} `json:"indexValue"`
-	IndexFieldDataType       string      `json:"indexFieldType"`
-	IndexFieldDateTimeFormat string      `json:"dateTimeFormat"`
+	TemplateSql              string              `json:"templateSql"`
+	IndexFieldName           string              `json:"indexField"`
+	IndexFieldValue          interface{}         `json:"indexValue"`
+	IndexFieldDataType       string              `json:"indexFieldType"`
+	IndexFieldDateTimeFormat string              `json:"dateTimeFormat"`
+	IndexFields              []*store.IndexField `json:"indexFields"`
 
 	store *store.IndexFieldStoreWrap
 }
 
 func (t *TemplateSqlQueryCfg) InitIndexFieldStore() {
 	t.store = &store.IndexFieldStoreWrap{}
-	t.store.Init(t.IndexFieldName, t.IndexFieldValue, t.IndexFieldDataType, t.IndexFieldDateTimeFormat)
+	if t.IndexFieldName != "" {
+		f := &store.IndexField{
+			IndexFieldName:           t.IndexFieldName,
+			IndexFieldValue:          t.IndexFieldValue,
+			IndexFieldDataType:       t.IndexFieldDataType,
+			IndexFieldDateTimeFormat: t.IndexFieldDateTimeFormat,
+		}
+		t.store.Init(f)
+		return
+	}
+	if len(t.IndexFields) > 0 {
+		t.store.Init(t.IndexFields...)
+	}
 }
 
 func (t *TemplateSqlQueryCfg) SetIndexValue(v interface{}) {

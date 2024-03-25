@@ -55,20 +55,17 @@ func (wrap *IndexFieldStoreWrap) GetStore() *IndexFieldStore {
 	return wrap.store
 }
 
-func (wrap *IndexFieldStoreWrap) Init(name string, value interface{}, dataType string, format string) {
+func (wrap *IndexFieldStoreWrap) Init(fields ...*IndexField) {
 	store := &IndexFieldStore{}
 	wrap.store = store
 	store.IndexFieldValueList = make([]*IndexField, 0)
 	store.IndexFieldValueMap = make(map[string]*IndexField)
-	if name != "" {
-		w := &IndexField{
-			IndexFieldName:           name,
-			IndexFieldValue:          value,
-			IndexFieldDataType:       dataType,
-			IndexFieldDateTimeFormat: format,
+	for _, field := range fields {
+		if field.IndexFieldName == "" {
+			continue
 		}
-		store.IndexFieldValueList = append(store.IndexFieldValueList, w)
-		store.IndexFieldValueMap[name] = w
+		store.IndexFieldValueList = append(store.IndexFieldValueList, field)
+		store.IndexFieldValueMap[field.IndexFieldName] = field
 	}
 }
 
