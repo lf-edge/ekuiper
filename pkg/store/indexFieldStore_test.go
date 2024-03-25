@@ -22,7 +22,11 @@ import (
 
 func TestIndexFieldStore(t *testing.T) {
 	s := &IndexFieldStoreWrap{}
-	s.Init("col", 1, "", "")
+	f := &IndexField{
+		IndexFieldName:  "col",
+		IndexFieldValue: 1,
+	}
+	s.Init(f)
 	require.Len(t, s.GetFieldList(), 1)
 	require.Len(t, s.GetFieldMap(), 1)
 	require.Equal(t, s.GetFieldList()[0], s.GetFieldMap()["col"])

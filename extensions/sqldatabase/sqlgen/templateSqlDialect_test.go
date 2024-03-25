@@ -141,6 +141,27 @@ func TestTemplateQuery_DateTime(t *testing.T) {
 	props := map[string]interface{}{
 		"templateSqlQueryCfg": tempCfg,
 	}
+	tempCfg2 := map[string]interface{}{
+		"templateSql":    "select * from table where responseTime > `{{.responseTime}}`",
+		"indexField":     "responseTime",
+		"indexValue":     "2008-10-25 14:56:59.123",
+		"indexFieldType": DATETIME_TYPE,
+		"dateTimeFormat": "YYYY-MM-dd HH:mm:ssSSS",
+		"indexFields": []map[string]interface{}{
+			{
+				"indexField":     "responseTime2",
+				"indexValue":     "2008-10-25 14:56:59.123",
+				"indexFieldType": DATETIME_TYPE,
+				"dateTimeFormat": "YYYY-MM-dd HH:mm:ssSSS",
+			},
+		},
+	}
+	props2 := map[string]interface{}{
+		"templateSqlQueryCfg": tempCfg2,
+	}
+	sqlcfg2 := &sqlConfig{}
+	err := sqlcfg2.Init(props2)
+	require.Error(t, err)
 
 	sqlcfg := &sqlConfig{}
 	_ = sqlcfg.Init(props)
