@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/util"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -345,6 +346,11 @@ func (ss *sourceSingleton) detach(instanceKey string) bool {
 }
 
 func start(poolCtx api.StreamContext, node *SourceNode, s api.Source) (*sourceInstance, error) {
+	if setter, ok := s.(util.MetaSetter); ok {
+		streamName := node.GetName()
+		ruleID := node.ctx.GetRuleId()
+		setter.SetMeta(ruleID, streamName)
+	}
 	err := s.Configure(node.options.DATASOURCE, node.props)
 	if err != nil {
 		return nil, err

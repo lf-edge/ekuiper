@@ -160,11 +160,11 @@ func TestTemplateQuery_DateTime(t *testing.T) {
 		"templateSqlQueryCfg": tempCfg2,
 	}
 	sqlcfg2 := &sqlConfig{}
-	err := sqlcfg2.Init(props2)
+	err := sqlcfg2.Init(props2, "", "")
 	require.Error(t, err)
 
 	sqlcfg := &sqlConfig{}
-	_ = sqlcfg.Init(props)
+	_ = sqlcfg.Init(props, "", "")
 
 	s, _ := NewTemplateSqlQuery(sqlcfg.TemplateSqlQueryCfg)
 

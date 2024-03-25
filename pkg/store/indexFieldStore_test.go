@@ -50,3 +50,19 @@ func TestIndexFieldStore(t *testing.T) {
 	require.Len(t, s.GetFieldMap(), 1)
 	require.Equal(t, s.GetFieldList()[0], s.GetFieldMap()["col"])
 }
+
+func TestGlobalStore(t *testing.T) {
+	w := &IndexFieldStoreWrap{
+		RuleID:     "1",
+		StreamName: "1",
+	}
+	w.Init(&IndexField{
+		IndexFieldName:  "1",
+		IndexFieldValue: 1,
+	})
+	GlobalWrapStore.AddIndexFieldStoreWrap(w)
+	GlobalWrapStore.UpdateIndexFieldValue("1", "1", map[string]interface{}{
+		"1": 2,
+	})
+	GlobalWrapStore.RemoveIndexFieldStoreWrap("1")
+}

@@ -45,6 +45,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/infra"
 	"github.com/lf-edge/ekuiper/pkg/kv"
 	"github.com/lf-edge/ekuiper/pkg/memory"
+	sqlStore "github.com/lf-edge/ekuiper/pkg/store"
 )
 
 const (
@@ -165,6 +166,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/{streamName}/fieldValue", updateRuleSQLValue).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
@@ -254,6 +256,20 @@ func getFile(file *fileContent) error {
 		}
 	}
 	return nil
+}
+
+func updateRuleSQLValue(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	ruleID := vars["name"]
+	streamName := vars["streamName"]
+	defer r.Body.Close()
+	m := map[string]interface{}{}
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	sqlStore.GlobalWrapStore.UpdateIndexFieldValue(ruleID, streamName, m)
 }
 
 func explainRuleHandler(w http.ResponseWriter, r *http.Request) {

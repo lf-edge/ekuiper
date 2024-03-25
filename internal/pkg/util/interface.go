@@ -21,3 +21,7 @@ type PropsValidator interface {
 type PingableConn interface {
 	Ping(string, map[string]interface{}) error
 }
+
+type MetaSetter interface {
+	SetMeta(string, string)
+}

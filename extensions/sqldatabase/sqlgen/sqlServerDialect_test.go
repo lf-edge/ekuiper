@@ -117,7 +117,7 @@ func TestInternalQuery(t *testing.T) {
 		"internalSqlQueryCfg": tempCfg2,
 	}
 	sqlcfg2 := &sqlConfig{}
-	err := sqlcfg2.Init(props2)
+	err := sqlcfg2.Init(props2, "", "")
 	require.Error(t, err)
 
 	cfg := &InternalSqlQueryCfg{
