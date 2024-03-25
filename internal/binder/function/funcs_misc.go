@@ -251,7 +251,7 @@ func registerMiscFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			var v0 float64
-			v0, err := cast.ToFloat64(v0, cast.CONVERT_SAMEKIND)
+			v0, err := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return err, false
 			}
