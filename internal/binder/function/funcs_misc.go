@@ -251,15 +251,9 @@ func registerMiscFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			var v0 float64
-			switch v1 := args[0].(type) {
-			case int:
-				v0 = float64(v1)
-			case int64:
-				v0 = float64(v1)
-			case float64:
-				v0 = v1
-			default:
-				return fmt.Errorf("Only int and float type can be truncated."), false
+			v0, err := cast.ToFloat64(v0, cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return err, false
 			}
 			switch v2 := args[1].(type) {
 			case int:
