@@ -269,7 +269,14 @@ func updateRuleSQLValue(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-	sqlStore.GlobalWrapStore.UpdateIndexFieldValue(ruleID, streamName, m)
+	updated := sqlStore.GlobalWrapStore.UpdateIndexFieldValue(ruleID, streamName, m)
+	if updated {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("success"))
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
+	w.Write([]byte("not found"))
 }
 
 func explainRuleHandler(w http.ResponseWriter, r *http.Request) {

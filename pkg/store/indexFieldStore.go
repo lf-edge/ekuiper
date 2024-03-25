@@ -151,16 +151,17 @@ func (g *WrapStore) RemoveIndexFieldStoreWrap(ruleID string) {
 	delete(g.store, ruleID)
 }
 
-func (g *WrapStore) UpdateIndexFieldValue(ruleID, streamName string, input map[string]interface{}) {
+func (g *WrapStore) UpdateIndexFieldValue(ruleID, streamName string, input map[string]interface{}) bool {
 	g.Lock()
 	defer g.Unlock()
 	ss, ok := g.store[ruleID]
 	if !ok {
-		return
+		return false
 	}
 	wrap, ok := ss[streamName]
 	if !ok {
-		return
+		return false
 	}
 	wrap.UpdateByInput(input)
+	return true
 }
