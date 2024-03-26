@@ -37,6 +37,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/testx"
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
@@ -240,6 +241,8 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
+	suite.assertGetRuleHiddenPassword()
+
 	// validate a rule
 	ruleJson := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
 
@@ -263,6 +266,11 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	expect = `invalid rule json: Missing rule actions.`
 	assert.Equal(suite.T(), http.StatusUnprocessableEntity, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
+
+	// delete rule
+	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule3442551", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
 
 	// create rule with trigger false
 	ruleJson = `{"id": "rule3/21","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
@@ -423,6 +431,36 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/alert", bytes.NewBufferString("any"))
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
+}
+
+func (suite *RestTestSuite) assertGetRuleHiddenPassword() {
+	ruleJson2 := `{"id":"rule3442551","triggered":false,"sql":"select * from alert","actions":[{"mqtt":{"password":"123","topic":"123","server":"123"}}]}`
+	buf2 := bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	// get rule
+	req1, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule3442551", bytes.NewBufferString("any"))
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	require.Equal(suite.T(), http.StatusOK, w1.Code)
+
+	returnVal, _ := io.ReadAll(w1.Result().Body)
+	rule2 := &api.Rule{}
+	require.NoError(suite.T(), json.Unmarshal(returnVal, rule2))
+	require.Len(suite.T(), rule2.Actions, 1)
+	mqttAction := rule2.Actions[0]["mqtt"]
+	require.NotNil(suite.T(), mqttAction)
+	mqttOption, ok := mqttAction.(map[string]interface{})
+	require.True(suite.T(), ok)
+	require.Equal(suite.T(), "******", mqttOption["password"])
+
+	// delete rule
+	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule3442551", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
 }
 
 func assertErrorCode(code errorx.ErrorCode, resp []byte) (bool, error) {

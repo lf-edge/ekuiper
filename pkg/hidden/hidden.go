@@ -32,25 +32,55 @@ func init() {
 	}
 }
 
+func IsHiddenNecessary(m string) bool {
+	lm := strings.ToLower(m)
+	if strings.Contains(lm, "url") {
+		return true
+	}
+	for k := range hiddenPasswdKey {
+		if strings.Contains(lm, k) {
+			return true
+		}
+	}
+	return false
+}
+
 func HiddenPassword(kvs map[string]interface{}) map[string]interface{} {
 	for k, v := range kvs {
-		if m, ok := v.(map[string]interface{}); ok {
-			kvs[k] = HiddenPassword(m)
+		newV := hiddenPassword4Interface(k, v)
+		kvs[k] = newV
+	}
+	return kvs
+}
+
+func hiddenPassword4Interface(k string, v interface{}) interface{} {
+	switch vv := v.(type) {
+	case map[string]interface{}:
+		for kk, vvv := range vv {
+			hiddenValue := hiddenPassword4Interface(kk, vvv)
+			vv[kk] = hiddenValue
 		}
-		if _, ok := hiddenPasswdKey[strings.ToLower(k)]; ok {
-			kvs[k] = PASSWORD
+		return vv
+	case []interface{}:
+		for i, item := range vv {
+			vv[i] = hiddenPassword4Interface("", item)
 		}
-		if strings.ToLower(k) == "url" {
+		return vv
+	default:
+		lk := strings.ToLower(k)
+		if _, ok := hiddenPasswdKey[lk]; ok {
+			v = PASSWORD
+		} else if lk == "url" {
 			if _, ok := v.(string); !ok {
-				continue
+				return v
 			}
 			urlValue, hidden := HiddenURLPasswd(v.(string))
 			if hidden {
-				kvs[k] = urlValue
+				v = urlValue
 			}
 		}
 	}
-	return kvs
+	return v
 }
 
 func HiddenURLPasswd(originURL string) (string, bool) {
