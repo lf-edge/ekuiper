@@ -91,12 +91,38 @@ template_config:
 * `indexValue`: 初始索引值，如果用户指定该字段，查询将使用这个初始值作为查询条件，当获得更大的值时将更新下一个查询
 * `indexFieldType`: 索引字段的列类型，如果是 dateTime 类型，必须将该字段设置为 `DATETIME`
 * `dateTimeFormat`: 索引字段的时间格式
+* `indexFields`: 复合索引列
 
 | table   | limit | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
 | ------- | ----- | ------------ | --------------------- | -------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
 | Student | 10    |              |                       |                |                       | select * from Student limit 10                                                                      |
 | Student | 10    | stun         | 100                   |                |                       | select * from Student where stun > 100 limit 10                                                     |
 | Student | 10    | registerTime | "2022-04-21 10:23:55" | "DATETIME"     | "YYYY-MM-dd HH:mm:ss" | select * from Student where registerTime > '2022-04-21 10:23:55' order by registerTime ASC limit 10 |
+
+```yaml
+internalSqlQueryCfg:
+  # 要查询的表名
+  table: t
+  # 需要从结果中获取多少条目
+  limit: 1
+  indexFields:
+      # 索引字段的时间格式
+    - indexField: a
+      # 表的哪一列作为索引来记录偏移量
+      indexValue: "2022-04-21 10:23:55"
+      # 索引字段的列类型，如果是 dateTime 类型，必须将该字段设置为 `DATETIME`
+      indexFieldType: "DATETIME"
+      # 索引字段的时间格式
+      dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
+    - indexField: b
+      indexValue: 1
+```
+
+对于 indexFields，eKuiper 将会对于所有索引列生成相应的查询语句，值得注意的是，对于多索引列的查询语句，indexFields 的声明顺序将会决定索引列排序的优先顺序，对于上述例子，将会生成以下 SQL:
+
+```sql
+select * from t where a > '2022-04-21 10:23:55' and b > 1 order by a asc, b asc limit 1
+```
 
 ### templateSqlQueryCfg
 
@@ -105,7 +131,7 @@ template_config:
 * `indexValue`: 同上
 * `indexFieldType`: 同上
 * `dateTimeFormat`: 同上
-
+* `indexFields`: 同上
 ::: v-pre
 
 | TemplateSql                                                                                       | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
