@@ -1455,6 +1455,20 @@ func (p *Parser) parseStreamArrayType() (ast.FieldType, error) {
 					return nil, fmt.Errorf("found %q, expect rparen in struct of array type definition.", lit2)
 				}
 			}
+		} else if t == ast.ARRAY {
+			if f, err := p.parseStreamArrayType(); err != nil {
+				return nil, err
+			} else {
+				if tok2, lit2 := p.scanIgnoreWhitespace(); tok2 == ast.RPAREN {
+					lStack.Pop()
+					if lStack.Len() > 0 {
+						return nil, fmt.Errorf("Parenthesis is in array of array type %q not matched.", tok1)
+					}
+					return &ast.ArrayType{Type: ast.ARRAY, FieldType: f}, nil
+				} else {
+					return nil, fmt.Errorf("found %q, expect rparen in array of array type definition.", lit2)
+				}
+			}
 		} else if tok1 == ast.COMMA {
 			p.unscan()
 		} else {

@@ -31,6 +31,24 @@ func TestParser_ParseCreateStream(t *testing.T) {
 		err  string
 	}{
 		{
+			s: `CREATE STREAM demo(list ARRAY(ARRAY(BIGINT))) WITH (DATASOURCE="users", FORMAT="JSON")`,
+			stmt: &ast.StreamStmt{
+				Name: ast.StreamName("demo"),
+				StreamFields: []ast.StreamField{
+					{
+						Name: "list",
+						FieldType: &ast.ArrayType{
+							Type:      ast.ARRAY,
+							FieldType: &ast.ArrayType{Type: ast.BIGINT},
+						}},
+				},
+				Options: &ast.Options{
+					DATASOURCE: "users",
+					FORMAT:     "JSON",
+				},
+			},
+		},
+		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
 					FIRST_NAME STRING,
