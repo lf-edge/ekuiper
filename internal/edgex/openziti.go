@@ -1,3 +1,5 @@
+//go:build edgex
+
 package edgex
 
 import (
