@@ -24,6 +24,8 @@ Assume the sink receive result map like:
 }
 ```
 
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ### Send specify tags to neuron
 
 Below is a sample neuron action configuration. In which, raw is false so the sink will convert the result map into neuron's default format. The `tags` specify the tag names to be sent.

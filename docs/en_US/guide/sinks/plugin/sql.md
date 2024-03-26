@@ -40,6 +40,8 @@ When using `sqlserver` as the target, you need to confirm that the `sqlserver` e
 
 Other common sink properties are supported. Please refer to the [sink common properties](../overview.md#common-properties) for more information.
 
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ## Sample usage
 
 Below is a sample for using sql to get the target data and set to mysql database

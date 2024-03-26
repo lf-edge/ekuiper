@@ -84,6 +84,8 @@ Users can specify the global MQTT configurations here. The configuration items s
 
   :::
 
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ### **Payload Handling**
 
 - `decompression`: Decompress the payload with the specified compression method. Support `gzip`, `zstd` method now.

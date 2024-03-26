@@ -75,6 +75,8 @@ $(PLUGINS_CUSTOM):
 
 其他通用的 sink 属性也支持，请参阅[公共属性](../overview.md#公共属性)。
 
+你可以通过 api 的方式提前检查对应 sink 端点的连通性: [连通性检查](../../../api/restapi/connection.md#连通性检查)
+
 ### 设置 key 和 headers
 
 通过 key 和 headers 设置 Kafka 客户端发送消息时的元数据:

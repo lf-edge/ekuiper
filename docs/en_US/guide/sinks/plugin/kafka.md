@@ -73,6 +73,8 @@ Restart the eKuiper server to activate the plugin.
 | key                | true | Key information carried by the Kafka client in messages sent to the server |
 | headers            | true     | The header information carried by the Kafka client in the message sent to the server |
 
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ### Setting Kafka Key and Headers
 
 Set the metadata when the Kafka client sends messages through keys and headers:

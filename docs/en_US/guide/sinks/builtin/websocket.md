@@ -22,6 +22,8 @@ Other common sink properties are supported. Please refer to the [sink common pro
 
 When the websocket sink defines both addr and path, eKuiper will act as a websocket client to establish a websocket connection to the remote end and push messages through the connection.
 
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ## eKuiper as websocket server
 
 When the websocket sink only defines path and addr is empty, eKuiper will serve as the websocket server and wait for the remote websocket connection to be established and push the message through the connection.

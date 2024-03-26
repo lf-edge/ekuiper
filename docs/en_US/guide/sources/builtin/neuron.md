@@ -15,6 +15,8 @@ The Neuron source connector features an asynchronous dial mechanism, ensuring co
 
 In the eKuiper side, all Neuron source and sink instances share the same connection, thus the events consumed are also the same.
 
+You can check the connectivity of the corresponding sink endpoint in advance through the API: [Connectivity Check](../../../api/restapi/connection.md#connectivity-check)
+
 ## Configurations
 
 The connector in eKuiper can be configured with [environment variables](../../../configuration/configuration.md#environment-variable-syntax), [rest API](../../../api/restapi/configKey.md), or configuration file. This section focuses on the configuration file approach.
