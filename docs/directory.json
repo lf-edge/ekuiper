@@ -496,6 +496,10 @@
           "path": "api/restapi/configKey"
         },
         {
+          "title": "连接管理",
+          "path": "api/restapi/connection"
+        },
+        {
           "title": "脚本函数管理",
           "path": "api/restapi/udf"
         },
@@ -1235,6 +1239,10 @@
         {
           "title": "Source ConfigKey",
           "path": "api/restapi/configKey"
+        },
+        {
+          "title": "Connections",
+          "path": "api/restapi/connection"
         },
         {
           "title": "Script Functions",
