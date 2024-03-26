@@ -57,7 +57,7 @@ func TestComparison(t *testing.T) {
 			},
 			r: []interface{}{
 				errors.New("invalid operation string(32) > int64(72)"), errors.New("invalid operation string(32) <= int64(32)"), false,
-				false, true, false, true, errors.New("between operator cannot compare string(32) and int(30)"), errors.New("between operator cannot compare string(32) and int(2)"),
+				false, true, false, true, errors.New("between operator cannot compare string(32) and int64(30)"), errors.New("between operator cannot compare string(32) and int64(2)"),
 			},
 		}, { // 3
 			m: map[string]interface{}{
@@ -120,7 +120,7 @@ func TestComparison(t *testing.T) {
 			},
 			r: []interface{}{
 				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) > int64(72)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) <= int64(32)"), false,
-				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("between operator cannot compare string(2020-02-26T02:37:21.822Z) and int(30)"), errors.New("between operator cannot compare string(2020-02-26T02:37:21.822Z) and int(2)"),
+				errors.New("invalid operation string(2020-02-26T02:37:21.822Z) >= time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) < time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) = time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("invalid operation string(2020-02-26T02:37:21.822Z) != time.Time(2018-11-02 09:54:48.442 +0000 UTC)"), errors.New("between operator cannot compare string(2020-02-26T02:37:21.822Z) and int64(30)"), errors.New("between operator cannot compare string(2020-02-26T02:37:21.822Z) and int64(2)"),
 			},
 		}, { // 10
 			m: map[string]interface{}{
@@ -278,7 +278,7 @@ func TestCase(t *testing.T) {
 				"b": float64(72),
 			},
 			r: []interface{}{
-				1, 0, 0, 1,
+				int64(1), int64(0), int64(0), int64(1),
 			},
 		}, {
 			m: map[string]interface{}{
@@ -286,7 +286,7 @@ func TestCase(t *testing.T) {
 				"b": int64(72),
 			},
 			r: []interface{}{
-				1, 0, 0, 1,
+				int64(1), int64(0), int64(0), int64(1),
 			},
 		}, {
 			m: map[string]interface{}{
@@ -303,20 +303,20 @@ func TestCase(t *testing.T) {
 				"b": int64(55),
 			},
 			r: []interface{}{
-				0, nil, 0, 1,
+				int64(0), nil, int64(0), int64(1),
 			},
 		}, {
 			m: map[string]interface{}{
 				"a": int64(55),
 				"b": float64(0),
 			},
-			r: []interface{}{0, nil, 0, 1},
+			r: []interface{}{int64(0), nil, int64(0), int64(1)},
 		}, {
 			m: map[string]interface{}{
 				"c": "nothing",
 			},
 			r: []interface{}{
-				0, nil, -1, nil,
+				int64(0), nil, int64(-1), nil,
 			},
 		}, {
 			m: map[string]interface{}{
@@ -324,7 +324,7 @@ func TestCase(t *testing.T) {
 				"c": "nothing",
 			},
 			r: []interface{}{
-				0, nil, -1, nil,
+				int64(0), nil, int64(-1), nil,
 			},
 		},
 	}

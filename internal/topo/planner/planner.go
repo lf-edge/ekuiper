@@ -536,17 +536,17 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			}
 			wp := WindowPlan{
 				wtype:       w.WindowType,
-				length:      w.Length.Val,
+				length:      int(w.Length.Val),
 				isEventTime: opt.IsEventTime,
 			}.Init()
 			if w.Delay != nil {
-				wp.delay = int64(w.Delay.Val)
+				wp.delay = w.Delay.Val
 			}
 			if w.Interval != nil {
-				wp.interval = w.Interval.Val
+				wp.interval = int(w.Interval.Val)
 			} else if w.WindowType == ast.COUNT_WINDOW {
 				// if no interval value is set, and it's a count window, then set interval to length value.
-				wp.interval = w.Length.Val
+				wp.interval = int(w.Length.Val)
 			}
 			if w.TimeUnit != nil {
 				wp.timeUnit = w.TimeUnit.Val
@@ -656,7 +656,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		limitCount := 0
 		if stmt.Limit != nil && len(srfMapping) == 0 {
 			enableLimit = true
-			limitCount = stmt.Limit.(*ast.LimitExpr).LimitCount.Val
+			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectPlan{
 			windowFuncNames: windowFuncsNames,
@@ -675,7 +675,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		limitCount := 0
 		if stmt.Limit != nil {
 			enableLimit = true
-			limitCount = stmt.Limit.(*ast.LimitExpr).LimitCount.Val
+			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectSetPlan{
 			SrfMapping:  srfMapping,
