@@ -214,6 +214,10 @@
                   "path": "guide/sources/builtin/redisSub"
                 },
                 {
+                  "title": "Websocket 数据源",
+                  "path": "guide/sources/builtin/websocket"
+                },
+                {
                   "title": "模拟器数据源",
                   "path": "guide/sources/builtin/simulator"
                 }
@@ -294,6 +298,10 @@
                 {
                   "title": "Log Sink",
                   "path": "guide/sinks/builtin/log"
+                },
+                {
+                  "title": "Websocket Sink",
+                  "path": "guide/sinks/builtin/websocket"
                 },
                 {
                   "title": "Nop Sink",
@@ -954,6 +962,10 @@
                   "path": "guide/sources/builtin/redisSub"
                 },
                 {
+                  "title": "Websocket Source",
+                  "path": "guide/sources/builtin/websocket"
+                },
+                {
                   "title": "Simulator Source",
                   "path": "guide/sources/builtin/simulator"
                 }
@@ -1034,6 +1046,10 @@
                 {
                   "title": "Log Sink",
                   "path": "guide/sinks/builtin/log"
+                },
+                {
+                  "title": "Websocket Sink",
+                  "path": "guide/sinks/builtin/websocket"
                 },
                 {
                   "title": "Nop Sink",
