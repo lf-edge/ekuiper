@@ -8,6 +8,7 @@ if len(version_list) == 1:
 
 if __name__ == '__main__':
     version_list = ['.'.join(version.split('.')[:2]) for version in version_list]
+    version_list = [version[1:] if version.startswith('v') else version for version in version_list]
     version_list = [version for version in version_list if int(version.split('.')[0]) >= 1 and int(version.split('.')[1]) >= 11]
     version_list = list(set(version_list))
     version_list.sort(
