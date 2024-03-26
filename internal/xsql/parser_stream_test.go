@@ -40,7 +40,8 @@ func TestParser_ParseCreateStream(t *testing.T) {
 						FieldType: &ast.ArrayType{
 							Type:      ast.ARRAY,
 							FieldType: &ast.ArrayType{Type: ast.BIGINT},
-						}},
+						},
+					},
 				},
 				Options: &ast.Options{
 					DATASOURCE: "users",
@@ -85,7 +86,6 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				},
 			},
 		},
-
 		{
 			s: `CREATE STREAM demo (
 					USERID BIGINT,
@@ -104,7 +104,6 @@ func TestParser_ParseCreateStream(t *testing.T) {
 				},
 			},
 		},
-
 		{
 			s: `CREATE STREAM demo (
 					ADDRESSES ARRAY(STRUCT(STREET_NAME STRING, NUMBER BIGINT)),
