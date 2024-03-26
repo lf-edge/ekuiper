@@ -17,6 +17,7 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path"
 	"reflect"
 	"sync"
@@ -360,6 +361,14 @@ func (c *SinkConfigKeysOps) SaveCfgToStorage() error {
 		}
 
 		dir := path.Join(confDir, "sinks")
+		if IsTesting {
+			if _, err := os.Stat(dir); os.IsNotExist(err) {
+				err = os.MkdirAll(dir, 0o755)
+				if err != nil {
+					return err
+				}
+			}
+		}
 		filePath := path.Join(dir, pluginName+".yaml")
 		cfg := c.CopyUpdatableConfContent()
 		err = filex.WriteYamlMarshal(filePath, cfg)
