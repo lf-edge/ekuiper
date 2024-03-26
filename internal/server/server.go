@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -57,6 +59,14 @@ var (
 	ruleMigrationProcessor *RuleMigrationProcessor
 	stopSignal             chan struct{}
 )
+
+// newNetListener allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
+// protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
+// set in an init() call
+var newNetListener = func(addr string, logger *logrus.Logger) (net.Listener, error) {
+	logger.Warn("using ListenMode 'http'")
+	return net.Listen("tcp", addr)
+}
 
 func stopEKuiper() {
 	stopSignal <- struct{}{}
@@ -192,10 +202,14 @@ func StartUp(Version string) {
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
 	go func() {
 		var err error
+		ln, listenErr := newNetListener(srvRest.Addr, logger)
+		if listenErr != nil {
+			panic(listenErr)
+		}
 		if conf.Config.Basic.RestTls == nil {
-			err = srvRest.ListenAndServe()
+			err = srvRest.Serve(ln)
 		} else {
-			err = srvRest.ListenAndServeTLS(conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
+			err = srvRest.ServeTLS(ln, conf.Config.Basic.RestTls.Certfile, conf.Config.Basic.RestTls.Keyfile)
 		}
 		if err != nil && err != http.ErrServerClosed {
 			logger.Fatal("Error serving rest service: ", err)

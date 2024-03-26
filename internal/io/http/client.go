@@ -16,6 +16,7 @@ package http
 
 import (
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -30,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
+	"github.com/sirupsen/logrus"
 )
 
 // ClientConf is the configuration for http client
@@ -95,6 +97,15 @@ type ClientConfOption struct {
 }
 
 type WithClientConfOption func(clientConf *ClientConfOption)
+
+// newTransport allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
+// protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
+// set in an init() call
+var newTransport = func(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
+	return &http.Transport{
+		TLSClientConfig: tlscfg,
+	}
+}
 
 func WithCheckInterval(checkInterval bool) WithClientConfOption {
 	return func(clientConf *ClientConfOption) {
@@ -208,9 +219,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 		}
 	}
 
-	tr := &http.Transport{
-		TLSClientConfig: tlscfg,
-	}
+	tr := newTransport(tlscfg, conf.Log)
 
 	cc.client = &http.Client{
 		Transport: tr,
