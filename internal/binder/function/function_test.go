@@ -17,6 +17,11 @@ package function
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 func TestManager(t *testing.T) {
@@ -67,4 +72,15 @@ func TestManager(t *testing.T) {
 	if h {
 		t.Errorf("find undefined function set other")
 	}
+}
+
+func TestRegister(t *testing.T) {
+	modules.RegisterFunc("nouse", func() api.Function {
+		return nil
+	})
+	m := GetManager()
+	_, ok := m.ConvName("nouse")
+	assert.True(t, ok)
+	_, err := m.Function("nouse")
+	assert.NoError(t, err)
 }
