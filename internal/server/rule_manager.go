@@ -75,9 +75,14 @@ func (rr *RuleRegistry) Delete(key string) (*rule.RuleState, bool) {
 	return result, ok
 }
 
-func createRule(name, ruleJson string) (string, error) {
+func createRule(name, ruleJson string) (id string, err error) {
 	var rs *rule.RuleState = nil
-	var err error = nil
+	defer func() {
+		if err != nil {
+			// Do not store to registry so also delete the KV
+			deleteRule(id)
+		}
+	}()
 
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(name, ruleJson)
@@ -86,7 +91,7 @@ func createRule(name, ruleJson string) (string, error) {
 	}
 
 	if exists := ruleProcessor.ExecExists(r.Id); exists {
-		return "", fmt.Errorf("rule %v already exists", r.Id)
+		return r.Id, fmt.Errorf("rule %v already exists", r.Id)
 	}
 
 	// Validate the topo
@@ -101,8 +106,6 @@ func createRule(name, ruleJson string) (string, error) {
 	// Store to KV
 	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
 	if err != nil {
-		// Do not store to registry so also delete the KV
-		deleteRule(r.Id)
 		return r.Id, fmt.Errorf("store the rule error: %v", err)
 	}
 
