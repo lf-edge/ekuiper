@@ -54,7 +54,9 @@ jobs:
            VERSION="latest"
          else
            VERSION=$(echo $BRANCH | sed -E 's/([^.]+\.[^.]+).*/\1/')
-           VERSION="v$VERSION"
+           if [[ ! $VERSION =~ ^v.* ]]; then
+             VERSION="v$VERSION"
+           fi
          fi
          echo "DOCS_BRANCH=$BRANCH" >> $GITHUB_ENV
          echo "VERSION=$VERSION" >> $GITHUB_ENV
