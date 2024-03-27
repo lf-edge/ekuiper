@@ -814,5 +814,5 @@ func (suite *RestTestSuite) TestCreateDuplicateRule() {
 	require.Equal(suite.T(), http.StatusBadRequest, w2.Code)
 	var returnVal []byte
 	returnVal, _ = io.ReadAll(w2.Result().Body)
-	require.Equal(suite.T(), `{"error":1000,"message":"rule test12345 already exists"}`+"\ng", string(returnVal))
+	require.Equal(suite.T(), `{"error":1000,"message":"rule test12345 already exists"}`+"\n", string(returnVal))
 }
