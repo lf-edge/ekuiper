@@ -26,7 +26,7 @@ func init() {
 }
 
 func newZitifiedNetListener(_ string, logger *logrus.Logger) (net.Listener, error) {
-	logger.Warn("using ListenMode 'zerotrust'")
+	logger.Info("using ListenMode 'zerotrust'")
 	ctx := edgex_vault.AuthenicatedContext(logger)
 	serviceName := "edgex.rules-engine"
 	return ctx.Listen(serviceName)
