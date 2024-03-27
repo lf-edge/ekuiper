@@ -23,9 +23,10 @@ import (
 	"net"
 	"net/http"
 
-	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/sirupsen/logrus"
+
+	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 )
 
 func init() {

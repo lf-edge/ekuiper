@@ -25,13 +25,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
-	"github.com/sirupsen/logrus"
 )
 
 // ClientConf is the configuration for http client
