@@ -81,9 +81,9 @@ curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-T
     "database":    "dab",
     "table":       "{{.table}}", // 动态值，从结果中的 table 字段获取
     "tsfieldname": "ts",
-    "fields":      []string{"f1", "f2"}, // 结果中的 f1, f2 字段写入数据库中的 f1, f2 列
+    "fields":      ["f1", "f2"], // 结果中的 f1, f2 字段写入数据库中的 f1, f2 列
     "sTable":      "myStable", // 超级表名，也可以动态
-    "tagFields":   []string{"f3","f4"} // 结果中的 f3, f4 字段的值按顺序作为标签值写入
+    "tagFields":   ["f3","f4"] // 结果中的 f3, f4 字段的值按顺序作为标签值写入
   }
 }
 ```
@@ -118,10 +118,10 @@ curl --location --request POST 'http://127.0.0.1:9081/rules' --header 'Content-T
     "database":    "dab",
     "table":       "tableName", // dynamic value, get from the table field of the result
     "tsfieldname": "ts",
-    "fields":      []string{"temperature", "humidity"}, // Write f1, f2 fields in result into f1, f2 columns in the db
+    "fields":      ["temperature","humidity"], // Write f1, f2 fields in result into f1, f2 columns in the db
     "sTable":      "myStable", // super table name, also allow dynamic
     "tableDataField":      "telemetry", // write values of telemetry field into database
-    "tagFields":   []string{"f3","f4"} // Write f3, f4 fields' values in the result as tags in order
+    "tagFields":   ["f3","f4"] // Write f3, f4 fields' values in the result as tags in order
   }
 }
 ```
