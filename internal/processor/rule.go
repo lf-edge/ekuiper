@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -82,7 +83,6 @@ func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	err = p.db.Set(rule.Id, ruleJson)
 	if err != nil {
 		return nil, err
@@ -145,6 +145,16 @@ func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*api.Rule, erro
 	}
 	if rule.Options == nil {
 		rule.Options = &opt
+	}
+	for i, action := range rule.Actions {
+		for k, v := range action {
+			if c, ok := v.(map[string]interface{}); ok {
+				newConfig := meta.ReplacePasswdForConfigByResource("sink", k, c)
+				action[k] = newConfig
+				break
+			}
+		}
+		rule.Actions[i] = action
 	}
 	return rule, nil
 }
