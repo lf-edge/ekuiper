@@ -77,12 +77,6 @@ func (rr *RuleRegistry) Delete(key string) (*rule.RuleState, bool) {
 
 func createRule(name, ruleJson string) (id string, err error) {
 	var rs *rule.RuleState = nil
-	defer func() {
-		if err != nil {
-			// Do not store to registry so also delete the KV
-			deleteRule(id)
-		}
-	}()
 
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(name, ruleJson)
@@ -102,6 +96,12 @@ func createRule(name, ruleJson string) (id string, err error) {
 	if err != nil {
 		return r.Id, err
 	}
+	defer func() {
+		if err != nil {
+			// Do not store to registry so also delete the KV
+			deleteRule(id)
+		}
+	}()
 
 	// Store to KV
 	err = ruleProcessor.ExecCreate(r.Id, ruleJson)
