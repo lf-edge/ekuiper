@@ -54,7 +54,6 @@ func InitLogger() {
 			break
 		}
 	}
-	adaptLogging(Log)
 }
 
 func CloseLogger() {

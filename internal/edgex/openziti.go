@@ -27,6 +27,7 @@ import (
 )
 
 func AuthenicatedContext(logger *logrus.Logger) ziti.Context {
+	adaptLogging(logger)
 	edgexCredentialName := os.Getenv("EDGEX_CREDENTIAL_NAME")
 	if edgexCredentialName == "" {
 		edgexCredentialName = "rules-engine"
