@@ -27,6 +27,7 @@ import (
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/sirupsen/logrus"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 )
 
@@ -37,21 +38,26 @@ func init() {
 var zitiTransport *http.Transport
 
 func newZeroTrustTransport(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
-	// attempt to locate an existing client for this existing token
-	if zitiTransport != nil {
-		return zitiTransport
-	} else {
-		ctx := edgex_vault.AuthenicatedContext(logger)
+	if conf.Config != nil && conf.Config.Basic.EnableOpenZiti == true {
+		logger.Info("using Transport 'zerotrust'")
+		// attempt to locate an existing client for this existing token
+		if zitiTransport != nil {
+			return zitiTransport
+		} else {
+			ctx := edgex_vault.AuthenicatedContext(logger)
 
-		zitiContexts := ziti.NewSdkCollection()
-		zitiContexts.Add(ctx)
+			zitiContexts := ziti.NewSdkCollection()
+			zitiContexts.Add(ctx)
 
-		zitiTransport = http.DefaultTransport.(*http.Transport).Clone() // copy default transport
-		zitiTransport.TLSClientConfig = tlscfg
-		zitiTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-			dialer := zitiContexts.NewDialer()
-			return dialer.Dial(network, addr)
+			zitiTransport = http.DefaultTransport.(*http.Transport).Clone() // copy default transport
+			zitiTransport.TLSClientConfig = tlscfg
+			zitiTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+				dialer := zitiContexts.NewDialer()
+				return dialer.Dial(network, addr)
+			}
+			return zitiTransport
 		}
-		return zitiTransport
+	} else {
+		return getTransport(tlscfg, logger)
 	}
 }

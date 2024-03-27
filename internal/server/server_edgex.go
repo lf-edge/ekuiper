@@ -23,6 +23,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/lf-edge/ekuiper/internal/conf"
 	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 )
 
@@ -30,9 +31,13 @@ func init() {
 	newNetListener = newZitifiedNetListener
 }
 
-func newZitifiedNetListener(_ string, logger *logrus.Logger) (net.Listener, error) {
-	logger.Info("using ListenMode 'zerotrust'")
-	ctx := edgex_vault.AuthenicatedContext(logger)
-	serviceName := "edgex.rules-engine"
-	return ctx.Listen(serviceName)
+func newZitifiedNetListener(addr string, logger *logrus.Logger) (net.Listener, error) {
+	if conf.Config != nil && conf.Config.Basic.EnableOpenZiti == true {
+		logger.Info("using ListenMode 'zerotrust'")
+		ctx := edgex_vault.AuthenicatedContext(logger)
+		serviceName := "edgex.rules-engine"
+		return ctx.Listen(serviceName)
+	} else {
+		return newTcpListener(addr, logger)
+	}
 }

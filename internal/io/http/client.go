@@ -102,7 +102,9 @@ type WithClientConfOption func(clientConf *ClientConfOption)
 // newTransport allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
 // protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
 // set in an init() call
-var newTransport = func(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
+var newTransport = getTransport
+
+func getTransport(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
 	return &http.Transport{
 		TLSClientConfig: tlscfg,
 	}

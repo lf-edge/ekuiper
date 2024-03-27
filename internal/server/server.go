@@ -63,7 +63,9 @@ var (
 // newNetListener allows EdgeX Foundry, protected by OpenZiti to override and obtain a transport
 // protected by OpenZiti's zero trust connectivity. See client_edgex.go where this function is
 // set in an init() call
-var newNetListener = func(addr string, logger *logrus.Logger) (net.Listener, error) {
+var newNetListener = newTcpListener
+
+func newTcpListener(addr string, logger *logrus.Logger) (net.Listener, error) {
 	logger.Info("using ListenMode 'http'")
 	return net.Listen("tcp", addr)
 }
