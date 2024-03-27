@@ -18,9 +18,10 @@ limitations under the License.
 package server
 
 import (
+	"net"
+
 	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 	"github.com/sirupsen/logrus"
-	"net"
 )
 
 func init() {

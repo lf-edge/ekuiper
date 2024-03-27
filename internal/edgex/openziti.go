@@ -18,10 +18,11 @@ limitations under the License.
 package edgex
 
 import (
+	"os"
+
 	zitisdk "github.com/openziti/sdk-golang/edge-apis"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 func AuthenicatedContext(logger *logrus.Logger) ziti.Context {

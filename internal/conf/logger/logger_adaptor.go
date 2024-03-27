@@ -23,5 +23,5 @@ import "github.com/sirupsen/logrus"
 // logrus logger. This function controls whether the logger should be adapted. it will
 // only be enabled when the -tags edgex build tag is supplied to the build
 func adaptLogging(_ *logrus.Logger) {
-	//no operation by default
+	// no operation by default
 }

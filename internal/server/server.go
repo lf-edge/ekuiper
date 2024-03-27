@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"os"
@@ -27,6 +26,8 @@ import (
 	"sort"
 	"syscall"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"go.uber.org/automaxprocs/maxprocs"
 

@@ -19,12 +19,15 @@ package logger
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
+
+	"github.com/sirupsen/logrus"
 )
 
-const OPENZITI_LOG_FORMAT = "openziti: %s"
-const OPENZITI_DEFAULT_LOG_FORMAT = "default openziti: %s"
+const (
+	OPENZITI_LOG_FORMAT         = "openziti: %s"
+	OPENZITI_DEFAULT_LOG_FORMAT = "default openziti: %s"
+)
 
 func adaptLogging(log *logrus.Logger) {
 	// with EdgeX enabled as of 2024, it includes OpenZiti support. OpenZiti uses the default

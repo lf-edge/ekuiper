@@ -20,11 +20,12 @@ package http
 import (
 	"context"
 	"crypto/tls"
+	"net"
+	"net/http"
+
 	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/sirupsen/logrus"
-	"net"
-	"net/http"
 )
 
 func init() {
