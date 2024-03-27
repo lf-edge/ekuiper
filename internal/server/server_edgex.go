@@ -20,8 +20,9 @@ package server
 import (
 	"net"
 
-	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 	"github.com/sirupsen/logrus"
+
+	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
 )
 
 func init() {

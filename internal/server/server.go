@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/lf-edge/ekuiper/internal/binder/function"
