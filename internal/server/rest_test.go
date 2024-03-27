@@ -793,3 +793,26 @@ func (suite *RestTestSuite) TestCreateRuleReplacePasswd() {
 	require.True(suite.T(), ok)
 	require.Equal(suite.T(), "4444", c["password"])
 }
+
+func (suite *RestTestSuite) TestCreateDuplicateRule() {
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo123() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	ruleJson2 := `{"id":"test12345","triggered":false,"sql":"select * from demo123","actions":[{"log":{}}]}`
+	buf2 := bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	buf2 = bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusBadRequest, w2.Code)
+	var returnVal []byte
+	returnVal, _ = io.ReadAll(w2.Result().Body)
+	require.Equal(suite.T(), `{"error":1000,"message":"rule test12345 already exists"}`+"\n", string(returnVal))
+}
