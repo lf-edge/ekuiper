@@ -1,4 +1,4 @@
-// Copyright 2023-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	mockContext "github.com/lf-edge/ekuiper/internal/io/mock/context"
+	"github.com/lf-edge/ekuiper/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -104,14 +105,14 @@ func TestSourceDecompressorError(t *testing.T) {
 }
 
 func TestSourcePingRedisError(t *testing.T) {
-	s := RedisSub()
+	s := RedisSub().(util.PingableConn)
 	prop := map[string]interface{}{
 		"address":  "",
 		"db":       0,
 		"channels": []string{DefaultChannel},
 	}
 	expErrStr := fmt.Sprintf("Ping Redis failed with error")
-	err := s.Configure("new", prop)
+	err := s.Ping("new", prop)
 	if err == nil {
 		t.Errorf("should have error")
 		return
