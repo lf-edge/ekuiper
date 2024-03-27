@@ -112,7 +112,7 @@ func (v *VaultSecret) autoRenew() {
 func (v *VaultSecret) renewToken() error {
 	url := fmt.Sprintf("%s://%s:%d/v1/auth/token/renew-self", v.scheme, v.host, v.port)
 
-	req, newReqErr := http.NewRequest("POST", url, nil)
+	req, newReqErr := http.NewRequest(http.MethodPost, url, nil)
 	if newReqErr != nil {
 		return fmt.Errorf("renewToken failed. error creating request: %v", newReqErr)
 	}
@@ -141,7 +141,7 @@ func (v *VaultSecret) renewToken() error {
 func (v *VaultSecret) exchangeVaultToken() error {
 	url := fmt.Sprintf("%s://%s:%d/v1/identity/oidc/token/"+v.secretName, v.scheme, v.host, v.port)
 
-	req, newReqErr := http.NewRequest("GET", url, nil)
+	req, newReqErr := http.NewRequest(http.MethodGet, url, nil)
 	if newReqErr != nil {
 		return fmt.Errorf("exchangeVaultToken failed. error creating request: %v", newReqErr)
 	}
