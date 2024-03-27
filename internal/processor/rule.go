@@ -235,6 +235,12 @@ func clone(opt api.RuleOption) *api.RuleOption {
 	}
 }
 
+func (p *RuleProcessor) ExecExists(name string) bool {
+	var s1 string
+	f, _ := p.db.Get(name, &s1)
+	return f
+}
+
 func (p *RuleProcessor) ExecDesc(name string) (string, error) {
 	var s1 string
 	f, _ := p.db.Get(name, &s1)

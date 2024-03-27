@@ -85,6 +85,10 @@ func createRule(name, ruleJson string) (string, error) {
 		return "", fmt.Errorf("invalid rule json: %v", err)
 	}
 
+	if exists := ruleProcessor.ExecExists(r.Id); exists {
+		return "", fmt.Errorf("rule %v already exists", r.Id)
+	}
+
 	// Validate the topo
 	err = infra.SafeRun(func() error {
 		rs, err = createRuleState(r)
