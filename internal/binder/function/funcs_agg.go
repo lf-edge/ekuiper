@@ -47,7 +47,7 @@ func registerAggFunc() {
 			return result, true
 		},
 		val:   ValidateOneArg,
-		check: func(args []interface{}) (interface{}, bool) { return nil, false },
+		check: returnNilIfHasAnyNil,
 	}
 	builtins["avg"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
