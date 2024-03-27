@@ -24,6 +24,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
@@ -170,19 +171,14 @@ func TestSinkDecompressorError(t *testing.T) {
 }
 
 func TestSinkPingRedisError(t *testing.T) {
-	s := RedisPub()
+	s := RedisPub().(util.PingableConn)
 	prop := map[string]interface{}{
 		"address": "127.0.0.1:6379",
 		"db":      0,
 		"channel": DefaultChannel,
 	}
 	expErrStr := fmt.Sprintf("Ping Redis failed with error")
-	err := s.Configure(prop)
-	if err != nil {
-		t.Error(err)
-	}
-	ctx := mockContext.NewMockContext("ruleSink", "op1")
-	err = s.Open(ctx)
+	err := s.Ping("", prop)
 	if err == nil {
 		t.Errorf("should have error")
 		return
