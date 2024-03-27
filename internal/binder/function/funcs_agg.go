@@ -25,6 +25,30 @@ import (
 )
 
 func registerAggFunc() {
+	builtins["agg_by_key"] = builtinFunc{
+		fType: ast.FuncTypeAgg,
+		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
+			arg0, ok := args[0].([]interface{})
+			if !ok {
+				return fmt.Errorf("agg_by_key should used as agg function"), false
+			}
+			result := make(map[string][]interface{})
+			for _, item := range arg0 {
+				if m, ok := item.(map[string]interface{}); ok {
+					for k, v := range m {
+						if v1, ok := result[k]; ok {
+							result[k] = append(v1, v)
+						} else {
+							result[k] = []interface{}{v}
+						}
+					}
+				}
+			}
+			return result, true
+		},
+		val:   ValidateOneArg,
+		check: func(args []interface{}) (interface{}, bool) { return nil, false },
+	}
 	builtins["avg"] = builtinFunc{
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {

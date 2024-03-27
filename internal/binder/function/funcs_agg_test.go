@@ -634,3 +634,39 @@ func TestLastValueValidation(t *testing.T) {
 		}
 	}
 }
+
+func TestAggByKey(t *testing.T) {
+	testcases := []struct {
+		args  []interface{}
+		value map[string][]interface{}
+	}{
+		{
+			args: []interface{}{
+				map[string]interface{}{
+					"a": 1,
+					"b": 2,
+				},
+				map[string]interface{}{
+					"a": 3,
+					"b": 4,
+				},
+			},
+			value: map[string][]interface{}{
+				"a": {1, 3},
+				"b": {2, 4},
+			},
+		},
+	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+	registerAggFunc()
+	f, ok := builtins["agg_by_key"]
+	require.True(t, ok)
+	for _, tc := range testcases {
+		v, ok := f.exec(fctx, []interface{}{tc.args})
+		require.True(t, ok)
+		require.Equal(t, v, tc.value)
+	}
+}
