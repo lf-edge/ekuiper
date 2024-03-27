@@ -37,6 +37,15 @@ func init() {
 
 var zitiTransport *http.Transport
 
+type ZitiUnderlayDialer struct {
+}
+
+var netDialer = &net.Dialer{}
+
+func (d *ZitiUnderlayDialer) Dial(network, address string) (net.Conn, error) {
+	return netDialer.Dial(network, address)
+}
+
 func newZeroTrustTransport(tlscfg *tls.Config, logger *logrus.Logger) *http.Transport {
 	if conf.Config != nil && conf.Config.Basic.EnableOpenZiti == true {
 		logger.Info("using Transport 'zerotrust'")
@@ -51,8 +60,8 @@ func newZeroTrustTransport(tlscfg *tls.Config, logger *logrus.Logger) *http.Tran
 
 			zitiTransport = http.DefaultTransport.(*http.Transport).Clone() // copy default transport
 			zitiTransport.TLSClientConfig = tlscfg
+			dialer := zitiContexts.NewDialerWithFallback(context.Background(), &ZitiUnderlayDialer{})
 			zitiTransport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-				dialer := zitiContexts.NewDialer()
 				return dialer.Dial(network, addr)
 			}
 			return zitiTransport
