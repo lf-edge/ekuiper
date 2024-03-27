@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/processor"
@@ -95,6 +96,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
+	r.HandleFunc("/metadata/sinks/{name}/confKeys/{confKey}", sinkConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 	suite.r = r
 }
 
@@ -761,4 +763,33 @@ func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
 	err = suite.s.StartRule(ruleId, &reply)
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), err.Error(), "unknown field a")
+}
+
+func (suite *RestTestSuite) TestCreateRuleReplacePasswd() {
+	meta.InitYamlConfigManager()
+	confKeyJson := `{"insecureSkipVerify":false,"protocolVersion":"3.1.1","qos":1,"server":"tcp://122.9.166.75:1883","token":"123","password":"4444"}`
+	req, _ := http.NewRequest(http.MethodPut, "http://localhost:8080/metadata/sinks/mqtt/confKeys/broker", bytes.NewBufferString(confKeyJson))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demodemo() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	ruleJson2 := `{"id":"test1234","triggered":false,"sql":"select * from demodemo","actions":[{"mqtt":{"password":"******","topic":"123","server":"123","resourceId":"broker"}}]}`
+	buf2 := bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	r, err := ruleProcessor.GetRuleById("test1234")
+	require.NoError(suite.T(), err)
+	mqttSinkConfig := r.Actions[0]["mqtt"]
+	require.NotNil(suite.T(), mqttSinkConfig)
+	c, ok := mqttSinkConfig.(map[string]interface{})
+	require.True(suite.T(), ok)
+	require.Equal(suite.T(), "4444", c["password"])
 }

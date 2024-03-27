@@ -766,6 +766,16 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 	return configResponse
 }
 
+// ReplacePasswdForConfigByResource reload password from resources if the config both include password(as fake password) and resourceId
+func ReplacePasswdForConfigByResource(typ string, name string, config map[string]interface{}) map[string]interface{} {
+	if r, ok := config["resourceId"]; ok {
+		if resourceId, ok := r.(string); ok {
+			return ReplacePasswdForConfig(typ, name, resourceId, config)
+		}
+	}
+	return config
+}
+
 func ReplacePasswdForConfig(typ, name, resourceID string, config map[string]interface{}) map[string]interface{} {
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
