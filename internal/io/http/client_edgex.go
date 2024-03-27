@@ -37,8 +37,7 @@ func init() {
 
 var zitiTransport *http.Transport
 
-type ZitiUnderlayDialer struct {
-}
+type ZitiUnderlayDialer struct{}
 
 var netDialer = &net.Dialer{}
 
