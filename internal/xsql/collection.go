@@ -168,7 +168,7 @@ func (w *WindowTuples) GroupRange(f func(i int, aggRow CollectionRow) (bool, err
 	return err
 }
 
-func (w *WindowTuples) AddTuple(tuple *Tuple) *WindowTuples {
+func (w *WindowTuples) AddTuple(tuple Row) *WindowTuples {
 	w.Content = append(w.Content, tuple)
 	return w
 }
