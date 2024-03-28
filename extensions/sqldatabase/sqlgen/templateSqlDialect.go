@@ -102,10 +102,7 @@ type TemplateSqlQueryCfg struct {
 	IndexFieldDataType       string              `json:"indexFieldType"`
 	IndexFieldDateTimeFormat string              `json:"dateTimeFormat"`
 	IndexFields              []*store.IndexField `json:"indexFields"`
-
-	RuleID     string `json:"-"`
-	StreamName string `json:"-"`
-	store      *store.IndexFieldStoreWrap
+	store                    *store.IndexFieldStoreWrap
 }
 
 func (t *TemplateSqlQueryCfg) InitIndexFieldStore() {
