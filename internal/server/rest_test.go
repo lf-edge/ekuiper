@@ -327,12 +327,12 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 
-	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule321/reset_state", bytes.NewBufferString(`{"type":1,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 	returnStr := string(returnVal)
-	require.Equal(suite.T(), `{"error":1000,"message":"rule rule321 should be running when modify state"}`+"\n", returnStr)
+	require.Equal(suite.T(), `{"error":1000,"message":"Rule rule344421 is not found in registry"}`+"\n", returnStr)
 
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321/explain", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
