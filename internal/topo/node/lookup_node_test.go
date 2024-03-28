@@ -28,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/lookup"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -318,6 +319,7 @@ func TestLookup(t *testing.T) {
 		STRICT_VALIDATION: true,
 		KIND:              "lookup",
 	}
+	mockclock.ResetClock(0)
 	lookup.CreateInstance("mock", "mock", options)
 	contextLogger := conf.Log.WithField("rule", "TestLookup")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
@@ -468,7 +470,8 @@ func TestCachedLookup(t *testing.T) {
 		},
 	}
 	// First run and the set mock result
-	clock := conf.Clock.(*clock.Mock)
+	mockclock.ResetClock(0)
+	clock := mockclock.GetMockClock()
 	select {
 	case err := <-errCh:
 		t.Error(err)

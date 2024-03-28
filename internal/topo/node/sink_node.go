@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
-	sinkUtil "github.com/lf-edge/ekuiper/internal/io/sink"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/node/cache"
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
@@ -47,13 +46,6 @@ type SinkConf struct {
 	BatchSize      int      `json:"batchSize"`
 	LingerInterval int      `json:"lingerInterval"`
 	conf.SinkConf
-}
-
-func (sc *SinkConf) isBatchSinkEnabled() bool {
-	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
-		return true
-	}
-	return false
 }
 
 type SinkNode struct {
@@ -91,7 +83,8 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 	logger.Debugf("open sink node %s", m.name)
 	go func() {
 		err := infra.SafeRun(func() error {
-			sconf, err := m.parseConf(logger)
+			sconf, err := ParseConf(logger, m.options)
+			m.concurrency = sconf.Concurrency
 			if err != nil {
 				return err
 			}
@@ -112,7 +105,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
 
 			m.reset()
-			logger.Infof("open sink node %d instances with batchSize", m.concurrency, sconf.BatchSize)
+			logger.Infof("open sink node %d instances with batchSize %d", m.concurrency, sconf.BatchSize)
 
 			go func(instance int) {
 				panicOrError := infra.SafeRun(func() error {
@@ -147,32 +140,15 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						dataOutCh <-chan []map[string]interface{}
 						resendCh  chan []map[string]interface{}
 
-						sendManager *sinkUtil.SendManager
-						c           *cache.SyncCache
-						rq          *cache.SyncCache
+						c  *cache.SyncCache
+						rq *cache.SyncCache
 					)
 					logger.Infof("sink node %s instance %d starts with conf %+v", m.name, instance, *sconf)
 
-					if sconf.isBatchSinkEnabled() {
-						sendManager, err = sinkUtil.NewSendManager(sconf.BatchSize, sconf.LingerInterval)
-						if err != nil {
-							return err
-						}
-						go sendManager.Run(ctx)
-					}
-
 					if !sconf.EnableCache {
-						if sendManager != nil {
-							dataOutCh = sendManager.GetOutputChan()
-						} else {
-							dataOutCh = dataCh
-						}
+						dataOutCh = dataCh
 					} else {
-						if sendManager != nil {
-							c = cache.NewSyncCache(ctx, sendManager.GetOutputChan(), result, &sconf.SinkConf, sconf.BufferLength)
-						} else {
-							c = cache.NewSyncCache(ctx, dataCh, result, &sconf.SinkConf, sconf.BufferLength)
-						}
+						c = cache.NewSyncCache(ctx, dataCh, result, &sconf.SinkConf, sconf.BufferLength)
 						if sconf.ResendAlterQueue {
 							resendCh = make(chan []map[string]interface{}, sconf.BufferLength)
 							rq = cache.NewSyncCache(ctx, resendCh, result, &sconf.SinkConf, sconf.BufferLength)
@@ -192,16 +168,10 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 							ctx.GetLogger().Debugf("receive empty in sink")
 							return
 						}
-						if sconf.isBatchSinkEnabled() {
-							for _, out := range outs {
-								sendManager.RecvData(out)
-							}
-						} else {
-							select {
-							case dataCh <- outs:
-							default:
-								ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v", m.name, instance, outs)
-							}
+						select {
+						case dataCh <- outs:
+						default:
+							ctx.GetLogger().Warnf("sink node %s instance %d buffer is full, drop data %v", m.name, instance, outs)
 						}
 						if resendCh != nil {
 							select {
@@ -383,7 +353,7 @@ func checkAck(ctx api.StreamContext, data interface{}, err error) bool {
 	return true
 }
 
-func (m *SinkNode) parseConf(logger api.Logger) (*SinkConf, error) {
+func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
 	sconf := &SinkConf{
 		Concurrency:  1,
 		Omitempty:    false,
@@ -392,29 +362,34 @@ func (m *SinkNode) parseConf(logger api.Logger) (*SinkConf, error) {
 		SinkConf:     *conf.Config.Sink,
 		BufferLength: 1024,
 	}
-	err := cast.MapToStruct(m.options, sconf)
+	err := cast.MapToStruct(props, sconf)
 	if err != nil {
-		return nil, fmt.Errorf("read properties %v fail with error: %v", m.options, err)
+		return nil, fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
 	if sconf.Concurrency <= 0 {
-		logger.Warnf("invalid type for concurrency property, should be positive integer but found %t", sconf.Concurrency)
+		logger.Warnf("invalid type for concurrency property, should be positive integer but found %d", sconf.Concurrency)
 		sconf.Concurrency = 1
 	}
-	m.concurrency = sconf.Concurrency
 	if sconf.Format == "" {
 		sconf.Format = "json"
 	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf && sconf.Format != message.FormatBinary && sconf.Format != message.FormatCustom && sconf.Format != message.FormatDelimited {
 		logger.Warnf("invalid type for format property, should be json protobuf or binary but found %s", sconf.Format)
 		sconf.Format = "json"
 	}
-	err = cast.MapToStruct(m.options, &sconf.SinkConf)
+	err = cast.MapToStruct(props, &sconf.SinkConf)
 	if err != nil {
-		return nil, fmt.Errorf("read properties %v to cache conf fail with error: %v", m.options, err)
+		return nil, fmt.Errorf("read properties %v to cache conf fail with error: %v", props, err)
 	}
 	if sconf.DataField == "" {
-		if v, ok := m.options["tableDataField"]; ok {
+		if v, ok := props["tableDataField"]; ok {
 			sconf.DataField = v.(string)
 		}
+	}
+	if sconf.BatchSize < 0 {
+		return nil, fmt.Errorf("invalid batchSize %d", sconf.BatchSize)
+	}
+	if sconf.LingerInterval < 0 {
+		return nil, fmt.Errorf("invalid lingerInterval %d", sconf.LingerInterval)
 	}
 	err = sconf.SinkConf.Validate()
 	if err != nil {

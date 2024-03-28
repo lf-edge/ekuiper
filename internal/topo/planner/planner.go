@@ -116,24 +116,9 @@ func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 			tp.AddSink(inputs, sink)
 		}
 	} else {
-		manager := io.GetManager()
-		for i, m := range rule.Actions {
-			for name, action := range m {
-				props, ok := action.(map[string]interface{})
-				if !ok {
-					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
-				}
-				s, err := manager.Sink(name)
-				if err != nil {
-					return nil, err
-				}
-				if s != nil {
-					if err := s.Configure(props); err != nil {
-						return nil, err
-					}
-				}
-				tp.AddSink(inputs, node.NewSinkNode(fmt.Sprintf("%s_%d", name, i), name, props))
-			}
+		err = buildActions(tp, rule, inputs)
+		if err != nil {
+			return nil, err
 		}
 	}
 
