@@ -21,10 +21,12 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
 
@@ -117,12 +119,13 @@ func TestLookup(t *testing.T) {
 			}
 		}
 	}()
-	mc := conf.Clock.(*clock.Mock)
+	result, _ := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
+	mockclock.ResetClock(0)
+	mc := mockclock.GetMockClock()
 	expected := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
 	}
-	result, _ := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
 	if len(result) != 2 {
 		t.Errorf("expect %v but got %v", expected, result)
 	} else {
@@ -130,8 +133,9 @@ func TestLookup(t *testing.T) {
 			result[0], result[1] = result[1], result[0]
 		}
 	}
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("expect %v but got %v", expected, result)
+	assert.Equal(t, len(expected), len(result))
+	for i, r := range result {
+		assert.Equal(t, expected[i].Message(), r.Message(), "%d message not equal", i)
 	}
 	err = ls.Close(ctx)
 	if err != nil {
