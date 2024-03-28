@@ -18,9 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 
+	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/store"
 )
@@ -28,7 +30,8 @@ import (
 type UpdateRuleStateType int
 
 const (
-	UpdateRuleSQLFieldValue UpdateRuleStateType = iota
+	UpdateRuleState UpdateRuleStateType = iota
+	UpdateRuleOffset
 )
 
 func ruleStateHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,8 +45,8 @@ func ruleStateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var err error
 	switch req.StateType {
-	case int(UpdateRuleSQLFieldValue):
-		err = updateRuleSQLValue(ruleID, req.Params)
+	case int(UpdateRuleOffset):
+		err = updateRuleOffset(ruleID, req.Params)
 	default:
 		err = fmt.Errorf("unknown stateType:%v", req.StateType)
 	}
@@ -60,19 +63,32 @@ type ruleStateUpdateRequest struct {
 	Params    map[string]interface{} `json:"params"`
 }
 
-type updateFieldValueRequest struct {
+type resetOffsetRequest struct {
+	OffsetType string                 `json:"type"`
 	StreamName string                 `json:"streamName"`
 	Input      map[string]interface{} `json:"input"`
 }
 
-func updateRuleSQLValue(ruleID string, param map[string]interface{}) error {
-	req := &updateFieldValueRequest{}
+func updateRuleOffset(ruleID string, param map[string]interface{}) error {
+	s, err := getRuleState(ruleID)
+	if err != nil {
+		return err
+	}
+	if s != rule.RuleStarted {
+		return fmt.Errorf("rule %v should be running when modify state", ruleID)
+	}
+	req := &resetOffsetRequest{}
 	if err := cast.MapToStruct(param, req); err != nil {
 		return err
 	}
-	updated := store.GlobalWrapStore.UpdateIndexFieldValue(ruleID, req.StreamName, req.Input)
-	if updated {
-		return nil
+	switch strings.ToLower(req.OffsetType) {
+	case "sql":
+		updated := store.GlobalWrapStore.UpdateIndexFieldValue(ruleID, req.StreamName, req.Input)
+		if updated {
+			return nil
+		}
+		return fmt.Errorf("rule:%v or stream:%v not found", ruleID, req.StreamName)
+	default:
+		return fmt.Errorf("unknown offset:%v for rule %v,stream %v", req.OffsetType, ruleID, req.StreamName)
 	}
-	return fmt.Errorf("rule:%v or stream:%v not found", ruleID, req.StreamName)
 }
