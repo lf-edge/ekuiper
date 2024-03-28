@@ -109,10 +109,7 @@ type TemplateSqlQueryCfg struct {
 }
 
 func (t *TemplateSqlQueryCfg) InitIndexFieldStore() {
-	t.store = &store.IndexFieldStoreWrap{
-		RuleID:     t.RuleID,
-		StreamName: t.StreamName,
-	}
+	t.store = &store.IndexFieldStoreWrap{}
 	if t.IndexFieldName != "" {
 		f := &store.IndexField{
 			IndexFieldName:           t.IndexFieldName,
@@ -141,4 +138,8 @@ func (t *TemplateSqlQueryCfg) SetIndexValue(v interface{}) {
 
 func (t *TemplateSqlQueryCfg) GetIndexValue() interface{} {
 	return t.store.GetStore()
+}
+
+func (t *TemplateSqlQueryCfg) GetIndexValueWrap() *store.IndexFieldStoreWrap {
+	return t.store
 }

@@ -24,9 +24,6 @@ type IndexField struct {
 }
 
 type IndexFieldStoreWrap struct {
-	RuleID     string
-	StreamName string
-
 	// use mutex to modify value in future
 	sync.RWMutex
 	store *IndexFieldStore
@@ -50,7 +47,6 @@ func NewIndexFieldWrap(fields ...*IndexField) *IndexFieldStoreWrap {
 
 func (wrap *IndexFieldStoreWrap) InitByStore(store *IndexFieldStore) {
 	wrap.store = store
-	GlobalWrapStore.AddIndexFieldStoreWrap(wrap)
 }
 
 func (wrap *IndexFieldStoreWrap) GetStore() *IndexFieldStore {
@@ -71,7 +67,6 @@ func (wrap *IndexFieldStoreWrap) Init(fields ...*IndexField) {
 		store.IndexFieldValueList = append(store.IndexFieldValueList, field)
 		store.IndexFieldValueMap[field.IndexFieldName] = field
 	}
-	GlobalWrapStore.AddIndexFieldStoreWrap(wrap)
 }
 
 func (wrap *IndexFieldStoreWrap) GetFieldList() []*IndexField {
@@ -130,11 +125,9 @@ func init() {
 	}
 }
 
-func (g *WrapStore) AddIndexFieldStoreWrap(wrap *IndexFieldStoreWrap) {
+func (g *WrapStore) AddIndexFieldStoreWrap(ruleID, streamName string, wrap *IndexFieldStoreWrap) {
 	g.Lock()
 	defer g.Unlock()
-	ruleID := wrap.RuleID
-	streamName := wrap.StreamName
 	var ss map[string]*IndexFieldStoreWrap
 	var ok bool
 	ss, ok = g.store[ruleID]

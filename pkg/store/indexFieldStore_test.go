@@ -56,15 +56,12 @@ func TestIndexFieldStore(t *testing.T) {
 }
 
 func TestGlobalStore(t *testing.T) {
-	w := &IndexFieldStoreWrap{
-		RuleID:     "1",
-		StreamName: "1",
-	}
+	w := &IndexFieldStoreWrap{}
 	w.Init(&IndexField{
 		IndexFieldName:  "1",
 		IndexFieldValue: 1,
 	})
-	GlobalWrapStore.AddIndexFieldStoreWrap(w)
+	GlobalWrapStore.AddIndexFieldStoreWrap("1", "1", w)
 	require.False(t, GlobalWrapStore.UpdateIndexFieldValue("0", "1", nil))
 	require.False(t, GlobalWrapStore.UpdateIndexFieldValue("1", "0", nil))
 	GlobalWrapStore.UpdateIndexFieldValue("1", "1", map[string]interface{}{
