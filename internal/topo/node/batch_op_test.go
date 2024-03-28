@@ -68,7 +68,6 @@ func TestRun(t *testing.T) {
 	}
 	mc := conf.Clock.(*clock.Mock)
 	for i, tc := range testcases {
-		mc.Set(mc.Now())
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
 			op, err := NewBatchOp("test", &api.RuleOption{BufferLength: 10, SendError: true}, tc.batchSize, tc.lingerInterval)
 			if len(tc.err) > 0 {
