@@ -91,6 +91,18 @@ func (wrap *IndexFieldStoreWrap) UpdateFieldValue(name string, value interface{}
 	w.IndexFieldValue = value
 }
 
+func (wrap *IndexFieldStoreWrap) UpdateByInput(input map[string]interface{}) {
+	wrap.Lock()
+	defer wrap.Unlock()
+	for k, v := range input {
+		w, ok := wrap.store.IndexFieldValueMap[k]
+		if !ok {
+			continue
+		}
+		w.IndexFieldValue = v
+	}
+}
+
 func (wrap *IndexFieldStoreWrap) LoadFromList() {
 	wrap.Lock()
 	defer wrap.Unlock()
@@ -98,4 +110,51 @@ func (wrap *IndexFieldStoreWrap) LoadFromList() {
 	for _, field := range wrap.store.IndexFieldValueList {
 		wrap.store.IndexFieldValueMap[field.IndexFieldName] = field
 	}
+}
+
+type WrapStore struct {
+	sync.Mutex
+	store map[string]map[string]*IndexFieldStoreWrap
+}
+
+var GlobalWrapStore *WrapStore
+
+func init() {
+	GlobalWrapStore = &WrapStore{
+		store: map[string]map[string]*IndexFieldStoreWrap{},
+	}
+}
+
+func (g *WrapStore) AddIndexFieldStoreWrap(ruleID, streamName string, wrap *IndexFieldStoreWrap) {
+	g.Lock()
+	defer g.Unlock()
+	var ss map[string]*IndexFieldStoreWrap
+	var ok bool
+	ss, ok = g.store[ruleID]
+	if !ok {
+		g.store[ruleID] = make(map[string]*IndexFieldStoreWrap)
+		ss = g.store[ruleID]
+	}
+	ss[streamName] = wrap
+}
+
+func (g *WrapStore) RemoveIndexFieldStoreWrap(ruleID string) {
+	g.Lock()
+	defer g.Unlock()
+	delete(g.store, ruleID)
+}
+
+func (g *WrapStore) UpdateIndexFieldValue(ruleID, streamName string, input map[string]interface{}) bool {
+	g.Lock()
+	defer g.Unlock()
+	ss, ok := g.store[ruleID]
+	if !ok {
+		return false
+	}
+	wrap, ok := ss[streamName]
+	if !ok {
+		return false
+	}
+	wrap.UpdateByInput(input)
+	return true
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/hidden"
+	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 type sqlConConfig struct {
@@ -92,6 +93,9 @@ func (m *sqlsource) Configure(_ string, props map[string]interface{}) error {
 func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
 	logger := ctx.GetLogger()
 	t := time.NewTicker(time.Duration(m.conf.Interval) * time.Millisecond)
+	if m.Query.GetIndexValueWrap() != nil {
+		store.GlobalWrapStore.AddIndexFieldStoreWrap(ctx.GetRuleId(), ctx.GetOpId(), m.Query.GetIndexValueWrap())
+	}
 	defer t.Stop()
 	for {
 		select {
@@ -161,10 +165,10 @@ func (m *sqlsource) Rewind(offset interface{}) error {
 func (m *sqlsource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("Closing sql stream to %v", m.conf)
+	store.GlobalWrapStore.RemoveIndexFieldStoreWrap(ctx.GetRuleId())
 	if m.db != nil {
 		return util.ReturnDBFromOneNode(util.GlobalPool, m.conf.Url)
 	}
-
 	return nil
 }
 

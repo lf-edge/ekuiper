@@ -49,4 +49,24 @@ func TestIndexFieldStore(t *testing.T) {
 	require.Len(t, s.GetFieldList(), 1)
 	require.Len(t, s.GetFieldMap(), 1)
 	require.Equal(t, s.GetFieldList()[0], s.GetFieldMap()["col"])
+
+	fStore := &IndexFieldStore{}
+	s = &IndexFieldStoreWrap{}
+	s.InitByStore(fStore)
+}
+
+func TestGlobalStore(t *testing.T) {
+	w := &IndexFieldStoreWrap{}
+	w.Init(&IndexField{
+		IndexFieldName:  "1",
+		IndexFieldValue: 1,
+	})
+	GlobalWrapStore.AddIndexFieldStoreWrap("1", "1", w)
+	require.False(t, GlobalWrapStore.UpdateIndexFieldValue("0", "1", nil))
+	require.False(t, GlobalWrapStore.UpdateIndexFieldValue("1", "0", nil))
+	GlobalWrapStore.UpdateIndexFieldValue("1", "1", map[string]interface{}{
+		"1": 2,
+		"2": 3,
+	})
+	GlobalWrapStore.RemoveIndexFieldStoreWrap("1")
 }
