@@ -192,6 +192,7 @@ type KuiperConf struct {
 		SQLConf             *SQLConf    `yaml:"sql"`
 		RulePatrolInterval  string      `yaml:"rulePatrolInterval"`
 		CfgStorageType      string      `yaml:"cfgStorageType"`
+		EnableOpenZiti      bool        `yaml:"enableOpenZiti"`
 	}
 	Rule   api.RuleOption
 	Sink   *SinkConf
