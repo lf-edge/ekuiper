@@ -63,6 +63,10 @@ func TestGlobalStore(t *testing.T) {
 	GlobalWrapStore.AddIndexFieldStoreWrap(w)
 	GlobalWrapStore.UpdateIndexFieldValue("1", "1", map[string]interface{}{
 		"1": 2,
+		"2": 3,
 	})
 	GlobalWrapStore.RemoveIndexFieldStoreWrap("1")
+
+	require.False(t, GlobalWrapStore.UpdateIndexFieldValue("0", "1", nil))
+	require.False(t, GlobalWrapStore.UpdateIndexFieldValue("1", "0", nil))
 }
