@@ -142,6 +142,20 @@ func TestAggExec(t *testing.T) {
 			var1:    nil,
 			vars:    nil,
 		},
+		{ // 5
+			args: []interface{}{
+				[]interface{}{
+					100, 150, nil, 200,
+				},
+			},
+			avg:     int64(150),
+			max:     int64(200),
+			min:     int64(100),
+			stddev:  40.824829046386306,
+			stddevs: float64(50),
+			var1:    1666.6666666666667,
+			vars:    float64(2500),
+		},
 	}
 	for i, tt := range tests {
 		rAvg, _ := fAvg.exec(fctx, tt.args)
