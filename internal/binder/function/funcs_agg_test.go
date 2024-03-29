@@ -87,7 +87,8 @@ func TestAggExec(t *testing.T) {
 			stddevs: fmt.Errorf("requires float64 slice but found []interface {}([foo bar self])"),
 			var1:    fmt.Errorf("requires float64 slice but found []interface {}([foo bar self])"),
 			vars:    fmt.Errorf("requires float64 slice but found []interface {}([foo bar self])"),
-		}, { // 1
+		},
+		{ // 1
 			args: []interface{}{
 				[]interface{}{
 					int64(100),
@@ -102,7 +103,8 @@ func TestAggExec(t *testing.T) {
 			stddevs: float64(50),
 			var1:    1666.6666666666667,
 			vars:    float64(2500),
-		}, { // 2
+		},
+		{ // 2
 			args: []interface{}{
 				[]interface{}{
 					float64(100),
@@ -117,7 +119,8 @@ func TestAggExec(t *testing.T) {
 			stddevs: float64(50),
 			var1:    1666.6666666666667,
 			vars:    float64(2500),
-		}, { // 3
+		},
+		{ // 3
 			args: []interface{}{
 				[]interface{}{
 					100, 150, 200,
@@ -130,7 +133,8 @@ func TestAggExec(t *testing.T) {
 			stddevs: float64(50),
 			var1:    1666.6666666666667,
 			vars:    float64(2500),
-		}, { // 4
+		},
+		{ // 4
 			args: []interface{}{
 				[]interface{}{},
 			},
@@ -218,7 +222,8 @@ func TestPercentileExec(t *testing.T) {
 			},
 			pCont: fmt.Errorf("requires float64 slice but found []interface {}([foo bar self])"),
 			pDisc: fmt.Errorf("requires float64 slice but found []interface {}([foo bar self])"),
-		}, { // 1
+		},
+		{ // 1
 			args: []interface{}{
 				[]interface{}{
 					int64(100),
@@ -228,7 +233,8 @@ func TestPercentileExec(t *testing.T) {
 			},
 			pCont: fmt.Errorf("Expect 2 arguments but found 1."),
 			pDisc: fmt.Errorf("Expect 2 arguments but found 1."),
-		}, { // 2
+		},
+		{ // 2
 			args: []interface{}{
 				[]interface{}{
 					int64(100),
@@ -239,7 +245,8 @@ func TestPercentileExec(t *testing.T) {
 			},
 			pCont: float64(125),
 			pDisc: float64(150),
-		}, { // 3
+		},
+		{ // 3
 			args: []interface{}{
 				[]interface{}{
 					float64(100),
@@ -250,7 +257,8 @@ func TestPercentileExec(t *testing.T) {
 			},
 			pCont: float64(125),
 			pDisc: float64(150),
-		}, { // 4
+		},
+		{ // 4
 			args: []interface{}{
 				[]interface{}{
 					100, 150, 200,
@@ -259,7 +267,8 @@ func TestPercentileExec(t *testing.T) {
 			},
 			pCont: float64(125),
 			pDisc: float64(150),
-		}, { // 5
+		},
+		{ // 5
 			args: []interface{}{
 				[]interface{}{},
 				[]interface{}{},
@@ -270,7 +279,7 @@ func TestPercentileExec(t *testing.T) {
 		{ // 6
 			args: []interface{}{
 				[]interface{}{
-					100, 150, nil,200,
+					100, 150, nil, 200,
 				},
 				[]interface{}{0.5, 0.5, 0.5},
 			},

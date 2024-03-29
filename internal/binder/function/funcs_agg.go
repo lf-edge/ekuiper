@@ -180,7 +180,7 @@ func registerAggFunc() {
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
 			if len(arg0) > 0 {
-				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND,cast.IGNORE_NIL)
+				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND, cast.IGNORE_NIL)
 				if err != nil {
 					return fmt.Errorf("requires float64 slice but found %[1]T(%[1]v)", arg0), false
 				}
