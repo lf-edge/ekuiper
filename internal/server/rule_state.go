@@ -24,7 +24,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 type UpdateRuleStateType int
@@ -77,17 +76,18 @@ func updateRuleOffset(ruleID string, param map[string]interface{}) error {
 	if s != rule.RuleStarted {
 		return fmt.Errorf("rule %v should be running when modify state", ruleID)
 	}
+
 	req := &resetOffsetRequest{}
 	if err := cast.MapToStruct(param, req); err != nil {
 		return err
 	}
 	switch strings.ToLower(req.OffsetType) {
 	case "sql":
-		updated := store.GlobalWrapStore.UpdateIndexFieldValue(ruleID, req.StreamName, req.Input)
-		if updated {
-			return nil
+		rs, ok := registry.Load(ruleID)
+		if !ok {
+			return fmt.Errorf("rule %s is not found in registry", ruleID)
 		}
-		return fmt.Errorf("rule:%v or stream:%v not found", ruleID, req.StreamName)
+		return rs.Topology.ResetStreamOffset(req.StreamName, req.Input)
 	default:
 		return fmt.Errorf("unknown offset:%v for rule %v,stream %v", req.OffsetType, ruleID, req.StreamName)
 	}

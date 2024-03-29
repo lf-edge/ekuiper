@@ -55,6 +55,10 @@ type DataSourceNode interface {
 	RemoveMetrics(ruleId string)
 }
 
+type SourceInstanceNode interface {
+	GetSource() api.Source
+}
+
 type MergeableTopo interface {
 	GetSource() DataSourceNode
 	// MergeSrc Add child topo as the source with following operators

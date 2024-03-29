@@ -15,6 +15,7 @@
 package mocknode
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -82,6 +83,10 @@ func (m *MockSource) Rewind(offset interface{}) error {
 		m.offset = oi
 	}
 	return nil
+}
+
+func (m *MockSource) ResetOffset(input map[string]interface{}) error {
+	return errors.New("mockSource source not support reset offset")
 }
 
 func (m *MockSource) Close(_ api.StreamContext) error {

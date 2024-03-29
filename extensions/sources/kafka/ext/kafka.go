@@ -16,6 +16,7 @@ package kafka
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -189,6 +190,10 @@ func (s *KafkaSource) Rewind(offset interface{}) error {
 		return fmt.Errorf("set kafka offset failed, err:%v", err)
 	}
 	return nil
+}
+
+func (s *KafkaSource) ResetOffset(input map[string]interface{}) error {
+	return errors.New("kafka source not support reset offset")
 }
 
 func (s *KafkaSource) GetOffset() (interface{}, error) {

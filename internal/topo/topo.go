@@ -324,3 +324,17 @@ func (s *Topo) RemoveMetrics() {
 func (s *Topo) GetTopo() *api.PrintableTopo {
 	return s.topo
 }
+
+func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) error {
+	for _, source := range s.sources {
+		if source.GetName() == name {
+			if sn, ok := source.(node.SourceInstanceNode); ok {
+				src := sn.GetSource()
+				if r, ok := src.(api.Rewindable); ok {
+					return r.ResetOffset(input)
+				}
+			}
+		}
+	}
+	return fmt.Errorf("stream %v not found in topo", name)
+}
