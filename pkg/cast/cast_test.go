@@ -345,6 +345,10 @@ func TestToFloatResult(t *testing.T) {
 			true,
 			1,
 		},
+		{
+			nil,
+			0,
+		},
 	}
 	for _, tt := range tests {
 		var (

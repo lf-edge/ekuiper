@@ -36,7 +36,6 @@ type ArrayNilConvert int8
 
 const (
 	IGNORE_NIL ArrayNilConvert = iota
-	TYPE_DEFAULT
 	FORCE_CONVERT
 )
 
@@ -419,7 +418,12 @@ func ToFloat64(input interface{}, sn Strictness) (float64, error) {
 			}
 			return 0, nil
 		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
 	}
+
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to float64", input)
 }
 
@@ -481,6 +485,10 @@ func ToFloat32(input interface{}, sn Strictness) (float32, error) {
 			if s {
 				return 1, nil
 			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
 			return 0, nil
 		}
 	}
@@ -920,15 +928,12 @@ func ToFloat64Slice(input interface{}, sn Strictness, anc ArrayNilConvert) ([]fl
 	}
 	var result []float64
 	for i := 0; i < s.Len(); i++ {
-		a := s.Index(i).Interface()
-		if anc == IGNORE_NIL && a == nil {
+		v := s.Index(i).Interface()
+		if anc == IGNORE_NIL && v == nil {
 			continue
 		}
-		if anc == TYPE_DEFAULT && a == nil {
-			a = float64(0)
-		}
 
-		ele, err := ToFloat64(a, sn)
+		ele, err := ToFloat64(v, sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice for the %d element: %v", input, i, err)
 		}
