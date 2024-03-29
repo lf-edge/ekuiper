@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
+	"github.com/lf-edge/ekuiper/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
 )
@@ -104,14 +105,14 @@ func TestSourceDecompressorError(t *testing.T) {
 }
 
 func TestSourcePingRedisError(t *testing.T) {
-	s := RedisSub()
+	s := RedisSub().(util.PingableConn)
 	prop := map[string]interface{}{
 		"address":  "",
 		"db":       0,
 		"channels": []string{DefaultChannel},
 	}
 	expErrStr := fmt.Sprintf("Ping Redis failed with error")
-	err := s.Configure("new", prop)
+	err := s.Ping("new", prop)
 	if err == nil {
 		t.Errorf("should have error")
 		return

@@ -153,7 +153,7 @@
 ```json
 {
   "id": "ruleLookup",
-  "sql": "SELECT * FROM demoStream2 INNER JOIN deviceTable ON demoStream.deviceId = deviceTable.id",
+  "sql": "SELECT * FROM demoStream2 INNER JOIN deviceTable ON demoStream2.deviceId = deviceTable.id",
   "actions": [{
     "mqtt": {
       "server": "tcp://myhost:1883",

@@ -94,12 +94,38 @@ The target database url
 * `indexValue`: initial index value, if user specify this field, the query will use this initial value as query condition, will update next query when get a greater value.
 * `indexFieldType`: column type for the indexField, if it is dateTime type, must set this field with `DATETIME`
 * `dateTimeFormat`: data time format for the index field
+* `indexFields`: multiple index for the table
 
 | table   | limit | indexField   | indexValue            | indexFieldType | dateTimeFormat        | sql query statement                                                                                 |
 | ------- | ----- | ------------ | --------------------- | -------------- | --------------------- | --------------------------------------------------------------------------------------------------- |
 | Student | 10    |              |                       |                |                       | select * from Student limit 10                                                                      |
 | Student | 10    | stun         | 100                   |                |                       | select * from Student where stun > 100 limit 10                                                     |
 | Student | 10    | registerTime | "2022-04-21 10:23:55" | "DATETIME"     | "YYYY-MM-dd HH:mm:ss" | select * from Student where registerTime > '2022-04-21 10:23:55' order by registerTime ASC limit 10 |
+
+```yaml
+internalSqlQueryCfg:
+  # table name to query
+  table: t
+  # how many items need fetch from the result
+  limit: 1
+  indexFields:
+      # which column for the table act as index to record the offset
+    - indexField: a
+      # initial index value, if user specify this field, the query will use this initial value as query condition, will update next query when get a greater value.
+      indexValue: "2022-04-21 10:23:55"
+      # column type for the indexField, if it is dateTime type, must set this field with `DATETIME`
+      indexFieldType: "DATETIME"
+      #  data time format for the index field
+      dateTimeFormat: "YYYY-MM-dd HH:mm:ss"
+    - indexField: b
+      indexValue: 1
+```
+
+For indexFields, eKuiper will generate corresponding query statements for all index columns. It is worth noting that for query statements with multiple index columns, the declaration order of indexFields will determine the priority of index column sorting. For the above example, it will generate The following SQL:
+
+```sql
+select * from t where a > '2022-04-21 10:23:55' and b > 1 order by a asc, b asc limit 1
+```
 
 ### templateSqlQueryCfg
 
@@ -108,6 +134,7 @@ The target database url
 * `indexValue`: initial index value, if user specify this field, the query will use this initial value as query condition, will update next query when get a greater value.
 * `indexFieldType`: column type for the indexField, if it is dateTime type, must set this field with `DATETIME`
 * `dateTimeFormat`: data time format for the index field
+* `indexFields`: multiple index for the table
 
 ::: v-pre
 

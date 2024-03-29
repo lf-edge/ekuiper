@@ -116,24 +116,9 @@ func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 			tp.AddSink(inputs, sink)
 		}
 	} else {
-		manager := io.GetManager()
-		for i, m := range rule.Actions {
-			for name, action := range m {
-				props, ok := action.(map[string]interface{})
-				if !ok {
-					return nil, fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
-				}
-				s, err := manager.Sink(name)
-				if err != nil {
-					return nil, err
-				}
-				if s != nil {
-					if err := s.Configure(props); err != nil {
-						return nil, err
-					}
-				}
-				tp.AddSink(inputs, node.NewSinkNode(fmt.Sprintf("%s_%d", name, i), name, props))
-			}
+		err = buildActions(tp, rule, inputs)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -385,14 +370,6 @@ type SourcePropsForSplit struct {
 }
 
 func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
-	if t.streamStmt.Options.SHARED {
-		srcSubtopo, existed := topo.GetSubTopo(string(t.name))
-		if existed {
-			srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
-			return srcSubtopo, nil, srcSubtopo.OpsCount(), nil
-		}
-	}
-
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
 	sp := &SourcePropsForSplit{}
@@ -448,14 +425,16 @@ func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOpt
 	}
 
 	if t.streamStmt.Options.SHARED && len(ops) > 0 {
-		// should not exist
-		srcSubtopo, _ := topo.GetSubTopo(string(t.name))
-		conf.Log.Infof("Create SubTopo %s", string(t.name))
-		srcSubtopo.AddSrc(srcConnNode)
-		subInputs := []api.Emitter{srcSubtopo}
-		for _, e := range ops {
-			srcSubtopo.AddOperator(subInputs, e)
-			subInputs = []api.Emitter{e}
+		// Create subtopo in the end to avoid errors in the middle
+		srcSubtopo, existed := topo.GetSubTopo(string(t.name))
+		if !existed {
+			conf.Log.Infof("Create SubTopo %s", string(t.name))
+			srcSubtopo.AddSrc(srcConnNode)
+			subInputs := []api.Emitter{srcSubtopo}
+			for _, e := range ops {
+				srcSubtopo.AddOperator(subInputs, e)
+				subInputs = []api.Emitter{e}
+			}
 		}
 		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)
 		return srcSubtopo, nil, len(ops), nil
@@ -536,17 +515,17 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			}
 			wp := WindowPlan{
 				wtype:       w.WindowType,
-				length:      w.Length.Val,
+				length:      int(w.Length.Val),
 				isEventTime: opt.IsEventTime,
 			}.Init()
 			if w.Delay != nil {
-				wp.delay = int64(w.Delay.Val)
+				wp.delay = w.Delay.Val
 			}
 			if w.Interval != nil {
-				wp.interval = w.Interval.Val
+				wp.interval = int(w.Interval.Val)
 			} else if w.WindowType == ast.COUNT_WINDOW {
 				// if no interval value is set, and it's a count window, then set interval to length value.
-				wp.interval = w.Length.Val
+				wp.interval = int(w.Length.Val)
 			}
 			if w.TimeUnit != nil {
 				wp.timeUnit = w.TimeUnit.Val
@@ -656,7 +635,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		limitCount := 0
 		if stmt.Limit != nil && len(srfMapping) == 0 {
 			enableLimit = true
-			limitCount = stmt.Limit.(*ast.LimitExpr).LimitCount.Val
+			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectPlan{
 			windowFuncNames: windowFuncsNames,
@@ -675,7 +654,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		limitCount := 0
 		if stmt.Limit != nil {
 			enableLimit = true
-			limitCount = stmt.Limit.(*ast.LimitExpr).LimitCount.Val
+			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectSetPlan{
 			SrfMapping:  srfMapping,

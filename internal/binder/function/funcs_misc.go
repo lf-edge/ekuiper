@@ -139,18 +139,20 @@ func registerMiscFunc() {
 	builtins["chr"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			if v, ok := args[0].(int); ok {
+			switch v := args[0].(type) {
+			case int:
 				return rune(v), true
-			} else if v, ok := args[0].(float64); ok {
-				temp := int(v)
-				return rune(temp), true
-			} else if v, ok := args[0].(string); ok {
+			case int64:
+				return rune(v), true
+			case float64:
+				return rune(v), true
+			case string:
 				if len(v) > 1 {
 					return fmt.Errorf("Parameter length cannot larger than 1."), false
 				}
 				r := []rune(v)
 				return r[0], true
-			} else {
+			default:
 				return fmt.Errorf("Only bigint, float and string type can be convert to char type."), false
 			}
 		},
@@ -249,16 +251,16 @@ func registerMiscFunc() {
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			var v0 float64
-			if v1, ok := args[0].(int); ok {
-				v0 = float64(v1)
-			} else if v1, ok := args[0].(float64); ok {
-				v0 = v1
-			} else {
-				return fmt.Errorf("Only int and float type can be truncated."), false
+			v0, err := cast.ToFloat64(args[0], cast.CONVERT_SAMEKIND)
+			if err != nil {
+				return err, false
 			}
-			if v2, ok := args[1].(int); ok {
+			switch v2 := args[1].(type) {
+			case int:
 				return toFixed(v0, v2), true
-			} else {
+			case int64:
+				return toFixed(v0, int(v2)), true
+			default:
 				return fmt.Errorf("The 2nd parameter must be int value."), false
 			}
 		},

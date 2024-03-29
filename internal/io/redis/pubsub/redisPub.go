@@ -1,4 +1,4 @@
-// Copyright 2023-2023 emy120115@gmail.com
+// Copyright 2023-2024 emy120115@gmail.com
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 package pubsub
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
@@ -67,6 +68,22 @@ func (r *redisPub) Validate(props map[string]interface{}) error {
 	return nil
 }
 
+func (r *redisPub) Ping(_ string, props map[string]interface{}) error {
+	if err := r.Configure(props); err != nil {
+		return err
+	}
+	r.conn = redis.NewClient(&redis.Options{
+		Addr:     r.conf.Address,
+		Username: r.conf.Username,
+		Password: r.conf.Password,
+		DB:       r.conf.Db,
+	})
+	if err := r.conn.Ping(context.Background()).Err(); err != nil {
+		return fmt.Errorf("Ping Redis failed with error: %v", err)
+	}
+	return nil
+}
+
 func (r *redisPub) Configure(props map[string]interface{}) error {
 	return r.Validate(props)
 }
@@ -79,11 +96,6 @@ func (r *redisPub) Open(ctx api.StreamContext) error {
 		Password: r.conf.Password,
 		DB:       r.conf.Db,
 	})
-	// Ping Redis to check if the connection is alive
-	err := r.conn.Ping(ctx).Err()
-	if err != nil {
-		return fmt.Errorf("Ping Redis failed with error: %v", err)
-	}
 	return nil
 }
 

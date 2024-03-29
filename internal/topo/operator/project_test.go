@@ -173,7 +173,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				Message: xsql.Message{},
 			},
 			result: []map[string]interface{}{{
-				"kuiper_field_0": 5,
+				"kuiper_field_0": int64(5),
 			}},
 		},
 		// 8
@@ -203,7 +203,7 @@ func TestProjectPlan_Apply1(t *testing.T) {
 				"a":    "val_a",
 				"b":    "value",
 				"Pi":   3.14,
-				"Zero": 0,
+				"Zero": int64(0),
 			}},
 		},
 		// 10

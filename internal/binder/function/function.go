@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/modules"
 )
 
 type (
@@ -105,6 +106,10 @@ func (m *Manager) Function(name string) (api.Function, error) {
 	if ok {
 		return ff(), nil
 	}
+	ff, ok = modules.Functions[name]
+	if ok {
+		return ff(), nil
+	}
 	return nil, nil
 }
 
@@ -128,6 +133,10 @@ func (m *Manager) ConvName(n string) (string, bool) {
 		return name, true
 	}
 	_, ok = builtinStatfulFuncs[name]
+	if ok {
+		return name, true
+	}
+	_, ok = modules.Functions[name]
 	return name, ok
 }
 

@@ -25,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -39,55 +38,6 @@ import (
 
 func init() {
 	testx.InitEnv("node")
-}
-
-func TestBatchSink(t *testing.T) {
-	mc := conf.Clock.(*clock.Mock)
-	conf.InitConf()
-	transform.RegisterAdditionalFuncs()
-	tests := []struct {
-		config map[string]interface{}
-		data   []map[string]interface{}
-		result [][]byte
-	}{
-		{
-			config: map[string]interface{}{
-				"batchSize": 2,
-			},
-			data:   []map[string]interface{}{{"ab": "hello1"}, {"ab": "hello2"}, {"ab": "hello3"}},
-			result: [][]byte{[]byte(`[{"ab":"hello1"},{"ab":"hello2"}]`)},
-		},
-		{
-			config: map[string]interface{}{
-				"lingerInterval": 1000,
-			},
-			data:   []map[string]interface{}{{"ab": "hello1"}, {"ab": "hello2"}, {"ab": "hello3"}},
-			result: [][]byte{[]byte(`[{"ab":"hello1"},{"ab":"hello2"},{"ab":"hello3"}]`)},
-		},
-	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	contextLogger := conf.Log.WithField("rule", "TestBatchSink")
-	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-
-	for i, tt := range tests {
-		mc.Set(mc.Now())
-		mockSink := mocknode.NewMockSink()
-		s := NewSinkNodeWithSink("mockSink", mockSink, tt.config)
-		s.Open(ctx, make(chan error))
-		s.input <- tt.data
-		for i := 0; i < 10; i++ {
-			mc.Add(1 * time.Second)
-			time.Sleep(10 * time.Millisecond)
-			// wait until mockSink get results
-			if len(mockSink.GetResults()) > 0 {
-				break
-			}
-		}
-		results := mockSink.GetResults()
-		if !reflect.DeepEqual(tt.result, results) {
-			t.Errorf("%d \tresult mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, results)
-		}
-	}
 }
 
 func TestSinkTemplate_Apply(t *testing.T) {
@@ -449,8 +399,7 @@ func TestConfig(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestConfig")
 	conf.InitConf()
 	for i, tt := range tests {
-		mockSink := NewSinkNode(fmt.Sprintf("test_%d", i), "mockSink", tt.config)
-		sconf, err := mockSink.parseConf(contextLogger)
+		sconf, err := ParseConf(contextLogger, tt.config)
 		if !reflect.DeepEqual(tt.err, err) {
 			t.Errorf("%d \terror mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.err, err)
 		} else if !reflect.DeepEqual(tt.sconf, sconf) {
