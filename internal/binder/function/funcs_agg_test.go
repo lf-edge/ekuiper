@@ -253,6 +253,16 @@ func TestPercentileExec(t *testing.T) {
 			pCont: nil,
 			pDisc: nil,
 		},
+		{ // 6
+			args: []interface{}{
+				[]interface{}{
+					100, 150, nil,200,
+				},
+				[]interface{}{0.5, 0.5, 0.5},
+			},
+			pCont: float64(125),
+			pDisc: float64(150),
+		},
 	}
 	for i, tt := range tests {
 		rCont, _ := pCont.exec(fctx, tt.args)

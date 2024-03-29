@@ -440,7 +440,7 @@ func getValueByType(v interface{}, vt string) (interface{}, error) {
 			return cast.ToFloat32(input, sn)
 		}, "float32", cast.CONVERT_SAMEKIND)
 	case v3.ValueTypeFloat64Array:
-		return cast.ToFloat64Slice(v, cast.CONVERT_SAMEKIND)
+		return cast.ToFloat64Slice(v, cast.CONVERT_SAMEKIND, cast.FORCE_CONVERT)
 	case v3.ValueTypeStringArray:
 		return cast.ToStringSlice(v, cast.CONVERT_SAMEKIND)
 	case v3.ValueTypeBinary:

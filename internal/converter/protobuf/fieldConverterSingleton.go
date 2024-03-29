@@ -95,7 +95,7 @@ func (fc *FieldConverter) EncodeField(field *desc.FieldDescriptor, v interface{}
 		)
 		switch ft {
 		case dpb.FieldDescriptorProto_TYPE_DOUBLE:
-			result, err = cast.ToFloat64Slice(v, cast.CONVERT_SAMEKIND)
+			result, err = cast.ToFloat64Slice(v, cast.CONVERT_SAMEKIND, cast.FORCE_CONVERT)
 		case dpb.FieldDescriptorProto_TYPE_FLOAT:
 			result, err = cast.ToTypedSlice(v, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				r, err := cast.ToFloat32(input, sn)
@@ -241,7 +241,7 @@ func (fc *FieldConverter) DecodeField(src interface{}, field *desc.FieldDescript
 	switch field.GetType() {
 	case dpb.FieldDescriptorProto_TYPE_DOUBLE, dpb.FieldDescriptorProto_TYPE_FLOAT:
 		if field.IsRepeated() {
-			r, e = cast.ToFloat64Slice(src, sn)
+			r, e = cast.ToFloat64Slice(src, sn, cast.FORCE_CONVERT)
 		} else {
 			r, e = cast.ToFloat64(src, sn)
 		}

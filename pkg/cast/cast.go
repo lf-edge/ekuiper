@@ -32,6 +32,14 @@ const (
 	CONVERT_ALL
 )
 
+type ARRAY_NIL_CONVERT int8
+
+const (
+	IGNORE_NIL ARRAY_NIL_CONVERT = iota
+	TYPE_DEFAULT
+	FORCE_CONVERT
+)
+
 /*********** Type Cast Utilities *****/
 
 // TODO datetime type
@@ -905,14 +913,22 @@ func ToUint64Slice(input interface{}, sn Strictness) ([]uint64, error) {
 	return result, nil
 }
 
-func ToFloat64Slice(input interface{}, sn Strictness) ([]float64, error) {
+func ToFloat64Slice(input interface{}, sn Strictness, anc ARRAY_NIL_CONVERT) ([]float64, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice)", input)
 	}
 	var result []float64
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToFloat64(s.Index(i).Interface(), sn)
+		a := s.Index(i).Interface()
+		if anc == IGNORE_NIL && a==nil {
+			continue
+		}
+		if anc==TYPE_DEFAULT && a==nil {
+			a = float64(0)
+		}
+		
+		ele, err := ToFloat64(a, sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice for the %d element: %v", input, i, err)
 		}
