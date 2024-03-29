@@ -32,10 +32,10 @@ const (
 	CONVERT_ALL
 )
 
-type ARRAY_NIL_CONVERT int8
+type ArrayNilConvert int8
 
 const (
-	IGNORE_NIL ARRAY_NIL_CONVERT = iota
+	IGNORE_NIL ArrayNilConvert = iota
 	TYPE_DEFAULT
 	FORCE_CONVERT
 )
@@ -913,7 +913,7 @@ func ToUint64Slice(input interface{}, sn Strictness) ([]uint64, error) {
 	return result, nil
 }
 
-func ToFloat64Slice(input interface{}, sn Strictness, anc ARRAY_NIL_CONVERT) ([]float64, error) {
+func ToFloat64Slice(input interface{}, sn Strictness, anc ArrayNilConvert) ([]float64, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice)", input)
