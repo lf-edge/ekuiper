@@ -270,3 +270,14 @@ func dedup(r []interface{}, col []interface{}, all bool) (interface{}, error) {
 		return result, nil
 	}
 }
+
+
+func ignoreNil(args []interface{}) []interface{} {
+	processedArgs := make([]interface{}, 0)
+	for _, arg := range args {
+		if arg != nil {
+			processedArgs = append(processedArgs, arg)
+		}
+	}
+	return processedArgs
+}

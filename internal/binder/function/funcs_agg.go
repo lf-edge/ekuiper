@@ -179,6 +179,7 @@ func registerAggFunc() {
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
+			arg0 = ignoreNil(arg0)
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
 				if err != nil {
@@ -202,6 +203,7 @@ func registerAggFunc() {
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
+			arg0 = ignoreNil(arg0)
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
 				if err != nil {
@@ -225,6 +227,7 @@ func registerAggFunc() {
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
+			arg0 = ignoreNil(arg0)
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
 				if err != nil {
@@ -248,6 +251,7 @@ func registerAggFunc() {
 		fType: ast.FuncTypeAgg,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
 			arg0 := args[0].([]interface{})
+			arg0 = ignoreNil(arg0)
 			if len(arg0) > 0 {
 				float64Slice, err := cast.ToFloat64Slice(arg0, cast.CONVERT_SAMEKIND)
 				if err != nil {
