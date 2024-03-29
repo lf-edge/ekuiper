@@ -768,11 +768,18 @@ func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
 }
 
 func (suite *RestTestSuite) TestUpdateRuleOffset() {
-	req1, _ := http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":0,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
+	req1, _ := http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`123`))
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ := io.ReadAll(w1.Result().Body) //nolint
 	returnStr := string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"json: cannot unmarshal number into Go value of type server.ruleStateUpdateRequest"}`+"\n", returnStr)
+
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":0,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
 	require.Equal(suite.T(), `{"error":1000,"message":"unknown stateType:0"}`+"\n", returnStr)
 
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
@@ -781,7 +788,7 @@ func (suite *RestTestSuite) TestUpdateRuleOffset() {
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 	returnStr = string(returnVal)
 	require.Equal(suite.T(), `{"error":1000,"message":"Rule rule344421 is not found in registry"}`+"\n", returnStr)
-	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(1)")
 	defer func() {
 		failpoint.Disable("github.com/lf-edge/ekuiper/internal/server/updateOffset")
 	}()
@@ -791,6 +798,14 @@ func (suite *RestTestSuite) TestUpdateRuleOffset() {
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 	returnStr = string(returnVal)
 	require.Equal(suite.T(), `{"error":1000,"message":"unknown offset:qwe for rule rule344421,stream demo"}`+"\n", returnStr)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(2)")
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"type":"qwe","streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"rule rule344421 should be running when modify state"}`+"\n", returnStr)
 }
 
 func (suite *RestTestSuite) TestCreateRuleReplacePasswd() {

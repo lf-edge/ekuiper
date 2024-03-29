@@ -72,9 +72,13 @@ type resetOffsetRequest struct {
 func updateRuleOffset(ruleID string, param map[string]interface{}) error {
 	s, StateErr := getRuleState(ruleID)
 	failpoint.Inject("updateOffset", func(val failpoint.Value) {
-		if val.(bool) {
+		switch val.(int) {
+		case 1:
 			StateErr = nil
 			s = rule.RuleStarted
+		case 2:
+			StateErr = nil
+			s = rule.RuleStopped
 		}
 	})
 	if StateErr != nil {
