@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	"github.com/gorilla/mux"
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -327,18 +328,11 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 
-	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
-	w1 = httptest.NewRecorder()
-	suite.r.ServeHTTP(w1, req1)
-	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
-	returnStr := string(returnVal)
-	require.Equal(suite.T(), `{"error":1000,"message":"Rule rule344421 is not found in registry"}`+"\n", returnStr)
-
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321/explain", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
-	returnStr = string(returnVal)
+	returnStr := string(returnVal)
 	expect = "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ * ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: alert wildcard:true\",\"id\":1,\"children\":null}\n\n"
 	assert.Equal(suite.T(), expect, returnStr)
 
@@ -731,4 +725,30 @@ func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
 	err = suite.s.StartRule(ruleId, &reply)
 	assert.Error(suite.T(), err)
 	assert.Equal(suite.T(), err.Error(), "unknown field a")
+}
+
+func (suite *RestTestSuite) TestUpdateRuleOffset() {
+	req1, _ := http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":0,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ := io.ReadAll(w1.Result().Body) //nolint
+	returnStr := string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"unknown stateType:0"}`+"\n", returnStr)
+
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"type":"sql","streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"Rule rule344421 is not found in registry"}`+"\n", returnStr)
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(true)")
+	defer func() {
+		failpoint.Disable("github.com/lf-edge/ekuiper/internal/server/updateOffset")
+	}()
+	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"type":"qwe","streamName":"demo","input":{"a":1}}}`))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	returnStr = string(returnVal)
+	require.Equal(suite.T(), `{"error":1000,"message":"unknown offset:qwe for rule rule344421,stream demo"}`+"\n", returnStr)
 }

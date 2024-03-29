@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -69,9 +70,15 @@ type resetOffsetRequest struct {
 }
 
 func updateRuleOffset(ruleID string, param map[string]interface{}) error {
-	s, err := getRuleState(ruleID)
-	if err != nil {
-		return err
+	s, StateErr := getRuleState(ruleID)
+	failpoint.Inject("updateOffset", func(val failpoint.Value) {
+		if val.(bool) {
+			StateErr = nil
+			s = rule.RuleStarted
+		}
+	})
+	if StateErr != nil {
+		return StateErr
 	}
 	if s != rule.RuleStarted {
 		return fmt.Errorf("rule %v should be running when modify state", ruleID)
