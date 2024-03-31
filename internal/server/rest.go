@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/processor"
 	"github.com/lf-edge/ekuiper/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/trial"
@@ -153,9 +154,11 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/streamdetails", streamDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/streams/{name}/schema", streamSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables", tablesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/tabledetails", tableDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
@@ -423,6 +426,31 @@ func pingHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func sourceDetailsManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {
+	defer r.Body.Close()
+	var (
+		content []processor.StreamDetail
+		err     error
+		kind    string
+	)
+	if st == ast.TypeTable {
+		kind = r.URL.Query().Get("kind")
+		if kind == "scan" {
+			kind = ast.StreamKindScan
+		} else if kind == "lookup" {
+			kind = ast.StreamKindLookup
+		} else {
+			kind = ""
+		}
+	}
+	content, err = streamProcessor.ShowStreamOrTableDetails(kind, st)
+	if err != nil {
+		handleError(w, err, fmt.Sprintf("%s command error", cases.Title(language.Und).String(ast.StreamTypeMap[st])), logger)
+		return
+	}
+	jsonResponse(content, w, logger)
+}
+
 func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {
 	defer r.Body.Close()
 	switch r.Method {
@@ -506,6 +534,11 @@ func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamTy
 }
 
 // list or create streams
+func streamDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	sourceDetailsManageHandler(w, r, ast.TypeStream)
+}
+
+// list or create streams
 func streamsHandler(w http.ResponseWriter, r *http.Request) {
 	sourcesManageHandler(w, r, ast.TypeStream)
 }
@@ -513,6 +546,11 @@ func streamsHandler(w http.ResponseWriter, r *http.Request) {
 // describe or delete a stream
 func streamHandler(w http.ResponseWriter, r *http.Request) {
 	sourceManageHandler(w, r, ast.TypeStream)
+}
+
+// list or create streams
+func tableDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	sourceDetailsManageHandler(w, r, ast.TypeTable)
 }
 
 // list or create tables
