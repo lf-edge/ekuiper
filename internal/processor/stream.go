@@ -147,7 +147,6 @@ func (p *StreamProcessor) RecoverLookupTable() (err error) {
 					e = lookup.CreateInstance(string(s.Name), s.Options.TYPE, s.Options)
 					if e != nil {
 						log.Errorf("%s", e.Error())
-						return e
 					}
 				default:
 					log.Errorf("Invalid lookup table statement: %s", vs.Statement)
