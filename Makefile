@@ -1,7 +1,7 @@
 BUILD_PATH ?= _build
 PACKAGES_PATH ?= _packages
 
-VERSION := $(shell git describe --tags --always)
+VERSION := $(shell git describe --tags --always | sed 's/^v//g')
 ARCH := $(shell go env GOARCH)
 OS := $(shell go env GOOS)
 PACKAGE_NAME := kuiper-$(VERSION)-$(OS)-$(ARCH)
