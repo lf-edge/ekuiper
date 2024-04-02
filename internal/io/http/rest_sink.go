@@ -16,6 +16,8 @@ package http
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/internal/compressor"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	"net/http"
 	"net/url"
 	"strings"
@@ -31,6 +33,7 @@ import (
 
 type RestSink struct {
 	ClientConf
+	compressor message.Compressor
 }
 
 func (ms *RestSink) Validate(props map[string]interface{}) error {
@@ -40,7 +43,17 @@ func (ms *RestSink) Validate(props map[string]interface{}) error {
 
 func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	conf.Log.Infof("Initialized rest sink with configurations %#v.", ps)
-	return ms.Validate(ps)
+	err := ms.Validate(ps)
+	if err != nil {
+		return err
+	}
+	if ms.config.Compression != "" {
+		ms.compressor, err = compressor.GetCompressor(ms.config.Compression)
+		if err != nil {
+			return fmt.Errorf("invalid compression method %s", ms.config.Compression)
+		}
+	}
+	return err
 }
 
 func (ms *RestSink) Open(ctx api.StreamContext) error {
@@ -62,6 +75,13 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 	if err != nil {
 		logger.Warnf("rest sink decode data error: %v", err)
 		return fmt.Errorf("rest sink decode data error: %v", err)
+	}
+
+	if ms.compressor != nil {
+		decodedData, err = ms.compressor.Compress(decodedData)
+		if err != nil {
+			return err
+		}
 	}
 
 	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)

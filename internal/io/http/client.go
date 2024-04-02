@@ -64,6 +64,7 @@ type RawConf struct {
 	// inferred properties
 	HeadersTemplate string
 	HeadersMap      map[string]string
+	Compression     string `json:"compression"`
 }
 
 const (
