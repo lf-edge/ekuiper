@@ -5,7 +5,7 @@ If you need to compile from source, please follow these instructions.
 3. Copy the `etc` folder from the parent directory to the current directory, `cp -r etc app`.
 4. Go to the app directory, and start packaging.
    ``` bash
-   ver=$(git describe --tags --always)
+   ver=$(git describe --tags --always | sed 's/^v//g')
    fyne package -os android/arm64 -name ekuiper -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png
    ```
 5. If all goes well you'll get `ekuiper.apk`.
