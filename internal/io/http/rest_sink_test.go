@@ -67,7 +67,8 @@ func TestRestSink_Apply(t *testing.T) {
 				Body:        `{"ab":"hello2"}`,
 				ContentType: "application/json",
 			}},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
@@ -82,7 +83,8 @@ func TestRestSink_Apply(t *testing.T) {
 				Body:        `[{"ab":"hello1"},{"ab":"hello2"}]`,
 				ContentType: "application/json",
 			}},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"method": "get",
 				//"url": "http://localhost/test",  //set dynamically to the test server
@@ -96,7 +98,8 @@ func TestRestSink_Apply(t *testing.T) {
 				Method:      "GET",
 				ContentType: "",
 			}},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"method": "put",
 				//"url": "http://localhost/test",  //set dynamically to the test server
@@ -112,7 +115,8 @@ func TestRestSink_Apply(t *testing.T) {
 				ContentType: "text/plain",
 				Body:        `[{"ab":"hello1"},{"ab":"hello2"}]`,
 			}},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
@@ -128,7 +132,8 @@ func TestRestSink_Apply(t *testing.T) {
 				ContentType: "application/x-www-form-urlencoded;param=value",
 				Body:        `result=%5B%7B%22ab%22%3A%22hello1%22%7D%2C%7B%22ab%22%3A%22hello2%22%7D%5D`,
 			}},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
@@ -149,7 +154,8 @@ func TestRestSink_Apply(t *testing.T) {
 				ContentType: "application/x-www-form-urlencoded;param=value",
 				Body:        `ab=hello2`,
 			}},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
