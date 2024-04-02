@@ -32,6 +32,13 @@ const (
 	CONVERT_ALL
 )
 
+type ArrayNilConvert int8
+
+const (
+	IGNORE_NIL ArrayNilConvert = iota
+	FORCE_CONVERT
+)
+
 /*********** Type Cast Utilities *****/
 
 // TODO datetime type
@@ -411,7 +418,12 @@ func ToFloat64(input interface{}, sn Strictness) (float64, error) {
 			}
 			return 0, nil
 		}
+	case nil:
+		if sn == CONVERT_ALL {
+			return 0, nil
+		}
 	}
+
 	return 0, fmt.Errorf("cannot convert %[1]T(%[1]v) to float64", input)
 }
 
@@ -473,6 +485,10 @@ func ToFloat32(input interface{}, sn Strictness) (float32, error) {
 			if s {
 				return 1, nil
 			}
+			return 0, nil
+		}
+	case nil:
+		if sn == CONVERT_ALL {
 			return 0, nil
 		}
 	}
@@ -905,14 +921,19 @@ func ToUint64Slice(input interface{}, sn Strictness) ([]uint64, error) {
 	return result, nil
 }
 
-func ToFloat64Slice(input interface{}, sn Strictness) ([]float64, error) {
+func ToFloat64Slice(input interface{}, sn Strictness, anc ArrayNilConvert) ([]float64, error) {
 	s := reflect.ValueOf(input)
 	if s.Kind() != reflect.Slice {
 		return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice)", input)
 	}
 	var result []float64
 	for i := 0; i < s.Len(); i++ {
-		ele, err := ToFloat64(s.Index(i).Interface(), sn)
+		v := s.Index(i).Interface()
+		if anc == IGNORE_NIL && v == nil {
+			continue
+		}
+
+		ele, err := ToFloat64(v, sn)
 		if err != nil {
 			return nil, fmt.Errorf("cannot convert %[1]T(%[1]v) to float slice for the %d element: %v", input, i, err)
 		}
