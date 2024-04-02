@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/posener/order"
-
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/store"
 )
@@ -89,9 +87,7 @@ func (t *templateSqlQuery) UpdateMaxIndexValue(row map[string]interface{}) {
 		if !found {
 			return
 		}
-		if val := order.Is(v); val.Greater(w.IndexFieldValue) {
-			t.store.UpdateFieldValue(w.IndexFieldName, v)
-		}
+		t.store.UpdateFieldValue(w.IndexFieldName, v)
 	}
 }
 
