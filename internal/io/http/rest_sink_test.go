@@ -172,6 +172,32 @@ func TestRestSink_Apply(t *testing.T) {
 				ContentType: "application/json",
 			}},
 		},
+		{
+			config: map[string]interface{}{
+				"method": "post",
+				//"url": "http://localhost/test",  //set dynamically to the test server
+				"bodyType":    "json",
+				"sendSingle":  true,
+				"timeout":     float64(1000),
+				"compression": "zstd",
+			},
+			data: []map[string]interface{}{{
+				"ab":   "hello1",
+				"abc":  "hello1",
+				"abcd": "hello1",
+			}, {
+				"ab": "hello2",
+			}},
+			result: []request{{
+				Method:      "POST",
+				Body:        ("(\xb5/\xfd\x04\x00\xfd\x00\x00T\x01{\"ab\":\"hello1\",\"abcd}\x02\x10\x04\xb3\x89҅\x01g9\x9a\xdd"),
+				ContentType: "application/json",
+			}, {
+				Method:      "POST",
+				Body:        ("(\xb5/\xfd\x04\x00y\x00\x00{\"ab\":\"hello2\"}$\xba\xa8\x12"),
+				ContentType: "application/json",
+			}},
+		},
 	}
 	t.Logf("The test bucket size is %d.", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestRestSink_Apply")
@@ -563,5 +589,11 @@ func TestIsRecoverAbleErr(t *testing.T) {
 func TestRestSinkMethod(t *testing.T) {
 	rs := &RestSink{}
 	err := rs.Validate(map[string]interface{}{"method": "head"})
+	require.Error(t, err)
+}
+
+func TestRestSinkConfigure(t *testing.T) {
+	rs := &RestSink{}
+	err := rs.Configure(map[string]interface{}{"compression": "zstdd"})
 	require.Error(t, err)
 }
