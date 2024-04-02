@@ -122,7 +122,7 @@ jobs:
           go install fyne.io/fyne/v2/cmd/fyne@latest
       - name: build
         run: |
-          ver=$(git describe --tags --always)
+          ver=$(git describe --tags --always | sed 's/^v//g')
           cd app
           cp -r etc app
           fyne package -os android/arm64 -name kuiper-$ver -metadata version=$ver -release -appID github.com.lfedge.ekuiper -icon icon.png || true        
