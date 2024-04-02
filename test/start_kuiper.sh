@@ -27,7 +27,7 @@ else
   done
 fi
 
-ver=`git describe --tags --always`
+ver=`git describe --tags --always | sed 's/^v//g'`
 os=`uname -s | tr "[A-Z]" "[a-z]"`
 base_dir=_build/kuiper-"$ver"-"$os"-amd64
 
