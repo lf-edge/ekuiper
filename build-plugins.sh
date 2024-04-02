@@ -21,7 +21,7 @@ cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
 PLUGIN_TYPE=$1
 PLUGIN_NAME=$2
-VERSION=$(git describe --tags --always)
+VERSION=$(git describe --tags --always | sed 's/^v//g')
 OS=$(sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g')
 
 pre(){
