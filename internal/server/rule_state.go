@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pingcap/failpoint"
@@ -64,7 +63,6 @@ type ruleStateUpdateRequest struct {
 }
 
 type resetOffsetRequest struct {
-	OffsetType string                 `json:"type"`
 	StreamName string                 `json:"streamName"`
 	Input      map[string]interface{} `json:"input"`
 }
@@ -92,14 +90,9 @@ func updateRuleOffset(ruleID string, param map[string]interface{}) error {
 	if err := cast.MapToStruct(param, req); err != nil {
 		return err
 	}
-	switch strings.ToLower(req.OffsetType) {
-	case "sql":
-		rs, ok := registry.Load(ruleID)
-		if !ok {
-			return fmt.Errorf("rule %s is not found in registry", ruleID)
-		}
-		return rs.Topology.ResetStreamOffset(req.StreamName, req.Input)
-	default:
-		return fmt.Errorf("unknown offset:%v for rule %v,stream %v", req.OffsetType, ruleID, req.StreamName)
+	rs, ok := registry.Load(ruleID)
+	if !ok {
+		return fmt.Errorf("rule %s is not found in registry", ruleID)
 	}
+	return rs.Topology.ResetStreamOffset(req.StreamName, req.Input)
 }
