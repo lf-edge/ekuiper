@@ -372,15 +372,27 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 	if conf.Config != nil && conf.Config.Basic.Prometheus {
 		var runningCount int
 		var stopCount int
+		var v promMetrics.RuleStatusMetricsValue
 		for _, r := range rs {
 			id := r.rule.Id
-			isRunning := r.state == rule.RuleStarted
-			if isRunning {
+			switch r.state {
+			case rule.RuleStarted:
 				runningCount++
-			} else {
+				v = promMetrics.RuleRunning
+			case rule.RuleStopped:
 				stopCount++
+				v = promMetrics.RuleStopped
+			case rule.RuleTerminated:
+				stopCount++
+				v = promMetrics.RuleStopped
+			case rule.RuleWait:
+				stopCount++
+				v = promMetrics.RuleStopped
+			default:
+				stopCount++
+				v = promMetrics.RuleStoppedByError
 			}
-			promMetrics.SetRuleStatus(id, isRunning)
+			promMetrics.SetRuleStatus(id, v)
 		}
 		promMetrics.SetRuleStatusCountGauge(true, runningCount)
 		promMetrics.SetRuleStatusCountGauge(false, stopCount)
