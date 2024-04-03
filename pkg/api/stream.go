@@ -167,6 +167,7 @@ type TopNode interface {
 type Rewindable interface {
 	GetOffset() (interface{}, error)
 	Rewind(offset interface{}) error
+	ResetOffset(input map[string]interface{}) error
 }
 
 type RuleOption struct {

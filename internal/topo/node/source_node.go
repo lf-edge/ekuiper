@@ -40,6 +40,7 @@ type SourceNode struct {
 	schema       map[string]*ast.JsonStreamField
 	IsWildcard   bool
 	IsSchemaless bool
+	si           *sourceInstance
 }
 
 func NewSourceNode(name string, st ast.StreamType, op UnOperation, options *ast.Options, rOptions *api.RuleOption, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) *SourceNode {
@@ -135,6 +136,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 						return err
 					}
 					buffer = si.dataCh
+					m.si = si
 
 					defer func() {
 						logger.Infof("source %s done", m.name)
@@ -217,6 +219,10 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 
 func (m *SourceNode) reset() {
 	m.statManager = nil
+}
+
+func (m *SourceNode) GetSource() api.Source {
+	return m.si.source
 }
 
 func (m *SourceNode) close() {

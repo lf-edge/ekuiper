@@ -84,6 +84,10 @@ func (m *MockSource) Rewind(offset interface{}) error {
 	return nil
 }
 
+func (m *MockSource) ResetOffset(input map[string]interface{}) error {
+	return nil
+}
+
 func (m *MockSource) Close(_ api.StreamContext) error {
 	m.offset = 0
 	return nil

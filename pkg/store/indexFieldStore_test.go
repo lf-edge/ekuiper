@@ -49,4 +49,14 @@ func TestIndexFieldStore(t *testing.T) {
 	require.Len(t, s.GetFieldList(), 1)
 	require.Len(t, s.GetFieldMap(), 1)
 	require.Equal(t, s.GetFieldList()[0], s.GetFieldMap()["col"])
+
+	s.UpdateByInput(map[string]interface{}{
+		"col":  2,
+		"col3": 4,
+	})
+	require.Equal(t, 2, s.GetFieldMap()["col"].IndexFieldValue)
+
+	fStore := &IndexFieldStore{}
+	s = &IndexFieldStoreWrap{}
+	s.InitByStore(fStore)
 }

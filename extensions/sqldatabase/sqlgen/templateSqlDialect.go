@@ -98,8 +98,7 @@ type TemplateSqlQueryCfg struct {
 	IndexFieldDataType       string              `json:"indexFieldType"`
 	IndexFieldDateTimeFormat string              `json:"dateTimeFormat"`
 	IndexFields              []*store.IndexField `json:"indexFields"`
-
-	store *store.IndexFieldStoreWrap
+	store                    *store.IndexFieldStoreWrap
 }
 
 func (t *TemplateSqlQueryCfg) InitIndexFieldStore() {
@@ -132,4 +131,8 @@ func (t *TemplateSqlQueryCfg) SetIndexValue(v interface{}) {
 
 func (t *TemplateSqlQueryCfg) GetIndexValue() interface{} {
 	return t.store.GetStore()
+}
+
+func (t *TemplateSqlQueryCfg) GetIndexValueWrap() *store.IndexFieldStoreWrap {
+	return t.store
 }

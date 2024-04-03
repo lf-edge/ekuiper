@@ -158,13 +158,20 @@ func (m *sqlsource) Rewind(offset interface{}) error {
 	return nil
 }
 
+func (m *sqlsource) ResetOffset(input map[string]interface{}) error {
+	wrap := m.Query.GetIndexValueWrap()
+	if wrap != nil {
+		wrap.UpdateByInput(input)
+	}
+	return nil
+}
+
 func (m *sqlsource) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debugf("Closing sql stream to %v", m.conf)
 	if m.db != nil {
 		return util.ReturnDBFromOneNode(util.GlobalPool, m.conf.Url)
 	}
-
 	return nil
 }
 

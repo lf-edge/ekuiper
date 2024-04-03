@@ -91,6 +91,18 @@ func (wrap *IndexFieldStoreWrap) UpdateFieldValue(name string, value interface{}
 	w.IndexFieldValue = value
 }
 
+func (wrap *IndexFieldStoreWrap) UpdateByInput(input map[string]interface{}) {
+	wrap.Lock()
+	defer wrap.Unlock()
+	for k, v := range input {
+		w, ok := wrap.store.IndexFieldValueMap[k]
+		if !ok {
+			continue
+		}
+		w.IndexFieldValue = v
+	}
+}
+
 func (wrap *IndexFieldStoreWrap) LoadFromList() {
 	wrap.Lock()
 	defer wrap.Unlock()
