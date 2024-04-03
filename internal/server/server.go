@@ -379,13 +379,7 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 			case rule.RuleStarted:
 				runningCount++
 				v = promMetrics.RuleRunning
-			case rule.RuleStopped:
-				stopCount++
-				v = promMetrics.RuleStopped
-			case rule.RuleTerminated:
-				stopCount++
-				v = promMetrics.RuleStopped
-			case rule.RuleWait:
+			case rule.RuleStopped, rule.RuleTerminated, rule.RuleWait:
 				stopCount++
 				v = promMetrics.RuleStopped
 			default:
