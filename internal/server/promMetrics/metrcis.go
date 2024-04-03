@@ -59,15 +59,7 @@ func SetRuleStatusCountGauge(isRunning bool, count int) {
 	RuleStatusCountGauge.WithLabelValues(lbl).Set(float64(count))
 }
 
-type RuleStatusMetricsValue int
-
-const (
-	RuleStoppedByError RuleStatusMetricsValue = -1
-	RuleStopped        RuleStatusMetricsValue = 0
-	RuleRunning        RuleStatusMetricsValue = 1
-)
-
-func SetRuleStatus(ruleID string, value RuleStatusMetricsValue) {
+func SetRuleStatus(ruleID string, value int) {
 	v := float64(value)
 	RuleStatusGauge.WithLabelValues(ruleID).Set(v)
 }
