@@ -423,6 +423,12 @@ func pingHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+type streamResponse struct {
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Format string `json:"format"`
+}
+
 func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {
 	defer r.Body.Close()
 	switch r.Method {
@@ -451,7 +457,24 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 			handleError(w, err, fmt.Sprintf("%s command error", cases.Title(language.Und).String(ast.StreamTypeMap[st])), logger)
 			return
 		}
-		jsonResponse(content, w, logger)
+		result := make([]streamResponse, 0)
+		for _, name := range content {
+			sd, err := streamProcessor.DescStream(name, st)
+			if err != nil {
+				handleError(w, err, "", logger)
+				return
+			}
+			switch v := sd.(type) {
+			case *ast.StreamStmt:
+				t := v.Options.TYPE
+				if t == "" {
+					t = "mqtt"
+				}
+				f := v.Options.FORMAT
+				result = append(result, streamResponse{Name: name, Type: t, Format: f})
+			}
+		}
+		jsonResponse(result, w, logger)
 	case http.MethodPost:
 		v, err := decodeStatementDescriptor(r.Body)
 		if err != nil {
