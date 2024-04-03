@@ -458,27 +458,32 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 			handleError(w, err, fmt.Sprintf("%s command error", cases.Title(language.Und).String(ast.StreamTypeMap[st])), logger)
 			return
 		}
-		result := make([]streamResponse, 0)
-		for _, name := range content {
-			sd, err := streamProcessor.DescStream(name, st)
-			if err != nil {
-				handleError(w, err, "", logger)
-				return
-			}
-			switch v := sd.(type) {
-			case *ast.StreamStmt:
-				t := v.Options.TYPE
-				if t == "" {
-					t = "mqtt"
+
+		if isDetailed, err := strconv.ParseBool(r.URL.Query().Get("detail")); err == nil && isDetailed {
+			result := make([]streamResponse, 0)
+			for _, name := range content {
+				sd, err := streamProcessor.DescStream(name, st)
+				if err != nil {
+					handleError(w, err, "", logger)
+					return
 				}
-				f := v.Options.FORMAT
-				if f == "" {
-					f = "json"
+				switch v := sd.(type) {
+				case *ast.StreamStmt:
+					t := v.Options.TYPE
+					if t == "" {
+						t = "mqtt"
+					}
+					f := v.Options.FORMAT
+					if f == "" {
+						f = "json"
+					}
+					result = append(result, streamResponse{Name: name, Type: strings.ToLower(t), Format: strings.ToLower(f)})
 				}
-				result = append(result, streamResponse{Name: name, Type: strings.ToLower(t), Format: strings.ToLower(f)})
 			}
+			jsonResponse(result, w, logger)
+		} else {
+			jsonResponse(content, w, logger)
 		}
-		jsonResponse(result, w, logger)
 	case http.MethodPost:
 		v, err := decodeStatementDescriptor(r.Body)
 		if err != nil {

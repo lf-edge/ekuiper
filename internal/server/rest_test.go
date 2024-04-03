@@ -248,13 +248,13 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
-	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams?detail=true", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ := io.ReadAll(w1.Result().Body)
 	require.Equal(suite.T(), `[{"name":"alert","type":"mqtt","format":"json"}]`, string(returnVal))
 
-	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tables", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tables?detail=true", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
