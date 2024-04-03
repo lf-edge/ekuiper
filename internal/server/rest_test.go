@@ -39,6 +39,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
 
@@ -236,6 +237,16 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 				logger.Info(reply)
 			}
 		}
+	}
+	all, err := streamProcessor.GetAll()
+	require.NoError(suite.T(), err)
+	for key := range all["streams"] {
+		_, err := streamProcessor.DropStream(key, ast.TypeStream)
+		require.NoError(suite.T(), err)
+	}
+	for key := range all["tables"] {
+		_, err := streamProcessor.DropStream(key, ast.TypeTable)
+		require.NoError(suite.T(), err)
 	}
 
 	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
