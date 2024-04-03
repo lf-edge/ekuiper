@@ -243,6 +243,23 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
+	buf1 = bytes.NewBuffer([]byte(`{"sql":"create table hello() WITH (DATASOURCE=\"/hello\", FORMAT=\"JSON\", TYPE=\"httppull\")"}`))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/tables", buf1)
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streams", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ := io.ReadAll(w1.Result().Body)
+	require.Equal(suite.T(), `[{"name":"alert","type":"mqtt","format":"json"}]`, string(returnVal))
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tables", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	require.Equal(suite.T(), `[{"name":"hello","type":"httppull","format":"json"}]`, string(returnVal))
+
 	suite.assertGetRuleHiddenPassword()
 
 	// validate a rule
@@ -252,7 +269,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
-	returnVal, _ := io.ReadAll(w2.Result().Body)
+	returnVal, _ = io.ReadAll(w2.Result().Body)
 	expect := `{"sources":["alert"],"valid":true}`
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))

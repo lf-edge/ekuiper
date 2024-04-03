@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -471,7 +472,10 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 					t = "mqtt"
 				}
 				f := v.Options.FORMAT
-				result = append(result, streamResponse{Name: name, Type: t, Format: f})
+				if f == "" {
+					f = "json"
+				}
+				result = append(result, streamResponse{Name: name, Type: strings.ToLower(t), Format: strings.ToLower(f)})
 			}
 		}
 		jsonResponse(result, w, logger)
