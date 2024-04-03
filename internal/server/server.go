@@ -368,19 +368,33 @@ func runScheduleRuleChecker(exit <-chan struct{}) {
 	runScheduleRuleCheckerByInterval(d, exit)
 }
 
+type RuleStatusMetricsValue int
+
+const (
+	RuleStoppedByError RuleStatusMetricsValue = -1
+	RuleStopped        RuleStatusMetricsValue = 0
+	RuleRunning        RuleStatusMetricsValue = 1
+)
+
 func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 	if conf.Config != nil && conf.Config.Basic.Prometheus {
 		var runningCount int
 		var stopCount int
+		var v RuleStatusMetricsValue
 		for _, r := range rs {
 			id := r.rule.Id
-			isRunning := r.state == rule.RuleStarted
-			if isRunning {
+			switch r.state {
+			case rule.RuleStarted:
 				runningCount++
-			} else {
+				v = RuleRunning
+			case rule.RuleStopped, rule.RuleTerminated, rule.RuleWait:
 				stopCount++
+				v = RuleStopped
+			default:
+				stopCount++
+				v = RuleStoppedByError
 			}
-			promMetrics.SetRuleStatus(id, isRunning)
+			promMetrics.SetRuleStatus(id, int(v))
 		}
 		promMetrics.SetRuleStatusCountGauge(true, runningCount)
 		promMetrics.SetRuleStatusCountGauge(false, stopCount)
