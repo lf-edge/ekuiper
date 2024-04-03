@@ -49,6 +49,12 @@ func ruleStateHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		err = fmt.Errorf("unknown stateType:%v", req.StateType)
 	}
+	failpoint.Inject("updateOffset", func(val failpoint.Value) {
+		switch val.(int) {
+		case 3:
+			err = nil
+		}
+	})
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
