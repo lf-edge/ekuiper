@@ -11,6 +11,9 @@ Once a rule has been created and run successfully using eKuiper, the user can vi
 ```json
 {
   "status": "running",
+  "lastStartTimestamp": "1712126817659",
+  "lastStopTimestamp": "0",
+  "nextStopTimestamp": "0",
   "source_demo_0_records_in_total": 265,
   "source_demo_0_records_out_total": 265,
   "source_demo_0_process_latency_us": 0,
@@ -38,7 +41,9 @@ Once a rule has been created and run successfully using eKuiper, the user can vi
 }
 ```
 
-The rule status consists of two main parts, one is the status, which is used to indicate whether the rule is running properly or not, its value may be `running`, `stopped manually`, etc. The other part is the metrics for each operator of the rule. The operator of the rule is generated based on the SQL of the rule, which may be different for each rule. In this example, the rule SQL is the simplest `SELECT * FROM demo`, the action is MQTT, and the generated operators are [source_demo, op_project, sink_mqtt]. Each of these operators has the same kind of metrics, which together with the operator names form a single metric. For example, the metric for the number of records_in_total for the operator source_demo_0 is `source_demo_0_records_in_total`.
+The rule status consists of two main parts, one is the status, which is used to indicate whether the rule is running properly or not, its value may be `running`, `stopped manually`, etc. And it contains the unix timestamp in milliseconds of when the rule was started and when it was paused.
+
+The other part is the metrics for each operator of the rule. The operator of the rule is generated based on the SQL of the rule, which may be different for each rule. In this example, the rule SQL is the simplest `SELECT * FROM demo`, the action is MQTT, and the generated operators are [source_demo, op_project, sink_mqtt]. Each of these operators has the same kind of metrics, which together with the operator names form a single metric. For example, the metric for the number of records_in_total for the operator source_demo_0 is `source_demo_0_records_in_total`.
 
 ### Metric Types
 
