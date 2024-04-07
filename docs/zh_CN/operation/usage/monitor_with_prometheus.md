@@ -138,11 +138,11 @@ eKuiper 预定义了在 Grafana 面板用于帮助用户更加清晰直观的从
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
 
-你可以通过以下面板查看规则的历史状态，1 代表规则正在运行，0 代表规则正常暂停，-1 代表规则异常退出。
+你可以通过以下面板查看规则的历史状态，1 代表规则正在运行，0 代表规则正常暂停，-1 代表规则异常退出，指标名为 `kuiper_rule_status`。
 
 ![rule status](./resources/ruleStatus.png)
 
-你可以通过以下面板查看 eKuiper 内部有多少正在运行的规则和暂停的规则。
+你可以通过以下面板查看 eKuiper 内部有多少正在运行的规则和暂停的规则，指标名为 `kuiper_rule_count`。
 
 ![rule count](./resources/ruleCount.png)
 
