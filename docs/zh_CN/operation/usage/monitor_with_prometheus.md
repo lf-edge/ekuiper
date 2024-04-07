@@ -138,6 +138,14 @@ eKuiper 预定义了在 Grafana 面板用于帮助用户更加清晰直观的从
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
 
+你可以通过以下面板查看规则的历史状态，1 代表规则正在运行，0 代表规则正常暂停，-1 代表规则异常退出。
+
+![rule status](./resources/ruleStatus.png)
+
+你可以通过以下面板查看 eKuiper 内部有多少正在运行的规则和暂停的规则。
+
+![rule count](./resources/ruleCount.png)
+
 ## 总结
 
 本文介绍了 eKuiper 中的规则状态指标以及如何使用 Prometheus 简单地监控这些状态指标。用户朋友可以基于此进一步探索 Prometheus 的更多高级功能，更好地实现 eKuiper 的运维。

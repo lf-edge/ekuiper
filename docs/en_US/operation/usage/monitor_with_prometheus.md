@@ -138,6 +138,14 @@ eKuiper is predefined in the Grafana panel to help users more clearly and intuit
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
 
+You can view the historical status of the rule through the following panel. 1 means the rule is running, 0 means the rule is suspended normally, and -1 means the rule exited abnormally.
+
+![rule status](./resources/ruleStatus.png)
+
+You can view how many running rules and paused rules there are inside eKuiper through the following panel.
+
+![rule count](./resources/ruleCount.png)
+
 ## Summary
 
 This article introduced the rule metrics in eKuiper and how to use Prometheus to monitor these metrics. Users can further explore more advanced features of Prometheus based on this to improve eKuiper's operation and maintenance.
