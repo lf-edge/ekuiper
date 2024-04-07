@@ -138,11 +138,11 @@ eKuiper is predefined in the Grafana panel to help users more clearly and intuit
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
 
-You can view the historical status of the rule through the following panel. 1 means the rule is running, 0 means the rule is suspended normally, and -1 means the rule exited abnormally.
+You can view the historical status of the rule through the following panel. 1 means the rule is running, 0 means the rule is suspended normally, and -1 means the rule exited abnormally. The metric is `kuiper_rule_status`.
 
 ![rule status](./resources/ruleStatus.png)
 
-You can view how many running rules and paused rules there are inside eKuiper through the following panel.
+You can view how many running rules and paused rules there are inside eKuiper through the following panel. The metric is `kuiper_rule_count`.
 
 ![rule count](./resources/ruleCount.png)
 
