@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -62,9 +61,7 @@ func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *
 }
 
 func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	ctx.GetLogger().Debugf("watermark node %s is started", w.name)
-	w.statManager = metric.NewStatManager(ctx, "op")
-	w.ctx = ctx
+	w.prepareExec(ctx)
 	// restore state
 	if s, err := ctx.GetState(WatermarkKey); err == nil && s != nil {
 		if si, ok := s.(int64); ok {

@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -47,10 +46,8 @@ func NewJoinAlignNode(name string, emitters []string, options *def.RuleOption) (
 }
 
 func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	n.ctx = ctx
+	n.prepareExec(ctx)
 	log := ctx.GetLogger()
-	log.Debugf("JoinAlignNode %s is started", n.name)
-	n.statManager = metric.NewStatManager(ctx, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			// restore batch state
