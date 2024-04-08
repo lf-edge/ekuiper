@@ -90,11 +90,6 @@ func main() {
 	app := cli.NewApp()
 	app.Version = Version
 
-	// nflag := []cli.Flag { cli.StringFlag{
-	//		Name: "name, n",
-	//		Usage: "the name of stream",
-	//	}}
-
 	var cfg map[string]clientConf
 	err := conf.LoadConfigByName(ClientYaml, &cfg)
 	if err != nil {
