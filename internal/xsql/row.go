@@ -83,6 +83,10 @@ type CollectionRow interface {
 	// Clone() CollectionRow
 }
 
+type ControlTuple interface {
+	ControlType() string
+}
+
 // AffiliateRow part of other row types do help calculation of newly added cols
 type AffiliateRow struct {
 	lock     sync.RWMutex
@@ -257,6 +261,10 @@ type WatermarkTuple struct {
 	Timestamp int64
 }
 
+func (t *WatermarkTuple) ControlType() string {
+	return "watermark"
+}
+
 func (t *WatermarkTuple) GetTimestamp() int64 {
 	return t.Timestamp
 }
@@ -264,6 +272,8 @@ func (t *WatermarkTuple) GetTimestamp() int64 {
 func (t *WatermarkTuple) IsWatermark() bool {
 	return true
 }
+
+var _ ControlTuple = &WatermarkTuple{}
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
