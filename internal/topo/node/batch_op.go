@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -54,9 +53,7 @@ func NewBatchOp(name string, rOpt *def.RuleOption, batchSize, lingerInterval int
 }
 
 func (b *BatchOp) Exec(ctx api.StreamContext, _ chan<- error) {
-	ctx.GetLogger().Infof("batch op started")
-	b.statManager = metric.NewStatManager(ctx, "op")
-	b.ctx = ctx
+	b.prepareExec(ctx)
 	switch {
 	case b.batchSize > 0 && b.lingerInterval > 0:
 		b.runWithTickerAndBatchSize(ctx)

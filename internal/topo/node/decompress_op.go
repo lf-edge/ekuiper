@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -43,9 +42,7 @@ func NewDecompressOp(name string, rOpt *def.RuleOption, compressMethod string) (
 }
 
 func (o *DecompressOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	ctx.GetLogger().Infof("decompress op started")
-	o.statManager = metric.NewStatManager(ctx, "op")
-	o.ctx = ctx
+	o.prepareExec(ctx)
 	go func() {
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)

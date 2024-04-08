@@ -225,6 +225,12 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
+func (o *defaultSinkNode) prepareExec(ctx api.StreamContext) {
+	ctx.GetLogger().Infof("%s started", o.name)
+	o.statManager = metric.NewStatManager(ctx, "op")
+	o.ctx = ctx
+}
+
 func SourcePing(sourceType string, config map[string]interface{}) error {
 	source, err := io.Source(sourceType)
 	if err != nil {

@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -73,10 +72,7 @@ func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, o
 
 // Exec decode op receives raw data and converts it to message
 func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	// TODO move this to new
-	ctx.GetLogger().Infof("decode op started")
-	o.statManager = metric.NewStatManager(ctx, "op")
-	o.ctx = ctx
+	o.prepareExec(ctx)
 	go func() {
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)
