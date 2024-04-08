@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup/cache"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -75,10 +74,8 @@ func NewLookupNode(name string, fields []string, keys []string, joinType ast.Joi
 }
 
 func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	n.ctx = ctx
 	log := ctx.GetLogger()
-	log.Debugf("LookupNode %s is started", n.name)
-	n.statManager = metric.NewStatManager(ctx, "op")
+	n.prepareExec(ctx)
 	go func() {
 		err := infra.SafeRun(func() error {
 			ns, err := lookup.Attach(n.name)

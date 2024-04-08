@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
+
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -66,9 +66,7 @@ func NewSwitchNode(name string, conf *SwitchConfig, options *api.RuleOption) (*S
 }
 
 func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	ctx.GetLogger().Infof("SwitchNode %s is started", n.name)
-	n.statManager = metric.NewStatManager(ctx, "op")
-	n.ctx = ctx
+	n.prepareExec(ctx)
 	for i := range n.outputNodes {
 		n.outputNodes[i].ctx = ctx
 	}
