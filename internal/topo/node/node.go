@@ -230,6 +230,23 @@ func (o *defaultSinkNode) prepareExec(ctx api.StreamContext) {
 	o.ctx = ctx
 }
 
+func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (done bool) {
+	ctx.GetLogger().Debugf("batch op receive %v", item)
+	processed := false
+	if item, processed = o.preprocess(item); processed {
+		return true
+	}
+	switch d := item.(type) {
+	case error:
+		o.statManager.IncTotalExceptions(d.Error())
+		return true
+	case *xsql.WatermarkTuple:
+		o.Broadcast(d)
+		return true
+	}
+	return false
+}
+
 func SourcePing(sourceType string, config map[string]interface{}) error {
 	source, err := io.Source(sourceType)
 	if err != nil {
