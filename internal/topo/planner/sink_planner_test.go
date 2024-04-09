@@ -48,6 +48,9 @@ func TestSinkPlan(t *testing.T) {
 						"op_log_0_0_transform",
 					},
 					"op_log_0_0_transform": {
+						"op_log_0_1_encode",
+					},
+					"op_log_0_1_encode": {
 						"sink_log_0",
 					},
 				},
@@ -75,6 +78,9 @@ func TestSinkPlan(t *testing.T) {
 						"op_log_0_1_transform",
 					},
 					"op_log_0_1_transform": {
+						"op_log_0_2_encode",
+					},
+					"op_log_0_2_encode": {
 						"sink_log_0",
 					},
 				},
