@@ -18,7 +18,10 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
-type workerFunc func(item any) []any
+// WorkerFunc is the function to process the data
+// The function do not need to process error and control messages
+// The function must return a slice of data for each input. To omit the data, return nil
+type workerFunc func(logger api.Logger, item any) []any
 
 func runWithOrder(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wf workerFunc) {
 	workerChans := make([]chan any, numWorkers)
@@ -97,7 +100,7 @@ func worker(ctx api.StreamContext, i int, wf workerFunc, inputRaw chan any, outp
 		case data := <-inputRaw:
 			ctx.GetLogger().Debugf("worker %d received %v", i, data)
 			select {
-			case output <- wf(data):
+			case output <- wf(ctx.GetLogger(), data):
 			case <-ctx.Done():
 				ctx.GetLogger().Debugf("worker %d done", i)
 				return

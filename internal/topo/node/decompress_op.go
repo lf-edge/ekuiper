@@ -54,7 +54,7 @@ func (o *DecompressOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *DecompressOp) Worker(item any) []any {
+func (o *DecompressOp) Worker(_ api.Logger, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
