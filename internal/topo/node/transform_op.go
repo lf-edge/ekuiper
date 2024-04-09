@@ -15,9 +15,13 @@
 package node
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
@@ -29,7 +33,9 @@ type TransformOp struct {
 	fields      []string
 	sendSingle  bool
 	omitIfEmpty bool
-	dt          *template.Template
+	// If the result format is text, the dataTemplate should be used to format the data and skip the encode step. Otherwise, the text must be unmarshall back to map
+	isTextFormat bool
+	dt           *template.Template
 }
 
 // NewTransformOp creates a transform node
@@ -41,6 +47,7 @@ func NewTransformOp(name string, rOpt *api.RuleOption, sc *SinkConf) (*Transform
 		fields:          sc.Fields,
 		sendSingle:      sc.SendSingle,
 		omitIfEmpty:     sc.Omitempty,
+		isTextFormat:    xsql.IsTextFormat(sc.Format),
 	}
 	if sc.DataTemplate != "" {
 		temp, err := template.New(name).Funcs(conf.FuncMap).Parse(sc.DataTemplate)
@@ -66,26 +73,80 @@ func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 // Worker do not need to process error and control messages
-func (t *TransformOp) Worker(item any) []any {
-	t.statManager.IncTotalRecordsIn()
+func (t *TransformOp) Worker(logger api.Logger, item any) []any {
 	t.statManager.ProcessTimeStart()
+	defer t.statManager.ProcessTimeEnd()
 	if ic, ok := item.(xsql.Collection); ok && t.omitIfEmpty && ic.Len() == 0 {
+		logger.Debugf("receive empty collection, dropped")
 		return nil
 	}
-	var m map[string]any
-	switch input := item.(type) {
-	case xsql.Row:
-		m = input.ToMap()
-	case xsql.Collection:
-		// omit empty data
-		if t.omitIfEmpty && input.Len() == 0 {
-			return nil
-		}
-		_ = input.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
-			b.buffer.AddTuple(r.(xsql.Row))
-			return true, nil
-		})
-	default:
-		ctx.GetLogger().Errorf("run batch error: invalid data type %T", input)
+	outs := itemToMap(item)
+	if t.omitIfEmpty && (item == nil || len(outs) == 0) {
+		logger.Debugf("receive empty result %v in sink, dropped", outs)
+		return nil
 	}
+	var result []any
+	if t.sendSingle {
+		result = make([]any, 0, len(outs))
+		for _, out := range outs {
+			bs, err := t.doTransform(out)
+			if err != nil {
+				result = append(result, err)
+			} else {
+				result = append(result, bs)
+			}
+		}
+	} else {
+		bs, err := t.doTransform(outs)
+		if err != nil {
+			result = append(result, err)
+		} else {
+			result = append(result, bs)
+		}
+	}
+	return result
+}
+
+// doTransform transforms the data according to the dataTemplate and fields
+// If the dataTemplate is the last action and the result is text, the data will be returned as []byte
+// Otherwise, the data will be return as a map or []map
+func (t *TransformOp) doTransform(d any) (any, error) {
+	var (
+		bs          []byte
+		transformed bool
+		selected    bool
+		m           any
+		e           error
+	)
+	if t.dt != nil {
+		var output bytes.Buffer
+		err := t.dt.Execute(&output, d)
+		if err != nil {
+			return nil, fmt.Errorf("fail to encode data %v with dataTemplate for error %v", d, err)
+		}
+		bs = output.Bytes()
+		transformed = true
+	}
+
+	if transformed {
+		m, selected, e = transform.TransItem(bs, t.dataField, t.fields)
+	} else {
+		m, selected, e = transform.TransItem(d, t.dataField, t.fields)
+	}
+	if e != nil {
+		return nil, fmt.Errorf("fail to TransItem data %v for error %v", d, e)
+	}
+	// if only do data template
+	if transformed && !selected {
+		if t.isTextFormat {
+			return bs, nil
+		} else {
+			err := json.Unmarshal(bs, &m)
+			if err != nil {
+				return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
+			}
+			return m, nil
+		}
+	}
+	return m, nil
 }
