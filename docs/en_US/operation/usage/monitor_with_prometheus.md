@@ -4,6 +4,15 @@ Prometheus is an open source system monitoring and alerting toolkit hosted at CN
 
 eKuiper's rules are continuously running streaming task. Rules are used to process unbounded streams of data, and under normal circumstances, rules are started and run continuously, producing operational status data. Until the rule is stopped manually or after an unrecoverable error. eKuiper provides a status API to get the running metrics of the rules. At the same time, eKuiper integrates with Prometheus, making it easy to monitor various status metrics through the latter. This tutorial is intended for users who are already familiar with eKuiper and will introduce rule status metrics and how to monitor specific indicators via Prometheus.
 
+## Prometheus Metrics
+
+eKuiper exposes the following metrics to prometheus to reflect the current cluster status:
+
+```text
+kuiper_rule_status: The status showed status of each rule in eKuiper. 1 represents running, 0 represents paused, and -1 represents abnormal exit.
+kuiper_rule_count: How many rules are running and how many rules are suspended in eKuiper.
+```
+
 ## Rule Status Metrics
 
 Once a rule has been created and run successfully using eKuiper, the user can view the rule's operational status metrics via the CLI, REST API or the management console. For example, for an existing rule1, you can get the rule run metrics in JSON format via `curl -X GET "http://127.0.0.1:9081/rules/rule1/status"`.
