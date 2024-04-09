@@ -80,6 +80,14 @@ func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *ap
 	index++
 	tp.AddOperator(newInputs, transformOp)
 	newInputs = []api.Emitter{transformOp}
+	// Encode is required. In the future, it could be optional if data template is set
+	encodeOp, err := node.NewEncodeOp(fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
+	if err != nil {
+		return nil, err
+	}
+	index++
+	tp.AddOperator(newInputs, encodeOp)
+	newInputs = []api.Emitter{encodeOp}
 
 	return newInputs, nil
 }

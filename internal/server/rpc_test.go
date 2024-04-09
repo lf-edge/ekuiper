@@ -144,7 +144,7 @@ func (suite *ServerTestSuite) TestRule() {
 	reply = ""
 	err = suite.s.GetTopoRule(ruleId, &reply)
 	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "{\n  \"sources\": [\n    \"source_test\"\n  ],\n  \"edges\": {\n    \"op_2_project\": [\n      \"sink_file_0\"\n    ],\n    \"source_test\": [\n      \"op_2_project\"\n    ]\n  }\n}", reply)
+	assert.Equal(suite.T(), "{\n  \"sources\": [\n    \"source_test\"\n  ],\n  \"edges\": {\n    \"op_2_project\": [\n      \"op_file_0_0_transform\"\n    ],\n    \"op_file_0_0_transform\": [\n      \"op_file_0_1_encode\"\n    ],\n    \"op_file_0_1_encode\": [\n      \"sink_file_0\"\n    ],\n    \"source_test\": [\n      \"op_2_project\"\n    ]\n  }\n}", reply)
 
 	reply = ""
 	err = suite.s.StopRule(ruleId, &reply)
