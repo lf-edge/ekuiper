@@ -4,6 +4,15 @@ Prometheus 是一个托管于 CNCF 的开源系统监控和警报工具包，许
 
 eKuiper 的规则是一个持续运行的流式计算任务。规则用于处理无界的数据流，正常情况下，规则启动后会一直运行，不断产生运行状态数据。直到规则被手动停止或出现不可恢复的错误后停止。eKuiper 中的规则提供了状态 API，可获取规则的运行指标。同时，eKuiper 整合了 Prometheus，可方便地通过后者监控各种状态指标。本教程面向已经初步了解 eKuiper 的用户，将介绍规则状态指标以及如何通过 Prometheus 监控特定的指标。
 
+## Prometheus 指标
+
+eKuiper 向 prometheus 暴露了如下指标来反应当前集群的状态:
+
+```text
+kuiper_rule_status: eKuiper 中每条规则的状态指标，1代表运行，0代表暂停，-1代表异常退出。
+kuiper_rule_count: eKuiper 中有多少条规则运行，多少条规则暂停。
+```
+
 ## 规则状态指标
 
 使用 eKuiper 创建规则并运行成功后，用户可以通过 CLI，REST API 或者管理控制台查看规则的运行状态指标。例如，已有规则 rule1，可通过 `curl -X GET "http://127.0.0.1:9081/rules/rule1/status"` 获取 JSON 格式的规则运行指标，如下所示：
@@ -11,6 +20,9 @@ eKuiper 的规则是一个持续运行的流式计算任务。规则用于处理
 ```json
 {
   "status": "running",
+  "lastStartTimestamp": "1712126817659",
+  "lastStopTimestamp": "0",
+  "nextStopTimestamp": "0",
   "source_demo_0_records_in_total": 265,
   "source_demo_0_records_out_total": 265,
   "source_demo_0_process_latency_us": 0,
@@ -38,7 +50,9 @@ eKuiper 的规则是一个持续运行的流式计算任务。规则用于处理
 }
 ```
 
-运行指标主要包括两个部分，一部分是 status，用于标示规则是否正常运行，其值可能为 `running`，`stopped manually` 等。另一部分为规则每个算子的运行指标。规则的算子根据规则的 SQL 生成，每个规则可能会有所不同。在此例中，规则 SQL 为最简单的 `SELECT * FROM demo`，action 为 MQTT，其生成的算子为 [source_demo，op_project，sink_mqtt] 3个。每一种算子都有相同数目的运行指标，与算子名字合起来构成一条指标。例如，算子 source_demo_0 的输入数量 records_in_total 的指标为 `source_demo_0_records_in_total`。
+运行指标主要包括两个部分，一部分是 status，用于标示规则是否正常运行，其值可能为 `running`，`stopped manually` 等, 以及包含规则是何时启动，何时暂停的 unix 时间戳，单位为毫秒。
+
+另一部分为规则每个算子的运行指标。规则的算子根据规则的 SQL 生成，每个规则可能会有所不同。在此例中，规则 SQL 为最简单的 `SELECT * FROM demo`，action 为 MQTT，其生成的算子为 [source_demo，op_project，sink_mqtt] 3个。每一种算子都有相同数目的运行指标，与算子名字合起来构成一条指标。例如，算子 source_demo_0 的输入数量 records_in_total 的指标为 `source_demo_0_records_in_total`。
 
 ### 运行指标
 
@@ -132,6 +146,14 @@ eKuiper 预定义了在 Grafana 面板用于帮助用户更加清晰直观的从
 ```shell
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
+
+你可以通过以下面板查看规则的历史状态，1 代表规则正在运行，0 代表规则正常暂停，-1 代表规则异常退出，指标名为 `kuiper_rule_status`。
+
+![rule status](./resources/ruleStatus.png)
+
+你可以通过以下面板查看 eKuiper 内部有多少正在运行的规则和暂停的规则，指标名为 `kuiper_rule_count`。
+
+![rule count](./resources/ruleCount.png)
 
 ## 总结
 
