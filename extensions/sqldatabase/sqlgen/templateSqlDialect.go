@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/store"
 )
 
 type templateSqlQuery struct {

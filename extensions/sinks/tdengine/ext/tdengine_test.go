@@ -19,10 +19,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 )
 
 func TestConfig(t *testing.T) {

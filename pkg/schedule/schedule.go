@@ -20,8 +20,8 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 const layout = "2006-01-02 15:04:05"

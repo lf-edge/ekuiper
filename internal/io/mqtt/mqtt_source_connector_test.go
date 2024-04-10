@@ -26,13 +26,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/mock"
-	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 // NOTICE!!! Need to run a MQTT broker in localhost:1883 for this test or change the url to your broker
@@ -128,9 +128,9 @@ func TestOnMsgCancel(t *testing.T) {
 	sc.onMessage(mockContext.NewMockContext("1", "1"), MockMessage{})
 	sc.onError(mockContext.NewMockContext("1", "1"), nil)
 
-	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/internal/io/mqtt/ctxCancel", "return(ture)"))
+	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/ctxCancel", "return(ture)"))
 	defer func() {
-		failpoint.Disable("github.com/lf-edge/ekuiper/internal/io/mqtt/ctxCancel")
+		failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/ctxCancel")
 	}()
 	ctx, cancel := context.Background().WithCancel()
 	cancel()

@@ -27,8 +27,8 @@ import (
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/sirupsen/logrus"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	edgex_vault "github.com/lf-edge/ekuiper/internal/edgex"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	edgex_vault "github.com/lf-edge/ekuiper/v2/internal/edgex"
 )
 
 func init() {

@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
 var body = []byte(`{

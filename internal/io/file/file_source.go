@@ -24,11 +24,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/compressor"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/compressor"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type FileSourceConfig struct {

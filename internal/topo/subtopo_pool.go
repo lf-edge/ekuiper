@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 var subTopoPool = sync.Map{}

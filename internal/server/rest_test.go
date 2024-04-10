@@ -31,16 +31,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/pkg/model"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/processor"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
-	"github.com/lf-edge/ekuiper/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 func init() {
@@ -788,12 +788,12 @@ func (suite *RestTestSuite) TestUpdateRuleOffset() {
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 	returnStr = string(returnVal)
 	require.Equal(suite.T(), `{"error":1000,"message":"Rule rule344421 is not found in registry"}`+"\n", returnStr)
-	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(1)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/updateOffset", "return(1)")
 	defer func() {
-		failpoint.Disable("github.com/lf-edge/ekuiper/internal/server/updateOffset")
+		failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/updateOffset")
 	}()
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(2)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/updateOffset", "return(2)")
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"streamName":"demo","input":{"a":1}}}`))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
@@ -801,7 +801,7 @@ func (suite *RestTestSuite) TestUpdateRuleOffset() {
 	returnStr = string(returnVal)
 	require.Equal(suite.T(), `{"error":1000,"message":"rule rule344421 should be running when modify state"}`+"\n", returnStr)
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/internal/server/updateOffset", "return(3)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/updateOffset", "return(3)")
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`{"type":1,"params":{"streamName":"demo","input":{"a":1}}}`))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)

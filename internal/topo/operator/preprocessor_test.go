@@ -26,14 +26,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/converter"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/converter"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 func TestPreprocessor_Apply(t *testing.T) {

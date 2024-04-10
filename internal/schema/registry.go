@@ -22,12 +22,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 // Initialize in the server startup

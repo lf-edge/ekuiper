@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/converter"
-	"github.com/lf-edge/ekuiper/internal/converter/delimited"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/converter"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/delimited"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 // TransFunc is the function to transform data

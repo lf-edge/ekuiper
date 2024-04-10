@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/jwt"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/jwt"
 )
 
 func genToken(signKeyName, issuer string, aud []string) string {

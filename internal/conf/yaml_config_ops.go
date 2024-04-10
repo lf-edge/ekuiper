@@ -22,8 +22,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 // ConfKeysOperator define interface to query/add/update/delete the configs in memory

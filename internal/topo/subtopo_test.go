@@ -22,11 +22,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/internal/topo/checkpoint"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestSubtopoLC(t *testing.T) {

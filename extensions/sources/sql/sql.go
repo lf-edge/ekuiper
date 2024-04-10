@@ -16,7 +16,7 @@ package main
 
 import (
 	sql "github.com/lf-edge/ekuiper/extensions/sources/sql/ext"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Sql() api.Source {

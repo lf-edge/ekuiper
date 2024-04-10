@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type inferer func(schemaFileName string, SchemaMessageName string) (ast.StreamFields, error)

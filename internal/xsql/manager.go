@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 var (

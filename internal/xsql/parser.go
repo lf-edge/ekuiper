@@ -24,10 +24,10 @@ import (
 
 	"github.com/golang-collections/collections/stack"
 
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/message"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 type Parser struct {

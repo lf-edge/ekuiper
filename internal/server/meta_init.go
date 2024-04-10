@@ -26,9 +26,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func init() {

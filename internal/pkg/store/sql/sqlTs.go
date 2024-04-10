@@ -20,7 +20,7 @@ import (
 	"encoding/gob"
 	"fmt"
 
-	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
+	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
 )
 
 type ts struct {

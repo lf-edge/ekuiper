@@ -17,19 +17,19 @@ package node
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/binder/io"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/node/cache"
-	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/infra"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
+	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 type SinkConf struct {

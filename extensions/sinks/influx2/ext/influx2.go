@@ -23,11 +23,11 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 
 	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
-	"github.com/lf-edge/ekuiper/internal/pkg/cert"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/cert"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 // c is the configuration for influx2 sink

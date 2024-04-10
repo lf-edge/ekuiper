@@ -23,10 +23,10 @@ import (
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/util"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type sqlConfig struct {

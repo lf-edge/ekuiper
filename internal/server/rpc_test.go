@@ -25,12 +25,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/pkg/model"
-	"github.com/lf-edge/ekuiper/internal/plugin/native"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/internal/service"
+	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/internal/service"
 )
 
 type ServerTestSuite struct {

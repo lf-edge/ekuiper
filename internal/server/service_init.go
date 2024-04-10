@@ -23,9 +23,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/service"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/service"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 var serviceManager *service.Manager

@@ -17,7 +17,7 @@ package wasm
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/wasm/runtime"
 )
 
 type PluginInfo struct {

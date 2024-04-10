@@ -18,7 +18,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func BenchmarkSimpleTuples(b *testing.B) {

@@ -54,7 +54,7 @@ import (
 
     "github.com/sirupsen/logrus"
 
-    "github.com/lf-edge/ekuiper/pkg/api"
+    "github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 ```
 

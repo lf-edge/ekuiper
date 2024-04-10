@@ -20,9 +20,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/converter/merge"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 type DataSourcePlan struct {

@@ -15,8 +15,8 @@
 package planner
 
 import (
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type FilterPlan struct {

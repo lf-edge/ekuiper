@@ -17,7 +17,7 @@ package portable
 import (
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/plugin"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 )
 
 type registry struct {

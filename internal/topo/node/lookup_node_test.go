@@ -22,16 +22,16 @@ import (
 
 	"github.com/benbjohnson/clock"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/io"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/lookup"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type mockLookupSrc struct {

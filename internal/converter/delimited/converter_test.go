@@ -21,8 +21,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 func TestEncode(t *testing.T) {

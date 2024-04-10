@@ -16,7 +16,7 @@ package main
 
 import (
 	random "github.com/lf-edge/ekuiper/extensions/sources/random/ext"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Random() api.Source {

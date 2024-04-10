@@ -26,8 +26,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase"
-	econf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
+	econf "github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
 
 func TestSingle(t *testing.T) {

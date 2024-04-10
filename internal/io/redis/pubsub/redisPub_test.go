@@ -24,10 +24,10 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/util"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/mock"
-	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestRedisPub(t *testing.T) {

@@ -15,9 +15,9 @@
 package factory
 
 import (
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients/websocket"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/mqtt"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/websocket"
 )
 
 func init() {

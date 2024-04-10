@@ -21,15 +21,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/internal/binder/io"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin/native"
-	"github.com/lf-edge/ekuiper/internal/topo/planner"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func init() {

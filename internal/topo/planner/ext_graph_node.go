@@ -19,10 +19,10 @@ package planner
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/topo/graph"
-	"github.com/lf-edge/ekuiper/internal/topo/operator"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/graph"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func init() {

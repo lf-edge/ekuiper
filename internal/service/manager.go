@@ -24,14 +24,14 @@ import (
 	"strings"
 	"sync"
 
-	kconf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/pkg/filex"
-	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 var (

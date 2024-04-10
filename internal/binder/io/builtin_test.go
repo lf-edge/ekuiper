@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestLookupSources(t *testing.T) {

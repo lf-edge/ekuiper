@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/store"
 )
 
 type CommonQueryGenerator struct {

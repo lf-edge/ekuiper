@@ -15,7 +15,7 @@
 package definition
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 type StoreBuilder interface {

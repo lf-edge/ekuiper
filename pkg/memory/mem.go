@@ -17,8 +17,8 @@ package memory
 import (
 	"github.com/shirou/gopsutil/mem"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/cgroup"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/cgroup"
 )
 
 var MemoryTotal uint64

@@ -17,7 +17,7 @@ package function
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 // The functions here are used to implement the array functions to be referred in

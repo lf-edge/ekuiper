@@ -22,17 +22,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/internal/binder/io"
-	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
-	"github.com/lf-edge/ekuiper/internal/processor"
-	"github.com/lf-edge/ekuiper/internal/topo"
-	"github.com/lf-edge/ekuiper/internal/topo/planner"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func init() {

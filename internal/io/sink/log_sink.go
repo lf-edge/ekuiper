@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/topo/collector"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/collector"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 // NewLogSink log action, no properties now

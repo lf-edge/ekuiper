@@ -17,10 +17,10 @@ package xsql
 import (
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 // Manage the function plugin instances

@@ -19,8 +19,8 @@ import (
 
 	zmq "github.com/pebbe/zmq4"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type zmqSink struct {

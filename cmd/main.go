@@ -17,8 +17,8 @@ package cmd
 import (
 	"flag"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/server"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/server"
 )
 
 // The compile time variable

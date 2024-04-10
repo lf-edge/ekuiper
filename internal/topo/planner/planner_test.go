@@ -26,16 +26,16 @@ import (
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/mqtt"
-	"github.com/lf-edge/ekuiper/internal/meta"
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/internal/testx"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
+	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func init() {

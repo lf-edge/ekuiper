@@ -20,14 +20,14 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/node"
-	"github.com/lf-edge/ekuiper/internal/topo/planner"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
 type RunDef struct {

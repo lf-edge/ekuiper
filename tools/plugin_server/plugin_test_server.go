@@ -25,13 +25,13 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/state"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 // Only support to test a single plugin Testing process.

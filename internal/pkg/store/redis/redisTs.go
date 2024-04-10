@@ -26,7 +26,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
+	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
 )
 
 const (

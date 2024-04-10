@@ -16,7 +16,7 @@ package main
 
 import (
 	zmq "github.com/lf-edge/ekuiper/extensions/sources/zmq/ext"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Zmq() api.Source {

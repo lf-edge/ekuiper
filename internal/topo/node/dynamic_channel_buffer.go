@@ -17,7 +17,7 @@ package node
 import (
 	"sync/atomic"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type DynamicChannelBuffer struct {

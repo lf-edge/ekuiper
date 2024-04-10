@@ -15,17 +15,17 @@
 package io
 
 import (
-	"github.com/lf-edge/ekuiper/internal/io/file"
-	"github.com/lf-edge/ekuiper/internal/io/http"
-	"github.com/lf-edge/ekuiper/internal/io/memory"
-	"github.com/lf-edge/ekuiper/internal/io/mqtt"
-	"github.com/lf-edge/ekuiper/internal/io/neuron"
-	"github.com/lf-edge/ekuiper/internal/io/simulator"
-	"github.com/lf-edge/ekuiper/internal/io/sink"
-	"github.com/lf-edge/ekuiper/internal/io/websocket"
-	plugin2 "github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/internal/io/file"
+	"github.com/lf-edge/ekuiper/v2/internal/io/http"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
+	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
+	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
+	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
+	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
+	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
+	plugin2 "github.com/lf-edge/ekuiper/v2/internal/plugin"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {

@@ -14,7 +14,7 @@
 
 package modules
 
-import "github.com/lf-edge/ekuiper/pkg/message"
+import "github.com/lf-edge/ekuiper/v2/pkg/message"
 
 var Converters = map[string]message.ConverterProvider{}
 

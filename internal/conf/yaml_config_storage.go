@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 const (

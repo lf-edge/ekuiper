@@ -24,9 +24,9 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	cnf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	cnf "github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type conf struct {

@@ -19,11 +19,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 type streamInfo struct {

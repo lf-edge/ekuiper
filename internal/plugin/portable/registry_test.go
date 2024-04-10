@@ -19,8 +19,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/plugin"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 )
 
 func TestConcurrent(t *testing.T) {

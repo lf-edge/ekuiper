@@ -23,9 +23,9 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
 func init() {

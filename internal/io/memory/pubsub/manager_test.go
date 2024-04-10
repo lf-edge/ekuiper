@@ -23,7 +23,7 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func TestCreateAndClose(t *testing.T) {

@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/converter/binary"
-	"github.com/lf-edge/ekuiper/internal/converter/delimited"
-	"github.com/lf-edge/ekuiper/internal/converter/json"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/message"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/binary"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/delimited"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/json"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {

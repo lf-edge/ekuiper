@@ -20,8 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/plugin/js"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/js"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func (t *Server) CreateScript(j string, reply *string) error {

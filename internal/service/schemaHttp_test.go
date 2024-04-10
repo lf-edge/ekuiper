@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
 func TestBookstoreConvertHttpMapping(t *testing.T) {

@@ -19,12 +19,12 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
-	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
 type PushConf struct {

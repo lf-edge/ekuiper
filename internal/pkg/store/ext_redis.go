@@ -17,7 +17,7 @@
 
 package store
 
-import "github.com/lf-edge/ekuiper/internal/pkg/store/redis"
+import "github.com/lf-edge/ekuiper/v2/internal/pkg/store/redis"
 
 func init() {
 	storeBuilders["redis"] = redis.BuildStores

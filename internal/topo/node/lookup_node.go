@@ -17,16 +17,16 @@ package node
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/lookup"
-	"github.com/lf-edge/ekuiper/internal/topo/lookup/cache"
-	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup/cache"
+	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
 type LookupConf struct {

@@ -24,9 +24,9 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/require"
 
-	econf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	econf "github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 var (

@@ -22,8 +22,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func NewRedisFromConf(c definition.Config) *redis.Client {

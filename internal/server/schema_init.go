@@ -23,9 +23,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 func init() {

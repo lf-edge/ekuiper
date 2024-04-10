@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
-	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
 func TestValidate(t *testing.T) {

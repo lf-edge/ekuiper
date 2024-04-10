@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type CsvReader struct {

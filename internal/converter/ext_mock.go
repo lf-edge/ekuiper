@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/message"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {

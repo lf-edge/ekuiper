@@ -21,7 +21,7 @@ import (
 
 	"github.com/klauspost/compress/zlib"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func NewZlibCompressor() (*zlibCompressor, error) {

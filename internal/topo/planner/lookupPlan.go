@@ -19,7 +19,7 @@ import (
 
 	"github.com/modern-go/reflect2"
 
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 // LookupPlan is the plan for table lookup and then merged/joined

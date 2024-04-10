@@ -20,9 +20,9 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/mock"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 )
 
 func TestSource_Configure(t *testing.T) {

@@ -18,7 +18,7 @@
 package redis
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 )
 
 func BuildStores(c definition.Config, _ string) (definition.StoreBuilder, definition.TsBuilder, error) {

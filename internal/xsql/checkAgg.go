@@ -15,8 +15,8 @@
 package xsql
 
 import (
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 // IsAggregate check if an expression is aggregate with the binding alias info

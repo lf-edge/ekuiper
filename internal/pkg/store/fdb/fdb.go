@@ -19,7 +19,7 @@ package fdb
 import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 )
 
 const defaultAPIVersion int = 710

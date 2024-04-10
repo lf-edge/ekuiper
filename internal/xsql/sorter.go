@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 // MultiSorter implements the Sort interface, sorting the changes within.

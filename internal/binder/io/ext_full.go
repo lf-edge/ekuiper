@@ -26,8 +26,8 @@ import (
 	random "github.com/lf-edge/ekuiper/extensions/sources/random/ext"
 	sql "github.com/lf-edge/ekuiper/extensions/sources/sql/ext"
 	video "github.com/lf-edge/ekuiper/extensions/sources/video/ext"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {

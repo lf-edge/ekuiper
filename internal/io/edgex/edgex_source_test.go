@@ -28,7 +28,7 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/models"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 var (

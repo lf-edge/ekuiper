@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 func TestMessageDecode(t *testing.T) {

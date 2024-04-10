@@ -21,11 +21,11 @@ import (
 
 	"github.com/valyala/fastjson"
 
-	"github.com/lf-edge/ekuiper/internal/converter/merge"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 type Converter struct{}

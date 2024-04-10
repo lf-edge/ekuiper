@@ -14,7 +14,7 @@
 
 package io
 
-import "github.com/lf-edge/ekuiper/pkg/api"
+import "github.com/lf-edge/ekuiper/v2/pkg/api"
 
 func ReceiveTuples(ctx api.StreamContext, consumer chan<- api.SourceTuple, tuples []api.SourceTuple) {
 	for _, t := range tuples {

@@ -20,7 +20,7 @@ package server
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 )
 
 func init() {

@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
 func TestIsAggStatement(t *testing.T) {

@@ -18,9 +18,9 @@ import (
 	_ "github.com/influxdata/influxdb1-client/v2"
 
 	influx "github.com/lf-edge/ekuiper/extensions/sinks/influx/ext"
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Influx() api.Sink {

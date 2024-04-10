@@ -15,7 +15,7 @@
 package factory
 
 import (
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 )
 
 var clientsFactory = make(map[string]clients.ClientFactoryFunc)

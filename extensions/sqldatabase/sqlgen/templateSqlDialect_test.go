@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/store"
 )
 
 func Test_templateSqlQueryCfg_getSqlQueryStatement(t1 *testing.T) {

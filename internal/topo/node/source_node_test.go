@@ -20,10 +20,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/ast"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func TestGetConf_Apply(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func TestGetMqttConnectionMeta(t *testing.T) {

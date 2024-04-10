@@ -19,7 +19,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/binder/mock"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/mock"
 )
 
 func TestEntriesSort(t *testing.T) {

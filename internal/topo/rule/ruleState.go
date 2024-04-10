@@ -25,13 +25,13 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo"
-	"github.com/lf-edge/ekuiper/internal/topo/planner"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/infra"
-	"github.com/lf-edge/ekuiper/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/schedule"
 )
 
 const (

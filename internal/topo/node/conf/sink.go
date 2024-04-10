@@ -15,7 +15,7 @@
 package conf
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 const ResourceID = "resourceId"

@@ -27,8 +27,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 )
 
 var m *Manager

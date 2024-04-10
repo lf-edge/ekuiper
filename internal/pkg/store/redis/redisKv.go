@@ -24,8 +24,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/lf-edge/ekuiper/internal/conf/logger"
-	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
+	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
+	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
 )
 
 const KvPrefix = "KV:STORE"
