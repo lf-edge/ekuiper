@@ -23,10 +23,10 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 )
 
 func TestState(t *testing.T) {
@@ -226,37 +226,6 @@ func TestParseTemplate(t *testing.T) {
 		}
 		if !reflect.DeepEqual(tt.r, result) {
 			t.Errorf("%d. %s\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.j, tt.r, result)
-		}
-	}
-}
-
-func TestTransition(t *testing.T) {
-	var mockFunc transform.TransFunc = func(d interface{}) ([]byte, bool, error) {
-		return []byte(fmt.Sprintf("%v", d)), true, nil
-	}
-	tests := []struct {
-		data interface{}
-		r    []byte
-	}{
-		{
-			data: "hello",
-			r:    []byte(`hello`),
-		}, {
-			data: "world",
-			r:    []byte(`world`),
-		}, {
-			data: map[string]interface{}{"a": "hello"},
-			r:    []byte(`map[a:hello]`),
-		},
-	}
-
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	ctx := Background().WithMeta("testTransRule", "op1", &state.MemoryStore{}).(*DefaultContext)
-	nc := WithValue(ctx, TransKey, mockFunc)
-	for i, tt := range tests {
-		r, _, _ := nc.TransformOutput(tt.data)
-		if !reflect.DeepEqual(tt.r, r) {
-			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, string(tt.r), string(r))
 		}
 	}
 }

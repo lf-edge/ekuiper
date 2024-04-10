@@ -598,8 +598,7 @@ func TestCollectPoints(t *testing.T) {
 			}
 			contextLogger := conf.Log.WithField("rule", test.name)
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-			tf, _ := transform.GenTransform(test.transforms.dataTemplate, "json", "", "", test.transforms.dataField, nil)
-			vCtx := context.WithValue(ctx, context.TransKey, tf)
+
 			err = ifsink.conf.ValidateTagTemplates(vCtx)
 			assert.NoError(t, err)
 			err = ifsink.transformPoints(vCtx, test.data)

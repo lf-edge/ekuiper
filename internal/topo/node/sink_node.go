@@ -18,14 +18,13 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -87,15 +86,6 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 			m.concurrency = sconf.Concurrency
 			if err != nil {
 				return err
-			}
-			var tf transform.TransFunc
-			// TODO refactor this, do not use if else
-			switch m.sinkType {
-			// For sink that has different field types like value fields, header field, tag field, ts field etc. Do not transform fields for now.
-			case "influx", "influx2":
-				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, nil)
-			default:
-				tf, err = transform.GenTransform(sconf.DataTemplate, sconf.Format, sconf.SchemaId, sconf.Delimiter, sconf.DataField, sconf.Fields)
 			}
 			if err != nil {
 				msg := fmt.Sprintf("property dataTemplate %v is invalid: %v", sconf.DataTemplate, err)
@@ -422,35 +412,6 @@ func doCollectMaps(ctx api.StreamContext, sink api.Sink, sconf *SinkConf, outs [
 		}
 		return err
 	}
-}
-
-func itemToMap(item interface{}) []map[string]interface{} {
-	var outs []map[string]interface{}
-	switch val := item.(type) {
-	case error:
-		outs = []map[string]interface{}{
-			{"error": val.Error()},
-		}
-		break
-	case xsql.Collection: // The order is important here, because some element is both a collection and a row, such as WindowTuples, JoinTuples, etc.
-		outs = val.ToMaps()
-		break
-	case xsql.Row:
-		outs = []map[string]interface{}{
-			val.ToMap(),
-		}
-		break
-	case []map[string]interface{}: // for test only
-		outs = val
-		break
-	case *xsql.WatermarkTuple:
-		// just ignore
-	default:
-		outs = []map[string]interface{}{
-			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},
-		}
-	}
-	return outs
 }
 
 // doCollectData outData must be map or []map

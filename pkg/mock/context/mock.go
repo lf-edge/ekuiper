@@ -16,17 +16,15 @@ package context
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 )
 
 func NewMockContext(ruleId string, opId string) api.StreamContext {
 	contextLogger := conf.Log.WithField("rule", ruleId)
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	tf, _ := transform.GenTransform("", "json", "", "", "", []string{})
-	ctx = context.WithValue(ctx, context.TransKey, tf)
 	tempStore, _ := state.CreateStore(ruleId, api.AtMostOnce)
 	return ctx.WithMeta(ruleId, opId, tempStore)
 }
