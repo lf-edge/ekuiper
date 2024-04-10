@@ -6,9 +6,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 var commonCases = []any{

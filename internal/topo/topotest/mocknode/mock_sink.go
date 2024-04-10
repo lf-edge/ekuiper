@@ -27,25 +27,38 @@ func NewMockSink() *MockSink {
 	return m
 }
 
-func (m *MockSink) Open(ctx api.StreamContext) error {
+func (m *MockSink) Info() *contract.ModuleInfo {
+	return &contract.ModuleInfo{
+		Id:          "mocksink",
+		Description: "A mock sink for testing",
+		New:         func() contract.Node { return NewMockSink() },
+	}
+}
+
+func (m *MockSink) Provision(ctx contract.StreamContext, _ map[string]any) error {
+	ctx.GetLogger().Infof("Mock sink is provisioned")
+	return nil
+}
+
+func (m *MockSink) Validate(ctx contract.StreamContext) error {
+	ctx.GetLogger().Infof("Mock sink is validated")
+	return nil
+}
+
+func (m *MockSink) Connect(ctx contract.StreamContext) error {
 	log := ctx.GetLogger()
-	log.Debugln("Opening mock sink")
+	log.Debug("Opening mock sink")
 	m.results = make([][]byte, 0)
 	return nil
 }
 
-func (m *MockSink) Collect(ctx api.StreamContext, item interface{}) error {
-	logger := ctx.GetLogger()
-	if v, _, err := ctx.TransformOutput(item); err == nil {
-		logger.Debugf("mock sink receive %s", item)
-		m.results = append(m.results, v)
-	} else {
-		logger.Info("mock sink transform data error: %v", err)
-	}
+func (m *MockSink) Collect(ctx contract.StreamContext, item []byte) error {
+	ctx.GetLogger().Debugf("Mock sink is collecting %s", string(item))
+	m.results = append(m.results, item)
 	return nil
 }
 
-func (m *MockSink) Close(_ api.StreamContext) error {
+func (m *MockSink) Close(_ contract.StreamContext) error {
 	// do nothing
 	return nil
 }

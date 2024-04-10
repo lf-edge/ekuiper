@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xsql
+package contract
 
-import "github.com/lf-edge/ekuiper/v2/pkg/message"
-
-func IsTextFormat(format string) bool {
-	return format == message.FormatJson || format == message.FormatDelimited
+// ReadonlyMessage Message is the interface that wraps each record.
+// Use this interface to exchange data between different components.
+// It is used in sink
+type ReadonlyMessage interface {
+	Get(key string) (value any, ok bool)
+	Range(f func(key string, value any) bool)
 }
