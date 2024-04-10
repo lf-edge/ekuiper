@@ -32,6 +32,26 @@ Response Sample:
 ["mystream"]
 ```
 
+## show streams detail
+
+The API is used for displaying all detailed definition of streams defined in the server.
+
+```shell
+GET http://localhost:9081/streamdetails
+```
+
+Response Sample:
+
+```json
+[
+  {
+    "name": "test1",
+    "type": "mqtt",
+    "format": "json"
+  }
+]
+```
+
 ## describe a stream
 
 The API is used for print the detailed definition of stream.
