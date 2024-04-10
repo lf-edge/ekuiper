@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file/writer"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type fileWriter struct {
@@ -42,7 +42,7 @@ type fileWriter struct {
 
 func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
-	fws := &fileWriter{Start: conf.GetNow()}
+	fws := &fileWriter{Start: timex.GetNow()}
 	var (
 		f   *os.File
 		err error

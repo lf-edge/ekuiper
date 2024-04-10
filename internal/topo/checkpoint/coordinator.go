@@ -19,10 +19,10 @@ import (
 
 	"github.com/benbjohnson/clock"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type pendingCheckpoint struct {
@@ -161,11 +161,11 @@ func createBarrierHandler(re Responder, inputCount int, qos api.Qos) BarrierHand
 
 func (c *Coordinator) Activate() error {
 	logger := c.ctx.GetLogger()
-	logger.Infof("Start checkpoint coordinator for rule %s at %d", c.ruleId, conf.GetNowInMilli())
+	logger.Infof("Start checkpoint coordinator for rule %s at %d", c.ruleId, timex.GetNowInMilli())
 	if c.ticker != nil {
 		c.ticker.Stop()
 	}
-	c.ticker = conf.GetTicker(int64(c.baseInterval))
+	c.ticker = timex.GetTicker(int64(c.baseInterval))
 	tc := c.ticker.C
 	go func() {
 		err := infra.SafeRun(func() error {

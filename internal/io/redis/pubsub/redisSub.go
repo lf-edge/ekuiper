@@ -21,13 +21,13 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type redisSub struct {
@@ -113,7 +113,7 @@ func subscribe(r *redisSub, ctx api.StreamContext, consumer chan<- api.SourceTup
 }
 
 func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.SourceTuple {
-	rcvTime := conf.GetNow()
+	rcvTime := timex.GetNow()
 	msg, ok := env.(*redis.Message)
 	if !ok { // should never happen
 		return []api.SourceTuple{

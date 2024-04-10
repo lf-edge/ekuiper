@@ -20,12 +20,12 @@ import (
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pingcap/failpoint"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // SourceConnector is the connector for mqtt source
@@ -123,7 +123,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 	if msg != nil {
 		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	}
-	rcvTime := conf.GetNow()
+	rcvTime := timex.GetNow()
 	select {
 	case ms.consumer <- api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),

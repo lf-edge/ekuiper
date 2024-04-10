@@ -20,11 +20,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/benbjohnson/clock"
-
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -174,7 +173,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			meta := map[string]interface{}{
 				"file": filepath.Join(dir, filename),
 			}
-			mc := conf.Clock.(*clock.Mock)
+			mc := mockclock.GetMockClock()
 			exp := []api.SourceTuple{
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"key": "value1"}, meta, mc.Now()),
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"key": "value2"}, meta, mc.Now()),

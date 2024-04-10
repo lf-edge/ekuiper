@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 const IdProperty = "topic"
@@ -111,12 +112,12 @@ func RemovePub(topic string) {
 }
 
 func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
-	doProduce(ctx, topic, api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, conf.GetNow()))
+	doProduce(ctx, topic, api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, timex.GetNow()))
 }
 
 func ProduceUpdatable(ctx api.StreamContext, topic string, data map[string]interface{}, rowkind string, keyval interface{}) {
 	doProduce(ctx, topic, &UpdatableTuple{
-		DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, conf.GetNow()),
+		DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, timex.GetNow()),
 		Rowkind:            rowkind,
 		Keyval:             keyval,
 	})

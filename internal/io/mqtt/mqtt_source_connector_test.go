@@ -20,16 +20,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -91,7 +90,7 @@ func TestOpen(t *testing.T) {
 		"server": url,
 	})
 	assert.NoError(t, err)
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 
 	// Open and subscribe before sending data
 	mock.TestSourceConnector(t, sc, []api.SourceTuple{

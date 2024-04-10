@@ -262,7 +262,6 @@ func TestConfigureLookup(t *testing.T) {
 
 func TestLookupPull(t *testing.T) {
 	conf.IsTesting = false
-	conf.InitClock()
 	r := &lookupSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -322,7 +321,6 @@ func TestLookupJoin(t *testing.T) {
 
 func TestLookup(t *testing.T) {
 	conf.IsTesting = false
-	conf.InitClock()
 	r := &lookupSource{}
 	server := mockAuthServer()
 	server.Start()

@@ -34,6 +34,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -454,7 +455,7 @@ func Test_itemToMap(t *testing.T) {
 		{
 			name: "test3",
 			args: args{
-				item: xsql.Row(&xsql.Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil}),
+				item: xsql.Row(&xsql.Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: timex.GetNowInMilli(), Metadata: nil}),
 			},
 			want: []map[string]interface{}{
 				{"a": 1, "b": "2"},
@@ -464,7 +465,7 @@ func Test_itemToMap(t *testing.T) {
 			name: "test4",
 			args: args{
 				item: xsql.Collection(&xsql.WindowTuples{Content: []xsql.Row{
-					&xsql.Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
+					&xsql.Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: timex.GetNowInMilli(), Metadata: nil},
 				}}),
 			},
 			want: []map[string]interface{}{

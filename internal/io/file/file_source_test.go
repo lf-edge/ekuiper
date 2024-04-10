@@ -22,10 +22,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
@@ -39,7 +38,7 @@ func TestJsonFile(t *testing.T) {
 	meta := map[string]interface{}{
 		"file": filepath.Join(path, "test", "test.json"),
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta, mc.Now()),
@@ -62,7 +61,7 @@ func TestJsonFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	moveToFolder := filepath.Join(path, "test", "moveTo")
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe", "height": 1.82}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
@@ -103,7 +102,7 @@ func TestJsonFolderParallel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe", "height": 1.82}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe", "height": 1.65}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
@@ -164,7 +163,7 @@ func TestCSVFolder(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	// Start testing
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"@": "#", "id": "1", "ts": "1670170500", "value": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "a.csv")}, mc.Now()),
@@ -229,7 +228,7 @@ func TestCSVFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ns": "@", "id": "id", "ts": "ts", "number": "value"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ns": "#", "id": "1", "ts": "1670170500", "number": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, mc.Now()),
@@ -260,7 +259,7 @@ func TestJsonLines(t *testing.T) {
 	meta := map[string]interface{}{
 		"file": filepath.Join(path, "test", "test.lines"),
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta, mc.Now()),
@@ -289,7 +288,7 @@ func TestEmptyListJsonLines(t *testing.T) {
 	meta := map[string]interface{}{
 		"file": filepath.Join(path, "test", "test_empty_list.lines"),
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(4), "name": "John Smith"}, meta, mc.Now()),
@@ -317,7 +316,7 @@ func TestInvalidJsonLines(t *testing.T) {
 	meta := map[string]interface{}{
 		"file": filepath.Join(path, "test", "test_invalid.lines"),
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		&xsql.ErrorSourceTuple{Error: fmt.Errorf("Invalid data format, cannot decode \"id\": 1,\"name\": \"John Doe" +
 			"\" with error decode failed: invalid character ':' after top-level value")},

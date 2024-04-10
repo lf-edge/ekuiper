@@ -924,7 +924,6 @@ func TestConfigure(t *testing.T) {
 
 func TestPullWithAuth(t *testing.T) {
 	conf.IsTesting = false
-	conf.InitClock()
 	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -954,7 +953,7 @@ func TestPullWithAuth(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}, map[string]interface{}{}, mc.Now()),
 	}
@@ -990,7 +989,7 @@ func TestPullBodyAuth(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}, map[string]interface{}{}, mc.Now()),
 	}
@@ -999,7 +998,6 @@ func TestPullBodyAuth(t *testing.T) {
 
 func TestPullIncremental(t *testing.T) {
 	conf.IsTesting = false
-	conf.InitClock()
 	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -1014,7 +1012,7 @@ func TestPullIncremental(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device0", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
@@ -1025,7 +1023,6 @@ func TestPullIncremental(t *testing.T) {
 
 func TestPullJsonList(t *testing.T) {
 	conf.IsTesting = false
-	conf.InitClock()
 	r := &PullSource{}
 	server := mockAuthServer()
 	server.Start()
@@ -1039,7 +1036,7 @@ func TestPullJsonList(t *testing.T) {
 		t.Errorf(err.Error())
 		return
 	}
-	mc := conf.Clock
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d2", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
@@ -1107,7 +1104,6 @@ func TestPullBodyTimeRange(t *testing.T) {
 
 func TestPullErrorTest(t *testing.T) {
 	conf.IsTesting = false
-	conf.InitClock()
 
 	tests := []struct {
 		name string

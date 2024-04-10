@@ -22,17 +22,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestSCNLC(t *testing.T) {
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	expects := []any{
 		&xsql.Tuple{
 			Raw:       []byte("hello"),
@@ -226,7 +226,7 @@ func (m *MockSourceConnector) Open(ctx api.StreamContext, consumer chan<- api.So
 		if d != nil {
 			consumer <- api.NewDefaultRawTuple(d, map[string]any{
 				"topic": m.topic,
-			}, conf.GetNow())
+			}, timex.GetNow())
 		} else {
 			consumer <- api.NewDefaultSourceTuple(nil, nil)
 		}

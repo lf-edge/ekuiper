@@ -24,9 +24,9 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	cnf "github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type conf struct {
@@ -92,7 +92,7 @@ func (s *lookupSource) Open(ctx api.StreamContext) error {
 }
 
 func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
-	rcvTime := cnf.GetNow()
+	rcvTime := timex.GetNow()
 	ctx.GetLogger().Debugf("Lookup redis %v", keys)
 	if len(keys) != 1 {
 		return nil, fmt.Errorf("redis lookup only support one key, but got %v", keys)

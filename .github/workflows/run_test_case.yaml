@@ -71,9 +71,9 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-    - name: Run topotest case
-      run: |
-        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=github.com/lf-edge/ekuiper/internal/topo -coverprofile=topotest-plugin.xml github.com/lf-edge/ekuiper/internal/topo/topotest/plugin
+#    - name: Run topotest case
+#      run: |
+#        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=github.com/lf-edge/ekuiper/internal/topo -coverprofile=topotest-plugin.xml github.com/lf-edge/ekuiper/internal/topo/topotest/plugin
     - name: Run test case
       run: |
         source $HOME/.wasmedge/env

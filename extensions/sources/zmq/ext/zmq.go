@@ -20,8 +20,8 @@ import (
 
 	zmq "github.com/pebbe/zmq4"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type zmqSource struct {
@@ -65,7 +65,7 @@ func (s *zmqSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			id, err := s.subscriber.GetIdentity()
 			errCh <- fmt.Errorf("zmq source getting message %s error: %v", id, err)
 		} else {
-			rcvTime := conf.GetNow()
+			rcvTime := timex.GetNow()
 			logger.Debugf("zmq source receive %v", msgs)
 			var m []byte
 			for i, msg := range msgs {

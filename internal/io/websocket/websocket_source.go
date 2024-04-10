@@ -17,12 +17,12 @@ package websocket
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type WebsocketSource struct {
@@ -102,7 +102,7 @@ func buildTuples(ctx api.StreamContext, msg interface{}) ([]api.SourceTuple, err
 	if err != nil {
 		return nil, err
 	}
-	rcvTime := conf.GetNow()
+	rcvTime := timex.GetNow()
 	tuples := make([]api.SourceTuple, 0, len(dataLists))
 	for _, data := range dataLists {
 		tuples = append(tuples, api.NewDefaultSourceTupleWithTime(data, nil, rcvTime))

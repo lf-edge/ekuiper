@@ -20,9 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 )
@@ -32,7 +30,7 @@ func TestMultiNeuron(t *testing.T) {
 	// start and test 2 sources
 	url1 := "tcp://127.0.0.1:33331"
 	url2 := "tcp://127.0.0.1:33332"
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp1 := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "yellow"}, "errors": map[string]interface{}{"tag_name3": 122.0}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33331"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "green", "tag_name3": 60.0}, "errors": map[string]interface{}{}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33331"}, mc.Now()),

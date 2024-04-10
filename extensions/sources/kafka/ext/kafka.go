@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type KafkaSource struct {
@@ -161,7 +162,7 @@ func (s *KafkaSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 			return
 		}
 		for _, data := range dataList {
-			rcvTime := time.Now()
+			rcvTime := timex.GetNow()
 			consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
 		}
 	}

@@ -17,16 +17,16 @@ package mockclock
 import (
 	"github.com/benbjohnson/clock"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func ResetClock(t int64) {
 	mock := clock.NewMock()
 	mock.Set(cast.TimeFromUnixMilli(t))
-	conf.Clock = mock
+	timex.Clock = mock
 }
 
 func GetMockClock() *clock.Mock {
-	return conf.Clock.(*clock.Mock)
+	return timex.Clock.(*clock.Mock)
 }

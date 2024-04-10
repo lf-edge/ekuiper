@@ -22,12 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 )
@@ -82,7 +81,7 @@ func mockNeuron(send bool, recv bool, url string) (mangos.Socket, chan []byte) {
 
 // Test scenario of multiple neuron sources and sinks
 func TestMultiSourceSink(t *testing.T) {
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	// start and test 2 sources
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "yellow"}, "errors": map[string]interface{}{"tag_name3": 122.0}}, map[string]interface{}{"topic": "$$neuron_ipc:///tmp/neuron-ekuiper.ipc"}, mc.Now()),

@@ -20,13 +20,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/gdexlab/go-render/render"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
@@ -80,7 +80,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	}()
 	select {
 	case res := <-consumer:
-		mc := conf.Clock.(*clock.Mock)
+		mc := mockclock.GetMockClock()
 		expected := api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": "test_id"}, mc.Now())
 		if !reflect.DeepEqual(expected, res) {
 			t.Errorf("result %s should be equal to %s", res, expected)

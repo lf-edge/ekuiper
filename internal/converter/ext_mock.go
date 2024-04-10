@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -36,7 +36,7 @@ type MockConverter struct{}
 
 func (m MockConverter) Encode(d interface{}) ([]byte, error) {
 	time.Sleep(10 * time.Millisecond)
-	now := conf.GetNowInMilli()
+	now := timex.GetNowInMilli()
 	return []byte(fmt.Sprintf(`{"temperature":23.4,"humidity":76,"ts": %d}`, now)), nil
 }
 
@@ -45,6 +45,6 @@ func (m MockConverter) Decode(b []byte) (interface{}, error) {
 	return map[string]any{
 		"temperature": 23.4,
 		"humidity":    76,
-		"ts":          conf.GetNowInMilli(),
+		"ts":          timex.GetNowInMilli(),
 	}, nil
 }

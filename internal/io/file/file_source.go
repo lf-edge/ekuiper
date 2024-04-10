@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type FileSourceConfig struct {
@@ -155,7 +156,7 @@ func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 		for {
 			select {
 			case <-ticker.C:
-				logger.Debugf("Load file source again at %v", conf.GetNowInMilli())
+				logger.Debugf("Load file source again at %v", timex.GetNowInMilli())
 				err := fs.Load(ctx, consumer)
 				if err != nil {
 					errCh <- err
@@ -169,7 +170,7 @@ func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 }
 
 func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
-	rcvTime := conf.GetNow()
+	rcvTime := timex.GetNow()
 	if fs.isDir {
 		ctx.GetLogger().Debugf("Monitor dir %s", fs.file)
 		entries, err := os.ReadDir(fs.file)
@@ -260,7 +261,7 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 
 func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
 	ctx.GetLogger().Debug("Start to load")
-	rcvTime := conf.GetNow()
+	rcvTime := timex.GetNow()
 
 	r, err := GetReader(fs.config.FileType, file, fs.config, ctx)
 	if err != nil {
@@ -297,7 +298,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 		if fs.config.SendInterval > 0 {
 			time.Sleep(time.Millisecond * time.Duration(fs.config.SendInterval))
 		}
-		rcvTime = conf.GetNow()
+		rcvTime = timex.GetNow()
 	}
 	return nil
 }

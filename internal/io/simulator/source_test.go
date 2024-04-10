@@ -17,10 +17,9 @@ package simulator
 import (
 	"testing"
 
-	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 )
@@ -91,7 +90,7 @@ func TestSource_Configure(t *testing.T) {
 }
 
 func TestSource_Open(t *testing.T) {
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": 2}, nil, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": 4}, nil, mc.Now()),
@@ -110,7 +109,7 @@ func TestSource_Open(t *testing.T) {
 }
 
 func TestSourceNoLoop_Open(t *testing.T) {
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	exp := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": 2}, nil, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": 4}, nil, mc.Now()),

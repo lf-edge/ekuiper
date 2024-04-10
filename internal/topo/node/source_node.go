@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type SourceNode struct {
@@ -164,7 +165,7 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 								continue
 							}
 							m.statManager.IncTotalRecordsIn()
-							rcvTime := conf.GetNow()
+							rcvTime := timex.GetNow()
 							if !data.Timestamp().IsZero() {
 								rcvTime = data.Timestamp()
 							}

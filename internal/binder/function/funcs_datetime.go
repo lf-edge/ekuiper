@@ -19,10 +19,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 var errTooManyArguments = errors.New("too many arguments")
@@ -492,7 +492,7 @@ func execGetCurrentDateTime(timeOnly bool) funcExe {
 // getCurrentWithFsp returns the current date/time with the specified number of fractional seconds precision.
 func getCurrentWithFsp(fsp int, timeOnly bool) (string, error) {
 	format := "yyyy-MM-dd HH:mm:ss"
-	now := conf.GetNow().In(cast.GetConfiguredTimeZone())
+	now := timex.GetNow().In(cast.GetConfiguredTimeZone())
 	switch fsp {
 	case 1:
 		format += ".S"

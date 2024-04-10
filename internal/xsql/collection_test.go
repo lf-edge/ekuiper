@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestCollectionAgg(t *testing.T) {
@@ -40,9 +40,9 @@ func TestCollectionAgg(t *testing.T) {
 		},
 		{
 			collO: &WindowTuples{Content: []Row{
-				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
-				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 2, "b": "4"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
-				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 3, "b": "6"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
+				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: timex.GetNowInMilli(), Metadata: nil},
+				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 2, "b": "4"}, Timestamp: timex.GetNowInMilli(), Metadata: nil},
+				&Tuple{Emitter: "a", Message: map[string]interface{}{"a": 3, "b": "6"}, Timestamp: timex.GetNowInMilli(), Metadata: nil},
 			}},
 			set: [][]map[string]interface{}{
 				{

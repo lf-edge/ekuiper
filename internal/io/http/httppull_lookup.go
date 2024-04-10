@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func GetLookUpSource() *lookupSource {
@@ -52,7 +53,7 @@ func (l *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 	var results []api.SourceTuple
 	meta := make(map[string]interface{})
 	for _, resp := range matched {
-		results = append(results, api.NewDefaultSourceTupleWithTime(resp, meta, conf.GetNow()))
+		results = append(results, api.NewDefaultSourceTupleWithTime(resp, meta, timex.GetNow()))
 	}
 	return results, nil
 }
