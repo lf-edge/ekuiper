@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build taos
+
 package main
 
 import (
 	_ "github.com/taosdata/driver-go/v2/taosSql"
 
-	tdengine "github.com/lf-edge/ekuiper/extensions/sinks/tdengine/ext"
+	tdengine "github.com/lf-edge/ekuiper/v2/extensions/sinks/tdengine/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

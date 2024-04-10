@@ -15,7 +15,7 @@
 package main
 
 import (
-	sql "github.com/lf-edge/ekuiper/extensions/sinks/sql/ext"
+	sql "github.com/lf-edge/ekuiper/v2/extensions/sinks/sql/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

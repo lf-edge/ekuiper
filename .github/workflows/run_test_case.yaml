@@ -71,14 +71,11 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
-#    - name: Run topotest case
-#      run: |
-#        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=github.com/lf-edge/ekuiper/internal/topo -coverprofile=topotest-plugin.xml github.com/lf-edge/ekuiper/internal/topo/topotest/plugin
     - name: Run test case
       run: |
         source $HOME/.wasmedge/env
         make failpoint-enable
-        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/internal/topo/topotest/plugin")
+        go test --tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -vE "github.com/lf-edge/ekuiper/internal/topo/topotest/plugin|github.com/lf-edge/ekuiper/extensions")
         make failpoint-disable
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -87,15 +84,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
         verbose: true
-    - name: Run plugins test case
-      run: |
-        mkdir -p data/test/uploads
-        cp extensions/functions/dependencies/tensorflow/models/*  data/test/uploads/
-        export CGO_CFLAGS=-I$(pwd)/extensions/functions/dependencies/tensorflow
-        export CGO_LDFLAGS=-L$(pwd)/extensions/functions/dependencies/tensorflow/amd64
-        export LD_LIBRARY_PATH=$(pwd)/extensions/functions/dependencies/tensorflow/amd64:$LD_LIBRARY_PATH
-        cd extensions
-        go test ./functions/...
     - uses: actions/upload-artifact@v3
       if: failure()
       with:

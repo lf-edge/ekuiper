@@ -17,7 +17,7 @@ package main
 import (
 	_ "github.com/influxdata/influxdb-client-go/v2"
 
-	influx2 "github.com/lf-edge/ekuiper/extensions/sinks/influx2/ext"
+	influx2 "github.com/lf-edge/ekuiper/v2/extensions/sinks/influx2/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

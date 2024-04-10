@@ -1018,6 +1018,12 @@ func TestPullIncremental(t *testing.T) {
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device2", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 	}
+	go func() {
+		for {
+			mc.Add(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
 	mock.TestSourceOpen(r, exp, t)
 }
 

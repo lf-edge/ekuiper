@@ -15,7 +15,7 @@
 package main
 
 import (
-	zmq "github.com/lf-edge/ekuiper/extensions/sinks/zmq/ext"
+	zmq "github.com/lf-edge/ekuiper/v2/extensions/sinks/zmq/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

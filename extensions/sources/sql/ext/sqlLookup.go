@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/extensions/util"
+	"github.com/lf-edge/ekuiper/v2/extensions/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"

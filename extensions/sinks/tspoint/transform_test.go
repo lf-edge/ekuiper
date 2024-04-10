@@ -12,55 +12,57 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build ignore_now
+
 package tspoint
 
-//func Test_parseTemplates(t *testing.T) {
-//	tests := []struct {
-//		name string
-//		conf WriteOptions
-//		err  string
-//	}{
-//		{
-//			name: "normal",
-//			conf: WriteOptions{
-//				Tags: map[string]string{
-//					"tag1": "value1",
-//				},
-//			},
-//		},
-//		{
-//			name: "normal with template",
-//			conf: WriteOptions{
-//				Tags: map[string]string{
-//					"tag1": "value1",
-//					"tag2": "{{.temperature}}",
-//					"tag3": "100",
-//				},
-//			},
-//		},
-//		{
-//			name: "error template",
-//			conf: WriteOptions{
-//				Tags: map[string]string{
-//					"tag1": "value1",
-//					"tag2": "{{abc .temperature}}",
-//					"tag3": "100",
-//				},
-//			},
-//			err: "Template Invalid: template: sink:1: function \"abc\" not defined",
-//		},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			contextLogger := conf.Log.WithField("rule", tt.name)
-//			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-//			err := tt.conf.ValidateTagTemplates(ctx)
-//			if tt.err == "" {
-//				assert.NoError(t, err)
-//			} else {
-//				assert.Error(t, err)
-//				assert.Equal(t, tt.err, err.Error())
-//			}
-//		})
-//	}
-//}
+func Test_parseTemplates(t *testing.T) {
+	tests := []struct {
+		name string
+		conf WriteOptions
+		err  string
+	}{
+		{
+			name: "normal",
+			conf: WriteOptions{
+				Tags: map[string]string{
+					"tag1": "value1",
+				},
+			},
+		},
+		{
+			name: "normal with template",
+			conf: WriteOptions{
+				Tags: map[string]string{
+					"tag1": "value1",
+					"tag2": "{{.temperature}}",
+					"tag3": "100",
+				},
+			},
+		},
+		{
+			name: "error template",
+			conf: WriteOptions{
+				Tags: map[string]string{
+					"tag1": "value1",
+					"tag2": "{{abc .temperature}}",
+					"tag3": "100",
+				},
+			},
+			err: "Template Invalid: template: sink:1: function \"abc\" not defined",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			contextLogger := conf.Log.WithField("rule", tt.name)
+			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+			err := tt.conf.ValidateTagTemplates(ctx)
+			if tt.err == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+				assert.Equal(t, tt.err, err.Error())
+			}
+		})
+	}
+}

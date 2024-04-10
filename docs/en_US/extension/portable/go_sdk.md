@@ -58,8 +58,8 @@ As the portable plugin is a standalone program, it needs a main program to be ab
 package main
 
 import (
-    "github.com/lf-edge/ekuiper/v2/sdk/go/api"
-    sdk "github.com/lf-edge/ekuiper/v2/sdk/go/runtime"
+    "github.com/lf-edge/ekuiper/sdk/go/api"
+    sdk "github.com/lf-edge/ekuiper/sdk/go/runtime"
     "os"
 )
 

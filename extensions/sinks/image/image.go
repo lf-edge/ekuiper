@@ -15,7 +15,7 @@
 package main
 
 import (
-	image "github.com/lf-edge/ekuiper/extensions/sinks/image/ext"
+	image "github.com/lf-edge/ekuiper/v2/extensions/sinks/image/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

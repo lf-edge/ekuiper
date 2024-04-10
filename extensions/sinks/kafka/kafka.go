@@ -15,7 +15,7 @@
 package main
 
 import (
-	kafka "github.com/lf-edge/ekuiper/extensions/sinks/kafka/ext"
+	kafka "github.com/lf-edge/ekuiper/v2/extensions/sinks/kafka/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

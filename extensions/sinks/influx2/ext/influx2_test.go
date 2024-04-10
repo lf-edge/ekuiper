@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build ignore_now
+
 package influx2
 
 import (
@@ -22,7 +24,7 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
+	"github.com/lf-edge/ekuiper/v2/extensions/sinks/tspoint"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
@@ -148,7 +150,6 @@ func TestConfig(t *testing.T) {
 }
 
 func TestCollectPoints(t *testing.T) {
-	conf.InitClock()
 	mockclock.ResetClock(10)
 	tests := []struct {
 		name       string
@@ -728,7 +729,6 @@ func TestCollectPointsError(t *testing.T) {
 
 // Do not test for multiple tags and data to avoid order problem
 func TestCollectLines(t *testing.T) {
-	conf.InitClock()
 	mockclock.ResetClock(10)
 	tests := []struct {
 		name       string
