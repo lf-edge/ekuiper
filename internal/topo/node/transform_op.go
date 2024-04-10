@@ -150,3 +150,32 @@ func (t *TransformOp) doTransform(d any) (any, error) {
 	}
 	return m, nil
 }
+
+func itemToMap(item interface{}) []map[string]interface{} {
+	var outs []map[string]interface{}
+	switch val := item.(type) {
+	case error:
+		outs = []map[string]interface{}{
+			{"error": val.Error()},
+		}
+		break
+	case xsql.Collection: // The order is important here, because some element is both a collection and a row, such as WindowTuples, JoinTuples, etc.
+		outs = val.ToMaps()
+		break
+	case xsql.Row:
+		outs = []map[string]interface{}{
+			val.ToMap(),
+		}
+		break
+	case []map[string]interface{}: // for test only
+		outs = val
+		break
+	case *xsql.WatermarkTuple:
+		// just ignore
+	default:
+		outs = []map[string]interface{}{
+			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},
+		}
+	}
+	return outs
+}
