@@ -23,7 +23,6 @@ import (
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/extensions/util"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/hidden"
@@ -95,8 +94,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 	defer t.Stop()
 	for {
 		select {
-		case <-t.C:
-			rcvTime := conf.GetNow()
+		case rcvTime := <-t.C:
 			query, err := m.Query.SqlQueryStatement()
 			if err != nil {
 				logger.Errorf("Get sql query error %v", err)
@@ -141,7 +139,6 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				scanIntoMap(data, columns, cols)
 				m.Query.UpdateMaxIndexValue(data)
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
-				rcvTime = conf.GetNow()
 			}
 		case <-ctx.Done():
 			return

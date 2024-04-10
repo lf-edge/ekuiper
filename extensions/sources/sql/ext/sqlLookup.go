@@ -18,9 +18,9 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/lf-edge/ekuiper/extensions/util"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -45,7 +45,7 @@ func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	}
 	s.driver, err = util.ParseDriver(s.url)
 	if err != nil {
-		conf.Log.Warnf("parse url %v driver failed, err:%v", s.url, err)
+		ctx.GetLogger().Warnf("parse url %v driver failed, err:%v", s.url, err)
 		s.driver = ""
 	}
 	s.db = db
@@ -68,7 +68,7 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 
 func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debug("Start to lookup tuple")
-	rcvTime := conf.GetNow()
+	rcvTime := time.Now()
 	query := s.buildQuery(fields, keys, values)
 	ctx.GetLogger().Debugf("Query is %s", query)
 	rows, err := s.db.Query(query)

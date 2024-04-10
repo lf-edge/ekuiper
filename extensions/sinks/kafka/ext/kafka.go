@@ -23,10 +23,9 @@ import (
 	kafkago "github.com/segmentio/kafka-go"
 
 	"github.com/lf-edge/ekuiper/extensions/kafka"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
@@ -149,7 +148,7 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 			}
 			kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
 			if err != nil {
-				conf.Log.Errorf("build kafka msg failed, err:%v", err)
+				logger.Errorf("build kafka msg failed, err:%v", err)
 				return err
 			}
 			messages = append(messages, kafkaMsg)
@@ -161,7 +160,7 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 		}
 		msg, err := m.buildMsg(ctx, item, decodedBytes)
 		if err != nil {
-			conf.Log.Errorf("build kafka msg failed, err:%v", err)
+			logger.Errorf("build kafka msg failed, err:%v", err)
 			return err
 		}
 		messages = append(messages, msg)
@@ -170,9 +169,9 @@ func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
 	}
 	err := m.writer.WriteMessages(ctx, messages...)
 	if err != nil {
-		conf.Log.Errorf("kafka sink error: %v", err)
+		logger.Errorf("kafka sink error: %v", err)
 	} else {
-		conf.Log.Debug("sink kafka success")
+		logger.Debug("sink kafka success")
 	}
 	switch err := err.(type) {
 	case kafkago.Error:
