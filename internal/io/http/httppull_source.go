@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type pullTimeMeta struct {
@@ -55,13 +56,13 @@ func (hps *PullSource) Close(ctx api.StreamContext) error {
 func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Infof("Starting HTTP pull source with interval %d", hps.config.Interval)
-	ticker := conf.GetTicker(int64(hps.config.Interval))
+	ticker := timex.GetTicker(int64(hps.config.Interval))
 	defer ticker.Stop()
 	omd5 := ""
 
 	// Pulling data at initial start
 	logger.Debugf("Pulling data at initial start")
-	tuples := hps.doPull(ctx, conf.GetNow(), &omd5)
+	tuples := hps.doPull(ctx, timex.GetNow(), &omd5)
 	io.ReceiveTuples(ctx, consumer, tuples)
 
 	for {

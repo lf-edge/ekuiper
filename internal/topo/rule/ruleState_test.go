@@ -22,13 +22,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -576,7 +576,7 @@ func TestScheduleRule(t *testing.T) {
 
 func TestScheduleRuleInRange(t *testing.T) {
 	now := time.Now()
-	m := conf.Clock.(*clock.Mock)
+	m := mockclock.GetMockClock()
 	m.Set(now)
 	before := now.AddDate(-10, -10, -10)
 	after := now.Add(10 * time.Second)
@@ -682,7 +682,7 @@ func TestStartLongRunningScheduleRule(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	now := time.Now()
-	m := conf.Clock.(*clock.Mock)
+	m := mockclock.GetMockClock()
 	m.Set(now)
 	before := now.AddDate(-10, -10, -10)
 	after := now.Add(10 * time.Second)

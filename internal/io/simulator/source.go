@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type c struct {
@@ -73,7 +73,7 @@ func (m *Source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, er
 }
 
 func (m *Source) send(ctx api.StreamContext, consumer chan<- api.SourceTuple, index int) int {
-	tuple := api.NewDefaultSourceTupleWithTime(m.c.Data[index], nil, conf.GetNow())
+	tuple := api.NewDefaultSourceTupleWithTime(m.c.Data[index], nil, timex.GetNow())
 	select {
 	case consumer <- tuple:
 		index++

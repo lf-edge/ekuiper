@@ -46,6 +46,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 var (
@@ -352,7 +353,7 @@ func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 				conf.Log.Errorf("get all rules with stated failed, err:%v", err)
 				continue
 			}
-			now := conf.GetNow()
+			now := timex.GetNow()
 			handleAllRuleStatusMetrics(rs)
 			handleAllScheduleRuleState(now, rs)
 		}

@@ -28,11 +28,11 @@ import (
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/fxamacker/cbor/v2"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type EdgexSource struct {
@@ -112,7 +112,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 					return
 				}
 			case msg, ok := <-messages:
-				rcvTime := conf.GetNow()
+				rcvTime := timex.GetNow()
 				if !ok { // the source is closed
 					log.Infof("Exit subscription to edgex messagebus topic %s.", es.topic)
 					return

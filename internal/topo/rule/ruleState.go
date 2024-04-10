@@ -32,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 const (
@@ -307,7 +308,7 @@ func (rs *RuleState) Start() (err error) {
 		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
 	}
 	if rs.Rule.IsLongRunningScheduleRule() {
-		isIn, err := schedule.IsInScheduleRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange)
+		isIn, err := schedule.IsInScheduleRanges(timex.GetNow(), rs.Rule.Options.CronDatetimeRange)
 		if err != nil {
 			return err
 		}
@@ -337,7 +338,7 @@ func (rs *RuleState) startScheduleRule() error {
 	}
 	var cronCtx context.Context
 	cronCtx, rs.cronState.cancel = context.WithCancel(context.Background())
-	now := conf.GetNow()
+	now := timex.GetNow()
 	isInRunningSchedule, remainedDuration, err := rs.isInRunningSchedule(now, d)
 	if err != nil {
 		return err
@@ -359,7 +360,7 @@ func (rs *RuleState) startScheduleRule() error {
 				rs.Lock()
 				defer rs.Unlock()
 			}
-			now := conf.GetNow()
+			now := timex.GetNow()
 			allowed, err := rs.isInAllowedTimeRange(now)
 			if err != nil {
 				return false, err
@@ -583,7 +584,7 @@ func (rs *RuleState) GetState() (s string, err error) {
 }
 
 func (rs *RuleState) getStoppedRuleState() (result string) {
-	if schedule.IsAfterTimeRanges(conf.GetNow(), rs.Rule.Options.CronDatetimeRange) {
+	if schedule.IsAfterTimeRanges(timex.GetNow(), rs.Rule.Options.CronDatetimeRange) {
 		result = RuleTerminated
 	} else if rs.cronState.isInSchedule {
 		result = RuleWait

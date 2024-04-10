@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type Topo struct {
@@ -190,7 +191,7 @@ func (s *Topo) prepareContext() {
 			}
 		}
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, conf.GetNowInMilli())
+		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, timex.GetNowInMilli())
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }

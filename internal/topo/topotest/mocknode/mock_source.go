@@ -19,11 +19,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type MockSource struct {
@@ -37,7 +37,7 @@ const TIMELEAP = 200
 func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
 	log := ctx.GetLogger()
 	mockClock := mockclock.GetMockClock()
-	log.Infof("%d: mock source %s starts", conf.GetNowInMilli(), ctx.GetOpId())
+	log.Infof("%d: mock source %s starts", timex.GetNowInMilli(), ctx.GetOpId())
 	log.Debugf("mock source %s starts with offset %d", ctx.GetOpId(), m.offset)
 	for i, d := range m.data {
 		if i < m.offset {
@@ -45,9 +45,9 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 			continue
 		}
 		log.Debugf("mock source is waiting %d", i)
-		diff := d.Timestamp - conf.GetNowInMilli()
+		diff := d.Timestamp - timex.GetNowInMilli()
 		if diff <= 0 {
-			log.Warnf("Time stamp invalid, current time is %d, but timestamp is %d", conf.GetNowInMilli(), d.Timestamp)
+			log.Warnf("Time stamp invalid, current time is %d, but timestamp is %d", timex.GetNowInMilli(), d.Timestamp)
 			diff = TIMELEAP
 		}
 		next := mockClock.After(time.Duration(diff) * time.Millisecond)

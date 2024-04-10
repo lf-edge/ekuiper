@@ -18,11 +18,11 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type sqlLookupConfig struct {
@@ -68,7 +68,7 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 
 func (s *sqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
 	ctx.GetLogger().Debug("Start to lookup tuple")
-	rcvTime := time.Now()
+	rcvTime := timex.GetNow()
 	query := s.buildQuery(fields, keys, values)
 	ctx.GetLogger().Debugf("Query is %s", query)
 	rows, err := s.db.Query(query)

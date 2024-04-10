@@ -18,14 +18,12 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/benbjohnson/clock"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func TestTable(t *testing.T) {
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	tb := createTable("topicT", "a")
 	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "0"}, nil, mc.Now()))
 	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": "0"}, nil, mc.Now()))

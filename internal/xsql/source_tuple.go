@@ -17,7 +17,7 @@ package xsql
 import (
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type ErrorSourceTuple struct {
@@ -33,5 +33,5 @@ func (t *ErrorSourceTuple) Meta() map[string]interface{} {
 }
 
 func (t *ErrorSourceTuple) Timestamp() time.Time {
-	return conf.GetNow()
+	return timex.GetNow()
 }

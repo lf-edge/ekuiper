@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type item struct {
@@ -50,7 +51,7 @@ func NewCache(expireTime int, cacheMissingKey bool) *Cache {
 }
 
 func (c *Cache) run(ctx context.Context) {
-	ticker := conf.GetTicker(int64(c.expireTime * 2000))
+	ticker := timex.GetTicker(int64(c.expireTime * 2000))
 	for {
 		select {
 		case <-ticker.C:
@@ -64,7 +65,7 @@ func (c *Cache) run(ctx context.Context) {
 }
 
 func (c *Cache) deleteExpired() {
-	now := conf.GetNowInMilli()
+	now := timex.GetNowInMilli()
 	c.Lock()
 	for k, v := range c.items {
 		if v.expiration > 0 && now > v.expiration {
@@ -81,7 +82,7 @@ func (c *Cache) Set(key string, value []api.SourceTuple) {
 	c.Lock()
 	defer c.Unlock()
 	if c.expireTime > 0 {
-		c.items[key] = &item{data: value, expiration: conf.GetNowInMilli() + int64(c.expireTime*1000)}
+		c.items[key] = &item{data: value, expiration: timex.GetNowInMilli() + int64(c.expireTime*1000)}
 	} else {
 		c.items[key] = &item{data: value}
 	}
@@ -91,7 +92,7 @@ func (c *Cache) Get(key string) ([]api.SourceTuple, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	if v, ok := c.items[key]; ok {
-		if v.expiration > 0 && conf.GetNowInMilli() > v.expiration {
+		if v.expiration > 0 && timex.GetNowInMilli() > v.expiration {
 			return nil, false
 		}
 		return v.data, true

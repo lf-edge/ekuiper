@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -67,7 +66,7 @@ func TestUpdateLookup(t *testing.T) {
 			}
 		}
 	}()
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	expected := []api.SourceTuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}, mc.Now()),
 	}

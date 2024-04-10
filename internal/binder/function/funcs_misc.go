@@ -38,6 +38,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func registerMiscFunc() {
@@ -415,7 +416,7 @@ func registerMiscFunc() {
 	builtins["tstamp"] = builtinFunc{
 		fType: ast.FuncTypeScalar,
 		exec: func(ctx api.FunctionContext, args []interface{}) (interface{}, bool) {
-			return conf.GetNowInMilli(), true
+			return timex.GetNowInMilli(), true
 		},
 		val: ValidateNoArg,
 	}

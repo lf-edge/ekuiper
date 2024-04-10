@@ -459,7 +459,6 @@ func ValidateRuleOption(option *api.RuleOption) error {
 func init() {
 	logger.Log.Debugf("conf init")
 	IsTesting = logger.IsTesting
-	InitClock()
 }
 
 func gcOutdatedLog(filePath string, maxDuration time.Duration) {

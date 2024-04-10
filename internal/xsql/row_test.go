@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // Row valuer, wildcarder test
@@ -34,7 +34,7 @@ func TestCollectionRow(t *testing.T) {
 		result   []interface{} // result of valuers and wildcards
 	}{
 		{
-			rowC:     &Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
+			rowC:     &Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: timex.GetNowInMilli(), Metadata: nil},
 			value:    []string{"a", "b"},
 			wildcard: []string{""},
 			result:   []interface{}{1, "2", map[string]interface{}{"a": 1, "b": "2"}},
@@ -126,7 +126,7 @@ func TestRow(t *testing.T) {
 		result [][]map[string]interface{}
 	}{
 		{
-			rowO: &Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: conf.GetNowInMilli(), Metadata: nil},
+			rowO: &Tuple{Emitter: "a", Message: map[string]interface{}{"a": 1, "b": "2"}, Timestamp: timex.GetNowInMilli(), Metadata: nil},
 			set: [][]map[string]interface{}{
 				{
 					{"a": 2, "c": "3", "@d": 4},

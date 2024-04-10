@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type sinkConf struct {
@@ -105,7 +106,7 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debug("Opening file sink")
 	// Check if the files have opened longer than the rolling interval, if so close it and create a new one
 	if m.c.CheckInterval > 0 {
-		t := conf.GetTicker(m.c.CheckInterval)
+		t := timex.GetTicker(m.c.CheckInterval)
 		go func() {
 			defer t.Stop()
 			for {
@@ -236,10 +237,10 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 			fileName := filepath.Base(fn)
 			switch m.c.RollingNamePattern {
 			case "prefix":
-				newFile = fmt.Sprintf("%d-%s", conf.GetNowInMilli(), fileName)
+				newFile = fmt.Sprintf("%d-%s", timex.GetNowInMilli(), fileName)
 			case "suffix":
 				ext := filepath.Ext(fn)
-				newFile = fmt.Sprintf("%s-%d%s", strings.TrimSuffix(fileName, ext), conf.GetNowInMilli(), ext)
+				newFile = fmt.Sprintf("%s-%d%s", strings.TrimSuffix(fileName, ext), timex.GetNowInMilli(), ext)
 			default:
 				newFile = fileName
 			}

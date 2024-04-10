@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -187,12 +188,12 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 			time.Sleep(time.Duration(wait) * time.Millisecond)
 			// Make sure time is going forward only
 			// gradually add up time to ensure checkpoint is triggered before the data send
-			for n := conf.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
+			for n := timex.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
 				if d[i].Timestamp < n {
 					n = d[i].Timestamp
 				}
 				mockClock.Set(cast.TimeFromUnixMilli(n))
-				conf.Log.Debugf("Clock set to %d", conf.GetNowInMilli())
+				conf.Log.Debugf("Clock set to %d", timex.GetNowInMilli())
 				time.Sleep(1 * time.Millisecond)
 			}
 			select {
@@ -205,7 +206,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 		}
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
-	conf.Log.Debugf("Clock add to %d", conf.GetNowInMilli())
+	conf.Log.Debugf("Clock add to %d", timex.GetNowInMilli())
 	// Check if stream done. Poll for metrics,
 	time.Sleep(10 * time.Millisecond)
 	var retry int
@@ -422,12 +423,12 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *
 			t.Error("coordinator timeout")
 			t.FailNow()
 		}
-		conf.Log.Debugf("Start sending first phase data done at %d", conf.GetNowInMilli())
+		conf.Log.Debugf("Start sending first phase data done at %d", timex.GetNowInMilli())
 		if err := sendData(t, tt.PauseSize, tt.PauseMetric, datas, errCh, tp, 100, 100); err != nil {
 			t.Errorf("first phase send data error %s", err)
 			break
 		}
-		conf.Log.Debugf("Send first phase data done at %d", conf.GetNowInMilli())
+		conf.Log.Debugf("Send first phase data done at %d", timex.GetNowInMilli())
 		// compare checkpoint count
 		time.Sleep(10 * time.Millisecond)
 		for retry = 3; retry > 0; retry-- {
@@ -449,9 +450,9 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *
 		tp.Cancel()
 		time.Sleep(10 * time.Millisecond)
 		// resume stream
-		conf.Log.Debugf("Resume stream at %d", conf.GetNowInMilli())
+		conf.Log.Debugf("Resume stream at %d", timex.GetNowInMilli())
 		errCh = tp.Open()
-		conf.Log.Debugf("After open stream at %d", conf.GetNowInMilli())
+		conf.Log.Debugf("After open stream at %d", timex.GetNowInMilli())
 		if err := sendData(t, dataLength, tt.M, datas, errCh, tp, POSTLEAP, 10); err != nil {
 			t.Errorf("second phase send data error %s", err)
 			break

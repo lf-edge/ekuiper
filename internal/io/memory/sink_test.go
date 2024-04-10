@@ -19,11 +19,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/benbjohnson/clock"
-
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
@@ -59,7 +58,7 @@ func TestUpdate(t *testing.T) {
 		fmt.Println(d)
 		actual = append(actual, d)
 	}
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	expects := []api.SourceTuple{
 		&pubsub.UpdatableTuple{
 			DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": "1", "verb": "insert", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}, mc.Now()),

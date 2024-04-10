@@ -12,19 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package conf
+package timex
 
 import (
+	"os"
+	"strings"
 	"time"
 
 	"github.com/benbjohnson/clock"
 )
 
-var Clock clock.Clock
+var (
+	Clock     clock.Clock
+	IsTesting bool
+)
+
+func init() {
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-test.") {
+			IsTesting = true
+			break
+		}
+	}
+	InitClock()
+}
 
 func InitClock() {
 	if IsTesting {
-		Log.Debugf("running in testing mode")
 		Clock = clock.NewMock()
 	} else {
 		Clock = clock.New()

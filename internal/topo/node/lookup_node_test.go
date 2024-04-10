@@ -20,8 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
-
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -48,7 +46,7 @@ func (m *mockLookupSrc) Configure(_ string, _ map[string]interface{}) error {
 
 // Lookup accept int value as the first array value
 func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string, values []interface{}) ([]api.SourceTuple, error) {
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	if len(fields) > 0 { // if fields is not empty, the value will be kept
 		if m.data != nil {
 			return m.data, nil

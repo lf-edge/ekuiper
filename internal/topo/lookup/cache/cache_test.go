@@ -19,16 +19,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func TestExpiration(t *testing.T) {
 	c := NewCache(20, false)
 	defer c.Close()
-	clock := conf.Clock.(*clock.Mock)
+	clock := mockclock.GetMockClock()
 	expects := [][]api.SourceTuple{
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1}, nil, clock.Now())},
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2}, nil, clock.Now()), api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3}, nil, clock.Now())},
@@ -86,7 +84,7 @@ func TestExpiration(t *testing.T) {
 func TestNoExpiration(t *testing.T) {
 	c := NewCache(0, true)
 	defer c.Close()
-	clock := conf.Clock.(*clock.Mock)
+	clock := mockclock.GetMockClock()
 	expects := [][]api.SourceTuple{
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1}, nil, clock.Now())},
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2}, nil, clock.Now()), api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3}, nil, clock.Now())},

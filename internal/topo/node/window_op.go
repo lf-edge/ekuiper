@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type WindowConfig struct {
@@ -122,7 +123,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		log.Warnf("Restore window state fails: %s", err)
 	}
 	if !o.isEventTime {
-		o.triggerTime = conf.GetNowInMilli()
+		o.triggerTime = timex.GetNowInMilli()
 	}
 	if s, err := ctx.GetState(TriggerTimeKey); err == nil && s != nil {
 		if si, ok := s.(int64); ok {
@@ -200,9 +201,9 @@ func getAlignedWindowEndTime(n time.Time, interval int, timeUnit ast.Token) time
 }
 
 func getFirstTimer(ctx api.StreamContext, rawInerval int, timeUnit ast.Token) (int64, *clock.Timer) {
-	next := getAlignedWindowEndTime(conf.GetNow(), rawInerval, timeUnit)
+	next := getAlignedWindowEndTime(timex.GetNow(), rawInerval, timeUnit)
 	ctx.GetLogger().Infof("align window timer to %v(%d)", next, next.UnixMilli())
-	return next.UnixMilli(), conf.GetTimerByTime(next)
+	return next.UnixMilli(), timex.GetTimerByTime(next)
 }
 
 func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*xsql.Tuple, errCh chan<- error) {
@@ -242,7 +243,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 		firstC = firstTicker.C
 		// resume the previous window
 		if len(inputs) > 0 && o.triggerTime > 0 {
-			nextTick := conf.GetNowInMilli() + o.interval
+			nextTick := timex.GetNowInMilli() + o.interval
 			next := o.triggerTime
 			switch o.window.Type {
 			case ast.TUMBLING_WINDOW, ast.HOPPING_WINDOW:
@@ -351,7 +352,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						timeoutTicker.Stop()
 						timeoutTicker.Reset(time.Duration(o.window.Interval) * time.Millisecond)
 					} else {
-						timeoutTicker = conf.GetTimer(o.window.Interval)
+						timeoutTicker = timex.GetTimer(o.window.Interval)
 						timeout = timeoutTicker.C
 						o.triggerTime = d.Timestamp
 						_ = ctx.PutState(TriggerTimeKey, o.triggerTime)
@@ -371,11 +372,11 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 						return
 					} else {
 						log.Debugf(fmt.Sprintf("It has %d of count window.", tl.count()))
-						triggerTime := conf.GetNowInMilli()
+						triggerTime := timex.GetNowInMilli()
 						for tl.hasMoreCountWindow() {
 							tsets := tl.nextCountWindow()
 							windowStart := triggerTime
-							triggerTime = conf.GetNowInMilli()
+							triggerTime = timex.GetNowInMilli()
 							windowEnd := triggerTime
 							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 							log.Debugf("Sent: %v", tsets)
@@ -441,11 +442,11 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 func (o *WindowOperator) setupTicker() {
 	switch o.window.Type {
 	case ast.TUMBLING_WINDOW:
-		o.ticker = conf.GetTicker(o.window.Length)
+		o.ticker = timex.GetTicker(o.window.Length)
 	case ast.HOPPING_WINDOW:
-		o.ticker = conf.GetTicker(o.window.Interval)
+		o.ticker = timex.GetTicker(o.window.Interval)
 	case ast.SESSION_WINDOW:
-		o.ticker = conf.GetTicker(o.window.Length)
+		o.ticker = timex.GetTicker(o.window.Length)
 	}
 }
 

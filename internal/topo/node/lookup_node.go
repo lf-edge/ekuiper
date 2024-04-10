@@ -17,7 +17,6 @@ package node
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup/cache"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
@@ -27,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type LookupConf struct {
@@ -221,7 +221,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 				Emitter:   n.name,
 				Message:   v.Message(),
 				Metadata:  v.Meta(),
-				Timestamp: conf.GetNowInMilli(),
+				Timestamp: timex.GetNowInMilli(),
 			}
 			merged.AddTuple(t)
 			tuples.Content = append(tuples.Content, merged)
@@ -250,7 +250,7 @@ func (n *LookupNode) merge(ctx api.StreamContext, d xsql.Row, r []map[string]int
 		t := &xsql.Tuple{
 			Emitter:   n.name,
 			Message:   v,
-			Timestamp: conf.GetNowInMilli(),
+			Timestamp: timex.GetNowInMilli(),
 		}
 		merged.AddTuple(t)
 		sets.Content = append(sets.Content, merged)

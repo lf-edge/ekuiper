@@ -19,9 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/benbjohnson/clock"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
@@ -29,7 +27,7 @@ func TestBuffer(t *testing.T) {
 	b := NewDynamicChannelBuffer()
 	b.SetLimit(100)
 	stopSign := make(chan struct{})
-	mc := conf.Clock.(*clock.Mock)
+	mc := mockclock.GetMockClock()
 	go func(done chan struct{}) {
 		for i := 0; i < 100; i++ {
 			select {

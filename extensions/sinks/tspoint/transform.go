@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type WriteOptions struct {
@@ -245,7 +246,7 @@ func getTime(data map[string]any, tsFieldName string, precisionStr string) (time
 		}
 		return time.UnixMilli(v64), v64, nil
 	} else {
-		tt := time.Now()
+		tt := timex.GetNow()
 		switch precisionStr {
 		case "ms":
 			return tt, tt.UnixMilli(), nil

@@ -17,10 +17,10 @@ package node
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type BatchOp struct {
@@ -67,7 +67,7 @@ func (b *BatchOp) Exec(ctx api.StreamContext, _ chan<- error) {
 }
 
 func (b *BatchOp) runWithTickerAndBatchSize(ctx api.StreamContext) {
-	ticker := conf.GetTicker(int64(b.lingerInterval))
+	ticker := timex.GetTicker(int64(b.lingerInterval))
 	go func() {
 		defer ticker.Stop()
 		for {
@@ -145,7 +145,7 @@ func (b *BatchOp) runWithBatchSize(ctx api.StreamContext) {
 }
 
 func (b *BatchOp) runWithTicker(ctx api.StreamContext) {
-	ticker := conf.GetTicker(int64(b.lingerInterval))
+	ticker := timex.GetTicker(int64(b.lingerInterval))
 	go func() {
 		defer ticker.Stop()
 		for {
