@@ -12,10 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package xsql
+package contract
 
-import "github.com/lf-edge/ekuiper/v2/pkg/message"
+// Sink is the interface that wraps the basic Sink method.
+// It is used to connect to the external system and send data to it.
+// A sink must implement the Sink interface AND any collector interface.
+type Sink interface {
+	Node
+	Connector
+}
 
-func IsTextFormat(format string) bool {
-	return format == message.FormatJson || format == message.FormatDelimited
+type BytesCollector interface {
+	Collect(ctx StreamContext, item []byte) error
+}
+
+type MessageCollector interface {
+	Collect(ctx StreamContext, item ReadonlyMessage) error
 }
