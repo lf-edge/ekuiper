@@ -15,7 +15,7 @@
 package main
 
 import (
-	video "github.com/lf-edge/ekuiper/extensions/sources/video/ext"
+	video "github.com/lf-edge/ekuiper/v2/extensions/sources/video/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

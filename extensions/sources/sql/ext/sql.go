@@ -20,9 +20,9 @@ import (
 	"strings"
 	"time"
 
-	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
-	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
-	"github.com/lf-edge/ekuiper/extensions/util"
+	driver2 "github.com/lf-edge/ekuiper/v2/extensions/sqldatabase/driver"
+	"github.com/lf-edge/ekuiper/v2/extensions/sqldatabase/sqlgen"
+	"github.com/lf-edge/ekuiper/v2/extensions/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/hidden"

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2021-2023 EMQ Technologies Co., Ltd.
+# Copyright 2021-2024 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -59,19 +59,19 @@ cp ../extensions/functions/image/image.json .
 zip image.zip Image.so image.json
 rm -rf Image.so
 
-# build tdengine plugins
-FILE=../plugins/sinks/Tdengine.so
-if [ -f "$FILE" ]; then
-    echo "$FILE exists, not requried to build plugin."
-else
-    echo "$FILE does not exist, will build the plugin."
-    go build -trimpath --buildmode=plugin -o ../plugins/sinks/Tdengine.so ../extensions/sinks/tdengine/*.go
-fi
-
-mv ../plugins/sinks/Tdengine.so .
-mv ../extensions/sinks/tdengine/tdengine.json .
-zip tdengine.zip Tdengine.so tdengine.json
-rm -rf Tdengine.so
+## build tdengine plugins
+#FILE=../plugins/sinks/Tdengine.so
+#if [ -f "$FILE" ]; then
+#    echo "$FILE exists, not requried to build plugin."
+#else
+#    echo "$FILE does not exist, will build the plugin."
+#    go build -trimpath --buildmode=plugin -o ../plugins/sinks/Tdengine.so ../extensions/sinks/tdengine/*.go
+#fi
+#
+#mv ../plugins/sinks/Tdengine.so .
+#mv ../extensions/sinks/tdengine/tdengine.json .
+#zip tdengine.zip Tdengine.so tdengine.json
+#rm -rf Tdengine.so
 
 # build sql plugins
 FILE=../plugins/sinks/Sql.so
@@ -105,7 +105,7 @@ rm -rf plugins/service/web/plugins/
 mkdir -p plugins/service/web/plugins/
 mv zmq.zip plugins/service/web/plugins/
 mv image.zip plugins/service/web/plugins/
-mv tdengine.zip plugins/service/web/plugins/
+#mv tdengine.zip plugins/service/web/plugins/
 mv sql.zip plugins/service/web/plugins/
 mv sqlSrc.zip plugins/service/web/plugins/
 

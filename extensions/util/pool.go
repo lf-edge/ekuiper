@@ -59,7 +59,7 @@ func (dp *dbPool) getDBConnCount(url string) int {
 }
 
 func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
-	//hiddenURL, _ := hidden.HiddenURLPasswd(url)
+	// hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	newDb, err := openDB(url, dp.isTesting)
@@ -80,7 +80,7 @@ func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
 }
 
 func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
-	//hiddenURL, _ := hidden.HiddenURLPasswd(url)
+	// hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	db, ok := dp.pool[url]
@@ -134,7 +134,7 @@ func openDMDB(url string) (*sql.DB, error) {
 }
 
 func (dp *dbPool) closeOneConn(url string) error {
-	//hiddenURL, _ := hidden.HiddenURLPasswd(url)
+	// hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	connCount, ok := dp.connections[url]

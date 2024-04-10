@@ -15,7 +15,7 @@
 package main
 
 import (
-	random "github.com/lf-edge/ekuiper/extensions/sources/random/ext"
+	random "github.com/lf-edge/ekuiper/v2/extensions/sources/random/ext"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 

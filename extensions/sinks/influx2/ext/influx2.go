@@ -22,7 +22,7 @@ import (
 	client "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 
-	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
+	"github.com/lf-edge/ekuiper/v2/extensions/sinks/tspoint"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
