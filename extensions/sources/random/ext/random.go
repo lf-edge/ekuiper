@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -34,7 +33,7 @@ type randomSourceConfig struct {
 	Interval int                    `json:"interval"`
 	Seed     int                    `json:"seed"`
 	Pattern  map[string]interface{} `json:"pattern"`
-	// how long will the source trace for deduplication. If 0, deduplicate is disabled; if negative, deduplicate will be the whole life time
+	// how long will the source trace for deduplication. If 0, deduplicate is disabled; if negative, deduplicate will be the whole lifetime
 	Deduplicate int    `json:"deduplicate"`
 	Format      string `json:"format"`
 }
@@ -45,7 +44,7 @@ type randomSource struct {
 	list [][]byte
 }
 
-func (s *randomSource) Configure(topic string, props map[string]interface{}) error {
+func (s *randomSource) Configure(_ string, props map[string]interface{}) error {
 	cfg := &randomSourceConfig{
 		Format: "json",
 	}
@@ -94,8 +93,7 @@ func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTup
 	defer t.Stop()
 	for {
 		select {
-		case <-t.C:
-			rcvTime := conf.GetNow()
+		case rcvTime := <-t.C:
 			next := randomize(s.conf.Pattern, s.conf.Seed)
 			if s.conf.Deduplicate != 0 && s.isDup(ctx, next) {
 				logger.Debugf("find duplicate")
@@ -141,7 +139,7 @@ func (s *randomSource) isDup(ctx api.StreamContext, next map[string]interface{})
 		s.list = s.list[1:]
 	}
 	s.list = append(s.list, ns)
-	ctx.PutState(dedupStateKey, s.list)
+	_ = ctx.PutState(dedupStateKey, s.list)
 	return false
 }
 

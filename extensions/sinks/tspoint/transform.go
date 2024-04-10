@@ -20,8 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -188,12 +186,13 @@ func transformToMap(ctx api.StreamContext, dd map[string]any, options *WriteOpti
 		}
 		return m, nil
 	} else {
-		d, _, _ := transform.TransItem(dd, options.DataField, nil)
-		if dm, ok := d.(map[string]any); !ok {
-			return nil, nil
-		} else {
-			return dm, nil
-		}
+		//d, _, _ := transform.TransItem(dd, options.DataField, nil)
+		//if dm, ok := d.(map[string]any); !ok {
+		//	return nil, nil
+		//} else {
+		//	return dm, nil
+		//}
+		return nil, nil
 	}
 }
 
@@ -217,12 +216,13 @@ func transformMapsToMap(ctx api.StreamContext, dds []map[string]any, options *Wr
 		}
 		return ms, nil
 	} else {
-		d, _, _ := transform.TransItem(dds, options.DataField, nil)
-		if md, ok := d.([]map[string]any); !ok {
-			return nil, nil
-		} else {
-			return md, nil
-		}
+		//d, _, _ := transform.TransItem(dds, options.DataField, nil)
+		//if md, ok := d.([]map[string]any); !ok {
+		//	return nil, nil
+		//} else {
+		//	return md, nil
+		//}
+		return nil, nil
 	}
 }
 
@@ -245,7 +245,7 @@ func getTime(data map[string]any, tsFieldName string, precisionStr string) (time
 		}
 		return time.UnixMilli(v64), v64, nil
 	} else {
-		tt := conf.GetNow()
+		tt := time.Now()
 		switch precisionStr {
 		case "ms":
 			return tt, tt.UnixMilli(), nil

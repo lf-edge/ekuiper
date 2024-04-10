@@ -25,7 +25,6 @@ import (
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -46,9 +45,9 @@ func (rps *VideoPullSource) Configure(_ string, props map[string]interface{}) er
 	if err != nil {
 		return fmt.Errorf("check ffmpeg failed, err:%v", err)
 	}
-	conf.Log.Infof("ffmpeg dependency check result: %s", string(output))
+	// conf.Log.Infof("ffmpeg dependency check result: %s", string(output))
 	if strings.Contains(string(output), "ffmpeg version") {
-		conf.Log.Infof("ffmpeg dependency check success")
+		// conf.Log.Infof("ffmpeg dependency check success")
 	} else {
 		return errors.New("ffmpeg dependency check failed")
 	}
@@ -88,8 +87,7 @@ func (rps *VideoPullSource) initTimerPull(ctx api.StreamContext, consumer chan<-
 	defer ticker.Stop()
 	for {
 		select {
-		case <-ticker.C:
-			rcvTime := conf.GetNow()
+		case rcvTime := <-ticker.C:
 			buf := rps.readFrameAsJpeg(ctx)
 			results, e := ctx.DecodeIntoList(buf.Bytes())
 			meta := make(map[string]interface{})

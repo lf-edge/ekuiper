@@ -20,9 +20,6 @@ import (
 	"sync"
 
 	"github.com/xo/dburl"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/pkg/hidden"
 )
 
 var GlobalPool *dbPool
@@ -62,15 +59,15 @@ func (dp *dbPool) getDBConnCount(url string) int {
 }
 
 func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
-	hiddenURL, _ := hidden.HiddenURLPasswd(url)
+	//hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	newDb, err := openDB(url, dp.isTesting)
 	if err != nil {
-		conf.Log.Errorf("create new database instance %v failed, err:%v", hiddenURL, err)
+		// conf.Log.Errorf("create new database instance %v failed, err:%v", hiddenURL, err)
 		return nil, err
 	}
-	conf.Log.Infof("create new database instance: %v", hiddenURL)
+	// conf.Log.Infof("create new database instance: %v", hiddenURL)
 	oldDB, ok := dp.pool[url]
 	if !ok {
 		dp.connections[url] = 1
@@ -83,7 +80,7 @@ func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
 }
 
 func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
-	hiddenURL, _ := hidden.HiddenURLPasswd(url)
+	//hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	db, ok := dp.pool[url]
@@ -93,10 +90,10 @@ func (dp *dbPool) getOrCreate(url string) (*sql.DB, error) {
 	}
 	newDb, err := openDB(url, dp.isTesting)
 	if err != nil {
-		conf.Log.Errorf("create new database instance %v failed, err:%v", hiddenURL, err)
+		// conf.Log.Errorf("create new database instance %v failed, err:%v", hiddenURL, err)
 		return nil, err
 	}
-	conf.Log.Infof("create new database instance: %v", hiddenURL)
+	// conf.Log.Infof("create new database instance: %v", hiddenURL)
 	dp.pool[url] = newDb
 	dp.connections[url] = 1
 	return newDb, nil
@@ -117,10 +114,10 @@ func openDB(url string, isTesting bool) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := conf.Config
-	if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
-		db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
-	}
+	//c := conf.Config
+	//if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
+	//	db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
+	//}
 	return db, nil
 }
 
@@ -129,15 +126,15 @@ func openDMDB(url string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	c := conf.Config
-	if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
-		db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
-	}
+	//c := conf.Config
+	//if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
+	//	db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
+	//}
 	return db, nil
 }
 
 func (dp *dbPool) closeOneConn(url string) error {
-	hiddenURL, _ := hidden.HiddenURLPasswd(url)
+	//hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
 	connCount, ok := dp.connections[url]
@@ -149,7 +146,7 @@ func (dp *dbPool) closeOneConn(url string) error {
 		dp.connections[url] = connCount
 		return nil
 	}
-	conf.Log.Infof("drop database instance: %v", hiddenURL)
+	// conf.Log.Infof("drop database instance: %v", hiddenURL)
 	db := dp.pool[url]
 	// remove db instance from map in order to avoid memory leak
 	delete(dp.pool, url)

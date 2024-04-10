@@ -28,8 +28,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/server"
+	"github.com/lf-edge/ekuiper/v2/cmd"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -44,7 +43,7 @@ var etc embed.FS
 
 var (
 	Version       = "unknown"
-	LoadFileType  = "absolute"
+	LoadFileType  = "relative"
 	baseDirectory = ""
 )
 
@@ -55,11 +54,12 @@ var btnStart *widget.Button
 var application fyne.App
 
 func setDirectory() {
-	conf.PathConfig.LoadFileType = LoadFileType
-	conf.PathConfig.Dirs["etc"] = baseDirectory + "etc"
-	conf.PathConfig.Dirs["data"] = baseDirectory + "data"
-	conf.PathConfig.Dirs["log"] = baseDirectory + "log"
-	conf.PathConfig.Dirs["plugins"] = baseDirectory + "plugins"
+	cmd.LoadFileType = LoadFileType
+	// TODO need to check if the path is valid
+	//conf.PathConfig.Dirs["etc"] = baseDirectory + "etc"
+	//conf.PathConfig.Dirs["data"] = baseDirectory + "data"
+	//conf.PathConfig.Dirs["log"] = baseDirectory + "log"
+	//conf.PathConfig.Dirs["plugins"] = baseDirectory + "plugins"
 }
 
 func initService() {
@@ -141,17 +141,13 @@ func walkAndCopy(path, dest string) error {
 
 func startService() {
 	go func() {
-		server.StartUp(Version)
+		cmd.Main()
 	}()
 	go func() {
 		time.Sleep(time.Millisecond * 500)
-
-		restHttpType := "http"
-		if conf.Config.Basic.RestTls != nil {
-			restHttpType = "https"
-		}
+		// TODO need to make it dynamic
 		localIPAddr, _ := getClientIp()
-		msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, \nrestful API on %s://%s.", Version, conf.Config.Basic.Port, restHttpType, cast.JoinHostPortInt(localIPAddr, conf.Config.Basic.RestPort))
+		msg := fmt.Sprintf("Serving kuiper (version - %s) on port %d, \nrestful API on http://%s.", Version, 9081, cast.JoinHostPortInt(localIPAddr, 9081))
 		displayMessage(msg)
 		btnStart.Hide()
 		btnQuit.Show()

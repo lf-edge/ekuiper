@@ -21,9 +21,9 @@ import (
 	client "github.com/influxdata/influxdb1-client/v2"
 
 	"github.com/lf-edge/ekuiper/extensions/sinks/tspoint"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 )
 
 // c is the configuration for influx2 sink
