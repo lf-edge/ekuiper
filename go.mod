@@ -1,4 +1,4 @@
-module github.com/lf-edge/ekuiper
+module github.com/lf-edge/ekuiper/v2
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
