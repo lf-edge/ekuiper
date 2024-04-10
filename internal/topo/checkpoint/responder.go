@@ -17,7 +17,7 @@ package checkpoint
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
 type Responder interface {

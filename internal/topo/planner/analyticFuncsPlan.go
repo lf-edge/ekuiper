@@ -15,7 +15,7 @@
 package planner
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type AnalyticFuncsPlan struct {

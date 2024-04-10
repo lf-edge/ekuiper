@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/jwt"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/jwt"
 )
 
 var notAuth = []string{"/", "/ping"}

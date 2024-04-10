@@ -15,7 +15,7 @@
 package checkpoint
 
 import (
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type StreamTask interface {

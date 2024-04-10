@@ -17,7 +17,7 @@ package mocknode
 import (
 	"encoding/base64"
 
-	"github.com/lf-edge/ekuiper/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 // TestData The time diff must larger than timeleap

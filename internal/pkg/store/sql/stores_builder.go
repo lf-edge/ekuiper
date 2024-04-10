@@ -17,8 +17,8 @@ package sql
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/sql/sqlite"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/sql/sqlite"
 )
 
 func BuildStores(c definition.Config, name string) (definition.StoreBuilder, definition.TsBuilder, error) {

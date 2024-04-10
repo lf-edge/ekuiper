@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/mock"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 )
 
 func sinkTest(t *testing.T) {

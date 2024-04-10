@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type imageSink struct {

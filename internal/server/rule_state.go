@@ -22,8 +22,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pingcap/failpoint"
 
-	"github.com/lf-edge/ekuiper/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type UpdateRuleStateType int

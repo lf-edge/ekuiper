@@ -21,7 +21,7 @@ import (
 
 	"github.com/klauspost/compress/gzip"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func NewGzipCompressor() (*gzipCompressor, error) {

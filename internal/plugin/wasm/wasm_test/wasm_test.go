@@ -20,12 +20,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/plugin/wasm"
-	"github.com/lf-edge/ekuiper/internal/plugin/wasm/runtime"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/state"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/wasm"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/wasm/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 // EDIT HERE: Define the plugins that you want to test.

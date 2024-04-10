@@ -23,7 +23,7 @@ import (
 	"github.com/PaesslerAG/gval"
 	"github.com/PaesslerAG/jsonpath"
 
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 var builder = gval.Full(jsonpath.PlaceholderExtension())

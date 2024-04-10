@@ -63,8 +63,8 @@ import (
   "database/sql"
   "fmt"
   _ "github.com/go-sql-driver/mysql"
-  "github.com/lf-edge/ekuiper/pkg/api"
-  "github.com/lf-edge/ekuiper/pkg/cast"
+  "github.com/lf-edge/ekuiper/v2/pkg/api"
+  "github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 

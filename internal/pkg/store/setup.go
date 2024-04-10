@@ -15,7 +15,7 @@
 package store
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 )
 
 type StoreConf struct {

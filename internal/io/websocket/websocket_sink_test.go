@@ -25,8 +25,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/topo/connection/factory"
-	"github.com/lf-edge/ekuiper/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 const (

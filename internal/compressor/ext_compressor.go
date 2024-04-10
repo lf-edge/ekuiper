@@ -17,11 +17,11 @@
 package compressor
 
 import (
-	"github.com/lf-edge/ekuiper/internal/compressor/flate"
-	"github.com/lf-edge/ekuiper/internal/compressor/gzip"
-	"github.com/lf-edge/ekuiper/internal/compressor/zlib"
-	"github.com/lf-edge/ekuiper/internal/compressor/zstd"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/internal/compressor/flate"
+	"github.com/lf-edge/ekuiper/v2/internal/compressor/gzip"
+	"github.com/lf-edge/ekuiper/v2/internal/compressor/zlib"
+	"github.com/lf-edge/ekuiper/v2/internal/compressor/zstd"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 const (

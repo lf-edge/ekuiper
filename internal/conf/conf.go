@@ -29,10 +29,10 @@ import (
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
 
-	"github.com/lf-edge/ekuiper/internal/conf/logger"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/schedule"
+	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/schedule"
 )
 
 const (

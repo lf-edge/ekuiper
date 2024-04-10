@@ -17,8 +17,8 @@ package operator
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/xsql"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type ProjectSetOperator struct {

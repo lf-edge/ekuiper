@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/lf-edge/ekuiper/internal/io/http/httpserver"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
 
 type ConnectionBody struct {

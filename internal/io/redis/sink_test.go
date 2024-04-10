@@ -20,9 +20,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	econf "github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	econf "github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func TestSink(t *testing.T) {

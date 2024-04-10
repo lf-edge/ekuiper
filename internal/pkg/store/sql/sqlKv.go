@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"strings"
 
-	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type sqlKvStore struct {

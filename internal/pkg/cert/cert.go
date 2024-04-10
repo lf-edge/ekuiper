@@ -21,8 +21,8 @@ import (
 	"encoding/base64"
 	"os"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func GenTLSConfig(props map[string]interface{}, typ string) (*tls.Config, error) {

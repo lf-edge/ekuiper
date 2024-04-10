@@ -17,7 +17,7 @@ package js
 import (
 	"encoding/json"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 // Exporter is used to export and import the JavaScript functions

@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/mock"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/mock"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 func TestBinding(t *testing.T) {

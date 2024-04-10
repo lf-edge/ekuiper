@@ -20,8 +20,8 @@ import (
 
 	"github.com/dop251/goja"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 var manager *Manager

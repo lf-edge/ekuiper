@@ -23,9 +23,9 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/cert"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/cert"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type WebSocketConnectionConfig struct {

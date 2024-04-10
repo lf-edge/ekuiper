@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func Test_MessageValTest(t *testing.T) {

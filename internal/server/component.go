@@ -17,7 +17,7 @@ package server
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
 )
 
 type component interface {

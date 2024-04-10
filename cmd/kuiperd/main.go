@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/lf-edge/ekuiper/cmd"
+import "github.com/lf-edge/ekuiper/v2/cmd"
 
 func main() {
 	cmd.Main()

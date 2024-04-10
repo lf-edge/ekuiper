@@ -17,12 +17,12 @@
 package converter
 
 import (
-	"github.com/lf-edge/ekuiper/internal/converter/custom"
-	"github.com/lf-edge/ekuiper/internal/converter/protobuf"
-	"github.com/lf-edge/ekuiper/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/internal/schema"
-	"github.com/lf-edge/ekuiper/pkg/message"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/custom"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/protobuf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {

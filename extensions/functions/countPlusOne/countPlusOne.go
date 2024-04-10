@@ -17,7 +17,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type countPlusOneFunc struct{}

@@ -17,7 +17,7 @@ package portable
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 )
 
 type PluginInfo struct {

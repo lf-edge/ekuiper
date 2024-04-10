@@ -25,7 +25,7 @@ import (
 	"github.com/jhump/protoreflect/dynamic"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type httpConnMeta struct {

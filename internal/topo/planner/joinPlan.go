@@ -14,7 +14,7 @@
 
 package planner
 
-import "github.com/lf-edge/ekuiper/pkg/ast"
+import "github.com/lf-edge/ekuiper/v2/pkg/ast"
 
 type JoinPlan struct {
 	baseLogicalPlan

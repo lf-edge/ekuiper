@@ -18,8 +18,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/topo/topotest/mocknode"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func TestSharedSourceSchemaless(t *testing.T) {

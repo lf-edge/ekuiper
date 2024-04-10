@@ -21,7 +21,7 @@ import (
 
 	"github.com/mattn/go-tflite"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 var ipManager *interpreterManager

@@ -20,8 +20,8 @@ import (
 
 	zmq "github.com/pebbe/zmq4"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type zmqSource struct {

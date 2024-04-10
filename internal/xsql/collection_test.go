@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func TestCollectionAgg(t *testing.T) {

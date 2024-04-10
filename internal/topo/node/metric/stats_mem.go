@@ -20,8 +20,8 @@ package metric
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func getStatManager(_ api.StreamContext, sm DefaultStatManager) (StatManager, error) {

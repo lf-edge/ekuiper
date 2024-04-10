@@ -15,7 +15,7 @@
 package conf
 
 import (
-	"github.com/lf-edge/ekuiper/internal/conf/logger"
+	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 )
 
 const (

@@ -24,8 +24,8 @@ import (
 	// introduce sqlite
 	_ "modernc.org/sqlite"
 
-	"github.com/lf-edge/ekuiper/internal/conf/logger"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 )
 
 type Database struct {

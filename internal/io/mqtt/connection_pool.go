@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 var (

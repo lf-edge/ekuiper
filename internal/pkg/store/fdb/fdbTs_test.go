@@ -22,8 +22,8 @@ import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/directory"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/store/test/common"
-	ts2 "github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/test/common"
+	ts2 "github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 const (

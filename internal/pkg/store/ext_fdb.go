@@ -17,7 +17,7 @@
 package store
 
 import (
-	"github.com/lf-edge/ekuiper/internal/pkg/store/fdb"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/fdb"
 )
 
 func init() {

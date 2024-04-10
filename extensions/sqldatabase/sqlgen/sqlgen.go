@@ -17,8 +17,8 @@ package sqlgen
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/store"
 )
 
 type SqlQueryGenerator interface {

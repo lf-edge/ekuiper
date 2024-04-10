@@ -20,9 +20,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
-	"github.com/lf-edge/ekuiper/internal/pkg/store/sql"
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/sql"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 type StoreCreator func(conf definition.Config, name string) (definition.StoreBuilder, definition.TsBuilder, error)

@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/compressor"
-	"github.com/lf-edge/ekuiper/internal/topo/connection/clients"
-	mqttClient "github.com/lf-edge/ekuiper/internal/topo/connection/clients/mqtt"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/cast"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/internal/compressor"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
+	mqttClient "github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/mqtt"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 // AdConf is the advanced configuration for the mqtt sink

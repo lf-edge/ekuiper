@@ -29,10 +29,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
-	"github.com/lf-edge/ekuiper/internal/topo/context"
-	"github.com/lf-edge/ekuiper/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type request struct {
@@ -533,9 +533,9 @@ func TestRestSinkIOError(t *testing.T) {
 			}},
 		},
 	}
-	failpoint.Enable("github.com/lf-edge/ekuiper/internal/io/http/injectRestTemporaryError", "return(ture)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/http/injectRestTemporaryError", "return(ture)")
 	defer func() {
-		failpoint.Disable("github.com/lf-edge/ekuiper/internal/io/http/injectRestTemporaryError")
+		failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/http/injectRestTemporaryError")
 	}()
 	for _, tt := range tests {
 		requests = nil

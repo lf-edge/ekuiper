@@ -19,8 +19,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/internal/io/memory/store"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 // lookupsource is a lookup source that reads data from memory

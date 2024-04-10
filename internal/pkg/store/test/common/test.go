@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 func TestKvSetnx(ks kv.KeyValue, t *testing.T) {

@@ -16,7 +16,7 @@ package main
 
 import (
 	video "github.com/lf-edge/ekuiper/extensions/sources/video/ext"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Video() api.Source {

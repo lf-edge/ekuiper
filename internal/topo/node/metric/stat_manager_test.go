@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestGetMetrics(t *testing.T) {

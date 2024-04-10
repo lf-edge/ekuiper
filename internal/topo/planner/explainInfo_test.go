@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/internal/converter/merge"
-	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func TestDataSourcePlanExplainInfo(t *testing.T) {

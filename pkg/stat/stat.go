@@ -14,7 +14,7 @@
 
 package stat
 
-import "github.com/lf-edge/ekuiper/internal/topo/node/metric"
+import "github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 
 type StatsAble interface {
 	SetupStats(stats metric.StatManager)

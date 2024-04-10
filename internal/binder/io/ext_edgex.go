@@ -17,9 +17,9 @@
 package io
 
 import (
-	"github.com/lf-edge/ekuiper/internal/io/edgex"
-	"github.com/lf-edge/ekuiper/pkg/api"
-	"github.com/lf-edge/ekuiper/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/internal/io/edgex"
+	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {

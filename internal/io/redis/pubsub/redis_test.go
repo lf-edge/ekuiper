@@ -21,7 +21,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
-	"github.com/lf-edge/ekuiper/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
 
 const (

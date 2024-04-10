@@ -27,7 +27,7 @@ import (
 	"github.com/apple/foundationdb/bindings/go/src/fdb/directory"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
 
-	kvEncoding "github.com/lf-edge/ekuiper/internal/pkg/store/encoding"
+	kvEncoding "github.com/lf-edge/ekuiper/v2/internal/pkg/store/encoding"
 )
 
 type fdbKvStore struct {

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/lf-edge/ekuiper/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 type CompressorInstantiator func(name string) (message.Compressor, error)

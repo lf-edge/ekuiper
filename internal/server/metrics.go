@@ -20,7 +20,7 @@ import (
 
 	"github.com/shirou/gopsutil/process"
 
-	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 type Metrics struct {
