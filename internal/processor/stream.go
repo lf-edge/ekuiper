@@ -42,6 +42,12 @@ type StreamProcessor struct {
 	tableStatusDb  kv.KeyValue
 }
 
+type StreamDetail struct {
+	Name   string `json:"name"`
+	Type   string `json:"type"`
+	Format string `json:"format"`
+}
+
 func NewStreamProcessor() *StreamProcessor {
 	db, err := store.GetKV("stream")
 	if err != nil {
@@ -265,6 +271,41 @@ func (p *StreamProcessor) ShowStream(st ast.StreamType) (res []string, err error
 		}
 	}
 	return result, nil
+}
+
+func (p *StreamProcessor) ShowStreamOrTableDetails(kind string, st ast.StreamType) (res []StreamDetail, err error) {
+	var streams []string
+
+	if kind != "" {
+		streams, err = p.ShowTable(kind)
+	} else {
+		streams, err = p.ShowStream(st)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	streamDetails := make([]StreamDetail, 0)
+	for _, name := range streams {
+		sd, err := p.DescStream(name, st)
+		if err != nil {
+			return nil, err
+		}
+		switch v := sd.(type) {
+		case *ast.StreamStmt:
+			t := v.Options.TYPE
+			if t == "" {
+				t = "mqtt"
+			}
+			f := v.Options.FORMAT
+			if f == "" {
+				f = "json"
+			}
+			streamDetails = append(streamDetails, StreamDetail{Name: name, Type: strings.ToLower(t), Format: strings.ToLower(f)})
+		}
+	}
+
+	return streamDetails, nil
 }
 
 func (p *StreamProcessor) ShowTable(kind string) (res []string, err error) {
