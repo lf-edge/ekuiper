@@ -132,4 +132,4 @@ func (o *DecodeOp) toTuple(v map[string]any, d *xsql.Tuple) *xsql.Tuple {
 	}
 }
 
-var _ SchemaNode = &DecodeOp{}
+var _ api.SchemaNode = &DecodeOp{}

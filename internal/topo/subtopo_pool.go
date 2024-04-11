@@ -55,14 +55,14 @@ func (s *SrcSubTopo) AddSrc(src node.DataSourceNode) *SrcSubTopo {
 }
 
 // AddOperator adds an internal operator to the subtopo.
-func (s *SrcSubTopo) AddOperator(inputs []api.Emitter, operator node.OperatorNode) *SrcSubTopo {
+func (s *SrcSubTopo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *SrcSubTopo {
 	for _, input := range inputs {
 		input.AddOutput(operator.GetInput())
 		operator.AddInputCount()
 		switch rt := input.(type) {
 		case node.MergeableTopo:
 			rt.LinkTopo(s.topo, s.name+"_"+operator.GetName())
-		case api.TopNode:
+		case node.TopNode:
 			s.addEdge(rt, operator, "op")
 		}
 	}
@@ -71,7 +71,7 @@ func (s *SrcSubTopo) AddOperator(inputs []api.Emitter, operator node.OperatorNod
 	return s
 }
 
-func (s *SrcSubTopo) addEdge(from api.TopNode, to api.TopNode, toType string) {
+func (s *SrcSubTopo) addEdge(from node.TopNode, to node.TopNode, toType string) {
 	var f string
 	switch from.(type) {
 	case node.DataSourceNode:
@@ -96,9 +96,9 @@ func (s *SrcSubTopo) MergeSrc(parentTopo *api.PrintableTopo) {
 
 func (s *SrcSubTopo) LinkTopo(parentTopo *api.PrintableTopo, parentJointName string) {
 	if _, ok := s.tail.(node.DataSourceNode); ok {
-		parentTopo.Edges[fmt.Sprintf("source_%s", s.tail.(api.TopNode).GetName())] = []any{fmt.Sprintf("op_%s", parentJointName)}
+		parentTopo.Edges[fmt.Sprintf("source_%s", s.tail.(node.TopNode).GetName())] = []any{fmt.Sprintf("op_%s", parentJointName)}
 	} else {
-		parentTopo.Edges[fmt.Sprintf("op_%s_%s", s.name, s.tail.(api.TopNode).GetName())] = []any{fmt.Sprintf("op_%s", parentJointName)}
+		parentTopo.Edges[fmt.Sprintf("op_%s_%s", s.name, s.tail.(node.TopNode).GetName())] = []any{fmt.Sprintf("op_%s", parentJointName)}
 	}
 }
 

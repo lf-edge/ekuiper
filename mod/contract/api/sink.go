@@ -18,14 +18,16 @@ package api
 // It is used to connect to the external system and send data to it.
 // A sink must implement the Sink interface AND any collector interface.
 type Sink interface {
-	Node
+	Nodelet
 	Connector
 }
 
 type BytesCollector interface {
+	Sink
 	Collect(ctx StreamContext, item []byte) error
 }
 
 type MessageCollector interface {
+	Sink
 	Collect(ctx StreamContext, item ReadonlyMessage) error
 }

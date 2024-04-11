@@ -42,7 +42,7 @@ func Plan(rule *api.Rule) (*topo.Topo, error) {
 }
 
 // PlanSQLWithSourcesAndSinks For test only
-func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode) (*topo.Topo, error) {
+func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[string]any, sinks []node.DataSinkNode) (*topo.Topo, error) {
 	sql := rule.Sql
 
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
@@ -92,7 +92,7 @@ func validateStmt(stmt *ast.SelectStatement) error {
 	return vErr
 }
 
-func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {
+func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []node.DataSinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.ExecutorError, err.Error())
@@ -109,7 +109,7 @@ func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, err
 	}
-	inputs := []api.Emitter{input}
+	inputs := []node.Emitter{input}
 	// Add actions
 	if len(sinks) > 0 { // For use of mock sink in testing
 		for _, sink := range sinks {
@@ -182,8 +182,8 @@ func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
 	return res, nil
 }
 
-func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (api.Emitter, int, error) {
-	var inputs []api.Emitter
+func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (node.Emitter, int, error) {
+	var inputs []node.Emitter
 	newIndex := index
 	for _, c := range lp.Children() {
 		input, ni, err := buildOps(c, tp, options, sources, streamsFromStmt, newIndex)
@@ -195,7 +195,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 	}
 	newIndex++
 	var (
-		op  api.Emitter
+		op  node.Emitter
 		err error
 	)
 	switch t := lp.(type) {
@@ -205,13 +205,13 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 			return nil, 0, err
 		}
 		tp.AddSrc(srcNode)
-		inputs = []api.Emitter{srcNode}
+		inputs = []node.Emitter{srcNode}
 		op = srcNode
 		if len(emitters) > 0 {
 			for i, e := range emitters {
 				if i < len(emitters)-1 {
 					tp.AddOperator(inputs, e)
-					inputs = []api.Emitter{e}
+					inputs = []node.Emitter{e}
 				}
 				op = e
 				newIndex++
@@ -227,7 +227,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 		if t.condition != nil {
 			wfilterOp := Transform(&operator.FilterOp{Condition: t.condition}, fmt.Sprintf("%d_windowFilter", newIndex), options)
 			tp.AddOperator(inputs, wfilterOp)
-			inputs = []api.Emitter{wfilterOp}
+			inputs = []node.Emitter{wfilterOp}
 		}
 		l, i, d := convertFromDuration(t)
 		var rawInterval int
@@ -430,10 +430,10 @@ func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOpt
 		if !existed {
 			conf.Log.Infof("Create SubTopo %s", string(t.name))
 			srcSubtopo.AddSrc(srcConnNode)
-			subInputs := []api.Emitter{srcSubtopo}
+			subInputs := []node.Emitter{srcSubtopo}
 			for _, e := range ops {
 				srcSubtopo.AddOperator(subInputs, e)
-				subInputs = []api.Emitter{e}
+				subInputs = []node.Emitter{e}
 			}
 		}
 		srcSubtopo.StoreSchema(ruleId, string(t.name), t.streamFields, t.isWildCard)

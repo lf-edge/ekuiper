@@ -45,7 +45,7 @@ type SrcSubTopo struct {
 	source node.DataSourceNode
 	// May be empty
 	ops  []node.OperatorNode
-	tail api.Emitter
+	tail node.Emitter
 	topo *api.PrintableTopo
 	// Save the schemainfo for each rule only to use when need to attach schema when the rule is starting.
 	// Get updated if the rule is updated. Never delete it until the subtopo is deleted.
@@ -72,7 +72,7 @@ func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 	}
 	// Attach schemas
 	for _, op := range s.ops {
-		if so, ok := op.(node.SchemaNode); ok {
+		if so, ok := op.(api.SchemaNode); ok {
 			si, hasSchema := s.schemaReg[ctx.GetRuleId()]
 			if hasSchema {
 				ctx.GetLogger().Infof("attach schema to op %s", op.GetName())
@@ -180,7 +180,7 @@ func (s *SrcSubTopo) Close(ruleId string) {
 			RemoveSubTopo(s.name)
 		}
 		for _, op := range s.ops {
-			if so, ok := op.(node.SchemaNode); ok {
+			if so, ok := op.(api.SchemaNode); ok {
 				so.DetachSchema(ruleId)
 			}
 		}

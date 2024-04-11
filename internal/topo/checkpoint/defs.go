@@ -19,10 +19,13 @@ import (
 )
 
 type StreamTask interface {
-	Broadcast(data interface{})
 	GetName() string
 	GetStreamContext() api.StreamContext
 	SetQos(api.Qos)
+}
+
+type NonSinkTask interface {
+	Broadcast(data any)
 }
 
 type NonSourceTask interface {

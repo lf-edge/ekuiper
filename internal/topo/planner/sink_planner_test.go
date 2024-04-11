@@ -95,7 +95,7 @@ func TestSinkPlan(t *testing.T) {
 			TYPE:       "httppull",
 		}, &api.RuleOption{SendError: false}, false, false, nil)
 		tp.AddSrc(n)
-		inputs := []api.Emitter{n}
+		inputs := []node.Emitter{n}
 		err = buildActions(tp, c.rule, inputs)
 		assert.NoError(t, err)
 		assert.Equal(t, c.topo, tp.GetTopo())
@@ -185,7 +185,7 @@ func TestSinkPlanError(t *testing.T) {
 				TYPE:       "httppull",
 			}, &api.RuleOption{SendError: false}, false, false, nil)
 			tp.AddSrc(n)
-			inputs := []api.Emitter{n}
+			inputs := []node.Emitter{n}
 			err = buildActions(tp, c.rule, inputs)
 			assert.Error(t, err)
 			assert.Equal(t, c.err, err.Error())

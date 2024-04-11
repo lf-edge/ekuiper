@@ -25,51 +25,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
-
-type OperatorNode interface {
-	api.Operator
-	Broadcast(data interface{})
-	GetStreamContext() api.StreamContext
-	GetInputCount() int
-	AddInputCount()
-	SetQos(api.Qos)
-	SetBarrierHandler(checkpoint.BarrierHandler)
-	RemoveMetrics(name string)
-}
-
-type SchemaNode interface {
-	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
-	AttachSchema(api.StreamContext, string, map[string]*ast.JsonStreamField, bool)
-	// DetachSchema detach the schema from the node. The parameters are ruleId
-	DetachSchema(string)
-}
-
-type DataSourceNode interface {
-	api.Emitter
-	Open(ctx api.StreamContext, errCh chan<- error)
-	GetName() string
-	GetMetrics() []any
-	RemoveMetrics(ruleId string)
-}
-
-type SourceInstanceNode interface {
-	GetSource() api.Source
-}
-
-type MergeableTopo interface {
-	GetSource() DataSourceNode
-	// MergeSrc Add child topo as the source with following operators
-	MergeSrc(parentTopo *api.PrintableTopo)
-	// LinkTopo Add printable topo link from the parent topo to the child topo
-	LinkTopo(parentTopo *api.PrintableTopo, parentJointName string)
-	// SubMetrics return the metrics of the sub nodes
-	SubMetrics() ([]string, []any)
-	// Close notifies subtopo to deref
-	Close(ruleId string)
-}
 
 type defaultNode struct {
 	name        string
@@ -238,6 +195,7 @@ func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (done bo
 	}
 	switch d := item.(type) {
 	case error:
+		// TODO send error?
 		o.statManager.IncTotalExceptions(d.Error())
 		return true
 	case *xsql.WatermarkTuple:
@@ -262,15 +220,17 @@ func SourcePing(sourceType string, config map[string]interface{}) error {
 	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
 }
 
+// SinkPing Todo re-activate it
 func SinkPing(sinkType string, config map[string]interface{}) error {
-	sink, err := getSink(sinkType, config)
-	if err != nil {
-		return err
-	}
-	if pingAble, ok := sink.(util.PingableConn); ok {
-		return pingAble.Ping("", config)
-	}
-	return fmt.Errorf("sink %v doesn't support ping connection", sinkType)
+	//sink, err := getSink(sinkType, config)
+	//if err != nil {
+	//	return err
+	//}
+	//if pingAble, ok := sink.(util.PingableConn); ok {
+	//	return pingAble.Ping("", config)
+	//}
+	//return fmt.Errorf("sink %v doesn't support ping connection", sinkType)
+	return nil
 }
 
 func propsToNodeOption(props map[string]any) *api.RuleOption {

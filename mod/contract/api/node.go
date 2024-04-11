@@ -17,16 +17,15 @@ package api
 type ModuleInfo struct {
 	Id          string
 	Description string
-	New         func() Node
+	New         func() Nodelet
 }
 
-type Node interface {
-	Info() *ModuleInfo
+type Nodelet interface {
 	// Provision is called when the node is created, usually setting the configs. Do not put time-consuming operations here.
 	Provision(ctx StreamContext, configs map[string]any) error
-	// Validate is called after Provision, to check if the node is ready to run.
-	Validate(ctx StreamContext) error
 	Closable
+	// Info() *ModuleInfo
+	// Validate(ctx StreamContext) error
 }
 
 type Closable interface {

@@ -38,7 +38,7 @@ type SwitchNode struct {
 // GetEmitter returns the nth emitter of the node. SwtichNode is the only node that has multiple emitters
 // In planner graph, fromNodes is a multi-dim array, switch node is the only node that could be in the second dim
 // The dim is the index
-func (n *SwitchNode) GetEmitter(outputIndex int) api.Emitter {
+func (n *SwitchNode) GetEmitter(outputIndex int) Emitter {
 	return &n.outputNodes[outputIndex]
 }
 

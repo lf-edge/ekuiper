@@ -45,8 +45,10 @@ func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 	for k, v := range def.SinkProps {
 		sinkProps[k] = v
 	}
+	// TODO open this again
 	// Add trial run prefix for rule id to avoid duplicate rule id with real rules in runtime or other trial rule
-	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock, []*node.SinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
+	//tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock, []node.DataSinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
+	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock, []node.DataSinkNode{nil})
 	if err != nil {
 		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}

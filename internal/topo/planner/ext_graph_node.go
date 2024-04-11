@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 )
 
 func init() {
-	extNodes["script"] = func(name string, props map[string]interface{}, options *api.RuleOption) (api.TopNode, error) {
+	extNodes["script"] = func(name string, props map[string]interface{}, options *api.RuleOption) (node.TopNode, error) {
 		sop, err := parseScript(props)
 		if err != nil {
 			return nil, err
