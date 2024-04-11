@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
@@ -92,7 +91,6 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}
-			ctx = context.WithValue(ctx.(*context.DefaultContext), context.TransKey, tf)
 
 			m.reset()
 			logger.Infof("open sink node %d instances with batchSize %d", m.concurrency, sconf.BatchSize)

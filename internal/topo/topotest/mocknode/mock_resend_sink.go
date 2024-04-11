@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package mocknode
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type MockResendSink struct {
@@ -33,41 +32,41 @@ func NewMockResendSink(onHit chan int) *MockResendSink {
 
 func (m *MockResendSink) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-	log.Debugln("Opening mock sink")
+	log.Debug("Opening mock sink")
 	m.results = make([][]byte, 0)
 	m.resentResults = make([][]byte, 0)
 	return nil
 }
 
 func (m *MockResendSink) Collect(ctx api.StreamContext, item interface{}) error {
-	logger := ctx.GetLogger()
-	defer func() {
-		m.count++
-		m.onHit <- m.count
-	}()
-	if m.count%2 == 0 {
-		return errorx.NewIOErr(`mock io error`)
-	}
-	if v, _, err := ctx.TransformOutput(item); err == nil {
-		logger.Debugf("mock sink receive %s", item)
-		m.results = append(m.results, v)
-	} else {
-		logger.Info("mock sink transform data error: %v", err)
-	}
+	//logger := ctx.GetLogger()
+	//defer func() {
+	//	m.count++
+	//	m.onHit <- m.count
+	//}()
+	//if m.count%2 == 0 {
+	//	return errorx.NewIOErr(`mock io error`)
+	//}
+	//if v, _, err := ctx.TransformOutput(item); err == nil {
+	//	logger.Debugf("mock sink receive %s", item)
+	//	m.results = append(m.results, v)
+	//} else {
+	//	logger.Info("mock sink transform data error: %v", err)
+	//}
 	return nil
 }
 
 func (m *MockResendSink) CollectResend(ctx api.StreamContext, item interface{}) error {
-	logger := ctx.GetLogger()
-	if m.count%3 != 1 {
-		return errorx.NewIOErr(`mock io error`)
-	}
-	if v, _, err := ctx.TransformOutput(item); err == nil {
-		logger.Debugf("mock sink resend %s", item)
-		m.resentResults = append(m.resentResults, v)
-	} else {
-		logger.Info("mock sink transform data error: %v", err)
-	}
+	//logger := ctx.GetLogger()
+	//if m.count%3 != 1 {
+	//	return errorx.NewIOErr(`mock io error`)
+	//}
+	//if v, _, err := ctx.TransformOutput(item); err == nil {
+	//	logger.Debugf("mock sink resend %s", item)
+	//	m.resentResults = append(m.resentResults, v)
+	//} else {
+	//	logger.Info("mock sink transform data error: %v", err)
+	//}
 	return nil
 }
 

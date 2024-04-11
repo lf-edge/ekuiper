@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -78,29 +78,30 @@ func (s *sink) Open(ctx api.StreamContext) error {
 }
 
 func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
-	ctx.GetLogger().Debugf("receive %+v", data)
-	if s.c.Raw {
-		r, _, err := ctx.TransformOutput(data)
-		if err != nil {
-			return err
-		}
-		return publish(ctx, r, s.cli)
-	} else {
-		switch d := data.(type) {
-		case []map[string]interface{}:
-			for _, el := range d {
-				err := s.SendMapToNeuron(ctx, el)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		case map[string]interface{}:
-			return s.SendMapToNeuron(ctx, d)
-		default:
-			return fmt.Errorf("unrecognized format of %s", data)
-		}
-	}
+	//ctx.GetLogger().Debugf("receive %+v", data)
+	//if s.c.Raw {
+	//	r, _, err := ctx.TransformOutput(data)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	return publish(ctx, r, s.cli)
+	//} else {
+	//	switch d := data.(type) {
+	//	case []map[string]interface{}:
+	//		for _, el := range d {
+	//			err := s.SendMapToNeuron(ctx, el)
+	//			if err != nil {
+	//				return err
+	//			}
+	//		}
+	//		return nil
+	//	case map[string]interface{}:
+	//		return s.SendMapToNeuron(ctx, d)
+	//	default:
+	//		return fmt.Errorf("unrecognized format of %s", data)
+	//	}
+	//}
+	return nil
 }
 
 func (s *sink) Close(ctx api.StreamContext) error {

@@ -12,29 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contract
+package api
 
 // The source capabilities are split to several functionality
 // Implementations can implement part of them and combine
 
-// Source is the interface that wraps the basic Source method.
-type Source interface {
-	Closable
-}
-
-type SourceConnector interface {
-	Source
-	Connect(ctx StreamContext) error
-	Subscriber
-}
-
-// Rewindable is a source feature that allows the source to rewind to a specific offset.
-type Rewindable interface {
-	GetOffset() (any, error)
-	Rewind(offset any) error
-	ResetOffset(input map[string]any) error
-}
-
-type Subscriber interface {
-	Subscribe(ctx StreamContext) error
-}
+//// Source is the interface that wraps the basic Source method.
+//type Source interface {
+//	Closable
+//}
+//
+//type SourceConnector interface {
+//	Source
+//	Connect(ctx StreamContext) error
+//	Subscriber
+//}
+//
+//// Rewindable is a source feature that allows the source to rewind to a specific offset.
+//type Rewindable interface {
+//	GetOffset() (any, error)
+//	Rewind(offset any) error
+//	ResetOffset(input map[string]any) error
+//}
+//
+//type Subscriber interface {
+//	Subscribe(ctx StreamContext) error
+//}

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,38 +27,38 @@ func NewMockSink() *MockSink {
 	return m
 }
 
-func (m *MockSink) Info() *contract.ModuleInfo {
-	return &contract.ModuleInfo{
+func (m *MockSink) Info() *api.ModuleInfo {
+	return &api.ModuleInfo{
 		Id:          "mocksink",
 		Description: "A mock sink for testing",
-		New:         func() contract.Node { return NewMockSink() },
+		New:         func() api.Node { return NewMockSink() },
 	}
 }
 
-func (m *MockSink) Provision(ctx contract.StreamContext, _ map[string]any) error {
+func (m *MockSink) Provision(ctx api.StreamContext, _ map[string]any) error {
 	ctx.GetLogger().Infof("Mock sink is provisioned")
 	return nil
 }
 
-func (m *MockSink) Validate(ctx contract.StreamContext) error {
+func (m *MockSink) Validate(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Mock sink is validated")
 	return nil
 }
 
-func (m *MockSink) Connect(ctx contract.StreamContext) error {
+func (m *MockSink) Connect(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Debug("Opening mock sink")
 	m.results = make([][]byte, 0)
 	return nil
 }
 
-func (m *MockSink) Collect(ctx contract.StreamContext, item []byte) error {
+func (m *MockSink) Collect(ctx api.StreamContext, item []byte) error {
 	ctx.GetLogger().Debugf("Mock sink is collecting %s", string(item))
 	m.results = append(m.results, item)
 	return nil
 }
 
-func (m *MockSink) Close(_ contract.StreamContext) error {
+func (m *MockSink) Close(_ api.StreamContext) error {
 	// do nothing
 	return nil
 }

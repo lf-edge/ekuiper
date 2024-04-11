@@ -21,12 +21,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pingcap/failpoint"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type RestSink struct {
@@ -57,59 +54,59 @@ func (e *temporaryError) Error() string {
 func (e *temporaryError) Temporary() bool { return true }
 
 func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desUrl string) error {
-	logger := ctx.GetLogger()
-	decodedData, _, err := ctx.TransformOutput(item)
-	if err != nil {
-		logger.Warnf("rest sink decode data error: %v", err)
-		return fmt.Errorf("rest sink decode data error: %v", err)
-	}
-
-	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
-	failpoint.Inject("injectRestTemporaryError", func(val failpoint.Value) {
-		if val.(bool) {
-			err = &url.Error{Err: &temporaryError{}}
-		}
-	})
-	if err != nil {
-		originErr := err
-		recoverAble := isRecoverAbleError(originErr)
-		if recoverAble {
-			logger.Errorf("rest sink meet error:%v, recoverAble:%v, ruleID:%v", originErr.Error(), recoverAble, ctx.GetRuleId())
-			return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
-				originErr.Error(),
-				recoverAble,
-				ms.config.Method,
-				ms.config.Url,
-				decodedData))
-		}
-		return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
-			originErr.Error(),
-			recoverAble,
-			ms.config.Method,
-			ms.config.Url,
-			decodedData,
-		)
-	} else {
-		logger.Debugf("rest sink got response %v", resp)
-		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
-		// do not record response body error as it is not an error in the sink action.
-		if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
-			if strings.HasPrefix(err.Error(), BODY_ERR) {
-				logger.Warnf("rest sink response body error: %v", err)
-			} else {
-				return fmt.Errorf(`parse response error: %s. | method=%s path="%s" status=%d response_body="%s"`,
-					err,
-					ms.config.Method,
-					ms.config.Url,
-					resp.StatusCode,
-					b,
-				)
-			}
-		}
-		if ms.config.DebugResp {
-			logger.Infof("Response raw content: %s\n", string(b))
-		}
-	}
+	//logger := ctx.GetLogger()
+	//decodedData, _, err := ctx.TransformOutput(item)
+	//if err != nil {
+	//	logger.Warnf("rest sink decode data error: %v", err)
+	//	return fmt.Errorf("rest sink decode data error: %v", err)
+	//}
+	//
+	//resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
+	//failpoint.Inject("injectRestTemporaryError", func(val failpoint.Value) {
+	//	if val.(bool) {
+	//		err = &url.Error{Err: &temporaryError{}}
+	//	}
+	//})
+	//if err != nil {
+	//	originErr := err
+	//	recoverAble := isRecoverAbleError(originErr)
+	//	if recoverAble {
+	//		logger.Errorf("rest sink meet error:%v, recoverAble:%v, ruleID:%v", originErr.Error(), recoverAble, ctx.GetRuleId())
+	//		return errorx.NewIOErr(fmt.Sprintf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+	//			originErr.Error(),
+	//			recoverAble,
+	//			ms.config.Method,
+	//			ms.config.Url,
+	//			decodedData))
+	//	}
+	//	return fmt.Errorf(`rest sink fails to send out the data:err=%s recoverAble=%v method=%s path="%s" request_body="%s"`,
+	//		originErr.Error(),
+	//		recoverAble,
+	//		ms.config.Method,
+	//		ms.config.Url,
+	//		decodedData,
+	//	)
+	//} else {
+	//	logger.Debugf("rest sink got response %v", resp)
+	//	_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
+	//	// do not record response body error as it is not an error in the sink action.
+	//	if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
+	//		if strings.HasPrefix(err.Error(), BODY_ERR) {
+	//			logger.Warnf("rest sink response body error: %v", err)
+	//		} else {
+	//			return fmt.Errorf(`parse response error: %s. | method=%s path="%s" status=%d response_body="%s"`,
+	//				err,
+	//				ms.config.Method,
+	//				ms.config.Url,
+	//				resp.StatusCode,
+	//				b,
+	//			)
+	//		}
+	//	}
+	//	if ms.config.DebugResp {
+	//		logger.Infof("Response raw content: %s\n", string(b))
+	//	}
+	//}
 	return nil
 }
 

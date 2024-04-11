@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contract
+package api
 
 // ReadonlyMessage Message is the interface that wraps each record.
 // Use this interface to exchange data between different components.

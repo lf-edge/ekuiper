@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 package sql
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -161,140 +160,141 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
 }
 
 func (m *sqlSink) Collect(ctx api.StreamContext, item interface{}) error {
-	ctx.GetLogger().Debugf("sql sink receive %s", item)
-	if m.conf.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item)
-		if err != nil {
-			return err
-		}
-		tm := make(map[string]interface{})
-		err = json.Unmarshal(jsonBytes, &tm)
-		if err != nil {
-			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
-		}
-		item = tm
-	}
-
-	var (
-		table string
-		err   error
-	)
-	switch v := item.(type) {
-	case map[string]interface{}:
-		table, err = ctx.ParseTemplate(m.conf.Table, v)
-		if err != nil {
-			ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
-			return err
-		}
-		if m.conf.DataField != "" {
-			item = v[m.conf.DataField]
-		}
-	case []map[string]interface{}:
-		if len(v) == 0 {
-			ctx.GetLogger().Warnf("empty data array")
-			return nil
-		}
-		table, err = ctx.ParseTemplate(m.conf.Table, v[0])
-		if err != nil {
-			ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
-			return err
-		}
-	}
-
-	var keys []string = nil
-	var values []string = nil
-	var vars string
-
-	if m.conf.RowkindField == "" {
-		switch v := item.(type) {
-		case []map[string]interface{}:
-			if m.driver == "oracle" {
-				// TODO: for now we haven't support oracle bulk insert, thus we send batch data one by one.
-				for _, mapData := range v {
-					if err := m.Collect(ctx, mapData); err != nil {
-						return err
-					}
-				}
-				return nil
-			}
-			for _, mapData := range v {
-				keys, vars, err = m.conf.buildInsertSql(ctx, mapData)
-				if err != nil {
-					return err
-				}
-				values = append(values, vars)
-			}
-			if keys != nil {
-				sqlStr := buildInsertSQL(m.driver, table, keys, values)
-				return m.writeToDB(ctx, &sqlStr)
-			}
-			return nil
-		case map[string]interface{}:
-			keys, vars, err = m.conf.buildInsertSql(ctx, v)
-			if err != nil {
-				return err
-			}
-			values = append(values, vars)
-			if keys != nil {
-				sqlStr := buildInsertSQL(m.driver, table, keys, values)
-				return m.writeToDB(ctx, &sqlStr)
-			}
-			return nil
-		case []interface{}:
-			for _, data := range v {
-				mapData, ok := data.(map[string]interface{})
-				if !ok {
-					ctx.GetLogger().Errorf("unsupported type: %T", data)
-					return fmt.Errorf("unsupported type: %T", data)
-				}
-
-				keys, vars, err = m.conf.buildInsertSql(ctx, mapData)
-				if err != nil {
-					ctx.GetLogger().Errorf("sql sink build sql error %v for data", err, mapData)
-					return err
-				}
-				values = append(values, vars)
-			}
-
-			if keys != nil {
-				sqlStr := buildInsertSQL(m.driver, table, keys, values)
-				return m.writeToDB(ctx, &sqlStr)
-			}
-			return nil
-		default: // never happen
-			return fmt.Errorf("unsupported type: %T", item)
-		}
-	} else {
-		switch d := item.(type) {
-		case []map[string]interface{}:
-			for _, el := range d {
-				err := m.save(ctx, table, el)
-				if err != nil {
-					ctx.GetLogger().Error(err)
-				}
-			}
-		case map[string]interface{}:
-			err := m.save(ctx, table, d)
-			if err != nil {
-				return err
-			}
-		case []interface{}:
-			for _, vv := range d {
-				el, ok := vv.(map[string]interface{})
-				if !ok {
-					ctx.GetLogger().Errorf("unsupported type: %T", vv)
-					return fmt.Errorf("unsupported type: %T", vv)
-				}
-				err := m.save(ctx, table, el)
-				if err != nil {
-					ctx.GetLogger().Error(err)
-				}
-			}
-		default:
-			return fmt.Errorf("unrecognized format of %s", item)
-		}
-		return nil
-	}
+	//ctx.GetLogger().Debugf("sql sink receive %s", item)
+	//if m.conf.DataTemplate != "" {
+	//	jsonBytes, _, err := ctx.TransformOutput(item)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	tm := make(map[string]interface{})
+	//	err = json.Unmarshal(jsonBytes, &tm)
+	//	if err != nil {
+	//		return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+	//	}
+	//	item = tm
+	//}
+	//
+	//var (
+	//	table string
+	//	err   error
+	//)
+	//switch v := item.(type) {
+	//case map[string]interface{}:
+	//	table, err = ctx.ParseTemplate(m.conf.Table, v)
+	//	if err != nil {
+	//		ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
+	//		return err
+	//	}
+	//	if m.conf.DataField != "" {
+	//		item = v[m.conf.DataField]
+	//	}
+	//case []map[string]interface{}:
+	//	if len(v) == 0 {
+	//		ctx.GetLogger().Warnf("empty data array")
+	//		return nil
+	//	}
+	//	table, err = ctx.ParseTemplate(m.conf.Table, v[0])
+	//	if err != nil {
+	//		ctx.GetLogger().Errorf("parse template for table %s error: %v", m.conf.Table, err)
+	//		return err
+	//	}
+	//}
+	//
+	//var keys []string = nil
+	//var values []string = nil
+	//var vars string
+	//
+	//if m.conf.RowkindField == "" {
+	//	switch v := item.(type) {
+	//	case []map[string]interface{}:
+	//		if m.driver == "oracle" {
+	//			// TODO: for now we haven't support oracle bulk insert, thus we send batch data one by one.
+	//			for _, mapData := range v {
+	//				if err := m.Collect(ctx, mapData); err != nil {
+	//					return err
+	//				}
+	//			}
+	//			return nil
+	//		}
+	//		for _, mapData := range v {
+	//			keys, vars, err = m.conf.buildInsertSql(ctx, mapData)
+	//			if err != nil {
+	//				return err
+	//			}
+	//			values = append(values, vars)
+	//		}
+	//		if keys != nil {
+	//			sqlStr := buildInsertSQL(m.driver, table, keys, values)
+	//			return m.writeToDB(ctx, &sqlStr)
+	//		}
+	//		return nil
+	//	case map[string]interface{}:
+	//		keys, vars, err = m.conf.buildInsertSql(ctx, v)
+	//		if err != nil {
+	//			return err
+	//		}
+	//		values = append(values, vars)
+	//		if keys != nil {
+	//			sqlStr := buildInsertSQL(m.driver, table, keys, values)
+	//			return m.writeToDB(ctx, &sqlStr)
+	//		}
+	//		return nil
+	//	case []interface{}:
+	//		for _, data := range v {
+	//			mapData, ok := data.(map[string]interface{})
+	//			if !ok {
+	//				ctx.GetLogger().Errorf("unsupported type: %T", data)
+	//				return fmt.Errorf("unsupported type: %T", data)
+	//			}
+	//
+	//			keys, vars, err = m.conf.buildInsertSql(ctx, mapData)
+	//			if err != nil {
+	//				ctx.GetLogger().Errorf("sql sink build sql error %v for data", err, mapData)
+	//				return err
+	//			}
+	//			values = append(values, vars)
+	//		}
+	//
+	//		if keys != nil {
+	//			sqlStr := buildInsertSQL(m.driver, table, keys, values)
+	//			return m.writeToDB(ctx, &sqlStr)
+	//		}
+	//		return nil
+	//	default: // never happen
+	//		return fmt.Errorf("unsupported type: %T", item)
+	//	}
+	//} else {
+	//	switch d := item.(type) {
+	//	case []map[string]interface{}:
+	//		for _, el := range d {
+	//			err := m.save(ctx, table, el)
+	//			if err != nil {
+	//				ctx.GetLogger().Error(err)
+	//			}
+	//		}
+	//	case map[string]interface{}:
+	//		err := m.save(ctx, table, d)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	case []interface{}:
+	//		for _, vv := range d {
+	//			el, ok := vv.(map[string]interface{})
+	//			if !ok {
+	//				ctx.GetLogger().Errorf("unsupported type: %T", vv)
+	//				return fmt.Errorf("unsupported type: %T", vv)
+	//			}
+	//			err := m.save(ctx, table, el)
+	//			if err != nil {
+	//				ctx.GetLogger().Error(err)
+	//			}
+	//		}
+	//	default:
+	//		return fmt.Errorf("unrecognized format of %s", item)
+	//	}
+	//	return nil
+	//}
+	return nil
 }
 
 func (m *sqlSink) Close(_ api.StreamContext) error {

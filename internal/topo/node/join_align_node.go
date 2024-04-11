@@ -118,7 +118,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.IncTotalExceptions(e.Error())
 					}
 				case <-ctx.Done():
-					log.Infoln("Cancelling join align node....")
+					log.Info("Cancelling join align node....")
 					return nil
 				}
 			}

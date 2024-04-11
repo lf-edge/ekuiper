@@ -1,4 +1,4 @@
-// Copyright 2023-2024 emy120115@gmail.com
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
@@ -108,26 +107,26 @@ func (r *redisPub) CollectResend(ctx api.StreamContext, item interface{}) error 
 }
 
 func (r *redisPub) collectWithChannel(ctx api.StreamContext, item interface{}, channel string) error {
-	logger := ctx.GetLogger()
-	logger.Debugf("receive %+v", item)
-	// Transform
-	jsonBytes, _, err := ctx.TransformOutput(item)
-	if err != nil {
-		return err
-	}
-	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-	// Compress
-	if r.compressor != nil {
-		jsonBytes, err = r.compressor.Compress(jsonBytes)
-		if err != nil {
-			return err
-		}
-	}
-	// Publish
-	err = r.conn.Publish(ctx, channel, jsonBytes).Err()
-	if err != nil {
-		return errorx.NewIOErr(fmt.Sprintf(`Error occurred while publishing the Redis message to %s`, r.conf.Address))
-	}
+	//logger := ctx.GetLogger()
+	//logger.Debugf("receive %+v", item)
+	//// Transform
+	//jsonBytes, _, err := ctx.TransformOutput(item)
+	//if err != nil {
+	//	return err
+	//}
+	//logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
+	//// Compress
+	//if r.compressor != nil {
+	//	jsonBytes, err = r.compressor.Compress(jsonBytes)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
+	//// Publish
+	//err = r.conn.Publish(ctx, channel, jsonBytes).Err()
+	//if err != nil {
+	//	return errorx.NewIOErr(fmt.Sprintf(`Error occurred while publishing the Redis message to %s`, r.conf.Address))
+	//}
 	return nil
 }
 
@@ -142,6 +141,6 @@ func (r *redisPub) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func RedisPub() api.Sink {
-	return &redisPub{}
-}
+//func RedisPub() api.Sink {
+//	return &redisPub{}
+//}

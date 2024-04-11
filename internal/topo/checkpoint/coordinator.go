@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -222,10 +222,10 @@ func (c *Coordinator) Activate() error {
 						c.cancel(s.CheckpointId)
 					}
 				case <-c.ctx.Done():
-					logger.Infoln("Cancelling coordinator....")
+					logger.Info("Cancelling coordinator....")
 					if c.ticker != nil {
 						c.ticker.Stop()
-						logger.Infoln("Stop coordinator ticker")
+						logger.Info("Stop coordinator ticker")
 					}
 					return nil
 				}

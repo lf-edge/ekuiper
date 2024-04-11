@@ -1,4 +1,4 @@
-// Copyright 2023-2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/extensions/kafka"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type kafkaSink struct {
@@ -136,87 +135,88 @@ func (m *kafkaSink) Open(ctx api.StreamContext) error {
 }
 
 func (m *kafkaSink) Collect(ctx api.StreamContext, item interface{}) error {
-	logger := ctx.GetLogger()
-	logger.Debugf("kafka sink receive %s", item)
-	var messages []kafkago.Message
-	switch d := item.(type) {
-	case []map[string]interface{}:
-		for _, msg := range d {
-			decodedBytes, _, err := ctx.TransformOutput(msg)
-			if err != nil {
-				return fmt.Errorf("kafka sink transform data error: %v", err)
-			}
-			kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
-			if err != nil {
-				logger.Errorf("build kafka msg failed, err:%v", err)
-				return err
-			}
-			messages = append(messages, kafkaMsg)
-		}
-	case map[string]interface{}:
-		decodedBytes, _, err := ctx.TransformOutput(d)
-		if err != nil {
-			return fmt.Errorf("kafka sink transform data error: %v", err)
-		}
-		msg, err := m.buildMsg(ctx, item, decodedBytes)
-		if err != nil {
-			logger.Errorf("build kafka msg failed, err:%v", err)
-			return err
-		}
-		messages = append(messages, msg)
-	default:
-		return fmt.Errorf("unrecognized format of %s", item)
-	}
-	err := m.writer.WriteMessages(ctx, messages...)
-	if err != nil {
-		logger.Errorf("kafka sink error: %v", err)
-	} else {
-		logger.Debug("sink kafka success")
-	}
-	switch err := err.(type) {
-	case kafkago.Error:
-		if err.Temporary() {
-			return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
-		} else {
-			return err
-		}
-	case kafkago.WriteErrors:
-		count := 0
-		for i := range messages {
-			switch err := err[i].(type) {
-			case nil:
-				continue
-
-			case kafkago.Error:
-				if err.Temporary() {
-					count++
-					continue
-				}
-			default:
-				if strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
-					return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
-				}
-			}
-		}
-		if count > 0 {
-			return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
-		} else {
-			return err
-		}
-	case nil:
-		return nil
-	default:
-		return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data: %v`, err.Error()))
-	}
+	//logger := ctx.GetLogger()
+	//logger.Debugf("kafka sink receive %s", item)
+	//var messages []kafkago.Message
+	//switch d := item.(type) {
+	//case []map[string]interface{}:
+	//	for _, msg := range d {
+	//		decodedBytes, _, err := ctx.TransformOutput(msg)
+	//		if err != nil {
+	//			return fmt.Errorf("kafka sink transform data error: %v", err)
+	//		}
+	//		kafkaMsg, err := m.buildMsg(ctx, msg, decodedBytes)
+	//		if err != nil {
+	//			logger.Errorf("build kafka msg failed, err:%v", err)
+	//			return err
+	//		}
+	//		messages = append(messages, kafkaMsg)
+	//	}
+	//case map[string]interface{}:
+	//	decodedBytes, _, err := ctx.TransformOutput(d)
+	//	if err != nil {
+	//		return fmt.Errorf("kafka sink transform data error: %v", err)
+	//	}
+	//	msg, err := m.buildMsg(ctx, item, decodedBytes)
+	//	if err != nil {
+	//		logger.Errorf("build kafka msg failed, err:%v", err)
+	//		return err
+	//	}
+	//	messages = append(messages, msg)
+	//default:
+	//	return fmt.Errorf("unrecognized format of %s", item)
+	//}
+	//err := m.writer.WriteMessages(ctx, messages...)
+	//if err != nil {
+	//	logger.Errorf("kafka sink error: %v", err)
+	//} else {
+	//	logger.Debug("sink kafka success")
+	//}
+	//switch err := err.(type) {
+	//case kafkago.Error:
+	//	if err.Temporary() {
+	//		return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
+	//	} else {
+	//		return err
+	//	}
+	//case kafkago.WriteErrors:
+	//	count := 0
+	//	for i := range messages {
+	//		switch err := err[i].(type) {
+	//		case nil:
+	//			continue
+	//
+	//		case kafkago.Error:
+	//			if err.Temporary() {
+	//				count++
+	//				continue
+	//			}
+	//		default:
+	//			if strings.Contains(err.Error(), "kafka.(*Client).Produce:") {
+	//				return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
+	//			}
+	//		}
+	//	}
+	//	if count > 0 {
+	//		return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data . %v`, err.Error()))
+	//	} else {
+	//		return err
+	//	}
+	//case nil:
+	//	return nil
+	//default:
+	//	return errorx.NewIOErr(fmt.Sprintf(`kafka sink fails to send out the data: %v`, err.Error()))
+	//}
+	return nil
 }
 
 func (m *kafkaSink) Close(ctx api.StreamContext) error {
 	return m.writer.Close()
 }
 
-func GetSink() api.Sink {
-	return &kafkaSink{}
-}
+//func GetSink() api.Sink {
+//	return &kafkaSink{}
+//}
 
 func (m *kafkaSink) buildMsg(ctx api.StreamContext, item interface{}, decodedBytes []byte) (kafkago.Message, error) {
 	msg := kafkago.Message{Value: decodedBytes}

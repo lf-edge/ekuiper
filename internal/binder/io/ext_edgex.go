@@ -24,5 +24,5 @@ import (
 
 func init() {
 	modules.RegisterSource("edgex", func() api.Source { return &edgex.EdgexSource{} })
-	modules.RegisterSink("edgex", func() api.Sink { return &edgex.EdgexMsgBusSink{} })
+	//modules.RegisterSink("edgex", func() api.Sink { return &edgex.EdgexMsgBusSink{} })
 }

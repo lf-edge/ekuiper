@@ -141,7 +141,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					n.statManager.IncTotalRecordsOut()
 					n.statManager.SetBufferLength(int64(len(n.input)))
 				case <-ctx.Done():
-					ctx.GetLogger().Infoln("Cancelling switch node....")
+					ctx.GetLogger().Info("Cancelling switch node....")
 					return nil
 				}
 			}

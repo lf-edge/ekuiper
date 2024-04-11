@@ -427,7 +427,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			}
 		// is cancelling
 		case <-ctx.Done():
-			log.Infoln("Cancelling window....")
+			log.Info("Cancelling window....")
 			if o.ticker != nil {
 				o.ticker.Stop()
 			}

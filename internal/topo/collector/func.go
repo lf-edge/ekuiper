@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,26 @@ type FuncCollector struct {
 	f CollectorFunc
 }
 
+func (c *FuncCollector) Info() *api.ModuleInfo {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *FuncCollector) Provision(ctx api.StreamContext, configs map[string]any) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *FuncCollector) Validate(ctx api.StreamContext) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *FuncCollector) Connect(ctx api.StreamContext) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 // Func creates a new value *FuncCollector that
 // will use the specified function parameter to
 // collect streaming data.
@@ -49,7 +69,7 @@ func (c *FuncCollector) Configure(props map[string]interface{}) error {
 // Open is the starting point that starts the collector
 func (c *FuncCollector) Open(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
-	log.Infoln("Opening func collector")
+	log.Info("Opening func collector")
 
 	if c.f == nil {
 		return errors.New("func collector missing function")

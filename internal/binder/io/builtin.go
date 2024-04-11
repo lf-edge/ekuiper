@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
-	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
 	plugin2 "github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -38,15 +37,15 @@ func init() {
 	modules.RegisterSource("websocket", func() api.Source { return &websocket.WebsocketSource{} })
 	modules.RegisterSource("simulator", func() api.Source { return &simulator.Source{} })
 
-	modules.RegisterSink("log", sink.NewLogSink)
-	modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
-	modules.RegisterSink("mqtt", func() api.Sink { return &mqtt.MQTTSink{} })
-	modules.RegisterSink("rest", func() api.Sink { return &http.RestSink{} })
-	modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
-	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
-	modules.RegisterSink("neuron", func() api.Sink { return neuron.GetSink() })
-	modules.RegisterSink("file", func() api.Sink { return file.File() })
-	modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
+	//modules.RegisterSink("log", sink.NewLogSink)
+	//modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
+	//modules.RegisterSink("mqtt", func() api.Sink { return &mqtt.MQTTSink{} })
+	//modules.RegisterSink("rest", func() api.Sink { return &http.RestSink{} })
+	//modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
+	//modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
+	//modules.RegisterSink("neuron", func() api.Sink { return neuron.GetSink() })
+	//modules.RegisterSink("file", func() api.Sink { return file.File() })
+	//modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
 	modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
 	modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })

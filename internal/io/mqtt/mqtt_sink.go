@@ -24,7 +24,6 @@ import (
 	mqttClient "github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
@@ -131,27 +130,27 @@ func (ms *MQTTSink) CollectResend(ctx api.StreamContext, item interface{}) error
 }
 
 func (ms *MQTTSink) collectWithTopic(ctx api.StreamContext, item interface{}, topic string) error {
-	logger := ctx.GetLogger()
-	jsonBytes, _, err := ctx.TransformOutput(item)
-	if err != nil {
-		return err
-	}
-	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-	if ms.compressor != nil {
-		jsonBytes, err = ms.compressor.Compress(jsonBytes)
-		if err != nil {
-			return err
-		}
-	}
-
-	tpc, err := ctx.ParseTemplate(topic, item)
-	if err != nil {
-		return err
-	}
-
-	if err := ms.cli.Publish(ctx, tpc, jsonBytes, ms.sendParams); err != nil {
-		return errorx.NewIOErr(err.Error())
-	}
+	//logger := ctx.GetLogger()
+	//jsonBytes, _, err := ctx.TransformOutput(item)
+	//if err != nil {
+	//	return err
+	//}
+	//logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
+	//if ms.compressor != nil {
+	//	jsonBytes, err = ms.compressor.Compress(jsonBytes)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
+	//
+	//tpc, err := ctx.ParseTemplate(topic, item)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//if err := ms.cli.Publish(ctx, tpc, jsonBytes, ms.sendParams); err != nil {
+	//	return errorx.NewIOErr(err.Error())
+	//}
 	return nil
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,11 @@
 package memory
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -80,44 +78,44 @@ func (s *sink) Configure(props map[string]interface{}) error {
 }
 
 func (s *sink) collectWithTopic(ctx api.StreamContext, data interface{}, t string) error {
-	topic, err := ctx.ParseTemplate(t, data)
-	if err != nil {
-		return err
-	}
-	if s.hasTransform {
-		jsonBytes, _, err := ctx.TransformOutput(data)
-		if err != nil {
-			return err
-		}
-		m := make(map[string]interface{})
-		err = json.Unmarshal(jsonBytes, &m)
-		if err != nil {
-			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
-		}
-		data = m
-	} else {
-		m, _, err := transform.TransItem(data, s.dataField, s.fields)
-		if err != nil {
-			return fmt.Errorf("fail to select fields %v for data %v", s.fields, data)
-		}
-		data = m
-	}
-	switch d := data.(type) {
-	case []map[string]interface{}:
-		for _, el := range d {
-			err := s.publish(ctx, topic, el)
-			if err != nil {
-				return fmt.Errorf("fail to publish data %v for error %v", d, err)
-			}
-		}
-	case map[string]interface{}:
-		err := s.publish(ctx, topic, d)
-		if err != nil {
-			return fmt.Errorf("fail to publish data %v for error %v", d, err)
-		}
-	default:
-		return fmt.Errorf("unrecognized format of %s", data)
-	}
+	//topic, err := ctx.ParseTemplate(t, data)
+	//if err != nil {
+	//	return err
+	//}
+	//if s.hasTransform {
+	//	jsonBytes, _, err := ctx.TransformOutput(data)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	m := make(map[string]interface{})
+	//	err = json.Unmarshal(jsonBytes, &m)
+	//	if err != nil {
+	//		return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+	//	}
+	//	data = m
+	//} else {
+	//	m, _, err := transform.TransItem(data, s.dataField, s.fields)
+	//	if err != nil {
+	//		return fmt.Errorf("fail to select fields %v for data %v", s.fields, data)
+	//	}
+	//	data = m
+	//}
+	//switch d := data.(type) {
+	//case []map[string]interface{}:
+	//	for _, el := range d {
+	//		err := s.publish(ctx, topic, el)
+	//		if err != nil {
+	//			return fmt.Errorf("fail to publish data %v for error %v", d, err)
+	//		}
+	//	}
+	//case map[string]interface{}:
+	//	err := s.publish(ctx, topic, d)
+	//	if err != nil {
+	//		return fmt.Errorf("fail to publish data %v for error %v", d, err)
+	//	}
+	//default:
+	//	return fmt.Errorf("unrecognized format of %s", data)
+	//}
 	return nil
 }
 

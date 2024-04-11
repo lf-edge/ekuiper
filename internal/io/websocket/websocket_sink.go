@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -83,18 +83,19 @@ func (wss *WebSocketSink) Validate(props map[string]interface{}) error {
 }
 
 func (wss *WebSocketSink) Collect(ctx api.StreamContext, data interface{}) error {
-	decodeBytes, _, err := ctx.TransformOutput(data)
-	if err != nil {
-		if wss.conf.SendError {
-			_ = wss.cli.Publish(ctx, "", []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())), nil)
-		}
-		return err
-	}
-	err = wss.cli.Publish(ctx, "", decodeBytes, nil)
-	if err != nil && wss.conf.SendError {
-		_ = wss.cli.Publish(ctx, "", []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())), nil)
-	}
-	return err
+	//decodeBytes, _, err := ctx.TransformOutput(data)
+	//if err != nil {
+	//	if wss.conf.SendError {
+	//		_ = wss.cli.Publish(ctx, "", []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())), nil)
+	//	}
+	//	return err
+	//}
+	//err = wss.cli.Publish(ctx, "", decodeBytes, nil)
+	//if err != nil && wss.conf.SendError {
+	//	_ = wss.cli.Publish(ctx, "", []byte(fmt.Sprintf(`{"error":"%s"}`, err.Error())), nil)
+	//}
+	//return err
+	return nil
 }
 
 func (wss *WebSocketSink) Close(ctx api.StreamContext) error {
