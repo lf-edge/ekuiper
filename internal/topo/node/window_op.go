@@ -44,11 +44,12 @@ type WindowConfig struct {
 
 type WindowOperator struct {
 	*defaultSinkNode
-	window      *WindowConfig
-	interval    int64
-	duration    int64
-	isEventTime bool
-	trigger     *EventTimeTrigger // For event time only
+	window          *WindowConfig
+	interval        int64
+	duration        int64
+	isEventTime     bool
+	isOverlapWindow bool
+	trigger         *EventTimeTrigger // For event time only
 
 	ticker *clock.Ticker // For processing time only
 	// states
@@ -95,6 +96,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 	}
 	o.delayTS = make([]int64, 0)
 	o.triggerTS = make([]int64, 0)
+	o.isOverlapWindow = isOverlapWindow(w.Type)
 	return o, nil
 }
 
@@ -533,56 +535,61 @@ func (o *WindowOperator) isTimeRelatedWindow() bool {
 	return false
 }
 
-func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.Row) {
+func isOverlapWindow(winType ast.WindowType) bool {
+	switch winType {
+	case ast.HOPPING_WINDOW, ast.SLIDING_WINDOW:
+		return true
+	default:
+		return false
+	}
+}
+
+func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, right int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.Row) {
 	log := ctx.GetLogger()
-	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
+	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(right/1000, right%1000), right)
 	var delta int64
 	length := o.window.Length + o.window.Delay
 	if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
-		delta = o.calDelta(triggerTime, log)
+		delta = o.calDelta(right, log)
 	}
 	content := make([]xsql.Row, 0, len(inputs))
-	i := 0
 	// Sync table
-	leftmost := triggerTime - length - delta
-	for _, tuple := range inputs {
-		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
-			if leftmost > tuple.Timestamp {
+	left := right - length - delta
+	nextleft := -1
+	// Assume the inputs are sorted by timestamp
+	for i, tuple := range inputs {
+		// Other window always discard the tuples that has been triggered.
+		// So the tuple in the inputs should all bigger than the current left (in the window)
+		// For hopping and sliding window, firstly check if the beginning tuples are expired and discard them
+		if o.isOverlapWindow {
+			if left > tuple.Timestamp {
 				log.Debugf("length: %d, delta: %d", length, delta)
 				log.Debugf("tuple %s emitted at %d expired", tuple, tuple.Timestamp)
 				// Expired tuple, remove it by not adding back to inputs
 				continue
 			}
-			// Added back all inputs for non expired events
-			inputs[i] = tuple
-			i++
-		} else {
-			// time-related window is left-closed,right-opened, so that we need keep the tuple if its timestamp >= trigger time
-			if o.isTimeRelatedWindow() {
-				if tuple.Timestamp >= triggerTime {
-					// Only added back early arrived events
-					inputs[i] = tuple
-					i++
-				}
-			} else {
-				if tuple.Timestamp > triggerTime {
-					// Only added back early arrived events
-					inputs[i] = tuple
-					i++
-				}
-			}
 		}
+		// Now all tuples are in the window. Next step is to check if the tuple is in the current window
+		// If the tuple is beyond the right boundary, then it should be in the next window
+		meet := tuple.Timestamp <= right
 		if o.isTimeRelatedWindow() {
-			if tuple.Timestamp < triggerTime {
-				content = append(content, tuple)
+			meet = tuple.Timestamp < right
+		}
+		if meet {
+			content = append(content, tuple)
+			if nextleft < 0 && o.isOverlapWindow {
+				nextleft = i
 			}
 		} else {
-			if tuple.Timestamp <= triggerTime {
-				content = append(content, tuple)
+			if nextleft < 0 && !o.isOverlapWindow {
+				nextleft = i
 			}
 		}
 	}
-	return inputs[:i], content
+	if nextleft < 0 {
+		return inputs[:0], content
+	}
+	return inputs[nextleft:], content
 }
 
 func (o *WindowOperator) gcInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) []*xsql.Tuple {

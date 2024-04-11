@@ -354,6 +354,7 @@ func TestGCInputsForConditionNotMatch(t *testing.T) {
 			Length: 1000,
 			Type:   ast.SLIDING_WINDOW,
 		},
+		isOverlapWindow: true,
 	}
 	tuples := []*xsql.Tuple{
 		{
