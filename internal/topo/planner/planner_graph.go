@@ -32,7 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-type genNodeFunc func(name string, props map[string]interface{}, options *api.RuleOption) (api.TopNode, error)
+type genNodeFunc func(name string, props map[string]interface{}, options *api.RuleOption) (node.TopNode, error)
 
 var extNodes = map[string]genNodeFunc{}
 
@@ -56,7 +56,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		return nil, err
 	}
 	var (
-		nodeMap             = make(map[string]api.TopNode)
+		nodeMap             = make(map[string]node.TopNode)
 		sinks               = make(map[string]bool)
 		sources             = make(map[string]bool)
 		store               kv.KeyValue
@@ -90,10 +90,10 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		if srcNode != nil {
 			nodeMap[srcName] = srcNode
 			tp.AddSrc(srcNode)
-			inputs := []api.Emitter{srcNode}
+			inputs := []node.Emitter{srcNode}
 			for _, e := range ops {
 				tp.AddOperator(inputs, e)
-				inputs = []api.Emitter{e}
+				inputs = []node.Emitter{e}
 				nodeMap[srcName] = e
 			}
 		}
@@ -107,7 +107,8 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; ok {
 				return nil, fmt.Errorf("sink %s has edge", nodeName)
 			}
-			nodeMap[nodeName] = node.NewSinkNode(nodeName, gn.NodeType, gn.Props)
+			// TODO open this again
+			//nodeMap[nodeName] = node.NewSinkNode(nodeName, gn.NodeType, gn.Props)
 			sinks[nodeName] = true
 		case "operator":
 			if _, ok := ruleGraph.Topo.Edges[nodeName]; !ok {
@@ -375,11 +376,11 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 		for _, fromNode := range fromNodes {
 			totalLen += len(fromNode)
 		}
-		inputs := make([]api.Emitter, 0, totalLen)
+		inputs := make([]node.Emitter, 0, totalLen)
 		for i, fromNode := range fromNodes {
 			for _, from := range fromNode {
 				if i == 0 {
-					if src, ok := nodeMap[from].(api.Emitter); ok {
+					if src, ok := nodeMap[from].(node.Emitter); ok {
 						inputs = append(inputs, src)
 					}
 				} else {
@@ -397,7 +398,7 @@ func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
 			return nil, fmt.Errorf("node %s is not defined", nodeName)
 		}
 		if _, ok := sinks[nodeName]; ok {
-			tp.AddSink(inputs, n.(*node.SinkNode))
+			tp.AddSink(inputs, n.(node.DataSinkNode))
 		} else {
 			tp.AddOperator(inputs, n.(node.OperatorNode))
 		}

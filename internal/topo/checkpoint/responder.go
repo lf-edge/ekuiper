@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,7 +56,9 @@ func (re *ResponderExecutor) TriggerCheckpoint(checkpointId int64) error {
 		OpId:         name,
 	}
 	// broadcast barrier
-	re.task.Broadcast(barrier)
+	if nonSink, ok := re.task.(NonSinkTask); ok {
+		nonSink.Broadcast(barrier)
+	}
 	// Save key state to the global state
 	err := sctx.Snapshot()
 	if err != nil {

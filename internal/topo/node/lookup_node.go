@@ -112,7 +112,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					case *xsql.WatermarkTuple:
 						n.Broadcast(d)
 					case xsql.Row:
-						log.Debugf("Lookup Node receive tuple input %s", d)
+						log.Debugf("Lookup Nodelet receive tuple input %s", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
 						err := n.lookup(ctx, d, fv, ns, sets, c)
@@ -127,7 +127,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.ProcessTimeEnd()
 						n.statManager.SetBufferLength(int64(len(n.input)))
 					case *xsql.WindowTuples:
-						log.Debugf("Lookup Node receive window input %s", d)
+						log.Debugf("Lookup Nodelet receive window input %s", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.WindowTuples).GetWindowRange()}
 						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
@@ -207,7 +207,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 				merged.AddTuple(d)
 				tuples.Content = append(tuples.Content, merged)
 			} else {
-				ctx.GetLogger().Debugf("Lookup Node %s no result found for tuple %s", n.name, d)
+				ctx.GetLogger().Debugf("Lookup Nodelet %s no result found for tuple %s", n.name, d)
 				return nil
 			}
 		}
@@ -237,7 +237,7 @@ func (n *LookupNode) merge(ctx api.StreamContext, d xsql.Row, r []map[string]int
 			merged.AddTuple(d)
 			sets.Content = append(sets.Content, merged)
 		} else {
-			ctx.GetLogger().Debugf("Lookup Node %s no result found for tuple %s", n.name, d)
+			ctx.GetLogger().Debugf("Lookup Nodelet %s no result found for tuple %s", n.name, d)
 			return
 		}
 	}

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build ignore_now
+
 package node
 
 import (
@@ -19,32 +21,11 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
-	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
-
-type SinkConf struct {
-	Concurrency    int      `json:"concurrency"`
-	Omitempty      bool     `json:"omitIfEmpty"`
-	SendSingle     bool     `json:"sendSingle"`
-	DataTemplate   string   `json:"dataTemplate"`
-	Format         string   `json:"format"`
-	SchemaId       string   `json:"schemaId"`
-	Delimiter      string   `json:"delimiter"`
-	BufferLength   int      `json:"bufferLength"`
-	Fields         []string `json:"fields"`
-	DataField      string   `json:"dataField"`
-	BatchSize      int      `json:"batchSize"`
-	LingerInterval int      `json:"lingerInterval"`
-	conf.SinkConf
-}
 
 type SinkNode struct {
 	*defaultSinkNode
@@ -110,7 +91,7 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 						logger.Debugf("Successfully get the sink %s", m.sinkType)
 						m.sink = sink
 						logger.Debugf("Now is to open sink for rule %s.\n", ctx.GetRuleId())
-						if err := sink.Open(ctx); err != nil {
+						if err := sink.Connect(ctx); err != nil {
 							return err
 						}
 						logger.Debugf("Successfully open sink for rule %s.\n", ctx.GetRuleId())
@@ -341,51 +322,6 @@ func checkAck(ctx api.StreamContext, data interface{}, err error) bool {
 	return true
 }
 
-func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
-	sconf := &SinkConf{
-		Concurrency:  1,
-		Omitempty:    false,
-		SendSingle:   false,
-		DataTemplate: "",
-		SinkConf:     *conf.Config.Sink,
-		BufferLength: 1024,
-	}
-	err := cast.MapToStruct(props, sconf)
-	if err != nil {
-		return nil, fmt.Errorf("read properties %v fail with error: %v", props, err)
-	}
-	if sconf.Concurrency <= 0 {
-		logger.Warnf("invalid type for concurrency property, should be positive integer but found %d", sconf.Concurrency)
-		sconf.Concurrency = 1
-	}
-	if sconf.Format == "" {
-		sconf.Format = "json"
-	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf && sconf.Format != message.FormatBinary && sconf.Format != message.FormatCustom && sconf.Format != message.FormatDelimited {
-		logger.Warnf("invalid type for format property, should be json protobuf or binary but found %s", sconf.Format)
-		sconf.Format = "json"
-	}
-	err = cast.MapToStruct(props, &sconf.SinkConf)
-	if err != nil {
-		return nil, fmt.Errorf("read properties %v to cache conf fail with error: %v", props, err)
-	}
-	if sconf.DataField == "" {
-		if v, ok := props["tableDataField"]; ok {
-			sconf.DataField = v.(string)
-		}
-	}
-	if sconf.BatchSize < 0 {
-		return nil, fmt.Errorf("invalid batchSize %d", sconf.BatchSize)
-	}
-	if sconf.LingerInterval < 0 {
-		return nil, fmt.Errorf("invalid lingerInterval %d", sconf.LingerInterval)
-	}
-	err = sconf.SinkConf.Validate()
-	if err != nil {
-		return nil, fmt.Errorf("invalid cache properties: %v", err)
-	}
-	return sconf, err
-}
-
 func (m *SinkNode) reset() {
 	if !m.isMock {
 		m.sink = nil
@@ -466,28 +402,6 @@ func resendDataToSink(ctx api.StreamContext, sink api.Sink, outData interface{},
 			stats.IncTotalMessagesProcessed(1)
 		}
 		return nil
-	}
-}
-
-func getSink(name string, action map[string]interface{}) (api.Sink, error) {
-	var (
-		s   api.Sink
-		err error
-	)
-	s, err = io.Sink(name)
-	if s != nil {
-		newAction := nodeConf.GetSinkConf(name, action)
-		err = s.Configure(newAction)
-		if err != nil {
-			return nil, err
-		}
-		return s, nil
-	} else {
-		if err != nil {
-			return nil, err
-		} else {
-			return nil, fmt.Errorf("sink %s not found", name)
-		}
 	}
 }
 

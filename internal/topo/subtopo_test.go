@@ -37,7 +37,7 @@ func TestSubtopoLC(t *testing.T) {
 	srcNode := &mockSrc{name: "shared"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]api.Emitter{srcNode}, opNode)
+	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 	subTopo.StoreSchema("rule1", "shared", map[string]*ast.JsonStreamField{
 		"field1": {Type: "string"},
 	}, false)
@@ -123,7 +123,7 @@ func TestSubtopoRunError(t *testing.T) {
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
-	subTopo.AddOperator([]api.Emitter{srcNode}, opNode)
+	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 	// create another subtopo
 	subTopo2, existed := GetSubTopo("shared")
 	assert.True(t, existed)

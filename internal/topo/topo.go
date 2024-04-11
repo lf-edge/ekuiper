@@ -40,7 +40,7 @@ import (
 
 type Topo struct {
 	sources     []node.DataSourceNode
-	sinks       []*node.SinkNode
+	sinks       []node.DataSinkNode
 	ctx         api.StreamContext
 	cancel      context.CancelFunc
 	drain       chan error
@@ -54,6 +54,7 @@ type Topo struct {
 	hasOpened   atomic.Bool
 }
 
+// TODO create context when new a topo
 func NewWithNameAndOptions(name string, options *api.RuleOption) (*Topo, error) {
 	tp := &Topo{
 		name:    name,
@@ -112,17 +113,17 @@ func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 	return s
 }
 
-func (s *Topo) AddSink(inputs []api.Emitter, snk *node.SinkNode) *Topo {
+func (s *Topo) AddSink(inputs []node.Emitter, snk node.DataSinkNode) *Topo {
 	for _, input := range inputs {
 		input.AddOutput(snk.GetInput())
 		snk.AddInputCount()
-		s.addEdge(input.(api.TopNode), snk, "sink")
+		s.addEdge(input.(node.TopNode), snk, "sink")
 	}
 	s.sinks = append(s.sinks, snk)
 	return s
 }
 
-func (s *Topo) AddOperator(inputs []api.Emitter, operator node.OperatorNode) *Topo {
+func (s *Topo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *Topo {
 	for _, input := range inputs {
 		// add rule id to make operator name unique
 		ch, opName := operator.GetInput()
@@ -131,7 +132,7 @@ func (s *Topo) AddOperator(inputs []api.Emitter, operator node.OperatorNode) *To
 		switch rt := input.(type) {
 		case node.MergeableTopo:
 			rt.LinkTopo(s.topo, operator.GetName())
-		case api.TopNode:
+		case node.TopNode:
 			s.addEdge(rt, operator, "op")
 		}
 	}
@@ -139,7 +140,7 @@ func (s *Topo) AddOperator(inputs []api.Emitter, operator node.OperatorNode) *To
 	return s
 }
 
-func (s *Topo) addEdge(from api.TopNode, to api.TopNode, toType string) {
+func (s *Topo) addEdge(from node.TopNode, to node.TopNode, toType string) {
 	fromType := "op"
 	if _, ok := from.(node.DataSourceNode); ok {
 		fromType = "source"
@@ -199,14 +200,14 @@ func (s *Topo) prepareContext() {
 func (s *Topo) Open() <-chan error {
 	// if stream has opened, do nothing
 	if s.hasOpened.Load() && !conf.IsTesting {
-		s.ctx.GetLogger().Infoln("rule is already running, do nothing")
+		s.ctx.GetLogger().Info("rule is already running, do nothing")
 		return s.drain
 	}
 	s.hasOpened.Store(true)
 	s.prepareContext() // ensure context is set
 	s.drain = make(chan error)
 	log := s.ctx.GetLogger()
-	log.Infoln("Opening stream")
+	log.Info("Opening stream")
 	go func() {
 		err := infra.SafeRun(func() error {
 			s.mu.Lock()
@@ -218,7 +219,7 @@ func (s *Topo) Open() <-chan error {
 			s.enableCheckpoint(s.ctx)
 			// open stream sink, after log sink is ready.
 			for _, snk := range s.sinks {
-				snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
+				snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
 			}
 
 			for _, op := range s.ops {

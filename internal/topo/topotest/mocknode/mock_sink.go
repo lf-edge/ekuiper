@@ -31,7 +31,7 @@ func (m *MockSink) Info() *api.ModuleInfo {
 	return &api.ModuleInfo{
 		Id:          "mocksink",
 		Description: "A mock sink for testing",
-		New:         func() api.Node { return NewMockSink() },
+		New:         func() api.Nodelet { return NewMockSink() },
 	}
 }
 

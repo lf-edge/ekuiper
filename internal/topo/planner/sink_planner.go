@@ -27,7 +27,7 @@ import (
 // SinkPlanner is the planner for sink node. It transforms logical sink plan to multiple physical nodes.
 // It will split the sink plan into multiple sink nodes according to its sink configurations.
 
-func buildActions(tp *topo.Topo, rule *api.Rule, inputs []api.Emitter) error {
+func buildActions(tp *topo.Topo, rule *api.Rule, inputs []node.Emitter) error {
 	for i, m := range rule.Actions {
 		for name, action := range m {
 			s, _ := io.Sink(name)
@@ -48,17 +48,29 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []api.Emitter) error {
 			if err != nil {
 				return err
 			}
-			if err = s.Configure(props); err != nil {
+			if err = s.Provision(tp.GetContext(), props); err != nil {
 				return err
 			}
-			tp.AddSink(newInputs, node.NewSinkNode(sinkName, name, props))
+			var (
+				snk node.DataSinkNode
+			)
+			switch ss := s.(type) {
+			case api.BytesCollector:
+				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options)
+			default:
+				err = fmt.Errorf("sink type %s does not implement any collector", name)
+			}
+			if err != nil {
+				return err
+			}
+			tp.AddSink(newInputs, snk)
 		}
 	}
 	return nil
 }
 
 // Split sink node according to the sink configuration. Return the new input emitters.
-func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]api.Emitter, error) {
+func splitSink(tp *topo.Topo, inputs []node.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]node.Emitter, error) {
 	index := 0
 	newInputs := inputs
 	// Batch enabled
@@ -69,7 +81,7 @@ func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *ap
 		}
 		index++
 		tp.AddOperator(newInputs, batchOp)
-		newInputs = []api.Emitter{batchOp}
+		newInputs = []node.Emitter{batchOp}
 	}
 	// Transform enabled
 	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
@@ -79,7 +91,7 @@ func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *ap
 	}
 	index++
 	tp.AddOperator(newInputs, transformOp)
-	newInputs = []api.Emitter{transformOp}
+	newInputs = []node.Emitter{transformOp}
 	// Encode is required. In the future, it could be optional if data template is set
 	encodeOp, err := node.NewEncodeOp(fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
 	if err != nil {
@@ -87,7 +99,7 @@ func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *ap
 	}
 	index++
 	tp.AddOperator(newInputs, encodeOp)
-	newInputs = []api.Emitter{encodeOp}
+	newInputs = []node.Emitter{encodeOp}
 
 	return newInputs, nil
 }

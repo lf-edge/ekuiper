@@ -16,6 +16,8 @@ package api
 
 import (
 	"time"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type SourceTuple interface {
@@ -107,22 +109,17 @@ type LookupSource interface {
 	Closable
 }
 
+type SchemaNode interface {
+	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
+	AttachSchema(StreamContext, string, map[string]*ast.JsonStreamField, bool)
+	// DetachSchema detach the schema from the node. The parameters are ruleId
+	DetachSchema(string)
+}
+
 type ResendSink interface {
 	Sink
 	// CollectResend Called when the sink cache resend is triggered
 	CollectResend(ctx StreamContext, data interface{}) error
-}
-
-type Emitter interface {
-	AddOutput(chan<- interface{}, string) error
-}
-
-type Collector interface {
-	GetInput() (chan<- interface{}, string)
-}
-
-type TopNode interface {
-	GetName() string
 }
 
 type Rewindable interface {
@@ -236,14 +233,6 @@ func GetDefaultRule(name, sql string) *Rule {
 			},
 		},
 	}
-}
-
-type Operator interface {
-	Emitter
-	Collector
-	Exec(StreamContext, chan<- error)
-	GetName() string
-	GetMetrics() []any
 }
 
 type FunctionContext interface {
