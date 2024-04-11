@@ -39,6 +39,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -70,9 +71,11 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/streamdetails", streamDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/streams/{name}/schema", streamSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables", tablesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/tabledetails", tableDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
@@ -270,10 +273,38 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 		}
 	}
 
+	all, err := streamProcessor.GetAll()
+	require.NoError(suite.T(), err)
+	for key := range all["streams"] {
+		_, err := streamProcessor.DropStream(key, ast.TypeStream)
+		require.NoError(suite.T(), err)
+	}
+	for key := range all["tables"] {
+		_, err := streamProcessor.DropStream(key, ast.TypeTable)
+		require.NoError(suite.T(), err)
+	}
+
 	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
+
+	buf1 = bytes.NewBuffer([]byte(`{"sql":"create table hello() WITH (DATASOURCE=\"/hello\", FORMAT=\"JSON\", TYPE=\"httppull\")"}`))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/tables", buf1)
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/streamdetails", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ := io.ReadAll(w1.Result().Body)
+	require.Equal(suite.T(), `[{"name":"alert","type":"mqtt","format":"json"}]`, string(returnVal))
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tabledetails", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body)
+	require.Equal(suite.T(), `[{"name":"hello","type":"httppull","format":"json"}]`, string(returnVal))
 
 	suite.assertGetRuleHiddenPassword()
 
@@ -284,7 +315,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
-	returnVal, _ := io.ReadAll(w2.Result().Body)
+	returnVal, _ = io.ReadAll(w2.Result().Body)
 	expect := `{"sources":["alert"],"valid":true}`
 	assert.Equal(suite.T(), http.StatusOK, w2.Code)
 	assert.Equal(suite.T(), expect, string(returnVal))
