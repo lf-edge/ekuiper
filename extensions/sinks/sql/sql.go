@@ -15,8 +15,8 @@
 package main
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	sql "github.com/lf-edge/ekuiper/v2/extensions/sinks/sql/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Sql() api.Sink {

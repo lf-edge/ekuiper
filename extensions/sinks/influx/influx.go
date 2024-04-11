@@ -17,8 +17,8 @@ package main
 import (
 	_ "github.com/influxdata/influxdb1-client/v2"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	influx "github.com/lf-edge/ekuiper/v2/extensions/sinks/influx/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Influx() api.Sink {

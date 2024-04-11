@@ -27,11 +27,11 @@ import (
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 

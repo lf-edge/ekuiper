@@ -15,8 +15,8 @@
 package main
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	zmq "github.com/lf-edge/ekuiper/v2/extensions/sinks/zmq/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Zmq() api.Sink {

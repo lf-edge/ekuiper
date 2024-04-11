@@ -31,6 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
@@ -39,7 +40,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 

@@ -15,7 +15,7 @@
 package state
 
 import (
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 const CheckpointListKey = "checkpoints"

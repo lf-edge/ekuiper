@@ -20,10 +20,10 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/extensions/sqldatabase"
 	"github.com/lf-edge/ekuiper/v2/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/v2/extensions/util"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"

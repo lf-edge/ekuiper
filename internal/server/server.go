@@ -30,6 +30,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/automaxprocs/maxprocs"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/meta"
@@ -42,7 +43,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/schedule"

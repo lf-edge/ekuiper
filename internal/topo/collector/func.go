@@ -17,7 +17,7 @@ package collector
 import (
 	"errors"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 // CollectorFunc is a function used to colllect

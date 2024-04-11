@@ -15,11 +15,11 @@
 package context
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func NewMockContext(ruleId string, opId string) api.StreamContext {

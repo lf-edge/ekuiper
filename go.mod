@@ -43,6 +43,7 @@ require (
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.7
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+	github.com/lf-edge/ekuiper/contract/v2 v2.0.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-adodb v0.0.1
 	github.com/mattn/go-tflite v1.0.1
@@ -359,6 +360,6 @@ require (
 	nhooyr.io/websocket v1.8.10 // indirect
 )
 
-go 1.22
+replace github.com/lf-edge/ekuiper/contract/v2 v2.0.0 => ./mod/contract
 
-toolchain go1.22.1
+go 1.22.1

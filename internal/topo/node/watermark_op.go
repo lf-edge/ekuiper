@@ -19,9 +19,9 @@ import (
 	"math"
 	"sort"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 

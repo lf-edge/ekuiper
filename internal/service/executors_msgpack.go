@@ -25,7 +25,7 @@ import (
 
 	"github.com/ugorji/go/codec"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 func init() {

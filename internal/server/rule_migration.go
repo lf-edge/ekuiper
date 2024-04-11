@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
@@ -29,7 +30,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )

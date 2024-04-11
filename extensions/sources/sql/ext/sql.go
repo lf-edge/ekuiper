@@ -20,10 +20,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	driver2 "github.com/lf-edge/ekuiper/v2/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/v2/extensions/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/v2/extensions/util"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/hidden"
 )

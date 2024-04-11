@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 

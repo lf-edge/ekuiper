@@ -20,10 +20,10 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"

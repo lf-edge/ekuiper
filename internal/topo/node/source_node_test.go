@@ -20,8 +20,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )

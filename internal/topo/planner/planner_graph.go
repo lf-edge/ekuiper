@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	store2 "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
@@ -26,7 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"

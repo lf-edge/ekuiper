@@ -17,6 +17,7 @@
 package io
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	image "github.com/lf-edge/ekuiper/v2/extensions/sinks/image/ext"
 	influx "github.com/lf-edge/ekuiper/v2/extensions/sinks/influx/ext"
 	influx2 "github.com/lf-edge/ekuiper/v2/extensions/sinks/influx2/ext"
@@ -26,7 +27,6 @@ import (
 	random "github.com/lf-edge/ekuiper/v2/extensions/sources/random/ext"
 	sql "github.com/lf-edge/ekuiper/v2/extensions/sources/sql/ext"
 	video "github.com/lf-edge/ekuiper/v2/extensions/sources/video/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 

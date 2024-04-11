@@ -22,9 +22,9 @@ import (
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 

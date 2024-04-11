@@ -19,7 +19,7 @@ import (
 
 	"github.com/mmcloughlin/geohash"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 type (

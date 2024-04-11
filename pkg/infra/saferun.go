@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 // SafeRun will catch and return the panic error together with other errors

@@ -20,7 +20,7 @@ import (
 
 	zmq "github.com/pebbe/zmq4"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 

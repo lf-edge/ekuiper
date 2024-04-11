@@ -17,7 +17,7 @@ package topotest
 import (
 	"testing"
 
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 func TestWindow(t *testing.T) {

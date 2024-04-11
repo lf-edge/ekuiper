@@ -22,12 +22,12 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func TestSharedInmemoryNode(t *testing.T) {
