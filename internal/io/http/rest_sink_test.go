@@ -598,7 +598,7 @@ func TestRestSinkMethod(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestRestSinkConfigure(t *testing.T) {
+func TestRestSinkUnsupportedCompression(t *testing.T) {
 	rs := &RestSink{}
 	err := rs.Configure(map[string]interface{}{"compression": "zstdd"})
 	require.Error(t, err)

@@ -16,11 +16,12 @@ package http
 
 import (
 	"fmt"
-	"github.com/pingcap/failpoint"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -46,12 +47,12 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	if ms.config.Compression != "" {
-		ms.compressor, err = compressor.GetCompressor(ms.config.Compression)
-		if err != nil {
-			return fmt.Errorf("invalid compression method %s", ms.config.Compression)
-		}
+
+	ms.compressor, err = compressor.GetCompressor(ms.config.Compression)
+	if err != nil {
+		return fmt.Errorf("invalid compression method %s", ms.config.Compression)
 	}
+
 	return err
 }
 
