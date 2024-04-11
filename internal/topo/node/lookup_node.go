@@ -156,7 +156,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.IncTotalExceptions(e.Error())
 					}
 				case <-ctx.Done():
-					log.Infoln("Cancelling lookup node....")
+					log.Info("Cancelling lookup node....")
 					return nil
 				}
 			}

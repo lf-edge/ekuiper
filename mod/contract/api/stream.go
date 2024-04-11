@@ -15,8 +15,6 @@
 package api
 
 import (
-	"context"
-	"sync"
 	"time"
 )
 
@@ -79,33 +77,6 @@ func (t *DefaultSourceTuple) Raw() []byte {
 	return t.raw
 }
 
-type Logger interface {
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Debugln(args ...interface{})
-	Infoln(args ...interface{})
-	Warnln(args ...interface{})
-	Errorln(args ...interface{})
-	Debugf(format string, args ...interface{})
-	Infof(format string, args ...interface{})
-	Warnf(format string, args ...interface{})
-	Errorf(format string, args ...interface{})
-}
-
-type Store interface {
-	SaveState(checkpointId int64, opId string, state map[string]interface{}) error
-	// SaveCheckpoint saves the whole checkpoint state into storage
-	SaveCheckpoint(checkpointId int64) error
-	GetOpState(opId string) (*sync.Map, error)
-	Clean() error
-}
-
-type Closable interface {
-	Close(ctx StreamContext) error
-}
-
 type Source interface {
 	// Open Should be sync function for normal case. The container will run it in go func
 	Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
@@ -133,16 +104,6 @@ type LookupSource interface {
 	Configure(datasource string, props map[string]interface{}) error
 	// Lookup receive lookup values to construct the query and return query results
 	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
-	Closable
-}
-
-type Sink interface {
-	// Open Should be sync function for normal case. The container will run it in go func
-	Open(ctx StreamContext) error
-	// Configure Called during initialization. Configure the sink with the properties from rule action definition
-	Configure(props map[string]interface{}) error
-	// Collect Called when each row of data has transferred to this sink
-	Collect(ctx StreamContext, data interface{}) error
 	Closable
 }
 
@@ -275,39 +236,6 @@ func GetDefaultRule(name, sql string) *Rule {
 			},
 		},
 	}
-}
-
-type StreamContext interface {
-	context.Context
-	GetLogger() Logger
-	GetRuleId() string
-	GetOpId() string
-	GetInstanceId() int
-	GetRootPath() string
-	WithMeta(ruleId string, opId string, store Store) StreamContext
-	WithInstance(instanceId int) StreamContext
-	WithCancel() (StreamContext, context.CancelFunc)
-	SetError(e error)
-	// IncrCounter State handling
-	IncrCounter(key string, amount int) error
-	GetCounter(key string) (int, error)
-	PutState(key string, value interface{}) error
-	GetState(key string) (interface{}, error)
-	DeleteState(key string) error
-	// ParseTemplate parse the template string with the given data
-	ParseTemplate(template string, data interface{}) (string, error)
-	// ParseJsonPath parse the jsonPath string with the given data
-	ParseJsonPath(jsonPath string, data interface{}) (interface{}, error)
-	// TransformOutput Transform output according to the properties including dataTemplate, sendSingle, fields
-	// TransformOutput first transform data through the dataTemplate property，and then select data based on the fields property
-	// It is recommended that you do not configure both the dataTemplate property and the fields property.
-	// The second parameter is whether the data is transformed or just return as its json format.
-	TransformOutput(data interface{}) ([]byte, bool, error)
-	// Decode is set in the source according to the format.
-	// It decodes byte array into map or map slice.
-	Decode(data []byte) (map[string]interface{}, error)
-
-	DecodeIntoList(data []byte) ([]map[string]interface{}, error)
 }
 
 type Operator interface {

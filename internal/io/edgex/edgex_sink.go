@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -118,90 +117,91 @@ func (ems *EdgexMsgBusSink) Open(ctx api.StreamContext) error {
 }
 
 func (ems *EdgexMsgBusSink) produceEvents(ctx api.StreamContext, item interface{}) (*dtos.Event, error) {
-	if ems.c.DataTemplate != "" {
-		jsonBytes, _, err := ctx.TransformOutput(item)
-		if err != nil {
-			return nil, err
-		}
-		tm := make(map[string]interface{})
-		err = json.Unmarshal(jsonBytes, &tm)
-		if err != nil {
-			return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
-		}
-		item = tm
-	} else {
-		tm, _, err := transform.TransItem(item, ems.c.DataField, ems.c.Fields)
-		if err != nil {
-			return nil, fmt.Errorf("fail to select fields %v for data %v", ems.c.Fields, item)
-		}
-		item = tm
-	}
-	var m []map[string]interface{}
-	switch payload := item.(type) {
-	case map[string]interface{}:
-		m = []map[string]interface{}{payload}
-	case []map[string]interface{}:
-		m = payload
-	default:
-		// impossible
-		return nil, fmt.Errorf("receive invalid data %v", item)
-	}
-	m1 := ems.getMeta(m)
-	event := m1.createEvent()
-	// Override the devicename if user specified the value
-	if event.DeviceName == "" {
-		event.DeviceName = ems.c.DeviceName
-	}
-	if event.ProfileName == "" {
-		event.ProfileName = ems.c.ProfileName
-	}
-	if event.SourceName == "" {
-		event.SourceName = ems.c.SourceName
-	}
-	for _, v := range m {
-		for k1, v1 := range v {
-			// Ignore nil values
-			if k1 == ems.c.Metadata || v1 == nil {
-				continue
-			} else {
-				var (
-					vt  string
-					vv  interface{}
-					err error
-				)
-				mm1 := m1.readingMeta(ctx, k1)
-				if mm1 != nil && mm1.valueType != nil {
-					vt = *mm1.valueType
-					vv, err = getValueByType(v1, vt)
-				} else {
-					vt, vv, err = getValueType(v1)
-				}
-				if err != nil {
-					ctx.GetLogger().Errorf("%v", err)
-					continue
-				}
-				switch vt {
-				case v3.ValueTypeBinary:
-					// default media type
-					event.AddBinaryReading(k1, vv.([]byte), "application/text")
-				case v3.ValueTypeObject:
-					event.AddObjectReading(k1, vv)
-				default:
-					err = event.AddSimpleReading(k1, vt, vv)
-				}
-
-				if err != nil {
-					ctx.GetLogger().Errorf("%v", err)
-					continue
-				}
-				r := event.Readings[len(event.Readings)-1]
-				if mm1 != nil {
-					event.Readings[len(event.Readings)-1] = mm1.decorate(&r)
-				}
-			}
-		}
-	}
-	return event, nil
+	//if ems.c.DataTemplate != "" {
+	//	jsonBytes, _, err := ctx.TransformOutput(item)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	tm := make(map[string]interface{})
+	//	err = json.Unmarshal(jsonBytes, &tm)
+	//	if err != nil {
+	//		return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
+	//	}
+	//	item = tm
+	//} else {
+	//	tm, _, err := transform.TransItem(item, ems.c.DataField, ems.c.Fields)
+	//	if err != nil {
+	//		return nil, fmt.Errorf("fail to select fields %v for data %v", ems.c.Fields, item)
+	//	}
+	//	item = tm
+	//}
+	//var m []map[string]interface{}
+	//switch payload := item.(type) {
+	//case map[string]interface{}:
+	//	m = []map[string]interface{}{payload}
+	//case []map[string]interface{}:
+	//	m = payload
+	//default:
+	//	// impossible
+	//	return nil, fmt.Errorf("receive invalid data %v", item)
+	//}
+	//m1 := ems.getMeta(m)
+	//event := m1.createEvent()
+	//// Override the devicename if user specified the value
+	//if event.DeviceName == "" {
+	//	event.DeviceName = ems.c.DeviceName
+	//}
+	//if event.ProfileName == "" {
+	//	event.ProfileName = ems.c.ProfileName
+	//}
+	//if event.SourceName == "" {
+	//	event.SourceName = ems.c.SourceName
+	//}
+	//for _, v := range m {
+	//	for k1, v1 := range v {
+	//		// Ignore nil values
+	//		if k1 == ems.c.Metadata || v1 == nil {
+	//			continue
+	//		} else {
+	//			var (
+	//				vt  string
+	//				vv  interface{}
+	//				err error
+	//			)
+	//			mm1 := m1.readingMeta(ctx, k1)
+	//			if mm1 != nil && mm1.valueType != nil {
+	//				vt = *mm1.valueType
+	//				vv, err = getValueByType(v1, vt)
+	//			} else {
+	//				vt, vv, err = getValueType(v1)
+	//			}
+	//			if err != nil {
+	//				ctx.GetLogger().Errorf("%v", err)
+	//				continue
+	//			}
+	//			switch vt {
+	//			case v3.ValueTypeBinary:
+	//				// default media type
+	//				event.AddBinaryReading(k1, vv.([]byte), "application/text")
+	//			case v3.ValueTypeObject:
+	//				event.AddObjectReading(k1, vv)
+	//			default:
+	//				err = event.AddSimpleReading(k1, vt, vv)
+	//			}
+	//
+	//			if err != nil {
+	//				ctx.GetLogger().Errorf("%v", err)
+	//				continue
+	//			}
+	//			r := event.Readings[len(event.Readings)-1]
+	//			if mm1 != nil {
+	//				event.Readings[len(event.Readings)-1] = mm1.decorate(&r)
+	//			}
+	//		}
+	//	}
+	//}
+	//return event, nil
+	return nil, nil
 }
 
 func getValueType(v interface{}) (string, interface{}, error) {

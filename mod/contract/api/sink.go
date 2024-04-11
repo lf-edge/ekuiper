@@ -12,9 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contract
+package api
 
-// Connector is a source feature that allows the source to connect to the data source.
-type Connector interface {
-	Connect(ctx StreamContext) error
+// Sink is the interface that wraps the basic Sink method.
+// It is used to connect to the external system and send data to it.
+// A sink must implement the Sink interface AND any collector interface.
+type Sink interface {
+	Node
+	Connector
+}
+
+type BytesCollector interface {
+	Collect(ctx StreamContext, item []byte) error
+}
+
+type MessageCollector interface {
+	Collect(ctx StreamContext, item ReadonlyMessage) error
 }

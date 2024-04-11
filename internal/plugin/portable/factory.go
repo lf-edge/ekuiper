@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,11 +48,12 @@ func (m *Manager) LookupSource(_ string) (api.LookupSource, error) {
 }
 
 func (m *Manager) Sink(name string) (api.Sink, error) {
-	meta, ok := m.GetPluginMeta(plugin.SINK, name)
-	if !ok {
-		return nil, nil
-	}
-	return runtime.NewPortableSink(name, meta), nil
+	//meta, ok := m.GetPluginMeta(plugin.SINK, name)
+	//if !ok {
+	//	return nil, nil
+	//}
+	//return runtime.NewPortableSink(name, meta), nil
+	return nil, nil
 }
 
 func (m *Manager) SinkPluginInfo(name string) (plugin.EXTENSION_TYPE, string, string) {

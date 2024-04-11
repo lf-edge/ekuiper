@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 type PortableSink struct {
@@ -91,18 +90,19 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 }
 
 func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
-	ctx.GetLogger().Debugf("Receive %+v", item)
-	if val, _, err := ctx.TransformOutput(item); err == nil {
-		ctx.GetLogger().Debugf("Send %s", val)
-		e := ps.dataCh.Send(val)
-		if e != nil {
-			return errorx.NewIOErr(e.Error())
-		}
-		return nil
-	} else {
-		ctx.GetLogger().Errorf("Found error %s", err.Error())
-		return err
-	}
+	//ctx.GetLogger().Debugf("Receive %+v", item)
+	//if val, _, err := ctx.TransformOutput(item); err == nil {
+	//	ctx.GetLogger().Debugf("Send %s", val)
+	//	e := ps.dataCh.Send(val)
+	//	if e != nil {
+	//		return errorx.NewIOErr(e.Error())
+	//	}
+	//	return nil
+	//} else {
+	//	ctx.GetLogger().Errorf("Found error %s", err.Error())
+	//	return err
+	//}
+	return nil
 }
 
 func (ps *PortableSink) Close(ctx api.StreamContext) error {

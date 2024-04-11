@@ -12,20 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contract
+package api
 
-// Sink is the interface that wraps the basic Sink method.
-// It is used to connect to the external system and send data to it.
-// A sink must implement the Sink interface AND any collector interface.
-type Sink interface {
-	Node
-	Connector
+type ModuleInfo struct {
+	Id          string
+	Description string
+	New         func() Node
 }
 
-type BytesCollector interface {
-	Collect(ctx StreamContext, item []byte) error
+type Node interface {
+	Info() *ModuleInfo
+	// Provision is called when the node is created, usually setting the configs. Do not put time-consuming operations here.
+	Provision(ctx StreamContext, configs map[string]any) error
+	// Validate is called after Provision, to check if the node is ready to run.
+	Validate(ctx StreamContext) error
+	Closable
 }
 
-type MessageCollector interface {
-	Collect(ctx StreamContext, item ReadonlyMessage) error
+type Closable interface {
+	Close(ctx StreamContext) error
 }

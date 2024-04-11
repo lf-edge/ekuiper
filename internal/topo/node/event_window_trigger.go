@@ -204,7 +204,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 			}
 		// is cancelling
 		case <-ctx.Done():
-			log.Infoln("Cancelling window....")
+			log.Info("Cancelling window....")
 			if o.ticker != nil {
 				o.ticker.Stop()
 			}

@@ -12,23 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contract
+package api
 
-type ModuleInfo struct {
-	Id          string
-	Description string
-	New         func() Node
-}
-
-type Node interface {
-	Info() *ModuleInfo
-	// Provision is called when the node is created, usually setting the configs. Do not put time-consuming operations here.
-	Provision(ctx StreamContext, configs map[string]any) error
-	// Validate is called after Provision, to check if the node is ready to run.
-	Validate(ctx StreamContext) error
-	Closable
-}
-
-type Closable interface {
-	Close(ctx StreamContext) error
+// Connector is a source feature that allows the source to connect to the data source.
+type Connector interface {
+	Connect(ctx StreamContext) error
 }

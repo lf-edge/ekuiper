@@ -24,7 +24,7 @@ import (
 
 func init() {
 	modules.RegisterLookupSource("redis", redis.GetLookupSource)
-	modules.RegisterSink("redis", redis.GetSink)
-	modules.RegisterSink("redisPub", pubsub.RedisPub)
+	//modules.RegisterSink("redis", redis.GetSink)
+	//modules.RegisterSink("redisPub", pubsub.RedisPub)
 	modules.RegisterSource("redisSub", pubsub.RedisSub)
 }

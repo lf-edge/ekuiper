@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package contract
+package api
 
 import (
 	"context"
@@ -61,4 +61,9 @@ type StreamContext interface {
 	ParseTemplate(template string, data interface{}) (string, error)
 	// ParseJsonPath parse the jsonPath string with the given data
 	ParseJsonPath(jsonPath string, data interface{}) (interface{}, error)
+
+	// Decode is set in the source according to the format.
+	// It decodes byte array into map or map slice.
+	Decode(data []byte) (map[string]interface{}, error)
+	DecodeIntoList(data []byte) ([]map[string]interface{}, error)
 }

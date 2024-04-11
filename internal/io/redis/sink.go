@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -97,45 +96,45 @@ func (r *RedisSink) Open(ctx api.StreamContext) (err error) {
 }
 
 func (r *RedisSink) Collect(ctx api.StreamContext, data interface{}) error {
-	logger := ctx.GetLogger()
-	var val string
-	if r.c.DataTemplate != "" { // The result is a string
-		v, _, err := ctx.TransformOutput(data)
-		if err != nil {
-			logger.Error(err)
-			return err
-		}
-		m := make(map[string]interface{})
-		err = json.Unmarshal(v, &m)
-		if err != nil {
-			return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(v), err)
-		}
-		data = m
-		val = string(v)
-	} else {
-		m, _, err := transform.TransItem(data, r.c.DataField, r.c.Fields)
-		if err != nil {
-			return fmt.Errorf("fail to select fields %v for data %v", r.c.Fields, data)
-		}
-		data = m
-	}
-	switch d := data.(type) {
-	case []map[string]interface{}:
-		for _, el := range d {
-			err := r.save(ctx, el, val)
-			if err != nil {
-				return err
-			}
-		}
-	case map[string]interface{}:
-		err := r.save(ctx, d, val)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unrecognized format of %s", data)
-	}
-	logger.Debug("insert success %v", data)
+	//logger := ctx.GetLogger()
+	//var val string
+	//if r.c.DataTemplate != "" { // The result is a string
+	//	v, _, err := ctx.TransformOutput(data)
+	//	if err != nil {
+	//		logger.Error(err)
+	//		return err
+	//	}
+	//	m := make(map[string]interface{})
+	//	err = json.Unmarshal(v, &m)
+	//	if err != nil {
+	//		return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(v), err)
+	//	}
+	//	data = m
+	//	val = string(v)
+	//} else {
+	//	m, _, err := transform.TransItem(data, r.c.DataField, r.c.Fields)
+	//	if err != nil {
+	//		return fmt.Errorf("fail to select fields %v for data %v", r.c.Fields, data)
+	//	}
+	//	data = m
+	//}
+	//switch d := data.(type) {
+	//case []map[string]interface{}:
+	//	for _, el := range d {
+	//		err := r.save(ctx, el, val)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	//case map[string]interface{}:
+	//	err := r.save(ctx, d, val)
+	//	if err != nil {
+	//		return err
+	//	}
+	//default:
+	//	return fmt.Errorf("unrecognized format of %s", data)
+	//}
+	//logger.Debug("insert success %v", data)
 	return nil
 }
 
@@ -231,6 +230,6 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]interface{}, val
 	return nil
 }
 
-func GetSink() api.Sink {
-	return &RedisSink{}
-}
+//func GetSink() api.Sink {
+//	return &RedisSink{}
+//}

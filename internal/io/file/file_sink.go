@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -138,46 +138,46 @@ func (m *fileSink) Open(ctx api.StreamContext) error {
 }
 
 func (m *fileSink) Collect(ctx api.StreamContext, item interface{}) error {
-	ctx.GetLogger().Debugf("file sink receive %s", item)
-	fn, err := ctx.ParseTemplate(m.c.Path, item)
-	if err != nil {
-		return err
-	}
-	fw, err := m.GetFws(ctx, fn, item)
-	if err != nil {
-		return err
-	}
-	if v, _, err := ctx.TransformOutput(item); err == nil {
-		ctx.GetLogger().Debugf("file sink transform data %s", v)
-		m.mux.Lock()
-		defer m.mux.Unlock()
-		if fw.Written {
-			_, e := fw.Writer.Write(fw.Hook.Line())
-			if e != nil {
-				return e
-			}
-		} else {
-			fw.Written = true
-		}
-		_, e := fw.Writer.Write(v)
-		if e != nil {
-			return e
-		}
-		if m.c.RollingCount > 0 {
-			fw.Count++
-			if fw.Count >= m.c.RollingCount {
-				e = fw.Close(ctx)
-				if e != nil {
-					return e
-				}
-				delete(m.fws, fn)
-				fw.Count = 0
-				fw.Written = false
-			}
-		}
-	} else {
-		return fmt.Errorf("file sink transform data error: %v", err)
-	}
+	//ctx.GetLogger().Debugf("file sink receive %s", item)
+	//fn, err := ctx.ParseTemplate(m.c.Path, item)
+	//if err != nil {
+	//	return err
+	//}
+	//fw, err := m.GetFws(ctx, fn, item)
+	//if err != nil {
+	//	return err
+	//}
+	//if v, _, err := ctx.TransformOutput(item); err == nil {
+	//	ctx.GetLogger().Debugf("file sink transform data %s", v)
+	//	m.mux.Lock()
+	//	defer m.mux.Unlock()
+	//	if fw.Written {
+	//		_, e := fw.Writer.Write(fw.Hook.Line())
+	//		if e != nil {
+	//			return e
+	//		}
+	//	} else {
+	//		fw.Written = true
+	//	}
+	//	_, e := fw.Writer.Write(v)
+	//	if e != nil {
+	//		return e
+	//	}
+	//	if m.c.RollingCount > 0 {
+	//		fw.Count++
+	//		if fw.Count >= m.c.RollingCount {
+	//			e = fw.Close(ctx)
+	//			if e != nil {
+	//				return e
+	//			}
+	//			delete(m.fws, fn)
+	//			fw.Count = 0
+	//			fw.Written = false
+	//		}
+	//	}
+	//} else {
+	//	return fmt.Errorf("file sink transform data error: %v", err)
+	//}
 	return nil
 }
 
@@ -256,6 +256,6 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 	return fws, nil
 }
 
-func File() api.Sink {
-	return &fileSink{}
-}
+//func File() api.Sink {
+//	return &fileSink{}
+//}

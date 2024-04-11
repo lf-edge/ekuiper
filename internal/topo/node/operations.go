@@ -78,7 +78,7 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 	logger := ctx.GetLogger()
 	if o.op == nil {
-		logger.Infoln("Unary operator missing operation")
+		logger.Info("Unary operator missing operation")
 		return
 	}
 	exeCtx, cancel := ctx.WithCancel()
