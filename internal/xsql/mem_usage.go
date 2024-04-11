@@ -16,13 +16,17 @@ package xsql
 
 import "unsafe"
 
-func (t *Tuple) MemoryUsage() int64 {
+func (t *Tuple) CalculateMemUsage() {
 	var mem int64
 	for key, value := range t.Message {
 		mem += int64(unsafe.Sizeof(key))
 		mem += getMemUsage(value)
 	}
-	return mem
+	t.MemUsage = mem
+}
+
+func (t *Tuple) GetMemUsage() int64 {
+	return t.MemUsage
 }
 
 func getMemUsage(v interface{}) int64 {

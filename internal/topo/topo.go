@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/tracker"
 )
 
 type Topo struct {
@@ -190,6 +191,7 @@ func (s *Topo) prepareContext() {
 			}
 		}
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		ctx.RuleTracker = &tracker.Tracker{}
 		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, conf.GetNowInMilli())
 		s.ctx, s.cancel = ctx.WithCancel()
 	}

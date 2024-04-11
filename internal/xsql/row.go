@@ -246,6 +246,8 @@ type Tuple struct {
 	AffiliateRow
 	lock      sync.Mutex             // lock for the cachedMap, because it is possible to access by multiple sinks
 	cachedMap map[string]interface{} // clone of the row and cached for performance
+
+	MemUsage int64
 }
 
 var (

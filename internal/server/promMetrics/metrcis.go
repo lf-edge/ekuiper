@@ -27,6 +27,7 @@ const (
 var (
 	RuleStatusCountGauge *prometheus.GaugeVec
 	RuleStatusGauge      *prometheus.GaugeVec
+	RuleMemoryUsageGauge *prometheus.GaugeVec
 )
 
 func InitServerMetrics() {
@@ -43,15 +44,26 @@ func InitServerMetrics() {
 		Name:      "status",
 		Help:      "gauge of rule status",
 	}, []string{LblRuleIDType})
+
+	RuleMemoryUsageGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "kuiper",
+		Subsystem: "rule",
+		Name:      "memory_usage",
+		Help:      "gauge of rule memory usage",
+	}, []string{LblRuleIDType})
 }
 
 func RegisterMetrics() {
 	InitServerMetrics()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
+	prometheus.MustRegister(RuleMemoryUsageGauge)
 }
 
 func SetRuleStatusCountGauge(isRunning bool, count int) {
+	if RuleStatusCountGauge == nil {
+		return
+	}
 	lbl := LBlRuleRunning
 	if !isRunning {
 		lbl = LblRuleStop
@@ -60,10 +72,31 @@ func SetRuleStatusCountGauge(isRunning bool, count int) {
 }
 
 func SetRuleStatus(ruleID string, value int) {
+	if RuleStatusGauge == nil {
+		return
+	}
 	v := float64(value)
 	RuleStatusGauge.WithLabelValues(ruleID).Set(v)
 }
 
 func RemoveRuleStatus(ruleID string) {
+	if RuleStatusGauge == nil {
+		return
+	}
 	RuleStatusGauge.DeleteLabelValues(ruleID)
+}
+
+func SetRuleMemoryUsage(ruleID string, usage int64) {
+	if RuleMemoryUsageGauge == nil {
+		return
+	}
+	v := float64(usage)
+	RuleMemoryUsageGauge.WithLabelValues(ruleID).Set(v)
+}
+
+func RemoveRuleMemory(ruleID string) {
+	if RuleMemoryUsageGauge == nil {
+		return
+	}
+	RuleMemoryUsageGauge.DeleteLabelValues(ruleID)
 }

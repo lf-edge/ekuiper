@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/tracker"
 )
 
 const (
@@ -37,11 +38,12 @@ const (
 )
 
 type DefaultContext struct {
-	ruleId     string
-	opId       string
-	instanceId int
-	ctx        context.Context
-	err        error
+	ruleId      string
+	opId        string
+	instanceId  int
+	RuleTracker *tracker.Tracker
+	ctx         context.Context
+	err         error
 	// Only initialized after withMeta set
 	store    api.Store
 	state    *sync.Map
@@ -175,35 +177,38 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 		c.GetLogger().Warnf("Initialize context store error for %s: %s", opId, err)
 	}
 	return &DefaultContext{
-		ruleId:     ruleId,
-		opId:       opId,
-		instanceId: 0,
-		ctx:        c.ctx,
-		store:      store,
-		state:      s,
-		tpReg:      sync.Map{},
-		jpReg:      sync.Map{},
+		ruleId:      ruleId,
+		opId:        opId,
+		instanceId:  0,
+		RuleTracker: c.RuleTracker,
+		ctx:         c.ctx,
+		store:       store,
+		state:       s,
+		tpReg:       sync.Map{},
+		jpReg:       sync.Map{},
 	}
 }
 
 func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 	return &DefaultContext{
-		instanceId: instanceId,
-		ruleId:     c.ruleId,
-		opId:       c.opId,
-		ctx:        c.ctx,
-		state:      c.state,
+		RuleTracker: c.RuleTracker,
+		instanceId:  instanceId,
+		ruleId:      c.ruleId,
+		opId:        c.opId,
+		ctx:         c.ctx,
+		state:       c.state,
 	}
 }
 
 func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(c.ctx)
 	return &DefaultContext{
-		ruleId:     c.ruleId,
-		opId:       c.opId,
-		instanceId: c.instanceId,
-		ctx:        ctx,
-		state:      c.state,
+		RuleTracker: c.RuleTracker,
+		ruleId:      c.ruleId,
+		opId:        c.opId,
+		instanceId:  c.instanceId,
+		ctx:         ctx,
+		state:       c.state,
 	}, cancel
 }
 
@@ -263,4 +268,8 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 	}
 	c.snapshot = nil
 	return nil
+}
+
+func (c *DefaultContext) GetRuleMemoryTracker() *tracker.Tracker {
+	return c.RuleTracker
 }

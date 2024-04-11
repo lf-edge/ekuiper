@@ -395,6 +395,10 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 				v = RuleStoppedByError
 			}
 			promMetrics.SetRuleStatus(id, int(v))
+			if rs, ok := registry.Load(id); ok {
+				t := rs.Topology.GetContext().GetRuleMemoryTracker()
+				promMetrics.SetRuleMemoryUsage(id, t.BytesConsumed())
+			}
 		}
 		promMetrics.SetRuleStatusCountGauge(true, runningCount)
 		promMetrics.SetRuleStatusCountGauge(false, stopCount)

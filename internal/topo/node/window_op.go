@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/infra"
+	"github.com/lf-edge/ekuiper/pkg/tracker"
 )
 
 type WindowConfig struct {
@@ -58,6 +59,7 @@ type WindowOperator struct {
 	triggerTS        []int64
 	triggerCondition ast.Expr
 	stateFuncs       []*ast.Call
+	tracker          *tracker.Tracker
 }
 
 const (
@@ -95,6 +97,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 	}
 	o.delayTS = make([]int64, 0)
 	o.triggerTS = make([]int64, 0)
+	o.tracker = &tracker.Tracker{}
 	return o, nil
 }
 
@@ -102,6 +105,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 // input: *xsql.Tuple from preprocessor
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
+	o.tracker.Attach(ctx.GetRuleMemoryTracker())
 	o.ctx = ctx
 	log := ctx.GetLogger()
 	log.Debugf("Window operator %s is started", o.name)
@@ -324,6 +328,8 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
 				inputs = append(inputs, d)
+				d.CalculateMemUsage()
+				o.tracker.Consume(d.GetMemUsage())
 				switch o.window.Type {
 				case ast.NOT_WINDOW:
 					inputs = o.scan(inputs, d.Timestamp, ctx)
@@ -533,7 +539,7 @@ func (o *WindowOperator) isTimeRelatedWindow() bool {
 	return false
 }
 
-func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, []xsql.Row) {
+func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, ctx api.StreamContext) ([]*xsql.Tuple, []*xsql.Tuple) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, time.Unix(triggerTime/1000, triggerTime%1000), triggerTime)
 	var delta int64
@@ -541,7 +547,7 @@ func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, c
 	if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, log)
 	}
-	content := make([]xsql.Row, 0)
+	content := make([]*xsql.Tuple, 0)
 	i := 0
 	// Sync table
 	for _, tuple := range inputs {
@@ -582,6 +588,11 @@ func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, c
 			}
 		}
 	}
+	var released int64
+	for index := i; index < len(inputs); index++ {
+		released += inputs[index].GetMemUsage()
+	}
+	o.tracker.Release(released)
 	return inputs[:i], content
 }
 
@@ -598,7 +609,11 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 		windowEnd   = triggerTime
 	)
 	length := o.window.Length + o.window.Delay
-	inputs, content := o.handleInputs(inputs, triggerTime, ctx)
+	inputs, cc := o.handleInputs(inputs, triggerTime, ctx)
+	content := make([]xsql.Row, 0)
+	for _, cc := range cc {
+		content = append(content, cc)
+	}
 	results := &xsql.WindowTuples{
 		Content: content,
 	}
@@ -616,6 +631,9 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime int64, ctx api.S
 	results.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 	log.Debugf("window %s triggered for %d tuples", o.name, len(inputs))
 	log.Debugf("Sent: %v", results)
+	for _, c := range cc {
+		o.tracker.Release(c.GetMemUsage())
+	}
 	o.Broadcast(results)
 	o.statManager.IncTotalRecordsOut()
 	o.statManager.IncTotalMessagesProcessed(int64(results.Len()))

@@ -18,6 +18,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"github.com/lf-edge/ekuiper/pkg/tracker"
 )
 
 type SourceTuple interface {
@@ -286,6 +288,7 @@ type StreamContext interface {
 	GetRootPath() string
 	WithMeta(ruleId string, opId string, store Store) StreamContext
 	WithInstance(instanceId int) StreamContext
+	GetRuleMemoryTracker() *tracker.Tracker
 	WithCancel() (StreamContext, context.CancelFunc)
 	SetError(e error)
 	// IncrCounter State handling
