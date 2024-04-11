@@ -17,11 +17,11 @@ package planner
 import (
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 // SinkPlanner is the planner for sink node. It transforms logical sink plan to multiple physical nodes.

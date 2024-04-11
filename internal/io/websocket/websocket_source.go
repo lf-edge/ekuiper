@@ -17,11 +17,11 @@ package websocket
 import (
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 

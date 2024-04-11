@@ -17,8 +17,8 @@ package topotest
 import (
 	"testing"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 // Full lifecycle test: Run window rule; trigger checkpoints by mock timer; restart rule; make sure the result is right;

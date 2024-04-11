@@ -15,6 +15,7 @@
 package io
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
@@ -24,7 +25,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
 	plugin2 "github.com/lf-edge/ekuiper/v2/internal/plugin"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 

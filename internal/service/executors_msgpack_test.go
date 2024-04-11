@@ -23,8 +23,8 @@ import (
 
 	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func TestMsgpackService(t *testing.T) {

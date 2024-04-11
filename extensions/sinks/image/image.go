@@ -15,8 +15,8 @@
 package main
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	image "github.com/lf-edge/ekuiper/v2/extensions/sinks/image/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Image() api.Sink {

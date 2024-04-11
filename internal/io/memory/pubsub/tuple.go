@@ -14,7 +14,7 @@
 
 package pubsub
 
-import "github.com/lf-edge/ekuiper/v2/pkg/api"
+import "github.com/lf-edge/ekuiper/contract/v2/api"
 
 type UpdatableTuple struct {
 	*api.DefaultSourceTuple

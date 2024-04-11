@@ -20,10 +20,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func TestTffunc_Exec(t *testing.T) {

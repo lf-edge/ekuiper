@@ -31,9 +31,9 @@ import (
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 type RestHelloRequest struct {

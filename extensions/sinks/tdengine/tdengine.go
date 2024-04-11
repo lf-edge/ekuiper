@@ -19,8 +19,8 @@ package main
 import (
 	_ "github.com/taosdata/driver-go/v2/taosSql"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	tdengine "github.com/lf-edge/ekuiper/v2/extensions/sinks/tdengine/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 )
 
 func Tdengine() api.Sink {

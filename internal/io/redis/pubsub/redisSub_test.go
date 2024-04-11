@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/require"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
-	"github.com/lf-edge/ekuiper/v2/pkg/api"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
