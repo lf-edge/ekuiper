@@ -541,14 +541,14 @@ func (o *WindowOperator) handleInputs(inputs []*xsql.Tuple, triggerTime int64, c
 	if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 		delta = o.calDelta(triggerTime, log)
 	}
-	content := make([]xsql.TupleRow, 0)
+	content := make([]xsql.TupleRow, 0, len(inputs))
 	i := 0
 	// Sync table
+	leftmost := triggerTime - length - delta
 	for _, tuple := range inputs {
 		if o.window.Type == ast.HOPPING_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
-			diff := triggerTime - tuple.Timestamp
-			if diff > length+delta {
-				log.Debugf("diff: %d, length: %d, delta: %d", diff, length, delta)
+			if leftmost > tuple.Timestamp {
+				log.Debugf("length: %d, delta: %d", length, delta)
 				log.Debugf("tuple %s emitted at %d expired", tuple, tuple.Timestamp)
 				// Expired tuple, remove it by not adding back to inputs
 				continue
