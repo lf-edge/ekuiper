@@ -48,9 +48,11 @@ func (ms *RestSink) Configure(ps map[string]interface{}) error {
 		return err
 	}
 
-	ms.compressor, err = compressor.GetCompressor(ms.config.Compression)
-	if err != nil {
-		return fmt.Errorf("invalid compression method %s", ms.config.Compression)
+	if ms.config.Compression != "" {
+		ms.compressor, err = compressor.GetCompressor(ms.config.Compression)
+		if err != nil {
+			return fmt.Errorf("invalid compression method %s", ms.config.Compression)
+		}
 	}
 
 	return err
