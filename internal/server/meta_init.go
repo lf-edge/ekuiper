@@ -50,6 +50,7 @@ func (m metaComp) rest(r *mux.Router) {
 	r.HandleFunc("/metadata/sinks/{name}", newSinkMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources", sourcesMetaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}", sourceMetaHandler).Methods(http.MethodGet)
+	r.HandleFunc("/metadata/resources", resourceHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/yaml/{name}", sourceConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/{name}/confKeys/{confKey}", sourceConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/metadata/sinks/yaml/{name}", sinkConfHandler).Methods(http.MethodGet)
@@ -166,6 +167,14 @@ func connectionMetaHandler(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(ret, w, logger)
 		return
 	}
+}
+
+func resourceHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	v := r.URL.Query().Get("sourceType")
+	res := meta.GetSourceResourceConf(v)
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(res, w, logger)
 }
 
 // Get source yaml
