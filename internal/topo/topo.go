@@ -54,7 +54,7 @@ type Topo struct {
 	hasOpened   atomic.Bool
 }
 
-// TODO create context when new a topo
+// NewWithNameAndOptions TODO create context when new a topo
 func NewWithNameAndOptions(name string, options *api.RuleOption) (*Topo, error) {
 	tp := &Topo{
 		name:    name,
@@ -339,4 +339,9 @@ func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) erro
 		}
 	}
 	return fmt.Errorf("stream %v not found in topo", name)
+}
+
+// GetSinks Only use in testing
+func (s *Topo) GetSinks() []node.DataSinkNode {
+	return s.sinks
 }

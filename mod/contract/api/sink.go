@@ -22,6 +22,8 @@ type Sink interface {
 	Connector
 }
 
+// TODO how to distinguish sendSingle or not?
+
 type BytesCollector interface {
 	Sink
 	Collect(ctx StreamContext, item []byte) error

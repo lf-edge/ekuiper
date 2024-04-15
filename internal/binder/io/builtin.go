@@ -42,7 +42,7 @@ func init() {
 	modules.RegisterSink("mqtt", func() api.Sink { return &mqtt.MQTTSink{} })
 	//modules.RegisterSink("rest", func() api.Sink { return &http.RestSink{} })
 	//modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
-	//modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
+	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
 	//modules.RegisterSink("neuron", func() api.Sink { return neuron.GetSink() })
 	//modules.RegisterSink("file", func() api.Sink { return file.File() })
 	//modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })

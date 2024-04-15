@@ -52,11 +52,11 @@ jobs:
         mkdir -p log
         mkdir -p plugins/sinks
         sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
-        go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
-        cp extensions/sources/random/random.yaml etc/sources/random.yaml
-        go build --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
-        go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
-        go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+        #        go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
+        #        cp extensions/sources/random/random.yaml etc/sources/random.yaml
+        #        go build --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
+        #        go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
+        #        go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
         go build --buildmode=plugin -o data/test/helloworld.so internal/converter/protobuf/test/*.go
         go build --buildmode=plugin -o data/myFormat.so internal/converter/custom/test/*.go
         cp test/lookup.json data/lookup.json
@@ -65,12 +65,12 @@ jobs:
         mkdir -p data/schema
         cp data/myFormat.so data/schema/myFormat.so
         mkdir -p plugins/portable/mirror
-        cd sdk/go/example/mirror
-        go build -o ../../../../plugins/portable/mirror/mirror .
-        cp mirror.json ../../../../plugins/portable/mirror
-        cd ../../../../
-        cp -r sdk/python/example/pysam plugins/portable/pysam
-        cp -r sdk/python/ekuiper plugins/portable/pysam/
+      #        cd sdk/go/example/mirror
+      #        go build -o ../../../../plugins/portable/mirror/mirror .
+      #        cp mirror.json ../../../../plugins/portable/mirror
+      #        cd ../../../../
+      #        cp -r sdk/python/example/pysam plugins/portable/pysam
+      #        cp -r sdk/python/ekuiper plugins/portable/pysam/
     - name: Run test case
       run: |
         source $HOME/.wasmedge/env

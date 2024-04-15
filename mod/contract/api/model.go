@@ -20,4 +20,6 @@ package api
 type ReadonlyMessage interface {
 	Get(key string) (value any, ok bool)
 	Range(f func(key string, value any) bool)
+	// ToMap todo remove after eliminate map
+	ToMap() map[string]any
 }

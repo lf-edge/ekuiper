@@ -110,15 +110,17 @@ func (m *mockSource) Close(_ api.StreamContext) error {
 
 type mockSink struct{}
 
-func (m *mockSink) Open(_ api.StreamContext) error {
+func (m *mockSink) Provision(ctx api.StreamContext, configs map[string]any) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *mockSink) Connect(ctx api.StreamContext) error {
+	// do nothing
 	return nil
 }
 
-func (m *mockSink) Configure(_ map[string]interface{}) error {
-	return nil
-}
-
-func (m *mockSink) Collect(_ api.StreamContext, _ interface{}) error {
+func (m *mockSink) CollectBytes(_ api.StreamContext, _ interface{}) error {
 	return nil
 }
 

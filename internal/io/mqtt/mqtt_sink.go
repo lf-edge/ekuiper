@@ -133,6 +133,5 @@ func (ms *MQTTSink) Close(ctx api.StreamContext) error {
 }
 
 var (
-	_ api.Sink           = &MQTTSink{}
 	_ api.BytesCollector = &MQTTSink{}
 )

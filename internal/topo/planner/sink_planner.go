@@ -44,7 +44,7 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []node.Emitter) error {
 			}
 			// Split sink node
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			newInputs, err := splitSink(tp, inputs, sinkName, rule.Options, commonConf)
+			newInputs, err := splitSink(tp, inputs, s, sinkName, rule.Options, commonConf)
 			if err != nil {
 				return err
 			}
@@ -57,6 +57,8 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []node.Emitter) error {
 			switch ss := s.(type) {
 			case api.BytesCollector:
 				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options)
+			case api.MessageCollector:
+				snk, err = node.NewMessageSinkNode(tp.GetContext(), sinkName, ss, rule.Options)
 			default:
 				err = fmt.Errorf("sink type %s does not implement any collector", name)
 			}
@@ -70,7 +72,7 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []node.Emitter) error {
 }
 
 // Split sink node according to the sink configuration. Return the new input emitters.
-func splitSink(tp *topo.Topo, inputs []node.Emitter, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]node.Emitter, error) {
+func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]node.Emitter, error) {
 	index := 0
 	newInputs := inputs
 	// Batch enabled
@@ -92,14 +94,15 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, sinkName string, options *a
 	index++
 	tp.AddOperator(newInputs, transformOp)
 	newInputs = []node.Emitter{transformOp}
-	// Encode is required. In the future, it could be optional if data template is set
-	encodeOp, err := node.NewEncodeOp(fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
-	if err != nil {
-		return nil, err
+	// Encode will convert the result to []byte
+	if _, ok := s.(api.BytesCollector); ok {
+		encodeOp, err := node.NewEncodeOp(fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
+		if err != nil {
+			return nil, err
+		}
+		index++
+		tp.AddOperator(newInputs, encodeOp)
+		newInputs = []node.Emitter{encodeOp}
 	}
-	index++
-	tp.AddOperator(newInputs, encodeOp)
-	newInputs = []node.Emitter{encodeOp}
-
 	return newInputs, nil
 }

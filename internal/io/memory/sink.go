@@ -44,13 +44,7 @@ type sink struct {
 	resendTopic  string
 }
 
-func (s *sink) Open(ctx api.StreamContext) error {
-	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
-	pubsub.CreatePub(s.topic)
-	return nil
-}
-
-func (s *sink) Configure(props map[string]interface{}) error {
+func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 	cfg := &config{}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
@@ -77,57 +71,24 @@ func (s *sink) Configure(props map[string]interface{}) error {
 	return nil
 }
 
-func (s *sink) collectWithTopic(ctx api.StreamContext, data interface{}, t string) error {
-	//topic, err := ctx.ParseTemplate(t, data)
-	//if err != nil {
-	//	return err
-	//}
-	//if s.hasTransform {
-	//	jsonBytes, _, err := ctx.TransformOutput(data)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	m := make(map[string]interface{})
-	//	err = json.Unmarshal(jsonBytes, &m)
-	//	if err != nil {
-	//		return fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(jsonBytes), err)
-	//	}
-	//	data = m
-	//} else {
-	//	m, _, err := transform.TransItem(data, s.dataField, s.fields)
-	//	if err != nil {
-	//		return fmt.Errorf("fail to select fields %v for data %v", s.fields, data)
-	//	}
-	//	data = m
-	//}
-	//switch d := data.(type) {
-	//case []map[string]interface{}:
-	//	for _, el := range d {
-	//		err := s.publish(ctx, topic, el)
-	//		if err != nil {
-	//			return fmt.Errorf("fail to publish data %v for error %v", d, err)
-	//		}
-	//	}
-	//case map[string]interface{}:
-	//	err := s.publish(ctx, topic, d)
-	//	if err != nil {
-	//		return fmt.Errorf("fail to publish data %v for error %v", d, err)
-	//	}
-	//default:
-	//	return fmt.Errorf("unrecognized format of %s", data)
-	//}
+func (s *sink) Connect(ctx api.StreamContext) error {
+	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
+	pubsub.CreatePub(s.topic)
 	return nil
 }
 
-func (s *sink) Collect(ctx api.StreamContext, data interface{}) error {
-	ctx.GetLogger().Debugf("receive %+v", data)
-	return s.collectWithTopic(ctx, data, s.topic)
+func (s *sink) Collect(ctx api.StreamContext, data api.ReadonlyMessage) error {
+	topic, err := ctx.ParseTemplate(s.topic, data)
+	if err != nil {
+		return err
+	}
+	return s.publish(ctx, topic, data)
 }
 
-func (s *sink) CollectResend(ctx api.StreamContext, data interface{}) error {
-	ctx.GetLogger().Debugf("resend %+v", data)
-	return s.collectWithTopic(ctx, data, s.resendTopic)
-}
+//func (s *sink) CollectResend(ctx api.StreamContext, data interface{}) error {
+//	ctx.GetLogger().Debugf("resend %+v", data)
+//	return s.collectWithTopic(ctx, data, s.resendTopic)
+//}
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory sink")
@@ -135,28 +96,32 @@ func (s *sink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *sink) publish(ctx api.StreamContext, topic string, el map[string]interface{}) error {
+func (s *sink) publish(ctx api.StreamContext, topic string, mess api.ReadonlyMessage) error {
 	if s.rowkindField != "" {
-		c, ok := el[s.rowkindField]
+		c, ok := mess.Get(s.rowkindField)
 		var rowkind string
 		if !ok {
 			rowkind = ast.RowkindUpsert
 		} else {
 			rowkind, ok = c.(string)
 			if !ok {
-				return fmt.Errorf("rowkind field %s is not a string in data %v", s.rowkindField, el)
+				return fmt.Errorf("rowkind field %s is not a string in data %v", s.rowkindField, mess)
 			}
 			if rowkind != ast.RowkindInsert && rowkind != ast.RowkindUpdate && rowkind != ast.RowkindDelete && rowkind != ast.RowkindUpsert {
 				return fmt.Errorf("invalid rowkind %s", rowkind)
 			}
 		}
-		key, ok := el[s.keyField]
+		key, ok := mess.Get(s.keyField)
 		if !ok {
-			return fmt.Errorf("key field %s not found in data %v", s.keyField, el)
+			return fmt.Errorf("key field %s not found in data %v", s.keyField, mess)
 		}
-		pubsub.ProduceUpdatable(ctx, topic, el, rowkind, key)
+		pubsub.ProduceUpdatable(ctx, topic, mess.ToMap(), rowkind, key)
 	} else {
-		pubsub.Produce(ctx, topic, el)
+		pubsub.Produce(ctx, topic, mess.ToMap())
 	}
 	return nil
 }
+
+var (
+	_ api.MessageCollector = &sink{}
+)

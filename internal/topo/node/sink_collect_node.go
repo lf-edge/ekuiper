@@ -18,8 +18,6 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
-	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
@@ -81,26 +79,61 @@ func (s *BytesSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func getSink(ctx api.StreamContext, name string, action map[string]any) (api.Sink, error) {
-	var (
-		s   api.Sink
-		err error
-	)
-	s, err = io.Sink(name)
-	if s != nil {
-		newAction := nodeConf.GetSinkConf(name, action)
-		err = s.Provision(ctx, newAction)
-		if err != nil {
-			return nil, err
-		}
-		return s, nil
-	} else {
-		if err != nil {
-			return nil, err
-		} else {
-			return nil, fmt.Errorf("sink %s not found", name)
-		}
-	}
+// MessageSinkNode represents a sink node that collects message from the stream
+type MessageSinkNode struct {
+	*defaultSinkNode
+	sink api.MessageCollector
 }
 
-var _ DataSinkNode = (*BytesSinkNode)(nil)
+// NewMessageSinkNode creates a sink node that collects data from the stream. Do some static validation
+func NewMessageSinkNode(_ api.StreamContext, name string, sink api.MessageCollector, rOpt *api.RuleOption) (*MessageSinkNode, error) {
+	return &MessageSinkNode{
+		defaultSinkNode: newDefaultSinkNode(name, rOpt),
+		sink:            sink,
+	}, nil
+}
+
+// Exec TODO when to fail?
+func (s *MessageSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
+	s.prepareExec(ctx)
+	go func() {
+		err := s.sink.Connect(ctx)
+		if err != nil {
+			infra.DrainError(ctx, err, errCh)
+		}
+		defer s.sink.Close(ctx)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case d := <-s.input:
+				if processed := s.commonIngest(ctx, d); processed {
+					return
+				}
+
+				s.statManager.IncTotalRecordsIn()
+				s.statManager.ProcessTimeStart()
+				// TODO send error?
+				switch data := d.(type) {
+				case api.ReadonlyMessage:
+					ctx.GetLogger().Debugf("Sink node %s receive data %s", s.name, data)
+					err = s.sink.Collect(ctx, data)
+				default:
+					err = fmt.Errorf("expect message data type but got %T", d)
+				}
+				if err != nil {
+					s.statManager.IncTotalExceptions(err.Error())
+				} else {
+					s.statManager.IncTotalRecordsOut()
+				}
+				s.statManager.ProcessTimeEnd()
+				s.statManager.IncTotalMessagesProcessed(1)
+			}
+		}
+	}()
+}
+
+var (
+	_ DataSinkNode = (*BytesSinkNode)(nil)
+	_ DataSinkNode = (*MessageSinkNode)(nil)
+)

@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -226,7 +227,28 @@ func (d *AffiliateRow) Pick(cols [][]string) [][]string {
 // Message is a valuer that substitutes values for the mapped interface. It is the basic type for data events.
 type Message map[string]interface{}
 
-var _ Valuer = Message{}
+func (m Message) Get(key string) (value any, ok bool) {
+	v, o := m[key]
+	return v, o
+}
+
+func (m Message) Range(f func(key string, value any) bool) {
+	for k, v := range m {
+		exit := f(k, v)
+		if exit {
+			break
+		}
+	}
+}
+
+func (m Message) ToMap() map[string]any {
+	return m
+}
+
+var (
+	_ Valuer              = Message{}
+	_ api.ReadonlyMessage = Message{}
+)
 
 type Metadata Message
 
