@@ -16,21 +16,12 @@
 
 package io
 
-import (
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	kafkaSrc "github.com/lf-edge/ekuiper/v2/extensions/sources/kafka/ext"
-	random "github.com/lf-edge/ekuiper/v2/extensions/sources/random/ext"
-	sql "github.com/lf-edge/ekuiper/v2/extensions/sources/sql/ext"
-	video "github.com/lf-edge/ekuiper/v2/extensions/sources/video/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-)
-
 func init() {
-	modules.RegisterSource("random", func() api.Source { return random.GetSource() })
-	modules.RegisterSource("video", func() api.Source { return video.GetSource() })
-	modules.RegisterSource("sql", func() api.Source { return sql.GetSource() })
-	modules.RegisterSource("kafka", func() api.Source { return kafkaSrc.GetSource() })
-	modules.RegisterLookupSource("sql", func() api.LookupSource { return sql.GetLookup() })
+	//modules.RegisterSource("random", func() api.Source { return random.GetSource() })
+	//modules.RegisterSource("video", func() api.Source { return video.GetSource() })
+	//modules.RegisterSource("sql", func() api.Source { return sql.GetSource() })
+	//modules.RegisterSource("kafka", func() api.Source { return kafkaSrc.GetSource() })
+	//modules.RegisterLookupSource("sql", func() api.LookupSource { return sql.GetLookup() })
 	//modules.RegisterSink("image", func() api.Sink { return image.GetSink() })
 	//modules.RegisterSink("influx", func() api.Sink { return influx.GetSink() })
 	//modules.RegisterSink("influx2", func() api.Sink { return influx2.GetSink() })
