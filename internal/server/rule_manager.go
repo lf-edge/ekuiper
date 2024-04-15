@@ -277,6 +277,27 @@ func restartRule(name string) error {
 	return reRunRule(name, false)
 }
 
+func getAllRuleStatus() (string, error) {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return "", err
+	}
+	resp := "{"
+	for index, ruleID := range rules {
+		m, err := getRuleStatus(ruleID)
+		if err != nil {
+			return "", err
+		}
+		resp += fmt.Sprintf(`"%v":`, ruleID)
+		resp += m
+		if index < len(rules)-1 {
+			resp += ","
+		}
+	}
+	resp += "}"
+	return resp, nil
+}
+
 func getRuleStatus(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
 		result, err := rs.GetState()
