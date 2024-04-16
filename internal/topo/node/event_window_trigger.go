@@ -123,8 +123,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				o.statManager.IncTotalExceptions("input channel closed")
 				break
 			}
-			processed := false
-			if item, processed = o.preprocess(item); processed {
+			if processed := o.commonIngest(ctx, item); processed {
 				break
 			}
 			switch d := item.(type) {

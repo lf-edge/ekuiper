@@ -95,8 +95,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		select {
 		// process incoming item
 		case item := <-o.input:
-			processed := false
-			if item, processed = o.preprocess(item); processed {
+			if processed := o.commonIngest(ctx, item); processed {
 				break
 			}
 			switch d := item.(type) {

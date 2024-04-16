@@ -61,7 +61,7 @@ func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *
 }
 
 func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	w.prepareExec(ctx, "op")
+	w.prepareExec(ctx, errCh, "op")
 	// restore state
 	if s, err := ctx.GetState(WatermarkKey); err == nil && s != nil {
 		if si, ok := s.(int64); ok {
@@ -107,8 +107,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						w.statManager.IncTotalExceptions("input channel closed")
 						break
 					}
-					processed := false
-					if item, processed = w.preprocess(item); processed {
+					if processed := w.commonIngest(ctx, item); processed {
 						break
 					}
 					switch d := item.(type) {

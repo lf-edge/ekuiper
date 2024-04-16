@@ -41,7 +41,7 @@ func NewDecompressOp(name string, rOpt *api.RuleOption, compressMethod string) (
 }
 
 func (o *DecompressOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	o.prepareExec(ctx, "op")
+	o.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)

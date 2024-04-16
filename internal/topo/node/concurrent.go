@@ -83,9 +83,7 @@ func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wo
 			ctx.GetLogger().Infof("distribute done")
 			return
 		case item := <-node.input:
-			ctx.GetLogger().Debugf("distributor receive %v", item)
-			processed := false
-			if item, processed = node.preprocess(item); processed {
+			if processed := node.commonIngest(ctx, item); processed {
 				break
 			}
 			node.statManager.IncTotalRecordsIn()

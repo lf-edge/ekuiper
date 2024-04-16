@@ -42,7 +42,7 @@ func NewEncodeOp(name string, rOpt *api.RuleOption, sc *SinkConf) (*EncodeOp, er
 // Exec decode op receives map/[]map and converts it to bytes.
 // If receiving bytes, just return it.
 func (o *EncodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	o.prepareExec(ctx, "op")
+	o.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)

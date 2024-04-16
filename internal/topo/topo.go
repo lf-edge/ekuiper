@@ -64,6 +64,7 @@ func NewWithNameAndOptions(name string, options *api.RuleOption) (*Topo, error) 
 			Edges:   make(map[string][]interface{}),
 		},
 	}
+	tp.prepareContext() // ensure context is set
 	return tp, nil
 }
 
@@ -204,7 +205,6 @@ func (s *Topo) Open() <-chan error {
 		return s.drain
 	}
 	s.hasOpened.Store(true)
-	s.prepareContext() // ensure context is set
 	s.drain = make(chan error)
 	log := s.ctx.GetLogger()
 	log.Info("Opening stream")

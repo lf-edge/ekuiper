@@ -15,6 +15,7 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
 type defaultNode struct {
@@ -34,6 +36,7 @@ type defaultNode struct {
 	sendError   bool
 	statManager metric.StatManager
 	ctx         api.StreamContext
+	errCh       chan<- error
 	qos         api.Qos
 	outputMu    sync.RWMutex
 	outputs     map[string]chan<- any
@@ -181,14 +184,15 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
-func (o *defaultNode) prepareExec(ctx api.StreamContext, opType string) {
+func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opType string) {
 	ctx.GetLogger().Infof("%s started", o.name)
 	o.statManager = metric.NewStatManager(ctx, opType)
 	o.ctx = ctx
+	o.errCh = errCh
 }
 
 func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (done bool) {
-	ctx.GetLogger().Debugf("batch op receive %v", item)
+	ctx.GetLogger().Debugf("receive %v", item)
 	processed := false
 	if item, processed = o.preprocess(item); processed {
 		return true
@@ -201,8 +205,19 @@ func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (done bo
 	case *xsql.WatermarkTuple:
 		o.Broadcast(d)
 		return true
+	case xsql.EOFTuple:
+		return o.handleEof(ctx, d)
 	}
 	return false
+}
+
+func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) bool {
+	if len(o.outputs) > 0 {
+		o.Broadcast(d)
+	} else {
+		infra.DrainError(ctx, errors.New("done"), o.errCh)
+	}
+	return true
 }
 
 func SourcePing(sourceType string, config map[string]interface{}) error {

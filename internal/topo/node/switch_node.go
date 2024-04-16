@@ -66,7 +66,7 @@ func NewSwitchNode(name string, conf *SwitchConfig, options *api.RuleOption) (*S
 }
 
 func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	n.prepareExec(ctx, "op")
+	n.prepareExec(ctx, errCh, "op")
 	for i := range n.outputNodes {
 		n.outputNodes[i].ctx = ctx
 	}
@@ -78,8 +78,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				select {
 				// process incoming item from both streams(transformed) and tables
 				case item, opened := <-n.input:
-					processed := false
-					if item, processed = n.preprocess(item); processed {
+					if processed := n.commonIngest(ctx, item); processed {
 						break
 					}
 					n.statManager.IncTotalRecordsIn()

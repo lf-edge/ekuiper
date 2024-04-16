@@ -40,6 +40,12 @@ type TupleSource interface {
 	Subscribe(ctx StreamContext, ingest TupleIngest) error
 }
 
+type EOFIngest func(ctx StreamContext)
+
+type Bounded interface {
+	SetEofIngest(eof EOFIngest)
+}
+
 // Rewindable is a source feature that allows the source to rewind to a specific offset.
 type Rewindable interface {
 	GetOffset() (any, error)

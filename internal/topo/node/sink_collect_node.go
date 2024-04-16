@@ -28,7 +28,8 @@ import (
 // BytesSinkNode represents a sink node that collects byte data from the stream
 type BytesSinkNode struct {
 	*defaultSinkNode
-	sink api.BytesCollector
+	sink  api.BytesCollector
+	errCh chan<- error
 }
 
 // NewBytesSinkNode creates a sink node that collects data from the stream. Do some static validation
@@ -41,7 +42,8 @@ func NewBytesSinkNode(_ api.StreamContext, name string, sink api.BytesCollector,
 
 // Exec TODO when to fail?
 func (s *BytesSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	s.prepareExec(ctx, "sink")
+	s.prepareExec(ctx, errCh, "sink")
+	s.errCh = errCh
 	go func() {
 		err := s.sink.Connect(ctx)
 		if err != nil {
@@ -54,7 +56,7 @@ func (s *BytesSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				return
 			case d := <-s.input:
 				if processed := s.commonIngest(ctx, d); processed {
-					return
+					break
 				}
 
 				s.statManager.IncTotalRecordsIn()
@@ -82,7 +84,8 @@ func (s *BytesSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 // MessageSinkNode represents a sink node that collects message from the stream
 type MessageSinkNode struct {
 	*defaultSinkNode
-	sink api.TupleCollector
+	sink  api.TupleCollector
+	errCh chan<- error
 }
 
 // NewMessageSinkNode creates a sink node that collects data from the stream. Do some static validation
@@ -95,7 +98,7 @@ func NewMessageSinkNode(_ api.StreamContext, name string, sink api.TupleCollecto
 
 // Exec TODO when to fail?
 func (s *MessageSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	s.prepareExec(ctx, "sink")
+	s.prepareExec(ctx, errCh, "sink")
 	go func() {
 		err := s.sink.Connect(ctx)
 		if err != nil {
@@ -108,9 +111,8 @@ func (s *MessageSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				return
 			case d := <-s.input:
 				if processed := s.commonIngest(ctx, d); processed {
-					return
+					break
 				}
-
 				s.statManager.IncTotalRecordsIn()
 				s.statManager.ProcessTimeStart()
 				ctx.GetLogger().Debugf("Sink node %s receive data %s", s.name, d)

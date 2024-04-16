@@ -75,7 +75,7 @@ func NewLookupNode(name string, fields []string, keys []string, joinType ast.Joi
 
 func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
-	n.prepareExec(ctx, "op")
+	n.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			ns, err := lookup.Attach(n.name)
@@ -95,8 +95,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				select {
 				// process incoming item from both streams(transformed) and tables
 				case item, opened := <-n.input:
-					processed := false
-					if item, processed = n.preprocess(item); processed {
+					if processed := n.commonIngest(ctx, item); processed {
 						break
 					}
 					n.statManager.IncTotalRecordsIn()

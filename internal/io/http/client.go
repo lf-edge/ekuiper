@@ -421,30 +421,30 @@ func getMD5Hash(text []byte) string {
 
 // TODO remove this function after all the sources are migrated to use the new API
 func decode(ctx api.StreamContext, data []byte) ([]map[string]interface{}, error) {
-	r, err := ctx.DecodeIntoList(data)
-	if err == nil {
-		return r, nil
-	}
-	var r1 interface{}
-	err = json.Unmarshal(data, &r1)
-	if err != nil {
-		return nil, err
-	}
-	switch rt := r1.(type) {
-	case map[string]interface{}:
-		return []map[string]interface{}{rt}, nil
-	case []map[string]interface{}:
-		return rt, nil
-	case []interface{}:
-		r2 := make([]map[string]interface{}, len(rt))
-		for i, m := range rt {
-			if rm, ok := m.(map[string]interface{}); ok {
-				r2[i] = rm
-			} else {
-				return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
-			}
-		}
-		return r2, nil
-	}
+	//r, err := ctx.DecodeIntoList(data)
+	//if err == nil {
+	//	return r, nil
+	//}
+	//var r1 interface{}
+	//err = json.Unmarshal(data, &r1)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//switch rt := r1.(type) {
+	//case map[string]interface{}:
+	//	return []map[string]interface{}{rt}, nil
+	//case []map[string]interface{}:
+	//	return rt, nil
+	//case []interface{}:
+	//	r2 := make([]map[string]interface{}, len(rt))
+	//	for i, m := range rt {
+	//		if rm, ok := m.(map[string]interface{}); ok {
+	//			r2[i] = rm
+	//		} else {
+	//			return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
+	//		}
+	//	}
+	//	return r2, nil
+	//}
 	return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
 }

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -29,8 +28,11 @@ import (
 type MockSource struct {
 	data   []*xsql.Tuple
 	offset int
+	eof    api.EOFIngest
 	sync.Mutex
 }
+
+const TIMELEAP = 200
 
 func (m *MockSource) Provision(ctx api.StreamContext, configs map[string]any) error {
 	datasource, ok := configs["datasource"]
@@ -41,15 +43,17 @@ func (m *MockSource) Provision(ctx api.StreamContext, configs map[string]any) er
 	return nil
 }
 
-func (m *MockSource) Connect(ctx api.StreamContext) error {
+func (m *MockSource) SetEofIngest(eof api.EOFIngest) {
+	m.eof = eof
+}
+
+func (m *MockSource) Connect(_ api.StreamContext) error {
 	return nil
 }
 
-const TIMELEAP = 200
-
-func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, _ chan<- error) {
+func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest) error {
 	log := ctx.GetLogger()
-	mockClock := mockclock.GetMockClock()
+	mockClock := timex.Clock
 	log.Infof("%d: mock source %s starts", timex.GetNowInMilli(), ctx.GetOpId())
 	log.Debugf("mock source %s starts with offset %d", ctx.GetOpId(), m.offset)
 	for i, d := range m.data {
@@ -70,15 +74,17 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, _ ch
 		case <-next:
 			m.Lock()
 			m.offset = i + 1
-			consumer <- api.NewDefaultSourceTupleWithTime(d.Message, xsql.Message{"topic": "mock"}, mockClock.Now())
-			log.Debugf("%d: mock source %s is sending data %d:%s", cast.TimeToUnixMilli(mockClock.Now()), ctx.GetOpId(), i, d)
+			ingest(ctx, api.NewDefaultSourceTuple(d.Message, xsql.Message{"topic": "mock"}), timex.GetNow())
+			log.Debugf("%d: mock source %s is sending data %d:%s", timex.GetNowInMilli(), ctx.GetOpId(), i, d)
 			m.Unlock()
 		case <-ctx.Done():
 			log.Debugf("mock source open DONE")
-			return
+			return nil
 		}
 	}
 	log.Debugf("mock source sends out all data")
+	m.eof(ctx)
+	return nil
 }
 
 func (m *MockSource) GetOffset() (interface{}, error) {
@@ -105,3 +111,8 @@ func (m *MockSource) Close(_ api.StreamContext) error {
 	m.offset = 0
 	return nil
 }
+
+var (
+	_ api.TupleSource = &MockSource{}
+	_ api.Bounded     = &MockSource{}
+)

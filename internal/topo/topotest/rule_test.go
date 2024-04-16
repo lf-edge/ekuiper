@@ -835,13 +835,13 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
-					"ts":    float64(1541152486822),
-					"lc":    float64(1),
+					"ts":    1541152486822,
+					"lc":    int64(1),
 				}},
 				{{
 					"color": "yellow",
-					"ts":    float64(1541152488442),
-					"lc":    float64(2),
+					"ts":    1541152488442,
+					"lc":    int64(2),
 				}},
 			},
 			M: map[string]interface{}{

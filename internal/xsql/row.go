@@ -279,6 +279,8 @@ var (
 	_ MetaData = &Tuple{}
 )
 
+type EOFTuple int
+
 type WatermarkTuple struct {
 	Timestamp int64
 }

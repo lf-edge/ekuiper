@@ -46,7 +46,7 @@ func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (
 }
 
 func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	n.prepareExec(ctx, "op")
+	n.prepareExec(ctx, errCh, "op")
 	log := ctx.GetLogger()
 	go func() {
 		err := infra.SafeRun(func() error {
@@ -73,8 +73,7 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				select {
 				// process incoming item from both streams(transformed) and tables
 				case item, opened := <-n.input:
-					processed := false
-					if item, processed = n.preprocess(item); processed {
+					if processed := n.commonIngest(ctx, item); processed {
 						break
 					}
 					n.statManager.IncTotalRecordsIn()

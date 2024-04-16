@@ -56,12 +56,12 @@ func CommonResultFunc(result []any) [][]map[string]any {
 	maps := make([][]map[string]any, 0, len(result))
 	for _, v := range result {
 		switch rt := v.(type) {
-		case api.ReadonlyMessage:
-			maps = append(maps, []map[string]any{rt.ToMap()})
-		case []api.ReadonlyMessage:
+		case api.Tuple:
+			maps = append(maps, []map[string]any{rt.Message().ToMap()})
+		case []api.Tuple:
 			nm := make([]map[string]any, 0, len(rt))
 			for _, mm := range rt {
-				nm = append(nm, mm.ToMap())
+				nm = append(nm, mm.Message().ToMap())
 			}
 			maps = append(maps, nm)
 		}
@@ -121,27 +121,18 @@ func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, w in
 		outerloop:
 			for {
 				select {
-				case sg := <-errCh:
-					switch et := sg.(type) {
-					case error:
-						tp.Cancel()
-						assert.Fail(t, et.Error())
-						break outerloop
-					default:
-						fmt.Println("ctrlCh", et)
-					}
+				case <-errCh:
+					tp.Cancel()
+					break outerloop
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
-					limit--
-					if limit <= 0 {
-						break outerloop
-					}
 				case <-ticker:
 					tp.Cancel()
 					assert.Fail(t, "timeout")
 					break outerloop
 				}
 			}
+
 			assert.Equal(t, tt.R, CommonResultFunc(sinkResult))
 			err := CompareMetrics(tp, tt.M)
 			assert.NoError(t, err)
@@ -220,23 +211,6 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
 	conf.Log.Debugf("Clock add to %d", timex.GetNowInMilli())
-	//// Check if stream done. Poll for metrics,
-	//time.Sleep(10 * time.Millisecond)
-	//var retry int
-	//for retry = 4; retry > 0; retry-- {
-	//	var err error
-	//	if err = CompareMetrics(tp, metrics); err == nil {
-	//		break
-	//	}
-	//	conf.Log.Errorf("check metrics error at %d: %s", retry, err)
-	//	time.Sleep(1000 * time.Millisecond)
-	//}
-	//if retry == 0 {
-	//	t.Error("send data timeout")
-	//} else if retry < 2 {
-	//	conf.Log.Debugf("try %d for metric comparison\n", 2-retry)
-	//}
-	//return nil
 }
 
 // create a test rule with memory sink

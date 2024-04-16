@@ -43,6 +43,9 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,
 	}
+	if bs, ok := ss.(api.Bounded); ok {
+		bs.SetEofIngest(m.ingestEof)
+	}
 	return m, nil
 }
 
@@ -52,7 +55,7 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 
 // Open will be invoked by topo. It starts reading data.
 func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
-	m.prepareExec(ctx, "source")
+	m.prepareExec(ctx, ctrlCh, "source")
 	if able, ok := m.s.(stat.StatsAble); ok {
 		able.SetupStats(m.statManager)
 	}
@@ -93,6 +96,11 @@ func (m *SourceNode) ingestTuple(t api.Tuple, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message().ToMap(), Timestamp: ts.UnixMilli(), Metadata: t.Meta().ToMap()}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
+}
+
+func (m *SourceNode) ingestEof(ctx api.StreamContext) {
+	ctx.GetLogger().Infof("send out EOF")
+	m.Broadcast(xsql.EOFTuple(0))
 }
 
 // Run Subscribe could be a long-running function

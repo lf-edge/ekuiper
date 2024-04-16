@@ -51,8 +51,8 @@ func NewBatchOp(name string, rOpt *api.RuleOption, batchSize, lingerInterval int
 	return o, nil
 }
 
-func (b *BatchOp) Exec(ctx api.StreamContext, _ chan<- error) {
-	b.prepareExec(ctx, "op")
+func (b *BatchOp) Exec(ctx api.StreamContext, errCh chan<- error) {
+	b.prepareExec(ctx, errCh, "op")
 	switch {
 	case b.batchSize > 0 && b.lingerInterval > 0:
 		b.runWithTickerAndBatchSize(ctx)

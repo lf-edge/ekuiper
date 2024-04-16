@@ -61,7 +61,7 @@ func NewTransformOp(name string, rOpt *api.RuleOption, sc *SinkConf) (*Transform
 }
 
 func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	t.prepareExec(ctx, "op")
+	t.prepareExec(ctx, errCh, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, t.defaultSinkNode, t.concurrency, t.Worker)

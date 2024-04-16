@@ -102,7 +102,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 // input: *xsql.Tuple from preprocessor
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
-	o.prepareExec(ctx, "op")
+	o.prepareExec(ctx, errCh, "op")
 	log := ctx.GetLogger()
 	var inputs []*xsql.Tuple
 	if s, err := ctx.GetState(WindowInputsKey); err == nil {
@@ -305,8 +305,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			_ = ctx.PutState(MsgCountKey, o.msgCount)
 		// process incoming item
 		case item, opened := <-o.input:
-			processed := false
-			if item, processed = o.preprocess(item); processed {
+			if processed := o.commonIngest(ctx, item); processed {
 				break
 			}
 			o.statManager.IncTotalRecordsIn()
