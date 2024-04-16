@@ -114,9 +114,7 @@ func (t *TemplateSqlQueryCfg) InitIndexFieldStore() {
 		t.store.Init(f)
 		return
 	}
-	if len(t.IndexFields) > 0 {
-		t.store.Init(t.IndexFields...)
-	}
+	t.store.Init(t.IndexFields...)
 }
 
 func (t *TemplateSqlQueryCfg) SetIndexValue(v interface{}) {
