@@ -220,6 +220,13 @@ func TestGenerateTemplateWithMultiIndex(t *testing.T) {
 			},
 			sql: "select * from table where col1 > `1` AND col2 > `2` order by co1 ASC, co2 ASC",
 		},
+		{
+			cfg: &TemplateSqlQueryCfg{
+				TemplateSql: "select * from table",
+				store:       store.NewIndexFieldWrap(),
+			},
+			sql: "select * from table",
+		},
 	}
 
 	for _, tc := range testcases {
