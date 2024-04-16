@@ -163,6 +163,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
+	r.HandleFunc("/rules/status/all", getAllRuleStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/v2/rules/{name}/status", getStatusV2RulHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
@@ -715,6 +716,18 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
+}
+
+func getAllRuleStatusHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	s, err := getAllRuleStatus()
+	if err != nil {
+		handleError(w, err, "get rules status error", logger)
+		return
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(s))
 }
 
 // get status of a rule
