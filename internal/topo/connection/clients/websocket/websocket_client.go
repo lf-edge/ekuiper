@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 )
 
@@ -34,7 +35,7 @@ type websocketClientWrapper struct {
 	// We maintained topicChannel for each source_node(ruleID_OpID_InstanceID)
 	// When source_node Subscribed, each message comes from the websocket connection will be delivered into all topic Channel.
 	// When source_node Released, the Topic Channel will be removed by the ID so that the websocket msg won't send data to it anymore.
-	chs          map[string][]api.TopicChannel
+	chs          map[string][]io.TopicChannel
 	errCh        map[string]chan error
 	refCount     int
 	conSelector  string
@@ -53,7 +54,7 @@ func newWebsocketClientClientWrapper(config *WebSocketConnectionConfig) (clients
 	}
 	cc := &websocketClientWrapper{
 		c:            conn,
-		chs:          make(map[string][]api.TopicChannel),
+		chs:          make(map[string][]io.TopicChannel),
 		errCh:        make(map[string]chan error),
 		refCount:     1,
 		config:       config,
@@ -82,7 +83,7 @@ func (wcw *websocketClientWrapper) isFinished() bool {
 	return wcw.finished
 }
 
-func (wcw *websocketClientWrapper) getChannels() (map[string][]api.TopicChannel, map[string]chan error) {
+func (wcw *websocketClientWrapper) getChannels() (map[string][]io.TopicChannel, map[string]chan error) {
 	wcw.Lock()
 	defer wcw.Unlock()
 	return wcw.chs, wcw.errCh
@@ -139,7 +140,7 @@ func (wcw *websocketClientWrapper) Ping() error {
 	return wcw.getConn().WriteMessage(websocket.PingMessage, nil)
 }
 
-func (wcw *websocketClientWrapper) Subscribe(ctx api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, _ map[string]interface{}) error {
+func (wcw *websocketClientWrapper) Subscribe(ctx api.StreamContext, subChan []io.TopicChannel, messageErrors chan error, _ map[string]interface{}) error {
 	wcw.Lock()
 	defer wcw.Unlock()
 	if wcw.finished {

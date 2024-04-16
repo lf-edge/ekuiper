@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -32,7 +33,7 @@ type BatchOp struct {
 	currIndex int
 }
 
-func NewBatchOp(name string, rOpt *api.RuleOption, batchSize, lingerInterval int) (*BatchOp, error) {
+func NewBatchOp(name string, rOpt *def.RuleOption, batchSize, lingerInterval int) (*BatchOp, error) {
 	if batchSize < 1 && lingerInterval < 1 {
 		return nil, fmt.Errorf("either batchSize or lingerInterval should be larger than 0")
 	}

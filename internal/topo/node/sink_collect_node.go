@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
@@ -33,7 +34,7 @@ type BytesSinkNode struct {
 }
 
 // NewBytesSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewBytesSinkNode(_ api.StreamContext, name string, sink api.BytesCollector, rOpt *api.RuleOption) (*BytesSinkNode, error) {
+func NewBytesSinkNode(_ api.StreamContext, name string, sink api.BytesCollector, rOpt *def.RuleOption) (*BytesSinkNode, error) {
 	return &BytesSinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		sink:            sink,
@@ -89,7 +90,7 @@ type MessageSinkNode struct {
 }
 
 // NewMessageSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewMessageSinkNode(_ api.StreamContext, name string, sink api.TupleCollector, rOpt *api.RuleOption) (*MessageSinkNode, error) {
+func NewMessageSinkNode(_ api.StreamContext, name string, sink api.TupleCollector, rOpt *def.RuleOption) (*MessageSinkNode, error) {
 	return &MessageSinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		sink:            sink,

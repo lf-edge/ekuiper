@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 func TestSharedSourceSchemaless(t *testing.T) {
@@ -51,7 +52,7 @@ func TestSharedSourceSchemaless(t *testing.T) {
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -134,7 +135,7 @@ func TestWindowFuncSQL(t *testing.T) {
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -381,7 +382,7 @@ func TestAccAggSQL(t *testing.T) {
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -458,7 +459,7 @@ func TestLimitSQL(t *testing.T) {
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -655,7 +656,7 @@ func TestSRFSQL(t *testing.T) {
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -821,7 +822,7 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-			T: &api.PrintableTopo{
+			T: &def.PrintableTopo{
 				Sources: []string{"source_demo"},
 				Edges: map[string][]interface{}{
 					"source_demo":  {"op_2_project"},
@@ -1116,7 +1117,7 @@ func TestSingleSQL(t *testing.T) {
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
 			},
-			T: &api.PrintableTopo{
+			T: &def.PrintableTopo{
 				Sources: []string{"source_demo"},
 				Edges: map[string][]interface{}{
 					"source_demo":  {"op_2_project"},
@@ -1429,7 +1430,7 @@ func TestSingleSQL(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -1501,7 +1502,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 				"source_demoE_0_records_in_total":  int64(6),
 				"source_demoE_0_records_out_total": int64(6),
 			},
-			T: &api.PrintableTopo{
+			T: &def.PrintableTopo{
 				Sources: []string{"source_demoE"},
 				Edges: map[string][]interface{}{
 					"source_demoE":   {"op_2_watermark"},
@@ -1579,7 +1580,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -1715,7 +1716,7 @@ func TestSingleSQLError(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, 0, &api.RuleOption{
+	DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -1790,7 +1791,7 @@ func TestSingleSQLOmitError(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, 0, &api.RuleOption{
+	DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    false,
 	}, 0)
@@ -2036,7 +2037,7 @@ func TestWindowSQL(t *testing.T) {
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength:       100,
 			SendError:          true,
@@ -2172,7 +2173,7 @@ func TestAliasSQL(t *testing.T) {
 	}
 	// Data setup
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength:       100,
 			SendError:          true,

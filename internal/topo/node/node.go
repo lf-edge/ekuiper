@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
@@ -37,12 +38,12 @@ type defaultNode struct {
 	statManager metric.StatManager
 	ctx         api.StreamContext
 	errCh       chan<- error
-	qos         api.Qos
+	qos         def.Qos
 	outputMu    sync.RWMutex
 	outputs     map[string]chan<- any
 }
 
-func newDefaultNode(name string, options *api.RuleOption) *defaultNode {
+func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 	c := options.Concurrency
 	if c < 1 {
 		c = 1
@@ -66,7 +67,7 @@ func (o *defaultNode) GetName() string {
 	return o.name
 }
 
-func (o *defaultNode) SetQos(qos api.Qos) {
+func (o *defaultNode) SetQos(qos def.Qos) {
 	o.qos = qos
 }
 
@@ -87,7 +88,7 @@ func (o *defaultNode) Broadcast(val interface{}) {
 	if _, ok := val.(error); ok && !o.sendError {
 		return
 	}
-	if o.qos >= api.AtLeastOnce {
+	if o.qos >= def.AtLeastOnce {
 		boe := &checkpoint.BufferOrEvent{
 			Data:    val,
 			Channel: o.name,
@@ -140,7 +141,7 @@ type defaultSinkNode struct {
 	bufferLen      int
 }
 
-func newDefaultSinkNode(name string, options *api.RuleOption) *defaultSinkNode {
+func newDefaultSinkNode(name string, options *def.RuleOption) *defaultSinkNode {
 	return &defaultSinkNode{
 		bufferLen:   options.BufferLength,
 		defaultNode: newDefaultNode(name, options),
@@ -166,7 +167,7 @@ func (o *defaultSinkNode) SetBarrierHandler(bh checkpoint.BarrierHandler) {
 
 // return the data and if processed
 func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
-	if o.qos >= api.AtLeastOnce {
+	if o.qos >= def.AtLeastOnce {
 		logger := o.ctx.GetLogger()
 		logger.Debugf("%s preprocess receive data %+v", o.name, data)
 		b, ok := data.(*checkpoint.BufferOrEvent)
@@ -248,11 +249,11 @@ func SinkPing(sinkType string, config map[string]interface{}) error {
 	return nil
 }
 
-func propsToNodeOption(props map[string]any) *api.RuleOption {
-	options := &api.RuleOption{
+func propsToNodeOption(props map[string]any) *def.RuleOption {
+	options := &def.RuleOption{
 		BufferLength: 1024,
 		SendError:    true,
-		Qos:          api.AtLeastOnce,
+		Qos:          def.AtLeastOnce,
 	}
 	err := cast.MapToStruct(props, options)
 	if err != nil {

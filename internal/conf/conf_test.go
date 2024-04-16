@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 func TestSourceConfValidate(t *testing.T) {
@@ -87,22 +87,22 @@ func TestSourceConfValidate(t *testing.T) {
 
 func TestRuleOptionValidate(t *testing.T) {
 	tests := []struct {
-		s   *api.RuleOption
-		e   *api.RuleOption
+		s   *def.RuleOption
+		e   *def.RuleOption
 		err string
 	}{
 		{
-			s: &api.RuleOption{},
-			e: &api.RuleOption{},
+			s: &def.RuleOption{},
+			e: &def.RuleOption{},
 		},
 		{
-			s: &api.RuleOption{
+			s: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     0,
 					Delay:        1000,
 					Multiplier:   1,
@@ -110,13 +110,13 @@ func TestRuleOptionValidate(t *testing.T) {
 					JitterFactor: 0.1,
 				},
 			},
-			e: &api.RuleOption{
+			e: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     0,
 					Delay:        1000,
 					Multiplier:   1,
@@ -126,13 +126,13 @@ func TestRuleOptionValidate(t *testing.T) {
 			},
 		},
 		{
-			s: &api.RuleOption{
+			s: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1,
@@ -140,13 +140,13 @@ func TestRuleOptionValidate(t *testing.T) {
 					JitterFactor: 0.1,
 				},
 			},
-			e: &api.RuleOption{
+			e: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1,
@@ -156,13 +156,13 @@ func TestRuleOptionValidate(t *testing.T) {
 			},
 		},
 		{
-			s: &api.RuleOption{
+			s: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1.5,
@@ -170,13 +170,13 @@ func TestRuleOptionValidate(t *testing.T) {
 					JitterFactor: 0.1,
 				},
 			},
-			e: &api.RuleOption{
+			e: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1.5,
@@ -186,13 +186,13 @@ func TestRuleOptionValidate(t *testing.T) {
 			},
 		},
 		{
-			s: &api.RuleOption{
+			s: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     -2,
 					Delay:        0,
 					Multiplier:   0,
@@ -200,13 +200,13 @@ func TestRuleOptionValidate(t *testing.T) {
 					JitterFactor: 1.1,
 				},
 			},
-			e: &api.RuleOption{
+			e: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				Restart: &def.RestartStrategy{
 					Attempts:     0,
 					Delay:        1000,
 					Multiplier:   2,

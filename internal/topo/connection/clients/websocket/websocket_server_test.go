@@ -24,8 +24,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	io2 "github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -68,7 +68,7 @@ func TestWebsocketServerConn(t *testing.T) {
 
 	dataCh := make(chan interface{})
 	data := map[string]interface{}{"a": float64(1)}
-	subs := []api.TopicChannel{
+	subs := []io2.TopicChannel{
 		{
 			Topic:    "",
 			Messages: dataCh,

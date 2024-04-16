@@ -19,14 +19,14 @@ package planner
 import (
 	"fmt"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func init() {
-	extNodes["script"] = func(name string, props map[string]interface{}, options *api.RuleOption) (node.TopNode, error) {
+	extNodes["script"] = func(name string, props map[string]interface{}, options *def.RuleOption) (node.TopNode, error) {
 		sop, err := parseScript(props)
 		if err != nil {
 			return nil, err

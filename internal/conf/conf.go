@@ -29,10 +29,10 @@ import (
 	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/schedule"
 )
 
 const (
@@ -194,7 +194,7 @@ type KuiperConf struct {
 		CfgStorageType      string      `yaml:"cfgStorageType"`
 		EnableOpenZiti      bool        `yaml:"enableOpenZiti"`
 	}
-	Rule   api.RuleOption
+	Rule   def.RuleOption
 	Sink   *SinkConf
 	Source *SourceConf
 	Store  struct {
@@ -295,13 +295,13 @@ func InitConf() {
 		panic(err)
 	}
 	kc := KuiperConf{
-		Rule: api.RuleOption{
+		Rule: def.RuleOption{
 			LateTol:            1000,
 			Concurrency:        1,
 			BufferLength:       1024,
 			CheckpointInterval: 300000, // 5 minutes
 			SendError:          true,
-			Restart: &api.RestartStrategy{
+			Restart: &def.RestartStrategy{
 				Attempts:     0,
 				Delay:        1000,
 				Multiplier:   2,
@@ -401,7 +401,7 @@ func SetLogFormat(disableTimestamp bool) {
 	Log.Formatter.(*logrus.TextFormatter).DisableTimestamp = disableTimestamp
 }
 
-func ValidateRuleOption(option *api.RuleOption) error {
+func ValidateRuleOption(option *def.RuleOption) error {
 	var errs error
 	if option.CheckpointInterval < 0 {
 		option.CheckpointInterval = 0

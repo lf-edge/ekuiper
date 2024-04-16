@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -170,7 +170,7 @@ func TestTransformRun(t *testing.T) {
 	}
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewTransformOp("test", &api.RuleOption{BufferLength: 10, SendError: true}, tt.sc)
+			op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tt.sc)
 			assert.NoError(t, err)
 			out := make(chan any, 100)
 			err = op.AddOutput(out, "test")

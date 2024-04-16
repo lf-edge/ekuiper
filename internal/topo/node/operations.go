@@ -16,6 +16,7 @@ package node
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -41,7 +42,7 @@ type UnaryOperator struct {
 }
 
 // New NewUnary creates *UnaryOperator value
-func New(name string, options *api.RuleOption) *UnaryOperator {
+func New(name string, options *def.RuleOption) *UnaryOperator {
 	return &UnaryOperator{
 		defaultSinkNode: newDefaultSinkNode(name, options),
 	}

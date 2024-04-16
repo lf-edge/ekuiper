@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
@@ -47,7 +48,7 @@ type RuleTest struct {
 	Sql  string
 	R    [][]map[string]any // The result
 	M    map[string]any     // final metrics
-	T    *api.PrintableTopo // printable topo, an optional field
+	T    *def.PrintableTopo // printable topo, an optional field
 	W    int                // wait time for each data sending, in milli
 }
 
@@ -69,7 +70,7 @@ func CommonResultFunc(result []any) [][]map[string]any {
 	return maps
 }
 
-func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, w int) {
+func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, w int) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			id := fmt.Sprintf("%s_%d", tt.Name, j)
@@ -214,7 +215,7 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 }
 
 // create a test rule with memory sink
-func createTestRule(t *testing.T, id string, tt RuleTest, opt *api.RuleOption) ([][]*xsql.Tuple, int, *topo.Topo, <-chan error) {
+func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) ([][]*xsql.Tuple, int, *topo.Topo, <-chan error) {
 	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
@@ -240,7 +241,7 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *api.RuleOption) (
 			}
 		}
 	}
-	tp, err := planner.Plan(&api.Rule{
+	tp, err := planner.Plan(&def.Rule{
 		Id:  id,
 		Sql: tt.Sql,
 		Actions: []map[string]any{

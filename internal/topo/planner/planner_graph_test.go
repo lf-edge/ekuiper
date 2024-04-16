@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -618,18 +619,18 @@ func TestPlannerGraphValidate(t *testing.T) {
 
 	t.Logf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		rg := &api.RuleGraph{}
+		rg := &def.RuleGraph{}
 		err := json.Unmarshal([]byte(tt.graph), rg)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-		_, err = PlanByGraph(&api.Rule{
+		_, err = PlanByGraph(&def.Rule{
 			Triggered: false,
 			Id:        fmt.Sprintf("rule%d", i),
 			Name:      fmt.Sprintf("rule%d", i),
 			Graph:     rg,
-			Options: &api.RuleOption{
+			Options: &def.RuleOption{
 				IsEventTime:        false,
 				LateTol:            1000,
 				Concurrency:        1,
@@ -961,17 +962,17 @@ func TestPlannerGraphWithStream(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			rg := &api.RuleGraph{}
+			rg := &def.RuleGraph{}
 			err := json.Unmarshal([]byte(tc.graph), rg)
 			if err != nil {
 				t.Error(err)
 				return
 			}
-			_, err = PlanByGraph(&api.Rule{
+			_, err = PlanByGraph(&def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Graph:     rg,
-				Options: &api.RuleOption{
+				Options: &def.RuleOption{
 					IsEventTime:        false,
 					LateTol:            1000,
 					Concurrency:        1,

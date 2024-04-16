@@ -16,12 +16,13 @@ package state
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 const CheckpointListKey = "checkpoints"
 
-func CreateStore(ruleId string, qos api.Qos) (api.Store, error) {
-	if qos >= api.AtLeastOnce {
+func CreateStore(ruleId string, qos def.Qos) (api.Store, error) {
+	if qos >= def.AtLeastOnce {
 		return getKVStore(ruleId)
 	} else {
 		return newMemoryStore(), nil

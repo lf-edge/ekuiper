@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 )
 
 type clientRegistry struct {
@@ -57,7 +58,7 @@ func getConnectionSelector(props map[string]interface{}) (ConnectionSelector str
 	return "", nil
 }
 
-func GetClient(connectionType string, props map[string]interface{}) (api.MessageClient, error) {
+func GetClient(connectionType string, props map[string]interface{}) (io.MessageClient, error) {
 	gClientRegistry.Lock.Lock()
 	defer gClientRegistry.Lock.Unlock()
 
@@ -109,7 +110,7 @@ func GetClient(connectionType string, props map[string]interface{}) (api.Message
 	}
 }
 
-func ReleaseClient(ctx api.StreamContext, cli api.MessageClient) {
+func ReleaseClient(ctx api.StreamContext, cli io.MessageClient) {
 	var log api.Logger
 	if ctx != nil {
 		log = ctx.GetLogger()

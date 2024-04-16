@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
@@ -46,7 +47,7 @@ type SrcSubTopo struct {
 	// May be empty
 	ops  []node.OperatorNode
 	tail node.Emitter
-	topo *api.PrintableTopo
+	topo *def.PrintableTopo
 	// Save the schemainfo for each rule only to use when need to attach schema when the rule is starting.
 	// Get updated if the rule is updated. Never delete it until the subtopo is deleted.
 	schemaReg map[string]schemainfo

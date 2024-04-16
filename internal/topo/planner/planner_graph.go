@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	store2 "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/graph"
@@ -32,7 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-type genNodeFunc func(name string, props map[string]interface{}, options *api.RuleOption) (node.TopNode, error)
+type genNodeFunc func(name string, props map[string]interface{}, options *def.RuleOption) (node.TopNode, error)
 
 var extNodes = map[string]genNodeFunc{}
 
@@ -46,7 +46,7 @@ const (
 )
 
 // PlanByGraph returns a topo.Topo object by a graph
-func PlanByGraph(rule *api.Rule) (*topo.Topo, error) {
+func PlanByGraph(rule *def.Rule) (*topo.Topo, error) {
 	ruleGraph := rule.Graph
 	if ruleGraph == nil {
 		return nil, errors.New("no graph")
@@ -430,8 +430,8 @@ func genNodesInOrder(toNodes []string, edges map[string][]interface{}, flatRever
 	return i
 }
 
-func parseSource(nodeName string, gn *api.GraphNode, rule *api.Rule, store kv.KeyValue, lookupTableChildren map[string]*ast.Options) (node.DataSourceNode, sourceType, string, []node.OperatorNode, error) {
-	sourceMeta := &api.SourceMeta{
+func parseSource(nodeName string, gn *def.GraphNode, rule *def.Rule, store kv.KeyValue, lookupTableChildren map[string]*ast.Options) (node.DataSourceNode, sourceType, string, []node.OperatorNode, error) {
+	sourceMeta := &def.SourceMeta{
 		SourceType: "stream",
 	}
 	err := cast.MapToStruct(gn.Props, sourceMeta)

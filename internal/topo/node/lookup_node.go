@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup/cache"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
@@ -47,7 +48,7 @@ type LookupNode struct {
 	keys       []string
 }
 
-func NewLookupNode(name string, fields []string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *api.RuleOption) (*LookupNode, error) {
+func NewLookupNode(name string, fields []string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *def.RuleOption) (*LookupNode, error) {
 	t := srcOptions.TYPE
 	if t == "" {
 		return nil, fmt.Errorf("source type is not specified")

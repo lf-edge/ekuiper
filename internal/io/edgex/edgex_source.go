@@ -29,6 +29,7 @@ import (
 	"github.com/fxamacker/cbor/v2"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -36,7 +37,7 @@ import (
 )
 
 type EdgexSource struct {
-	cli api.MessageClient
+	cli io.MessageClient
 
 	config      map[string]interface{}
 	topic       string
@@ -77,7 +78,7 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-	es.cli = cli.(api.MessageClient)
+	es.cli = cli.(io.MessageClient)
 
 	return nil
 }
@@ -86,7 +87,7 @@ func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, er
 	log := ctx.GetLogger()
 
 	messages := make(chan interface{}, es.buflen)
-	topics := []api.TopicChannel{{Topic: es.topic, Messages: messages}}
+	topics := []io.TopicChannel{{Topic: es.topic, Messages: messages}}
 	subErrs := make(chan error, len(topics))
 
 	if e := es.cli.Subscribe(ctx, topics, subErrs, nil); e != nil {

@@ -21,9 +21,9 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
@@ -127,7 +127,7 @@ func createRule(name, ruleJson string) (id string, err error) {
 // Create and initialize a rule state.
 // Errors are possible during plan the topo.
 // If error happens return immediately without add it to the registry
-func createRuleState(r *api.Rule) (*rule.RuleState, error) {
+func createRuleState(r *def.Rule) (*rule.RuleState, error) {
 	rs, err := rule.NewRuleState(r)
 	if err != nil {
 		return rs, err
@@ -136,7 +136,7 @@ func createRuleState(r *api.Rule) (*rule.RuleState, error) {
 	return rs, nil
 }
 
-func recoverRule(r *api.Rule) string {
+func recoverRule(r *def.Rule) string {
 	var rs *rule.RuleState = nil
 	var err error = nil
 	// Validate the topo
@@ -355,7 +355,7 @@ func getAllRulesWithStatus() ([]map[string]interface{}, error) {
 }
 
 type ruleWrapper struct {
-	rule  *api.Rule
+	rule  *def.Rule
 	state string
 }
 

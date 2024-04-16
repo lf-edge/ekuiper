@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
@@ -69,7 +70,7 @@ func (wsw *websocketServerConnWrapper) Ping() error {
 	return errors.New("websocket server can't ping")
 }
 
-func (wsw *websocketServerConnWrapper) process(ctx api.StreamContext, subChan []api.TopicChannel, messageErrors chan error) {
+func (wsw *websocketServerConnWrapper) process(ctx api.StreamContext, subChan []io.TopicChannel, messageErrors chan error) {
 	ch := pubsub.CreateSub(wsw.recvTopic, nil, fmt.Sprintf("%s_%s_%v", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), 1024)
 	defer pubsub.CloseSourceConsumerChannel(wsw.recvTopic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 	for {
@@ -98,7 +99,7 @@ func (wsw *websocketServerConnWrapper) process(ctx api.StreamContext, subChan []
 	}
 }
 
-func (wsw *websocketServerConnWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, params map[string]interface{}) error {
+func (wsw *websocketServerConnWrapper) Subscribe(c api.StreamContext, subChan []io.TopicChannel, messageErrors chan error, params map[string]interface{}) error {
 	go wsw.process(c, subChan, messageErrors)
 	return nil
 }

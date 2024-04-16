@@ -22,12 +22,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 func TestRuleActionParse_Apply(t *testing.T) {
 	tests := []struct {
 		ruleStr string
-		result  *api.Rule
+		result  *def.Rule
 	}{
 		{
 			ruleStr: `{
@@ -58,7 +59,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				}
 			  }
 			}`,
-			result: &api.Rule{
+			result: &def.Rule{
 				Triggered: true,
 				Id:        "ruleTest",
 				Sql:       "SELECT * from demo",
@@ -81,7 +82,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 						},
 					},
 				},
-				Options: &api.RuleOption{
+				Options: &def.RuleOption{
 					IsEventTime:        false,
 					LateTol:            1000,
 					Concurrency:        1,
@@ -90,7 +91,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.AtMostOnce,
 					CheckpointInterval: 300000,
 					SendError:          true,
-					Restart: &api.RestartStrategy{
+					Restart: &def.RestartStrategy{
 						Attempts:     20,
 						Delay:        1000,
 						Multiplier:   2,
@@ -126,7 +127,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					"checkpointInterval": 60000
 				}
 			}`,
-			result: &api.Rule{
+			result: &def.Rule{
 				Triggered: true,
 				Id:        "ruleTest2",
 				Sql:       "SELECT * from demo",
@@ -144,7 +145,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 						},
 					},
 				},
-				Options: &api.RuleOption{
+				Options: &def.RuleOption{
 					IsEventTime:        true,
 					LateTol:            1000,
 					Concurrency:        1,
@@ -153,7 +154,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.ExactlyOnce,
 					CheckpointInterval: 60000,
 					SendError:          true,
-					Restart: &api.RestartStrategy{
+					Restart: &def.RestartStrategy{
 						Attempts:     0,
 						Delay:        1000,
 						Multiplier:   2,
@@ -171,7 +172,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 			  ],
               "triggered": false
 			}`,
-			result: &api.Rule{
+			result: &def.Rule{
 				Triggered: false,
 				Id:        "ruleTest",
 				Sql:       "SELECT * from demo",
@@ -180,7 +181,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 						"log": map[string]interface{}{},
 					},
 				},
-				Options: &api.RuleOption{
+				Options: &def.RuleOption{
 					IsEventTime:        false,
 					LateTol:            1000,
 					Concurrency:        1,
@@ -189,7 +190,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.AtMostOnce,
 					CheckpointInterval: 300000,
 					SendError:          true,
-					Restart: &api.RestartStrategy{
+					Restart: &def.RestartStrategy{
 						Attempts:     0,
 						Delay:        1000,
 						Multiplier:   2,

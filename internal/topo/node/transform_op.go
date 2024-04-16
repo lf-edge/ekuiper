@@ -21,6 +21,7 @@ import (
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -41,7 +42,7 @@ type TransformOp struct {
 
 // NewTransformOp creates a transform node
 // sink conf should have been validated before
-func NewTransformOp(name string, rOpt *api.RuleOption, sc *SinkConf) (*TransformOp, error) {
+func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf) (*TransformOp, error) {
 	o := &TransformOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		dataField:       sc.DataField,

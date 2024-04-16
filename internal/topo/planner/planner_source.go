@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 
@@ -28,7 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
 )
 
-func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *api.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
+func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *def.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	isSchemaless := t.isSchemaless
 	_, isMock := mockSourcesProp[string(t.name)]
 	if isMock {
@@ -72,7 +73,7 @@ type SourcePropsForSplit struct {
 	SelId         string `json:"connectionSelector"`
 }
 
-func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *api.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
+func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
 	sp := &SourcePropsForSplit{}

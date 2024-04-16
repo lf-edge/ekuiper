@@ -16,6 +16,7 @@ package node
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -28,7 +29,7 @@ type EncodeOp struct {
 	converter message.Converter
 }
 
-func NewEncodeOp(name string, rOpt *api.RuleOption, sc *SinkConf) (*EncodeOp, error) {
+func NewEncodeOp(name string, rOpt *def.RuleOption, sc *SinkConf) (*EncodeOp, error) {
 	c, err := converter.GetOrCreateConverter(&ast.Options{FORMAT: sc.Format, SCHEMAID: sc.SchemaId, DELIMITER: sc.Delimiter})
 	if err != nil {
 		return nil, err

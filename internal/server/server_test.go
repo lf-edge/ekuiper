@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -67,12 +67,12 @@ func TestHandleScheduleRule(t *testing.T) {
 		},
 	}
 	for i, tc := range testcases {
-		r := &api.Rule{
+		r := &def.Rule{
 			Triggered: true,
-			Options: &api.RuleOption{
+			Options: &def.RuleOption{
 				Cron:     "",
 				Duration: "",
-				CronDatetimeRange: []api.DatetimeRange{
+				CronDatetimeRange: []def.DatetimeRange{
 					{
 						Begin: tc.begin,
 						End:   tc.end,
@@ -98,13 +98,13 @@ func TestHandleScheduleRuleState(t *testing.T) {
 	}()
 	err := cast.SetTimeZone("UTC")
 	require.NoError(t, err)
-	r := &api.Rule{}
-	r.Options = &api.RuleOption{}
+	r := &def.Rule{}
+	r.Options = &def.RuleOption{}
 	now, err := time.Parse("2006-01-02 15:04:05", "2006-01-02 15:04:05")
 	require.NoError(t, err)
 	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
 	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
+	r.Options.CronDatetimeRange = []def.DatetimeRange{
 		{
 			Begin: "2006-01-02 15:04:01",
 			End:   "2006-01-02 15:04:06",
@@ -112,7 +112,7 @@ func TestHandleScheduleRuleState(t *testing.T) {
 	}
 	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
 	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
+	r.Options.CronDatetimeRange = []def.DatetimeRange{
 		{
 			Begin: "2006-01-02 15:04:01",
 			End:   "2006-01-02 15:04:02",

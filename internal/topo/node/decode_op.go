@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -49,7 +50,7 @@ func (o *DecodeOp) DetachSchema(ruleId string) {
 	}
 }
 
-func NewDecodeOp(name, StreamName string, ruleId string, rOpt *api.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) (*DecodeOp, error) {
+func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) (*DecodeOp, error) {
 	options.Schema = nil
 	options.IsWildCard = isWildcard
 	options.IsSchemaLess = isSchemaless

@@ -24,8 +24,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -53,7 +53,7 @@ func TestWebsocketPubSub(t *testing.T) {
 	require.NoError(t, err)
 
 	dataCh := make(chan interface{}, 16)
-	subs := []api.TopicChannel{
+	subs := []io.TopicChannel{
 		{
 			Topic:    "",
 			Messages: dataCh,

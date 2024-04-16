@@ -28,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
@@ -227,7 +228,7 @@ func TestFuncState(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -304,7 +305,7 @@ func TestFuncStateCheckpoint(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoCheckpointRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.DoCheckpointRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength:       100,
 		Qos:                api.AtLeastOnce,
 		CheckpointInterval: 2000,

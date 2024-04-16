@@ -33,3 +33,9 @@ type TupleCollector interface {
 	Collect(ctx StreamContext, item ReadonlyMessage) error
 	CollectList(ctx StreamContext, items []ReadonlyMessage) error
 }
+
+type ResendSink interface {
+	Sink
+	// CollectResend Called when the sink cache resend is triggered
+	CollectResend(ctx StreamContext, data interface{}) error
+}

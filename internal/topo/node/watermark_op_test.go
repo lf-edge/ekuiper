@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -200,7 +201,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 			tempStore, _ := state.CreateStore("TestWatermark", api.AtMostOnce)
 			nctx := ctx.WithMeta("TestWatermark", "test", tempStore)
-			w := NewWatermarkOp("mock", false, []string{"demo"}, &api.RuleOption{
+			w := NewWatermarkOp("mock", false, []string{"demo"}, &def.RuleOption{
 				IsEventTime:        true,
 				LateTol:            tt.latetol,
 				Concurrency:        0,
@@ -452,7 +453,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 			ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 			tempStore, _ := state.CreateStore("TestWatermark", api.AtMostOnce)
 			nctx := ctx.WithMeta("TestWatermark", "test", tempStore)
-			w := NewWatermarkOp("mock", true, []string{"demo1", "demo2"}, &api.RuleOption{
+			w := NewWatermarkOp("mock", true, []string{"demo1", "demo2"}, &def.RuleOption{
 				IsEventTime:        true,
 				LateTol:            tt.latetol,
 				Concurrency:        0,

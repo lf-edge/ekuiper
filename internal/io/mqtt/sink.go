@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	mqttClient "github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -40,7 +41,7 @@ type AdConf struct {
 type MQTTSink struct {
 	adconf     *AdConf
 	config     map[string]interface{}
-	cli        api.MessageClient
+	cli        io.MessageClient
 	compressor message.Compressor
 	sendParams map[string]any
 }

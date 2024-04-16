@@ -25,13 +25,13 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -90,13 +90,13 @@ type RuleState struct {
 	RuleId   string
 	ActionCh chan ActionSignal
 	// Nearly constant, only change when update the rule
-	Rule *api.Rule
+	Rule *def.Rule
 	// States, create through rule in each rule start
 	Topology *topo.Topo
 	// 0 stop, 1 running, -1 delete, 2 internal stop, changed in actions
 	triggered int
 	// temporary storage for topo graph to make sure even rule close, the graph is still available
-	topoGraph *api.PrintableTopo
+	topoGraph *def.PrintableTopo
 	sync.RWMutex
 	cronState cronStateCtx
 
@@ -108,7 +108,7 @@ type RuleState struct {
 // NewRuleState Create and initialize a rule state.
 // Errors are possible during plan the topo.
 // If error happens return immediately without add it to the registry
-func NewRuleState(rule *api.Rule) (rs *RuleState, err error) {
+func NewRuleState(rule *def.Rule) (rs *RuleState, err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
@@ -142,7 +142,7 @@ func NewRuleState(rule *api.Rule) (rs *RuleState, err error) {
 // UpdateTopo update the rule and the topology AND restart the topology
 // Do not need to call restart after update
 
-func (rs *RuleState) UpdateTopo(rule *api.Rule) (err error) {
+func (rs *RuleState) UpdateTopo(rule *def.Rule) (err error) {
 	defer func() {
 		if err != nil {
 			if _, ok := err.(errorx.ErrorWithCode); !ok {
@@ -596,7 +596,7 @@ func (rs *RuleState) getStoppedRuleState() (result string) {
 	return result
 }
 
-func (rs *RuleState) GetTopoGraph() *api.PrintableTopo {
+func (rs *RuleState) GetTopoGraph() *def.PrintableTopo {
 	rs.RLock()
 	defer rs.RUnlock()
 	if rs.topoGraph != nil {

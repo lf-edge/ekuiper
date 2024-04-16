@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -47,7 +48,7 @@ const (
 	StreamWMKey   = "$$streamwms"
 )
 
-func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *api.RuleOption) *WatermarkOp {
+func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *def.RuleOption) *WatermarkOp {
 	wms := make(map[string]int64, len(streams))
 	for _, s := range streams {
 		wms[s] = options.LateTol

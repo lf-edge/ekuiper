@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 )
@@ -27,7 +28,7 @@ import (
 // SinkPlanner is the planner for sink node. It transforms logical sink plan to multiple physical nodes.
 // It will split the sink plan into multiple sink nodes according to its sink configurations.
 
-func buildActions(tp *topo.Topo, rule *api.Rule, inputs []node.Emitter) error {
+func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter) error {
 	for i, m := range rule.Actions {
 		for name, action := range m {
 			s, _ := io.Sink(name)
@@ -72,7 +73,7 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []node.Emitter) error {
 }
 
 // Split sink node according to the sink configuration. Return the new input emitters.
-func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string, options *api.RuleOption, sc *node.SinkConf) ([]node.Emitter, error) {
+func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf) ([]node.Emitter, error) {
 	index := 0
 	newInputs := inputs
 	// Batch enabled

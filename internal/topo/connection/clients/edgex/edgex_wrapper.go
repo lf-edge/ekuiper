@@ -26,6 +26,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 )
 
@@ -150,7 +151,7 @@ func (mc *edgexClientWrapper) Ping() error {
 	return nil
 }
 
-func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, _ map[string]interface{}) error {
+func (mc *edgexClientWrapper) Subscribe(c api.StreamContext, subChan []io.TopicChannel, messageErrors chan error, _ map[string]interface{}) error {
 	log := c.GetLogger()
 
 	mc.subLock.Lock()

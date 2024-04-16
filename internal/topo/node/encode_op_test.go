@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -53,7 +53,7 @@ func TestEncodeJSON(t *testing.T) {
 			out:  []byte("test"),
 		},
 	}
-	op, err := NewEncodeOp("test", &api.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "json"})
+	op, err := NewEncodeOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "json"})
 	assert.NoError(t, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
@@ -71,7 +71,7 @@ func TestEncodeJSON(t *testing.T) {
 }
 
 func TestEncodeValidate(t *testing.T) {
-	_, err := NewEncodeOp("test", &api.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "cann"})
+	_, err := NewEncodeOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "cann"})
 	assert.Error(t, err)
 	assert.Equal(t, "format type cann not supported", err.Error())
 }

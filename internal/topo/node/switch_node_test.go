@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -160,7 +160,7 @@ func TestTuple(t *testing.T) {
 			},
 		},
 		StopAtFirstMatch: false,
-	}, &api.RuleOption{})
+	}, &def.RuleOption{})
 	if err != nil {
 		t.Fatalf("Failed to create switch node: %v", err)
 	}
@@ -357,7 +357,7 @@ func TestCollection(t *testing.T) {
 			},
 		},
 		StopAtFirstMatch: true,
-	}, &api.RuleOption{})
+	}, &def.RuleOption{})
 	if err != nil {
 		t.Fatalf("Failed to create switch node: %v", err)
 	}

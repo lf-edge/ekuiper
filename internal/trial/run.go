@@ -20,8 +20,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -36,20 +37,20 @@ type RunDef struct {
 	SinkProps map[string]any            `json:"sinkProps"`
 }
 
-func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
+func create(runDef *RunDef) (*topo.Topo, io.MessageClient, error) {
 	sinkProps := map[string]any{
-		"path":      "/test/" + def.Id,
+		"path":      "/test/" + runDef.Id,
 		"sendError": true,
 	}
-	for k, v := range def.SinkProps {
+	for k, v := range runDef.SinkProps {
 		sinkProps[k] = v
 	}
 	// TODO open this again
 	// Add trial run prefix for rule id to avoid duplicate rule id with real rules in runtime or other trial rule
-	//tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock, []node.DataSinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
-	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock)
+	//tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+runDef.Id, runDef.Sql), runDef.Mock, []node.DataSinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
+	tp, err := planner.PlanSQLWithSourcesAndSinks(def.GetDefaultRule("$$_"+uuid.New().String()+runDef.Id, runDef.Sql), runDef.Mock)
 	if err != nil {
-		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
+		return nil, nil, fmt.Errorf("fail to run rule %s: %s", runDef.Id, err)
 	}
 	// Try run
 	// TODO currently some static validations are done in runtime, so start to run to detect them. This adds time penalty for this API.
@@ -66,18 +67,18 @@ func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
+		return nil, nil, fmt.Errorf("fail to run rule %s: %s", runDef.Id, err)
 	}
 	tp.Cancel()
 	// Create websocket client to send out control error message together with data
 	cli, err := clients.GetClient("websocket", sinkProps)
 	if err != nil {
-		return nil, nil, fmt.Errorf("fail to create websocket server for rule %s: %s", def.Id, err)
+		return nil, nil, fmt.Errorf("fail to create websocket server for rule %s: %s", runDef.Id, err)
 	}
 	return tp, cli, nil
 }
 
-func trialRun(tp *topo.Topo, cli api.MessageClient) {
+func trialRun(tp *topo.Topo, cli io.MessageClient) {
 	go func() {
 		timeout := time.NewTicker(5 * time.Minute)
 		defer func() {

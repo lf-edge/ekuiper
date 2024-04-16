@@ -22,11 +22,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
@@ -183,7 +183,7 @@ func compareMetrics(tp *topo.Topo, m map[string]interface{}) bool {
 	return true
 }
 
-func CreateRule(name, sql string) (*api.Rule, error) {
+func CreateRule(name, sql string) (*def.Rule, error) {
 	p := processor.NewRuleProcessor()
 	p.ExecDrop(name)
 	return p.ExecCreateWithValidation(name, sql)

@@ -18,13 +18,14 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type WebSocketSink struct {
-	cli   api.MessageClient
+	cli   io.MessageClient
 	props map[string]interface{}
 	conf  *WebsocketConf
 }

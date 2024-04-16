@@ -22,7 +22,7 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -244,7 +244,7 @@ func TestPlannerAlias(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		p, _ := createLogicalPlan(stmt, &api.RuleOption{
+		p, _ := createLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,

@@ -14,6 +14,8 @@
 
 package api
 
+import "github.com/lf-edge/ekuiper/v2/pkg/ast"
+
 type ModuleInfo struct {
 	Id          string
 	Description string
@@ -30,4 +32,11 @@ type Nodelet interface {
 
 type Closable interface {
 	Close(ctx StreamContext) error
+}
+
+type SchemaNode interface {
+	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
+	AttachSchema(StreamContext, string, map[string]*ast.JsonStreamField, bool)
+	// DetachSchema detach the schema from the node. The parameters are ruleId
+	DetachSchema(string)
 }

@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 )
@@ -39,7 +39,7 @@ type Manager struct {
 
 type Run struct {
 	topo   *topo.Topo
-	msgCli api.MessageClient
+	msgCli io.MessageClient
 }
 
 func (m *Manager) CreateRule(ruleDef string) (string, error) {

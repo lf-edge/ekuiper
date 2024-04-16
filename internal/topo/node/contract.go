@@ -16,6 +16,7 @@ package node
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 )
 
@@ -57,7 +58,7 @@ type DataSinkNode interface {
 	GetStreamContext() api.StreamContext
 	GetInputCount() int
 	AddInputCount()
-	SetQos(api.Qos)
+	SetQos(def.Qos)
 	SetBarrierHandler(checkpoint.BarrierHandler)
 }
 
@@ -68,9 +69,9 @@ type SourceInstanceNode interface {
 type MergeableTopo interface {
 	GetSource() DataSourceNode
 	// MergeSrc Add child topo as the source with following operators
-	MergeSrc(parentTopo *api.PrintableTopo)
+	MergeSrc(parentTopo *def.PrintableTopo)
 	// LinkTopo Add printable topo link from the parent topo to the child topo
-	LinkTopo(parentTopo *api.PrintableTopo, parentJointName string)
+	LinkTopo(parentTopo *def.PrintableTopo, parentJointName string)
 	// SubMetrics return the metrics of the sub nodes
 	SubMetrics() ([]string, []any)
 	// Close notifies subtopo to deref

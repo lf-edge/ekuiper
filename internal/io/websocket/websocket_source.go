@@ -27,7 +27,7 @@ import (
 
 type WebsocketSource struct {
 	props map[string]interface{}
-	cli   api.MessageClient
+	cli   io.MessageClient
 }
 
 func (wss *WebsocketSource) Ping(dataSource string, props map[string]interface{}) error {
@@ -56,7 +56,7 @@ func (wss *WebsocketSource) Open(ctx api.StreamContext, consumer chan<- api.Tupl
 func (wss *WebsocketSource) subscribe(ctx api.StreamContext, consumer chan<- api.Tuple) error {
 	log := ctx.GetLogger()
 	messages := make(chan interface{}, 1024)
-	topics := []api.TopicChannel{{Topic: "", Messages: messages}}
+	topics := []io.TopicChannel{{Topic: "", Messages: messages}}
 	errCh := make(chan error, len(topics))
 	if err := wss.cli.Subscribe(ctx, topics, errCh, nil); err != nil {
 		return err

@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -57,7 +58,7 @@ func TestSCNLC(t *testing.T) {
 			[]byte("world"),
 		},
 	}
-	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo", map[string]any{}, &api.RuleOption{
+	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo", map[string]any{}, &def.RuleOption{
 		BufferLength: 1024,
 		SendError:    true,
 	})
@@ -110,7 +111,7 @@ func TestNewError(t *testing.T) {
 			[]byte("world"),
 		},
 	}
-	_, err := NewSourceConnectorNode("mock_connector", sc, "", map[string]any{}, &api.RuleOption{
+	_, err := NewSourceConnectorNode("mock_connector", sc, "", map[string]any{}, &def.RuleOption{
 		BufferLength: 1024,
 		SendError:    true,
 	})
@@ -122,7 +123,7 @@ func TestConnError(t *testing.T) {
 	var sc api.SourceConnector = &MockSourceConnector{
 		data: nil, // nil data to produce mock connect error
 	}
-	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo2", map[string]any{}, &api.RuleOption{
+	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo2", map[string]any{}, &def.RuleOption{
 		BufferLength: 1024,
 		SendError:    true,
 	})
@@ -165,7 +166,7 @@ func TestSubError(t *testing.T) {
 			[]byte("world"),
 		},
 	}
-	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo2", map[string]any{}, &api.RuleOption{
+	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo2", map[string]any{}, &def.RuleOption{
 		BufferLength: 1024,
 		SendError:    true,
 	})

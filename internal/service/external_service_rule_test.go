@@ -31,8 +31,8 @@ import (
 	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
 )
 
@@ -553,7 +553,7 @@ func TestRestService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -820,7 +820,7 @@ func TestGrpcService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -1056,7 +1056,7 @@ func TestSchemalessService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)

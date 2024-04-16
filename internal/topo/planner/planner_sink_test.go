@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -28,12 +28,12 @@ import (
 func TestSinkPlan(t *testing.T) {
 	tc := []struct {
 		name string
-		rule *api.Rule
-		topo *api.PrintableTopo
+		rule *def.Rule
+		topo *def.PrintableTopo
 	}{
 		{
 			name: "normal sink plan",
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": map[string]any{},
@@ -41,7 +41,7 @@ func TestSinkPlan(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			topo: &api.PrintableTopo{
+			topo: &def.PrintableTopo{
 				Sources: []string{"source_src1"},
 				Edges: map[string][]any{
 					"source_src1": {
@@ -58,7 +58,7 @@ func TestSinkPlan(t *testing.T) {
 		},
 		{
 			name: "batch sink plan",
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": map[string]any{
@@ -68,7 +68,7 @@ func TestSinkPlan(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			topo: &api.PrintableTopo{
+			topo: &def.PrintableTopo{
 				Sources: []string{"source_src1"},
 				Edges: map[string][]any{
 					"source_src1": {
@@ -93,7 +93,7 @@ func TestSinkPlan(t *testing.T) {
 		n := node.NewSourceNode("src1", ast.TypeStream, nil, &ast.Options{
 			DATASOURCE: "/feed",
 			TYPE:       "httppull",
-		}, &api.RuleOption{SendError: false}, false, false, nil)
+		}, &def.RuleOption{SendError: false}, false, false, nil)
 		tp.AddSrc(n)
 		inputs := []node.Emitter{n}
 		err = buildActions(tp, c.rule, inputs)
@@ -105,12 +105,12 @@ func TestSinkPlan(t *testing.T) {
 func TestSinkPlanError(t *testing.T) {
 	tc := []struct {
 		name string
-		rule *api.Rule
+		rule *def.Rule
 		err  string
 	}{
 		{
 			name: "invalid sink",
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"noexist": map[string]any{},
@@ -122,7 +122,7 @@ func TestSinkPlanError(t *testing.T) {
 		},
 		{
 			name: "invalid action format",
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": 12,
@@ -134,7 +134,7 @@ func TestSinkPlanError(t *testing.T) {
 		},
 		{
 			name: "invalid batchSize",
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": map[string]any{
@@ -148,7 +148,7 @@ func TestSinkPlanError(t *testing.T) {
 		},
 		{
 			name: "invalid lingerInterval",
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": map[string]any{
@@ -163,7 +163,7 @@ func TestSinkPlanError(t *testing.T) {
 		},
 		{
 			name: "invalid dataTemplate",
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": map[string]any{
@@ -183,7 +183,7 @@ func TestSinkPlanError(t *testing.T) {
 			n := node.NewSourceNode("src1", ast.TypeStream, nil, &ast.Options{
 				DATASOURCE: "/feed",
 				TYPE:       "httppull",
-			}, &api.RuleOption{SendError: false}, false, false, nil)
+			}, &def.RuleOption{SendError: false}, false, false, nil)
 			tp.AddSrc(n)
 			inputs := []node.Emitter{n}
 			err = buildActions(tp, c.rule, inputs)

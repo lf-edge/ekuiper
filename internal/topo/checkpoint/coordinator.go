@@ -20,6 +20,7 @@ import (
 	"github.com/benbjohnson/clock"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -103,7 +104,7 @@ type Coordinator struct {
 	activated               bool
 }
 
-func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos api.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
+func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos def.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
 	logger := ctx.GetLogger()
 	logger.Infof("create new coordinator for rule %s", ruleId)
 	signal := make(chan *Signal, 1024)
@@ -149,10 +150,10 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 	}
 }
 
-func createBarrierHandler(re Responder, inputCount int, qos api.Qos) BarrierHandler {
-	if qos == api.AtLeastOnce {
+func createBarrierHandler(re Responder, inputCount int, qos def.Qos) BarrierHandler {
+	if qos == def.AtLeastOnce {
 		return NewBarrierTracker(re, inputCount)
-	} else if qos == api.ExactlyOnce {
+	} else if qos == def.ExactlyOnce {
 		return NewBarrierAligner(re, inputCount)
 	} else {
 		return nil

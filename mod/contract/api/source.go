@@ -52,3 +52,14 @@ type Rewindable interface {
 	Rewind(offset any) error
 	ResetOffset(input map[string]any) error
 }
+
+type LookupSource interface {
+	// Open creates the connection to the external data source
+	Open(ctx StreamContext) error
+	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
+	// read from the yaml
+	Configure(datasource string, props map[string]interface{}) error
+	// Lookup receive lookup values to construct the query and return query results
+	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]Tuple, error)
+	Closable
+}

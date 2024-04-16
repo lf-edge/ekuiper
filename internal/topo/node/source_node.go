@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/stat"
@@ -34,7 +35,7 @@ type SourceNode struct {
 }
 
 // NewSourceNode creates a SourceConnectorNode
-func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[string]any, rOpt *api.RuleOption) (*SourceNode, error) {
+func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[string]any, rOpt *def.RuleOption) (*SourceNode, error) {
 	err := ss.Provision(ctx, props)
 	if err != nil {
 		return nil, err

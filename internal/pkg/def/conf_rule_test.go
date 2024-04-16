@@ -1,4 +1,4 @@
-// Copyright 2023-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,41 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package api
+package def
 
 import (
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestDefaultSourceTupleResult(t *testing.T) {
-	now := time.Now()
-
-	st := NewDefaultSourceTupleWithTime(nil, nil, now)
-
-	assert.Equal(t, &DefaultSourceTuple{
-		Mess: nil,
-		M:    nil,
-		Time: now,
-	}, st)
-	assert.Nil(t, st.Message())
-	assert.Nil(t, st.Meta())
-	assert.Equal(t, now, st.Timestamp())
-
-	st = NewDefaultSourceTuple(nil, nil)
-
-	assert.Equal(t, &DefaultSourceTuple{
-		Mess: nil,
-		M:    nil,
-		Time: st.Time,
-	}, st)
-	assert.Nil(t, st.Message())
-	assert.Nil(t, st.Meta())
-	assert.NotEqual(t, now, st.Timestamp())
-}
 
 func TestIsLongRunningScheduleRule(t *testing.T) {
 	r := &Rule{}

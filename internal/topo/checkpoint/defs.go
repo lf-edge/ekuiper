@@ -16,12 +16,13 @@ package checkpoint
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 type StreamTask interface {
 	GetName() string
 	GetStreamContext() api.StreamContext
-	SetQos(api.Qos)
+	SetQos(qos def.Qos)
 }
 
 type NonSinkTask interface {
