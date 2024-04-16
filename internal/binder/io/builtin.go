@@ -16,7 +16,6 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/http"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	plugin2 "github.com/lf-edge/ekuiper/v2/internal/plugin"
@@ -43,8 +42,8 @@ func init() {
 	//modules.RegisterSink("file", func() api.Sink { return file.File() })
 	//modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
-	modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
-	modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
+	//modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
+	//modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
 }
 
 type Manager struct{}
