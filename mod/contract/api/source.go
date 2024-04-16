@@ -18,13 +18,13 @@ package api
 // Implementations can implement part of them and combine
 
 //// Source is the interface that wraps the basic Source method.
+//// The lifecycle of a source: Provision -> Connect -> Subscribe -> Close
 //type Source interface {
-//	Closable
+//	Nodelet
+//	Connector
 //}
 //
 //type SourceConnector interface {
-//	Source
-//	Connect(ctx StreamContext) error
 //	Subscriber
 //}
 //

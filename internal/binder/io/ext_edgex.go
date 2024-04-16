@@ -16,13 +16,7 @@
 
 package io
 
-import (
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/edgex"
-	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-)
-
 func init() {
-	modules.RegisterSource("edgex", func() api.Source { return &edgex.EdgexSource{} })
+	//modules.RegisterSource("edgex", func() api.Source { return &edgex.EdgexSource{} })
 	//modules.RegisterSink("edgex", func() api.Sink { return &edgex.EdgexMsgBusSink{} })
 }

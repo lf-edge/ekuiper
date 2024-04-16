@@ -85,6 +85,16 @@ func (s *sink) Collect(ctx api.StreamContext, data api.ReadonlyMessage) error {
 	return s.publish(ctx, topic, data)
 }
 
+func (s *sink) CollectList(ctx api.StreamContext, data []api.ReadonlyMessage) error {
+	// TODO topic template
+	//topic, err := ctx.ParseTemplate(s.topic, data)
+	//if err != nil {
+	//	return err
+	//}
+	pubsub.ProduceList(ctx, s.topic, data)
+	return nil
+}
+
 //func (s *sink) CollectResend(ctx api.StreamContext, data interface{}) error {
 //	ctx.GetLogger().Debugf("resend %+v", data)
 //	return s.collectWithTopic(ctx, data, s.resendTopic)
@@ -115,9 +125,9 @@ func (s *sink) publish(ctx api.StreamContext, topic string, mess api.ReadonlyMes
 		if !ok {
 			return fmt.Errorf("key field %s not found in data %v", s.keyField, mess)
 		}
-		pubsub.ProduceUpdatable(ctx, topic, mess.ToMap(), rowkind, key)
+		pubsub.ProduceUpdatable(ctx, topic, mess, rowkind, key)
 	} else {
-		pubsub.Produce(ctx, topic, mess.ToMap())
+		pubsub.Produce(ctx, topic, mess)
 	}
 	return nil
 }

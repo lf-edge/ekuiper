@@ -17,6 +17,7 @@ package api
 // Sink is the interface that wraps the basic Sink method.
 // It is used to connect to the external system and send data to it.
 // A sink must implement the Sink interface AND any collector interface.
+// The lifecycle of a sink: Provision -> Connect -> Collect -> Close
 type Sink interface {
 	Nodelet
 	Connector
@@ -32,4 +33,5 @@ type BytesCollector interface {
 type MessageCollector interface {
 	Sink
 	Collect(ctx StreamContext, item ReadonlyMessage) error
+	CollectList(ctx StreamContext, items []ReadonlyMessage) error
 }

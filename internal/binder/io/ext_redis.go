@@ -16,15 +16,9 @@
 
 package io
 
-import (
-	"github.com/lf-edge/ekuiper/v2/internal/io/redis"
-	"github.com/lf-edge/ekuiper/v2/internal/io/redis/pubsub"
-	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-)
-
 func init() {
-	modules.RegisterLookupSource("redis", redis.GetLookupSource)
+	//modules.RegisterLookupSource("redis", redis.GetLookupSource)
 	//modules.RegisterSink("redis", redis.GetSink)
 	//modules.RegisterSink("redisPub", pubsub.RedisPub)
-	modules.RegisterSource("redisSub", pubsub.RedisSub)
+	//modules.RegisterSource("redisSub", pubsub.RedisSub)
 }

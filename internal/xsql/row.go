@@ -55,7 +55,7 @@ type RawRow interface {
 	Set(col string, value interface{})
 	// ToMap converts the row to a map to export to other systems *
 	ToMap() map[string]interface{}
-	// Pick the columns and discard others. It replaces the underlying message with a new value. There are 3 types to pick: column, alias and annonymous expressions.
+	// Pick the columns and discard others. It replaces the underlying message with a new value. There are 3 types to pick: column, alias and anonymous expressions.
 	// cols is a list [columnname, tablename]
 	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string)
 }

@@ -102,9 +102,9 @@ func TestWindow(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(4),
 				"op_3_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -140,9 +140,9 @@ func TestWindow(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(4),
 				"op_4_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -214,9 +214,9 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(7),
-				"sink_mockSink_0_records_out_total": int64(7),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(7),
+				"sink_memory_0_0_records_out_total": int64(7),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -244,7 +244,7 @@ func TestWindow(t *testing.T) {
 					"op_3_window":  {"op_4_join"},
 					"op_4_join":    {"op_5_having"},
 					"op_5_having":  {"op_6_project"},
-					"op_6_project": {"sink_mockSink"},
+					"op_6_project": {"sink_memory_0"},
 				},
 			},
 		},
@@ -278,9 +278,9 @@ func TestWindow(t *testing.T) {
 				"op_5_project_0_records_in_total":   int64(3),
 				"op_5_project_0_records_out_total":  int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -324,9 +324,9 @@ func TestWindow(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(4),
 				"op_3_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_sessionDemo_0_exceptions_total":  int64(0),
 				"source_sessionDemo_0_records_in_total":  int64(11),
@@ -398,9 +398,9 @@ func TestWindow(t *testing.T) {
 				"op_5_project_0_records_in_total":   int64(8),
 				"op_5_project_0_records_out_total":  int64(8),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(8),
-				"sink_mockSink_0_records_out_total": int64(8),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(8),
+				"sink_memory_0_0_records_out_total": int64(8),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -461,9 +461,9 @@ func TestWindow(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(4),
 				"op_3_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(7),
-				"sink_mockSink_0_records_out_total": int64(7),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(7),
+				"sink_memory_0_0_records_out_total": int64(7),
 
 				"source_demoError_0_exceptions_total":  int64(3),
 				"source_demoError_0_records_in_total":  int64(5),
@@ -494,9 +494,9 @@ func TestWindow(t *testing.T) {
 				"op_5_project_0_records_in_total":   int64(1),
 				"op_5_project_0_records_out_total":  int64(1),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(1),
-				"sink_mockSink_0_records_out_total": int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -557,9 +557,9 @@ func TestWindow(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(4),
 				"op_4_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -586,9 +586,9 @@ func TestWindow(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(1),
 				"op_3_project_0_records_out_total":  int64(1),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(1),
-				"sink_mockSink_0_records_out_total": int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -618,9 +618,9 @@ func TestWindow(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(5),
 				"op_3_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -660,9 +660,9 @@ func TestWindow(t *testing.T) {
 				"op_6_project_0_records_in_total":  int64(1),
 				"op_6_project_0_records_out_total": int64(1),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(1),
-				"sink_mockSink_0_records_out_total": int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -699,9 +699,9 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -727,9 +727,9 @@ func TestWindow(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(1),
 				"op_3_project_0_records_out_total":  int64(1),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(1),
-				"sink_mockSink_0_records_out_total": int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -828,9 +828,9 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -868,9 +868,9 @@ func TestEventWindow(t *testing.T) {
 				"op_5_project_0_records_in_total":   int64(2),
 				"op_5_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -943,9 +943,9 @@ func TestEventWindow(t *testing.T) {
 				"op_6_project_0_records_in_total":   int64(5),
 				"op_6_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1002,9 +1002,9 @@ func TestEventWindow(t *testing.T) {
 				"op_6_project_0_records_in_total":   int64(3),
 				"op_6_project_0_records_out_total":  int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1058,9 +1058,9 @@ func TestEventWindow(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(4),
 				"op_4_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_sessionDemoE_0_exceptions_total":  int64(0),
 				"source_sessionDemoE_0_records_in_total":  int64(12),
@@ -1137,9 +1137,9 @@ func TestEventWindow(t *testing.T) {
 				"op_6_project_0_records_in_total":   int64(9),
 				"op_6_project_0_records_out_total":  int64(9),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(9),
-				"sink_mockSink_0_records_out_total": int64(9),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(9),
+				"sink_memory_0_0_records_out_total": int64(9),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1202,9 +1202,9 @@ func TestEventWindow(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(5),
 				"op_4_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(6),
-				"sink_mockSink_0_records_out_total": int64(6),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(6),
+				"sink_memory_0_0_records_out_total": int64(6),
 
 				"source_demoErr_0_exceptions_total":  int64(1),
 				"source_demoErr_0_records_in_total":  int64(6),
@@ -1268,9 +1268,9 @@ func TestEventWindow(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(4),
 				"op_4_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_sessionDemoE_0_exceptions_total":  int64(0),
 				"source_sessionDemoE_0_records_in_total":  int64(12),
@@ -1330,9 +1330,9 @@ func TestEventWindow(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(5),
 				"op_4_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1381,8 +1381,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_watermark_0_records_out_total": int64(2),
 				"op_3_window_0_records_in_total":     int64(2),
 				"op_3_window_0_records_out_total":    int64(1),
-				"sink_mockSink_0_records_in_total":   int64(1),
-				"sink_mockSink_0_records_out_total":  int64(1),
+				"sink_memory_0_0_records_in_total":   int64(1),
+				"sink_memory_0_0_records_out_total":  int64(1),
 			},
 		},
 		{
@@ -1410,8 +1410,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_watermark_0_records_out_total": int64(2),
 				"op_3_window_0_records_in_total":     int64(2),
 				"op_3_window_0_records_out_total":    int64(2),
-				"sink_mockSink_0_records_in_total":   int64(2),
-				"sink_mockSink_0_records_out_total":  int64(2),
+				"sink_memory_0_0_records_in_total":   int64(2),
+				"sink_memory_0_0_records_out_total":  int64(2),
 			},
 		},
 		{
@@ -1431,8 +1431,8 @@ func TestEventWindow(t *testing.T) {
 				"op_2_watermark_0_records_out_total": int64(2),
 				"op_3_window_0_records_in_total":     int64(2),
 				"op_3_window_0_records_out_total":    int64(1),
-				"sink_mockSink_0_records_in_total":   int64(1),
-				"sink_mockSink_0_records_out_total":  int64(1),
+				"sink_memory_0_0_records_in_total":   int64(1),
+				"sink_memory_0_0_records_out_total":  int64(1),
 			},
 		},
 		{
@@ -1505,9 +1505,9 @@ func TestWindowError(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(1),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1537,9 +1537,9 @@ func TestWindowError(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(4),
 				"op_4_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1591,9 +1591,9 @@ func TestWindowError(t *testing.T) {
 				"op_5_project_0_records_in_total":   int64(5),
 				"op_5_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(8),
-				"sink_mockSink_0_records_out_total": int64(8),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(8),
+				"sink_memory_0_0_records_out_total": int64(8),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1635,9 +1635,9 @@ func TestWindowError(t *testing.T) {
 				"op_6_project_0_records_in_total":   int64(2),
 				"op_6_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1679,9 +1679,9 @@ func TestWindowError(t *testing.T) {
 				"op_4_project_0_records_in_total":   int64(3),
 				"op_4_project_0_records_out_total":  int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),

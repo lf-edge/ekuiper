@@ -64,7 +64,7 @@ func (hps *PushSource) Configure(endpoint string, props map[string]interface{}) 
 	return nil
 }
 
-func (hps *PushSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (hps *PushSource) Open(ctx api.StreamContext, consumer chan<- any, errCh chan<- error) {
 	t, done, err := httpserver.RegisterEndpoint(hps.conf.Endpoint, hps.conf.Method, hps.conf.ContentType)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)

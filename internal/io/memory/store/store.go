@@ -57,7 +57,7 @@ func runTable(topic string, topicRegex *regexp.Regexp, t *Table) {
 					t.delete(vv.Keyval)
 				}
 			default:
-				t.add(v)
+				//				t.add(v)
 			}
 			conf.Log.Debugf("receive data %v for %s", v, topic)
 		case <-ctx.Done():

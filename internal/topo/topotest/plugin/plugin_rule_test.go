@@ -216,9 +216,9 @@ func TestFuncState(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(8),
 				"op_2_project_0_records_out_total":  int64(8),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(8),
-				"sink_mockSink_0_records_out_total": int64(8),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(8),
+				"sink_memory_0_0_records_out_total": int64(8),
 
 				"source_text_0_exceptions_total":  int64(0),
 				"source_text_0_records_in_total":  int64(8),
@@ -276,9 +276,9 @@ func TestFuncStateCheckpoint(t *testing.T) {
 					"op_2_project_0_records_in_total":   int64(6),
 					"op_2_project_0_records_out_total":  int64(6),
 
-					"sink_mockSink_0_exceptions_total":  int64(0),
-					"sink_mockSink_0_records_in_total":  int64(6),
-					"sink_mockSink_0_records_out_total": int64(6),
+					"sink_memory_0_0_exceptions_total":  int64(0),
+					"sink_memory_0_0_records_in_total":  int64(6),
+					"sink_memory_0_0_records_out_total": int64(6),
 
 					"source_text_0_exceptions_total":  int64(0),
 					"source_text_0_records_in_total":  int64(6),
@@ -293,9 +293,9 @@ func TestFuncStateCheckpoint(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(3),
 				"op_2_project_0_records_out_total":  int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_text_0_exceptions_total":  int64(0),
 				"source_text_0_records_in_total":  int64(3),

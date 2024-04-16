@@ -32,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -185,7 +186,7 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 				conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 				continue
 			}
-			pubsub.Produce(ctx, topic, m)
+			pubsub.Produce(ctx, topic, xsql.Message(m))
 		case websocket.CloseMessage:
 			conf.Log.Infof("websocket endpoint %v recv close message", endpoint)
 			return
@@ -210,20 +211,24 @@ func sendProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 		case <-ctx.Done():
 			return
 		case data := <-subCh:
-			bsV := data.Message()[WebsocketServerDataKey]
-			bs, ok := bsV.([]byte)
-			if !ok {
-				conf.Log.Warnf("%v should send bytes", WebsocketServerDataKey)
-				continue
-			}
-			if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
-				// close sent error can't be captured by IsCloseError
-				if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
-					conf.Log.Infof("websocket endpoint %s connection get closed, err:%v", endpoint, err)
-					return
+			switch m := data.(type) {
+			case api.ReadonlyMessage:
+				bsV, _ := m.Get(WebsocketServerDataKey)
+				bs, ok := bsV.([]byte)
+				if !ok {
+					conf.Log.Warnf("%v should send bytes", WebsocketServerDataKey)
+					continue
 				}
-				conf.Log.Errorf("websocket endpoint %s send error %s", endpoint, err)
-				continue
+				if err := c.WriteMessage(websocket.TextMessage, bs); err != nil {
+					// close sent error can't be captured by IsCloseError
+					if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
+						conf.Log.Infof("websocket endpoint %s connection get closed, err:%v", endpoint, err)
+						return
+					}
+					conf.Log.Errorf("websocket endpoint %s send error %s", endpoint, err)
+					continue
+				}
+				// TODO other types
 			}
 		}
 	}
@@ -315,7 +320,7 @@ func RegisterEndpoint(endpoint string, method string, _ string) (string, chan st
 			return
 		}
 		sctx.GetLogger().Debugf("httppush received message %s", m)
-		pubsub.Produce(sctx, topic, m)
+		pubsub.Produce(sctx, topic, xsql.Message(m))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	}).Methods(method)

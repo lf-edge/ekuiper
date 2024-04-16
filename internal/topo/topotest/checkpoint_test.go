@@ -71,8 +71,8 @@ package topotest
 //					"op_3_project_0_records_in_total":  int64(4),
 //					"op_3_project_0_records_out_total": int64(4),
 //
-//					"sink_mockSink_0_records_in_total":  int64(4),
-//					"sink_mockSink_0_records_out_total": int64(4),
+//					"sink_memory_0_0_records_in_total":  int64(4),
+//					"sink_memory_0_0_records_out_total": int64(4),
 //
 //					"source_demo_0_records_in_total":  int64(3),
 //					"source_demo_0_records_out_total": int64(3),
@@ -87,8 +87,8 @@ package topotest
 //				"op_3_project_0_records_in_total":  int64(1),
 //				"op_3_project_0_records_out_total": int64(1),
 //
-//				"sink_mockSink_0_records_in_total":  int64(1),
-//				"sink_mockSink_0_records_out_total": int64(1),
+//				"sink_memory_0_0_records_in_total":  int64(1),
+//				"sink_memory_0_0_records_out_total": int64(1),
 //
 //				"source_demo_0_records_in_total":  int64(3),
 //				"source_demo_0_records_out_total": int64(3),
@@ -168,9 +168,9 @@ package topotest
 //					"op_5_project_0_records_in_total":  int64(2),
 //					"op_5_project_0_records_out_total": int64(2),
 //
-//					"sink_mockSink_0_exceptions_total":  int64(0),
-//					"sink_mockSink_0_records_in_total":  int64(2),
-//					"sink_mockSink_0_records_out_total": int64(2),
+//					"sink_memory_0_0_exceptions_total":  int64(0),
+//					"sink_memory_0_0_records_in_total":  int64(2),
+//					"sink_memory_0_0_records_out_total": int64(2),
 //
 //					"source_demo_0_exceptions_total":  int64(0),
 //					"source_demo_0_records_in_total":  int64(3),
@@ -184,9 +184,9 @@ package topotest
 //			PauseSize: 3,
 //			Cc:        2,
 //			PauseMetric: map[string]interface{}{
-//				"sink_mockSink_0_exceptions_total":  int64(0),
-//				"sink_mockSink_0_records_in_total":  int64(2),
-//				"sink_mockSink_0_records_out_total": int64(2),
+//				"sink_memory_0_0_exceptions_total":  int64(0),
+//				"sink_memory_0_0_records_in_total":  int64(2),
+//				"sink_memory_0_0_records_out_total": int64(2),
 //
 //				"source_demo_0_exceptions_total":  int64(0),
 //				"source_demo_0_records_in_total":  int64(3),

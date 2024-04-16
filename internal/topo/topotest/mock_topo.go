@@ -52,10 +52,19 @@ type RuleTest struct {
 }
 
 // CommonResultFunc A function to convert memory sink result to map slice
-func CommonResultFunc(result []api.SourceTuple) [][]map[string]any {
+func CommonResultFunc(result []any) [][]map[string]any {
 	maps := make([][]map[string]any, 0, len(result))
 	for _, v := range result {
-		maps = append(maps, []map[string]any{v.Message()})
+		switch rt := v.(type) {
+		case api.ReadonlyMessage:
+			maps = append(maps, []map[string]any{rt.ToMap()})
+		case []api.ReadonlyMessage:
+			nm := make([]map[string]any, 0, len(rt))
+			for _, mm := range rt {
+				nm = append(nm, mm.ToMap())
+			}
+			maps = append(maps, nm)
+		}
 	}
 	return maps
 }
@@ -108,7 +117,7 @@ func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, w in
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, "", limit)
 			ticker := time.After(1000 * time.Second)
-			sinkResult := make([]api.SourceTuple, 0, limit)
+			sinkResult := make([]any, 0, limit)
 		outerloop:
 			for {
 				select {

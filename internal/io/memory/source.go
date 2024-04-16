@@ -30,7 +30,7 @@ type source struct {
 	bufferLength int
 }
 
-func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
+func (s *source) Open(ctx api.StreamContext, consumer chan<- any, _ chan<- error) {
 	ch := pubsub.CreateSub(s.topic, s.topicRegex, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.bufferLength)
 	for {
 		select {
