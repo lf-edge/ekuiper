@@ -71,7 +71,7 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestRunRandom(t *testing.T) {
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTuple(map[string]interface{}{"count": 50}, nil),
 		api.NewDefaultSourceTuple(map[string]interface{}{"count": 50}, nil),
 		api.NewDefaultSourceTuple(map[string]interface{}{"count": 50}, nil),

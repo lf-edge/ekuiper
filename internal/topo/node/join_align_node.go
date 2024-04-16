@@ -46,7 +46,7 @@ func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (
 }
 
 func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	n.prepareExec(ctx)
+	n.prepareExec(ctx, "op")
 	log := ctx.GetLogger()
 	go func() {
 		err := infra.SafeRun(func() error {

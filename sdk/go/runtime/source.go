@@ -63,7 +63,7 @@ func setupSourceRuntime(con *Control, s api.Source) (*sourceRuntime, error) {
 
 func (s *sourceRuntime) run() {
 	errCh := make(chan error)
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	go s.s.Open(s.ctx, consumer, errCh)
 	for {
 		select {

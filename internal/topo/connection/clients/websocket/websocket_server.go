@@ -25,6 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 type websocketServerConnWrapper struct {
@@ -76,14 +77,19 @@ func (wsw *websocketServerConnWrapper) process(ctx api.StreamContext, subChan []
 		case <-ctx.Done():
 			return
 		case data := <-ch:
-			bs, err := json.Marshal(data.Message())
-			if err != nil {
-				messageErrors <- err
-				continue
+			// TODO other types
+			switch t := data.(type) {
+			case api.Tuple:
+				bs, err := json.Marshal(t.Message())
+				if err != nil {
+					messageErrors <- err
+					continue
+				}
+				for _, subC := range subChan {
+					subC.Messages <- bs
+				}
 			}
-			for _, subC := range subChan {
-				subC.Messages <- bs
-			}
+
 		default:
 			if wsw.isFinish() {
 				return
@@ -113,9 +119,9 @@ func (wsw *websocketServerConnWrapper) Release(c api.StreamContext) bool {
 }
 
 func (wsw *websocketServerConnWrapper) Publish(c api.StreamContext, topic string, message []byte, params map[string]interface{}) error {
-	pubsub.Produce(c, wsw.sendTopic, map[string]interface{}{
+	pubsub.Produce(c, wsw.sendTopic, api.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{
 		httpserver.WebsocketServerDataKey: message,
-	})
+	}), nil))
 	return nil
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,97 +15,247 @@
 package node
 
 import (
-	"reflect"
+	"errors"
+	"fmt"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-func TestGetConf_Apply(t *testing.T) {
-	result := map[string]interface{}{
-		"url":                "http://localhost",
-		"method":             "post",
-		"interval":           10000,
-		"timeout":            5000,
-		"bodyType":           "json",
-		"key":                "",
-		"format":             "json",
-		"responseType":       "code",
-		"incremental":        false,
-		"insecureSkipVerify": true,
-		"headers": map[string]interface{}{
-			"accept": "application/json",
+func TestSCNLC(t *testing.T) {
+	mc := mockclock.GetMockClock()
+	expects := []any{
+		&xsql.Tuple{
+			Raw:       []byte("hello"),
+			Metadata:  map[string]any{"topic": "demo"},
+			Timestamp: mc.Now().UnixMilli(),
+			Emitter:   "mock_connector",
+		},
+		&xsql.ErrorSourceTuple{
+			Error: errors.New("expect api.RawTuple but got *api.DefaultSourceTuple"),
+		},
+		&xsql.Tuple{
+			Raw:       []byte("world"),
+			Metadata:  map[string]any{"topic": "demo"},
+			Timestamp: mc.Now().UnixMilli(),
+			Emitter:   "mock_connector",
 		},
 	}
-	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
-		DATASOURCE: "/feed",
-		TYPE:       "httppull",
-	}, &api.RuleOption{SendError: false}, false, false, nil)
-	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
-	if !reflect.DeepEqual(result, conf) {
-		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
+	var sc api.SourceConnector = &MockSourceConnector{
+		data: [][]byte{
+			[]byte("hello"),
+			nil,
+			[]byte("world"),
+		},
+	}
+	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo", map[string]any{}, &api.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.NoError(t, err)
+	result := make(chan any, 10)
+	err = scn.AddOutput(result, "testResult")
+	assert.NoError(t, err)
+
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	errCh := make(chan error)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	limit := len(expects)
+	actual := make([]any, 0, limit)
+	go func() {
+		defer wg.Done()
+		ticker := time.After(2000 * time.Second)
+		for {
+			select {
+			case sg := <-errCh:
+				switch et := sg.(type) {
+				case error:
+					assert.Fail(t, et.Error())
+					return
+				default:
+					fmt.Println("ctrlCh", et)
+				}
+			case tuple := <-result:
+				actual = append(actual, tuple)
+				limit--
+				if limit <= 0 {
+					return
+				}
+			case <-ticker:
+				assert.Fail(t, "timeout")
+				return
+			}
+		}
+	}()
+	scn.Open(ctx, errCh)
+	wg.Wait()
+	assert.Equal(t, expects, actual)
+}
+
+func TestNewError(t *testing.T) {
+	var sc api.SourceConnector = &MockSourceConnector{
+		data: [][]byte{
+			[]byte("hello"),
+			[]byte("world"),
+		},
+	}
+	_, err := NewSourceConnectorNode("mock_connector", sc, "", map[string]any{}, &api.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.Error(t, err)
+	assert.Equal(t, "datasource name cannot be empty", err.Error())
+}
+
+func TestConnError(t *testing.T) {
+	var sc api.SourceConnector = &MockSourceConnector{
+		data: nil, // nil data to produce mock connect error
+	}
+	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo2", map[string]any{}, &api.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.NoError(t, err)
+
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	assert.NoError(t, err)
+	errCh := make(chan error)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var errResult error
+	go func() {
+		defer wg.Done()
+		ticker := time.After(2 * time.Second)
+		for {
+			select {
+			case sg := <-errCh:
+				switch et := sg.(type) {
+				case error:
+					errResult = et
+					return
+				default:
+					fmt.Println("ctrlCh", et)
+				}
+			case <-ticker:
+				return
+			}
+		}
+	}()
+	scn.Open(ctx, errCh)
+	wg.Wait()
+	assert.Error(t, errResult)
+	assert.Equal(t, "data is nil", errResult.Error())
+}
+
+func TestSubError(t *testing.T) {
+	var sc api.SourceConnector = &MockSourceConnector{
+		data: [][]byte{
+			[]byte("hello"),
+			[]byte("world"),
+		},
+	}
+	scn, err := NewSourceConnectorNode("mock_connector", sc, "demo2", map[string]any{}, &api.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.NoError(t, err)
+
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	// subscribe once to produce error
+	err = sc.Subscribe(ctx)
+	assert.NoError(t, err)
+	err = sc.Subscribe(ctx)
+	assert.Error(t, err)
+	errCh := make(chan error)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var errResult error
+	go func() {
+		defer wg.Done()
+		ticker := time.After(5 * time.Second)
+		for {
+			select {
+			case sg := <-errCh:
+				switch et := sg.(type) {
+				case error:
+					errResult = et
+					return
+				default:
+					fmt.Println("ctrlCh", et)
+				}
+			case <-ticker:
+				return
+			}
+		}
+	}()
+	scn.Open(ctx, errCh)
+	wg.Wait()
+	assert.Error(t, errResult)
+	assert.Equal(t, "already subscribed", errResult.Error())
+}
+
+type MockSourceConnector struct {
+	data       [][]byte
+	topic      string
+	subscribed atomic.Bool
+}
+
+func (m *MockSourceConnector) Connect(ctx api.StreamContext) error {
+	if m.data == nil {
+		return fmt.Errorf("data is nil")
+	}
+	return nil
+}
+
+func (m *MockSourceConnector) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
+	if !m.subscribed.Load() {
+		time.Sleep(100 * time.Millisecond)
+	}
+	for _, d := range m.data {
+		if d != nil {
+			consumer <- api.NewDefaultRawTuple(d, map[string]any{
+				"topic": m.topic,
+			}, timex.GetNow())
+		} else {
+			consumer <- api.NewDefaultSourceTuple(nil, nil)
+		}
+	}
+	<-ctx.Done()
+	fmt.Println("MockSourceConnector closed")
+}
+
+func (m *MockSourceConnector) Configure(datasource string, _ map[string]interface{}) error {
+	if datasource == "" {
+		return fmt.Errorf("datasource name cannot be empty")
+	}
+	m.topic = datasource
+	return nil
+}
+
+func (m *MockSourceConnector) Close(ctx api.StreamContext) error {
+	if m.subscribed.Load() {
+		m.subscribed.Store(false)
+		return nil
+	} else {
+		return fmt.Errorf("not subscribed")
 	}
 }
 
-func TestGetConfAndConvert_Apply(t *testing.T) {
-	result := map[string]interface{}{
-		"url":                "http://localhost",
-		"method":             "post",
-		"interval":           10000,
-		"timeout":            5000,
-		"bodyType":           "json",
-		"key":                "",
-		"incremental":        false,
-		"format":             "json",
-		"responseType":       "code",
-		"insecureSkipVerify": true,
-		"headers": map[string]interface{}{
-			"accept": "application/json",
-		},
+func (m *MockSourceConnector) Subscribe(ctx api.StreamContext) error {
+	if m.subscribed.Load() {
+		return fmt.Errorf("already subscribed")
 	}
-	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
-		DATASOURCE: "/feed",
-		TYPE:       "httppull",
-	}, &api.RuleOption{SendError: false}, false, false, nil)
-	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
-	assert.Equal(t, result, conf)
-
-	r := &httpPullSourceConfig{
-		Url:                "http://localhost",
-		Method:             "post",
-		Interval:           10000,
-		Timeout:            5000,
-		Incremental:        false,
-		BodyType:           "json",
-		InsecureSkipVerify: true,
-		Headers: map[string]interface{}{
-			"accept": "application/json",
-		},
-	}
-
-	cfg := &httpPullSourceConfig{}
-	err := cast.MapToStruct(conf, cfg)
-	if err != nil {
-		t.Errorf("map to sturct error %s", err)
-		return
-	}
-
-	assert.Equal(t, r, cfg)
-}
-
-type httpPullSourceConfig struct {
-	Url                string                 `json:"url"`
-	Method             string                 `json:"method"`
-	Interval           int                    `json:"interval"`
-	Timeout            int                    `json:"timeout"`
-	Incremental        bool                   `json:"incremental"`
-	Body               string                 `json:"body"`
-	BodyType           string                 `json:"bodyType"`
-	InsecureSkipVerify bool                   `json:"insecureSkipVerify"`
-	Headers            map[string]interface{} `json:"headers"`
+	m.subscribed.Store(true)
+	return nil
 }

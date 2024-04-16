@@ -91,7 +91,7 @@ func TestSource_Configure(t *testing.T) {
 
 func TestSource_Open(t *testing.T) {
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": 2}, nil, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": 4}, nil, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": 2}, nil, mc.Now()),
@@ -110,7 +110,7 @@ func TestSource_Open(t *testing.T) {
 
 func TestSourceNoLoop_Open(t *testing.T) {
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": 2}, nil, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": 4}, nil, mc.Now()),
 	}

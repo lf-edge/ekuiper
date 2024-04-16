@@ -52,14 +52,14 @@ func TestUpdate(t *testing.T) {
 			ms.Collect(ctx, d)
 		}
 	}()
-	var actual []api.SourceTuple
+	var actual []api.Tuple
 	for i := 0; i < 4; i++ {
 		d := <-c
 		fmt.Println(d)
 		actual = append(actual, d)
 	}
 	mc := mockclock.GetMockClock()
-	expects := []api.SourceTuple{
+	expects := []api.Tuple{
 		&pubsub.UpdatableTuple{
 			DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": "1", "verb": "insert", "name": "test1"}, map[string]interface{}{"topic": "testupdate"}, mc.Now()),
 			Rowkind:            "insert",

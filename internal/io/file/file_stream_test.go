@@ -174,7 +174,7 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 				"file": filepath.Join(dir, filename),
 			}
 			mc := mockclock.GetMockClock()
-			exp := []api.SourceTuple{
+			exp := []api.Tuple{
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"key": "value1"}, meta, mc.Now()),
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"key": "value2"}, meta, mc.Now()),
 			}

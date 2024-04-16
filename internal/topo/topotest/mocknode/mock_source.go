@@ -32,9 +32,22 @@ type MockSource struct {
 	sync.Mutex
 }
 
+func (m *MockSource) Provision(ctx api.StreamContext, configs map[string]any) error {
+	datasource, ok := configs["datasource"]
+	if !ok {
+		return fmt.Errorf("datasource is required")
+	}
+	m.data = TestData[datasource.(string)]
+	return nil
+}
+
+func (m *MockSource) Connect(ctx api.StreamContext) error {
+	return nil
+}
+
 const TIMELEAP = 200
 
-func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
+func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, _ chan<- error) {
 	log := ctx.GetLogger()
 	mockClock := mockclock.GetMockClock()
 	log.Infof("%d: mock source %s starts", timex.GetNowInMilli(), ctx.GetOpId())
@@ -57,7 +70,7 @@ func (m *MockSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple
 		case <-next:
 			m.Lock()
 			m.offset = i + 1
-			consumer <- api.NewDefaultSourceTupleWithTime(d.Message, xsql.Metadata{"topic": "mock"}, mockClock.Now())
+			consumer <- api.NewDefaultSourceTupleWithTime(d.Message, xsql.Message{"topic": "mock"}, mockClock.Now())
 			log.Debugf("%d: mock source %s is sending data %d:%s", cast.TimeToUnixMilli(mockClock.Now()), ctx.GetOpId(), i, d)
 			m.Unlock()
 		case <-ctx.Done():
@@ -90,10 +103,5 @@ func (m *MockSource) ResetOffset(input map[string]interface{}) error {
 
 func (m *MockSource) Close(_ api.StreamContext) error {
 	m.offset = 0
-	return nil
-}
-
-func (m *MockSource) Configure(dataKey string, _ map[string]interface{}) error {
-	m.data = TestData[dataKey]
 	return nil
 }

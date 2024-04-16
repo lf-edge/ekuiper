@@ -27,7 +27,7 @@ func TestExpiration(t *testing.T) {
 	c := NewCache(20, false)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := [][]api.SourceTuple{
+	expects := [][]api.Tuple{
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1}, nil, clock.Now())},
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2}, nil, clock.Now()), api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3}, nil, clock.Now())},
 		{},
@@ -85,7 +85,7 @@ func TestNoExpiration(t *testing.T) {
 	c := NewCache(0, true)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := [][]api.SourceTuple{
+	expects := [][]api.Tuple{
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1}, nil, clock.Now())},
 		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2}, nil, clock.Now()), api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3}, nil, clock.Now())},
 		{},

@@ -31,12 +31,12 @@ func TestMultiNeuron(t *testing.T) {
 	url1 := "tcp://127.0.0.1:33331"
 	url2 := "tcp://127.0.0.1:33332"
 	mc := mockclock.GetMockClock()
-	exp1 := []api.SourceTuple{
+	exp1 := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "yellow"}, "errors": map[string]interface{}{"tag_name3": 122.0}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33331"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "green", "tag_name3": 60.0}, "errors": map[string]interface{}{}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33331"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 15.4, "tag_name2": "green", "tag_name3": 70.0}, "errors": map[string]interface{}{}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33331"}, mc.Now()),
 	}
-	exp2 := []api.SourceTuple{
+	exp2 := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "yellow"}, "errors": map[string]interface{}{"tag_name3": 122.0}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33332"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "green", "tag_name3": 60.0}, "errors": map[string]interface{}{}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33332"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 15.4, "tag_name2": "green", "tag_name3": 70.0}, "errors": map[string]interface{}{}}, map[string]interface{}{"topic": "$$neuron_tcp://127.0.0.1:33332"}, mc.Now()),

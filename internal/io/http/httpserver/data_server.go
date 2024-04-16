@@ -34,6 +34,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // manage the global http data server
@@ -168,7 +169,6 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 			return
 		default:
 		}
-
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
 			if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
@@ -178,6 +178,7 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 			conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 			continue
 		}
+		rcvTime := timex.GetNow()
 		conf.Log.Infof("websocket endpoint %v recv msg success", endpoint)
 		switch msgType {
 		case websocket.TextMessage:
@@ -186,7 +187,7 @@ func recvProcess(ctx api.StreamContext, c *websocket.Conn, endpoint string) {
 				conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 				continue
 			}
-			pubsub.Produce(ctx, topic, xsql.Message(m))
+			pubsub.Produce(ctx, topic, api.NewDefaultSourceTupleWithTime(xsql.Message(m), nil, rcvTime))
 		case websocket.CloseMessage:
 			conf.Log.Infof("websocket endpoint %v recv close message", endpoint)
 			return
@@ -310,6 +311,7 @@ func RegisterEndpoint(endpoint string, method string, _ string) (string, chan st
 	topic := TopicPrefix + endpoint
 	pubsub.CreatePub(topic)
 	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+		rcvTime := timex.GetNow()
 		sctx.GetLogger().Debugf("receive http request: %s", r.URL.String())
 		defer r.Body.Close()
 		m := make(map[string]interface{})
@@ -320,7 +322,7 @@ func RegisterEndpoint(endpoint string, method string, _ string) (string, chan st
 			return
 		}
 		sctx.GetLogger().Debugf("httppush received message %s", m)
-		pubsub.Produce(sctx, topic, xsql.Message(m))
+		pubsub.Produce(sctx, topic, api.NewDefaultSourceTupleWithTime(xsql.Message(m), nil, rcvTime))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	}).Methods(method)

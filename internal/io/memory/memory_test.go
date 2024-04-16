@@ -41,7 +41,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	ctx1 := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	ctx, cancel := ctx1.WithCancel()
 	defer cancel()
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	errorChannel := make(chan error)
 	srcProps := make(map[string]interface{})
 	srcProps["option"] = "value"
@@ -149,7 +149,7 @@ func TestMultipleTopics(t *testing.T) {
 				},
 			},
 		}
-		expected = []api.SourceTuple{
+		expected = []api.Tuple{
 			&api.DefaultSourceTuple{
 				Mess: map[string]interface{}{
 					"id":   1,
@@ -344,7 +344,7 @@ func TestMultipleTopics(t *testing.T) {
 
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	errorChannel := make(chan error)
 
 	count := 0
@@ -399,7 +399,7 @@ func TestMultipleTopics(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		close(consumer)
 	}()
-	var results []api.SourceTuple
+	var results []api.Tuple
 	for res := range consumer {
 		results = append(results, res)
 	}

@@ -30,7 +30,7 @@ func TestTable(t *testing.T) {
 	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3, "b": "4"}, nil, mc.Now()))
 	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()))
 	v, _ := tb.Read([]string{"a"}, []interface{}{1})
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()),
 	}
 	if !reflect.DeepEqual(v, exp) {
@@ -38,7 +38,7 @@ func TestTable(t *testing.T) {
 		return
 	}
 	v, _ = tb.Read([]string{"b"}, []interface{}{"0"})
-	exp = []api.SourceTuple{
+	exp = []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": "0"}, nil, mc.Now()),
 	}
 	if !reflect.DeepEqual(v, exp) {
@@ -49,7 +49,7 @@ func TestTable(t *testing.T) {
 	tb.delete(3)
 	tb.add(api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()))
 	v, _ = tb.Read([]string{"b"}, []interface{}{"0"})
-	exp = []api.SourceTuple{
+	exp = []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2, "b": "0"}, nil, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 5, "b": "0"}, nil, mc.Now()),
 	}
@@ -67,7 +67,7 @@ func TestTable(t *testing.T) {
 	}
 
 	v, _ = tb.Read([]string{"a", "b"}, []interface{}{1, "1"})
-	exp = []api.SourceTuple{
+	exp = []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1, "b": "1"}, nil, mc.Now()),
 	}
 	if !reflect.DeepEqual(v, exp) {

@@ -102,7 +102,7 @@ func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowO
 // input: *xsql.Tuple from preprocessor
 // output: xsql.WindowTuplesSet
 func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
-	o.prepareExec(ctx)
+	o.prepareExec(ctx, "op")
 	log := ctx.GetLogger()
 	var inputs []*xsql.Tuple
 	if s, err := ctx.GetState(WindowInputsKey); err == nil {

@@ -39,7 +39,7 @@ func TestJsonFile(t *testing.T) {
 		"file": filepath.Join(path, "test", "test.json"),
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta, mc.Now()),
@@ -63,7 +63,7 @@ func TestJsonFolder(t *testing.T) {
 	}
 	mc := mockclock.GetMockClock()
 	moveToFolder := filepath.Join(path, "test", "moveTo")
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe", "height": 1.82}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe", "height": 1.65}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "Will Doe", "height": 1.76}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f2.json")}, mc.Now()),
@@ -103,7 +103,7 @@ func TestJsonFolderParallel(t *testing.T) {
 		t.Fatal(err)
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe", "height": 1.82}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe", "height": 1.65}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f1.json")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "Will Doe", "height": 1.76}, map[string]interface{}{"file": filepath.Join(path, "test", "json", "f2.json")}, mc.Now()),
@@ -165,7 +165,7 @@ func TestCSVFolder(t *testing.T) {
 	}
 	mc := mockclock.GetMockClock()
 	// Start testing
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"@": "#", "id": "1", "ts": "1670170500", "value": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "a.csv")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"@": "#", "id": "2", "ts": "1670170900", "value": "176"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "a.csv")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": "33", "ts": "1670270500", "humidity": "89"}, map[string]interface{}{"file": filepath.Join(path, "test", "csvTemp", "b.csv")}, mc.Now()),
@@ -229,7 +229,7 @@ func TestCSVFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ns": "@", "id": "id", "ts": "ts", "number": "value"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ns": "#", "id": "1", "ts": "1670170500", "number": "161.927872"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ns": "#", "id": "2", "ts": "1670170900", "number": "176"}, map[string]interface{}{"file": filepath.Join(path, "test", "csv", "a.csv")}, mc.Now()),
@@ -260,7 +260,7 @@ func TestJsonLines(t *testing.T) {
 		"file": filepath.Join(path, "test", "test.lines"),
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Jane Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "John Smith"}, meta, mc.Now()),
@@ -289,7 +289,7 @@ func TestEmptyListJsonLines(t *testing.T) {
 		"file": filepath.Join(path, "test", "test_empty_list.lines"),
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(4), "name": "John Smith"}, meta, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(5), "name": "John Smith"}, meta, mc.Now()),
@@ -317,7 +317,7 @@ func TestInvalidJsonLines(t *testing.T) {
 		"file": filepath.Join(path, "test", "test_invalid.lines"),
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		&xsql.ErrorSourceTuple{Error: fmt.Errorf("Invalid data format, cannot decode \"id\": 1,\"name\": \"John Doe" +
 			"\" with error decode failed: invalid character ':' after top-level value")},
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John Doe"}, meta, mc.Now()),

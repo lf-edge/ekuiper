@@ -82,7 +82,7 @@ func (es *EdgexSource) Configure(_ string, props map[string]interface{}) error {
 	return nil
 }
 
-func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (es *EdgexSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	log := ctx.GetLogger()
 
 	messages := make(chan interface{}, es.buflen)

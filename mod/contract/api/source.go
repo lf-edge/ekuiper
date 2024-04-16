@@ -14,27 +14,35 @@
 
 package api
 
+import "time"
+
 // The source capabilities are split to several functionality
 // Implementations can implement part of them and combine
 
-//// Source is the interface that wraps the basic Source method.
-//// The lifecycle of a source: Provision -> Connect -> Subscribe -> Close
-//type Source interface {
-//	Nodelet
-//	Connector
-//}
-//
-//type SourceConnector interface {
-//	Subscriber
-//}
-//
-//// Rewindable is a source feature that allows the source to rewind to a specific offset.
-//type Rewindable interface {
-//	GetOffset() (any, error)
-//	Rewind(offset any) error
-//	ResetOffset(input map[string]any) error
-//}
-//
-//type Subscriber interface {
-//	Subscribe(ctx StreamContext) error
-//}
+// Source is the interface that wraps the basic Source method.
+// The lifecycle of a source: Provision -> Connect -> Subscribe -> Close
+type Source interface {
+	Nodelet
+	Connector
+}
+
+type BytesIngest func(ctx StreamContext, data RawTuple)
+
+type BytesSource interface {
+	Source
+	Subscribe(ctx StreamContext, ingest BytesIngest) error
+}
+
+type TupleIngest func(ctx StreamContext, data any, ts time.Time)
+
+type TupleSource interface {
+	Source
+	Subscribe(ctx StreamContext, ingest TupleIngest) error
+}
+
+// Rewindable is a source feature that allows the source to rewind to a specific offset.
+type Rewindable interface {
+	GetOffset() (any, error)
+	Rewind(offset any) error
+	ResetOffset(input map[string]any) error
+}

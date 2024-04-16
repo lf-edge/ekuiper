@@ -48,7 +48,7 @@ func (m *Source) Configure(_ string, props map[string]interface{}) error {
 	return nil
 }
 
-func (m *Source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (m *Source) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	ctx.GetLogger().Infof("trail run source starts")
 	ticker := time.NewTicker(time.Duration(m.c.Interval) * time.Millisecond)
 	defer ticker.Stop()
@@ -72,7 +72,7 @@ func (m *Source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, er
 	}
 }
 
-func (m *Source) send(ctx api.StreamContext, consumer chan<- api.SourceTuple, index int) int {
+func (m *Source) send(ctx api.StreamContext, consumer chan<- api.Tuple, index int) int {
 	tuple := api.NewDefaultSourceTupleWithTime(m.c.Data[index], nil, timex.GetNow())
 	select {
 	case consumer <- tuple:

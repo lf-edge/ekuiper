@@ -67,7 +67,7 @@ func TestUpdateLookup(t *testing.T) {
 		}
 	}()
 	mc := mockclock.GetMockClock()
-	expected := []api.SourceTuple{
+	expected := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test"}, mc.Now()),
 	}
 	result, err := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
@@ -121,7 +121,7 @@ func TestLookup(t *testing.T) {
 	result, _ := ls.Lookup(ctx, []string{}, []string{"ff"}, []interface{}{"value1"})
 	mockclock.ResetClock(0)
 	mc := mockclock.GetMockClock()
-	expected := []api.SourceTuple{
+	expected := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value2"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"ff": "value1", "gg": "value4"}, map[string]interface{}{"topic": "test2"}, mc.Now()),
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -44,16 +45,15 @@ func (l *lookupSource) Configure(datasource string, props map[string]interface{}
 	return l.InitConf(datasource, props)
 }
 
-func (l *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
+func (l *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.Tuple, error) {
 	resps, err := l.pull(ctx)
 	if err != nil {
 		return nil, err
 	}
 	matched := l.lookupJoin(resps, keys, values)
-	var results []api.SourceTuple
-	meta := make(map[string]interface{})
+	var results []api.Tuple
 	for _, resp := range matched {
-		results = append(results, api.NewDefaultSourceTupleWithTime(resp, meta, timex.GetNow()))
+		results = append(results, api.NewDefaultSourceTupleWithTime(xsql.Message(resp), nil, timex.GetNow()))
 	}
 	return results, nil
 }

@@ -71,7 +71,7 @@ func NewDecodeOp(name, StreamName string, ruleId string, rOpt *api.RuleOption, o
 
 // Exec decode op receives raw data and converts it to message
 func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	o.prepareExec(ctx)
+	o.prepareExec(ctx, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)

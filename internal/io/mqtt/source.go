@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -35,30 +34,27 @@ type SourceConnector struct {
 	cfg   *Conf
 	props map[string]any
 
-	cli      *Connection
-	consumer chan<- api.SourceTuple
-	stats    metric.StatManager
+	cli   *Connection
+	stats metric.StatManager
 }
 
 type Conf struct {
-	Qos       int `json:"qos"`
-	BufferLen int `json:"bufferLength"`
+	Topic string `json:"datasource"`
+	Qos   int    `json:"qos"`
 }
 
 func (ms *SourceConnector) SetupStats(stats metric.StatManager) {
 	ms.stats = stats
 }
 
-func (ms *SourceConnector) Configure(topic string, props map[string]any) error {
-	if topic == "" {
-		return fmt.Errorf("topic cannot be empty")
-	}
-	cfg := &Conf{
-		BufferLen: 10240,
-	}
+func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
+	cfg := &Conf{}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", props, err)
+	}
+	if cfg.Topic == "" {
+		return fmt.Errorf("topic is required")
 	}
 	_, err = validateConfig(props)
 	if err != nil {
@@ -66,14 +62,11 @@ func (ms *SourceConnector) Configure(topic string, props map[string]any) error {
 	}
 	ms.props = props
 	ms.cfg = cfg
-	ms.tpc = topic
+	ms.tpc = cfg.Topic
 	return nil
 }
 
-func (ms *SourceConnector) Ping(dataSource string, props map[string]interface{}) error {
-	if err := ms.Configure(dataSource, props); err != nil {
-		return err
-	}
+func (ms *SourceConnector) Ping(props map[string]interface{}) error {
 	cli, err := CreateClient(context.Background(), "", ms.props)
 	if err != nil {
 		return err
@@ -91,81 +84,33 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
-func (ms *SourceConnector) Subscribe(ctx api.StreamContext) error {
+func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest) error {
 	return ms.cli.Subscribe(ms.tpc, &SubscriptionInfo{
 		Qos: byte(ms.cfg.Qos),
 		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
-			ms.onMessage(ctx, message)
+			ms.onMessage(ctx, message, ingest)
 		},
+		// TODO signal ingest
 		ErrHandler: func(err error) {
 			ms.onError(ctx, err)
 		},
 	})
 }
 
-func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
-	failpoint.Inject("ctxCancel", func(val failpoint.Value) {
-		if val.(bool) {
-			panic("shouldn't run")
-		}
-	})
-
-	if ms.consumer == nil {
-		// The consumer is closed, no need to process the message
-		ctx.GetLogger().Debugf("The consumer is closed, skip to process the message %s from topic %s", string(msg.Payload()), msg.Topic())
-		return
-	}
+func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message, ingest api.BytesIngest) {
 	if msg != nil {
 		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	}
 	rcvTime := timex.GetNow()
-	select {
-	case ms.consumer <- api.NewDefaultRawTuple(msg.Payload(), map[string]interface{}{
+	ingest(ctx, api.NewDefaultRawTuple(msg.Payload(), xsql.Message(map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
-	}, rcvTime):
-	default:
-		ms.stats.IncTotalExceptions("buffer full from mqtt connector, drop message")
-	}
+	}), rcvTime))
 }
 
 func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
-	failpoint.Inject("ctxCancel", func(val failpoint.Value) {
-		if val.(bool) {
-			panic("shouldn't run")
-		}
-	})
-
-	if ms.consumer == nil {
-		// The consumer is closed, no need to process the message
-		ctx.GetLogger().Debugf("The consumer is closed, skip to send the error")
-		return
-	}
-	select {
-	case ms.consumer <- &xsql.ErrorSourceTuple{
-		Error: err,
-	}:
-	default:
-		ms.stats.IncTotalExceptions("buffer full from mqtt connector, drop err")
-	}
-}
-
-// Open is a continuous process, it keeps reading data from mqtt broker. It starts a go routine to read data and send to consumer channel
-// Run open then subscribe
-func (ms *SourceConnector) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
-	ctx.GetLogger().Infof("Open connector reader")
-	ms.consumer = consumer
+	ctx.GetLogger().Error(err)
 }
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
@@ -177,4 +122,8 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-var _ api.SourceConnector = &SourceConnector{}
+func GetSource() api.Source {
+	return &SourceConnector{}
+}
+
+var _ api.BytesSource = &SourceConnector{}

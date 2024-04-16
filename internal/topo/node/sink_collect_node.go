@@ -41,7 +41,7 @@ func NewBytesSinkNode(_ api.StreamContext, name string, sink api.BytesCollector,
 
 // Exec TODO when to fail?
 func (s *BytesSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	s.prepareExec(ctx)
+	s.prepareExec(ctx, "sink")
 	go func() {
 		err := s.sink.Connect(ctx)
 		if err != nil {
@@ -82,11 +82,11 @@ func (s *BytesSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 // MessageSinkNode represents a sink node that collects message from the stream
 type MessageSinkNode struct {
 	*defaultSinkNode
-	sink api.MessageCollector
+	sink api.TupleCollector
 }
 
 // NewMessageSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewMessageSinkNode(_ api.StreamContext, name string, sink api.MessageCollector, rOpt *api.RuleOption) (*MessageSinkNode, error) {
+func NewMessageSinkNode(_ api.StreamContext, name string, sink api.TupleCollector, rOpt *api.RuleOption) (*MessageSinkNode, error) {
 	return &MessageSinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		sink:            sink,
@@ -95,7 +95,7 @@ func NewMessageSinkNode(_ api.StreamContext, name string, sink api.MessageCollec
 
 // Exec TODO when to fail?
 func (s *MessageSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	s.prepareExec(ctx)
+	s.prepareExec(ctx, "sink")
 	go func() {
 		err := s.sink.Connect(ctx)
 		if err != nil {
@@ -113,11 +113,13 @@ func (s *MessageSinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 				s.statManager.IncTotalRecordsIn()
 				s.statManager.ProcessTimeStart()
+				ctx.GetLogger().Debugf("Sink node %s receive data %s", s.name, d)
 				// TODO send error?
 				switch data := d.(type) {
 				case api.ReadonlyMessage:
-					ctx.GetLogger().Debugf("Sink node %s receive data %s", s.name, data)
 					err = s.sink.Collect(ctx, data)
+				case []api.ReadonlyMessage:
+					err = s.sink.CollectList(ctx, data)
 				default:
 					err = fmt.Errorf("expect message data type but got %T", d)
 				}

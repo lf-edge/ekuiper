@@ -42,7 +42,7 @@ func (wss *WebsocketSource) Ping(dataSource string, props map[string]interface{}
 	return cli.Ping()
 }
 
-func (wss *WebsocketSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (wss *WebsocketSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	cli, err := clients.GetClient("websocket", wss.props)
 	if err != nil {
 		errCh <- err
@@ -53,7 +53,7 @@ func (wss *WebsocketSource) Open(ctx api.StreamContext, consumer chan<- api.Sour
 	}
 }
 
-func (wss *WebsocketSource) subscribe(ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
+func (wss *WebsocketSource) subscribe(ctx api.StreamContext, consumer chan<- api.Tuple) error {
 	log := ctx.GetLogger()
 	messages := make(chan interface{}, 1024)
 	topics := []api.TopicChannel{{Topic: "", Messages: messages}}
@@ -61,14 +61,14 @@ func (wss *WebsocketSource) subscribe(ctx api.StreamContext, consumer chan<- api
 	if err := wss.cli.Subscribe(ctx, topics, errCh, nil); err != nil {
 		return err
 	}
-	var tuples []api.SourceTuple
+	var tuples []api.Tuple
 	for {
 		select {
 		case <-ctx.Done():
 			log.Info("Exit subscription to websocket source")
 			return nil
 		case err := <-errCh:
-			tuples = []api.SourceTuple{
+			tuples = []api.Tuple{
 				&xsql.ErrorSourceTuple{
 					Error: fmt.Errorf("the subscription to websocket source have error %s.\n", err.Error()),
 				},
@@ -80,7 +80,7 @@ func (wss *WebsocketSource) subscribe(ctx api.StreamContext, consumer chan<- api
 			}
 			dataTuples, err := buildTuples(ctx, msg)
 			if err != nil {
-				tuples = []api.SourceTuple{
+				tuples = []api.Tuple{
 					&xsql.ErrorSourceTuple{
 						Error: fmt.Errorf("the subscription to websocket source have error %s.\n", err.Error()),
 					},
@@ -93,7 +93,7 @@ func (wss *WebsocketSource) subscribe(ctx api.StreamContext, consumer chan<- api
 	}
 }
 
-func buildTuples(ctx api.StreamContext, msg interface{}) ([]api.SourceTuple, error) {
+func buildTuples(ctx api.StreamContext, msg interface{}) ([]api.Tuple, error) {
 	msgBytes, ok := msg.([]byte)
 	if !ok {
 		return nil, fmt.Errorf("websocker source should recv bytes")
@@ -103,7 +103,7 @@ func buildTuples(ctx api.StreamContext, msg interface{}) ([]api.SourceTuple, err
 		return nil, err
 	}
 	rcvTime := timex.GetNow()
-	tuples := make([]api.SourceTuple, 0, len(dataLists))
+	tuples := make([]api.Tuple, 0, len(dataLists))
 	for _, data := range dataLists {
 		tuples = append(tuples, api.NewDefaultSourceTupleWithTime(data, nil, rcvTime))
 	}

@@ -22,17 +22,17 @@ import (
 
 type DynamicChannelBuffer struct {
 	limit  int64
-	In     chan api.SourceTuple
-	Out    chan api.SourceTuple
-	buffer []api.SourceTuple
+	In     chan api.Tuple
+	Out    chan api.Tuple
+	buffer []api.Tuple
 	done   chan bool
 }
 
 func NewDynamicChannelBuffer() *DynamicChannelBuffer {
 	buffer := &DynamicChannelBuffer{
-		In:     make(chan api.SourceTuple, 1024),
-		Out:    make(chan api.SourceTuple),
-		buffer: make([]api.SourceTuple, 0),
+		In:     make(chan api.Tuple, 1024),
+		Out:    make(chan api.Tuple),
+		buffer: make([]api.Tuple, 0),
 		limit:  102400,
 		done:   make(chan bool, 1),
 	}

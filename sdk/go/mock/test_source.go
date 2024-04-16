@@ -22,14 +22,14 @@ import (
 	"github.com/lf-edge/ekuiper/sdk/go/api"
 )
 
-func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
+func TestSourceOpen(r api.Source, exp []api.Tuple, t *testing.T) {
 	ctx, cancel := newMockContext("rule1", "op1").WithCancel()
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	errCh := make(chan error)
 	go r.Open(ctx, consumer, errCh)
 	ticker := time.After(10 * time.Second)
 	limit := len(exp)
-	var result []api.SourceTuple
+	var result []api.Tuple
 outerloop:
 	for {
 		select {

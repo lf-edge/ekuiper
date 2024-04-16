@@ -69,21 +69,21 @@ func TestSingle(t *testing.T) {
 	mc := mockclock.GetMockClock()
 	tests := []struct {
 		value  int
-		result []api.SourceTuple
+		result []api.Tuple
 	}{
 		{
 			value: 1,
-			result: []api.SourceTuple{
+			result: []api.Tuple{
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John", "address": float64(34), "mobile": "334433"}, nil, mc.Now()),
 			},
 		}, {
 			value: 2,
-			result: []api.SourceTuple{
+			result: []api.Tuple{
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Susan", "address": float64(22), "mobile": "666433"}, nil, mc.Now()),
 			},
 		}, {
 			value:  3,
-			result: []api.SourceTuple{},
+			result: []api.Tuple{},
 		},
 	}
 	for i, tt := range tests {
@@ -116,22 +116,22 @@ func TestList(t *testing.T) {
 	mc := mockclock.GetMockClock()
 	tests := []struct {
 		value  string
-		result []api.SourceTuple
+		result []api.Tuple
 	}{
 		{
 			value: "group1",
-			result: []api.SourceTuple{
+			result: []api.Tuple{
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(2), "name": "Susan"}, nil, mc.Now()),
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(1), "name": "John"}, nil, mc.Now()),
 			},
 		}, {
 			value: "group2",
-			result: []api.SourceTuple{
+			result: []api.Tuple{
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"id": float64(3), "name": "Nancy"}, nil, mc.Now()),
 			},
 		}, {
 			value:  "group4",
-			result: []api.SourceTuple{},
+			result: []api.Tuple{},
 		},
 	}
 	for i, tt := range tests {
@@ -147,7 +147,7 @@ func TestList(t *testing.T) {
 	}
 }
 
-func deepEqual(a []api.SourceTuple, b []api.SourceTuple) bool {
+func deepEqual(a []api.Tuple, b []api.Tuple) bool {
 	for i, val := range a {
 		if !reflect.DeepEqual(val.Message(), b[i].Message()) || !reflect.DeepEqual(val.Meta(), b[i].Meta()) {
 			return false

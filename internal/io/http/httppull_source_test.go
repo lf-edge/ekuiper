@@ -954,7 +954,7 @@ func TestPullWithAuth(t *testing.T) {
 		return
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}, map[string]interface{}{}, mc.Now()),
 	}
 	mock.TestSourceOpen(r, exp, t)
@@ -990,7 +990,7 @@ func TestPullBodyAuth(t *testing.T) {
 		return
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}, map[string]interface{}{}, mc.Now()),
 	}
 	mock.TestSourceOpen(r, exp, t)
@@ -1013,7 +1013,7 @@ func TestPullIncremental(t *testing.T) {
 		return
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device0", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "device2", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
@@ -1043,7 +1043,7 @@ func TestPullJsonList(t *testing.T) {
 		return
 	}
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d2", "humidity": 60.0, "temperature": 25.5}}, map[string]interface{}{}, mc.Now()),
 	}
@@ -1066,7 +1066,7 @@ func TestPullUrlTimeRange(t *testing.T) {
 	}
 	// Mock time
 	mockclock.ResetClock(143)
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(43), "temperature": float64(33)}}, map[string]interface{}{}, time.UnixMilli(143)),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(53), "temperature": float64(43)}}, map[string]interface{}{}, time.UnixMilli(253)),
 	}
@@ -1096,7 +1096,7 @@ func TestPullBodyTimeRange(t *testing.T) {
 	}
 	// Mock time
 	mockclock.ResetClock(143)
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(43), "temperature": float64(33)}}, map[string]interface{}{}, time.UnixMilli(143)),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "d1", "humidity": float64(53), "temperature": float64(43)}}, map[string]interface{}{}, time.UnixMilli(253)),
 	}
@@ -1114,12 +1114,12 @@ func TestPullErrorTest(t *testing.T) {
 	tests := []struct {
 		name string
 		conf map[string]interface{}
-		exp  []api.SourceTuple
+		exp  []api.Tuple
 	}{
 		{
 			name: "wrong url template",
 			conf: map[string]interface{}{"url": "http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime}", "interval": 10},
-			exp: []api.SourceTuple{
+			exp: []api.Tuple{
 				&xsql.ErrorSourceTuple{
 					Error: errors.New("parse url http://localhost:52345/data4?device=d1&start={{.lastPullTime}}&end={{.PullTime} error Template Invalid: template: sink:1: bad character U+007D '}'"),
 				},
@@ -1127,7 +1127,7 @@ func TestPullErrorTest(t *testing.T) {
 		}, {
 			name: "wrong header template",
 			conf: map[string]interface{}{"url": "http://localhost:52345/data4", "interval": 10, "HeadersTemplate": "\"Authorization\": \"Bearer {{.aatoken}}"},
-			exp: []api.SourceTuple{
+			exp: []api.Tuple{
 				&xsql.ErrorSourceTuple{
 					Error: errors.New("parse headers error parsed header template is not json: \"Authorization\": \"Bearer <no value>"),
 				},
@@ -1135,13 +1135,13 @@ func TestPullErrorTest(t *testing.T) {
 		}, {
 			name: "wrong body template",
 			conf: map[string]interface{}{"url": "http://localhost:52345/data4", "interval": 10, "body": `{"device": "d1", "start": {{.LastPullTime}}, "end": {{.pullTime}}}`},
-			exp: []api.SourceTuple{
+			exp: []api.Tuple{
 				api.NewDefaultSourceTupleWithTime(map[string]interface{}{"code": float64(200), "data": map[string]interface{}{"device_id": "", "humidity": float64(0), "temperature": float64(0)}}, map[string]interface{}{}, time.UnixMilli(143)),
 			},
 		}, {
 			name: "wrong response",
 			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10},
-			exp: []api.SourceTuple{
+			exp: []api.Tuple{
 				&xsql.ErrorSourceTuple{
 					Error: errors.New("parse response error response code error: 404"),
 				},
@@ -1149,7 +1149,7 @@ func TestPullErrorTest(t *testing.T) {
 		}, {
 			name: "wrong request",
 			conf: map[string]interface{}{"url": "http://localhost:52345/aa/data4", "interval": 10, "bodyType": "form", "body": "ddd"},
-			exp: []api.SourceTuple{
+			exp: []api.Tuple{
 				&xsql.ErrorSourceTuple{
 					Error: errors.New("send request error invalid content: ddd"),
 				},

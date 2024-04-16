@@ -25,7 +25,7 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
-func TestSourceConnector(t *testing.T, r api.SourceConnector, expected []api.SourceTuple, sender func()) {
+func TestSourceConnector(t *testing.T, r api.SourceConnector, expected []api.Tuple, sender func()) {
 	// init
 	c := count.Load()
 	if c == nil {
@@ -34,7 +34,7 @@ func TestSourceConnector(t *testing.T, r api.SourceConnector, expected []api.Sou
 	}
 	ctx, cancel := mockContext.NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
 	count.Store(c.(int) + 1)
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	ctrlCh := make(chan error)
 	// connect, subscribe and read data
 	err := r.Connect(ctx)
@@ -53,7 +53,7 @@ func TestSourceConnector(t *testing.T, r api.SourceConnector, expected []api.Sou
 	// Receive data
 	limit := len(expected)
 	ticker := time.After(2 * time.Second)
-	var result []api.SourceTuple
+	var result []api.Tuple
 outerloop:
 	for {
 		select {

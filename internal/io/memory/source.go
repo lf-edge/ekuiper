@@ -22,45 +22,56 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+type conf struct {
+	Topic        string `json:"datasource"`
+	BufferLength int    `json:"bufferLength"`
+}
+
 type source struct {
-	topic        string
-	topicRegex   *regexp.Regexp
-	bufferLength int
+	topicRegex *regexp.Regexp
+	c          *conf
 }
 
-func (s *source) Open(ctx api.StreamContext, consumer chan<- any, _ chan<- error) {
-	ch := pubsub.CreateSub(s.topic, s.topicRegex, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.bufferLength)
-	for {
-		select {
-		case v, opened := <-ch:
-			if !opened {
-				return
-			}
-			consumer <- v
-		case <-ctx.Done():
-			return
-		}
+func (s *source) Provision(ctx api.StreamContext, props map[string]any) error {
+	cfg := &conf{
+		BufferLength: 1024,
 	}
-}
-
-func (s *source) Configure(datasource string, props map[string]interface{}) error {
-	s.topic = datasource
-	s.bufferLength = 1024
-	if c, ok := props["bufferLength"]; ok {
-		if bl, err := cast.ToInt(c, cast.STRICT); err != nil || bl > 0 {
-			s.bufferLength = bl
-		}
+	err := cast.MapToStruct(props, cfg)
+	if err != nil {
+		return fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
-	if strings.ContainsAny(datasource, "+#") {
-		r, err := getRegexp(datasource)
+	if cfg.Topic == "" {
+		return fmt.Errorf("topic is required")
+	}
+	if strings.ContainsAny(cfg.Topic, "+#") {
+		r, err := getRegexp(cfg.Topic)
 		if err != nil {
 			return err
 		}
 		s.topicRegex = r
 	}
+	s.c = cfg
 	return nil
+}
+
+func (s *source) Connect(_ api.StreamContext) error {
+	// do nothing
+	return nil
+}
+
+func (s *source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest) error {
+	ch := pubsub.CreateSub(s.c.Topic, s.topicRegex, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.c.BufferLength)
+	for {
+		select {
+		case v := <-ch:
+			ingest(ctx, v, timex.GetNow())
+		case <-ctx.Done():
+			return nil
+		}
+	}
 }
 
 func getRegexp(topic string) (*regexp.Regexp, error) {
@@ -80,6 +91,12 @@ func getRegexp(topic string) (*regexp.Regexp, error) {
 
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory source")
-	pubsub.CloseSourceConsumerChannel(s.topic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
+	pubsub.CloseSourceConsumerChannel(s.c.Topic, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 	return nil
 }
+
+func GetSource() api.Source {
+	return &source{}
+}
+
+var _ api.TupleSource = &source{}

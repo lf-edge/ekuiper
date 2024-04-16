@@ -41,7 +41,7 @@ func TestConnectFail(t *testing.T) {
 		return
 	}
 	ctx, cancel := mockContext.NewMockContext("ruleTestReconnect", "op1").WithCancel()
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	errCh := make(chan error)
 	server, _ := mockRedisPubSub(false, false, DefaultChannel)
 	go s.Open(ctx, consumer, errCh)

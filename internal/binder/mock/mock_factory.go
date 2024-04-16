@@ -96,7 +96,7 @@ func (m *mockFunc) IsAggregate() bool {
 
 type mockSource struct{}
 
-func (m *mockSource) Open(_ api.StreamContext, _ chan<- api.SourceTuple, _ chan<- error) {
+func (m *mockSource) Open(_ api.StreamContext, _ chan<- api.Tuple, _ chan<- error) {
 	return
 }
 

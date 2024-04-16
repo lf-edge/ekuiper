@@ -15,88 +15,8 @@
 package api
 
 import (
-	"time"
-
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
-
-type SourceTuple interface {
-	Message() map[string]interface{}
-	Meta() map[string]interface{}
-	Timestamp() time.Time
-}
-
-type RawTuple interface {
-	Raw() []byte
-}
-
-type DefaultSourceTuple struct {
-	Mess map[string]interface{} `json:"message"`
-	M    map[string]interface{} `json:"meta"`
-	Time time.Time              `json:"timestamp"`
-	raw  []byte
-}
-
-// NewDefaultRawTuple creates a new DefaultSourceTuple with raw data. Use this when extend source connector
-func NewDefaultRawTuple(raw []byte, meta map[string]interface{}, ts time.Time) *DefaultSourceTuple {
-	return &DefaultSourceTuple{
-		M:    meta,
-		Time: ts,
-		raw:  raw,
-	}
-}
-
-// NewDefaultSourceTuple creates a new DefaultSourceTuple with message and metadata. Use this when extend all in one source.
-func NewDefaultSourceTuple(message map[string]interface{}, meta map[string]interface{}) *DefaultSourceTuple {
-	return &DefaultSourceTuple{
-		Mess: message,
-		M:    meta,
-		Time: time.Now(),
-	}
-}
-
-func NewDefaultSourceTupleWithTime(message map[string]interface{}, meta map[string]interface{}, timestamp time.Time) *DefaultSourceTuple {
-	return &DefaultSourceTuple{
-		Mess: message,
-		M:    meta,
-		Time: timestamp,
-	}
-}
-
-func (t *DefaultSourceTuple) Message() map[string]interface{} {
-	return t.Mess
-}
-
-func (t *DefaultSourceTuple) Meta() map[string]interface{} {
-	return t.M
-}
-
-func (t *DefaultSourceTuple) Timestamp() time.Time {
-	return t.Time
-}
-
-func (t *DefaultSourceTuple) Raw() []byte {
-	return t.raw
-}
-
-type Source interface {
-	// Open Should be sync function for normal case. The container will run it in go func
-	Open(ctx StreamContext, consumer chan<- SourceTuple, errCh chan<- error)
-	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
-	// read from the yaml
-	Configure(datasource string, props map[string]interface{}) error
-	Closable
-}
-
-type SourceConnector interface {
-	Source
-	Connect(ctx StreamContext) error
-	Subscriber
-}
-
-type Subscriber interface {
-	Subscribe(ctx StreamContext) error
-}
 
 type LookupSource interface {
 	// Open creates the connection to the external data source
@@ -105,7 +25,7 @@ type LookupSource interface {
 	// read from the yaml
 	Configure(datasource string, props map[string]interface{}) error
 	// Lookup receive lookup values to construct the query and return query results
-	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]SourceTuple, error)
+	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]Tuple, error)
 	Closable
 }
 
@@ -120,12 +40,6 @@ type ResendSink interface {
 	Sink
 	// CollectResend Called when the sink cache resend is triggered
 	CollectResend(ctx StreamContext, data interface{}) error
-}
-
-type Rewindable interface {
-	GetOffset() (interface{}, error)
-	Rewind(offset interface{}) error
-	ResetOffset(input map[string]interface{}) error
 }
 
 type RuleOption struct {

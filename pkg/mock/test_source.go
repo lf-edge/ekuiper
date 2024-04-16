@@ -33,7 +33,7 @@ import (
 
 var count atomic.Value
 
-func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
+func TestSourceOpen(r api.Source, exp []api.Tuple, t *testing.T) {
 	result, err := RunMockSource(r, len(exp))
 	if err != nil {
 		t.Error(err)
@@ -52,7 +52,7 @@ func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
 	}
 }
 
-func RunMockSource(r api.Source, limit int) ([]api.SourceTuple, error) {
+func RunMockSource(r api.Source, limit int) ([]api.Tuple, error) {
 	c := count.Load()
 	if c == nil {
 		count.Store(1)
@@ -62,11 +62,11 @@ func RunMockSource(r api.Source, limit int) ([]api.SourceTuple, error) {
 	cv, _ := converter.GetOrCreateConverter(&ast.Options{FORMAT: "json"})
 	ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, cv)
 	count.Store(c.(int) + 1)
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	errCh := make(chan error)
 	go r.Open(ctx, consumer, errCh)
 	ticker := time.After(10 * time.Second)
-	var result []api.SourceTuple
+	var result []api.Tuple
 outerloop:
 	for {
 		select {

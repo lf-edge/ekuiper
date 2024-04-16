@@ -93,7 +93,7 @@ func TestOpen(t *testing.T) {
 	mc := mockclock.GetMockClock()
 
 	// Open and subscribe before sending data
-	mock.TestSourceConnector(t, sc, []api.SourceTuple{
+	mock.TestSourceConnector(t, sc, []api.Tuple{
 		api.NewDefaultRawTuple([]byte("hello"), map[string]any{
 			"topic":     "demo",
 			"messageId": uint16(0),
@@ -123,7 +123,7 @@ func TestOpen(t *testing.T) {
 
 func TestOnMsgCancel(t *testing.T) {
 	sc := &SourceConnector{}
-	sc.consumer = make(chan<- api.SourceTuple, 10)
+	sc.consumer = make(chan<- api.Tuple, 10)
 	sc.onMessage(mockContext.NewMockContext("1", "1"), MockMessage{})
 	sc.onError(mockContext.NewMockContext("1", "1"), nil)
 

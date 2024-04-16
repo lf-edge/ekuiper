@@ -142,7 +142,7 @@ func startSymbolHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, fmt.Sprintf("source symbol %s already exists", ctrl.SymbolName), http.StatusBadRequest)
 			return
 		}
-		consumer := make(chan api.SourceTuple)
+		consumer := make(chan api.Tuple)
 		errCh := make(chan error)
 		go func() {
 			defer func() {

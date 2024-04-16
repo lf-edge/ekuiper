@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -42,6 +43,7 @@ type sink struct {
 	fields       []string
 	dataField    string
 	resendTopic  string
+	meta         xsql.Message
 }
 
 func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
@@ -68,6 +70,9 @@ func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 	if s.resendTopic == "" {
 		s.resendTopic = s.topic
 	}
+	s.meta = map[string]any{
+		"topic": cfg.Topic,
+	}
 	return nil
 }
 
@@ -91,7 +96,11 @@ func (s *sink) CollectList(ctx api.StreamContext, data []api.ReadonlyMessage) er
 	//if err != nil {
 	//	return err
 	//}
-	pubsub.ProduceList(ctx, s.topic, data)
+	tuples := make([]api.Tuple, len(data))
+	for i, d := range data {
+		tuples[i] = api.NewDefaultSourceTuple(d, s.meta)
+	}
+	pubsub.ProduceList(ctx, s.topic, tuples)
 	return nil
 }
 
@@ -125,13 +134,13 @@ func (s *sink) publish(ctx api.StreamContext, topic string, mess api.ReadonlyMes
 		if !ok {
 			return fmt.Errorf("key field %s not found in data %v", s.keyField, mess)
 		}
-		pubsub.ProduceUpdatable(ctx, topic, mess, rowkind, key)
+		pubsub.ProduceUpdatable(ctx, topic, api.NewDefaultSourceTuple(mess, s.meta), rowkind, key)
 	} else {
-		pubsub.Produce(ctx, topic, mess)
+		pubsub.Produce(ctx, topic, api.NewDefaultSourceTuple(mess, s.meta))
 	}
 	return nil
 }
 
 var (
-	_ api.MessageCollector = &sink{}
+	_ api.TupleCollector = &sink{}
 )

@@ -111,19 +111,19 @@ type Table struct {
 	topic string
 	key   string
 	// datamap is the overall data indexed by primary key
-	datamap map[interface{}]api.SourceTuple
+	datamap map[interface{}]api.Tuple
 	cancel  context.CancelFunc
 }
 
 func createTable(topic string, key string) *Table {
-	t := &Table{topic: topic, key: key, datamap: make(map[interface{}]api.SourceTuple)}
+	t := &Table{topic: topic, key: key, datamap: make(map[interface{}]api.Tuple)}
 	return t
 }
 
-func (t *Table) add(value api.SourceTuple) {
+func (t *Table) add(value api.Tuple) {
 	t.Lock()
 	defer t.Unlock()
-	keyval, ok := value.Message()[t.key]
+	keyval, ok := value.Message().Get(t.key)
 	if !ok {
 		conf.Log.Errorf("add to table %s omitted, value not found for key %s", t.topic, t.key)
 	}
@@ -136,11 +136,11 @@ func (t *Table) delete(key interface{}) {
 	delete(t.datamap, key)
 }
 
-func (t *Table) Read(keys []string, values []interface{}) ([]api.SourceTuple, error) {
+func (t *Table) Read(keys []string, values []interface{}) ([]api.Tuple, error) {
 	t.RLock()
 	defer t.RUnlock()
 	// Find the primary key
-	var matched api.SourceTuple
+	var matched api.Tuple
 	for i, k := range keys {
 		if k == t.key {
 			matched = t.datamap[values[i]]
@@ -149,22 +149,22 @@ func (t *Table) Read(keys []string, values []interface{}) ([]api.SourceTuple, er
 	if matched != nil {
 		match := true
 		for i, k := range keys {
-			if val, ok := matched.Message()[k]; !ok || val != values[i] {
+			if val, ok := matched.Message().Get(k); !ok || val != values[i] {
 				match = false
 				break
 			}
 		}
 		if match {
-			return []api.SourceTuple{matched}, nil
+			return []api.Tuple{matched}, nil
 		} else {
 			return nil, nil
 		}
 	}
-	var result []api.SourceTuple
+	var result []api.Tuple
 	for _, v := range t.datamap {
 		match := true
 		for i, k := range keys {
-			if val, ok := v.Message()[k]; !ok || val != values[i] {
+			if val, ok := v.Message().Get(k); !ok || val != values[i] {
 				match = false
 				break
 			}

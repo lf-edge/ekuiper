@@ -86,7 +86,7 @@ func (r *redisSub) Configure(_ string, props map[string]interface{}) error {
 	return r.Validate(props)
 }
 
-func (r *redisSub) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (r *redisSub) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Infof("redisSub sink Opening")
 	err := subscribe(r, ctx, consumer)
@@ -95,12 +95,12 @@ func (r *redisSub) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, 
 	}
 }
 
-func subscribe(r *redisSub, ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
+func subscribe(r *redisSub, ctx api.StreamContext, consumer chan<- api.Tuple) error {
 	// Subscribe to Redis channels
 	sub := r.conn.PSubscribe(ctx, r.conf.Channels...)
 	channel := sub.Channel()
 	defer sub.Close()
-	var tuples []api.SourceTuple
+	var tuples []api.Tuple
 	for {
 		select {
 		case <-ctx.Done():
@@ -112,11 +112,11 @@ func subscribe(r *redisSub, ctx api.StreamContext, consumer chan<- api.SourceTup
 	}
 }
 
-func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.SourceTuple {
+func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.Tuple {
 	rcvTime := timex.GetNow()
 	msg, ok := env.(*redis.Message)
 	if !ok { // should never happen
-		return []api.SourceTuple{
+		return []api.Tuple{
 			&xsql.ErrorSourceTuple{
 				Error: fmt.Errorf("can not convert interface data to redis message %v.", env),
 			},
@@ -127,7 +127,7 @@ func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.Source
 	if r.decompressor != nil {
 		payload, err = r.decompressor.Decompress(payload)
 		if err != nil {
-			return []api.SourceTuple{
+			return []api.Tuple{
 				&xsql.ErrorSourceTuple{
 					Error: fmt.Errorf("can not decompress redis message %v.", err),
 				},
@@ -137,7 +137,7 @@ func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.Source
 	results, e := ctx.DecodeIntoList(payload)
 	// The unmarshal type can only be bool, float64, string, []interface{}, map[string]interface{}, nil
 	if e != nil {
-		return []api.SourceTuple{
+		return []api.Tuple{
 			&xsql.ErrorSourceTuple{
 				Error: fmt.Errorf("Invalid data format, cannot decode %s with error %s", payload, e),
 			},
@@ -147,7 +147,7 @@ func getTuples(ctx api.StreamContext, r *redisSub, env interface{}) []api.Source
 	meta := make(map[string]interface{})
 	meta["channel"] = msg.Channel
 
-	tuples := make([]api.SourceTuple, 0, len(results))
+	tuples := make([]api.Tuple, 0, len(results))
 	for _, result := range results {
 		tuples = append(tuples, api.NewDefaultSourceTupleWithTime(result, meta, rcvTime))
 	}

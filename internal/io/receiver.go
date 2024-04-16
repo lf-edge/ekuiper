@@ -16,7 +16,7 @@ package io
 
 import "github.com/lf-edge/ekuiper/contract/v2/api"
 
-func ReceiveTuples(ctx api.StreamContext, consumer chan<- api.SourceTuple, tuples []api.SourceTuple) {
+func ReceiveTuples(ctx api.StreamContext, consumer chan<- api.Tuple, tuples []api.Tuple) {
 	for _, t := range tuples {
 		select {
 		case consumer <- t:

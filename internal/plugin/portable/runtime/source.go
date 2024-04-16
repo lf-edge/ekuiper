@@ -37,6 +37,16 @@ type PortableSource struct {
 	props map[string]interface{}
 }
 
+func (ps *PortableSource) Provision(ctx api.StreamContext, configs map[string]any) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ps *PortableSource) Connect(ctx api.StreamContext) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewPortableSource(symbolName string, reg *PluginMeta) *PortableSource {
 	return &PortableSource{
 		symbolName: symbolName,
@@ -44,7 +54,7 @@ func NewPortableSource(symbolName string, reg *PluginMeta) *PortableSource {
 	}
 }
 
-func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	ctx.GetLogger().Infof("Start running portable source %s with datasource %s and conf %+v", ps.symbolName, ps.topic, ps.props)
 	pm := GetPluginInsManager()
 	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf)
@@ -116,7 +126,7 @@ func (ps *PortableSource) Open(ctx api.StreamContext, consumer chan<- api.Source
 			infra.DrainError(ctx, fmt.Errorf("cannot receive from mangos Socket: %s", err.Error()), errCh)
 			return
 		}
-		result := &api.DefaultSourceTuple{Time: timex.GetNow()}
+		result := api.NewDefaultSourceTupleWithTime(nil, nil, timex.GetNow())
 		e := json.Unmarshal(msg, result)
 		if e != nil {
 			ctx.GetLogger().Errorf("Invalid data format, cannot decode %s to json format with error %s", string(msg), e)

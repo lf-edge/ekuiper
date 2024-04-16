@@ -33,7 +33,7 @@ import (
 )
 
 type mockLookupSrc struct {
-	data []api.SourceTuple // new mock data
+	data []api.Tuple // new mock data
 }
 
 func (m *mockLookupSrc) Open(_ api.StreamContext) error {
@@ -45,13 +45,13 @@ func (m *mockLookupSrc) Configure(_ string, _ map[string]interface{}) error {
 }
 
 // Lookup accept int value as the first array value
-func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string, values []interface{}) ([]api.SourceTuple, error) {
+func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string, values []interface{}) ([]api.Tuple, error) {
 	mc := mockclock.GetMockClock()
 	if len(fields) > 0 { // if fields is not empty, the value will be kept
 		if m.data != nil {
 			return m.data, nil
 		} else {
-			m.data = []api.SourceTuple{api.NewDefaultSourceTupleWithTime(map[string]interface{}{
+			m.data = []api.Tuple{api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": 1000,
 				"newB": 1000,
 			}, nil, mc.Now())}
@@ -59,7 +59,7 @@ func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string,
 	}
 	a1, ok := values[0].(int)
 	if ok {
-		var result []api.SourceTuple
+		var result []api.Tuple
 		c := a1 % 2
 		if c != 0 {
 			result = append(result, api.NewDefaultSourceTupleWithTime(map[string]interface{}{
@@ -90,7 +90,7 @@ func (m *mockLookupSrc) Lookup(_ api.StreamContext, fields []string, _ []string,
 		}
 		return result, nil
 	} else {
-		return []api.SourceTuple{
+		return []api.Tuple{
 			api.NewDefaultSourceTupleWithTime(map[string]interface{}{
 				"newA": 0,
 				"newB": 0,

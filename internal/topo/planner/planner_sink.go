@@ -57,7 +57,7 @@ func buildActions(tp *topo.Topo, rule *api.Rule, inputs []node.Emitter) error {
 			switch ss := s.(type) {
 			case api.BytesCollector:
 				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options)
-			case api.MessageCollector:
+			case api.TupleCollector:
 				snk, err = node.NewMessageSinkNode(tp.GetContext(), sinkName, ss, rule.Options)
 			default:
 				err = fmt.Errorf("sink type %s does not implement any collector", name)

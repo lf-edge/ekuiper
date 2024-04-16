@@ -181,9 +181,9 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
-func (o *defaultSinkNode) prepareExec(ctx api.StreamContext) {
+func (o *defaultNode) prepareExec(ctx api.StreamContext, opType string) {
 	ctx.GetLogger().Infof("%s started", o.name)
-	o.statManager = metric.NewStatManager(ctx, "op")
+	o.statManager = metric.NewStatManager(ctx, opType)
 	o.ctx = ctx
 }
 

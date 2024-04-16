@@ -66,7 +66,7 @@ func NewSwitchNode(name string, conf *SwitchConfig, options *api.RuleOption) (*S
 }
 
 func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
-	n.prepareExec(ctx)
+	n.prepareExec(ctx, "op")
 	for i := range n.outputNodes {
 		n.outputNodes[i].ctx = ctx
 	}

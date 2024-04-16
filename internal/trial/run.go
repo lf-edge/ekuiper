@@ -25,7 +25,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -48,7 +47,7 @@ func create(def *RunDef) (*topo.Topo, api.MessageClient, error) {
 	// TODO open this again
 	// Add trial run prefix for rule id to avoid duplicate rule id with real rules in runtime or other trial rule
 	//tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock, []node.DataSinkNode{node.NewSinkNode("ws", "websocket", sinkProps)})
-	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock, []node.DataSinkNode{nil})
+	tp, err := planner.PlanSQLWithSourcesAndSinks(api.GetDefaultRule("$$_"+uuid.New().String()+def.Id, def.Sql), def.Mock)
 	if err != nil {
 		return nil, nil, fmt.Errorf("fail to run rule %s: %s", def.Id, err)
 	}

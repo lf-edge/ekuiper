@@ -75,7 +75,7 @@ func NewLookupNode(name string, fields []string, keys []string, joinType ast.Joi
 
 func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
-	n.prepareExec(ctx)
+	n.prepareExec(ctx, "op")
 	go func() {
 		err := infra.SafeRun(func() error {
 			ns, err := lookup.Attach(n.name)
@@ -179,7 +179,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 		}
 	}
 	var (
-		r  []api.SourceTuple
+		r  []api.Tuple
 		e  error
 		ok bool
 	)
@@ -216,8 +216,8 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 			merged.AddTuple(d)
 			t := &xsql.Tuple{
 				Emitter:   n.name,
-				Message:   v.Message(),
-				Metadata:  v.Meta(),
+				Message:   v.Message().ToMap(),
+				Metadata:  v.Meta().ToMap(),
 				Timestamp: timex.GetNowInMilli(),
 			}
 			merged.AddTuple(t)

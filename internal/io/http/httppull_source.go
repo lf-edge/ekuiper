@@ -15,7 +15,6 @@
 package http
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -42,7 +41,7 @@ func (hps *PullSource) Configure(device string, props map[string]interface{}) er
 	return hps.InitConf(device, props, WithCheckInterval(true))
 }
 
-func (hps *PullSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (hps *PullSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	ctx.GetLogger().Infof("Opening HTTP pull source with conf %+v", hps.config)
 	hps.initTimerPull(ctx, consumer, errCh)
 }
@@ -53,7 +52,7 @@ func (hps *PullSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
+func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.Tuple, _ chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Infof("Starting HTTP pull source with interval %d", hps.config.Interval)
 	ticker := timex.GetTicker(int64(hps.config.Interval))
@@ -77,7 +76,7 @@ func (hps *PullSource) initTimerPull(ctx api.StreamContext, consumer chan<- api.
 	}
 }
 
-func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *string) []api.SourceTuple {
+func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *string) []api.Tuple {
 	if hps.t == nil {
 		hps.t = &pullTimeMeta{
 			LastPullTime: rcvTime.UnixMilli() - int64(hps.config.Interval),
@@ -99,10 +98,10 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 	// Parse url which may contain dynamic time range
 	url, err := ctx.ParseTemplate(hps.config.Url, tempProps)
 	if err != nil {
-		return []api.SourceTuple{
-			&xsql.ErrorSourceTuple{
-				Error: fmt.Errorf("parse url %s error %v", hps.config.Url, err),
-			},
+		return []api.Tuple{
+			//&xsql.ErrorSourceTuple{
+			//	Error: fmt.Errorf("parse url %s error %v", hps.config.Url, err),
+			//},
 		}
 	}
 
@@ -116,36 +115,36 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 	}
 	headers, err := hps.parseHeaders(ctx, tempProps)
 	if err != nil {
-		return []api.SourceTuple{
-			&xsql.ErrorSourceTuple{
-				Error: fmt.Errorf("parse headers error %v", err),
-			},
+		return []api.Tuple{
+			//&xsql.ErrorSourceTuple{
+			//	Error: fmt.Errorf("parse headers error %v", err),
+			//},
 		}
 	}
 	body, err := ctx.ParseTemplate(hps.config.Body, tempProps)
 	if err != nil {
-		return []api.SourceTuple{
-			&xsql.ErrorSourceTuple{
-				Error: fmt.Errorf("parse body %s error %v", hps.config.Body, err),
-			},
+		return []api.Tuple{
+			//&xsql.ErrorSourceTuple{
+			//	Error: fmt.Errorf("parse body %s error %v", hps.config.Body, err),
+			//},
 		}
 	}
 	ctx.GetLogger().Debugf("httppull source sending request url: %s, headers: %v, body %s", url, headers, hps.config.Body)
 	if resp, e := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, url, headers, true, body); e != nil {
 		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", e, hps)
-		return []api.SourceTuple{
-			&xsql.ErrorSourceTuple{
-				Error: fmt.Errorf("send request error %v", e),
-			},
+		return []api.Tuple{
+			//&xsql.ErrorSourceTuple{
+			//	Error: fmt.Errorf("send request error %v", e),
+			//},
 		}
 	} else {
 		ctx.GetLogger().Debugf("httppull source got response %v", resp)
 		results, _, e := hps.parseResponse(ctx, resp, true, omd5)
 		if e != nil {
-			return []api.SourceTuple{
-				&xsql.ErrorSourceTuple{
-					Error: fmt.Errorf("parse response error %v", e),
-				},
+			return []api.Tuple{
+				//&xsql.ErrorSourceTuple{
+				//	Error: fmt.Errorf("parse response error %v", e),
+				//},
 			}
 		}
 		hps.t.LastPullTime = hps.t.PullTime
@@ -153,10 +152,9 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 			ctx.GetLogger().Debugf("no data to send for incremental")
 			return nil
 		}
-		tuples := make([]api.SourceTuple, len(results))
-		meta := make(map[string]interface{})
+		tuples := make([]api.Tuple, len(results))
 		for i, result := range results {
-			tuples[i] = api.NewDefaultSourceTupleWithTime(result, meta, rcvTime)
+			tuples[i] = api.NewDefaultSourceTupleWithTime(xsql.Message(result), nil, rcvTime)
 		}
 		return tuples
 	}

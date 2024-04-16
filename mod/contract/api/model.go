@@ -14,6 +14,8 @@
 
 package api
 
+import "time"
+
 // ReadonlyMessage Message is the interface that wraps each record.
 // Use this interface to exchange data between different components.
 // It is used in sink
@@ -22,4 +24,69 @@ type ReadonlyMessage interface {
 	Range(f func(key string, value any) bool)
 	// ToMap todo remove after eliminate map
 	ToMap() map[string]any
+}
+
+type MetaInfo interface {
+	Meta() ReadonlyMessage
+	Timestamp() time.Time
+}
+
+// Tuple is the record passing in source and sink
+type Tuple interface {
+	Message() ReadonlyMessage
+	MetaInfo
+}
+
+type RawTuple interface {
+	Raw() []byte
+	MetaInfo
+}
+
+type DefaultSourceTuple struct {
+	message ReadonlyMessage `json:"message"`
+	meta    ReadonlyMessage `json:"meta"`
+	time    time.Time       `json:"timestamp"`
+	raw     []byte
+}
+
+// NewDefaultRawTuple creates a new DefaultSourceTuple with raw data. Use this when extend source connector
+func NewDefaultRawTuple(raw []byte, meta ReadonlyMessage, ts time.Time) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		meta: meta,
+		time: ts,
+		raw:  raw,
+	}
+}
+
+// NewDefaultSourceTuple creates a new DefaultSourceTuple with message and metadata. Use this when extend all in one source.
+func NewDefaultSourceTuple(message ReadonlyMessage, meta ReadonlyMessage) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		message: message,
+		meta:    meta,
+		time:    time.Now(),
+	}
+}
+
+func NewDefaultSourceTupleWithTime(message ReadonlyMessage, meta ReadonlyMessage, timestamp time.Time) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		message: message,
+		meta:    meta,
+		time:    timestamp,
+	}
+}
+
+func (t *DefaultSourceTuple) Message() ReadonlyMessage {
+	return t.message
+}
+
+func (t *DefaultSourceTuple) Meta() ReadonlyMessage {
+	return t.meta
+}
+
+func (t *DefaultSourceTuple) Timestamp() time.Time {
+	return t.time
+}
+
+func (t *DefaultSourceTuple) Raw() []byte {
+	return t.raw
 }

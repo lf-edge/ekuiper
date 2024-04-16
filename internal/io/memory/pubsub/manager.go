@@ -110,7 +110,7 @@ func RemovePub(topic string) {
 	}
 }
 
-func ProduceUpdatable(ctx api.StreamContext, topic string, data api.ReadonlyMessage, rowkind string, keyval interface{}) {
+func ProduceUpdatable(ctx api.StreamContext, topic string, data api.Tuple, rowkind string, keyval interface{}) {
 	// TODO fix updatable
 	//doProduce(ctx, topic, &UpdatableTuple{
 	//	DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, timex.GetNow()),
@@ -119,11 +119,11 @@ func ProduceUpdatable(ctx api.StreamContext, topic string, data api.ReadonlyMess
 	//})
 }
 
-func Produce(ctx api.StreamContext, topic string, data api.ReadonlyMessage) {
+func Produce(ctx api.StreamContext, topic string, data api.Tuple) {
 	doProduce(ctx, topic, data)
 }
 
-func ProduceList(ctx api.StreamContext, topic string, list []api.ReadonlyMessage) {
+func ProduceList(ctx api.StreamContext, topic string, list []api.Tuple) {
 	doProduce(ctx, topic, list)
 }
 

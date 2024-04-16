@@ -23,14 +23,12 @@ type Sink interface {
 	Connector
 }
 
-// TODO how to distinguish sendSingle or not?
-
 type BytesCollector interface {
 	Sink
 	Collect(ctx StreamContext, item []byte) error
 }
 
-type MessageCollector interface {
+type TupleCollector interface {
 	Sink
 	Collect(ctx StreamContext, item ReadonlyMessage) error
 	CollectList(ctx StreamContext, items []ReadonlyMessage) error

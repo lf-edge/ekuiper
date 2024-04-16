@@ -91,7 +91,7 @@ func (s *lookupSource) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.SourceTuple, error) {
+func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, values []interface{}) ([]api.Tuple, error) {
 	rcvTime := timex.GetNow()
 	ctx.GetLogger().Debugf("Lookup redis %v", keys)
 	if len(keys) != 1 {
@@ -102,7 +102,7 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 		res, err := s.cli.Get(ctx, v).Result()
 		if err != nil {
 			if err == redis.Nil {
-				return []api.SourceTuple{}, nil
+				return []api.Tuple{}, nil
 			}
 			return nil, err
 		}
@@ -111,16 +111,16 @@ func (s *lookupSource) Lookup(ctx api.StreamContext, _ []string, keys []string, 
 		if err != nil {
 			return nil, err
 		}
-		return []api.SourceTuple{api.NewDefaultSourceTupleWithTime(m, nil, rcvTime)}, nil
+		return []api.Tuple{api.NewDefaultSourceTupleWithTime(m, nil, rcvTime)}, nil
 	} else {
 		res, err := s.cli.LRange(ctx, v, 0, -1).Result()
 		if err != nil {
 			if err == redis.Nil {
-				return []api.SourceTuple{}, nil
+				return []api.Tuple{}, nil
 			}
 			return nil, err
 		}
-		ret := make([]api.SourceTuple, 0, len(res))
+		ret := make([]api.Tuple, 0, len(res))
 		for _, r := range res {
 			m := make(map[string]interface{})
 			err = json.Unmarshal(cast.StringToBytes(r), &m)

@@ -139,7 +139,7 @@ func (fs *FileSource) Configure(fileName string, props map[string]interface{}) e
 	return nil
 }
 
-func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	err := fs.Load(ctx, consumer)
 	if err != nil {
 		select {
@@ -169,7 +169,7 @@ func (fs *FileSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	}
 }
 
-func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTuple) error {
+func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.Tuple) error {
 	rcvTime := timex.GetNow()
 	if fs.isDir {
 		ctx.GetLogger().Debugf("Monitor dir %s", fs.file)
@@ -225,7 +225,7 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 	return nil
 }
 
-func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer chan<- api.SourceTuple) (result error) {
+func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer chan<- api.Tuple) (result error) {
 	r, err := fs.prepareFile(ctx, file)
 	if err != nil {
 		ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
@@ -259,7 +259,7 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 	return fs.publish(ctx, r, consumer, meta)
 }
 
-func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
+func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.Tuple, meta map[string]interface{}) error {
 	ctx.GetLogger().Debug("Start to load")
 	rcvTime := timex.GetNow()
 
@@ -273,7 +273,7 @@ func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer ch
 
 	var m map[string]interface{}
 	for {
-		var tuple api.SourceTuple
+		var tuple api.Tuple
 		m, err = r.Read()
 		if err == io.EOF {
 			break

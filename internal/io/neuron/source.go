@@ -45,7 +45,7 @@ func (s *source) Configure(_ string, props map[string]interface{}) error {
 	return nil
 }
 
-func (s *source) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, errCh chan<- error) {
+func (s *source) Open(ctx api.StreamContext, consumer chan<- api.Tuple, errCh chan<- error) {
 	_, err := createOrGetConnection(ctx, s.c.Url)
 	if err != nil {
 		infra.DrainError(ctx, err, errCh)

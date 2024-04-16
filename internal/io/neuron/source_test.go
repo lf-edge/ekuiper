@@ -31,7 +31,7 @@ import (
 
 func TestRun(t *testing.T) {
 	mc := mockclock.GetMockClock()
-	exp := []api.SourceTuple{
+	exp := []api.Tuple{
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "yellow"}, "errors": map[string]interface{}{"tag_name3": 122.0}}, map[string]interface{}{"topic": "$$neuron_ipc:///tmp/neuron-ekuiper.ipc"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 11.22, "tag_name2": "green", "tag_name3": 60.0}, "errors": map[string]interface{}{}}, map[string]interface{}{"topic": "$$neuron_ipc:///tmp/neuron-ekuiper.ipc"}, mc.Now()),
 		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]interface{}{"tag_name1": 15.4, "tag_name2": "green", "tag_name3": 70.0}, "errors": map[string]interface{}{}}, map[string]interface{}{"topic": "$$neuron_ipc:///tmp/neuron-ekuiper.ipc"}, mc.Now()),
@@ -55,7 +55,7 @@ func connectFailTest(t *testing.T) {
 		return
 	}
 	ctx, cancel := mockContext.NewMockContext("ruleTestReconnect", "op1").WithCancel()
-	consumer := make(chan api.SourceTuple)
+	consumer := make(chan api.Tuple)
 	errCh := make(chan error)
 	server, _ := mockNeuron(false, false, DefaultNeuronUrl)
 	go s.Open(ctx, consumer, errCh)

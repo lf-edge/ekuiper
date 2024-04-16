@@ -68,7 +68,7 @@ func (s *randomSource) Configure(_ string, props map[string]interface{}) error {
 	return nil
 }
 
-func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple, _ chan<- error) {
+func (s *randomSource) Open(ctx api.StreamContext, consumer chan<- api.Tuple, _ chan<- error) {
 	logger := ctx.GetLogger()
 	logger.Infof("open random source with config %+v", s.conf)
 
