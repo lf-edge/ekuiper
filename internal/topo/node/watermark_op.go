@@ -61,7 +61,7 @@ func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *
 }
 
 func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
-	w.prepareExec(ctx)
+	w.prepareExec(ctx, errCh, "op")
 	// restore state
 	if s, err := ctx.GetState(WatermarkKey); err == nil && s != nil {
 		if si, ok := s.(int64); ok {

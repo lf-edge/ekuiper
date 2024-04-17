@@ -78,6 +78,7 @@ type defaultNode struct {
 	sendError   bool
 	statManager metric.StatManager
 	ctx         api.StreamContext
+	ctrlCh      chan<- error
 	qos         def.Qos
 	outputMu    sync.RWMutex
 	outputs     map[string]chan<- any
@@ -225,10 +226,11 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 	return data, false
 }
 
-func (o *defaultSinkNode) prepareExec(ctx api.StreamContext) {
+func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opType string) {
 	ctx.GetLogger().Infof("%s started", o.name)
-	o.statManager = metric.NewStatManager(ctx, "op")
+	o.statManager = metric.NewStatManager(ctx, opType)
 	o.ctx = ctx
+	o.ctrlCh = errCh
 }
 
 func SourcePing(sourceType string, config map[string]interface{}) error {

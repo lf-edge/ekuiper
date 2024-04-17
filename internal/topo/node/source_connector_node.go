@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/stat"
@@ -61,10 +60,7 @@ func (m *SourceConnectorNode) setup(dataSource string, props map[string]any) err
 
 // Open will be invoked by topo. It starts reading data.
 func (m *SourceConnectorNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
-	m.ctx = ctx
-	ctx.GetLogger().Infof("Opening source connector %s", m.name)
-	// create stat manager
-	m.statManager = metric.NewStatManager(ctx, "source")
+	m.prepareExec(ctx, ctrlCh, "source")
 	if able, ok := m.s.(stat.StatsAble); ok {
 		able.SetupStats(m.statManager)
 	}
