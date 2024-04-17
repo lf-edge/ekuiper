@@ -41,7 +41,7 @@ func Send(logger api.Logger, client *http.Client, u string, method string, opts 
 	if len(opts) > 0 {
 		for _, opt := range opts {
 			if err := opt(req); err != nil {
-				return nil, fmt.Errorf("apply request options has error: %w", err)
+				return nil, err
 			}
 		}
 	}

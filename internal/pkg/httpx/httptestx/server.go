@@ -110,7 +110,7 @@ func ResponseSnapshotMiddleware(snapshots *[]*ResponseSnapshot) mux.MiddlewareFu
 			copiedBodyBuf := bytes.NewBuffer([]byte{})
 			_, err := io.Copy(copiedBodyBuf, rec.Body)
 			if err != nil {
-				panic(fmt.Sprintf("copy body buffer has error: %w", err))
+				panic(fmt.Sprintf("copy body buffer has error: %s", err))
 			}
 			// snapshotting
 			snapshot := new(ResponseSnapshot)
@@ -118,7 +118,7 @@ func ResponseSnapshotMiddleware(snapshots *[]*ResponseSnapshot) mux.MiddlewareFu
 			snapshot.Code = rec.Code
 			snapshot.Headers = make(http.Header, 0)
 			snapshot.Method = r.Method
-			for k, vs := range rec.HeaderMap {
+			for k, vs := range rec.Result().Header {
 				for _, v := range vs {
 					snapshot.Headers.Add(k, v)
 				}
@@ -126,7 +126,7 @@ func ResponseSnapshotMiddleware(snapshots *[]*ResponseSnapshot) mux.MiddlewareFu
 			*snapshots = append(*snapshots, snapshot)
 
 			// write everything to actual response writer
-			for k, v := range rec.HeaderMap {
+			for k, v := range rec.Result().Header {
 				w.Header()[k] = v
 			}
 			w.WriteHeader(rec.Code)
