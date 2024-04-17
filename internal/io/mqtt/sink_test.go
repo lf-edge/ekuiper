@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestSinkConfigure(t *testing.T) {
@@ -98,10 +100,11 @@ func TestSinkConfigure(t *testing.T) {
 		},
 	}
 
+	ctx := mockContext.NewMockContext("testsinkconfigure", "sink1")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ms := &MQTTSink{}
-			err := ms.Configure(tt.input)
+			err := ms.Provision(ctx, tt.input)
 			if !reflect.DeepEqual(err, tt.expectedErr) {
 				t.Errorf("\n Expected error: \t%v\n \t\t\tgot: \t%v", tt.expectedErr, err)
 				return

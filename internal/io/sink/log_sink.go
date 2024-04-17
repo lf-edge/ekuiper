@@ -26,14 +26,9 @@ import (
 // NewLogSink log action, no properties now
 // example: {"log":{}}
 func NewLogSink() api.Sink {
-	return collector.Func(func(ctx api.StreamContext, data interface{}) error {
-		log := ctx.GetLogger()
-		if v, _, err := ctx.TransformOutput(data); err == nil {
-			log.Infof("sink result for rule %s: %s", ctx.GetRuleId(), v)
-			return nil
-		} else {
-			return fmt.Errorf("transform data error: %v", err)
-		}
+	return collector.Func(func(ctx api.StreamContext, data any) error {
+		ctx.GetLogger().Infof("sink result for rule %s: %s", ctx.GetRuleId(), data)
+		return nil
 	})
 }
 
@@ -47,12 +42,10 @@ var QR = &QueryResult{LastFetch: time.Now()}
 
 func NewLogSinkToMemory() api.Sink {
 	QR.Results = make([]string, 0, 10)
-	return collector.Func(func(ctx api.StreamContext, data interface{}) error {
-		var result string
-		if v, _, err := ctx.TransformOutput(data); err == nil {
-			result = string(v)
-		} else {
-			return fmt.Errorf("transform data error: %v", err)
+	return collector.Func(func(ctx api.StreamContext, data any) error {
+		result, ok := data.(string)
+		if !ok {
+			return fmt.Errorf("result is not a string but got %v", data)
 		}
 		QR.Mux.Lock()
 		QR.Results = append(QR.Results, result)

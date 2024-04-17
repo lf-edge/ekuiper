@@ -21,15 +21,14 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -42,7 +41,7 @@ func init() {
 	testx.InitEnv("mqtt_source_connector")
 }
 
-func TestPing(t *testing.T) {
+func TestProvision(t *testing.T) {
 	tests := []struct {
 		name  string
 		props map[string]any
@@ -51,28 +50,24 @@ func TestPing(t *testing.T) {
 		{
 			name: "Valid configuration",
 			props: map[string]any{
-				"server": url,
+				"server":     url,
+				"datasource": "demo",
 			},
 		},
 		{
 			name: "Invalid configuration",
 			props: map[string]any{
-				"server": make(chan any),
+				"server":     make(chan any),
+				"datasource": "demo",
 			},
 			err: "1 error(s) decoding:\n\n* 'server' expected type 'string'",
 		},
-		{
-			name: "Runtime error",
-			props: map[string]any{
-				"server": "not exist",
-			},
-			err: "found error when connecting for not exist: no servers defined to connect to",
-		},
 	}
 	sc := &SourceConnector{}
+	ctx := mockContext.NewMockContext("testprov", "source")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := sc.Ping("demo", tt.props)
+			err := sc.Provision(ctx, tt.props)
 			if tt.err != "" {
 				assert.Error(t, err)
 				require.True(t, strings.HasPrefix(err.Error(), tt.err))
@@ -85,16 +80,14 @@ func TestPing(t *testing.T) {
 
 func TestOpen(t *testing.T) {
 	sc := &SourceConnector{}
-	// Test configure
-	err := sc.Configure("demo", map[string]any{
-		"server": url,
-	})
-	assert.NoError(t, err)
 	mc := mockclock.GetMockClock()
 
 	// Open and subscribe before sending data
-	mock.TestSourceConnector(t, sc, []api.SourceTuple{
-		api.NewDefaultRawTuple([]byte("hello"), map[string]any{
+	mock.TestSourceConnector(t, sc, map[string]any{
+		"server":     url,
+		"datasource": "demo",
+	}, []api.Tuple{
+		api.NewDefaultRawTuple([]byte("hello"), xsql.Message{
 			"topic":     "demo",
 			"messageId": uint16(0),
 			"qos":       byte(0),
@@ -119,56 +112,4 @@ func TestOpen(t *testing.T) {
 			}
 		}
 	})
-}
-
-func TestOnMsgCancel(t *testing.T) {
-	sc := &SourceConnector{}
-	sc.consumer = make(chan<- api.SourceTuple, 10)
-	sc.onMessage(mockContext.NewMockContext("1", "1"), MockMessage{})
-	sc.onError(mockContext.NewMockContext("1", "1"), nil)
-
-	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/ctxCancel", "return(ture)"))
-	defer func() {
-		failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/ctxCancel")
-	}()
-	ctx, cancel := context.Background().WithCancel()
-	cancel()
-	time.Sleep(100 * time.Millisecond)
-	sc.onMessage(ctx, nil)
-	sc.onError(ctx, nil)
-}
-
-// MockMessage implements the Message interface and allows for control over the returned data when a MessageHandler is
-// invoked.
-type MockMessage struct {
-	payload []byte
-	topic   string
-}
-
-func (mm MockMessage) Payload() []byte {
-	return mm.payload
-}
-
-func (MockMessage) Duplicate() bool {
-	panic("function not expected to be invoked")
-}
-
-func (MockMessage) Qos() byte {
-	return 0
-}
-
-func (MockMessage) Retained() bool {
-	panic("function not expected to be invoked")
-}
-
-func (mm MockMessage) Topic() string {
-	return mm.topic
-}
-
-func (MockMessage) MessageID() uint16 {
-	return 0
-}
-
-func (MockMessage) Ack() {
-	panic("function not expected to be invoked")
 }

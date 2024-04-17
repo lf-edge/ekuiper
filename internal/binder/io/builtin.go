@@ -33,7 +33,7 @@ func init() {
 	// modules.RegisterSource("simulator", func() api.Source { return &simulator.Source{} })
 
 	modules.RegisterSink("log", sink.NewLogSink)
-	// modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
+	modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
 	modules.RegisterSink("mqtt", func() api.Sink { return &mqtt.MQTTSink{} })
 	// modules.RegisterSink("rest", func() api.Sink { return &http.RestSink{} })
 	modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })

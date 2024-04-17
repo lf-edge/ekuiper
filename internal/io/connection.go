@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package clients
+package io
 
-import (
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io"
+import "github.com/lf-edge/ekuiper/contract/v2/api"
+
+type ConnStatus int
+
+const (
+	Connecting ConnStatus = iota
+	Connected
+	Disconnect
+	Subscribed
+	SubError
 )
 
-type ConsumerInfo struct {
-	ConsumerId   string
-	ConsumerChan chan<- interface{}
-	SubErrors    chan error
-}
-
-type SubscribedTopics struct {
-	Topics []string
-}
-
-type ClientFactoryFunc func(props map[string]interface{}) (ClientWrapper, error)
-
-type ClientWrapper interface {
-	Subscribe(c api.StreamContext, subChan []io.TopicChannel, messageErrors chan error, params map[string]interface{}) error
-	Release(c api.StreamContext) bool
+type MessageClient interface {
+	Subscribe(c api.StreamContext, subChan []TopicChannel, messageErrors chan error, params map[string]interface{}) error
 	Publish(c api.StreamContext, topic string, message []byte, params map[string]interface{}) error
-	SetConnectionSelector(conSelector string)
-	GetConnectionSelector() string
-	AddRef()
 	Ping() error
+}
+
+// TopicChannel is the data structure for subscriber
+type TopicChannel struct {
+	// Topic for subscriber to filter on if any
+	Topic string
+	// Messages is the returned message channel for the subscriber
+	Messages chan<- interface{}
 }

@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package memory
+package api
 
-func GetSink() *sink {
-	return &sink{}
-}
-
-func GetSource() *source {
-	return &source{}
+// Connector is a source feature that allows the source to connect to the data source.
+type Connector interface {
+	Connect(ctx StreamContext) error
 }

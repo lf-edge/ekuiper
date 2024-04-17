@@ -15,21 +15,20 @@
 package topotest
 
 import (
-	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
@@ -47,10 +46,103 @@ const POSTLEAP = 1000 // Time change after all data sends out
 type RuleTest struct {
 	Name string
 	Sql  string
-	R    interface{}            // The result
-	M    map[string]interface{} // final metrics
-	T    *def.PrintableTopo     // printable topo, an optional field
-	W    int                    // wait time for each data sending, in milli
+	R    [][]map[string]any // The result
+	M    map[string]any     // final metrics
+	T    *def.PrintableTopo // printable topo, an optional field
+	W    int                // wait time for each data sending, in milli
+}
+
+// CommonResultFunc A function to convert memory sink result to map slice
+func CommonResultFunc(result []any) [][]map[string]any {
+	maps := make([][]map[string]any, 0, len(result))
+	for _, v := range result {
+		switch rt := v.(type) {
+		case api.Tuple:
+			maps = append(maps, []map[string]any{rt.Message().ToMap()})
+		case []api.Tuple:
+			nm := make([]map[string]any, 0, len(rt))
+			for _, mm := range rt {
+				nm = append(nm, mm.Message().ToMap())
+			}
+			maps = append(maps, nm)
+		}
+	}
+	return maps
+}
+
+func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, w int) {
+	doRuleTestWithResultFunc(t, tests, j, opt, w, CommonResultFunc)
+}
+
+func doRuleTestWithResultFunc(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, w int, resultFunc func(result []any) [][]map[string]any) {
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			id := fmt.Sprintf("%s_%d", tt.Name, j)
+			// Create the rule which sink to memory topic
+			datas, dataLength, tp, errCh := createTestRule(t, id, tt, opt)
+			if tp == nil {
+				t.Errorf("topo is not created successfully")
+				return
+			}
+			// Send data with leaps
+			wait := tt.W
+			if wait == 0 {
+				if w > 0 {
+					wait = w
+				} else {
+					wait = 5
+				}
+			}
+			switch opt.Qos {
+			case def.ExactlyOnce:
+				wait *= 10
+			case def.AtLeastOnce:
+				wait *= 3
+			default:
+				// do nothing
+			}
+			var retry int
+			if opt.Qos > def.AtMostOnce {
+				for retry = 3; retry > 0; retry-- {
+					if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
+						conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
+						time.Sleep(10 * time.Millisecond)
+					} else {
+						break
+					}
+				}
+				if retry < 0 {
+					t.Error("coordinator timeout")
+					t.FailNow()
+				}
+			}
+			// Send async
+			go sendData(dataLength, datas, tp, POSTLEAP, wait)
+			// Receive data
+			limit := len(tt.R)
+			consumer := pubsub.CreateSub(id, nil, "", limit)
+			ticker := time.After(1000 * time.Second)
+			sinkResult := make([]any, 0, limit)
+		outerloop:
+			for {
+				select {
+				case <-errCh:
+					tp.Cancel()
+					break outerloop
+				case tuple := <-consumer:
+					sinkResult = append(sinkResult, tuple)
+				case <-ticker:
+					tp.Cancel()
+					assert.Fail(t, "timeout")
+					break outerloop
+				}
+			}
+
+			assert.Equal(t, tt.R, resultFunc(sinkResult))
+			err := CompareMetrics(tp, tt.M)
+			assert.NoError(t, err)
+		})
+	}
 }
 
 func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
@@ -94,88 +186,7 @@ func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
 	return nil
 }
 
-func CommonResultFunc(result [][]byte) interface{} {
-	var maps [][]map[string]interface{}
-	for _, v := range result {
-		var mapRes []map[string]interface{}
-		err := json.Unmarshal(v, &mapRes)
-		if err != nil {
-			panic(fmt.Sprintf("Failed to parse the input %v into map", string(v)))
-		}
-		maps = append(maps, mapRes)
-	}
-	return maps
-}
-
-func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, wait int) {
-	doRuleTestBySinkProps(t, tests, j, opt, wait, nil, CommonResultFunc)
-}
-
-func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, w int, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
-	for i, tt := range tests {
-		t.Run(tt.Name, func(t *testing.T) {
-			datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
-			if tp == nil {
-				t.Errorf("topo is not created successfully")
-				return
-			}
-			wait := tt.W
-			if wait == 0 {
-				if w > 0 {
-					wait = w
-				} else {
-					wait = 5
-				}
-			}
-			switch opt.Qos {
-			case def.ExactlyOnce:
-				wait *= 10
-			case def.AtLeastOnce:
-				wait *= 3
-			}
-			var retry int
-			if opt.Qos > def.AtMostOnce {
-				for retry = 3; retry > 0; retry-- {
-					if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
-						conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
-						time.Sleep(10 * time.Millisecond)
-					} else {
-						break
-					}
-				}
-				if retry < 0 {
-					t.Error("coordinator timeout")
-					t.FailNow()
-				}
-			}
-			if err := sendData(t, dataLength, tt.M, datas, errCh, tp, POSTLEAP, wait); err != nil {
-				t.Errorf("send data error %s", err)
-				return
-			}
-			compareResult(t, mockSink, resultFunc, tt, i, tp)
-		})
-	}
-}
-
-func compareResult(t *testing.T, mockSink *mocknode.MockSink, resultFunc func(result [][]byte) interface{}, tt RuleTest, i int, tp *topo.Topo) {
-	// Check results
-	results := mockSink.GetResults()
-	maps := resultFunc(results)
-
-	assert.Equal(t, tt.R, maps)
-	if err := CompareMetrics(tp, tt.M); err != nil {
-		t.Errorf("%d. %q\n\nmetrics mismatch:\n\n%s\n\n", i, tt.Sql, err)
-	}
-	if tt.T != nil {
-		topo := tp.GetTopo()
-		if !reflect.DeepEqual(tt.T, topo) {
-			t.Errorf("%d. %q\n\ntopo mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.Sql, tt.T, topo)
-		}
-	}
-	tp.Cancel()
-}
-
-func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, datas [][]*xsql.Tuple, errCh <-chan error, tp *topo.Topo, postleap int, wait int) error {
+func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int, wait int) {
 	// Send data and move time
 	mockClock := mockclock.GetMockClock()
 	// Set the current time
@@ -187,7 +198,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 		for _, d := range datas {
 			time.Sleep(time.Duration(wait) * time.Millisecond)
 			// Make sure time is going forward only
-			// gradually add up time to ensure checkpoint is triggered before the data send
+			// gradually add uptime to ensure checkpoint is triggered before the data send
 			for n := timex.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
 				if d[i].Timestamp < n {
 					n = d[i].Timestamp
@@ -197,36 +208,18 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 				time.Sleep(1 * time.Millisecond)
 			}
 			select {
-			case err := <-errCh:
-				t.Log(err)
-				tp.Cancel()
-				return err
+			case <-tp.GetContext().Done():
+				return
 			default:
 			}
 		}
 	}
 	mockClock.Add(time.Duration(postleap) * time.Millisecond)
 	conf.Log.Debugf("Clock add to %d", timex.GetNowInMilli())
-	// Check if stream done. Poll for metrics,
-	time.Sleep(10 * time.Millisecond)
-	var retry int
-	for retry = 4; retry > 0; retry-- {
-		var err error
-		if err = CompareMetrics(tp, metrics); err == nil {
-			break
-		}
-		conf.Log.Errorf("check metrics error at %d: %s", retry, err)
-		time.Sleep(1000 * time.Millisecond)
-	}
-	if retry == 0 {
-		t.Error("send data timeout")
-	} else if retry < 2 {
-		conf.Log.Debugf("try %d for metric comparison\n", 2-retry)
-	}
-	return nil
 }
 
-func createStream(t *testing.T, tt RuleTest, j int, opt *def.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *topo.Topo, *mocknode.MockSink, <-chan error) {
+// create a test rule with memory sink
+func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) ([][]*xsql.Tuple, int, *topo.Topo, <-chan error) {
 	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
@@ -252,18 +245,28 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *def.RuleOption, sinkPro
 			}
 		}
 	}
-	mockSink := mocknode.NewMockSink()
-	sink := node.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp, err := planner.PlanSQLWithSourcesAndSinks(&def.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, nil, []*node.SinkNode{sink})
+	tp, err := planner.Plan(&def.Rule{
+		Id:  id,
+		Sql: tt.Sql,
+		Actions: []map[string]any{
+			{
+				"memory": map[string]any{
+					"topic":      id,
+					"sendSingle": true,
+				},
+			},
+		},
+		Options: opt,
+	})
 	if err != nil {
 		t.Error(err)
-		return nil, 0, nil, nil, nil
+		return nil, 0, nil, nil
 	}
 	errCh := tp.Open()
-	return datas, dataLength, tp, mockSink, errCh
+	return datas, dataLength, tp, errCh
 }
 
-// Create or drop streams
+// HandleStream Create or drop streams
 func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 	p := processor.NewStreamProcessor()
 	for _, name := range names {
@@ -393,76 +396,4 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 			t.Log(err)
 		}
 	}
-}
-
-type RuleCheckpointTest struct {
-	RuleTest
-	PauseSize   int                    // Stop stream after sending pauseSize source to test checkpoint resume
-	Cc          int                    // checkpoint count when paused
-	PauseMetric map[string]interface{} // The metric to check when paused
-}
-
-func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *def.RuleOption) {
-	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
-	for i, tt := range tests {
-		datas, dataLength, tp, mockSink, errCh := createStream(t, tt.RuleTest, j, opt, nil)
-		if tp == nil {
-			t.Errorf("topo is not created successfully")
-			break
-		}
-		var retry int
-		for retry = 10; retry > 0; retry-- {
-			if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
-				conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
-				time.Sleep(10 * time.Millisecond)
-			} else {
-				break
-			}
-		}
-		if retry == 0 {
-			t.Error("coordinator timeout")
-			t.FailNow()
-		}
-		conf.Log.Debugf("Start sending first phase data done at %d", timex.GetNowInMilli())
-		if err := sendData(t, tt.PauseSize, tt.PauseMetric, datas, errCh, tp, 100, 100); err != nil {
-			t.Errorf("first phase send data error %s", err)
-			break
-		}
-		conf.Log.Debugf("Send first phase data done at %d", timex.GetNowInMilli())
-		// compare checkpoint count
-		time.Sleep(10 * time.Millisecond)
-		for retry = 3; retry > 0; retry-- {
-			actual := tp.GetCoordinator().GetCompleteCount()
-			if tt.Cc == actual {
-				break
-			}
-			conf.Log.Debugf("check checkpointCount error at %d: %d\n", retry, actual)
-			time.Sleep(200 * time.Millisecond)
-		}
-		cc := tp.GetCoordinator().GetCompleteCount()
-		tp.Cancel()
-		if retry == 0 {
-			t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, j, tt.Cc, cc)
-			return
-		} else if retry < 3 {
-			conf.Log.Debugf("try %d for checkpoint count\n", 4-retry)
-		}
-		tp.Cancel()
-		time.Sleep(10 * time.Millisecond)
-		// resume stream
-		conf.Log.Debugf("Resume stream at %d", timex.GetNowInMilli())
-		errCh = tp.Open()
-		conf.Log.Debugf("After open stream at %d", timex.GetNowInMilli())
-		if err := sendData(t, dataLength, tt.M, datas, errCh, tp, POSTLEAP, 10); err != nil {
-			t.Errorf("second phase send data error %s", err)
-			break
-		}
-		compareResult(t, mockSink, CommonResultFunc, tt.RuleTest, i, tp)
-	}
-}
-
-func CreateRule(name, sql string) (*def.Rule, error) {
-	p := processor.NewRuleProcessor()
-	p.ExecDrop(name)
-	return p.ExecCreateWithValidation(name, sql)
 }

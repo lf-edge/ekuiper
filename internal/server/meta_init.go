@@ -321,6 +321,7 @@ func getLanguage(r *http.Request) string {
 	return language
 }
 
+// TODO add ping back
 func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -334,11 +335,6 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	config = replacePasswdForConfig("sink", sinkNm, config)
-	err = node.SinkPing(sinkNm, config)
-	if err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
 
 	w.WriteHeader(http.StatusOK)
 }

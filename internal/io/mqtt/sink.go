@@ -20,9 +20,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	mqttClient "github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/mqtt"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -40,42 +40,12 @@ type AdConf struct {
 type MQTTSink struct {
 	adconf     *AdConf
 	config     map[string]interface{}
-	cli        api.MessageClient
+	cli        io.MessageClient
 	compressor message.Compressor
 	sendParams map[string]any
 }
 
-func (ms *MQTTSink) hasKeys(str []string, ps map[string]interface{}) bool {
-	for _, v := range str {
-		if _, ok := ps[v]; ok {
-			return true
-		}
-	}
-	return false
-}
-
-func validateMQTTSinkTopic(topic string) error {
-	if strings.Contains(topic, "#") || strings.Contains(topic, "+") {
-		return fmt.Errorf("mqtt sink topic shouldn't contain # or +")
-	}
-	return nil
-}
-
-func (ms *MQTTSink) Ping(_ string, props map[string]interface{}) error {
-	if err := ms.Configure(props); err != nil {
-		return err
-	}
-	cli, err := clients.GetClient("mqtt", ms.config)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		clients.ReleaseClient(context.Background(), cli)
-	}()
-	return cli.Ping()
-}
-
-func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
+func (ms *MQTTSink) Provision(_ api.StreamContext, ps map[string]any) error {
 	adconf := &AdConf{}
 	err := cast.MapToStruct(ps, adconf)
 	if err != nil {
@@ -110,7 +80,7 @@ func (ms *MQTTSink) Configure(ps map[string]interface{}) error {
 	return mc.CfgValidate(ms.config)
 }
 
-func (ms *MQTTSink) Open(ctx api.StreamContext) error {
+func (ms *MQTTSink) Connect(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	cli, err := clients.GetClient("mqtt", ms.config)
 	if err != nil {
@@ -122,34 +92,20 @@ func (ms *MQTTSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ms *MQTTSink) Collect(ctx api.StreamContext, item interface{}) error {
-	return ms.collectWithTopic(ctx, item, ms.adconf.Tpc)
+func validateMQTTSinkTopic(topic string) error {
+	if strings.Contains(topic, "#") || strings.Contains(topic, "+") {
+		return fmt.Errorf("mqtt sink topic shouldn't contain # or +")
+	}
+	return nil
 }
 
-func (ms *MQTTSink) CollectResend(ctx api.StreamContext, item interface{}) error {
-	return ms.collectWithTopic(ctx, item, ms.adconf.ResendTopic)
-}
-
-func (ms *MQTTSink) collectWithTopic(ctx api.StreamContext, item interface{}, topic string) error {
-	logger := ctx.GetLogger()
-	jsonBytes, _, err := ctx.TransformOutput(item)
-	if err != nil {
-		return err
-	}
-	logger.Debugf("%s publish %s", ctx.GetOpId(), jsonBytes)
-	if ms.compressor != nil {
-		jsonBytes, err = ms.compressor.Compress(jsonBytes)
-		if err != nil {
-			return err
-		}
-	}
-
-	tpc, err := ctx.ParseTemplate(topic, item)
+func (ms *MQTTSink) Collect(ctx api.StreamContext, item []byte) error {
+	tpc, err := ctx.ParseTemplate(ms.adconf.Tpc, item)
 	if err != nil {
 		return err
 	}
 
-	if err := ms.cli.Publish(ctx, tpc, jsonBytes, ms.sendParams); err != nil {
+	if err := ms.cli.Publish(ctx, tpc, item, ms.sendParams); err != nil {
 		return errorx.NewIOErr(err.Error())
 	}
 	return nil
@@ -163,3 +119,5 @@ func (ms *MQTTSink) Close(ctx api.StreamContext) error {
 	}
 	return nil
 }
+
+var _ api.BytesCollector = &MQTTSink{}

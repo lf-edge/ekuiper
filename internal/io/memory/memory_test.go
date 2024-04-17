@@ -16,11 +16,11 @@ package memory
 
 import (
 	"fmt"
-	"reflect"
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/gdexlab/go-render/render"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -28,9 +28,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestSharedInmemoryNode(t *testing.T) {
+	mockclock.ResetClock(100)
 	pubsub.Reset()
 	id := "test_id"
 	sinkProps := make(map[string]interface{})
@@ -40,53 +43,40 @@ func TestSharedInmemoryNode(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx1 := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	ctx, cancel := ctx1.WithCancel()
-	defer cancel()
-	consumer := make(chan api.SourceTuple)
-	errorChannel := make(chan error)
 	srcProps := make(map[string]interface{})
 	srcProps["option"] = "value"
-	err := snk.Configure(sinkProps)
+	err := snk.Provision(ctx, sinkProps)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = snk.Open(ctx)
+	err = snk.Connect(ctx)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	srcProps[pubsub.IdProperty] = id
-	err = src.Configure(id, srcProps)
+	srcProps["datasource"] = id
+	err = src.Provision(ctx, srcProps)
 	if err != nil {
 		t.Error(err)
 	}
 
-	//if _, contains := pubTopics[id]; !contains {
-	//	t.Errorf("there should be memory node for topic")
-	//}
-
-	data := make(map[string]interface{})
-	data["temperature"] = 33.0
-	list := make([]map[string]interface{}, 0)
-	list = append(list, data)
+	rawTuple := api.NewDefaultSourceTuple(xsql.Message{"temp": 12}, nil, timex.GetNow())
+	mockclock.GetMockClock().Add(100)
 	go func() {
-		err = snk.Collect(ctx, list)
+		err = snk.CollectList(ctx, []api.Tuple{rawTuple})
 		if err != nil {
 			t.Error(err)
 		}
 	}()
-	go func() {
-		src.Open(ctx, consumer, errorChannel)
-	}()
-	select {
-	case res := <-consumer:
-		mc := mockclock.GetMockClock()
-		expected := api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": "test_id"}, mc.Now())
-		if !reflect.DeepEqual(expected, res) {
-			t.Errorf("result %s should be equal to %s", res, expected)
-		}
-		return
-	}
+	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, ts time.Time) {
+		expected := []api.Tuple{api.NewDefaultSourceTuple(rawTuple.Message(), xsql.Message{"topic": id}, timex.GetNow())}
+		assert.Equal(t, expected, res)
+		cancel()
+	})
+	assert.NoError(t, err)
+	<-ctx.Done()
 }
 
 func TestMultipleTopics(t *testing.T) {
@@ -149,263 +139,91 @@ func TestMultipleTopics(t *testing.T) {
 				},
 			},
 		}
-		expected = []api.SourceTuple{
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":   1,
-					"temp": 23,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s1",
-				},
+		expected = [][]api.Tuple{
+			{ // 0 "h/d1/c1/s2",
+				api.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
 			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":   1,
-					"temp": 23,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s1",
-				},
+			{ // 1 "h/+/+/s1",
+				api.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+
+				api.NewDefaultSourceTuple(xsql.Message{"id": 7, "hum": 67.5}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 8, "hum": 77.1}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 9, "hum": 90.3}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
+
+				api.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
 			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":    4,
-					"color": "red",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s2",
-				},
+			{ // 2 "h/d3/#",
+				api.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
 			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":    4,
-					"color": "red",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s2",
-				},
+			{ // 3 "h/d1/c1/s2",
+				api.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
 			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":  7,
-					"hum": 67.5,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d2/c2/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":     10,
-					"status": "on",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d3/c3/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":     10,
-					"status": "on",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d3/c3/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":   2,
-					"temp": 34,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":   2,
-					"temp": 34,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":    5,
-					"color": "red",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s2",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":    5,
-					"color": "red",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s2",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":  8,
-					"hum": 77.1,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d2/c2/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":     11,
-					"status": "off",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d3/c3/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":     11,
-					"status": "off",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d3/c3/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":   3,
-					"temp": 28,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":   3,
-					"temp": 28,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":    6,
-					"color": "green",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s2",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":    6,
-					"color": "green",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d1/c1/s2",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":  9,
-					"hum": 90.3,
-				},
-				M: map[string]interface{}{
-					"topic": "h/d2/c2/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":     12,
-					"status": "on",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d3/c3/s1",
-				},
-			},
-			&api.DefaultSourceTuple{
-				Mess: map[string]interface{}{
-					"id":     12,
-					"status": "on",
-				},
-				M: map[string]interface{}{
-					"topic": "h/d3/c3/s1",
-				},
+			{ // 4 "h/+/c1/s1"
+				api.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				api.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
 			},
 		}
 	)
 
 	contextLogger := conf.Log.WithField("rule", "test")
-	ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithCancel()
-	consumer := make(chan api.SourceTuple)
-	errorChannel := make(chan error)
-
-	count := 0
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	// create pub
 	for _, topic := range sinkTopics {
 		snk := GetSink()
-		err := snk.Configure(map[string]interface{}{"topic": topic})
+		err := snk.Provision(ctx, map[string]interface{}{"topic": topic})
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		err = snk.Open(ctx)
+		err = snk.Connect(ctx)
 		if err != nil {
 			t.Error(err)
 			return
 		}
-		src := GetSource()
-		err = src.Configure(sourceTopics[count], make(map[string]interface{}))
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		go func(c int) {
-			nc := ctx.WithMeta("rule1", fmt.Sprintf("op%d", c), &state.MemoryStore{})
-			src.Open(nc, consumer, errorChannel)
-		}(count)
-		count++
 	}
-	for count < len(sourceTopics) {
+	// receive data
+	var wg sync.WaitGroup
+	for i, topic := range sourceTopics {
+		wg.Add(1)
 		src := GetSource()
-		err := src.Configure(sourceTopics[count], make(map[string]interface{}))
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		go func(c int) {
-			nc := ctx.WithMeta("rule1", fmt.Sprintf("op%d", c), &state.MemoryStore{})
-			src.Open(nc, consumer, errorChannel)
-		}(count)
-		count++
+		err := src.Provision(ctx, map[string]any{"datasource": topic})
+		assert.NoError(t, err)
+		limit := len(expected[i])
+		result := make([]api.Tuple, 0, limit)
+		nc, cancel := ctx.WithMeta("rule1", fmt.Sprintf("op%d", i), &state.MemoryStore{}).WithCancel()
+		err = src.Subscribe(nc, func(ctx api.StreamContext, data any, ts time.Time) {
+			rid, _ := data.(api.Tuple).Message().Get("id")
+			fmt.Printf("%d(%s) receive %v\n", i, topic, rid)
+			result = append(result, data.(api.Tuple))
+			limit--
+			if limit == 0 {
+				assert.Equal(t, result, expected[i], i)
+				cancel()
+				wg.Done()
+			}
+		})
+		assert.NoError(t, err)
 	}
 
-	go func() {
-		c := 0
-		for c < 3 {
-			for i, v := range sinkData {
-				time.Sleep(10 * time.Millisecond)
-				pubsub.Produce(ctx, sinkTopics[i], v[c])
-			}
-			c++
+	for i, v := range sinkData {
+		topic := sinkTopics[i]
+		for _, mm := range v {
+			time.Sleep(10 * time.Millisecond)
+			pubsub.Produce(ctx, topic, api.NewDefaultSourceTuple(xsql.Message(mm), xsql.Message{"topic": topic}, timex.GetNow()))
+			fmt.Printf("send to topic %s: %v\n", topic, mm["id"])
 		}
-		cancel()
-		time.Sleep(100 * time.Millisecond)
-		close(consumer)
-	}()
-	var results []api.SourceTuple
-	for res := range consumer {
-		results = append(results, res)
+
 	}
-	for i, r := range results {
-		if !reflect.DeepEqual(r.Message(), expected[i].Message()) || !reflect.DeepEqual(r.Meta(), expected[i].Meta()) {
-			t.Errorf("Expect\t %v\n but got\t\t\t\t %v", render.AsCode(expected[i]), render.AsCode(r))
-		}
-	}
+	wg.Wait()
 }

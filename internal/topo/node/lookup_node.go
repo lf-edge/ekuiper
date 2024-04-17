@@ -148,7 +148,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.IncTotalExceptions(e.Error())
 					}
 				case <-ctx.Done():
-					log.Infoln("Cancelling lookup node....")
+					log.Info("Cancelling lookup node....")
 					return nil
 				}
 			}
@@ -171,7 +171,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 		}
 	}
 	var (
-		r  []api.SourceTuple
+		r  []api.Tuple
 		e  error
 		ok bool
 	)
@@ -208,8 +208,8 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 			merged.AddTuple(d)
 			t := &xsql.Tuple{
 				Emitter:   n.name,
-				Message:   v.Message(),
-				Metadata:  v.Meta(),
+				Message:   v.Message().ToMap(),
+				Metadata:  v.Meta().ToMap(),
 				Timestamp: timex.GetNowInMilli(),
 			}
 			merged.AddTuple(t)

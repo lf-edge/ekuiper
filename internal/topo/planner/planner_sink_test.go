@@ -19,11 +19,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func TestSinkPlan(t *testing.T) {
@@ -91,12 +90,12 @@ func TestSinkPlan(t *testing.T) {
 	for _, c := range tc {
 		tp, err := topo.NewWithNameAndOptions("test", c.rule.Options)
 		assert.NoError(t, err)
-		n := node.NewSourceNode("src1", ast.TypeStream, nil, &ast.Options{
-			DATASOURCE: "/feed",
-			TYPE:       "httppull",
-		}, &def.RuleOption{SendError: false}, false, false, nil)
+		si, err := io.Source("memory")
+		assert.NoError(t, err)
+		n, err := node.NewSourceNode(tp.GetContext(), "src1", si, map[string]any{"datasource": "demo"}, &def.RuleOption{SendError: false})
+		assert.NoError(t, err)
 		tp.AddSrc(n)
-		inputs := []api.Emitter{n}
+		inputs := []node.Emitter{n}
 		err = buildActions(tp, c.rule, inputs)
 		assert.NoError(t, err)
 		assert.Equal(t, c.topo, tp.GetTopo())
@@ -181,12 +180,12 @@ func TestSinkPlanError(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			tp, err := topo.NewWithNameAndOptions("test", c.rule.Options)
 			assert.NoError(t, err)
-			n := node.NewSourceNode("src1", ast.TypeStream, nil, &ast.Options{
-				DATASOURCE: "/feed",
-				TYPE:       "httppull",
-			}, &def.RuleOption{SendError: false}, false, false, nil)
+			si, err := io.Source("memory")
+			assert.NoError(t, err)
+			n, err := node.NewSourceNode(tp.GetContext(), "src1", si, map[string]any{"datasource": "demo"}, &def.RuleOption{SendError: false})
+			assert.NoError(t, err)
 			tp.AddSrc(n)
-			inputs := []api.Emitter{n}
+			inputs := []node.Emitter{n}
 			err = buildActions(tp, c.rule, inputs)
 			assert.Error(t, err)
 			assert.Equal(t, c.err, err.Error())

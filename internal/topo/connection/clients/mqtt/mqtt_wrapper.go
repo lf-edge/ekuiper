@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -183,7 +184,7 @@ func (mc *mqttClientWrapper) checkConn() error {
 	return nil
 }
 
-func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []api.TopicChannel, messageErrors chan error, params map[string]interface{}) error {
+func (mc *mqttClientWrapper) Subscribe(c api.StreamContext, subChan []io.TopicChannel, messageErrors chan error, params map[string]interface{}) error {
 	log := c.GetLogger()
 
 	mc.subLock.Lock()

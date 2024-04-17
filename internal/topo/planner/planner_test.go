@@ -32,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -4777,8 +4778,10 @@ func TestTransformSourceNode(t *testing.T) {
 			Type: "bigint",
 		},
 	}
-	props := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt"})
-	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props, &def.RuleOption{SendError: false})
+	tp, err := topo.NewWithNameAndOptions("test", &def.RuleOption{SendError: false})
+	assert.NoError(t, err)
+	props := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", DATASOURCE: "topic1"})
+	srcNode, err := node.NewSourceNode(tp.GetContext(), "test", &mqtt.SourceConnector{}, props, &def.RuleOption{SendError: false})
 	assert.NoError(t, err)
 	decodeNode, err := node.NewDecodeOp("2_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
 	assert.NoError(t, err)
@@ -4786,8 +4789,8 @@ func TestTransformSourceNode(t *testing.T) {
 	assert.NoError(t, err)
 	decodeNode2, err := node.NewDecodeOp("3_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
 	assert.NoError(t, err)
-	props2 := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", CONF_KEY: "testCom"})
-	srcNode2, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props2, &def.RuleOption{SendError: false})
+	props2 := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", CONF_KEY: "testCom", DATASOURCE: "topic2"})
+	srcNode2, err := node.NewSourceNode(tp.GetContext(), "test", &mqtt.SourceConnector{}, props2, &def.RuleOption{SendError: false})
 	assert.NoError(t, err)
 
 	testCases := []struct {
@@ -4796,46 +4799,7 @@ func TestTransformSourceNode(t *testing.T) {
 		node node.DataSourceNode
 		ops  []node.OperatorNode
 	}{
-		{
-			name: "normal source node",
-			plan: &DataSourcePlan{
-				name: "test",
-				streamStmt: &ast.StreamStmt{
-					StreamType: ast.TypeStream,
-					Options: &ast.Options{
-						TYPE: "file",
-					},
-				},
-				streamFields: nil,
-				allMeta:      false,
-				metaFields:   []string{},
-				iet:          false,
-				isBinary:     false,
-			},
-			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
-				TYPE: "file",
-			}, &def.RuleOption{SendError: false}, false, false, nil),
-		},
-		{
-			name: "schema source node",
-			plan: &DataSourcePlan{
-				name: "test",
-				streamStmt: &ast.StreamStmt{
-					StreamType: ast.TypeStream,
-					Options: &ast.Options{
-						TYPE: "file",
-					},
-				},
-				streamFields: schema,
-				allMeta:      false,
-				metaFields:   []string{},
-				iet:          false,
-				isBinary:     false,
-			},
-			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
-				TYPE: "file",
-			}, &def.RuleOption{SendError: false}, false, false, schema),
-		},
+		// TODO revert file tests
 		{
 			name: "split source node",
 			plan: &DataSourcePlan{
@@ -4866,7 +4830,7 @@ func TestTransformSourceNode(t *testing.T) {
 					StreamType: ast.TypeStream,
 					Options: &ast.Options{
 						TYPE:       "mqtt",
-						DATASOURCE: "topic1",
+						DATASOURCE: "topic2",
 						CONF_KEY:   "testCom",
 					},
 				},
@@ -4885,7 +4849,7 @@ func TestTransformSourceNode(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceNode, ops, _, err := transformSourceNode(tc.plan, nil, "test", &def.RuleOption{}, 1)
+			sourceNode, ops, _, err := transformSourceNode(tp.GetContext(), tc.plan, nil, "test", &def.RuleOption{}, 1)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.node, sourceNode)
 			assert.Equal(t, len(tc.ops), len(ops))
@@ -5057,7 +5021,13 @@ func TestPlanTopo(t *testing.T) {
 						"op_3_project",
 					},
 					"op_3_project": {
-						"sink_sink_memory_log",
+						"op_logToMemory_0_0_transform",
+					},
+					"op_logToMemory_0_0_transform": {
+						"op_logToMemory_0_1_encode",
+					},
+					"op_logToMemory_0_1_encode": {
+						"sink_logToMemory_0",
 					},
 				},
 			},
@@ -5075,7 +5045,13 @@ func TestPlanTopo(t *testing.T) {
 						"op_3_project",
 					},
 					"op_3_project": {
-						"sink_sink_memory_log",
+						"op_logToMemory_0_0_transform",
+					},
+					"op_logToMemory_0_0_transform": {
+						"op_logToMemory_0_1_encode",
+					},
+					"op_logToMemory_0_1_encode": {
+						"sink_logToMemory_0",
 					},
 				},
 			},
@@ -5093,7 +5069,13 @@ func TestPlanTopo(t *testing.T) {
 						"op_3_project",
 					},
 					"op_3_project": {
-						"sink_sink_memory_log",
+						"op_logToMemory_0_0_transform",
+					},
+					"op_logToMemory_0_0_transform": {
+						"op_logToMemory_0_1_encode",
+					},
+					"op_logToMemory_0_1_encode": {
+						"sink_logToMemory_0",
 					},
 				},
 			},
@@ -5111,7 +5093,13 @@ func TestPlanTopo(t *testing.T) {
 						"op_3_project",
 					},
 					"op_3_project": {
-						"sink_sink_memory_log",
+						"op_logToMemory_0_0_transform",
+					},
+					"op_logToMemory_0_0_transform": {
+						"op_logToMemory_0_1_encode",
+					},
+					"op_logToMemory_0_1_encode": {
+						"sink_logToMemory_0",
 					},
 				},
 			},
@@ -5119,9 +5107,9 @@ func TestPlanTopo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			topo, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)})
+			tp, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.topo, topo.GetTopo())
+			assert.Equal(t, tt.topo, tp.GetTopo())
 		})
 	}
 }
