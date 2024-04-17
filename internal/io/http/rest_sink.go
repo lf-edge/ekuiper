@@ -91,7 +91,7 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 		)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
-		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil)
+		_, b, err := ms.parseResponse(ctx, resp, ms.config.DebugResp, nil, false)
 		// do not record response body error as it is not an error in the sink action.
 		if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
 			if strings.HasPrefix(err.Error(), BODY_ERR) {
@@ -139,7 +139,8 @@ func (ms *RestSink) CollectResend(ctx api.StreamContext, item interface{}) error
 func (ms *RestSink) sendWithUrl(ctx api.StreamContext, decodedData []byte, v interface{}, desUrl string) (*http.Response, error) {
 	// Allow to use tokens in headers and check oAuth token expiration
 	if ms.accessConf != nil && ms.accessConf.ExpireInSecond > 0 &&
-		int(time.Now().Sub(ms.tokenLastUpdateAt).Abs().Seconds()) >= ms.accessConf.ExpireInSecond {
+		// S1012 static check fix: We should use time.Since to replace time.Now().Sub()
+		int(time.Since(ms.tokenLastUpdateAt).Abs().Seconds()) >= ms.accessConf.ExpireInSecond {
 		ctx.GetLogger().Debugf("Refreshing token for REST sink")
 		if err := ms.refresh(ctx); err != nil {
 			ctx.GetLogger().Warnf("Refresh REST sink token error: %v", err)
@@ -175,7 +176,10 @@ func (ms *RestSink) sendWithUrl(ctx api.StreamContext, decodedData []byte, v int
 	if err != nil {
 		return nil, fmt.Errorf("rest sink headers template decode error: %v", err)
 	}
-	return httpx.Send(ctx.GetLogger(), ms.client, bodyType, method, u, headers, ms.config.SendSingle, decodedData)
+
+	return httpx.Send(ctx.GetLogger(), ms.client, u, method,
+		httpx.WithHeadersMap(headers),
+		httpx.WithBody(decodedData, bodyType, ms.config.SendSingle, ms.compressor, ms.config.CompressionAlgorithm))
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {

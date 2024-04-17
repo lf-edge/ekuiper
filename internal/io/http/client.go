@@ -27,11 +27,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/cert"
 	"github.com/lf-edge/ekuiper/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
+	"github.com/lf-edge/ekuiper/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
 )
 
@@ -45,6 +47,9 @@ type ClientConf struct {
 
 	tokens map[string]interface{}
 	client *http.Client
+
+	compressor   message.Compressor   // compressor used to payload compression when specifies compressAlgorithm
+	decompressor message.Decompressor // decompressor used to payload decompression when specifies compressAlgorithm
 }
 
 type RawConf struct {
@@ -65,8 +70,9 @@ type RawConf struct {
 	// sink specific properties
 	SendSingle bool `json:"sendSingle"`
 	// inferred properties
-	HeadersTemplate string
-	HeadersMap      map[string]string
+	HeadersTemplate      string
+	HeadersMap           map[string]string
+	CompressionAlgorithm string `json:"compressionAlgorithm"` // CompressionAlgorithm specifies the algorithms used to payload compression
 }
 
 const (
@@ -230,6 +236,19 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 	}
 	cc.config = c
 
+	// that means payload need compression and decompression, so we need initialize compressor and decompressor
+	if c.CompressionAlgorithm != "" {
+		cc.compressor, err = compressor.GetCompressor(c.CompressionAlgorithm)
+		if err != nil {
+			return fmt.Errorf("init payload compressor failed, %w", err)
+		}
+
+		cc.decompressor, err = compressor.GetDecompressor(c.CompressionAlgorithm)
+		if err != nil {
+			return fmt.Errorf("init payload decompressor failed, %w", err)
+		}
+	}
+
 	// try to get access token
 	if cc.accessConf != nil {
 		conf.Log.Infof("Try to get access token from %s", cc.accessConf.Url)
@@ -250,9 +269,10 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 
 // initialize the oAuth access token
 func (cc *ClientConf) auth(ctx api.StreamContext) error {
-	if resp, e := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, true, cc.accessConf.Body); e == nil {
+	if resp, e := httpx.Send(conf.Log, cc.client, cc.accessConf.Url, http.MethodPost,
+		httpx.WithBody(cc.accessConf.Body, "json", true, nil, httpx.EmptyCompressorAlgorithm)); e == nil {
 		conf.Log.Infof("try to get access token got response %v", resp)
-		tokens, _, e := cc.parseResponse(ctx, resp, true, nil)
+		tokens, _, e := cc.parseResponse(ctx, resp, true, nil, true)
 		if e != nil {
 			return fmt.Errorf("Cannot parse access token response to json: %v", e)
 		}
@@ -290,11 +310,14 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 				return fmt.Errorf("fail to parse the header for refresh token request %s: %v", k, err)
 			}
 		}
-		rr, ee := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, true, cc.accessConf.Body)
+		rr, ee := httpx.Send(conf.Log, cc.client, cc.refreshConf.Url, http.MethodPost,
+			httpx.WithBody(cc.accessConf.Body, "json", true, nil, httpx.EmptyCompressorAlgorithm),
+			httpx.WithHeadersMap(headers),
+		)
 		if ee != nil {
 			return fmt.Errorf("fail to get refresh token: %v", ee)
 		}
-		nt, _, err := cc.parseResponse(ctx, rr, true, nil)
+		nt, _, err := cc.parseResponse(ctx, rr, true, nil, true)
 		if err != nil {
 			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
@@ -341,7 +364,7 @@ const (
 )
 
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
-func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, returnBody bool, omd5 *string) ([]map[string]interface{}, []byte, error) {
+func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, returnBody bool, omd5 *string, skipDecompression bool) ([]map[string]interface{}, []byte, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		c, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -358,16 +381,34 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	} else if !returnBody { // For rest sink who only need to know if the request is successful
 		return nil, nil, nil
 	}
+
 	c, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %v", BODY_ERR, err)
 	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			conf.Log.Errorf("fail to close the response body: %v", err)
 		}
 	}(resp.Body)
+
+	// if compressAlgorithm has been set, that means we need decompress payloads
+	// TODO: skipDecompression flag is ugly, maybe we can more elegant ?
+	if cc.config.CompressionAlgorithm != "" && !skipDecompression {
+		// we need check response header key Content-Encoding is exist, if not that means remote server probably not support
+		// configured compression algorithm and we should throw error.
+		if resp.Header.Get("Content-Encoding") == "" {
+			ctx.GetLogger().Warnf("Cannot find header with key 'Content-Encoding' when trying to detect response content encoding and decompress it, probably remote server does not support configured algorithm %q", cc.config.CompressionAlgorithm)
+			return nil, nil, fmt.Errorf("try to detect and decompress payload has error, cannot find header with key 'Content-Encoding' in response")
+		}
+		c, err = cc.decompressor.Decompress(c)
+		if err != nil {
+			return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
+		}
+	}
+
 	if returnBody && cc.config.Incremental {
 		nmd5 := getMD5Hash(c)
 		if *omd5 == nmd5 {

@@ -15,292 +15,26 @@
 package http
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net"
 	"net/http"
-	"net/http/httptest"
 	"path/filepath"
 	"reflect"
-	"strconv"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx/httptestx"
 	"github.com/lf-edge/ekuiper/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/mock"
 )
-
-func jsonOut(w http.ResponseWriter, out interface{}) {
-	w.Header().Add("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	err := enc.Encode(out)
-	// Problems encoding
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-	}
-}
-
-const (
-	DefaultToken = "privatisation"
-	RefreshToken = "privaterefresh"
-)
-
-// mock http auth server
-func mockAuthServer() *httptest.Server {
-	l, _ := net.Listen("tcp", "127.0.0.1:52345")
-	router := mux.NewRouter()
-	i := 0
-	router.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-		body := &struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}{}
-		err := json.NewDecoder(r.Body).Decode(body)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-		if body.Username != "admin" || body.Password != "0000" {
-			http.Error(w, "invalid username or password", http.StatusBadRequest)
-		}
-		out := &struct {
-			Token        string `json:"token"`
-			RefreshToken string `json:"refresh_token"`
-			ClientId     string `json:"client_id"`
-			Expires      int64  `json:"expires"`
-		}{
-			Token:        DefaultToken,
-			RefreshToken: RefreshToken,
-			ClientId:     "test",
-			Expires:      36000,
-		}
-		jsonOut(w, out)
-	}).Methods(http.MethodPost)
-	router.HandleFunc("/refresh", func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token != "Bearer "+DefaultToken {
-			http.Error(w, "invalid token", http.StatusBadRequest)
-		}
-		rt := r.Header.Get("RefreshToken")
-		if rt != RefreshToken {
-			http.Error(w, "invalid refresh token", http.StatusBadRequest)
-		}
-		out := &struct {
-			Token        string `json:"token"`
-			RefreshToken string `json:"refresh_token"`
-			ClientId     string `json:"client_id"`
-			Expires      int64  `json:"expires"`
-		}{
-			Token:        DefaultToken,
-			RefreshToken: RefreshToken,
-			ClientId:     "test",
-			Expires:      36000,
-		}
-		jsonOut(w, out)
-	}).Methods(http.MethodPost)
-	router.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token != "Bearer "+DefaultToken {
-			http.Error(w, "invalid token", http.StatusBadRequest)
-		}
-		out := &struct {
-			DeviceId    string  `json:"device_id"`
-			Temperature float64 `json:"temperature"`
-			Humidity    float64 `json:"humidity"`
-		}{
-			DeviceId:    "device1",
-			Temperature: 25.5,
-			Humidity:    60.0,
-		}
-		jsonOut(w, out)
-	}).Methods(http.MethodGet)
-	// Return same data for 3 times
-	router.HandleFunc("/data2", func(w http.ResponseWriter, r *http.Request) {
-		out := &struct {
-			Code int `json:"code"`
-			Data struct {
-				DeviceId    string  `json:"device_id"`
-				Temperature float64 `json:"temperature"`
-				Humidity    float64 `json:"humidity"`
-			} `json:"data"`
-		}{
-			Code: 200,
-			Data: struct {
-				DeviceId    string  `json:"device_id"`
-				Temperature float64 `json:"temperature"`
-				Humidity    float64 `json:"humidity"`
-			}{
-				DeviceId:    "device" + strconv.Itoa(i/3),
-				Temperature: 25.5,
-				Humidity:    60.0,
-			},
-		}
-		i++
-		jsonOut(w, out)
-	}).Methods(http.MethodGet)
-
-	router.HandleFunc("/data3", func(w http.ResponseWriter, r *http.Request) {
-		out := []*struct {
-			Code int `json:"code"`
-			Data struct {
-				DeviceId    string  `json:"device_id"`
-				Temperature float64 `json:"temperature"`
-				Humidity    float64 `json:"humidity"`
-			} `json:"data"`
-		}{
-			{
-				Code: 200,
-				Data: struct {
-					DeviceId    string  `json:"device_id"`
-					Temperature float64 `json:"temperature"`
-					Humidity    float64 `json:"humidity"`
-				}{
-					DeviceId:    "d1",
-					Temperature: 25.5,
-					Humidity:    60.0,
-				},
-			},
-			{
-				Code: 200,
-				Data: struct {
-					DeviceId    string  `json:"device_id"`
-					Temperature float64 `json:"temperature"`
-					Humidity    float64 `json:"humidity"`
-				}{
-					DeviceId:    "d2",
-					Temperature: 25.5,
-					Humidity:    60.0,
-				},
-			},
-		}
-		jsonOut(w, out)
-	}).Methods(http.MethodGet)
-	// data4 receives time range in url
-	router.HandleFunc("/data4", func(w http.ResponseWriter, r *http.Request) {
-		device := r.URL.Query().Get("device")
-		s := r.URL.Query().Get("start")
-		e := r.URL.Query().Get("end")
-
-		start, _ := strconv.ParseInt(s, 10, 64)
-		end, _ := strconv.ParseInt(e, 10, 64)
-
-		out := &struct {
-			Code int `json:"code"`
-			Data struct {
-				DeviceId    string `json:"device_id"`
-				Temperature int64  `json:"temperature"`
-				Humidity    int64  `json:"humidity"`
-			} `json:"data"`
-		}{
-			Code: 200,
-			Data: struct {
-				DeviceId    string `json:"device_id"`
-				Temperature int64  `json:"temperature"`
-				Humidity    int64  `json:"humidity"`
-			}{
-				DeviceId:    device,
-				Temperature: start % 50,
-				Humidity:    end % 100,
-			},
-		}
-		jsonOut(w, out)
-	}).Methods(http.MethodGet)
-
-	// data5 receives time range in body
-	router.HandleFunc("/data5", func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Failed to read request body", http.StatusBadRequest)
-			return
-		}
-
-		// Create a Person struct to hold the JSON data
-		var ddd struct {
-			Device string `json:"device"`
-			Start  int64  `json:"start"`
-			End    int64  `json:"end"`
-		}
-
-		// Unmarshal the JSON data into the Person struct
-		err = json.Unmarshal(body, &ddd)
-		if err != nil {
-			http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
-			return
-		}
-
-		out := &struct {
-			Code int `json:"code"`
-			Data struct {
-				DeviceId    string `json:"device_id"`
-				Temperature int64  `json:"temperature"`
-				Humidity    int64  `json:"humidity"`
-			} `json:"data"`
-		}{
-			Code: 200,
-			Data: struct {
-				DeviceId    string `json:"device_id"`
-				Temperature int64  `json:"temperature"`
-				Humidity    int64  `json:"humidity"`
-			}{
-				DeviceId:    ddd.Device,
-				Temperature: ddd.Start % 50,
-				Humidity:    ddd.End % 100,
-			},
-		}
-		jsonOut(w, out)
-	}).Methods(http.MethodPost)
-
-	router.HandleFunc("/data6", func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, "Failed to read request body", http.StatusBadRequest)
-			return
-		}
-
-		// Create a Person struct to hold the JSON data
-		var ddd struct {
-			Device string `json:"device"`
-			Token  string `json:"token"`
-		}
-
-		// Unmarshal the JSON data into the Person struct
-		err = json.Unmarshal(body, &ddd)
-		if err != nil {
-			http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
-			return
-		}
-
-		if ddd.Token != DefaultToken {
-			http.Error(w, "invalid token", http.StatusBadRequest)
-		}
-
-		out := &struct {
-			DeviceId    string  `json:"device_id"`
-			Temperature float64 `json:"temperature"`
-			Humidity    float64 `json:"humidity"`
-		}{
-			DeviceId:    "device1",
-			Temperature: 25.5,
-			Humidity:    60.0,
-		}
-		jsonOut(w, out)
-	}).Methods(http.MethodPost)
-
-	server := httptest.NewUnstartedServer(router)
-	err := server.Listener.Close()
-	if err != nil {
-		panic(err)
-	}
-	server.Listener = l
-	return server
-}
 
 var wrongPath, _ = filepath.Abs("/tmp/wrong")
 
@@ -449,8 +183,8 @@ func TestConfigure(t *testing.T) {
 				ExpireInSecond: 3600,
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -499,8 +233,8 @@ func TestConfigure(t *testing.T) {
 				ExpireInSecond: 36000,
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -570,8 +304,8 @@ func TestConfigure(t *testing.T) {
 				},
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -708,8 +442,8 @@ func TestConfigure(t *testing.T) {
 				ExpireInSecond: 3600,
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -756,8 +490,8 @@ func TestConfigure(t *testing.T) {
 				ExpireInSecond: 3600,
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -887,10 +621,12 @@ func TestConfigure(t *testing.T) {
 			err: errors.New("fail to authorize by oAuth: fail to get refresh token: Post \"http:localhost:52345/refresh2\": http: no Host in request URL"),
 		},
 	}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
+	defer closer()
 
-	defer server.Close()
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("Test %d: %s", i, tt.name), func(t *testing.T) {
@@ -926,9 +662,11 @@ func TestPullWithAuth(t *testing.T) {
 	conf.IsTesting = false
 	conf.InitClock()
 	r := &PullSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("data", map[string]interface{}{
 		"url":      "http://localhost:52345/",
 		"interval": 100,
@@ -961,11 +699,103 @@ func TestPullWithAuth(t *testing.T) {
 	mock.TestSourceOpen(r, exp, t)
 }
 
+func testPullWithAuthAndCompression(t *testing.T, compressionAlgorithm string) {
+	conf.IsTesting = false
+	conf.InitClock()
+
+	// create mock handler
+	withMockCompressionHandler := func() httptestx.MockServerRouterOption {
+		return func(r *mux.Router, ctx *sync.Map) error {
+			// we need create sub router for compression endpoint,
+			// cause in actual auth endpoints don't need to compression
+			subr := r.NewRoute().Subrouter()
+			subr.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
+				token := r.Header.Get("Authorization")
+				if token != "Bearer "+httptestx.DefaultToken {
+					http.Error(w, "invalid token", http.StatusBadRequest)
+				}
+
+				out := &struct {
+					DeviceId    string  `json:"device_id"`
+					Temperature float64 `json:"temperature"`
+					Humidity    float64 `json:"humidity"`
+				}{
+					DeviceId:    "device1",
+					Temperature: 30.1,
+					Humidity:    65.5,
+				}
+				httptestx.JSONOut(w, out)
+			})
+			subr.Use(httptestx.CompressHandler)
+			return nil
+		}
+	}
+
+	r := &PullSource{}
+	server, closer := httptestx.MockAuthServer(
+		withMockCompressionHandler(),
+	)
+	server.Start()
+	defer closer()
+
+	err := r.Configure("data", map[string]any{
+		"url":      "http://localhost:52345/",
+		"interval": 100,
+		"headers": map[string]any{
+			"Authorization": "Bearer {{.token}}",
+		},
+		"oAuth": map[string]interface{}{
+			"access": map[string]interface{}{
+				"url":    "http://localhost:52345/token",
+				"body":   "{\"username\": \"admin\",\"password\": \"0000\"}",
+				"expire": "10",
+			},
+			"refresh": map[string]interface{}{
+				"url": "http://localhost:52345/refresh",
+				"headers": map[string]interface{}{
+					"Authorization": "Bearer {{.token}}",
+					"RefreshToken":  "{{.refresh_token}}",
+				},
+			},
+		},
+		"compressionAlgorithm": compressionAlgorithm,
+	})
+
+	if err != nil {
+		t.Errorf(err.Error())
+		return
+	}
+
+	mc := conf.Clock
+	exp := []api.SourceTuple{
+		api.NewDefaultSourceTupleWithTime(map[string]interface{}{"device_id": "device1", "humidity": 65.5, "temperature": 30.1}, map[string]interface{}{}, mc.Now()),
+	}
+	mock.TestSourceOpen(r, exp, t)
+}
+
+func TestPullWithAuthAndGZipCompression(t *testing.T) {
+	testPullWithAuthAndCompression(t, compressor.GZIP)
+}
+
+func TestPullWithAuthAndFlateCompression(t *testing.T) {
+	testPullWithAuthAndCompression(t, compressor.FLATE)
+}
+
+func TestPullWithAuthAndZLibCompression(t *testing.T) {
+	testPullWithAuthAndCompression(t, compressor.ZLIB)
+}
+
+func TestPullWithAuthAndZStdCompression(t *testing.T) {
+	testPullWithAuthAndCompression(t, compressor.ZSTD)
+}
+
 func TestPullBodyAuth(t *testing.T) {
 	r := &PullSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("data6", map[string]interface{}{
 		"method":   "POST",
 		"body":     `{"device": "d1", "token": "{{.token}}"}`,
@@ -1001,9 +831,11 @@ func TestPullIncremental(t *testing.T) {
 	conf.IsTesting = false
 	conf.InitClock()
 	r := &PullSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("data2", map[string]interface{}{
 		"url":          "http://localhost:52345/",
 		"interval":     100,
@@ -1027,9 +859,11 @@ func TestPullJsonList(t *testing.T) {
 	conf.IsTesting = false
 	conf.InitClock()
 	r := &PullSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("data3", map[string]interface{}{
 		"url":          "http://localhost:52345/",
 		"interval":     100,
@@ -1049,9 +883,11 @@ func TestPullJsonList(t *testing.T) {
 
 func TestPullUrlTimeRange(t *testing.T) {
 	r := &PullSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("", map[string]interface{}{
 		"url":          "http://localhost:52345/data4?device=d1&start={{.LastPullTime}}&end={{.PullTime}}",
 		"interval":     110,
@@ -1077,9 +913,11 @@ func TestPullUrlTimeRange(t *testing.T) {
 
 func TestPullBodyTimeRange(t *testing.T) {
 	r := &PullSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("data5", map[string]interface{}{
 		"url":          "http://localhost:52345/",
 		"interval":     110,
@@ -1155,9 +993,11 @@ func TestPullErrorTest(t *testing.T) {
 		},
 	}
 
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
