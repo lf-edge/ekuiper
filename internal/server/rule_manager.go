@@ -26,7 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -425,12 +424,6 @@ func validateRule(name, ruleJson string) ([]string, bool, error) {
 				return nil, false, err
 			}
 		}
-	} else if rule.Graph != nil {
-		tp, err := planner.PlanByGraph(rule)
-		if err != nil {
-			return nil, false, fmt.Errorf("invalid rule graph: %v", err)
-		}
-		sources = tp.GetTopo().Sources
 	}
 	return sources, true, nil
 }
