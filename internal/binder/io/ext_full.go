@@ -16,31 +16,17 @@
 
 package io
 
-import (
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	image "github.com/lf-edge/ekuiper/v2/extensions/sinks/image/ext"
-	influx "github.com/lf-edge/ekuiper/v2/extensions/sinks/influx/ext"
-	influx2 "github.com/lf-edge/ekuiper/v2/extensions/sinks/influx2/ext"
-	kafka "github.com/lf-edge/ekuiper/v2/extensions/sinks/kafka/ext"
-	sqlSink "github.com/lf-edge/ekuiper/v2/extensions/sinks/sql/ext"
-	kafkaSrc "github.com/lf-edge/ekuiper/v2/extensions/sources/kafka/ext"
-	random "github.com/lf-edge/ekuiper/v2/extensions/sources/random/ext"
-	sql "github.com/lf-edge/ekuiper/v2/extensions/sources/sql/ext"
-	video "github.com/lf-edge/ekuiper/v2/extensions/sources/video/ext"
-	"github.com/lf-edge/ekuiper/v2/pkg/modules"
-)
-
 func init() {
-	modules.RegisterSource("random", func() api.Source { return random.GetSource() })
-	modules.RegisterSource("video", func() api.Source { return video.GetSource() })
-	modules.RegisterSource("sql", func() api.Source { return sql.GetSource() })
-	modules.RegisterSource("kafka", func() api.Source { return kafkaSrc.GetSource() })
-	modules.RegisterLookupSource("sql", func() api.LookupSource { return sql.GetLookup() })
-	modules.RegisterSink("image", func() api.Sink { return image.GetSink() })
-	modules.RegisterSink("influx", func() api.Sink { return influx.GetSink() })
-	modules.RegisterSink("influx2", func() api.Sink { return influx2.GetSink() })
-	modules.RegisterSink("kafka", func() api.Sink { return kafka.GetSink() })
-	modules.RegisterSink("sql", func() api.Sink { return sqlSink.GetSink() })
+	//modules.RegisterSource("random", func() api.Source { return random.GetSource() })
+	//modules.RegisterSource("video", func() api.Source { return video.GetSource() })
+	//modules.RegisterSource("sql", func() api.Source { return sql.GetSource() })
+	//modules.RegisterSource("kafka", func() api.Source { return kafkaSrc.GetSource() })
+	//modules.RegisterLookupSource("sql", func() api.LookupSource { return sql.GetLookup() })
+	//modules.RegisterSink("image", func() api.Sink { return image.GetSink() })
+	//modules.RegisterSink("influx", func() api.Sink { return influx.GetSink() })
+	//modules.RegisterSink("influx2", func() api.Sink { return influx2.GetSink() })
+	//modules.RegisterSink("kafka", func() api.Sink { return kafka.GetSink() })
+	//modules.RegisterSink("sql", func() api.Sink { return sqlSink.GetSink() })
 	// Do not include zmq/tdengine because it is not supported for all versions
 	// sinks["tdengine"] = func() api.Sink { return tdengine.GetSink() }
 	// sinks["zmq"] = func() api.Sink { return zmqSink.GetSink() }
