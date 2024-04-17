@@ -49,10 +49,8 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []api.Emitter) error {
 			if err != nil {
 				return err
 			}
-			if s != nil {
-				if err = s.Configure(props); err != nil {
-					return err
-				}
+			if err = s.Configure(props); err != nil {
+				return err
 			}
 			tp.AddSink(newInputs, node.NewSinkNode(sinkName, name, props))
 		}
@@ -74,5 +72,15 @@ func splitSink(tp *topo.Topo, inputs []api.Emitter, sinkName string, options *de
 		tp.AddOperator(newInputs, batchOp)
 		newInputs = []api.Emitter{batchOp}
 	}
+	// Transform enabled
+	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
+	transformOp, err := node.NewTransformOp(fmt.Sprintf("%s_%d_transform", sinkName, index), options, sc)
+	if err != nil {
+		return nil, err
+	}
+	index++
+	tp.AddOperator(newInputs, transformOp)
+	newInputs = []api.Emitter{transformOp}
+
 	return newInputs, nil
 }

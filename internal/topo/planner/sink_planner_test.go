@@ -46,6 +46,9 @@ func TestSinkPlan(t *testing.T) {
 				Sources: []string{"source_src1"},
 				Edges: map[string][]any{
 					"source_src1": {
+						"op_log_0_0_transform",
+					},
+					"op_log_0_0_transform": {
 						"sink_log_0",
 					},
 				},
@@ -70,6 +73,9 @@ func TestSinkPlan(t *testing.T) {
 						"op_log_0_0_batch",
 					},
 					"op_log_0_0_batch": {
+						"op_log_0_1_transform",
+					},
+					"op_log_0_1_transform": {
 						"sink_log_0",
 					},
 				},
@@ -149,6 +155,20 @@ func TestSinkPlanError(t *testing.T) {
 				Options: defaultOption,
 			},
 			err: "fail to parse sink configuration: invalid lingerInterval -1",
+		},
+		{
+			name: "invalid dataTemplate",
+			rule: &api.Rule{
+				Actions: []map[string]any{
+					{
+						"log": map[string]any{
+							"dataTemplate": "{{...a}}",
+						},
+					},
+				},
+				Options: defaultOption,
+			},
+			err: "template: log_0_0_transform:1: unexpected <.> in operand",
 		},
 	}
 	for _, c := range tc {

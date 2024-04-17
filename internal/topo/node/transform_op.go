@@ -1,0 +1,153 @@
+// Copyright 2024 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package node
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"text/template"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+)
+
+type TransformOp struct {
+	*defaultSinkNode
+	dataField   string
+	fields      []string
+	sendSingle  bool
+	omitIfEmpty bool
+	// If the result format is text, the dataTemplate should be used to format the data and skip the encode step. Otherwise, the text must be unmarshall back to map
+	isTextFormat bool
+	dt           *template.Template
+}
+
+// NewTransformOp creates a transform node
+// sink conf should have been validated before
+func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf) (*TransformOp, error) {
+	o := &TransformOp{
+		defaultSinkNode: newDefaultSinkNode(name, rOpt),
+		dataField:       sc.DataField,
+		fields:          sc.Fields,
+		sendSingle:      sc.SendSingle,
+		omitIfEmpty:     sc.Omitempty,
+		isTextFormat:    xsql.IsTextFormat(sc.Format),
+	}
+	if sc.DataTemplate != "" {
+		temp, err := template.New(name).Funcs(conf.FuncMap).Parse(sc.DataTemplate)
+		if err != nil {
+			return nil, err
+		}
+		o.dt = temp
+	}
+	return o, nil
+}
+
+func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
+	t.prepareExec(ctx, errCh, "op")
+	go func() {
+		err := infra.SafeRun(func() error {
+			runWithOrder(ctx, t.defaultSinkNode, t.concurrency, t.Worker)
+			return nil
+		})
+		if err != nil {
+			infra.DrainError(ctx, err, errCh)
+		}
+	}()
+}
+
+// Worker do not need to process error and control messages
+func (t *TransformOp) Worker(logger api.Logger, item any) []any {
+	t.statManager.ProcessTimeStart()
+	defer t.statManager.ProcessTimeEnd()
+	if ic, ok := item.(xsql.Collection); ok && t.omitIfEmpty && ic.Len() == 0 {
+		logger.Debugf("receive empty collection, dropped")
+		return nil
+	}
+	outs := itemToMap(item)
+	if t.omitIfEmpty && (item == nil || len(outs) == 0) {
+		logger.Debugf("receive empty result %v in sink, dropped", outs)
+		return nil
+	}
+	var result []any
+	if t.sendSingle {
+		result = make([]any, 0, len(outs))
+		for _, out := range outs {
+			bs, err := t.doTransform(out)
+			if err != nil {
+				result = append(result, err)
+			} else {
+				result = append(result, bs)
+			}
+		}
+	} else {
+		bs, err := t.doTransform(outs)
+		if err != nil {
+			result = append(result, err)
+		} else {
+			result = append(result, bs)
+		}
+	}
+	return result
+}
+
+// doTransform transforms the data according to the dataTemplate and fields
+// If the dataTemplate is the last action and the result is text, the data will be returned as []byte
+// Otherwise, the data will be return as a map or []map
+func (t *TransformOp) doTransform(d any) (any, error) {
+	var (
+		bs          []byte
+		transformed bool
+		selected    bool
+		m           any
+		e           error
+	)
+	if t.dt != nil {
+		var output bytes.Buffer
+		err := t.dt.Execute(&output, d)
+		if err != nil {
+			return nil, fmt.Errorf("fail to encode data %v with dataTemplate for error %v", d, err)
+		}
+		bs = output.Bytes()
+		transformed = true
+	}
+
+	if transformed {
+		m, selected, e = transform.TransItem(bs, t.dataField, t.fields)
+	} else {
+		m, selected, e = transform.TransItem(d, t.dataField, t.fields)
+	}
+	if e != nil {
+		return nil, fmt.Errorf("fail to TransItem data %v for error %v", d, e)
+	}
+	// if only do data template
+	if transformed && !selected {
+		if t.isTextFormat {
+			return bs, nil
+		} else {
+			err := json.Unmarshal(bs, &m)
+			if err != nil {
+				return nil, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
+			}
+			return m, nil
+		}
+	}
+	return m, nil
+}
