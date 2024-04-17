@@ -17,7 +17,6 @@ package node
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -55,16 +54,11 @@ func (o *UnaryOperator) SetOperation(op UnOperation) {
 
 // Exec is the entry point for the executor
 func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
-	o.ctx = ctx
-	log := ctx.GetLogger()
-	log.Debugf("Unary operator %s is started", o.name)
+	o.prepareExec(ctx, errCh, "op")
 	// validate p
 	if o.concurrency < 1 {
 		o.concurrency = 1
 	}
-	// reset status
-	o.statManager = nil
-
 	go func() {
 		err := infra.SafeRun(func() error {
 			o.doOp(ctx.WithInstance(0), errCh)
@@ -89,7 +83,6 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		cancel()
 	}()
 
-	o.statManager = metric.NewStatManager(ctx, "op")
 	fv, afv := xsql.NewFunctionValuersForOp(exeCtx)
 
 	for {
