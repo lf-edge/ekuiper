@@ -20,7 +20,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
-	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 )
 
 var ( // init once and read only
@@ -70,17 +69,6 @@ func Source(name string) (api.Source, error) {
 	return nil, errs
 }
 
-func GetSourcePlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
-	for _, sf := range sourceFactories {
-		t, s1, s2 := sf.SourcePluginInfo(name)
-		if t == plugin.NONE_EXTENSION {
-			continue
-		}
-		return t, s1, s2
-	}
-	return plugin.NONE_EXTENSION, "", ""
-}
-
 func Sink(name string) (api.Sink, error) {
 	var errs error
 	for i, sf := range sinkFactories {
@@ -93,17 +81,6 @@ func Sink(name string) (api.Sink, error) {
 		}
 	}
 	return nil, errs
-}
-
-func GetSinkPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
-	for _, sf := range sinkFactories {
-		t, s1, s2 := sf.SinkPluginInfo(name)
-		if t == plugin.NONE_EXTENSION {
-			continue
-		}
-		return t, s1, s2
-	}
-	return plugin.NONE_EXTENSION, "", ""
 }
 
 func LookupSource(name string) (api.LookupSource, error) {
