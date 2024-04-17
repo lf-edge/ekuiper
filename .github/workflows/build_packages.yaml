@@ -199,9 +199,6 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
-    - name: Update version for setup.py
-      if: github.event_name == 'release'
-      run: sed -i -r "s|([ \t]*version=).*|\1'${GITHUB_REF#refs/tags/}',|1" sdk/python/setup.py
     - name: Build multi platform image
       if: contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name)
       uses: docker/build-push-action@v3

@@ -197,7 +197,6 @@ tidy:
 lint:tools/lint/bin/golangci-lint
 	@echo "linting"
 	tools/lint/bin/golangci-lint run ./... ./extensions/... ./tools/kubernetes/...
-	cd sdk/go && ../../tools/lint/bin/golangci-lint run
 
 tools/lint/bin/golangci-lint:
 	GOBIN=tools/lint/bin go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
