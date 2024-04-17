@@ -15,7 +15,6 @@
 package topotest
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -815,9 +814,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -827,7 +826,7 @@ func TestSingleSQL(t *testing.T) {
 				Sources: []string{"source_demo"},
 				Edges: map[string][]interface{}{
 					"source_demo":  {"op_2_project"},
-					"op_2_project": {"sink_mockSink"},
+					"op_2_project": {"sink_memory_0"},
 				},
 			},
 		},
@@ -852,9 +851,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -885,9 +884,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -924,9 +923,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(2),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(2),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demoError_0_exceptions_total":  int64(2),
 				"source_demoError_0_records_in_total":  int64(5),
@@ -960,9 +959,9 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -988,9 +987,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -1028,9 +1027,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demo1_0_exceptions_total":  int64(0),
 				"source_demo1_0_records_in_total":  int64(5),
@@ -1065,9 +1064,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_filter_0_records_in_total":   int64(5),
 				"op_2_filter_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_demo1_0_exceptions_total":  int64(0),
 				"source_demo1_0_records_in_total":  int64(5),
@@ -1110,9 +1109,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -1122,7 +1121,7 @@ func TestSingleSQL(t *testing.T) {
 				Sources: []string{"source_demo"},
 				Edges: map[string][]interface{}{
 					"source_demo":  {"op_2_project"},
-					"op_2_project": {"sink_mockSink"},
+					"op_2_project": {"sink_memory_0"},
 				},
 			},
 		},
@@ -1152,9 +1151,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_5_project_0_records_in_total":  int64(3),
 				"op_5_project_0_records_out_total": int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -1195,9 +1194,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(5),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -1225,9 +1224,9 @@ func TestSingleSQL(t *testing.T) {
 				"op_6_project_0_records_in_total":   int64(1),
 				"op_6_project_0_records_out_total":  int64(1),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(1),
-				"sink_mockSink_0_records_out_total": int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -1286,9 +1285,9 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -1325,9 +1324,9 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -1400,9 +1399,9 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(4),
 				"op_3_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1413,7 +1412,7 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 				Edges: map[string][]interface{}{
 					"source_demoE":   {"op_2_watermark"},
 					"op_2_watermark": {"op_3_project"},
-					"op_3_project":   {"sink_mockSink"},
+					"op_3_project":   {"sink_memory_0"},
 				},
 			},
 		},
@@ -1439,9 +1438,9 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1475,9 +1474,9 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(4),
 				"op_3_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
@@ -1540,9 +1539,9 @@ func TestSingleSQLError(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(1),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1578,9 +1577,9 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(1),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1611,9 +1610,9 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(1),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
+				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_records_in_total":  int64(5),
+				"sink_memory_0_0_records_out_total": int64(5),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1652,9 +1651,9 @@ func TestSingleSQLOmitError(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(2),
-				"sink_mockSink_0_records_out_total": int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(2),
+				"sink_memory_0_0_records_out_total": int64(2),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1686,9 +1685,9 @@ func TestSingleSQLOmitError(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(4),
-				"sink_mockSink_0_records_out_total": int64(4),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
@@ -1701,118 +1700,6 @@ func TestSingleSQLOmitError(t *testing.T) {
 		BufferLength: 100,
 		SendError:    false,
 	}, 0)
-}
-
-func TestSingleSQLTemplate(t *testing.T) {
-	// Reset
-	streamList := []string{"demo"}
-	HandleStream(false, streamList, t)
-	// Data setup
-	tests := []RuleTest{
-		{
-			Name: `TestSingleSQLTemplateRule1`,
-			Sql:  `SELECT * FROM demo`,
-			R: []map[string]interface{}{
-				{
-					"c":       "red",
-					"wrapper": "w1",
-				},
-				{
-					"c":       "blue",
-					"wrapper": "w1",
-				},
-				{
-					"c":       "blue",
-					"wrapper": "w1",
-				},
-				{
-					"c":       "yellow",
-					"wrapper": "w1",
-				},
-				{
-					"c":       "red",
-					"wrapper": "w1",
-				},
-			},
-			M: map[string]interface{}{
-				"op_2_project_0_exceptions_total":   int64(0),
-				"op_2_project_0_process_latency_us": int64(0),
-				"op_2_project_0_records_in_total":   int64(5),
-				"op_2_project_0_records_out_total":  int64(5),
-
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
-
-				"source_demo_0_exceptions_total":  int64(0),
-				"source_demo_0_records_in_total":  int64(5),
-				"source_demo_0_records_out_total": int64(5),
-			},
-		},
-	}
-	HandleStream(true, streamList, t)
-	doRuleTestBySinkProps(t, tests, 0, &def.RuleOption{
-		BufferLength: 100,
-		SendError:    true,
-	}, 0, map[string]interface{}{
-		"dataTemplate": `{"wrapper":"w1", "c":"{{.color}}"}`,
-		"sendSingle":   true,
-	}, func(result [][]byte) interface{} {
-		var maps []map[string]interface{}
-		for _, v := range result {
-			var mapRes map[string]interface{}
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				t.Errorf("Failed to parse the input into map")
-				continue
-			}
-			maps = append(maps, mapRes)
-		}
-		return maps
-	})
-}
-
-func TestNoneSingleSQLTemplate(t *testing.T) {
-	// Reset
-	streamList := []string{"demo"}
-	HandleStream(false, streamList, t)
-	// Data setup
-	tests := []RuleTest{
-		{
-			Name: `TestNoneSingleSQLTemplateRule1`,
-			Sql:  `SELECT * FROM demo`,
-			R: [][]byte{
-				[]byte("<div>results</div><ul><li>red - 3</li></ul>"),
-				[]byte("<div>results</div><ul><li>blue - 6</li></ul>"),
-				[]byte("<div>results</div><ul><li>blue - 2</li></ul>"),
-				[]byte("<div>results</div><ul><li>yellow - 4</li></ul>"),
-				[]byte("<div>results</div><ul><li>red - 1</li></ul>"),
-			},
-			M: map[string]interface{}{
-				"op_2_project_0_exceptions_total":   int64(0),
-				"op_2_project_0_process_latency_us": int64(0),
-				"op_2_project_0_records_in_total":   int64(5),
-				"op_2_project_0_records_out_total":  int64(5),
-
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(5),
-				"sink_mockSink_0_records_out_total": int64(5),
-
-				"source_demo_0_exceptions_total":  int64(0),
-				"source_demo_0_records_in_total":  int64(5),
-				"source_demo_0_records_out_total": int64(5),
-			},
-		},
-	}
-	HandleStream(true, streamList, t)
-	doRuleTestBySinkProps(t, tests, 0, &def.RuleOption{
-		BufferLength: 100,
-		SendError:    true,
-	}, 0, map[string]interface{}{
-		"dataTemplate": `<div>results</div><ul>{{range .}}<li>{{.color}} - {{.size}}</li>{{end}}</ul>`,
-	}, func(result [][]byte) interface{} {
-		return result
-	})
 }
 
 func TestSingleSQLForBinary(t *testing.T) {
@@ -1836,9 +1723,8 @@ func TestSingleSQLForBinary(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(1),
 				"op_2_project_0_records_out_total":  int64(1),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(1),
-				"sink_mockSink_0_records_out_total": int64(1),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
 
 				"source_binDemo_0_exceptions_total":  int64(0),
 				"source_binDemo_0_records_in_total":  int64(1),
@@ -1863,28 +1749,8 @@ func TestSingleSQLForBinary(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	byteFunc := func(result [][]byte) interface{} {
-		var maps [][]map[string]interface{}
-		for _, v := range result {
-			var mapRes []map[string][]byte
-			err := json.Unmarshal(v, &mapRes)
-			if err != nil {
-				panic("Failed to parse the input into map")
-			}
-			mapInt := make([]map[string]interface{}, len(mapRes))
-			for i, mv := range mapRes {
-				mapInt[i] = make(map[string]interface{})
-				// assume only one key
-				for k, v := range mv {
-					mapInt[i][k] = v
-				}
-			}
-			maps = append(maps, mapInt)
-		}
-		return maps
-	}
 	for j, opt := range options {
-		doRuleTestBySinkProps(t, tests, j, opt, 0, nil, byteFunc)
+		DoRuleTest(t, tests, j, opt, 0)
 	}
 }
 

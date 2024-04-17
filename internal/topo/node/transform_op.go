@@ -151,3 +151,36 @@ func (t *TransformOp) doTransform(d any) (any, error) {
 	}
 	return m, nil
 }
+
+func itemToMap(item interface{}) []xsql.Message {
+	var outs []xsql.Message
+	switch val := item.(type) {
+	case error:
+		outs = []xsql.Message{
+			{"error": val.Error()},
+		}
+		break
+	case xsql.Collection: // The order is important here, because some element is both a collection and a row, such as WindowTuples, JoinTuples, etc.
+		maps := val.ToMaps()
+		outs = make([]xsql.Message, len(maps))
+		for i, m := range maps {
+			outs[i] = m
+		}
+		break
+	case xsql.Row:
+		outs = []xsql.Message{
+			val.ToMap(),
+		}
+		break
+	case []xsql.Message: // for test only
+		outs = val
+		break
+	case *xsql.WatermarkTuple:
+		// just ignore
+	default:
+		outs = []xsql.Message{
+			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},
+		}
+	}
+	return outs
+}

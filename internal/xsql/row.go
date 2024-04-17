@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -54,7 +55,7 @@ type RawRow interface {
 	Set(col string, value interface{})
 	// ToMap converts the row to a map to export to other systems *
 	ToMap() map[string]interface{}
-	// Pick the columns and discard others. It replaces the underlying message with a new value. There are 3 types to pick: column, alias and annonymous expressions.
+	// Pick the columns and discard others. It replaces the underlying message with a new value. There are 3 types to pick: column, alias and anonymous expressions.
 	// cols is a list [columnname, tablename]
 	Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string)
 }
@@ -81,6 +82,10 @@ type CollectionRow interface {
 	AggregateData
 	// Clone when broadcast to make sure each row are dealt single threaded
 	// Clone() CollectionRow
+}
+
+type ControlTuple interface {
+	ControlType() string
 }
 
 // AffiliateRow part of other row types do help calculation of newly added cols
@@ -222,7 +227,28 @@ func (d *AffiliateRow) Pick(cols [][]string) [][]string {
 // Message is a valuer that substitutes values for the mapped interface. It is the basic type for data events.
 type Message map[string]interface{}
 
-var _ Valuer = Message{}
+func (m Message) Get(key string) (value any, ok bool) {
+	v, o := m[key]
+	return v, o
+}
+
+func (m Message) Range(f func(key string, value any) bool) {
+	for k, v := range m {
+		exit := f(k, v)
+		if exit {
+			break
+		}
+	}
+}
+
+func (m Message) ToMap() map[string]any {
+	return m
+}
+
+var (
+	_ Valuer              = Message{}
+	_ api.ReadonlyMessage = Message{}
+)
 
 type Metadata Message
 

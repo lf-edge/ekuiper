@@ -230,17 +230,6 @@ func SourcePing(sourceType string, config map[string]interface{}) error {
 	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
 }
 
-func SinkPing(sinkType string, config map[string]interface{}) error {
-	sink, err := getSink(sinkType, config)
-	if err != nil {
-		return err
-	}
-	if pingAble, ok := sink.(util.PingableConn); ok {
-		return pingAble.Ping("", config)
-	}
-	return fmt.Errorf("sink %v doesn't support ping connection", sinkType)
-}
-
 func propsToNodeOption(props map[string]any) *def.RuleOption {
 	options := &def.RuleOption{
 		BufferLength: 1024,

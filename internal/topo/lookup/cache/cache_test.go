@@ -21,15 +21,16 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 func TestExpiration(t *testing.T) {
 	c := NewCache(20, false)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := [][]api.SourceTuple{
-		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1}, nil, clock.Now())},
-		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2}, nil, clock.Now()), api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3}, nil, clock.Now())},
+	expects := [][]api.Tuple{
+		{api.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 1}), nil, clock.Now())},
+		{api.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 2}), nil, clock.Now()), api.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 3}), nil, clock.Now())},
 		{},
 	}
 	c.Set("a", expects[0])
@@ -85,9 +86,9 @@ func TestNoExpiration(t *testing.T) {
 	c := NewCache(0, true)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := [][]api.SourceTuple{
-		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 1}, nil, clock.Now())},
-		{api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 2}, nil, clock.Now()), api.NewDefaultSourceTupleWithTime(map[string]interface{}{"a": 3}, nil, clock.Now())},
+	expects := [][]api.Tuple{
+		{api.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 1}), nil, clock.Now())},
+		{api.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 2}), nil, clock.Now()), api.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 3}), nil, clock.Now())},
 		{},
 	}
 	c.Set("a", expects[0])

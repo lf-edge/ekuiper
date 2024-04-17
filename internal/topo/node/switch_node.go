@@ -38,7 +38,7 @@ type SwitchNode struct {
 // GetEmitter returns the nth emitter of the node. SwtichNode is the only node that has multiple emitters
 // In planner graph, fromNodes is a multi-dim array, switch node is the only node that could be in the second dim
 // The dim is the index
-func (n *SwitchNode) GetEmitter(outputIndex int) api.Emitter {
+func (n *SwitchNode) GetEmitter(outputIndex int) Emitter {
 	return &n.outputNodes[outputIndex]
 }
 
@@ -132,7 +132,7 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					n.statManager.IncTotalRecordsOut()
 					n.statManager.SetBufferLength(int64(len(n.input)))
 				case <-ctx.Done():
-					ctx.GetLogger().Infoln("Cancelling switch node....")
+					ctx.GetLogger().Info("Cancelling switch node....")
 					return nil
 				}
 			}

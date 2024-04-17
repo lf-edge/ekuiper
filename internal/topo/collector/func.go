@@ -41,15 +41,13 @@ func Func(f CollectorFunc) *FuncCollector {
 	return &FuncCollector{f: f}
 }
 
-func (c *FuncCollector) Configure(props map[string]interface{}) error {
+func (c *FuncCollector) Provision(ctx api.StreamContext, configs map[string]any) error {
 	// do nothing
 	return nil
 }
 
-// Open is the starting point that starts the collector
-func (c *FuncCollector) Open(ctx api.StreamContext) error {
-	log := ctx.GetLogger()
-	log.Infoln("Opening func collector")
+func (c *FuncCollector) Connect(ctx api.StreamContext) error {
+	ctx.GetLogger().Info("Opening func collector")
 
 	if c.f == nil {
 		return errors.New("func collector missing function")
@@ -57,10 +55,12 @@ func (c *FuncCollector) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-func (c *FuncCollector) Collect(ctx api.StreamContext, item interface{}) error {
+func (c *FuncCollector) Collect(ctx api.StreamContext, item []byte) error {
 	return c.f(ctx, item)
 }
 
 func (c *FuncCollector) Close(api.StreamContext) error {
 	return nil
 }
+
+var _ api.BytesCollector = &FuncCollector{}

@@ -22,9 +22,9 @@ type NopSink struct {
 	log bool
 }
 
-func (ns *NopSink) Configure(ps map[string]interface{}) error {
+func (ns *NopSink) Provision(ctx api.StreamContext, configs map[string]any) error {
 	var log bool
-	l, ok := ps["log"]
+	l, ok := configs["log"]
 	if ok {
 		log = l.(bool)
 	}
@@ -32,11 +32,11 @@ func (ns *NopSink) Configure(ps map[string]interface{}) error {
 	return nil
 }
 
-func (ns *NopSink) Open(ctx api.StreamContext) error {
+func (ns *NopSink) Connect(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ns *NopSink) Collect(ctx api.StreamContext, item interface{}) error {
+func (ns *NopSink) Collect(ctx api.StreamContext, item []byte) error {
 	logger := ctx.GetLogger()
 	if ns.log {
 		logger.Infof("%s", item)
@@ -47,3 +47,9 @@ func (ns *NopSink) Collect(ctx api.StreamContext, item interface{}) error {
 func (ns *NopSink) Close(ctx api.StreamContext) error {
 	return nil
 }
+
+func GetSink() api.Sink {
+	return &NopSink{}
+}
+
+var _ api.BytesCollector = &NopSink{}

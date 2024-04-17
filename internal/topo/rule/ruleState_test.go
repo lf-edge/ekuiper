@@ -339,7 +339,7 @@ func TestMultipleAccess(t *testing.T) {
 // Test rule state message
 func TestRuleState_Start(t *testing.T) {
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON", DATASOURCE="test")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	// Test rule not triggered
 	r := &def.Rule{
@@ -426,7 +426,7 @@ func TestRuleState_Start(t *testing.T) {
 func TestScheduleRule(t *testing.T) {
 	conf.IsTesting = true
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", DATASOURCE="test", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	// Test rule not triggered
 	r := &def.Rule{
@@ -568,7 +568,7 @@ const layout = "2006-01-02 15:04:05"
 func TestRuleStateInternalStop(t *testing.T) {
 	conf.IsTesting = true
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", DATASOURCE="test", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	r := &def.Rule{
 		Triggered: false,

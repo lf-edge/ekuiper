@@ -46,7 +46,7 @@ type SrcSubTopo struct {
 	source node.DataSourceNode
 	// May be empty
 	ops  []node.OperatorNode
-	tail api.Emitter
+	tail node.Emitter
 	topo *def.PrintableTopo
 	// Save the schemainfo for each rule only to use when need to attach schema when the rule is starting.
 	// Get updated if the rule is updated. Never delete it until the subtopo is deleted.

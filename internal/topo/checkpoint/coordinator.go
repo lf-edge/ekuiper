@@ -223,10 +223,10 @@ func (c *Coordinator) Activate() error {
 						c.cancel(s.CheckpointId)
 					}
 				case <-c.ctx.Done():
-					logger.Infoln("Cancelling coordinator....")
+					logger.Info("Cancelling coordinator....")
 					if c.ticker != nil {
 						c.ticker.Stop()
-						logger.Infoln("Stop coordinator ticker")
+						logger.Info("Stop coordinator ticker")
 					}
 					return nil
 				}

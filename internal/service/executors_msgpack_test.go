@@ -68,9 +68,9 @@ func TestMsgpackService(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(3),
 				"op_2_project_0_records_out_total":  int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 			},
 		}, {
 			Name: `TestRestRule2`,
@@ -92,22 +92,22 @@ func TestMsgpackService(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(3),
 				"op_2_project_0_records_out_total":  int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 			},
 		}, {
 			Name: `TestRestRule3`,
 			Sql:  `SELECT getFeatureFromMsgpack(self)->feature[0]->box->h FROM fakeBin`,
 			R: [][]map[string]interface{}{
 				{{
-					"kuiper_field_0": float64(106), // Convert by the testing tool
+					"kuiper_field_0": int64(106), // Convert by the testing tool
 				}},
 				{{
-					"kuiper_field_0": float64(107),
+					"kuiper_field_0": int64(107),
 				}},
 				{{
-					"kuiper_field_0": float64(108),
+					"kuiper_field_0": int64(108),
 				}},
 			},
 			M: map[string]interface{}{
@@ -116,9 +116,9 @@ func TestMsgpackService(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(3),
 				"op_2_project_0_records_out_total":  int64(3),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
-				"sink_mockSink_0_records_in_total":  int64(3),
-				"sink_mockSink_0_records_out_total": int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 			},
 			//}, {
 			//	Name: `TestRestRule4`,
@@ -143,9 +143,9 @@ func TestMsgpackService(t *testing.T) {
 			//		"op_2_project_0_records_in_total":   int64(3),
 			//		"op_2_project_0_records_out_total":  int64(3),
 			//
-			//		"sink_mockSink_0_exceptions_total":  int64(0),
-			//		"sink_mockSink_0_records_in_total":  int64(3),
-			//		"sink_mockSink_0_records_out_total": int64(3),
+			//		"sink_memory_0_0_exceptions_total":  int64(0),
+			//		"sink_memory_0_0_records_in_total":  int64(3),
+			//		"sink_memory_0_0_records_out_total": int64(3),
 			//	},
 		},
 	}

@@ -20,20 +20,18 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 const IdProperty = "topic"
 
 type pubConsumers struct {
 	count     int
-	consumers map[string]chan api.SourceTuple // The consumer channel list [sourceId]chan
+	consumers map[string]chan any // The consumer channel list [sourceId]chan, the value must be message or message list
 }
 
 type subChan struct {
 	regex *regexp.Regexp
-	ch    chan api.SourceTuple
+	ch    chan any
 }
 
 var (
@@ -52,7 +50,7 @@ func CreatePub(topic string) {
 	}
 	c := &pubConsumers{
 		count:     1,
-		consumers: make(map[string]chan api.SourceTuple),
+		consumers: make(map[string]chan any),
 	}
 	pubTopics[topic] = c
 	for sourceId, sc := range subExps {
@@ -62,10 +60,10 @@ func CreatePub(topic string) {
 	}
 }
 
-func CreateSub(wildcard string, regex *regexp.Regexp, sourceId string, bufferLength int) chan api.SourceTuple {
+func CreateSub(wildcard string, regex *regexp.Regexp, sourceId string, bufferLength int) chan any {
 	mu.Lock()
 	defer mu.Unlock()
-	ch := make(chan api.SourceTuple, bufferLength)
+	ch := make(chan any, bufferLength)
 	if regex != nil {
 		subExps[sourceId] = &subChan{
 			regex: regex,
@@ -111,19 +109,24 @@ func RemovePub(topic string) {
 	}
 }
 
-func Produce(ctx api.StreamContext, topic string, data map[string]interface{}) {
-	doProduce(ctx, topic, api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, timex.GetNow()))
+func ProduceUpdatable(ctx api.StreamContext, topic string, data api.Tuple, rowkind string, keyval interface{}) {
+	// TODO fix updatable
+	//doProduce(ctx, topic, &UpdatableTuple{
+	//	DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, timex.GetNow()),
+	//	Rowkind:            rowkind,
+	//	Keyval:             keyval,
+	//})
 }
 
-func ProduceUpdatable(ctx api.StreamContext, topic string, data map[string]interface{}, rowkind string, keyval interface{}) {
-	doProduce(ctx, topic, &UpdatableTuple{
-		DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, timex.GetNow()),
-		Rowkind:            rowkind,
-		Keyval:             keyval,
-	})
+func Produce(ctx api.StreamContext, topic string, data api.Tuple) {
+	doProduce(ctx, topic, data)
 }
 
-func doProduce(ctx api.StreamContext, topic string, data api.SourceTuple) {
+func ProduceList(ctx api.StreamContext, topic string, list []api.Tuple) {
+	doProduce(ctx, topic, list)
+}
+
+func doProduce(ctx api.StreamContext, topic string, data any) {
 	c, exists := pubTopics[topic]
 	if !exists {
 		return
@@ -144,34 +147,13 @@ func doProduce(ctx api.StreamContext, topic string, data api.SourceTuple) {
 	}
 }
 
-func ProduceError(ctx api.StreamContext, topic string, err error) {
-	c, exists := pubTopics[topic]
-	if !exists {
-		return
-	}
-	logger := ctx.GetLogger()
-	mu.RLock()
-	defer mu.RUnlock()
-	// broadcast to all consumers
-	for name, out := range c.consumers {
-		select {
-		case out <- &xsql.ErrorSourceTuple{Error: err}:
-			logger.Debugf("memory source broadcast error from topic %s to %s done", topic, name)
-		case <-ctx.Done():
-			// rule stop so stop waiting
-		default:
-			logger.Errorf("memory source topic %s drop message to %s", topic, name)
-		}
-	}
-}
-
-func addPubConsumer(topic string, sourceId string, ch chan api.SourceTuple) {
+func addPubConsumer(topic string, sourceId string, ch chan any) {
 	var sinkConsumerChannels *pubConsumers
 	if c, exists := pubTopics[topic]; exists {
 		sinkConsumerChannels = c
 	} else {
 		sinkConsumerChannels = &pubConsumers{
-			consumers: make(map[string]chan api.SourceTuple),
+			consumers: make(map[string]chan any),
 		}
 		pubTopics[topic] = sinkConsumerChannels
 	}

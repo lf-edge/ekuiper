@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ package mock
 
 import (
 	"fmt"
-	"reflect"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -24,70 +24,74 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/converter"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 var count atomic.Value
 
-func TestSourceOpen(r api.Source, exp []api.SourceTuple, t *testing.T) {
-	result, err := RunMockSource(r, len(exp))
-	if err != nil {
-		t.Error(err)
-	}
-	for i, v := range result {
-		switch v.(type) {
-		case *api.DefaultSourceTuple:
-			assert.Equal(t, exp[i].Message(), v.Message())
-			assert.Equal(t, exp[i].Meta(), v.Meta())
-		case *xsql.ErrorSourceTuple:
-			assert.Equal(t, reflect.TypeOf(exp[i]), reflect.TypeOf(v))
-			assert.Equal(t, exp[i].(*xsql.ErrorSourceTuple).Error, v.(*xsql.ErrorSourceTuple).Error)
-		default:
-			assert.Equal(t, exp[i], v)
-		}
-	}
-}
-
-func RunMockSource(r api.Source, limit int) ([]api.SourceTuple, error) {
+func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected []api.Tuple, sender func()) {
+	// init
 	c := count.Load()
 	if c == nil {
 		count.Store(1)
 		c = 0
 	}
-	ctx, cancel := mockContext.NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
-	cv, _ := converter.GetOrCreateConverter(&ast.Options{FORMAT: "json"})
-	ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, cv)
 	count.Store(c.(int) + 1)
-	consumer := make(chan api.SourceTuple)
-	errCh := make(chan error)
-	go r.Open(ctx, consumer, errCh)
-	ticker := time.After(10 * time.Second)
-	var result []api.SourceTuple
-outerloop:
-	for {
-		select {
-		case err := <-errCh:
-			cancel()
-			return nil, err
-		case tuple := <-consumer:
-			result = append(result, tuple)
-			limit--
-			if limit <= 0 {
-				break outerloop
-			}
-		case <-ticker:
-			cancel()
-			return nil, fmt.Errorf("timeout")
+	// provision
+	ctx, cancel := mockContext.NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
+	err := r.Provision(ctx, props)
+	assert.NoError(t, err)
+	// connect, subscribe and read data
+	err = r.Connect(ctx)
+	assert.NoError(t, err)
+
+	// Send and receive data
+	limit := len(expected)
+	var (
+		wg     sync.WaitGroup
+		result []api.Tuple
+	)
+	wg.Add(1)
+	go func() {
+		switch ss := r.(type) {
+		case api.BytesSource:
+			err = ss.Subscribe(ctx, func(ctx api.StreamContext, data api.RawTuple) {
+				result = append(result, api.NewDefaultRawTuple(data.Raw(), data.Meta(), data.Timestamp()))
+				limit--
+				if limit <= 0 {
+					wg.Done()
+				}
+			})
+		case api.TupleSource:
+			panic("added later")
+		default:
+			panic("wrong source type")
 		}
+	}()
+	defer func() {
+		err = r.Close(ctx)
+		assert.NoError(t, err)
+	}()
+	// Send data
+	go func() {
+		sender()
+	}()
+
+	ticker := time.After(2 * time.Second)
+	finished := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(finished)
+	}()
+	select {
+	case <-ctx.Done():
+	case <-finished:
+		cancel()
+		assert.Equal(t, expected, result)
+	case <-ticker:
+		cancel()
+		assert.Fail(t, "timeout")
+		return
 	}
-	err := r.Close(ctx)
-	if err != nil {
-		return nil, err
-	}
-	cancel()
-	return result, nil
+	assert.Equal(t, expected, result)
 }

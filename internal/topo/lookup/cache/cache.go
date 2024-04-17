@@ -24,7 +24,7 @@ import (
 )
 
 type item struct {
-	data       []api.SourceTuple
+	data       []api.Tuple
 	expiration int64
 }
 
@@ -75,7 +75,7 @@ func (c *Cache) deleteExpired() {
 	c.Unlock()
 }
 
-func (c *Cache) Set(key string, value []api.SourceTuple) {
+func (c *Cache) Set(key string, value []api.Tuple) {
 	if (value == nil || len(value) == 0) && !c.cacheMissingKey {
 		return
 	}
@@ -88,7 +88,7 @@ func (c *Cache) Set(key string, value []api.SourceTuple) {
 	}
 }
 
-func (c *Cache) Get(key string) ([]api.SourceTuple, bool) {
+func (c *Cache) Get(key string) ([]api.Tuple, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	if v, ok := c.items[key]; ok {

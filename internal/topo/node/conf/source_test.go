@@ -37,7 +37,8 @@ func TestGetSourceConf(t *testing.T) {
 			args: args{
 				sourceType: "mqtt",
 				options: &ast.Options{
-					CONF_KEY: "",
+					CONF_KEY:   "",
+					DATASOURCE: "abc",
 				},
 			},
 			want: map[string]interface{}{
@@ -47,6 +48,7 @@ func TestGetSourceConf(t *testing.T) {
 				"insecureSkipVerify": false,
 				"protocolVersion":    "3.1.1",
 				"qos":                1,
+				"datasource":         "abc",
 			},
 		},
 		{
@@ -54,7 +56,8 @@ func TestGetSourceConf(t *testing.T) {
 			args: args{
 				sourceType: "mqtt",
 				options: &ast.Options{
-					CONF_KEY: "Demo_conf",
+					CONF_KEY:   "Demo_conf",
+					DATASOURCE: "abc",
 				},
 			},
 			want: map[string]interface{}{
@@ -64,6 +67,7 @@ func TestGetSourceConf(t *testing.T) {
 				"insecureSkipVerify": false,
 				"protocolVersion":    "3.1.1",
 				"qos":                1,
+				"datasource":         "abc",
 			},
 		},
 	}

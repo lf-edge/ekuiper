@@ -79,7 +79,6 @@ type MergeableTopo interface {
 	Close(ruleId string)
 }
 
-// SchemaNode TODO Remove this type. Let the framework deal with schema
 type SchemaNode interface {
 	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
 	AttachSchema(api.StreamContext, string, map[string]*ast.JsonStreamField, bool)

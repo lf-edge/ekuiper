@@ -22,8 +22,6 @@ import (
 	"testing"
 
 	"github.com/gdexlab/go-render/render"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 func TestCreateAndClose(t *testing.T) {
@@ -31,7 +29,7 @@ func TestCreateAndClose(t *testing.T) {
 	var (
 		sourceTopics = []string{"h/d1/c1/s2", "h/+/+/s1", "h/d3/#", "h/d1/c1/s2", "h/+/c1/s1"}
 		sinkTopics   = []string{"h/d1/c1/s1", "h/d1/c1/s2", "h/d2/c2/s1", "h/d3/c3/s1", "h/d1/c1/s1"}
-		chans        []chan api.SourceTuple
+		chans        []chan any
 	)
 	for i, topic := range sinkTopics {
 		CreatePub(topic)
@@ -53,27 +51,27 @@ func TestCreateAndClose(t *testing.T) {
 	expPub := map[string]*pubConsumers{
 		"h/d1/c1/s1": {
 			count: 2,
-			consumers: map[string]chan api.SourceTuple{
+			consumers: map[string]chan any{
 				"1": chans[1],
 				"4": chans[4],
 			},
 		},
 		"h/d1/c1/s2": {
 			count: 1,
-			consumers: map[string]chan api.SourceTuple{
+			consumers: map[string]chan any{
 				"0": chans[0],
 				"3": chans[3],
 			},
 		},
 		"h/d2/c2/s1": {
 			count: 1,
-			consumers: map[string]chan api.SourceTuple{
+			consumers: map[string]chan any{
 				"1": chans[1],
 			},
 		},
 		"h/d3/c3/s1": {
 			count: 1,
-			consumers: map[string]chan api.SourceTuple{
+			consumers: map[string]chan any{
 				"1": chans[1],
 				"2": chans[2],
 			},
@@ -92,19 +90,19 @@ func TestCreateAndClose(t *testing.T) {
 	expPub = map[string]*pubConsumers{
 		"h/d1/c1/s1": {
 			count: 1,
-			consumers: map[string]chan api.SourceTuple{
+			consumers: map[string]chan any{
 				"4": chans[4],
 			},
 		},
 		"h/d1/c1/s2": {
 			count: 0,
-			consumers: map[string]chan api.SourceTuple{
+			consumers: map[string]chan any{
 				"3": chans[3],
 			},
 		},
 		"h/d3/c3/s1": {
 			count:     1,
-			consumers: map[string]chan api.SourceTuple{},
+			consumers: map[string]chan any{},
 		},
 	}
 	if !reflect.DeepEqual(expPub, pubTopics) {
