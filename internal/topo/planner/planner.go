@@ -36,9 +36,8 @@ import (
 func Plan(rule *api.Rule) (*topo.Topo, error) {
 	if rule.Sql != "" {
 		return PlanSQLWithSourcesAndSinks(rule, nil, nil)
-	} else {
-		return PlanByGraph(rule)
 	}
+	return nil, nil
 }
 
 // PlanSQLWithSourcesAndSinks For test only
