@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -72,7 +73,7 @@ func init() {
 	gob.Register([]map[string]interface{}{})
 }
 
-func NewWindowOp(name string, w WindowConfig, options *api.RuleOption) (*WindowOperator, error) {
+func NewWindowOp(name string, w WindowConfig, options *def.RuleOption) (*WindowOperator, error) {
 	o := new(WindowOperator)
 
 	o.defaultSinkNode = newDefaultSinkNode(name, options)

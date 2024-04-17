@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
@@ -187,7 +187,7 @@ func TestRun(t *testing.T) {
 	}
 	testx.InitEnv("cache")
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	tempStore, _ := state.CreateStore("mock", api.AtMostOnce)
+	tempStore, _ := state.CreateStore("mock", def.AtMostOnce)
 	deleteCachedb()
 	for i, tt := range tests {
 		contextLogger := conf.Log.WithField("rule", fmt.Sprintf("TestRun-%d", i))

@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -52,7 +53,7 @@ func (n *SwitchNode) AddOutput(output chan<- interface{}, name string) error {
 	return n.outputNodes[0].AddOutput(output, name)
 }
 
-func NewSwitchNode(name string, conf *SwitchConfig, options *api.RuleOption) (*SwitchNode, error) {
+func NewSwitchNode(name string, conf *SwitchConfig, options *def.RuleOption) (*SwitchNode, error) {
 	sn := &SwitchNode{
 		conf: conf,
 	}

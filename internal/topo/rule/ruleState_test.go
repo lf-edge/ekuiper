@@ -25,23 +25,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
-var defaultOption = &api.RuleOption{
+var defaultOption = &def.RuleOption{
 	IsEventTime:        false,
 	LateTol:            1000,
 	Concurrency:        1,
 	BufferLength:       1024,
 	SendMetaToSink:     false,
 	SendError:          true,
-	Qos:                api.AtMostOnce,
+	Qos:                def.AtMostOnce,
 	CheckpointInterval: 300000,
-	Restart: &api.RestartStrategy{
+	Restart: &def.RestartStrategy{
 		Attempts:     0,
 		Delay:        1000,
 		Multiplier:   2,
@@ -59,12 +59,12 @@ func TestCreate(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	tests := []struct {
-		r    *api.Rule
+		r    *def.Rule
 		e    error
 		code errorx.ErrorCode
 	}{
 		{
-			r: &api.Rule{
+			r: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "SELECT ts FROM demo",
@@ -78,7 +78,7 @@ func TestCreate(t *testing.T) {
 			e: nil,
 		},
 		{
-			r: &api.Rule{
+			r: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "SELECT FROM demo",
@@ -93,7 +93,7 @@ func TestCreate(t *testing.T) {
 			code: errorx.ParserError,
 		},
 		{
-			r: &api.Rule{
+			r: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "SELECT * FROM demo1",
@@ -136,13 +136,13 @@ func TestUpdate(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	tests := []struct {
-		r         *api.Rule
+		r         *def.Rule
 		e         error
 		triggered int
 		code      errorx.ErrorCode
 	}{
 		{
-			r: &api.Rule{
+			r: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "SELECT FROM demo",
@@ -158,7 +158,7 @@ func TestUpdate(t *testing.T) {
 			triggered: 1,
 		},
 		{
-			r: &api.Rule{
+			r: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "SELECT * FROM demo1",
@@ -174,7 +174,7 @@ func TestUpdate(t *testing.T) {
 			triggered: 1,
 		},
 		{
-			r: &api.Rule{
+			r: &def.Rule{
 				Triggered: true,
 				Id:        "test",
 				Sql:       "SELECT * FROM demo",
@@ -189,7 +189,7 @@ func TestUpdate(t *testing.T) {
 			triggered: 1,
 		},
 		{
-			r: &api.Rule{
+			r: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "SELECT * FROM demo",
@@ -205,7 +205,7 @@ func TestUpdate(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		rs, err := NewRuleState(&api.Rule{
+		rs, err := NewRuleState(&def.Rule{
 			Triggered: true,
 			Id:        "test",
 			Sql:       "SELECT ts FROM demo",
@@ -244,7 +244,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	scheduleOption1 := *defaultOption
 	scheduleOption1.Cron = "mockCron"
 	scheduleOption1.Duration = "1s"
-	rule1 := &api.Rule{
+	rule1 := &def.Rule{
 		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
@@ -267,7 +267,7 @@ func TestUpdateScheduleRule(t *testing.T) {
 	scheduleOption2 := *defaultOption
 	scheduleOption2.Cron = "mockCron2"
 	scheduleOption2.Duration = "2s"
-	rule2 := &api.Rule{
+	rule2 := &def.Rule{
 		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
@@ -288,7 +288,7 @@ func TestMultipleAccess(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	rs, err := NewRuleState(&api.Rule{
+	rs, err := NewRuleState(&def.Rule{
 		Triggered: false,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
@@ -342,7 +342,7 @@ func TestRuleState_Start(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	// Test rule not triggered
-	r := &api.Rule{
+	r := &def.Rule{
 		Triggered: false,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
@@ -427,7 +427,7 @@ func TestScheduleRule(t *testing.T) {
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	// Test rule not triggered
-	r := &api.Rule{
+	r := &def.Rule{
 		Triggered: false,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
@@ -580,7 +580,7 @@ func TestRuleStateInternalStop(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	r := &api.Rule{
+	r := &def.Rule{
 		Triggered: false,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
@@ -599,7 +599,7 @@ func TestRuleStateInternalStop(t *testing.T) {
 
 	r.Options.Cron = ""
 	r.Options.Duration = ""
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
+	r.Options.CronDatetimeRange = []def.DatetimeRange{
 		{
 			Begin: layout,
 			End:   layout,

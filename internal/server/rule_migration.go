@@ -18,8 +18,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	store2 "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
@@ -63,7 +63,7 @@ type dependencies struct {
 	schemas          []string
 }
 
-func ruleTraverse(rule *api.Rule, de *dependencies) {
+func ruleTraverse(rule *def.Rule, de *dependencies) {
 	sql := rule.Sql
 	if sql != "" {
 		stmt, err := xsql.GetStatementFromSql(sql)

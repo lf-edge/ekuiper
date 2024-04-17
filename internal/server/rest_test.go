@@ -31,9 +31,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -396,7 +396,7 @@ func (suite *RestTestSuite) assertGetRuleHiddenPassword() {
 	require.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	returnVal, _ := io.ReadAll(w1.Result().Body)
-	rule2 := &api.Rule{}
+	rule2 := &def.Rule{}
 	require.NoError(suite.T(), json.Unmarshal(returnVal, rule2))
 	require.Len(suite.T(), rule2.Actions, 1)
 	mqttAction := rule2.Actions[0]["mqtt"]

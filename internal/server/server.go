@@ -30,13 +30,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/automaxprocs/maxprocs"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
@@ -45,7 +46,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -410,7 +410,7 @@ func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 	}
 }
 
-func handleScheduleRuleState(now time.Time, r *api.Rule, state string) error {
+func handleScheduleRuleState(now time.Time, r *def.Rule, state string) error {
 	scheduleActionSignal := handleScheduleRule(now, r, state)
 	conf.Log.Debugf("rule %v origin state: %v, sginal: %v", r.Id, state, scheduleActionSignal)
 	switch scheduleActionSignal {
@@ -430,7 +430,7 @@ const (
 	scheduleRuleActionStop
 )
 
-func handleScheduleRule(now time.Time, r *api.Rule, state string) scheduleRuleAction {
+func handleScheduleRule(now time.Time, r *def.Rule, state string) scheduleRuleAction {
 	options := r.Options
 	if options != nil && options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
 		isInRange, err := schedule.IsInScheduleRanges(now, options.CronDatetimeRange)

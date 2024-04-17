@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -45,7 +45,7 @@ func TestGetConf_Apply(t *testing.T) {
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
-	}, &api.RuleOption{SendError: false}, false, false, nil)
+	}, &def.RuleOption{SendError: false}, false, false, nil)
 	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	if !reflect.DeepEqual(result, conf) {
 		t.Errorf("result mismatch:\n\nexp=%s\n\ngot=%s\n\n", result, conf)
@@ -71,7 +71,7 @@ func TestGetConfAndConvert_Apply(t *testing.T) {
 	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "/feed",
 		TYPE:       "httppull",
-	}, &api.RuleOption{SendError: false}, false, false, nil)
+	}, &def.RuleOption{SendError: false}, false, false, nil)
 	conf := nodeConf.GetSourceConf(n.sourceType, n.options)
 	assert.Equal(t, result, conf)
 

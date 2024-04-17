@@ -17,8 +17,8 @@ package node
 import (
 	"testing"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -29,29 +29,29 @@ func TestSourcePool(t *testing.T) {
 		DATASOURCE: "demo",
 		TYPE:       "mock",
 		SHARED:     true,
-	}, &api.RuleOption{SendError: false}, false, false, nil)
+	}, &def.RuleOption{SendError: false}, false, false, nil)
 	n.concurrency = 2
 	contextLogger := conf.Log.WithField("rule", "mockRule0")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
 	n.ctx = ctx.WithMeta("mockRule0", "test", tempStore)
 	n1 := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "demo1",
 		TYPE:       "mock",
 		SHARED:     true,
-	}, &api.RuleOption{SendError: false}, false, false, nil)
+	}, &def.RuleOption{SendError: false}, false, false, nil)
 
 	contextLogger = conf.Log.WithField("rule", "mockRule1")
 	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	tempStore, _ = state.CreateStore("mockRule1", api.AtMostOnce)
+	tempStore, _ = state.CreateStore("mockRule1", def.AtMostOnce)
 	n1.ctx = ctx.WithMeta("mockRule1", "test1", tempStore)
 	n2 := NewSourceNode("test2", ast.TypeStream, nil, &ast.Options{
 		DATASOURCE: "demo1",
 		TYPE:       "mock",
-	}, &api.RuleOption{SendError: false}, false, false, nil)
+	}, &def.RuleOption{SendError: false}, false, false, nil)
 	contextLogger = conf.Log.WithField("rule", "mockRule2")
 	ctx = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	tempStore, _ = state.CreateStore("mockRule2", api.AtMostOnce)
+	tempStore, _ = state.CreateStore("mockRule2", def.AtMostOnce)
 	n2.ctx = ctx.WithMeta("mockRule2", "test2", tempStore)
 
 	// Test add source instance

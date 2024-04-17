@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -33,7 +34,7 @@ type JoinAlignNode struct {
 
 const BatchKey = "$$batchInputs"
 
-func NewJoinAlignNode(name string, emitters []string, options *api.RuleOption) (*JoinAlignNode, error) {
+func NewJoinAlignNode(name string, emitters []string, options *def.RuleOption) (*JoinAlignNode, error) {
 	batch := make(map[string][]*xsql.Tuple, len(emitters))
 	for _, e := range emitters {
 		batch[e] = nil

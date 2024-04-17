@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	store2 "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
@@ -33,7 +34,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-func Plan(rule *api.Rule) (*topo.Topo, error) {
+func Plan(rule *def.Rule) (*topo.Topo, error) {
 	if rule.Sql != "" {
 		return PlanSQLWithSourcesAndSinks(rule, nil, nil)
 	}
@@ -41,7 +42,7 @@ func Plan(rule *api.Rule) (*topo.Topo, error) {
 }
 
 // PlanSQLWithSourcesAndSinks For test only
-func PlanSQLWithSourcesAndSinks(rule *api.Rule, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode) (*topo.Topo, error) {
+func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode) (*topo.Topo, error) {
 	sql := rule.Sql
 
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
@@ -91,7 +92,7 @@ func validateStmt(stmt *ast.SelectStatement) error {
 	return vErr
 }
 
-func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {
+func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, sinks []*node.SinkNode, streamsFromStmt []string) (t *topo.Topo, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.ExecutorError, err.Error())
@@ -124,7 +125,7 @@ func createTopo(rule *api.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 	return tp, nil
 }
 
-func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
+func GetExplainInfoFromLogicalPlan(rule *def.Rule) (string, error) {
 	sql := rule.Sql
 
 	conf.Log.Infof("Init rule with options %+v", rule.Options)
@@ -181,7 +182,7 @@ func GetExplainInfoFromLogicalPlan(rule *api.Rule) (string, error) {
 	return res, nil
 }
 
-func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (api.Emitter, int, error) {
+func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources map[string]map[string]any, streamsFromStmt []string, index int) (api.Emitter, int, error) {
 	var inputs []api.Emitter
 	newIndex := index
 	for _, c := range lp.Children() {
@@ -301,7 +302,7 @@ func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
 	return int64(t.length) * unit, int64(t.interval) * unit, t.delay * unit
 }
 
-func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *api.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
+func transformSourceNode(t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *def.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	isSchemaless := t.isSchemaless
 	mockSourceConf, isMock := mockSourcesProp[string(t.name)]
 	if isMock {
@@ -368,7 +369,7 @@ type SourcePropsForSplit struct {
 	SelId         string `json:"connectionSelector"`
 }
 
-func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
+func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *def.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
 	sp := &SourcePropsForSplit{}
@@ -441,7 +442,7 @@ func splitSource(t *DataSourcePlan, ss api.SourceConnector, options *api.RuleOpt
 	return srcConnNode, ops, 0, nil
 }
 
-func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
+func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.PlanError, err.Error())
@@ -686,7 +687,7 @@ func extractSRFMapping(stmt *ast.SelectStatement) map[string]struct{} {
 	return m
 }
 
-func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.UnaryOperator {
+func Transform(op node.UnOperation, name string, options *def.RuleOption) *node.UnaryOperator {
 	unaryOperator := node.New(name, options)
 	unaryOperator.SetOperation(op)
 	return unaryOperator

@@ -20,21 +20,21 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestNewDecompressOp(t *testing.T) {
-	_, err := NewDecompressOp("test", &api.RuleOption{}, "non")
+	_, err := NewDecompressOp("test", &def.RuleOption{}, "non")
 	assert.Error(t, err)
 	assert.Equal(t, "get decompressor non fail with error: unsupported decompressor: non", err.Error())
-	_, err = NewDecompressOp("test", &api.RuleOption{}, "gzip")
+	_, err = NewDecompressOp("test", &def.RuleOption{}, "gzip")
 	assert.NoError(t, err)
 }
 
 func TestDecompressOp_Exec(t *testing.T) {
-	op, err := NewDecompressOp("test", &api.RuleOption{BufferLength: 10, SendError: true}, "gzip")
+	op, err := NewDecompressOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, "gzip")
 	assert.NoError(t, err)
 	op.tool = &MockCompresser{}
 	out := make(chan any, 100)

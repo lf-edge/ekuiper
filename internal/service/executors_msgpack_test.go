@@ -23,7 +23,7 @@ import (
 
 	"github.com/msgpack-rpc/msgpack-rpc-go/rpc"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
 )
 
@@ -150,7 +150,7 @@ func TestMsgpackService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &api.RuleOption{
+	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
