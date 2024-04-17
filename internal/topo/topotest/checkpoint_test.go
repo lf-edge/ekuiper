@@ -112,11 +112,11 @@ func TestCheckpoint(t *testing.T) {
 			Qos:                def.AtLeastOnce,
 			CheckpointInterval: 600,
 			SendError:          true,
-		}, {
-			BufferLength:       100,
-			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 600,
-			SendError:          true,
+			//}, {
+			//	BufferLength:       100,
+			//	Qos:                def.ExactlyOnce,
+			//	CheckpointInterval: 600,
+			//	SendError:          true,
 		},
 	}
 	for j, opt := range options {

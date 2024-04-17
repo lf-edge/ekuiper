@@ -89,23 +89,13 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 		select {
 		// process incoming item
 		case item := <-o.input:
-			processed := false
-			if item, processed = o.preprocess(item); processed {
+			data, processed := o.commonIngest(ctx, item)
+			if processed {
 				break
 			}
-			switch d := item.(type) {
-			case error:
-				o.Broadcast(d)
-				o.statManager.IncTotalExceptions(d.Error())
-				continue
-			case *xsql.WatermarkTuple:
-				o.Broadcast(d)
-				continue
-			}
-
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
-			result := o.op.Apply(exeCtx, item, fv, afv)
+			result := o.op.Apply(exeCtx, data, fv, afv)
 
 			switch val := result.(type) {
 			case nil:

@@ -118,16 +118,12 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 	for {
 		select {
 		// process incoming item
-		case item, opened := <-o.input:
-			if !opened {
-				o.statManager.IncTotalExceptions("input channel closed")
+		case item := <-o.input:
+			data, processed := o.ingest(ctx, item)
+			if processed {
 				break
 			}
-			processed := false
-			if item, processed = o.preprocess(item); processed {
-				break
-			}
-			switch d := item.(type) {
+			switch d := data.(type) {
 			case error:
 				o.Broadcast(d)
 				o.statManager.IncTotalExceptions(d.Error())
@@ -221,4 +217,24 @@ func getEarliestEventTs(inputs []*xsql.Tuple, startTs int64, endTs int64) int64 
 		}
 	}
 	return minTs
+}
+
+func (o *WindowOperator) ingest(ctx api.StreamContext, item any) (any, bool) {
+	ctx.GetLogger().Debugf("receive %v", item)
+	item, processed := o.preprocess(ctx, item)
+	if processed {
+		return item, processed
+	}
+	switch d := item.(type) {
+	case error:
+		o.statManager.IncTotalExceptions(d.Error())
+		if o.sendError {
+			return d, false
+		}
+		return nil, true
+	case xsql.EOFTuple:
+		return nil, true
+	}
+	// watermark tuple should return
+	return item, false
 }

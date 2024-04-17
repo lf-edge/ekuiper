@@ -253,18 +253,6 @@ var (
 	_ MetaData = &Tuple{}
 )
 
-type WatermarkTuple struct {
-	Timestamp int64
-}
-
-func (t *WatermarkTuple) GetTimestamp() int64 {
-	return t.Timestamp
-}
-
-func (t *WatermarkTuple) IsWatermark() bool {
-	return true
-}
-
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
 	Tuples []Row // The content is immutable, but the slice may be added or removed

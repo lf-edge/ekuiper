@@ -95,23 +95,14 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				log.Debugf("LookupNode %s is looping", n.name)
 				select {
 				// process incoming item from both streams(transformed) and tables
-				case item, opened := <-n.input:
-					processed := false
-					if item, processed = n.preprocess(item); processed {
+				case item := <-n.input:
+					data, processed := n.commonIngest(ctx, item)
+					if processed {
 						break
 					}
 					n.statManager.IncTotalRecordsIn()
 					n.statManager.ProcessTimeStart()
-					if !opened {
-						n.statManager.IncTotalExceptions("input channel closed")
-						break
-					}
-					switch d := item.(type) {
-					case error:
-						n.Broadcast(d)
-						n.statManager.IncTotalExceptions(d.Error())
-					case *xsql.WatermarkTuple:
-						n.Broadcast(d)
+					switch d := data.(type) {
 					case xsql.Row:
 						log.Debugf("Lookup Node receive tuple input %s", d)
 						n.statManager.ProcessTimeStart()

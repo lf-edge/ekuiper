@@ -102,16 +102,12 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 				case <-ctx.Done():
 					ctx.GetLogger().Infof("watermark node %s is finished", w.name)
 					return nil
-				case item, opened := <-w.input:
-					if !opened {
-						w.statManager.IncTotalExceptions("input channel closed")
+				case item := <-w.input:
+					data, processed := w.commonIngest(ctx, item)
+					if processed {
 						break
 					}
-					processed := false
-					if item, processed = w.preprocess(item); processed {
-						break
-					}
-					switch d := item.(type) {
+					switch d := data.(type) {
 					case error:
 						w.Broadcast(d)
 						w.statManager.IncTotalExceptions(d.Error())

@@ -82,12 +82,11 @@ func (b *BatchOp) runWithTickerAndBatchSize(ctx api.StreamContext) {
 }
 
 func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
-	ctx.GetLogger().Debugf("batch op receive %v", item)
-	processed := false
-	if item, processed = b.preprocess(item); processed {
+	data, processed := b.commonIngest(ctx, item)
+	if processed {
 		return
 	}
-	switch d := item.(type) {
+	switch d := data.(type) {
 	case error:
 		b.Broadcast(d)
 		b.statManager.IncTotalExceptions(d.Error())

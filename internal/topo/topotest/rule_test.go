@@ -924,7 +924,7 @@ func TestSingleSQL(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_exceptions_total":  int64(2),
 				"sink_mockSink_0_records_in_total":  int64(4),
 				"sink_mockSink_0_records_out_total": int64(4),
 
@@ -1540,7 +1540,7 @@ func TestSingleSQLError(t *testing.T) {
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_exceptions_total":  int64(1),
 				"sink_mockSink_0_records_in_total":  int64(3),
 				"sink_mockSink_0_records_out_total": int64(3),
 
@@ -1578,7 +1578,7 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_exceptions_total":  int64(1),
 				"sink_mockSink_0_records_in_total":  int64(5),
 				"sink_mockSink_0_records_out_total": int64(5),
 
@@ -1611,7 +1611,7 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(4),
 
-				"sink_mockSink_0_exceptions_total":  int64(0),
+				"sink_mockSink_0_exceptions_total":  int64(1),
 				"sink_mockSink_0_records_in_total":  int64(5),
 				"sink_mockSink_0_records_out_total": int64(5),
 
