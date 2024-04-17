@@ -64,6 +64,7 @@ func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) 
 			Edges:   make(map[string][]interface{}),
 		},
 	}
+	tp.prepareContext() // ensure context is set
 	return tp, nil
 }
 
