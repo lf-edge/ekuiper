@@ -15,6 +15,7 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -26,51 +27,9 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
-
-type OperatorNode interface {
-	api.Operator
-	Broadcast(data interface{})
-	GetStreamContext() api.StreamContext
-	GetInputCount() int
-	AddInputCount()
-	SetQos(def.Qos)
-	SetBarrierHandler(checkpoint.BarrierHandler)
-	RemoveMetrics(name string)
-}
-
-type SchemaNode interface {
-	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
-	AttachSchema(api.StreamContext, string, map[string]*ast.JsonStreamField, bool)
-	// DetachSchema detach the schema from the node. The parameters are ruleId
-	DetachSchema(string)
-}
-
-type DataSourceNode interface {
-	api.Emitter
-	Open(ctx api.StreamContext, errCh chan<- error)
-	GetName() string
-	GetMetrics() []any
-	RemoveMetrics(ruleId string)
-}
-
-type SourceInstanceNode interface {
-	GetSource() api.Source
-}
-
-type MergeableTopo interface {
-	GetSource() DataSourceNode
-	// MergeSrc Add child topo as the source with following operators
-	MergeSrc(parentTopo *def.PrintableTopo)
-	// LinkTopo Add printable topo link from the parent topo to the child topo
-	LinkTopo(parentTopo *def.PrintableTopo, parentJointName string)
-	// SubMetrics return the metrics of the sub nodes
-	SubMetrics() ([]string, []any)
-	// Close notifies subtopo to deref
-	Close(ruleId string)
-}
 
 type defaultNode struct {
 	name        string
@@ -179,12 +138,10 @@ type defaultSinkNode struct {
 	input          chan any
 	barrierHandler checkpoint.BarrierHandler
 	inputCount     int
-	bufferLen      int
 }
 
 func newDefaultSinkNode(name string, options *def.RuleOption) *defaultSinkNode {
 	return &defaultSinkNode{
-		bufferLen:   options.BufferLength,
 		defaultNode: newDefaultNode(name, options),
 		input:       make(chan any, options.BufferLength),
 	}
@@ -206,14 +163,18 @@ func (o *defaultSinkNode) SetBarrierHandler(bh checkpoint.BarrierHandler) {
 	o.barrierHandler = bh
 }
 
-// return the data and if processed
-func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
+func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opType string) {
+	ctx.GetLogger().Infof("%s started", o.name)
+	o.statManager = metric.NewStatManager(ctx, opType)
+	o.ctx = ctx
+	o.ctrlCh = errCh
+}
+
+func (o *defaultSinkNode) preprocess(ctx api.StreamContext, item any) (any, bool) {
 	if o.qos >= def.AtLeastOnce {
-		logger := o.ctx.GetLogger()
-		logger.Debugf("%s preprocess receive data %+v", o.name, data)
-		b, ok := data.(*checkpoint.BufferOrEvent)
+		b, ok := item.(*checkpoint.BufferOrEvent)
 		if ok {
-			logger.Debugf("data is BufferOrEvent, start barrier handler")
+			ctx.GetLogger().Debugf("data is BufferOrEvent, start barrier handler")
 			// if it is a barrier, return true and ignore the further processing
 			// if it is blocked(align handler), return true and then write back to the channel later
 			if o.barrierHandler.Process(b, o.ctx) {
@@ -223,14 +184,35 @@ func (o *defaultSinkNode) preprocess(data interface{}) (interface{}, bool) {
 			}
 		}
 	}
-	return data, false
+	return item, false
 }
 
-func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opType string) {
-	ctx.GetLogger().Infof("%s started", o.name)
-	o.statManager = metric.NewStatManager(ctx, opType)
-	o.ctx = ctx
-	o.ctrlCh = errCh
+func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bool) {
+	ctx.GetLogger().Debugf("receive %v", item)
+	item, processed := o.preprocess(ctx, item)
+	if processed {
+		return item, processed
+	}
+	switch d := item.(type) {
+	case error:
+		o.statManager.IncTotalExceptions(d.Error())
+		if o.sendError {
+			o.Broadcast(d)
+		}
+		return nil, true
+	case *xsql.WatermarkTuple, xsql.EOFTuple:
+		o.Broadcast(d)
+		return nil, true
+	}
+	return item, false
+}
+
+func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) {
+	if len(o.outputs) > 0 {
+		o.Broadcast(d)
+	} else {
+		infra.DrainError(ctx, errors.New("done"), o.ctrlCh)
+	}
 }
 
 func SourcePing(sourceType string, config map[string]interface{}) error {

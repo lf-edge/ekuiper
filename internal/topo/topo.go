@@ -209,39 +209,34 @@ func (s *Topo) Open() <-chan error {
 	s.drain = make(chan error)
 	log := s.ctx.GetLogger()
 	log.Infoln("Opening stream")
-	go func() {
-		err := infra.SafeRun(func() error {
-			s.mu.Lock()
-			defer s.mu.Unlock()
-			var err error
-			if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
-				return fmt.Errorf("topo %s create store error %v", s.name, err)
-			}
-			s.enableCheckpoint(s.ctx)
-			// open stream sink, after log sink is ready.
-			for _, snk := range s.sinks {
-				snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
-			}
-
-			for _, op := range s.ops {
-				op.Exec(s.ctx.WithMeta(s.name, op.GetName(), s.store), s.drain)
-			}
-
-			for _, source := range s.sources {
-				source.Open(s.ctx.WithMeta(s.name, source.GetName(), s.store), s.drain)
-			}
-
-			// activate checkpoint
-			if s.coordinator != nil {
-				s.coordinator.Activate()
-			}
-			return nil
-		})
-		if err != nil {
-			infra.DrainError(s.ctx, err, s.drain)
+	err := infra.SafeRun(func() error {
+		var err error
+		if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
+			return fmt.Errorf("topo %s create store error %v", s.name, err)
 		}
-	}()
+		s.enableCheckpoint(s.ctx)
+		// open stream sink, after log sink is ready.
+		for _, snk := range s.sinks {
+			snk.Open(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
+		}
 
+		for _, op := range s.ops {
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), s.store), s.drain)
+		}
+
+		for _, source := range s.sources {
+			source.Open(s.ctx.WithMeta(s.name, source.GetName(), s.store), s.drain)
+		}
+
+		// activate checkpoint
+		if s.coordinator != nil {
+			return s.coordinator.Activate()
+		}
+		return nil
+	})
+	if err != nil {
+		infra.DrainError(s.ctx, err, s.drain)
+	}
 	return s.drain
 }
 

@@ -16,6 +16,8 @@ package node
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 // WorkerFunc is the function to process the data
@@ -33,7 +35,7 @@ func runWithOrder(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, 
 
 	// Start worker goroutines
 	for i := 0; i < numWorkers; i++ {
-		go worker(ctx, i, wf, workerChans[i], workerOutChans[i])
+		go worker(ctx, node, i, wf, workerChans[i], workerOutChans[i])
 	}
 	// start merger goroutine
 	output := make(chan any)
@@ -52,8 +54,12 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, output chan any, channe
 			select {
 			case data := <-ch:
 				for _, d := range data {
-					node.Broadcast(d)
-					switch dt := d.(type) {
+					dd, processed := node.commonIngest(ctx, d)
+					if processed {
+						continue
+					}
+					node.Broadcast(dd)
+					switch dt := dd.(type) {
 					case error:
 						node.statManager.IncTotalExceptions(dt.Error())
 					default:
@@ -81,26 +87,27 @@ func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wo
 		case <-ctx.Done():
 			ctx.GetLogger().Infof("distribute done")
 			return
-		case item := <-node.input:
-			ctx.GetLogger().Debugf("distributor receive %v", item)
-			processed := false
-			if item, processed = node.preprocess(item); processed {
-				break
-			}
-			node.statManager.IncTotalRecordsIn()
+		case item := <-node.input: // Just send out all inputs even they are control tuples
 			workerChans[counter] <- item
 		}
 		counter++
 	}
 }
 
-func worker(ctx api.StreamContext, i int, wf workerFunc, inputRaw chan any, output chan []any) {
+func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, inputRaw chan any, output chan []any) {
 	for {
 		select {
 		case data := <-inputRaw:
-			ctx.GetLogger().Debugf("worker %d received %v", i, data)
+			var result []any
+			switch data.(type) {
+			case error, *checkpoint.BufferOrEvent, *xsql.WatermarkTuple, xsql.EOFTuple:
+				result = []any{data}
+			default:
+				node.statManager.IncTotalRecordsIn()
+				result = wf(ctx.GetLogger(), data)
+			}
 			select {
-			case output <- wf(ctx.GetLogger(), data):
+			case output <- result:
 			case <-ctx.Done():
 				ctx.GetLogger().Debugf("worker %d done", i)
 				return

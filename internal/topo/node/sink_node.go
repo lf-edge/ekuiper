@@ -15,38 +15,20 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
-
-type SinkConf struct {
-	Concurrency    int      `json:"concurrency"`
-	Omitempty      bool     `json:"omitIfEmpty"`
-	SendSingle     bool     `json:"sendSingle"`
-	DataTemplate   string   `json:"dataTemplate"`
-	Format         string   `json:"format"`
-	SchemaId       string   `json:"schemaId"`
-	Delimiter      string   `json:"delimiter"`
-	BufferLength   int      `json:"bufferLength"`
-	Fields         []string `json:"fields"`
-	DataField      string   `json:"dataField"`
-	BatchSize      int      `json:"batchSize"`
-	LingerInterval int      `json:"lingerInterval"`
-	conf.SinkConf
-}
 
 type SinkNode struct {
 	*defaultSinkNode
@@ -157,14 +139,14 @@ func (m *SinkNode) Open(ctx api.StreamContext, result chan<- error) {
 					}
 
 					receiveQ := func(data interface{}) {
-						processed := false
-						if data, processed = m.preprocess(data); processed {
+						item, processed := m.ingest(ctx, data)
+						if processed {
 							return
 						}
 						m.statManager.IncTotalRecordsIn()
 						m.statManager.SetBufferLength(bufferLen(dataCh, dataOutCh, c, rq))
-						outs := itemToMap(data)
-						if sconf.Omitempty && (data == nil || len(outs) == 0) {
+						outs := itemToMap(item)
+						if sconf.Omitempty && (item == nil || len(outs) == 0) {
 							ctx.GetLogger().Debugf("receive empty in sink")
 							return
 						}
@@ -353,51 +335,6 @@ func checkAck(ctx api.StreamContext, data interface{}, err error) bool {
 	return true
 }
 
-func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
-	sconf := &SinkConf{
-		Concurrency:  1,
-		Omitempty:    false,
-		SendSingle:   false,
-		DataTemplate: "",
-		SinkConf:     *conf.Config.Sink,
-		BufferLength: 1024,
-	}
-	err := cast.MapToStruct(props, sconf)
-	if err != nil {
-		return nil, fmt.Errorf("read properties %v fail with error: %v", props, err)
-	}
-	if sconf.Concurrency <= 0 {
-		logger.Warnf("invalid type for concurrency property, should be positive integer but found %d", sconf.Concurrency)
-		sconf.Concurrency = 1
-	}
-	if sconf.Format == "" {
-		sconf.Format = "json"
-	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf && sconf.Format != message.FormatBinary && sconf.Format != message.FormatCustom && sconf.Format != message.FormatDelimited {
-		logger.Warnf("invalid type for format property, should be json protobuf or binary but found %s", sconf.Format)
-		sconf.Format = "json"
-	}
-	err = cast.MapToStruct(props, &sconf.SinkConf)
-	if err != nil {
-		return nil, fmt.Errorf("read properties %v to cache conf fail with error: %v", props, err)
-	}
-	if sconf.DataField == "" {
-		if v, ok := props["tableDataField"]; ok {
-			sconf.DataField = v.(string)
-		}
-	}
-	if sconf.BatchSize < 0 {
-		return nil, fmt.Errorf("invalid batchSize %d", sconf.BatchSize)
-	}
-	if sconf.LingerInterval < 0 {
-		return nil, fmt.Errorf("invalid lingerInterval %d", sconf.LingerInterval)
-	}
-	err = sconf.SinkConf.Validate()
-	if err != nil {
-		return nil, fmt.Errorf("invalid cache properties: %v", err)
-	}
-	return sconf, err
-}
-
 func (m *SinkNode) reset() {
 	if !m.isMock {
 		m.sink = nil
@@ -443,8 +380,6 @@ func itemToMap(item interface{}) []map[string]interface{} {
 	case []map[string]interface{}: // for test only
 		outs = val
 		break
-	case *xsql.WatermarkTuple:
-		// just ignore
 	default:
 		outs = []map[string]interface{}{
 			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},
@@ -540,4 +475,25 @@ func (m *SinkNode) AddOutput(_ chan<- interface{}, name string) error {
 // Broadcast Override defaultNode
 func (m *SinkNode) Broadcast(_ interface{}) {
 	// do nothing, may be called by checkpoint
+}
+
+func (m *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
+	ctx.GetLogger().Debugf("receive %v", item)
+	item, processed := m.preprocess(ctx, item)
+	if processed {
+		return item, processed
+	}
+	switch d := item.(type) {
+	case error:
+		m.statManager.IncTotalExceptions(d.Error())
+		if m.sendError {
+			return d, false
+		}
+		return nil, true
+	case *xsql.WatermarkTuple:
+		return nil, true
+	case xsql.EOFTuple:
+		infra.DrainError(ctx, errors.New("done"), m.ctrlCh)
+	}
+	return item, false
 }

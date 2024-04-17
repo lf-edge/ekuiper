@@ -305,18 +305,14 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			_ = ctx.PutState(WindowInputsKey, inputs)
 			_ = ctx.PutState(MsgCountKey, o.msgCount)
 		// process incoming item
-		case item, opened := <-o.input:
-			processed := false
-			if item, processed = o.preprocess(item); processed {
+		case item := <-o.input:
+			data, processed := o.commonIngest(ctx, item)
+			if processed {
 				break
 			}
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
-			if !opened {
-				o.statManager.IncTotalExceptions("input channel closed")
-				break
-			}
-			switch d := item.(type) {
+			switch d := data.(type) {
 			case error:
 				o.Broadcast(d)
 				o.statManager.IncTotalExceptions(d.Error())
