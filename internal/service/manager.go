@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
@@ -217,17 +216,6 @@ func (m *Manager) initFile(baseName string) error {
 
 func (m *Manager) HasFunctionSet(_ string) bool {
 	return false
-}
-
-func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
-	funcContainer, ok := m.getFunction(funcName)
-	if ok {
-		installScript := ""
-		m.serviceInstallKV.Get(funcContainer.ServiceName, &installScript)
-		return plugin.SERVICE_EXTENSION, funcContainer.ServiceName, installScript
-	} else {
-		return plugin.NONE_EXTENSION, "", ""
-	}
 }
 
 func (m *Manager) Function(name string) (api.Function, error) {

@@ -31,28 +31,6 @@ cd test
 rm -rf plugins/service/web/plugins/
 mkdir -p plugins/service/web/plugins/
 
-# prepare portable plugins
-cd ..
-mkdir test/temp
-
-mkdir test/temp/mirror
-cd sdk/go/example/mirror
-go build -o ../../../../test/temp/mirror/mirror .
-cd ../../../..
-cp sdk/go/example/mirror/mirror.json test/temp/mirror
-cp -r sdk/go/example/mirror/sources test/temp/mirror/
-cd test/temp/mirror
-zip -r ../../plugins/service/web/plugins/mirror.zip *
-cd ../../..
-
-cp -r sdk/python/example/pysam test/temp/pysam
-cp -r sdk/python/ekuiper test/temp/pysam/
-cd test/temp/pysam
-zip -r ../../plugins/service/web/plugins/pysam.zip *
-cd ../..
-
-rm -r temp
-
 pids=`ps aux | grep http_server | grep "./" | awk '{printf $2 " "}'`
 if [ "$pids" = "" ] ; then
    echo "No http mockup server was started"

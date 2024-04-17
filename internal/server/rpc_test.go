@@ -27,8 +27,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
-	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
-	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/service"
 )
@@ -40,8 +38,6 @@ type ServerTestSuite struct {
 
 func (suite *ServerTestSuite) SetupTest() {
 	suite.s = new(Server)
-	nativeManager, _ = native.InitManager()
-	portableManager, _ = portable.InitManager()
 	serviceManager, _ = service.InitManager()
 	_ = schema.InitRegistry()
 	meta.InitYamlConfigManager()
