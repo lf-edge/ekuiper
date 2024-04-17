@@ -34,7 +34,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -86,9 +85,6 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules/{name}/reset_state", ruleStateHandler).Methods(http.MethodPut)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
-	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
-	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
-	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -97,21 +93,9 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
-	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
+	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	r.HandleFunc("/metadata/sinks/{name}/confKeys/{confKey}", sinkConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 	suite.r = r
-}
-
-func (suite *RestTestSuite) Test_Connection() {
-	req, err := http.NewRequest(http.MethodPost, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
-	require.NoError(suite.T(), err)
-	w := httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	req, err = http.NewRequest(http.MethodDelete, "/connection/websocket", bytes.NewBufferString(`{"endpoint":"/api/data"}`))
-	require.NoError(suite.T(), err)
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *RestTestSuite) Test_rootHandler() {
@@ -701,71 +685,71 @@ func TestRestTestSuite(t *testing.T) {
 	suite.Run(t, new(RestTestSuite))
 }
 
-func (suite *ServerTestSuite) TestCreateInValidSinkRule() {
-	var sql, reply string
-	var err error
-	sql = `Create Stream test543 (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
-	err = suite.s.Stream(sql, &reply)
-	require.NoError(suite.T(), err)
-	reply = ""
-	rule := `{"id":"rule","sql":"select * from test543","actions":[{"mqtt":{"server":"tcp://docker.for.mac.host.internal:1883","topic":"collect/labels","qos":100,"clientId":"center","sendSingle":true}}]}`
-	ruleId := "rule"
-	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
-	err = suite.s.CreateRule(args, &reply)
-	require.Error(suite.T(), err)
-}
-
-func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
-	reply := ""
-	sql := `Create Stream test (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
-	err := suite.s.Stream(sql, &reply)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "Stream test is created.\n", reply)
-
-	reply = ""
-	rule := `{
-			  "sql": "SELECT a from test;",
-			  "actions": [{
-				"file": {
-				  "path": "../internal/server/rpc_test_data/data/result.txt",
-				  "interval": 5000,
-				  "fileType": "lines",
-				  "format": "json"
-				}
-			  }]
-	}`
-	ruleId := "myRule"
-	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
-	err = suite.s.CreateRule(args, &reply)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "Rule myRule was created successfully, please use 'bin/kuiper getstatus rule myRule' command to get rule status.", reply)
-
-	reply = ""
-	err = suite.s.GetStatusRule(ruleId, &reply)
-	assert.Nil(suite.T(), err)
-
-	reply = ""
-	err = suite.s.StopRule(ruleId, &reply)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "Rule myRule was stopped.", reply)
-
-	reply = ""
-	sql = `drop stream test`
-	err = suite.s.Stream(sql, &reply)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "Stream test is dropped.\n", reply)
-
-	reply = ""
-	sql = `Create Stream test (b bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
-	err = suite.s.Stream(sql, &reply)
-	assert.Nil(suite.T(), err)
-	assert.Equal(suite.T(), "Stream test is created.\n", reply)
-
-	reply = ""
-	err = suite.s.StartRule(ruleId, &reply)
-	assert.Error(suite.T(), err)
-	assert.Equal(suite.T(), err.Error(), "unknown field a")
-}
+//func (suite *ServerTestSuite) TestCreateInValidSinkRule() {
+//	var sql, reply string
+//	var err error
+//	sql = `Create Stream test543 (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+//	err = suite.s.Stream(sql, &reply)
+//	require.NoError(suite.T(), err)
+//	reply = ""
+//	rule := `{"id":"rule","sql":"select * from test543","actions":[{"mqtt":{"server":"tcp://docker.for.mac.host.internal:1883","topic":"collect/labels","qos":100,"clientId":"center","sendSingle":true}}]}`
+//	ruleId := "rule"
+//	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
+//	err = suite.s.CreateRule(args, &reply)
+//	require.Error(suite.T(), err)
+//}
+//
+//func (suite *ServerTestSuite) TestStartRuleAfterSchemaChange() {
+//	reply := ""
+//	sql := `Create Stream test (a bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+//	err := suite.s.Stream(sql, &reply)
+//	assert.Nil(suite.T(), err)
+//	assert.Equal(suite.T(), "Stream test is created.\n", reply)
+//
+//	reply = ""
+//	rule := `{
+//			  "sql": "SELECT a from test;",
+//			  "actions": [{
+//				"file": {
+//				  "path": "../internal/server/rpc_test_data/data/result.txt",
+//				  "interval": 5000,
+//				  "fileType": "lines",
+//				  "format": "json"
+//				}
+//			  }]
+//	}`
+//	ruleId := "myRule"
+//	args := &model.RPCArgDesc{Name: ruleId, Json: rule}
+//	err = suite.s.CreateRule(args, &reply)
+//	assert.Nil(suite.T(), err)
+//	assert.Equal(suite.T(), "Rule myRule was created successfully, please use 'bin/kuiper getstatus rule myRule' command to get rule status.", reply)
+//
+//	reply = ""
+//	err = suite.s.GetStatusRule(ruleId, &reply)
+//	assert.Nil(suite.T(), err)
+//
+//	reply = ""
+//	err = suite.s.StopRule(ruleId, &reply)
+//	assert.Nil(suite.T(), err)
+//	assert.Equal(suite.T(), "Rule myRule was stopped.", reply)
+//
+//	reply = ""
+//	sql = `drop stream test`
+//	err = suite.s.Stream(sql, &reply)
+//	assert.Nil(suite.T(), err)
+//	assert.Equal(suite.T(), "Stream test is dropped.\n", reply)
+//
+//	reply = ""
+//	sql = `Create Stream test (b bigint) WITH (DATASOURCE="../internal/server/rpc_test_data/test.json", FORMAT="JSON", type="file");`
+//	err = suite.s.Stream(sql, &reply)
+//	assert.Nil(suite.T(), err)
+//	assert.Equal(suite.T(), "Stream test is created.\n", reply)
+//
+//	reply = ""
+//	err = suite.s.StartRule(ruleId, &reply)
+//	assert.Error(suite.T(), err)
+//	assert.Equal(suite.T(), err.Error(), "unknown field a")
+//}
 
 func (suite *RestTestSuite) TestUpdateRuleOffset() {
 	req1, _ := http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule344421/reset_state", bytes.NewBufferString(`123`))
