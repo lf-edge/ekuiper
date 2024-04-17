@@ -16,7 +16,6 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
@@ -27,7 +26,7 @@ func init() {
 	modules.RegisterSource("mqtt", func() api.Source { return &mqtt.SourceConnector{} })
 	// modules.RegisterSource("httppull", func() api.Source { return &http.PullSource{} })
 	// modules.RegisterSource("httppush", func() api.Source { return &http.PushSource{} })
-	modules.RegisterSource("file", func() api.Source { return &file.FileSource{} })
+	// modules.RegisterSource("file", func() api.Source { return &file.FileSource{} })
 	modules.RegisterSource("memory", func() api.Source { return memory.GetSource() })
 	// modules.RegisterSource("neuron", func() api.Source { return neuron.GetSource() })
 	// modules.RegisterSource("websocket", func() api.Source { return &websocket.WebsocketSource{} })
@@ -40,7 +39,7 @@ func init() {
 	modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
 	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
 	// modules.RegisterSink("neuron", func() api.Sink { return neuron.GetSink() })
-	modules.RegisterSink("file", func() api.Sink { return file.File() })
+	// modules.RegisterSink("file", func() api.Sink { return file.File() })
 	// modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
 	// modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
