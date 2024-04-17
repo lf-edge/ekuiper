@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -35,7 +36,7 @@ type SourceConnectorNode struct {
 }
 
 // NewSourceConnectorNode creates a SourceConnectorNode
-func NewSourceConnectorNode(name string, ss api.SourceConnector, dataSource string, props map[string]any, rOpt *api.RuleOption) (*SourceConnectorNode, error) {
+func NewSourceConnectorNode(name string, ss api.SourceConnector, dataSource string, props map[string]any, rOpt *def.RuleOption) (*SourceConnectorNode, error) {
 	m := &SourceConnectorNode{
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,

@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -174,7 +174,7 @@ func TestAnalyticFuncs(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestChangedFuncs_Apply1")
 
 	for i, tt := range tests {
-		tempStore, _ := state.CreateStore("mockRule"+strconv.Itoa(i), api.AtMostOnce)
+		tempStore, _ := state.CreateStore("mockRule"+strconv.Itoa(i), def.AtMostOnce)
 		ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("mockRule"+strconv.Itoa(i), "project", tempStore)
 
 		pp := &AnalyticFuncsOp{Funcs: tt.funcs}

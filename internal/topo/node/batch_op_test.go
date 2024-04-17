@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -68,7 +68,7 @@ func TestRun(t *testing.T) {
 	mc := mockclock.GetMockClock()
 	for i, tc := range testcases {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
-			op, err := NewBatchOp("test", &api.RuleOption{BufferLength: 10, SendError: true}, tc.batchSize, tc.lingerInterval)
+			op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tc.batchSize, tc.lingerInterval)
 			if len(tc.err) > 0 {
 				assert.Error(t, err)
 				assert.Equal(t, tc.err, err.Error())

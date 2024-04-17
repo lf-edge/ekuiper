@@ -29,6 +29,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
@@ -46,19 +47,19 @@ type Topo struct {
 	drain       chan error
 	ops         []node.OperatorNode
 	name        string
-	options     *api.RuleOption
+	options     *def.RuleOption
 	store       api.Store
 	coordinator *checkpoint.Coordinator
-	topo        *api.PrintableTopo
+	topo        *def.PrintableTopo
 	mu          sync.Mutex
 	hasOpened   atomic.Bool
 }
 
-func NewWithNameAndOptions(name string, options *api.RuleOption) (*Topo, error) {
+func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
 	tp := &Topo{
 		name:    name,
 		options: options,
-		topo: &api.PrintableTopo{
+		topo: &def.PrintableTopo{
 			Sources: make([]string, 0),
 			Edges:   make(map[string][]interface{}),
 		},
@@ -248,7 +249,7 @@ func (s *Topo) HasOpen() bool {
 }
 
 func (s *Topo) enableCheckpoint(ctx api.StreamContext) {
-	if s.options.Qos >= api.AtLeastOnce {
+	if s.options.Qos >= def.AtLeastOnce {
 		var (
 			sources []checkpoint.StreamTask
 			ops     []checkpoint.NonSourceTask
@@ -322,7 +323,7 @@ func (s *Topo) RemoveMetrics() {
 	conf.Log.Infof("finish removing %v metrics", s.name)
 }
 
-func (s *Topo) GetTopo() *api.PrintableTopo {
+func (s *Topo) GetTopo() *def.PrintableTopo {
 	return s.topo
 }
 

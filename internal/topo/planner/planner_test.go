@@ -26,10 +26,10 @@ import (
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
@@ -42,16 +42,16 @@ func init() {
 	testx.InitEnv("planner")
 }
 
-var defaultOption = &api.RuleOption{
+var defaultOption = &def.RuleOption{
 	IsEventTime:        false,
 	LateTol:            1000,
 	Concurrency:        1,
 	BufferLength:       1024,
 	SendMetaToSink:     false,
 	SendError:          true,
-	Qos:                api.AtMostOnce,
+	Qos:                def.AtMostOnce,
 	CheckpointInterval: 300000,
-	Restart: &api.RestartStrategy{
+	Restart: &def.RestartStrategy{
 		Attempts:     0,
 		Delay:        1000,
 		Multiplier:   2,
@@ -2745,7 +2745,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		p, err := createLogicalPlan(stmt, &api.RuleOption{
+		p, err := createLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,
@@ -4148,7 +4148,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		p, err := createLogicalPlan(stmt, &api.RuleOption{
+		p, err := createLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,
@@ -4736,7 +4736,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 		t.Run(tt.sql, func(t *testing.T) {
 			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 			assert.NoError(t, err)
-			p, err := createLogicalPlan(stmt, &api.RuleOption{
+			p, err := createLogicalPlan(stmt, &def.RuleOption{
 				IsEventTime:        false,
 				LateTol:            0,
 				Concurrency:        0,
@@ -4778,16 +4778,16 @@ func TestTransformSourceNode(t *testing.T) {
 		},
 	}
 	props := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt"})
-	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props, &api.RuleOption{SendError: false})
+	srcNode, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props, &def.RuleOption{SendError: false})
 	assert.NoError(t, err)
-	decodeNode, err := node.NewDecodeOp("2_decoder", "test", "test", &api.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
+	decodeNode, err := node.NewDecodeOp("2_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
 	assert.NoError(t, err)
-	decomNode, err := node.NewDecompressOp("2_decompressor", &api.RuleOption{SendError: false}, "gzip")
+	decomNode, err := node.NewDecompressOp("2_decompressor", &def.RuleOption{SendError: false}, "gzip")
 	assert.NoError(t, err)
-	decodeNode2, err := node.NewDecodeOp("3_decoder", "test", "test", &api.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
+	decodeNode2, err := node.NewDecodeOp("3_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
 	assert.NoError(t, err)
 	props2 := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", CONF_KEY: "testCom"})
-	srcNode2, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props2, &api.RuleOption{SendError: false})
+	srcNode2, err := node.NewSourceConnectorNode("test", &mqtt.SourceConnector{}, "topic1", props2, &def.RuleOption{SendError: false})
 	assert.NoError(t, err)
 
 	testCases := []struct {
@@ -4814,7 +4814,7 @@ func TestTransformSourceNode(t *testing.T) {
 			},
 			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 				TYPE: "file",
-			}, &api.RuleOption{SendError: false}, false, false, nil),
+			}, &def.RuleOption{SendError: false}, false, false, nil),
 		},
 		{
 			name: "schema source node",
@@ -4834,7 +4834,7 @@ func TestTransformSourceNode(t *testing.T) {
 			},
 			node: node.NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
 				TYPE: "file",
-			}, &api.RuleOption{SendError: false}, false, false, schema),
+			}, &def.RuleOption{SendError: false}, false, false, schema),
 		},
 		{
 			name: "split source node",
@@ -4885,7 +4885,7 @@ func TestTransformSourceNode(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceNode, ops, _, err := transformSourceNode(tc.plan, nil, "test", &api.RuleOption{}, 1)
+			sourceNode, ops, _, err := transformSourceNode(tc.plan, nil, "test", &def.RuleOption{}, 1)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.node, sourceNode)
 			assert.Equal(t, len(tc.ops), len(ops))
@@ -4956,12 +4956,12 @@ func TestGetLogicalPlanForExplain(t *testing.T) {
 	ref.SetRefSource([]string{})
 
 	tests := []struct {
-		rule *api.Rule
+		rule *def.Rule
 		res  string
 		err  string
 	}{
 		{
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "select name, row_number() as index from src1",
@@ -4975,7 +4975,7 @@ func TestGetLogicalPlanForExplain(t *testing.T) {
 			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ $$alias.index, src1.name ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:index, expr:$$alias.index} ]\",\"id\":1,\"children\":[2]}\n\n         {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: src1, StreamFields:[ name ]\",\"id\":2,\"children\":null}\n\n",
 		},
 		{
-			rule: &api.Rule{
+			rule: &def.Rule{
 				Triggered: false,
 				Id:        "test",
 				Sql:       "select name, row_number() from src1",
@@ -5042,12 +5042,12 @@ func TestPlanTopo(t *testing.T) {
 	tests := []struct {
 		name string
 		sql  string
-		topo *api.PrintableTopo
+		topo *def.PrintableTopo
 	}{
 		{
 			name: "testMqttSplit",
 			sql:  `SELECT * FROM src1`,
-			topo: &api.PrintableTopo{
+			topo: &def.PrintableTopo{
 				Sources: []string{"source_src1"},
 				Edges: map[string][]any{
 					"source_src1": {
@@ -5065,7 +5065,7 @@ func TestPlanTopo(t *testing.T) {
 		{
 			name: "testSharedMqttSplit",
 			sql:  `SELECT * FROM src2`,
-			topo: &api.PrintableTopo{
+			topo: &def.PrintableTopo{
 				Sources: []string{"source_src2"},
 				Edges: map[string][]any{
 					"source_src2": {
@@ -5083,7 +5083,7 @@ func TestPlanTopo(t *testing.T) {
 		{
 			name: "testSharedConnSplit",
 			sql:  `SELECT * FROM src3`,
-			topo: &api.PrintableTopo{
+			topo: &def.PrintableTopo{
 				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
 					"source_mqtt.localConnection/topic1": {
@@ -5101,7 +5101,7 @@ func TestPlanTopo(t *testing.T) {
 		{
 			name: "testSharedNodeWithSharedConnSplit",
 			sql:  `SELECT * FROM src4`,
-			topo: &api.PrintableTopo{
+			topo: &def.PrintableTopo{
 				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
 					"source_mqtt.localConnection/topic1": {
@@ -5119,7 +5119,7 @@ func TestPlanTopo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			topo, err := PlanSQLWithSourcesAndSinks(api.GetDefaultRule(tt.name, tt.sql), nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)})
+			topo, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil, []*node.SinkNode{node.NewSinkNode("sink_memory_log", "logToMemory", nil)})
 			assert.NoError(t, err)
 			assert.Equal(t, tt.topo, topo.GetTopo())
 		})

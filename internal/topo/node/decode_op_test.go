@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -37,7 +37,7 @@ func TestJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp("test", "streamName", "test1", &api.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil)
+			op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil)
 			assert.NoError(t, err)
 			out := make(chan any, 100)
 			err = op.AddOutput(out, "test")
@@ -88,7 +88,7 @@ func TestJSON(t *testing.T) {
 // Concurrency 10 - BenchmarkThrougput-16           1000000000               0.1553 ns/op
 // This is useful when a node is much slower
 func BenchmarkThrougput(b *testing.B) {
-	op, err := NewDecodeOp("test", "streamName", "test1", &api.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil)
+	op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil)
 	assert.NoError(b, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
@@ -125,7 +125,7 @@ func TestJSONWithSchema(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp("test", "streamName", "test1", &api.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
+			op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bigint",
 				},
@@ -219,7 +219,7 @@ func TestJSONWithSchema(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	_, err := NewDecodeOp("test", "streamName", "test1", &api.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil)
+	_, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil)
 	assert.Error(t, err)
 	assert.Equal(t, "cannot get converter from format cann, schemaId : format type cann not supported", err.Error())
 }

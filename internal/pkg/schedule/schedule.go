@@ -20,13 +20,13 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 const layout = "2006-01-02 15:04:05"
 
-func IsInScheduleRanges(now time.Time, timeRanges []api.DatetimeRange) (bool, error) {
+func IsInScheduleRanges(now time.Time, timeRanges []def.DatetimeRange) (bool, error) {
 	if len(timeRanges) < 1 {
 		return true, nil
 	}
@@ -90,7 +90,7 @@ func isInTimeRange(now time.Time, start string, end string) (bool, error) {
 	return false, nil
 }
 
-func IsAfterTimeRanges(now time.Time, ranges []api.DatetimeRange) bool {
+func IsAfterTimeRanges(now time.Time, ranges []def.DatetimeRange) bool {
 	if len(ranges) < 1 {
 		return false
 	}
@@ -145,7 +145,7 @@ func IsInRunningSchedule(cronExpr string, now time.Time, d time.Duration) (bool,
 	return false, 0, nil
 }
 
-func ValidateRanges(ranges []api.DatetimeRange) error {
+func ValidateRanges(ranges []def.DatetimeRange) error {
 	if len(ranges) < 1 {
 		return nil
 	}
@@ -157,7 +157,7 @@ func ValidateRanges(ranges []api.DatetimeRange) error {
 	return nil
 }
 
-func validateRange(r api.DatetimeRange) error {
+func validateRange(r def.DatetimeRange) error {
 	if r.BeginTimestamp > 0 && r.EndTimestamp > 0 {
 		s, err := cast.InterfaceToTime(r.BeginTimestamp, "")
 		if err != nil {

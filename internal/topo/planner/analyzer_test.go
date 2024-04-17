@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -188,7 +188,7 @@ func TestCheckTopoSort(t *testing.T) {
 	sql := "select latest(a) as a from src1"
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	require.NoError(t, err)
-	_, err = createLogicalPlan(stmt, &api.RuleOption{
+	_, err = createLogicalPlan(stmt, &def.RuleOption{
 		IsEventTime:        false,
 		LateTol:            0,
 		Concurrency:        0,
@@ -251,7 +251,7 @@ func Test_validation(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		_, err = createLogicalPlan(stmt, &api.RuleOption{
+		_, err = createLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,
@@ -307,7 +307,7 @@ func Test_validationSchemaless(t *testing.T) {
 			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
 			continue
 		}
-		_, err = createLogicalPlan(stmt, &api.RuleOption{
+		_, err = createLogicalPlan(stmt, &def.RuleOption{
 			IsEventTime:        false,
 			LateTol:            0,
 			Concurrency:        0,

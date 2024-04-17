@@ -17,8 +17,8 @@ package topotest
 import (
 	"testing"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 // Full lifecycle test: Run window rule; trigger checkpoints by mock timer; restart rule; make sure the result is right;
@@ -106,15 +106,15 @@ func TestCheckpoint(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength:       100,
-			Qos:                api.AtLeastOnce,
+			Qos:                def.AtLeastOnce,
 			CheckpointInterval: 600,
 			SendError:          true,
 		}, {
 			BufferLength:       100,
-			Qos:                api.ExactlyOnce,
+			Qos:                def.ExactlyOnce,
 			CheckpointInterval: 600,
 			SendError:          true,
 		},

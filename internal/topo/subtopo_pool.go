@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 )
 
@@ -28,7 +29,7 @@ var subTopoPool = sync.Map{}
 func GetSubTopo(name string) (*SrcSubTopo, bool) {
 	ac, ok := subTopoPool.LoadOrStore(name, &SrcSubTopo{
 		name: name,
-		topo: &api.PrintableTopo{
+		topo: &def.PrintableTopo{
 			Sources: make([]string, 0),
 			Edges:   make(map[string][]any),
 		},
@@ -87,14 +88,14 @@ func (s *SrcSubTopo) addEdge(from api.TopNode, to api.TopNode, toType string) {
 	s.topo.Edges[f] = append(e, t)
 }
 
-func (s *SrcSubTopo) MergeSrc(parentTopo *api.PrintableTopo) {
+func (s *SrcSubTopo) MergeSrc(parentTopo *def.PrintableTopo) {
 	parentTopo.Sources = append(parentTopo.Sources, s.topo.Sources...)
 	for k, v := range s.topo.Edges {
 		parentTopo.Edges[k] = v
 	}
 }
 
-func (s *SrcSubTopo) LinkTopo(parentTopo *api.PrintableTopo, parentJointName string) {
+func (s *SrcSubTopo) LinkTopo(parentTopo *def.PrintableTopo, parentJointName string) {
 	if _, ok := s.tail.(node.DataSourceNode); ok {
 		parentTopo.Edges[fmt.Sprintf("source_%s", s.tail.(api.TopNode).GetName())] = []any{fmt.Sprintf("op_%s", parentJointName)}
 	} else {

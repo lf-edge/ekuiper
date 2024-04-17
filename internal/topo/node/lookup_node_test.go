@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
@@ -319,7 +320,7 @@ func TestLookup(t *testing.T) {
 	l, _ := NewLookupNode("mock", []string{}, []string{"a"}, ast.INNER_JOIN, []ast.Expr{&ast.FieldRef{
 		StreamName: "",
 		Name:       "a",
-	}}, options, &api.RuleOption{
+	}}, options, &def.RuleOption{
 		IsEventTime:        false,
 		LateTol:            0,
 		Concurrency:        0,
@@ -372,7 +373,7 @@ func TestCachedLookup(t *testing.T) {
 	l, _ := NewLookupNode("mock", []string{"fixed"}, []string{"a"}, ast.INNER_JOIN, []ast.Expr{&ast.FieldRef{
 		StreamName: "",
 		Name:       "a",
-	}}, options, &api.RuleOption{
+	}}, options, &def.RuleOption{
 		IsEventTime:        false,
 		LateTol:            0,
 		Concurrency:        0,

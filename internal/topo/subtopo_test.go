@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -54,7 +55,7 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, 1, len(srcNode.outputs))
 	var tch chan<- any = opNode.ch
 	assert.Equal(t, tch, srcNode.outputs[0])
-	ptopo := &api.PrintableTopo{
+	ptopo := &def.PrintableTopo{
 		Sources: []string{"source_shared"},
 		Edges: map[string][]any{
 			"source_shared": {"op_shared_op1"},
@@ -167,7 +168,7 @@ func TestSubtopoRunError(t *testing.T) {
 }
 
 func TestSubtopoPrint(t *testing.T) {
-	tt := &api.PrintableTopo{
+	tt := &def.PrintableTopo{
 		Sources: []string{"source_shared"},
 		Edges: map[string][]any{
 			"source_shared": {"op_shared_op1"},
@@ -176,17 +177,17 @@ func TestSubtopoPrint(t *testing.T) {
 	subTopo, _ := GetSubTopo("shared")
 	subTopo.topo = tt
 	subTopo.tail = &mockOp{name: "op1", ch: make(chan any)}
-	ptopo := &api.PrintableTopo{
+	ptopo := &def.PrintableTopo{
 		Sources: []string{"mqtt_src1"},
 		Edges:   map[string][]any{},
 	}
 	subTopo.MergeSrc(ptopo)
-	assert.Equal(t, &api.PrintableTopo{
+	assert.Equal(t, &def.PrintableTopo{
 		Sources: []string{"mqtt_src1", "source_shared"},
 		Edges:   map[string][]any{"source_shared": {"op_shared_op1"}},
 	}, ptopo)
 	subTopo.LinkTopo(ptopo, "project")
-	assert.Equal(t, &api.PrintableTopo{
+	assert.Equal(t, &def.PrintableTopo{
 		Sources: []string{"mqtt_src1", "source_shared"},
 		Edges: map[string][]any{
 			"op_shared_op1": {"op_project"},
@@ -223,7 +224,7 @@ func (m *mockSrc) GetStreamContext() api.StreamContext {
 	panic("implement me")
 }
 
-func (m *mockSrc) SetQos(qos api.Qos) {
+func (m *mockSrc) SetQos(qos def.Qos) {
 	// TODO implement me
 	panic("implement me")
 }
@@ -307,7 +308,7 @@ func (m *mockOp) AddInputCount() {
 	m.inputC++
 }
 
-func (m *mockOp) SetQos(qos api.Qos) {
+func (m *mockOp) SetQos(qos def.Qos) {
 	// TODO implement me
 	panic("implement me")
 }

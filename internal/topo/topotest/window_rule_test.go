@@ -17,7 +17,7 @@ package topotest
 import (
 	"testing"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 func TestWindow(t *testing.T) {
@@ -236,7 +236,7 @@ func TestWindow(t *testing.T) {
 				"op_4_join_0_records_in_total":   int64(10),
 				"op_4_join_0_records_out_total":  int64(8),
 			},
-			T: &api.PrintableTopo{
+			T: &def.PrintableTopo{
 				Sources: []string{"source_demo", "source_demo1"},
 				Edges: map[string][]interface{}{
 					"source_demo":  {"op_3_window"},
@@ -702,7 +702,7 @@ func TestWindow(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -710,13 +710,13 @@ func TestWindow(t *testing.T) {
 		{
 			BufferLength:       100,
 			SendError:          true,
-			Qos:                api.AtLeastOnce,
+			Qos:                def.AtLeastOnce,
 			CheckpointInterval: 5000,
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
-			Qos:                api.ExactlyOnce,
+			Qos:                def.ExactlyOnce,
 			CheckpointInterval: 5000,
 		},
 	}
@@ -1414,7 +1414,7 @@ func TestEventWindow(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength: 100,
 			SendError:    true,
@@ -1424,7 +1424,7 @@ func TestEventWindow(t *testing.T) {
 		{
 			BufferLength:       100,
 			SendError:          true,
-			Qos:                api.AtLeastOnce,
+			Qos:                def.AtLeastOnce,
 			CheckpointInterval: 5000,
 			IsEventTime:        true,
 			LateTol:            1000,
@@ -1432,7 +1432,7 @@ func TestEventWindow(t *testing.T) {
 		{
 			BufferLength:       100,
 			SendError:          true,
-			Qos:                api.ExactlyOnce,
+			Qos:                def.ExactlyOnce,
 			CheckpointInterval: 5000,
 			IsEventTime:        true,
 			LateTol:            1000,
@@ -1659,7 +1659,7 @@ func TestWindowError(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, 0, &api.RuleOption{
+	DoRuleTest(t, tests, 0, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -1686,11 +1686,11 @@ func TestEventSlidingWindow(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	options := []*api.RuleOption{
+	options := []*def.RuleOption{
 		{
 			BufferLength:       100,
 			SendError:          true,
-			Qos:                api.AtLeastOnce,
+			Qos:                def.AtLeastOnce,
 			CheckpointInterval: 5000,
 			IsEventTime:        true,
 			LateTol:            1000,
@@ -1698,7 +1698,7 @@ func TestEventSlidingWindow(t *testing.T) {
 		{
 			BufferLength:       100,
 			SendError:          true,
-			Qos:                api.ExactlyOnce,
+			Qos:                def.ExactlyOnce,
 			CheckpointInterval: 5000,
 			IsEventTime:        true,
 			LateTol:            1000,

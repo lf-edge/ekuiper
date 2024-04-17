@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -51,7 +51,7 @@ func NewRuleProcessor() *RuleProcessor {
 	return processor
 }
 
-func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*api.Rule, error) {
+func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*def.Rule, error) {
 	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (p *RuleProcessor) ExecCreate(name, ruleJson string) error {
 	return nil
 }
 
-func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
+func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*def.Rule, error) {
 	rule, err := p.GetRuleByJson(name, ruleJson)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (p *RuleProcessor) ExecUpdate(name, ruleJson string) (*api.Rule, error) {
 	return rule, nil
 }
 
-func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (*api.Rule, error) {
+func (p *RuleProcessor) ExecReplaceRuleState(name string, triggered bool) (*def.Rule, error) {
 	rule, err := p.GetRuleById(name)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (p *RuleProcessor) GetRuleJson(id string) (string, error) {
 	return s1, nil
 }
 
-func (p *RuleProcessor) GetRuleById(id string) (*api.Rule, error) {
+func (p *RuleProcessor) GetRuleById(id string) (*def.Rule, error) {
 	var s1 string
 	f, _ := p.db.Get(id, &s1)
 	if !f {
@@ -133,10 +133,10 @@ func (p *RuleProcessor) GetRuleById(id string) (*api.Rule, error) {
 }
 
 // GetRuleByJsonValidated called when the json is getting from trusted source like db
-func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*api.Rule, error) {
+func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*def.Rule, error) {
 	opt := conf.Config.Rule
 	// set default rule options
-	rule := &api.Rule{
+	rule := &def.Rule{
 		Triggered: true,
 		Options:   clone(opt),
 	}
@@ -159,7 +159,7 @@ func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*api.Rule, erro
 	return rule, nil
 }
 
-func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*api.Rule, error) {
+func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 	rule, err := p.GetRuleByJsonValidated(ruleJson)
 	if err != nil {
 		return rule, err
@@ -215,8 +215,8 @@ func validateRuleID(id string) error {
 	return nil
 }
 
-func clone(opt api.RuleOption) *api.RuleOption {
-	return &api.RuleOption{
+func clone(opt def.RuleOption) *def.RuleOption {
+	return &def.RuleOption{
 		IsEventTime:        opt.IsEventTime,
 		LateTol:            opt.LateTol,
 		Concurrency:        opt.Concurrency,
@@ -225,7 +225,7 @@ func clone(opt api.RuleOption) *api.RuleOption {
 		SendError:          opt.SendError,
 		Qos:                opt.Qos,
 		CheckpointInterval: opt.CheckpointInterval,
-		Restart: &api.RestartStrategy{
+		Restart: &def.RestartStrategy{
 			Attempts:     opt.Restart.Attempts,
 			Delay:        opt.Restart.Delay,
 			Multiplier:   opt.Restart.Multiplier,

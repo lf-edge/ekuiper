@@ -22,8 +22,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
@@ -50,7 +50,7 @@ func TestState(t *testing.T) {
 		}
 	)
 	// initialization
-	cStore, err := state.CreateStore(ruleId, api.AtLeastOnce)
+	cStore, err := state.CreateStore(ruleId, def.AtLeastOnce)
 	if err != nil {
 		t.Errorf("Get store for rule %s error: %s", ruleId, err)
 		return

@@ -24,8 +24,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
@@ -49,7 +49,7 @@ type RuleTest struct {
 	Sql  string
 	R    interface{}            // The result
 	M    map[string]interface{} // final metrics
-	T    *api.PrintableTopo     // printable topo, an optional field
+	T    *def.PrintableTopo     // printable topo, an optional field
 	W    int                    // wait time for each data sending, in milli
 }
 
@@ -107,11 +107,11 @@ func CommonResultFunc(result [][]byte) interface{} {
 	return maps
 }
 
-func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, wait int) {
+func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, wait int) {
 	doRuleTestBySinkProps(t, tests, j, opt, wait, nil, CommonResultFunc)
 }
 
-func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleOption, w int, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
+func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, w int, sinkProps map[string]interface{}, resultFunc func(result [][]byte) interface{}) {
 	for i, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			datas, dataLength, tp, mockSink, errCh := createStream(t, tt, j, opt, sinkProps)
@@ -128,13 +128,13 @@ func doRuleTestBySinkProps(t *testing.T, tests []RuleTest, j int, opt *api.RuleO
 				}
 			}
 			switch opt.Qos {
-			case api.ExactlyOnce:
+			case def.ExactlyOnce:
 				wait *= 10
-			case api.AtLeastOnce:
+			case def.AtLeastOnce:
 				wait *= 3
 			}
 			var retry int
-			if opt.Qos > api.AtMostOnce {
+			if opt.Qos > def.AtMostOnce {
 				for retry = 3; retry > 0; retry-- {
 					if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
 						conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
@@ -226,7 +226,7 @@ func sendData(t *testing.T, dataLength int, metrics map[string]interface{}, data
 	return nil
 }
 
-func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *topo.Topo, *mocknode.MockSink, <-chan error) {
+func createStream(t *testing.T, tt RuleTest, j int, opt *def.RuleOption, sinkProps map[string]interface{}) ([][]*xsql.Tuple, int, *topo.Topo, *mocknode.MockSink, <-chan error) {
 	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
@@ -254,7 +254,7 @@ func createStream(t *testing.T, tt RuleTest, j int, opt *api.RuleOption, sinkPro
 	}
 	mockSink := mocknode.NewMockSink()
 	sink := node.NewSinkNodeWithSink("mockSink", mockSink, sinkProps)
-	tp, err := planner.PlanSQLWithSourcesAndSinks(&api.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, nil, []*node.SinkNode{sink})
+	tp, err := planner.PlanSQLWithSourcesAndSinks(&def.Rule{Id: fmt.Sprintf("%s_%d", tt.Name, j), Sql: tt.Sql, Options: opt}, nil, []*node.SinkNode{sink})
 	if err != nil {
 		t.Error(err)
 		return nil, 0, nil, nil, nil
@@ -402,7 +402,7 @@ type RuleCheckpointTest struct {
 	PauseMetric map[string]interface{} // The metric to check when paused
 }
 
-func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *api.RuleOption) {
+func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *def.RuleOption) {
 	fmt.Printf("The test bucket for option %d size is %d.\n\n", j, len(tests))
 	for i, tt := range tests {
 		datas, dataLength, tp, mockSink, errCh := createStream(t, tt.RuleTest, j, opt, nil)
@@ -461,7 +461,7 @@ func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, j int, opt *
 	}
 }
 
-func CreateRule(name, sql string) (*api.Rule, error) {
+func CreateRule(name, sql string) (*def.Rule, error) {
 	p := processor.NewRuleProcessor()
 	p.ExecDrop(name)
 	return p.ExecCreateWithValidation(name, sql)
