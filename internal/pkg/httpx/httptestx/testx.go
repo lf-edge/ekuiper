@@ -1,14 +1,14 @@
 package httptestx
 
 import (
-	"compress/flate"
-	"compress/gzip"
-	"compress/zlib"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/felixge/httpsnoop"
+	"github.com/klauspost/compress/flate"
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zlib"
 	"github.com/klauspost/compress/zstd"
 	"github.com/lf-edge/ekuiper/internal/compressor"
 )
@@ -95,7 +95,7 @@ func CompressHandler(h http.Handler) http.Handler {
 		case compressor.ZLIB:
 			encWriter, _ = zlib.NewWriterLevel(w, zlib.DefaultCompression)
 		case compressor.ZSTD:
-			encWriter, _ = zstd.NewWriter(w, zstd.WithEncoderLevel(zstd.SpeedDefault))
+			encWriter, _ = zstd.NewWriter(w)
 		default:
 			encWriter, _ = gzip.NewWriterLevel(w, gzip.DefaultCompression)
 		}

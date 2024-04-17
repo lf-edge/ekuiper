@@ -264,7 +264,6 @@ func testRestSinkWithCompression(t *testing.T, compressionAlgorithm string) {
 			// we need create sub router for compression test
 			subr := r.NewRoute().Subrouter()
 			subr.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-
 				bodyBytes, err := io.ReadAll(r.Body)
 				if err != nil {
 					http.Error(w, "read body failed", http.StatusBadRequest)

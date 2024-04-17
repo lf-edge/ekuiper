@@ -3,6 +3,7 @@ run:
   skip-dirs:
     - internal/plugin
     - extensions/functions/tfLite
+    - internal/pkg/httpx/httptestx
   build-tags:
     - edgex
 

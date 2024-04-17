@@ -760,7 +760,6 @@ func testPullWithAuthAndCompression(t *testing.T, compressionAlgorithm string) {
 		},
 		"compressionAlgorithm": compressionAlgorithm,
 	})
-
 	if err != nil {
 		t.Errorf(err.Error())
 		return
