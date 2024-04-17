@@ -123,23 +123,13 @@ func (suite *RestTestSuite) Test_sourcesManageHandler() {
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
-	// create table
-	buf := bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"memory\", KEY=\"id\", KIND=\"lookup\")"}`))
-	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams?kind=lookup", buf)
-	w = httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusCreated, w.Code)
-	var returnVal []byte
-	returnVal, _ = io.ReadAll(w.Result().Body)
-	fmt.Printf("returnVal %s\n", string(returnVal))
-
 	// create stream
-	buf = bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	buf := bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusCreated, w.Code)
-	returnVal, _ = io.ReadAll(w.Result().Body)
+	returnVal, _ := io.ReadAll(w.Result().Body)
 	fmt.Printf("returnVal %s\n", string(returnVal))
 
 	// get stream
@@ -159,39 +149,9 @@ func (suite *RestTestSuite) Test_sourcesManageHandler() {
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 
-	// get table
-	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tables/alertTable", bytes.NewBufferString("any"))
-	w = httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	expect = []byte(`{"Name":"alertTable","Options":{"datasource":"0","type":"memory", "key":"id","kind":"lookup"},"Statement":null,"StreamFields":null,"StreamType":1}`)
-	exp = map[string]interface{}{}
-	_ = json.NewDecoder(bytes.NewBuffer(expect)).Decode(&exp)
-	res = map[string]interface{}{}
-	_ = json.NewDecoder(w.Result().Body).Decode(&res)
-	assert.Equal(suite.T(), exp, res)
-
-	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/tables/alertTable/schema", bytes.NewBufferString("any"))
-	w = httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
-	// put table
-	buf = bytes.NewBuffer([]byte(` {"sql":"CREATE TABLE alertTable() WITH (DATASOURCE=\"0\", TYPE=\"memory\", KEY=\"id\", KIND=\"lookup\")"}`))
-	req, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/tables/alertTable", buf)
-	w = httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
 	// put stream
 	buf = bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"httppull\")"}`))
 	req, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/streams/alert", buf)
-	w = httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	assert.Equal(suite.T(), http.StatusOK, w.Code)
-
-	// drop table
-	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/tables/alertTable", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)

@@ -43,7 +43,7 @@ func init() {
 	modules.RegisterSink("file", func() api.Sink { return file.File() })
 	// modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
-	modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
+	// modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
 	// modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
 }
 

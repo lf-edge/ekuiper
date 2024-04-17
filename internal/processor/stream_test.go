@@ -216,8 +216,6 @@ func TestTableProcessor(t *testing.T) {
 func TestTableList(t *testing.T) {
 	p := NewStreamProcessor()
 	p.ExecStmt(`CREATE TABLE tt1 () WITH (DATASOURCE="users", FORMAT="JSON", KIND="scan")`)
-	p.ExecStmt(`CREATE TABLE tt2 () WITH (DATASOURCE="users", TYPE="memory", FORMAT="JSON", KEY="id", KIND="lookup")`)
-	p.ExecStmt(`CREATE TABLE tt3 () WITH (DATASOURCE="users", TYPE="memory", FORMAT="JSON", KEY="id", KIND="lookup")`)
 	p.ExecStmt(`CREATE TABLE tt4 () WITH (DATASOURCE="users", FORMAT="JSON")`)
 	defer func() {
 		p.ExecStmt(`DROP TABLE tt1`)
@@ -230,7 +228,7 @@ func TestTableList(t *testing.T) {
 		t.Errorf("Show lookup table fails: %s", err)
 		return
 	}
-	le := []string{"tt2", "tt3"}
+	le := []string{}
 	if !reflect.DeepEqual(le, la) {
 		t.Errorf("Show lookup table mismatch:\nexp=%s\ngot=%s", le, la)
 		return
@@ -257,7 +255,6 @@ func TestAll(t *testing.T) {
 		},
 		"tables": {
 			"tt1": `CREATE TABLE tt1 () WITH (DATASOURCE="users", FORMAT="JSON", KIND="scan")`,
-			"tt3": `CREATE TABLE tt3 () WITH (DATASOURCE="users", TYPE="memory", FORMAT="JSON", KEY="id", KIND="lookup")`,
 		},
 	}
 	p := NewStreamProcessor()

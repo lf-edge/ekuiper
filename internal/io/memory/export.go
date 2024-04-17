@@ -21,7 +21,3 @@ func GetSink() *sink {
 func GetSource() *source {
 	return &source{}
 }
-
-func GetLookupSource() *lookupsource {
-	return &lookupsource{}
-}
