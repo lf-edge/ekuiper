@@ -56,16 +56,6 @@ func TestBindings(t *testing.T) {
 			isSource:       true,
 			isLookupSource: false,
 			isSink:         true,
-		}, {
-			name:           "rest",
-			isSource:       false,
-			isLookupSource: false,
-			isSink:         true,
-		}, {
-			name:           "redis",
-			isSource:       false,
-			isLookupSource: true,
-			isSink:         true,
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))

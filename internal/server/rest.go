@@ -38,7 +38,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
-	"github.com/lf-edge/ekuiper/v2/internal/trial"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -168,9 +167,6 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/reset_state", ruleStateHandler).Methods(http.MethodPut)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
-	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
-	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
-	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/ruleset/export", exportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruleset/import", importHandler).Methods(http.MethodPost)
 	r.HandleFunc("/configs", configurationUpdateHandler).Methods(http.MethodPatch)
@@ -179,7 +175,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
-	r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
+	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -804,45 +800,4 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Add("Content-Disposition", "Attachment")
 	http.ServeContent(w, r, name, time.Now(), exported)
-}
-
-func testRuleHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		handleError(w, err, "Invalid body", logger)
-		return
-	}
-	id, err := trial.TrialManager.CreateRule(string(body))
-	if err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
-	result := map[string]any{
-		"id":   id,
-		"port": conf.Config.Source.HttpServerPort,
-	}
-	jsonResponse(result, w, logger)
-}
-
-func testRuleStartHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	vars := mux.Vars(r)
-	id := vars["name"]
-	err := trial.TrialManager.StartRule(id)
-	if err != nil {
-		handleError(w, err, "start rule error", logger)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Test rule %s was started", id)
-}
-
-func testRuleStopHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	vars := mux.Vars(r)
-	id := vars["name"]
-	trial.TrialManager.StopRule(id)
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Test rule %s was stopped", id)
 }

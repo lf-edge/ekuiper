@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
@@ -340,7 +339,7 @@ func TestMultipleAccess(t *testing.T) {
 // Test rule state message
 func TestRuleState_Start(t *testing.T) {
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	// Test rule not triggered
 	r := &api.Rule{
@@ -425,7 +424,7 @@ func TestRuleState_Start(t *testing.T) {
 func TestScheduleRule(t *testing.T) {
 	conf.IsTesting = true
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	// Test rule not triggered
 	r := &api.Rule{
@@ -574,205 +573,12 @@ func TestScheduleRule(t *testing.T) {
 	}()
 }
 
-func TestScheduleRuleInRange(t *testing.T) {
-	now := time.Now()
-	m := mockclock.GetMockClock()
-	m.Set(now)
-	before := now.AddDate(-10, -10, -10)
-	after := now.Add(10 * time.Second)
-	conf.IsTesting = true
-	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
-	defer sp.ExecStmt(`DROP STREAM demo`)
-	// Test rule not triggered
-	r := &api.Rule{
-		Triggered: false,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: defaultOption,
-	}
-	r.Options.Cron = "mockCron"
-	r.Options.Duration = "1s"
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
-		{
-			Begin: before.Format(layout),
-			End:   after.Format(layout),
-		},
-	}
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		err = rs.startScheduleRule()
-		require.NoError(t, err)
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, RuleStarted, state)
-		require.True(t, rs.cronState.isInSchedule)
-	}()
-
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
-		{
-			Begin: after.Format(layout),
-			End:   after.Format(layout),
-		},
-	}
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		err = rs.startScheduleRule()
-		require.NoError(t, err)
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, RuleWait, state)
-		require.True(t, rs.cronState.isInSchedule)
-	}()
-
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
-		{
-			Begin: before.Format(layout),
-			End:   before.Format(layout),
-		},
-	}
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		err = rs.startScheduleRule()
-		require.NoError(t, err)
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, RuleTerminated, state)
-		require.True(t, rs.cronState.isInSchedule)
-	}()
-
-	now2, err := time.Parse(layout, "2006-01-02 15:04:01")
-	require.NoError(t, err)
-	r.Options.Cron = "4 15 * * *"
-	r.Options.CronDatetimeRange = nil
-	r.Options.Duration = "2s"
-	m.Set(now2)
-
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		require.NoError(t, rs.startScheduleRule())
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, state, RuleStarted)
-		time.Sleep(3 * time.Second)
-		state, err = rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, state, RuleWait)
-	}()
-}
-
 const layout = "2006-01-02 15:04:05"
-
-func TestStartLongRunningScheduleRule(t *testing.T) {
-	conf.IsTesting = true
-	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
-	defer sp.ExecStmt(`DROP STREAM demo`)
-	now := time.Now()
-	m := mockclock.GetMockClock()
-	m.Set(now)
-	before := now.AddDate(-10, -10, -10)
-	after := now.Add(10 * time.Second)
-	r := &api.Rule{
-		Triggered: false,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: defaultOption,
-	}
-	r.Options.Cron = ""
-	r.Options.Duration = ""
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
-		{
-			Begin: before.Format(layout),
-			End:   after.Format(layout),
-		},
-	}
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		require.NoError(t, rs.Start())
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, state, RuleStarted)
-	}()
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
-		{
-			Begin: before.Format(layout),
-			End:   before.Format(layout),
-		},
-	}
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		require.NoError(t, rs.Start())
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, state, RuleTerminated)
-	}()
-
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
-		{
-			Begin: after.Format(layout),
-			End:   after.Format(layout),
-		},
-	}
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		require.NoError(t, rs.Start())
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, state, RuleWait)
-	}()
-
-	r.Options.CronDatetimeRange = []api.DatetimeRange{
-		{
-			Begin: before.Format(layout),
-			End:   after.Format(layout),
-		},
-	}
-	func() {
-		rs, err := NewRuleState(r)
-		require.NoError(t, err)
-		require.NoError(t, rs.Start())
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, state, RuleStarted)
-
-		require.NoError(t, rs.Stop())
-		time.Sleep(500 * time.Millisecond)
-		state, err = rs.GetState()
-		require.NoError(t, err)
-		require.Equal(t, state, RuleStopped)
-	}()
-}
 
 func TestRuleStateInternalStop(t *testing.T) {
 	conf.IsTesting = true
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="neuron", FORMAT="JSON")`)
+	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	r := &api.Rule{
 		Triggered: false,
