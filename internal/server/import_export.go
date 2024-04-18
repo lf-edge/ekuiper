@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,8 +36,8 @@ import (
 )
 
 type ConfManager interface {
-	Import(map[string]string) map[string]string
-	PartialImport(map[string]string) map[string]string
+	Import(context.Context, map[string]string) map[string]string
+	PartialImport(context.Context, map[string]string) map[string]string
 	Export() map[string]string
 	Status() map[string]string
 	Reset()
@@ -147,7 +148,7 @@ type ImportConfigurationStatus struct {
 	ConfigResponse Configuration
 }
 
-func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
+func configurationImport(ctx context.Context, data []byte, reboot bool) ImportConfigurationStatus {
 	conf := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
@@ -204,14 +205,14 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 
 	if reboot {
 		if managers["plugin"] != nil {
-			errMap := managers["plugin"].Import(conf.NativePlugins)
+			errMap := managers["plugin"].Import(ctx, conf.NativePlugins)
 			if len(errMap) > 0 {
 				importStatus.ErrorMsg = fmt.Errorf("pluginImport NativePlugins import error %v", errMap).Error()
 				return importStatus
 			}
 		}
 		if managers["schema"] != nil {
-			errMap := managers["schema"].Import(conf.Schema)
+			errMap := managers["schema"].Import(ctx, conf.Schema)
 			if len(errMap) > 0 {
 				importStatus.ErrorMsg = fmt.Errorf("schemaImport Schema import error %v", errMap).Error()
 				return importStatus
@@ -219,13 +220,13 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		}
 	}
 	if managers["portable"] != nil {
-		configResponse.PortablePlugins = managers["portable"].Import(conf.PortablePlugins)
+		configResponse.PortablePlugins = managers["portable"].Import(ctx, conf.PortablePlugins)
 	}
 	if managers["service"] != nil {
-		configResponse.Service = managers["service"].Import(conf.Service)
+		configResponse.Service = managers["service"].Import(ctx, conf.Service)
 	}
 	if managers["script"] != nil {
-		configResponse.Scripts = managers["script"].Import(conf.Scripts)
+		configResponse.Scripts = managers["script"].Import(ctx, conf.Scripts)
 	}
 
 	yamlCfgSet := meta.YamlConfigurationSet{
@@ -277,7 +278,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 	return importStatus
 }
 
-func configurationPartialImport(data []byte) ImportConfigurationStatus {
+func configurationPartialImport(ctx context.Context, data []byte) ImportConfigurationStatus {
 	conf := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
@@ -341,19 +342,19 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 
 	configResponse.Uploads = uploadsImport(conf.Uploads)
 	if managers["plugin"] != nil {
-		configResponse.NativePlugins = managers["plugin"].PartialImport(conf.NativePlugins)
+		configResponse.NativePlugins = managers["plugin"].PartialImport(ctx, conf.NativePlugins)
 	}
 	if managers["schema"] != nil {
-		configResponse.Schema = managers["schema"].PartialImport(conf.Schema)
+		configResponse.Schema = managers["schema"].PartialImport(ctx, conf.Schema)
 	}
 	if managers["portable"] != nil {
-		configResponse.PortablePlugins = managers["portable"].PartialImport(conf.PortablePlugins)
+		configResponse.PortablePlugins = managers["portable"].PartialImport(ctx, conf.PortablePlugins)
 	}
 	if managers["service"] != nil {
-		configResponse.Service = managers["service"].PartialImport(conf.Service)
+		configResponse.Service = managers["service"].PartialImport(ctx, conf.Service)
 	}
 	if managers["script"] != nil {
-		configResponse.Scripts = managers["script"].PartialImport(conf.Scripts)
+		configResponse.Scripts = managers["script"].PartialImport(ctx, conf.Scripts)
 	}
 
 	configResponse.SourceConfig = confRsp.Sources
@@ -422,7 +423,7 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if !partial {
 		configurationReset()
-		result := configurationImport(content, stop)
+		result := configurationImport(context.Background(), content, stop)
 		if result.ErrorMsg != "" {
 			w.WriteHeader(http.StatusBadRequest)
 			jsonResponse(result, w, logger)
@@ -438,7 +439,7 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 			}()
 		}
 	} else {
-		result := configurationPartialImport(content)
+		result := configurationPartialImport(context.Background(), content)
 		if result.ErrorMsg != "" {
 			w.WriteHeader(http.StatusBadRequest)
 			jsonResponse(result, w, logger)

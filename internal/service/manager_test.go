@@ -29,6 +29,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 )
 
 var m *Manager
@@ -501,7 +502,7 @@ func TestManage(t *testing.T) {
 		"dynamic":     `{"name":"dynamic","file":"` + url.String() + `"}`,
 		"wrongPath":   `{"name":"dynamic","file":"wrongpath"}`,
 	}
-	m.ImportServices(importedService)
+	m.ImportServices(context.Background(), importedService)
 
 	allServicesStatus = m.GetAllServicesStatus()
 	if len(allServicesStatus) != 2 {

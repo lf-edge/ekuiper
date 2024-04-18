@@ -17,6 +17,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -124,12 +125,12 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 
 type portableExporter struct{}
 
-func (e portableExporter) Import(plugins map[string]string) map[string]string {
-	return portableManager.PluginImport(plugins)
+func (e portableExporter) Import(ctx context.Context, plugins map[string]string) map[string]string {
+	return portableManager.PluginImport(ctx, plugins)
 }
 
-func (e portableExporter) PartialImport(plugins map[string]string) map[string]string {
-	return portableManager.PluginPartialImport(plugins)
+func (e portableExporter) PartialImport(ctx context.Context, plugins map[string]string) map[string]string {
+	return portableManager.PluginPartialImport(ctx, plugins)
 }
 
 func (e portableExporter) Export() map[string]string {

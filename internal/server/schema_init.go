@@ -17,6 +17,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -134,12 +135,12 @@ func schemaHandler(w http.ResponseWriter, r *http.Request) {
 
 type schemaExporter struct{}
 
-func (e schemaExporter) Import(s map[string]string) map[string]string {
-	return schema.ImportSchema(s)
+func (e schemaExporter) Import(ctx context.Context, s map[string]string) map[string]string {
+	return schema.ImportSchema(ctx, s)
 }
 
-func (e schemaExporter) PartialImport(s map[string]string) map[string]string {
-	return schema.SchemaPartialImport(s)
+func (e schemaExporter) PartialImport(ctx context.Context, s map[string]string) map[string]string {
+	return schema.SchemaPartialImport(ctx, s)
 }
 
 func (e schemaExporter) Export() map[string]string {

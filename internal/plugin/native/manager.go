@@ -19,6 +19,7 @@ package native
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -854,12 +855,17 @@ func (rr *Manager) GetAllPluginsStatus() map[string]string {
 const BOOT_INSTALL = "$boot_install"
 
 // PluginImport save the plugin install information and wait for restart
-func (rr *Manager) PluginImport(plugins map[string]string) map[string]string {
+func (rr *Manager) PluginImport(ctx context.Context, plugins map[string]string) map[string]string {
 	errMap := map[string]string{}
 	if len(plugins) == 0 {
 		return nil
 	}
 	for k, v := range plugins {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := rr.plgInstallDb.Set(k, v)
 		if err != nil {
 			errMap[k] = err.Error()
@@ -876,9 +882,14 @@ func (rr *Manager) PluginImport(plugins map[string]string) map[string]string {
 // PluginPartialImport compare the plugin to be installed and the one in database
 // if not exist in database, install;
 // if exist, ignore
-func (rr *Manager) PluginPartialImport(plugins map[string]string) map[string]string {
+func (rr *Manager) PluginPartialImport(ctx context.Context, plugins map[string]string) map[string]string {
 	errMap := map[string]string{}
 	for k, v := range plugins {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		plugInScript := ""
 		found, _ := rr.plgInstallDb.Get(k, &plugInScript)
 		if !found {
