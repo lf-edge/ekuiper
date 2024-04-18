@@ -31,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 var (
@@ -347,6 +348,9 @@ func (m *Manager) List() ([]string, error) {
 
 func (m *Manager) Create(r *ServiceCreationRequest) error {
 	name, uri := r.Name, r.File
+	if err := validate.ValidateID(r.Name); err != nil {
+		return err
+	}
 	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
 		return fmt.Errorf("service %s exist", name)
 	}
