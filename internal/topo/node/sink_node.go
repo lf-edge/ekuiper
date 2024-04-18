@@ -30,8 +30,10 @@ import (
 // This node is the skeleton. It will refer to a sink instance to do the real work.
 type SinkNode struct {
 	*defaultSinkNode
-	sink      api.Sink
-	doCollect func(ctx api.StreamContext, sink api.Sink, data any) error
+	sink       api.Sink
+	eoflimit   int
+	currentEof int
+	doCollect  func(ctx api.StreamContext, sink api.Sink, data any) error
 }
 
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
@@ -42,6 +44,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 		defer s.sink.Close(ctx)
+		s.currentEof = 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -49,13 +52,14 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			case d := <-s.input:
 				data, processed := s.ingest(ctx, d)
 				if processed {
-					return
+					break
 				}
 
 				s.statManager.IncTotalRecordsIn()
 				s.statManager.ProcessTimeStart()
 				err = s.doCollect(ctx, s.sink, data)
 				if err != nil {
+					ctx.GetLogger().Error(err)
 					s.statManager.IncTotalExceptions(err.Error())
 				} else {
 					s.statManager.IncTotalRecordsOut()
@@ -68,7 +72,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
-	ctx.GetLogger().Debugf("receive %v", item)
+	ctx.GetLogger().Debugf("%s_%d receive %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	item, processed := s.preprocess(ctx, item)
 	if processed {
 		return item, processed
@@ -83,19 +87,24 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 	case *xsql.WatermarkTuple:
 		return nil, true
 	case xsql.EOFTuple:
-		infra.DrainError(ctx, errors.New("done"), s.ctrlCh)
+		s.currentEof++
+		if s.eoflimit == s.currentEof {
+			infra.DrainError(ctx, errors.New("done"), s.ctrlCh)
+		}
 		return nil, true
 	}
+	ctx.GetLogger().Debugf("%s_%d receive data %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	return item, false
 }
 
 // NewBytesSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollector, rOpt *def.RuleOption) (*SinkNode, error) {
+func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollector, rOpt *def.RuleOption, eoflimit int) (*SinkNode, error) {
 	ctx.GetLogger().Infof("create bytes sink node %s", name)
 	return &SinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		sink:            sink,
 		doCollect:       bytesCollect,
+		eoflimit:        eoflimit,
 	}, nil
 }
 
@@ -104,6 +113,8 @@ func bytesCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 	case []byte:
 		ctx.GetLogger().Debugf("Sink node %s receive data %s", ctx.GetOpId(), data)
 		err = sink.(api.BytesCollector).Collect(ctx, d)
+	case error:
+		err = sink.(api.BytesCollector).Collect(ctx, []byte(d.Error()))
 	default:
 		err = fmt.Errorf("expect []byte data type but got %T", d)
 	}
@@ -111,15 +122,17 @@ func bytesCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 }
 
 // NewTupleSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollector, rOpt *def.RuleOption) (*SinkNode, error) {
+func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollector, rOpt *def.RuleOption, eoflimit int) (*SinkNode, error) {
 	ctx.GetLogger().Infof("create message sink node %s", name)
 	return &SinkNode{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		sink:            sink,
 		doCollect:       tupleCollect,
+		eoflimit:        eoflimit,
 	}, nil
 }
 
+// return error that cannot be sent
 func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 	switch d := data.(type) {
 	case api.Tuple:
@@ -135,8 +148,10 @@ func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 			tuples = append(tuples, api.NewDefaultSourceTuple(m, nil, timex.GetNow()))
 		}
 		err = sink.(api.TupleCollector).CollectList(ctx, tuples)
+	case error:
+		err = sink.(api.TupleCollector).Collect(ctx, api.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
 	default:
-		err = fmt.Errorf("expect message data type but got %T", d)
+		err = fmt.Errorf("expect tuple data type but got %T", d)
 	}
 	return err
 }

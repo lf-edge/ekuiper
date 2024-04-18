@@ -40,6 +40,7 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	if err != nil {
 		return nil, err
 	}
+	ctx.GetLogger().Infof("provision source %s with props %+v", name, props)
 	m := &SourceNode{
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,
@@ -67,7 +68,12 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data api.RawTuple) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
-	tuple := &xsql.Tuple{Emitter: m.name, Raw: data.Raw(), Timestamp: data.Timestamp().UnixMilli(), Metadata: data.Meta().ToMap()}
+	var tuple *xsql.Tuple
+	if data.Meta() != nil {
+		tuple = &xsql.Tuple{Emitter: m.name, Raw: data.Raw(), Timestamp: data.Timestamp().UnixMilli(), Metadata: data.Meta().ToMap()}
+	} else {
+		tuple = &xsql.Tuple{Emitter: m.name, Raw: data.Raw(), Timestamp: data.Timestamp().UnixMilli(), Metadata: nil}
+	}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)

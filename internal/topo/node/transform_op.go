@@ -102,7 +102,16 @@ func (t *TransformOp) Worker(logger api.Logger, item any) []any {
 		if err != nil {
 			result = append(result, err)
 		} else {
-			result = append(result, bs)
+			switch bst := bs.(type) {
+			case []map[string]any:
+				mss := make([]api.ReadonlyMessage, 0, len(bst))
+				for _, ms := range bst {
+					mss = append(mss, xsql.Message(ms))
+				}
+				result = append(result, mss)
+			default:
+				result = append(result, bst)
+			}
 		}
 	}
 	return result
@@ -152,33 +161,31 @@ func (t *TransformOp) doTransform(d any) (any, error) {
 	return m, nil
 }
 
-func itemToMap(item interface{}) []xsql.Message {
-	var outs []xsql.Message
+func itemToMap(item interface{}) []map[string]any {
+	var outs []map[string]any
 	switch val := item.(type) {
 	case error:
-		outs = []xsql.Message{
+		outs = []map[string]any{
 			{"error": val.Error()},
 		}
 		break
 	case xsql.Collection: // The order is important here, because some element is both a collection and a row, such as WindowTuples, JoinTuples, etc.
 		maps := val.ToMaps()
-		outs = make([]xsql.Message, len(maps))
+		outs = make([]map[string]any, len(maps))
 		for i, m := range maps {
 			outs[i] = m
 		}
 		break
 	case xsql.Row:
-		outs = []xsql.Message{
+		outs = []map[string]any{
 			val.ToMap(),
 		}
 		break
-	case []xsql.Message: // for test only
+	case []map[string]any: // for test only
 		outs = val
 		break
-	case *xsql.WatermarkTuple:
-		// just ignore
 	default:
-		outs = []xsql.Message{
+		outs = []map[string]any{
 			{"error": fmt.Sprintf("result is not a map slice but found %#v", val)},
 		}
 	}

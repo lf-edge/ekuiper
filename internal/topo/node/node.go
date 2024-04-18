@@ -21,13 +21,11 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
@@ -188,7 +186,7 @@ func (o *defaultSinkNode) preprocess(ctx api.StreamContext, item any) (any, bool
 }
 
 func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bool) {
-	ctx.GetLogger().Debugf("receive %v", item)
+	ctx.GetLogger().Debugf("op %s_%d receive %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	item, processed := o.preprocess(ctx, item)
 	if processed {
 		return item, processed
@@ -204,6 +202,7 @@ func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bo
 		o.Broadcast(d)
 		return nil, true
 	}
+	ctx.GetLogger().Debugf("%s_%d receive data %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	return item, false
 }
 
@@ -228,17 +227,4 @@ func SourcePing(sourceType string, config map[string]interface{}) error {
 		return pingAble.Ping(dataSource, config)
 	}
 	return fmt.Errorf("source %v doesn't support ping connection", sourceType)
-}
-
-func propsToNodeOption(props map[string]any) *def.RuleOption {
-	options := &def.RuleOption{
-		BufferLength: 1024,
-		SendError:    true,
-		Qos:          def.AtLeastOnce,
-	}
-	err := cast.MapToStruct(props, options)
-	if err != nil {
-		conf.Log.Warnf("fail to parse rule option %v from props", err)
-	}
-	return options
 }

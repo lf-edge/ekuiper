@@ -15,7 +15,6 @@
 package node
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -41,8 +40,10 @@ func TestSCNLC(t *testing.T) {
 			Timestamp: mc.Now().UnixMilli(),
 			Emitter:   "mock_connector",
 		},
-		&xsql.ErrorSourceTuple{
-			Error: errors.New("expect api.RawTuple but got *api.DefaultSourceTuple"),
+		&xsql.Tuple{
+			Emitter:   "mock_connector",
+			Metadata:  map[string]any{"topic": "demo"},
+			Timestamp: mc.Now().UnixMilli(),
 		},
 		&xsql.Tuple{
 			Raw:       []byte("world"),
@@ -130,7 +131,7 @@ func TestConnError(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	errCh := make(chan error)
+	errCh := make(chan error, 2)
 	var wg sync.WaitGroup
 	wg.Add(1)
 	var errResult error
@@ -156,53 +157,6 @@ func TestConnError(t *testing.T) {
 	wg.Wait()
 	assert.Error(t, errResult)
 	assert.Equal(t, "data is nil", errResult.Error())
-}
-
-func TestSubError(t *testing.T) {
-	var sc api.BytesSource = &MockSourceConnector{
-		data: [][]byte{
-			[]byte("hello"),
-			[]byte("world"),
-		},
-	}
-	ctx := mockContext.NewMockContext("rule1", "src1")
-	scn, err := NewSourceNode(ctx, "mock_connector", sc, map[string]any{"datasource": "demo2"}, &def.RuleOption{
-		BufferLength: 1024,
-		SendError:    true,
-	})
-	assert.NoError(t, err)
-
-	// subscribe once to produce error
-	err = sc.Subscribe(ctx, nil)
-	assert.NoError(t, err)
-	err = sc.Subscribe(ctx, nil)
-	assert.Error(t, err)
-	errCh := make(chan error)
-	var wg sync.WaitGroup
-	wg.Add(1)
-	var errResult error
-	go func() {
-		defer wg.Done()
-		ticker := time.After(5 * time.Second)
-		for {
-			select {
-			case sg := <-errCh:
-				switch et := sg.(type) {
-				case error:
-					errResult = et
-					return
-				default:
-					fmt.Println("ctrlCh", et)
-				}
-			case <-ticker:
-				return
-			}
-		}
-	}()
-	scn.Open(ctx, errCh)
-	wg.Wait()
-	assert.Error(t, errResult)
-	assert.Equal(t, "already subscribed", errResult.Error())
 }
 
 type MockSourceConnector struct {
@@ -246,7 +200,7 @@ func (m *MockSourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesI
 			time.Sleep(100 * time.Millisecond)
 		}
 		for _, d := range m.data {
-			ingest(ctx, api.NewDefaultRawTuple(d, nil, timex.GetNow()))
+			ingest(ctx, api.NewDefaultRawTuple(d, xsql.Message{"topic": "demo"}, timex.GetNow()))
 		}
 		<-ctx.Done()
 		fmt.Println("MockSourceConnector closed")

@@ -28,7 +28,7 @@ import (
 // SinkPlanner is the planner for sink node. It transforms logical sink plan to multiple physical nodes.
 // It will split the sink plan into multiple sink nodes according to its sink configurations.
 
-func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter) error {
+func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCount int) error {
 	for i, m := range rule.Actions {
 		for name, action := range m {
 			s, _ := io.Sink(name)
@@ -52,12 +52,13 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter) error {
 			if err = s.Provision(tp.GetContext(), props); err != nil {
 				return err
 			}
+			tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, props)
 			var snk node.DataSinkNode
 			switch ss := s.(type) {
 			case api.BytesCollector:
-				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options)
+				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount)
 			case api.TupleCollector:
-				snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, rule.Options)
+				snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount)
 			default:
 				err = fmt.Errorf("sink type %s does not implement any collector", name)
 			}

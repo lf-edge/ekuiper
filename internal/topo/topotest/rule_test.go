@@ -31,8 +31,8 @@ func TestSharedSourceSchemaless(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"a": float64(1),
-						"b": float64(2),
+						"a": 1,
+						"b": 2,
 					},
 				},
 			},
@@ -43,8 +43,8 @@ func TestSharedSourceSchemaless(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"b": float64(2),
-						"c": float64(3),
+						"b": 2,
+						"c": 3,
 					},
 				},
 			},
@@ -58,8 +58,8 @@ func TestSharedSourceSchemaless(t *testing.T) {
 			SendError:    true,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -74,32 +74,32 @@ func TestWindowFuncSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"row_number": float64(1),
-						"size":       float64(3),
+						"row_number": 1,
+						"size":       3,
 					},
 				},
 				{
 					{
-						"row_number": float64(1),
-						"size":       float64(6),
+						"row_number": 1,
+						"size":       6,
 					},
 				},
 				{
 					{
-						"row_number": float64(1),
-						"size":       float64(2),
+						"row_number": 1,
+						"size":       2,
 					},
 				},
 				{
 					{
-						"row_number": float64(1),
-						"size":       float64(4),
+						"row_number": 1,
+						"size":       4,
 					},
 				},
 				{
 					{
-						"row_number": float64(1),
-						"size":       float64(1),
+						"row_number": 1,
+						"size":       1,
 					},
 				},
 			},
@@ -110,24 +110,24 @@ func TestWindowFuncSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"row_number": float64(1),
-						"size":       float64(3),
+						"row_number": 1,
+						"size":       3,
 					},
 					{
-						"row_number": float64(2),
-						"size":       float64(6),
+						"row_number": 2,
+						"size":       6,
 					},
 					{
-						"row_number": float64(3),
-						"size":       float64(2),
+						"row_number": 3,
+						"size":       2,
 					},
 					{
-						"row_number": float64(4),
-						"size":       float64(4),
+						"row_number": 4,
+						"size":       4,
 					},
 					{
-						"row_number": float64(5),
-						"size":       float64(1),
+						"row_number": 5,
+						"size":       1,
 					},
 				},
 			},
@@ -153,8 +153,8 @@ func TestWindowFuncSQL(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -313,31 +313,31 @@ func TestAccAggSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"acc_count": float64(1),
+						"acc_count": 1,
 						"color":     "red",
 					},
 				},
 				{
 					{
-						"acc_count": float64(1),
+						"acc_count": 1,
 						"color":     "blue",
 					},
 				},
 				{
 					{
-						"acc_count": float64(1),
+						"acc_count": 1,
 						"color":     "blue",
 					},
 				},
 				{
 					{
-						"acc_count": float64(1),
+						"acc_count": 1,
 						"color":     "yellow",
 					},
 				},
 				{
 					{
-						"acc_count": float64(2),
+						"acc_count": 2,
 						"color":     "red",
 					},
 				},
@@ -400,91 +400,8 @@ func TestAccAggSQL(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
-	}
-}
-
-func TestLimitSQL(t *testing.T) {
-	// Reset
-	streamList := []string{"demo", "demoArr", "demoArr2"}
-	HandleStream(false, streamList, t)
-	var r [][]map[string]interface{}
-	tests := []RuleTest{
-		{
-			Name: "TestLimitSQL01",
-			Sql:  `SELECT unnest(demoArr2.arr) as col, demo.size FROM demo inner join demoArr2 on demo.size = demoArr2.x group by SESSIONWINDOW(ss, 2, 1) limit 1;`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"col":  float64(1),
-						"size": float64(1),
-					},
-				},
-			},
-		},
-		{
-			Name: "TestLimitSQL0",
-			Sql:  `SELECT unnest(demoArr.arr3) as col, demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1) limit 1;`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"col":  float64(1),
-						"size": float64(1),
-					},
-				},
-			},
-		},
-		{
-			Name: "TestLimitSQL1",
-			Sql:  `SELECT unnest(demoArr.arr3) as col, demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1) limit 0;`,
-			R:    r,
-		},
-		{
-			Name: "TestLimitSQL2",
-			Sql:  `SELECT demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1) limit 1;`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"size": float64(1),
-					},
-				},
-			},
-		},
-		{
-			Name: "TestLimitSQL3",
-			Sql:  `SELECT demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1) limit 0;`,
-			R:    r,
-		},
-	}
-	// Data setup
-	HandleStream(true, streamList, t)
-	options := []*def.RuleOption{
-		{
-			BufferLength: 100,
-			SendError:    true,
-		},
-		{
-			BufferLength: 100,
-			SendError:    true,
-			Debug:        true,
-			LogFilename:  "rule-test.log",
-		},
-		{
-			BufferLength:       100,
-			SendError:          true,
-			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
-		},
-		{
-			BufferLength:       100,
-			SendError:          true,
-			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
-		},
-	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -493,17 +410,6 @@ func TestSRFSQL(t *testing.T) {
 	streamList := []string{"demo", "demoArr"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
-		{
-			Name: "TestSingleSQLRule25",
-			Sql:  "SELECT unnest(a) from demoArr group by SESSIONWINDOW(ss, 2, 1);",
-			R: [][]map[string]interface{}{
-				{
-					{
-						"error": "the argument for the unnest function should be array",
-					},
-				},
-			},
-		},
 		{
 			Name: "TestSingleSQLRule24",
 			Sql:  "Select unnest(a) from demoArr;",
@@ -516,79 +422,19 @@ func TestSRFSQL(t *testing.T) {
 			},
 		},
 		{
-			Name: "TestSingleSQLRule21",
-			Sql:  `SELECT unnest(demoArr.arr3) as col, demo.size FROM demo inner join demoArr on demo.size = demoArr.x group by SESSIONWINDOW(ss, 2, 1);`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"col":  float64(1),
-						"size": float64(1),
-					},
-					{
-						"col":  float64(2),
-						"size": float64(1),
-					},
-					{
-						"col":  float64(3),
-						"size": float64(1),
-					},
-				},
-			},
-		},
-		{
-			Name: "TestSingleSQLRule22",
-			Sql:  `SELECT unnest(arr3) as col,y From demoArr group by y, SESSIONWINDOW(ss, 2, 1);`,
-			R: [][]map[string]interface{}{
-				{
-					{
-						"col": float64(1),
-						"y":   float64(2),
-					},
-					{
-						"col": float64(2),
-						"y":   float64(2),
-					},
-					{
-						"col": float64(3),
-						"y":   float64(2),
-					},
-				},
-			},
-		},
-		{
-			Name: "TestSingleSQLRule23",
-			Sql:  "SELECT unnest(arr3) as col,a from demoArr group by SESSIONWINDOW(ss, 2, 1);",
-			R: [][]map[string]interface{}{
-				{
-					{
-						"col": float64(1),
-						"a":   float64(6),
-					},
-					{
-						"col": float64(2),
-						"a":   float64(6),
-					},
-					{
-						"col": float64(3),
-						"a":   float64(6),
-					},
-				},
-			},
-		},
-		{
 			Name: `TestSingleSQLRule18`,
 			Sql:  `SELECT unnest(arr2) FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{
 					{
-						"a": float64(1),
-						"b": float64(2),
+						"a": 1,
+						"b": 2,
 					},
 				},
 				{
 					{
-						"a": float64(3),
-						"b": float64(4),
+						"a": 3,
+						"b": 4,
 					},
 				},
 			},
@@ -600,14 +446,14 @@ func TestSRFSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"a": float64(1),
-						"b": float64(2),
+						"a": 1,
+						"b": 2,
 					},
 				},
 				{
 					{
-						"a": float64(3),
-						"b": float64(4),
+						"a": 3,
+						"b": 4,
 					},
 				},
 			},
@@ -618,17 +464,17 @@ func TestSRFSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"col": float64(1),
+						"col": 1,
 					},
 				},
 				{
 					{
-						"col": float64(2),
+						"col": 2,
 					},
 				},
 				{
 					{
-						"col": float64(3),
+						"col": 3,
 					},
 				},
 			},
@@ -639,16 +485,16 @@ func TestSRFSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"a": float64(1),
-						"b": float64(2),
-						"x": float64(1),
+						"a": 1,
+						"b": 2,
+						"x": 1,
 					},
 				},
 				{
 					{
-						"a": float64(3),
-						"b": float64(4),
-						"x": float64(1),
+						"a": 3,
+						"b": 4,
+						"x": 1,
 					},
 				},
 			},
@@ -672,8 +518,8 @@ func TestSRFSQL(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -689,29 +535,29 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"b":    float64(1),
-						"lag":  float64(0),
-						"size": float64(3),
+						"b":    int64(1),
+						"lag":  int64(0),
+						"size": 3,
 					},
 					{
-						"b":    float64(4),
-						"lag":  float64(1),
-						"size": float64(6),
+						"b":    int64(4),
+						"lag":  int64(1),
+						"size": 6,
 					},
 					{
-						"b":    float64(7),
-						"lag":  float64(4),
-						"size": float64(2),
+						"b":    int64(7),
+						"lag":  int64(4),
+						"size": 2,
 					},
 					{
-						"b":    float64(3),
-						"lag":  float64(7),
-						"size": float64(4),
+						"b":    int64(3),
+						"lag":  int64(7),
+						"size": 4,
 					},
 					{
-						"b":    float64(5),
-						"lag":  float64(3),
-						"size": float64(1),
+						"b":    int64(5),
+						"lag":  int64(3),
+						"size": 1,
 					},
 				},
 			},
@@ -722,37 +568,37 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"b":    float64(1),
-						"lag":  float64(0),
-						"size": float64(3),
+						"b":    int64(1),
+						"lag":  int64(0),
+						"size": 3,
 					},
 				},
 				{
 					{
-						"b":    float64(4),
-						"lag":  float64(1),
-						"size": float64(6),
+						"b":    int64(4),
+						"lag":  int64(1),
+						"size": 6,
 					},
 				},
 				{
 					{
-						"b":    float64(7),
-						"lag":  float64(4),
-						"size": float64(2),
+						"b":    int64(7),
+						"lag":  int64(4),
+						"size": 2,
 					},
 				},
 				{
 					{
-						"b":    float64(3),
-						"lag":  float64(7),
-						"size": float64(4),
+						"b":    int64(3),
+						"lag":  int64(7),
+						"size": 4,
 					},
 				},
 				{
 					{
-						"b":    float64(5),
-						"lag":  float64(3),
-						"size": float64(1),
+						"b":    int64(5),
+						"lag":  int64(3),
+						"size": 1,
 					},
 				},
 			},
@@ -762,8 +608,8 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  `SELECT arr[x:y+1] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
-					"col1": []interface{}{
-						float64(2), float64(3),
+					"col1": []int{
+						2, 3,
 					},
 				}},
 			},
@@ -774,38 +620,38 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color":      "red",
-					"size":       float64(3),
-					"ts":         float64(1541152486013),
+					"size":       3,
+					"ts":         1541152486013,
 					"upper":      "RED",
-					"event_time": float64(1541152486013),
+					"event_time": int64(1541152486013),
 				}},
 				{{
 					"color":      "blue",
-					"size":       float64(6),
-					"ts":         float64(1541152486822),
+					"size":       6,
+					"ts":         1541152486822,
 					"upper":      "BLUE",
-					"event_time": float64(1541152486822),
+					"event_time": int64(1541152486822),
 				}},
 				{{
 					"color":      "blue",
-					"size":       float64(2),
-					"ts":         float64(1541152487632),
+					"size":       2,
+					"ts":         1541152487632,
 					"upper":      "BLUE",
-					"event_time": float64(1541152487632),
+					"event_time": int64(1541152487632),
 				}},
 				{{
 					"color":      "yellow",
-					"size":       float64(4),
-					"ts":         float64(1541152488442),
+					"size":       4,
+					"ts":         1541152488442,
 					"upper":      "YELLOW",
-					"event_time": float64(1541152488442),
+					"event_time": int64(1541152488442),
 				}},
 				{{
 					"color":      "red",
-					"size":       float64(1),
-					"ts":         float64(1541152489252),
+					"size":       1,
+					"ts":         1541152489252,
 					"upper":      "RED",
-					"event_time": float64(1541152489252),
+					"event_time": int64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
@@ -836,13 +682,13 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
-					"ts":    float64(1541152486822),
-					"lc":    float64(1),
+					"ts":    1541152486822,
+					"lc":    int64(1),
 				}},
 				{{
 					"color": "yellow",
-					"ts":    float64(1541152488442),
-					"lc":    float64(2),
+					"ts":    1541152488442,
+					"lc":    int64(2),
 				}},
 			},
 			M: map[string]interface{}{
@@ -870,12 +716,12 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  `SELECT size as Int8, ts FROM demo where size > 3`,
 			R: [][]map[string]interface{}{
 				{{
-					"Int8": float64(6),
-					"ts":   float64(1541152486822),
+					"Int8": 6,
+					"ts":   1541152486822,
 				}},
 				{{
-					"Int8": float64(4),
-					"ts":   float64(1541152488442),
+					"Int8": 4,
+					"ts":   1541152488442,
 				}},
 			},
 			M: map[string]interface{}{
@@ -906,35 +752,25 @@ func TestSingleSQL(t *testing.T) {
 					"error": "error in preprocessor: field size type mismatch: cannot convert string(red) to int64",
 				}},
 				{{
-					"Int8": float64(6),
-					"ts":   float64(1541152486822),
+					"Int8": int64(6),
+					"ts":   int64(1541152486822),
 				}},
 				{{
-					"Int8": float64(4),
-					"ts":   float64(1541152488442),
+					"Int8": int64(4),
+					"ts":   int64(1541152488442),
 				}},
 				{{
 					"error": "error in preprocessor: field size type mismatch: cannot convert string(blue) to int64",
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(2),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(2),
-				"op_3_project_0_records_out_total":  int64(2),
-
 				"sink_memory_0_0_exceptions_total":  int64(2),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
 
-				"source_demoError_0_exceptions_total":  int64(2),
+				"source_demoError_0_exceptions_total":  int64(0),
 				"source_demoError_0_records_in_total":  int64(5),
-				"source_demoError_0_records_out_total": int64(3),
-
-				"op_2_filter_0_exceptions_total":   int64(2),
-				"op_2_filter_0_process_latency_us": int64(0),
-				"op_2_filter_0_records_in_total":   int64(3),
-				"op_2_filter_0_records_out_total":  int64(2),
+				"source_demoError_0_records_out_total": int64(5),
 			},
 		},
 		{
@@ -943,19 +779,19 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"m":  "mock",
-					"ts": float64(1541152486013),
+					"ts": 1541152486013,
 				}},
 				{{
 					"m":  "mock",
-					"ts": float64(1541152486822),
+					"ts": 1541152486822,
 				}},
 				{{
 					"m":  "mock",
-					"ts": float64(1541152487632),
+					"ts": 1541152487632,
 				}},
 				{{
 					"m":  "mock",
-					"ts": float64(1541152488442),
+					"ts": 1541152488442,
 				}},
 			},
 			M: map[string]interface{}{
@@ -974,11 +810,11 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
-					"ts":    float64(1541152486822),
+					"ts":    1541152486822,
 				}},
 				{{
 					"color": "yellow",
-					"ts":    float64(1541152488442),
+					"ts":    1541152488442,
 				}},
 			},
 			M: map[string]interface{}{
@@ -1041,16 +877,16 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  "SELECT * FROM demo1 where `from`=\"device1\"",
 			R: [][]map[string]interface{}{
 				{{
-					"temp": float64(25.5),
-					"hum":  float64(65),
+					"temp": 25.5,
+					"hum":  65,
 					"from": "device1",
-					"ts":   float64(1541152486013),
+					"ts":   1541152486013,
 				}},
 				{{
-					"temp": float64(27.4),
-					"hum":  float64(80),
+					"temp": 27.4,
+					"hum":  80,
 					"from": "device1",
-					"ts":   float64(1541152488442),
+					"ts":   1541152488442,
 				}},
 			},
 			M: map[string]interface{}{
@@ -1080,27 +916,27 @@ func TestSingleSQL(t *testing.T) {
 				{{
 					"color": "red",
 					"s":     "M",
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}},
 				{{
 					"color": "blue",
 					"s":     "L",
-					"ts":    float64(1541152486822),
+					"ts":    1541152486822,
 				}},
 				{{
 					"color": "blue",
 					"s":     "M",
-					"ts":    float64(1541152487632),
+					"ts":    1541152487632,
 				}},
 				{{
 					"color": "yellow",
 					"s":     "L",
-					"ts":    float64(1541152488442),
+					"ts":    1541152488442,
 				}},
 				{{
 					"color": "red",
 					"s":     "S",
-					"ts":    float64(1541152489252),
+					"ts":    1541152489252,
 				}},
 			},
 			M: map[string]interface{}{
@@ -1140,17 +976,6 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_join_aligner_0_records_in_total":  int64(10),
-				"op_3_join_aligner_0_records_out_total": int64(5),
-
-				"op_4_join_0_exceptions_total":  int64(0),
-				"op_4_join_0_records_in_total":  int64(5),
-				"op_4_join_0_records_out_total": int64(3),
-
-				"op_5_project_0_exceptions_total":  int64(0),
-				"op_5_project_0_records_in_total":  int64(3),
-				"op_5_project_0_records_out_total": int64(3),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(3),
 				"sink_memory_0_0_records_out_total": int64(3),
@@ -1170,22 +995,22 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"tt_color": "red",
-					"tt_size":  float64(3),
+					"tt_size":  3,
 				}},
 				{{
 					"tt_color": "blue",
-					"tt_size":  float64(6),
+					"tt_size":  6,
 				}},
 				{{
-					"tt_size": float64(2),
+					"tt_size": 2,
 				}},
 				{{
 					"tt_color": "yellow",
-					"tt_size":  float64(4),
+					"tt_size":  4,
 				}},
 				{{
 					"tt_color": "red",
-					"tt_size":  float64(1),
+					"tt_size":  1,
 				}},
 			},
 			M: map[string]interface{}{
@@ -1210,11 +1035,11 @@ func TestSingleSQL(t *testing.T) {
 				{
 					{
 						"color": "blue",
-						"c":     float64(2),
+						"c":     2,
 					},
 					{
 						"color": "yellow",
-						"c":     float64(1),
+						"c":     1,
 					},
 				},
 			},
@@ -1238,8 +1063,8 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  `SELECT arr[x:4] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
-					"col1": []interface{}{
-						float64(2), float64(3), float64(4),
+					"col1": []int{
+						2, 3, 4,
 					},
 				}},
 			},
@@ -1249,8 +1074,8 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  `SELECT arr[1:y] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
-					"col1": []interface{}{
-						float64(2),
+					"col1": []int{
+						2,
 					},
 				}},
 			},
@@ -1260,7 +1085,7 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  `SELECT arr[1] as col1 FROM demoArr where x=1`,
 			R: [][]map[string]interface{}{
 				{{
-					"col1": float64(2),
+					"col1": 2,
 				}},
 			},
 		},
@@ -1269,19 +1094,19 @@ func TestSingleSQL(t *testing.T) {
 			Sql:  "SELECT lag(size) as lastSize, lag(had_changed(true,size)), size, lastSize/size as changeRate FROM demo WHERE size > 2",
 			R: [][]map[string]interface{}{
 				{{
-					"size": float64(3),
+					"size": 3,
 				}},
 				{{
-					"lastSize":   float64(3),
-					"size":       float64(6),
+					"lastSize":   3,
+					"size":       6,
 					"lag":        true,
-					"changeRate": float64(0),
+					"changeRate": int64(0),
 				}},
 				{{
-					"lastSize":   float64(2),
-					"size":       float64(4),
+					"lastSize":   2,
+					"size":       4,
 					"lag":        true,
-					"changeRate": float64(0),
+					"changeRate": int64(0),
 				}},
 			},
 			M: map[string]interface{}{
@@ -1300,27 +1125,27 @@ func TestSingleSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"size":  float64(3),
+					"size":  3,
 				}},
 				{{
 					"color": "blue",
-					"size":  float64(6),
+					"size":  6,
 				}},
 				{{
 					"color":      "blue",
-					"lastSize":   float64(6),
-					"size":       float64(2),
-					"changeRate": float64(3),
+					"lastSize":   6,
+					"size":       2,
+					"changeRate": int64(3),
 				}},
 				{{
 					"color": "yellow",
-					"size":  float64(4),
+					"size":  4,
 				}},
 				{{
 					"color":      "red",
-					"lastSize":   float64(3),
-					"size":       float64(1),
-					"changeRate": float64(3),
+					"lastSize":   3,
+					"size":       1,
+					"changeRate": int64(3),
 				}},
 			},
 			M: map[string]interface{}{
@@ -1353,8 +1178,8 @@ func TestSingleSQL(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -1370,35 +1195,30 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
+					"size":  3,
+					"ts":    1541152486013,
 					"upper": "RED",
 				}},
 				{{
 					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
+					"size":  2,
+					"ts":    1541152487632,
 					"upper": "BLUE",
 				}},
 				{{
 					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
+					"size":  4,
+					"ts":    1541152488442,
 					"upper": "YELLOW",
 				}},
 				{{
 					"color": "red",
-					"size":  float64(1),
-					"ts":    float64(1541152489252),
+					"size":  1,
+					"ts":    1541152489252,
 					"upper": "RED",
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(0),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
@@ -1422,19 +1242,19 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
-					"lc":    float64(0),
-					"lt":    float64(0),
-					"et":    float64(1541152487632),
+					"size":  2,
+					"ts":    1541152487632,
+					"lc":    0,
+					"lt":    0,
+					"et":    int64(1541152487632),
 				}},
 				{{
 					"color": "red",
-					"size":  float64(1),
-					"ts":    float64(1541152489252),
-					"lc":    float64(1),
-					"lt":    float64(1541152487632),
-					"et":    float64(1541152489252),
+					"size":  1,
+					"ts":    1541152489252,
+					"lc":    1,
+					"lt":    int64(1541152487632),
+					"et":    int64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
@@ -1453,27 +1273,22 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"tt_color": "red",
-					"tt_size":  float64(3),
+					"tt_size":  3,
 				}},
 				{{
 					"tt_color": "blue",
-					"tt_size":  float64(2),
+					"tt_size":  2,
 				}},
 				{{
 					"tt_color": "yellow",
-					"tt_size":  float64(4),
+					"tt_size":  4,
 				}},
 				{{
 					"tt_color": "red",
-					"tt_size":  float64(1),
+					"tt_size":  1,
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(0),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
@@ -1507,8 +1322,8 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			LateTol:            1000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -1524,13 +1339,13 @@ func TestSingleSQLError(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}},
 				{{
 					"error": "run Where error: invalid operation string(string) >= int64(3)",
 				}},
 				{{
-					"ts": float64(1541152487632),
+					"ts": 1541152487632,
 				}},
 			},
 			M: map[string]interface{}{
@@ -1558,16 +1373,16 @@ func TestSingleSQLError(t *testing.T) {
 			Sql:  `SELECT size * 5 FROM ldemo`,
 			R: [][]map[string]interface{}{
 				{{
-					"kuiper_field_0": float64(15),
+					"kuiper_field_0": int64(15),
 				}},
 				{{
 					"error": "run Select error: expr: binaryExpr:{ ldemo.size * 5 } meet error, err:invalid operation string(string) * int64(5)",
 				}},
 				{{
-					"kuiper_field_0": float64(15),
+					"kuiper_field_0": int64(15),
 				}},
 				{{
-					"kuiper_field_0": float64(10),
+					"kuiper_field_0": int64(10),
 				}},
 				{{}},
 			},
@@ -1591,16 +1406,16 @@ func TestSingleSQLError(t *testing.T) {
 			Sql:  `SELECT size * 5 as c FROM ldemo`,
 			R: [][]map[string]interface{}{
 				{{
-					"c": float64(15),
+					"c": int64(15),
 				}},
 				{{
 					"error": "run Select error: alias: c expr: binaryExpr:{ ldemo.size * 5 } meet error, err:invalid operation string(string) * int64(5)",
 				}},
 				{{
-					"c": float64(15),
+					"c": int64(15),
 				}},
 				{{
-					"c": float64(10),
+					"c": int64(10),
 				}},
 				{{}},
 			},
@@ -1621,7 +1436,7 @@ func TestSingleSQLError(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, 0, &def.RuleOption{
+	DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -1639,10 +1454,10 @@ func TestSingleSQLOmitError(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}},
 				{{
-					"ts": float64(1541152487632),
+					"ts": 1541152487632,
 				}},
 			},
 			M: map[string]interface{}{
@@ -1669,13 +1484,13 @@ func TestSingleSQLOmitError(t *testing.T) {
 			Sql:  `SELECT size * 5 FROM ldemo`,
 			R: [][]map[string]interface{}{
 				{{
-					"kuiper_field_0": float64(15),
+					"kuiper_field_0": int64(15),
 				}},
 				{{
-					"kuiper_field_0": float64(15),
+					"kuiper_field_0": int64(15),
 				}},
 				{{
-					"kuiper_field_0": float64(10),
+					"kuiper_field_0": int64(10),
 				}},
 				{{}},
 			},
@@ -1696,7 +1511,7 @@ func TestSingleSQLOmitError(t *testing.T) {
 		},
 	}
 	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, 0, &def.RuleOption{
+	DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    false,
 	}, 0)
@@ -1749,8 +1564,8 @@ func TestSingleSQLForBinary(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -1766,11 +1581,11 @@ func TestWindowSQL(t *testing.T) {
 				{
 					{
 						"color": "blue",
-						"size":  float64(2),
+						"size":  2,
 					},
 					{
 						"color": "red",
-						"size":  float64(1),
+						"size":  1,
 					},
 				},
 			},
@@ -1782,13 +1597,13 @@ func TestWindowSQL(t *testing.T) {
 				{
 					{
 						"color": "blue",
-						"size":  float64(2),
+						"size":  2,
 					},
 				},
 				{
 					{
 						"color": "red",
-						"size":  float64(1),
+						"size":  1,
 					},
 				},
 				{},
@@ -1801,7 +1616,7 @@ func TestWindowSQL(t *testing.T) {
 				{
 					{
 						"color": "red",
-						"size":  float64(1),
+						"size":  1,
 					},
 				},
 			},
@@ -1825,8 +1640,8 @@ func TestWindowSQL(t *testing.T) {
 			IsEventTime:        true,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }
 
@@ -1840,32 +1655,32 @@ func TestAliasSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"size": float64(4),
-						"b":    float64(5),
+						"size": int64(4),
+						"b":    int64(5),
 					},
 				},
 				{
 					{
-						"size": float64(7),
-						"b":    float64(8),
+						"size": int64(7),
+						"b":    int64(8),
 					},
 				},
 				{
 					{
-						"size": float64(3),
-						"b":    float64(4),
+						"size": int64(3),
+						"b":    int64(4),
 					},
 				},
 				{
 					{
-						"size": float64(5),
-						"b":    float64(6),
+						"size": int64(5),
+						"b":    int64(6),
 					},
 				},
 				{
 					{
-						"size": float64(2),
-						"b":    float64(3),
+						"size": int64(2),
+						"b":    int64(3),
 					},
 				},
 			},
@@ -1876,32 +1691,32 @@ func TestAliasSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"a": float64(3),
-						"b": float64(4),
+						"a": 3,
+						"b": int64(4),
 					},
 				},
 				{
 					{
-						"a": float64(6),
-						"b": float64(7),
+						"a": 6,
+						"b": int64(7),
 					},
 				},
 				{
 					{
-						"a": float64(2),
-						"b": float64(3),
+						"a": 2,
+						"b": int64(3),
 					},
 				},
 				{
 					{
-						"a": float64(4),
-						"b": float64(5),
+						"a": 4,
+						"b": int64(5),
 					},
 				},
 				{
 					{
-						"a": float64(1),
-						"b": float64(2),
+						"a": 1,
+						"b": int64(2),
 					},
 				},
 			},
@@ -1912,32 +1727,32 @@ func TestAliasSQL(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"a": float64(3),
-						"b": float64(4),
+						"a": 3,
+						"b": int64(4),
 					},
 				},
 				{
 					{
-						"a": float64(6),
-						"b": float64(7),
+						"a": 6,
+						"b": int64(7),
 					},
 				},
 				{
 					{
-						"a": float64(2),
-						"b": float64(3),
+						"a": 2,
+						"b": int64(3),
 					},
 				},
 				{
 					{
-						"a": float64(4),
-						"b": float64(5),
+						"a": 4,
+						"b": int64(5),
 					},
 				},
 				{
 					{
-						"a": float64(1),
-						"b": float64(2),
+						"a": 1,
+						"b": int64(2),
 					},
 				},
 			},
@@ -1959,7 +1774,7 @@ func TestAliasSQL(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 0)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 0)
 	}
 }

@@ -206,7 +206,7 @@ func (s *Topo) Open() <-chan error {
 	}
 	s.hasOpened.Store(true)
 	s.prepareContext() // ensure context is set
-	s.drain = make(chan error)
+	s.drain = make(chan error, 2)
 	log := s.ctx.GetLogger()
 	log.Info("Opening stream")
 	err := infra.SafeRun(func() error {

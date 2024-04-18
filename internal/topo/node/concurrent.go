@@ -16,7 +16,6 @@ package node
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
@@ -98,13 +97,17 @@ func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, 
 	for {
 		select {
 		case data := <-inputRaw:
+			item, processed := node.preprocess(ctx, data)
+			if processed {
+				break
+			}
 			var result []any
-			switch data.(type) {
-			case error, *checkpoint.BufferOrEvent, *xsql.WatermarkTuple, xsql.EOFTuple:
-				result = []any{data}
+			switch item.(type) {
+			case error, *xsql.WatermarkTuple, xsql.EOFTuple:
+				result = []any{item}
 			default:
 				node.statManager.IncTotalRecordsIn()
-				result = wf(ctx.GetLogger(), data)
+				result = wf(ctx.GetLogger(), item)
 			}
 			select {
 			case output <- result:
