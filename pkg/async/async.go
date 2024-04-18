@@ -94,6 +94,7 @@ func (m *AsyncManager) RegisterTask(taskID string) (context.Context, error) {
 	}
 	n := time.Now().Unix()
 	s := &AsyncTaskStatus{
+		Status:           TaskRegisterStatus,
 		TaskID:           taskID,
 		CreatedTimestamp: n,
 		UpdatedTimestamp: n,

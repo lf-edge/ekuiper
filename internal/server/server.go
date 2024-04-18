@@ -44,6 +44,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/ast"
+	"github.com/lf-edge/ekuiper/pkg/async"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/schedule"
 )
@@ -199,6 +200,7 @@ func StartUp(Version string) {
 	}
 	exit := make(chan struct{})
 	go runScheduleRuleChecker(exit)
+	async.InitManager()
 
 	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
