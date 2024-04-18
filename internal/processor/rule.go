@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
@@ -28,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/validate"
 )
 
 type RuleProcessor struct {
@@ -199,20 +199,8 @@ func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
 	return rule, nil
 }
 
-var invalidRuleChars = []string{
-	"/", "#", "%",
-}
-
 func validateRuleID(id string) error {
-	if id != strings.TrimSpace(id) {
-		return fmt.Errorf("ruleID: %v should be trimed", id)
-	}
-	for _, invalidChar := range invalidRuleChars {
-		if strings.Contains(id, invalidChar) {
-			return fmt.Errorf("ruleID:%s contains invalidChar:%v", id, invalidChar)
-		}
-	}
-	return nil
+	return validate.ValidateID(id)
 }
 
 func clone(opt def.RuleOption) *def.RuleOption {
