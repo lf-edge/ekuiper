@@ -113,7 +113,7 @@ func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 	}
 	inputs := []node.Emitter{input}
 	// Add actions
-	err = buildActions(tp, rule, inputs)
+	err = buildActions(tp, rule, inputs, len(streamsFromStmt))
 	if err != nil {
 		return nil, err
 	}

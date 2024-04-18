@@ -229,10 +229,11 @@ func (o *WindowOperator) ingest(ctx api.StreamContext, item any) (any, bool) {
 	case error:
 		o.statManager.IncTotalExceptions(d.Error())
 		if o.sendError {
-			return d, false
+			o.Broadcast(d)
 		}
 		return nil, true
 	case xsql.EOFTuple:
+		o.Broadcast(d)
 		return nil, true
 	}
 	// watermark tuple should return

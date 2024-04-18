@@ -96,7 +96,7 @@ func TestSinkPlan(t *testing.T) {
 		assert.NoError(t, err)
 		tp.AddSrc(n)
 		inputs := []node.Emitter{n}
-		err = buildActions(tp, c.rule, inputs)
+		err = buildActions(tp, c.rule, inputs, 1)
 		assert.NoError(t, err)
 		assert.Equal(t, c.topo, tp.GetTopo())
 	}
@@ -186,7 +186,7 @@ func TestSinkPlanError(t *testing.T) {
 			assert.NoError(t, err)
 			tp.AddSrc(n)
 			inputs := []node.Emitter{n}
-			err = buildActions(tp, c.rule, inputs)
+			err = buildActions(tp, c.rule, inputs, 1)
 			assert.Error(t, err)
 			assert.Equal(t, c.err, err.Error())
 		})

@@ -49,7 +49,7 @@ func SafeRun(fn func() error) (err error) {
 // DrainError a non-block function to send out the error to the error channel
 // Only the first error will be sent out and received then the rule will be terminated
 // Thus the latter error will just skip
-// It is usually the error outlet of a op/rule.
+// It is usually the error outlet of an op/rule.
 func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
 	if err != nil {
 		if ctx != nil {

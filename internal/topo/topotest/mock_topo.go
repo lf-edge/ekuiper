@@ -65,19 +65,22 @@ func CommonResultFunc(result []any) [][]map[string]any {
 				nm = append(nm, mm.Message().ToMap())
 			}
 			maps = append(maps, nm)
+		default:
+			conf.Log.Errorf("receive wrong tuple %v", rt)
 		}
 	}
 	return maps
 }
 
-func DoRuleTest(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, w int) {
-	doRuleTestWithResultFunc(t, tests, j, opt, w, CommonResultFunc)
+func DoRuleTest(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int) {
+	doRuleTestWithResultFunc(t, tests, opt, w, CommonResultFunc)
 }
 
-func doRuleTestWithResultFunc(t *testing.T, tests []RuleTest, j int, opt *def.RuleOption, w int, resultFunc func(result []any) [][]map[string]any) {
+func doRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int, resultFunc func(result []any) [][]map[string]any) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			id := fmt.Sprintf("%s_%d", tt.Name, j)
+			id := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "#", "_"), "/", "_")
+			conf.Log.Debugf("run test %s", id)
 			// Create the rule which sink to memory topic
 			datas, dataLength, tp, errCh := createTestRule(t, id, tt, opt)
 			if tp == nil {
@@ -120,24 +123,38 @@ func doRuleTestWithResultFunc(t *testing.T, tests []RuleTest, j int, opt *def.Ru
 			go sendData(dataLength, datas, tp, POSTLEAP, wait)
 			// Receive data
 			limit := len(tt.R)
-			consumer := pubsub.CreateSub(id, nil, "", limit)
+			consumer := pubsub.CreateSub(id, nil, id, limit)
+			conf.Log.Debugf("test create memory sub %s", id)
 			ticker := time.After(1000 * time.Second)
 			sinkResult := make([]any, 0, limit)
 		outerloop:
 			for {
 				select {
 				case <-errCh:
+					conf.Log.Debugf("test %s receive error signal", id)
 					tp.Cancel()
 					break outerloop
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
+					conf.Log.Debugf("test %s append result %v", id, tuple)
 				case <-ticker:
 					tp.Cancel()
 					assert.Fail(t, "timeout")
 					break outerloop
 				}
 			}
-
+		outloop:
+			for {
+				// Receive the last will if any
+				select {
+				case tuple := <-consumer:
+					sinkResult = append(sinkResult, tuple)
+					conf.Log.Debugf("test %s append result %v", id, tuple)
+				default:
+					break outloop
+				}
+			}
+			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
 			assert.Equal(t, tt.R, resultFunc(sinkResult))
 			err := CompareMetrics(tp, tt.M)
 			assert.NoError(t, err)
@@ -192,6 +209,7 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 	// Set the current time
 	mockClock.Add(0)
 	// TODO assume multiple data source send the data in order and has the same length
+	mockClock.Set(cast.TimeFromUnixMilli(datas[0][0].Timestamp - 1000))
 	for i := 0; i < dataLength; i++ {
 		// wait for table to load
 		time.Sleep(100 * time.Millisecond)
@@ -245,19 +263,20 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) (
 			}
 		}
 	}
-	tp, err := planner.Plan(&def.Rule{
+	rule := &def.Rule{
 		Id:  id,
 		Sql: tt.Sql,
 		Actions: []map[string]any{
 			{
 				"memory": map[string]any{
 					"topic":      id,
-					"sendSingle": true,
+					"sendSingle": false,
 				},
 			},
 		},
 		Options: opt,
-	})
+	}
+	tp, err := planner.Plan(rule)
 	if err != nil {
 		t.Error(err)
 		return nil, 0, nil, nil

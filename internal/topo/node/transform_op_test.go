@@ -29,7 +29,7 @@ func TestTransformRun(t *testing.T) {
 		expects []any
 	}{
 		{
-			name: "filed transform",
+			name: "field transform",
 			sc: &SinkConf{
 				Omitempty:    true,
 				Fields:       []string{"a", "b"},

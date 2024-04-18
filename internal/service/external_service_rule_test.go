@@ -553,7 +553,7 @@ func TestRestService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
+	topotest.DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -747,13 +747,13 @@ func TestGrpcService(t *testing.T) {
 			Sql:  `SELECT getFeatureFromGrpc(self)->feature[0]->box->h FROM fakeBin`,
 			R: [][]map[string]interface{}{
 				{{
-					"kuiper_field_0": float64(106), // Convert by the testing tool
+					"kuiper_field_0": int64(106),
 				}},
 				{{
-					"kuiper_field_0": float64(107),
+					"kuiper_field_0": int64(107),
 				}},
 				{{
-					"kuiper_field_0": float64(108),
+					"kuiper_field_0": int64(108),
 				}},
 			},
 			M: map[string]interface{}{
@@ -820,7 +820,7 @@ func TestGrpcService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
+	topotest.DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -1056,7 +1056,7 @@ func TestSchemalessService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
+	topotest.DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)

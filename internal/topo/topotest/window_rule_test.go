@@ -31,11 +31,11 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"size":  float64(3),
+						"size":  3,
 						"color": "red",
 					},
 					{
-						"size":  float64(1),
+						"size":  1,
 						"color": "red",
 					},
 				},
@@ -48,63 +48,52 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
-					"et":    float64(1541152486013),
+					"size":  3,
+					"ts":    1541152486013,
+					"et":    int64(1541152486013),
 				}, {
 					"color": "blue",
-					"size":  float64(6),
-					"ts":    float64(1541152486822),
-					"et":    float64(1541152486822),
+					"size":  6,
+					"ts":    1541152486822,
+					"et":    int64(1541152486822),
 				}},
 				{{
 					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
-					"et":    float64(1541152486013),
+					"size":  3,
+					"ts":    1541152486013,
+					"et":    int64(1541152486013),
 				}, {
 					"color": "blue",
-					"size":  float64(6),
-					"ts":    float64(1541152486822),
-					"et":    float64(1541152486822),
+					"size":  6,
+					"ts":    1541152486822,
+					"et":    int64(1541152486822),
 				}, {
 					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
-					"et":    float64(1541152487632),
+					"size":  2,
+					"ts":    1541152487632,
+					"et":    int64(1541152487632),
 				}},
 				{{
 					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
-					"et":    float64(1541152487632),
+					"size":  2,
+					"ts":    1541152487632,
+					"et":    int64(1541152487632),
 				}, {
 					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
-					"et":    float64(1541152488442),
-				}},
-				{{
-					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
-					"et":    float64(1541152488442),
-				}, {
-					"color": "red",
-					"size":  float64(1),
-					"ts":    float64(1541152489252),
-					"et":    float64(1541152489252),
+					"size":  4,
+					"ts":    1541152488442,
+					"et":    int64(1541152488442),
 				}},
 			},
 			M: map[string]interface{}{
 				"op_3_project_0_exceptions_total":   int64(0),
 				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(4),
+				"op_3_project_0_records_in_total":   int64(3),
+				"op_3_project_0_records_out_total":  int64(3),
 
 				"sink_memory_0_0_exceptions_total":  int64(0),
-				"sink_memory_0_0_records_in_total":  int64(4),
-				"sink_memory_0_0_records_out_total": int64(4),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -113,7 +102,7 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_exceptions_total":   int64(0),
 				"op_2_window_0_process_latency_us": int64(0),
 				"op_2_window_0_records_in_total":   int64(5),
-				"op_2_window_0_records_out_total":  int64(4),
+				"op_2_window_0_records_out_total":  int64(3),
 			},
 		},
 		{
@@ -122,27 +111,21 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}, {
 					"color": "blue",
-					"ts":    float64(1541152486822),
+					"ts":    1541152486822,
 				}},
 				{},
 				{{
 					"color": "yellow",
-					"ts":    float64(1541152488442),
+					"ts":    1541152488442,
 				}},
-				{},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(4),
-				"op_4_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
-				"sink_memory_0_0_records_in_total":  int64(4),
-				"sink_memory_0_0_records_out_total": int64(4),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -151,7 +134,7 @@ func TestWindow(t *testing.T) {
 				"op_3_window_0_exceptions_total":   int64(0),
 				"op_3_window_0_process_latency_us": int64(0),
 				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(4),
+				"op_3_window_0_records_out_total":  int64(3),
 
 				"op_2_filter_0_exceptions_total":   int64(0),
 				"op_2_filter_0_process_latency_us": int64(0),
@@ -166,51 +149,51 @@ func TestWindow(t *testing.T) {
 				{{
 					"color": "red",
 					"temp":  25.5,
-					"ts1":   float64(1541152486013),
-					"ts2":   float64(1541152486013),
-					"diff":  float64(0),
+					"ts1":   1541152486013,
+					"ts2":   1541152486013,
+					"diff":  int64(0),
 				}}, {{
 					"color": "red",
 					"temp":  25.5,
-					"ts1":   float64(1541152486013),
-					"ts2":   float64(1541152486013),
-					"diff":  float64(0),
+					"ts1":   1541152486013,
+					"ts2":   1541152486013,
+					"diff":  int64(0),
 				}}, {{
 					"color": "red",
 					"temp":  25.5,
-					"ts1":   float64(1541152486013),
-					"ts2":   float64(1541152486013),
-					"diff":  float64(0),
+					"ts1":   1541152486013,
+					"ts2":   1541152486013,
+					"diff":  int64(0),
 				}}, {{
 					"color": "blue",
 					"temp":  28.1,
-					"ts1":   float64(1541152487632),
-					"ts2":   float64(1541152487632),
-					"diff":  float64(0),
+					"ts1":   1541152487632,
+					"ts2":   1541152487632,
+					"diff":  int64(0),
 				}}, {{
 					"color": "blue",
 					"temp":  28.1,
-					"ts1":   float64(1541152487632),
-					"ts2":   float64(1541152487632),
-					"diff":  float64(0),
+					"ts1":   1541152487632,
+					"ts2":   1541152487632,
+					"diff":  int64(0),
 				}}, {{
 					"color": "blue",
 					"temp":  28.1,
-					"ts1":   float64(1541152487632),
-					"ts2":   float64(1541152487632),
-					"diff":  float64(0),
+					"ts1":   1541152487632,
+					"ts2":   1541152487632,
+					"diff":  int64(0),
 				}, {
 					"color": "yellow",
 					"temp":  27.4,
-					"ts1":   float64(1541152488442),
-					"ts2":   float64(1541152488442),
-					"diff":  float64(0),
+					"ts1":   1541152488442,
+					"ts2":   1541152488442,
+					"diff":  int64(0),
 				}}, {{
 					"color": "yellow",
 					"temp":  27.4,
-					"ts1":   float64(1541152488442),
-					"ts2":   float64(1541152488442),
-					"diff":  float64(0),
+					"ts1":   1541152488442,
+					"ts2":   1541152488442,
+					"diff":  int64(0),
 				}},
 			},
 			M: map[string]interface{}{
@@ -254,22 +237,22 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"c":     float64(1),
+					"c":     1,
 				}}, {{
 					"color": "blue",
-					"c":     float64(2),
+					"c":     2,
 				}, {
 					"color": "red",
-					"c":     float64(1),
+					"c":     1,
 				}}, {{
 					"color": "blue",
-					"c":     float64(1),
+					"c":     1,
 				}, {
 					"color": "red",
-					"c":     float64(1),
+					"c":     1,
 				}, {
 					"color": "yellow",
-					"c":     float64(1),
+					"c":     1,
 				}},
 			},
 			M: map[string]interface{}{
@@ -297,36 +280,26 @@ func TestWindow(t *testing.T) {
 			Sql:  `SELECT count(temp), window_start() as ws, window_end(), event_time() as et FROM sessionDemo GROUP BY SessionWindow(ss, 2, 1) `,
 			R: [][]map[string]interface{}{
 				{{
-					"count":      float64(2),
-					"ws":         float64(1541152486013),
-					"window_end": float64(1541152487823), // timeout
-					"et":         float64(1541152487823),
+					"count":      2,
+					"ws":         int64(1541152486013),
+					"window_end": int64(1541152487823), // timeout
+					"et":         int64(1541152487823),
 				}}, {{
-					"count":      float64(3),
-					"ws":         float64(1541152487932),
-					"window_end": float64(1541152490000), // tick
-					"et":         float64(1541152490000),
+					"count":      3,
+					"ws":         int64(1541152487932),
+					"window_end": int64(1541152490000), // tick
+					"et":         int64(1541152490000),
 				}}, {{
-					"count":      float64(5),
-					"ws":         float64(1541152490000),
-					"window_end": float64(1541152494000), // tick
-					"et":         float64(1541152494000),
-				}}, {{
-					"count":      float64(1),
-					"ws":         float64(1541152494000),
-					"window_end": float64(1541152495112), // timeout
-					"et":         float64(1541152495112),
+					"count":      5,
+					"ws":         int64(1541152490000),
+					"window_end": int64(1541152494000), // tick
+					"et":         int64(1541152494000),
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(0),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
-				"sink_memory_0_0_records_in_total":  int64(4),
-				"sink_memory_0_0_records_out_total": int64(4),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_sessionDemo_0_exceptions_total":  int64(0),
 				"source_sessionDemo_0_records_in_total":  int64(11),
@@ -335,7 +308,7 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_exceptions_total":   int64(0),
 				"op_2_window_0_process_latency_us": int64(0),
 				"op_2_window_0_records_in_total":   int64(11),
-				"op_2_window_0_records_out_total":  int64(4),
+				"op_2_window_0_records_out_total":  int64(3),
 			},
 		},
 		{
@@ -344,52 +317,52 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"temp1":        25.5,
-					"c":            float64(1),
-					"window_start": float64(1541152485115),
-					"window_end":   float64(1541152486115),
-					"event_time":   float64(1541152486115),
+					"c":            1,
+					"window_start": int64(1541152485115),
+					"window_end":   int64(1541152486115),
+					"event_time":   int64(1541152486115),
 				}}, {{
 					"temp1":        25.5,
-					"c":            float64(1),
-					"window_start": float64(1541152485822),
-					"window_end":   float64(1541152486822),
-					"event_time":   float64(1541152486822),
+					"c":            1,
+					"window_start": int64(1541152485822),
+					"window_end":   int64(1541152486822),
+					"event_time":   int64(1541152486822),
 				}}, {{
 					"temp1":        25.5,
-					"c":            float64(1),
-					"window_start": float64(1541152485903),
-					"window_end":   float64(1541152486903),
-					"event_time":   float64(1541152486903),
+					"c":            1,
+					"window_start": int64(1541152485903),
+					"window_end":   int64(1541152486903),
+					"event_time":   int64(1541152486903),
 				}}, {{
 					"temp1":        28.1,
-					"c":            float64(1),
-					"window_start": float64(1541152486702),
-					"window_end":   float64(1541152487702),
-					"event_time":   float64(1541152487702),
+					"c":            1,
+					"window_start": int64(1541152486702),
+					"window_end":   int64(1541152487702),
+					"event_time":   int64(1541152487702),
 				}}, {{
 					"temp1":        28.1,
-					"c":            float64(1),
-					"window_start": float64(1541152487442),
-					"window_end":   float64(1541152488442),
-					"event_time":   float64(1541152488442),
+					"c":            1,
+					"window_start": int64(1541152487442),
+					"window_end":   int64(1541152488442),
+					"event_time":   int64(1541152488442),
 				}}, {{
 					"temp1":        55.5,
-					"c":            float64(2),
-					"window_start": float64(1541152487605),
-					"window_end":   float64(1541152488605),
-					"event_time":   float64(1541152488605),
+					"c":            2,
+					"window_start": int64(1541152487605),
+					"window_end":   int64(1541152488605),
+					"event_time":   int64(1541152488605),
 				}}, {{
 					"temp1":        27.4,
-					"c":            float64(1),
-					"window_start": float64(1541152488252),
-					"window_end":   float64(1541152489252),
-					"event_time":   float64(1541152489252),
+					"c":            1,
+					"window_start": int64(1541152488252),
+					"window_end":   int64(1541152489252),
+					"event_time":   int64(1541152489252),
 				}}, {{
 					"temp1":        52.9,
-					"c":            float64(2),
-					"window_start": float64(1541152488305),
-					"window_end":   float64(1541152489305),
-					"event_time":   float64(1541152489305),
+					"c":            2,
+					"window_start": int64(1541152488305),
+					"window_end":   int64(1541152489305),
+					"event_time":   int64(1541152489305),
 				}},
 			},
 			M: map[string]interface{}{
@@ -430,49 +403,38 @@ func TestWindow(t *testing.T) {
 				}},
 				{{
 					"color": "blue",
-					"size":  float64(6),
-					"ts":    float64(1541152486822),
+					"size":  int64(6),
+					"ts":    int64(1541152486822),
 				}},
 				{{
 					"color": "blue",
-					"size":  float64(6),
-					"ts":    float64(1541152486822),
+					"size":  int64(6),
+					"ts":    int64(1541152486822),
 				}, {
 					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
+					"size":  int64(2),
+					"ts":    int64(1541152487632),
 				}},
 				{{
 					"error": "error in preprocessor: field color type mismatch: cannot convert int(7) to string",
 				}},
 				{{
 					"color": "blue",
-					"size":  float64(2),
-					"ts":    float64(1541152487632),
+					"size":  int64(2),
+					"ts":    int64(1541152487632),
 				}},
 				{{
 					"error": "error in preprocessor: field size type mismatch: cannot convert string(blue) to int64",
 				}},
-				{},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(3),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(4),
-				"op_3_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(3),
-				"sink_memory_0_0_records_in_total":  int64(7),
-				"sink_memory_0_0_records_out_total": int64(7),
+				"sink_memory_0_0_records_in_total":  int64(6),
+				"sink_memory_0_0_records_out_total": int64(6),
 
-				"source_demoError_0_exceptions_total":  int64(3),
+				"source_demoError_0_exceptions_total":  int64(0),
 				"source_demoError_0_records_in_total":  int64(5),
-				"source_demoError_0_records_out_total": int64(2),
-
-				"op_2_window_0_exceptions_total":   int64(3),
-				"op_2_window_0_process_latency_us": int64(0),
-				"op_2_window_0_records_in_total":   int64(2),
-				"op_2_window_0_records_out_total":  int64(4),
+				"source_demoError_0_records_out_total": int64(5),
 			},
 		},
 		{
@@ -481,11 +443,11 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color":        "red",
-					"ts":           float64(1541152486013),
-					"c":            float64(2),
-					"window_start": float64(1541152486000),
-					"window_end":   float64(1541152487000),
-					"et":           float64(1541152487000),
+					"ts":           1541152486013,
+					"c":            2,
+					"window_start": int64(1541152486000),
+					"window_end":   int64(1541152487000),
+					"et":           int64(1541152487000),
 				}},
 			},
 			M: map[string]interface{}{
@@ -505,7 +467,7 @@ func TestWindow(t *testing.T) {
 				"op_3_window_0_exceptions_total":   int64(0),
 				"op_3_window_0_process_latency_us": int64(0),
 				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(4),
+				"op_3_window_0_records_out_total":  int64(3),
 
 				"op_2_filter_0_exceptions_total":   int64(0),
 				"op_2_filter_0_process_latency_us": int64(0),
@@ -514,7 +476,7 @@ func TestWindow(t *testing.T) {
 
 				"op_4_having_0_exceptions_total":   int64(0),
 				"op_4_having_0_process_latency_us": int64(0),
-				"op_4_having_0_records_in_total":   int64(4),
+				"op_4_having_0_records_in_total":   int64(3),
 				"op_4_having_0_records_out_total":  int64(1),
 			},
 		},
@@ -524,42 +486,32 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color":        "red",
-					"window_start": float64(1541152485000),
-					"window_end":   float64(1541152487000),
+					"window_start": int64(1541152485000),
+					"window_end":   int64(1541152487000),
 				}, {
 					"color":        "blue",
-					"window_start": float64(1541152485000),
-					"window_end":   float64(1541152487000),
+					"window_start": int64(1541152485000),
+					"window_end":   int64(1541152487000),
 				}},
 				{{
 					"color":        "red",
-					"window_start": float64(1541152486000),
-					"window_end":   float64(1541152488000),
+					"window_start": int64(1541152486000),
+					"window_end":   int64(1541152488000),
 				}, {
 					"color":        "blue",
-					"window_start": float64(1541152486000),
-					"window_end":   float64(1541152488000),
+					"window_start": int64(1541152486000),
+					"window_end":   int64(1541152488000),
 				}},
 				{{
 					"color":        "yellow",
-					"window_start": float64(1541152487000),
-					"window_end":   float64(1541152489000),
-				}},
-				{{
-					"color":        "yellow",
-					"window_start": float64(1541152488000),
-					"window_end":   float64(1541152490000),
+					"window_start": int64(1541152487000),
+					"window_end":   int64(1541152489000),
 				}},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(4),
-				"op_4_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
-				"sink_memory_0_0_records_in_total":  int64(4),
-				"sink_memory_0_0_records_out_total": int64(4),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -568,7 +520,7 @@ func TestWindow(t *testing.T) {
 				"op_3_window_0_exceptions_total":   int64(0),
 				"op_3_window_0_process_latency_us": int64(0),
 				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(4),
+				"op_3_window_0_records_out_total":  int64(3),
 			},
 		},
 		{
@@ -577,7 +529,7 @@ func TestWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"c":  "red",
-					"we": 1.541152487632e+12,
+					"we": int64(1541152487632),
 				}},
 			},
 			M: map[string]interface{}{
@@ -637,30 +589,25 @@ func TestWindow(t *testing.T) {
 			Sql:  `SELECT collect(size) as allSize FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1), color ORDER BY color`,
 			R: [][]map[string]interface{}{
 				{{
-					"allSize": []interface{}{float64(6)},
+					"allSize": []interface{}{6},
 				}, {
-					"allSize": []interface{}{float64(3)},
+					"allSize": []interface{}{3},
 				}},
 				{{
-					"allSize": []interface{}{float64(6), float64(2)},
+					"allSize": []interface{}{6, 2},
 				}, {
-					"allSize": []interface{}{float64(3)},
+					"allSize": []interface{}{3},
 				}},
 				{{
-					"allSize": []interface{}{float64(2)},
+					"allSize": []interface{}{2},
 				}, {
-					"allSize": []interface{}{float64(4)},
-				}},
-				{{
-					"allSize": []interface{}{float64(1)},
-				}, {
-					"allSize": []interface{}{float64(4)},
+					"allSize": []interface{}{4},
 				}},
 			},
 			M: map[string]interface{}{
 				"sink_memory_0_0_exceptions_total":  int64(0),
-				"sink_memory_0_0_records_in_total":  int64(4),
-				"sink_memory_0_0_records_out_total": int64(4),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
@@ -669,23 +616,18 @@ func TestWindow(t *testing.T) {
 				"op_2_window_0_exceptions_total":   int64(0),
 				"op_2_window_0_process_latency_us": int64(0),
 				"op_2_window_0_records_in_total":   int64(5),
-				"op_2_window_0_records_out_total":  int64(4),
+				"op_2_window_0_records_out_total":  int64(3),
 			},
 		},
 		{
 			Name: `TestWindowRule13`,
-			Sql:  `SELECT color as c FROM demo GROUP BY SlidingWindow(ss, 3600,1) filter (where size = 3 )`,
+			Sql:  `SELECT color as c FROM demo GROUP BY SlidingWindow(ss, 3600) filter (where size = 3 )`,
 			R: [][]map[string]interface{}{
 				{{
 					"c": "red",
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(0),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(1),
-				"op_3_project_0_records_out_total":  int64(1),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(1),
 				"sink_memory_0_0_records_out_total": int64(1),
@@ -693,11 +635,6 @@ func TestWindow(t *testing.T) {
 				"source_demo_0_exceptions_total":  int64(0),
 				"source_demo_0_records_in_total":  int64(5),
 				"source_demo_0_records_out_total": int64(5),
-
-				"op_2_window_0_exceptions_total":   int64(0),
-				"op_2_window_0_process_latency_us": int64(0),
-				"op_2_window_0_records_in_total":   int64(1),
-				"op_2_window_0_records_out_total":  int64(1),
 			},
 		},
 	}
@@ -720,8 +657,8 @@ func TestWindow(t *testing.T) {
 			CheckpointInterval: 5000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 15)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 15)
 	}
 }
 
@@ -736,25 +673,25 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"size": float64(3),
+						"size": 3,
 					},
 					{
-						"size": float64(1),
+						"size": 1,
 					},
 				},
 			},
 			M: map[string]interface{}{
-				"op_2_watermark_0_records_in_total":  int64(6),
-				"op_2_watermark_0_records_out_total": int64(4),
-				"op_2_watermark_0_exceptions_total":  int64(0),
+				"op_3_watermark_0_records_in_total":  int64(6),
+				"op_3_watermark_0_records_out_total": int64(4),
+				"op_3_watermark_0_exceptions_total":  int64(0),
 
-				"op_3_windowFilter_0_records_in_total":  int64(4),
-				"op_3_windowFilter_0_records_out_total": int64(2),
-				"op_3_windowFilter_0_exceptions_total":  int64(0),
+				"op_4_windowFilter_0_records_in_total":  int64(4),
+				"op_4_windowFilter_0_records_out_total": int64(2),
+				"op_4_windowFilter_0_exceptions_total":  int64(0),
 
-				"op_3_window_0_records_in_total":  int64(2),
-				"op_3_window_0_records_out_total": int64(1),
-				"op_3_window_0_exceptions_total":  int64(0),
+				"op_4_window_0_records_in_total":  int64(2),
+				"op_4_window_0_records_out_total": int64(1),
+				"op_4_window_0_exceptions_total":  int64(0),
 			},
 		},
 		{
@@ -762,28 +699,28 @@ func TestEventWindow(t *testing.T) {
 			Sql:  `SELECT count(*), last_agg_hit_time() as lt, last_agg_hit_count() as lc, event_time() as et FROM demoE GROUP BY HOPPINGWINDOW(ss, 2, 1) HAVING lc < 4`,
 			R: [][]map[string]interface{}{
 				{{
-					"count": float64(1),
-					"lc":    float64(0),
-					"lt":    float64(0),
-					"et":    float64(1541152487000),
+					"count": 1,
+					"lc":    0,
+					"lt":    0,
+					"et":    int64(1541152487000),
 				}},
 				{{
-					"count": float64(2),
-					"lc":    float64(1),
-					"lt":    float64(1541152487000),
-					"et":    float64(1541152488000),
+					"count": 2,
+					"lc":    1,
+					"lt":    int64(1541152487000),
+					"et":    int64(1541152488000),
 				}},
 				{{
-					"count": float64(2),
-					"lc":    float64(2),
-					"lt":    float64(1541152488000),
-					"et":    float64(1541152489000),
+					"count": 2,
+					"lc":    2,
+					"lt":    int64(1541152488000),
+					"et":    int64(1541152489000),
 				}},
 				{{
-					"count": float64(2),
-					"lc":    float64(3),
-					"lt":    float64(1541152489000),
-					"et":    float64(1541152490000),
+					"count": 2,
+					"lc":    3,
+					"lt":    int64(1541152489000),
+					"et":    int64(1541152490000),
 				}},
 			},
 			M: map[string]interface{}{
@@ -795,13 +732,13 @@ func TestEventWindow(t *testing.T) {
 				"source_demoE_0_records_in_total":  int64(6),
 				"source_demoE_0_records_out_total": int64(6),
 
-				"op_3_window_0_exceptions_total":   int64(0),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(4),
-				"op_3_window_0_records_out_total":  int64(5),
+				"op_4_window_0_exceptions_total":   int64(0),
+				"op_4_window_0_process_latency_us": int64(0),
+				"op_4_window_0_records_in_total":   int64(4),
+				"op_4_window_0_records_out_total":  int64(5),
 
-				"op_2_watermark_0_records_in_total":  int64(6),
-				"op_2_watermark_0_records_out_total": int64(4),
+				"op_3_watermark_0_records_in_total":  int64(6),
+				"op_3_watermark_0_records_out_total": int64(4),
 			},
 		},
 		{
@@ -809,24 +746,19 @@ func TestEventWindow(t *testing.T) {
 			Sql:  `SELECT window_start(), window_end(), color, ts FROM demoE where size > 2 GROUP BY tumblingwindow(ss, 1)`,
 			R: [][]map[string]interface{}{
 				{{
-					"window_start": float64(1541152486013),
-					"window_end":   float64(1541152487000),
+					"window_start": int64(1541152486013),
+					"window_end":   int64(1541152487000),
 					"color":        "red",
-					"ts":           float64(1541152486013),
+					"ts":           1541152486013,
 				}},
 				{{
-					"window_start": float64(1541152488000),
-					"window_end":   float64(1541152489000),
+					"window_start": int64(1541152488000),
+					"window_end":   int64(1541152489000),
 					"color":        "yellow",
-					"ts":           float64(1541152488442),
+					"ts":           1541152488442,
 				}},
 			},
 			M: map[string]interface{}{
-				"op_5_project_0_exceptions_total":   int64(0),
-				"op_5_project_0_process_latency_us": int64(0),
-				"op_5_project_0_records_in_total":   int64(2),
-				"op_5_project_0_records_out_total":  int64(2),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(2),
 				"sink_memory_0_0_records_out_total": int64(2),
@@ -835,15 +767,13 @@ func TestEventWindow(t *testing.T) {
 				"source_demoE_0_records_in_total":  int64(6),
 				"source_demoE_0_records_out_total": int64(6),
 
-				"op_3_window_0_exceptions_total":   int64(0),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(4),
-				"op_3_window_0_records_out_total":  int64(5),
+				"op_4_window_0_exceptions_total":  int64(0),
+				"op_4_window_0_records_in_total":  int64(4),
+				"op_4_window_0_records_out_total": int64(5),
 
-				"op_4_filter_0_exceptions_total":   int64(0),
-				"op_4_filter_0_process_latency_us": int64(0),
-				"op_4_filter_0_records_in_total":   int64(5),
-				"op_4_filter_0_records_out_total":  int64(2),
+				"op_5_filter_0_exceptions_total":  int64(0),
+				"op_5_filter_0_records_in_total":  int64(5),
+				"op_5_filter_0_records_out_total": int64(2),
 			},
 		},
 		{
@@ -854,54 +784,49 @@ func TestEventWindow(t *testing.T) {
 					{
 						"color": "red",
 						"temp":  25.5,
-						"ts":    float64(1541152486013),
+						"ts":    1541152486013,
 					},
 				},
 				{
 					{
 						"color": "red",
 						"temp":  25.5,
-						"ts":    float64(1541152486013),
+						"ts":    1541152486013,
 					},
 				},
 				{
 					{
 						"color": "blue",
 						"temp":  28.1,
-						"ts":    float64(1541152487632),
+						"ts":    1541152487632,
 					},
 				},
 				{
 					{
 						"color": "blue",
 						"temp":  28.1,
-						"ts":    float64(1541152487632),
+						"ts":    1541152487632,
 					},
 					{
 						"color": "yellow",
 						"temp":  27.4,
-						"ts":    float64(1541152488442),
+						"ts":    1541152488442,
 					},
 				},
 				{
 					{
 						"color": "yellow",
 						"temp":  27.4,
-						"ts":    float64(1541152488442),
+						"ts":    1541152488442,
 					},
 					{
 						"color": "red",
 						"temp":  25.5,
-						"ts":    float64(1541152489252),
+						"ts":    1541152489252,
 					},
 				},
 			},
 			M: map[string]interface{}{
-				"op_6_project_0_exceptions_total":   int64(0),
-				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(5),
-				"op_6_project_0_records_out_total":  int64(5),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(5),
 				"sink_memory_0_0_records_out_total": int64(5),
@@ -914,15 +839,8 @@ func TestEventWindow(t *testing.T) {
 				"source_demo1E_0_records_in_total":  int64(6),
 				"source_demo1E_0_records_out_total": int64(6),
 
-				"op_4_window_0_exceptions_total":   int64(0),
-				"op_4_window_0_process_latency_us": int64(0),
-				"op_4_window_0_records_in_total":   int64(9),
-				"op_4_window_0_records_out_total":  int64(5),
-
-				"op_5_join_0_exceptions_total":   int64(0),
-				"op_5_join_0_process_latency_us": int64(0),
-				"op_5_join_0_records_in_total":   int64(5),
-				"op_5_join_0_records_out_total":  int64(5),
+				"op_6_window_0_records_in_total":  int64(9),
+				"op_6_window_0_records_out_total": int64(5),
 			},
 		},
 		{
@@ -931,36 +849,31 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color": "red",
-					"ws":    float64(1541152484013),
-					"we":    float64(1541152486013),
+					"ws":    int64(1541152484013),
+					"we":    int64(1541152486013),
 				}}, {{
 					"color": "blue",
-					"ws":    float64(1541152485632),
-					"we":    float64(1541152487632),
+					"ws":    int64(1541152485632),
+					"we":    int64(1541152487632),
 				}, {
 					"color": "red",
-					"ws":    float64(1541152485632),
-					"we":    float64(1541152487632),
+					"ws":    int64(1541152485632),
+					"we":    int64(1541152487632),
 				}}, {{
 					"color": "blue",
-					"ws":    float64(1541152487252),
-					"we":    float64(1541152489252),
+					"ws":    int64(1541152487252),
+					"we":    int64(1541152489252),
 				}, {
 					"color": "red",
-					"ws":    float64(1541152487252),
-					"we":    float64(1541152489252),
+					"ws":    int64(1541152487252),
+					"we":    int64(1541152489252),
 				}, {
 					"color": "yellow",
-					"ws":    float64(1541152487252),
-					"we":    float64(1541152489252),
+					"ws":    int64(1541152487252),
+					"we":    int64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
-				"op_6_project_0_exceptions_total":   int64(0),
-				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(3),
-				"op_6_project_0_records_out_total":  int64(3),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(3),
 				"sink_memory_0_0_records_out_total": int64(3),
@@ -969,20 +882,8 @@ func TestEventWindow(t *testing.T) {
 				"source_demoE_0_records_in_total":  int64(6),
 				"source_demoE_0_records_out_total": int64(6),
 
-				"op_3_window_0_exceptions_total":   int64(0),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(4),
-				"op_3_window_0_records_out_total":  int64(3),
-
-				"op_4_aggregate_0_exceptions_total":   int64(0),
-				"op_4_aggregate_0_process_latency_us": int64(0),
-				"op_4_aggregate_0_records_in_total":   int64(3),
-				"op_4_aggregate_0_records_out_total":  int64(3),
-
-				"op_5_order_0_exceptions_total":   int64(0),
-				"op_5_order_0_process_latency_us": int64(0),
-				"op_5_order_0_records_in_total":   int64(3),
-				"op_5_order_0_records_out_total":  int64(3),
+				"op_4_window_0_records_in_total":  int64(4),
+				"op_4_window_0_records_out_total": int64(3),
 			},
 		},
 		{
@@ -1012,11 +913,6 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(4),
-				"op_4_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
@@ -1025,10 +921,8 @@ func TestEventWindow(t *testing.T) {
 				"source_sessionDemoE_0_records_in_total":  int64(12),
 				"source_sessionDemoE_0_records_out_total": int64(12),
 
-				"op_3_window_0_exceptions_total":   int64(0),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(10),
-				"op_3_window_0_records_out_total":  int64(4),
+				"op_4_window_0_records_in_total":  int64(10),
+				"op_4_window_0_records_out_total": int64(4),
 			},
 		},
 		{
@@ -1038,64 +932,59 @@ func TestEventWindow(t *testing.T) {
 				{
 					{
 						"m": 25.5,
-						"c": float64(1),
+						"c": 1,
 					},
 				},
 				{
 					{
 						"m": 25.5,
-						"c": float64(1),
+						"c": 1,
 					},
 				},
 				{
 					{
 						"m": 25.5,
-						"c": float64(1),
+						"c": 1,
 					},
 				},
 				{
 					{
 						"m": 28.1,
-						"c": float64(1),
+						"c": 1,
 					},
 				},
 				{
 					{
 						"m": 28.1,
-						"c": float64(1),
+						"c": 1,
 					},
 				},
 				{
 					{
 						"m": 28.1,
-						"c": float64(2),
+						"c": 2,
 					},
 				},
 				{
 					{
 						"m": 28.1,
-						"c": float64(2),
+						"c": 2,
 					},
 				},
 				{
 					{
 						"m": 27.4,
-						"c": float64(2),
+						"c": 2,
 					},
 				},
 				{
 					{
 						"m": 27.4,
-						"c": float64(2),
+						"c": 2,
 					},
 				},
 			},
 			M: map[string]interface{}{
-				"op_6_project_0_exceptions_total":   int64(0),
-				"op_6_project_0_process_latency_us": int64(0),
-				"op_6_project_0_records_in_total":   int64(9),
-				"op_6_project_0_records_out_total":  int64(9),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(9),
 				"sink_memory_0_0_records_out_total": int64(9),
@@ -1108,14 +997,8 @@ func TestEventWindow(t *testing.T) {
 				"source_demo1E_0_records_in_total":  int64(6),
 				"source_demo1E_0_records_out_total": int64(6),
 
-				"op_4_window_0_exceptions_total":  int64(0),
-				"op_4_window_0_records_in_total":  int64(9),
-				"op_4_window_0_records_out_total": int64(9),
-
-				"op_5_join_0_exceptions_total":   int64(0),
-				"op_5_join_0_process_latency_us": int64(0),
-				"op_5_join_0_records_in_total":   int64(9),
-				"op_5_join_0_records_out_total":  int64(9),
+				"op_6_window_0_records_in_total":  int64(9),
+				"op_6_window_0_records_out_total": int64(9),
 			},
 		},
 		{
@@ -1127,52 +1010,46 @@ func TestEventWindow(t *testing.T) {
 				}},
 				{{
 					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
+					"size":  int64(3),
+					"ts":    int64(1541152486013),
 				}},
 				{{
 					"color": "red",
-					"size":  float64(3),
-					"ts":    float64(1541152486013),
+					"size":  int64(3),
+					"ts":    int64(1541152486013),
 				}},
 				{{
 					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
+					"size":  int64(4),
+					"ts":    int64(1541152488442),
 				}},
 				{{
 					"color": "yellow",
-					"size":  float64(4),
-					"ts":    float64(1541152488442),
+					"size":  int64(4),
+					"ts":    int64(1541152488442),
 				}, {
 					"color": "red",
-					"size":  float64(1),
-					"ts":    float64(1541152489252),
+					"size":  int64(1),
+					"ts":    int64(1541152489252),
 				}},
 				{{
 					"color": "red",
-					"size":  float64(1),
-					"ts":    float64(1541152489252),
+					"size":  int64(1),
+					"ts":    int64(1541152489252),
 				}},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(1),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(5),
-				"op_4_project_0_records_out_total":  int64(5),
-
 				"sink_memory_0_0_exceptions_total":  int64(1),
 				"sink_memory_0_0_records_in_total":  int64(6),
 				"sink_memory_0_0_records_out_total": int64(6),
 
-				"source_demoErr_0_exceptions_total":  int64(1),
+				"source_demoErr_0_exceptions_total":  int64(0),
 				"source_demoErr_0_records_in_total":  int64(6),
-				"source_demoErr_0_records_out_total": int64(5),
+				"source_demoErr_0_records_out_total": int64(6),
 
-				"op_3_window_0_exceptions_total":   int64(2),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(3),
-				"op_3_window_0_records_out_total":  int64(5),
+				"op_4_window_0_exceptions_total":  int64(1),
+				"op_4_window_0_records_in_total":  int64(3),
+				"op_4_window_0_records_out_total": int64(5),
 			},
 		},
 		{
@@ -1181,52 +1058,47 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"temp":         25.5,
-					"window_start": float64(1541152486013),
-					"window_end":   float64(1541152487013),
+					"window_start": int64(1541152486013),
+					"window_end":   int64(1541152487013),
 				}}, {{
 					"temp":         28.1,
-					"window_start": float64(1541152487932),
-					"window_end":   float64(1541152490000),
+					"window_start": int64(1541152487932),
+					"window_end":   int64(1541152490000),
 				}, {
 					"temp":         27.4,
-					"window_start": float64(1541152487932),
-					"window_end":   float64(1541152490000),
+					"window_start": int64(1541152487932),
+					"window_end":   int64(1541152490000),
 				}, {
 					"temp":         25.5,
-					"window_start": float64(1541152487932),
-					"window_end":   float64(1541152490000),
+					"window_start": int64(1541152487932),
+					"window_end":   int64(1541152490000),
 				}}, {{
 					"temp":         26.2,
-					"window_start": float64(1541152490000),
-					"window_end":   float64(1541152494000),
+					"window_start": int64(1541152490000),
+					"window_end":   int64(1541152494000),
 				}, {
 					"temp":         26.8,
-					"window_start": float64(1541152490000),
-					"window_end":   float64(1541152494000),
+					"window_start": int64(1541152490000),
+					"window_end":   int64(1541152494000),
 				}, {
 					"temp":         28.9,
-					"window_start": float64(1541152490000),
-					"window_end":   float64(1541152494000),
+					"window_start": int64(1541152490000),
+					"window_end":   int64(1541152494000),
 				}, {
 					"temp":         29.1,
-					"window_start": float64(1541152490000),
-					"window_end":   float64(1541152494000),
+					"window_start": int64(1541152490000),
+					"window_end":   int64(1541152494000),
 				}, {
 					"temp":         32.2,
-					"window_start": float64(1541152490000),
-					"window_end":   float64(1541152494000),
+					"window_start": int64(1541152490000),
+					"window_end":   int64(1541152494000),
 				}}, {{
 					"temp":         30.9,
-					"window_start": float64(1541152494000),
-					"window_end":   float64(1541152495112),
+					"window_start": int64(1541152494000),
+					"window_end":   int64(1541152495112),
 				}},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(4),
-				"op_4_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
@@ -1235,10 +1107,8 @@ func TestEventWindow(t *testing.T) {
 				"source_sessionDemoE_0_records_in_total":  int64(12),
 				"source_sessionDemoE_0_records_out_total": int64(12),
 
-				"op_3_window_0_exceptions_total":   int64(0),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(10),
-				"op_3_window_0_records_out_total":  int64(4),
+				"op_4_window_0_records_in_total":  int64(10),
+				"op_4_window_0_records_out_total": int64(4),
 			},
 		},
 		{
@@ -1247,48 +1117,43 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"color":        "red",
-					"window_start": float64(1541152485013),
-					"window_end":   float64(1541152487000),
+					"window_start": int64(1541152485013),
+					"window_end":   int64(1541152487000),
 				}},
 				{{
 					"color":        "red",
-					"window_start": float64(1541152486000),
-					"window_end":   float64(1541152488000),
+					"window_start": int64(1541152486000),
+					"window_end":   int64(1541152488000),
 				}, {
 					"color":        "blue",
-					"window_start": float64(1541152486000),
-					"window_end":   float64(1541152488000),
+					"window_start": int64(1541152486000),
+					"window_end":   int64(1541152488000),
 				}},
 				{{
 					"color":        "blue",
-					"window_start": float64(1541152487000),
-					"window_end":   float64(1541152489000),
+					"window_start": int64(1541152487000),
+					"window_end":   int64(1541152489000),
 				}, {
 					"color":        "yellow",
-					"window_start": float64(1541152487000),
-					"window_end":   float64(1541152489000),
+					"window_start": int64(1541152487000),
+					"window_end":   int64(1541152489000),
 				}},
 				{{
 					"color":        "yellow",
-					"window_start": float64(1541152488000),
-					"window_end":   float64(1541152490000),
+					"window_start": int64(1541152488000),
+					"window_end":   int64(1541152490000),
 				}, {
 					"color":        "red",
-					"window_start": float64(1541152488000),
-					"window_end":   float64(1541152490000),
+					"window_start": int64(1541152488000),
+					"window_end":   int64(1541152490000),
 				}},
 				{{
 					"color":        "red",
-					"window_start": float64(1541152489000),
-					"window_end":   float64(1541152491000),
+					"window_start": int64(1541152489000),
+					"window_end":   int64(1541152491000),
 				}},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(0),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(5),
-				"op_4_project_0_records_out_total":  int64(5),
-
 				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(5),
 				"sink_memory_0_0_records_out_total": int64(5),
@@ -1296,11 +1161,6 @@ func TestEventWindow(t *testing.T) {
 				"source_demoE_0_exceptions_total":  int64(0),
 				"source_demoE_0_records_in_total":  int64(6),
 				"source_demoE_0_records_out_total": int64(6),
-
-				"op_3_window_0_exceptions_total":   int64(0),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(4),
-				"op_3_window_0_records_out_total":  int64(5),
 			},
 		},
 		{
@@ -1314,13 +1174,13 @@ func TestEventWindow(t *testing.T) {
 				},
 			},
 			M: map[string]interface{}{
-				"op_2_watermark_0_records_in_total":  int64(6),
-				"op_2_watermark_0_records_out_total": int64(4),
-				"op_2_watermark_0_exceptions_total":  int64(0),
+				"op_3_watermark_0_records_in_total":  int64(6),
+				"op_3_watermark_0_records_out_total": int64(4),
+				"op_3_watermark_0_exceptions_total":  int64(0),
 
-				"op_3_window_0_records_in_total":  int64(4),
-				"op_3_window_0_records_out_total": int64(1),
-				"op_3_window_0_exceptions_total":  int64(0),
+				"op_4_window_0_records_in_total":  int64(4),
+				"op_4_window_0_records_out_total": int64(1),
+				"op_4_window_0_exceptions_total":  int64(0),
 			},
 		},
 		{
@@ -1329,17 +1189,17 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"temp": float64(27.5),
+						"temp": 27.5,
 					},
 				},
 			},
 			M: map[string]interface{}{
 				"source_demoE2_0_records_in_total":   int64(3),
 				"source_demoE2_0_records_out_total":  int64(3),
-				"op_2_watermark_0_records_in_total":  int64(3),
-				"op_2_watermark_0_records_out_total": int64(2),
-				"op_3_window_0_records_in_total":     int64(2),
-				"op_3_window_0_records_out_total":    int64(1),
+				"op_3_watermark_0_records_in_total":  int64(3),
+				"op_3_watermark_0_records_out_total": int64(2),
+				"op_4_window_0_records_in_total":     int64(2),
+				"op_4_window_0_records_out_total":    int64(1),
 				"sink_memory_0_0_records_in_total":   int64(1),
 				"sink_memory_0_0_records_out_total":  int64(1),
 			},
@@ -1350,25 +1210,25 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"temp": float64(27.5),
+						"temp": 27.5,
 					},
 				},
 				{
 					{
-						"temp": float64(27.5),
+						"temp": 27.5,
 					},
 					{
-						"temp": float64(25.5),
+						"temp": 25.5,
 					},
 				},
 			},
 			M: map[string]interface{}{
 				"source_demoE2_0_records_in_total":   int64(3),
 				"source_demoE2_0_records_out_total":  int64(3),
-				"op_2_watermark_0_records_in_total":  int64(3),
-				"op_2_watermark_0_records_out_total": int64(2),
-				"op_3_window_0_records_in_total":     int64(2),
-				"op_3_window_0_records_out_total":    int64(2),
+				"op_3_watermark_0_records_in_total":  int64(3),
+				"op_3_watermark_0_records_out_total": int64(2),
+				"op_4_window_0_records_in_total":     int64(2),
+				"op_4_window_0_records_out_total":    int64(2),
 				"sink_memory_0_0_records_in_total":   int64(2),
 				"sink_memory_0_0_records_out_total":  int64(2),
 			},
@@ -1379,17 +1239,17 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"temp": float64(27.5),
+						"temp": 27.5,
 					},
 				},
 			},
 			M: map[string]interface{}{
 				"source_demoE2_0_records_in_total":   int64(3),
 				"source_demoE2_0_records_out_total":  int64(3),
-				"op_2_watermark_0_records_in_total":  int64(3),
-				"op_2_watermark_0_records_out_total": int64(2),
-				"op_3_window_0_records_in_total":     int64(2),
-				"op_3_window_0_records_out_total":    int64(1),
+				"op_3_watermark_0_records_in_total":  int64(3),
+				"op_3_watermark_0_records_out_total": int64(2),
+				"op_4_window_0_records_in_total":     int64(2),
+				"op_4_window_0_records_out_total":    int64(1),
 				"sink_memory_0_0_records_in_total":   int64(1),
 				"sink_memory_0_0_records_out_total":  int64(1),
 			},
@@ -1400,14 +1260,14 @@ func TestEventWindow(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{
 					{
-						"temp": float64(26.0),
-						"ts":   float64(1541152486000),
+						"temp": 26.0,
+						"ts":   1541152486000,
 					},
 				},
 				{
 					{
-						"temp": float64(27.0),
-						"ts":   float64(1541152487000),
+						"temp": 27.0,
+						"ts":   1541152487000,
 					},
 				},
 			},
@@ -1438,8 +1298,8 @@ func TestEventWindow(t *testing.T) {
 			LateTol:            1000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 10)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 10)
 	}
 }
 
@@ -1454,28 +1314,19 @@ func TestWindowError(t *testing.T) {
 			R: [][]map[string]interface{}{
 				{{
 					"error": "run Select error: expr: binaryExpr:{ ldemo.size * 3 } meet error, err:invalid operation string(string) * int64(3)",
-				}}, {{
-					"kuiper_field_0": float64(6),
-				}, {}},
+				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(1),
-				"op_3_project_0_process_latency_us": int64(0),
-				"op_3_project_0_records_in_total":   int64(2),
-				"op_3_project_0_records_out_total":  int64(1),
-
 				"sink_memory_0_0_exceptions_total":  int64(1),
-				"sink_memory_0_0_records_in_total":  int64(2),
-				"sink_memory_0_0_records_out_total": int64(2),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
 				"source_ldemo_0_records_out_total": int64(5),
 
-				"op_2_window_0_exceptions_total":   int64(0),
-				"op_2_window_0_process_latency_us": int64(0),
-				"op_2_window_0_records_in_total":   int64(5),
-				"op_2_window_0_records_out_total":  int64(2),
+				"op_2_window_0_records_in_total":  int64(5),
+				"op_2_window_0_records_out_total": int64(1),
 			},
 		}, {
 			Name: `TestWindowErrorRule2`,
@@ -1485,34 +1336,19 @@ func TestWindowError(t *testing.T) {
 					"error": "run Where error: invalid operation string(string) > int64(2)",
 				}}, {{
 					"color": "red",
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}}, {{
-					"ts": float64(1541152487632),
-				}}, {}, {},
+					"ts": 1541152487632,
+				}}, {},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(1),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(4),
-				"op_4_project_0_records_out_total":  int64(4),
-
 				"sink_memory_0_0_exceptions_total":  int64(1),
-				"sink_memory_0_0_records_in_total":  int64(5),
-				"sink_memory_0_0_records_out_total": int64(5),
+				"sink_memory_0_0_records_in_total":  int64(4),
+				"sink_memory_0_0_records_out_total": int64(4),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
 				"source_ldemo_0_records_out_total": int64(5),
-
-				"op_3_window_0_exceptions_total":   int64(1),
-				"op_3_window_0_process_latency_us": int64(0),
-				"op_3_window_0_records_in_total":   int64(2),
-				"op_3_window_0_records_out_total":  int64(4),
-
-				"op_2_filter_0_exceptions_total":   int64(1),
-				"op_2_filter_0_process_latency_us": int64(0),
-				"op_2_filter_0_records_in_total":   int64(5),
-				"op_2_filter_0_records_out_total":  int64(2),
 			},
 		}, {
 			Name: `TestWindowErrorRule3`,
@@ -1521,21 +1357,21 @@ func TestWindowError(t *testing.T) {
 				{{
 					"color": "red",
 					"temp":  25.5,
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}}, {{
 					"color": "red",
 					"temp":  25.5,
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}}, {{
 					"color": "red",
 					"temp":  25.5,
-					"ts":    float64(1541152486013),
+					"ts":    1541152486013,
 				}}, {{
 					"temp": 28.1,
-					"ts":   float64(1541152487632),
+					"ts":   1541152487632,
 				}}, {{
 					"temp": 28.1,
-					"ts":   float64(1541152487632),
+					"ts":   1541152487632,
 				}}, {{
 					"error": "run Join error: invalid operation int64(1541152487632) = string(1541152488442)",
 				}}, {{
@@ -1585,7 +1421,7 @@ func TestWindowError(t *testing.T) {
 				}}, {{
 					"error": "run Having error: invalid operation string(string) >= int64(2)",
 				}}, {{
-					"color": float64(49),
+					"color": 49,
 				}, {}},
 			},
 			M: map[string]interface{}{
@@ -1624,42 +1460,25 @@ func TestWindowError(t *testing.T) {
 				{{
 					"error": "run Order By error: incompatible types for comparison: int and string",
 				}}, {{
-					"size": float64(3),
+					"size": 3,
 				}}, {{
-					"color": float64(49),
-					"size":  float64(2),
-				}}, {{
-					"color": "red",
+					"color": 49,
+					"size":  2,
 				}},
 			},
 			M: map[string]interface{}{
-				"op_4_project_0_exceptions_total":   int64(1),
-				"op_4_project_0_process_latency_us": int64(0),
-				"op_4_project_0_records_in_total":   int64(3),
-				"op_4_project_0_records_out_total":  int64(3),
-
 				"sink_memory_0_0_exceptions_total":  int64(1),
-				"sink_memory_0_0_records_in_total":  int64(4),
-				"sink_memory_0_0_records_out_total": int64(4),
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
 
 				"source_ldemo_0_exceptions_total":  int64(0),
 				"source_ldemo_0_records_in_total":  int64(5),
 				"source_ldemo_0_records_out_total": int64(5),
-
-				"op_2_window_0_exceptions_total":   int64(0),
-				"op_2_window_0_process_latency_us": int64(0),
-				"op_2_window_0_records_in_total":   int64(5),
-				"op_2_window_0_records_out_total":  int64(4),
-
-				"op_3_order_0_exceptions_total":   int64(1),
-				"op_3_order_0_process_latency_us": int64(0),
-				"op_3_order_0_records_in_total":   int64(4),
-				"op_3_order_0_records_out_total":  int64(3),
 			},
 		},
 	}
 	HandleStream(true, streamList, t)
-	DoRuleTest(t, tests, 0, &def.RuleOption{
+	DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
@@ -1710,7 +1529,7 @@ func TestEventSlidingWindow(t *testing.T) {
 			LateTol:      1000,
 		},
 	}
-	for j, opt := range options {
-		DoRuleTest(t, tests, j, opt, 10)
+	for _, opt := range options {
+		DoRuleTest(t, tests, opt, 10)
 	}
 }

@@ -150,7 +150,7 @@ func TestMsgpackService(t *testing.T) {
 		},
 	}
 	topotest.HandleStream(true, streamList, t)
-	topotest.DoRuleTest(t, tests, 0, &def.RuleOption{
+	topotest.DoRuleTest(t, tests, &def.RuleOption{
 		BufferLength: 100,
 		SendError:    true,
 	}, 0)
