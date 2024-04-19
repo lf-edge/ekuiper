@@ -31,7 +31,7 @@ type RuleOption struct {
 	SendError          bool              `json:"sendError,omitempty" yaml:"sendError,omitempty"`
 	Qos                Qos               `json:"qos,omitempty" yaml:"qos,omitempty"`
 	CheckpointInterval cast.DurationConf `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
-	Restart            *RestartStrategy  `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
+	RestartStrategy    *RestartStrategy  `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
 	Cron               string            `json:"cron,omitempty" yaml:"cron,omitempty"`
 	Duration           string            `json:"duration,omitempty" yaml:"duration,omitempty"`
 	CronDatetimeRange  []DatetimeRange   `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
