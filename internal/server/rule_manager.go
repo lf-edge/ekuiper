@@ -187,6 +187,7 @@ func replaceRulePassword(id, ruleJson string) (string, error) {
 		return "", err
 	}
 
+	var replacePassword bool
 	for i, action := range r.Actions {
 		if i >= len(existsRule.Actions) {
 			break
@@ -206,6 +207,7 @@ func replaceRulePassword(id, ruleJson string) (string, error) {
 										m[key] = oldPasswordStr
 										action[k] = m
 										r.Actions[i] = action
+										replacePassword = true
 										continue
 									}
 								}
@@ -215,6 +217,9 @@ func replaceRulePassword(id, ruleJson string) (string, error) {
 				}
 			}
 		}
+	}
+	if !replacePassword {
+		return ruleJson, nil
 	}
 	b, err := json.Marshal(r)
 	if err != nil {
