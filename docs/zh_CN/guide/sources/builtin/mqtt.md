@@ -41,6 +41,8 @@ demo_conf: #Conf_key
   server: "tcp://10.211.55.6:1883"
 ```
 
+你可以通过 api 的方式提前检查对应 sink 端点的连通性: [连通性检查](../../../api/restapi/connection.md#连通性检查)
+
 ## 全局配置
 
 用户可在 `default` 部分指定全局设置。
