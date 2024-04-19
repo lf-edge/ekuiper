@@ -180,7 +180,7 @@ type RuleOption struct {
 	SendError          bool             `json:"sendError" yaml:"sendError"`
 	Qos                Qos              `json:"qos" yaml:"qos"`
 	CheckpointInterval int              `json:"checkpointInterval" yaml:"checkpointInterval"`
-	Restart            *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
+	RestartStrategy    *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
 	Cron               string           `json:"cron" yaml:"cron"`
 	Duration           string           `json:"duration" yaml:"duration"`
 	CronDatetimeRange  []DatetimeRange  `json:"cronDatetimeRange" yaml:"cronDatetimeRange"`
@@ -265,7 +265,7 @@ func GetDefaultRule(name, sql string) *Rule {
 			SendError:          true,
 			Qos:                AtMostOnce,
 			CheckpointInterval: 300000,
-			Restart: &RestartStrategy{
+			RestartStrategy: &RestartStrategy{
 				Attempts:     0,
 				Delay:        1000,
 				Multiplier:   2,
