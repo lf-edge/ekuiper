@@ -933,3 +933,65 @@ func (suite *RestTestSuite) TestCreateDuplicateRule() {
 	returnVal, _ = io.ReadAll(w2.Result().Body)
 	require.Equal(suite.T(), `{"error":1000,"message":"rule test12345 already exists"}`+"\n", string(returnVal))
 }
+
+func (suite *RestTestSuite) TestGetAllRuleStatus() {
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo456() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	ruleJson2 := `{"id":"allRule1","sql":"select * from demo456","actions":[{"log":{}}]}`
+	buf2 := bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	ruleJson2 = `{"id":"allRule2","sql":"select * from demo456","actions":[{"log":{}}]}`
+	buf2 = bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules/status/all", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	var returnVal []byte
+	returnVal, _ = io.ReadAll(w.Result().Body)
+	var m map[string]interface{}
+	require.NoError(suite.T(), json.Unmarshal(returnVal, &m))
+	_, ok := m["allRule1"]
+	require.True(suite.T(), ok)
+	_, ok = m["allRule2"]
+	require.True(suite.T(), ok)
+}
+
+func (suite *RestTestSuite) TestSinkHiddenPassword() {
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo78() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	ruleJson2 := `{"triggered":false,"id":"rule34","sql":"select * from demo78;","actions":[{"mqtt":{"server":"tcp://broker.emqx.io:1883","topic":"devices/demo_001/messages/events/","qos":0,"clientId":"demo_001","username":"xyz.azure-devices.net/demo_001/?api-version=2018-06-30","password":"12345"}}]}`
+	buf2 := bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	ruleJson2 = `{"triggered":false,"id":"rule34","sql":"select * from demo78;","actions":[{"mqtt":{"server":"tcp://broker.emqx.io:1883","topic":"devices/demo_001/messages/events/","qos":0,"clientId":"demo_001","username":"xyz.azure-devices.net/demo_001/?api-version=2018-06-30","password":"******"}}]}`
+	buf2 = bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule34", buf2)
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusOK, w2.Code)
+
+	ruleJson, err := ruleProcessor.GetRuleJson("rule34")
+	require.NoError(suite.T(), err)
+	r := &api.Rule{}
+	require.NoError(suite.T(), json.Unmarshal([]byte(ruleJson), r))
+	m := r.Actions[0]["mqtt"].(map[string]interface{})
+	require.Equal(suite.T(), "12345", m["password"])
+}
