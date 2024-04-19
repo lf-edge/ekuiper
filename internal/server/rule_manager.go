@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -171,6 +172,59 @@ func replacePasswdForConfig(typ string, name string, config map[string]interface
 		}
 	}
 	return config
+}
+
+func replaceRulePassword(id, ruleJson string) (string, error) {
+	r := &api.Rule{
+		Triggered: true,
+	}
+	if err := json.Unmarshal([]byte(ruleJson), r); err != nil {
+		return "", err
+	}
+	existsRule, err := ruleProcessor.GetRuleById(id)
+	if err != nil {
+		return "", err
+	}
+
+	var replacePassword bool
+	for i, action := range r.Actions {
+		if i >= len(existsRule.Actions) {
+			break
+		}
+		for k, v := range action {
+			if m, ok := v.(map[string]interface{}); ok {
+				for key := range hidden.GetHiddenKeys() {
+					if v, ok := m[key]; ok && v == hidden.PASSWORD {
+						oldAction := existsRule.Actions[i]
+						oldV, ok := oldAction[k]
+						if ok {
+							if oldM, ok := oldV.(map[string]interface{}); ok {
+								oldPasswordValue, ok := oldM[key]
+								if ok {
+									oldPasswordStr, ok := oldPasswordValue.(string)
+									if ok && oldPasswordStr != hidden.PASSWORD {
+										m[key] = oldPasswordStr
+										action[k] = m
+										r.Actions[i] = action
+										replacePassword = true
+										continue
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	if !replacePassword {
+		return ruleJson, nil
+	}
+	b, err := json.Marshal(r)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
