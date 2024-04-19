@@ -225,12 +225,12 @@ func clone(opt api.RuleOption) *api.RuleOption {
 		SendError:          opt.SendError,
 		Qos:                opt.Qos,
 		CheckpointInterval: opt.CheckpointInterval,
-		Restart: &api.RestartStrategy{
-			Attempts:     opt.Restart.Attempts,
-			Delay:        opt.Restart.Delay,
-			Multiplier:   opt.Restart.Multiplier,
-			MaxDelay:     opt.Restart.MaxDelay,
-			JitterFactor: opt.Restart.JitterFactor,
+		RestartStrategy: &api.RestartStrategy{
+			Attempts:     opt.RestartStrategy.Attempts,
+			Delay:        opt.RestartStrategy.Delay,
+			Multiplier:   opt.RestartStrategy.Multiplier,
+			MaxDelay:     opt.RestartStrategy.MaxDelay,
+			JitterFactor: opt.RestartStrategy.JitterFactor,
 		},
 	}
 }
