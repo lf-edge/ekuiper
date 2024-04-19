@@ -92,7 +92,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                def.AtMostOnce,
 					CheckpointInterval: cast.DurationConf(5 * time.Minute),
 					SendError:          true,
-					Restart: &def.RestartStrategy{
+					RestartStrategy: &def.RestartStrategy{
 						Attempts:     20,
 						Delay:        cast.DurationConf(time.Second),
 						Multiplier:   2,
@@ -156,7 +156,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                def.ExactlyOnce,
 					CheckpointInterval: cast.DurationConf(time.Minute),
 					SendError:          true,
-					Restart: &def.RestartStrategy{
+					RestartStrategy: &def.RestartStrategy{
 						Attempts:     0,
 						Delay:        cast.DurationConf(time.Second),
 						Multiplier:   2,
@@ -193,7 +193,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                def.AtMostOnce,
 					CheckpointInterval: cast.DurationConf(5 * time.Minute),
 					SendError:          true,
-					Restart: &def.RestartStrategy{
+					RestartStrategy: &def.RestartStrategy{
 						Attempts:     0,
 						Delay:        cast.DurationConf(time.Second),
 						Multiplier:   2,
