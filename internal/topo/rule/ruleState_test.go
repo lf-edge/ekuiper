@@ -42,7 +42,7 @@ var defaultOption = &api.RuleOption{
 	SendError:          true,
 	Qos:                api.AtMostOnce,
 	CheckpointInterval: 300000,
-	Restart: &api.RestartStrategy{
+	RestartStrategy: &api.RestartStrategy{
 		Attempts:     0,
 		Delay:        1000,
 		Multiplier:   2,
