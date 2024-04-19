@@ -12,7 +12,7 @@
       "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/kafka.html"
     },
     "description": {
-      "en_US": "This a sink for Kafka, it can be used for saving the analysis data into Redis.",
+      "en_US": "This a sink for Kafka, it can be used for saving the analysis data into Kafka.",
       "zh_CN": "为 Kafka 的持久化插件，可以用于将分析数据存入 Kafka 中"
     }
   },
