@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
@@ -36,6 +37,20 @@ type SqlLookupSource struct {
 	table         string
 	needReconnect bool
 	gen           sqlQueryGen
+}
+
+func (s *SqlLookupSource) Ping(_ string, m map[string]interface{}) error {
+	ctx := context.Background()
+	if err := s.Provision(ctx, m); err != nil {
+		return err
+	}
+	if err := s.Connect(ctx); err != nil {
+		return err
+	}
+	defer func() {
+		s.Close(ctx)
+	}()
+	return s.conn.Ping(ctx)
 }
 
 func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]any) error {
