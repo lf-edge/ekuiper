@@ -17,6 +17,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -292,12 +293,12 @@ func fetchPluginList(t plugin.PluginType, hosts, os, arch string) (result map[st
 
 type pluginExporter struct{}
 
-func (e pluginExporter) Import(plugins map[string]string) map[string]string {
-	return nativeManager.PluginImport(plugins)
+func (e pluginExporter) Import(ctx context.Context, plugins map[string]string) map[string]string {
+	return nativeManager.PluginImport(ctx, plugins)
 }
 
-func (e pluginExporter) PartialImport(plugins map[string]string) map[string]string {
-	return nativeManager.PluginPartialImport(plugins)
+func (e pluginExporter) PartialImport(ctx context.Context, plugins map[string]string) map[string]string {
+	return nativeManager.PluginPartialImport(ctx, plugins)
 }
 
 func (e pluginExporter) Export() map[string]string {
