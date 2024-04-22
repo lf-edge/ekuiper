@@ -109,3 +109,18 @@ func TestSQLLookupReconnect(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
 }
+
+func TestLookupPing(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer func() {
+		s.Close()
+	}()
+	props := map[string]interface{}{
+		"dburl":      fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+		"datasource": "t",
+	}
+	ls := &SqlLookupSource{}
+	require.NoError(t, ls.Ping("", props))
+}
