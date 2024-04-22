@@ -327,9 +327,9 @@ func (t *Server) ImportConfiguration(arg *model.ImportDataDesc, reply *string) e
 	var result ImportConfigurationStatus
 	if !partial {
 		configurationReset()
-		result = configurationImport(content, arg.Stop)
+		result = configurationImport(context.Background(), content, arg.Stop)
 	} else {
-		result = configurationPartialImport(content)
+		result = configurationPartialImport(context.Background(), content)
 	}
 	marshal, _ := json.Marshal(result)
 

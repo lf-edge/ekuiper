@@ -16,6 +16,7 @@ package service
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -520,10 +521,15 @@ func (m *Manager) servicesRegisterForImport(_, v string) error {
 	return nil
 }
 
-func (m *Manager) ImportServices(services map[string]string) map[string]string {
+func (m *Manager) ImportServices(ctx context.Context, services map[string]string) map[string]string {
 	errMap := map[string]string{}
 	_ = m.serviceStatusInstallKV.Clean()
 	for k, v := range services {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := m.servicesRegisterForImport(k, v)
 		if err != nil {
 			_ = m.serviceStatusInstallKV.Set(k, err.Error())
@@ -533,9 +539,14 @@ func (m *Manager) ImportServices(services map[string]string) map[string]string {
 	return errMap
 }
 
-func (m *Manager) ImportPartialServices(services map[string]string) map[string]string {
+func (m *Manager) ImportPartialServices(ctx context.Context, services map[string]string) map[string]string {
 	errMap := map[string]string{}
 	for k, v := range services {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := m.servicesRegisterForImport(k, v)
 		if err != nil {
 			errMap[k] = err.Error()

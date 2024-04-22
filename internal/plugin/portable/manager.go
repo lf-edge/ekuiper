@@ -17,6 +17,7 @@ package portable
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -444,10 +445,15 @@ func (m *Manager) pluginRegisterForImport(k, v string) error {
 	return nil
 }
 
-func (m *Manager) PluginImport(plugins map[string]string) map[string]string {
+func (m *Manager) PluginImport(ctx context.Context, plugins map[string]string) map[string]string {
 	errMap := map[string]string{}
 	_ = m.plgStatusDb.Clean()
 	for k, v := range plugins {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := m.pluginRegisterForImport(k, v)
 		if err != nil {
 			_ = m.plgStatusDb.Set(k, err.Error())
@@ -458,9 +464,14 @@ func (m *Manager) PluginImport(plugins map[string]string) map[string]string {
 	return errMap
 }
 
-func (m *Manager) PluginPartialImport(plugins map[string]string) map[string]string {
+func (m *Manager) PluginPartialImport(ctx context.Context, plugins map[string]string) map[string]string {
 	errMap := map[string]string{}
 	for k, v := range plugins {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		var installScript string
 		found, _ := m.plgInstallDb.Get(k, &installScript)
 		if !found {

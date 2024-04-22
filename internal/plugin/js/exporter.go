@@ -15,6 +15,7 @@
 package js
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -24,10 +25,15 @@ import (
 // The functions are stored in the key-value store only. So import and export are just to read and write the key-value store
 
 // Import the JavaScript functions from the map. This is usually called after reset to override all settings
-func (m *Manager) Import(scripts map[string]string) map[string]string {
+func (m *Manager) Import(ctx context.Context, scripts map[string]string) map[string]string {
 	errMap := map[string]string{}
 	_ = m.importStatusDb.Clean()
 	for k, v := range scripts {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := m.UpsertByJson(k, v)
 		if err != nil {
 			_ = m.importStatusDb.Set(k, err.Error())
@@ -37,9 +43,14 @@ func (m *Manager) Import(scripts map[string]string) map[string]string {
 	return errMap
 }
 
-func (m *Manager) PartialImport(scripts map[string]string) map[string]string {
+func (m *Manager) PartialImport(ctx context.Context, scripts map[string]string) map[string]string {
 	errMap := map[string]string{}
 	for k, v := range scripts {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := m.UpsertByJson(k, v)
 		if err != nil {
 			errMap[k] = err.Error()
