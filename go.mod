@@ -121,6 +121,6 @@ require (
 	modernc.org/token v1.1.0 // indirect
 )
 
-replace github.com/lf-edge/ekuiper/contract/v2 v2.0.0 => ./mod/contract
+replace github.com/lf-edge/ekuiper/contract/v2 v2.0.0 => ./contract
 
 go 1.22.1
