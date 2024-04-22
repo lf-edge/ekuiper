@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -87,7 +88,7 @@ func (s *sink) Collect(ctx api.StreamContext, data api.Tuple) error {
 	if err != nil {
 		return err
 	}
-	return s.publish(ctx, topic, api.NewDefaultSourceTuple(data.Message(), s.meta, timex.GetNow()))
+	return s.publish(ctx, topic, model.NewDefaultSourceTuple(data.Message(), s.meta, timex.GetNow()))
 }
 
 func (s *sink) CollectList(ctx api.StreamContext, tuples []api.Tuple) error {
@@ -98,7 +99,7 @@ func (s *sink) CollectList(ctx api.StreamContext, tuples []api.Tuple) error {
 	//}
 	tt := make([]api.Tuple, len(tuples))
 	for i, d := range tuples {
-		tt[i] = api.NewDefaultSourceTuple(d.Message(), s.meta, timex.GetNow())
+		tt[i] = model.NewDefaultSourceTuple(d.Message(), s.meta, timex.GetNow())
 	}
 	pubsub.ProduceList(ctx, s.topic, tt)
 	return nil

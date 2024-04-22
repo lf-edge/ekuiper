@@ -74,7 +74,7 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest) er
 		case <-next:
 			m.Lock()
 			m.offset = i + 1
-			ingest(ctx, api.NewDefaultSourceTuple(d.Message, xsql.Message{"topic": "mock"}, timex.GetNow()), timex.GetNow())
+			ingest(ctx, map[string]any(d.Message), map[string]any{"topic": "mock"}, timex.GetNow())
 			log.Debugf("%d: mock source %s is sending data %d:%s", timex.GetNowInMilli(), ctx.GetOpId(), i, d)
 			m.Unlock()
 		case <-ctx.Done():

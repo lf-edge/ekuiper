@@ -24,7 +24,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 var count atomic.Value
@@ -55,8 +57,8 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	go func() {
 		switch ss := r.(type) {
 		case api.BytesSource:
-			err = ss.Subscribe(ctx, func(ctx api.StreamContext, data api.RawTuple) {
-				result = append(result, api.NewDefaultRawTuple(data.Raw(), data.Meta(), data.Timestamp()))
+			err = ss.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
+				result = append(result, model.NewDefaultRawTuple(payload, xsql.Message(meta), ts))
 				limit--
 				if limit <= 0 {
 					wg.Done()

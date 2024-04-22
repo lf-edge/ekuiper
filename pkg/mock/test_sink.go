@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -57,11 +58,11 @@ func RunTupleSinkCollect(s api.TupleCollector, data []any) error {
 			err = s.CollectList(ctx, ee)
 		// TODO Make the output all as tuple
 		case api.ReadonlyMessage:
-			err = s.Collect(ctx, api.NewDefaultSourceTuple(ee, nil, timex.GetNow()))
+			err = s.Collect(ctx, model.NewDefaultSourceTuple(ee, nil, timex.GetNow()))
 		case []api.ReadonlyMessage:
 			tuples := make([]api.Tuple, 0, len(ee))
 			for _, m := range ee {
-				tuples = append(tuples, api.NewDefaultSourceTuple(m, nil, timex.GetNow()))
+				tuples = append(tuples, model.NewDefaultSourceTuple(m, nil, timex.GetNow()))
 			}
 			err = s.CollectList(ctx, tuples)
 		default:

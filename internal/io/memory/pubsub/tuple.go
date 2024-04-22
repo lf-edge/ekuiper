@@ -14,10 +14,12 @@
 
 package pubsub
 
-import "github.com/lf-edge/ekuiper/contract/v2/api"
+import (
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
+)
 
 type UpdatableTuple struct {
-	*api.DefaultSourceTuple
+	*model.DefaultSourceTuple
 	Rowkind string
 	Keyval  interface{}
 }

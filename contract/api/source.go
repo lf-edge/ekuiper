@@ -26,14 +26,16 @@ type Source interface {
 	Connector
 }
 
-type BytesIngest func(ctx StreamContext, data RawTuple)
+type BytesIngest func(ctx StreamContext, payload []byte, meta map[string]any, ts time.Time)
 
 type BytesSource interface {
 	Source
 	Subscribe(ctx StreamContext, ingest BytesIngest) error
 }
 
-type TupleIngest func(ctx StreamContext, data any, ts time.Time)
+// TupleIngest reads in a structural data or its list.
+// It supports map and []map for now
+type TupleIngest func(ctx StreamContext, data any, meta map[string]any, ts time.Time)
 
 type TupleSource interface {
 	Source

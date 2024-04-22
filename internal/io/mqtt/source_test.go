@@ -31,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 // NOTICE!!! Need to run a MQTT broker in localhost:1883 for this test or change the url to your broker
@@ -87,7 +88,7 @@ func TestOpen(t *testing.T) {
 		"server":     url,
 		"datasource": "demo",
 	}, []api.Tuple{
-		api.NewDefaultRawTuple([]byte("hello"), xsql.Message{
+		model.NewDefaultRawTuple([]byte("hello"), xsql.Message{
 			"topic":     "demo",
 			"messageId": uint16(0),
 			"qos":       byte(0),

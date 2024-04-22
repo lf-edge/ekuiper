@@ -64,27 +64,31 @@ func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 	go m.Run(ctx, ctrlCh)
 }
 
-func (m *SourceNode) ingestBytes(ctx api.StreamContext, data api.RawTuple) {
+func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
 	var tuple *xsql.Tuple
-	if data.Meta() != nil {
-		tuple = &xsql.Tuple{Emitter: m.name, Raw: data.Raw(), Timestamp: data.Timestamp().UnixMilli(), Metadata: data.Meta().ToMap()}
-	} else {
-		tuple = &xsql.Tuple{Emitter: m.name, Raw: data.Raw(), Timestamp: data.Timestamp().UnixMilli(), Metadata: nil}
-	}
+	tuple = &xsql.Tuple{Emitter: m.name, Raw: data, Timestamp: ts.UnixMilli(), Metadata: meta}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)
 	m.statManager.ProcessTimeEnd()
 }
 
-func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, ts time.Time) {
+func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
 	switch mess := data.(type) {
+	// Maps are expected from user extension
+	case map[string]any:
+		m.ingestMap(mess, meta, ts)
+	case []map[string]any:
+		for _, mm := range mess {
+			m.ingestMap(mm, meta, ts)
+		}
+	// Source tuples are expected from memory
 	case api.Tuple:
 		m.ingestTuple(mess, ts)
 	case []api.Tuple:
@@ -97,6 +101,12 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, ts time.Tim
 	}
 	m.statManager.IncTotalMessagesProcessed(1)
 	m.statManager.ProcessTimeEnd()
+}
+
+func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
+	tuple := &xsql.Tuple{Emitter: m.name, Message: t, Timestamp: ts.UnixMilli(), Metadata: meta}
+	m.Broadcast(tuple)
+	m.statManager.IncTotalRecordsOut()
 }
 
 func (m *SourceNode) ingestTuple(t api.Tuple, ts time.Time) {
