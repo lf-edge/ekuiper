@@ -200,7 +200,7 @@ func (m *MockSourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesI
 			time.Sleep(100 * time.Millisecond)
 		}
 		for _, d := range m.data {
-			ingest(ctx, api.NewDefaultRawTuple(d, xsql.Message{"topic": "demo"}, timex.GetNow()))
+			ingest(ctx, d, map[string]any{"topic": "demo"}, timex.GetNow())
 		}
 		<-ctx.Done()
 		fmt.Println("MockSourceConnector closed")

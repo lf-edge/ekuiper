@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -102,11 +101,11 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	}
 	rcvTime := timex.GetNow()
-	ingest(ctx, api.NewDefaultRawTuple(msg.Payload(), xsql.Message(map[string]interface{}{
+	ingest(ctx, msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
-	}), rcvTime))
+	}, rcvTime)
 }
 
 func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {

@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -62,7 +63,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 		t.Error(err)
 	}
 
-	rawTuple := api.NewDefaultSourceTuple(xsql.Message{"temp": 12}, nil, timex.GetNow())
+	rawTuple := model.NewDefaultSourceTuple(xsql.Message{"temp": 12}, nil, timex.GetNow())
 	mockclock.GetMockClock().Add(100)
 	go func() {
 		err = snk.CollectList(ctx, []api.Tuple{rawTuple})
@@ -70,8 +71,8 @@ func TestSharedInmemoryNode(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, ts time.Time) {
-		expected := []api.Tuple{api.NewDefaultSourceTuple(rawTuple.Message(), xsql.Message{"topic": id}, timex.GetNow())}
+	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
+		expected := []api.Tuple{model.NewDefaultSourceTuple(rawTuple.Message(), xsql.Message{"topic": id}, timex.GetNow())}
 		assert.Equal(t, expected, res)
 		cancel()
 	})
@@ -141,37 +142,37 @@ func TestMultipleTopics(t *testing.T) {
 		}
 		expected = [][]api.Tuple{
 			{ // 0 "h/d1/c1/s2",
-				api.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
 			},
 			{ // 1 "h/+/+/s1",
-				api.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
 
-				api.NewDefaultSourceTuple(xsql.Message{"id": 7, "hum": 67.5}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 8, "hum": 77.1}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 9, "hum": 90.3}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 7, "hum": 67.5}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 8, "hum": 77.1}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 9, "hum": 90.3}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
 
-				api.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
 			},
 			{ // 2 "h/d3/#",
-				api.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
 			},
 			{ // 3 "h/d1/c1/s2",
-				api.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
 			},
 			{ // 4 "h/+/c1/s1"
-				api.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				api.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				model.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
 			},
 		}
 	)
@@ -202,10 +203,10 @@ func TestMultipleTopics(t *testing.T) {
 		limit := len(expected[i])
 		result := make([]api.Tuple, 0, limit)
 		nc, cancel := ctx.WithMeta("rule1", fmt.Sprintf("op%d", i), &state.MemoryStore{}).WithCancel()
-		err = src.Subscribe(nc, func(ctx api.StreamContext, data any, ts time.Time) {
-			rid, _ := data.(api.Tuple).Message().Get("id")
+		err = src.Subscribe(nc, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
+			rid, _ := res.(api.Tuple).Message().Get("id")
 			fmt.Printf("%d(%s) receive %v\n", i, topic, rid)
-			result = append(result, data.(api.Tuple))
+			result = append(result, res.(api.Tuple))
 			limit--
 			if limit == 0 {
 				assert.Equal(t, result, expected[i], i)
@@ -220,7 +221,7 @@ func TestMultipleTopics(t *testing.T) {
 		topic := sinkTopics[i]
 		for _, mm := range v {
 			time.Sleep(10 * time.Millisecond)
-			pubsub.Produce(ctx, topic, api.NewDefaultSourceTuple(xsql.Message(mm), xsql.Message{"topic": topic}, timex.GetNow()))
+			pubsub.Produce(ctx, topic, model.NewDefaultSourceTuple(xsql.Message(mm), xsql.Message{"topic": topic}, timex.GetNow()))
 			fmt.Printf("send to topic %s: %v\n", topic, mm["id"])
 		}
 

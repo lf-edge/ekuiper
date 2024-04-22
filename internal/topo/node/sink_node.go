@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -141,15 +142,15 @@ func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 		err = sink.(api.TupleCollector).CollectList(ctx, d)
 	// TODO Make the output all as tuple
 	case api.ReadonlyMessage:
-		err = sink.(api.TupleCollector).Collect(ctx, api.NewDefaultSourceTuple(d, nil, timex.GetNow()))
+		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(d, nil, timex.GetNow()))
 	case []api.ReadonlyMessage:
 		tuples := make([]api.Tuple, 0, len(d))
 		for _, m := range d {
-			tuples = append(tuples, api.NewDefaultSourceTuple(m, nil, timex.GetNow()))
+			tuples = append(tuples, model.NewDefaultSourceTuple(m, nil, timex.GetNow()))
 		}
 		err = sink.(api.TupleCollector).CollectList(ctx, tuples)
 	case error:
-		err = sink.(api.TupleCollector).Collect(ctx, api.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
+		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
 	default:
 		err = fmt.Errorf("expect tuple data type but got %T", d)
 	}
