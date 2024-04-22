@@ -6,5 +6,5 @@ use (
 	.
 	./app
 	./tools/kubernetes
-	./mod/contract
+	contract
 )
