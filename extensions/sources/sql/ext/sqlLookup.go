@@ -36,19 +36,16 @@ type sqlLookupSource struct {
 	driver string
 }
 
+func (s *sqlLookupSource) Ping(_ string, props map[string]interface{}) error {
+	if err := s.Configure("", props); err != nil {
+		return err
+	}
+	return s.db.Ping()
+}
+
 // Open establish a connection to the database
 func (s *sqlLookupSource) Open(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("Opening sql lookup source")
-	db, err := util.FetchDBToOneNode(util.GlobalPool, s.url)
-	if err != nil {
-		return fmt.Errorf("connection to %s Open with error %v", s.url, err)
-	}
-	s.driver, err = util.ParseDriver(s.url)
-	if err != nil {
-		conf.Log.Warnf("parse url %v driver failed, err:%v", s.url, err)
-		s.driver = ""
-	}
-	s.db = db
 	return nil
 }
 
@@ -63,6 +60,16 @@ func (s *sqlLookupSource) Configure(datasource string, props map[string]interfac
 	}
 	s.url = cfg.Url
 	s.table = datasource
+	db, err := util.FetchDBToOneNode(util.GlobalPool, s.url)
+	if err != nil {
+		return fmt.Errorf("connection to %s Open with error %v", s.url, err)
+	}
+	s.driver, err = util.ParseDriver(s.url)
+	if err != nil {
+		conf.Log.Warnf("parse url %v driver failed, err:%v", s.url, err)
+		s.driver = ""
+	}
+	s.db = db
 	return nil
 }
 
