@@ -15,6 +15,7 @@
 package schema
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -287,12 +288,17 @@ func clearInstallFlag() {
 	_ = schemaDb.Delete(BOOT_INSTALL)
 }
 
-func ImportSchema(schema map[string]string) map[string]string {
+func ImportSchema(ctx context.Context, schema map[string]string) map[string]string {
 	if len(schema) == 0 {
 		return nil
 	}
 	errMap := map[string]string{}
 	for k, v := range schema {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := schemaDb.Set(k, v)
 		if err != nil {
 			errMap[k] = err.Error()
@@ -309,9 +315,14 @@ func ImportSchema(schema map[string]string) map[string]string {
 // SchemaPartialImport compare the schema to be installed and the one in database
 // if not exist in database, install;
 // if existed, ignore
-func SchemaPartialImport(schemas map[string]string) map[string]string {
+func SchemaPartialImport(ctx context.Context, schemas map[string]string) map[string]string {
 	errMap := map[string]string{}
 	for k, v := range schemas {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		schemaScript := ""
 		found, _ := schemaDb.Get(k, &schemaScript)
 		if !found {

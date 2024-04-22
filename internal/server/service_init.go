@@ -17,6 +17,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -145,12 +146,12 @@ func serviceFunctionHandler(w http.ResponseWriter, r *http.Request) {
 
 type serviceExporter struct{}
 
-func (e serviceExporter) Import(services map[string]string) map[string]string {
-	return serviceManager.ImportServices(services)
+func (e serviceExporter) Import(ctx context.Context, services map[string]string) map[string]string {
+	return serviceManager.ImportServices(ctx, services)
 }
 
-func (e serviceExporter) PartialImport(services map[string]string) map[string]string {
-	return serviceManager.ImportPartialServices(services)
+func (e serviceExporter) PartialImport(ctx context.Context, services map[string]string) map[string]string {
+	return serviceManager.ImportPartialServices(ctx, services)
 }
 
 func (e serviceExporter) Export() map[string]string {

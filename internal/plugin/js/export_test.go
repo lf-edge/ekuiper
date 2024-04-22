@@ -19,6 +19,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/lf-edge/ekuiper/internal/topo/context"
 )
 
 func TestFullLifecycle(t *testing.T) {
@@ -54,7 +56,7 @@ func TestFullLifecycle(t *testing.T) {
 		"testScript": "{\"id\":\"testScript\",\"description\":\"Test script\",\"script\":\"function testScript() { return 'Hello, new!'; }\",\"isAgg\":false}",
 		"invalid":    "{\"id\":\"novalid\",\"description\":\"invalid script\",\"script\":\"function novalid() { return 'Hello, invalid!'; }\",\"isAgg\":false}",
 	}
-	errMap := m.PartialImport(invalidSet)
+	errMap := m.PartialImport(context.Background(), invalidSet)
 	assert.Equal(t, map[string]string{"invalid": "the script id novalid does not match the key invalid"}, errMap)
 	newExpected := map[string]string{
 		"area":       "{\"id\":\"area\",\"description\":\"func for area\",\"script\":\"function area(x, y) { return x*y; }\",\"isAgg\":false}",
@@ -65,7 +67,7 @@ func TestFullLifecycle(t *testing.T) {
 	assert.Equal(t, newExpected, scripts)
 	// Import scripts
 	m.Reset()
-	errMap = m.Import(expected)
+	errMap = m.Import(context.Background(), expected)
 	assert.Empty(t, errMap)
 	status := m.Status()
 	assert.Empty(t, status)
@@ -75,7 +77,7 @@ func TestFullLifecycle(t *testing.T) {
 	m.Reset()
 	scripts = m.Export()
 	assert.Empty(t, scripts)
-	errMap = m.Import(invalidSet)
+	errMap = m.Import(context.Background(), invalidSet)
 	assert.Equal(t, map[string]string{"invalid": "the script id novalid does not match the key invalid"}, errMap)
 	status = m.Status()
 	assert.Equal(t, map[string]string{"invalid": "the script id novalid does not match the key invalid"}, status)
@@ -100,9 +102,9 @@ func TestDBInvalid(t *testing.T) {
 		m.db = oldDb
 	}()
 	m.Reset()
-	errMap := m.Import(map[string]string{"test": "{\"id\":\"test\",\"description\":\"Test script\",\"script\":\"function test() { return 'Hello, World!'; }\",\"isAgg\":false}"})
+	errMap := m.Import(context.Background(), map[string]string{"test": "{\"id\":\"test\",\"description\":\"Test script\",\"script\":\"function test() { return 'Hello, World!'; }\",\"isAgg\":false}"})
 	assert.Equal(t, map[string]string{"test": "db is nil"}, errMap)
-	errMap = m.PartialImport(map[string]string{"test": "{\"id\":\"test\",\"description\":\"Test script\",\"script\":\"function test() { return 'Hello, World!'; }\",\"isAgg\":false}"})
+	errMap = m.PartialImport(context.Background(), map[string]string{"test": "{\"id\":\"test\",\"description\":\"Test script\",\"script\":\"function test() { return 'Hello, World!'; }\",\"isAgg\":false}"})
 	assert.Equal(t, map[string]string{"test": "db is nil"}, errMap)
 	scripts := m.Export()
 	assert.Empty(t, scripts)
