@@ -102,7 +102,7 @@ func startPluginIns(info *portable.PluginInfo) (*runtime.PluginIns, error) {
 	conf.Log.Println("waiting handshake")
 	err = ctrlChan.Handshake()
 	if err != nil {
-		return nil, fmt.Errorf("plugin %s control handshake error: %v", info.Name, err)
+		return nil, fmt.Errorf("startPluginIns, plugin %s control handshake error: %v", info.Name, err)
 	}
 	conf.Log.Println("plugin start running")
 	return runtime.NewPluginInsForTest(info.Name, ctrlChan), nil

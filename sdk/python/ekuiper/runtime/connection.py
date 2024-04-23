@@ -87,7 +87,7 @@ class SinkChannel:
 class SinkAckChannel:
 
     def __init__(self, meta: dict):
-        s = Pull0()
+        s = Push0(send_timeout=1000)
         url = "ipc:///tmp/{}_{}_{}_ack.ipc".format(meta['ruleId'], meta['opId'], meta['instanceId'])
         logging.info(url)
         dial_with_retry(s, url)

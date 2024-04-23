@@ -55,6 +55,11 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 	}
 	ctx.GetLogger().Infof("Plugin started successfully")
 
+	ackCh, err := CreateSinkAckChannel(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Control: send message to plugin to ask starting symbol
 	c := &Control{
 		Meta: Meta{
@@ -73,12 +78,6 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 
 	// must start symbol firstly
 	dataCh, err := CreateSinkChannel(ctx)
-	if err != nil {
-		_ = ins.StopSymbol(ctx, c)
-		return err
-	}
-
-	ackCh, err := CreateSinkAckChannel(ctx)
 	if err != nil {
 		_ = ins.StopSymbol(ctx, c)
 		return err

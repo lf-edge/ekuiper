@@ -51,3 +51,13 @@ class Context(object):
     def emit_error(self, error: str):
         """Emit error to the stream"""
         pass
+
+    @abstractmethod
+    def ack_ok(self):
+        """Emit the response ack ok to the sink"""
+        pass
+
+    @abstractmethod
+    def ack_error(self, error: str):
+        """Emit the response ack error to the sink"""
+        pass

@@ -31,7 +31,6 @@ class ContextImpl(Context):
     def set_emitter(self, emitter: SourceChannel):
         self.emitter = emitter
 
-
     def set_ack_emitter(self, emitter: SinkAckChannel):
         self.ack_emitter = emitter
 
@@ -58,9 +57,8 @@ class ContextImpl(Context):
         return self.emitter.send(str.encode(json_str))
 
     def ack_ok(self):
-        data = {'error':''}
-        json_str = json.dumps(data)
-        return self.ack_emitter.send(str.encode(json_str))
+        data = b'{}'
+        return self.ack_emitter.send(data)
 
     def ack_error(self, error: str):
         data = {'error': error}

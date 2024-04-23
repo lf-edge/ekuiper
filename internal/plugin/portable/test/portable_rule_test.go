@@ -98,7 +98,10 @@ func TestSourceAndFunc(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	defer runtime.GetPluginInsManager().KillAll()
+	defer func() {
+		time.Sleep(3 * time.Second)
+		runtime.GetPluginInsManager().KillAll()
+	}()
 	for i, tt := range tests {
 		topotest.HandleStream(true, streamList[i:i+1], t)
 		rs, err := CreateRule(tt.Name, tt.Rule)

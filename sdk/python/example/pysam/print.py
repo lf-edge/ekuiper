@@ -30,6 +30,7 @@ class PrintSink(Sink):
 
     def collect(self, ctx: Context, data: Any):
         print('receive: ', data)
+        ctx.ack_ok()
 
     def close(self, ctx: Context):
         print("closing print sink")
