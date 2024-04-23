@@ -15,8 +15,11 @@
 package runtime
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+
+	"go.nanomsg.org/mangos/v3"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -27,6 +30,7 @@ type PortableSink struct {
 	reg        *PluginMeta
 	props      map[string]interface{}
 	dataCh     DataOutChannel
+	ackCh      DataInChannel
 	clean      func() error
 }
 
@@ -74,6 +78,12 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 		return err
 	}
 
+	ackCh, err := CreateSinkAckChannel(ctx)
+	if err != nil {
+		_ = ins.StopSymbol(ctx, c)
+		return err
+	}
+
 	ps.clean = func() error {
 		ctx.GetLogger().Info("clean up sink")
 		err1 := dataCh.Close()
@@ -87,6 +97,7 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 		return errors.Join(err1, err2)
 	}
 	ps.dataCh = dataCh
+	ps.ackCh = ackCh
 	return nil
 }
 
@@ -98,11 +109,26 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if e != nil {
 			return errorx.NewIOErr(e.Error())
 		}
+		msg, err := recvAck(ctx, ps.ackCh)
+		if err != nil {
+			return err
+		}
+		r := &ackResponse{}
+		if err := json.Unmarshal(msg, r); err != nil {
+			return err
+		}
+		if len(r.Error) > 0 {
+			return errors.New(r.Error)
+		}
 		return nil
 	} else {
 		ctx.GetLogger().Errorf("Found error %s", err.Error())
 		return err
 	}
+}
+
+type ackResponse struct {
+	Error string `json:"error"`
 }
 
 func (ps *PortableSink) Close(ctx api.StreamContext) error {
@@ -111,4 +137,24 @@ func (ps *PortableSink) Close(ctx api.StreamContext) error {
 		return ps.clean()
 	}
 	return nil
+}
+
+func recvAck(ctx api.StreamContext, dataCh DataInChannel) ([]byte, error) {
+	var msg []byte
+	var err error
+	// make sure recv has timeout
+	msg, err = dataCh.Recv()
+	switch err {
+	case mangos.ErrClosed:
+		ctx.GetLogger().Info("stop source after close")
+	case mangos.ErrRecvTimeout:
+		ctx.GetLogger().Debug("source receive timeout, retry")
+		select {
+		case <-ctx.Done():
+			ctx.GetLogger().Info("stop dataInChannel")
+		}
+	case nil:
+		// do nothing
+	}
+	return msg, err
 }
