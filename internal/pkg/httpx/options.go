@@ -16,7 +16,8 @@ import (
 type HTTPRequestOptions func(req *http.Request) error
 
 const (
-	acceptEncoding = "Accept-Encoding"
+	acceptEncoding  = "Accept-Encoding"
+	contentEncoding = "Content-Encoding"
 
 	// EmptyCompressorAlgorithm just using to beautify codes.
 	EmptyCompressorAlgorithm = ""
@@ -62,14 +63,18 @@ func compressRequest(r *http.Request, bodyType string, algo string, compressor m
 	return nil
 }
 
+// setAcceptEncodingHeader sets the new header with specified
+// algorithm.
 func setAcceptEncodingHeader(r *http.Request, algo string) {
 	// set Accept-Encoding header to request
 	if algo == "flate" {
-		// So is really need to do this?
-		r.Header.Set(acceptEncoding, "deflate")
-	} else {
-		r.Header.Set(acceptEncoding, algo)
+		// replace flate to deflate, but is really need to do this?
+		algo = "deflate"
 	}
+	r.Header.Set(acceptEncoding, algo)
+	// set header Content-Encoding and key is specified algo.
+	// see: https://github.com/lf-edge/ekuiper/pull/2779#issuecomment-2071751663
+	r.Header.Set(contentEncoding, algo)
 }
 
 // WithBody specifies the request body.
