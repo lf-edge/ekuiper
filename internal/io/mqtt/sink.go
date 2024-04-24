@@ -19,21 +19,19 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/io"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
 	mqttClient "github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/mqtt"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 // AdConf is the advanced configuration for the mqtt sink
 type AdConf struct {
-	Tpc         string `json:"topic"`
-	Qos         byte   `json:"qos"`
-	Retained    bool   `json:"retained"`
-	Compression string `json:"compression"`
+	Tpc      string `json:"topic"`
+	Qos      byte   `json:"qos"`
+	Retained bool   `json:"retained"`
+
 	ResendTopic string `json:"resendDestination"`
 }
 
@@ -41,7 +39,6 @@ type MQTTSink struct {
 	adconf     *AdConf
 	config     map[string]interface{}
 	cli        io.MessageClient
-	compressor message.Compressor
 	sendParams map[string]any
 }
 
@@ -60,12 +57,6 @@ func (ms *MQTTSink) Provision(_ api.StreamContext, ps map[string]any) error {
 	}
 	if adconf.Qos != 0 && adconf.Qos != 1 && adconf.Qos != 2 {
 		return fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", adconf.Qos)
-	}
-	if adconf.Compression != "" {
-		ms.compressor, err = compressor.GetCompressor(adconf.Compression)
-		if err != nil {
-			return fmt.Errorf("invalid compression method %s", adconf.Compression)
-		}
 	}
 	ms.config = ps
 	if adconf.ResendTopic == "" {

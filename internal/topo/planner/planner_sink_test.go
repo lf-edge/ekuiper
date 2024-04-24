@@ -86,6 +86,40 @@ func TestSinkPlan(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "batch and compress sink plan",
+			rule: &def.Rule{
+				Actions: []map[string]any{
+					{
+						"log": map[string]any{
+							"batchSize":   10,
+							"compression": "gzip",
+						},
+					},
+				},
+				Options: defaultOption,
+			},
+			topo: &def.PrintableTopo{
+				Sources: []string{"source_src1"},
+				Edges: map[string][]any{
+					"source_src1": {
+						"op_log_0_0_batch",
+					},
+					"op_log_0_0_batch": {
+						"op_log_0_1_transform",
+					},
+					"op_log_0_1_transform": {
+						"op_log_0_2_encode",
+					},
+					"op_log_0_2_encode": {
+						"op_log_0_3_compress",
+					},
+					"op_log_0_3_compress": {
+						"sink_log_0",
+					},
+				},
+			},
+		},
 	}
 	for _, c := range tc {
 		tp, err := topo.NewWithNameAndOptions("test", c.rule.Options)

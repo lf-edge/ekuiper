@@ -103,6 +103,16 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 		index++
 		tp.AddOperator(newInputs, encodeOp)
 		newInputs = []node.Emitter{encodeOp}
+
+		if sc.Compression != "" {
+			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression)
+			if err != nil {
+				return nil, err
+			}
+			index++
+			tp.AddOperator(newInputs, compressOp)
+			newInputs = []node.Emitter{compressOp}
+		}
 	}
 	return newInputs, nil
 }
