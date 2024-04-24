@@ -226,9 +226,15 @@ func (suite *MetaTestSuite) TestResourceSourceType() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 
-	req, _ = http.NewRequest(http.MethodGet, "/metadata/resources?sourceType=stream", bytes.NewBufferString("any"))
+	req, _ = http.NewRequest(http.MethodGet, "/metadata/resource?sourceType=stream", bytes.NewBufferString("any"))
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnval, _ := io.ReadAll(w.Body)
+	require.Equal(suite.T(), `{"mqtt":{"demo":{"qos":0,"server":"tcp://10.211.55.6:1883","sourceType":"stream"}}}`, string(returnval))
+
+	req, _ = http.NewRequest(http.MethodGet, "/metadata/resource", bytes.NewBufferString("any"))
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	returnval, _ = io.ReadAll(w.Body)
 	require.Equal(suite.T(), `{"mqtt":{"demo":{"qos":0,"server":"tcp://10.211.55.6:1883","sourceType":"stream"}}}`, string(returnval))
 }
