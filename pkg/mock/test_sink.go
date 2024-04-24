@@ -25,9 +25,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-func RunBytesSinkCollect(s api.BytesCollector, data [][]byte) error {
+func RunBytesSinkCollect(s api.BytesCollector, data [][]byte, props map[string]any) error {
 	ctx := mockContext.NewMockContext("ruleSink", "op1")
-	err := s.Connect(ctx)
+	err := s.Provision(ctx, props)
+	if err != nil {
+		return err
+	}
+	err = s.Connect(ctx)
 	if err != nil {
 		return err
 	}
@@ -43,9 +47,13 @@ func RunBytesSinkCollect(s api.BytesCollector, data [][]byte) error {
 	return s.Close(ctx)
 }
 
-func RunTupleSinkCollect(s api.TupleCollector, data []any) error {
+func RunTupleSinkCollect(s api.TupleCollector, data []any, props map[string]any) error {
 	ctx := mockContext.NewMockContext("ruleSink", "op1")
-	err := s.Connect(ctx)
+	err := s.Provision(ctx, props)
+	if err != nil {
+		return err
+	}
+	err = s.Connect(ctx)
 	if err != nil {
 		return err
 	}
