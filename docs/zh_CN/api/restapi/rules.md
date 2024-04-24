@@ -174,6 +174,14 @@ GET http://localhost:9081/rules/{id}/status
 }
 ```
 
+## 获取所有规则的状态
+
+该命令用于获取所有规则的状态。 如果规则正在运行，则将实时检索状态指标。
+
+```shell
+GET http://localhost:9081/rules/status/all
+```
+
 ## 验证规则
 
 该 API 用于验证规则。

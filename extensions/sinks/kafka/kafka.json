@@ -51,6 +51,21 @@
       }
     },
     {
+      "name": "requiredACKs",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "int",
+      "hint": {
+        "en_US": "The mechanism for Kafka client to confirm messages",
+        "zh_CN": "Kafka 客户端确认消息的机制"
+      },
+      "label": {
+        "en_US": "requiredACKs",
+        "zh_CN": "确认机制"
+      }
+    },
+    {
       "name": "saslAuthType",
       "default": "none",
       "optional": false,
