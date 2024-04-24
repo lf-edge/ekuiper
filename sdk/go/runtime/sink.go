@@ -89,8 +89,6 @@ func (s *sinkRuntime) run() {
 		err = s.s.Collect(s.ctx, msg)
 		if err != nil {
 			s.ctx.GetLogger().Errorf("collect error: %s", err.Error())
-			//_ = s.stop()
-			//return
 		}
 		r := &ackResponse{}
 		if err != nil {
