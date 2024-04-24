@@ -62,6 +62,8 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 				if limit <= 0 {
 					wg.Done()
 				}
+			}, func(ctx api.StreamContext, err error) {
+				panic(err)
 			})
 		case api.TupleSource:
 			panic("added later")

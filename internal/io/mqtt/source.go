@@ -83,15 +83,14 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
-func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest) error {
+func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
 	return ms.cli.Subscribe(ms.tpc, &SubscriptionInfo{
 		Qos: byte(ms.cfg.Qos),
 		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
 			ms.onMessage(ctx, message, ingest)
 		},
-		// TODO signal ingest
 		ErrHandler: func(err error) {
-			ms.onError(ctx, err)
+			ingestError(ctx, err)
 		},
 	})
 }
@@ -106,10 +105,6 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
 	}, rcvTime)
-}
-
-func (ms *SourceConnector) onError(ctx api.StreamContext, err error) {
-	ctx.GetLogger().Error(err)
 }
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {

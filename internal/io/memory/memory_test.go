@@ -75,7 +75,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 		expected := []api.Tuple{model.NewDefaultSourceTuple(rawTuple.Message(), xsql.Message{"topic": id}, timex.GetNow())}
 		assert.Equal(t, expected, res)
 		cancel()
-	})
+	}, nil)
 	assert.NoError(t, err)
 	<-ctx.Done()
 }
@@ -213,7 +213,7 @@ func TestMultipleTopics(t *testing.T) {
 				cancel()
 				wg.Done()
 			}
-		})
+		}, nil)
 		assert.NoError(t, err)
 	}
 

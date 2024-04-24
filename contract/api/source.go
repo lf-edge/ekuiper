@@ -26,11 +26,12 @@ type Source interface {
 	Connector
 }
 
+type ErrorIngest func(ctx StreamContext, err error)
 type BytesIngest func(ctx StreamContext, payload []byte, meta map[string]any, ts time.Time)
 
 type BytesSource interface {
 	Source
-	Subscribe(ctx StreamContext, ingest BytesIngest) error
+	Subscribe(ctx StreamContext, ingest BytesIngest, ingestError ErrorIngest) error
 }
 
 // TupleIngest reads in a structural data or its list.
@@ -39,7 +40,7 @@ type TupleIngest func(ctx StreamContext, data any, meta map[string]any, ts time.
 
 type TupleSource interface {
 	Source
-	Subscribe(ctx StreamContext, ingest TupleIngest) error
+	Subscribe(ctx StreamContext, ingest TupleIngest, ingestError ErrorIngest) error
 }
 
 type EOFIngest func(ctx StreamContext)

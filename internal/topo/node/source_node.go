@@ -115,6 +115,12 @@ func (m *SourceNode) ingestTuple(t api.Tuple, ts time.Time) {
 	m.statManager.IncTotalRecordsOut()
 }
 
+func (m *SourceNode) ingestError(ctx api.StreamContext, err error) {
+	ctx.GetLogger().Error(err)
+	m.Broadcast(err)
+	m.statManager.IncTotalExceptions(err.Error())
+}
+
 func (m *SourceNode) ingestEof(ctx api.StreamContext) {
 	ctx.GetLogger().Infof("send out EOF")
 	m.Broadcast(xsql.EOFTuple(0))
@@ -130,9 +136,9 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		}
 		switch ss := m.s.(type) {
 		case api.BytesSource:
-			err = ss.Subscribe(ctx, m.ingestBytes)
+			err = ss.Subscribe(ctx, m.ingestBytes, m.ingestError)
 		case api.TupleSource:
-			err = ss.Subscribe(ctx, m.ingestAnyTuple)
+			err = ss.Subscribe(ctx, m.ingestAnyTuple, m.ingestError)
 		}
 		if err != nil {
 			return err
