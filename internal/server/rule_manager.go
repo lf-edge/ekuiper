@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -336,20 +337,67 @@ func getAllRuleStatus() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	resp := "{"
-	for index, ruleID := range rules {
-		m, err := getRuleStatus(ruleID)
+	m := make(map[string]ruleExceptionStatus)
+	for _, ruleID := range rules {
+		s, err := getRuleExceptionStatus(ruleID)
 		if err != nil {
 			return "", err
 		}
-		resp += fmt.Sprintf(`"%v":`, ruleID)
-		resp += m
-		if index < len(rules)-1 {
-			resp += ","
+		m[ruleID] = s
+	}
+	b, _ := json.Marshal(m)
+	return string(b), nil
+}
+
+func getRuleExceptionStatus(name string) (ruleExceptionStatus, error) {
+	s := ruleExceptionStatus{
+		lastExceptionTime: -1,
+	}
+	if rs, ok := registry.Load(name); ok {
+		result, err := rs.GetState()
+		if err != nil {
+			return s, err
+		}
+		s.Status = result
+		if result == rule.RuleStarted {
+			keys, values := (*rs.Topology).GetMetrics()
+			for i, key := range keys {
+				if strings.Contains(key, "last_exception_time") {
+					v := values[i].(int)
+					if v > s.lastExceptionTime {
+						s.lastExceptionTime = v
+						total, last := getTargetException(keys, values, key[:strings.Index(key, "last_exception_time")])
+						s.LastException = last
+						s.ExceptionsTotal = total
+					}
+				}
+			}
 		}
 	}
-	resp += "}"
-	return resp, nil
+	return s, nil
+}
+
+func getTargetException(keys []string, values []any, prefix string) (int64, string) {
+	var t int64
+	lastException := ""
+	for i, key := range keys {
+		if key == fmt.Sprintf("%s_exceptions_total", prefix) {
+			t = values[i].(int64)
+			continue
+		}
+		if key == fmt.Sprintf("%s_last_exception", prefix) {
+			lastException = values[i].(string)
+			continue
+		}
+	}
+	return t, lastException
+}
+
+type ruleExceptionStatus struct {
+	Status            string `json:"status"`
+	LastException     string `json:"last_exception"`
+	ExceptionsTotal   int64  `json:"exceptions_total"`
+	lastExceptionTime int
 }
 
 func getRuleStatus(name string) (string, error) {
