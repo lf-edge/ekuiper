@@ -113,6 +113,16 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 			tp.AddOperator(newInputs, compressOp)
 			newInputs = []node.Emitter{compressOp}
 		}
+
+		if sc.Encryption != "" {
+			encryptOp, err := node.NewEncryptOp(fmt.Sprintf("%s_%d_encrypt", sinkName, index), options, sc.Encryption)
+			if err != nil {
+				return nil, err
+			}
+			index++
+			tp.AddOperator(newInputs, encryptOp)
+			newInputs = []node.Emitter{encryptOp}
+		}
 	}
 	return newInputs, nil
 }

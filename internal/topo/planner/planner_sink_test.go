@@ -120,19 +120,55 @@ func TestSinkPlan(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "encrypt and compress sink plan",
+			rule: &def.Rule{
+				Actions: []map[string]any{
+					{
+						"log": map[string]any{
+							"compression": "gzip",
+							"encryption":  "aes",
+						},
+					},
+				},
+				Options: defaultOption,
+			},
+			topo: &def.PrintableTopo{
+				Sources: []string{"source_src1"},
+				Edges: map[string][]any{
+					"source_src1": {
+						"op_log_0_0_transform",
+					},
+					"op_log_0_0_transform": {
+						"op_log_0_1_encode",
+					},
+					"op_log_0_1_encode": {
+						"op_log_0_2_compress",
+					},
+					"op_log_0_2_compress": {
+						"op_log_0_3_encrypt",
+					},
+					"op_log_0_3_encrypt": {
+						"sink_log_0",
+					},
+				},
+			},
+		},
 	}
 	for _, c := range tc {
-		tp, err := topo.NewWithNameAndOptions("test", c.rule.Options)
-		assert.NoError(t, err)
-		si, err := io.Source("memory")
-		assert.NoError(t, err)
-		n, err := node.NewSourceNode(tp.GetContext(), "src1", si, map[string]any{"datasource": "demo"}, &def.RuleOption{SendError: false})
-		assert.NoError(t, err)
-		tp.AddSrc(n)
-		inputs := []node.Emitter{n}
-		err = buildActions(tp, c.rule, inputs, 1)
-		assert.NoError(t, err)
-		assert.Equal(t, c.topo, tp.GetTopo())
+		t.Run(c.name, func(t *testing.T) {
+			tp, err := topo.NewWithNameAndOptions("test", c.rule.Options)
+			assert.NoError(t, err)
+			si, err := io.Source("memory")
+			assert.NoError(t, err)
+			n, err := node.NewSourceNode(tp.GetContext(), "src1", si, map[string]any{"datasource": "demo"}, &def.RuleOption{SendError: false})
+			assert.NoError(t, err)
+			tp.AddSrc(n)
+			inputs := []node.Emitter{n}
+			err = buildActions(tp, c.rule, inputs, 1)
+			assert.NoError(t, err)
+			assert.Equal(t, c.topo, tp.GetTopo())
+		})
 	}
 }
 

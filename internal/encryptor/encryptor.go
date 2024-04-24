@@ -17,7 +17,6 @@ package encryptor
 import (
 	"crypto/rand"
 	"fmt"
-	"io"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/encryptor/aes"
@@ -26,16 +25,11 @@ import (
 
 func GetEncryptor(name string) (message.Encryptor, error) {
 	if name == "aes" {
+		if conf.Config == nil || conf.Config.AesKey == nil {
+			return nil, fmt.Errorf("AES key is not defined")
+		}
 		key, iv := getKeyIv()
 		return aes.NewStreamEncrypter(key, iv)
-	}
-	return nil, fmt.Errorf("unsupported encryptor: %s", name)
-}
-
-func GetEncryptWriter(name string, output io.Writer) (io.Writer, error) {
-	if name == "aes" {
-		key, iv := getKeyIv()
-		return aes.NewStreamWriter(key, iv, output)
 	}
 	return nil, fmt.Errorf("unsupported encryptor: %s", name)
 }
