@@ -15,6 +15,7 @@
 package conf
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -193,6 +194,7 @@ type KuiperConf struct {
 		RulePatrolInterval  string      `yaml:"rulePatrolInterval"`
 		CfgStorageType      string      `yaml:"cfgStorageType"`
 		EnableOpenZiti      bool        `yaml:"enableOpenZiti"`
+		AesKey              string      `yaml:"aesKey"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf
@@ -218,6 +220,7 @@ type KuiperConf struct {
 		PythonBin   string `yaml:"pythonBin"`
 		InitTimeout int    `yaml:"initTimeout"`
 	}
+	AesKey []byte
 }
 
 func SetLogLevel(level string, debug bool) {
@@ -360,6 +363,14 @@ func InitConf() {
 		if err := cast.SetTimeZone("Local"); err != nil {
 			Log.Fatal(err)
 		}
+	}
+
+	if Config.Basic.AesKey != "" {
+		key, err := base64.StdEncoding.DecodeString(Config.Basic.AesKey)
+		if err != nil {
+			Log.Fatal(err)
+		}
+		Config.AesKey = key
 	}
 
 	if Config.Store.Type == "redis" && Config.Store.Redis.ConnectionSelector != "" {
