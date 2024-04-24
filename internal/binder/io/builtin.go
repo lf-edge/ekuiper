@@ -15,7 +15,6 @@
 package io
 
 import (
-	sql "github.com/lf-edge/ekuiper/extensions/sources/sql/ext"
 	"github.com/lf-edge/ekuiper/internal/io/file"
 	"github.com/lf-edge/ekuiper/internal/io/http"
 	"github.com/lf-edge/ekuiper/internal/io/memory"
@@ -49,7 +48,6 @@ func init() {
 	modules.RegisterSink("file", func() api.Sink { return file.File() })
 	modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
-	modules.RegisterLookupSource("sql", func() api.LookupSource { return sql.GetLookup() })
 	modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
 	modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
 }
