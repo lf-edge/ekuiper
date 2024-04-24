@@ -51,7 +51,7 @@ func (m *MockSource) Connect(_ api.StreamContext) error {
 	return nil
 }
 
-func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest) error {
+func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
 	log := ctx.GetLogger()
 	mockClock := timex.Clock
 	log.Infof("%d: mock source %s starts", timex.GetNowInMilli(), ctx.GetOpId())

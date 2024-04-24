@@ -190,7 +190,7 @@ func (m *MockSourceConnector) Close(ctx api.StreamContext) error {
 	}
 }
 
-func (m *MockSourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest) error {
+func (m *MockSourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
 	if m.subscribed.Load() {
 		return fmt.Errorf("already subscribed")
 	}
