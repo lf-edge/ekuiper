@@ -16,6 +16,9 @@ package node
 
 import (
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
@@ -101,4 +104,64 @@ func TestSourcePool(t *testing.T) {
 	}
 
 	removeSourceInstance(n2)
+}
+
+func TestSourcePoolRecreate(t *testing.T) {
+	n := NewSourceNode("test", ast.TypeStream, nil, &ast.Options{
+		DATASOURCE: "demo1",
+		TYPE:       "mock",
+		SHARED:     true,
+	}, &api.RuleOption{SendError: false}, false, false, nil)
+	contextLogger := conf.Log.WithField("rule", "mockRule0")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", api.AtMostOnce)
+	n.ctx = ctx.WithMeta("mockRule0", "test", tempStore)
+
+	// Test add source instance
+	_, err := getSourceInstance(n, 0)
+	assert.NoError(t, err)
+	time.Sleep(10 * time.Millisecond)
+	go func() {
+		removeSourceInstance(n)
+	}()
+	_, err = getSourceInstance(n, 0)
+	assert.NoError(t, err)
+
+	poolLen := len(pool.registry)
+	if poolLen != 1 {
+		t.Errorf("source instances length unmatch: expect %d but got %d", 1, poolLen)
+		return
+	}
+	si, ok := pool.registry["mock.test"]
+	if !ok {
+		t.Errorf("source instances pool unmatch: can't find key %s", "mock.test")
+		return
+	}
+	outputLen := len(si.outputs)
+	if outputLen != 1 {
+		t.Errorf("source instances length unmatch: expect %d but got %d", 3, outputLen)
+		return
+	}
+	time.Sleep(1 * time.Second)
+	// Test add source instance
+	removeSourceInstance(n)
+	_, err = getSourceInstance(n, 0)
+	assert.NoError(t, err)
+
+	poolLen = len(pool.registry)
+	if poolLen != 1 {
+		t.Errorf("source instances length unmatch: expect %d but got %d", 1, poolLen)
+		return
+	}
+	si, ok = pool.registry["mock.test"]
+	if !ok {
+		t.Errorf("source instances pool unmatch: can't find key %s", "mock.test")
+		return
+	}
+	outputLen = len(si.outputs)
+	if outputLen != 1 {
+		t.Errorf("source instances length unmatch: expect %d but got %d", 3, outputLen)
+		return
+	}
+	time.Sleep(1 * time.Second)
 }
