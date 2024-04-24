@@ -121,8 +121,6 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func GetSource() api.Source {
+func GetSource() api.BytesSource {
 	return &SourceConnector{}
 }
-
-var _ api.BytesSource = &SourceConnector{}
