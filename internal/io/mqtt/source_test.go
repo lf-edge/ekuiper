@@ -28,7 +28,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -88,7 +87,7 @@ func TestOpen(t *testing.T) {
 		"server":     url,
 		"datasource": "demo",
 	}, []api.Tuple{
-		model.NewDefaultRawTuple([]byte("hello"), xsql.Message{
+		model.NewDefaultRawTuple([]byte("hello"), model.DefaultMessage{
 			"topic":     "demo",
 			"messageId": uint16(0),
 			"qos":       byte(0),
