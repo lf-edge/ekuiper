@@ -174,6 +174,14 @@ Among them, the following states respectively represent the unix timestamp of th
 }
 ```
 
+## get the status of all rules
+
+The command is used to get the status of all rules. If the rule is running, the metrics will be retrieved realtime.
+
+```shell
+GET http://localhost:9081/rules/status/all
+```
+
 ## get the topology structure of a rule
 
 The command is used to get the status of the rule represented as a json string. In the json string, there are 2 fields:
