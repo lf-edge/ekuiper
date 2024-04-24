@@ -247,6 +247,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 		if err != nil {
 			return nil, 0, err
 		}
+	case *DedupTriggerPlan:
+		op = node.NewDedupTriggerNode(fmt.Sprintf("%d_dedup_trigger", newIndex), options, t.aliasName, t.startField.Name, t.endField.Name, t.nowField.Name, t.expire)
 	case *LookupPlan:
 		op, err = node.NewLookupNode(t.joinExpr.Name, t.fields, t.keys, t.joinExpr.JoinType, t.valvars, t.options, options)
 	case *JoinAlignPlan:
@@ -487,6 +489,47 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 	}
 	srfMapping := extractSRFMapping(stmt)
 	if stmt.Fields != nil {
+		// extract dedup trigger op
+		fields := make([]ast.Field, 0, len(stmt.Fields))
+		for _, field := range stmt.Fields {
+			if field.Expr != nil {
+				var (
+					exp  *ast.Expr
+					name string
+					fc   *ast.Call
+				)
+				if f, ok := field.Expr.(*ast.FieldRef); ok {
+					if f.AliasRef != nil && f.AliasRef.Expression != nil {
+						if wf, ok := f.AliasRef.Expression.(*ast.Call); ok && wf.FuncType == ast.FuncTypeTrigger {
+							exp = &f.AliasRef.Expression
+							name = field.AName
+							fc = wf
+						}
+					}
+				} else if f, ok := field.Expr.(*ast.Call); ok && f.FuncType == ast.FuncTypeTrigger {
+					name = field.Name
+					exp = &field.Expr
+					fc = f
+				}
+				if exp != nil {
+					p = DedupTriggerPlan{
+						aliasName:  name,
+						startField: fc.Args[0].(*ast.FieldRef),
+						endField:   fc.Args[1].(*ast.FieldRef),
+						nowField:   fc.Args[2].(*ast.FieldRef),
+						expire:     fc.Args[3].(*ast.IntegerLiteral).Val,
+					}.Init()
+					p.SetChildren(children)
+					children = []LogicalPlan{p}
+
+					*exp = &ast.FieldRef{
+						StreamName: ast.DefaultStream,
+						Name:       name,
+					}
+				}
+			}
+			fields = append(fields, field)
+		}
 		enableLimit := false
 		limitCount := 0
 		if stmt.Limit != nil && len(srfMapping) == 0 {
@@ -495,7 +538,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		}
 		p = ProjectPlan{
 			windowFuncNames: windowFuncsNames,
-			fields:          stmt.Fields,
+			fields:          fields,
 			isAggregate:     xsql.WithAggFields(stmt),
 			sendMeta:        opt.SendMetaToSink,
 			enableLimit:     enableLimit,

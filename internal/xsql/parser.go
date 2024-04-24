@@ -869,6 +869,7 @@ var WindowFuncs = map[string]struct{}{
 	"sessionwindow":  {},
 	"slidingwindow":  {},
 	"countwindow":    {},
+	"dedup_trigger":  {},
 }
 
 func convFuncName(n string) (string, bool) {
@@ -918,8 +919,27 @@ func (p *Parser) parseCall(n string) (ast.Expr, error) {
 		}
 	}
 	if wt, err := validateWindows(name, args); wt == ast.NOT_WINDOW {
-		if valErr := validateFuncs(name, args); valErr != nil {
-			return nil, valErr
+		switch name {
+		case "dedup_trigger":
+			ft = ast.FuncTypeTrigger
+			if len(args) != 4 {
+				return nil, fmt.Errorf("dedup_trigger function should have 4 arguments")
+			}
+			for i, arg := range args {
+				if i == 3 {
+					break
+				}
+				if _, ok := arg.(*ast.FieldRef); !ok {
+					return nil, fmt.Errorf("dedup_trigger function should have fieldRef as the %d argument", i+1)
+				}
+			}
+			if _, ok := args[3].(*ast.IntegerLiteral); !ok {
+				return nil, fmt.Errorf("dedup_trigger function should have integer as the fourth argument")
+			}
+		default:
+			if valErr := validateFuncs(name, args); valErr != nil {
+				return nil, valErr
+			}
 		}
 		// Add context for some aggregate func
 		if name == "deduplicate" {

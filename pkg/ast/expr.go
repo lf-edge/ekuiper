@@ -210,6 +210,7 @@ const (
 	FuncTypeCols
 	FuncTypeSrf
 	FuncTypeWindow
+	FuncTypeTrigger
 )
 
 type Call struct {
