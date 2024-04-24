@@ -60,3 +60,8 @@ type Compressor interface {
 type Decompressor interface {
 	Decompress([]byte) ([]byte, error)
 }
+
+// Encryptor encrypts bytes
+type Encryptor interface {
+	Encrypt([]byte) []byte
+}
