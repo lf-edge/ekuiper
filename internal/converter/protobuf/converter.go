@@ -20,6 +20,7 @@ import (
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/static"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -58,7 +59,7 @@ func NewConverter(schemaFile string, soFile string, messageName string) (message
 	}
 }
 
-func (c *Converter) Encode(d interface{}) (b []byte, err error) {
+func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
@@ -76,7 +77,7 @@ func (c *Converter) Encode(d interface{}) (b []byte, err error) {
 	}
 }
 
-func (c *Converter) Decode(b []byte) (m interface{}, err error) {
+func (c *Converter) Decode(ctx api.StreamContext, b []byte) (m any, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())

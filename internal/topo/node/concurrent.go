@@ -22,7 +22,7 @@ import (
 // WorkerFunc is the function to process the data
 // The function do not need to process error and control messages
 // The function must return a slice of data for each input. To omit the data, return nil
-type workerFunc func(logger api.Logger, item any) []any
+type workerFunc func(ctx api.StreamContext, item any) []any
 
 func runWithOrder(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wf workerFunc) {
 	workerChans := make([]chan any, numWorkers)
@@ -107,7 +107,7 @@ func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, 
 				result = []any{item}
 			default:
 				node.statManager.IncTotalRecordsIn()
-				result = wf(ctx.GetLogger(), item)
+				result = wf(ctx, item)
 			}
 			select {
 			case output <- result:

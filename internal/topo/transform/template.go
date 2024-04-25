@@ -15,106 +15,12 @@
 package transform
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/converter"
-	"github.com/lf-edge/ekuiper/v2/internal/converter/delimited"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
-
-// TransFunc is the function to transform data
-type TransFunc func(interface{}) ([]byte, bool, error)
-
-func GenTransform(dt string, format string, schemaId string, delimiter string, dataField string, fields []string) (TransFunc, error) {
-	var (
-		tp  *template.Template = nil
-		c   message.Converter
-		err error
-	)
-	switch format {
-	case message.FormatProtobuf, message.FormatCustom:
-		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, SCHEMAID: schemaId})
-		if err != nil {
-			return nil, err
-		}
-	case message.FormatDelimited:
-		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format, DELIMITER: delimiter})
-		if err != nil {
-			return nil, err
-		}
-		c.(*delimited.Converter).SetColumns(fields)
-	case message.FormatJson:
-		c, err = converter.GetOrCreateConverter(&ast.Options{FORMAT: format})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if dt != "" {
-		temp, err := template.New("sink").Funcs(conf.FuncMap).Parse(dt)
-		if err != nil {
-			return nil, err
-		}
-		tp = temp
-	}
-	return func(d interface{}) ([]byte, bool, error) {
-		var (
-			bs          []byte
-			transformed bool
-			selected    bool
-			m           interface{}
-			e           error
-		)
-		if tp != nil {
-			var output bytes.Buffer
-			err := tp.Execute(&output, d)
-			if err != nil {
-				return nil, false, fmt.Errorf("fail to encode data %v with dataTemplate for error %v", d, err)
-			}
-			bs = output.Bytes()
-			transformed = true
-		}
-
-		if transformed {
-			m, selected, e = TransItem(bs, dataField, fields)
-		} else {
-			m, selected, e = TransItem(d, dataField, fields)
-		}
-		if e != nil {
-			return nil, false, fmt.Errorf("fail to TransItem data %v for error %v", d, e)
-		}
-		if selected {
-			d = m
-		}
-
-		switch format {
-		case message.FormatJson:
-			if transformed && !selected {
-				return bs, true, nil
-			}
-			outBytes, err := c.Encode(d)
-			return outBytes, transformed || selected, err
-		case message.FormatProtobuf, message.FormatCustom, message.FormatDelimited:
-			if transformed && !selected {
-				m := make(map[string]interface{})
-				err := json.Unmarshal(bs, &m)
-				if err != nil {
-					return nil, false, fmt.Errorf("fail to decode data %s after applying dataTemplate for error %v", string(bs), err)
-				}
-				d = m
-			}
-			outBytes, err := c.Encode(d)
-			return outBytes, transformed || selected, err
-		default: // should not happen
-			return nil, false, fmt.Errorf("unsupported format %v", format)
-		}
-	}, nil
-}
 
 func GenTp(dt string) (*template.Template, error) {
 	return template.New("sink").Funcs(conf.FuncMap).Parse(dt)
