@@ -14,6 +14,7 @@
 package conf
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -442,4 +443,15 @@ func TestLoad(t *testing.T) {
 	require.NoError(t, err)
 	LoadConfigFromPath(path.Join(cpath, ConfFileName), &Config)
 	require.Equal(t, 10, Config.Rule.RestartStrategy.Attempts)
+}
+
+func TestJitterFactor(t *testing.T) {
+	b := `{"attempts": 0,
+            "delay": 1000,
+            "jitterFactor": 0.3,
+            "maxDelay": 30000,
+            "multiplier": 2}`
+	r := &def.RestartStrategy{}
+	require.NoError(t, json.Unmarshal([]byte(b), r))
+	require.Equal(t, 0.3, r.JitterFactor)
 }
