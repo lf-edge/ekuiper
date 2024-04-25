@@ -90,7 +90,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.AtMostOnce,
 					CheckpointInterval: 300000,
 					SendError:          true,
-					Restart: &api.RestartStrategy{
+					RestartStrategy: &api.RestartStrategy{
 						Attempts:     20,
 						Delay:        1000,
 						Multiplier:   2,
@@ -153,7 +153,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.ExactlyOnce,
 					CheckpointInterval: 60000,
 					SendError:          true,
-					Restart: &api.RestartStrategy{
+					RestartStrategy: &api.RestartStrategy{
 						Attempts:     0,
 						Delay:        1000,
 						Multiplier:   2,
@@ -189,7 +189,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					Qos:                api.AtMostOnce,
 					CheckpointInterval: 300000,
 					SendError:          true,
-					Restart: &api.RestartStrategy{
+					RestartStrategy: &api.RestartStrategy{
 						Attempts:     0,
 						Delay:        1000,
 						Multiplier:   2,

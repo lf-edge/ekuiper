@@ -58,9 +58,7 @@ func (i *InternalSqlQueryCfg) InitIndexFieldStore() {
 		i.store.Init(f)
 		return
 	}
-	if len(i.IndexFields) > 0 {
-		i.store.Init(i.IndexFields...)
-	}
+	i.store.Init(i.IndexFields...)
 }
 
 func (i *InternalSqlQueryCfg) SetIndexValue(v interface{}) {

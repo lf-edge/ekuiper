@@ -16,6 +16,7 @@ package service
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -32,6 +33,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/kv"
+	"github.com/lf-edge/ekuiper/pkg/validate"
 )
 
 var (
@@ -359,6 +361,9 @@ func (m *Manager) List() ([]string, error) {
 
 func (m *Manager) Create(r *ServiceCreationRequest) error {
 	name, uri := r.Name, r.File
+	if err := validate.ValidateID(r.Name); err != nil {
+		return err
+	}
 	if ok, _ := m.serviceKV.Get(name, &serviceInfo{}); ok {
 		return fmt.Errorf("service %s exist", name)
 	}
@@ -516,10 +521,15 @@ func (m *Manager) servicesRegisterForImport(_, v string) error {
 	return nil
 }
 
-func (m *Manager) ImportServices(services map[string]string) map[string]string {
+func (m *Manager) ImportServices(ctx context.Context, services map[string]string) map[string]string {
 	errMap := map[string]string{}
 	_ = m.serviceStatusInstallKV.Clean()
 	for k, v := range services {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := m.servicesRegisterForImport(k, v)
 		if err != nil {
 			_ = m.serviceStatusInstallKV.Set(k, err.Error())
@@ -529,9 +539,14 @@ func (m *Manager) ImportServices(services map[string]string) map[string]string {
 	return errMap
 }
 
-func (m *Manager) ImportPartialServices(services map[string]string) map[string]string {
+func (m *Manager) ImportPartialServices(ctx context.Context, services map[string]string) map[string]string {
 	errMap := map[string]string{}
 	for k, v := range services {
+		select {
+		case <-ctx.Done():
+			return errMap
+		default:
+		}
 		err := m.servicesRegisterForImport(k, v)
 		if err != nil {
 			errMap[k] = err.Error()

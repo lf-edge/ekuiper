@@ -14,12 +14,16 @@
 package conf
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 )
@@ -102,7 +106,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     0,
 					Delay:        1000,
 					Multiplier:   1,
@@ -116,7 +120,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     0,
 					Delay:        1000,
 					Multiplier:   1,
@@ -132,7 +136,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1,
@@ -146,7 +150,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1,
@@ -162,7 +166,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1.5,
@@ -176,7 +180,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     3,
 					Delay:        1000,
 					Multiplier:   1.5,
@@ -192,7 +196,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     -2,
 					Delay:        0,
 					Multiplier:   0,
@@ -206,7 +210,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				BufferLength:       1024,
 				CheckpointInterval: 300000, // 5 minutes
 				SendError:          true,
-				Restart: &api.RestartStrategy{
+				RestartStrategy: &api.RestartStrategy{
 					Attempts:     0,
 					Delay:        1000,
 					Multiplier:   2,
@@ -421,4 +425,24 @@ func TestSyslogConf_Validate(t *testing.T) {
 			assert.Equal(t, tt.wantErr, err)
 		})
 	}
+}
+
+func TestLoad(t *testing.T) {
+	require.NoError(t, os.Setenv("KUIPER__RULE__RESTARTSTRATEGY__ATTEMPTS", "10"))
+	InitConf()
+	cpath, err := GetConfLoc()
+	require.NoError(t, err)
+	LoadConfigFromPath(path.Join(cpath, ConfFileName), &Config)
+	require.Equal(t, 10, Config.Rule.RestartStrategy.Attempts)
+}
+
+func TestJitterFactor(t *testing.T) {
+	b := `{"attempts": 0,
+            "delay": 1000,
+            "jitterFactor": 0.3,
+            "maxDelay": 30000,
+            "multiplier": 2}`
+	r := &api.RestartStrategy{}
+	require.NoError(t, json.Unmarshal([]byte(b), r))
+	require.Equal(t, 0.3, r.JitterFactor)
 }

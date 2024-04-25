@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
@@ -31,6 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
+	"github.com/lf-edge/ekuiper/pkg/hidden"
 	"github.com/lf-edge/ekuiper/pkg/infra"
 )
 
@@ -174,6 +176,84 @@ func replacePasswdForConfig(typ string, name string, config map[string]interface
 	return config
 }
 
+func replacePasswdByRuleID(ruleId string, actionIndex int, name string, config map[string]interface{}) map[string]interface{} {
+	rule, err := ruleProcessor.GetRuleById(ruleId)
+	if err != nil {
+		return config
+	}
+	if len(rule.Actions) <= actionIndex {
+		return config
+	}
+	rc, ok := rule.Actions[actionIndex][name]
+	if !ok {
+		return config
+	}
+	ruleConfig, ok := rc.(map[string]interface{})
+	if !ok {
+		return config
+	}
+	for key := range hidden.GetHiddenKeys() {
+		if v, ok := config[key]; ok && v == hidden.PASSWORD {
+			config[key] = ruleConfig[key]
+			continue
+		}
+	}
+	return config
+}
+
+func replaceRulePassword(id, ruleJson string) (string, error) {
+	r := &api.Rule{
+		Triggered: true,
+	}
+	if err := json.Unmarshal([]byte(ruleJson), r); err != nil {
+		return "", err
+	}
+	existsRule, err := ruleProcessor.GetRuleById(id)
+	if err != nil {
+		return "", err
+	}
+
+	var replacePassword bool
+	for i, action := range r.Actions {
+		if i >= len(existsRule.Actions) {
+			break
+		}
+		for k, v := range action {
+			if m, ok := v.(map[string]interface{}); ok {
+				for key := range hidden.GetHiddenKeys() {
+					if v, ok := m[key]; ok && v == hidden.PASSWORD {
+						oldAction := existsRule.Actions[i]
+						oldV, ok := oldAction[k]
+						if ok {
+							if oldM, ok := oldV.(map[string]interface{}); ok {
+								oldPasswordValue, ok := oldM[key]
+								if ok {
+									oldPasswordStr, ok := oldPasswordValue.(string)
+									if ok && oldPasswordStr != hidden.PASSWORD {
+										m[key] = oldPasswordStr
+										action[k] = m
+										r.Actions[i] = action
+										replacePassword = true
+										continue
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	if !replacePassword {
+		return ruleJson, nil
+	}
+	b, err := json.Marshal(r)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
@@ -275,6 +355,74 @@ func stopRule(name string) (result string, err error) {
 
 func restartRule(name string) error {
 	return reRunRule(name, false)
+}
+
+func getAllRuleStatus() (string, error) {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return "", err
+	}
+	m := make(map[string]ruleExceptionStatus)
+	for _, ruleID := range rules {
+		s, err := getRuleExceptionStatus(ruleID)
+		if err != nil {
+			return "", err
+		}
+		m[ruleID] = s
+	}
+	b, _ := json.Marshal(m)
+	return string(b), nil
+}
+
+func getRuleExceptionStatus(name string) (ruleExceptionStatus, error) {
+	s := ruleExceptionStatus{
+		lastExceptionTime: -1,
+	}
+	if rs, ok := registry.Load(name); ok {
+		result, err := rs.GetState()
+		if err != nil {
+			return s, err
+		}
+		s.Status = result
+		if result == rule.RuleStarted {
+			keys, values := (*rs.Topology).GetMetrics()
+			for i, key := range keys {
+				if strings.Contains(key, "last_exception_time") {
+					v := values[i].(int)
+					if v > s.lastExceptionTime {
+						s.lastExceptionTime = v
+						total, last := getTargetException(keys, values, key[:strings.Index(key, "last_exception_time")])
+						s.LastException = last
+						s.ExceptionsTotal = total
+					}
+				}
+			}
+		}
+	}
+	return s, nil
+}
+
+func getTargetException(keys []string, values []any, prefix string) (int64, string) {
+	var t int64
+	lastException := ""
+	for i, key := range keys {
+		if key == fmt.Sprintf("%s_exceptions_total", prefix) {
+			t = values[i].(int64)
+			continue
+		}
+		if key == fmt.Sprintf("%s_last_exception", prefix) {
+			lastException = values[i].(string)
+			continue
+		}
+	}
+	return t, lastException
+}
+
+type ruleExceptionStatus struct {
+	Status            string `json:"status"`
+	LastException     string `json:"last_exception"`
+	ExceptionsTotal   int64  `json:"exceptions_total"`
+	lastExceptionTime int
 }
 
 func getRuleStatus(name string) (string, error) {

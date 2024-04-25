@@ -163,6 +163,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
+	r.HandleFunc("/rules/status/all", getAllRuleStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
@@ -661,13 +662,18 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = updateRule(name, string(body), true)
+		newRuleJson, err := replaceRulePassword(name, string(body))
+		if err != nil {
+			handleError(w, err, "Invalid body", logger)
+			return
+		}
+		err = updateRule(name, newRuleJson, true)
 		if err != nil {
 			handleError(w, err, "Update rule error", logger)
 			return
 		}
 		// Update to db after validation
-		_, err = ruleProcessor.ExecUpdate(name, string(body))
+		_, err = ruleProcessor.ExecUpdate(name, newRuleJson)
 		if err != nil {
 			handleError(w, err, "Update rule error, suggest to delete it and recreate", logger)
 			return
@@ -675,6 +681,18 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
+}
+
+func getAllRuleStatusHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	s, err := getAllRuleStatus()
+	if err != nil {
+		handleError(w, err, "get rules status error", logger)
+		return
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(s))
 }
 
 // get status of a rule

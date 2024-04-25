@@ -202,6 +202,14 @@ func TestGenerateSQLWithMultiIndex(t *testing.T) {
 			},
 			sql: `select * from t where col2 > '2' AND col1 > '1' order by 'col2' ASC, 'col1' ASC limit 3`,
 		},
+		{
+			cfg: &InternalSqlQueryCfg{
+				Table: "t",
+				Limit: 3,
+				store: store.NewIndexFieldWrap(),
+			},
+			sql: `select * from t  limit 3`,
+		},
 	}
 
 	for _, tc := range testcases {
