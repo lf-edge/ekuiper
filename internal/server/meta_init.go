@@ -344,12 +344,12 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	config = replacePasswdForConfig("sink", sinkNm, config)
+	config = replacePasswdByRuleID(sinkNm, config)
 	err = node.SinkPing(sinkNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 }
 
