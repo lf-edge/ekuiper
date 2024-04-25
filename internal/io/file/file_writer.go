@@ -24,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
+	"github.com/lf-edge/ekuiper/v2/internal/encryptor"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file/writer"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -40,7 +41,7 @@ type fileWriter struct {
 	Written bool
 }
 
-func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string) (_ *fileWriter, ge error) {
+func (m *fileSink) createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers string, compressAlgorithm string, encryption string) (_ *fileWriter, ge error) {
 	ctx.GetLogger().Infof("Create new file writer for %s", fn)
 	fws := &fileWriter{Start: timex.GetNow()}
 	var (
@@ -78,22 +79,34 @@ func createFileWriter(ctx api.StreamContext, fn string, ft FileType, headers str
 		fws.Hook = linesHooks
 	}
 
-	fws.Compress = compressAlgorithm
-
-	if compressAlgorithm == "" {
-		fws.Writer = writer.NewBufioWrapWriter(bufio.NewWriter(f))
-	} else {
-		fws.fileBuffer = writer.NewBufioWrapWriter(bufio.NewWriter(f))
-		fws.Writer, err = compressor.GetCompressWriter(compressAlgorithm, fws.fileBuffer)
-		if err != nil {
-			return nil, fmt.Errorf("fail to get compress writer for %s: %v", compressAlgorithm, err)
-		}
+	fws.fileBuffer = writer.NewBufioWrapWriter(bufio.NewWriter(f))
+	var currWriter io.Writer = fws.fileBuffer
+	fws.Writer, err = m.CreateWriter(ctx, currWriter, compressAlgorithm, encryption)
+	if err != nil {
+		return nil, err
 	}
 	_, err = fws.Writer.Write(fws.Hook.Header())
 	if err != nil {
 		return nil, err
 	}
 	return fws, nil
+}
+
+func (m *fileSink) CreateWriter(_ api.StreamContext, currWriter io.Writer, compression string, encryption string) (io.Writer, error) {
+	var err error
+	if encryption != "" {
+		currWriter, err = encryptor.GetEncryptWriter(encryption, currWriter)
+		if err != nil {
+			return nil, fmt.Errorf("fail to get encrypt writer for %s: %v", encryption, err)
+		}
+	}
+	if compression != "" {
+		currWriter, err = compressor.GetCompressWriter(compression, currWriter)
+		if err != nil {
+			return nil, fmt.Errorf("fail to get compress writer for %s: %v", compression, err)
+		}
+	}
+	return currWriter, nil
 }
 
 func (fw *fileWriter) Close(ctx api.StreamContext) error {
@@ -104,20 +117,17 @@ func (fw *fileWriter) Close(ctx api.StreamContext) error {
 		if e != nil {
 			ctx.GetLogger().Errorf("file sink fails to write footer with error %s.", e)
 		}
-		if fw.Compress != "" {
-			e := fw.Writer.(io.Closer).Close()
+
+		// Close the compressor and encryptor firstly
+		if w, ok := fw.Writer.(io.Closer); ok {
+			e := w.Close()
 			if e != nil {
-				ctx.GetLogger().Errorf("file sink fails to close compress writer with error %s.", err)
+				ctx.GetLogger().Errorf("file sink fails to close compress/encrypt writer with error %s.", err)
 			}
-			err = fw.fileBuffer.Flush()
-			if err != nil {
-				ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
-			}
-		} else {
-			err = fw.Writer.(*writer.BufioWrapWriter).Flush()
-			if err != nil {
-				ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
-			}
+		}
+		err = fw.fileBuffer.Flush()
+		if err != nil {
+			ctx.GetLogger().Errorf("file sink fails to flush with error %s.", err)
 		}
 
 		err = fw.File.Sync()

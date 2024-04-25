@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -40,6 +41,7 @@ type sinkConf struct {
 	Delimiter          string   `json:"delimiter"`
 	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
 	Compression        string   `json:"compression"`
+	Encryption         string   `json:"encryption"`
 	Fields             []string `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
 }
 
@@ -243,7 +245,7 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 			nfn = filepath.Join(fileDir, newFile)
 		}
 
-		fws, e = createFileWriter(ctx, nfn, m.c.FileType, headers, m.c.Compression)
+		fws, e = m.createFileWriter(ctx, nfn, m.c.FileType, headers, m.c.Compression, m.c.Encryption)
 		if e != nil {
 			return nil, e
 		}
@@ -252,8 +254,11 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 	return fws, nil
 }
 
-func File() api.Sink {
+func GetSink() api.Sink {
 	return &fileSink{}
 }
 
-var _ api.BytesCollector = &fileSink{}
+var (
+	_ api.BytesCollector = &fileSink{}
+	_ model.StreamWriter = &fileSink{}
+)

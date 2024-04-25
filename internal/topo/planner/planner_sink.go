@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 // SinkPlanner is the planner for sink node. It transforms logical sink plan to multiple physical nodes.
@@ -103,8 +104,8 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 		index++
 		tp.AddOperator(newInputs, encodeOp)
 		newInputs = []node.Emitter{encodeOp}
-
-		if sc.Compression != "" {
+		_, isStreamWriter := s.(model.StreamWriter)
+		if !isStreamWriter && sc.Compression != "" {
 			compressOp, err := node.NewCompressOp(fmt.Sprintf("%s_%d_compress", sinkName, index), options, sc.Compression)
 			if err != nil {
 				return nil, err
@@ -114,7 +115,7 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 			newInputs = []node.Emitter{compressOp}
 		}
 
-		if sc.Encryption != "" {
+		if !isStreamWriter && sc.Encryption != "" {
 			encryptOp, err := node.NewEncryptOp(fmt.Sprintf("%s_%d_encrypt", sinkName, index), options, sc.Encryption)
 			if err != nil {
 				return nil, err

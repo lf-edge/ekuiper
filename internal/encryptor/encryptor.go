@@ -17,6 +17,7 @@ package encryptor
 import (
 	"crypto/rand"
 	"fmt"
+	"io"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/encryptor/aes"
@@ -25,19 +26,33 @@ import (
 
 func GetEncryptor(name string) (message.Encryptor, error) {
 	if name == "aes" {
-		if conf.Config == nil || conf.Config.AesKey == nil {
-			return nil, fmt.Errorf("AES key is not defined")
+		key, iv, err := GetKeyIv()
+		if err != nil {
+			return nil, err
 		}
-		key, iv := getKeyIv()
 		return aes.NewStreamEncrypter(key, iv)
 	}
 	return nil, fmt.Errorf("unsupported encryptor: %s", name)
 }
 
-func getKeyIv() ([]byte, []byte) {
+func GetEncryptWriter(name string, output io.Writer) (io.Writer, error) {
+	if name == "aes" {
+		key, iv, err := GetKeyIv()
+		if err != nil {
+			return nil, err
+		}
+		return aes.NewStreamWriter(key, iv, output)
+	}
+	return nil, fmt.Errorf("unsupported encryptor: %s", name)
+}
+
+func GetKeyIv() ([]byte, []byte, error) {
+	if conf.Config == nil || conf.Config.AesKey == nil {
+		return nil, nil, fmt.Errorf("AES key is not defined")
+	}
 	key := conf.Config.AesKey
 	iv := make([]byte, 16)
 	// Use the crypto/rand package to generate random bytes
 	_, _ = rand.Read(iv)
-	return key, iv
+	return key, iv, nil
 }
