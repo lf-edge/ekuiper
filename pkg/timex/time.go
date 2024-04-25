@@ -69,3 +69,17 @@ func GetNowInMilli() int64 {
 func GetNow() time.Time {
 	return Clock.Now()
 }
+
+// Mock time, only use in test
+
+func Set(t int64) {
+	if IsTesting {
+		Clock.(*clock.Mock).Set(time.UnixMilli(t))
+	}
+}
+
+func Add(d time.Duration) {
+	if IsTesting {
+		Clock.(*clock.Mock).Add(d)
+	}
+}
