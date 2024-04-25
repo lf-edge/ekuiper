@@ -36,6 +36,7 @@ type SinkConf struct {
 	DataField      string   `json:"dataField"`
 	BatchSize      int      `json:"batchSize"`
 	LingerInterval int      `json:"lingerInterval"`
+	Compression    string   `json:"compression"`
 	conf.SinkConf
 }
 
