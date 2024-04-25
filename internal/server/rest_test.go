@@ -496,7 +496,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"lateTolerance":"1s","concurrency":1,"bufferLength":1024,"sendError":true,"checkpointInterval":"5m0s","restartStrategy":{"delay":"1s","multiplier":2,"maxDelay":"30s","jitter":0.1}}}`
+	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"lateTolerance":"1s","concurrency":1,"bufferLength":1024,"sendError":true,"checkpointInterval":"5m0s","restartStrategy":{"delay":"1s","multiplier":2,"maxDelay":"30s","jitterFactor":0.1}}}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// delete rule
@@ -990,7 +990,7 @@ func (suite *RestTestSuite) TestSinkHiddenPassword() {
 
 	ruleJson, err := ruleProcessor.GetRuleJson("rule34")
 	require.NoError(suite.T(), err)
-	r := &api.Rule{}
+	r := &def.Rule{}
 	require.NoError(suite.T(), json.Unmarshal([]byte(ruleJson), r))
 	m := r.Actions[0]["mqtt"].(map[string]interface{})
 	require.Equal(suite.T(), "12345", m["password"])
