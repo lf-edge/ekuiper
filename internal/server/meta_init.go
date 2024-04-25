@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build ui || !core
-// +build ui !core
 
 package server
 

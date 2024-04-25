@@ -20,15 +20,18 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestEncodeWithMockConverter(t *testing.T) {
 	mockConverter := MockConverter{}
+	ctx := mockContext.NewMockContext("test", "op1")
 	data := map[string]interface{}{
 		"temperature": 23.4,
 		"humidity":    76,
 	}
-	encodedData, err := mockConverter.Encode(data)
+	encodedData, err := mockConverter.Encode(ctx, data)
 
 	assert.Nil(t, err)
 	assert.Contains(t, string(encodedData), `"temperature":23.4`)
@@ -37,8 +40,9 @@ func TestEncodeWithMockConverter(t *testing.T) {
 
 func TestDecodeWithMockConverter(t *testing.T) {
 	mockConverter := MockConverter{}
+	ctx := mockContext.NewMockContext("test", "op1")
 	data := []byte(`{"temperature":23.4,"humidity":76,"ts":1633027200000}`)
-	decodedData, err := mockConverter.Decode(data)
+	decodedData, err := mockConverter.Decode(ctx, data)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 23.4, decodedData.(map[string]interface{})["temperature"])

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -34,13 +35,13 @@ func init() {
 // MockConverter mocks a slow converter for benchmark test
 type MockConverter struct{}
 
-func (m MockConverter) Encode(d interface{}) ([]byte, error) {
+func (m MockConverter) Encode(ctx api.StreamContext, d any) ([]byte, error) {
 	time.Sleep(10 * time.Millisecond)
 	now := timex.GetNowInMilli()
 	return []byte(fmt.Sprintf(`{"temperature":23.4,"humidity":76,"ts": %d}`, now)), nil
 }
 
-func (m MockConverter) Decode(b []byte) (interface{}, error) {
+func (m MockConverter) Decode(ctx api.StreamContext, b []byte) (any, error) {
 	time.Sleep(10 * time.Millisecond)
 	return map[string]any{
 		"temperature": 23.4,

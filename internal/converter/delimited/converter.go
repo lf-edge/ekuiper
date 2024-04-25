@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
@@ -42,7 +43,7 @@ func (c *Converter) SetColumns(cols []string) {
 }
 
 // Encode If no columns defined, the default order is sort by key
-func (c *Converter) Encode(d interface{}) (b []byte, err error) {
+func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
@@ -74,7 +75,7 @@ func (c *Converter) Encode(d interface{}) (b []byte, err error) {
 
 // Decode If the cols is not set, the default key name is col1, col2, col3...
 // The return value is always a map
-func (c *Converter) Decode(b []byte) (ma interface{}, err error) {
+func (c *Converter) Decode(ctx api.StreamContext, b []byte) (ma any, err error) {
 	tokens := strings.Split(string(b), c.delimiter)
 	m := make(map[string]interface{})
 	if len(c.cols) == 0 {

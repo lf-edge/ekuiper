@@ -45,12 +45,6 @@ jobs:
         mkdir -p log
         mkdir -p plugins/sinks
         sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
-        go build --buildmode=plugin -o data/test/helloworld.so internal/converter/protobuf/test/*.go
-        go build --buildmode=plugin -o data/myFormat.so internal/converter/custom/test/*.go
-        mkdir -p data/custom
-        cp data/myFormat.so data/custom/myFormat.so
-        mkdir -p data/schema
-        cp data/myFormat.so data/schema/myFormat.so
     - name: Run test case
       run: |
         make failpoint-enable

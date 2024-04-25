@@ -1070,12 +1070,12 @@ func TestPreprocessorForBinary(t *testing.T) {
 		pp.streamFields = tt.stmt.StreamFields.ToJsonSchema()
 		format := message.FormatJson
 		ccc, _ := converter.GetOrCreateConverter(&ast.Options{FORMAT: format})
-		nCtx := context.WithValue(ctx, context.DecodeKey, ccc)
-		if dm, e := nCtx.Decode(tt.data); e != nil {
+		if dm, e := ccc.Decode(ctx, tt.data); e != nil {
 			log.Fatal(e)
 			return
 		} else {
-			tuple := &xsql.Tuple{Message: dm}
+			dmm := dm.(map[string]any)
+			tuple := &xsql.Tuple{Message: xsql.Message(dmm)}
 			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			result := pp.Apply(ctx, tuple, fv, afv)
 			if !reflect.DeepEqual(tt.result, result) {

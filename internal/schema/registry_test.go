@@ -23,7 +23,12 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
+
+func init() {
+	testx.InitEnv("schema")
+}
 
 func TestProtoRegistry(t *testing.T) {
 	// Move test schema file to etc dir

@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestMessageDecode(t *testing.T) {
@@ -42,8 +43,9 @@ func TestMessageDecode(t *testing.T) {
 		},
 	}
 	conv, _ := GetConverter()
+	ctx := mockContext.NewMockContext("test", "op1")
 	for i, tt := range tests {
-		result, err := conv.Decode(tt.payload)
+		result, err := conv.Decode(ctx, tt.payload)
 		if err != nil {
 			t.Errorf("%d decode error: %v", i, err)
 		}
@@ -54,7 +56,8 @@ func TestMessageDecode(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
-	_, err := converter.Encode(nil)
+	ctx := mockContext.NewMockContext("test", "op1")
+	_, err := converter.Encode(ctx, nil)
 	require.Error(t, err)
 	errWithCode, ok := err.(errorx.ErrorWithCode)
 	require.True(t, ok)

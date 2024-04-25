@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func BenchmarkSimpleTuples(b *testing.B) {
@@ -100,6 +101,7 @@ func BenchmarkComplexTuplesWithSchema(b *testing.B) {
 }
 
 func benchmarkByFiles(filePath string, b *testing.B, schema map[string]*ast.JsonStreamField) {
+	ctx := mockContext.NewMockContext("test", "test")
 	payload, err := os.ReadFile(filePath)
 	if err != nil {
 		b.Fatalf(err.Error())
@@ -108,12 +110,12 @@ func benchmarkByFiles(filePath string, b *testing.B, schema map[string]*ast.Json
 		f := NewFastJsonConverter("", "", schema, false, false)
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			f.Decode(payload)
+			f.Decode(ctx, payload)
 		}
 	} else {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			converter.Decode(payload)
+			converter.Decode(ctx, payload)
 		}
 	}
 }

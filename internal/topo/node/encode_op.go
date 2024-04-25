@@ -54,14 +54,14 @@ func (o *EncodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *EncodeOp) Worker(_ api.Logger, item any) []any {
+func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case []byte:
 		return []any{d}
 	default:
-		r, err := o.converter.Encode(item)
+		r, err := o.converter.Encode(ctx, item)
 		if err != nil {
 			return []any{err}
 		} else {
