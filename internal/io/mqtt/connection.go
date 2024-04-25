@@ -87,9 +87,17 @@ func (conn *Connection) attach() {
 }
 
 // Do not call this directly. Call connection pool Detach method to release the connection
-func (conn *Connection) detach(topic string) bool {
+func (conn *Connection) detachSub(topic string) bool {
 	delete(conn.subscriptions, topic)
 	conn.Client.Unsubscribe(topic)
+	if conn.refCount.Add(-1) == 0 {
+		go conn.Close()
+		return true
+	}
+	return false
+}
+
+func (conn *Connection) detachPub() bool {
 	if conn.refCount.Add(-1) == 0 {
 		go conn.Close()
 		return true

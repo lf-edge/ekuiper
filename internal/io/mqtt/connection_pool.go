@@ -53,11 +53,16 @@ func GetConnection(ctx api.StreamContext, props map[string]any) (*Connection, er
 	}
 }
 
-func DetachConnection(clientId string, topic string) {
+func DetachConnection(clientId string, subscribedTopic string) {
 	lock.Lock()
 	defer lock.Unlock()
 	if conn, ok := connectionPool[clientId]; ok {
-		closed := conn.detach(topic)
+		var closed bool
+		if subscribedTopic != "" {
+			closed = conn.detachSub(subscribedTopic)
+		} else {
+			closed = conn.detachPub()
+		}
 		if closed {
 			delete(connectionPool, clientId)
 		}
