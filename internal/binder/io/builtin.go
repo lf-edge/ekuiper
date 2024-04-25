@@ -16,6 +16,7 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
@@ -39,7 +40,7 @@ func init() {
 	modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
 	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
 	// modules.RegisterSink("neuron", func() api.Sink { return neuron.GetSink() })
-	// modules.RegisterSink("file", func() api.Sink { return file.File() })
+	modules.RegisterSink("file", file.GetSink)
 	// modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
 	// modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })

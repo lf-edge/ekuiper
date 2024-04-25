@@ -15,6 +15,8 @@
 package file
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -28,6 +30,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/encryptor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -516,9 +519,7 @@ func TestFileSinkReopen(t *testing.T) {
 		}
 		return nil
 	})
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
+	assert.NoError(t, err)
 	conf.IsTesting = true
 	tmpfile, err := os.CreateTemp("", "reopen.log")
 	if err != nil {
@@ -589,4 +590,121 @@ func TestFileSinkReopen(t *testing.T) {
 	if !reflect.DeepEqual(contents, exp) {
 		t.Errorf("\nexpected\t %q \nbut got\t\t %q", string(exp), string(contents))
 	}
+}
+
+// Test single file writing and flush by close
+func TestFileCompressAndEncrypt(t *testing.T) {
+	conf.InitConf()
+	tests := []struct {
+		name       string
+		ft         FileType
+		fname      string
+		content    []byte
+		compress   string
+		encryption string
+	}{
+		{
+			name:       "lines with encryption",
+			ft:         LINES_TYPE,
+			fname:      "test_lines",
+			content:    []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			encryption: "aes",
+		},
+		{
+			name:       "lines with compress and encryption",
+			ft:         LINES_TYPE,
+			fname:      "test_lines",
+			content:    []byte("{\"key\":\"value1\"}\n{\"key\":\"value2\"}"),
+			compress:   GZIP,
+			encryption: "aes",
+		},
+	}
+
+	// Create a stream context for testing
+	ctx := mockContext.NewMockContext("rule1", "op1")
+	_ = os.Mkdir("tmp", 0o777)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a temporary file for testing
+			tmpfile, err := os.CreateTemp("tmp", tt.fname)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tmpfile.Close()
+			defer os.Remove(tmpfile.Name())
+			// Create a file sink with the temporary file path
+			sink := &fileSink{}
+			f := message.FormatJson
+			err = sink.Provision(ctx, map[string]interface{}{
+				"path":               tmpfile.Name(),
+				"fileType":           tt.ft,
+				"format":             f,
+				"rollingNamePattern": "none",
+				"compression":        tt.compress,
+				"fields":             []string{"key"},
+				"encryption":         tt.encryption,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = sink.Connect(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Test collecting a map item
+			if err := sink.Collect(ctx, []byte("{\"key\":\"value1\"}")); err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+
+			// Test collecting another map item
+			if err := sink.Collect(ctx, []byte("{\"key\":\"value2\"}")); err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+
+			if err = sink.Close(ctx); err != nil {
+				t.Errorf("unexpected close error: %s", err)
+			}
+			// Read the contents of the temporary file and check if they match the collected items
+			contents, err := os.ReadFile(tmpfile.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Decrypt then uncompress
+			key, _, err := encryptor.GetKeyIv()
+			assert.NoError(t, err)
+			revert := Decrypt(key, contents)
+			// uncompress
+			if tt.compress != "" {
+				decompressor, _ := compressor.GetDecompressor(tt.compress)
+				decompress, err := decompressor.Decompress(revert)
+				if err != nil {
+					t.Errorf("%v", err)
+				}
+
+				assert.Equal(t, decompress, tt.content)
+			} else {
+				assert.Equal(t, revert, tt.content)
+			}
+		})
+	}
+}
+
+func Decrypt(key []byte, contents []byte) []byte {
+	// Create a new AES cipher block using the key
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		panic(err)
+	}
+	// Get IV from the encrypted data
+	iv := contents[:aes.BlockSize]
+	// Get the actual encrypted data
+	secret := contents[aes.BlockSize:]
+	// create a new CFB decrypter
+	dstream := cipher.NewCFBDecrypter(block, iv)
+	// decrypt the data
+	decrypted := make([]byte, len(secret))
+	dstream.XORKeyStream(decrypted, secret)
+	return decrypted
 }
