@@ -186,7 +186,7 @@ func GetSourceResourceConf(sourceType string) map[string]map[string]map[string]i
 				value, ok := c["sourceType"]
 				if ok {
 					sv, ok := value.(string)
-					if ok && sv == sourceType {
+					if ok && (sv == sourceType || sourceType == "") {
 						appendConfKeyInResult(result, typ, name, c)
 					}
 				}
