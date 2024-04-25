@@ -199,7 +199,7 @@ type RestartStrategy struct {
 	Delay        int     `json:"delay" yaml:"delay"`
 	Multiplier   float64 `json:"multiplier" yaml:"multiplier"`
 	MaxDelay     int     `json:"maxDelay" yaml:"maxDelay"`
-	JitterFactor float64 `json:"jitter" yaml:"jitter"`
+	JitterFactor float64 `json:"jitterFactor" yaml:"jitterFactor"`
 }
 
 type PrintableTopo struct {
