@@ -174,6 +174,31 @@ func replacePasswdForConfig(typ string, name string, config map[string]interface
 	return config
 }
 
+func replacePasswdByRuleID(ruleId string, actionIndex int, name string, config map[string]interface{}) map[string]interface{} {
+	rule, err := ruleProcessor.GetRuleById(ruleId)
+	if err != nil {
+		return config
+	}
+	if len(rule.Actions) <= actionIndex {
+		return config
+	}
+	rc, ok := rule.Actions[actionIndex][name]
+	if !ok {
+		return config
+	}
+	ruleConfig, ok := rc.(map[string]interface{})
+	if !ok {
+		return config
+	}
+	for key := range hidden.GetHiddenKeys() {
+		if v, ok := config[key]; ok && v == hidden.PASSWORD {
+			config[key] = ruleConfig[key]
+			continue
+		}
+	}
+	return config
+}
+
 func replaceRulePassword(id, ruleJson string) (string, error) {
 	r := &api.Rule{
 		Triggered: true,

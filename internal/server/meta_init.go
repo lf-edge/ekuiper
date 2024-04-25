@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -334,12 +335,21 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	config = replacePasswdForConfig("sink", sinkNm, config)
+	ruleId := r.URL.Query().Get("ruleId")
+	index := r.URL.Query().Get("index")
+	if len(ruleId) > 0 && len(index) > 0 {
+		actionIndex, err := strconv.ParseInt(index, 10, 64)
+		if err != nil {
+			handleError(w, err, "", logger)
+			return
+		}
+		config = replacePasswdByRuleID(ruleId, int(actionIndex), sinkNm, config)
+	}
 	err = node.SinkPing(sinkNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 }
 
