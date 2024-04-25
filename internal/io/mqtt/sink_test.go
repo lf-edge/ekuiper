@@ -16,9 +16,9 @@ package mqtt
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -28,7 +28,7 @@ func TestSinkConfigure(t *testing.T) {
 	tests := []struct {
 		name           string
 		input          map[string]interface{}
-		expectedErr    error
+		expectedErr    string
 		expectedAdConf *AdConf
 	}{
 		{
@@ -41,26 +41,48 @@ func TestSinkConfigure(t *testing.T) {
 				"privateKeyRaw": "MTIz",
 				"server":        "123",
 			},
-			expectedErr: fmt.Errorf("tls: failed to find any PEM data in certificate input"),
+			expectedErr: "tls: failed to find any PEM data in certificate input",
+		},
+		{
+			name: "Invalid configuration",
+			input: map[string]any{
+				"server":     "123",
+				"datasource": "demo",
+				"qos":        "dd",
+			},
+			expectedErr: "1 error(s) decoding:\n\n* 'qos' expected type 'uint8', got unconvertible type 'string', value: 'dd'",
 		},
 		{
 			name: "Missing topic",
 			input: map[string]interface{}{
+				"server":      "123",
 				"qos":         1,
 				"retained":    false,
 				"compression": "zlib",
 			},
-			expectedErr: fmt.Errorf("mqtt sink is missing property topic"),
+			expectedErr: "mqtt sink is missing property topic",
+		},
+		{
+			name: "Wrong topic",
+			input: map[string]interface{}{
+				"server":      "123",
+				"topic":       "test/#",
+				"qos":         1,
+				"retained":    false,
+				"compression": "zlib",
+			},
+			expectedErr: "mqtt sink topic shouldn't contain # or +",
 		},
 		{
 			name: "Invalid QoS",
 			input: map[string]interface{}{
+				"server":      "123",
 				"topic":       "testTopic",
 				"qos":         3,
 				"retained":    false,
 				"compression": "gzip",
 			},
-			expectedErr: fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", 3),
+			expectedErr: fmt.Sprintf("invalid qos value %v, the value could be only int 0 or 1 or 2", 3),
 		},
 		{
 			name: "Valid configuration with QoS 0 and no compression",
@@ -71,7 +93,6 @@ func TestSinkConfigure(t *testing.T) {
 				"compression": "",
 				"server":      "123",
 			},
-			expectedErr: nil,
 			expectedAdConf: &AdConf{
 				Tpc:         "testTopic3",
 				Qos:         0,
@@ -88,7 +109,6 @@ func TestSinkConfigure(t *testing.T) {
 				"compression": "zlib",
 				"server":      "123",
 			},
-			expectedErr: nil,
 			expectedAdConf: &AdConf{
 				Tpc:         "testTopic4",
 				Qos:         1,
@@ -101,17 +121,14 @@ func TestSinkConfigure(t *testing.T) {
 	ctx := mockContext.NewMockContext("testsinkconfigure", "sink1")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ms := &MQTTSink{}
+			ms := &Sink{}
 			err := ms.Provision(ctx, tt.input)
-			if !reflect.DeepEqual(err, tt.expectedErr) {
-				t.Errorf("\n Expected error: \t%v\n \t\t\tgot: \t%v", tt.expectedErr, err)
-				return
-			}
-			if tt.expectedErr == nil {
-				if !reflect.DeepEqual(ms.adconf, tt.expectedAdConf) {
-					t.Errorf("\n Expected adConf: \t%v\n \t\t\tgot: \t%v", tt.expectedAdConf, ms.adconf)
-					return
-				}
+			if tt.expectedErr != "" {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tt.expectedErr)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, ms.adconf, tt.expectedAdConf)
 			}
 		})
 	}

@@ -19,9 +19,6 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients"
-	mqttClient "github.com/lf-edge/ekuiper/v2/internal/topo/connection/clients/mqtt"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -35,20 +32,22 @@ type AdConf struct {
 	ResendTopic string `json:"resendDestination"`
 }
 
-type MQTTSink struct {
-	adconf     *AdConf
-	config     map[string]interface{}
-	cli        io.MessageClient
-	sendParams map[string]any
+type Sink struct {
+	adconf *AdConf
+	config map[string]interface{}
+	cli    *Connection
 }
 
-func (ms *MQTTSink) Provision(_ api.StreamContext, ps map[string]any) error {
-	adconf := &AdConf{}
-	err := cast.MapToStruct(ps, adconf)
+func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
+	_, err := validateConfig(ps)
 	if err != nil {
 		return err
 	}
-
+	adconf := &AdConf{}
+	err = cast.MapToStruct(ps, adconf)
+	if err != nil {
+		return err
+	}
 	if adconf.Tpc == "" {
 		return fmt.Errorf("mqtt sink is missing property topic")
 	}
@@ -63,24 +62,14 @@ func (ms *MQTTSink) Provision(_ api.StreamContext, ps map[string]any) error {
 		adconf.ResendTopic = adconf.Tpc
 	}
 	ms.adconf = adconf
-	ms.sendParams = map[string]any{
-		"qos":      adconf.Qos,
-		"retained": adconf.Retained,
-	}
-	mc := &mqttClient.MQTTClient{}
-	return mc.CfgValidate(ms.config)
+	return nil
 }
 
-func (ms *MQTTSink) Connect(ctx api.StreamContext) error {
-	log := ctx.GetLogger()
-	cli, err := clients.GetClient("mqtt", ms.config)
-	if err != nil {
-		log.Errorf("found error when get mqtt client config %v, error %s", ms.config, err.Error())
-		return err
-	}
+func (ms *Sink) Connect(ctx api.StreamContext) error {
+	ctx.GetLogger().Infof("Connecting to mqtt server")
+	cli, err := GetConnection(ctx, ms.config)
 	ms.cli = cli
-
-	return nil
+	return err
 }
 
 func validateMQTTSinkTopic(topic string) error {
@@ -90,25 +79,27 @@ func validateMQTTSinkTopic(topic string) error {
 	return nil
 }
 
-func (ms *MQTTSink) Collect(ctx api.StreamContext, item []byte) error {
-	tpc, err := ctx.ParseTemplate(ms.adconf.Tpc, item)
+func (ms *Sink) Collect(ctx api.StreamContext, item []byte) error {
+	tpc := ms.adconf.Tpc
+	token := ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item)
+	err := handleToken(token)
 	if err != nil {
-		return err
-	}
-
-	if err := ms.cli.Publish(ctx, tpc, item, ms.sendParams); err != nil {
-		return errorx.NewIOErr(err.Error())
+		return errorx.NewIOErr(fmt.Sprintf("found error when publishing to topic %s: %s", ms.adconf.Tpc, err))
 	}
 	return nil
 }
 
-func (ms *MQTTSink) Close(ctx api.StreamContext) error {
-	logger := ctx.GetLogger()
-	logger.Infof("Closing mqtt sink")
+func (ms *Sink) Close(ctx api.StreamContext) error {
+	ctx.GetLogger().Info("Closing mqtt sink connector")
 	if ms.cli != nil {
-		clients.ReleaseClient(ctx, ms.cli)
+		DetachConnection(ms.cli.GetClientId(), "")
+		ms.cli = nil
 	}
 	return nil
 }
 
-var _ api.BytesCollector = &MQTTSink{}
+func GetSink() api.Sink {
+	return &Sink{}
+}
+
+var _ api.BytesCollector = &Sink{}

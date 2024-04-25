@@ -24,7 +24,7 @@ import (
 )
 
 func init() {
-	modules.RegisterSource("mqtt", func() api.Source { return &mqtt.SourceConnector{} })
+	modules.RegisterSource("mqtt", mqtt.GetSource)
 	// modules.RegisterSource("httppull", func() api.Source { return &http.PullSource{} })
 	// modules.RegisterSource("httppush", func() api.Source { return &http.PushSource{} })
 	// modules.RegisterSource("file", func() api.Source { return &file.FileSource{} })
@@ -35,7 +35,7 @@ func init() {
 
 	modules.RegisterSink("log", sink.NewLogSink)
 	modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
-	modules.RegisterSink("mqtt", func() api.Sink { return &mqtt.MQTTSink{} })
+	modules.RegisterSink("mqtt", mqtt.GetSink)
 	// modules.RegisterSink("rest", func() api.Sink { return &http.RestSink{} })
 	modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
 	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })

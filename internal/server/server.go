@@ -42,7 +42,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -135,7 +134,6 @@ func StartUp(Version string) {
 	startTimeStamp = time.Now().Unix()
 	createPaths()
 	conf.InitConf()
-	factory.InitClientsFactory()
 
 	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
 	defer undo()

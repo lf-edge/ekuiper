@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -33,17 +32,12 @@ type SourceConnector struct {
 	cfg   *Conf
 	props map[string]any
 
-	cli   *Connection
-	stats metric.StatManager
+	cli *Connection
 }
 
 type Conf struct {
 	Topic string `json:"datasource"`
 	Qos   int    `json:"qos"`
-}
-
-func (ms *SourceConnector) SetupStats(stats metric.StatManager) {
-	ms.stats = stats
 }
 
 func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -116,6 +110,8 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func GetSource() api.BytesSource {
+func GetSource() api.Source {
 	return &SourceConnector{}
 }
+
+var _ api.BytesSource = &SourceConnector{}

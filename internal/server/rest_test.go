@@ -37,7 +37,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/connection/factory"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -51,7 +50,6 @@ func init() {
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
 	sysMetrics = NewMetrics()
-	factory.InitClientsFactory()
 }
 
 type RestTestSuite struct {
@@ -424,7 +422,6 @@ func assertErrorCode(code errorx.ErrorCode, resp []byte) (bool, error) {
 
 func (suite *RestTestSuite) Test_ruleTestHandler() {
 	suite.T().Skip()
-	factory.InitClientsFactory()
 	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream alert() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
 	w1 := httptest.NewRecorder()
