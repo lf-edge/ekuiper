@@ -40,6 +40,7 @@ func main() {
 			"tag": "value",
 		},
 	})
+
 	if err != nil {
 		panic(err)
 	}

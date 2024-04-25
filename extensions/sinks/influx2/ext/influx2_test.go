@@ -118,6 +118,17 @@ func TestConfig(t *testing.T) {
 			error: "measurement is required",
 		},
 		{
+			name: "measurement missing error",
+			conf: map[string]interface{}{
+				"addr":            "http://192.168.0.3:8086",
+				"org":             "abc",
+				"bucket":          "bucket_one",
+				"precision":       "ns",
+				"useLineProtocol": true,
+			},
+			error: "measurement is required",
+		},
+		{
 			name: "unmarshall error for tls",
 			conf: map[string]interface{}{
 				"addr":        "http://192.168.0.3:8086",
