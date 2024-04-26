@@ -179,7 +179,7 @@ func (ms *RestSink) sendWithUrl(ctx api.StreamContext, decodedData []byte, v int
 
 	return httpx.Send(ctx.GetLogger(), ms.client, u, method,
 		httpx.WithHeadersMap(headers),
-		httpx.WithBody(decodedData, bodyType, ms.config.SendSingle, ms.compressor, ms.config.CompressionAlgorithm))
+		httpx.WithBody(decodedData, bodyType, ms.config.SendSingle, ms.compressor, ms.config.Compression))
 }
 
 func (ms *RestSink) Close(ctx api.StreamContext) error {

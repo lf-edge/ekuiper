@@ -235,11 +235,11 @@ func testRestSinkWithCompression(t *testing.T, compressionAlgorithm string) {
 	}{
 		{
 			config: map[string]any{
-				"method":               http.MethodPost,
-				"url":                  "http://localhost:52345/test",
-				"sendSingle":           true,
-				"dataTemplate":         `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
-				"compressionAlgorithm": compressionAlgorithm,
+				"method":       http.MethodPost,
+				"url":          "http://localhost:52345/test",
+				"sendSingle":   true,
+				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
+				"compression":  compressionAlgorithm,
 			},
 			data: [][]byte{[]byte(`{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`), []byte(`{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`)},
 			result: []request{

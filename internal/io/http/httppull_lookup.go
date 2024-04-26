@@ -99,7 +99,7 @@ func (l *lookupSource) pull(ctx api.StreamContext) ([]map[string]interface{}, er
 	body := l.config.Body
 	resp, e := httpx.Send(ctx.GetLogger(), l.client, l.config.Url, l.config.Method,
 		httpx.WithHeadersMap(headers),
-		httpx.WithBody(body, l.config.BodyType, true, l.compressor, l.config.CompressionAlgorithm),
+		httpx.WithBody(body, l.config.BodyType, true, l.compressor, l.config.Compression),
 	)
 	if e != nil {
 		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", e, l)

@@ -70,9 +70,9 @@ type RawConf struct {
 	// sink specific properties
 	SendSingle bool `json:"sendSingle"`
 	// inferred properties
-	HeadersTemplate      string
-	HeadersMap           map[string]string
-	CompressionAlgorithm string `json:"compressionAlgorithm"` // CompressionAlgorithm specifies the algorithms used to payload compression
+	HeadersTemplate string
+	HeadersMap      map[string]string
+	Compression     string `json:"compression"` // Compression specifies the algorithms used to payload compression
 }
 
 const (
@@ -237,13 +237,13 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 	cc.config = c
 
 	// that means payload need compression and decompression, so we need initialize compressor and decompressor
-	if c.CompressionAlgorithm != "" {
-		cc.compressor, err = compressor.GetCompressor(c.CompressionAlgorithm)
+	if c.Compression != "" {
+		cc.compressor, err = compressor.GetCompressor(c.Compression)
 		if err != nil {
 			return fmt.Errorf("init payload compressor failed, %w", err)
 		}
 
-		cc.decompressor, err = compressor.GetDecompressor(c.CompressionAlgorithm)
+		cc.decompressor, err = compressor.GetDecompressor(c.Compression)
 		if err != nil {
 			return fmt.Errorf("init payload decompressor failed, %w", err)
 		}
@@ -371,7 +371,7 @@ func (cc *ClientConf) responseBodyDecompress(ctx api.StreamContext, resp *http.R
 	// we need check response header key Content-Encoding is exist, if not that means remote server probably not support
 	// configured compression algorithm and we should throw error.
 	if resp.Header.Get("Content-Encoding") == "" {
-		ctx.GetLogger().Warnf("Cannot find header with key 'Content-Encoding' when trying to detect response content encoding and decompress it, probably remote server does not support configured algorithm %q", cc.config.CompressionAlgorithm)
+		ctx.GetLogger().Warnf("Cannot find header with key 'Content-Encoding' when trying to detect response content encoding and decompress it, probably remote server does not support configured algorithm %q", cc.config.Compression)
 		return nil, fmt.Errorf("try to detect and decompress payload has error, cannot find header with key 'Content-Encoding' in response")
 	}
 	body, err = cc.decompressor.Decompress(body)
@@ -424,7 +424,7 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	switch cc.config.ResponseType {
 	case "code":
 		if returnBody {
-			if cc.config.CompressionAlgorithm != "" && !skipDecompression {
+			if cc.config.Compression != "" && !skipDecompression {
 				if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
 					return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
 				}
@@ -437,7 +437,7 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		}
 		return nil, nil, nil
 	case "body":
-		if cc.config.CompressionAlgorithm != "" && !skipDecompression {
+		if cc.config.Compression != "" && !skipDecompression {
 			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
 				return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
 			}

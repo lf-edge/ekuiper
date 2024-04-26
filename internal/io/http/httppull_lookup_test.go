@@ -358,9 +358,9 @@ func testLookupPullWithCompressionAlgorithm(algo string, t *testing.T) {
 	server.Start()
 	defer closer()
 	err := r.Configure("lookup1", map[string]interface{}{
-		"url":                  "http://localhost:52345/",
-		"responseType":         "body",
-		"compressionAlgorithm": algo,
+		"url":          "http://localhost:52345/",
+		"responseType": "body",
+		"compression":  algo,
 	})
 	require.NoError(t, err)
 	resp, err := r.pull(context.Background())
