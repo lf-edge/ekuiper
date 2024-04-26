@@ -48,14 +48,6 @@ func (ms *RestSink) Open(ctx api.StreamContext) error {
 	return nil
 }
 
-type temporaryError struct{}
-
-func (e *temporaryError) Error() string {
-	return "mockTimeoutError"
-}
-
-func (e *temporaryError) Temporary() bool { return true }
-
 func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desUrl string) error {
 	logger := ctx.GetLogger()
 	decodedData, _, err := ctx.TransformOutput(item)
@@ -67,7 +59,7 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 	resp, err := ms.sendWithUrl(ctx, decodedData, item, desUrl)
 	failpoint.Inject("injectRestTemporaryError", func(val failpoint.Value) {
 		if val.(bool) {
-			err = &url.Error{Err: &temporaryError{}}
+			err = &url.Error{Err: &errorx.MockTemporaryError{}}
 		}
 	})
 	if err != nil {
@@ -114,16 +106,7 @@ func (ms *RestSink) collectWithUrl(ctx api.StreamContext, item interface{}, desU
 }
 
 func isRecoverAbleError(err error) bool {
-	if strings.Contains(err.Error(), "connection reset by peer") {
-		return true
-	}
-	if urlErr, ok := err.(*url.Error); ok {
-		// consider timeout and temporary error as recoverable
-		if urlErr.Timeout() || urlErr.Temporary() {
-			return true
-		}
-	}
-	return false
+	return errorx.IsRestRecoverAbleError(err)
 }
 
 func (ms *RestSink) Collect(ctx api.StreamContext, item interface{}) error {

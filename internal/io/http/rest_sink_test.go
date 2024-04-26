@@ -557,7 +557,7 @@ func TestRestSinkIOError(t *testing.T) {
 
 func TestIsRecoverAbleErr(t *testing.T) {
 	require.True(t, isRecoverAbleError(errors.New("connection reset by peer")))
-	require.True(t, isRecoverAbleError(&url.Error{Err: &temporaryError{}}))
+	require.True(t, isRecoverAbleError(&url.Error{Err: &errorx.MockTemporaryError{}}))
 }
 
 func TestRestSinkMethod(t *testing.T) {

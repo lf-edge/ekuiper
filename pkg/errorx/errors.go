@@ -14,6 +14,11 @@
 
 package errorx
 
+import (
+	"net/url"
+	"strings"
+)
+
 type Error struct {
 	msg  string
 	code ErrorCode
@@ -39,3 +44,24 @@ type ErrorWithCode interface {
 	Error() string
 	Code() ErrorCode
 }
+
+func IsRestRecoverAbleError(err error) bool {
+	if strings.Contains(err.Error(), "connection reset by peer") {
+		return true
+	}
+	if urlErr, ok := err.(*url.Error); ok {
+		// consider timeout and temporary error as recoverable
+		if urlErr.Timeout() || urlErr.Temporary() {
+			return true
+		}
+	}
+	return false
+}
+
+type MockTemporaryError struct{}
+
+func (e *MockTemporaryError) Error() string {
+	return "mockTimeoutError"
+}
+
+func (e *MockTemporaryError) Temporary() bool { return true }
