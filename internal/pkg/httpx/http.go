@@ -15,7 +15,6 @@
 package httpx
 
 import (
-	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -33,67 +32,17 @@ import (
 var BodyTypeMap = map[string]string{"none": "", "text": "text/plain", "json": "application/json", "html": "text/html", "xml": "application/xml", "javascript": "application/javascript", "form": ""}
 
 // Send v must be a []byte or map
-func Send(logger api.Logger, client *http.Client, bodyType string, method string, u string, headers map[string]string, sendSingle bool, v interface{}) (*http.Response, error) {
+func Send(logger api.Logger, client *http.Client, u string, method string, opts ...HTTPRequestOptions) (*http.Response, error) {
 	var req *http.Request
-	var err error
-	switch bodyType {
-	case "none":
-		req, err = http.NewRequest(method, u, nil)
-		if err != nil {
-			return nil, fmt.Errorf("fail to create request: %v", err)
-		}
-	case "json", "text", "javascript", "html", "xml":
-		var body io.Reader
-		switch t := v.(type) {
-		case []byte:
-			body = bytes.NewBuffer(t)
-		case string:
-			body = strings.NewReader(t)
-		default:
-			vj, err := json.Marshal(v)
-			if err != nil {
-				return nil, fmt.Errorf("invalid content: %v", v)
-			}
-			body = bytes.NewBuffer(vj)
-		}
-		req, err = http.NewRequest(method, u, body)
-		if err != nil {
-			return nil, fmt.Errorf("fail to create request: %v", err)
-		}
-		req.Header.Set("Content-Type", BodyTypeMap[bodyType])
-	case "form":
-		form := url.Values{}
-		im, err := convertToMap(v, sendSingle)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range im {
-			var vstr string
-			switch value.(type) {
-			case []interface{}, map[string]interface{}:
-				if temp, err := json.Marshal(value); err != nil {
-					return nil, fmt.Errorf("fail to parse from value: %v", err)
-				} else {
-					vstr = string(temp)
-				}
-			default:
-				vstr = fmt.Sprintf("%v", value)
-			}
-			form.Set(key, vstr)
-		}
-		body := io.NopCloser(strings.NewReader(form.Encode()))
-		req, err = http.NewRequest(method, u, body)
-		if err != nil {
-			return nil, fmt.Errorf("fail to create request: %v", err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded;param=value")
-	default:
-		return nil, fmt.Errorf("unsupported body type %s", bodyType)
+	req, err := http.NewRequest(method, u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create new request failed: %w", err)
 	}
-
-	if len(headers) > 0 {
-		for k, v := range headers {
-			req.Header.Set(k, v)
+	if len(opts) > 0 {
+		for _, opt := range opts {
+			if err := opt(req); err != nil {
+				return nil, err
+			}
 		}
 	}
 	logger.Debugf("do request: %#v", req)

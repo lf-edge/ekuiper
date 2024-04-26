@@ -18,11 +18,15 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"sync"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx/httptestx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 )
 
@@ -81,8 +85,8 @@ func TestConfigureLookup(t *testing.T) {
 				ExpireInSecond: 3600,
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -131,8 +135,8 @@ func TestConfigureLookup(t *testing.T) {
 				ExpireInSecond: 36000,
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -202,8 +206,8 @@ func TestConfigureLookup(t *testing.T) {
 				},
 			},
 			tokens: map[string]interface{}{
-				"token":         DefaultToken,
-				"refresh_token": RefreshToken,
+				"token":         httptestx.DefaultToken,
+				"refresh_token": httptestx.RefreshToken,
 				"client_id":     "test",
 				"expires":       float64(36000),
 			},
@@ -225,10 +229,13 @@ func TestConfigureLookup(t *testing.T) {
 			},
 		},
 	}
-	server := mockAuthServer()
-	server.Start()
 
-	defer server.Close()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
+	server.Start()
+	defer closer()
+
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("Test %d: %s", i, tt.name), func(t *testing.T) {
@@ -264,9 +271,11 @@ func TestLookupPull(t *testing.T) {
 	conf.IsTesting = false
 	conf.InitClock()
 	r := &lookupSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("data3", map[string]interface{}{
 		"url":          "http://localhost:52345/",
 		"responseType": "body",
@@ -292,6 +301,104 @@ func TestLookupPull(t *testing.T) {
 			},
 		},
 	}, resp)
+}
+
+func withCompressedPayloadEndpoint() httptestx.MockServerRouterOption {
+	return func(r *mux.Router, ctx *sync.Map) error {
+		r.HandleFunc("/lookup1", func(w http.ResponseWriter, r *http.Request) {
+			out := []*struct {
+				Code int `json:"code"`
+				Data struct {
+					DeviceId    string  `json:"device_id"`
+					Temperature float64 `json:"temperature"`
+					Humidity    float64 `json:"humidity"`
+				} `json:"data"`
+			}{
+				{
+					Code: 200,
+					Data: struct {
+						DeviceId    string  `json:"device_id"`
+						Temperature float64 `json:"temperature"`
+						Humidity    float64 `json:"humidity"`
+					}{
+						DeviceId:    "d1",
+						Temperature: 30.5,
+						Humidity:    67.0,
+					},
+				},
+				{
+					Code: 200,
+					Data: struct {
+						DeviceId    string  `json:"device_id"`
+						Temperature float64 `json:"temperature"`
+						Humidity    float64 `json:"humidity"`
+					}{
+						DeviceId:    "d2",
+						Temperature: 35.5,
+						Humidity:    80.0,
+					},
+				},
+			}
+			httptestx.JSONOut(w, out)
+		}).Methods(http.MethodGet)
+
+		r.Use(httptestx.CompressHandler)
+
+		return nil
+	}
+}
+
+func testLookupPullWithCompressionAlgorithm(algo string, t *testing.T) {
+	conf.IsTesting = false
+	conf.InitClock()
+	r := &lookupSource{}
+	server, closer := httptestx.MockAuthServer(
+		withCompressedPayloadEndpoint(),
+	)
+	server.Start()
+	defer closer()
+	err := r.Configure("lookup1", map[string]interface{}{
+		"url":          "http://localhost:52345/",
+		"responseType": "body",
+		"compression":  algo,
+	})
+	require.NoError(t, err)
+	resp, err := r.pull(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, []map[string]interface{}{
+		{
+			"code": float64(200),
+			"data": map[string]interface{}{
+				"device_id":   "d1",
+				"temperature": float64(30.5),
+				"humidity":    float64(67.0),
+			},
+		},
+		{
+			"code": float64(200),
+			"data": map[string]interface{}{
+				"device_id":   "d2",
+				"temperature": float64(35.5),
+				"humidity":    float64(80.0),
+			},
+		},
+	}, resp)
+}
+
+func TestLookupPullWithGZipAlgorithm(t *testing.T) {
+	testLookupPullWithCompressionAlgorithm(string(compressor.GZIP), t)
+}
+
+func TestLookupPullWithFlateAlgorithm(t *testing.T) {
+	testLookupPullWithCompressionAlgorithm(string(compressor.FLATE), t)
+}
+
+func TestLookupPullWithZLibAlgorithm(t *testing.T) {
+	testLookupPullWithCompressionAlgorithm(string(compressor.ZLIB), t)
+}
+
+func TestLookupPullWithZSTDAlgorithm(t *testing.T) {
+	testLookupPullWithCompressionAlgorithm(string(compressor.ZSTD), t)
 }
 
 func TestLookupJoin(t *testing.T) {
@@ -324,9 +431,11 @@ func TestLookup(t *testing.T) {
 	conf.IsTesting = false
 	conf.InitClock()
 	r := &lookupSource{}
-	server := mockAuthServer()
+	server, closer := httptestx.MockAuthServer(
+		httptestx.WithBuiltinTestDataEndpoints(),
+	)
 	server.Start()
-	defer server.Close()
+	defer closer()
 	err := r.Configure("data3", map[string]interface{}{
 		"url":          "http://localhost:52345/",
 		"responseType": "body",

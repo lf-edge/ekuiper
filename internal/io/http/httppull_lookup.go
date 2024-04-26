@@ -83,7 +83,8 @@ func (l *lookupSource) lookupJoin(dataMap []map[string]interface{}, keys []strin
 func (l *lookupSource) pull(ctx api.StreamContext) ([]map[string]interface{}, error) {
 	// check oAuth token expiration
 	if l.accessConf != nil && l.accessConf.ExpireInSecond > 0 &&
-		int(time.Now().Sub(l.tokenLastUpdateAt).Abs().Seconds()) >= l.accessConf.ExpireInSecond {
+		// S1012 static check fix: We should use time.Since to replace time.Now().Sub()
+		int(time.Since(l.tokenLastUpdateAt).Abs().Seconds()) >= l.accessConf.ExpireInSecond {
 		ctx.GetLogger().Debugf("Refreshing token for HTTP pull")
 		if err := l.refresh(ctx); err != nil {
 			ctx.GetLogger().Warnf("Refresh HTTP pull token error: %v", err)
@@ -94,13 +95,18 @@ func (l *lookupSource) pull(ctx api.StreamContext) ([]map[string]interface{}, er
 		return nil, err
 	}
 	ctx.GetLogger().Debugf("httppull source sending request url: %s, headers: %v, body %s", l.config.Url, headers, l.config.Body)
-	resp, e := httpx.Send(ctx.GetLogger(), l.client, l.config.BodyType, l.config.Method, l.config.Url, headers, true, l.config.Body)
+
+	body := l.config.Body
+	resp, e := httpx.Send(ctx.GetLogger(), l.client, l.config.Url, l.config.Method,
+		httpx.WithHeadersMap(headers),
+		httpx.WithBody(body, l.config.BodyType, true, l.compressor, l.config.Compression),
+	)
 	if e != nil {
 		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", e, l)
 		return nil, err
 	}
 	ctx.GetLogger().Debugf("httppull source got response %v", resp)
-	results, _, e := l.parseResponse(ctx, resp, true, nil)
+	results, _, e := l.parseResponse(ctx, resp, true, nil, false)
 	if e != nil {
 		return nil, err
 	}

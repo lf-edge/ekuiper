@@ -15,6 +15,7 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -23,13 +24,17 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/gorilla/mux"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/internal/compressor"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/pkg/httpx/httptestx"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -220,6 +225,151 @@ func TestRestSink_Apply(t *testing.T) {
 			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, requests)
 		}
 	}
+}
+
+func testRestSinkWithCompression(t *testing.T, compressionAlgorithm string) {
+	tests := []struct {
+		config map[string]any
+		data   [][]byte
+		result []request
+	}{
+		{
+			config: map[string]any{
+				"method":       http.MethodPost,
+				"url":          "http://localhost:52345/test",
+				"sendSingle":   true,
+				"dataTemplate": `{"wrapper":"w1","content":{{json .}},"ab":"{{.ab}}"}`,
+				"compression":  compressionAlgorithm,
+			},
+			data: [][]byte{[]byte(`{"wrapper":"w1","content":{"ab":"hello1"},"ab":"hello1"}`), []byte(`{"wrapper":"w1","content":{"ab":"hello2"},"ab":"hello2"}`)},
+			result: []request{
+				{
+					Method:      "POST",
+					Body:        "{\"wrapper\":\"w1\",\"content\":{\"ab\":\"hello1\"},\"ab\":\"hello1\"}\n",
+					ContentType: "application/json",
+				},
+				{
+					Method:      "POST",
+					Body:        "{\"wrapper\":\"w1\",\"content\":{\"ab\":\"hello2\"},\"ab\":\"hello2\"}\n",
+					ContentType: "application/json",
+				},
+			},
+		},
+	}
+
+	responseSnapshots := make([]*httptestx.ResponseSnapshot, 0)
+
+	withCompressedPayloadEndpoint := func() httptestx.MockServerRouterOption {
+		return func(r *mux.Router, ctx *sync.Map) error {
+			// we need create sub router for compression test
+			subr := r.NewRoute().Subrouter()
+			subr.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
+				bodyBytes, err := io.ReadAll(r.Body)
+				if err != nil {
+					http.Error(w, "read body failed", http.StatusBadRequest)
+					return
+				}
+				defer r.Body.Close()
+
+				type content struct {
+					Wrapper string `json:"wrapper"`
+					Content struct {
+						Ab string `json:"ab"`
+					} `json:"content"`
+					Ab string `json:"ab"`
+				}
+
+				dec, err := compressor.GetDecompressor(compressionAlgorithm)
+				if err != nil {
+					http.Error(w, "get decompressor failed", http.StatusInternalServerError)
+					return
+				}
+
+				bodyBytes, err = dec.Decompress(bodyBytes)
+				if err != nil {
+					http.Error(w, "decompress failed", http.StatusInternalServerError)
+					return
+				}
+
+				c := new(content)
+				if err := json.Unmarshal(bodyBytes, c); err != nil {
+					http.Error(w, "unmarshal body failed", http.StatusBadRequest)
+					return
+				}
+
+				httptestx.JSONOut(w, c)
+			})
+
+			subr.Use(httptestx.CompressHandler)
+			subr.Use(httptestx.ResponseSnapshotMiddleware(&responseSnapshots))
+			return nil
+		}
+	}
+
+	server, closer := httptestx.MockAuthServer(
+		withCompressedPayloadEndpoint(),
+	)
+	server.Start()
+	defer closer()
+
+	contextLogger := conf.Log.WithField("rule", "TestRestSink_Apply")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+
+	for i, tt := range tests {
+		s := &RestSink{}
+		if err := s.Configure(tt.config); err != nil {
+			t.Error(err)
+		}
+		s.Open(ctx)
+
+		vCtx := context.WithValue(ctx, context.TransKey, transform.TransFunc(func(d interface{}) ([]byte, bool, error) {
+			return d.([]byte), true, nil
+		}))
+		for _, d := range tt.data {
+			s.Collect(vCtx, d)
+		}
+		s.Close(ctx)
+
+		for _, snapshot := range responseSnapshots {
+			bodyBytes, err := io.ReadAll(snapshot.Body)
+			if err != nil {
+				t.Errorf("%d \tread snapshot body error: %s", i, err)
+			}
+
+			ct := snapshot.Headers.Get("Content-Type")
+
+			pass := false
+			for _, res := range tt.result {
+				t.Logf("bodybytes: %s", bodyBytes)
+				t.Logf("expected: %s", res.Body)
+				if res.Body == string(bodyBytes) && res.Method == snapshot.Method && res.ContentType == ct {
+					pass = true
+					break
+				}
+			}
+
+			if !pass {
+				t.Errorf("%d \tcannot find matched response with expected result in snapshot", i)
+				return
+			}
+		}
+	}
+}
+
+func TestRestSinkWithGZipCompression(t *testing.T) {
+	testRestSinkWithCompression(t, compressor.GZIP)
+}
+
+func TestRestSinkWithZLibCompression(t *testing.T) {
+	testRestSinkWithCompression(t, compressor.ZLIB)
+}
+
+func TestRestSinkWithZStdCompression(t *testing.T) {
+	testRestSinkWithCompression(t, compressor.ZSTD)
+}
+
+func TestRestSinkWithFlateCompression(t *testing.T) {
+	testRestSinkWithCompression(t, compressor.FLATE)
 }
 
 func TestRestSinkTemplate_Apply(t *testing.T) {
@@ -533,7 +683,7 @@ func TestRestSinkIOError(t *testing.T) {
 			}},
 		},
 	}
-	failpoint.Enable("github.com/lf-edge/ekuiper/internal/io/http/injectRestTemporaryError", "return(ture)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/internal/io/http/injectRestTemporaryError", "return(true)")
 	defer func() {
 		failpoint.Disable("github.com/lf-edge/ekuiper/internal/io/http/injectRestTemporaryError")
 	}()

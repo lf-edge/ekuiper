@@ -130,7 +130,9 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 		}
 	}
 	ctx.GetLogger().Debugf("httppull source sending request url: %s, headers: %v, body %s", url, headers, hps.config.Body)
-	if resp, e := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, url, headers, true, body); e != nil {
+	if resp, e := httpx.Send(ctx.GetLogger(), hps.client, url, hps.config.Method,
+		httpx.WithHeadersMap(headers),
+		httpx.WithBody(body, hps.config.BodyType, true, hps.compressor, hps.config.Compression)); e != nil {
 		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", e, hps)
 		return []api.SourceTuple{
 			&xsql.ErrorSourceTuple{
@@ -139,7 +141,7 @@ func (hps *PullSource) doPull(ctx api.StreamContext, rcvTime time.Time, omd5 *st
 		}
 	} else {
 		ctx.GetLogger().Debugf("httppull source got response %v", resp)
-		results, _, e := hps.parseResponse(ctx, resp, true, omd5)
+		results, _, e := hps.parseResponse(ctx, resp, true, omd5, false)
 		if e != nil {
 			return []api.SourceTuple{
 				&xsql.ErrorSourceTuple{

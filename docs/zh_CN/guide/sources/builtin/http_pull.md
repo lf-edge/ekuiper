@@ -39,6 +39,8 @@ default:
     Accept: application/json
   # 如何检查响应状态，支持通过状态码或 body
   responseType: code
+  # 设置数据压缩算法，可选项有 gzip、zlib、zstd、flate，大小写敏感
+  # compression: "gzip"
   # 获取 token
 #  oAuth:
 #    # 设置如何获取访问码
@@ -82,6 +84,16 @@ application_conf: #Conf_key
 - `responseType`：定义如何解析 HTTP 响应。目前支持两种方式：
   - `code`：通过 HTTP 响应码判断响应状态。
   - `body`：通过 HTTP 响应正文判断响应状态。要求响应正文为 JSON 格式且其中包含 code 字段。
+
+#### **HTTP 数据压缩支持**
+
+用户可以选择是否对 `HTTP` 数据使用受支持的压缩算法进行压缩，此方法基于标准的**端到端压缩**技术协定与**主动协商机制**，通过请求中指定 `Accept-Encoding` 请求头告知服务器端所支持的压缩算法，服务器根据 `Accept-Encoding` 中指定的压缩算法对数据进行解压缩并在响应请求时使用 `Content-Encoding` 来告知客户端响应数据使用了哪种压缩算法，在 `eKuiper` 中通常要求 **服务器端与 eKuiper 使用相同的压缩算法** 分别对响应和请求进行压缩，所以在配置数据压缩时，请保证您所指定的压缩算法服务器端同样支持。
+
+- `compression`：设置数据压缩算法，可选项有 gzip、zlib、zstd、flate，大小写敏感
+
+**对于 `Flate` 压缩算法的额外说明：**
+
+对于 `Flate` 压缩算法会在请求头 `Accept-Encoding` 中设置值为 `deflate`，其他压缩算法则设置值为 `gzip`、`zlib` 或 `zstd`。
 
 ### 安全配置
 

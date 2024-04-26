@@ -39,6 +39,8 @@ default:
     Accept: application/json
   # how to check the response status, by status code or by body
   responseType: code
+  # Set payload compression algorithm, supported algorithms: gzip|zlib|zstd|flate, algorithm name case-sensitive
+  # compression: "gzip"
   #  # Get token
 #  oAuth:
 #    # Access token fetch method
@@ -82,6 +84,16 @@ Use can specify the global HTTP pull settings here. The configuration items spec
 - `responseType`: Define how to parse the HTTP response. There are two types defined:
   - `code`: To check the response status from the HTTP status code.
   - `body`: To check the response status from the response body. The body must be "application/json" content type and contains a "code" field.
+
+#### **Support for HTTP Payload Compression**
+
+Users can choose whether to compress `HTTP` payload using supported compression algorithms. This method is based on the **end-to-end compression** and **proactive negotiation mechanism**. The server is informed of the supported compression algorithms through the `Accept-Encoding` request header specified in the request. The server decompresses the data according to the compression algorithm specified in `Accept-Encoding` and uses `Content-Encoding` to inform the client which compression algorithm was used in the response data when responding to the request. In `eKuiper`, it is usually required that **the server and eKuiper use the same compression algorithm** to compress the response and request respectively. Therefore, when configuring data compression, please ensure that the compression algorithm you specify is also supported by the server.
+
+- `compression`: Set the data compression algorithm. The options are `gzip`, `zlib`, `zstd`, `flate`, case sensitive.
+
+**Additional notes on the `Flate` compression algorithm:**
+
+For the `Flate` compression algorithm, the `Accept-Encoding` request header will be set to `deflate`. For other compression algorithms, the value will be set to `gzip`, `zlib`, or `zstd`.
 
 ### Security Configurations
 
