@@ -31,6 +31,7 @@ type PortableSink struct {
 	props      map[string]interface{}
 	dataCh     DataOutChannel
 	ackCh      DataInChannel
+	checkAck   bool
 	clean      func() error
 }
 
@@ -43,6 +44,13 @@ func NewPortableSink(symbolName string, reg *PluginMeta) *PortableSink {
 
 func (ps *PortableSink) Configure(props map[string]interface{}) error {
 	ps.props = props
+	c, ok := props["checkAck"]
+	if ok {
+		checkAck, ok := c.(bool)
+		if ok {
+			ps.checkAck = checkAck
+		}
+	}
 	return nil
 }
 
@@ -108,16 +116,18 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if e != nil {
 			return errorx.NewIOErr(e.Error())
 		}
-		msg, err := recvAck(ctx, ps.ackCh)
-		if err != nil {
-			return err
-		}
-		r := &ackResponse{}
-		if err := json.Unmarshal(msg, r); err != nil {
-			return err
-		}
-		if len(r.Error) > 0 {
-			return errors.New(r.Error)
+		if ps.checkAck {
+			msg, err := recvAck(ctx, ps.ackCh)
+			if err != nil {
+				return err
+			}
+			r := &ackResponse{}
+			if err := json.Unmarshal(msg, r); err != nil {
+				return err
+			}
+			if len(r.Error) > 0 {
+				return errors.New(r.Error)
+			}
 		}
 		return nil
 	} else {
@@ -142,18 +152,22 @@ func recvAck(ctx api.StreamContext, dataCh DataInChannel) ([]byte, error) {
 	var msg []byte
 	var err error
 	// make sure recv has timeout
-	msg, err = dataCh.Recv()
-	switch err {
-	case mangos.ErrClosed:
-		ctx.GetLogger().Info("stop source after close")
-	case mangos.ErrRecvTimeout:
-		ctx.GetLogger().Debug("source receive timeout, retry")
-		select {
-		case <-ctx.Done():
-			ctx.GetLogger().Info("stop dataInChannel")
+	for {
+		msg, err = dataCh.Recv()
+		switch err {
+		case mangos.ErrClosed:
+			ctx.GetLogger().Info("stop source after close")
+			return nil, err
+		case mangos.ErrRecvTimeout:
+			ctx.GetLogger().Debug("source receive timeout, retry")
+			select {
+			case <-ctx.Done():
+				ctx.GetLogger().Info("stop dataInChannel")
+			default:
+				continue
+			}
+		case nil:
+			return msg, nil
 		}
-	case nil:
-		// do nothing
 	}
-	return msg, err
 }
