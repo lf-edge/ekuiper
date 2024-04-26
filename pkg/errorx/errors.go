@@ -57,3 +57,11 @@ func IsRecoverAbleError(err error) bool {
 	}
 	return false
 }
+
+type MockTemporaryError struct{}
+
+func (e *MockTemporaryError) Error() string {
+	return "mockTimeoutError"
+}
+
+func (e *MockTemporaryError) Temporary() bool { return true }
