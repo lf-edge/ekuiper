@@ -269,6 +269,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}, with
 
 // initialize the oAuth access token
 func (cc *ClientConf) auth(ctx api.StreamContext) error {
+	// send authentication request and authentication request no need to compress
 	if resp, e := httpx.Send(conf.Log, cc.client, cc.accessConf.Url, http.MethodPost,
 		httpx.WithBody(cc.accessConf.Body, "json", true, nil, httpx.EmptyCompressorAlgorithm)); e == nil {
 		conf.Log.Infof("try to get access token got response %v", resp)
@@ -363,6 +364,23 @@ const (
 	CODE_ERR = "response code error"
 )
 
+// responseBodyDecompress used to decompress the specified response body bytes, decompression algorithm indicated
+// by response header 'Content-Encoding' value.
+func (cc *ClientConf) responseBodyDecompress(ctx api.StreamContext, resp *http.Response, body []byte) ([]byte, error) {
+	var err error
+	// we need check response header key Content-Encoding is exist, if not that means remote server probably not support
+	// configured compression algorithm and we should throw error.
+	if resp.Header.Get("Content-Encoding") == "" {
+		ctx.GetLogger().Warnf("Cannot find header with key 'Content-Encoding' when trying to detect response content encoding and decompress it, probably remote server does not support configured algorithm %q", cc.config.CompressionAlgorithm)
+		return nil, fmt.Errorf("try to detect and decompress payload has error, cannot find header with key 'Content-Encoding' in response")
+	}
+	body, err = cc.decompressor.Decompress(body)
+	if err != nil {
+		return nil, fmt.Errorf("try to decompress payload failed, %w", err)
+	}
+	return body, nil
+}
+
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
 func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, returnBody bool, omd5 *string, skipDecompression bool) ([]map[string]interface{}, []byte, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
@@ -394,21 +412,6 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		}
 	}(resp.Body)
 
-	// if compressAlgorithm has been set, that means we need decompress payloads
-	// TODO: skipDecompression flag is ugly, maybe we can more elegant ?
-	if cc.config.CompressionAlgorithm != "" && !skipDecompression {
-		// we need check response header key Content-Encoding is exist, if not that means remote server probably not support
-		// configured compression algorithm and we should throw error.
-		if resp.Header.Get("Content-Encoding") == "" {
-			ctx.GetLogger().Warnf("Cannot find header with key 'Content-Encoding' when trying to detect response content encoding and decompress it, probably remote server does not support configured algorithm %q", cc.config.CompressionAlgorithm)
-			return nil, nil, fmt.Errorf("try to detect and decompress payload has error, cannot find header with key 'Content-Encoding' in response")
-		}
-		c, err = cc.decompressor.Decompress(c)
-		if err != nil {
-			return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
-		}
-	}
-
 	if returnBody && cc.config.Incremental {
 		nmd5 := getMD5Hash(c)
 		if *omd5 == nmd5 {
@@ -421,6 +424,11 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	switch cc.config.ResponseType {
 	case "code":
 		if returnBody {
+			if cc.config.CompressionAlgorithm != "" && !skipDecompression {
+				if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
+					return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
+				}
+			}
 			m, e := decode(ctx, c)
 			if e != nil {
 				return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
@@ -429,6 +437,11 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		}
 		return nil, nil, nil
 	case "body":
+		if cc.config.CompressionAlgorithm != "" && !skipDecompression {
+			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
+				return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
+			}
+		}
 		payloads, err := decode(ctx, c)
 		if err != nil {
 			if err != nil {
