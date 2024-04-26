@@ -34,9 +34,10 @@ func TestRestSinkCollect(t *testing.T) {
 	ctx := mockContext.NewMockContext("1", "2")
 	s := &RestSink{}
 	require.NoError(t, s.Provision(ctx, map[string]any{
-		"url":       fmt.Sprintf("%s/get", server.URL),
-		"method":    "get",
-		"debugResp": true,
+		"url":         fmt.Sprintf("%s/get", server.URL),
+		"method":      "get",
+		"compression": "gzip",
+		"debugResp":   true,
 	}))
 	data := &xsql.Tuple{
 		Message: map[string]interface{}{

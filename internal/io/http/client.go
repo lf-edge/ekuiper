@@ -28,22 +28,18 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 // ClientConf is the configuration for http client
 // It is shared by httppull source and rest sink to configure their http client
 type ClientConf struct {
-	config       *RawConf
-	client       *http.Client
-	compressor   message.Compressor   // compressor used to payload compression when specifies compressAlgorithm
-	decompressor message.Decompressor // decompressor used to payload decompression when specifies compressAlgorithm
+	config *RawConf
+	client *http.Client
 
 	// auth related
 	accessConf        *AccessTokenConf
@@ -75,6 +71,8 @@ type RawConf struct {
 	Incremental bool              `json:"incremental"`
 
 	OAuth map[string]map[string]interface{} `json:"oauth"`
+	// sink specific properties
+	SendSingle bool `json:"sendSingle"`
 	// Could be code or body
 	ResponseType string `json:"responseType"`
 	Compression  string `json:"compression"` // Compression specifies the algorithms used to payload compression
@@ -195,18 +193,6 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 		Timeout:   time.Duration(c.Timeout),
 	}
 	cc.config = c
-	// that means payload need compression and decompression, so we need initialize compressor and decompressor
-	if c.Compression != "" {
-		cc.compressor, err = compressor.GetCompressor(c.Compression)
-		if err != nil {
-			return fmt.Errorf("init payload compressor failed, %w", err)
-		}
-
-		cc.decompressor, err = compressor.GetDecompressor(c.Compression)
-		if err != nil {
-			return fmt.Errorf("init payload decompressor failed, %w", err)
-		}
-	}
 	if cc.accessConf != nil {
 		conf.Log.Infof("Try to get access token from %s", cc.accessConf.Url)
 		ctx := mockContext.NewMockContext("none", "httppull_init")
@@ -221,31 +207,30 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 
 // initialize the oAuth access token
 func (cc *ClientConf) auth(ctx api.StreamContext) error {
-	resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, true, cc.accessConf.Body)
-	if err != nil {
-		return err
-	}
-	tokens, _, err := cc.parseResponse(ctx, resp, "")
-	if err != nil {
-		return err
-	}
-	cc.tokens = tokens[0]
-	ctx.GetLogger().Infof("Got access token %v", cc.tokens)
-	expireIn, err := ctx.ParseTemplate(cc.accessConf.Expire, cc.tokens)
-	if err != nil {
-		return fmt.Errorf("fail to parse the expire time for access token: %v", err)
-	}
-	cc.accessConf.ExpireInSecond, err = cast.ToInt(expireIn, cast.CONVERT_ALL)
-	if err != nil {
-		return fmt.Errorf("fail to covert the expire time %s for access token: %v", expireIn, err)
-	}
-	if cc.refreshConf != nil {
-		err := cc.refresh(ctx)
+	if resp, e := httpx.Send(conf.Log, cc.client, cc.accessConf.Url, http.MethodPost,
+		httpx.WithBody(cc.accessConf.Body, "json", true, httpx.EmptyCompressorAlgorithm)); e == nil {
+		tokens, _, err := cc.parseResponse(ctx, resp, "")
 		if err != nil {
 			return err
 		}
-	} else {
-		cc.tokenLastUpdateAt = time.Now()
+		cc.tokens = tokens[0]
+		ctx.GetLogger().Infof("Got access token %v", cc.tokens)
+		expireIn, err := ctx.ParseTemplate(cc.accessConf.Expire, cc.tokens)
+		if err != nil {
+			return fmt.Errorf("fail to parse the expire time for access token: %v", err)
+		}
+		cc.accessConf.ExpireInSecond, err = cast.ToInt(expireIn, cast.CONVERT_ALL)
+		if err != nil {
+			return fmt.Errorf("fail to covert the expire time %s for access token: %v", expireIn, err)
+		}
+		if cc.refreshConf != nil {
+			err := cc.refresh(ctx)
+			if err != nil {
+				return err
+			}
+		} else {
+			cc.tokenLastUpdateAt = time.Now()
+		}
 	}
 	return nil
 }
@@ -273,11 +258,14 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 			}
 		}
 
-		resp, err := httpx.Send(conf.Log, cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, true, cc.refreshConf.Body)
-		if err != nil {
-			return fmt.Errorf("fail to get refresh token: %v", err)
+		rr, ee := httpx.Send(conf.Log, cc.client, cc.refreshConf.Url, http.MethodPost,
+			httpx.WithBody(cc.accessConf.Body, "json", true, httpx.EmptyCompressorAlgorithm),
+			httpx.WithHeadersMap(headers),
+		)
+		if ee != nil {
+			return fmt.Errorf("fail to get refresh token: %v", ee)
 		}
-		nt, _, err := cc.parseResponse(ctx, resp, "")
+		nt, _, err := cc.parseResponse(ctx, rr, "")
 		if err != nil {
 			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
@@ -297,23 +285,6 @@ const (
 	BODY_ERR = "response body error"
 	CODE_ERR = "response code error"
 )
-
-// responseBodyDecompress used to decompress the specified response body bytes, decompression algorithm indicated
-// by response header 'Content-Encoding' value.
-func (cc *ClientConf) responseBodyDecompress(ctx api.StreamContext, resp *http.Response, body []byte) ([]byte, error) {
-	var err error
-	// we need check response header key Content-Encoding is exist, if not that means remote server probably not support
-	// configured compression algorithm and we should throw error.
-	if resp.Header.Get("Content-Encoding") == "" {
-		ctx.GetLogger().Warnf("Cannot find header with key 'Content-Encoding' when trying to detect response content encoding and decompress it, probably remote server does not support configured algorithm %q", cc.config.Compression)
-		return nil, fmt.Errorf("try to detect and decompress payload has error, cannot find header with key 'Content-Encoding' in response")
-	}
-	body, err = cc.decompressor.Decompress(body)
-	if err != nil {
-		return nil, fmt.Errorf("try to decompress payload failed, %w", err)
-	}
-	return body, nil
-}
 
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
 func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, lastMD5 string) ([]map[string]interface{}, string, error) {
@@ -340,22 +311,12 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 
 	switch cc.config.ResponseType {
 	case "code":
-		if cc.config.Compression != "" {
-			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
-				return nil, "", fmt.Errorf("try to decompress payload failed, %w", err)
-			}
-		}
 		m, e := decode(c)
 		if e != nil {
 			return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
 		}
 		return m, newMD5, e
 	case "body":
-		if cc.config.Compression != "" {
-			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
-				return nil, "", fmt.Errorf("try to decompress payload failed, %w", err)
-			}
-		}
 		payloads, err := decode(c)
 		if err != nil {
 			return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)

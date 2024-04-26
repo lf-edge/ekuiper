@@ -86,7 +86,7 @@ func (r *RestSink) collect(ctx api.StreamContext, item api.MessageTuple) error {
 			u = nu
 		}
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), r.client, bodyType, method, u, headers, true, data)
+	resp, err := httpx.Send(ctx.GetLogger(), r.client, u, method, httpx.WithHeadersMap(headers), httpx.WithBody(data, bodyType, r.config.SendSingle, r.config.Compression))
 	failpoint.Inject("recoverAbleErr", func() {
 		err = errors.New("connection reset by peer")
 	})
