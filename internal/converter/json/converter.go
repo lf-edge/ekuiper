@@ -21,7 +21,6 @@ import (
 
 	"github.com/valyala/fastjson"
 
-	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -57,91 +56,24 @@ func (c *Converter) Decode(b []byte) (m interface{}, err error) {
 type FastJsonConverter struct {
 	sync.RWMutex
 	isSchemaLess bool
-	// ruleID -> schema
-	schemaMap map[string]map[string]*ast.JsonStreamField
-	// ruleID -> StreamName
-	streamMap map[string]string
-	schema    map[string]*ast.JsonStreamField
-	// ruleID -> wildcard
-	wildcardMap map[string]struct{}
+	isWildcard   bool
+	schema       map[string]*ast.JsonStreamField
 }
 
-func NewFastJsonConverter(ruleID, streamName string, schema map[string]*ast.JsonStreamField, isWildcard, isSchemaLess bool) *FastJsonConverter {
+func NewFastJsonConverter(schema map[string]*ast.JsonStreamField, isWildcard, isSchemaLess bool) *FastJsonConverter {
 	f := &FastJsonConverter{
-		schemaMap:    make(map[string]map[string]*ast.JsonStreamField),
 		schema:       schema,
-		wildcardMap:  make(map[string]struct{}),
 		isSchemaLess: isSchemaLess,
-		streamMap:    map[string]string{},
+		isWildcard:   isWildcard,
 	}
-	f.schemaMap[ruleID] = schema
-	f.streamMap[ruleID] = streamName
-	if isWildcard {
-		f.wildcardMap[ruleID] = struct{}{}
-	}
-	f.storeSchema()
 	return f
 }
 
-func (c *FastJsonConverter) MergeSchema(ruleID, dataSource string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error {
+func (c *FastJsonConverter) ResetSchema(schema map[string]*ast.JsonStreamField, isWildcard bool) {
 	c.Lock()
 	defer c.Unlock()
-	_, ok := c.schemaMap[ruleID]
-	if ok {
-		return nil
-	}
-	c.schemaMap[ruleID] = newSchema
-	c.streamMap[ruleID] = dataSource
-	if isWildcard {
-		c.wildcardMap[ruleID] = struct{}{}
-	} else {
-		mergedSchema, err := mergeSchema(c.schema, newSchema)
-		if err != nil {
-			return err
-		}
-		c.schema = mergedSchema
-	}
-	c.storeSchema()
-	return nil
-}
-
-func (c *FastJsonConverter) DetachSchema(ruleID string) error {
-	var err error
-	c.Lock()
-	defer c.Unlock()
-	_, ok := c.schemaMap[ruleID]
-	if ok {
-		merge.RemoveRuleSchema(ruleID)
-		delete(c.streamMap, ruleID)
-		delete(c.wildcardMap, ruleID)
-		delete(c.schemaMap, ruleID)
-		newSchema := make(map[string]*ast.JsonStreamField)
-		for _, schema := range c.schemaMap {
-			newSchema, err = mergeSchema(newSchema, schema)
-			if err != nil {
-				return err
-			}
-		}
-		c.schema = newSchema
-		c.storeSchema()
-	}
-	return nil
-}
-
-func (c *FastJsonConverter) storeSchema() {
-	if len(c.wildcardMap) > 0 {
-		for ruleID := range c.schemaMap {
-			merge.AddRuleSchema(ruleID, c.streamMap[ruleID], nil, true)
-		}
-		return
-	}
-	for ruleID := range c.schemaMap {
-		merge.AddRuleSchema(ruleID, c.streamMap[ruleID], c.schema, false)
-	}
-}
-
-func mergeSchema(originSchema, newSchema map[string]*ast.JsonStreamField) (map[string]*ast.JsonStreamField, error) {
-	return merge.MergeSchema(originSchema, newSchema)
+	c.schema = schema
+	c.isWildcard = isWildcard
 }
 
 func (c *FastJsonConverter) Encode(d interface{}) (b []byte, err error) {
@@ -156,7 +88,7 @@ func (c *FastJsonConverter) Decode(b []byte) (m interface{}, err error) {
 	}()
 	c.RLock()
 	defer c.RUnlock()
-	if len(c.wildcardMap) > 0 {
+	if c.isWildcard {
 		return converter.Decode(b)
 	}
 	return c.decodeWithSchema(b, c.schema)

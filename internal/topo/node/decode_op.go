@@ -20,6 +20,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
+	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -30,22 +31,27 @@ import (
 type DecodeOp struct {
 	*defaultSinkNode
 	converter message.Converter
+	sLayer    *schemaLayer.SchemaLayer
 }
 
 func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
 	ctx.GetLogger().Infof("attach schema to shared stream")
-	if fastDecoder, ok := o.converter.(message.SchemaMergeAbleConverter); ok {
-		if err := fastDecoder.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
+	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		if err := o.sLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
 			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
+		} else {
+			fastDecoder.ResetSchema(o.sLayer.GetSchema())
 		}
 	}
 }
 
 func (o *DecodeOp) DetachSchema(ruleId string) {
 	conf.Log.Infof("detach schema for shared stream rule %v", ruleId)
-	if fastDecoder, ok := o.converter.(message.SchemaMergeAbleConverter); ok {
-		if err := fastDecoder.DetachSchema(ruleId); err != nil {
+	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		if err := o.sLayer.DetachSchema(ruleId); err != nil {
 			conf.Log.Warnf("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
+		} else {
+			fastDecoder.ResetSchema(o.sLayer.GetSchema())
 		}
 	}
 }
@@ -67,6 +73,7 @@ func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, o
 	return &DecodeOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		converter:       converterTool,
+		sLayer:          schemaLayer.NewSchemaLayer(ruleId, StreamName, schema, isWildcard),
 	}, nil
 }
 
