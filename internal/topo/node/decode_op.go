@@ -19,6 +19,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
+	schemaLayer "github.com/lf-edge/ekuiper/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -29,23 +30,28 @@ import (
 
 type DecodeOp struct {
 	*defaultSinkNode
-	converter message.Converter
+	converter   message.Converter
+	schemaLayer *schemaLayer.SchemaLayer
 }
 
 func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
 	ctx.GetLogger().Infof("attach schema to shared stream")
-	if fastDecoder, ok := o.converter.(message.SchemaMergeAbleConverter); ok {
-		if err := fastDecoder.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
+	if schemaResetor, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		if err := o.schemaLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
 			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
+		} else {
+			schemaResetor.ResetSchema(o.schemaLayer.GetSchema())
 		}
 	}
 }
 
 func (o *DecodeOp) DetachSchema(ruleId string) {
 	conf.Log.Infof("detach schema for shared stream rule %v", ruleId)
-	if fastDecoder, ok := o.converter.(message.SchemaMergeAbleConverter); ok {
-		if err := fastDecoder.DetachSchema(ruleId); err != nil {
+	if schemaResetor, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		if err := o.schemaLayer.DetachSchema(ruleId); err != nil {
 			conf.Log.Warnf("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
+		} else {
+			schemaResetor.ResetSchema(o.schemaLayer.GetSchema())
 		}
 	}
 }
@@ -64,9 +70,11 @@ func NewDecodeOp(name, StreamName string, ruleId string, rOpt *api.RuleOption, o
 		msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", options.FORMAT, options.SCHEMAID, err)
 		return nil, fmt.Errorf(msg)
 	}
+	sLayer := schemaLayer.NewSchemaLayer(ruleId, StreamName, schema, isWildcard)
 	return &DecodeOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		converter:       converterTool,
+		schemaLayer:     sLayer,
 	}, nil
 }
 

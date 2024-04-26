@@ -22,6 +22,7 @@ import (
 
 const (
 	DecodeKey = "$$decode"
+	SchemaKey = "$$schema"
 )
 
 func (c *DefaultContext) Decode(data []byte) (map[string]interface{}, error) {

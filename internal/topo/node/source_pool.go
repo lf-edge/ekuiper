@@ -23,6 +23,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	schemaLayer "github.com/lf-edge/ekuiper/internal/converter/schema"
 	kctx "github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/topo/state"
 	"github.com/lf-edge/ekuiper/pkg/api"
@@ -147,6 +148,7 @@ func (p *sourcePool) addInstance(k string, node *SourceNode, source api.Source) 
 		}
 		sctx, cancel := ctx.WithMeta(ruleId, opId, store).WithCancel()
 		sctx = kctx.WithValue(sctx.(*kctx.DefaultContext), kctx.DecodeKey, node.ctx.Value(kctx.DecodeKey))
+		sctx = kctx.WithValue(sctx.(*kctx.DefaultContext), kctx.SchemaKey, node.ctx.Value(kctx.SchemaKey))
 		si, err := start(sctx, node, source)
 		if err != nil {
 			return nil, err
@@ -281,11 +283,15 @@ func (ss *sourceSingleton) broadcastError(err error) {
 
 func (ss *sourceSingleton) attachSchema(ruleID, dataSource string, schema map[string]*ast.JsonStreamField, isWildCard bool) {
 	decodeConverter := ss.ctx.Value(kctx.DecodeKey)
-	if decodeConverter != nil {
-		fastDecoder, ok := decodeConverter.(message.SchemaMergeAbleConverter)
-		if ok {
-			if err := fastDecoder.MergeSchema(ruleID, dataSource, schema, isWildCard); err != nil {
+	sLayer := ss.ctx.Value(kctx.SchemaKey)
+	if decodeConverter != nil && sLayer != nil {
+		resetSchemaDecoder, ok1 := decodeConverter.(message.SchemaResetAbleConverter)
+		schemaLayer, ok2 := sLayer.(*schemaLayer.SchemaLayer)
+		if ok1 && ok2 {
+			if err := schemaLayer.MergeSchema(ruleID, dataSource, schema, isWildCard); err != nil {
 				conf.Log.Warnf("merge schema for shared stream rule %v failed, err:%v", ruleID, err)
+			} else {
+				resetSchemaDecoder.ResetSchema(schemaLayer.GetSchema())
 			}
 		}
 	}
@@ -318,11 +324,15 @@ func (ss *sourceSingleton) attach(instanceKey string, bl int) error {
 
 func (ss *sourceSingleton) detachSchema(ruleID string) {
 	decodeConverter := ss.ctx.Value(kctx.DecodeKey)
-	if decodeConverter != nil {
-		fastDecoder, ok := decodeConverter.(message.SchemaMergeAbleConverter)
-		if ok {
-			if err := fastDecoder.DetachSchema(ruleID); err != nil {
+	sLayer := ss.ctx.Value(kctx.SchemaKey)
+	if decodeConverter != nil && sLayer != nil {
+		resetSchemaDecoder, ok1 := decodeConverter.(message.SchemaResetAbleConverter)
+		schemaLayer, ok2 := sLayer.(*schemaLayer.SchemaLayer)
+		if ok1 && ok2 {
+			if err := schemaLayer.DetachSchema(ruleID); err != nil {
 				conf.Log.Warnf("detach schema for rule %v failed, err:%v", ruleID, err.Error())
+			} else {
+				resetSchemaDecoder.ResetSchema(schemaLayer.GetSchema())
 			}
 		}
 	}

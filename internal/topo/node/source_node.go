@@ -19,6 +19,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/converter"
+	"github.com/lf-edge/ekuiper/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	nodeConf "github.com/lf-edge/ekuiper/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/node/metric"
@@ -116,7 +117,9 @@ func (m *SourceNode) Open(ctx api.StreamContext, errCh chan<- error) {
 				logger.Warnf(msg)
 				return fmt.Errorf(msg)
 			}
+			schemaLayer := schema.NewSchemaLayer(ctx.GetRuleId(), m.options.StreamName, m.options.Schema, m.options.IsWildCard)
 			ctx = context.WithValue(ctx.(*context.DefaultContext), context.DecodeKey, converterTool)
+			ctx = context.WithValue(ctx.(*context.DefaultContext), context.SchemaKey, schemaLayer)
 			m.reset()
 			logger.Infof("open source node with props %v, concurrency: %d, bufferLength: %d", conf.Printable(m.props), m.concurrency, m.bufferLength)
 
