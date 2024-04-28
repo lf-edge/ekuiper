@@ -410,12 +410,8 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, partial bool, stop bool) (*ImportConfigurationStatus, error) {
 	if rsi.Content != "" && rsi.FilePath != "" {
 		return nil, errors.New("Invalid body: Cannot specify both content and file")
-		//handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
-		//return
 	} else if rsi.Content == "" && rsi.FilePath == "" {
 		return nil, errors.New("Invalid body: must specify content or file")
-		//handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
-		//return
 	}
 	content := []byte(rsi.Content)
 	if rsi.FilePath != "" {
@@ -449,12 +445,8 @@ func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, part
 		result := configurationPartialImport(context.Background(), content)
 		if result.ErrorMsg != "" {
 			return nil, errors.New(result.ErrorMsg)
-			//w.WriteHeader(http.StatusBadRequest)
-			//jsonResponse(result, w, logger)
 		} else {
 			return &result, nil
-			//w.WriteHeader(http.StatusOK)
-			//jsonResponse(result, w, logger)
 		}
 	}
 }

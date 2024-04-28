@@ -24,7 +24,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/pkg/async"
+	"github.com/lf-edge/ekuiper/internal/pkg/async"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
@@ -86,6 +86,7 @@ func asyncTaskHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		registerAsyncTask(w, r)
 	case http.MethodGet:
+
 		queryAsyncTaskStatus(w, r)
 	}
 }
