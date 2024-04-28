@@ -398,26 +398,36 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body: Error decoding json", logger)
 		return
 	}
+	result, err := handleConfigurationImport(context.Background(), rsi, partial, stop)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(result, w, logger)
+}
+
+func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, partial bool, stop bool) (*ImportConfigurationStatus, error) {
 	if rsi.Content != "" && rsi.FilePath != "" {
-		handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
-		return
+		return nil, errors.New("Invalid body: Cannot specify both content and file")
+		//handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
+		//return
 	} else if rsi.Content == "" && rsi.FilePath == "" {
-		handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
-		return
+		return nil, errors.New("Invalid body: must specify content or file")
+		//handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
+		//return
 	}
 	content := []byte(rsi.Content)
 	if rsi.FilePath != "" {
 		reader, err := httpx.ReadFile(rsi.FilePath)
 		if err != nil {
-			handleError(w, err, "Fail to read file", logger)
-			return
+			return nil, err
 		}
 		defer reader.Close()
 		buf := new(bytes.Buffer)
 		_, err = io.Copy(buf, reader)
 		if err != nil {
-			handleError(w, err, "fail to convert file", logger)
-			return
+			return nil, err
 		}
 		content = buf.Bytes()
 	}
@@ -425,27 +435,26 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 		configurationReset()
 		result := configurationImport(context.Background(), content, stop)
 		if result.ErrorMsg != "" {
-			w.WriteHeader(http.StatusBadRequest)
-			jsonResponse(result, w, logger)
+			return nil, errors.New(result.ErrorMsg)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			jsonResponse(result, w, logger)
-		}
-
-		if stop {
-			go func() {
-				time.Sleep(1 * time.Second)
-				os.Exit(100)
-			}()
+			if stop {
+				go func() {
+					time.Sleep(1 * time.Second)
+					os.Exit(100)
+				}()
+			}
+			return &result, nil
 		}
 	} else {
 		result := configurationPartialImport(context.Background(), content)
 		if result.ErrorMsg != "" {
-			w.WriteHeader(http.StatusBadRequest)
-			jsonResponse(result, w, logger)
+			return nil, errors.New(result.ErrorMsg)
+			//w.WriteHeader(http.StatusBadRequest)
+			//jsonResponse(result, w, logger)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			jsonResponse(result, w, logger)
+			return &result, nil
+			//w.WriteHeader(http.StatusOK)
+			//jsonResponse(result, w, logger)
 		}
 	}
 }
