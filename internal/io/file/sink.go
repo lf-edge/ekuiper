@@ -27,29 +27,33 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type sinkConf struct {
-	RollingInterval    int64    `json:"rollingInterval"`
-	RollingCount       int      `json:"rollingCount"`
-	RollingNamePattern string   `json:"rollingNamePattern"` // where to add the timestamp to the file name
-	CheckInterval      int64    `json:"checkInterval"`
-	Path               string   `json:"path"` // support dynamic property, when rolling, make sure the path is updated
-	FileType           FileType `json:"fileType"`
-	HasHeader          bool     `json:"hasHeader"`
-	Delimiter          string   `json:"delimiter"`
-	Format             string   `json:"format"` // only use for validation; transformation is done in sink_node
-	Compression        string   `json:"compression"`
-	Encryption         string   `json:"encryption"`
-	Fields             []string `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
+	RollingInterval    int64          `json:"rollingInterval"`
+	RollingCount       int            `json:"rollingCount"`
+	RollingNamePattern string         `json:"rollingNamePattern"` // where to add the timestamp to the file name
+	RollingHook        string         `json:"rollingHook"`
+	RollingHookProps   map[string]any `json:"rollingHookProps"`
+	CheckInterval      int64          `json:"checkInterval"`
+	Path               string         `json:"path"` // support dynamic property, when rolling, make sure the path is updated
+	FileType           FileType       `json:"fileType"`
+	HasHeader          bool           `json:"hasHeader"`
+	Delimiter          string         `json:"delimiter"`
+	Format             string         `json:"format"` // only use for validation; transformation is done in sink_node
+	Compression        string         `json:"compression"`
+	Encryption         string         `json:"encryption"`
+	Fields             []string       `json:"fields"` // only use for extracting header for csv; transformation is done in sink_node
 }
 
 type fileSink struct {
 	c *sinkConf
 
-	mux sync.Mutex
-	fws map[string]*fileWriter
+	mux      sync.Mutex
+	fws      map[string]*fileWriter
+	rollHook modules.RollHook
 }
 
 func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}) error {
@@ -97,7 +101,17 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	if _, ok := compressionTypes[c.Compression]; !ok && c.Compression != "" {
 		return fmt.Errorf("compression must be one of gzip, zstd")
 	}
-
+	if c.RollingHook != "" {
+		h, ok := modules.GetFileRollHook(c.RollingHook)
+		if !ok {
+			return fmt.Errorf("rolling hook %s is not registered", c.RollingHook)
+		}
+		err := h.Provision(ctx, c.RollingHookProps)
+		if err != nil {
+			return err
+		}
+		m.rollHook = h
+	}
 	m.c = c
 	m.fws = make(map[string]*fileWriter)
 	return nil
@@ -116,15 +130,11 @@ func (m *fileSink) Connect(ctx api.StreamContext) error {
 					m.mux.Lock()
 					for k, v := range m.fws {
 						if now.Sub(v.Start) > time.Duration(m.c.RollingInterval)*time.Millisecond {
-							ctx.GetLogger().Debugf("rolling file %s", k)
-							err := v.Close(ctx)
-							// TODO how to inform this error to the rule
+							err := m.roll(ctx, k, v)
+							// TODO how to deal with this error
 							if err != nil {
 								ctx.GetLogger().Errorf("file sink fails to close file %s with error %s.", k, err)
 							}
-							delete(m.fws, k)
-							// The file will be created when the next item comes
-							v.Written = false
 						}
 					}
 					m.mux.Unlock()
@@ -166,16 +176,9 @@ func (m *fileSink) Collect(ctx api.StreamContext, item []byte) error {
 	if m.c.RollingCount > 0 {
 		fw.Count++
 		if fw.Count >= m.c.RollingCount {
-			e = fw.Close(ctx)
-			if e != nil {
-				return e
-			}
-			delete(m.fws, fn)
-			fw.Count = 0
-			fw.Written = false
+			return m.roll(ctx, fn, fw)
 		}
 	}
-
 	return nil
 }
 
@@ -183,12 +186,38 @@ func (m *fileSink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing file sink")
 	var errs []error
 	for k, v := range m.fws {
-		if e := v.Close(ctx); e != nil {
+		e := m.roll(ctx, k, v)
+		if e != nil {
 			ctx.GetLogger().Errorf("failed to close file %s: %v", k, e)
 			errs = append(errs, e)
 		}
 	}
+	if m.rollHook != nil {
+		e := m.rollHook.Close(ctx)
+		if e != nil {
+			errs = append(errs, e)
+		}
+	}
 	return errors.Join(errs...)
+}
+
+func (m *fileSink) roll(ctx api.StreamContext, k string, v *fileWriter) error {
+	ctx.GetLogger().Debugf("rolling file %s", k)
+	err := v.Close(ctx)
+	if err != nil {
+		return err
+	} else {
+		if m.rollHook != nil {
+			err = m.rollHook.RollDone(ctx, v.File.Name())
+			if err != nil {
+				return err
+			}
+		}
+	}
+	delete(m.fws, k)
+	// The file will be created when the next item comes
+	v.Written = false
+	return nil
 }
 
 // GetFws returns the file writer for the given file name, if the file writer does not exist, it will create one
