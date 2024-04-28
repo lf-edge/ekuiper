@@ -41,7 +41,7 @@ type Converter interface {
 type ConverterProvider func(schemaFileName string, SchemaMessageName string, delimiter string) (Converter, error)
 
 type SchemaResetAbleConverter interface {
-	ResetSchema(schema map[string]*ast.JsonStreamField, isWildcard bool)
+	ResetSchema(schema map[string]*ast.JsonStreamField)
 }
 
 type ColumnSetter interface {

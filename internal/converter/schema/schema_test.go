@@ -206,9 +206,8 @@ func TestMergeWildcardSchema(t *testing.T) {
 		},
 	}
 	require.NoError(t, f.MergeSchema("3", "", newSchema, false))
-	s, isWildcard := f.GetSchema()
+	s := f.GetSchema()
 	require.Nil(t, s)
-	require.True(t, isWildcard)
 }
 
 func TestAttachDetachSchema(t *testing.T) {

@@ -216,7 +216,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
 	for _, tc := range testcases {
-		f := NewFastJsonConverter(tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema)
 		v, err := f.Decode(ctx, tc.payload)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
@@ -227,7 +227,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -387,7 +387,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
 	for _, tc := range testcases {
-		f := NewFastJsonConverter(tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema)
 		_, err := f.Decode(ctx, tc.payload)
 		require.Error(t, err)
 		require.Equal(t, err.Error(), tc.err.Error())
@@ -398,7 +398,7 @@ func TestFastJsonEncode(t *testing.T) {
 	a := make(map[string]int)
 	a["a"] = 1
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter(nil, false, false)
+	f := NewFastJsonConverter(nil)
 	v, err := f.Encode(ctx, a)
 	require.NoError(t, err)
 	require.Equal(t, v, []byte(`{"a":1}`))
@@ -431,7 +431,7 @@ func TestArrayWithArray(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter(schema, false, false)
+	f := NewFastJsonConverter(schema)
 	v, err := f.Decode(ctx, payload)
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -612,7 +612,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -622,7 +622,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter(tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -639,7 +639,7 @@ func TestConvertBytea(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter(schema, false, false)
+	f := NewFastJsonConverter(schema)
 	v, err := f.Decode(ctx, []byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -655,7 +655,7 @@ func TestConvertBytea(t *testing.T) {
 			},
 		},
 	}
-	f = NewFastJsonConverter(schema, false, false)
+	f = NewFastJsonConverter(schema)
 	v, err = f.Decode(ctx, []byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -667,7 +667,7 @@ func TestSchemaless(t *testing.T) {
 	originSchema := map[string]*ast.JsonStreamField{
 		"a": nil,
 	}
-	f := NewFastJsonConverter(originSchema, false, true)
+	f := NewFastJsonConverter(originSchema)
 	testcases := []struct {
 		data   map[string]interface{}
 		expect map[string]interface{}
@@ -722,7 +722,7 @@ func TestJsonError(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 	// fastjson
-	c := NewFastJsonConverter(nil, false, true)
+	c := NewFastJsonConverter(nil)
 	_, err = c.Decode(ctx, nil)
 	require.Error(t, err)
 	errWithCode, ok = err.(errorx.ErrorWithCode)
