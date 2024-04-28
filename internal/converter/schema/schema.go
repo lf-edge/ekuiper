@@ -105,13 +105,13 @@ func (s *SchemaLayer) DetachSchema(ruleID string) error {
 	return nil
 }
 
-func (s *SchemaLayer) GetSchema() (map[string]*ast.JsonStreamField, bool) {
+func (s *SchemaLayer) GetSchema() map[string]*ast.JsonStreamField {
 	s.RLock()
 	defer s.RUnlock()
 	if len(s.wildcardMap) > 0 {
-		return nil, true
+		return nil
 	}
-	return s.schema, false
+	return s.schema
 }
 
 func mergeSchema(originSchema, newSchema map[string]*ast.JsonStreamField) (map[string]*ast.JsonStreamField, error) {
