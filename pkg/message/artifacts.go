@@ -38,7 +38,7 @@ type Converter interface {
 
 // ConverterProvider The format, schema information are passed in by stream options
 // The columns information is defined in the source side, like file source
-type ConverterProvider func(schemaFileName string, SchemaMessageName string, delimiter string) (Converter, error)
+type ConverterProvider func(schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (Converter, error)
 
 type SchemaResetAbleConverter interface {
 	ResetSchema(schema map[string]*ast.JsonStreamField)

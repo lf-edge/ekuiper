@@ -28,13 +28,16 @@ import (
 )
 
 func init() {
-	modules.RegisterConverter(message.FormatJson, func(_ string, _ string, _ string) (message.Converter, error) {
-		return json.GetConverter()
+	modules.RegisterConverter(message.FormatJson, func(_ string, _ string, _ string, schema map[string]*ast.JsonStreamField) (message.Converter, error) {
+		if schema == nil {
+			return json.GetConverter()
+		}
+		return json.NewFastJsonConverter(schema), nil
 	})
-	modules.RegisterConverter(message.FormatBinary, func(_ string, _ string, _ string) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatBinary, func(_ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		return binary.GetConverter()
 	})
-	modules.RegisterConverter(message.FormatDelimited, func(_ string, _ string, delimiter string) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatDelimited, func(_ string, _ string, delimiter string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		return delimited.NewConverter(delimiter)
 	})
 }
@@ -50,16 +53,6 @@ func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error)
 	if t == "" {
 		t = message.FormatJson
 	}
-	if t == message.FormatJson {
-		// it's unit test
-		if options.RuleID == "" || options.StreamName == "" {
-			return json.GetConverter()
-		}
-		if options.IsWildCard {
-			return json.NewFastJsonConverter(nil), nil
-		}
-		return json.NewFastJsonConverter(options.Schema), nil
-	}
 
 	schemaFile := ""
 	schemaName := options.SCHEMAID
@@ -70,8 +63,12 @@ func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error)
 			schemaName = r[1]
 		}
 	}
+	schema := options.Schema
+	if options.IsWildCard {
+		schema = nil
+	}
 	if c, ok := modules.Converters[t]; ok {
-		return c(schemaFile, schemaName, options.DELIMITER)
+		return c(schemaFile, schemaName, options.DELIMITER, schema)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }
