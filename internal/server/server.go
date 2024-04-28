@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/keyedstate"
 	meta2 "github.com/lf-edge/ekuiper/internal/meta"
+	"github.com/lf-edge/ekuiper/internal/pkg/async"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/internal/processor"
@@ -199,6 +200,7 @@ func StartUp(Version string) {
 	}
 	exit := make(chan struct{})
 	go runScheduleRuleChecker(exit)
+	async.InitManager()
 
 	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
