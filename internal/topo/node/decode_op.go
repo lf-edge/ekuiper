@@ -91,14 +91,14 @@ func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *DecodeOp) Worker(_ api.Logger, item any) []any {
+func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case error:
 		return []any{d}
 	case *xsql.Tuple:
-		result, err := o.converter.Decode(d.Raw)
+		result, err := o.converter.Decode(ctx, d.Raw)
 		if err != nil {
 			return []any{err}
 		}

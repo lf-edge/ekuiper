@@ -23,6 +23,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestEncode(t *testing.T) {
@@ -55,12 +56,13 @@ func TestEncode(t *testing.T) {
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	ctx := mockContext.NewMockContext("test", "op1")
 	for i, tt := range tests {
 		c, err := NewConverter(":")
 		if err != nil {
 			t.Fatal(err)
 		}
-		a, err := c.Encode(tt.m)
+		a, err := c.Encode(ctx, tt.m)
 		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.r, a) {
@@ -102,14 +104,15 @@ func TestDecode(t *testing.T) {
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
+	ctx := mockContext.NewMockContext("test", "op1")
 	for i, tt := range tests {
-		a, err := c.Decode(tt.r)
+		a, err := c.Decode(ctx, tt.r)
 		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.m, a) {
 			t.Errorf("%d. \n\nresult mismatch:\n\nexp=%v\n\ngot=%v\n\n", i, tt.m, a)
 		}
-		b, err := ch.Decode(tt.r)
+		b, err := ch.Decode(ctx, tt.r)
 		if !reflect.DeepEqual(tt.e, testx.Errstring(err)) {
 			t.Errorf("%d.error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.e, err)
 		} else if tt.e == "" && !reflect.DeepEqual(tt.nm, b) {
@@ -121,7 +124,8 @@ func TestDecode(t *testing.T) {
 func TestError(t *testing.T) {
 	converter, err := NewConverter(",")
 	require.NoError(t, err)
-	_, err = converter.Encode(nil)
+	ctx := mockContext.NewMockContext("test", "op1")
+	_, err = converter.Encode(ctx, nil)
 	require.Error(t, err)
 	errWithCode, ok := err.(errorx.ErrorWithCode)
 	require.True(t, ok)

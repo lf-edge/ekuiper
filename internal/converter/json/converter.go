@@ -21,6 +21,7 @@ import (
 
 	"github.com/valyala/fastjson"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -35,11 +36,11 @@ func GetConverter() (message.Converter, error) {
 	return converter, nil
 }
 
-func (c *Converter) Encode(d interface{}) (b []byte, err error) {
+func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	return json.Marshal(d)
 }
 
-func (c *Converter) Decode(b []byte) (m interface{}, err error) {
+func (c *Converter) Decode(ctx api.StreamContext, b []byte) (m any, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
@@ -76,11 +77,11 @@ func (c *FastJsonConverter) ResetSchema(schema map[string]*ast.JsonStreamField, 
 	c.isWildcard = isWildcard
 }
 
-func (c *FastJsonConverter) Encode(d interface{}) (b []byte, err error) {
+func (c *FastJsonConverter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	return json.Marshal(d)
 }
 
-func (c *FastJsonConverter) Decode(b []byte) (m interface{}, err error) {
+func (c *FastJsonConverter) Decode(ctx api.StreamContext, b []byte) (m any, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
@@ -89,7 +90,7 @@ func (c *FastJsonConverter) Decode(b []byte) (m interface{}, err error) {
 	c.RLock()
 	defer c.RUnlock()
 	if c.isWildcard {
-		return converter.Decode(b)
+		return converter.Decode(ctx, b)
 	}
 	return c.decodeWithSchema(b, c.schema)
 }

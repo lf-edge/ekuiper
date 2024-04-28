@@ -17,7 +17,6 @@
 package converter
 
 import (
-	"github.com/lf-edge/ekuiper/v2/internal/converter/custom"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
@@ -33,5 +32,4 @@ func init() {
 		}
 		return protobuf.NewConverter(ffs.SchemaFile, ffs.SoFile, schemaMessageName)
 	})
-	modules.RegisterConverter(message.FormatCustom, custom.LoadConverter)
 }

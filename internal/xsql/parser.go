@@ -25,6 +25,7 @@ import (
 	"github.com/golang-collections/collections/stack"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	_ "github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"

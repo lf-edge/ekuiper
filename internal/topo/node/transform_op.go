@@ -74,16 +74,16 @@ func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 // Worker do not need to process error and control messages
-func (t *TransformOp) Worker(logger api.Logger, item any) []any {
+func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 	t.statManager.ProcessTimeStart()
 	defer t.statManager.ProcessTimeEnd()
 	if ic, ok := item.(xsql.Collection); ok && t.omitIfEmpty && ic.Len() == 0 {
-		logger.Debugf("receive empty collection, dropped")
+		ctx.GetLogger().Debugf("receive empty collection, dropped")
 		return nil
 	}
 	outs := itemToMap(item)
 	if t.omitIfEmpty && (item == nil || len(outs) == 0) {
-		logger.Debugf("receive empty result %v in sink, dropped", outs)
+		ctx.GetLogger().Debugf("receive empty result %v in sink, dropped", outs)
 		return nil
 	}
 	var result []any

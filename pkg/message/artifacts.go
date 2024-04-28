@@ -15,6 +15,7 @@
 package message
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -31,8 +32,8 @@ const (
 
 // Converter converts bytes & map or []map according to the schema
 type Converter interface {
-	Encode(d interface{}) ([]byte, error)
-	Decode(b []byte) (interface{}, error)
+	Encode(ctx api.StreamContext, d any) ([]byte, error)
+	Decode(ctx api.StreamContext, b []byte) (any, error)
 }
 
 // ConverterProvider The format, schema information are passed in by stream options

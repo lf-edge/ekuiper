@@ -284,33 +284,13 @@ func TestInferredStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	etcDir := filepath.Join(dataDir, "schemas", "custom")
-	err = os.MkdirAll(etcDir, os.ModePerm)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err = os.RemoveAll(etcDir)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
-	// build the so file into data/test prior to running the test
-	bytesRead, err := os.ReadFile(filepath.Join(dataDir, "myFormat.so"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.WriteFile(filepath.Join(etcDir, "myFormat.so"), bytesRead, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
 	petcDir := filepath.Join(dataDir, "schemas", "protobuf")
 	err = os.MkdirAll(petcDir, os.ModePerm)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Copy test2.proto
-	bytesRead, err = os.ReadFile("../schema/test/test2.proto")
+	bytesRead, err := os.ReadFile("../schema/test/test2.proto")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,20 +322,6 @@ func TestInferredStream(t *testing.T) {
 			r: map[string]*ast.JsonStreamField{
 				"name":   {Type: "string"},
 				"author": {Type: "string"},
-			},
-		}, {
-			s: `CREATE STREAM demo2 () WITH (FORMAT="custom", DATASOURCE="demo", SCHEMAID="myFormat.Sample")`,
-			r: map[string]*ast.JsonStreamField{
-				"id":   {Type: "bigint"},
-				"name": {Type: "string"},
-				"age":  {Type: "bigint"},
-				"hobbies": {
-					Type: "struct",
-					Properties: map[string]*ast.JsonStreamField{
-						"indoor":  {Type: "array", Items: &ast.JsonStreamField{Type: "string"}},
-						"outdoor": {Type: "array", Items: &ast.JsonStreamField{Type: "string"}},
-					},
-				},
 			},
 		},
 	}
