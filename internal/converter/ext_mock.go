@@ -21,13 +21,14 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
-	modules.RegisterConverter("mock", func(_ string, _ string, _ string) (message.Converter, error) {
+	modules.RegisterConverter("mock", func(_ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		return &MockConverter{}, nil
 	})
 }

@@ -20,12 +20,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {
-	modules.RegisterConverter(message.FormatProtobuf, func(schemaFileName string, schemaMessageName string, _ string) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatProtobuf, func(schemaFileName string, schemaMessageName string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		ffs, err := schema.GetSchemaFile(def.PROTOBUF, schemaFileName)
 		if err != nil {
 			return nil, err
