@@ -121,6 +121,10 @@ func connect(ctx api.StreamContext, url string, info *conninfo) error {
 	if err != nil {
 		return err
 	}
+	err = info.sock.SetOption(mangos.OptionMaxRecvSize, 0)
+	if err != nil {
+		return err
+	}
 	info.sock.SetPipeEventHook(func(ev mangos.PipeEvent, p mangos.Pipe) {
 		switch ev {
 		case mangos.PipeEventAttached:
