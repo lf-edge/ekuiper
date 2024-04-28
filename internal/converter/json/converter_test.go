@@ -17,7 +17,6 @@ package json
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -26,7 +25,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/converter/merge"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -218,7 +216,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("", "", tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema, false, false)
 		v, err := f.Decode(ctx, tc.payload)
 		require.NoError(t, err)
 		require.Equal(t, v, tc.require)
@@ -229,7 +227,7 @@ func TestFastJsonConverterWithSchema(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", "", tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema, false, false)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -389,7 +387,7 @@ func TestFastJsonConverterWithSchemaError(t *testing.T) {
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
 	for _, tc := range testcases {
-		f := NewFastJsonConverter("", "", tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema, false, false)
 		_, err := f.Decode(ctx, tc.payload)
 		require.Error(t, err)
 		require.Equal(t, err.Error(), tc.err.Error())
@@ -400,7 +398,7 @@ func TestFastJsonEncode(t *testing.T) {
 	a := make(map[string]int)
 	a["a"] = 1
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter("", "", nil, false, false)
+	f := NewFastJsonConverter(nil, false, false)
 	v, err := f.Encode(ctx, a)
 	require.NoError(t, err)
 	require.Equal(t, v, []byte(`{"a":1}`))
@@ -433,7 +431,7 @@ func TestArrayWithArray(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter("", "", schema, false, false)
+	f := NewFastJsonConverter(schema, false, false)
 	v, err := f.Decode(ctx, payload)
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -614,7 +612,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", "", tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema, false, false)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -624,7 +622,7 @@ func TestTypeNull(t *testing.T) {
 		arrayRequire := []map[string]interface{}{
 			tc.require,
 		}
-		f := NewFastJsonConverter("", "", tc.schema, false, false)
+		f := NewFastJsonConverter(tc.schema, false, false)
 		v, err := f.Decode(ctx, arrayPayload)
 		require.NoError(t, err)
 		require.Equal(t, v, arrayRequire)
@@ -641,7 +639,7 @@ func TestConvertBytea(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
-	f := NewFastJsonConverter("", "", schema, false, false)
+	f := NewFastJsonConverter(schema, false, false)
 	v, err := f.Decode(ctx, []byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -657,7 +655,7 @@ func TestConvertBytea(t *testing.T) {
 			},
 		},
 	}
-	f = NewFastJsonConverter("", "", schema, false, false)
+	f = NewFastJsonConverter(schema, false, false)
 	v, err = f.Decode(ctx, []byte(payload))
 	require.NoError(t, err)
 	require.Equal(t, v, map[string]interface{}{
@@ -665,213 +663,11 @@ func TestConvertBytea(t *testing.T) {
 	})
 }
 
-func TestMergeSchema(t *testing.T) {
-	testcases := []struct {
-		originSchema map[string]*ast.JsonStreamField
-		newSchema    map[string]*ast.JsonStreamField
-		resultSchema map[string]*ast.JsonStreamField
-		err          error
-	}{
-		{
-			originSchema: map[string]*ast.JsonStreamField{
-				"a": nil,
-			},
-			newSchema: map[string]*ast.JsonStreamField{
-				"b": nil,
-			},
-			resultSchema: map[string]*ast.JsonStreamField{
-				"a": nil,
-				"b": nil,
-			},
-		},
-		{
-			originSchema: map[string]*ast.JsonStreamField{
-				"a": nil,
-			},
-			newSchema: map[string]*ast.JsonStreamField{
-				"a": nil,
-			},
-			resultSchema: map[string]*ast.JsonStreamField{
-				"a": nil,
-			},
-		},
-		{
-			originSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "array",
-					Items: &ast.JsonStreamField{
-						Type: "struct",
-						Properties: map[string]*ast.JsonStreamField{
-							"b": {
-								Type: "bigint",
-							},
-						},
-					},
-				},
-			},
-			newSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "array",
-					Items: &ast.JsonStreamField{
-						Type: "struct",
-						Properties: map[string]*ast.JsonStreamField{
-							"b": {
-								Type: "string",
-							},
-						},
-					},
-				},
-			},
-			err: errors.New("column field type b between current[bigint] and new[string] are not equal"),
-		},
-		{
-			originSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "array",
-					Items: &ast.JsonStreamField{
-						Type: "bigint",
-					},
-				},
-			},
-			newSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "array",
-					Items: &ast.JsonStreamField{
-						Type: "string",
-					},
-				},
-			},
-			err: errors.New("array column field type a between current[bigint] and new[string] are not equal"),
-		},
-		{
-			originSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "struct",
-					Properties: map[string]*ast.JsonStreamField{
-						"b": {
-							Type: "bigint",
-						},
-					},
-				},
-			},
-			newSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "struct",
-					Properties: map[string]*ast.JsonStreamField{
-						"b": {
-							Type: "string",
-						},
-					},
-				},
-			},
-			err: errors.New("column field type b between current[bigint] and new[string] are not equal"),
-		},
-		{
-			originSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "bigint",
-				},
-			},
-			newSchema: map[string]*ast.JsonStreamField{
-				"b": {
-					Type: "string",
-				},
-			},
-			resultSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "bigint",
-				},
-				"b": {
-					Type: "string",
-				},
-			},
-		},
-		{
-			originSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "struct",
-					Properties: map[string]*ast.JsonStreamField{
-						"b": {
-							Type: "bigint",
-						},
-					},
-				},
-			},
-			newSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "struct",
-					Properties: map[string]*ast.JsonStreamField{
-						"c": {
-							Type: "string",
-						},
-					},
-				},
-			},
-			resultSchema: map[string]*ast.JsonStreamField{
-				"a": {
-					Type: "struct",
-					Properties: map[string]*ast.JsonStreamField{
-						"b": {
-							Type: "bigint",
-						},
-						"c": {
-							Type: "string",
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, tc := range testcases {
-		f := NewFastJsonConverter("1", "", tc.originSchema, false, false)
-		err := f.MergeSchema("2", "", tc.newSchema, false)
-		if tc.err == nil {
-			require.NoError(t, err)
-			require.Equal(t, tc.resultSchema, f.schema)
-		} else {
-			require.Equal(t, tc.err, err)
-		}
-	}
-}
-
-func TestMergeWildcardSchema(t *testing.T) {
-	originSchema := map[string]*ast.JsonStreamField{
-		"a": {
-			Type: "bigint",
-		},
-	}
-	f := NewFastJsonConverter("1", "", originSchema, false, false)
-	require.NoError(t, f.MergeSchema("2", "", nil, true))
-	newSchema := map[string]*ast.JsonStreamField{
-		"b": {
-			Type: "bigint",
-		},
-	}
-	require.NoError(t, f.MergeSchema("3", "", newSchema, false))
-	data := map[string]interface{}{
-		"a": float64(1),
-		"b": float64(2),
-		"c": float64(3),
-	}
-	ctx := mockContext.NewMockContext("test", "op1")
-	bs, _ := json.Marshal(data)
-	d, err := f.Decode(ctx, bs)
-	require.NoError(t, err)
-	require.Equal(t, data, d)
-	require.NoError(t, f.DetachSchema("2"))
-	d, err = f.Decode(ctx, bs)
-	require.NoError(t, err)
-	require.Equal(t, map[string]interface{}{
-		"a": int64(1),
-		"b": int64(2),
-	}, d)
-}
-
 func TestSchemaless(t *testing.T) {
 	originSchema := map[string]*ast.JsonStreamField{
 		"a": nil,
 	}
-	f := NewFastJsonConverter("1", "", originSchema, false, true)
+	f := NewFastJsonConverter(originSchema, false, true)
 	testcases := []struct {
 		data   map[string]interface{}
 		expect map[string]interface{}
@@ -926,44 +722,10 @@ func TestJsonError(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 	// fastjson
-	c := NewFastJsonConverter("", "", nil, false, true)
+	c := NewFastJsonConverter(nil, false, true)
 	_, err = c.Decode(ctx, nil)
 	require.Error(t, err)
 	errWithCode, ok = err.(errorx.ErrorWithCode)
 	require.True(t, ok)
 	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
-}
-
-func TestAttachDetachSchema(t *testing.T) {
-	f := NewFastJsonConverter("rule1", "demo", nil, true, true)
-	err := f.MergeSchema("rule2", "demo", map[string]*ast.JsonStreamField{
-		"a": nil,
-	}, false)
-	require.NoError(t, err)
-	r := merge.GetRuleSchema("rule1")
-	er := merge.RuleSchemaResponse{
-		Schema: map[string]map[string]*ast.JsonStreamField{
-			"demo": nil,
-		},
-		Wildcard: map[string]bool{
-			"demo": true,
-		},
-	}
-	require.Equal(t, r, er)
-	r = merge.GetRuleSchema("rule2")
-	require.Equal(t, r, er)
-	// detach rule
-	require.NoError(t, f.DetachSchema("rule1"))
-	r = merge.GetRuleSchema("rule2")
-	er = merge.RuleSchemaResponse{
-		Schema: map[string]map[string]*ast.JsonStreamField{
-			"demo": {
-				"a": nil,
-			},
-		},
-		Wildcard: map[string]bool{
-			"demo": false,
-		},
-	}
-	require.Equal(t, r, er)
 }

@@ -40,9 +40,8 @@ type Converter interface {
 // The columns information is defined in the source side, like file source
 type ConverterProvider func(schemaFileName string, SchemaMessageName string, delimiter string) (Converter, error)
 
-type SchemaMergeAbleConverter interface {
-	MergeSchema(key, datasource string, newSchema map[string]*ast.JsonStreamField, isWildcard bool) error
-	DetachSchema(key string) error
+type SchemaResetAbleConverter interface {
+	ResetSchema(schema map[string]*ast.JsonStreamField, isWildcard bool)
 }
 
 type ColumnSetter interface {
