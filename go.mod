@@ -23,7 +23,7 @@ require (
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.7
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-dev.2
+	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/montanaflynn/stats v0.7.1
