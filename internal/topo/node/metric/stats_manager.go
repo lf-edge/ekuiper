@@ -140,10 +140,10 @@ func (sm *DefaultStatManager) GetMetrics() []any {
 		sm.totalMessagesProcessed,
 		sm.processLatency,
 		sm.bufferLength,
-		0,
+		int64(0),
 		sm.totalExceptions,
 		sm.lastException,
-		0,
+		int64(0),
 	}
 
 	if !sm.lastInvocation.IsZero() {

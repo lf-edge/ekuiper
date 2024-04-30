@@ -373,10 +373,10 @@ func getRuleExceptionStatus(name string) (ruleExceptionStatus, error) {
 			keys, values := (*rs.Topology).GetMetrics()
 			for i, key := range keys {
 				if strings.Contains(key, "last_exception_time") {
-					v := values[i].(int)
+					v := values[i].(int64)
 					if v > s.lastExceptionTime {
 						s.lastExceptionTime = v
-						total, last := getTargetException(keys, values, key[:strings.Index(key, "last_exception_time")])
+						total, last := getTargetException(keys, values, key[:strings.Index(key, "_last_exception_time")])
 						s.LastException = last
 						s.ExceptionsTotal = total
 					}
@@ -407,7 +407,7 @@ type ruleExceptionStatus struct {
 	Status            string `json:"status"`
 	LastException     string `json:"last_exception"`
 	ExceptionsTotal   int64  `json:"exceptions_total"`
-	lastExceptionTime int
+	lastExceptionTime int64
 }
 
 func getRuleStatusV2(name string) (map[string]any, error) {
