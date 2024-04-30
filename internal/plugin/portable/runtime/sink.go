@@ -126,7 +126,7 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 				return err
 			}
 			if len(r.Error) > 0 {
-				return errors.New(r.Error)
+				return errorx.NewIOErr(r.Error)
 			}
 		}
 		return nil
