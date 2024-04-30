@@ -31,8 +31,9 @@ type PortableSink struct {
 	props      map[string]interface{}
 	dataCh     DataOutChannel
 	ackCh      DataInChannel
-	checkAck   bool
-	clean      func() error
+	// 0 indicates no ack, and 1 indicates need ack
+	requiredACKs int
+	clean        func() error
 }
 
 func NewPortableSink(symbolName string, reg *PluginMeta) *PortableSink {
@@ -44,11 +45,11 @@ func NewPortableSink(symbolName string, reg *PluginMeta) *PortableSink {
 
 func (ps *PortableSink) Configure(props map[string]interface{}) error {
 	ps.props = props
-	c, ok := props["checkAck"]
+	c, ok := props["requiredACKs"]
 	if ok {
-		checkAck, ok := c.(bool)
+		acks, ok := c.(int)
 		if ok {
-			ps.checkAck = checkAck
+			ps.requiredACKs = acks
 		}
 	}
 	return nil
@@ -116,7 +117,7 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if e != nil {
 			return errorx.NewIOErr(e.Error())
 		}
-		if ps.checkAck {
+		if ps.requiredACKs > 0 {
 			msg, err := recvAck(ctx, ps.ackCh)
 			if err != nil {
 				return err
