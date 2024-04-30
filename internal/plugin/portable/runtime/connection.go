@@ -225,6 +225,25 @@ func CreateSinkChannel(ctx api.StreamContext) (DataOutChannel, error) {
 	return sock, nil
 }
 
+func CreateSinkAckChannel(ctx api.StreamContext) (DataInChannel, error) {
+	var (
+		sock mangos.Socket
+		err  error
+	)
+	if sock, err = pull.NewSocket(); err != nil {
+		return nil, fmt.Errorf("can't get new pull socket: %s", err)
+	}
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionRecvDeadline: 1000 * time.Millisecond,
+	})
+	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d_ack.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	if err = listenWithRetry(sock, url); err != nil {
+		return nil, fmt.Errorf("can't listen on pull socket for %s: %s", url, err.Error())
+	}
+	conf.Log.Infof("sink ack channel created: %s", url)
+	return sock, nil
+}
+
 func CreateControlChannel(pluginName string) (ControlChannel, error) {
 	var (
 		sock mangos.Socket

@@ -15,8 +15,11 @@
 package runtime
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+
+	"go.nanomsg.org/mangos/v3"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
@@ -27,7 +30,10 @@ type PortableSink struct {
 	reg        *PluginMeta
 	props      map[string]interface{}
 	dataCh     DataOutChannel
-	clean      func() error
+	ackCh      DataInChannel
+	// 0 indicates no ack, and 1 indicates need ack
+	requiredACKs int
+	clean        func() error
 }
 
 func NewPortableSink(symbolName string, reg *PluginMeta) *PortableSink {
@@ -39,6 +45,13 @@ func NewPortableSink(symbolName string, reg *PluginMeta) *PortableSink {
 
 func (ps *PortableSink) Configure(props map[string]interface{}) error {
 	ps.props = props
+	c, ok := props["requiredACKs"]
+	if ok {
+		acks, ok := c.(int)
+		if ok {
+			ps.requiredACKs = acks
+		}
+	}
 	return nil
 }
 
@@ -50,6 +63,11 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 		return err
 	}
 	ctx.GetLogger().Infof("Plugin started successfully")
+
+	ackCh, err := CreateSinkAckChannel(ctx)
+	if err != nil {
+		return err
+	}
 
 	// Control: send message to plugin to ask starting symbol
 	c := &Control{
@@ -87,6 +105,7 @@ func (ps *PortableSink) Open(ctx api.StreamContext) error {
 		return errors.Join(err1, err2)
 	}
 	ps.dataCh = dataCh
+	ps.ackCh = ackCh
 	return nil
 }
 
@@ -98,11 +117,28 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item interface{}) error {
 		if e != nil {
 			return errorx.NewIOErr(e.Error())
 		}
+		if ps.requiredACKs > 0 {
+			msg, err := recvAck(ctx, ps.ackCh)
+			if err != nil {
+				return err
+			}
+			r := &ackResponse{}
+			if err := json.Unmarshal(msg, r); err != nil {
+				return err
+			}
+			if len(r.Error) > 0 {
+				return errorx.NewIOErr(r.Error)
+			}
+		}
 		return nil
 	} else {
 		ctx.GetLogger().Errorf("Found error %s", err.Error())
 		return err
 	}
+}
+
+type ackResponse struct {
+	Error string `json:"error"`
 }
 
 func (ps *PortableSink) Close(ctx api.StreamContext) error {
@@ -111,4 +147,28 @@ func (ps *PortableSink) Close(ctx api.StreamContext) error {
 		return ps.clean()
 	}
 	return nil
+}
+
+func recvAck(ctx api.StreamContext, dataCh DataInChannel) ([]byte, error) {
+	var msg []byte
+	var err error
+	// make sure recv has timeout
+	for {
+		msg, err = dataCh.Recv()
+		switch err {
+		case mangos.ErrClosed:
+			ctx.GetLogger().Info("stop source after close")
+			return nil, err
+		case mangos.ErrRecvTimeout:
+			ctx.GetLogger().Debug("source receive timeout, retry")
+			select {
+			case <-ctx.Done():
+				ctx.GetLogger().Info("stop dataInChannel")
+			default:
+				continue
+			}
+		case nil:
+			return msg, nil
+		}
+	}
 }
