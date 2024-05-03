@@ -57,6 +57,21 @@ type influxSink2 struct {
 	cli   client.Client
 }
 
+func (m *influxSink2) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Configure(props); err != nil {
+		return err
+	}
+	defer func() {
+		m.cli.Close()
+	}()
+	pingable, err := m.cli.Ping(context.Background())
+	if err != nil || !pingable {
+		return fmt.Errorf("error connecting to influxdb2: %v", err)
+
+	}
+	return nil
+}
+
 func (m *influxSink2) Configure(props map[string]any) error {
 	m.conf = c{
 		PrecisionStr: "ms",
