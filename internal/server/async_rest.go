@@ -17,78 +17,55 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 
 	"github.com/lf-edge/ekuiper/internal/pkg/async"
-	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
 const (
 	dataImportAsyncTask = "dataImport"
 )
 
-type asyncTaskRequest struct {
-	Type   string                 `json:"type"`
-	Params map[string]interface{} `json:"params"`
-}
-
 type asyncTaskResponse struct {
 	TaskID string `json:"id"`
 }
 
-func registerAsyncTask(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	b, err := io.ReadAll(r.Body)
+func registerDataImportTask(w http.ResponseWriter, r *http.Request) {
+	cb := r.URL.Query().Get("stop")
+	stop := cb == "1"
+	par := r.URL.Query().Get("partial")
+	partial := par == "1"
+	rsi := &configurationInfo{}
+	err := json.NewDecoder(r.Body).Decode(rsi)
+	if err != nil {
+		handleError(w, err, "Invalid body: Error decoding json", logger)
+		return
+	}
+	taskID, err := handleDataImportAsyncTask(rsi, partial, stop)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
 	}
-	req := &asyncTaskRequest{}
 	resp := &asyncTaskResponse{}
-	if err := json.Unmarshal(b, req); err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
-	switch strings.ToLower(req.Type) {
-	case strings.ToLower(dataImportAsyncTask):
-		taskID, err := handleDataImportAsyncTask(req.Params)
-		if err != nil {
-			handleError(w, err, "", logger)
-			return
-		}
-		resp.TaskID = taskID
-	default:
-		err = fmt.Errorf("unknown async task type: %v", req.Type)
-		handleError(w, err, "", logger)
-		return
-	}
+	resp.TaskID = taskID
 	w.WriteHeader(http.StatusOK)
 	jsonResponse(resp, w, logger)
 }
 
 func queryAsyncTaskStatus(w http.ResponseWriter, r *http.Request) {
-	taskID := r.URL.Query().Get("id")
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	taskID := vars["id"]
 	s, err := async.GlobalAsyncManager.GetTask(taskID)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 	jsonResponse(s, w, logger)
-}
-
-func asyncTaskHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		registerAsyncTask(w, r)
-	case http.MethodGet:
-
-		queryAsyncTaskStatus(w, r)
-	}
 }
 
 func asyncTaskCancelHandler(w http.ResponseWriter, r *http.Request) {
@@ -99,25 +76,11 @@ func asyncTaskCancelHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-	w.Write([]byte("cancel success"))
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("cancel success"))
 }
 
-func handleDataImportAsyncTask(params map[string]interface{}) (string, error) {
-	rsi := &configurationInfo{}
-	if err := cast.MapToStruct(params, rsi); err != nil {
-		return "", err
-	}
-	var partial bool
-	var stop bool
-	sr, ok := params["stop"].(bool)
-	if ok {
-		stop = sr
-	}
-	pr, ok := params["partial"].(bool)
-	if ok {
-		partial = pr
-	}
+func handleDataImportAsyncTask(rsi *configurationInfo, partial bool, stop bool) (string, error) {
 	taskID := generateTaskID(dataImportAsyncTask)
 	subCtx, err := async.GlobalAsyncManager.RegisterTask(taskID)
 	if err != nil {

@@ -429,7 +429,7 @@ func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, part
 	}
 	if !partial {
 		configurationReset()
-		result := configurationImport(context.Background(), content, stop)
+		result := configurationImport(ctx, content, stop)
 		if result.ErrorMsg != "" {
 			return nil, errors.New(result.ErrorMsg)
 		} else {
@@ -442,7 +442,7 @@ func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, part
 			return &result, nil
 		}
 	} else {
-		result := configurationPartialImport(context.Background(), content)
+		result := configurationPartialImport(ctx, content)
 		if result.ErrorMsg != "" {
 			return nil, errors.New(result.ErrorMsg)
 		} else {
