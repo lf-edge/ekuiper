@@ -93,6 +93,30 @@ Content-Type: application/json
 }
 ```
 
+Example 5: Import data through an asynchronous API. After receiving the request, the server will generate a task ID, then execute the task in the background and return a response immediately.
+
+```` shell
+POST http://{{host}}/async/data/import
+Content type: application/json
+
+{
+  "content": "$data json content"
+}
+
+response
+
+{
+  "id": "$taskID"
+}
+````
+
+Check the running status of background tasks by task ID
+
+```` shell
+Get http://{{host}}/async/task/{{id}}
+Content type: application/json
+````
+
 ## Import data status
 
 This API returns data import errors. If all returns are empty, it means that the import is completely successful.
