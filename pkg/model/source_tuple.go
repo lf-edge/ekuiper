@@ -16,42 +16,17 @@ package model
 
 import (
 	"time"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
-// DefaultMessage is a valuer that substitutes values for the mapped interface. It is the basic type for data events.
-type DefaultMessage map[string]interface{}
-
-func (m DefaultMessage) Get(key string) (value any, ok bool) {
-	v, o := m[key]
-	return v, o
-}
-
-func (m DefaultMessage) Range(f func(key string, value any) bool) {
-	for k, v := range m {
-		exit := f(k, v)
-		if exit {
-			break
-		}
-	}
-}
-
-func (m DefaultMessage) ToMap() map[string]any {
-	return m
-}
-
-var _ api.ReadonlyMessage = DefaultMessage(nil)
-
 type DefaultSourceTuple struct {
-	message api.ReadonlyMessage
-	meta    api.ReadonlyMessage
+	message map[string]any
+	meta    map[string]any
 	time    time.Time
 	raw     []byte
 }
 
 // NewDefaultRawTuple creates a new DefaultSourceTuple with raw data. Use this when extend source connector
-func NewDefaultRawTuple(raw []byte, meta api.ReadonlyMessage, ts time.Time) *DefaultSourceTuple {
+func NewDefaultRawTuple(raw []byte, meta map[string]any, ts time.Time) *DefaultSourceTuple {
 	return &DefaultSourceTuple{
 		meta: meta,
 		time: ts,
@@ -59,7 +34,7 @@ func NewDefaultRawTuple(raw []byte, meta api.ReadonlyMessage, ts time.Time) *Def
 	}
 }
 
-func NewDefaultSourceTuple(message api.ReadonlyMessage, meta api.ReadonlyMessage, timestamp time.Time) *DefaultSourceTuple {
+func NewDefaultSourceTuple(message map[string]any, meta map[string]any, timestamp time.Time) *DefaultSourceTuple {
 	return &DefaultSourceTuple{
 		message: message,
 		meta:    meta,
@@ -67,11 +42,29 @@ func NewDefaultSourceTuple(message api.ReadonlyMessage, meta api.ReadonlyMessage
 	}
 }
 
-func (t *DefaultSourceTuple) Message() api.ReadonlyMessage {
-	return t.message
+func (t *DefaultSourceTuple) Value(key, table string) (any, bool) {
+	v, ok := t.message[key]
+	return v, ok
 }
 
-func (t *DefaultSourceTuple) Meta() api.ReadonlyMessage {
+func (t *DefaultSourceTuple) Range(f func(key string, value any) bool) {
+	for k, v := range t.message {
+		if !f(k, v) {
+			break
+		}
+	}
+}
+
+func (t *DefaultSourceTuple) All(table string) (map[string]any, bool) {
+	return t.message, true
+}
+
+func (t *DefaultSourceTuple) Meta(key, table string) (any, bool) {
+	v, ok := t.meta[key]
+	return v, ok
+}
+
+func (t *DefaultSourceTuple) AllMeta() map[string]any {
 	return t.meta
 }
 

@@ -117,7 +117,7 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						// Later a series of events may send out in order
 						w.statManager.ProcessTimeStart()
 						// whether to drop the late event
-						if w.track(ctx, d.Emitter, d.GetTimestamp()) {
+						if w.track(ctx, d.Emitter, d.Timestamp) {
 							// If not drop, check if it can be sent out
 							w.addAndTrigger(ctx, d)
 						}
@@ -154,7 +154,7 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 		w.events = append(w.events, d)
 	} else {
 		index := sort.Search(len(w.events), func(i int) bool {
-			return w.events[i].GetTimestamp() > d.GetTimestamp()
+			return w.events[i].Timestamp > d.Timestamp
 		})
 		w.events = append(w.events, nil)
 		copy(w.events[index+1:], w.events[index:])
@@ -166,11 +166,11 @@ func (w *WatermarkOp) addAndTrigger(ctx api.StreamContext, d *xsql.Tuple) {
 	// Make sure watermark time proceeds
 	if watermark > w.lastWatermarkTs {
 		// Send out all events before the watermark
-		if watermark >= w.events[0].GetTimestamp() {
+		if watermark >= w.events[0].Timestamp {
 			// Find out the last event to send in this watermark change
 			c := len(w.events)
 			for i, e := range w.events {
-				if e.GetTimestamp() > watermark {
+				if e.Timestamp > watermark {
 					c = i
 					break
 				}

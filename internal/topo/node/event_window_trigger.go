@@ -188,7 +188,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					o.triggerTime = d.Timestamp
 				}
 				if o.window.Type == ast.SLIDING_WINDOW && o.isMatchCondition(ctx, d) {
-					o.triggerTS = append(o.triggerTS, d.GetTimestamp())
+					o.triggerTS = append(o.triggerTS, d.Timestamp)
 				}
 				inputs = append(inputs, d)
 				o.statManager.ProcessTimeEnd()

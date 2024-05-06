@@ -35,7 +35,7 @@ func TestSCNLC(t *testing.T) {
 	mc := mockclock.GetMockClock()
 	expects := []any{
 		&xsql.Tuple{
-			Raw:       []byte("hello"),
+			Rawdata:   []byte("hello"),
 			Metadata:  map[string]any{"topic": "demo"},
 			Timestamp: mc.Now().UnixMilli(),
 			Emitter:   "mock_connector",
@@ -46,7 +46,7 @@ func TestSCNLC(t *testing.T) {
 			Timestamp: mc.Now().UnixMilli(),
 		},
 		&xsql.Tuple{
-			Raw:       []byte("world"),
+			Rawdata:   []byte("world"),
 			Metadata:  map[string]any{"topic": "demo"},
 			Timestamp: mc.Now().UnixMilli(),
 			Emitter:   "mock_connector",

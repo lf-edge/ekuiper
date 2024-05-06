@@ -69,7 +69,7 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
 	var tuple *xsql.Tuple
-	tuple = &xsql.Tuple{Emitter: m.name, Raw: data, Timestamp: ts.UnixMilli(), Metadata: meta}
+	tuple = &xsql.Tuple{Emitter: m.name, Rawdata: data, Timestamp: ts.UnixMilli(), Metadata: meta}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)
@@ -89,9 +89,9 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 			m.ingestMap(mm, meta, ts)
 		}
 	// Source tuples are expected from memory
-	case api.Tuple:
+	case *xsql.Tuple:
 		m.ingestTuple(mess, ts)
-	case []api.Tuple:
+	case []*xsql.Tuple:
 		for _, mm := range mess {
 			m.ingestTuple(mm, ts)
 		}
@@ -109,8 +109,8 @@ func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Ti
 	m.statManager.IncTotalRecordsOut()
 }
 
-func (m *SourceNode) ingestTuple(t api.Tuple, ts time.Time) {
-	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message().ToMap(), Timestamp: ts.UnixMilli(), Metadata: t.Meta().ToMap()}
+func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
+	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts.UnixMilli(), Metadata: t.Metadata}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 }

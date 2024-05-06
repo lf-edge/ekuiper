@@ -98,14 +98,14 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	case error:
 		return []any{d}
 	case *xsql.Tuple:
-		result, err := o.converter.Decode(ctx, d.Raw)
+		result, err := o.converter.Decode(ctx, d.Rawdata)
 		if err != nil {
 			return []any{err}
 		}
 		switch r := result.(type) {
 		case map[string]interface{}:
 			d.Message = r
-			d.Raw = nil
+			d.Rawdata = nil
 			return []any{d}
 		case []map[string]interface{}:
 			rr := make([]any, len(r))

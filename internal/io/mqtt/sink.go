@@ -79,9 +79,18 @@ func validateMQTTSinkTopic(topic string) error {
 	return nil
 }
 
-func (ms *Sink) Collect(ctx api.StreamContext, item []byte) error {
+func (ms *Sink) Collect(ctx api.StreamContext, item api.SinkRawTuple) error {
 	tpc := ms.adconf.Tpc
-	token := ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item)
+	// If tpc supports dynamic props(template), planner will guarantee the result has the parsed dynamic props
+	if dp, ok := item.(api.HasDynamicProps); ok {
+		var err error
+		tpc, err = dp.DynamicProps(tpc)
+		if err != nil {
+			return err
+		}
+	}
+	ctx.GetLogger().Debugf("publishing to topic %s", tpc)
+	token := ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw())
 	err := handleToken(token)
 	if err != nil {
 		return errorx.NewIOErr(fmt.Sprintf("found error when publishing to topic %s: %s", ms.adconf.Tpc, err))

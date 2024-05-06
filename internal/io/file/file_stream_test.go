@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
@@ -113,12 +114,12 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := sink.Collect(ctx, []byte("{\"key\":\"value1\"}")); err != nil {
+			if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value1\"}")}); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
 
 			// Test collecting another map item
-			if err := sink.Collect(ctx, []byte("{\"key\":\"value2\"}")); err != nil {
+			if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value2\"}")}); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
 			if err = sink.Close(ctx); err != nil {

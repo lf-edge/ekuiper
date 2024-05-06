@@ -55,8 +55,8 @@ func (c *FuncCollector) Connect(ctx api.StreamContext) error {
 	return nil
 }
 
-func (c *FuncCollector) Collect(ctx api.StreamContext, item []byte) error {
-	return c.f(ctx, item)
+func (c *FuncCollector) Collect(ctx api.StreamContext, item api.SinkRawTuple) error {
+	return c.f(ctx, item.Raw())
 }
 
 func (c *FuncCollector) Close(api.StreamContext) error {

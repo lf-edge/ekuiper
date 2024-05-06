@@ -15,6 +15,7 @@
 package xsql
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -35,6 +36,7 @@ type SortingData interface {
 
 // Collection A collection of rows as a table. It is used for window, join, group by, etc.
 type Collection interface {
+	api.SinkTupleList
 	SortingData
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
 	GroupRange(func(i int, aggRow CollectionRow) (bool, error)) error
@@ -146,6 +148,14 @@ func (w *WindowTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 		}
 	}
 	return nil
+}
+
+func (w *WindowTuples) RangeOfTuples(f func(index int, tuple api.SinkTuple) bool) {
+	for i, r := range w.Content {
+		if !f(i, r) {
+			break
+		}
+	}
 }
 
 func (w *WindowTuples) RangeSet(f func(i int, r Row) (bool, error)) error {
@@ -311,6 +321,14 @@ func (s *JoinTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	return nil
 }
 
+func (s *JoinTuples) RangeOfTuples(f func(index int, tuple api.SinkTuple) bool) {
+	for i, r := range s.Content {
+		if !f(i, r) {
+			break
+		}
+	}
+}
+
 func (s *JoinTuples) RangeSet(f func(i int, r Row) (bool, error)) error {
 	for i, r := range s.Content {
 		rc := r.Clone()
@@ -441,6 +459,14 @@ func (s *GroupedTuplesSet) Range(f func(i int, r ReadonlyRow) (bool, error)) err
 		}
 	}
 	return nil
+}
+
+func (s *GroupedTuplesSet) RangeOfTuples(f func(index int, tuple api.SinkTuple) bool) {
+	for i, r := range s.Groups {
+		if !f(i, r) {
+			break
+		}
+	}
 }
 
 func (s *GroupedTuplesSet) RangeSet(f func(i int, r Row) (bool, error)) error {

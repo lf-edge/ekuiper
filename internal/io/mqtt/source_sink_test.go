@@ -35,18 +35,18 @@ func TestSourceSink(t *testing.T) {
 		[]byte("{\"humidity\":82,\"status\":\"wet\",\"temperature\":25}"),
 		[]byte("{\"humidity\":60,\"status\":\"hot\",\"temperature\":33}"),
 	}
-	result := []api.Tuple{
-		model.NewDefaultRawTuple([]byte("{\"humidity\":50,\"status\":\"green\",\"temperature\":22}"), model.DefaultMessage{
+	result := []api.SinkTuple{
+		model.NewDefaultRawTuple([]byte("{\"humidity\":50,\"status\":\"green\",\"temperature\":22}"), map[string]any{
 			"topic":     "demo",
 			"messageId": uint16(0),
 			"qos":       byte(0),
 		}, mc.Now()),
-		model.NewDefaultRawTuple([]byte("{\"humidity\":82,\"status\":\"wet\",\"temperature\":25}"), model.DefaultMessage{
+		model.NewDefaultRawTuple([]byte("{\"humidity\":82,\"status\":\"wet\",\"temperature\":25}"), map[string]any{
 			"topic":     "demo",
 			"messageId": uint16(0),
 			"qos":       byte(0),
 		}, mc.Now()),
-		model.NewDefaultRawTuple([]byte("{\"humidity\":60,\"status\":\"hot\",\"temperature\":33}"), model.DefaultMessage{
+		model.NewDefaultRawTuple([]byte("{\"humidity\":60,\"status\":\"hot\",\"temperature\":33}"), map[string]any{
 			"topic":     "demo",
 			"messageId": uint16(0),
 			"qos":       byte(0),

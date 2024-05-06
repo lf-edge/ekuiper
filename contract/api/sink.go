@@ -25,17 +25,11 @@ type Sink interface {
 
 type BytesCollector interface {
 	Sink
-	Collect(ctx StreamContext, item []byte) error
+	Collect(ctx StreamContext, item SinkRawTuple) error
 }
 
 type TupleCollector interface {
 	Sink
-	Collect(ctx StreamContext, item Tuple) error
-	CollectList(ctx StreamContext, items []Tuple) error
-}
-
-type ResendSink interface {
-	Sink
-	// CollectResend Called when the sink cache resend is triggered
-	CollectResend(ctx StreamContext, data interface{}) error
+	Collect(ctx StreamContext, item SinkTuple) error
+	CollectList(ctx StreamContext, items SinkTupleList) error
 }

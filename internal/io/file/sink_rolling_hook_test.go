@@ -28,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -186,7 +187,7 @@ func TestCollectRolling(t *testing.T) {
 				m := map[string]interface{}{"key": "value" + strconv.Itoa(i), "ts": c.Now().UnixMilli()}
 				b, err := json.Marshal(m)
 				assert.NoError(t, err)
-				if err := sink.Collect(ctx, b); err != nil {
+				if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: b}); err != nil {
 					t.Errorf("unexpected error: %s", err)
 				}
 			}

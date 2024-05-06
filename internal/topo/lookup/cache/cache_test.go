@@ -22,17 +22,18 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestExpiration(t *testing.T) {
 	c := NewCache(20, false)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := [][]api.Tuple{
-		{model.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 1}), nil, clock.Now())},
-		{model.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 2}), nil, clock.Now()), model.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 3}), nil, clock.Now())},
-		{},
+	expects := []api.SinkTupleList{
+		mock.MemTupleList{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}},
+		mock.MemTupleList{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}},
+		mock.MemTupleList{},
 	}
 	c.Set("a", expects[0])
 	clock.Add(10 * time.Second)
@@ -87,10 +88,10 @@ func TestNoExpiration(t *testing.T) {
 	c := NewCache(0, true)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := [][]api.Tuple{
-		{model.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 1}), nil, clock.Now())},
-		{model.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 2}), nil, clock.Now()), model.NewDefaultSourceTuple(xsql.Message(map[string]interface{}{"a": 3}), nil, clock.Now())},
-		{},
+	expects := []api.SinkTupleList{
+		mock.MemTupleList{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}},
+		mock.MemTupleList{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}},
+		mock.MemTupleList{},
 	}
 	c.Set("a", expects[0])
 	clock.Add(10 * time.Second)

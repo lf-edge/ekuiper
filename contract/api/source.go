@@ -63,6 +63,6 @@ type LookupSource interface {
 	// read from the yaml
 	Configure(datasource string, props map[string]interface{}) error
 	// Lookup receive lookup values to construct the query and return query results
-	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) ([]Tuple, error)
+	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) (SinkTupleList, error)
 	Closable
 }
