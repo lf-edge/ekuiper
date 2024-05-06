@@ -29,7 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -63,16 +63,24 @@ func TestSharedInmemoryNode(t *testing.T) {
 		t.Error(err)
 	}
 
-	rawTuple := model.NewDefaultSourceTuple(xsql.Message{"temp": 12}, nil, timex.GetNow())
+	rawTuple := &xsql.Tuple{
+		Message:  map[string]any{"temp": 20},
+		Metadata: nil,
+	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
-		err = snk.CollectList(ctx, []api.Tuple{rawTuple})
+		err = snk.CollectList(ctx, mock.MemTupleList{rawTuple})
 		if err != nil {
 			t.Error(err)
 		}
 	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
-		expected := []api.Tuple{model.NewDefaultSourceTuple(rawTuple.Message(), xsql.Message{"topic": id}, timex.GetNow())}
+		expected := []*xsql.Tuple{{
+			Emitter:   "",
+			Timestamp: timex.GetNowInMilli(),
+			Metadata:  map[string]any{"topic": id},
+			Message:   rawTuple.Message,
+		}}
 		assert.Equal(t, expected, res)
 		cancel()
 	}, nil)
@@ -140,39 +148,39 @@ func TestMultipleTopics(t *testing.T) {
 				},
 			},
 		}
-		expected = [][]api.Tuple{
+		expected = [][]*xsql.Tuple{
 			{ // 0 "h/d1/c1/s2",
-				model.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				{Message: map[string]any{"id": 4, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 5, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 6, "color": "green"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
 			},
 			{ // 1 "h/+/+/s1",
-				model.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				{Message: map[string]any{"id": 1, "temp": 23}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 2, "temp": 34}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 3, "temp": 28}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
 
-				model.NewDefaultSourceTuple(xsql.Message{"id": 7, "hum": 67.5}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 8, "hum": 77.1}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 9, "hum": 90.3}, xsql.Message{"topic": "h/d2/c2/s1"}, timex.GetNow()),
+				{Message: map[string]any{"id": 7, "hum": 67.5}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 8, "hum": 77.1}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 9, "hum": 90.3}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNowInMilli()},
 
-				model.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				{Message: map[string]any{"id": 10, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 11, "status": "off"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 12, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
 			},
 			{ // 2 "h/d3/#",
-				model.NewDefaultSourceTuple(xsql.Message{"id": 10, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 11, "status": "off"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 12, "status": "on"}, xsql.Message{"topic": "h/d3/c3/s1"}, timex.GetNow()),
+				{Message: map[string]any{"id": 10, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 11, "status": "off"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 12, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
 			},
 			{ // 3 "h/d1/c1/s2",
-				model.NewDefaultSourceTuple(xsql.Message{"id": 4, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 5, "color": "red"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 6, "color": "green"}, xsql.Message{"topic": "h/d1/c1/s2"}, timex.GetNow()),
+				{Message: map[string]any{"id": 4, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 5, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 6, "color": "green"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
 			},
 			{ // 4 "h/+/c1/s1"
-				model.NewDefaultSourceTuple(xsql.Message{"id": 1, "temp": 23}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 2, "temp": 34}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
-				model.NewDefaultSourceTuple(xsql.Message{"id": 3, "temp": 28}, xsql.Message{"topic": "h/d1/c1/s1"}, timex.GetNow()),
+				{Message: map[string]any{"id": 1, "temp": 23}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 2, "temp": 34}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 3, "temp": 28}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
 			},
 		}
 	)
@@ -201,12 +209,12 @@ func TestMultipleTopics(t *testing.T) {
 		err := src.Provision(ctx, map[string]any{"datasource": topic})
 		assert.NoError(t, err)
 		limit := len(expected[i])
-		result := make([]api.Tuple, 0, limit)
+		result := make([]*xsql.Tuple, 0, limit)
 		nc, cancel := ctx.WithMeta("rule1", fmt.Sprintf("op%d", i), &state.MemoryStore{}).WithCancel()
 		err = src.Subscribe(nc, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
-			rid, _ := res.(api.Tuple).Message().Get("id")
+			rid, _ := res.(*xsql.Tuple).Message["id"]
 			fmt.Printf("%d(%s) receive %v\n", i, topic, rid)
-			result = append(result, res.(api.Tuple))
+			result = append(result, res.(*xsql.Tuple))
 			limit--
 			if limit == 0 {
 				assert.Equal(t, result, expected[i], i)
@@ -221,7 +229,7 @@ func TestMultipleTopics(t *testing.T) {
 		topic := sinkTopics[i]
 		for _, mm := range v {
 			time.Sleep(10 * time.Millisecond)
-			pubsub.Produce(ctx, topic, model.NewDefaultSourceTuple(xsql.Message(mm), xsql.Message{"topic": topic}, timex.GetNow()))
+			pubsub.Produce(ctx, topic, &xsql.Tuple{Message: mm, Metadata: map[string]any{"topic": topic}, Timestamp: timex.GetNowInMilli()})
 			fmt.Printf("send to topic %s: %v\n", topic, mm["id"])
 		}
 

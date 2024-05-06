@@ -30,7 +30,7 @@ import (
 
 var count atomic.Value
 
-func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected []api.Tuple, sender func()) {
+func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected []api.SinkTuple, sender func()) {
 	// init
 	c := count.Load()
 	if c == nil {
@@ -50,14 +50,14 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	limit := len(expected)
 	var (
 		wg     sync.WaitGroup
-		result []api.Tuple
+		result []api.SinkTuple
 	)
 	wg.Add(1)
 	go func() {
 		switch ss := r.(type) {
 		case api.BytesSource:
 			err = ss.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
-				result = append(result, model.NewDefaultRawTuple(payload, model.DefaultMessage(meta), ts))
+				result = append(result, model.NewDefaultRawTuple(payload, meta, ts))
 				limit--
 				if limit <= 0 {
 					wg.Done()

@@ -47,12 +47,12 @@ func TestJSON(t *testing.T) {
 			op.Exec(ctx, errCh)
 
 			cases := []any{
-				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				errors.New("go through error"),
-				&xsql.Tuple{Emitter: "test", Raw: []byte("\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-				&xsql.Tuple{Emitter: "test", Raw: []byte("[\"hello\"]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-				&xsql.Tuple{Emitter: "test", Raw: []byte("\"hello\""), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("[\"hello\"]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("\"hello\""), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				"invalid",
 			}
 			expects := [][]any{
@@ -98,7 +98,7 @@ func BenchmarkThrougput(b *testing.B) {
 	op.Exec(ctx, errCh)
 	go func() {
 		for i := 0; i < 100; i++ {
-			op.input <- &xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}
+			op.input <- &xsql.Tuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}
 		}
 	}()
 	for i := 0; i < 100; i++ {
@@ -139,8 +139,8 @@ func TestJSONWithSchema(t *testing.T) {
 			op.Exec(ctx, errCh)
 
 			cases := []any{
-				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
 			}
 			expects := [][]any{
 				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1)}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
@@ -166,8 +166,8 @@ func TestJSONWithSchema(t *testing.T) {
 			nctx := mockContext.NewMockContext("test2", "decode_test")
 			op.AttachSchema(nctx, "streamName", tt.schema, false)
 			cases = []any{
-				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
 			}
 			expectsWithSchema := [][]any{
 				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1), "b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
@@ -192,8 +192,8 @@ func TestJSONWithSchema(t *testing.T) {
 
 			op.DetachSchema(ctx.GetRuleId())
 			cases = []any{
-				&xsql.Tuple{Emitter: "test", Raw: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
-				&xsql.Tuple{Emitter: "test", Raw: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+				&xsql.Tuple{Emitter: "test", Rawdata: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
 			}
 			expects = [][]any{
 				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"b": 2.0}, Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},

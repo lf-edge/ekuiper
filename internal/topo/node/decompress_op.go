@@ -61,10 +61,10 @@ func (o *DecompressOp) Worker(_ api.StreamContext, item any) []any {
 	case error:
 		return []any{d}
 	case *xsql.Tuple:
-		if r, err := o.tool.Decompress(d.Raw); err != nil {
+		if r, err := o.tool.Decompress(d.Rawdata); err != nil {
 			return []any{err}
 		} else {
-			d.Raw = r
+			d.Rawdata = r
 			return []any{d}
 		}
 	default:

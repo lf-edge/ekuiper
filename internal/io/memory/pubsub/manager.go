@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 const IdProperty = "topic"
@@ -109,20 +110,11 @@ func RemovePub(topic string) {
 	}
 }
 
-func ProduceUpdatable(ctx api.StreamContext, topic string, data api.Tuple, rowkind string, keyval interface{}) {
-	// TODO fix updatable
-	//doProduce(ctx, topic, &UpdatableTuple{
-	//	DefaultSourceTuple: api.NewDefaultSourceTupleWithTime(data, map[string]interface{}{"topic": topic}, timex.GetNow()),
-	//	Rowkind:            rowkind,
-	//	Keyval:             keyval,
-	//})
-}
-
-func Produce(ctx api.StreamContext, topic string, data api.Tuple) {
+func Produce(ctx api.StreamContext, topic string, data *xsql.Tuple) {
 	doProduce(ctx, topic, data)
 }
 
-func ProduceList(ctx api.StreamContext, topic string, list []api.Tuple) {
+func ProduceList(ctx api.StreamContext, topic string, list []*xsql.Tuple) {
 	doProduce(ctx, topic, list)
 }
 

@@ -104,11 +104,7 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 		} else {
 			switch bst := bs.(type) {
 			case []map[string]any:
-				mss := make([]api.ReadonlyMessage, 0, len(bst))
-				for _, ms := range bst {
-					mss = append(mss, xsql.Message(ms))
-				}
-				result = append(result, mss)
+				result = append(result, bst)
 			default:
 				result = append(result, bst)
 			}

@@ -17,8 +17,8 @@ package xsql
 import (
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -32,7 +32,7 @@ import (
 
 type Wildcarder interface {
 	// All Value returns the value and existence flag for a given key.
-	All(stream string) (map[string]interface{}, bool)
+	All(table string) (map[string]any, bool)
 }
 
 type Event interface {
@@ -245,10 +245,7 @@ func (m Message) ToMap() map[string]any {
 	return m
 }
 
-var (
-	_ Valuer              = Message{}
-	_ api.ReadonlyMessage = Message{}
-)
+var _ Valuer = Message{}
 
 type Metadata Message
 
@@ -264,8 +261,8 @@ type Alias struct {
 // Tuple The input row, produced by the source
 type Tuple struct {
 	Emitter   string
-	Message   Message // the original pointer is immutable & big; may be cloned. Union with Raw
-	Raw       []byte  // the original raw message, should be deleted after decoded into message.
+	Message   Message // the original pointer is immutable & big; may be cloned. Union with Rawdata
+	Rawdata   []byte  // the original raw message, should be deleted after decoded into message.
 	Timestamp int64
 	Metadata  Metadata // immutable
 
@@ -285,10 +282,6 @@ type JoinTuple struct {
 	AffiliateRow
 	lock      sync.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
-}
-
-func (jt *JoinTuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
-	return []interface{}{Eval(expr, MultiValuer(jt, v, &WildcardValuer{jt}))}
 }
 
 var _ Row = &JoinTuple{}
@@ -378,7 +371,11 @@ func (t *Tuple) Value(key, table string) (interface{}, bool) {
 	return t.Message.Value(key, table)
 }
 
-func (t *Tuple) All(string) (map[string]interface{}, bool) {
+func (t *Tuple) Raw() []byte {
+	return t.Rawdata
+}
+
+func (t *Tuple) All(string) (map[string]any, bool) {
 	return t.Message, true
 }
 
@@ -387,7 +384,7 @@ func (t *Tuple) Clone() Row {
 		Emitter:      t.Emitter,
 		Timestamp:    t.Timestamp,
 		Message:      t.Message,
-		Raw:          t.Raw,
+		Rawdata:      t.Rawdata,
 		Metadata:     t.Metadata,
 		AffiliateRow: t.AffiliateRow.Clone(),
 	}
@@ -430,8 +427,8 @@ func (t *Tuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 	return []interface{}{Eval(expr, MultiValuer(t, v, &WildcardValuer{t}))}
 }
 
-func (t *Tuple) GetTimestamp() int64 {
-	return t.Timestamp
+func (t *Tuple) GetTimestamp() time.Time {
+	return time.UnixMilli(t.Timestamp)
 }
 
 func (t *Tuple) IsWatermark() bool {
@@ -605,6 +602,10 @@ func (jt *JoinTuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters ma
 		}
 	}
 	jt.cachedMap = nil
+}
+
+func (jt *JoinTuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
+	return []interface{}{Eval(expr, MultiValuer(jt, v, &WildcardValuer{jt}))}
 }
 
 // GroupedTuple implementation

@@ -22,7 +22,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -57,12 +56,14 @@ func CommonResultFunc(result []any) [][]map[string]any {
 	maps := make([][]map[string]any, 0, len(result))
 	for _, v := range result {
 		switch rt := v.(type) {
-		case api.Tuple:
-			maps = append(maps, []map[string]any{rt.Message().ToMap()})
-		case []api.Tuple:
+		case *xsql.Tuple:
+			m, _ := rt.All("")
+			maps = append(maps, []map[string]any{m})
+		case []*xsql.Tuple:
 			nm := make([]map[string]any, 0, len(rt))
 			for _, mm := range rt {
-				nm = append(nm, mm.Message().ToMap())
+				m, _ := mm.All("")
+				nm = append(nm, m)
 			}
 			maps = append(maps, nm)
 		default:
