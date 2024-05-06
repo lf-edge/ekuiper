@@ -84,6 +84,21 @@ class SinkChannel:
     def close(self):
         self.sock.close()
 
+class SinkAckChannel:
+
+    def __init__(self, meta: dict):
+        s = Push0(send_timeout=1000)
+        url = "ipc:///tmp/{}_{}_{}_ack.ipc".format(meta['ruleId'], meta['opId'], meta['instanceId'])
+        logging.info(url)
+        dial_with_retry(s, url)
+        self.sock = s
+
+    def send(self, data: bytes):
+        self.sock.send(data)
+
+    def close(self):
+        self.sock.close()
+
 
 def listen_with_retry(sock, url: str):
     retry_count = 10

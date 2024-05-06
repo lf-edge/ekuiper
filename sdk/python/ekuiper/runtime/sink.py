@@ -16,7 +16,7 @@ import logging
 import traceback
 
 from . import reg
-from .connection import SinkChannel
+from .connection import SinkChannel, SinkAckChannel
 from .symbol import SymbolRuntime, parse_context
 from ..sink import Sink
 
@@ -30,9 +30,12 @@ class SinkRuntime(SymbolRuntime):
             config = ctrl['config']
         s.configure(config)
         ch = SinkChannel(ctrl['meta'])
+        ackCh = SinkAckChannel(ctrl['meta'])
         self.s = s
         self.ctx = ctx
         self.ch = ch
+        self.ackCh = ackCh
+        ctx.set_ack_emitter(ackCh)
         self.running = False
         self.key = f"{ctrl['meta']['ruleId']}_{ctrl['meta']['opId']}" \
                    f"_{ctrl['meta']['instanceId']}_{ctrl['symbolName']}"
@@ -62,6 +65,7 @@ class SinkRuntime(SymbolRuntime):
         try:
             self.s.close(self.ctx)
             self.ch.close()
+            self.ackCh.close()
             reg.delete(self.key)
         except Exception:
             logging.error(traceback.format_exc())

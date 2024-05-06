@@ -166,6 +166,24 @@ func CreateSinkChannel(ctx api.StreamContext) (DataInChannel, error) {
 	return sock, nil
 }
 
+func CreateSinkAckChannel(ctx api.StreamContext) (DataOutChannel, error) {
+	var (
+		sock mangos.Socket
+		err  error
+	)
+	if sock, err = push.NewSocket(); err != nil {
+		return nil, fmt.Errorf("can't get new push socket: %s", err)
+	}
+	setSockOptions(sock, map[string]interface{}{
+		mangos.OptionSendDeadline: 1000 * time.Millisecond,
+	})
+	url := fmt.Sprintf("ipc:///tmp/%s_%s_%d_ack.ipc", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	if err = sock.DialOptions(url, dialOptions); err != nil {
+		return nil, fmt.Errorf("can't dial on push socket: %s", err.Error())
+	}
+	return sock, nil
+}
+
 func setSockOptions(sock mangos.Socket, sockOptions map[string]interface{}) {
 	for k, v := range sockOptions {
 		err := sock.SetOption(k, v)

@@ -16,7 +16,7 @@ import json
 import logging
 import sys
 
-from .connection import SourceChannel
+from .connection import SourceChannel, SinkAckChannel
 from .context import Context
 
 
@@ -30,6 +30,9 @@ class ContextImpl(Context):
 
     def set_emitter(self, emitter: SourceChannel):
         self.emitter = emitter
+
+    def set_ack_emitter(self, emitter: SinkAckChannel):
+        self.ack_emitter = emitter
 
     def get_rule_id(self) -> str:
         return self.ruleId
@@ -52,3 +55,12 @@ class ContextImpl(Context):
         data = {'error': error}
         json_str = json.dumps(data)
         return self.emitter.send(str.encode(json_str))
+
+    def ack_ok(self):
+        data = b'{}'
+        return self.ack_emitter.send(data)
+
+    def ack_error(self, error: str):
+        data = {'error': error}
+        json_str = json.dumps(data)
+        return self.ack_emitter.send(str.encode(json_str))

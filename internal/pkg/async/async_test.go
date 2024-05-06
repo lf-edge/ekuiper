@@ -79,7 +79,7 @@ func TestAsyncManager(t *testing.T) {
 	require.Equal(t, TaskErrorStatus, s.Status)
 	require.Equal(t, "err msg", s.Message)
 
-	require.NoError(t, m.FinishTask(id))
+	require.NoError(t, m.FinishTask(id, "success"))
 	s, err = m.GetTask(id)
 	require.NoError(t, err)
 	require.Equal(t, TaskFinishStatus, s.Status)

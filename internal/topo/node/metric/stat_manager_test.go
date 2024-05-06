@@ -30,7 +30,7 @@ func TestGetMetrics(t *testing.T) {
 	sm.SetBufferLength(20)
 	a := sm.GetMetrics()
 	e := []any{
-		int64(1), int64(0), int64(0), int64(0), int64(20), "current time", int64(0), "", 0,
+		int64(1), int64(0), int64(0), int64(0), int64(20), "current time", int64(0), "", int64(0),
 	}
 	assert.Equal(t, e[:5], a[:5])
 	assert.NotEqual(t, "", a[5])

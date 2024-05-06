@@ -37,7 +37,9 @@ var GlobalAsyncManager *AsyncManager
 
 func InitManager() error {
 	var err error
-	GlobalAsyncManager = &AsyncManager{}
+	GlobalAsyncManager = &AsyncManager{
+		taskCancel: make(map[string]context.CancelFunc),
+	}
 	s, err := store.GetKV("asyncManager")
 	if err != nil {
 		return err
@@ -133,7 +135,7 @@ func (m *AsyncManager) StartTask(taskID string) error {
 	return m.storeTaskStatus(taskID, s)
 }
 
-func (m *AsyncManager) FinishTask(taskID string) error {
+func (m *AsyncManager) FinishTask(taskID, msg string) error {
 	m.Lock()
 	defer m.Unlock()
 	s, err := m.getTaskStatus(taskID)
@@ -141,6 +143,7 @@ func (m *AsyncManager) FinishTask(taskID string) error {
 		return err
 	}
 	s.Status = TaskFinishStatus
+	s.Message = msg
 	return m.storeTaskStatus(taskID, s)
 }
 
