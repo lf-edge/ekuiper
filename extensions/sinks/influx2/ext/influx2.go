@@ -67,7 +67,6 @@ func (m *influxSink2) Ping(_ string, props map[string]interface{}) error {
 	pingable, err := m.cli.Ping(context.Background())
 	if err != nil || !pingable {
 		return fmt.Errorf("error connecting to influxdb2: %v", err)
-
 	}
 	return nil
 }
