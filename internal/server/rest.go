@@ -191,6 +191,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/v2/data/import", yamlConfImportHandler).Methods(http.MethodPost)
 
 	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
+	r.HandleFunc("/async/data/import", registerDataImportTask).Methods(http.MethodPost)
+	r.HandleFunc("/async/data/{id}", queryAsyncTaskStatus).Methods(http.MethodGet)
+	r.HandleFunc("/async/task/{id}/cancel", asyncTaskCancelHandler).Methods(http.MethodPost)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
