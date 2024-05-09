@@ -272,7 +272,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *api.RuleOption, sources ma
 	case *ProjectSetPlan:
 		op = Transform(&operator.ProjectSetOperator{SrfMapping: t.SrfMapping, LimitCount: t.limitCount, EnableLimit: t.enableLimit}, fmt.Sprintf("%d_projectset", newIndex), options)
 	case *WindowFuncPlan:
-		op = Transform(&operator.WindowFuncOperator{WindowFuncFields: t.windowFuncFields}, fmt.Sprintf("%d_windowFunc", newIndex), options)
+		op = Transform(&operator.WindowFuncOperator{WindowFuncField: t.windowFuncField}, fmt.Sprintf("%d_windowFunc", newIndex), options)
 	default:
 		err = fmt.Errorf("unknown logical plan %v", t)
 	}
@@ -621,13 +621,15 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
 	}
-	windowFuncFields, windowFuncsNames := extractWindowFuncFields(stmt)
+	windowFuncFields := extractWindowFuncFields(stmt)
 	if len(windowFuncFields) > 0 {
-		p = WindowFuncPlan{
-			windowFuncFields: windowFuncFields,
-		}.Init()
-		p.SetChildren(children)
-		children = []LogicalPlan{p}
+		for _, wf := range windowFuncFields {
+			p = WindowFuncPlan{
+				windowFuncField: wf,
+			}.Init()
+			p.SetChildren(children)
+			children = []LogicalPlan{p}
+		}
 	}
 	srfMapping := extractSRFMapping(stmt)
 	if stmt.Fields != nil {
@@ -638,7 +640,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			limitCount = int(stmt.Limit.(*ast.LimitExpr).LimitCount.Val)
 		}
 		p = ProjectPlan{
-			windowFuncNames: windowFuncsNames,
+			windowFuncNames: windowFuncFields,
 			fields:          stmt.Fields,
 			isAggregate:     xsql.WithAggFields(stmt),
 			sendMeta:        opt.SendMetaToSink,
@@ -693,22 +695,19 @@ func Transform(op node.UnOperation, name string, options *api.RuleOption) *node.
 	return unaryOperator
 }
 
-func extractWindowFuncFields(stmt *ast.SelectStatement) (ast.Fields, map[string]struct{}) {
-	windowFuncsName := make(map[string]struct{})
-	windowFuncFields := make([]ast.Field, 0)
+func extractWindowFuncFields(stmt *ast.SelectStatement) map[string]ast.Field {
+	windowFuncFields := make(map[string]ast.Field)
 	for _, field := range stmt.Fields {
 		if wf, ok := field.Expr.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
-			windowFuncFields = append(windowFuncFields, field)
-			windowFuncsName[wf.Name] = struct{}{}
+			windowFuncFields[wf.Name] = field
 			continue
 		}
 		if ref, ok := field.Expr.(*ast.FieldRef); ok && ref.AliasRef != nil {
 			if wf, ok := ref.AliasRef.Expression.(*ast.Call); ok && wf.FuncType == ast.FuncTypeWindow {
-				windowFuncFields = append(windowFuncFields, field)
-				windowFuncsName[ref.Name] = struct{}{}
+				windowFuncFields[ref.Name] = field
 				continue
 			}
 		}
 	}
-	return windowFuncFields, windowFuncsName
+	return windowFuncFields
 }

@@ -30,7 +30,7 @@ type ProjectPlan struct {
 	aliasNames       []string
 	exprNames        []string
 	exceptNames      []string
-	windowFuncNames  map[string]struct{}
+	windowFuncNames  map[string]ast.Field
 	wildcardEmitters map[string]bool
 	aliasFields      ast.Fields
 	exprFields       ast.Fields
