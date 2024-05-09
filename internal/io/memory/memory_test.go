@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -69,7 +68,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
-		err = snk.CollectList(ctx, mock.MemTupleList{rawTuple})
+		err = snk.CollectList(ctx, &xsql.MemTupleList{Content: []api.MessageTuple{rawTuple}})
 		if err != nil {
 			t.Error(err)
 		}

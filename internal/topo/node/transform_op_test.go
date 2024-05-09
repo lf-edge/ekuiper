@@ -6,9 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 var commonCases = []any{
@@ -42,10 +44,10 @@ func TestTransformRun(t *testing.T) {
 			expects: []any{
 				errors.New("fail to TransItem data map[a:1 b:2] for error fail to decode data <nil> for error unsupported type <nil>"),
 				errors.New("fail to TransItem data map[a:3 b:4 c:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
-				map[string]any{"a": 5, "b": 6},
+				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}},
 				errors.New("fail to TransItem data map[a:1 b:2] for error fail to decode data <nil> for error unsupported type <nil>"),
 				errors.New("fail to TransItem data map[a:3 b:4 c:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
-				map[string]any{"a": 5, "b": 6},
+				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}},
 				errors.New("fail to TransItem data map[a:3 b:4 c:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
 			},
 		},
@@ -60,18 +62,18 @@ func TestTransformRun(t *testing.T) {
 			},
 			cases: commonCases,
 			expects: []any{
-				map[string]any{"a": 1, "b": 2},
-				map[string]any{"a": 3, "b": 4},
-				map[string]any{"a": nil, "b": nil},
+				&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}},
+				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4}},
+				&xsql.Tuple{Message: map[string]any{"a": nil, "b": nil}},
 
-				map[string]any{"a": 1, "b": 2},
-				map[string]any{"a": 3, "b": 4},
+				&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}},
+				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4}},
 
-				map[string]any{"a": nil, "b": nil},
-				map[string]any{"a": 3, "b": 4},
+				&xsql.Tuple{Message: map[string]any{"a": nil, "b": nil}},
+				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4}},
 
 				// Even no omit empty, the empty data should be omitted due to sendSingle
-				map[string]any{},
+				&xsql.Tuple{Message: map[string]any{}},
 			},
 		},
 		{
@@ -82,12 +84,12 @@ func TestTransformRun(t *testing.T) {
 				SendSingle: false,
 			},
 			expects: []any{
-				[]map[string]any{{"a": 1, "b": 2}},
-				[]map[string]any{{"a": 3, "b": 4, "c": "hello"}},
-				[]map[string]any{{"a": 5, "b": 6}},
-				[]map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "c": "hello"}},
-				[]map[string]any{{"data": map[string]any{"a": 5, "b": 6}}, {"a": 3, "b": 4, "c": "hello"}},
-				[]map[string]any{},
+				&xsql.MemTupleList{Maps: []map[string]any{{"a": 1, "b": 2}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}}},
+				&xsql.MemTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
+				&xsql.MemTupleList{Maps: []map[string]any{{"a": 5, "b": 6}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}}}},
+				&xsql.MemTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
+				&xsql.MemTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6}}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
+				&xsql.MemTupleList{Maps: []map[string]any{}, Content: []api.MessageTuple{}},
 			},
 		},
 		{
@@ -102,12 +104,9 @@ func TestTransformRun(t *testing.T) {
 			expects: []any{
 				nil,
 				nil,
-				map[string]any{"a": 5, "b": 6, "c": "world"},
-
+				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6, "c": "world"}},
 				nil,
-
-				map[string]any{"a": 5, "b": 6, "c": "world"},
-
+				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6, "c": "world"}},
 				nil,
 			},
 		},
@@ -121,11 +120,11 @@ func TestTransformRun(t *testing.T) {
 			},
 			cases: commonCases,
 			expects: []any{
-				map[string]any{"ab": 1.0},
-				map[string]any{"ab": 3.0},
+				&xsql.Tuple{Message: map[string]any{"ab": 1.0}},
+				&xsql.Tuple{Message: map[string]any{"ab": 3.0}},
 				errors.New("fail to decode data {\"ab\":<no value>} after applying dataTemplate for error invalid character '<' looking for beginning of value"),
 
-				map[string]any{"ab": 1.0},
+				&xsql.Tuple{Message: map[string]any{"ab": 1.0}},
 
 				errors.New("fail to decode data {\"ab\":<no value>} after applying dataTemplate for error invalid character '<' looking for beginning of value"),
 			},
@@ -141,20 +140,21 @@ func TestTransformRun(t *testing.T) {
 			},
 			cases: commonCases,
 			expects: []any{
-				map[string]any{"ab": 1.0},
-				map[string]any{"ab": 3.0},
+				&xsql.Tuple{Message: map[string]any{"ab": 1.0}},
+				&xsql.Tuple{Message: map[string]any{"ab": 3.0}},
 				errors.New("fail to TransItem data map[data:map[a:5 b:6 c:world]] for error fail to decode data {\"ab\":<no value>,\"bb\":<no value>} for error invalid character '<' looking for beginning of value"),
 
-				map[string]any{"ab": 1.0},
-				map[string]any{"ab": 3.0},
+				&xsql.Tuple{Message: map[string]any{"ab": 1.0}},
+				&xsql.Tuple{Message: map[string]any{"ab": 3.0}},
 
 				errors.New("fail to TransItem data map[data:map[a:5 b:6 c:world]] for error fail to decode data {\"ab\":<no value>,\"bb\":<no value>} for error invalid character '<' looking for beginning of value"),
-				map[string]any{"ab": 3.0},
+				&xsql.Tuple{Message: map[string]any{"ab": 3.0}},
 			},
 		},
 	}
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
+			timex.Set(0)
 			op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tt.sc)
 			assert.NoError(t, err)
 			out := make(chan any, 100)

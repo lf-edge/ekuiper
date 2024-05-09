@@ -203,17 +203,16 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 				return nil
 			}
 		}
-		r.RangeOfTuples(func(index int, tuple api.SinkTuple) bool {
+		r.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
 			merged := &xsql.JoinTuple{}
 			merged.AddTuple(d)
-			m, _ := tuple.All("")
 			var meta map[string]any
 			if mi, ok := tuple.(api.MetaInfo); ok {
 				meta = mi.AllMeta()
 			}
 			t := &xsql.Tuple{
 				Emitter:   n.name,
-				Message:   m,
+				Message:   tuple.ToMap(),
 				Metadata:  meta,
 				Timestamp: timex.GetNowInMilli(),
 			}

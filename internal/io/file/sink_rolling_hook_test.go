@@ -187,7 +187,7 @@ func TestCollectRolling(t *testing.T) {
 				m := map[string]interface{}{"key": "value" + strconv.Itoa(i), "ts": c.Now().UnixMilli()}
 				b, err := json.Marshal(m)
 				assert.NoError(t, err)
-				if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: b}); err != nil {
+				if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: b}); err != nil {
 					t.Errorf("unexpected error: %s", err)
 				}
 			}

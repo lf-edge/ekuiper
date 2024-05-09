@@ -148,15 +148,14 @@ func (m *fileSink) Connect(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *fileSink) Collect(ctx api.StreamContext, tuple api.SinkRawTuple) error {
+func (m *fileSink) Collect(ctx api.StreamContext, tuple api.RawTuple) error {
 	item := tuple.Raw()
 	ctx.GetLogger().Debugf("file sink receive %s", item)
 	fn := m.c.Path
 	if dp, ok := tuple.(api.HasDynamicProps); ok {
-		var err error
-		fn, err = dp.DynamicProps(fn)
-		if err != nil {
-			return err
+		t, transformed := dp.DynamicProps(fn)
+		if transformed {
+			fn = t
 		}
 	}
 	ctx.GetLogger().Debugf("writing to file path %s", fn)

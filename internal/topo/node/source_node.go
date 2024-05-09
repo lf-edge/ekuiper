@@ -68,8 +68,7 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
-	var tuple *xsql.Tuple
-	tuple = &xsql.Tuple{Emitter: m.name, Rawdata: data, Timestamp: ts.UnixMilli(), Metadata: meta}
+	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts.UnixMilli(), Metadata: meta}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)

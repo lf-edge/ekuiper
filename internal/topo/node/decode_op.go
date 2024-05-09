@@ -97,16 +97,14 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	switch d := item.(type) {
 	case error:
 		return []any{d}
-	case *xsql.Tuple:
-		result, err := o.converter.Decode(ctx, d.Rawdata)
+	case *xsql.RawTuple:
+		result, err := o.converter.Decode(ctx, d.Raw())
 		if err != nil {
 			return []any{err}
 		}
 		switch r := result.(type) {
 		case map[string]interface{}:
-			d.Message = r
-			d.Rawdata = nil
-			return []any{d}
+			return []any{o.toTuple(r, d)}
 		case []map[string]interface{}:
 			rr := make([]any, len(r))
 			for i, v := range r {
@@ -131,7 +129,7 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	}
 }
 
-func (o *DecodeOp) toTuple(v map[string]any, d *xsql.Tuple) *xsql.Tuple {
+func (o *DecodeOp) toTuple(v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
 	return &xsql.Tuple{
 		Message:   v,
 		Metadata:  d.Metadata,

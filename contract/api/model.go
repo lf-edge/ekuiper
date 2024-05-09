@@ -18,13 +18,13 @@ import (
 	"time"
 )
 
-// SinkTuple is an interface of the below interfaces
-type SinkTuple interface {
+// MessageTuple is an interface of the below interfaces
+type MessageTuple interface {
 	ReadonlyMessage
 }
 
-type SinkRawTuple interface {
-	HasRaw
+type RawTuple interface {
+	Raw() []byte
 }
 
 // ReadonlyMessage Message is the interface that wraps each record.
@@ -32,7 +32,7 @@ type SinkRawTuple interface {
 // It is used in sink
 type ReadonlyMessage interface {
 	Value(key, table string) (any, bool)
-	All(table string) (map[string]any, bool)
+	ToMap() map[string]any
 }
 
 type MetaInfo interface {
@@ -41,17 +41,15 @@ type MetaInfo interface {
 	AllMeta() map[string]any
 }
 
-type HasRaw interface {
-	Raw() []byte
-}
-
 type HasDynamicProps interface {
 	// DynamicProps return the transformed dynamic properties (typically in sink).
 	// The transformation should be done in transform op
-	DynamicProps(template string) (string, error)
+	DynamicProps(template string) (string, bool)
+	AllProps() map[string]string
 }
 
 type SinkTupleList interface {
-	RangeOfTuples(f func(index int, tuple SinkTuple) bool)
+	RangeOfTuples(f func(index int, tuple MessageTuple) bool)
 	Len() int
+	ToMaps() []map[string]any
 }

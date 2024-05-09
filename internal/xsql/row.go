@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -258,13 +259,44 @@ type Alias struct {
  * All row types definitions, watermark, barrier
  */
 
+type RawTuple struct {
+	Emitter   string
+	Timestamp int64
+	Rawdata   []byte
+	Metadata  Metadata // immutable
+	Props     map[string]string
+}
+
+func (r *RawTuple) DynamicProps(template string) (string, bool) {
+	v, ok := r.Props[template]
+	return v, ok
+}
+
+func (r *RawTuple) AllProps() map[string]string {
+	return r.Props
+}
+
+func (r *RawTuple) Raw() []byte {
+	return r.Rawdata
+}
+
+func (r *RawTuple) Meta(key, table string) (any, bool) {
+	v, ok := r.Metadata[key]
+	return v, ok
+}
+
+var (
+	_ api.RawTuple        = &RawTuple{}
+	_ api.HasDynamicProps = &RawTuple{}
+)
+
 // Tuple The input row, produced by the source
 type Tuple struct {
 	Emitter   string
-	Message   Message // the original pointer is immutable & big; may be cloned. Union with Rawdata
-	Rawdata   []byte  // the original raw message, should be deleted after decoded into message.
+	Message   Message // the original pointer is immutable & big; may be cloned.
 	Timestamp int64
 	Metadata  Metadata // immutable
+	Props     map[string]string
 
 	AffiliateRow
 	lock      sync.Mutex             // lock for the cachedMap, because it is possible to access by multiple sinks
@@ -321,7 +353,7 @@ func (m Message) Value(key, _ string) (interface{}, bool) {
 		return v, ok
 	} else if conf.Config == nil || conf.Config.Basic.IgnoreCase {
 		// Only when with 'SELECT * FROM ...'  and 'schemaless', the key in map is not convert to lower case.
-		// So all of keys in map should be convert to lowercase and then compare them.
+		// So all keys in map should be converted to lowercase and then compare them.
 		return m.getIgnoreCase(key)
 	} else {
 		return nil, false
@@ -371,10 +403,6 @@ func (t *Tuple) Value(key, table string) (interface{}, bool) {
 	return t.Message.Value(key, table)
 }
 
-func (t *Tuple) Raw() []byte {
-	return t.Rawdata
-}
-
 func (t *Tuple) All(string) (map[string]any, bool) {
 	return t.Message, true
 }
@@ -384,7 +412,6 @@ func (t *Tuple) Clone() Row {
 		Emitter:      t.Emitter,
 		Timestamp:    t.Timestamp,
 		Message:      t.Message,
-		Rawdata:      t.Rawdata,
 		Metadata:     t.Metadata,
 		AffiliateRow: t.AffiliateRow.Clone(),
 	}
@@ -421,6 +448,15 @@ func (t *Tuple) MetaData() Metadata {
 
 func (t *Tuple) GetEmitter() string {
 	return t.Emitter
+}
+
+func (t *Tuple) DynamicProps(template string) (string, bool) {
+	r, ok := t.Props[template]
+	return r, ok
+}
+
+func (t *Tuple) AllProps() map[string]string {
+	return t.Props
 }
 
 func (t *Tuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {

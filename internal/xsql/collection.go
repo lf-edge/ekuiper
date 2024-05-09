@@ -150,7 +150,7 @@ func (w *WindowTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	return nil
 }
 
-func (w *WindowTuples) RangeOfTuples(f func(index int, tuple api.SinkTuple) bool) {
+func (w *WindowTuples) RangeOfTuples(f func(index int, tuple api.MessageTuple) bool) {
 	for i, r := range w.Content {
 		if !f(i, r) {
 			break
@@ -321,7 +321,7 @@ func (s *JoinTuples) Range(f func(i int, r ReadonlyRow) (bool, error)) error {
 	return nil
 }
 
-func (s *JoinTuples) RangeOfTuples(f func(index int, tuple api.SinkTuple) bool) {
+func (s *JoinTuples) RangeOfTuples(f func(index int, tuple api.MessageTuple) bool) {
 	for i, r := range s.Content {
 		if !f(i, r) {
 			break
@@ -461,7 +461,7 @@ func (s *GroupedTuplesSet) Range(f func(i int, r ReadonlyRow) (bool, error)) err
 	return nil
 }
 
-func (s *GroupedTuplesSet) RangeOfTuples(f func(index int, tuple api.SinkTuple) bool) {
+func (s *GroupedTuplesSet) RangeOfTuples(f func(index int, tuple api.MessageTuple) bool) {
 	for i, r := range s.Groups {
 		if !f(i, r) {
 			break
@@ -580,3 +580,32 @@ func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
 		return nil, false
 	}
 }
+
+type MemTupleList struct {
+	Content []api.MessageTuple
+	Maps    []map[string]any
+}
+
+func (l *MemTupleList) ToMaps() []map[string]any {
+	if l.Maps == nil {
+		l.Maps = make([]map[string]any, len(l.Content))
+		for i, t := range l.Content {
+			l.Maps[i] = t.ToMap()
+		}
+	}
+	return l.Maps
+}
+
+func (l *MemTupleList) RangeOfTuples(f func(index int, tuple api.MessageTuple) bool) {
+	for i, v := range l.Content {
+		if !f(i, v) {
+			break
+		}
+	}
+}
+
+func (l *MemTupleList) Len() int {
+	return len(l.Content)
+}
+
+var _ api.SinkTupleList = &MemTupleList{}

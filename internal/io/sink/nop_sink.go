@@ -36,7 +36,7 @@ func (ns *NopSink) Connect(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ns *NopSink) Collect(ctx api.StreamContext, item api.SinkRawTuple) error {
+func (ns *NopSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	logger := ctx.GetLogger()
 	if ns.log {
 		logger.Infof("%s", item.Raw())
