@@ -61,7 +61,7 @@ func RunTupleSinkCollect(s api.TupleCollector, data []any, props map[string]any)
 		switch ee := e.(type) {
 		case api.MessageTuple:
 			err = s.Collect(ctx, ee)
-		case api.SinkTupleList:
+		case api.MessageTupleList:
 			err = s.CollectList(ctx, ee)
 		default:
 			err = errors.New("unsupported data type")

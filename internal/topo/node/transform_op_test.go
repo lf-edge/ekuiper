@@ -25,10 +25,11 @@ var commonCases = []any{
 
 func TestTransformRun(t *testing.T) {
 	testcases := []struct {
-		name    string
-		sc      *SinkConf
-		cases   []any
-		expects []any
+		name      string
+		sc        *SinkConf
+		templates []string
+		cases     []any
+		expects   []any
 	}{
 		{
 			name: "field transform",
@@ -83,13 +84,14 @@ func TestTransformRun(t *testing.T) {
 				Format:     "json",
 				SendSingle: false,
 			},
+			cases: commonCases,
 			expects: []any{
-				&xsql.MemTupleList{Maps: []map[string]any{{"a": 1, "b": 2}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}}},
-				&xsql.MemTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
-				&xsql.MemTupleList{Maps: []map[string]any{{"a": 5, "b": 6}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}}}},
-				&xsql.MemTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
-				&xsql.MemTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6}}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
-				&xsql.MemTupleList{Maps: []map[string]any{}, Content: []api.MessageTuple{}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{}, Content: []api.MessageTuple{}},
 			},
 		},
 		{
@@ -151,11 +153,71 @@ func TestTransformRun(t *testing.T) {
 				&xsql.Tuple{Message: map[string]any{"ab": 3.0}},
 			},
 		},
+		{
+			name: "props of single",
+			sc: &SinkConf{
+				Omitempty:  true,
+				Format:     "json",
+				SendSingle: true,
+				SchemaId:   "schema_{{.a}}",
+				Delimiter:  "{{.b}}_comma",
+			},
+			templates: []string{"schema_{{.a}}", "{{.b}}_comma"},
+			cases:     commonCases,
+			expects: []any{
+				&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Props: map[string]string{"schema_{{.a}}": "schema_1", "{{.b}}_comma": "2_comma"}},
+				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Props: map[string]string{"schema_{{.a}}": "schema_3", "{{.b}}_comma": "4_comma"}},
+				&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Props: map[string]string{"schema_{{.a}}": "schema_<no value>", "{{.b}}_comma": "<no value>_comma"}},
+
+				&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Props: map[string]string{"schema_{{.a}}": "schema_1", "{{.b}}_comma": "2_comma"}},
+				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Props: map[string]string{"schema_{{.a}}": "schema_3", "{{.b}}_comma": "4_comma"}},
+
+				&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Props: map[string]string{"schema_{{.a}}": "schema_<no value>", "{{.b}}_comma": "<no value>_comma"}},
+			},
+		},
+		{
+			name: "props of list",
+			sc: &SinkConf{
+				Omitempty:  false,
+				Format:     "json",
+				SendSingle: false,
+				SchemaId:   "t_{{index . 0 \"a\"}}_t",
+			},
+			templates: []string{"t_{{index . 0 \"a\"}}_t"},
+			cases:     commonCases,
+			expects: []any{
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_1_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_3_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_<no value>_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_1_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_<no value>_t"}},
+				errors.New("fail to calculate props t_{{index . 0 \"a\"}}_t through data [] with dataTemplate for error template: sink:1:4: executing \"sink\" at <index . 0 \"a\">: error calling index: reflect: slice index out of range"),
+			},
+		},
+		{
+			name: "props of data template",
+			sc: &SinkConf{
+				Format:       "json",
+				DataTemplate: "{\"ab\":{{.a}},\"bb\":{{.b}}}",
+				SendSingle:   true,
+				SchemaId:     "{{.a}}",
+			},
+			templates: []string{"{{.a}}"},
+			cases:     commonCases,
+			expects: []any{
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":1,"bb":2}`), Props: map[string]string{"{{.a}}": "1"}},
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":3,"bb":4}`), Props: map[string]string{"{{.a}}": "3"}},
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":<no value>,"bb":<no value>}`), Props: map[string]string{"{{.a}}": "<no value>"}},
+
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":1,"bb":2}`), Props: map[string]string{"{{.a}}": "1"}},
+				&xsql.RawTuple{Rawdata: []byte(`{"ab":3,"bb":4}`), Props: map[string]string{"{{.a}}": "3"}},
+			},
+		},
 	}
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
 			timex.Set(0)
-			op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tt.sc)
+			op, err := NewTransformOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tt.sc, tt.templates)
 			assert.NoError(t, err)
 			out := make(chan any, 100)
 			err = op.AddOutput(out, "test")

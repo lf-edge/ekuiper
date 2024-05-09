@@ -68,7 +68,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	}
 	mockclock.GetMockClock().Add(100)
 	go func() {
-		err = snk.CollectList(ctx, &xsql.MemTupleList{Content: []api.MessageTuple{rawTuple}})
+		err = snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}})
 		if err != nil {
 			t.Error(err)
 		}

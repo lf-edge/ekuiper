@@ -16,10 +16,10 @@ package planner
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
@@ -40,13 +40,14 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 			if !ok {
 				return fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
 			}
-			commonConf, err := node.ParseConf(conf.Log, props)
+			commonConf, err := node.ParseConf(tp.GetContext().GetLogger(), props)
 			if err != nil {
 				return fmt.Errorf("fail to parse sink configuration: %v", err)
 			}
+			templates := findTemplateProps(props)
 			// Split sink node
 			sinkName := fmt.Sprintf("%s_%d", name, i)
-			newInputs, err := splitSink(tp, inputs, s, sinkName, rule.Options, commonConf)
+			newInputs, err := splitSink(tp, inputs, s, sinkName, rule.Options, commonConf, templates)
 			if err != nil {
 				return err
 			}
@@ -72,8 +73,25 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 	return nil
 }
 
+func findTemplateProps(props map[string]any) []string {
+	var result []string
+	re := regexp.MustCompile(`{{(.*?)}}`)
+	for _, p := range props {
+		switch pt := p.(type) {
+		case string:
+			if re.Match([]byte(pt)) {
+				result = append(result, pt)
+			}
+		case map[string]any:
+			res := findTemplateProps(pt)
+			result = append(result, res...)
+		}
+	}
+	return result
+}
+
 // Split sink node according to the sink configuration. Return the new input emitters.
-func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf) ([]node.Emitter, error) {
+func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string, options *def.RuleOption, sc *node.SinkConf, templates []string) ([]node.Emitter, error) {
 	index := 0
 	newInputs := inputs
 	// Batch enabled
@@ -88,7 +106,7 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 	}
 	// Transform enabled
 	// Currently, the row to map is done here and is required. TODO: eliminate map and this could become optional
-	transformOp, err := node.NewTransformOp(fmt.Sprintf("%s_%d_transform", sinkName, index), options, sc)
+	transformOp, err := node.NewTransformOp(fmt.Sprintf("%s_%d_transform", sinkName, index), options, sc, templates)
 	if err != nil {
 		return nil, err
 	}

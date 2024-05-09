@@ -171,7 +171,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 		}
 	}
 	var (
-		r  api.SinkTupleList
+		r  api.MessageTupleList
 		e  error
 		ok bool
 	)

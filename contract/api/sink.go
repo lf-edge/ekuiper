@@ -31,5 +31,5 @@ type BytesCollector interface {
 type TupleCollector interface {
 	Sink
 	Collect(ctx StreamContext, item MessageTuple) error
-	CollectList(ctx StreamContext, items SinkTupleList) error
+	CollectList(ctx StreamContext, items MessageTupleList) error
 }

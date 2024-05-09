@@ -29,10 +29,10 @@ func TestExpiration(t *testing.T) {
 	c := NewCache(20, false)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := []api.SinkTupleList{
-		&xsql.MemTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}}},
-		&xsql.MemTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}}},
-		&xsql.MemTupleList{Content: []api.MessageTuple{}},
+	expects := []api.MessageTupleList{
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{}},
 	}
 	c.Set("a", expects[0])
 	clock.Add(10 * time.Second)
@@ -87,10 +87,10 @@ func TestNoExpiration(t *testing.T) {
 	c := NewCache(0, true)
 	defer c.Close()
 	clock := mockclock.GetMockClock()
-	expects := []api.SinkTupleList{
-		&xsql.MemTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}}},
-		&xsql.MemTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}}},
-		&xsql.MemTupleList{Content: []api.MessageTuple{}},
+	expects := []api.MessageTupleList{
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{}},
 	}
 	c.Set("a", expects[0])
 	clock.Add(10 * time.Second)

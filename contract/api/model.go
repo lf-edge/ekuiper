@@ -25,6 +25,7 @@ type MessageTuple interface {
 
 type RawTuple interface {
 	Raw() []byte
+	Replace([]byte)
 }
 
 // ReadonlyMessage Message is the interface that wraps each record.
@@ -48,7 +49,7 @@ type HasDynamicProps interface {
 	AllProps() map[string]string
 }
 
-type SinkTupleList interface {
+type MessageTupleList interface {
 	RangeOfTuples(f func(index int, tuple MessageTuple) bool)
 	Len() int
 	ToMaps() []map[string]any

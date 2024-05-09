@@ -21,7 +21,6 @@ import (
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -43,11 +42,14 @@ type TransformOp struct {
 	// If the result format is text, the dataTemplate should be used to format the data and skip the encode step. Otherwise, the text must be unmarshall back to map
 	isTextFormat bool
 	dt           *template.Template
+	templates    map[string]*template.Template
+	// temp state
+	output bytes.Buffer
 }
 
 // NewTransformOp creates a transform node
 // sink conf should have been validated before
-func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf) (*TransformOp, error) {
+func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf, templates []string) (*TransformOp, error) {
 	o := &TransformOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		dataField:       sc.DataField,
@@ -55,13 +57,21 @@ func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf) (*Transform
 		sendSingle:      sc.SendSingle,
 		omitIfEmpty:     sc.Omitempty,
 		isTextFormat:    xsql.IsTextFormat(sc.Format),
+		templates:       map[string]*template.Template{},
 	}
 	if sc.DataTemplate != "" {
-		temp, err := template.New(name).Funcs(conf.FuncMap).Parse(sc.DataTemplate)
+		temp, err := transform.GenTp(sc.DataTemplate)
 		if err != nil {
 			return nil, err
 		}
 		o.dt = temp
+	}
+	for _, tstr := range templates {
+		temp, err := transform.GenTp(tstr)
+		if err != nil {
+			return nil, err
+		}
+		o.templates[tstr] = temp
 	}
 	return o, nil
 }
@@ -97,38 +107,50 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 	if t.sendSingle {
 		result = make([]any, 0, len(outs))
 		for _, out := range outs {
+			props, err := t.calculateProps(out)
+			if err != nil {
+				result = append(result, err)
+				continue
+			}
 			bs, err := t.doTransform(out)
 			if err != nil {
 				result = append(result, err)
 			} else {
-				result = append(result, toSinkTuple(bs))
+				result = append(result, toSinkTuple(bs, props))
 			}
 		}
 	} else {
-		bs, err := t.doTransform(outs)
+		props, err := t.calculateProps(outs)
 		if err != nil {
 			result = append(result, err)
 		} else {
-			result = append(result, toSinkTuple(bs))
+			bs, err := t.doTransform(outs)
+			if err != nil {
+				result = append(result, err)
+			} else {
+				result = append(result, toSinkTuple(bs, props))
+			}
 		}
 	}
 	return result
 }
 
 // TODO keep the tuple meta etc.
-func toSinkTuple(bs any) any {
+func toSinkTuple(bs any, props map[string]string) any {
 	if bs == nil {
 		return bs
 	}
 	switch bt := bs.(type) {
+	case []byte:
+		return &xsql.RawTuple{Rawdata: bt, Props: props}
 	case map[string]any:
-		return &xsql.Tuple{Message: bt, Timestamp: timex.GetNowInMilli()}
+		return &xsql.Tuple{Message: bt, Timestamp: timex.GetNowInMilli(), Props: props}
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, 0, len(bt))
 		for _, m := range bt {
 			tuples = append(tuples, &xsql.Tuple{Message: m, Timestamp: timex.GetNowInMilli()})
 		}
-		return &xsql.MemTupleList{Content: tuples, Maps: bt}
+		return &xsql.TransformedTupleList{Content: tuples, Maps: bt, Props: props}
 	default:
 		return fmt.Errorf("invalid transform result type %v", bs)
 	}
@@ -178,6 +200,22 @@ func (t *TransformOp) doTransform(d any) (any, error) {
 	return m, nil
 }
 
+func (t *TransformOp) calculateProps(data any) (map[string]string, error) {
+	if len(t.templates) == 0 {
+		return nil, nil
+	}
+	result := make(map[string]string, len(t.templates))
+	for k, temp := range t.templates {
+		err := temp.Execute(&t.output, data)
+		if err != nil {
+			return nil, fmt.Errorf("fail to calculate props %s through data %v with dataTemplate for error %v", k, data, err)
+		}
+		result[k] = t.output.String()
+		t.output.Reset()
+	}
+	return result, nil
+}
+
 func itemToMap(item interface{}) []map[string]any {
 	var outs []map[string]any
 	switch val := item.(type) {
@@ -197,9 +235,6 @@ func itemToMap(item interface{}) []map[string]any {
 		outs = []map[string]any{
 			val.ToMap(),
 		}
-		break
-	case []map[string]any: // for test only
-		outs = val
 		break
 	default:
 		outs = []map[string]any{
