@@ -35,7 +35,7 @@ func TestSourceSink(t *testing.T) {
 		[]byte("{\"humidity\":82,\"status\":\"wet\",\"temperature\":25}"),
 		[]byte("{\"humidity\":60,\"status\":\"hot\",\"temperature\":33}"),
 	}
-	result := []api.SinkTuple{
+	result := []api.MessageTuple{
 		model.NewDefaultRawTuple([]byte("{\"humidity\":50,\"status\":\"green\",\"temperature\":22}"), map[string]any{
 			"topic":     "demo",
 			"messageId": uint16(0),

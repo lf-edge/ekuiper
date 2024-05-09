@@ -55,8 +55,8 @@ func (t *DefaultSourceTuple) Range(f func(key string, value any) bool) {
 	}
 }
 
-func (t *DefaultSourceTuple) All(table string) (map[string]any, bool) {
-	return t.message, true
+func (t *DefaultSourceTuple) ToMap() map[string]any {
+	return t.message
 }
 
 func (t *DefaultSourceTuple) Meta(key, table string) (any, bool) {

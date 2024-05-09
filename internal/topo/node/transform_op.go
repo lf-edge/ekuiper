@@ -26,8 +26,14 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+// TransformOp transforms the row/collection to sink tuples
+// Immutable: false
+// Change trigger frequency: true, by sendSingle property
+// Input: Row/Collection
+// Output: MessageTuple, SinkTupleList, RawTuple
 type TransformOp struct {
 	*defaultSinkNode
 	dataField   string
@@ -86,6 +92,7 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 		ctx.GetLogger().Debugf("receive empty result %v in sink, dropped", outs)
 		return nil
 	}
+	// MessageTuple or SinkTupleList
 	var result []any
 	if t.sendSingle {
 		result = make([]any, 0, len(outs))
@@ -94,7 +101,7 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 			if err != nil {
 				result = append(result, err)
 			} else {
-				result = append(result, bs)
+				result = append(result, toSinkTuple(bs))
 			}
 		}
 	} else {
@@ -102,15 +109,29 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 		if err != nil {
 			result = append(result, err)
 		} else {
-			switch bst := bs.(type) {
-			case []map[string]any:
-				result = append(result, bst)
-			default:
-				result = append(result, bst)
-			}
+			result = append(result, toSinkTuple(bs))
 		}
 	}
 	return result
+}
+
+// TODO keep the tuple meta etc.
+func toSinkTuple(bs any) any {
+	if bs == nil {
+		return bs
+	}
+	switch bt := bs.(type) {
+	case map[string]any:
+		return &xsql.Tuple{Message: bt, Timestamp: timex.GetNowInMilli()}
+	case []map[string]any:
+		tuples := make([]api.MessageTuple, 0, len(bt))
+		for _, m := range bt {
+			tuples = append(tuples, &xsql.Tuple{Message: m, Timestamp: timex.GetNowInMilli()})
+		}
+		return &xsql.MemTupleList{Content: tuples, Maps: bt}
+	default:
+		return fmt.Errorf("invalid transform result type %v", bs)
+	}
 }
 
 // doTransform transforms the data according to the dataTemplate and fields

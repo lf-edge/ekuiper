@@ -15,11 +15,14 @@
 package node
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -27,30 +30,36 @@ func TestEncodeJSON(t *testing.T) {
 	tests := []struct {
 		name string
 		in   any
-		out  []byte
+		out  any
 	}{
 		{
 			name: "normal",
-			in:   map[string]any{"name": "joe", "age": 20},
-			out:  []byte(`{"age":20,"name":"joe"}`),
+			in:   &xsql.Tuple{Message: map[string]any{"name": "joe", "age": 20}},
+			out:  &xsql.RawTuple{Rawdata: []byte(`{"age":20,"name":"joe"}`)},
 		},
 		{
 			name: "list",
-			in: []map[string]any{
-				{"name": "joe", "age": 20},
-				{"name": "tom", "age": 21},
+			in: &xsql.MemTupleList{
+				Maps: []map[string]any{
+					{"name": "joe", "age": 20},
+					{"name": "tom", "age": 21},
+				},
+				Content: []api.MessageTuple{
+					&xsql.Tuple{Message: map[string]any{"name": "joe", "age": 20}},
+					&xsql.Tuple{Message: map[string]any{"name": "tom", "age": 21}},
+				},
 			},
-			out: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`),
+			out: &xsql.RawTuple{Rawdata: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`)},
 		},
 		{
 			name: "unknown type",
 			in:   12,
-			out:  []byte(`12`),
+			out:  errors.New("receive unsupported data 12"),
 		},
 		{
 			name: "bytes",
-			in:   []byte("test"),
-			out:  []byte("test"),
+			in:   &xsql.RawTuple{Rawdata: []byte("test")},
+			out:  &xsql.RawTuple{Rawdata: []byte("test")},
 		},
 	}
 	op, err := NewEncodeOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "json"})

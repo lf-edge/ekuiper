@@ -79,14 +79,13 @@ func validateMQTTSinkTopic(topic string) error {
 	return nil
 }
 
-func (ms *Sink) Collect(ctx api.StreamContext, item api.SinkRawTuple) error {
+func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	tpc := ms.adconf.Tpc
 	// If tpc supports dynamic props(template), planner will guarantee the result has the parsed dynamic props
 	if dp, ok := item.(api.HasDynamicProps); ok {
-		var err error
-		tpc, err = dp.DynamicProps(tpc)
-		if err != nil {
-			return err
+		temp, transformed := dp.DynamicProps(tpc)
+		if transformed {
+			tpc = temp
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", tpc)

@@ -22,8 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
-	"github.com/lf-edge/ekuiper/v2/pkg/model"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func RunBytesSinkCollect(s api.BytesCollector, data [][]byte, props map[string]any) error {
@@ -38,7 +36,7 @@ func RunBytesSinkCollect(s api.BytesCollector, data [][]byte, props map[string]a
 	}
 	time.Sleep(time.Second)
 	for _, e := range data {
-		err = s.Collect(ctx, &xsql.Tuple{Rawdata: e})
+		err = s.Collect(ctx, &xsql.RawTuple{Rawdata: e})
 		if err != nil {
 			return err
 		}
@@ -61,19 +59,10 @@ func RunTupleSinkCollect(s api.TupleCollector, data []any, props map[string]any)
 	time.Sleep(time.Second)
 	for _, e := range data {
 		switch ee := e.(type) {
-		case api.SinkTuple:
+		case api.MessageTuple:
 			err = s.Collect(ctx, ee)
 		case api.SinkTupleList:
 			err = s.CollectList(ctx, ee)
-		// TODO Make the output all as tuple
-		case map[string]any:
-			err = s.Collect(ctx, model.NewDefaultSourceTuple(ee, nil, timex.GetNow()))
-		case []map[string]any:
-			tuples := make([]api.SinkTuple, 0, len(ee))
-			for _, m := range ee {
-				tuples = append(tuples, model.NewDefaultSourceTuple(m, nil, timex.GetNow()))
-			}
-			err = s.CollectList(ctx, MemTupleList(tuples))
 		default:
 			err = errors.New("unsupported data type")
 		}
@@ -84,18 +73,4 @@ func RunTupleSinkCollect(s api.TupleCollector, data []any, props map[string]any)
 	time.Sleep(time.Second)
 	fmt.Println("closing sink")
 	return s.Close(ctx)
-}
-
-type MemTupleList []api.SinkTuple
-
-func (l MemTupleList) RangeOfTuples(f func(index int, tuple api.SinkTuple) bool) {
-	for i, v := range l {
-		if !f(i, v) {
-			break
-		}
-	}
-}
-
-func (l MemTupleList) Len() int {
-	return len(l)
 }

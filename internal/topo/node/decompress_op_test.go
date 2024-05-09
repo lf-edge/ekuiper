@@ -45,12 +45,12 @@ func TestDecompressOp_Exec(t *testing.T) {
 	op.Exec(ctx, errCh)
 
 	cases := []any{
-		&xsql.Tuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+		&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
 		errors.New("go through error"),
 		"invalid",
 	}
 	expects := [][]any{
-		{&xsql.Tuple{Emitter: "test", Rawdata: []byte("mock decompress"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
+		{&xsql.RawTuple{Emitter: "test", Rawdata: []byte("mock decompress"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
 		{errors.New("go through error")},
 		{errors.New("unsupported data received: invalid")},
 	}

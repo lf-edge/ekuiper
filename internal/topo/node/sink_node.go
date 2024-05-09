@@ -22,7 +22,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -113,16 +112,14 @@ func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollecto
 func bytesCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 	ctx.GetLogger().Debugf("Sink node %s receive data %s", ctx.GetOpId(), data)
 	switch d := data.(type) {
-	case api.SinkRawTuple:
+	case api.RawTuple:
 		err = sink.(api.BytesCollector).Collect(ctx, d)
-	case []byte: // TODO remove this, make output all tuples
-		err = sink.(api.BytesCollector).Collect(ctx, &xsql.Tuple{Rawdata: d})
 	case error:
-		err = sink.(api.BytesCollector).Collect(ctx, &xsql.Tuple{
+		err = sink.(api.BytesCollector).Collect(ctx, &xsql.RawTuple{
 			Rawdata: []byte(d.Error()),
 		})
 	default:
-		err = fmt.Errorf("expect api.SinkRawTuple data type but got %T", d)
+		err = fmt.Errorf("expect api.RawTuple data type but got %T", d)
 	}
 	return err
 }
@@ -141,19 +138,10 @@ func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollecto
 // return error that cannot be sent
 func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 	switch d := data.(type) {
-	case api.SinkTuple:
+	case api.MessageTuple:
 		err = sink.(api.TupleCollector).Collect(ctx, d)
 	case api.SinkTupleList:
 		err = sink.(api.TupleCollector).CollectList(ctx, d)
-	// TODO Make the output all as tuple
-	case map[string]any:
-		err = sink.(api.TupleCollector).Collect(ctx, &xsql.Tuple{Message: d, Timestamp: timex.GetNowInMilli()})
-	case []map[string]any:
-		tuples := make([]api.SinkTuple, 0, len(d))
-		for _, m := range d {
-			tuples = append(tuples, &xsql.Tuple{Message: m, Timestamp: timex.GetNowInMilli()})
-		}
-		err = sink.(api.TupleCollector).CollectList(ctx, mock.MemTupleList(tuples))
 	case error:
 		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
 	default:

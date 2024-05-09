@@ -15,14 +15,21 @@
 package node
 
 import (
+	"fmt"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
+// EncodeOp converts tuple to raw bytes according to the FORMAT property
+// Immutable: false
+// Input: any (mostly MessageTuple/SinkTupleList, may receive RawTuple after transformOp
+// Output: RawTuple
 type EncodeOp struct {
 	*defaultSinkNode
 	converter message.Converter
@@ -58,14 +65,30 @@ func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
-	case []byte:
+	case api.RawTuple:
 		return []any{d}
+	case api.MessageTuple:
+		return tupleCopy(ctx, o.converter, d, d.ToMap())
+	case api.SinkTupleList:
+		return tupleCopy(ctx, o.converter, d, d.ToMaps())
 	default:
-		r, err := o.converter.Encode(ctx, item)
-		if err != nil {
-			return []any{err}
-		} else {
-			return []any{r}
+		return []any{fmt.Errorf("receive unsupported data %v", d)}
+	}
+}
+
+func tupleCopy(ctx api.StreamContext, converter message.Converter, st any, message any) []any {
+	raw, err := converter.Encode(ctx, message)
+	if err != nil {
+		return []any{err}
+	} else {
+		r := &xsql.RawTuple{Rawdata: raw}
+		if ss, ok := st.(api.MetaInfo); ok {
+			r.Metadata = ss.AllMeta()
+			r.Timestamp = ss.Created().UnixMilli()
 		}
+		if ss, ok := st.(api.HasDynamicProps); ok {
+			r.Props = ss.AllProps()
+		}
+		return []any{r}
 	}
 }

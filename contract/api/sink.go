@@ -25,11 +25,11 @@ type Sink interface {
 
 type BytesCollector interface {
 	Sink
-	Collect(ctx StreamContext, item SinkRawTuple) error
+	Collect(ctx StreamContext, item RawTuple) error
 }
 
 type TupleCollector interface {
 	Sink
-	Collect(ctx StreamContext, item SinkTuple) error
+	Collect(ctx StreamContext, item MessageTuple) error
 	CollectList(ctx StreamContext, items SinkTupleList) error
 }

@@ -30,7 +30,7 @@ import (
 
 var count atomic.Value
 
-func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected []api.SinkTuple, sender func()) {
+func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected []api.MessageTuple, sender func()) {
 	// init
 	c := count.Load()
 	if c == nil {
@@ -50,7 +50,7 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	limit := len(expected)
 	var (
 		wg     sync.WaitGroup
-		result []api.SinkTuple
+		result []api.MessageTuple
 	)
 	wg.Add(1)
 	go func() {

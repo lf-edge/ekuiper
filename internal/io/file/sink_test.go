@@ -318,12 +318,12 @@ func TestFileSink_Collect(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value1\"}")}); err != nil {
+			if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte("{\"key\":\"value1\"}")}); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
 
 			// Test collecting another map item
-			if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value2\"}")}); err != nil {
+			if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte("{\"key\":\"value2\"}")}); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
 			if err = sink.Close(ctx); err != nil {
@@ -470,7 +470,7 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				m := map[string]interface{}{"key": "value" + strconv.Itoa(i), "ts": c.Now().UnixMilli()}
 				b, err := json.Marshal(m)
 				assert.NoError(t, err)
-				if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: b}); err != nil {
+				if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: b}); err != nil {
 					t.Errorf("unexpected error: %s", err)
 				}
 			}
@@ -546,7 +546,7 @@ func TestFileSinkReopen(t *testing.T) {
 	}
 
 	// Test collecting a map item
-	if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value1\"}")}); err != nil {
+	if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte("{\"key\":\"value1\"}")}); err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 	sink.Close(ctx)
@@ -576,7 +576,7 @@ func TestFileSinkReopen(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Test collecting another map item
-	if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value2\"}")}); err != nil {
+	if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte("{\"key\":\"value2\"}")}); err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 	if err = sink.Close(ctx); err != nil {
@@ -655,12 +655,12 @@ func TestFileCompressAndEncrypt(t *testing.T) {
 			}
 
 			// Test collecting a map item
-			if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value1\"}")}); err != nil {
+			if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte("{\"key\":\"value1\"}")}); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
 
 			// Test collecting another map item
-			if err := sink.Collect(ctx, &xsql.Tuple{Rawdata: []byte("{\"key\":\"value2\"}")}); err != nil {
+			if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte("{\"key\":\"value2\"}")}); err != nil {
 				t.Errorf("unexpected error: %s", err)
 			}
 
