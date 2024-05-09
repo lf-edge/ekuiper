@@ -24,6 +24,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
+// EncryptNode encrypt raw bytes
+// Immutable: false
+// Input: RawTuple
+// Output: RawTuple
 type EncryptNode struct {
 	*defaultSinkNode
 	tool message.Encryptor
@@ -57,9 +61,10 @@ func (o *EncryptNode) Worker(_ api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
-	case []byte:
-		r := o.tool.Encrypt(d)
-		return []any{r}
+	case api.RawTuple:
+		r := o.tool.Encrypt(d.Raw())
+		d.Replace(r)
+		return []any{d}
 	default:
 		return []any{fmt.Errorf("unsupported data received: %v", d)}
 	}

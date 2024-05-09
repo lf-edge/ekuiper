@@ -69,7 +69,7 @@ func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 		return []any{d}
 	case api.MessageTuple:
 		return tupleCopy(ctx, o.converter, d, d.ToMap())
-	case api.SinkTupleList:
+	case api.MessageTupleList:
 		return tupleCopy(ctx, o.converter, d, d.ToMaps())
 	default:
 		return []any{fmt.Errorf("receive unsupported data %v", d)}

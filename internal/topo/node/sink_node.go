@@ -140,7 +140,7 @@ func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 	switch d := data.(type) {
 	case api.MessageTuple:
 		err = sink.(api.TupleCollector).Collect(ctx, d)
-	case api.SinkTupleList:
+	case api.MessageTupleList:
 		err = sink.(api.TupleCollector).CollectList(ctx, d)
 	case error:
 		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))

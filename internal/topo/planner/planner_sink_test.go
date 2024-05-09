@@ -15,6 +15,7 @@
 package planner
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -296,7 +297,7 @@ func TestSinkPlanError(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			err: "template: log_0_0_transform:1: unexpected <.> in operand",
+			err: "template: sink:1: unexpected <.> in operand",
 		},
 	}
 	for _, c := range tc {
@@ -312,6 +313,51 @@ func TestSinkPlanError(t *testing.T) {
 			err = buildActions(tp, c.rule, inputs, 1)
 			assert.Error(t, err)
 			assert.Equal(t, c.err, err.Error())
+		})
+	}
+}
+
+func TestFindTemplates(t *testing.T) {
+	cases := []struct {
+		name   string
+		props  map[string]any
+		result []string
+	}{
+		{
+			name: "normal",
+			props: map[string]any{
+				"test":  1,
+				"topic": "{{.topic}}",
+				"tt":    50,
+				"path":  "mypath/{{.path}}",
+			},
+			result: []string{
+				"mypath/{{.path}}", "{{.topic}}",
+			},
+		},
+		{
+			name: "embed",
+			props: map[string]any{
+				"test":  1,
+				"topic": "{{.topic}}",
+				"multi": map[string]any{
+					"test":  1,
+					"topic": "{{.ntopic}}",
+				},
+				"tt":   50,
+				"path": "mypath/{{.path}}",
+			},
+			result: []string{
+				"mypath/{{.path}}", "{{.ntopic}}", "{{.topic}}",
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			r := findTemplateProps(tt.props)
+			sort.Strings(r)
+			assert.Equal(t, tt.result, r)
 		})
 	}
 }

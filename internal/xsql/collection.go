@@ -36,7 +36,7 @@ type SortingData interface {
 
 // Collection A collection of rows as a table. It is used for window, join, group by, etc.
 type Collection interface {
-	api.SinkTupleList
+	api.MessageTupleList
 	SortingData
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
 	GroupRange(func(i int, aggRow CollectionRow) (bool, error)) error
@@ -581,12 +581,22 @@ func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
 	}
 }
 
-type MemTupleList struct {
+type TransformedTupleList struct {
 	Content []api.MessageTuple
 	Maps    []map[string]any
+	Props   map[string]string
 }
 
-func (l *MemTupleList) ToMaps() []map[string]any {
+func (l *TransformedTupleList) DynamicProps(template string) (string, bool) {
+	v, ok := l.Props[template]
+	return v, ok
+}
+
+func (l *TransformedTupleList) AllProps() map[string]string {
+	return l.Props
+}
+
+func (l *TransformedTupleList) ToMaps() []map[string]any {
 	if l.Maps == nil {
 		l.Maps = make([]map[string]any, len(l.Content))
 		for i, t := range l.Content {
@@ -596,7 +606,7 @@ func (l *MemTupleList) ToMaps() []map[string]any {
 	return l.Maps
 }
 
-func (l *MemTupleList) RangeOfTuples(f func(index int, tuple api.MessageTuple) bool) {
+func (l *TransformedTupleList) RangeOfTuples(f func(index int, tuple api.MessageTuple) bool) {
 	for i, v := range l.Content {
 		if !f(i, v) {
 			break
@@ -604,8 +614,11 @@ func (l *MemTupleList) RangeOfTuples(f func(index int, tuple api.MessageTuple) b
 	}
 }
 
-func (l *MemTupleList) Len() int {
+func (l *TransformedTupleList) Len() int {
 	return len(l.Content)
 }
 
-var _ api.SinkTupleList = &MemTupleList{}
+var (
+	_ api.MessageTupleList = &TransformedTupleList{}
+	_ api.HasDynamicProps  = &TransformedTupleList{}
+)

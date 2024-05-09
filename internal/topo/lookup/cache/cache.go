@@ -24,7 +24,7 @@ import (
 )
 
 type item struct {
-	data       api.SinkTupleList
+	data       api.MessageTupleList
 	expiration int64
 }
 
@@ -75,7 +75,7 @@ func (c *Cache) deleteExpired() {
 	c.Unlock()
 }
 
-func (c *Cache) Set(key string, value api.SinkTupleList) {
+func (c *Cache) Set(key string, value api.MessageTupleList) {
 	if (value == nil || value.Len() == 0) && !c.cacheMissingKey {
 		return
 	}
@@ -88,7 +88,7 @@ func (c *Cache) Set(key string, value api.SinkTupleList) {
 	}
 }
 
-func (c *Cache) Get(key string) (api.SinkTupleList, bool) {
+func (c *Cache) Get(key string) (api.MessageTupleList, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	if v, ok := c.items[key]; ok {

@@ -39,7 +39,7 @@ func TestEncodeJSON(t *testing.T) {
 		},
 		{
 			name: "list",
-			in: &xsql.MemTupleList{
+			in: &xsql.TransformedTupleList{
 				Maps: []map[string]any{
 					{"name": "joe", "age": 20},
 					{"name": "tom", "age": 21},
@@ -60,6 +60,26 @@ func TestEncodeJSON(t *testing.T) {
 			name: "bytes",
 			in:   &xsql.RawTuple{Rawdata: []byte("test")},
 			out:  &xsql.RawTuple{Rawdata: []byte("test")},
+		},
+		{
+			name: "prop and meta copy",
+			in:   &xsql.Tuple{Message: map[string]any{"name": "joe", "age": 20}, Metadata: map[string]any{"topic": "demo"}, Props: map[string]string{"{{.a}}": "1"}},
+			out:  &xsql.RawTuple{Rawdata: []byte(`{"age":20,"name":"joe"}`), Metadata: map[string]any{"topic": "demo"}, Props: map[string]string{"{{.a}}": "1"}},
+		},
+		{
+			name: "list prop copy",
+			in: &xsql.TransformedTupleList{
+				Maps: []map[string]any{
+					{"name": "joe", "age": 20},
+					{"name": "tom", "age": 21},
+				},
+				Content: []api.MessageTuple{
+					&xsql.Tuple{Message: map[string]any{"name": "joe", "age": 20}},
+					&xsql.Tuple{Message: map[string]any{"name": "tom", "age": 21}},
+				},
+				Props: map[string]string{"{{.a}}": "1"},
+			},
+			out: &xsql.RawTuple{Rawdata: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`), Props: map[string]string{"{{.a}}": "1"}},
 		},
 	}
 	op, err := NewEncodeOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "json"})

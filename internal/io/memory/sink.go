@@ -95,7 +95,7 @@ func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
 	return nil
 }
 
-func (s *sink) CollectList(ctx api.StreamContext, tuples api.SinkTupleList) error {
+func (s *sink) CollectList(ctx api.StreamContext, tuples api.MessageTupleList) error {
 	topic := s.topic
 	if dp, ok := tuples.(api.HasDynamicProps); ok {
 		temp, transformed := dp.DynamicProps(topic)

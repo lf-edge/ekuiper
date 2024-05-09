@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -47,14 +48,16 @@ func TestEncryptOp_Exec(t *testing.T) {
 	op.Exec(ctx, errCh)
 
 	cases := []any{
-		[]byte("{\"a\":1,\"b\":2}"),
+		&xsql.RawTuple{Rawdata: []byte("{\"a\":1,\"b\":2}")},
 		errors.New("go through error"),
 		"invalid",
+		&xsql.RawTuple{Rawdata: []byte(`{"age":20,"name":"joe"}`), Metadata: map[string]any{"topic": "demo"}, Props: map[string]string{"{{.a}}": "1"}},
 	}
 	expects := [][]any{
-		{[]byte("mock encrypt")},
+		{&xsql.RawTuple{Rawdata: []byte("mock encrypt")}},
 		{errors.New("go through error")},
 		{errors.New("unsupported data received: invalid")},
+		{&xsql.RawTuple{Rawdata: []byte("mock encrypt"), Metadata: map[string]any{"topic": "demo"}, Props: map[string]string{"{{.a}}": "1"}}},
 	}
 
 	for i, c := range cases {

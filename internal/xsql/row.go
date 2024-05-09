@@ -267,6 +267,10 @@ type RawTuple struct {
 	Props     map[string]string
 }
 
+func (r *RawTuple) Replace(new []byte) {
+	r.Rawdata = new
+}
+
 func (r *RawTuple) DynamicProps(template string) (string, bool) {
 	v, ok := r.Props[template]
 	return v, ok
@@ -303,9 +307,18 @@ type Tuple struct {
 	cachedMap map[string]interface{} // clone of the row and cached for performance
 }
 
+func (t *Tuple) Created() time.Time {
+	return time.UnixMilli(t.Timestamp)
+}
+
+func (t *Tuple) AllMeta() map[string]any {
+	return t.Metadata
+}
+
 var (
-	_ Row      = &Tuple{}
-	_ MetaData = &Tuple{}
+	_ Row          = &Tuple{}
+	_ MetaData     = &Tuple{}
+	_ api.MetaInfo = &Tuple{}
 )
 
 // JoinTuple is a row produced by a join operation
