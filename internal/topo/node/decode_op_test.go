@@ -190,7 +190,7 @@ func TestJSONWithSchema(t *testing.T) {
 				}
 			}
 
-			op.DetachSchema(ctx.GetRuleId())
+			op.DetachSchema(ctx, ctx.GetRuleId())
 			cases = []any{
 				&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				&xsql.RawTuple{Emitter: "test", Rawdata: []byte("[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":\"hello\"}]"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},

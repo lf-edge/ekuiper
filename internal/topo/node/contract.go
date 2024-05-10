@@ -76,12 +76,12 @@ type MergeableTopo interface {
 	// SubMetrics return the metrics of the sub nodes
 	SubMetrics() ([]string, []any)
 	// Close notifies subtopo to deref
-	Close(ruleId string)
+	Close(ctx api.StreamContext, ruleId string)
 }
 
 type SchemaNode interface {
 	// AttachSchema attach the schema to the node. The parameters are ruleId, sourceName, schema, whether is wildcard
 	AttachSchema(api.StreamContext, string, map[string]*ast.JsonStreamField, bool)
 	// DetachSchema detach the schema from the node. The parameters are ruleId
-	DetachSchema(string)
+	DetachSchema(api.StreamContext, string)
 }

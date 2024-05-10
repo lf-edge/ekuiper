@@ -171,7 +171,7 @@ func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*a
 	}
 }
 
-func (s *SrcSubTopo) Close(ruleId string) {
+func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string) {
 	if _, ok := s.refRules.LoadAndDelete(ruleId); ok {
 		s.refCount.Add(-1)
 		if s.refCount.Load() == 0 {
@@ -182,7 +182,7 @@ func (s *SrcSubTopo) Close(ruleId string) {
 		}
 		for _, op := range s.ops {
 			if so, ok := op.(node.SchemaNode); ok {
-				so.DetachSchema(ruleId)
+				so.DetachSchema(ctx, ruleId)
 			}
 		}
 	}

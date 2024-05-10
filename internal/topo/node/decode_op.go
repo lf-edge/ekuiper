@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -35,23 +34,25 @@ type DecodeOp struct {
 }
 
 func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
-	ctx.GetLogger().Infof("attach schema to shared stream")
 	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		ctx.GetLogger().Infof("attach schema to shared stream")
 		if err := o.sLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
 			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
 		} else {
+			ctx.GetLogger().Infof("attach schema become %+v", o.sLayer.GetSchema())
 			fastDecoder.ResetSchema(o.sLayer.GetSchema())
 		}
 	}
 }
 
-func (o *DecodeOp) DetachSchema(ruleId string) {
-	conf.Log.Infof("detach schema for shared stream rule %v", ruleId)
+func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
 	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		ctx.GetLogger().Infof("detach schema for shared stream rule %v", ruleId)
 		if err := o.sLayer.DetachSchema(ruleId); err != nil {
-			conf.Log.Warnf("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
+			ctx.GetLogger().Infof("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
 		} else {
 			fastDecoder.ResetSchema(o.sLayer.GetSchema())
+			ctx.GetLogger().Infof("detach schema become %+v", o.sLayer.GetSchema())
 		}
 	}
 }
