@@ -160,7 +160,7 @@ kuiperConfig:
       # to enable the checkpoint mechanism
       qos: 0
       # The interval in millisecond to run the checkpoint mechanism.
-      checkpointInterval: 300000
+      checkpointInterval: 300s
       # Whether to send errors to sinks
       sendError: true
 

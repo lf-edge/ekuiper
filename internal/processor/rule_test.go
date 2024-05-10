@@ -88,7 +88,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					BufferLength:       1024,
 					SendMetaToSink:     false,
 					Qos:                def.AtMostOnce,
-					CheckpointInterval: 300000,
+					CheckpointInterval: "300s",
 					SendError:          true,
 					Restart: &def.RestartStrategy{
 						Attempts:     20,
@@ -123,7 +123,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					"lateTolerance": 1000,
 					"bufferLength": 10240,
 					"qos": 2,
-					"checkpointInterval": 60000
+					"checkpointInterval": "60s"
 				}
 			}`,
 			result: &def.Rule{
@@ -151,7 +151,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					BufferLength:       10240,
 					SendMetaToSink:     false,
 					Qos:                def.ExactlyOnce,
-					CheckpointInterval: 60000,
+					CheckpointInterval: "60s",
 					SendError:          true,
 					Restart: &def.RestartStrategy{
 						Attempts:     0,
@@ -187,7 +187,7 @@ func TestRuleActionParse_Apply(t *testing.T) {
 					BufferLength:       1024,
 					SendMetaToSink:     false,
 					Qos:                def.AtMostOnce,
-					CheckpointInterval: 300000,
+					CheckpointInterval: "300s",
 					SendError:          true,
 					Restart: &def.RestartStrategy{
 						Attempts:     0,

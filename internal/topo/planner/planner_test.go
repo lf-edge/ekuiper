@@ -51,7 +51,7 @@ var defaultOption = &def.RuleOption{
 	SendMetaToSink:     false,
 	SendError:          true,
 	Qos:                def.AtMostOnce,
-	CheckpointInterval: 300000,
+	CheckpointInterval: "300s",
 	Restart: &def.RestartStrategy{
 		Attempts:     0,
 		Delay:        1000,
@@ -2753,7 +2753,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			BufferLength:       0,
 			SendMetaToSink:     false,
 			Qos:                0,
-			CheckpointInterval: 0,
+			CheckpointInterval: "0s",
 			SendError:          true,
 		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
@@ -4156,7 +4156,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 			BufferLength:       0,
 			SendMetaToSink:     false,
 			Qos:                0,
-			CheckpointInterval: 0,
+			CheckpointInterval: "0s",
 			SendError:          true,
 		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
@@ -4744,7 +4744,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 				BufferLength:       0,
 				SendMetaToSink:     false,
 				Qos:                0,
-				CheckpointInterval: 0,
+				CheckpointInterval: "0s",
 				SendError:          true,
 			}, kv)
 			assert.Equal(t, tt.err, testx.Errstring(err))

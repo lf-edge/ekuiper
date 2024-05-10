@@ -365,7 +365,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"debug":false,"logFilename":"","isEventTime":false,"lateTolerance":1000,"concurrency":1,"bufferLength":1024,"sendMetaToSink":false,"sendError":true,"qos":0,"checkpointInterval":300000,"restartStrategy":{"attempts":0,"delay":1000,"multiplier":2,"maxDelay":30000,"jitter":0.1},"cron":"","duration":"","cronDatetimeRange":null}}`
+	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"debug":false,"logFilename":"","isEventTime":false,"lateTolerance":1000,"concurrency":1,"bufferLength":1024,"sendMetaToSink":false,"sendError":true,"qos":0,"checkpointInterval":"300s","restartStrategy":{"attempts":0,"delay":1000,"multiplier":2,"maxDelay":30000,"jitter":0.1},"cron":"","duration":"","cronDatetimeRange":null}}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// delete rule

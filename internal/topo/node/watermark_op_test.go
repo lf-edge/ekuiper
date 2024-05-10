@@ -208,7 +208,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 				SendMetaToSink:     false,
 				SendError:          false,
 				Qos:                0,
-				CheckpointInterval: 0,
+				CheckpointInterval: "0s",
 			})
 			errCh := make(chan error)
 			outputCh := make(chan interface{}, 50)
@@ -460,7 +460,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 				SendMetaToSink:     false,
 				SendError:          false,
 				Qos:                0,
-				CheckpointInterval: 0,
+				CheckpointInterval: "0s",
 			})
 			errCh := make(chan error)
 			outputCh := make(chan interface{}, 50)

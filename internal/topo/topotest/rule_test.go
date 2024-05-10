@@ -144,13 +144,13 @@ func TestWindowFuncSQL(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 	}
 	for _, opt := range options {
@@ -391,13 +391,13 @@ func TestAccAggSQL(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 	}
 	for _, opt := range options {
@@ -510,12 +510,12 @@ func TestSRFSQL(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		}, {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 	}
 	for _, opt := range options {
@@ -1169,13 +1169,13 @@ func TestSingleSQL(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 	}
 	for _, opt := range options {
@@ -1310,14 +1310,14 @@ func TestSingleSQLWithEventTime(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 			IsEventTime:        true,
 			LateTol:            1000,
 		}, {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 			IsEventTime:        true,
 			LateTol:            1000,
 		},
@@ -1556,12 +1556,12 @@ func TestSingleSQLForBinary(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		}, {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 	}
 	for _, opt := range options {
@@ -1629,14 +1629,14 @@ func TestWindowSQL(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 			IsEventTime:        true,
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 			IsEventTime:        true,
 		},
 	}
@@ -1765,13 +1765,13 @@ func TestAliasSQL(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: 5000,
+			CheckpointInterval: "5s",
 		},
 	}
 	for _, opt := range options {

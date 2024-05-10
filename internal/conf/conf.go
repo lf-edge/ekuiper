@@ -62,7 +62,7 @@ type SinkConf struct {
 	MaxDiskCache         int    `json:"maxDiskCache" yaml:"maxDiskCache"`
 	BufferPageSize       int    `json:"bufferPageSize" yaml:"bufferPageSize"`
 	EnableCache          bool   `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       int    `json:"resendInterval" yaml:"resendInterval"`
+	ResendInterval       string `json:"resendInterval" yaml:"resendInterval"`
 	CleanCacheAtStop     bool   `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
 	ResendAlterQueue     bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
 	ResendPriority       int    `json:"resendPriority" yaml:"resendPriority"`
@@ -87,11 +87,14 @@ func (sc *SinkConf) Validate() error {
 		Log.Warnf("bufferPageSize is less than or equal to 0, set to 256")
 		errs = errors.Join(errs, errors.New("bufferPageSize:bufferPageSize must be positive"))
 	}
-	if sc.ResendInterval < 0 {
-		sc.ResendInterval = 0
-		Log.Warnf("resendInterval is less than 0, set to 0")
+	d, err := time.ParseDuration(sc.ResendInterval)
+	if err != nil {
+		errs = errors.Join(errs, err)
+	}
+	if d < 0 {
 		errs = errors.Join(errs, errors.New("resendInterval:resendInterval must be positive"))
 	}
+
 	if sc.BufferPageSize > sc.MemoryCacheThreshold {
 		sc.MemoryCacheThreshold = sc.BufferPageSize
 		Log.Warnf("memoryCacheThreshold is less than bufferPageSize, set to %d", sc.BufferPageSize)
@@ -302,7 +305,7 @@ func InitConf() {
 			LateTol:            1000,
 			Concurrency:        1,
 			BufferLength:       1024,
-			CheckpointInterval: 300000, // 5 minutes
+			CheckpointInterval: "300s", // 5 minutes
 			SendError:          true,
 			Restart: &def.RestartStrategy{
 				Attempts:     0,
@@ -414,10 +417,9 @@ func SetLogFormat(disableTimestamp bool) {
 
 func ValidateRuleOption(option *def.RuleOption) error {
 	var errs error
-	if option.CheckpointInterval < 0 {
-		option.CheckpointInterval = 0
-		Log.Warnf("checkpointInterval is negative, set to 0")
-		errs = errors.Join(errs, errors.New("invalidCheckpointInterval:checkpointInterval must be greater than 0"))
+	_, err := time.ParseDuration(option.CheckpointInterval)
+	if err != nil {
+		errs = errors.Join(errs, err)
 	}
 	if option.Concurrency < 0 {
 		option.Concurrency = 1

@@ -40,7 +40,7 @@ var defaultOption = &def.RuleOption{
 	SendMetaToSink:     false,
 	SendError:          true,
 	Qos:                def.AtMostOnce,
-	CheckpointInterval: 300000,
+	CheckpointInterval: "300s",
 	Restart: &def.RestartStrategy{
 		Attempts:     0,
 		Delay:        1000,

@@ -131,7 +131,7 @@ func TestRun(t *testing.T) {
 				MaxDiskCache:         12,
 				BufferPageSize:       2,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     false,
 			},
 			dataIn: [][]map[string]interface{}{
@@ -145,7 +145,7 @@ func TestRun(t *testing.T) {
 				MaxDiskCache:         8,
 				BufferPageSize:       2,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     false,
 			},
 			dataIn: [][]map[string]interface{}{
@@ -159,7 +159,7 @@ func TestRun(t *testing.T) {
 				MaxDiskCache:         8,
 				BufferPageSize:       1,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     false,
 			},
 			dataIn: [][]map[string]interface{}{
@@ -173,7 +173,7 @@ func TestRun(t *testing.T) {
 				MaxDiskCache:         4,
 				BufferPageSize:       2,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     false,
 			},
 			dataIn: [][]map[string]interface{}{

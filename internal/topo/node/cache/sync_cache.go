@@ -194,8 +194,13 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 }
 
 func (c *SyncCache) send(ctx api.StreamContext) {
-	if c.CacheLength > 1 && c.cacheConf.ResendInterval > 0 {
-		time.Sleep(time.Duration(c.cacheConf.ResendInterval) * time.Millisecond)
+	dura, err := time.ParseDuration(c.cacheConf.ResendInterval)
+	if err != nil {
+		dura = 0
+		ctx.GetLogger().Warnf("resend interval parse error:%v", err)
+	}
+	if c.CacheLength > 1 && dura > 0 {
+		time.Sleep(dura)
 	}
 	d, ok := c.peakMemCache(ctx)
 	if ok {
