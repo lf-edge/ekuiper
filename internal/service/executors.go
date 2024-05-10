@@ -175,7 +175,7 @@ func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params
 		}
 	}
 	if e != nil {
-		return nil, fmt.Errorf("error invoking method %s in proto: %v", name, err)
+		return nil, fmt.Errorf("error invoking method %s in proto: %v", name, e)
 	}
 	odm, err := dynamic.AsDynamicMessage(o)
 	if err != nil {
