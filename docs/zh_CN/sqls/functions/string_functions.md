@@ -48,11 +48,13 @@ format_time(col, format)
 | z  | 时区名      | z(MST)                                |
 | Z  | 4位数的时区   | Z(-0700)                              |
 | X  | 时区       | X(-07), XX(-0700), XXX(-07:00)        |
+| \  | 转义符      | \Z(Z)  \X(X)                          |
 
 示例:
 
 - YYYY-MM-dd T HH:mm:ss -> 2006-01-02 T 15:04:05
 - YYYY/MM/dd HH:mm:ssSSS XXX -> 2006/01/02 15:04:05.000 -07:00
+- yyyy-MM-ddTHH:mm:ssSS\ZXX -> 2006-01-02T15:04:05.00Z-0700
 
 ## INDEXOF
 
