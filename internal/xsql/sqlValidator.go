@@ -24,12 +24,12 @@ import (
 // This is the pre-validation. In planner, there will be a more comprehensive validation after binding
 func Validate(stmt *ast.SelectStatement) error {
 	if HasAggFuncs(stmt.Condition) {
-		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause.")
+		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause: %s.", stmt.Condition)
 	}
 
 	for _, d := range stmt.Dimensions {
 		if HasAggFuncs(d.Expr) {
-			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause.")
+			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause: %s.", d.Expr)
 		}
 	}
 

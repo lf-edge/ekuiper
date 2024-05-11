@@ -1813,13 +1813,13 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `SELECT id,AVG(data) FROM t GROUP BY SUM(data)>10`,
 			stmt: nil,
-			err:  "Not allowed to call aggregate functions in GROUP BY clause.",
+			err:  "Not allowed to call aggregate functions in GROUP BY clause: binaryExpr:{ Call:{ name:sum, args:[$$default.data] } > 10 }.",
 		},
 
 		{
 			s:    `SELECT temp AS t, name FROM topic/sensor1 WHERE count(name) = 3`,
 			stmt: nil,
-			err:  "Not allowed to call aggregate functions in WHERE clause.",
+			err:  "Not allowed to call aggregate functions in WHERE clause: binaryExpr:{ Call:{ name:count, args:[$$default.name] } = 3 }.",
 		},
 
 		{
