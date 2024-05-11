@@ -50,11 +50,13 @@ common in many languages like Java, etc. The supported symbols in Kuiper are
 | z      | time zone name            | z(MST)                                |
 | Z      | 4 digits time zone offset | Z(-0700)                              |
 | X      | time zone offset          | X(-07), XX(-0700), XXX(-07:00)        |
+| \      | Escape character          | \Z(Z)  \X(X)                          |
 
 Examples:
 
 - YYYY-MM-dd T HH:mm:ss -> 2006-01-02 T 15:04:05
 - YYYY/MM/dd HH:mm:ssSSS XXX -> 2006/01/02 15:04:05.000 -07:00
+- yyyy-MM-ddTHH:mm:ssSS\ZXX -> 2006-01-02T15:04:05.00Z-0700
 
 ## INDEXOF
 
