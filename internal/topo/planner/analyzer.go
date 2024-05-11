@@ -421,15 +421,15 @@ type aggFuncChecker struct{}
 func (c *aggFuncChecker) validate(s *ast.SelectStatement) (err error) {
 	isAggStmt := false
 	if xsql.IsAggregate(s.Condition) {
-		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause.")
+		return fmt.Errorf("Not allowed to call aggregate functions in WHERE clause: %s.", s.Condition)
 	}
 	if !allAggregate(s.Having) {
-		return fmt.Errorf("Not allowed to call non-aggregate functions in HAVING clause.")
+		return fmt.Errorf("Not allowed to call non-aggregate functions in HAVING clause: %s.", s.Having)
 	}
 	for _, d := range s.Dimensions {
 		isAggStmt = true
 		if xsql.IsAggregate(d.Expr) {
-			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause.")
+			return fmt.Errorf("Not allowed to call aggregate functions in GROUP BY clause: %s.", d.Expr)
 		}
 	}
 	if s.Joins != nil {
