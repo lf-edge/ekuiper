@@ -25,10 +25,10 @@ import (
 
 // AdConf is the advanced configuration for the mqtt sink
 type AdConf struct {
-	Tpc      string `json:"topic"`
-	Qos      byte   `json:"qos"`
-	Retained bool   `json:"retained"`
-
+	Tpc         string `json:"topic"`
+	Qos         byte   `json:"qos"`
+	Retained    bool   `json:"retained"`
+	SelId       string `json:"connectionSelector"`
 	ResendTopic string `json:"resendDestination"`
 }
 
@@ -67,7 +67,7 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 
 func (ms *Sink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	cli, err := GetConnection(ctx, ms.config)
+	cli, err := GetConnection(ctx, ms.adconf.SelId, ms.config)
 	ms.cli = cli
 	return err
 }
@@ -100,8 +100,7 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Info("Closing mqtt sink connector")
 	if ms.cli != nil {
-		DetachConnection(ms.cli.GetClientId(), "")
-		ms.cli = nil
+		DetachConnection(ms.cli, ms.adconf.SelId, "")
 	}
 	return nil
 }

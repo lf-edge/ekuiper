@@ -38,6 +38,7 @@ type SourceConnector struct {
 type Conf struct {
 	Topic string `json:"datasource"`
 	Qos   int    `json:"qos"`
+	SelId string `json:"connectionSelector"`
 }
 
 func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -70,7 +71,7 @@ func (ms *SourceConnector) Ping(props map[string]interface{}) error {
 
 func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	cli, err := GetConnection(ctx, ms.props)
+	cli, err := GetConnection(ctx, ms.cfg.SelId, ms.props)
 	ms.cli = cli
 	return err
 }
@@ -104,8 +105,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
-		DetachConnection(ms.cli.GetClientId(), ms.tpc)
-		ms.cli = nil
+		DetachConnection(ms.cli, ms.cfg.SelId, ms.tpc)
 	}
 	return nil
 }
