@@ -23,7 +23,7 @@ import (
 )
 
 type WindowFuncOperator struct {
-	WindowFuncFields ast.Fields
+	WindowFuncField ast.Field
 }
 
 type windowFuncHandle interface {
@@ -49,28 +49,27 @@ func (rh *rowNumberFuncHandle) handleCollection(input xsql.Collection) {
 }
 
 func (wf *WindowFuncOperator) Apply(_ api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
-	for _, windowFuncField := range wf.WindowFuncFields {
-		name := windowFuncField.Name
-		if windowFuncField.AName != "" {
-			name = windowFuncField.AName
-		}
-		var funcName string
-		switch c := windowFuncField.Expr.(type) {
-		case *ast.Call:
-			funcName = c.Name
-		case *ast.FieldRef:
-			funcName = c.AliasRef.Expression.(*ast.Call).Name
-		}
-		wh, err := getWindowFuncHandle(funcName, name)
-		if err != nil {
-			return err
-		}
-		switch input := data.(type) {
-		case xsql.Row:
-			wh.handleTuple(input)
-		case xsql.Collection:
-			wh.handleCollection(input)
-		}
+	windowFuncField := wf.WindowFuncField
+	name := windowFuncField.Name
+	if windowFuncField.AName != "" {
+		name = windowFuncField.AName
+	}
+	var funcName string
+	switch c := windowFuncField.Expr.(type) {
+	case *ast.Call:
+		funcName = c.Name
+	case *ast.FieldRef:
+		funcName = c.AliasRef.Expression.(*ast.Call).Name
+	}
+	wh, err := getWindowFuncHandle(funcName, name)
+	if err != nil {
+		return err
+	}
+	switch input := data.(type) {
+	case xsql.Row:
+		wh.handleTuple(input)
+	case xsql.Collection:
+		wh.handleCollection(input)
 	}
 	return data
 }

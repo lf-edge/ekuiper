@@ -358,15 +358,13 @@ func Test_createLogicalPlan(t *testing.T) {
 									}.Init(),
 								},
 							},
-							windowFuncFields: []ast.Field{
-								{
-									Name:  "row_number",
-									AName: "index",
-									Expr: &ast.FieldRef{
-										StreamName: ast.AliasStream,
-										Name:       "index",
-										AliasRef:   ref,
-									},
+							windowFuncField: ast.Field{
+								Name:  "row_number",
+								AName: "index",
+								Expr: &ast.FieldRef{
+									StreamName: ast.AliasStream,
+									Name:       "index",
+									AliasRef:   ref,
 								},
 							},
 						}.Init(),
@@ -390,8 +388,16 @@ func Test_createLogicalPlan(t *testing.T) {
 						},
 					},
 				},
-				windowFuncNames: map[string]struct{}{
-					"index": {},
+				windowFuncNames: map[string]ast.Field{
+					"index": {
+						Name:  "row_number",
+						AName: "index",
+						Expr: &ast.FieldRef{
+							StreamName: ast.AliasStream,
+							Name:       "index",
+							AliasRef:   ref,
+						},
+					},
 				},
 			}.Init(),
 		},
@@ -417,13 +423,11 @@ func Test_createLogicalPlan(t *testing.T) {
 									}.Init(),
 								},
 							},
-							windowFuncFields: []ast.Field{
-								{
-									Name: "row_number",
-									Expr: &ast.Call{
-										Name:     "row_number",
-										FuncType: ast.FuncTypeWindow,
-									},
+							windowFuncField: ast.Field{
+								Name: "row_number",
+								Expr: &ast.Call{
+									Name:     "row_number",
+									FuncType: ast.FuncTypeWindow,
 								},
 							},
 						}.Init(),
@@ -445,8 +449,14 @@ func Test_createLogicalPlan(t *testing.T) {
 						},
 					},
 				},
-				windowFuncNames: map[string]struct{}{
-					"row_number": {},
+				windowFuncNames: map[string]ast.Field{
+					"row_number": {
+						Name: "row_number",
+						Expr: &ast.Call{
+							Name:     "row_number",
+							FuncType: ast.FuncTypeWindow,
+						},
+					},
 				},
 			}.Init(),
 		},
