@@ -255,7 +255,7 @@ jobs:
         sudo ./get_helm.sh
         helm version
     - name: build kuiper for docker
-      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --alway) -f deploy/docker/Dockerfile .
+      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --always | sed 's/^v//g') -f deploy/docker/Dockerfile .
     - name: run emqx on chart
       env:
         KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
