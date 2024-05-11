@@ -589,7 +589,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				"pow", []interface{}{0, -0.4, 1.2},
 			},
-			result: fmt.Errorf("validate function arguments failed."),
+			result: fmt.Errorf("validate pow arguments failed"),
 		},
 		{
 			name: "array_map",
@@ -610,7 +610,7 @@ func TestArrayCommonFunctions(t *testing.T) {
 			args: []interface{}{
 				"power", []interface{}{1, 2, 3},
 			},
-			result: fmt.Errorf("validate function arguments failed."),
+			result: fmt.Errorf("validate power arguments failed"),
 		},
 		{
 			name: "array_join",
