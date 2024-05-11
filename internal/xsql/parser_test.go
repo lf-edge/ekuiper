@@ -22,6 +22,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/testx"
@@ -780,19 +781,19 @@ func TestParser_ParseStatement(t *testing.T) {
 		{
 			s:    `SELECT count(*, f1) FROM tbl`,
 			stmt: nil,
-			err:  `Expect 1 arguments but found 2.`,
+			err:  `validate function count error: Expect 1 arguments but found 2.`,
 		},
 
 		{
 			s:    `SELECT lag() FROM tbl`,
 			stmt: nil,
-			err:  `expect one two or three args but got 0`,
+			err:  `validate function lag error: expect one two or three args but got 0`,
 		},
 
 		{
 			s:    `SELECT lag(a, b, "default value") FROM tbl`,
 			stmt: nil,
-			err:  `Expect int type for parameter 2`,
+			err:  `validate function lag error: Expect int type for parameter 2`,
 		},
 
 		{
@@ -3297,15 +3298,16 @@ func TestParser_ParseStatement(t *testing.T) {
 		},
 	}
 
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	for i, tt := range tests {
-		// fmt.Printf("Parsing SQL %q.\n", tt.s)
-		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
-		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
-			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
-		}
+	for _, tt := range tests {
+		t.Run(tt.s, func(t *testing.T) {
+			stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
+			if tt.err != "" {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tt.err)
+			} else {
+				assert.Equal(t, tt.stmt, stmt)
+			}
+		})
 	}
 }
 
