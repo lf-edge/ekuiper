@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -269,7 +270,7 @@ func (s *Topo) enableCheckpoint(ctx api.StreamContext) error {
 		for _, r := range s.sinks {
 			sinks = append(sinks, r)
 		}
-		d, err := time.ParseDuration(s.options.CheckpointInterval)
+		d, err := cast.ConvertDuration(s.options.CheckpointInterval)
 		if err != nil {
 			return err
 		}

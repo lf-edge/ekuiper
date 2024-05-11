@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
@@ -194,7 +195,7 @@ func (c *SyncCache) run(ctx api.StreamContext) {
 }
 
 func (c *SyncCache) send(ctx api.StreamContext) {
-	dura, err := time.ParseDuration(c.cacheConf.ResendInterval)
+	dura, err := cast.ConvertDuration(c.cacheConf.ResendInterval)
 	if err != nil {
 		dura = 0
 		ctx.GetLogger().Warnf("resend interval parse error:%v", err)

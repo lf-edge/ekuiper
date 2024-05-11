@@ -87,7 +87,7 @@ func (sc *SinkConf) Validate() error {
 		Log.Warnf("bufferPageSize is less than or equal to 0, set to 256")
 		errs = errors.Join(errs, errors.New("bufferPageSize:bufferPageSize must be positive"))
 	}
-	d, err := time.ParseDuration(sc.ResendInterval)
+	d, err := cast.ConvertDuration(sc.ResendInterval)
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
@@ -417,7 +417,7 @@ func SetLogFormat(disableTimestamp bool) {
 
 func ValidateRuleOption(option *def.RuleOption) error {
 	var errs error
-	_, err := time.ParseDuration(option.CheckpointInterval)
+	_, err := cast.ConvertDuration(option.CheckpointInterval)
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
