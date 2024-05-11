@@ -46,13 +46,6 @@ func newErrorStruct(err string) *errorStruct {
 	}
 }
 
-func newErrorStructWithS(err string, serr string) *errorStruct {
-	return &errorStruct{
-		err:  err,
-		serr: &serr,
-	}
-}
-
 func (e *errorStruct) Serr() string {
 	if e.serr != nil {
 		return *e.serr
@@ -66,7 +59,7 @@ var tests = []struct {
 }{
 	{ // 0
 		sql: `SELECT count(*) FROM src1 HAVING sin(temp) > 0.3`,
-		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause."),
+		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ Call:{ name:sin, args:[src1.temp] } > 0.300000 }."),
 	},
 	{ // 1
 		sql: `SELECT count(*) FROM src1 WHERE name = "dname" HAVING sin(count(*)) > 0.3`,
@@ -82,11 +75,11 @@ var tests = []struct {
 	},
 	{ // 4
 		sql: `SELECT count(*) as c FROM src1 WHERE name = "dname" GROUP BY sin(c)`,
-		r:   newErrorStruct("Not allowed to call aggregate functions in GROUP BY clause."),
+		r:   newErrorStruct("Not allowed to call aggregate functions in GROUP BY clause: Call:{ name:sin, args:[$$alias.c] }."),
 	},
 	{ // 5
 		sql: `SELECT count(*) as c FROM src1 WHERE name = "dname" HAVING sum(c) > 0.3 OR sin(temp) > 3`,
-		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause."),
+		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ binaryExpr:{ Call:{ name:sum, args:[$$alias.c] } > 0.300000 } OR binaryExpr:{ Call:{ name:sin, args:[src1.temp] } > 3 } }."),
 	},
 	{ // 6
 		sql: `SELECT collect(*) as c FROM src1 WHERE name = "dname" HAVING c[2]->temp > 20 AND sin(c[0]->temp) > 0`,
@@ -94,7 +87,7 @@ var tests = []struct {
 	},
 	{ // 7
 		sql: `SELECT collect(*) as c FROM src1 WHERE name = "dname" HAVING c[2]->temp + temp > 0`,
-		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause."),
+		r:   newErrorStruct("Not allowed to call non-aggregate functions in HAVING clause: binaryExpr:{ binaryExpr:{ binaryExpr:{ binaryExpr:{ $$alias.c[2] } -> jsonFieldName:temp } + src1.temp } > 0 }."),
 	},
 	{ // 8
 		sql: `SELECT deduplicate(temp, true) as de FROM src1 HAVING cardinality(de) > 20`,
