@@ -168,6 +168,12 @@ func convertFormat(f string) (string, error) {
 	out := ""
 	for i := 0; i < len(formatRune); i++ {
 		switch r := formatRune[i]; r {
+		case '\\':
+			i = i + 1
+			if i >= len(formatRune) {
+				return "", fmt.Errorf("%s is invalid", f)
+			}
+			out += string(formatRune[i])
 		case 'Y', 'y':
 			j := 1
 			for ; i+j < lenFormat && j <= 4; j++ {
