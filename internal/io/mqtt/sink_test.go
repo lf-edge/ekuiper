@@ -87,17 +87,19 @@ func TestSinkConfigure(t *testing.T) {
 		{
 			name: "Valid configuration with QoS 0 and no compression",
 			input: map[string]interface{}{
-				"topic":       "testTopic3",
-				"qos":         0,
-				"retained":    false,
-				"compression": "",
-				"server":      "123",
+				"topic":              "testTopic3",
+				"qos":                0,
+				"retained":           false,
+				"compression":        "",
+				"server":             "123",
+				"connectionSelector": "mqtt.local",
 			},
 			expectedAdConf: &AdConf{
 				Tpc:         "testTopic3",
 				Qos:         0,
 				Retained:    false,
 				ResendTopic: "testTopic3",
+				SelId:       "mqtt.local",
 			},
 		},
 		{
