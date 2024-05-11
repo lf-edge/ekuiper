@@ -271,3 +271,12 @@ func TestInterfaceToUnixMilli(t *testing.T) {
 		assert.Equal(t, tt.want, got)
 	}
 }
+
+func TestConvertFormat(t *testing.T) {
+	s, err := convertFormat("yyyy-MM-ddTHH:mm:ssSS\\ZXX")
+	require.NoError(t, err)
+	require.Equal(t, "2006-01-02T15:04:05.00Z-0700", s)
+
+	s, err = convertFormat("\\")
+	require.Error(t, err)
+}
