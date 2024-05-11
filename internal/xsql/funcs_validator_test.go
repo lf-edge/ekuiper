@@ -15,12 +15,11 @@
 package xsql
 
 import (
-	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/lf-edge/ekuiper/internal/testx"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/lf-edge/ekuiper/pkg/ast"
 )
 
@@ -50,7 +49,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT abs(1,2) FROM tbl`,
 			stmt: nil,
-			err:  "Expect 1 arguments but found 2.",
+			err:  "validate function abs error: Expect 1 arguments but found 2.",
 		},
 
 		{
@@ -64,19 +63,19 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT abs(true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function abs error: Expect number - float or int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT abs("test") FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function abs error: Expect number - float or int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT abs(ss) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function abs error: Expect number - float or int type for parameter 1",
 		},
 
 		///
@@ -99,19 +98,19 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT sin(true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function sin error: Expect number - float or int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT sin("test") FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function sin error: Expect number - float or int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT sin(ss) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function sin error: Expect number - float or int type for parameter 1",
 		},
 		///
 		{
@@ -133,19 +132,19 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT tanh(true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function tanh error: Expect number - float or int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT tanh("test") FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function tanh error: Expect number - float or int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT tanh(ss) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function tanh error: Expect number - float or int type for parameter 1",
 		},
 
 		///
@@ -160,25 +159,25 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT bitxor(1.1, 2) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 1",
+			err:  "validate function bitxor error: Expect int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT bitxor(true, 2) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 1",
+			err:  "validate function bitxor error: Expect int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT bitxor(1, ss) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 2",
+			err:  "validate function bitxor error: Expect int type for parameter 2",
 		},
 
 		{
 			s:    `SELECT bitxor(1, 2.2) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 2",
+			err:  "validate function bitxor error: Expect int type for parameter 2",
 		},
 
 		///
@@ -193,13 +192,13 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT bitnot(1.1) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 1",
+			err:  "validate function bitnot error: Expect int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT bitnot(true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 1",
+			err:  "validate function bitnot error: Expect int type for parameter 1",
 		},
 
 		///
@@ -214,19 +213,19 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT mod("1.1", 2) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 1",
+			err:  "validate function mod error: Expect number - float or int type for parameter 1",
 		},
 
 		{
 			s:    `SELECT mod(1.1, true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 2",
+			err:  "validate function mod error: Expect number - float or int type for parameter 2",
 		},
 
 		{
 			s:    `SELECT mod(1, ss) FROM tbl`,
 			stmt: nil,
-			err:  "Expect number - float or int type for parameter 2",
+			err:  "validate function mod error: Expect number - float or int type for parameter 2",
 		},
 
 		///
@@ -241,19 +240,19 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT concat("1.1", 2) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 2",
+			err:  "validate function concat error: Expect string type for parameter 2",
 		},
 
 		{
 			s:    `SELECT concat("1.1", true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 2",
+			err:  "validate function concat error: Expect string type for parameter 2",
 		},
 
 		{
 			s:    `SELECT concat("1", ss) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 2",
+			err:  "validate function concat error: Expect string type for parameter 2",
 		},
 
 		///
@@ -268,13 +267,13 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT regexp_matches(1, "true") FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 1",
+			err:  "validate function regexp_matches error: Expect string type for parameter 1",
 		},
 
 		{
 			s:    `SELECT regexp_matches("1.1", 2) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 2",
+			err:  "validate function regexp_matches error: Expect string type for parameter 2",
 		},
 
 		///
@@ -289,7 +288,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT regexp_replace(field1, "true", true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 3",
+			err:  "validate function regexp_replace error: Expect string type for parameter 3",
 		},
 
 		///
@@ -304,7 +303,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT trim(1) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 1",
+			err:  "validate function trim error: Expect string type for parameter 1",
 		},
 
 		///
@@ -319,7 +318,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT rpad("ff", true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 2",
+			err:  "validate function rpad error: Expect int type for parameter 2",
 		},
 
 		///
@@ -334,19 +333,19 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT substring(field, -1, 4) FROM tbl`,
 			stmt: nil,
-			err:  "The start index should not be a nagtive integer.",
+			err:  "validate function substring error: The start index should not be a nagtive integer.",
 		},
 
 		{
 			s:    `SELECT substring(field, 0, -1) FROM tbl`,
 			stmt: nil,
-			err:  "The end index should be larger than start index.",
+			err:  "validate function substring error: The end index should be larger than start index.",
 		},
 
 		{
 			s:    `SELECT substring(field, 0, true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 3",
+			err:  "validate function substring error: Expect int type for parameter 3",
 		},
 
 		///
@@ -361,7 +360,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT cast("12", "bool") FROM tbl`,
 			stmt: nil,
-			err:  "Expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime, bytea.",
+			err:  "validate function cast error: Expect one of following value for the 2nd parameter: bigint, float, string, boolean, datetime, bytea.",
 		},
 
 		///
@@ -376,7 +375,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT chr(true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 1",
+			err:  "validate function chr error: Expect int type for parameter 1",
 		},
 
 		///
@@ -391,7 +390,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT encode(field, true) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 2",
+			err:  "validate function encode error: Expect string type for parameter 2",
 		},
 
 		///
@@ -406,7 +405,7 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT trunc(5, ss) FROM tbl`,
 			stmt: nil,
-			err:  "Expect int type for parameter 2",
+			err:  "validate function trunc error: Expect int type for parameter 2",
 		},
 
 		///
@@ -421,46 +420,46 @@ func TestFuncValidator(t *testing.T) {
 		{
 			s:    `SELECT sha512(20) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 1",
+			err:  "validate function sha512 error: Expect string type for parameter 1",
 		},
 
 		{
 			s:    `SELECT mqtt("topic") FROM tbl`,
 			stmt: nil,
-			err:  "Expect meta reference type for parameter 1",
+			err:  "validate function mqtt error: Expect meta reference type for parameter 1",
 		},
 
 		{
 			s:    `SELECT mqtt(topic1) FROM tbl`,
 			stmt: nil,
-			err:  "Parameter of mqtt function can be only topic or messageid.",
+			err:  "validate function mqtt error: Parameter of mqtt function can be only topic or messageid.",
 		},
 
 		{
 			s:    `SELECT split_value(topic1) FROM tbl`,
 			stmt: nil,
-			err:  "the arguments for split_value should be 3",
+			err:  "validate function split_value error: the arguments for split_value should be 3",
 		},
 
 		{
 			s:    `SELECT split_value(topic1, 3, 1) FROM tbl`,
 			stmt: nil,
-			err:  "Expect string type for parameter 2",
+			err:  "validate function split_value error: Expect string type for parameter 2",
 		},
 		{
 			s:    `SELECT split_value(topic1, "hello", -1) FROM tbl`,
 			stmt: nil,
-			err:  "The index should not be a nagtive integer.",
+			err:  "validate function split_value error: The index should not be a nagtive integer.",
 		},
 		{
 			s:    `SELECT meta(tbl, "timestamp", 1) FROM tbl`,
 			stmt: nil,
-			err:  "Expect 1 arguments but found 3.",
+			err:  "validate function meta error: Expect 1 arguments but found 3.",
 		},
 		{
 			s:    `SELECT meta("src1.device") FROM tbl`,
 			stmt: nil,
-			err:  "Expect meta reference type for parameter 1",
+			err:  "validate function meta error: Expect meta reference type for parameter 1",
 		},
 		{
 			s:    `SELECT meta(device) FROM tbl`,
@@ -486,33 +485,34 @@ func TestFuncValidator(t *testing.T) {
 			s: `SELECT json_path_query(data, 44) AS data
     FROM characters;`,
 			stmt: nil,
-			err:  "Expect string type for parameter 2",
+			err:  "validate function json_path_query error: Expect string type for parameter 2",
 		},
 		{
 			s:    `SELECT collect() from tbl`,
 			stmt: nil,
-			err:  "Expect 1 arguments but found 0.",
+			err:  "validate function collect error: Expect 1 arguments but found 0.",
 		},
 		{
 			s:    `SELECT deduplicate(abc, temp, true) from tbl`,
 			stmt: nil,
-			err:  "Expect 2 arguments but found 3.",
+			err:  "validate function deduplicate error: Expect 2 arguments but found 3.",
 		},
 		{
 			s:    `SELECT deduplicate(temp, "string") from tbl`,
 			stmt: nil,
-			err:  "Expect bool type for parameter 2",
+			err:  "validate function deduplicate error: Expect bool type for parameter 2",
 		},
 	}
 
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	for i, tt := range tests {
-		// fmt.Printf("Parsing SQL %q.\n", tt.s)
-		stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
-		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			t.Errorf("%d. %q: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.s, tt.err, err)
-		} else if tt.err == "" && !reflect.DeepEqual(tt.stmt, stmt) {
-			t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.stmt, stmt)
-		}
+	for _, tt := range tests {
+		t.Run(tt.s, func(t *testing.T) {
+			stmt, err := NewParser(strings.NewReader(tt.s)).Parse()
+			if tt.err != "" {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tt.err)
+			} else {
+				assert.Equal(t, tt.stmt, stmt)
+			}
+		})
 	}
 }

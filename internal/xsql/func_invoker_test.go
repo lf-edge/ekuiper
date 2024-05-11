@@ -17,6 +17,8 @@ package xsql
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/lf-edge/ekuiper/internal/binder"
 	"github.com/lf-edge/ekuiper/internal/binder/function"
 	"github.com/lf-edge/ekuiper/pkg/ast"
@@ -29,9 +31,8 @@ func TestInvoke(t *testing.T) {
 		return
 	}
 	err = validateFuncs("sum", []ast.Expr{})
-	if err == nil || err.Error() != "Expect 1 arguments but found 0." {
-		t.Error(err)
-	}
+	assert.Error(t, err)
+	assert.EqualError(t, err, "validate function sum error: Expect 1 arguments but found 0.")
 	err = validateFuncs("window_start", []ast.Expr{})
 	if err != nil {
 		t.Error(err)
