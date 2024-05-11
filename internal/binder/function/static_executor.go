@@ -39,7 +39,11 @@ func (f *funcExecutor) ValidateWithName(args []ast.Expr, name string) error {
 		}
 	}
 	// TODO pass in ctx
-	return fs.val(nil, eargs)
+	err := fs.val(nil, eargs)
+	if err != nil {
+		return fmt.Errorf("validate function %s error: %v", name, err)
+	}
+	return nil
 }
 
 func (f *funcExecutor) Validate(_ []interface{}) error {

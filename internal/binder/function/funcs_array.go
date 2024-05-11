@@ -527,7 +527,7 @@ func registerArrayFunc() {
 				}
 				eargs := make([]ast.Expr, len(params))
 				if err := fs.val(nil, eargs); err != nil {
-					return fmt.Errorf("validate function arguments failed."), false
+					return fmt.Errorf("validate %s arguments failed", funcName), false
 				}
 
 				result, ok = fs.exec(ctx, params)
