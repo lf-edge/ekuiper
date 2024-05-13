@@ -1685,47 +1685,31 @@ func (p *Parser) parseOver(c *ast.Call) error {
 		return nil
 	} else if function.IsAnalyticFunc(c.Name) || function.IsWindowFunc(c.Name) {
 		if tok1, _ := p.scanIgnoreWhitespace(); tok1 == ast.LPAREN {
-			if t, _ := p.scanIgnoreWhitespace(); t == ast.PARTITION {
-				if t1, l1 := p.scanIgnoreWhitespace(); t1 == ast.BY {
-					pe := &ast.PartitionExpr{}
-					for {
-						if exp, err := p.ParseExpr(); err != nil {
-							return err
-						} else {
-							pe.Exprs = append(pe.Exprs, exp)
-						}
-						if tok, _ := p.scanIgnoreWhitespace(); tok == ast.COMMA {
-							continue
-						}
-						p.unscan()
-						break
-					}
-					if len(pe.Exprs) == 0 {
-						return fmt.Errorf("PARTITION BY must have at least one expression.")
-					}
-					c.Partition = pe
-				} else {
-					return fmt.Errorf("found %q, expected by after partition.", l1)
-				}
-			} else {
-				p.unscan()
+			partitionExpr, err := p.parsePartitionBy()
+			if err != nil {
+				return err
 			}
-
-			if t, _ := p.scanIgnoreWhitespace(); t == ast.WHEN {
-				if exp, err := p.ParseExpr(); err != nil {
+			c.Partition = partitionExpr
+			if function.IsWindowFunc(c.Name) {
+				orderBy, err := p.parseSorts()
+				if err != nil {
 					return err
-				} else {
-					c.WhenExpr = exp
 				}
-			} else {
-				p.unscan()
+				c.SortFields = orderBy
 			}
-			if c.Partition != nil || c.WhenExpr != nil {
+			if function.IsAnalyticFunc(c.Name) {
+				whenExpr, err := p.parseWhen()
+				if err != nil {
+					return err
+				}
+				c.WhenExpr = whenExpr
+			}
+			if c.Partition != nil || len(c.SortFields) > 0 || c.WhenExpr != nil {
 				if ttt, _ := p.scanIgnoreWhitespace(); ttt != ast.RPAREN {
 					return fmt.Errorf("Found %q, expect right parentheses after OVER ", ttt)
 				}
 			}
-			if c.Partition == nil && c.WhenExpr == nil {
+			if c.Partition == nil && len(c.SortFields) == 0 && c.WhenExpr == nil {
 				ttt, _ := p.scanIgnoreWhitespace()
 				return fmt.Errorf("Found %q after OVER (, expect partition by or when.", ttt)
 			}
@@ -1736,4 +1720,46 @@ func (p *Parser) parseOver(c *ast.Call) error {
 	} else {
 		return fmt.Errorf("Found OVER after non analytic function %s", c.Name)
 	}
+}
+
+func (p *Parser) parsePartitionBy() (*ast.PartitionExpr, error) {
+	if t, _ := p.scanIgnoreWhitespace(); t == ast.PARTITION {
+		if t1, l1 := p.scanIgnoreWhitespace(); t1 == ast.BY {
+			pe := &ast.PartitionExpr{}
+			for {
+				if exp, err := p.ParseExpr(); err != nil {
+					return nil, err
+				} else {
+					pe.Exprs = append(pe.Exprs, exp)
+				}
+				if tok, _ := p.scanIgnoreWhitespace(); tok == ast.COMMA {
+					continue
+				}
+				p.unscan()
+				break
+			}
+			if len(pe.Exprs) == 0 {
+				return nil, fmt.Errorf("PARTITION BY must have at least one expression.")
+			}
+			return pe, nil
+		} else {
+			return nil, fmt.Errorf("found %q, expected by after partition.", l1)
+		}
+	} else {
+		p.unscan()
+	}
+	return nil, nil
+}
+
+func (p *Parser) parseWhen() (ast.Expr, error) {
+	if t, _ := p.scanIgnoreWhitespace(); t == ast.WHEN {
+		if exp, err := p.ParseExpr(); err != nil {
+			return nil, err
+		} else {
+			return exp, nil
+		}
+	} else {
+		p.unscan()
+	}
+	return nil, nil
 }

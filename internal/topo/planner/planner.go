@@ -605,18 +605,9 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			children = []LogicalPlan{p}
 		}
 	}
-
 	if stmt.Having != nil {
 		p = HavingPlan{
 			condition: stmt.Having,
-		}.Init()
-		p.SetChildren(children)
-		children = []LogicalPlan{p}
-	}
-
-	if stmt.SortFields != nil {
-		p = OrderPlan{
-			SortFields: stmt.SortFields,
 		}.Init()
 		p.SetChildren(children)
 		children = []LogicalPlan{p}
@@ -630,6 +621,13 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *api.RuleOption, store kv.
 			p.SetChildren(children)
 			children = []LogicalPlan{p}
 		}
+	}
+	if stmt.SortFields != nil {
+		p = OrderPlan{
+			SortFields: stmt.SortFields,
+		}.Init()
+		p.SetChildren(children)
+		children = []LogicalPlan{p}
 	}
 	srfMapping := extractSRFMapping(stmt)
 	if stmt.Fields != nil {
