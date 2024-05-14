@@ -30,7 +30,7 @@ type ParquetReader struct {
 	rowsReader parquet.Rows
 }
 
-func CreateParquetReader(filename string, config *FileSourceConfig, ctx api.StreamContext) (FormatReader, error) {
+func CreateParquetReader(ctx api.StreamContext, filename string, config *FileSourceConfig) (FormatReader, error) {
 	var (
 		pr  ParquetReader
 		err error

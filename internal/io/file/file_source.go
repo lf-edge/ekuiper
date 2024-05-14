@@ -245,7 +245,7 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 		}
 	case PARQUET_TYPE:
 		var err error
-		fr, err = CreateParquetReader(file, fs.config, ctx)
+		fr, err = CreateParquetReader(ctx, file, fs.config)
 		if err != nil {
 			return err
 		}
