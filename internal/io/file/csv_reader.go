@@ -48,7 +48,7 @@ func (r *CsvReader) Close() error {
 	return nil
 }
 
-func CreateCsvReader(fileStream io.Reader, config *FileSourceConfig, ctx api.StreamContext) (FormatReader, error) {
+func CreateCsvReader(ctx api.StreamContext, fileStream io.Reader, config *FileSourceConfig) (FormatReader, error) {
 	r := csv.NewReader(fileStream)
 	r.Comma = rune(config.Delimiter[0])
 	r.TrimLeadingSpace = true

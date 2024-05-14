@@ -239,7 +239,7 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 				closer.Close()
 			}()
 		}
-		fr, err = GetReader(fs.config.FileType, r, fs.config, ctx)
+		fr, err = GetReader(ctx, fs.config.FileType, r, fs.config)
 		if err != nil {
 			return err
 		}

@@ -26,7 +26,7 @@ func (r *JsonReader) Close() error {
 	return nil
 }
 
-func CreateJsonReader(fileStream io.Reader, config *FileSourceConfig, ctx api.StreamContext) (FormatReader, error) {
+func CreateJsonReader(ctx api.StreamContext, fileStream io.Reader, config *FileSourceConfig) (FormatReader, error) {
 	r := json.NewDecoder(fileStream)
 	reader := &JsonReader{}
 

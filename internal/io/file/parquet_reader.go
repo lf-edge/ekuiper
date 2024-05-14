@@ -31,9 +31,11 @@ type ParquetReader struct {
 }
 
 func CreateParquetReader(filename string, config *FileSourceConfig, ctx api.StreamContext) (FormatReader, error) {
-	var pr ParquetReader
+	var (
+		pr  ParquetReader
+		err error
+	)
 
-	var err error
 	pr.f, err = os.Open(filename)
 	if err != nil {
 		ctx.GetLogger().Error(err)

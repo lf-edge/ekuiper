@@ -38,7 +38,7 @@ func (r *LineReader) Close() error {
 	return nil
 }
 
-func CreateLineReader(fileStream io.Reader, config *FileSourceConfig, ctx api.StreamContext) (FormatReader, error) {
+func CreateLineReader(ctx api.StreamContext, fileStream io.Reader, config *FileSourceConfig) (FormatReader, error) {
 	scanner := bufio.NewScanner(fileStream)
 	scanner.Split(bufio.ScanLines)
 
