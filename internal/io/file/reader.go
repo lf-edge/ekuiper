@@ -29,14 +29,14 @@ type FormatReader interface {
 	Close() error
 }
 
-func GetReader(fileType FileType, fileStream io.Reader, config *FileSourceConfig, ctx api.StreamContext) (FormatReader, error) {
+func GetReader(ctx api.StreamContext, fileType FileType, fileStream io.Reader, config *FileSourceConfig) (FormatReader, error) {
 	switch fileType {
 	case JSON_TYPE:
-		return CreateJsonReader(fileStream, config, ctx)
+		return CreateJsonReader(ctx, fileStream, config)
 	case CSV_TYPE:
-		return CreateCsvReader(fileStream, config, ctx)
+		return CreateCsvReader(ctx, fileStream, config)
 	case LINES_TYPE:
-		return CreateLineReader(fileStream, config, ctx)
+		return CreateLineReader(ctx, fileStream, config)
 	default:
 		return nil, fmt.Errorf("invalid file type %s", fileType)
 	}

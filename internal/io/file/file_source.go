@@ -225,20 +225,35 @@ func (fs *FileSource) Load(ctx api.StreamContext, consumer chan<- api.SourceTupl
 }
 
 func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer chan<- api.SourceTuple) (result error) {
-	r, err := fs.prepareFile(ctx, file)
-	if err != nil {
-		ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
-		return err
-	}
-	meta := map[string]interface{}{
-		"file": file,
-	}
-	defer func() {
-		ctx.GetLogger().Debugf("Finish loading from file %s", file)
-		if closer, ok := r.(io.Closer); ok {
-			ctx.GetLogger().Debugf("Close reader")
-			closer.Close()
+	var fr FormatReader
+	switch fs.config.FileType {
+	case JSON_TYPE, CSV_TYPE, LINES_TYPE:
+		r, err := fs.prepareFile(ctx, file)
+		if err != nil {
+			ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
+			return err
 		}
+		if closer, ok := r.(io.Closer); ok {
+			defer func() {
+				ctx.GetLogger().Debugf("Close reader")
+				closer.Close()
+			}()
+		}
+		fr, err = GetReader(ctx, fs.config.FileType, r, fs.config)
+		if err != nil {
+			return err
+		}
+	case PARQUET_TYPE:
+		var err error
+		fr, err = CreateParquetReader(ctx, file, fs.config)
+		if err != nil {
+			return err
+		}
+	}
+
+	defer func() {
+		fr.Close()
+		ctx.GetLogger().Debugf("Finish loading from file %s", file)
 		if result == nil {
 			switch fs.config.ActionAfterRead {
 			case 1:
@@ -255,25 +270,20 @@ func (fs *FileSource) parseFile(ctx api.StreamContext, file string, consumer cha
 			}
 		}
 	}()
-	return fs.publish(ctx, r, consumer, meta)
+
+	return fs.publish(ctx, fr, consumer, map[string]any{"file": file})
 }
 
-func (fs *FileSource) publish(ctx api.StreamContext, file io.Reader, consumer chan<- api.SourceTuple, meta map[string]interface{}) error {
+func (fs *FileSource) publish(ctx api.StreamContext, fr FormatReader, consumer chan<- api.SourceTuple, meta map[string]any) error {
 	ctx.GetLogger().Debug("Start to load")
 	rcvTime := conf.GetNow()
-
-	r, err := GetReader(fs.config.FileType, file, fs.config, ctx)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
 	ctx.GetLogger().Debug("Sending tuples")
 
 	var m map[string]interface{}
 	for {
+		var err error
 		var tuple api.SourceTuple
-		m, err = r.Read()
+		m, err = fr.Read()
 		if err == io.EOF {
 			break
 		}

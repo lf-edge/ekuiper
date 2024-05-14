@@ -17,9 +17,10 @@ package file
 type FileType string
 
 const (
-	JSON_TYPE  FileType = "json"
-	CSV_TYPE   FileType = "csv"
-	LINES_TYPE FileType = "lines"
+	JSON_TYPE    FileType = "json"
+	CSV_TYPE     FileType = "csv"
+	LINES_TYPE   FileType = "lines"
+	PARQUET_TYPE FileType = "parquet"
 )
 
 const (
@@ -28,9 +29,10 @@ const (
 )
 
 var fileTypes = map[FileType]struct{}{
-	JSON_TYPE:  {},
-	CSV_TYPE:   {},
-	LINES_TYPE: {},
+	JSON_TYPE:    {},
+	CSV_TYPE:     {},
+	LINES_TYPE:   {},
+	PARQUET_TYPE: {},
 }
 
 var compressionTypes = map[string]struct{}{
