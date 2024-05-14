@@ -21,8 +21,9 @@ import (
 
 func init() {
 	gob.Register(time.Time{})
-	gob.Register(make(map[string]interface{}))
+	gob.Register(make(map[string]any))
 	gob.Register(make(map[string][]*Tuple))
-	gob.Register(Tuple{})
-	gob.Register([]interface{}{})
+	gob.Register(&Tuple{})
+	gob.Register([]any{})
+	gob.Register(&RawTuple{})
 }
