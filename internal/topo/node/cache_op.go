@@ -45,6 +45,8 @@ type CacheOp struct {
 }
 
 func NewCacheOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *SinkConf) (*CacheOp, error) {
+	// use channel buffer as memory cache
+	sc.MemoryCacheThreshold = 0
 	c, err := cache.NewSyncCache(ctx, &sc.SinkConf)
 	if err != nil {
 		return nil, err

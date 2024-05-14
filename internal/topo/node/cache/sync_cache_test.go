@@ -121,17 +121,16 @@ func TestCache(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestCache")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
 	s, err := NewSyncCache(ctx, &conf.SinkConf{
-		MemoryCacheThreshold: 2,
-		MaxDiskCache:         4,
-		BufferPageSize:       2,
-		EnableCache:          true,
-		ResendInterval:       0,
-		CleanCacheAtStop:     false,
+		MaxDiskCache:     6,
+		BufferPageSize:   2,
+		EnableCache:      true,
+		ResendInterval:   0,
+		CleanCacheAtStop: false,
 	})
 	assert.NoError(t, err)
 	// prepare data
-	var tuples = make([]any, 10)
-	for i := 0; i < 10; i++ {
+	var tuples = make([]any, 15)
+	for i := 0; i < 15; i++ {
 		tuples[i] = &xsql.RawTuple{
 			Emitter:   "test",
 			Timestamp: int64(i),
@@ -151,7 +150,7 @@ func TestCache(t *testing.T) {
 			length: 0,
 		},
 		{
-			name:   "read in mem",
+			name:   "read in write buffer",
 			inputs: tuples[:2],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
@@ -162,7 +161,7 @@ func TestCache(t *testing.T) {
 			length: 1,
 		},
 		{
-			name:   "read in mem and disk buffer",
+			name:   "read in read and write buffer",
 			inputs: tuples[2:4],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
@@ -173,7 +172,7 @@ func TestCache(t *testing.T) {
 			length: 2,
 		},
 		{
-			name:   "read in mem and disk",
+			name:   "read in disk",
 			inputs: tuples[4:7],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
@@ -188,11 +187,21 @@ func TestCache(t *testing.T) {
 			inputs: tuples[7:],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 3,
+				Timestamp: 8,
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
 			length: 6,
+		},
+		{
+			name: "read in left read buffer",
+			output: &xsql.RawTuple{
+				Emitter:   "test",
+				Timestamp: 9,
+				Rawdata:   []byte("hello"),
+				Metadata:  map[string]any{"topic": "demo"},
+			},
+			length: 5,
 		},
 	}
 	for _, tt := range tests {
@@ -206,6 +215,89 @@ func TestCache(t *testing.T) {
 			assert.Equal(t, tt.length, s.CacheLength, "cache length")
 		})
 	}
+}
+
+func TestCacheInit(t *testing.T) {
+	// Test flush and reload
+	testx.InitEnv("cache2")
+	tempStore, err := state.CreateStore("mock", def.AtMostOnce)
+	assert.NoError(t, err)
+	deleteCachedb()
+	contextLogger := conf.Log.WithField("rule", "TestCache")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
+	s, err := NewSyncCache(ctx, &conf.SinkConf{
+		MemoryCacheThreshold: 0,
+		MaxDiskCache:         4,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       0,
+		CleanCacheAtStop:     false,
+	})
+	assert.NoError(t, err)
+	// prepare data
+	var tuples = make([]any, 10)
+	for i := 0; i < 10; i++ {
+		tuples[i] = &xsql.RawTuple{
+			Emitter:   "test",
+			Timestamp: int64(i),
+			Rawdata:   []byte("hello"),
+			Metadata:  map[string]any{"topic": "demo"},
+		}
+		err = s.AddCache(ctx, tuples[i])
+		assert.NoError(t, err)
+	}
+	assert.Equal(t, 6, s.CacheLength, "cache length before flush")
+	s.Flush(ctx)
+	s = nil
+	s, err = NewSyncCache(ctx, &conf.SinkConf{
+		MemoryCacheThreshold: 0,
+		MaxDiskCache:         4,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       0,
+		CleanCacheAtStop:     false,
+	})
+	assert.NoError(t, err)
+	r, _ := s.PopCache(ctx)
+	assert.Equal(t, 3, s.CacheLength, "cache length after pop")
+	assert.Equal(t, &xsql.RawTuple{
+		Emitter:   "test",
+		Timestamp: int64(6),
+		Rawdata:   []byte("hello"),
+		Metadata:  map[string]any{"topic": "demo"},
+	}, r)
+	s.Flush(ctx)
+	s = nil
+	s, err = NewSyncCache(ctx, &conf.SinkConf{
+		MemoryCacheThreshold: 0,
+		MaxDiskCache:         4,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       0,
+		CleanCacheAtStop:     false,
+	})
+	assert.NoError(t, err)
+	r, _ = s.PopCache(ctx)
+	assert.Equal(t, 2, s.CacheLength, "cache length after pop")
+	assert.Equal(t, &xsql.RawTuple{
+		Emitter:   "test",
+		Timestamp: int64(7),
+		Rawdata:   []byte("hello"),
+		Metadata:  map[string]any{"topic": "demo"},
+	}, r)
+	s.cacheConf.CleanCacheAtStop = true
+	s.Flush(ctx)
+	s = nil
+	s, err = NewSyncCache(ctx, &conf.SinkConf{
+		MemoryCacheThreshold: 0,
+		MaxDiskCache:         2,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       0,
+		CleanCacheAtStop:     true,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 0, s.CacheLength, "cache length after clean")
 }
 
 func deleteCachedb() {
