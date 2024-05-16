@@ -68,7 +68,9 @@ func (m *influxSink2) Ping(_ string, props map[string]interface{}) error {
 	}
 	m.cli = client.NewClientWithOptions(m.conf.Addr, m.conf.Token, options)
 	defer func() {
-		m.cli.Close()
+		if m.cli != nil {
+			m.cli.Close()
+		}
 	}()
 	pingable, err := m.cli.Ping(context.Background())
 	if err != nil || !pingable {
