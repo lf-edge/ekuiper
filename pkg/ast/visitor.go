@@ -107,6 +107,10 @@ func Walk(v Visitor, node Node) {
 			}
 		}
 
+		if len(n.SortFields) > 0 {
+			Walk(v, n.SortFields)
+		}
+
 		if n.WhenExpr != nil {
 			Walk(v, n.WhenExpr)
 		}
