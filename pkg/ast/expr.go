@@ -224,6 +224,9 @@ type Call struct {
 	Cached      bool
 	Partition   *PartitionExpr
 	WhenExpr    Expr
+
+	// This is used for window functions.
+	SortFields SortFields
 }
 
 func (c *Call) expr()    {}
