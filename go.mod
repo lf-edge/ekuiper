@@ -25,7 +25,6 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.7
-	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
@@ -45,6 +44,7 @@ require (
 	github.com/ugorji/go/codec v1.2.12
 	github.com/urfave/cli v1.22.14
 	github.com/valyala/fastjson v1.6.4
+	github.com/yisaer/file-rotatelogs v0.0.0-20240516054310-8347494122ad
 	go.nanomsg.org/mangos/v3 v3.4.2
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/text v0.14.0
