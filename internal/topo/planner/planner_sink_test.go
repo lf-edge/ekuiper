@@ -122,13 +122,14 @@ func TestSinkPlan(t *testing.T) {
 			},
 		},
 		{
-			name: "encrypt and compress sink plan",
+			name: "encrypt and compress and cache sink plan",
 			rule: &def.Rule{
 				Actions: []map[string]any{
 					{
 						"log": map[string]any{
 							"compression": "gzip",
 							"encryption":  "aes",
+							"enableCache": true,
 						},
 					},
 				},
@@ -150,6 +151,9 @@ func TestSinkPlan(t *testing.T) {
 						"op_log_0_3_encrypt",
 					},
 					"op_log_0_3_encrypt": {
+						"op_log_0_4_cache",
+					},
+					"op_log_0_4_cache": {
 						"sink_log_0",
 					},
 				},

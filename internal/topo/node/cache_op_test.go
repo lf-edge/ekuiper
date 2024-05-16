@@ -18,150 +18,166 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
+	"strings"
+	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/maps"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-// TestRun test for
-// 1. cache in memory only
-// 2. cache in memory and disk buffer only
-// 3. cache in memory and disk
-// 4. cache in memory and disk buffer and overflow
-// Each flow test rule restart
-// Each flow use slightly different config like bufferPageSize
-func TestRun(t *testing.T) {
+func TestCacheRun(t *testing.T) {
+	testx.InitEnv("cacheOp")
+	deleteCachedb()
+	timex.Set(0)
+	// prepare data
+	tuples := make([]any, 20)
+	for i := 0; i < 20; i++ {
+		tuples[i] = &xsql.Tuple{
+			Emitter:   "test",
+			Timestamp: int64(i),
+			Message:   map[string]any{"key": "value"},
+			Metadata:  map[string]any{"topic": "demo"},
+		}
+	}
+
 	tests := []struct {
-		sconf   *conf.SinkConf
-		dataIn  [][]map[string]interface{}
-		dataOut [][]map[string]interface{}
-		stopPt  int // restart the rule in this point
+		name         string
+		sendUntil    int
+		receiveCount int
+		lastReceive  any
 	}{
 		{ // 0
-			sconf: &conf.SinkConf{
-				MemoryCacheThreshold: 4,
-				MaxDiskCache:         12,
-				BufferPageSize:       2,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     false,
-			},
-			dataIn: [][]map[string]interface{}{
-				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}},
-			},
-			stopPt: 4,
+			name:         "in channel",
+			sendUntil:    2,
+			receiveCount: 1,
+			lastReceive:  tuples[0],
 		},
 		{ // 1
-			sconf: &conf.SinkConf{
-				MemoryCacheThreshold: 4,
-				MaxDiskCache:         8,
-				BufferPageSize:       2,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     false,
-			},
-			dataIn: [][]map[string]interface{}{
-				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}}, {{"a": 6}},
-			},
-			stopPt: 5,
+			name:         "in disk buffer",
+			sendUntil:    5,
+			receiveCount: 3,
+			lastReceive:  tuples[3],
 		},
-		{ // 2
-			sconf: &conf.SinkConf{
-				MemoryCacheThreshold: 1,
-				MaxDiskCache:         8,
-				BufferPageSize:       1,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     false,
-			},
-			dataIn: [][]map[string]interface{}{
-				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}}, {{"a": 6}},
-			},
-			stopPt: 4,
+		{
+			name:         "disk overflow",
+			sendUntil:    19,
+			receiveCount: 2,
+			lastReceive:  tuples[5],
 		},
-		{ // 3
-			sconf: &conf.SinkConf{
-				MemoryCacheThreshold: 2,
-				MaxDiskCache:         4,
-				BufferPageSize:       2,
-				EnableCache:          true,
-				ResendInterval:       0,
-				CleanCacheAtStop:     false,
-			},
-			dataIn: [][]map[string]interface{}{
-				{{"a": 1}}, {{"a": 2}}, {{"a": 3}}, {{"a": 4}}, {{"a": 5}}, {{"a": 6}}, {{"a": 7}}, {{"a": 8}}, {{"a": 9}}, {{"a": 10}}, {{"a": 11}}, {{"a": 12}}, {{"a": 13}},
-			},
-			dataOut: [][]map[string]interface{}{
-				{{"a": 1}}, {{"a": 6}}, {{"a": 7}}, {{"a": 8}}, {{"a": 9}}, {{"a": 10}}, {{"a": 11}}, {{"a": 12}}, {{"a": 13}},
-			},
-			stopPt: 4,
+		{
+			name: "pull by time",
+			// no send
+			sendUntil:    19,
+			receiveCount: 1,
+			lastReceive:  tuples[6],
+		},
+		{
+			name: "pull by time, receive after dropped tuple",
+			// no send
+			sendUntil:    19,
+			receiveCount: 1,
+			lastReceive:  tuples[13],
+		},
+		{
+			name: "receive all",
+			// no send
+			sendUntil:    19,
+			receiveCount: 5,
+			lastReceive:  tuples[18],
+		},
+		{
+			name: "send in no buffer",
+			// no send
+			sendUntil:    20,
+			receiveCount: 1,
+			lastReceive:  tuples[19],
 		},
 	}
-	testx.InitEnv("cache")
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	tempStore, _ := state.CreateStore("mock", def.AtMostOnce)
-	deleteCachedb()
-	for i, tt := range tests {
-		contextLogger := conf.Log.WithField("rule", fmt.Sprintf("TestRun-%d", i))
-		ctx, cancel := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
-		in := make(chan []map[string]interface{})
-		errCh := make(chan error)
-		var result []interface{}
-		go func() {
-			err := <-errCh
-			t.Log(err)
-			return
-		}()
-		exitCh := make(chan struct{})
-		// send data
-		_ = NewSyncCacheWithExitChanel(ctx, in, errCh, tt.sconf, 100, exitCh)
-		for i := 0; i < tt.stopPt; i++ {
-			in <- tt.dataIn[i]
-			time.Sleep(1 * time.Millisecond)
-		}
-		cancel()
-		// wait a cleanup job done
-		<-exitCh
 
-		// send the second half data
-		ctx, cancel = context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(fmt.Sprintf("rule%d", i), fmt.Sprintf("op%d", i), tempStore).WithCancel()
-		sc := NewSyncCache(ctx, in, errCh, tt.sconf, 100)
-		for i := tt.stopPt; i < len(tt.dataIn); i++ {
-			in <- tt.dataIn[i]
-			time.Sleep(1 * time.Millisecond)
-		}
-	loop:
-		for range tt.dataIn {
-			sc.Ack <- true
-			select {
-			case r := <-sc.Out:
-				result = append(result, r)
-			case <-time.After(1 * time.Second):
-				t.Log(fmt.Sprintf("test %d no data", i))
-				break loop
+	ctx := mockContext.NewMockContext("testCache", "op1")
+	cacheOp, err := NewCacheOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &conf.SinkConf{
+		MemoryCacheThreshold: 2,
+		MaxDiskCache:         4,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       10,
+	})
+	assert.NoError(t, err)
+	// In sink_node planner, set this buffer length
+	out := make(chan any, 2)
+	err = cacheOp.AddOutput(out, "test")
+	assert.NoError(t, err)
+	index := 0
+	errCh := make(chan error)
+	cacheOp.Exec(ctx, errCh)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var r any
+			for index < tt.sendUntil {
+				cacheOp.input <- tuples[index]
+				index++
 			}
-		}
-
-		cancel()
-		if tt.dataOut == nil {
-			tt.dataOut = tt.dataIn
-		}
-		if len(tt.dataOut) != len(result) {
-			t.Errorf("test %d data mismatch\nexpect\t%v\nbut got\t%v", i, tt.dataOut, result)
-			continue
-		}
-		for i, v := range result {
-			if !reflect.DeepEqual(tt.dataOut[i], v) {
-				t.Errorf("test %d data mismatch\nexpect\t%v\nbut got\t%v", i, tt.dataOut, result)
-				break
+			timex.Add(100 * time.Millisecond)
+			for { // wait until all processed
+				processed := cacheOp.statManager.GetMetrics()[2]
+				if processed == int64(tt.sendUntil) {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
 			}
-		}
+			if tt.receiveCount > 0 {
+				for j := 0; j < tt.receiveCount-1; j++ {
+					a := <-out
+					timex.Add(20 * time.Millisecond)
+					ctx.GetLogger().Infof("receive %d", a.(*xsql.Tuple).Timestamp)
+					if j%2 == 0 { // because channel length is 2, so need to wait for each 2
+						time.Sleep(10 * time.Millisecond)
+					}
+				}
+				r = <-out
+				ctx.GetLogger().Infof("receive %d", r.(*xsql.Tuple).Timestamp)
+			}
+			assert.Equal(t, tt.lastReceive, r)
+		})
 	}
+}
+
+func TestRunError(t *testing.T) {
+	ctx, cancel := mockContext.NewMockContext("testError", "op1").WithCancel()
+	// Test multiple output error
+	testx.InitEnv("cacheErr")
+	op, err := NewCacheOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &conf.SinkConf{
+		MemoryCacheThreshold: 2,
+		MaxDiskCache:         4,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       10,
+	})
+	assert.NoError(t, err)
+	err = op.AddOutput(make(chan any, 2), "output1")
+	assert.NoError(t, err)
+	err = op.AddOutput(make(chan any, 2), "output2")
+	assert.NoError(t, err)
+	errCh := make(chan error, 1)
+	op.Exec(ctx, errCh)
+	err = <-errCh
+	assert.Error(t, err)
+	assert.True(t, strings.Contains(err.Error(), "cache op should have only 1 output but got"), err.Error())
+	// Test done
+	maps.Clear(op.outputs)
+	err = op.AddOutput(make(chan any, 2), "output1")
+	assert.NoError(t, err)
+	op.Exec(ctx, errCh)
+	cancel()
+	assert.Equal(t, 0, len(errCh))
 }
 
 func deleteCachedb() {

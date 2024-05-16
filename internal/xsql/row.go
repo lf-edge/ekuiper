@@ -15,6 +15,7 @@
 package xsql
 
 import (
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -313,6 +314,10 @@ func (t *Tuple) Created() time.Time {
 
 func (t *Tuple) AllMeta() map[string]any {
 	return t.Metadata
+}
+
+func (t *Tuple) ToString() string {
+	return strconv.FormatInt(t.Timestamp, 10)
 }
 
 var (

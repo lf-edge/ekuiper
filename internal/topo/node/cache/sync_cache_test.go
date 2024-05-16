@@ -129,7 +129,7 @@ func TestCache(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	// prepare data
-	var tuples = make([]any, 15)
+	tuples := make([]any, 15)
 	for i := 0; i < 15; i++ {
 		tuples[i] = &xsql.RawTuple{
 			Emitter:   "test",
@@ -217,9 +217,110 @@ func TestCache(t *testing.T) {
 	}
 }
 
+func TestCacheCase2(t *testing.T) {
+	testx.InitEnv("cache2")
+	tempStore, err := state.CreateStore("mock", def.AtMostOnce)
+	assert.NoError(t, err)
+	deleteCachedb()
+	contextLogger := conf.Log.WithField("rule", "TestCache")
+	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta("TestCache", "op1", tempStore)
+	s, err := NewSyncCache(ctx, &conf.SinkConf{
+		MemoryCacheThreshold: 2,
+		MaxDiskCache:         4,
+		BufferPageSize:       2,
+		EnableCache:          true,
+		ResendInterval:       10,
+	})
+	assert.NoError(t, err)
+	// prepare data
+	tuples := make([]any, 15)
+	for i := 0; i < 15; i++ {
+		tuples[i] = &xsql.RawTuple{
+			Emitter:   "test",
+			Timestamp: int64(i),
+			Rawdata:   []byte("hello"),
+			Metadata:  map[string]any{"topic": "demo"},
+		}
+	}
+
+	tests := []struct {
+		name   string
+		inputs []any
+		output any
+		length int
+	}{
+		{
+			name:   "read in write buffer",
+			inputs: tuples[4:5],
+			output: &xsql.RawTuple{
+				Emitter:   "test",
+				Timestamp: 4,
+				Rawdata:   []byte("hello"),
+				Metadata:  map[string]any{"topic": "demo"},
+			},
+			length: 0,
+		},
+		{
+			name:   "read in write buffer cont",
+			inputs: tuples[5:6],
+			output: &xsql.RawTuple{
+				Emitter:   "test",
+				Timestamp: 5,
+				Rawdata:   []byte("hello"),
+				Metadata:  map[string]any{"topic": "demo"},
+			},
+			length: 0,
+		},
+		{
+			name:   "read in write buffer cont 2",
+			inputs: tuples[6:7],
+			output: &xsql.RawTuple{
+				Emitter:   "test",
+				Timestamp: 6,
+				Rawdata:   []byte("hello"),
+				Metadata:  map[string]any{"topic": "demo"},
+			},
+			length: 0,
+		},
+		{
+			name:   "write more",
+			inputs: tuples[7:10],
+			output: &xsql.RawTuple{
+				Emitter:   "test",
+				Timestamp: 7,
+				Rawdata:   []byte("hello"),
+				Metadata:  map[string]any{"topic": "demo"},
+			},
+			length: 2,
+		},
+		{
+			name:   "write over",
+			inputs: tuples[10:11],
+			output: &xsql.RawTuple{
+				Emitter:   "test",
+				Timestamp: 8,
+				Rawdata:   []byte("hello"),
+				Metadata:  map[string]any{"topic": "demo"},
+			},
+			length: 2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, tuple := range tt.inputs {
+				err = s.AddCache(ctx, tuple)
+				assert.NoError(t, err)
+			}
+			r, _ := s.PopCache(ctx)
+			assert.Equal(t, tt.output, r)
+			assert.Equal(t, tt.length, s.CacheLength, "cache length")
+		})
+	}
+}
+
 func TestCacheInit(t *testing.T) {
 	// Test flush and reload
-	testx.InitEnv("cache2")
+	testx.InitEnv("cache3")
 	tempStore, err := state.CreateStore("mock", def.AtMostOnce)
 	assert.NoError(t, err)
 	deleteCachedb()
@@ -235,7 +336,7 @@ func TestCacheInit(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	// prepare data
-	var tuples = make([]any, 10)
+	tuples := make([]any, 10)
 	for i := 0; i < 10; i++ {
 		tuples[i] = &xsql.RawTuple{
 			Emitter:   "test",
