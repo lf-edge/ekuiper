@@ -24,7 +24,6 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.2
-	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
@@ -287,6 +286,7 @@ require (
 	github.com/xdg/stringprep v1.0.3 // indirect
 	github.com/xo/dburl v0.13.0 // indirect
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
+	github.com/yisaer/file-rotatelogs v0.0.0-20240516054310-8347494122ad // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
