@@ -118,6 +118,20 @@ func (m *influxSink) Open(ctx api.StreamContext) error {
 	return err
 }
 
+func (m *influxSink) Ping(_ string, props map[string]interface{}) error {
+	if err := m.Configure(props); err != nil {
+		return err
+	}
+	defer func() {
+		if m.cli != nil {
+			m.cli.Close()
+		}
+	}()
+	// Test connection. Put it here to avoid server connection when running test in Configure
+	_, _, err := m.cli.Ping(time.Second * 10)
+	return err
+}
+
 func (m *influxSink) Collect(ctx api.StreamContext, data any) error {
 	logger := ctx.GetLogger()
 	err := m.transformPoints(ctx, data)

@@ -62,7 +62,9 @@ func (m *influxSink2) Ping(_ string, props map[string]interface{}) error {
 		return err
 	}
 	defer func() {
-		m.cli.Close()
+		if m.cli != nil {
+			m.cli.Close()
+		}
 	}()
 	pingable, err := m.cli.Ping(context.Background())
 	if err != nil || !pingable {
