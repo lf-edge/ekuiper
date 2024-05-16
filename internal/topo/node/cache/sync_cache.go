@@ -155,8 +155,8 @@ func (c *SyncCache) appendWriteCache(ctx api.StreamContext) error {
 		}
 		// also delete read buffer which is even older
 		c.CacheLength -= c.readBufferPage.L
+		ctx.GetLogger().Debug("disk full, remove the last page %v", c.readBufferPage)
 		c.readBufferPage.reset()
-		ctx.GetLogger().Debug("disk full, remove the last page")
 	}
 	err := c.store.Set(strconv.Itoa(c.diskPageTail), c.writeBufferPage)
 	if err != nil {
@@ -259,12 +259,15 @@ func (c *SyncCache) deleteDiskPage(ctx api.StreamContext, loaded bool) error {
 func (c *SyncCache) loadFromDisk(ctx api.StreamContext) error {
 	// load page from the disk
 	ctx.GetLogger().Debugf("loading from disk %d. CacheLength: %d, diskSize: %d", c.diskPageTail, c.CacheLength, c.diskSize)
-	ok, err := c.store.Get(strconv.Itoa(c.diskPageHead), c.readBufferPage)
+	// caution, must create a new page instance
+	p := &page{}
+	ok, err := c.store.Get(strconv.Itoa(c.diskPageHead), p)
 	if err != nil {
 		return fmt.Errorf("fail to load disk cache %v", err)
 	} else if !ok {
 		return fmt.Errorf("nothing in the disk, should not happen")
 	}
+	c.readBufferPage = p
 	err = c.deleteDiskPage(ctx, true)
 	if err != nil {
 		return err

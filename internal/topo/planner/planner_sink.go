@@ -143,5 +143,15 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 			newInputs = []node.Emitter{encryptOp}
 		}
 	}
+	// Caching
+	if sc.EnableCache {
+		cacheOp, err := node.NewCacheOp(tp.GetContext(), fmt.Sprintf("%s_%d_cache", sinkName, index), options, &sc.SinkConf)
+		if err != nil {
+			return nil, err
+		}
+		index++
+		tp.AddOperator(newInputs, cacheOp)
+		newInputs = []node.Emitter{cacheOp}
+	}
 	return newInputs, nil
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -39,25 +40,28 @@ type CacheOp struct {
 	// state
 	cache    *cache.SyncCache
 	currItem any
-	// resend timer, only enabled when there is cache. disable when all cache are sent
-	resendTimer   *clock.Timer
+	hasCache bool
+	// send timer, only enabled when there is cache. disable when all cache are sent
+	resendTicker  *clock.Ticker
 	resendTimerCh <-chan time.Time
 }
 
-func NewCacheOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *SinkConf) (*CacheOp, error) {
+func NewCacheOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *conf.SinkConf) (*CacheOp, error) {
 	// use channel buffer as memory cache
-	sc.MemoryCacheThreshold = 0
-	c, err := cache.NewSyncCache(ctx, &sc.SinkConf)
+	c, err := cache.NewSyncCache(ctx, sc)
 	if err != nil {
 		return nil, err
 	}
 	return &CacheOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		cache:           c,
-		cacheConf:       &sc.SinkConf,
+		cacheConf:       sc,
 	}, nil
 }
 
+// Exec ingest data and send through.
+// If channel full, save data to disk cache and start send timer
+// Once all cache sent, stop send timer
 func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	if len(s.outputs) > 1 {
 		infra.DrainError(ctx, fmt.Errorf("cache op should have only 1 output but got %+v", s.outputs), errCh)
@@ -74,13 +78,14 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 				if processed {
 					break
 				}
-				// If already have the cache, append this to cache and resend the currItem
+				// If already have the cache, append this to cache and send the currItem
 				// Otherwise, send out the new data. If blocked, make it currItem
 				s.statManager.IncTotalRecordsIn()
 				s.statManager.ProcessTimeStart()
 
-				if s.cache.CacheLength > 0 { // already have cache
+				if s.hasCache { // already have cache, add current data to cache and send out the cache
 					err := s.cache.AddCache(ctx, data)
+					ctx.GetLogger().Debugf("add data %v to cache", data)
 					if err != nil {
 						s.statManager.IncTotalExceptions(err.Error())
 						s.Broadcast(err)
@@ -91,33 +96,57 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 				} else {
 					s.currItem = data
 				}
-				// Send by custom broadcast, if successful, reset currItem to nil
-				s.Broadcast(s.currItem)
+				s.send()
 
 				s.statManager.ProcessTimeEnd()
 				s.statManager.IncTotalMessagesProcessed(1)
 			case <-s.resendTimerCh:
+				ctx.GetLogger().Debugf("ticker is triggered")
 				s.statManager.ProcessTimeStart()
-				if s.currItem == nil { // current item sent out finally
-					if s.cache.CacheLength > 0 {
-						// read
-						var readOk bool
-						s.currItem, readOk = s.cache.PopCache(s.ctx)
-						if !readOk { // should never happen
-							s.ctx.GetLogger().Errorf("fail to read from cache")
-						}
-					} else {
-						// cancel the timer since all cache are sent
-						s.resendTimer.Stop()
-						break
-					}
-				}
-				// Send by custom broadcast, if successful, reset currItem to nil
-				s.Broadcast(s.currItem)
+				s.send()
 				s.statManager.ProcessTimeEnd()
 			}
 		}
 	}()
+}
+
+func (s *CacheOp) send() {
+	if s.currItem == nil { // current item sent out finally
+		if s.cache.CacheLength > 0 {
+			// read
+			var readOk bool
+			s.currItem, readOk = s.cache.PopCache(s.ctx)
+			if !readOk { // should never happen
+				s.ctx.GetLogger().Errorf("fail to read from cache")
+			} else {
+				s.ctx.GetLogger().Debugf("read from cache %v", s.currItem)
+			}
+		} else {
+			// cancel the timer since all cache are sent
+			s.resendTicker.Stop()
+			s.hasCache = false
+			s.ctx.GetLogger().Debugf("cache all sent, stop ticker")
+			return
+		}
+	}
+	// Send by custom broadcast, if successful, reset currItem to nil
+	s.Broadcast(s.currItem)
+}
+
+func (s *CacheOp) Broadcast(val interface{}) {
+	if _, ok := val.(error); ok && !s.sendError {
+		return
+	}
+	if s.qos >= def.AtLeastOnce {
+		boe := &checkpoint.BufferOrEvent{
+			Data:    val,
+			Channel: s.name,
+		}
+		s.doBroadcast(boe)
+		return
+	}
+	s.doBroadcast(val)
+	return
 }
 
 func (s *CacheOp) doBroadcast(val interface{}) {
@@ -127,15 +156,19 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 	}
 	select {
 	case out <- val:
+		s.ctx.GetLogger().Debugf("send out data %v", val)
 		// send through. The sink must retry until successful
 		s.currItem = nil
 		s.statManager.IncTotalRecordsOut()
 	case <-s.ctx.Done():
 		// rule stop so stop waiting
 	default:
-		s.ctx.GetLogger().Debugf("memory buffer full, start to save cache")
-		// Start the resend interval
-		s.resendTimer = timex.GetTimer(int64(s.cacheConf.ResendInterval))
-		s.resendTimerCh = s.resendTimer.C
+		if !s.hasCache {
+			s.ctx.GetLogger().Debugf("memory buffer full, start to save cache")
+			// Start the send interval
+			s.resendTicker = timex.GetTicker(int64(s.cacheConf.ResendInterval))
+			s.resendTimerCh = s.resendTicker.C
+			s.hasCache = true
+		}
 	}
 }
