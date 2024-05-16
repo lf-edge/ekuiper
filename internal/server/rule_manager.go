@@ -515,15 +515,11 @@ func getAllRulesWithState() ([]ruleWrapper, error) {
 	sort.Strings(ruleIds)
 	rules := make([]ruleWrapper, 0, len(ruleIds))
 	for _, id := range ruleIds {
-		r, err := ruleProcessor.GetRuleById(id)
-		if err != nil {
-			return nil, err
+		rs, ok := registry.Load(id)
+		if ok {
+			s, _ := rs.GetState()
+			rules = append(rules, ruleWrapper{rule: rs.Rule, state: s})
 		}
-		s, err := getRuleState(id)
-		if err != nil {
-			return nil, err
-		}
-		rules = append(rules, ruleWrapper{rule: r, state: s})
 	}
 	return rules, nil
 }

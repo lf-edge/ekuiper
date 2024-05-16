@@ -223,6 +223,25 @@ func (suite *RestTestSuite) Test_sourcesManageHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
+func (suite *RestTestSuite) TestRulesGetStateWrapper() {
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream qwe12() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	// create rule with trigger false
+	ruleJson := `{"id": "rule4441","triggered": false,"sql": "select * from qwe12","actions": [{"log": {}}]}`
+
+	buf2 := bytes.NewBuffer([]byte(ruleJson))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+
+	w, err := getAllRulesWithState()
+	require.NoError(suite.T(), err)
+	require.True(suite.T(), len(w) > 0)
+}
+
 func (suite *RestTestSuite) Test_rulesManageHandler() {
 	// Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
