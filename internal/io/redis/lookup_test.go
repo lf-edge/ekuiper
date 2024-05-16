@@ -134,3 +134,13 @@ func TestLookupSourceDB(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, "redis lookup source db should be in range 0-15", err.Error())
 }
+
+func TestLookUpPingRedis(t *testing.T) {
+	s := &lookupSource{}
+	prop := map[string]interface{}{
+		"datasource": "1",
+		"addr":       addr,
+		"datatype":   "string",
+	}
+	require.NoError(t, s.Ping("1", prop))
+}

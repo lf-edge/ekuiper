@@ -114,6 +114,34 @@ func (m *influxSink) Connect(ctx api.StreamContext) (err error) {
 	return err
 }
 
+func (m *influxSink) Ping(_ string, props map[string]interface{}) (err error) {
+	if err = m.Provision(nil, props); err != nil {
+		return err
+	}
+	var insecureSkip bool
+	if m.tlsconf != nil {
+		insecureSkip = m.tlsconf.InsecureSkipVerify
+	}
+	m.cli, err = client.NewHTTPClient(client.HTTPConfig{
+		Addr:               m.conf.Addr,
+		Username:           m.conf.Username,
+		Password:           m.conf.Password,
+		InsecureSkipVerify: insecureSkip,
+		TLSConfig:          m.tlsconf,
+	})
+	if err != nil {
+		return fmt.Errorf("error creating influx client: %s", err)
+	}
+	defer func() {
+		if m.cli != nil {
+			m.cli.Close()
+		}
+	}()
+	// Test connection. Put it here to avoid server connection when running test in Configure
+	_, _, err = m.cli.Ping(time.Second * 10)
+	return err
+}
+
 func (m *influxSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {
 	return m.collect(ctx, item.ToMap())
 }
