@@ -15,6 +15,7 @@
 package redis
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -91,6 +92,23 @@ func (r *RedisSink) Validate(props map[string]any) error {
 	}
 	r.c = c
 	return nil
+}
+
+func (r *RedisSink) Ping(dataSource string, props map[string]interface{}) error {
+	if err := r.Validate(props); err != nil {
+		return err
+	}
+	cli := redis.NewClient(&redis.Options{
+		Addr:     r.c.Addr,
+		Username: r.c.Username,
+		Password: r.c.Password,
+		DB:       r.c.Db, // use default DB
+	})
+	_, err := cli.Ping(context.Background()).Result()
+	defer func() {
+		cli.Close()
+	}()
+	return err
 }
 
 func (r *RedisSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {

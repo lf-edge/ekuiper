@@ -15,6 +15,7 @@
 package redis
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -40,6 +41,22 @@ type lookupSource struct {
 	c   *conf
 	db  int
 	cli *redis.Client
+}
+
+func (s *lookupSource) Ping(dataSource string, props map[string]interface{}) error {
+	err := s.Validate(props)
+	if err != nil {
+		return err
+	}
+	s.cli = redis.NewClient(&redis.Options{
+		Addr:     s.c.Addr,
+		Username: s.c.Username,
+		Password: s.c.Password,
+		DB:       s.db, // use default DB
+	})
+	defer s.cli.Close()
+	_, err = s.cli.Ping(context.Background()).Result()
+	return err
 }
 
 func (s *lookupSource) Provision(ctx api.StreamContext, props map[string]any) error {
