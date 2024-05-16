@@ -30,9 +30,9 @@ func TestRetry(t *testing.T) {
 			retryIntervalDuration: time.Microsecond,
 		},
 	}
-	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/internal/service/httpExecutorRetry", "return(true)"))
+	require.NoError(t, failpoint.Enable("github.com/lf-edge/ekuiper/internal/v2/service/httpExecutorRetry", "return(true)"))
 	defer func() {
-		failpoint.Disable("github.com/lf-edge/ekuiper/internal/service/httpExecutorRetry")
+		failpoint.Disable("github.com/lf-edge/ekuiper/internal/v2/service/httpExecutorRetry")
 	}()
 	_, err := e.InvokeFunction(nil, "", nil)
 	require.NoError(t, err)
