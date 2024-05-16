@@ -58,9 +58,9 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 			var snk node.DataSinkNode
 			switch ss := s.(type) {
 			case api.BytesCollector:
-				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount)
+				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount, commonConf.ResendInterval)
 			case api.TupleCollector:
-				snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount)
+				snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount, commonConf.ResendInterval)
 			default:
 				err = fmt.Errorf("sink type %s does not implement any collector", name)
 			}
