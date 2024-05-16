@@ -27,8 +27,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
+	"github.com/yisaer/file-rotatelogs"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
