@@ -44,6 +44,16 @@ type lookupSource struct {
 	cli *redis.Client
 }
 
+func (s *lookupSource) Ping(dataSource string, props map[string]interface{}) error {
+	err := s.Configure(dataSource, props)
+	defer func() {
+		if s.cli != nil {
+			s.cli.Close()
+		}
+	}()
+	return err
+}
+
 func (s *lookupSource) Validate(props map[string]interface{}) error {
 	cfg := &conf{}
 	err := cast.MapToStruct(props, cfg)
