@@ -157,6 +157,25 @@ Thank you for your contribution! Please refer to the [CONTRIBUTING.md](./docs/en
 
 To run the benchmark by yourself, please check [the instruction](./test/benchmark/multiple_rules/readme.md).
 
+### nexmark test results
+
+- Nexmark is a benchmark suite used to evaluate the performance of stream processing systems and data flow management systems. It was proposed by the VLDB conference and launched in 2015 to help researchers and developers evaluate and compare different stream processing systems.
+- Through the model described by nexmark, we deployed an eKuiper on a 2C/4G server and deployed EQMX on another server. We will deploy nexmark’s test rules separately on eKuiper.
+- eKuiper's messages will be output through EMQX. eKuiper is not perfectly compatible with the query provided by nexmark, so we have made some changes to nexmark's query, which you can view in [nexmark-sql](./nexmark-sql.md).
+- Analysis results will be sent to eKuiper via MQTT, all data will be ignored.
+
+| Query | Number of messages sent per second | CPU usage |
+|----------|---------|--------|
+| query 1 | 11.4k | |
+| query 2 | 7k | 200% |
+| query 3 | 6k | 168% |
+| query 4 | 2k | 144% |
+| query 6 | 2.87k | 178% |
+| query 7 | 5k | 167% |
+| query 8 | 8k | 194% |
+| query 9 | 4k | 186% |
+| query 10 | 5k | 167% |
+
 ## Documents
 
 Check out the [latest document](https://ekuiper.org/docs/en/latest/) in official website.
