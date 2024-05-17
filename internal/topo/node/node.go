@@ -83,6 +83,10 @@ func (o *defaultNode) RemoveMetrics(ruleId string) {
 }
 
 func (o *defaultNode) Broadcast(val interface{}) {
+	o.BroadcastCustomized(val, o.doBroadcast)
+}
+
+func (o *defaultNode) BroadcastCustomized(val interface{}, broadcastFunc func(val any)) {
 	if _, ok := val.(error); ok && !o.sendError {
 		return
 	}
@@ -91,10 +95,10 @@ func (o *defaultNode) Broadcast(val interface{}) {
 			Data:    val,
 			Channel: o.name,
 		}
-		o.doBroadcast(boe)
+		broadcastFunc(boe)
 		return
 	}
-	o.doBroadcast(val)
+	broadcastFunc(val)
 	return
 }
 

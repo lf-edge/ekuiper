@@ -67,6 +67,7 @@ type SinkConf struct {
 	ResendAlterQueue     bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
 	ResendPriority       int    `json:"resendPriority" yaml:"resendPriority"`
 	ResendIndicatorField string `json:"resendIndicatorField" yaml:"resendIndicatorField"`
+	ResendDestination    string `json:"resendDestination" yaml:"resendDestination"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.

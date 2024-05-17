@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -38,6 +39,29 @@ type SinkNode struct {
 	currentEof     int
 	resendInterval int
 	doCollect      func(ctx api.StreamContext, sink api.Sink, data any) error
+	// channel for resend
+	resendOut chan<- any
+}
+
+func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) *SinkNode {
+	// set collect retry according to cache setting
+	retry := sc.ResendInterval
+	if !sc.EnableCache && !isRetry {
+		retry = 0
+	} else if retry <= 0 {
+		// default retry interval to 100ms
+		retry = 100
+	}
+	// Sink input channel as buffer
+	if isRetry || (sc.EnableCache && !sc.ResendAlterQueue) {
+		rOpt.BufferLength = sc.MemoryCacheThreshold
+	}
+	ctx.GetLogger().Infof("create sink node %s with isRetry %v, resendInterval %d, bufferLength %d", name, isRetry, retry, rOpt.BufferLength)
+	return &SinkNode{
+		defaultSinkNode: newDefaultSinkNode(name, &rOpt),
+		eoflimit:        eoflimit,
+		resendInterval:  retry,
+	}
 }
 
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
@@ -62,22 +86,46 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 				s.statManager.IncTotalRecordsIn()
 				s.statManager.ProcessTimeStart()
 				err = s.doCollect(ctx, s.sink, data)
-				if err != nil {
+				if err != nil { // resend handling when enabling cache. Two cases: 1. send to alter queue with resendOUt. 2. retry (blocking) until success or unrecoverable error if resendInterval is set
 					ctx.GetLogger().Error(err)
 					s.statManager.IncTotalExceptions(err.Error())
-					if s.resendInterval > 0 && errorx.IsIOError(err) {
-						time.Sleep(time.Duration(s.resendInterval) * time.Millisecond)
-						err = s.doCollect(ctx, s.sink, data)
-						ctx.GetLogger().Error("resend error %v", err)
+					if s.resendOut != nil {
+						s.BroadcastCustomized(data, func(val any) {
+							select {
+							case s.resendOut <- val:
+								// do nothing
+							case <-ctx.Done():
+								// rule stop so stop waiting
+							default:
+								s.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to resend sink", s.name))
+							}
+						})
+					} else if s.resendInterval > 0 {
+						for err != nil && errorx.IsIOError(err) {
+							time.Sleep(time.Duration(s.resendInterval) * time.Millisecond)
+							err = s.doCollect(ctx, s.sink, data)
+							ctx.GetLogger().Debugf("resending, got err? %v", err)
+							s.statManager.SetBufferLength(int64(len(s.input)))
+						}
+						if err == nil {
+							s.statManager.IncTotalRecordsOut()
+						} else {
+							ctx.GetLogger().Errorf("resend error %v", err)
+						}
 					}
 				} else {
 					s.statManager.IncTotalRecordsOut()
 				}
 				s.statManager.ProcessTimeEnd()
 				s.statManager.IncTotalMessagesProcessed(1)
+				s.statManager.SetBufferLength(int64(len(s.input)))
 			}
 		}
 	}()
+}
+
+func (s *SinkNode) SetResendOutput(output chan<- any) {
+	s.resendOut = output
 }
 
 func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
@@ -107,15 +155,12 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 }
 
 // NewBytesSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollector, rOpt *def.RuleOption, eoflimit int, resendInterval int) (*SinkNode, error) {
+func NewBytesSinkNode(ctx api.StreamContext, name string, sink api.BytesCollector, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) (*SinkNode, error) {
 	ctx.GetLogger().Infof("create bytes sink node %s", name)
-	return &SinkNode{
-		defaultSinkNode: newDefaultSinkNode(name, rOpt),
-		sink:            sink,
-		doCollect:       bytesCollect,
-		eoflimit:        eoflimit,
-		resendInterval:  resendInterval,
-	}, nil
+	n := newSinkNode(ctx, name, rOpt, eoflimit, sc, isRetry)
+	n.sink = sink
+	n.doCollect = bytesCollect
+	return n, nil
 }
 
 func bytesCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
@@ -134,15 +179,12 @@ func bytesCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 }
 
 // NewTupleSinkNode creates a sink node that collects data from the stream. Do some static validation
-func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollector, rOpt *def.RuleOption, eoflimit int, resendInterval int) (*SinkNode, error) {
+func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollector, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) (*SinkNode, error) {
 	ctx.GetLogger().Infof("create message sink node %s", name)
-	return &SinkNode{
-		defaultSinkNode: newDefaultSinkNode(name, rOpt),
-		sink:            sink,
-		doCollect:       tupleCollect,
-		eoflimit:        eoflimit,
-		resendInterval:  resendInterval,
-	}, nil
+	n := newSinkNode(ctx, name, rOpt, eoflimit, sc, isRetry)
+	n.sink = sink
+	n.doCollect = tupleCollect
+	return n, nil
 }
 
 // return error that cannot be sent
