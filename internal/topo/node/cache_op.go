@@ -101,11 +101,21 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 				s.statManager.ProcessTimeEnd()
 				s.statManager.IncTotalMessagesProcessed(1)
+				l := int64(len(s.input) + s.cache.CacheLength)
+				if s.currItem != nil {
+					l += 1
+				}
+				s.statManager.SetBufferLength(l)
 			case <-s.resendTimerCh:
 				ctx.GetLogger().Debugf("ticker is triggered")
 				s.statManager.ProcessTimeStart()
 				s.send()
 				s.statManager.ProcessTimeEnd()
+				l := int64(len(s.input) + s.cache.CacheLength)
+				if s.currItem != nil {
+					l += 1
+				}
+				s.statManager.SetBufferLength(l)
 			}
 		}
 	}()
