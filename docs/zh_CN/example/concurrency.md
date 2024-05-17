@@ -28,7 +28,7 @@ select concurrency, ts from demo where concurrency > 300 and lag(concurrency) < 
 {"concurrency":200,"ts":4}
 ```
 
-### 总电流持续10s超过200A 
+### 总电流持续10s超过200A
 
 ```sql
 select concurrency from demo group by SLIDINGWINDOW(ss,0,10) over (when concurrency > 200) having min(concurrency) > 200;
