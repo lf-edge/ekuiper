@@ -86,19 +86,10 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	if processed {
 		return
 	}
-	switch d := data.(type) {
-	case error:
-		b.Broadcast(d)
-		b.statManager.IncTotalExceptions(d.Error())
-		return
-	case *xsql.WatermarkTuple:
-		b.Broadcast(d)
-		return
-	}
 
 	b.statManager.IncTotalRecordsIn()
 	b.statManager.ProcessTimeStart()
-	switch input := item.(type) {
+	switch input := data.(type) {
 	case xsql.Row:
 		b.buffer.AddTuple(input)
 	case xsql.Collection:

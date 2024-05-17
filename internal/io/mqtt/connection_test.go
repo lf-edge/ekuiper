@@ -33,17 +33,17 @@ func TestConnectionLC(t *testing.T) {
 		"server": "abc",
 	}
 	ctx := mockContext.NewMockContext("test", "op")
-	connShared1, err := GetConnection(ctx, propsShared)
+	connShared1, err := GetConnection(ctx, "mqtt.localConnection", propsShared)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(connectionPool))
-	_, err = GetConnection(ctx, propsNormal)
+	_, err = GetConnection(ctx, "", propsNormal)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(connectionPool))
-	connShared2, err := GetConnection(ctx, propsShared)
+	connShared2, err := GetConnection(ctx, "mqtt.localConnection", propsShared)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(connectionPool))
 	assert.Equal(t, connShared1, connShared2)
-	_, err = GetConnection(ctx, propsInvalid)
+	_, err = GetConnection(ctx, "", propsInvalid)
 	assert.Error(t, err)
 	assert.Equal(t, err.Error(), "found error when connecting for abc: network Error : dial tcp: address abc: missing port in address")
 	assert.Equal(t, 1, len(connectionPool))
@@ -56,9 +56,9 @@ func TestConnectionLC(t *testing.T) {
 
 	// Test subscribe in the connector test.
 
-	DetachConnection("mqtt.localConnection", "")
+	DetachConnection(connShared1, "mqtt.localConnection", "")
 	assert.Equal(t, 1, len(connectionPool))
-	DetachConnection("mqtt.localConnection", "")
+	DetachConnection(connShared2, "mqtt.localConnection", "")
 	assert.Equal(t, 0, len(connectionPool))
 }
 

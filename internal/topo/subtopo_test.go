@@ -63,7 +63,8 @@ func TestSubtopoLC(t *testing.T) {
 	}
 	assert.Equal(t, ptopo, subTopo.topo)
 	// Test run
-	subTopo.Open(mockContext.NewMockContext("rule1", "abc"), make(chan error))
+	ctx1 := mockContext.NewMockContext("rule1", "abc")
+	subTopo.Open(ctx1, make(chan error))
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, 1, opNode.schemaCount)
 	// Run another
@@ -73,7 +74,8 @@ func TestSubtopoLC(t *testing.T) {
 	subTopo.StoreSchema("rule2", "shared", map[string]*ast.JsonStreamField{
 		"field2": {Type: "string"},
 	}, false)
-	subTopo2.Open(mockContext.NewMockContext("rule2", "abc"), make(chan error))
+	ctx2 := mockContext.NewMockContext("rule2", "abc")
+	subTopo2.Open(ctx2, make(chan error))
 	assert.Equal(t, int32(2), subTopo.refCount.Load())
 	assert.Equal(t, 2, opNode.schemaCount)
 	// Metrics test
@@ -106,10 +108,10 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, []checkpoint.StreamTask{srcNode}, sources)
 	assert.Equal(t, []checkpoint.NonSourceTask{opNode}, ops)
 	// Stop
-	subTopo.Close("rule1")
+	subTopo.Close(ctx1, "rule1")
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, 1, mlen(&subTopoPool))
-	subTopo2.Close("rule2")
+	subTopo2.Close(ctx2, "rule2")
 	assert.Equal(t, int32(0), subTopo.refCount.Load())
 	assert.Equal(t, 0, mlen(&subTopoPool))
 	assert.Equal(t, 2, len(subTopo.schemaReg))
@@ -132,33 +134,36 @@ func TestSubtopoRunError(t *testing.T) {
 	assert.Equal(t, 1, mlen(&subTopoPool))
 	// Test run firstly, successfully
 	assert.Equal(t, false, subTopo.opened.Load())
-	subTopo.Open(mockContext.NewMockContext("rule1", "abc"), make(chan error))
+	ctx1 := mockContext.NewMockContext("rule1", "abc")
+	subTopo.Open(ctx1, make(chan error))
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, true, subTopo.opened.Load())
-	subTopo.Close("rule1")
+	subTopo.Close(ctx1, "rule1")
 	assert.Equal(t, int32(0), subTopo.refCount.Load())
 	assert.Equal(t, 0, mlen(&subTopoPool))
 	time.Sleep(10 * time.Millisecond)
 	assert.Equal(t, false, subTopo.opened.Load())
 	// Test run secondly and thirdly, should fail
 	errCh1 := make(chan error, 1)
-	subTopo.Open(mockContext.NewMockContext("rule1", "abc"), errCh1)
+	ctx1 = mockContext.NewMockContext("rule1", "abc")
+	subTopo.Open(ctx1, errCh1)
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	errCh2 := make(chan error, 1)
 	assert.Equal(t, true, subTopo.opened.Load())
-	subTopo.Open(mockContext.NewMockContext("rule2", "abc"), errCh2)
+	ctx2 := mockContext.NewMockContext("rule2", "abc")
+	subTopo.Open(ctx2, errCh2)
 	assert.Equal(t, int32(2), subTopo.refCount.Load())
 	select {
 	case err := <-errCh1:
 		assert.Equal(t, assert.AnError, err)
-		subTopo.Close("rule1")
+		subTopo.Close(ctx1, "rule1")
 	case <-time.After(1 * time.Second):
 		assert.Fail(t, "Should receive error")
 	}
 	select {
 	case err := <-errCh2:
 		assert.Equal(t, assert.AnError, err)
-		subTopo2.Close("rule2")
+		subTopo2.Close(ctx2, "rule2")
 	case <-time.After(1 * time.Second):
 		assert.Fail(t, "Should receive error")
 	}
@@ -326,6 +331,6 @@ func (m *mockOp) AttachSchema(ctx api.StreamContext, dataSource string, schema m
 	m.schemaCount++
 }
 
-func (m *mockOp) DetachSchema(ruleId string) {
+func (m *mockOp) DetachSchema(ctx api.StreamContext, ruleId string) {
 	m.schemaCount--
 }

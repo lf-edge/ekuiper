@@ -99,7 +99,7 @@ func (s *Topo) Cancel() {
 	for _, src := range s.sources {
 		switch rt := src.(type) {
 		case node.MergeableTopo:
-			rt.Close(s.name)
+			rt.Close(s.ctx, s.name)
 		}
 	}
 }

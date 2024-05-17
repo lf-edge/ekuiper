@@ -15,7 +15,6 @@
 package mqtt
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -26,45 +25,35 @@ var (
 	lock           sync.RWMutex
 )
 
-func GetConnection(ctx api.StreamContext, props map[string]any) (*Connection, error) {
-	var clientId string
-	if sid, ok := props["connectionSelector"]; ok {
-		if s, ok := sid.(string); ok {
-			clientId = s
-		} else {
-			return nil, fmt.Errorf("connectionSelector value: %v is not string", sid)
-		}
-	}
-	if clientId == "" {
+func GetConnection(ctx api.StreamContext, selId string, props map[string]any) (*Connection, error) {
+	if selId == "" {
 		return CreateClient(ctx, "", props)
 	}
 	lock.Lock()
 	defer lock.Unlock()
-	if conn, ok := connectionPool[clientId]; ok {
+	if conn, ok := connectionPool[selId]; ok {
 		conn.attach()
 		return conn, nil
 	} else {
-		cli, err := CreateClient(ctx, clientId, props)
+		cli, err := CreateClient(ctx, selId, props)
 		if err != nil {
 			return nil, err
 		}
-		connectionPool[clientId] = cli
+		connectionPool[selId] = cli
 		return cli, nil
 	}
 }
 
-func DetachConnection(clientId string, subscribedTopic string) {
+func DetachConnection(conn *Connection, selId string, subscribedTopic string) {
+	var closed bool
+	if subscribedTopic != "" {
+		closed = conn.detachSub(subscribedTopic)
+	} else {
+		closed = conn.detachPub()
+	}
 	lock.Lock()
 	defer lock.Unlock()
-	if conn, ok := connectionPool[clientId]; ok {
-		var closed bool
-		if subscribedTopic != "" {
-			closed = conn.detachSub(subscribedTopic)
-		} else {
-			closed = conn.detachPub()
-		}
-		if closed {
-			delete(connectionPool, clientId)
-		}
+	if _, ok := connectionPool[selId]; closed && ok {
+		delete(connectionPool, selId)
 	}
 }
