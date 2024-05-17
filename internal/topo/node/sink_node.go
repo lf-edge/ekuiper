@@ -102,7 +102,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						})
 					} else if s.resendInterval > 0 {
 						for err != nil && errorx.IsIOError(err) {
-							time.Sleep(time.Duration(s.resendInterval) * time.Millisecond)
+							timex.Sleep(time.Duration(s.resendInterval) * time.Millisecond)
 							err = s.doCollect(ctx, s.sink, data)
 							ctx.GetLogger().Debugf("resending, got err? %v", err)
 							s.statManager.SetBufferLength(int64(len(s.input)))

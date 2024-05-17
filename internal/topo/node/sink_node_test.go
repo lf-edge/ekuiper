@@ -16,12 +16,17 @@ package node
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestNewSinkNode(t *testing.T) {
@@ -90,3 +95,96 @@ func TestNewSinkNode(t *testing.T) {
 		})
 	}
 }
+
+func TestRetry(t *testing.T) {
+	ctx, cancel := mockContext.NewMockContext("resendout", "sink").WithCancel()
+	s := &mockResendSink{failTimes: 2}
+	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
+		BufferLength: 1024,
+	}, 1, &conf.SinkConf{
+		ResendInterval:       100,
+		EnableCache:          true,
+		MemoryCacheThreshold: 10,
+	}, true)
+	assert.NoError(t, err)
+	data := &xsql.RawTuple{
+		Emitter:   "",
+		Timestamp: 1,
+	}
+	errCh := make(chan error, 1)
+	n.Exec(ctx, errCh)
+	n.input <- data
+	for {
+		timex.Add(50 * time.Millisecond)
+		processed := n.statManager.GetMetrics()[2]
+		if processed == int64(1) {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	cancel()
+	assert.Equal(t, s.val, data)
+}
+
+func TestResendOut(t *testing.T) {
+	ctx, cancel := mockContext.NewMockContext("resendout", "sink").WithCancel()
+	s := &mockResendSink{failTimes: 10}
+	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
+		BufferLength: 1024,
+	}, 1, &conf.SinkConf{
+		ResendInterval:       100,
+		EnableCache:          true,
+		MemoryCacheThreshold: 10,
+		ResendAlterQueue:     true,
+	}, true)
+	assert.NoError(t, err)
+	alertCh := make(chan any, 10)
+	n.SetResendOutput(alertCh)
+	data := &xsql.RawTuple{
+		Emitter:   "",
+		Timestamp: 1,
+	}
+	errCh := make(chan error, 1)
+	n.Exec(ctx, errCh)
+	go func() {
+		n.input <- data
+	}()
+	got := false
+	select {
+	case d := <-alertCh:
+		assert.Equal(t, data, d)
+		got = true
+	case e := <-errCh:
+		assert.NoError(t, e)
+	}
+	cancel()
+	assert.True(t, got)
+}
+
+type mockResendSink struct {
+	failTimes int
+	val       any
+}
+
+func (m *mockResendSink) Provision(ctx api.StreamContext, configs map[string]any) error {
+	return nil
+}
+
+func (m *mockResendSink) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *mockResendSink) Connect(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *mockResendSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
+	if m.failTimes > 0 {
+		m.failTimes--
+		return errorx.NewIOErr("fake error")
+	}
+	m.val = item
+	return nil
+}
+
+var _ api.BytesCollector = &mockResendSink{}
