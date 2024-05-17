@@ -23,8 +23,7 @@ require (
 	github.com/jhump/protoreflect v1.15.3
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
-	github.com/klauspost/compress v1.17.2
-	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+	github.com/klauspost/compress v1.17.7
 	github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
@@ -41,6 +40,7 @@ require (
 	github.com/ugorji/go/codec v1.2.11
 	github.com/urfave/cli v1.22.14
 	github.com/valyala/fastjson v1.6.4
+	github.com/yisaer/file-rotatelogs v0.0.0-20240516054310-8347494122ad
 	go.nanomsg.org/mangos/v3 v3.4.2
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/text v0.14.0
@@ -247,7 +247,6 @@ require (
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/posener/order v0.0.1 // indirect
 	github.com/prestodb/presto-go-client v0.0.0-20220921130148-c3f935ff1cf9 // indirect
 	github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
