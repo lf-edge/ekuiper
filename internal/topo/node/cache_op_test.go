@@ -108,7 +108,7 @@ func TestCacheRun(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       10,
+		ResendInterval:       "10",
 	})
 	assert.NoError(t, err)
 	// In sink_node planner, set this buffer length
@@ -159,7 +159,7 @@ func TestRunError(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       10,
+		ResendInterval:       "10",
 	})
 	assert.NoError(t, err)
 	err = op.AddOutput(make(chan any, 2), "output1")
