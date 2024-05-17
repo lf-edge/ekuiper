@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -140,23 +139,7 @@ func (s *CacheOp) send() {
 		}
 	}
 	// Send by custom broadcast, if successful, reset currItem to nil
-	s.Broadcast(s.currItem)
-}
-
-func (s *CacheOp) Broadcast(val interface{}) {
-	if _, ok := val.(error); ok && !s.sendError {
-		return
-	}
-	if s.qos >= def.AtLeastOnce {
-		boe := &checkpoint.BufferOrEvent{
-			Data:    val,
-			Channel: s.name,
-		}
-		s.doBroadcast(boe)
-		return
-	}
-	s.doBroadcast(val)
-	return
+	s.BroadcastCustomized(s.currItem, s.doBroadcast)
 }
 
 func (s *CacheOp) doBroadcast(val interface{}) {

@@ -124,10 +124,19 @@ func (s *Topo) AddSink(inputs []node.Emitter, snk node.DataSinkNode) *Topo {
 	return s
 }
 
+func (s *Topo) AddSinkAlterOperator(sink *node.SinkNode, operator node.OperatorNode) *Topo {
+	ch, _ := operator.GetInput()
+	sink.SetResendOutput(ch)
+	operator.AddInputCount()
+	s.addEdge(sink, operator, "op")
+	s.ops = append(s.ops, operator)
+	return s
+}
+
 func (s *Topo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *Topo {
+	ch, opName := operator.GetInput()
 	for _, input := range inputs {
 		// add rule id to make operator name unique
-		ch, opName := operator.GetInput()
 		_ = input.AddOutput(ch, fmt.Sprintf("%s_%s", s.name, opName))
 		operator.AddInputCount()
 		switch rt := input.(type) {
@@ -145,6 +154,8 @@ func (s *Topo) addEdge(from node.TopNode, to node.TopNode, toType string) {
 	fromType := "op"
 	if _, ok := from.(node.DataSourceNode); ok {
 		fromType = "source"
+	} else if _, ok := from.(*node.SinkNode); ok {
+		fromType = "sink"
 	}
 	f := fmt.Sprintf("%s_%s", fromType, from.GetName())
 	t := fmt.Sprintf("%s_%s", toType, to.GetName())
