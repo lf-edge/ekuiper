@@ -20,16 +20,14 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 // AdConf is the advanced configuration for the mqtt sink
 type AdConf struct {
-	Tpc         string `json:"topic"`
-	Qos         byte   `json:"qos"`
-	Retained    bool   `json:"retained"`
-	SelId       string `json:"connectionSelector"`
-	ResendTopic string `json:"resendDestination"`
+	Tpc      string `json:"topic"`
+	Qos      byte   `json:"qos"`
+	Retained bool   `json:"retained"`
+	SelId    string `json:"connectionSelector"`
 }
 
 type Sink struct {
@@ -58,9 +56,6 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 		return fmt.Errorf("invalid qos value %v, the value could be only int 0 or 1 or 2", adconf.Qos)
 	}
 	ms.config = ps
-	if adconf.ResendTopic == "" {
-		adconf.ResendTopic = adconf.Tpc
-	}
 	ms.adconf = adconf
 	return nil
 }
@@ -89,12 +84,7 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", tpc)
-	token := ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw())
-	err := handleToken(token)
-	if err != nil {
-		return errorx.NewIOErr(fmt.Sprintf("found error when publishing to topic %s: %s", ms.adconf.Tpc, err))
-	}
-	return nil
+	return ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw())
 }
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
