@@ -58,16 +58,17 @@ type tlsConf struct {
 }
 
 type SinkConf struct {
-	MemoryCacheThreshold int    `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
-	MaxDiskCache         int    `json:"maxDiskCache" yaml:"maxDiskCache"`
-	BufferPageSize       int    `json:"bufferPageSize" yaml:"bufferPageSize"`
-	EnableCache          bool   `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       any    `json:"resendInterval" yaml:"resendInterval"`
-	CleanCacheAtStop     bool   `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
-	ResendAlterQueue     bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
-	ResendPriority       int    `json:"resendPriority" yaml:"resendPriority"`
-	ResendIndicatorField string `json:"resendIndicatorField" yaml:"resendIndicatorField"`
-	ResendDestination    string `json:"resendDestination" yaml:"resendDestination"`
+	MemoryCacheThreshold   int  `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
+	MaxDiskCache           int  `json:"maxDiskCache" yaml:"maxDiskCache"`
+	BufferPageSize         int  `json:"bufferPageSize" yaml:"bufferPageSize"`
+	EnableCache            bool `json:"enableCache" yaml:"enableCache"`
+	ResendInterval         any  `json:"resendInterval" yaml:"resendInterval"`
+	ResendIntervalDuration time.Duration
+	CleanCacheAtStop       bool   `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
+	ResendAlterQueue       bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
+	ResendPriority         int    `json:"resendPriority" yaml:"resendPriority"`
+	ResendIndicatorField   string `json:"resendIndicatorField" yaml:"resendIndicatorField"`
+	ResendDestination      string `json:"resendDestination" yaml:"resendDestination"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.
@@ -88,11 +89,12 @@ func (sc *SinkConf) Validate() error {
 		Log.Warnf("bufferPageSize is less than or equal to 0, set to 256")
 		errs = errors.Join(errs, errors.New("bufferPageSize:bufferPageSize must be positive"))
 	}
-	d, err := cast.ConvertDuration(sc.ResendInterval)
+	var err error
+	sc.ResendIntervalDuration, err = cast.ConvertDuration(sc.ResendInterval)
 	if err != nil {
 		errs = errors.Join(errs, err)
 	}
-	if d < 0 {
+	if sc.ResendIntervalDuration < 0 {
 		errs = errors.Join(errs, errors.New("resendInterval:resendInterval must be positive"))
 	}
 

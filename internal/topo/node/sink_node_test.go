@@ -35,13 +35,13 @@ func TestNewSinkNode(t *testing.T) {
 		name           string
 		sc             *conf.SinkConf
 		isRetry        bool
-		resendInterval int
+		resendInterval time.Duration
 		bufferLength   int
 	}{
 		{
 			name: "normal sink",
 			sc: &conf.SinkConf{
-				ResendInterval: 100,
+				ResendIntervalDuration: 100 * time.Millisecond,
 			},
 			isRetry:        false,
 			resendInterval: 0,
@@ -50,38 +50,38 @@ func TestNewSinkNode(t *testing.T) {
 		{
 			name: "linear cache sink",
 			sc: &conf.SinkConf{
-				ResendInterval:       100,
-				EnableCache:          true,
-				MemoryCacheThreshold: 10,
+				ResendIntervalDuration: 100 * time.Millisecond,
+				EnableCache:            true,
+				MemoryCacheThreshold:   10,
 			},
 			isRetry:        false,
-			resendInterval: 100,
+			resendInterval: 100 * time.Millisecond,
 			bufferLength:   10,
 		},
 		{
 			name: "retry cache normal sink",
 			sc: &conf.SinkConf{
-				ResendInterval:       100,
-				EnableCache:          true,
-				MemoryCacheThreshold: 10,
-				ResendAlterQueue:     true,
+				ResendIntervalDuration: 100 * time.Millisecond,
+				EnableCache:            true,
+				MemoryCacheThreshold:   10,
+				ResendAlterQueue:       true,
 			},
 			isRetry: false,
 			// resend interval is set but no use
-			resendInterval: 100,
+			resendInterval: 100 * time.Millisecond,
 			bufferLength:   1024,
 		},
 		{
 			name: "retry cache resend sink",
 			sc: &conf.SinkConf{
-				ResendInterval:       100,
-				EnableCache:          true,
-				MemoryCacheThreshold: 10,
-				ResendAlterQueue:     true,
+				ResendIntervalDuration: 100 * time.Millisecond,
+				EnableCache:            true,
+				MemoryCacheThreshold:   10,
+				ResendAlterQueue:       true,
 			},
 			isRetry: true,
 			// resend interval is set but no use
-			resendInterval: 100,
+			resendInterval: 100 * time.Millisecond,
 			bufferLength:   10,
 		},
 	}
