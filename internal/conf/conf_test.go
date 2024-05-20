@@ -18,10 +18,12 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func TestSourceConfValidate(t *testing.T) {
@@ -93,18 +95,18 @@ func TestRuleOptionValidate(t *testing.T) {
 	}{
 		{
 			s: &def.RuleOption{
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 			},
 			e: &def.RuleOption{
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 			},
 		},
 		{
 			s: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     0,
@@ -115,10 +117,10 @@ func TestRuleOptionValidate(t *testing.T) {
 				},
 			},
 			e: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     0,
@@ -131,10 +133,10 @@ func TestRuleOptionValidate(t *testing.T) {
 		},
 		{
 			s: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -145,10 +147,10 @@ func TestRuleOptionValidate(t *testing.T) {
 				},
 			},
 			e: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -161,10 +163,10 @@ func TestRuleOptionValidate(t *testing.T) {
 		},
 		{
 			s: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -175,10 +177,10 @@ func TestRuleOptionValidate(t *testing.T) {
 				},
 			},
 			e: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -191,10 +193,10 @@ func TestRuleOptionValidate(t *testing.T) {
 		},
 		{
 			s: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(time.Second), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     -2,
@@ -205,10 +207,10 @@ func TestRuleOptionValidate(t *testing.T) {
 				},
 			},
 			e: &def.RuleOption{
-				LateTol:            1000,
+				LateTol:            cast.DurationConf(time.Second),
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: "300s", // 5 minutes
+				CheckpointInterval: cast.DurationConf(time.Second), // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     0,
@@ -218,18 +220,21 @@ func TestRuleOptionValidate(t *testing.T) {
 					JitterFactor: 0.1,
 				},
 			},
-			err: "multiple errors",
+			err: "invalidRestartMultiplier:restart multiplier must be greater than 0\ninvalidRestartAttempts:restart attempts must be greater than 0\ninvalidRestartDelay:restart delay must be greater than 0\ninvalidRestartMaxDelay:restart maxDelay must be greater than 0\ninvalidRestartJitterFactor:restart jitterFactor must between [0, 1)",
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for i, tt := range tests {
-		err := ValidateRuleOption(tt.s)
-		if err != nil && tt.err == "" {
-			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
-		}
-		if !reflect.DeepEqual(tt.s, tt.e) {
-			t.Errorf("%d\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.s, tt.e)
-		}
+		t.Run(fmt.Sprintf("test_%d", i), func(t *testing.T) {
+			err := ValidateRuleOption(tt.s)
+			if tt.err == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.s, tt.e)
+			} else {
+				assert.Error(t, err)
+				assert.Equal(t, tt.err, err.Error())
+			}
+		})
 	}
 }
 
@@ -246,7 +251,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -260,7 +265,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -274,7 +279,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         -1,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -288,7 +293,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       0,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -302,7 +307,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "-1s",
+				ResendInterval:       cast.DurationConf(-time.Second),
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -316,7 +321,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -330,7 +335,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -344,7 +349,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         128,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -358,7 +363,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         300,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -372,7 +377,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       "0s",
+				ResendInterval:       0,
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       2,

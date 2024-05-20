@@ -17,6 +17,7 @@ package planner
 import (
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
@@ -132,7 +133,7 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 	newInputs := inputs
 	// Batch enabled
 	if sc.BatchSize > 0 || sc.LingerInterval > 0 {
-		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, sc.LingerInterval)
+		batchOp, err := node.NewBatchOp(fmt.Sprintf("%s_%d_batch", sinkName, index), options, sc.BatchSize, time.Duration(sc.LingerInterval))
 		if err != nil {
 			return nil, err
 		}

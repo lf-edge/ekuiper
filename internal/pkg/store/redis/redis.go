@@ -18,8 +18,6 @@
 package redis
 
 import (
-	"time"
-
 	"github.com/redis/go-redis/v9"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
@@ -31,7 +29,7 @@ func NewRedisFromConf(c definition.Config) *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:        cast.JoinHostPortInt(conf.Host, conf.Port),
 		Password:    conf.Password,
-		DialTimeout: time.Duration(conf.Timeout) * time.Millisecond,
+		DialTimeout: conf.Timeout,
 	})
 }
 

@@ -32,12 +32,12 @@ import (
 )
 
 type sinkConf struct {
-	RollingInterval    int64          `json:"rollingInterval"`
+	RollingInterval    time.Duration  `json:"rollingInterval"`
 	RollingCount       int            `json:"rollingCount"`
 	RollingNamePattern string         `json:"rollingNamePattern"` // where to add the timestamp to the file name
 	RollingHook        string         `json:"rollingHook"`
 	RollingHookProps   map[string]any `json:"rollingHookProps"`
-	CheckInterval      int64          `json:"checkInterval"`
+	CheckInterval      time.Duration  `json:"checkInterval"`
 	Path               string         `json:"path"` // support dynamic property, when rolling, make sure the path is updated
 	FileType           FileType       `json:"fileType"`
 	HasHeader          bool           `json:"hasHeader"`
@@ -61,7 +61,7 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 		RollingCount:  1000000,
 		Path:          "cache",
 		FileType:      LINES_TYPE,
-		CheckInterval: (5 * time.Minute).Milliseconds(),
+		CheckInterval: 5 * time.Minute,
 	}
 	if err := cast.MapToStruct(props, c); err != nil {
 		return err
@@ -129,7 +129,7 @@ func (m *fileSink) Connect(ctx api.StreamContext) error {
 				case now := <-t.C:
 					m.mux.Lock()
 					for k, v := range m.fws {
-						if now.Sub(v.Start) > time.Duration(m.c.RollingInterval)*time.Millisecond {
+						if now.Sub(v.Start) > m.c.RollingInterval {
 							err := m.roll(ctx, k, v)
 							// TODO how to deal with this error
 							if err != nil {

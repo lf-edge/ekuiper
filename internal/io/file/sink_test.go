@@ -132,7 +132,7 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestFileSink_Configure(t *testing.T) {
-	defaultCheckInterval := (5 * time.Minute).Milliseconds()
+	defaultCheckInterval := 5 * time.Minute
 
 	tests := []struct {
 		name string
@@ -152,7 +152,7 @@ func TestFileSink_Configure(t *testing.T) {
 		{
 			name: "new props",
 			c: &sinkConf{
-				CheckInterval:      500,
+				CheckInterval:      500 * time.Millisecond,
 				Path:               "test",
 				FileType:           CSV_TYPE,
 				Format:             message.FormatDelimited,
@@ -161,7 +161,7 @@ func TestFileSink_Configure(t *testing.T) {
 				RollingNamePattern: "none",
 			},
 			p: map[string]interface{}{
-				"checkInterval":      500,
+				"checkInterval":      "500ms",
 				"path":               "test",
 				"fileType":           "csv",
 				"format":             message.FormatDelimited,
@@ -174,7 +174,7 @@ func TestFileSink_Configure(t *testing.T) {
 				CheckInterval:   defaultCheckInterval,
 				Path:            "cache",
 				FileType:        LINES_TYPE,
-				RollingInterval: 500,
+				RollingInterval: 500 * time.Millisecond,
 				RollingCount:    0,
 			},
 			p: map[string]interface{}{
@@ -188,12 +188,12 @@ func TestFileSink_Configure(t *testing.T) {
 				CheckInterval:   defaultCheckInterval,
 				Path:            "cache",
 				FileType:        LINES_TYPE,
-				RollingInterval: 500,
+				RollingInterval: 5 * time.Second,
 				RollingCount:    0,
 				Fields:          []string{"c", "a", "b"},
 			},
 			p: map[string]interface{}{
-				"rollingInterval": 500,
+				"rollingInterval": "5s",
 				"rollingCount":    0,
 				"fields":          []string{"c", "a", "b"},
 			},

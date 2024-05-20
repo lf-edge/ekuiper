@@ -17,6 +17,7 @@ package node
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -45,12 +46,12 @@ func TestDecompressOp_Exec(t *testing.T) {
 	op.Exec(ctx, errCh)
 
 	cases := []any{
-		&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}},
+		&xsql.RawTuple{Emitter: "test", Rawdata: []byte("{\"a\":1,\"b\":2}"), Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
 		errors.New("go through error"),
 		"invalid",
 	}
 	expects := [][]any{
-		{&xsql.RawTuple{Emitter: "test", Rawdata: []byte("mock decompress"), Timestamp: 111, Metadata: map[string]any{"topic": "demo", "qos": 1}}},
+		{&xsql.RawTuple{Emitter: "test", Rawdata: []byte("mock decompress"), Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}}},
 		{errors.New("go through error")},
 		{errors.New("unsupported data received: invalid")},
 	}

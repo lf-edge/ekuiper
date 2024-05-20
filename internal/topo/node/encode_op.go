@@ -84,7 +84,7 @@ func tupleCopy(ctx api.StreamContext, converter message.Converter, st any, messa
 		r := &xsql.RawTuple{Rawdata: raw}
 		if ss, ok := st.(api.MetaInfo); ok {
 			r.Metadata = ss.AllMeta()
-			r.Timestamp = ss.Created().UnixMilli()
+			r.Timestamp = ss.Created()
 		}
 		if ss, ok := st.(api.HasDynamicProps); ok {
 			r.Props = ss.AllProps()

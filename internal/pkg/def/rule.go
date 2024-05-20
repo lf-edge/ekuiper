@@ -14,21 +14,27 @@
 
 package def
 
+import (
+	"time"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+)
+
 type RuleOption struct {
-	Debug              bool             `json:"debug" yaml:"debug"`
-	LogFilename        string           `json:"logFilename" yaml:"logFilename"`
-	IsEventTime        bool             `json:"isEventTime" yaml:"isEventTime"`
-	LateTol            int64            `json:"lateTolerance" yaml:"lateTolerance"`
-	Concurrency        int              `json:"concurrency" yaml:"concurrency"`
-	BufferLength       int              `json:"bufferLength" yaml:"bufferLength"`
-	SendMetaToSink     bool             `json:"sendMetaToSink" yaml:"sendMetaToSink"`
-	SendError          bool             `json:"sendError" yaml:"sendError"`
-	Qos                Qos              `json:"qos" yaml:"qos"`
-	CheckpointInterval any              `json:"checkpointInterval" yaml:"checkpointInterval"`
-	Restart            *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
-	Cron               string           `json:"cron" yaml:"cron"`
-	Duration           string           `json:"duration" yaml:"duration"`
-	CronDatetimeRange  []DatetimeRange  `json:"cronDatetimeRange" yaml:"cronDatetimeRange"`
+	Debug              bool              `json:"debug" yaml:"debug"`
+	LogFilename        string            `json:"logFilename" yaml:"logFilename"`
+	IsEventTime        bool              `json:"isEventTime" yaml:"isEventTime"`
+	LateTol            cast.DurationConf `json:"lateTolerance" yaml:"lateTolerance"`
+	Concurrency        int               `json:"concurrency" yaml:"concurrency"`
+	BufferLength       int               `json:"bufferLength" yaml:"bufferLength"`
+	SendMetaToSink     bool              `json:"sendMetaToSink" yaml:"sendMetaToSink"`
+	SendError          bool              `json:"sendError" yaml:"sendError"`
+	Qos                Qos               `json:"qos" yaml:"qos"`
+	CheckpointInterval cast.DurationConf `json:"checkpointInterval" yaml:"checkpointInterval"`
+	Restart            *RestartStrategy  `json:"restartStrategy" yaml:"restartStrategy"`
+	Cron               string            `json:"cron" yaml:"cron"`
+	Duration           string            `json:"duration" yaml:"duration"`
+	CronDatetimeRange  []DatetimeRange   `json:"cronDatetimeRange" yaml:"cronDatetimeRange"`
 }
 
 type DatetimeRange struct {
@@ -39,11 +45,11 @@ type DatetimeRange struct {
 }
 
 type RestartStrategy struct {
-	Attempts     int     `json:"attempts" yaml:"attempts"`
-	Delay        int     `json:"delay" yaml:"delay"`
-	Multiplier   float64 `json:"multiplier" yaml:"multiplier"`
-	MaxDelay     int     `json:"maxDelay" yaml:"maxDelay"`
-	JitterFactor float64 `json:"jitter" yaml:"jitter"`
+	Attempts     int               `json:"attempts" yaml:"attempts"`
+	Delay        cast.DurationConf `json:"delay" yaml:"delay"`
+	Multiplier   float64           `json:"multiplier" yaml:"multiplier"`
+	MaxDelay     cast.DurationConf `json:"maxDelay" yaml:"maxDelay"`
+	JitterFactor float64           `json:"jitter" yaml:"jitter"`
 }
 
 type PrintableTopo struct {
@@ -102,14 +108,14 @@ func GetDefaultRule(name, sql string) *Rule {
 		Id:  name,
 		Sql: sql,
 		Options: &RuleOption{
+			LateTol:            cast.DurationConf(time.Second),
 			IsEventTime:        false,
-			LateTol:            1000,
 			Concurrency:        1,
 			BufferLength:       1024,
 			SendMetaToSink:     false,
 			SendError:          true,
 			Qos:                AtMostOnce,
-			CheckpointInterval: "300s",
+			CheckpointInterval: cast.DurationConf(5 * time.Minute),
 			Restart: &RestartStrategy{
 				Attempts:     0,
 				Delay:        1000,

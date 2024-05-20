@@ -116,7 +116,7 @@ func getStoreConfigByKuiperConfig(c *conf.KuiperConf) (*store.StoreConf, error) 
 			Host:     c.Store.Redis.Host,
 			Port:     c.Store.Redis.Port,
 			Password: c.Store.Redis.Password,
-			Timeout:  c.Store.Redis.Timeout,
+			Timeout:  time.Duration(c.Store.Redis.Timeout),
 		},
 		SqliteConfig: definition.SqliteConfig{
 			Path: dataDir,
@@ -359,12 +359,7 @@ func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 }
 
 func runScheduleRuleChecker(exit <-chan struct{}) {
-	d, err := time.ParseDuration(conf.Config.Basic.RulePatrolInterval)
-	if err != nil {
-		conf.Log.Errorf("parse rulePatrolInterval failed, err:%v", err)
-		return
-	}
-	runScheduleRuleCheckerByInterval(d, exit)
+	runScheduleRuleCheckerByInterval(time.Duration(conf.Config.Basic.RulePatrolInterval), exit)
 }
 
 type RuleStatusMetricsValue int

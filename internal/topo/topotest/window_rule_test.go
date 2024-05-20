@@ -16,8 +16,10 @@ package topotest
 
 import (
 	"testing"
+	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func TestWindow(t *testing.T) {
@@ -648,13 +650,13 @@ func TestWindow(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: "5s",
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: "5s",
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
 		},
 	}
 	for _, opt := range options {
@@ -1279,23 +1281,23 @@ func TestEventWindow(t *testing.T) {
 			BufferLength: 100,
 			SendError:    true,
 			IsEventTime:  true,
-			LateTol:      1000,
+			LateTol:      cast.DurationConf(time.Second),
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: "5s",
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
 			IsEventTime:        true,
-			LateTol:            1000,
+			LateTol:            cast.DurationConf(time.Second),
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: "5s",
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
 			IsEventTime:        true,
-			LateTol:            1000,
+			LateTol:            cast.DurationConf(time.Second),
 		},
 	}
 	for _, opt := range options {
@@ -1510,23 +1512,23 @@ func TestEventSlidingWindow(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtLeastOnce,
-			CheckpointInterval: "5s",
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
 			IsEventTime:        true,
-			LateTol:            1000,
+			LateTol:            cast.DurationConf(time.Second),
 		},
 		{
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.ExactlyOnce,
-			CheckpointInterval: "5s",
+			CheckpointInterval: cast.DurationConf(5 * time.Second),
 			IsEventTime:        true,
-			LateTol:            1000,
+			LateTol:            cast.DurationConf(time.Second),
 		},
 		{
 			BufferLength: 100,
 			SendError:    true,
 			IsEventTime:  true,
-			LateTol:      1000,
+			LateTol:      cast.DurationConf(time.Second),
 		},
 	}
 	for _, opt := range options {

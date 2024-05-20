@@ -4,10 +4,10 @@ default:
   url: http://localhost
   # post, get, put, delete
   method: post
-  # The interval between the requests, time unit is ms
-  interval: 10000
-  # The timeout for http request, time unit is ms
-  timeout: 5000
+  # The interval between the requests
+  interval: 10s
+  # The timeout for http request
+  timeout: 5s
   # If it's set to true, then will compare with last result; If response of two requests are the same, then will skip sending out the result.
   # The possible setting could be: true/false
   incremental: false

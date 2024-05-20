@@ -17,7 +17,6 @@ package rule
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -29,23 +28,24 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
 var defaultOption = &def.RuleOption{
 	IsEventTime:        false,
-	LateTol:            1000,
+	LateTol:            cast.DurationConf(time.Second),
 	Concurrency:        1,
 	BufferLength:       1024,
 	SendMetaToSink:     false,
 	SendError:          true,
 	Qos:                def.AtMostOnce,
-	CheckpointInterval: "300s",
+	CheckpointInterval: cast.DurationConf(5 * time.Minute),
 	Restart: &def.RestartStrategy{
 		Attempts:     0,
-		Delay:        1000,
+		Delay:        cast.DurationConf(time.Second),
 		Multiplier:   2,
-		MaxDelay:     30000,
+		MaxDelay:     cast.DurationConf(30 * time.Second),
 		JitterFactor: 0.1,
 	},
 }
@@ -56,7 +56,8 @@ func init() {
 
 func TestCreate(t *testing.T) {
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	assert.NoError(t, err)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	tests := []struct {
 		r    *def.Rule
@@ -108,22 +109,20 @@ func TestCreate(t *testing.T) {
 			code: errorx.PlanError,
 		},
 	}
-	for i, tt := range tests {
-		_, err := NewRuleState(tt.r)
-		if err != nil {
-			code, ok := errorx.GetErrorCode(err)
-			if tt.code != 0 {
-				require.True(t, ok)
-				require.Equal(t, tt.code, code)
-				if !reflect.DeepEqual(err.Error(), tt.e.Error()) {
-					t.Errorf("%d.\n\nerror mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.e, err)
+	for _, tt := range tests {
+		t.Run(tt.r.Id, func(t *testing.T) {
+			_, err := NewRuleState(tt.r)
+			if err != nil {
+				code, ok := errorx.GetErrorCode(err)
+				if tt.code != 0 {
+					require.True(t, ok)
+					require.Equal(t, tt.code, code)
+					assert.EqualError(t, err, tt.e.Error())
+					return
 				}
-				continue
 			}
-		}
-		if !reflect.DeepEqual(err, tt.e) {
-			t.Errorf("%d.\n\nerror mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.e, err)
-		}
+			assert.Equal(t, tt.e, err)
+		})
 	}
 }
 

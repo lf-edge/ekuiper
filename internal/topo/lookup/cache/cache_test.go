@@ -26,14 +26,17 @@ import (
 )
 
 func TestExpiration(t *testing.T) {
-	c := NewCache(20, false)
-	defer c.Close()
+	mockclock.ResetClock(0)
 	clock := mockclock.GetMockClock()
+	c := NewCache(20*time.Second, false)
+	defer c.Close()
 	expects := []api.MessageTupleList{
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}}},
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNow()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNow()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNow()}}},
 		&xsql.TransformedTupleList{Content: []api.MessageTuple{}},
 	}
+	// wait for cache to run
+	time.Sleep(10 * time.Millisecond)
 	c.Set("a", expects[0])
 	clock.Add(10 * time.Second)
 	c.Set("b", expects[1])
@@ -62,6 +65,8 @@ func TestExpiration(t *testing.T) {
 	}
 
 	clock.Add(10 * time.Second)
+	// wait for cache to delete
+	time.Sleep(10 * time.Millisecond)
 	_, ok = c.Get("a")
 	if ok {
 		t.Error("a should not exist after expiration")
@@ -84,12 +89,14 @@ func TestExpiration(t *testing.T) {
 }
 
 func TestNoExpiration(t *testing.T) {
+	mockclock.ResetClock(0)
+	clock := mockclock.GetMockClock()
 	c := NewCache(0, true)
 	defer c.Close()
-	clock := mockclock.GetMockClock()
+
 	expects := []api.MessageTupleList{
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNowInMilli()}}},
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNowInMilli()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNowInMilli()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNow()}}},
+		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNow()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNow()}}},
 		&xsql.TransformedTupleList{Content: []api.MessageTuple{}},
 	}
 	c.Set("a", expects[0])

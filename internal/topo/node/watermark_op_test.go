@@ -25,12 +25,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func TestSingleStreamWatermark(t *testing.T) {
 	tests := []struct {
 		name    string
-		latetol int64
+		latetol time.Duration
 		inputs  []any // a tuple or a window
 		outputs []any
 	}{
@@ -43,7 +44,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -51,7 +52,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -59,7 +60,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 30,
+					Timestamp: time.UnixMilli(30),
 				},
 			},
 			outputs: []any{
@@ -69,7 +70,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -77,7 +78,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -85,12 +86,12 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 30,
+					Timestamp: time.UnixMilli(30),
 				},
 			},
 		}, {
 			name:    "disordered tuple",
-			latetol: 5,
+			latetol: 5 * time.Millisecond,
 			inputs: []any{
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -98,7 +99,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -106,7 +107,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -114,7 +115,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 30,
+					Timestamp: time.UnixMilli(30),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -122,7 +123,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 5,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -130,7 +131,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -138,7 +139,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 28,
+					Timestamp: time.UnixMilli(28),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -146,7 +147,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 40,
+					Timestamp: time.UnixMilli(40),
 				},
 			},
 			outputs: []any{
@@ -156,7 +157,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -164,7 +165,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 28,
+					Timestamp: time.UnixMilli(28),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -172,7 +173,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 30,
+					Timestamp: time.UnixMilli(30),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -180,7 +181,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 5,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 				&xsql.Tuple{
 					Emitter: "demo",
@@ -188,7 +189,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 			},
 		},
@@ -201,14 +202,13 @@ func TestSingleStreamWatermark(t *testing.T) {
 			tempStore, _ := state.CreateStore("TestWatermark", def.AtMostOnce)
 			nctx := ctx.WithMeta("TestWatermark", "test", tempStore)
 			w := NewWatermarkOp("mock", false, []string{"demo"}, &def.RuleOption{
-				IsEventTime:        true,
-				LateTol:            tt.latetol,
-				Concurrency:        0,
-				BufferLength:       0,
-				SendMetaToSink:     false,
-				SendError:          false,
-				Qos:                0,
-				CheckpointInterval: "0s",
+				IsEventTime:    true,
+				LateTol:        cast.DurationConf(tt.latetol),
+				Concurrency:    0,
+				BufferLength:   0,
+				SendMetaToSink: false,
+				SendError:      false,
+				Qos:            0,
 			})
 			errCh := make(chan error)
 			outputCh := make(chan interface{}, 50)
@@ -256,7 +256,7 @@ func TestSingleStreamWatermark(t *testing.T) {
 func TestMultiStreamWatermark(t *testing.T) {
 	tests := []struct {
 		name    string
-		latetol int64
+		latetol time.Duration
 		inputs  []any // a tuple or a window
 		outputs []any
 	}{
@@ -269,7 +269,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -277,7 +277,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -285,7 +285,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 30,
+					Timestamp: time.UnixMilli(30),
 				},
 			},
 			outputs: []any{
@@ -295,10 +295,10 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.WatermarkTuple{
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -306,15 +306,15 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.WatermarkTuple{
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 			},
 		}, {
 			name:    "disordered tuple",
-			latetol: 5,
+			latetol: 5 * time.Millisecond,
 			inputs: []any{
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -322,7 +322,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -330,7 +330,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -338,7 +338,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 30,
+					Timestamp: time.UnixMilli(30),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -346,7 +346,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 5,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -354,7 +354,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -362,7 +362,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 28,
+					Timestamp: time.UnixMilli(28),
 				},
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -370,7 +370,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 40,
+					Timestamp: time.UnixMilli(40),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -378,12 +378,12 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 45,
+					Timestamp: time.UnixMilli(45),
 				},
 			},
 			outputs: []any{
 				&xsql.WatermarkTuple{
-					Timestamp: 5,
+					Timestamp: time.UnixMilli(5),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -391,7 +391,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 10,
+					Timestamp: time.UnixMilli(10),
 				},
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -399,13 +399,13 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 20,
+					Timestamp: time.UnixMilli(20),
 				},
 				&xsql.WatermarkTuple{
-					Timestamp: 25,
+					Timestamp: time.UnixMilli(25),
 				},
 				&xsql.WatermarkTuple{
-					Timestamp: 27,
+					Timestamp: time.UnixMilli(27),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -413,7 +413,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 28,
+					Timestamp: time.UnixMilli(28),
 				},
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -421,7 +421,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 30,
+					Timestamp: time.UnixMilli(30),
 				},
 				&xsql.Tuple{
 					Emitter: "demo2",
@@ -429,7 +429,7 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 5,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 				&xsql.Tuple{
 					Emitter: "demo1",
@@ -437,10 +437,10 @@ func TestMultiStreamWatermark(t *testing.T) {
 						"a": 6,
 						"b": "aaaa",
 					},
-					Timestamp: 32,
+					Timestamp: time.UnixMilli(32),
 				},
 				&xsql.WatermarkTuple{
-					Timestamp: 35,
+					Timestamp: time.UnixMilli(35),
 				},
 			},
 		},
@@ -454,13 +454,13 @@ func TestMultiStreamWatermark(t *testing.T) {
 			nctx := ctx.WithMeta("TestWatermark", "test", tempStore)
 			w := NewWatermarkOp("mock", true, []string{"demo1", "demo2"}, &def.RuleOption{
 				IsEventTime:        true,
-				LateTol:            tt.latetol,
+				LateTol:            cast.DurationConf(tt.latetol),
 				Concurrency:        0,
 				BufferLength:       0,
 				SendMetaToSink:     false,
 				SendError:          false,
 				Qos:                0,
-				CheckpointInterval: "0s",
+				CheckpointInterval: 0,
 			})
 			errCh := make(chan error)
 			outputCh := make(chan interface{}, 50)

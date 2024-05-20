@@ -17,6 +17,7 @@ package cache
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -25,18 +26,18 @@ import (
 
 type item struct {
 	data       api.MessageTupleList
-	expiration int64
+	expiration time.Time
 }
 
 type Cache struct {
-	expireTime      int
+	expireTime      time.Duration
 	cacheMissingKey bool
 	cancel          context.CancelFunc
 	items           map[string]*item
 	sync.RWMutex
 }
 
-func NewCache(expireTime int, cacheMissingKey bool) *Cache {
+func NewCache(expireTime time.Duration, cacheMissingKey bool) *Cache {
 	c := &Cache{
 		expireTime:      expireTime,
 		cacheMissingKey: cacheMissingKey,
@@ -51,7 +52,7 @@ func NewCache(expireTime int, cacheMissingKey bool) *Cache {
 }
 
 func (c *Cache) run(ctx context.Context) {
-	ticker := timex.GetTicker(int64(c.expireTime * 2000))
+	ticker := timex.GetTicker(c.expireTime * 2)
 	for {
 		select {
 		case <-ticker.C:
@@ -65,10 +66,10 @@ func (c *Cache) run(ctx context.Context) {
 }
 
 func (c *Cache) deleteExpired() {
-	now := timex.GetNowInMilli()
+	now := timex.GetNow()
 	c.Lock()
 	for k, v := range c.items {
-		if v.expiration > 0 && now > v.expiration {
+		if !v.expiration.IsZero() && now.After(v.expiration) {
 			delete(c.items, k)
 		}
 	}
@@ -82,7 +83,7 @@ func (c *Cache) Set(key string, value api.MessageTupleList) {
 	c.Lock()
 	defer c.Unlock()
 	if c.expireTime > 0 {
-		c.items[key] = &item{data: value, expiration: timex.GetNowInMilli() + int64(c.expireTime*1000)}
+		c.items[key] = &item{data: value, expiration: timex.GetNow().Add(c.expireTime)}
 	} else {
 		c.items[key] = &item{data: value}
 	}
@@ -92,7 +93,7 @@ func (c *Cache) Get(key string) (api.MessageTupleList, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	if v, ok := c.items[key]; ok {
-		if v.expiration > 0 && timex.GetNowInMilli() > v.expiration {
+		if !v.expiration.IsZero() && timex.GetNow().After(v.expiration) {
 			return nil, false
 		}
 		return v.data, true

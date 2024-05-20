@@ -37,18 +37,18 @@ func TestSCNLC(t *testing.T) {
 		&xsql.RawTuple{
 			Rawdata:   []byte("hello"),
 			Metadata:  map[string]any{"topic": "demo"},
-			Timestamp: mc.Now().UnixMilli(),
+			Timestamp: mc.Now(),
 			Emitter:   "mock_connector",
 		},
 		&xsql.RawTuple{
 			Emitter:   "mock_connector",
 			Metadata:  map[string]any{"topic": "demo"},
-			Timestamp: mc.Now().UnixMilli(),
+			Timestamp: mc.Now(),
 		},
 		&xsql.RawTuple{
 			Rawdata:   []byte("world"),
 			Metadata:  map[string]any{"topic": "demo"},
-			Timestamp: mc.Now().UnixMilli(),
+			Timestamp: mc.Now(),
 			Emitter:   "mock_connector",
 		},
 	}
