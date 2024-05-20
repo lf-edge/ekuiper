@@ -296,6 +296,7 @@ func (t *Server) Export(file string, reply *string) error {
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 	exported, counts, err := rulesetProcessor.Export()
 	if err != nil {
 		return err
