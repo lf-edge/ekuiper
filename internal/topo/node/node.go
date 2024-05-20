@@ -171,7 +171,9 @@ func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opT
 	o.statManager = metric.NewStatManager(ctx, opType)
 	o.ctx = ctx
 	o.opsWg = ctx.GetRuleWaitGroup()
-	o.opsWg.Add(1)
+	if o.opsWg != nil {
+		o.opsWg.Add(1)
+	}
 	o.ctrlCh = errCh
 }
 
