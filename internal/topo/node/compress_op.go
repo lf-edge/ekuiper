@@ -43,6 +43,9 @@ func NewCompressOp(name string, rOpt *def.RuleOption, compressMethod string) (*C
 func (o *CompressOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")
 	go func() {
+		defer func() {
+			o.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)
 			return nil
@@ -66,4 +69,8 @@ func (o *CompressOp) Worker(_ api.StreamContext, item any) []any {
 	default:
 		return []any{fmt.Errorf("unsupported data received: %v", d)}
 	}
+}
+
+func (o *CompressOp) Close() {
+	o.defaultNode.Close()
 }

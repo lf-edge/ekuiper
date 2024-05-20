@@ -65,6 +65,10 @@ func NewSwitchNode(name string, conf *SwitchConfig, options *def.RuleOption) (*S
 	return sn, nil
 }
 
+func (n *SwitchNode) Close() {
+	n.defaultSinkNode.Close()
+}
+
 func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	n.prepareExec(ctx, errCh, "op")
 	for i := range n.outputNodes {
@@ -72,6 +76,9 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	fv, afv := xsql.NewFunctionValuersForOp(ctx)
 	go func() {
+		defer func() {
+			n.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			for {
 				ctx.GetLogger().Debugf("Switch node %s is looping", n.name)

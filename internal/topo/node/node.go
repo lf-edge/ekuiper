@@ -39,6 +39,7 @@ type defaultNode struct {
 	qos         def.Qos
 	outputMu    sync.RWMutex
 	outputs     map[string]chan<- any
+	opsWg       *sync.WaitGroup
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -165,7 +166,19 @@ func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opT
 	ctx.GetLogger().Infof("%s started", o.name)
 	o.statManager = metric.NewStatManager(ctx, opType)
 	o.ctx = ctx
+	o.opsWg = ctx.GetRuleWaitGroup()
+	o.opsWg.Add(1)
 	o.ctrlCh = errCh
+}
+
+func (o *defaultNode) finishExec() {
+	o.Close()
+}
+
+func (o *defaultNode) Close() {
+	if o.opsWg != nil {
+		o.opsWg.Done()
+	}
 }
 
 func (o *defaultSinkNode) preprocess(ctx api.StreamContext, item any) (any, bool) {

@@ -76,9 +76,16 @@ func NewTransformOp(name string, rOpt *def.RuleOption, sc *SinkConf, templates [
 	return o, nil
 }
 
+func (t *TransformOp) Close() {
+	t.defaultSinkNode.Close()
+}
+
 func (t *TransformOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	t.prepareExec(ctx, errCh, "op")
 	go func() {
+		defer func() {
+			t.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, t.defaultSinkNode, t.concurrency, t.Worker)
 			return nil

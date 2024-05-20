@@ -45,10 +45,17 @@ func NewJoinAlignNode(name string, emitters []string, options *def.RuleOption) (
 	return n, nil
 }
 
+func (n *JoinAlignNode) Close() {
+	n.defaultNode.Close()
+}
+
 func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	n.prepareExec(ctx, errCh, "op")
 	log := ctx.GetLogger()
 	go func() {
+		defer func() {
+			n.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			// restore batch state
 			if s, err := ctx.GetState(BatchKey); err == nil {

@@ -47,6 +47,9 @@ func NewEncryptOp(name string, rOpt *def.RuleOption, encryptMethod string) (*Enc
 func (o *EncryptNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")
 	go func() {
+		defer func() {
+			o.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)
 			return nil
@@ -55,6 +58,10 @@ func (o *EncryptNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
+}
+
+func (o *EncryptNode) Close() {
+	o.defaultNode.Close()
 }
 
 func (o *EncryptNode) Worker(_ api.StreamContext, item any) []any {

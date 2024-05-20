@@ -496,13 +496,7 @@ func (rs *RuleState) InternalStop() (err error) {
 	}()
 	rs.Lock()
 	defer rs.Unlock()
-	if !rs.Rule.IsLongRunningScheduleRule() {
-		err := fmt.Errorf("rule %v isn't allowed to execute Internal stop as it's not long running schedule rule", rs.RuleId)
-		conf.Log.Errorf(err.Error())
-		return err
-	} else {
-		conf.Log.Debugf("rule %v internal stopped", rs.RuleId)
-	}
+	conf.Log.Debugf("rule %v internal stopped", rs.RuleId)
 	return rs.internalStop()
 }
 

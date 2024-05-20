@@ -37,6 +37,10 @@ type SinkNode struct {
 	doCollect  func(ctx api.StreamContext, sink api.Sink, data any) error
 }
 
+func (s *SinkNode) Close() {
+	s.defaultNode.Close()
+}
+
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	s.prepareExec(ctx, errCh, "sink")
 	go func() {
@@ -44,7 +48,10 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 		if err != nil {
 			infra.DrainError(ctx, err, errCh)
 		}
-		defer s.sink.Close(ctx)
+		defer func() {
+			s.sink.Close(ctx)
+			s.Close()
+		}()
 		s.currentEof = 0
 		for {
 			select {

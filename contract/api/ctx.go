@@ -45,6 +45,7 @@ type StreamContext interface {
 	GetOpId() string
 	GetInstanceId() int
 	GetRootPath() string
+	GetRuleWaitGroup() *sync.WaitGroup
 
 	WithMeta(ruleId string, opId string, store Store) StreamContext
 	WithInstance(instanceId int) StreamContext

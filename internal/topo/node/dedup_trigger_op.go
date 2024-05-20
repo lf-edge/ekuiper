@@ -70,6 +70,9 @@ func (w *DedupTriggerNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	w.prepareExec(ctx, errCh, "op")
 
 	go func() {
+		defer func() {
+			w.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			for {
 				select {
@@ -109,6 +112,10 @@ func (w *DedupTriggerNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
+}
+
+func (w *DedupTriggerNode) Close() {
+	w.defaultNode.Close()
 }
 
 func (w *DedupTriggerNode) trigger(ctx api.StreamContext, now int64) {

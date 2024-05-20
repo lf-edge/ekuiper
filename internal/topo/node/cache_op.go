@@ -69,6 +69,9 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	s.prepareExec(ctx, errCh, "op")
 	go func() {
+		defer func() {
+			s.Close()
+		}()
 		for {
 			select {
 			case <-ctx.Done():
@@ -173,4 +176,8 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 			s.hasCache = true
 		}
 	}
+}
+
+func (s *CacheOp) Close() {
+	s.defaultNode.Close()
 }

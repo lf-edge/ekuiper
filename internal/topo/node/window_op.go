@@ -99,6 +99,10 @@ func NewWindowOp(name string, w WindowConfig, options *def.RuleOption) (*WindowO
 	return o, nil
 }
 
+func (o *WindowOperator) Close() {
+	o.defaultNode.Close()
+}
+
 // Exec is the entry point for the executor
 // input: *xsql.Tuple from preprocessor
 // output: xsql.WindowTuplesSet
@@ -142,6 +146,9 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log.Infof("Start with window state triggerTime: %d, msgCount: %d", o.triggerTime, o.msgCount)
 	if o.isEventTime {
 		go func() {
+			defer func() {
+				o.Close()
+			}()
 			err := infra.SafeRun(func() error {
 				o.execEventWindow(ctx, inputs, errCh)
 				return nil

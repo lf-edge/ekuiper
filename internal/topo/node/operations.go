@@ -52,6 +52,10 @@ func (o *UnaryOperator) SetOperation(op UnOperation) {
 	o.op = op
 }
 
+func (o *UnaryOperator) Close() {
+	o.defaultNode.Close()
+}
+
 // Exec is the entry point for the executor
 func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")
@@ -60,6 +64,9 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		o.concurrency = 1
 	}
 	go func() {
+		defer func() {
+			o.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			o.doOp(ctx.WithInstance(0), errCh)
 			return nil

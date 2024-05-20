@@ -54,6 +54,8 @@ type Topo struct {
 	topo        *def.PrintableTopo
 	mu          sync.Mutex
 	hasOpened   atomic.Bool
+
+	opsWg *sync.WaitGroup
 }
 
 func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
@@ -64,6 +66,7 @@ func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) 
 			Sources: make([]string, 0),
 			Edges:   make(map[string][]interface{}),
 		},
+		opsWg: &sync.WaitGroup{},
 	}
 	tp.prepareContext() // ensure context is set
 	return tp, nil
@@ -97,8 +100,7 @@ func (s *Topo) Cancel() {
 	s.store = nil
 	s.coordinator = nil
 	for _, src := range s.sources {
-		switch rt := src.(type) {
-		case node.MergeableTopo:
+		if rt, ok := src.(node.MergeableTopo); ok {
 			rt.Close(s.ctx, s.name)
 		}
 	}
@@ -195,6 +197,7 @@ func (s *Topo) prepareContext() {
 		}
 		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
 		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, timex.GetNowInMilli())
+		ctx = kctx.WithWg(ctx, s.opsWg)
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
@@ -343,4 +346,16 @@ func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) erro
 		}
 	}
 	return fmt.Errorf("stream %v not found in topo", name)
+}
+
+func (s *Topo) WaitClose(parWg *sync.WaitGroup) {
+	// wait all operators close
+	if s.opsWg != nil {
+		s.opsWg.Wait()
+	}
+	// tell server this rule closed
+	if parWg != nil {
+		parWg.Done()
+	}
+	conf.Log.Infof("rule %s stopped", s.ctx.GetRuleId())
 }
