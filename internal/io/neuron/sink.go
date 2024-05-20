@@ -181,7 +181,7 @@ func doPublish(ctx api.StreamContext, t *neuronTemplate, cli *conninfo) error {
 	if err != nil {
 		return fmt.Errorf("%s: Error publish the tag payload %s: %v", errorx.IOErr, t.TagName, err)
 	}
-	ctx.GetLogger().Debugf("Publish %s", r)
+	ctx.GetLogger().Infof("Publish %s", r)
 	return nil
 }
 
