@@ -24,7 +24,7 @@ type RuleOption struct {
 	SendMetaToSink     bool             `json:"sendMetaToSink" yaml:"sendMetaToSink"`
 	SendError          bool             `json:"sendError" yaml:"sendError"`
 	Qos                Qos              `json:"qos" yaml:"qos"`
-	CheckpointInterval string           `json:"checkpointInterval" yaml:"checkpointInterval"`
+	CheckpointInterval any              `json:"checkpointInterval" yaml:"checkpointInterval"`
 	Restart            *RestartStrategy `json:"restartStrategy" yaml:"restartStrategy"`
 	Cron               string           `json:"cron" yaml:"cron"`
 	Duration           string           `json:"duration" yaml:"duration"`

@@ -62,7 +62,7 @@ type SinkConf struct {
 	MaxDiskCache         int    `json:"maxDiskCache" yaml:"maxDiskCache"`
 	BufferPageSize       int    `json:"bufferPageSize" yaml:"bufferPageSize"`
 	EnableCache          bool   `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       string `json:"resendInterval" yaml:"resendInterval"`
+	ResendInterval       any    `json:"resendInterval" yaml:"resendInterval"`
 	CleanCacheAtStop     bool   `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
 	ResendAlterQueue     bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
 	ResendPriority       int    `json:"resendPriority" yaml:"resendPriority"`
