@@ -165,16 +165,16 @@ To run the benchmark by yourself, please check [the instruction](./test/benchmar
 - Analysis results will be sent to eKuiper via MQTT, all data will be ignored.
 
 | Query | Number of messages sent per second | CPU usage |
-|----------|---------|--------|
-| query 1 | 11.4k | |
-| query 2 | 7k | 200% |
-| query 3 | 6k | 168% |
-| query 4 | 2k | 144% |
-| query 6 | 2.87k | 178% |
-| query 7 | 5k | 167% |
-| query 8 | 8k | 194% |
-| query 9 | 4k | 186% |
-| query 10 | 5k | 167% |
+|----------|---------|-----------|
+| query 1 | 11.4k | 200%      |
+| query 2 | 7k | 200%      |
+| query 3 | 6k | 168%      |
+| query 4 | 2k | 144%      |
+| query 6 | 2.87k | 178%      |
+| query 7 | 5k | 167%      |
+| query 8 | 8k | 194%      |
+| query 9 | 4k | 186%      |
+| query 10 | 5k | 167%      |
 
 ## Documents
 
