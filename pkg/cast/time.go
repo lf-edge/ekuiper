@@ -16,6 +16,7 @@ package cast
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jinzhu/now"
@@ -363,4 +364,12 @@ func InterfaceToDuration(i interface{}) (time.Duration, error) {
 		return 0, fmt.Errorf("given arguments cannot convert to duration: %q", err)
 	}
 	return time.ParseDuration(duration)
+}
+
+func ConvertDuration(s string) (time.Duration, error) {
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err == nil {
+		return time.Duration(i) * time.Millisecond, nil
+	}
+	return time.ParseDuration(s)
 }

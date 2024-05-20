@@ -124,7 +124,7 @@ func TestCache(t *testing.T) {
 		MaxDiskCache:     6,
 		BufferPageSize:   2,
 		EnableCache:      true,
-		ResendInterval:   0,
+		ResendInterval:   "0s",
 		CleanCacheAtStop: false,
 	})
 	assert.NoError(t, err)
@@ -229,7 +229,7 @@ func TestCacheCase2(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       10,
+		ResendInterval:       "10",
 	})
 	assert.NoError(t, err)
 	// prepare data
@@ -331,7 +331,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       0,
+		ResendInterval:       "0ms",
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
@@ -355,7 +355,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       0,
+		ResendInterval:       "0ms",
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
@@ -374,7 +374,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       0,
+		ResendInterval:       "0ms",
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
@@ -394,7 +394,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         2,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       0,
+		ResendInterval:       "0ms",
 		CleanCacheAtStop:     true,
 	})
 	assert.NoError(t, err)

@@ -92,15 +92,19 @@ func TestRuleOptionValidate(t *testing.T) {
 		err string
 	}{
 		{
-			s: &def.RuleOption{},
-			e: &def.RuleOption{},
+			s: &def.RuleOption{
+				CheckpointInterval: "300s", // 5 minutes
+			},
+			e: &def.RuleOption{
+				CheckpointInterval: "300s", // 5 minutes
+			},
 		},
 		{
 			s: &def.RuleOption{
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     0,
@@ -114,7 +118,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     0,
@@ -130,7 +134,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -144,7 +148,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -160,7 +164,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -174,7 +178,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     3,
@@ -190,7 +194,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     -2,
@@ -204,7 +208,7 @@ func TestRuleOptionValidate(t *testing.T) {
 				LateTol:            1000,
 				Concurrency:        1,
 				BufferLength:       1024,
-				CheckpointInterval: 300000, // 5 minutes
+				CheckpointInterval: "300s", // 5 minutes
 				SendError:          true,
 				Restart: &def.RestartStrategy{
 					Attempts:     0,
@@ -242,7 +246,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -256,7 +260,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -270,7 +274,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         -1,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -284,7 +288,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       0,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -298,7 +302,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       -1,
+				ResendInterval:       "-1s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -312,7 +316,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -326,7 +330,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -340,7 +344,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         128,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -354,7 +358,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         300,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       0,
@@ -368,7 +372,7 @@ func TestSinkConf_Validate(t *testing.T) {
 				MaxDiskCache:         1024000,
 				BufferPageSize:       256,
 				EnableCache:          true,
-				ResendInterval:       0,
+				ResendInterval:       "0s",
 				CleanCacheAtStop:     true,
 				ResendAlterQueue:     true,
 				ResendPriority:       2,

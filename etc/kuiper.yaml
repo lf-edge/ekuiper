@@ -71,8 +71,8 @@ rule:
   # restored for unintended interrupt or planned restart of the rule. The performance may be affected
   # to enable the checkpoint mechanism
   qos: 0
-  # The interval in millisecond to run the checkpoint mechanism.
-  checkpointInterval: 300000
+  # The interval duration to run the checkpoint mechanism.
+  checkpointInterval: 300s
   # Whether to send errors to sinks
   sendError: true
   # The strategy to retry for rule errors.
@@ -100,8 +100,8 @@ sink:
   # The number of messages for a buffer page which is the unit to read/write to disk in batch to prevent frequent IO
   bufferPageSize: 256
 
-  # The interval in millisecond to resend the cached messages
-  resendInterval: 0
+  # The interval duration to resend the cached messages
+  resendInterval: 0s
 
   # Whether to clean the cache when the rule stops
   cleanCacheAtStop: false

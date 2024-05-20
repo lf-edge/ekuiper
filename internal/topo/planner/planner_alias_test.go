@@ -251,7 +251,7 @@ func TestPlannerAlias(t *testing.T) {
 			BufferLength:       0,
 			SendMetaToSink:     false,
 			Qos:                0,
-			CheckpointInterval: 0,
+			CheckpointInterval: "0s",
 			SendError:          true,
 		}, kv)
 		if !reflect.DeepEqual(tt.p, p) {

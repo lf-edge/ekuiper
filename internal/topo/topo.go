@@ -35,6 +35,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -214,7 +215,9 @@ func (s *Topo) Open() <-chan error {
 		if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {
 			return fmt.Errorf("topo %s create store error %v", s.name, err)
 		}
-		s.enableCheckpoint(s.ctx)
+		if err := s.enableCheckpoint(s.ctx); err != nil {
+			return err
+		}
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
 			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
@@ -244,7 +247,7 @@ func (s *Topo) HasOpen() bool {
 	return s.hasOpened.Load()
 }
 
-func (s *Topo) enableCheckpoint(ctx api.StreamContext) {
+func (s *Topo) enableCheckpoint(ctx api.StreamContext) error {
 	if s.options.Qos >= def.AtLeastOnce {
 		var (
 			sources []checkpoint.StreamTask
@@ -267,9 +270,14 @@ func (s *Topo) enableCheckpoint(ctx api.StreamContext) {
 		for _, r := range s.sinks {
 			sinks = append(sinks, r)
 		}
-		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.options.Qos, s.store, s.options.CheckpointInterval, s.ctx)
+		d, err := cast.ConvertDuration(s.options.CheckpointInterval)
+		if err != nil {
+			return err
+		}
+		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.options.Qos, s.store, int(d/time.Millisecond), s.ctx)
 		s.coordinator = c
 	}
+	return nil
 }
 
 func (s *Topo) GetCoordinator() *checkpoint.Coordinator {
