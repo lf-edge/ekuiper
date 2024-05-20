@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -45,7 +46,13 @@ type SinkNode struct {
 
 func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) *SinkNode {
 	// set collect retry according to cache setting
-	retry := sc.ResendInterval
+	var retry int
+	d, err := cast.ConvertDuration(sc.ResendInterval)
+	if err != nil {
+		retry = 100
+	} else {
+		retry = int(d / time.Millisecond)
+	}
 	if !sc.EnableCache && !isRetry {
 		retry = 0
 	} else if retry <= 0 {
