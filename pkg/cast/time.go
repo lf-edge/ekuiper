@@ -366,10 +366,16 @@ func InterfaceToDuration(i interface{}) (time.Duration, error) {
 	return time.ParseDuration(duration)
 }
 
-func ConvertDuration(s string) (time.Duration, error) {
-	i, err := strconv.ParseInt(s, 10, 64)
-	if err == nil {
-		return time.Duration(i) * time.Millisecond, nil
+func ConvertDuration(s any) (time.Duration, error) {
+	switch x := s.(type) {
+	case string:
+		i, err := strconv.ParseInt(x, 10, 64)
+		if err == nil {
+			return time.Duration(i) * time.Millisecond, nil
+		}
+		return time.ParseDuration(x)
+	case int:
+		return time.Duration(x) * time.Millisecond, nil
 	}
-	return time.ParseDuration(s)
+	return 0, fmt.Errorf("unsupported type:%t", s)
 }
