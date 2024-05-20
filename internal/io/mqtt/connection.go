@@ -57,6 +57,14 @@ type SubscriptionInfo struct {
 	ErrHandler func(error)
 }
 
+func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
+	if !conn.connected.Load() {
+		return errorx.NewIOErr("mqtt client is not connected")
+	}
+	token := conn.Client.Publish(topic, qos, retained, payload)
+	return handleToken(token)
+}
+
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.logger.Infof("The connection to mqtt broker is established")
@@ -142,7 +150,7 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	if err != nil {
 		return nil, err
 	}
-	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion)
+	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(time.Minute)
 
 	opts = opts.SetTLSConfig(c.tls)
 
@@ -176,6 +184,15 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	return con, nil
 }
 
+func handleToken(token pahoMqtt.Token) error {
+	if !token.WaitTimeout(5 * time.Second) {
+		return errorx.NewIOErr("timeout")
+	} else if token.Error() != nil {
+		return errorx.NewIOErr(token.Error().Error())
+	}
+	return nil
+}
+
 func validateConfig(props map[string]any) (*ConnectionConfig, error) {
 	c := &ConnectionConfig{PVersion: "3.1.1"}
 	err := cast.MapToStruct(props, c)
@@ -205,15 +222,6 @@ func validateConfig(props map[string]any) (*ConnectionConfig, error) {
 	}
 	c.tls = tlsConfig
 	return c, nil
-}
-
-func handleToken(token pahoMqtt.Token) error {
-	if !token.WaitTimeout(5 * time.Second) {
-		return errorx.NewIOErr("timeout")
-	} else if token.Error() != nil {
-		return errorx.NewIOErr(token.Error().Error())
-	}
-	return nil
 }
 
 func (conn *Connection) GetClientId() string {

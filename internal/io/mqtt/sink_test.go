@@ -95,11 +95,10 @@ func TestSinkConfigure(t *testing.T) {
 				"connectionSelector": "mqtt.local",
 			},
 			expectedAdConf: &AdConf{
-				Tpc:         "testTopic3",
-				Qos:         0,
-				Retained:    false,
-				ResendTopic: "testTopic3",
-				SelId:       "mqtt.local",
+				Tpc:      "testTopic3",
+				Qos:      0,
+				Retained: false,
+				SelId:    "mqtt.local",
 			},
 		},
 		{
@@ -112,10 +111,9 @@ func TestSinkConfigure(t *testing.T) {
 				"server":      "123",
 			},
 			expectedAdConf: &AdConf{
-				Tpc:         "testTopic4",
-				Qos:         1,
-				Retained:    false,
-				ResendTopic: "testTopic4",
+				Tpc:      "testTopic4",
+				Qos:      1,
+				Retained: false,
 			},
 		},
 	}

@@ -55,12 +55,13 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 				return err
 			}
 			tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, props)
+
 			var snk node.DataSinkNode
 			switch ss := s.(type) {
 			case api.BytesCollector:
-				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount)
+				snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, &commonConf.SinkConf, false)
 			case api.TupleCollector:
-				snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, rule.Options, streamCount)
+				snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, &commonConf.SinkConf, false)
 			default:
 				err = fmt.Errorf("sink type %s does not implement any collector", name)
 			}
@@ -68,6 +69,41 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 				return err
 			}
 			tp.AddSink(newInputs, snk)
+			// Cache in alter queue, the topo becomes sink (fail) -> cache -> resendSink
+			// If no alter queue, the topo is cache -> sink
+			if commonConf.EnableCache && commonConf.ResendAlterQueue {
+				s, _ := io.Sink(name)
+				// TODO currently, the destination prop must be named topic
+				if commonConf.ResendDestination != "" {
+					props["topic"] = commonConf.ResendDestination
+				}
+				if err = s.Provision(tp.GetContext(), props); err != nil {
+					return err
+				}
+				tp.GetContext().GetLogger().Infof("provision sink %s with props %+v", sinkName, props)
+
+				cacheOp, err := node.NewCacheOp(tp.GetContext(), fmt.Sprintf("%s_cache", sinkName), rule.Options, &commonConf.SinkConf)
+				if err != nil {
+					return err
+				}
+				tp.AddSinkAlterOperator(snk.(*node.SinkNode), cacheOp)
+				newInputs = []node.Emitter{cacheOp}
+
+				sinkName := fmt.Sprintf("%s_resend_%d", name, i)
+				var snk node.DataSinkNode
+				switch ss := s.(type) {
+				case api.BytesCollector:
+					snk, err = node.NewBytesSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, &commonConf.SinkConf, true)
+				case api.TupleCollector:
+					snk, err = node.NewTupleSinkNode(tp.GetContext(), sinkName, ss, *rule.Options, streamCount, &commonConf.SinkConf, true)
+				default:
+					err = fmt.Errorf("sink type %s does not implement any collector", name)
+				}
+				if err != nil {
+					return err
+				}
+				tp.AddSink(newInputs, snk)
+			}
 		}
 	}
 	return nil
@@ -144,7 +180,7 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 		}
 	}
 	// Caching
-	if sc.EnableCache {
+	if sc.EnableCache && !sc.ResendAlterQueue {
 		cacheOp, err := node.NewCacheOp(tp.GetContext(), fmt.Sprintf("%s_%d_cache", sinkName, index), options, &sc.SinkConf)
 		if err != nil {
 			return nil, err

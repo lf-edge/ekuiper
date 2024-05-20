@@ -54,6 +54,10 @@ func GetTimer(duration int64) *clock.Timer {
 	return Clock.Timer(time.Duration(duration) * time.Millisecond)
 }
 
+func Sleep(duration time.Duration) {
+	Clock.Sleep(duration)
+}
+
 func GetTimerByTime(t time.Time) *clock.Timer {
 	if IsTesting {
 		return Clock.Timer(time.Duration(t.UnixMilli()-GetNowInMilli()) * time.Millisecond)

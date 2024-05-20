@@ -212,6 +212,40 @@ func TestSinkPlan(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "resend sink plan",
+			rule: &def.Rule{
+				Actions: []map[string]any{
+					{
+						"log": map[string]any{
+							"enableCache":      true,
+							"resendAlterQueue": true,
+						},
+					},
+				},
+				Options: defaultOption,
+			},
+			topo: &def.PrintableTopo{
+				Sources: []string{"source_src1"},
+				Edges: map[string][]any{
+					"source_src1": {
+						"op_log_0_0_transform",
+					},
+					"op_log_0_0_transform": {
+						"op_log_0_1_encode",
+					},
+					"op_log_0_1_encode": {
+						"sink_log_0",
+					},
+					"sink_log_0": {
+						"op_log_0_cache",
+					},
+					"op_log_0_cache": {
+						"sink_log_resend_0",
+					},
+				},
+			},
+		},
 	}
 	for _, c := range tc {
 		t.Run(c.name, func(t *testing.T) {
