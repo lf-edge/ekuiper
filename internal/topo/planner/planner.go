@@ -17,6 +17,7 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -239,6 +240,8 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 			Delay:            d,
 			Length:           l,
 			Interval:         i,
+			CountInterval:    t.interval,
+			CountLength:      t.length,
 			RawInterval:      rawInterval,
 			TimeUnit:         t.timeUnit,
 			TriggerCondition: t.triggerCondition,
@@ -283,21 +286,21 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	return op, newIndex, nil
 }
 
-func convertFromDuration(t *WindowPlan) (int64, int64, int64) {
-	var unit int64 = 1
+func convertFromDuration(t *WindowPlan) (time.Duration, time.Duration, time.Duration) {
+	var unit time.Duration
 	switch t.timeUnit {
 	case ast.DD:
-		unit = 24 * 3600 * 1000
+		unit = 24 * time.Hour
 	case ast.HH:
-		unit = 3600 * 1000
+		unit = time.Hour
 	case ast.MI:
-		unit = 60 * 1000
+		unit = time.Minute
 	case ast.SS:
-		unit = 1000
+		unit = time.Second
 	case ast.MS:
-		unit = 1
+		unit = time.Millisecond
 	}
-	return int64(t.length) * unit, int64(t.interval) * unit, t.delay * unit
+	return time.Duration(t.length) * unit, time.Duration(t.interval) * unit, time.Duration(t.delay) * unit
 }
 
 func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.KeyValue) (lp LogicalPlan, err error) {

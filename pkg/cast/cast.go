@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -1013,8 +1014,9 @@ func ToBytesSlice(input interface{}, sn Strictness) ([][]byte, error) {
  */
 func MapToStruct(input, output interface{}) error {
 	config := &mapstructure.DecoderConfig{
-		TagName: "json",
-		Result:  output,
+		TagName:    "json",
+		Result:     output,
+		DecodeHook: ToTimeDurationHookFunc(),
 	}
 	decoder, err := mapstructure.NewDecoder(config)
 	if err != nil {
@@ -1022,6 +1024,26 @@ func MapToStruct(input, output interface{}) error {
 	}
 
 	return decoder.Decode(input)
+}
+
+func ToTimeDurationHookFunc() mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data any,
+	) (any, error) {
+		if t != reflect.TypeOf(time.Duration(5)) && t != reflect.TypeOf(DurationConf(time.Duration(5))) {
+			return data, nil
+		}
+		switch f.Kind() {
+		case reflect.String:
+			return time.ParseDuration(data.(string))
+		case reflect.Int:
+			return time.Duration(data.(int)) * time.Millisecond, nil
+		default:
+			return data, nil
+		}
+	}
 }
 
 // MapToStructStrict

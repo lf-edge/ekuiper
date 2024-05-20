@@ -37,7 +37,7 @@ type SinkNode struct {
 	sink           api.Sink
 	eoflimit       int
 	currentEof     int
-	resendInterval int
+	resendInterval time.Duration
 	doCollect      func(ctx api.StreamContext, sink api.Sink, data any) error
 	// channel for resend
 	resendOut chan<- any
@@ -45,12 +45,12 @@ type SinkNode struct {
 
 func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflimit int, sc *conf.SinkConf, isRetry bool) *SinkNode {
 	// set collect retry according to cache setting
-	retry := sc.ResendInterval
+	retry := time.Duration(sc.ResendInterval)
 	if !sc.EnableCache && !isRetry {
 		retry = 0
 	} else if retry <= 0 {
 		// default retry interval to 100ms
-		retry = 100
+		retry = 100 * time.Millisecond
 	}
 	// Sink input channel as buffer
 	if isRetry || (sc.EnableCache && !sc.ResendAlterQueue) {
@@ -102,7 +102,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						})
 					} else if s.resendInterval > 0 {
 						for err != nil && errorx.IsIOError(err) {
-							timex.Sleep(time.Duration(s.resendInterval) * time.Millisecond)
+							timex.Sleep(s.resendInterval)
 							err = s.doCollect(ctx, s.sink, data)
 							ctx.GetLogger().Debugf("resending, got err? %v", err)
 							s.statManager.SetBufferLength(int64(len(s.input)))

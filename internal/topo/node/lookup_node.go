@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -30,9 +31,9 @@ import (
 )
 
 type LookupConf struct {
-	Cache           bool `json:"cache"`
-	CacheTTL        int  `json:"cacheTtl"`
-	CacheMissingKey bool `json:"cacheMissingKey"`
+	Cache           bool          `json:"cache"`
+	CacheTTL        time.Duration `json:"cacheTtl"`
+	CacheMissingKey bool          `json:"cacheMissingKey"`
 }
 
 // LookupNode will look up the data from the external source when receiving an event
@@ -119,7 +120,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						n.statManager.ProcessTimeEnd()
 						n.statManager.SetBufferLength(int64(len(n.input)))
 					case *xsql.WindowTuples:
-						log.Debugf("Lookup Node receive window input %s", d)
+						log.Debugf("Lookup Node receive window input %v", d)
 						n.statManager.ProcessTimeStart()
 						sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0), WindowRange: item.(*xsql.WindowTuples).GetWindowRange()}
 						err := d.Range(func(i int, r xsql.ReadonlyRow) (bool, error) {
@@ -203,23 +204,25 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 				return nil
 			}
 		}
-		r.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
-			merged := &xsql.JoinTuple{}
-			merged.AddTuple(d)
-			var meta map[string]any
-			if mi, ok := tuple.(api.MetaInfo); ok {
-				meta = mi.AllMeta()
-			}
-			t := &xsql.Tuple{
-				Emitter:   n.name,
-				Message:   tuple.ToMap(),
-				Metadata:  meta,
-				Timestamp: timex.GetNowInMilli(),
-			}
-			merged.AddTuple(t)
-			tuples.Content = append(tuples.Content, merged)
-			return true
-		})
+		if r != nil {
+			r.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
+				merged := &xsql.JoinTuple{}
+				merged.AddTuple(d)
+				var meta map[string]any
+				if mi, ok := tuple.(api.MetaInfo); ok {
+					meta = mi.AllMeta()
+				}
+				t := &xsql.Tuple{
+					Emitter:   n.name,
+					Message:   tuple.ToMap(),
+					Metadata:  meta,
+					Timestamp: timex.GetNow(),
+				}
+				merged.AddTuple(t)
+				tuples.Content = append(tuples.Content, merged)
+				return true
+			})
+		}
 		return nil
 	}
 }
@@ -244,7 +247,7 @@ func (n *LookupNode) merge(ctx api.StreamContext, d xsql.Row, r []map[string]int
 		t := &xsql.Tuple{
 			Emitter:   n.name,
 			Message:   v,
-			Timestamp: timex.GetNowInMilli(),
+			Timestamp: timex.GetNow(),
 		}
 		merged.AddTuple(t)
 		sets.Content = append(sets.Content, merged)

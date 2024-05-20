@@ -68,7 +68,7 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
-	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts.UnixMilli(), Metadata: meta}
+	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)
@@ -103,13 +103,13 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 }
 
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
-	tuple := &xsql.Tuple{Emitter: m.name, Message: t, Timestamp: ts.UnixMilli(), Metadata: meta}
+	tuple := &xsql.Tuple{Emitter: m.name, Message: t, Timestamp: ts, Metadata: meta}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 }
 
 func (m *SourceNode) ingestTuple(t *xsql.Tuple, ts time.Time) {
-	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts.UnixMilli(), Metadata: t.Metadata}
+	tuple := &xsql.Tuple{Emitter: m.name, Message: t.Message, Timestamp: ts, Metadata: t.Metadata}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 }

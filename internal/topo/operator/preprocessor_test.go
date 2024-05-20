@@ -719,17 +719,6 @@ func TestPreprocessorTime_Apply(t *testing.T) {
 	}
 }
 
-func convertFields(o ast.StreamFields) []interface{} {
-	if o == nil {
-		return nil
-	}
-	fields := make([]interface{}, len(o))
-	for i := range o {
-		fields[i] = &o[i]
-	}
-	return fields
-}
-
 func TestPreprocessorEventtime_Apply(t *testing.T) {
 	err := cast.SetTimeZone("UTC")
 	require.NoError(t, err)
@@ -759,7 +748,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			result: &xsql.Tuple{
 				Message: xsql.Message{
 					"abc": int64(1568854515000),
-				}, Timestamp: 1568854515000,
+				}, Timestamp: cast.TimeFromUnixMilli(1568854515000),
 			},
 		},
 		{ // 1
@@ -780,7 +769,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 			result: &xsql.Tuple{
 				Message: xsql.Message{
 					"abc": float64(1568854515000),
-				}, Timestamp: 1568854515000,
+				}, Timestamp: cast.TimeFromUnixMilli(1568854515000),
 			},
 		},
 		{ // 2
@@ -815,7 +804,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					"abc": float64(34),
 					"def": "2019-09-23T02:47:29.754Z",
 					"ghi": float64(50),
-				}, Timestamp: int64(1569206849754),
+				}, Timestamp: cast.TimeFromUnixMilli(1569206849754),
 			},
 		},
 		{ // 4
@@ -835,7 +824,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 				Message: xsql.Message{
 					"abc": cast.TimeFromUnixMilli(1568854515000),
 					"def": cast.TimeFromUnixMilli(1568854573431),
-				}, Timestamp: int64(1568854515000),
+				}, Timestamp: cast.TimeFromUnixMilli(1568854515000),
 			},
 		},
 		{ // 5
@@ -857,7 +846,7 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 					"abc": float64(34),
 					"def": "2019-09-23AT02:47:29",
 					"ghi": float64(50),
-				}, Timestamp: int64(1569206849000),
+				}, Timestamp: cast.TimeFromUnixMilli(1569206849000),
 			},
 		},
 		{ // 6
@@ -884,36 +873,34 @@ func TestPreprocessorEventtime_Apply(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "TestPreprocessorEventtime_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 	for i, tt := range tests {
+		t.Run(fmt.Sprintf("test_%d", i), func(t *testing.T) {
+			pp := &Preprocessor{
+				checkSchema: true,
+				defaultFieldProcessor: defaultFieldProcessor{
+					streamFields:    tt.stmt.StreamFields.ToJsonSchema(),
+					timestampFormat: tt.stmt.Options.TIMESTAMP_FORMAT,
+				},
+				isEventTime:    true,
+				timestampField: tt.stmt.Options.TIMESTAMP,
+			}
 
-		pp := &Preprocessor{
-			checkSchema: true,
-			defaultFieldProcessor: defaultFieldProcessor{
-				streamFields:    tt.stmt.StreamFields.ToJsonSchema(),
-				timestampFormat: tt.stmt.Options.TIMESTAMP_FORMAT,
-			},
-			isEventTime:    true,
-			timestampField: tt.stmt.Options.TIMESTAMP,
-		}
-
-		dm := make(map[string]interface{})
-		if e := json.Unmarshal(tt.data, &dm); e != nil {
-			log.Fatal(e)
-			return
-		} else {
-			tuple := &xsql.Tuple{Message: dm}
-			fv, afv := xsql.NewFunctionValuersForOp(nil)
-			result := pp.Apply(ctx, tuple, fv, afv)
-			// workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
-			if rt, ok := result.(*xsql.Tuple); ok {
-				if rtt, ok := rt.Message["abc"].(time.Time); ok {
-					rt.Message["abc"] = rtt.UTC()
+			dm := make(map[string]interface{})
+			if e := json.Unmarshal(tt.data, &dm); e != nil {
+				log.Fatal(e)
+				return
+			} else {
+				tuple := &xsql.Tuple{Message: dm}
+				fv, afv := xsql.NewFunctionValuersForOp(nil)
+				result := pp.Apply(ctx, tuple, fv, afv)
+				// workaround make sure all the timezone are the same for time vars or the DeepEqual will be false.
+				if rt, ok := result.(*xsql.Tuple); ok {
+					if rtt, ok := rt.Message["abc"].(time.Time); ok {
+						rt.Message["abc"] = rtt.UTC()
+					}
 				}
+				assert.Equal(t, tt.result, result)
 			}
-			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tuple, tt.result, result)
-			}
-		}
-
+		})
 	}
 }
 

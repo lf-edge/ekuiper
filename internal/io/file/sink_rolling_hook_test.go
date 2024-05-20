@@ -57,7 +57,7 @@ func TestProvision(t *testing.T) {
 		{
 			name: "new props",
 			c: &sinkConf{
-				CheckInterval:      500,
+				CheckInterval:      500 * time.Millisecond,
 				Path:               "test",
 				FileType:           CSV_TYPE,
 				Format:             message.FormatDelimited,
@@ -79,6 +79,26 @@ func TestProvision(t *testing.T) {
 				"rollingHookProps": map[string]any{
 					"custom": "test",
 				},
+			},
+		},
+		{
+			name: "interval duration",
+			c: &sinkConf{
+				CheckInterval:      5 * time.Minute,
+				Path:               "test",
+				FileType:           CSV_TYPE,
+				Format:             message.FormatDelimited,
+				Delimiter:          ",",
+				RollingCount:       1000000,
+				RollingNamePattern: "none",
+				RollingInterval:    10 * time.Second,
+			},
+			p: map[string]interface{}{
+				"path":               "test",
+				"fileType":           "csv",
+				"format":             message.FormatDelimited,
+				"rollingNamePattern": "none",
+				"rollingInterval":    "10s",
 			},
 		},
 		{ // invalid rolling hook

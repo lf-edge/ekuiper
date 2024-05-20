@@ -16,12 +16,14 @@ package processor
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func TestRuleActionParse_Apply(t *testing.T) {
@@ -83,23 +85,24 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				},
 				Options: &def.RuleOption{
 					IsEventTime:        false,
-					LateTol:            1000,
+					LateTol:            cast.DurationConf(time.Second),
 					Concurrency:        1,
 					BufferLength:       1024,
 					SendMetaToSink:     false,
 					Qos:                def.AtMostOnce,
-					CheckpointInterval: "300s",
+					CheckpointInterval: cast.DurationConf(5 * time.Minute),
 					SendError:          true,
 					Restart: &def.RestartStrategy{
 						Attempts:     20,
-						Delay:        1000,
+						Delay:        cast.DurationConf(time.Second),
 						Multiplier:   2,
-						MaxDelay:     30000,
+						MaxDelay:     cast.DurationConf(30 * time.Second),
 						JitterFactor: 0.1,
 					},
 				},
 			},
-		}, {
+		},
+		{
 			ruleStr: `{
 				"id": "ruleTest2",
 				"sql": "SELECT * from demo",
@@ -146,23 +149,24 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				},
 				Options: &def.RuleOption{
 					IsEventTime:        true,
-					LateTol:            1000,
+					LateTol:            cast.DurationConf(time.Second),
 					Concurrency:        1,
 					BufferLength:       10240,
 					SendMetaToSink:     false,
 					Qos:                def.ExactlyOnce,
-					CheckpointInterval: "60s",
+					CheckpointInterval: cast.DurationConf(time.Minute),
 					SendError:          true,
 					Restart: &def.RestartStrategy{
 						Attempts:     0,
-						Delay:        1000,
+						Delay:        cast.DurationConf(time.Second),
 						Multiplier:   2,
-						MaxDelay:     30000,
+						MaxDelay:     cast.DurationConf(30 * time.Second),
 						JitterFactor: 0.1,
 					},
 				},
 			},
-		}, {
+		},
+		{
 			ruleStr: `{
 			  "id": "ruleTest",
 			  "sql": "SELECT * from demo",
@@ -182,18 +186,18 @@ func TestRuleActionParse_Apply(t *testing.T) {
 				},
 				Options: &def.RuleOption{
 					IsEventTime:        false,
-					LateTol:            1000,
+					LateTol:            cast.DurationConf(time.Second),
 					Concurrency:        1,
 					BufferLength:       1024,
 					SendMetaToSink:     false,
 					Qos:                def.AtMostOnce,
-					CheckpointInterval: "300s",
+					CheckpointInterval: cast.DurationConf(5 * time.Minute),
 					SendError:          true,
 					Restart: &def.RestartStrategy{
 						Attempts:     0,
-						Delay:        1000,
+						Delay:        cast.DurationConf(time.Second),
 						Multiplier:   2,
-						MaxDelay:     30000,
+						MaxDelay:     cast.DurationConf(30 * time.Second),
 						JitterFactor: 0.1,
 					},
 				},
@@ -202,14 +206,12 @@ func TestRuleActionParse_Apply(t *testing.T) {
 	}
 
 	p := NewRuleProcessor()
-	for i, tt := range tests {
-		r, err := p.GetRuleByJson(tt.result.Id, tt.ruleStr)
-		if err != nil {
-			t.Errorf("get rule error: %s", err)
-		}
-		if !reflect.DeepEqual(tt.result, r) {
-			t.Errorf("%d \tresult mismatch:\n\nexp=%+v\n\ngot=%+v\n\n", i, tt.result, r)
-		}
+	for _, tt := range tests {
+		t.Run(tt.ruleStr, func(t *testing.T) {
+			r, err := p.GetRuleByJson(tt.result.Id, tt.ruleStr)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.result, r)
+		})
 	}
 }
 
@@ -220,11 +222,15 @@ func TestAllRules(t *testing.T) {
 		"rule3": "{\"id\": \"rule3\",\"sql\": \"SELECT * FROM demo\",\"actions\": [{  \"log\": {}}]}",
 	}
 	sp := NewStreamProcessor()
-	defer sp.db.Clean()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	defer func() {
+		err := sp.db.Clean()
+		assert.NoError(t, err)
+	}()
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	assert.NoError(t, err)
 	p := NewRuleProcessor()
-	p.db.Clean()
-	defer p.db.Clean()
+	err = p.db.Clean()
+	assert.NoError(t, err)
 
 	for k, v := range expected {
 		_, err := p.ExecCreateWithValidation(k, v)
@@ -232,6 +238,7 @@ func TestAllRules(t *testing.T) {
 			t.Error(err)
 			return
 		}
+		// Intend to drop after all running done
 		defer p.ExecDrop(k)
 	}
 
@@ -240,9 +247,7 @@ func TestAllRules(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if !reflect.DeepEqual(all, expected) {
-		t.Errorf("Expect\t %v\nBut got\t%v", expected, all)
-	}
+	assert.Equal(t, expected, all)
 }
 
 func TestValidateRuleID(t *testing.T) {

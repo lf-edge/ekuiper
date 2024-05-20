@@ -24,20 +24,20 @@ import (
 )
 
 type SinkConf struct {
-	Concurrency    int      `json:"concurrency"`
-	Omitempty      bool     `json:"omitIfEmpty"`
-	SendSingle     bool     `json:"sendSingle"`
-	DataTemplate   string   `json:"dataTemplate"`
-	Format         string   `json:"format"`
-	SchemaId       string   `json:"schemaId"`
-	Delimiter      string   `json:"delimiter"`
-	BufferLength   int      `json:"bufferLength"`
-	Fields         []string `json:"fields"`
-	DataField      string   `json:"dataField"`
-	BatchSize      int      `json:"batchSize"`
-	LingerInterval int      `json:"lingerInterval"`
-	Compression    string   `json:"compression"`
-	Encryption     string   `json:"encryption"`
+	Concurrency    int               `json:"concurrency"`
+	Omitempty      bool              `json:"omitIfEmpty"`
+	SendSingle     bool              `json:"sendSingle"`
+	DataTemplate   string            `json:"dataTemplate"`
+	Format         string            `json:"format"`
+	SchemaId       string            `json:"schemaId"`
+	Delimiter      string            `json:"delimiter"`
+	BufferLength   int               `json:"bufferLength"`
+	Fields         []string          `json:"fields"`
+	DataField      string            `json:"dataField"`
+	BatchSize      int               `json:"batchSize"`
+	LingerInterval cast.DurationConf `json:"lingerInterval"`
+	Compression    string            `json:"compression"`
+	Encryption     string            `json:"encryption"`
 	conf.SinkConf
 }
 
@@ -77,7 +77,7 @@ func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
 		return nil, fmt.Errorf("invalid batchSize %d", sconf.BatchSize)
 	}
 	if sconf.LingerInterval < 0 {
-		return nil, fmt.Errorf("invalid lingerInterval %d", sconf.LingerInterval)
+		return nil, fmt.Errorf("invalid lingerInterval %v, must be positive", sconf.LingerInterval)
 	}
 	err = sconf.SinkConf.Validate()
 	if err != nil {

@@ -14,6 +14,8 @@
 
 package definition
 
+import "time"
+
 type Database interface {
 	Connect() error
 	Disconnect() error
@@ -31,7 +33,7 @@ type RedisConfig struct {
 	Host     string
 	Port     int
 	Password string
-	Timeout  int
+	Timeout  time.Duration
 }
 
 type SqliteConfig struct {

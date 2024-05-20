@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -29,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func TestPage(t *testing.T) {
@@ -124,7 +126,7 @@ func TestCache(t *testing.T) {
 		MaxDiskCache:     6,
 		BufferPageSize:   2,
 		EnableCache:      true,
-		ResendInterval:   "0s",
+		ResendInterval:   0,
 		CleanCacheAtStop: false,
 	})
 	assert.NoError(t, err)
@@ -133,7 +135,7 @@ func TestCache(t *testing.T) {
 	for i := 0; i < 15; i++ {
 		tuples[i] = &xsql.RawTuple{
 			Emitter:   "test",
-			Timestamp: int64(i),
+			Timestamp: time.UnixMilli(int64(i)),
 			Rawdata:   []byte("hello"),
 			Metadata:  map[string]any{"topic": "demo"},
 		}
@@ -154,7 +156,7 @@ func TestCache(t *testing.T) {
 			inputs: tuples[:2],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 0,
+				Timestamp: time.UnixMilli(0),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -165,7 +167,7 @@ func TestCache(t *testing.T) {
 			inputs: tuples[2:4],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 1,
+				Timestamp: time.UnixMilli(1),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -176,7 +178,7 @@ func TestCache(t *testing.T) {
 			inputs: tuples[4:7],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 2,
+				Timestamp: time.UnixMilli(2),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -187,7 +189,7 @@ func TestCache(t *testing.T) {
 			inputs: tuples[7:],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 8,
+				Timestamp: time.UnixMilli(8),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -197,7 +199,7 @@ func TestCache(t *testing.T) {
 			name: "read in left read buffer",
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 9,
+				Timestamp: time.UnixMilli(9),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -229,7 +231,7 @@ func TestCacheCase2(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       "10",
+		ResendInterval:       cast.DurationConf(10 * time.Millisecond),
 	})
 	assert.NoError(t, err)
 	// prepare data
@@ -237,7 +239,7 @@ func TestCacheCase2(t *testing.T) {
 	for i := 0; i < 15; i++ {
 		tuples[i] = &xsql.RawTuple{
 			Emitter:   "test",
-			Timestamp: int64(i),
+			Timestamp: time.UnixMilli(int64(i)),
 			Rawdata:   []byte("hello"),
 			Metadata:  map[string]any{"topic": "demo"},
 		}
@@ -254,7 +256,7 @@ func TestCacheCase2(t *testing.T) {
 			inputs: tuples[4:5],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 4,
+				Timestamp: time.UnixMilli(4),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -265,7 +267,7 @@ func TestCacheCase2(t *testing.T) {
 			inputs: tuples[5:6],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 5,
+				Timestamp: time.UnixMilli(5),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -276,7 +278,7 @@ func TestCacheCase2(t *testing.T) {
 			inputs: tuples[6:7],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 6,
+				Timestamp: time.UnixMilli(6),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -287,7 +289,7 @@ func TestCacheCase2(t *testing.T) {
 			inputs: tuples[7:10],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 7,
+				Timestamp: time.UnixMilli(7),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -298,7 +300,7 @@ func TestCacheCase2(t *testing.T) {
 			inputs: tuples[10:11],
 			output: &xsql.RawTuple{
 				Emitter:   "test",
-				Timestamp: 8,
+				Timestamp: time.UnixMilli(8),
 				Rawdata:   []byte("hello"),
 				Metadata:  map[string]any{"topic": "demo"},
 			},
@@ -331,7 +333,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       "0ms",
+		ResendInterval:       0,
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
@@ -340,7 +342,7 @@ func TestCacheInit(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		tuples[i] = &xsql.RawTuple{
 			Emitter:   "test",
-			Timestamp: int64(i),
+			Timestamp: time.UnixMilli(int64(i)),
 			Rawdata:   []byte("hello"),
 			Metadata:  map[string]any{"topic": "demo"},
 		}
@@ -355,7 +357,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       "0ms",
+		ResendInterval:       0,
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
@@ -363,7 +365,7 @@ func TestCacheInit(t *testing.T) {
 	assert.Equal(t, 3, s.CacheLength, "cache length after pop")
 	assert.Equal(t, &xsql.RawTuple{
 		Emitter:   "test",
-		Timestamp: int64(6),
+		Timestamp: time.UnixMilli(6),
 		Rawdata:   []byte("hello"),
 		Metadata:  map[string]any{"topic": "demo"},
 	}, r)
@@ -374,7 +376,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       "0ms",
+		ResendInterval:       0,
 		CleanCacheAtStop:     false,
 	})
 	assert.NoError(t, err)
@@ -382,7 +384,7 @@ func TestCacheInit(t *testing.T) {
 	assert.Equal(t, 2, s.CacheLength, "cache length after pop")
 	assert.Equal(t, &xsql.RawTuple{
 		Emitter:   "test",
-		Timestamp: int64(7),
+		Timestamp: time.UnixMilli(7),
 		Rawdata:   []byte("hello"),
 		Metadata:  map[string]any{"topic": "demo"},
 	}, r)
@@ -394,7 +396,7 @@ func TestCacheInit(t *testing.T) {
 		MaxDiskCache:         2,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       "0ms",
+		ResendInterval:       0,
 		CleanCacheAtStop:     true,
 	})
 	assert.NoError(t, err)

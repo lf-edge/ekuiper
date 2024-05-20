@@ -88,7 +88,7 @@ func NewExecutor(i *interfaceInfo) (executor, error) {
 	}
 	opt := &interfaceOpt{
 		addr:    u,
-		timeout: 5000,
+		timeout: 5 * time.Second,
 	}
 
 	if ins, ok := executors[i.Protocol]; ok {
@@ -104,7 +104,7 @@ type executor interface {
 
 type interfaceOpt struct {
 	addr    *url.URL
-	timeout int64
+	timeout time.Duration
 }
 
 type grpcExecutor struct {
@@ -116,7 +116,7 @@ type grpcExecutor struct {
 
 func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params []interface{}) (interface{}, error) {
 	if d.conn == nil {
-		dialCtx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
+		dialCtx, cancel := context.WithTimeout(context.Background(), d.timeout)
 		var (
 			conn *grpc.ClientConn
 			e    error
@@ -151,7 +151,7 @@ func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params
 	if err != nil {
 		return nil, err
 	}
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Duration(d.timeout)*time.Millisecond)
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), d.timeout)
 	var (
 		o proto.Message
 		e error
@@ -199,7 +199,7 @@ func (h *httpExecutor) InvokeFunction(ctx api.FunctionContext, name string, para
 		}
 		h.conn = &http.Client{
 			Transport: tr,
-			Timeout:   time.Duration(h.timeout) * time.Millisecond,
+			Timeout:   h.timeout,
 		}
 	}
 

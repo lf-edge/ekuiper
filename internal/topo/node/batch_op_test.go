@@ -31,7 +31,7 @@ func TestRun(t *testing.T) {
 	testcases := []struct {
 		sendCount      int
 		batchSize      int
-		lingerInterval int
+		lingerInterval time.Duration
 		err            string
 		expectItems    int
 	}{
@@ -49,19 +49,19 @@ func TestRun(t *testing.T) {
 		{
 			sendCount:      4,
 			batchSize:      10,
-			lingerInterval: 100,
+			lingerInterval: 100 * time.Millisecond,
 			expectItems:    4,
 		},
 		{
 			sendCount:      4,
 			batchSize:      0,
-			lingerInterval: 100,
+			lingerInterval: 100 * time.Millisecond,
 			expectItems:    4,
 		},
 		{
 			sendCount:      6,
 			batchSize:      3,
-			lingerInterval: 3000,
+			lingerInterval: 3 * time.Second,
 			expectItems:    3,
 		},
 	}

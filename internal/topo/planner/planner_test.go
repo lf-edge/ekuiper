@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
@@ -37,6 +38,7 @@ import (
 	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 func init() {
@@ -45,18 +47,18 @@ func init() {
 
 var defaultOption = &def.RuleOption{
 	IsEventTime:        false,
-	LateTol:            1000,
+	LateTol:            cast.DurationConf(time.Second),
 	Concurrency:        1,
 	BufferLength:       1024,
 	SendMetaToSink:     false,
 	SendError:          true,
 	Qos:                def.AtMostOnce,
-	CheckpointInterval: "300s",
+	CheckpointInterval: cast.DurationConf(5 * time.Minute),
 	Restart: &def.RestartStrategy{
 		Attempts:     0,
-		Delay:        1000,
+		Delay:        cast.DurationConf(time.Second),
 		Multiplier:   2,
-		MaxDelay:     30000,
+		MaxDelay:     cast.DurationConf(30 * time.Second),
 		JitterFactor: 0.1,
 	},
 }
@@ -2753,7 +2755,7 @@ func Test_createLogicalPlan(t *testing.T) {
 			BufferLength:       0,
 			SendMetaToSink:     false,
 			Qos:                0,
-			CheckpointInterval: "0s",
+			CheckpointInterval: 0,
 			SendError:          true,
 		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
@@ -4156,7 +4158,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 			BufferLength:       0,
 			SendMetaToSink:     false,
 			Qos:                0,
-			CheckpointInterval: "0s",
+			CheckpointInterval: 0,
 			SendError:          true,
 		}, kv)
 		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
@@ -4744,7 +4746,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 				BufferLength:       0,
 				SendMetaToSink:     false,
 				Qos:                0,
-				CheckpointInterval: "0s",
+				CheckpointInterval: 0,
 				SendError:          true,
 			}, kv)
 			assert.Equal(t, tt.err, testx.Errstring(err))

@@ -15,7 +15,6 @@
 package xsql
 
 import (
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -38,7 +37,7 @@ type Wildcarder interface {
 }
 
 type Event interface {
-	GetTimestamp() int64
+	GetTimestamp() time.Time
 	IsWatermark() bool
 }
 
@@ -262,7 +261,7 @@ type Alias struct {
 
 type RawTuple struct {
 	Emitter   string
-	Timestamp int64
+	Timestamp time.Time
 	Rawdata   []byte
 	Metadata  Metadata // immutable
 	Props     map[string]string
@@ -299,7 +298,7 @@ var (
 type Tuple struct {
 	Emitter   string
 	Message   Message // the original pointer is immutable & big; may be cloned.
-	Timestamp int64
+	Timestamp time.Time
 	Metadata  Metadata // immutable
 	Props     map[string]string
 
@@ -309,15 +308,11 @@ type Tuple struct {
 }
 
 func (t *Tuple) Created() time.Time {
-	return time.UnixMilli(t.Timestamp)
+	return t.Timestamp
 }
 
 func (t *Tuple) AllMeta() map[string]any {
 	return t.Metadata
-}
-
-func (t *Tuple) ToString() string {
-	return strconv.FormatInt(t.Timestamp, 10)
 }
 
 var (
@@ -482,7 +477,7 @@ func (t *Tuple) AggregateEval(expr ast.Expr, v CallValuer) []interface{} {
 }
 
 func (t *Tuple) GetTimestamp() time.Time {
-	return time.UnixMilli(t.Timestamp)
+	return t.Timestamp
 }
 
 func (t *Tuple) IsWatermark() bool {
@@ -492,7 +487,7 @@ func (t *Tuple) IsWatermark() bool {
 func (t *Tuple) FuncValue(key string) (interface{}, bool) {
 	switch key {
 	case "event_time":
-		return t.Timestamp, true
+		return t.Timestamp.UnixMilli(), true
 	default:
 		return nil, false
 	}

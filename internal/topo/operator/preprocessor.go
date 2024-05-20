@@ -84,11 +84,11 @@ func (p *Preprocessor) Apply(ctx api.StreamContext, data interface{}, _ *xsql.Fu
 	}
 	if p.isEventTime {
 		if t, ok := tuple.Message[p.timestampField]; ok {
-			if ts, err := cast.InterfaceToUnixMilli(t, p.timestampFormat); err != nil {
+			if ts, err := cast.InterfaceToTime(t, p.timestampFormat); err != nil {
 				return fmt.Errorf("cannot convert timestamp field %s to timestamp with error %v", p.timestampField, err)
 			} else {
 				tuple.Timestamp = ts
-				log.Debugf("preprocessor calculate timestamp %d", tuple.Timestamp)
+				log.Debugf("preprocessor calculate timestamp %d", tuple.Timestamp.UnixMilli())
 			}
 		} else {
 			return fmt.Errorf("cannot find timestamp field %s in tuple %v", p.timestampField, tuple.Message)

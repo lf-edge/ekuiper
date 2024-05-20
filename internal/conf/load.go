@@ -38,8 +38,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v3"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 const Separator = "__"
@@ -83,7 +84,7 @@ func LoadConfigFromPath(p string, c interface{}) error {
 		}
 		applyKeys(configs, names)
 	}
-	return mapstructure.Decode(configs, c)
+	return cast.MapToStruct(configs, c)
 }
 
 func CorrectsConfigKeysByJson(configs map[string]interface{}, jsonFilePath string) error {

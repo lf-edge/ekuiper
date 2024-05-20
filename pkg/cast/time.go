@@ -16,7 +16,6 @@ package cast
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/jinzhu/now"
@@ -364,18 +363,4 @@ func InterfaceToDuration(i interface{}) (time.Duration, error) {
 		return 0, fmt.Errorf("given arguments cannot convert to duration: %q", err)
 	}
 	return time.ParseDuration(duration)
-}
-
-func ConvertDuration(s any) (time.Duration, error) {
-	switch x := s.(type) {
-	case string:
-		i, err := strconv.ParseInt(x, 10, 64)
-		if err == nil {
-			return time.Duration(i) * time.Millisecond, nil
-		}
-		return time.ParseDuration(x)
-	case int:
-		return time.Duration(x) * time.Millisecond, nil
-	}
-	return 0, fmt.Errorf("unsupported type:%t", s)
 }

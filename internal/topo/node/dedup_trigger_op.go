@@ -124,7 +124,7 @@ func (w *DedupTriggerNode) trigger(ctx api.StreamContext, now int64) {
 				w.timeoutTicker.Stop()
 				w.timeoutTicker.Reset(time.Duration(r.end-now) * time.Millisecond)
 			} else {
-				w.timeoutTicker = timex.GetTimer(r.end - now)
+				w.timeoutTicker = timex.GetTimer(time.Duration(r.end-now) * time.Millisecond)
 				w.timeout = w.timeoutTicker.C
 				ctx.GetLogger().Debugf("Dedup trigger next trigger time %d", r.end)
 			}

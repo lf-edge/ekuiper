@@ -14,11 +14,13 @@
 
 package xsql
 
+import "time"
+
 type WatermarkTuple struct {
-	Timestamp int64
+	Timestamp time.Time
 }
 
-func (t *WatermarkTuple) GetTimestamp() int64 {
+func (t *WatermarkTuple) GetTimestamp() time.Time {
 	return t.Timestamp
 }
 

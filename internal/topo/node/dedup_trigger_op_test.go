@@ -222,7 +222,7 @@ func TestExec(t *testing.T) {
 		node.input <- &xsql.Tuple{
 			Emitter:   "test",
 			Message:   data,
-			Timestamp: int64(i),
+			Timestamp: time.UnixMilli(int64(i)),
 		}
 		c.Add(10 * time.Millisecond)
 	}

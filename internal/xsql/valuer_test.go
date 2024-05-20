@@ -170,7 +170,7 @@ func TestComparison(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
 	for i, tt := range data {
 		for j, c := range conditions {
-			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNowInMilli(), Metadata: nil}
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNow(), Metadata: nil}
 			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
 			result := ve.Eval(c)
 			if !reflect.DeepEqual(tt.r[j], result) {
@@ -191,7 +191,7 @@ func TestCalculation(t *testing.T) {
 				"b": float64(72),
 			},
 			r: []interface{}{
-				float64(104), float64(96), float64(0.4444444444444444), float64(32),
+				float64(104), float64(96), 0.4444444444444444, float64(32),
 			},
 		}, {
 			m: map[string]interface{}{
@@ -257,7 +257,7 @@ func TestCalculation(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
 	for i, tt := range data {
 		for j, c := range projects {
-			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNowInMilli(), Metadata: nil}
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNow(), Metadata: nil}
 			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
 			result := ve.Eval(c)
 			if !reflect.DeepEqual(tt.r[j], result) {
@@ -342,7 +342,7 @@ func TestCase(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
 	for i, tt := range data {
 		for j, c := range projects {
-			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNowInMilli(), Metadata: nil}
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNow(), Metadata: nil}
 			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
 			result := ve.Eval(c)
 			if !reflect.DeepEqual(tt.r[j], result) {
@@ -385,7 +385,7 @@ func TestArray(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
 	for i, tt := range data {
 		for j, c := range projects {
-			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNowInMilli(), Metadata: nil}
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNow(), Metadata: nil}
 			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
 			result := ve.Eval(c)
 			if !reflect.DeepEqual(tt.r[j], result) {
@@ -454,7 +454,7 @@ func TestLike(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(data)*len(sqls))
 	for i, tt := range data {
 		for j, c := range projects {
-			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNowInMilli(), Metadata: nil}
+			tuple := &Tuple{Emitter: "src", Message: tt.m, Timestamp: timex.GetNow(), Metadata: nil}
 			ve := &ValuerEval{Valuer: MultiValuer(tuple)}
 			result := ve.Eval(c)
 			if !reflect.DeepEqual(tt.r[j], result) {

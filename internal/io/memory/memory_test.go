@@ -76,7 +76,7 @@ func TestSharedInmemoryNode(t *testing.T) {
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
 		expected := []*xsql.Tuple{{
 			Emitter:   "",
-			Timestamp: timex.GetNowInMilli(),
+			Timestamp: timex.GetNow(),
 			Metadata:  map[string]any{"topic": id},
 			Message:   rawTuple.Message,
 		}}
@@ -149,37 +149,37 @@ func TestMultipleTopics(t *testing.T) {
 		}
 		expected = [][]*xsql.Tuple{
 			{ // 0 "h/d1/c1/s2",
-				{Message: map[string]any{"id": 4, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 5, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 6, "color": "green"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 4, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 5, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 6, "color": "green"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNow()},
 			},
 			{ // 1 "h/+/+/s1",
-				{Message: map[string]any{"id": 1, "temp": 23}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 2, "temp": 34}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 3, "temp": 28}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 1, "temp": 23}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 2, "temp": 34}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 3, "temp": 28}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNow()},
 
-				{Message: map[string]any{"id": 7, "hum": 67.5}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 8, "hum": 77.1}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 9, "hum": 90.3}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 7, "hum": 67.5}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 8, "hum": 77.1}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 9, "hum": 90.3}, Metadata: map[string]any{"topic": "h/d2/c2/s1"}, Timestamp: timex.GetNow()},
 
-				{Message: map[string]any{"id": 10, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 11, "status": "off"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 12, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 10, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 11, "status": "off"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 12, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNow()},
 			},
 			{ // 2 "h/d3/#",
-				{Message: map[string]any{"id": 10, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 11, "status": "off"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 12, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 10, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 11, "status": "off"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 12, "status": "on"}, Metadata: map[string]any{"topic": "h/d3/c3/s1"}, Timestamp: timex.GetNow()},
 			},
 			{ // 3 "h/d1/c1/s2",
-				{Message: map[string]any{"id": 4, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 5, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 6, "color": "green"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 4, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 5, "color": "red"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 6, "color": "green"}, Metadata: map[string]any{"topic": "h/d1/c1/s2"}, Timestamp: timex.GetNow()},
 			},
 			{ // 4 "h/+/c1/s1"
-				{Message: map[string]any{"id": 1, "temp": 23}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 2, "temp": 34}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
-				{Message: map[string]any{"id": 3, "temp": 28}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNowInMilli()},
+				{Message: map[string]any{"id": 1, "temp": 23}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 2, "temp": 34}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNow()},
+				{Message: map[string]any{"id": 3, "temp": 28}, Metadata: map[string]any{"topic": "h/d1/c1/s1"}, Timestamp: timex.GetNow()},
 			},
 		}
 	)
@@ -228,7 +228,7 @@ func TestMultipleTopics(t *testing.T) {
 		topic := sinkTopics[i]
 		for _, mm := range v {
 			time.Sleep(10 * time.Millisecond)
-			pubsub.Produce(ctx, topic, &xsql.Tuple{Message: mm, Metadata: map[string]any{"topic": topic}, Timestamp: timex.GetNowInMilli()})
+			pubsub.Produce(ctx, topic, &xsql.Tuple{Message: mm, Metadata: map[string]any{"topic": topic}, Timestamp: timex.GetNow()})
 			fmt.Printf("send to topic %s: %v\n", topic, mm["id"])
 		}
 

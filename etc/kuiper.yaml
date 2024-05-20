@@ -79,10 +79,10 @@ rule:
   restartStrategy:
     # The maximum retry times
     attempts: 0
-    # The interval in millisecond to retry
-    delay: 1000
-    # The maximum interval in millisecond to retry
-    maxDelay: 30000
+    # The interval to retry
+    delay: 1s
+    # The maximum interval to retry
+    maxDelay: 30s
     # The exponential to increase the interval. It can be a float value.
     multiplier: 2
     # How large random value will be added or subtracted to the delay to prevent restarting multiple rules at the same time.
@@ -124,8 +124,8 @@ store:
     host: localhost
     port: 6379
     password: kuiper
-    #Timeout in ms
-    timeout: 1000
+    #Timeout
+    timeout: 1s
   sqlite:
     #Sqlite file name, if left empty name of db will be sqliteKV.db
     name:
@@ -135,5 +135,5 @@ portable:
   # The executable of python. Specify this if you have multiple python instances in your system
   # or other circumstance where the python executable cannot be successfully invoked through the default command.
   pythonBin: python
-  # control init timeout in ms. If the init time is longer than this value, the plugin will be terminated.
-  initTimeout: 5000
+  # control init timeout. If the init time is longer than this value, the plugin will be terminated.
+  initTimeout: 5s
