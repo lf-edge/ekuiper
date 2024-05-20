@@ -277,6 +277,10 @@ func TestConvertDuration(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 100*time.Millisecond, t1)
 
+	t1, err = ConvertDuration(100)
+	require.NoError(t, err)
+	require.Equal(t, 100*time.Millisecond, t1)
+
 	t2, err := ConvertDuration("100s")
 	require.NoError(t, err)
 	require.Equal(t, 100*time.Second, t2)
