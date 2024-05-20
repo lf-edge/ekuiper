@@ -254,6 +254,16 @@ func stopRuleInternal(name string) {
 	}
 }
 
+func stopRuleWhenServerStop(name string) {
+	var err error
+	if rs, ok := registry.Load(name); ok {
+		err = rs.Stop()
+		if err != nil {
+			conf.Log.Warn(err)
+		}
+	}
+}
+
 func stopRule(name string) (result string, err error) {
 	if rs, ok := registry.Load(name); ok {
 		err = rs.Stop()

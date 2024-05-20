@@ -465,7 +465,7 @@ func handleScheduleRule(now time.Time, r *def.Rule, state string) scheduleRuleAc
 func waitAllRuleStop(ctx context.Context) error {
 	rules, _ := ruleProcessor.GetAllRules()
 	for _, r := range rules {
-		stopRuleInternal(r)
+		stopRuleWhenServerStop(r)
 	}
 	wg := &sync.WaitGroup{}
 	m := &sync.Map{}
