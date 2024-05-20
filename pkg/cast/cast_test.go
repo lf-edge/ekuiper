@@ -21,6 +21,7 @@ import (
 	"net"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -914,5 +915,57 @@ func TestToByteA(t *testing.T) {
 				t.Errorf("%d: ToByteA() = %x, want %x", i, r, tt.output)
 			}
 		}
+	}
+}
+
+type mockconf struct {
+	Interval time.Duration
+}
+
+func TestMapToStructDuration(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  map[string]any
+		output mockconf
+		err    string
+	}{
+		{
+			name: "duration string",
+			input: map[string]any{
+				"interval": "5s",
+			},
+			output: mockconf{
+				Interval: 5 * time.Second,
+			},
+		},
+		{
+			name: "duration int for millisecond",
+			input: map[string]any{
+				"interval": 1000,
+			},
+			output: mockconf{
+				Interval: time.Second,
+			},
+		},
+		{
+			name: "invalid duration string",
+			input: map[string]any{
+				"interval": "400",
+			},
+			err: "1 error(s) decoding:\n\n* error decoding 'Interval': time: missing unit in duration \"400\"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := mockconf{}
+			err := MapToStruct(tt.input, &r)
+			if tt.err != "" {
+				assert.Error(t, err)
+				assert.EqualError(t, err, tt.err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.output, r)
+			}
+		})
 	}
 }
