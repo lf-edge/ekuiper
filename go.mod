@@ -23,7 +23,7 @@ require (
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.7
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.1
+	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/montanaflynn/stats v0.7.1
@@ -40,6 +40,7 @@ require (
 	github.com/urfave/cli v1.22.14
 	github.com/valyala/fastjson v1.6.4
 	go.uber.org/automaxprocs v1.5.3
+	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
 	golang.org/x/text v0.14.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20240318140521-94a12d6c2237
 	google.golang.org/grpc v1.62.1
