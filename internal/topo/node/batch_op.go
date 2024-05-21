@@ -157,7 +157,3 @@ func (b *BatchOp) runWithTicker(ctx api.StreamContext) {
 		}
 	}()
 }
-
-func (b *BatchOp) Close() {
-	b.defaultNode.Close()
-}

@@ -60,10 +60,6 @@ func (o *EncryptNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *EncryptNode) Close() {
-	o.defaultNode.Close()
-}
-
 func (o *EncryptNode) Worker(_ api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()

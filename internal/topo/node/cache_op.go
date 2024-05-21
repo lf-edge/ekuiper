@@ -170,7 +170,3 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 		}
 	}
 }
-
-func (s *CacheOp) Close() {
-	s.defaultNode.Close()
-}

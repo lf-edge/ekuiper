@@ -114,10 +114,6 @@ func (w *DedupTriggerNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (w *DedupTriggerNode) Close() {
-	w.defaultNode.Close()
-}
-
 func (w *DedupTriggerNode) trigger(ctx api.StreamContext, now int64) {
 	for len(w.requests) > 0 {
 		r := w.requests.Peek()

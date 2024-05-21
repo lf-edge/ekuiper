@@ -143,7 +143,3 @@ func (o *DecodeOp) toTuple(v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
 }
 
 var _ SchemaNode = &DecodeOp{}
-
-func (o *DecodeOp) Close() {
-	o.defaultNode.Close()
-}

@@ -71,10 +71,6 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 	}
 }
 
-func (s *SinkNode) Close() {
-	s.defaultNode.Close()
-}
-
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	s.prepareExec(ctx, errCh, "sink")
 	go func() {

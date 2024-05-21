@@ -60,10 +60,6 @@ func NewWatermarkOp(name string, sendWatermark bool, streams []string, options *
 	}
 }
 
-func (w *WatermarkOp) Close() {
-	w.defaultNode.Close()
-}
-
 func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	w.prepareExec(ctx, errCh, "op")
 	// restore state

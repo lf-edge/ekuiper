@@ -52,10 +52,6 @@ func (o *UnaryOperator) SetOperation(op UnOperation) {
 	o.op = op
 }
 
-func (o *UnaryOperator) Close() {
-	o.defaultNode.Close()
-}
-
 // Exec is the entry point for the executor
 func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")

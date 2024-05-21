@@ -64,10 +64,6 @@ func (o *EncodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}()
 }
 
-func (o *EncodeOp) Close() {
-	o.defaultNode.Close()
-}
-
 func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()

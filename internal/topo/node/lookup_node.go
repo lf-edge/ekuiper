@@ -74,10 +74,6 @@ func NewLookupNode(name string, fields []string, keys []string, joinType ast.Joi
 	return n, nil
 }
 
-func (n *LookupNode) Close() {
-	n.defaultNode.Close()
-}
-
 func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
 	n.prepareExec(ctx, errCh, "op")

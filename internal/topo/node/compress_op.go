@@ -70,7 +70,3 @@ func (o *CompressOp) Worker(_ api.StreamContext, item any) []any {
 		return []any{fmt.Errorf("unsupported data received: %v", d)}
 	}
 }
-
-func (o *CompressOp) Close() {
-	o.defaultNode.Close()
-}
