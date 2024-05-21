@@ -1809,7 +1809,7 @@ func TestRuleWaitGroup(t *testing.T) {
 			BufferLength:       100,
 			SendError:          true,
 			Qos:                def.AtMostOnce,
-			CheckpointInterval: "5s",
+			CheckpointInterval: cast.DurationConf(time.Second * 5),
 		},
 	}
 	tp, err := planner.Plan(rule)
