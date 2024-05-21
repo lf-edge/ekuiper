@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -35,13 +36,13 @@ func TestNewSinkNode(t *testing.T) {
 		name           string
 		sc             *conf.SinkConf
 		isRetry        bool
-		resendInterval int
+		resendInterval time.Duration
 		bufferLength   int
 	}{
 		{
 			name: "normal sink",
 			sc: &conf.SinkConf{
-				ResendInterval: 100,
+				ResendInterval: cast.DurationConf(100 * time.Millisecond),
 			},
 			isRetry:        false,
 			resendInterval: 0,
@@ -50,38 +51,38 @@ func TestNewSinkNode(t *testing.T) {
 		{
 			name: "linear cache sink",
 			sc: &conf.SinkConf{
-				ResendInterval:       100,
+				ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 				EnableCache:          true,
 				MemoryCacheThreshold: 10,
 			},
 			isRetry:        false,
-			resendInterval: 100,
+			resendInterval: 100 * time.Millisecond,
 			bufferLength:   10,
 		},
 		{
 			name: "retry cache normal sink",
 			sc: &conf.SinkConf{
-				ResendInterval:       100,
+				ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 				EnableCache:          true,
 				MemoryCacheThreshold: 10,
 				ResendAlterQueue:     true,
 			},
 			isRetry: false,
 			// resend interval is set but no use
-			resendInterval: 100,
+			resendInterval: 100 * time.Millisecond,
 			bufferLength:   1024,
 		},
 		{
 			name: "retry cache resend sink",
 			sc: &conf.SinkConf{
-				ResendInterval:       100,
+				ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 				EnableCache:          true,
 				MemoryCacheThreshold: 10,
 				ResendAlterQueue:     true,
 			},
 			isRetry: true,
 			// resend interval is set but no use
-			resendInterval: 100,
+			resendInterval: 100 * time.Millisecond,
 			bufferLength:   10,
 		},
 	}
@@ -102,14 +103,14 @@ func TestRetry(t *testing.T) {
 	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
 		BufferLength: 1024,
 	}, 1, &conf.SinkConf{
-		ResendInterval:       100,
+		ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 		EnableCache:          true,
 		MemoryCacheThreshold: 10,
 	}, true)
 	assert.NoError(t, err)
 	data := &xsql.RawTuple{
 		Emitter:   "",
-		Timestamp: 1,
+		Timestamp: time.UnixMilli(1),
 	}
 	errCh := make(chan error, 1)
 	n.Exec(ctx, errCh)
@@ -132,7 +133,7 @@ func TestResendOut(t *testing.T) {
 	n, err := NewBytesSinkNode(ctx, "resendout_sink", s, def.RuleOption{
 		BufferLength: 1024,
 	}, 1, &conf.SinkConf{
-		ResendInterval:       100,
+		ResendInterval:       cast.DurationConf(100 * time.Millisecond),
 		EnableCache:          true,
 		MemoryCacheThreshold: 10,
 		ResendAlterQueue:     true,
@@ -142,7 +143,7 @@ func TestResendOut(t *testing.T) {
 	n.SetResendOutput(alertCh)
 	data := &xsql.RawTuple{
 		Emitter:   "",
-		Timestamp: 1,
+		Timestamp: time.UnixMilli(1),
 	}
 	errCh := make(chan error, 1)
 	n.Exec(ctx, errCh)

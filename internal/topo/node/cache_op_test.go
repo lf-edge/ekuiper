@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -42,7 +43,7 @@ func TestCacheRun(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		tuples[i] = &xsql.Tuple{
 			Emitter:   "test",
-			Timestamp: int64(i),
+			Timestamp: time.UnixMilli(int64(i)),
 			Message:   map[string]any{"key": "value"},
 			Metadata:  map[string]any{"topic": "demo"},
 		}
@@ -108,7 +109,7 @@ func TestCacheRun(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       "10",
+		ResendInterval:       cast.DurationConf(10 * time.Millisecond),
 	})
 	assert.NoError(t, err)
 	// In sink_node planner, set this buffer length
@@ -159,7 +160,7 @@ func TestRunError(t *testing.T) {
 		MaxDiskCache:         4,
 		BufferPageSize:       2,
 		EnableCache:          true,
-		ResendInterval:       "10",
+		ResendInterval:       cast.DurationConf(10 * time.Millisecond),
 	})
 	assert.NoError(t, err)
 	err = op.AddOutput(make(chan any, 2), "output1")

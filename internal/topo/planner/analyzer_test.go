@@ -195,7 +195,7 @@ func TestCheckTopoSort(t *testing.T) {
 		BufferLength:       0,
 		SendMetaToSink:     false,
 		Qos:                0,
-		CheckpointInterval: "0s",
+		CheckpointInterval: 0,
 		SendError:          true,
 	}, store)
 	errWithCode, ok := err.(errorx.ErrorWithCode)
@@ -258,7 +258,7 @@ func Test_validation(t *testing.T) {
 			BufferLength:       0,
 			SendMetaToSink:     false,
 			Qos:                0,
-			CheckpointInterval: "0s",
+			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
 		assert.Equal(t, tt.r.err, testx.Errstring(err), tt.sql)
@@ -314,7 +314,7 @@ func Test_validationSchemaless(t *testing.T) {
 			BufferLength:       0,
 			SendMetaToSink:     false,
 			Qos:                0,
-			CheckpointInterval: "0s",
+			CheckpointInterval: 0,
 			SendError:          true,
 		}, store)
 		serr := tt.r.Serr()

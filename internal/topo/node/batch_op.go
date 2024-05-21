@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -27,13 +28,13 @@ type BatchOp struct {
 	*defaultSinkNode
 	// configs
 	batchSize      int
-	lingerInterval int
+	lingerInterval time.Duration
 	// state
 	buffer    *xsql.WindowTuples
 	currIndex int
 }
 
-func NewBatchOp(name string, rOpt *def.RuleOption, batchSize, lingerInterval int) (*BatchOp, error) {
+func NewBatchOp(name string, rOpt *def.RuleOption, batchSize int, lingerInterval time.Duration) (*BatchOp, error) {
 	if batchSize < 1 && lingerInterval < 1 {
 		return nil, fmt.Errorf("either batchSize or lingerInterval should be larger than 0")
 	}
@@ -65,7 +66,7 @@ func (b *BatchOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 func (b *BatchOp) runWithTickerAndBatchSize(ctx api.StreamContext) {
-	ticker := timex.GetTicker(int64(b.lingerInterval))
+	ticker := timex.GetTicker(b.lingerInterval)
 	go func() {
 		defer func() {
 			ticker.Stop()
@@ -139,7 +140,7 @@ func (b *BatchOp) runWithBatchSize(ctx api.StreamContext) {
 }
 
 func (b *BatchOp) runWithTicker(ctx api.StreamContext) {
-	ticker := timex.GetTicker(int64(b.lingerInterval))
+	ticker := timex.GetTicker(b.lingerInterval)
 	go func() {
 		defer func() {
 			ticker.Stop()

@@ -62,12 +62,12 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 			continue
 		}
 		log.Debugf("mock source is waiting %d", i)
-		diff := d.Timestamp - timex.GetNowInMilli()
+		diff := d.Timestamp.Sub(timex.GetNow())
 		if diff <= 0 {
-			log.Warnf("Time stamp invalid, current time is %d, but timestamp is %d", timex.GetNowInMilli(), d.Timestamp)
-			diff = TIMELEAP
+			log.Warnf("Time stamp invalid, current time is %d, but timestamp is %d", timex.GetNowInMilli(), d.Timestamp.UnixMilli())
+			diff = TIMELEAP * time.Millisecond
 		}
-		next := mockClock.After(time.Duration(diff) * time.Millisecond)
+		next := mockClock.After(diff)
 		// Mock timer, only send out the data once the mock time goes to the timestamp.
 		// Another mechanism must be imposed to move forward the mock time.
 		select {
@@ -75,7 +75,7 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 			m.Lock()
 			m.offset = i + 1
 			ingest(ctx, map[string]any(d.Message), map[string]any{"topic": "mock"}, timex.GetNow())
-			log.Debugf("%d: mock source %s is sending data %d:%s", timex.GetNowInMilli(), ctx.GetOpId(), i, d)
+			log.Debugf("%d: mock source %s is sending data %d:%v", timex.GetNowInMilli(), ctx.GetOpId(), i, d)
 			m.Unlock()
 		case <-ctx.Done():
 			log.Debugf("mock source open DONE")

@@ -16,6 +16,7 @@ package checkpoint
 
 import (
 	"sync"
+	"time"
 
 	"github.com/benbjohnson/clock"
 
@@ -94,7 +95,7 @@ type Coordinator struct {
 	pendingCheckpoints      *sync.Map
 	completedCheckpoints    *checkpointStore
 	ruleId                  string
-	baseInterval            int
+	baseInterval            time.Duration
 	cleanThreshold          int
 	advanceToEndOfEventTime bool
 	ticker                  *clock.Ticker // For processing time only
@@ -104,7 +105,7 @@ type Coordinator struct {
 	activated               bool
 }
 
-func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos def.Qos, store api.Store, interval int, ctx api.StreamContext) *Coordinator {
+func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTask, sinks []SinkTask, qos def.Qos, store api.Store, interval time.Duration, ctx api.StreamContext) *Coordinator {
 	logger := ctx.GetLogger()
 	logger.Infof("create new coordinator for rule %s", ruleId)
 	signal := make(chan *Signal, 1024)
@@ -131,7 +132,7 @@ func NewCoordinator(ruleId string, sources []StreamTask, operators []NonSourceTa
 	}
 	// 5 minutes by default
 	if interval <= 0 {
-		interval = 300000
+		interval = 5 * time.Minute
 	}
 	return &Coordinator{
 		tasksToTrigger:     sourceResponders,
@@ -166,7 +167,7 @@ func (c *Coordinator) Activate() error {
 	if c.ticker != nil {
 		c.ticker.Stop()
 	}
-	c.ticker = timex.GetTicker(int64(c.baseInterval))
+	c.ticker = timex.GetTicker(c.baseInterval)
 	tc := c.ticker.C
 	go func() {
 		err := infra.SafeRun(func() error {

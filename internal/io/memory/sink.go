@@ -91,7 +91,7 @@ func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", topic)
-	pubsub.Produce(ctx, topic, &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNowInMilli()})
+	pubsub.Produce(ctx, topic, &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()})
 	return nil
 }
 
@@ -105,7 +105,7 @@ func (s *sink) CollectList(ctx api.StreamContext, tuples api.MessageTupleList) e
 	}
 	result := make([]*xsql.Tuple, tuples.Len())
 	tuples.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
-		result[index] = &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNowInMilli()}
+		result[index] = &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
 		return true
 	})
 	pubsub.ProduceList(ctx, topic, result)

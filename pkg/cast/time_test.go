@@ -273,11 +273,10 @@ func TestInterfaceToUnixMilli(t *testing.T) {
 }
 
 func TestConvertDuration(t *testing.T) {
-	t1, err := ConvertDuration("100")
-	require.NoError(t, err)
-	require.Equal(t, 100*time.Millisecond, t1)
+	_, err := ConvertDuration("100")
+	require.Error(t, err)
 
-	t1, err = ConvertDuration(100)
+	t1, err := ConvertDuration(100)
 	require.NoError(t, err)
 	require.Equal(t, 100*time.Millisecond, t1)
 

@@ -145,13 +145,13 @@ func toSinkTuple(bs any, props map[string]string) any {
 	}
 	switch bt := bs.(type) {
 	case []byte:
-		return &xsql.RawTuple{Rawdata: bt, Props: props}
+		return &xsql.RawTuple{Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
 	case map[string]any:
-		return &xsql.Tuple{Message: bt, Timestamp: timex.GetNowInMilli(), Props: props}
+		return &xsql.Tuple{Message: bt, Timestamp: timex.GetNow(), Props: props}
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, 0, len(bt))
 		for _, m := range bt {
-			tuples = append(tuples, &xsql.Tuple{Message: m, Timestamp: timex.GetNowInMilli()})
+			tuples = append(tuples, &xsql.Tuple{Message: m, Timestamp: timex.GetNow()})
 		}
 		return &xsql.TransformedTupleList{Content: tuples, Maps: bt, Props: props}
 	default:

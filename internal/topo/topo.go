@@ -35,7 +35,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -119,7 +118,11 @@ func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 
 func (s *Topo) AddSink(inputs []node.Emitter, snk node.DataSinkNode) *Topo {
 	for _, input := range inputs {
-		input.AddOutput(snk.GetInput())
+		err := input.AddOutput(snk.GetInput())
+		if err != nil {
+			s.ctx.GetLogger().Error(err)
+			return nil
+		}
 		snk.AddInputCount()
 		s.addEdge(input.(node.TopNode), snk, "sink")
 	}
@@ -284,11 +287,7 @@ func (s *Topo) enableCheckpoint(ctx api.StreamContext) error {
 		for _, r := range s.sinks {
 			sinks = append(sinks, r)
 		}
-		d, err := cast.ConvertDuration(s.options.CheckpointInterval)
-		if err != nil {
-			return err
-		}
-		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.options.Qos, s.store, int(d/time.Millisecond), s.ctx)
+		c := checkpoint.NewCoordinator(s.name, sources, ops, sinks, s.options.Qos, s.store, time.Duration(s.options.CheckpointInterval), s.ctx)
 		s.coordinator = c
 	}
 	return nil

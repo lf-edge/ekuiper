@@ -58,16 +58,16 @@ type tlsConf struct {
 }
 
 type SinkConf struct {
-	MemoryCacheThreshold int    `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
-	MaxDiskCache         int    `json:"maxDiskCache" yaml:"maxDiskCache"`
-	BufferPageSize       int    `json:"bufferPageSize" yaml:"bufferPageSize"`
-	EnableCache          bool   `json:"enableCache" yaml:"enableCache"`
-	ResendInterval       any    `json:"resendInterval" yaml:"resendInterval"`
-	CleanCacheAtStop     bool   `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
-	ResendAlterQueue     bool   `json:"resendAlterQueue" yaml:"resendAlterQueue"`
-	ResendPriority       int    `json:"resendPriority" yaml:"resendPriority"`
-	ResendIndicatorField string `json:"resendIndicatorField" yaml:"resendIndicatorField"`
-	ResendDestination    string `json:"resendDestination" yaml:"resendDestination"`
+	MemoryCacheThreshold int               `json:"memoryCacheThreshold" yaml:"memoryCacheThreshold"`
+	MaxDiskCache         int               `json:"maxDiskCache" yaml:"maxDiskCache"`
+	BufferPageSize       int               `json:"bufferPageSize" yaml:"bufferPageSize"`
+	EnableCache          bool              `json:"enableCache" yaml:"enableCache"`
+	ResendInterval       cast.DurationConf `json:"resendInterval" yaml:"resendInterval"`
+	CleanCacheAtStop     bool              `json:"cleanCacheAtStop" yaml:"cleanCacheAtStop"`
+	ResendAlterQueue     bool              `json:"resendAlterQueue" yaml:"resendAlterQueue"`
+	ResendPriority       int               `json:"resendPriority" yaml:"resendPriority"`
+	ResendIndicatorField string            `json:"resendIndicatorField" yaml:"resendIndicatorField"`
+	ResendDestination    string            `json:"resendDestination" yaml:"resendDestination"`
 }
 
 // Validate the configuration and reset to the default value for invalid values.
@@ -88,11 +88,7 @@ func (sc *SinkConf) Validate() error {
 		Log.Warnf("bufferPageSize is less than or equal to 0, set to 256")
 		errs = errors.Join(errs, errors.New("bufferPageSize:bufferPageSize must be positive"))
 	}
-	d, err := cast.ConvertDuration(sc.ResendInterval)
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
-	if d < 0 {
+	if sc.ResendInterval < 0 {
 		errs = errors.Join(errs, errors.New("resendInterval:resendInterval must be positive"))
 	}
 
@@ -173,33 +169,33 @@ func (s *syslogConf) Validate() error {
 
 type KuiperConf struct {
 	Basic struct {
-		LogLevel                string      `yaml:"logLevel"`
-		Debug                   bool        `yaml:"debug"`
-		ConsoleLog              bool        `yaml:"consoleLog"`
-		FileLog                 bool        `yaml:"fileLog"`
-		LogDisableTimestamp     bool        `yaml:"logDisableTimestamp"`
-		Syslog                  *syslogConf `yaml:"syslog"`
-		RotateTime              int         `yaml:"rotateTime"`
-		MaxAge                  int         `yaml:"maxAge"`
-		RotateSize              int64       `yaml:"rotateSize"`
-		RotateCount             int         `yaml:"rotateCount"`
-		TimeZone                string      `yaml:"timezone"`
-		Ip                      string      `yaml:"ip"`
-		Port                    int         `yaml:"port"`
-		RestIp                  string      `yaml:"restIp"`
-		RestPort                int         `yaml:"restPort"`
-		RestTls                 *tlsConf    `yaml:"restTls"`
-		Prometheus              bool        `yaml:"prometheus"`
-		PrometheusPort          int         `yaml:"prometheusPort"`
-		PluginHosts             string      `yaml:"pluginHosts"`
-		Authentication          bool        `yaml:"authentication"`
-		IgnoreCase              bool        `yaml:"ignoreCase"`
-		SQLConf                 *SQLConf    `yaml:"sql"`
-		RulePatrolInterval      string      `yaml:"rulePatrolInterval"`
-		CfgStorageType          string      `yaml:"cfgStorageType"`
-		EnableOpenZiti          bool        `yaml:"enableOpenZiti"`
-		AesKey                  string      `yaml:"aesKey"`
-		GracefulShutdownTimeout string      `yaml:"gracefulShutdownTimeout"`
+		LogLevel                string            `yaml:"logLevel"`
+		Debug                   bool              `yaml:"debug"`
+		ConsoleLog              bool              `yaml:"consoleLog"`
+		FileLog                 bool              `yaml:"fileLog"`
+		LogDisableTimestamp     bool              `yaml:"logDisableTimestamp"`
+		Syslog                  *syslogConf       `yaml:"syslog"`
+		RotateTime              int               `yaml:"rotateTime"`
+		MaxAge                  int               `yaml:"maxAge"`
+		RotateSize              int64             `yaml:"rotateSize"`
+		RotateCount             int               `yaml:"rotateCount"`
+		TimeZone                string            `yaml:"timezone"`
+		Ip                      string            `yaml:"ip"`
+		Port                    int               `yaml:"port"`
+		RestIp                  string            `yaml:"restIp"`
+		RestPort                int               `yaml:"restPort"`
+		RestTls                 *tlsConf          `yaml:"restTls"`
+		Prometheus              bool              `yaml:"prometheus"`
+		PrometheusPort          int               `yaml:"prometheusPort"`
+		PluginHosts             string            `yaml:"pluginHosts"`
+		Authentication          bool              `yaml:"authentication"`
+		IgnoreCase              bool              `yaml:"ignoreCase"`
+		SQLConf                 *SQLConf          `yaml:"sql"`
+		RulePatrolInterval      cast.DurationConf `yaml:"rulePatrolInterval"`
+		CfgStorageType          string            `yaml:"cfgStorageType"`
+		EnableOpenZiti          bool              `yaml:"enableOpenZiti"`
+		AesKey                  string            `yaml:"aesKey"`
+		GracefulShutdownTimeout cast.DurationConf `yaml:"gracefulShutdownTimeout"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf
@@ -208,11 +204,11 @@ type KuiperConf struct {
 		Type         string `yaml:"type"`
 		ExtStateType string `yaml:"extStateType"`
 		Redis        struct {
-			Host               string `yaml:"host"`
-			Port               int    `yaml:"port"`
-			Password           string `yaml:"password"`
-			Timeout            int    `yaml:"timeout"`
-			ConnectionSelector string `yaml:"connectionSelector"`
+			Host               string            `yaml:"host"`
+			Port               int               `yaml:"port"`
+			Password           string            `yaml:"password"`
+			Timeout            cast.DurationConf `yaml:"timeout"`
+			ConnectionSelector string            `yaml:"connectionSelector"`
 		}
 		Sqlite struct {
 			Name string `yaml:"name"`
@@ -222,8 +218,8 @@ type KuiperConf struct {
 		}
 	}
 	Portable struct {
-		PythonBin   string `yaml:"pythonBin"`
-		InitTimeout int    `yaml:"initTimeout"`
+		PythonBin   string            `yaml:"pythonBin"`
+		InitTimeout cast.DurationConf `yaml:"initTimeout"`
 	}
 	AesKey []byte
 }
@@ -286,7 +282,7 @@ func SetConsoleAndFileLog(consoleLog, fileLog bool) error {
 	} else if consoleLog {
 		mw := io.MultiWriter(os.Stdout, logWriter)
 		Log.SetOutput(mw)
-	} else if !consoleLog {
+	} else {
 		Log.SetOutput(logWriter)
 	}
 	if Config.Basic.RotateCount > 0 {
@@ -304,10 +300,10 @@ func InitConf() {
 	}
 	kc := KuiperConf{
 		Rule: def.RuleOption{
-			LateTol:            1000,
+			LateTol:            cast.DurationConf(time.Second),
 			Concurrency:        1,
 			BufferLength:       1024,
-			CheckpointInterval: "300s", // 5 minutes
+			CheckpointInterval: cast.DurationConf(5 * time.Minute), // 5 minutes
 			SendError:          true,
 			Restart: &def.RestartStrategy{
 				Attempts:     0,
@@ -332,8 +328,9 @@ func InitConf() {
 		Config.Basic.RestIp = "0.0.0.0"
 	}
 
-	if len(Config.Basic.RulePatrolInterval) < 1 {
-		Config.Basic.RulePatrolInterval = "10s"
+	if time.Duration(Config.Basic.RulePatrolInterval) < time.Second {
+		Log.Warnf("rule patrol interval %v is less than 1 second, set it to 10 seconds", Config.Basic.RulePatrolInterval)
+		Config.Basic.RulePatrolInterval = cast.DurationConf(10 * time.Second)
 	}
 
 	if Config.Basic.LogLevel == "" {
@@ -360,8 +357,8 @@ func InitConf() {
 		}
 	}
 
-	if len(Config.Basic.GracefulShutdownTimeout) < 1 {
-		Config.Basic.GracefulShutdownTimeout = "3s"
+	if time.Duration(Config.Basic.GracefulShutdownTimeout) < 1 {
+		Config.Basic.GracefulShutdownTimeout = cast.DurationConf(3 * time.Second)
 	}
 
 	if Config.Basic.TimeZone != "" {
@@ -423,10 +420,6 @@ func SetLogFormat(disableTimestamp bool) {
 
 func ValidateRuleOption(option *def.RuleOption) error {
 	var errs error
-	_, err := cast.ConvertDuration(option.CheckpointInterval)
-	if err != nil {
-		errs = errors.Join(errs, err)
-	}
 	if option.Concurrency < 0 {
 		option.Concurrency = 1
 		Log.Warnf("concurrency is negative, set to 1")
@@ -438,8 +431,8 @@ func ValidateRuleOption(option *def.RuleOption) error {
 		errs = errors.Join(errs, errors.New("invalidBufferLength:bufferLength must be greater than 0"))
 	}
 	if option.LateTol < 0 {
-		option.LateTol = 1000
-		Log.Warnf("lateTol is negative, set to 1000")
+		option.LateTol = cast.DurationConf(time.Second)
+		Log.Warnf("lateTol is negative, set to 1 second")
 		errs = errors.Join(errs, errors.New("invalidLateTol:lateTol must be greater than 0"))
 	}
 	if option.Restart != nil {

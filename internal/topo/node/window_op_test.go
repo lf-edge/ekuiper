@@ -351,29 +351,29 @@ func TestGCInputsForConditionNotMatch(t *testing.T) {
 			},
 		},
 		window: &WindowConfig{
-			Length: 1000,
+			Length: time.Second,
 			Type:   ast.SLIDING_WINDOW,
 		},
 	}
 	tuples := []*xsql.Tuple{
 		{
-			Timestamp: 3000,
+			Timestamp: time.UnixMilli(3000),
 		},
 		{
-			Timestamp: 4000,
+			Timestamp: time.UnixMilli(4000),
 		},
 		{
-			Timestamp: 5000,
+			Timestamp: time.UnixMilli(5000),
 		},
 	}
-	o.triggerTime = 1
-	inputs := o.gcInputs(tuples, 4500, context.Background())
+	o.triggerTime = time.UnixMilli(1)
+	inputs := o.gcInputs(tuples, time.UnixMilli(4500), context.Background())
 	require.Equal(t, []*xsql.Tuple{
 		{
-			Timestamp: 4000,
+			Timestamp: time.UnixMilli(4000),
 		},
 		{
-			Timestamp: 5000,
+			Timestamp: time.UnixMilli(5000),
 		},
 	}, inputs)
 }

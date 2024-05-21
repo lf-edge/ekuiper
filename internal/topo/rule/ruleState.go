@@ -229,9 +229,9 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 	}
 	err := infra.SafeRun(func() error {
 		count := 0
-		d := option.Delay
+		d := time.Duration(option.Delay)
 		var er error
-		ticker := time.NewTicker(time.Duration(d) * time.Millisecond)
+		ticker := time.NewTicker(d)
 		defer ticker.Stop()
 		for {
 			select {
@@ -247,14 +247,14 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 				}
 			}
 			if count < option.Attempts {
-				if d > option.MaxDelay {
-					d = option.MaxDelay
+				if d > time.Duration(option.MaxDelay) {
+					d = time.Duration(option.MaxDelay)
 				}
 				if option.JitterFactor > 0 {
-					d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*option.JitterFactor + 1)))
+					d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*option.JitterFactor+1))) * time.Millisecond
 					// make sure d is always in range
-					for d <= 0 || d > option.MaxDelay {
-						d = int(math.Round(float64(d) * ((rand.Float64()*2-1)*option.JitterFactor + 1)))
+					for d <= 0 || d > time.Duration(option.MaxDelay) {
+						d = time.Duration(math.Round(float64(d.Milliseconds())*((rand.Float64()*2-1)*option.JitterFactor+1))) * time.Millisecond
 					}
 					conf.Log.Infof("Rule %s will restart with jitterred delay %d", rs.RuleId, d)
 				} else {
@@ -270,7 +270,7 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 				}
 				count++
 				if option.Multiplier > 0 {
-					d = option.Delay * int(math.Pow(option.Multiplier, float64(count)))
+					d = time.Duration(option.Delay) * time.Duration(math.Pow(option.Multiplier, float64(count)))
 				}
 			} else {
 				return er

@@ -16,19 +16,19 @@ package node
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // EventTimeTrigger scans the input tuples and find out the tuples in the current window
 // The inputs are sorted by watermark op
 type EventTimeTrigger struct {
 	window   *WindowConfig
-	interval int64
+	interval time.Duration
 }
 
 func NewEventTimeTrigger(window *WindowConfig) (*EventTimeTrigger, error) {
@@ -53,68 +53,66 @@ func NewEventTimeTrigger(window *WindowConfig) (*EventTimeTrigger, error) {
 }
 
 // If the window end cannot be determined yet, return max int64 so that it can be recalculated for the next watermark
-func (w *EventTimeTrigger) getNextWindow(inputs []*xsql.Tuple, current int64, watermark int64) int64 {
+func (w *EventTimeTrigger) getNextWindow(inputs []*xsql.Tuple, current time.Time, watermark time.Time) time.Time {
 	switch w.window.Type {
 	case ast.TUMBLING_WINDOW, ast.HOPPING_WINDOW:
-		if current > 0 {
-			return current + w.interval
+		if !current.IsZero() {
+			return current.Add(w.interval)
 		} else { // first run without a previous window
 			nextTs := getEarliestEventTs(inputs, current, watermark)
-			if nextTs == math.MaxInt64 {
+			if nextTs == timex.Maxtime {
 				return nextTs
 			}
-			return getAlignedWindowEndTime(time.UnixMilli(nextTs), w.window.RawInterval, w.window.TimeUnit).UnixMilli()
+			return getAlignedWindowEndTime(nextTs, w.window.RawInterval, w.window.TimeUnit)
 		}
 	case ast.SLIDING_WINDOW:
 		nextTs := getEarliestEventTs(inputs, current, watermark)
 		return nextTs
 	default:
-		return math.MaxInt64
+		return timex.Maxtime
 	}
 }
 
-func (w *EventTimeTrigger) getNextSessionWindow(inputs []*xsql.Tuple, now int64) (int64, bool) {
+func (w *EventTimeTrigger) getNextSessionWindow(inputs []*xsql.Tuple, now time.Time) (time.Time, bool) {
 	if len(inputs) > 0 {
 		timeout, duration := w.window.Interval, w.window.Length
 		et := inputs[0].Timestamp
-		tick := getAlignedWindowEndTime(time.UnixMilli(et), w.window.RawInterval, w.window.TimeUnit).UnixMilli()
-		var p int64
+		tick := getAlignedWindowEndTime(et, w.window.RawInterval, w.window.TimeUnit)
+		p := time.Time{}
 		ticked := false
 		for _, tuple := range inputs {
-			var r int64 = math.MaxInt64
-			if p > 0 {
-				if tuple.Timestamp-p > timeout {
-					r = p + timeout
+			r := timex.Maxtime
+			if !p.IsZero() {
+				if tuple.Timestamp.Sub(p) > timeout {
+					r = p.Add(timeout)
 				}
 			}
-			if tuple.Timestamp > tick {
-				if tick-duration > et && tick < r {
+			if tuple.Timestamp.After(tick) {
+				if tick.Add(-duration).After(et) && tick.Before(r) {
 					r = tick
 					ticked = true
 				}
-				tick += duration
+				tick = tick.Add(duration)
 			}
-			if r < math.MaxInt64 {
+			if r.Before(timex.Maxtime) {
 				return r, ticked
 			}
 			p = tuple.Timestamp
 		}
-		if p > 0 {
-			if now-p > timeout {
-				return p + timeout, ticked
+		if !p.IsZero() {
+			if now.Sub(p) > timeout {
+				return p.Add(timeout), ticked
 			}
 		}
 	}
-	return math.MaxInt64, false
+	return timex.Maxtime, false
 }
 
 func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.Tuple, _ chan<- error) {
 	log := ctx.GetLogger()
-	var (
-		nextWindowEndTs int64
-		prevWindowEndTs int64
-		lastTicked      bool
-	)
+	nextWindowEndTs := timex.Maxtime
+	prevWindowEndTs := time.Time{}
+	var lastTicked bool
 	for {
 		select {
 		// process incoming item
@@ -131,7 +129,7 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				ctx.GetLogger().Debug("WatermarkTuple", d.GetTimestamp())
 				watermarkTs := d.GetTimestamp()
 				if o.window.Type == ast.SLIDING_WINDOW {
-					for len(o.delayTS) > 0 && watermarkTs >= o.delayTS[0] {
+					for len(o.delayTS) > 0 && (watermarkTs.After(o.delayTS[0]) || watermarkTs.Equal(o.delayTS[0])) {
 						inputs = o.scan(inputs, o.delayTS[0], ctx)
 						o.delayTS = o.delayTS[1:]
 					}
@@ -140,24 +138,24 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				windowEndTs := nextWindowEndTs
 				ticked := false
 				// Session window needs a recalculation of window because its window end depends on the inputs
-				if windowEndTs == math.MaxInt64 || o.window.Type == ast.SESSION_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
+				if windowEndTs.Equal(timex.Maxtime) || o.window.Type == ast.SESSION_WINDOW || o.window.Type == ast.SLIDING_WINDOW {
 					if o.window.Type == ast.SESSION_WINDOW {
 						windowEndTs, ticked = o.trigger.getNextSessionWindow(inputs, watermarkTs)
 					} else {
 						windowEndTs = o.trigger.getNextWindow(inputs, prevWindowEndTs, watermarkTs)
 					}
 				}
-				for windowEndTs <= watermarkTs && windowEndTs >= 0 {
+				for !windowEndTs.IsZero() && (windowEndTs.Before(watermarkTs) || windowEndTs.Equal(watermarkTs)) {
 					log.Debugf("Current input count %d", len(inputs))
 					// scan all events and find out the event in the current window
 					if o.window.Type == ast.SESSION_WINDOW && !lastTicked {
 						o.triggerTime = inputs[0].Timestamp
 					}
-					if windowEndTs > 0 {
+					if !windowEndTs.IsZero() {
 						if o.window.Type == ast.SLIDING_WINDOW {
-							for len(o.triggerTS) > 0 && o.triggerTS[0] <= watermarkTs {
+							for len(o.triggerTS) > 0 && (o.triggerTS[0].Before(watermarkTs) || o.triggerTS[0].Equal(watermarkTs)) {
 								if o.window.Delay > 0 {
-									o.delayTS = append(o.delayTS, o.triggerTS[0]+o.window.Delay)
+									o.delayTS = append(o.delayTS, o.triggerTS[0].Add(o.window.Delay))
 								} else {
 									inputs = o.scan(inputs, o.triggerTS[0], ctx)
 								}
@@ -174,17 +172,17 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 					} else {
 						windowEndTs = o.trigger.getNextWindow(inputs, prevWindowEndTs, watermarkTs)
 					}
-					log.Debugf("Window end ts %d Watermark ts %d\n", windowEndTs, watermarkTs)
+					log.Debugf("Window end ts %d Watermark ts %d\n", windowEndTs.UnixMilli(), watermarkTs.UnixMilli())
 				}
 				nextWindowEndTs = windowEndTs
-				log.Debugf("next window end %d", nextWindowEndTs)
+				log.Debugf("next window end %d", nextWindowEndTs.UnixMilli())
 			case *xsql.Tuple:
 				ctx.GetLogger().Debug("Tuple", d.GetTimestamp())
 				o.statManager.ProcessTimeStart()
 				o.statManager.IncTotalRecordsIn()
 				log.Debugf("event window receive tuple %s", d.Message)
 				// first tuple, set the window start time, which will set to triggerTime
-				if o.triggerTime == 0 {
+				if o.triggerTime.IsZero() {
 					o.triggerTime = d.Timestamp
 				}
 				if o.window.Type == ast.SLIDING_WINDOW && o.isMatchCondition(ctx, d) {
@@ -209,10 +207,10 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 	}
 }
 
-func getEarliestEventTs(inputs []*xsql.Tuple, startTs int64, endTs int64) int64 {
-	var minTs int64 = math.MaxInt64
+func getEarliestEventTs(inputs []*xsql.Tuple, startTs time.Time, endTs time.Time) time.Time {
+	minTs := timex.Maxtime
 	for _, t := range inputs {
-		if t.Timestamp > startTs && t.Timestamp <= endTs && t.Timestamp < minTs {
+		if t.Timestamp.After(startTs) && (t.Timestamp.Before(endTs) || t.Timestamp.Equal(endTs)) && t.Timestamp.Before(minTs) {
 			minTs = t.Timestamp
 		}
 	}

@@ -24,7 +24,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/cache"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
@@ -163,8 +162,7 @@ func (s *CacheOp) doBroadcast(val interface{}) {
 		if !s.hasCache {
 			s.ctx.GetLogger().Debugf("memory buffer full, start to save cache")
 			// Start the send interval
-			d, _ := cast.ConvertDuration(s.cacheConf.ResendInterval)
-			s.resendTicker = timex.Clock.Ticker(d)
+			s.resendTicker = timex.GetTicker(time.Duration(s.cacheConf.ResendInterval))
 			s.resendTimerCh = s.resendTicker.C
 			s.hasCache = true
 		}

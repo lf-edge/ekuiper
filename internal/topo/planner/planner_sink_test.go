@@ -321,7 +321,7 @@ func TestSinkPlanError(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			err: "fail to parse sink configuration: invalid lingerInterval -1",
+			err: "fail to parse sink configuration: invalid lingerInterval -1000000, must be positive",
 		},
 		{
 			name: "invalid dataTemplate",

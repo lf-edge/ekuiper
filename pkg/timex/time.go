@@ -25,6 +25,7 @@ import (
 var (
 	Clock     clock.Clock
 	IsTesting bool
+	Maxtime   = time.Date(9999, time.December, 31, 23, 59, 59, 999999999, time.UTC)
 )
 
 func init() {
@@ -46,12 +47,12 @@ func InitClock() {
 }
 
 // GetTicker Time related. For Mock
-func GetTicker(duration int64) *clock.Ticker {
-	return Clock.Ticker(time.Duration(duration) * time.Millisecond)
+func GetTicker(duration time.Duration) *clock.Ticker {
+	return Clock.Ticker(duration)
 }
 
-func GetTimer(duration int64) *clock.Timer {
-	return Clock.Timer(time.Duration(duration) * time.Millisecond)
+func GetTimer(duration time.Duration) *clock.Timer {
+	return Clock.Timer(duration)
 }
 
 func Sleep(duration time.Duration) {
@@ -60,7 +61,7 @@ func Sleep(duration time.Duration) {
 
 func GetTimerByTime(t time.Time) *clock.Timer {
 	if IsTesting {
-		return Clock.Timer(time.Duration(t.UnixMilli()-GetNowInMilli()) * time.Millisecond)
+		return Clock.Timer(t.Sub(GetNow()))
 	} else {
 		return Clock.Timer(time.Until(t))
 	}

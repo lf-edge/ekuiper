@@ -33,7 +33,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -210,7 +209,7 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 	// Set the current time
 	mockClock.Add(0)
 	// TODO assume multiple data source send the data in order and has the same length
-	mockClock.Set(cast.TimeFromUnixMilli(datas[0][0].Timestamp - 1000))
+	mockClock.Set(datas[0][0].Timestamp.Add(-time.Second))
 	for i := 0; i < dataLength; i++ {
 		// wait for table to load
 		time.Sleep(100 * time.Millisecond)
@@ -218,11 +217,11 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 			time.Sleep(time.Duration(wait) * time.Millisecond)
 			// Make sure time is going forward only
 			// gradually add uptime to ensure checkpoint is triggered before the data send
-			for n := timex.GetNowInMilli() + 100; d[i].Timestamp+100 > n; n += 100 {
-				if d[i].Timestamp < n {
+			for n := timex.GetNow().Add(100 * time.Millisecond); d[i].Timestamp.Add(100 * time.Millisecond).After(n); n = n.Add(100 * time.Millisecond) {
+				if d[i].Timestamp.Before(n) {
 					n = d[i].Timestamp
 				}
-				mockClock.Set(cast.TimeFromUnixMilli(n))
+				mockClock.Set(n)
 				conf.Log.Debugf("Clock set to %d", timex.GetNowInMilli())
 				time.Sleep(1 * time.Millisecond)
 			}
