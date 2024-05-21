@@ -1817,5 +1817,5 @@ func TestRuleWaitGroup(t *testing.T) {
 	tp.Open()
 	time.Sleep(10 * time.Millisecond)
 	tp.Cancel()
-	tp.WaitClose(nil)
+	tp.WaitClose()
 }

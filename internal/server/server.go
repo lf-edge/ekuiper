@@ -255,11 +255,7 @@ func StartUp(Version string) {
 	// wait rule checker exit
 	time.Sleep(10 * time.Millisecond)
 
-	d, err := time.ParseDuration(conf.Config.Basic.GracefulShutdownTimeout)
-	if err != nil {
-		d = time.Second * 3
-	}
-	ctx, cancel := context.WithTimeout(context.TODO(), d)
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(conf.Config.Basic.GracefulShutdownTimeout))
 	defer cancel()
 	wg := sync.WaitGroup{}
 	// wait all service stop
@@ -475,8 +471,11 @@ func waitAllRuleStop(ctx context.Context) error {
 			m.Store(r, struct{}{})
 			wg.Add(1)
 			go func() {
-				rs.Topology.WaitClose(wg)
-				m.Delete(r)
+				defer func() {
+					m.Delete(r)
+					wg.Done()
+				}()
+				rs.Topology.WaitClose()
 			}()
 		}
 	}

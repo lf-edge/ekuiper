@@ -358,14 +358,10 @@ func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) erro
 	return fmt.Errorf("stream %v not found in topo", name)
 }
 
-func (s *Topo) WaitClose(parWg *sync.WaitGroup) {
+func (s *Topo) WaitClose() {
 	// wait all operators close
 	if s.opsWg != nil {
 		s.opsWg.Wait()
-	}
-	// tell server this rule closed
-	if parWg != nil {
-		parWg.Done()
 	}
 	conf.Log.Infof("rule %s stopped", s.ctx.GetRuleId())
 }
