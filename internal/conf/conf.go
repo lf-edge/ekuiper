@@ -173,32 +173,33 @@ func (s *syslogConf) Validate() error {
 
 type KuiperConf struct {
 	Basic struct {
-		LogLevel            string      `yaml:"logLevel"`
-		Debug               bool        `yaml:"debug"`
-		ConsoleLog          bool        `yaml:"consoleLog"`
-		FileLog             bool        `yaml:"fileLog"`
-		LogDisableTimestamp bool        `yaml:"logDisableTimestamp"`
-		Syslog              *syslogConf `yaml:"syslog"`
-		RotateTime          int         `yaml:"rotateTime"`
-		MaxAge              int         `yaml:"maxAge"`
-		RotateSize          int64       `yaml:"rotateSize"`
-		RotateCount         int         `yaml:"rotateCount"`
-		TimeZone            string      `yaml:"timezone"`
-		Ip                  string      `yaml:"ip"`
-		Port                int         `yaml:"port"`
-		RestIp              string      `yaml:"restIp"`
-		RestPort            int         `yaml:"restPort"`
-		RestTls             *tlsConf    `yaml:"restTls"`
-		Prometheus          bool        `yaml:"prometheus"`
-		PrometheusPort      int         `yaml:"prometheusPort"`
-		PluginHosts         string      `yaml:"pluginHosts"`
-		Authentication      bool        `yaml:"authentication"`
-		IgnoreCase          bool        `yaml:"ignoreCase"`
-		SQLConf             *SQLConf    `yaml:"sql"`
-		RulePatrolInterval  string      `yaml:"rulePatrolInterval"`
-		CfgStorageType      string      `yaml:"cfgStorageType"`
-		EnableOpenZiti      bool        `yaml:"enableOpenZiti"`
-		AesKey              string      `yaml:"aesKey"`
+		LogLevel                string      `yaml:"logLevel"`
+		Debug                   bool        `yaml:"debug"`
+		ConsoleLog              bool        `yaml:"consoleLog"`
+		FileLog                 bool        `yaml:"fileLog"`
+		LogDisableTimestamp     bool        `yaml:"logDisableTimestamp"`
+		Syslog                  *syslogConf `yaml:"syslog"`
+		RotateTime              int         `yaml:"rotateTime"`
+		MaxAge                  int         `yaml:"maxAge"`
+		RotateSize              int64       `yaml:"rotateSize"`
+		RotateCount             int         `yaml:"rotateCount"`
+		TimeZone                string      `yaml:"timezone"`
+		Ip                      string      `yaml:"ip"`
+		Port                    int         `yaml:"port"`
+		RestIp                  string      `yaml:"restIp"`
+		RestPort                int         `yaml:"restPort"`
+		RestTls                 *tlsConf    `yaml:"restTls"`
+		Prometheus              bool        `yaml:"prometheus"`
+		PrometheusPort          int         `yaml:"prometheusPort"`
+		PluginHosts             string      `yaml:"pluginHosts"`
+		Authentication          bool        `yaml:"authentication"`
+		IgnoreCase              bool        `yaml:"ignoreCase"`
+		SQLConf                 *SQLConf    `yaml:"sql"`
+		RulePatrolInterval      string      `yaml:"rulePatrolInterval"`
+		CfgStorageType          string      `yaml:"cfgStorageType"`
+		EnableOpenZiti          bool        `yaml:"enableOpenZiti"`
+		AesKey                  string      `yaml:"aesKey"`
+		GracefulShutdownTimeout string      `yaml:"gracefulShutdownTimeout"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf
@@ -357,6 +358,10 @@ func InitConf() {
 				log.Fatal(err)
 			}
 		}
+	}
+
+	if len(Config.Basic.GracefulShutdownTimeout) < 1 {
+		Config.Basic.GracefulShutdownTimeout = "3s"
 	}
 
 	if Config.Basic.TimeZone != "" {

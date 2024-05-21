@@ -254,7 +254,12 @@ func StartUp(Version string) {
 	exit <- struct{}{}
 	// wait rule checker exit
 	time.Sleep(10 * time.Millisecond)
-	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+
+	d, err := time.ParseDuration(conf.Config.Basic.GracefulShutdownTimeout)
+	if err != nil {
+		d = time.Second * 3
+	}
+	ctx, cancel := context.WithTimeout(context.TODO(), d)
 	defer cancel()
 	wg := sync.WaitGroup{}
 	// wait all service stop
