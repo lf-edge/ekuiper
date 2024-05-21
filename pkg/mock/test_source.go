@@ -30,7 +30,7 @@ import (
 
 var count atomic.Value
 
-func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected []api.MessageTuple, sender func()) {
+func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected any, sender func()) {
 	// init
 	c := count.Load()
 	if c == nil {
@@ -45,9 +45,21 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	// connect, subscribe and read data
 	err = r.Connect(ctx)
 	assert.NoError(t, err)
-
+	// Send data
+	go func() {
+		sender()
+	}()
+	time.Sleep(10 * time.Millisecond)
 	// Send and receive data
-	limit := len(expected)
+	limit := 0
+	switch et := expected.(type) {
+	case []api.MessageTuple:
+		limit = len(et)
+	case []api.RawTuple:
+		limit = len(et)
+	default:
+		t.Fatal("invalid expected type")
+	}
 	var (
 		wg     sync.WaitGroup
 		result []api.MessageTuple
@@ -59,7 +71,7 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 			err = ss.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
 				result = append(result, model.NewDefaultRawTuple(payload, meta, ts))
 				limit--
-				if limit <= 0 {
+				if limit == 0 {
 					wg.Done()
 				}
 			}, func(ctx api.StreamContext, err error) {
@@ -74,10 +86,6 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	defer func() {
 		err = r.Close(ctx)
 		assert.NoError(t, err)
-	}()
-	// Send data
-	go func() {
-		sender()
 	}()
 
 	ticker := time.After(60 * time.Second)
