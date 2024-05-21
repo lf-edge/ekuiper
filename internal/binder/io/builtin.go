@@ -27,7 +27,7 @@ func init() {
 	modules.RegisterSource("mqtt", mqtt.GetSource)
 	// modules.RegisterSource("httppull", func() api.Source { return &http.PullSource{} })
 	// modules.RegisterSource("httppush", func() api.Source { return &http.PushSource{} })
-	// modules.RegisterSource("file", func() api.Source { return &file.FileSource{} })
+	modules.RegisterSource("file", file.GetSource)
 	modules.RegisterSource("memory", func() api.Source { return memory.GetSource() })
 	// modules.RegisterSource("neuron", func() api.Source { return neuron.GetSource() })
 	// modules.RegisterSource("websocket", func() api.Source { return &websocket.WebsocketSource{} })
