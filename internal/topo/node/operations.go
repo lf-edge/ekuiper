@@ -60,6 +60,9 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		o.concurrency = 1
 	}
 	go func() {
+		defer func() {
+			o.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			o.doOp(ctx.WithInstance(0), errCh)
 			return nil

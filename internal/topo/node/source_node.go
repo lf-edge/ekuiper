@@ -127,7 +127,10 @@ func (m *SourceNode) ingestEof(ctx api.StreamContext) {
 
 // Run Subscribe could be a long-running function
 func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
-	defer m.s.Close(ctx)
+	defer func() {
+		m.s.Close(ctx)
+		m.Close()
+	}()
 	poe := infra.SafeRun(func() error {
 		err := m.s.Connect(ctx)
 		if err != nil {
@@ -148,4 +151,8 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		infra.DrainError(ctx, poe, ctrlCh)
 	}
 	<-ctx.Done()
+}
+
+func (m *SourceNode) Close() {
+	m.defaultNode.Close()
 }
