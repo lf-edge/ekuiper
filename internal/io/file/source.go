@@ -26,14 +26,16 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	_ "github.com/lf-edge/ekuiper/v2/internal/io/file/reader"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type SourceConfig struct {
 	FileName         string        `json:"datasource"`
-	FileType         FileType      `json:"fileType"`
+	FileType         string        `json:"fileType"`
 	Path             string        `json:"path"`
 	Interval         time.Duration `json:"interval"`
 	IsTable          bool          `json:"isTable"`
@@ -43,10 +45,6 @@ type SourceConfig struct {
 	MoveTo           string        `json:"moveTo"`
 	IgnoreStartLines int           `json:"ignoreStartLines"`
 	IgnoreEndLines   int           `json:"ignoreEndLines"`
-	// For csv only
-	HasHeader bool     `json:"hasHeader"`
-	Columns   []string `json:"columns"`
-	Delimiter string   `json:"delimiter"`
 	// Only use for planning
 	Decompression string `json:"decompression"`
 }
@@ -59,12 +57,13 @@ type Source struct {
 	file   string
 	isDir  bool
 	config *SourceConfig
+	reader modules.FileStreamReader
 	eof    api.EOFIngest
 }
 
 func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	cfg := &SourceConfig{
-		FileType: JSON_TYPE,
+		FileType: "json",
 	}
 	err := cast.MapToStruct(props, cfg)
 	if err != nil {
@@ -73,8 +72,15 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	if cfg.FileType == "" {
 		return errors.New("missing or invalid property fileType, must be 'json'")
 	}
-	if _, ok := fileTypes[cfg.FileType]; !ok {
-		return fmt.Errorf("invalid property fileType: %s", cfg.FileType)
+	reader, ok := modules.GetFileStreamReader(ctx, cfg.FileType)
+	if ok {
+		err = reader.Provision(ctx, props)
+		if err != nil {
+			return err
+		}
+		fs.reader = reader
+	} else {
+		ctx.GetLogger().Warnf("file type %s is not stream reader, will send out the whole file", cfg.FileType)
 	}
 	if cfg.Path == "" {
 		return errors.New("missing property Path")
@@ -126,10 +132,6 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 			}
 		}
 	}
-	if cfg.Delimiter == "" {
-		cfg.Delimiter = ","
-	}
-
 	fs.config = cfg
 	return nil
 }
@@ -139,10 +141,10 @@ func (fs *Source) Connect(ctx api.StreamContext) error {
 	return nil
 }
 
-// Subscribe file source always ingest bytes
+// Subscribe file source may ingest bytes or tuple
 // For stream source, it ingest one line
 // For batch source, it ingest the whole file, thus it need a reader node to coordinate and read the content into lines/array
-func (fs *Source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
+func (fs *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
 	fs.Load(ctx, ingest, ingestError)
 	if fs.config.Interval > 0 {
 		ticker := time.NewTicker(fs.config.Interval)
@@ -176,7 +178,7 @@ func (fs *Source) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (fs *Source) Load(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) {
+func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	if fs.isDir {
 		ctx.GetLogger().Debugf("Monitor dir %s", fs.file)
 		entries, err := os.ReadDir(fs.file)
@@ -221,7 +223,7 @@ func (fs *Source) Load(ctx api.StreamContext, ingest api.BytesIngest, ingestErro
 	ctx.GetLogger().Debug("All tuples sent")
 }
 
-func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.BytesIngest, ingestError api.ErrorIngest) {
+func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	var (
 		err error
 		r   io.Reader
@@ -242,25 +244,25 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Bytes
 	}
 	meta := map[string]any{"file": file}
 	// Read line or read all
-	switch fs.config.FileType {
-	case LINES_TYPE: // read line by line
-		scanner := bufio.NewScanner(r)
-		scanner.Split(bufio.ScanLines)
-		for scanner.Scan() {
+	if fs.reader != nil {
+		err = fs.reader.Bind(ctx, r)
+		if err != nil {
+			ingestError(ctx, err)
+			return
+		}
+		for {
+			line, err := fs.reader.Read(ctx)
+			if err != nil {
+				break
+			}
 			rcvTime := timex.GetNow()
-			fmt.Println("received", rcvTime.UnixMilli())
-			line := scanner.Bytes()
 			ingest(ctx, line, meta, rcvTime)
 			if fs.config.SendInterval > 0 {
 				time.Sleep(fs.config.SendInterval)
 			}
 		}
-		// Check for any errors during scanning
-		if err := scanner.Err(); err != nil {
-			ingestError(ctx, err)
-			return
-		}
-	default: // read all
+		_ = fs.reader.Close(ctx)
+	} else {
 		rcvTime := timex.GetNow()
 		content, err := os.ReadFile(file)
 		if err != nil {
@@ -271,17 +273,18 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Bytes
 			ingest(ctx, content, meta, rcvTime)
 		}
 	}
+
 	ctx.GetLogger().Debugf("Finish loading from file %s", file)
 	switch fs.config.ActionAfterRead {
 	case 1:
 		if err := os.Remove(file); err != nil {
-			ingestError(ctx, err)
+			//ingestError(ctx, err)
 		}
 		ctx.GetLogger().Debugf("Remove file %s", file)
 	case 2:
 		targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
 		if err := os.Rename(file, targetFile); err != nil {
-			ingestError(ctx, err)
+			//ingestError(ctx, err)
 		}
 		ctx.GetLogger().Debugf("Move file %s to %s", file, targetFile)
 	}
@@ -339,13 +342,12 @@ func ignoreLines(ctx api.StreamContext, reader io.Reader, ignoreStartLines int, 
 }
 
 func (fs *Source) Info() (i model.NodeInfo) {
-	switch fs.config.FileType {
-	case JSON_TYPE: // output batch raw, so need encrypt/decompress as a whole and then decode as a whole
+	if fs.reader == nil { // output batch raw, so need encrypt/decompress as a whole and then decode as a whole
 		i.NeedBatchDecode = true
 		i.NeedDecode = true
-	case LINES_TYPE: // decrypt/decompress in scan and output raw
+	} else if fs.reader.IsBytesReader() { // decrypt/decompress in scan and output raw
 		i.NeedDecode = true
-	default: // decrypt/decompress in scan and output decoded tuple
+	} else { // decrypt/decompress in scan and output decoded tuple
 		// keep false
 	}
 	return
@@ -356,7 +358,8 @@ func GetSource() api.Source {
 }
 
 var (
-	_ api.BytesSource = &Source{}
+	// ingest possibly []byte and tuple
+	_ api.TupleSource = &Source{}
 	_ api.Bounded     = &Source{}
 	_ model.InfoNode  = &Source{}
 )
