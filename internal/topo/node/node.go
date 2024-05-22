@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -170,7 +171,10 @@ func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opT
 	ctx.GetLogger().Infof("%s started", o.name)
 	o.statManager = metric.NewStatManager(ctx, opType)
 	o.ctx = ctx
-	o.opsWg = ctx.GetRuleWaitGroup()
+	wg := ctx.Value(context.RuleWaitGroupKey)
+	if wg != nil {
+		o.opsWg = wg.(*sync.WaitGroup)
+	}
 	if o.opsWg != nil {
 		o.opsWg.Add(1)
 	}

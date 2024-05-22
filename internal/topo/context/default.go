@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	LoggerKey    = "$$logger"
-	RuleStartKey = "$$ruleStart"
+	LoggerKey        = "$$logger"
+	RuleStartKey     = "$$ruleStart"
+	RuleWaitGroupKey = "$$ruleWaitGroup"
 )
 
 type DefaultContext struct {
@@ -105,10 +106,6 @@ func (c *DefaultContext) GetLogger() api.Logger {
 
 func (c *DefaultContext) GetRuleId() string {
 	return c.ruleId
-}
-
-func (c *DefaultContext) GetRuleWaitGroup() *sync.WaitGroup {
-	return c.opsWg
 }
 
 func (c *DefaultContext) GetOpId() string {
