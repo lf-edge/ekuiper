@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -51,9 +52,9 @@ type SourceConfig struct {
 }
 
 // Source load data from file system.
-// If file type is lines, it reads line by line.
+// Depending on file types, it may read line by line like lines, csv.
 // Otherwise, it reads the file as a whole and send to company reader node to read and split.
-// The planner need to plan according to the file type.(currently, it is hardcoded to deal with file source only)
+// The planner need to plan according to the file type.
 type Source struct {
 	file   string
 	isDir  bool
@@ -337,6 +338,19 @@ func ignoreLines(ctx api.StreamContext, reader io.Reader, ignoreStartLines int, 
 	return r
 }
 
+func (fs *Source) Info() (i model.NodeInfo) {
+	switch fs.config.FileType {
+	case JSON_TYPE: // output batch raw, so need encrypt/decompress as a whole and then decode as a whole
+		i.NeedBatchDecode = true
+		i.NeedDecode = true
+	case LINES_TYPE: // decrypt/decompress in scan and output raw
+		i.NeedDecode = true
+	default: // decrypt/decompress in scan and output decoded tuple
+		// keep false
+	}
+	return
+}
+
 func GetSource() api.Source {
 	return &Source{}
 }
@@ -344,4 +358,5 @@ func GetSource() api.Source {
 var (
 	_ api.BytesSource = &Source{}
 	_ api.Bounded     = &Source{}
+	_ model.InfoNode  = &Source{}
 )
