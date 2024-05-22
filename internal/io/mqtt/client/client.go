@@ -119,7 +119,6 @@ func (conn *Connection) DetachPub(props map[string]any) {
 }
 
 func (conn *Connection) Subscribe(ctx api.StreamContext, props map[string]any, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-
 	qos := byte(props[qosProp].(int))
 	topic := props[topicProp].(string)
 	info := &SubscriptionInfo{
