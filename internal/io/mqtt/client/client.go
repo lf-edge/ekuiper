@@ -59,18 +59,30 @@ type SubscriptionInfo struct {
 }
 
 const (
-	topicProp    = "topic"
-	qosProp      = "qos"
-	retainedProp = "retained"
+	dataSourceProp = "datasource"
+	topicProp      = "topic"
+	qosProp        = "qos"
+	retainedProp   = "retained"
 )
 
 func (conn *Connection) Publish(payload any, props map[string]any) error {
 	if !conn.connected.Load() {
 		return errorx.NewIOErr("mqtt client is not connected")
 	}
-	topic := props[topicProp].(string)
-	qos := byte(props[qosProp].(int))
-	retained := props[retainedProp].(bool)
+	topic, err := getTopicFromProps(props)
+	if err != nil {
+		return err
+	}
+	qos := byte(0)
+	v, ok := props[qosProp]
+	if ok {
+		qos = byte(v.(int))
+	}
+	retained := false
+	v, ok = props[retainedProp]
+	if ok {
+		retained = v.(bool)
+	}
 	token := conn.Client.Publish(topic, qos, retained, payload)
 	return handleToken(token)
 }
@@ -110,7 +122,10 @@ func (conn *Connection) Ref() int {
 
 // Do not call this directly. Call connection pool Detach method to release the connection
 func (conn *Connection) DetachSub(props map[string]any) {
-	topic := props[topicProp].(string)
+	topic, err := getTopicFromProps(props)
+	if err != nil {
+		return
+	}
 	delete(conn.subscriptions, topic)
 	conn.Client.Unsubscribe(topic)
 }
@@ -119,8 +134,15 @@ func (conn *Connection) DetachPub(props map[string]any) {
 }
 
 func (conn *Connection) Subscribe(ctx api.StreamContext, props map[string]any, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	qos := byte(props[qosProp].(int))
-	topic := props[topicProp].(string)
+	qos := byte(0)
+	q, ok := props[qosProp]
+	if ok {
+		qos = byte(q.(int))
+	}
+	topic, err := getTopicFromProps(props)
+	if err != nil {
+		return err
+	}
 	info := &SubscriptionInfo{
 		Qos: qos,
 		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
@@ -270,4 +292,16 @@ func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Co
 		return nil, err
 	}
 	return cli, nil
+}
+
+func getTopicFromProps(props map[string]any) (string, error) {
+	v, ok := props[topicProp]
+	if ok {
+		return v.(string), nil
+	}
+	v, ok = props[dataSourceProp]
+	if ok {
+		return v.(string), nil
+	}
+	return "", fmt.Errorf("topic or datasource not defined")
 }
