@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *def.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
@@ -100,8 +101,8 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		srcConnNode = srcSubtopo
 	}
-
-	_, isBytesSource := ss.(api.BytesSource)
+	// Make sure it is provisioned. Already done in NewSourceNode
+	needDecode, needBatchDecode := checkByteSource(ss)
 
 	if err != nil {
 		return nil, nil, 0, err
@@ -110,7 +111,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	var ops []node.OperatorNode
 
 	if sp.Decompression != "" {
-		if isBytesSource {
+		if needBatchDecode {
 			dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
 			if err != nil {
 				return nil, nil, 0, err
@@ -118,11 +119,11 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			index++
 			ops = append(ops, dco)
 		} else {
-			return nil, nil, 0, fmt.Errorf("source %s does not support decompression", t.name)
+			ctx.GetLogger().Warnf("source %s does not support decompression", t.name)
 		}
 	}
 
-	if isBytesSource {
+	if needDecode {
 		// Create the decode node
 		decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
 		if err != nil {
@@ -154,4 +155,16 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		return srcSubtopo, nil, len(ops), nil
 	}
 	return srcConnNode, ops, 0, nil
+}
+
+func checkByteSource(ss api.Source) (bool, bool) {
+	switch st := ss.(type) {
+	case model.InfoNode:
+		i := st.Info()
+		return i.NeedDecode, i.NeedBatchDecode
+	case api.BytesSource:
+		return true, true
+	default:
+		return false, false
+	}
 }
