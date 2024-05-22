@@ -67,10 +67,9 @@ func TestSourceProvision(t *testing.T) {
 				"path":       path,
 			},
 			c: &SourceConfig{
-				FileName:  name,
-				Path:      path,
-				FileType:  JSON_TYPE,
-				Delimiter: ",",
+				FileName: name,
+				Path:     path,
+				FileType: string(JSON_TYPE),
 			},
 		},
 		{
@@ -92,13 +91,14 @@ func TestSourceProvision(t *testing.T) {
 			e: "missing or invalid property fileType, must be 'json'",
 		},
 		{
-			name: "invalid file type",
+			name: "invalid reader prop",
 			props: map[string]any{
 				"datasource": name,
 				"path":       path,
-				"fileType":   "aaa",
+				"fileType":   "csv",
+				"hasHeader":  "uvw",
 			},
-			e: "invalid property fileType: aaa",
+			e: "1 error(s) decoding:\n\n* 'hasHeader' expected type 'bool', got unconvertible type 'string', value: 'uvw'",
 		},
 		{
 			name: "missing path",
@@ -134,8 +134,7 @@ func TestSourceProvision(t *testing.T) {
 			c: &SourceConfig{
 				FileName:         "",
 				Path:             relPath,
-				FileType:         JSON_TYPE,
-				Delimiter:        ",",
+				FileType:         string(JSON_TYPE),
 				IgnoreStartLines: 0,
 				IgnoreEndLines:   0,
 			},
@@ -179,8 +178,7 @@ func TestSourceProvision(t *testing.T) {
 			c: &SourceConfig{
 				FileName:        name,
 				Path:            path,
-				FileType:        JSON_TYPE,
-				Delimiter:       ",",
+				FileType:        string(JSON_TYPE),
 				ActionAfterRead: 2,
 				MoveTo:          filepath.Join(path, "ddd"),
 			},
@@ -227,12 +225,46 @@ func TestLines(t *testing.T) {
 		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, mc.Now()),
 		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, mc.Now()),
 	}
-	r := GetSource().(api.BytesSource)
+	r := GetSource().(api.TupleSource)
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":            path,
 		"fileType":        "lines",
 		"datasource":      "test.lines.copy",
 		"actionAfterRead": 1,
+	}, exp, func() {
+		// do nothing
+	})
+}
+
+func TestCSVBatch(t *testing.T) {
+	path, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	path = filepath.Join(path, "test")
+
+	meta1 := map[string]any{
+		"file": filepath.Join(path, "csv", "a.csv"),
+	}
+	meta2 := map[string]any{
+		"file": filepath.Join(path, "csv", "b.csv"),
+	}
+	mc := timex.Clock
+	exp := []api.MessageTuple{
+		model.NewDefaultSourceTuple(map[string]any{"@": "#", "id": "1", "ts": "1670170500", "value": "161.927872"}, meta1, mc.Now()),
+		model.NewDefaultSourceTuple(map[string]any{"@": "#", "id": "2", "ts": "1670170900", "value": "176"}, meta1, mc.Now()),
+		model.NewDefaultSourceTuple(map[string]any{"id": "33", "ts": "1670270500", "humidity": "89"}, meta2, mc.Now()),
+		model.NewDefaultSourceTuple(map[string]any{"id": "44", "ts": "1670270900", "humidity": "76"}, meta2, mc.Now()),
+	}
+	r := GetSource().(api.TupleSource)
+	mock.TestSourceConnector(t, r, map[string]any{
+		"path":             path,
+		"fileType":         "csv",
+		"datasource":       "csv",
+		"hasHeader":        true,
+		"delimiter":        "\t",
+		"ignoreStartLines": 3,
+		"ignoreEndLines":   1,
 	}, exp, func() {
 		// do nothing
 	})
@@ -252,7 +284,7 @@ func TestBatch(t *testing.T) {
 	exp := []api.MessageTuple{
 		model.NewDefaultRawTuple([]byte("[{\"id\": 1,\"name\": \"John Doe\",\"height\": 1.82},{\"id\": 2,\"name\": \"Jane Doe\",\"height\": 1.65}]"), meta, mc.Now()),
 	}
-	r := GetSource().(api.BytesSource)
+	r := GetSource().(api.TupleSource)
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":       path,
 		"fileType":   "json",
@@ -281,7 +313,7 @@ func TestIgnoreLines(t *testing.T) {
 		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, mc.Now()),
 		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, mc.Now()),
 	}
-	r := GetSource().(api.BytesSource)
+	r := GetSource().(api.TupleSource)
 	r.(api.Bounded).SetEofIngest(func(ctx api.StreamContext) {
 		fmt.Printf("eof")
 	})
@@ -328,7 +360,7 @@ func TestIntervalAndDir(t *testing.T) {
 		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, ts),
 		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, ts),
 	}
-	r := GetSource().(api.BytesSource)
+	r := GetSource().(api.TupleSource)
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":             path,
 		"fileType":         "lines",

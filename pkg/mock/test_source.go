@@ -78,7 +78,22 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 				panic(err)
 			})
 		case api.TupleSource:
-			panic("added later")
+			err = ss.Subscribe(ctx, func(ctx api.StreamContext, message any, meta map[string]any, ts time.Time) {
+				switch mt := message.(type) {
+				case []byte:
+					result = append(result, model.NewDefaultRawTuple(mt, meta, ts))
+				case map[string]any:
+					result = append(result, model.NewDefaultSourceTuple(mt, meta, ts))
+				default:
+					panic("not supported yet")
+				}
+				limit--
+				if limit == 0 {
+					wg.Done()
+				}
+			}, func(ctx api.StreamContext, err error) {
+				panic(err)
+			})
 		default:
 			panic("wrong source type")
 		}
