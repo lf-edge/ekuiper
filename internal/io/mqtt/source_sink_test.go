@@ -57,10 +57,14 @@ func TestSourceSink(t *testing.T) {
 	mock.TestSourceConnector(t, sc, map[string]any{
 		"server":     url,
 		"datasource": "demo",
+		"qos":        0,
+		"topic":      "demo",
 	}, result, func() {
 		err := mock.RunBytesSinkCollect(sk, data, map[string]any{
-			"server": url,
-			"topic":  "demo",
+			"server":   url,
+			"topic":    "demo",
+			"qos":      0,
+			"retained": false,
 		})
 		assert.NoError(t, err)
 	})

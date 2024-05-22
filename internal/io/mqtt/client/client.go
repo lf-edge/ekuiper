@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mqtt
+package client
 
 import (
 	"crypto/tls"
@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type Connection struct {
@@ -57,10 +58,19 @@ type SubscriptionInfo struct {
 	ErrHandler func(error)
 }
 
-func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
+const (
+	topicProp    = "topic"
+	qosProp      = "qos"
+	retainedProp = "retained"
+)
+
+func (conn *Connection) Publish(payload any, props map[string]any) error {
 	if !conn.connected.Load() {
 		return errorx.NewIOErr("mqtt client is not connected")
 	}
+	topic := props[topicProp].(string)
+	qos := byte(props[qosProp].(int))
+	retained := props[retainedProp].(bool)
 	token := conn.Client.Publish(topic, qos, retained, payload)
 	return handleToken(token)
 }
@@ -69,7 +79,7 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.logger.Infof("The connection to mqtt broker is established")
 	for topic, info := range conn.subscriptions {
-		err := conn.Subscribe(topic, info)
+		err := conn.subscribe(topic, info)
 		if err != nil { // should never happen, if happened, stop the rule
 			panic(fmt.Sprintf("Failed to subscribe topic %s: %v", topic, err))
 		}
@@ -90,33 +100,58 @@ func (conn *Connection) onReconnecting(_ pahoMqtt.Client, _ *pahoMqtt.ClientOpti
 }
 
 // Do not call this directly. Call connection pool Attach method to get the connection
-func (conn *Connection) attach() {
+func (conn *Connection) Attach() {
 	conn.refCount.Add(1)
 }
 
+func (conn *Connection) Ref() int {
+	return int(conn.refCount.Load())
+}
+
 // Do not call this directly. Call connection pool Detach method to release the connection
-func (conn *Connection) detachSub(topic string) bool {
+func (conn *Connection) DetachSub(props map[string]any) {
+	topic := props[topicProp].(string)
 	delete(conn.subscriptions, topic)
 	conn.Client.Unsubscribe(topic)
-	if conn.refCount.Add(-1) == 0 {
-		go conn.Close()
-		return true
-	}
-	return false
 }
 
-func (conn *Connection) detachPub() bool {
-	if conn.refCount.Add(-1) == 0 {
-		go conn.Close()
-		return true
-	}
-	return false
+func (conn *Connection) DetachPub(props map[string]any) {
 }
 
-func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
+func (conn *Connection) Subscribe(ctx api.StreamContext, props map[string]any, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
+
+	qos := byte(props[qosProp].(int))
+	topic := props[topicProp].(string)
+	info := &SubscriptionInfo{
+		Qos: qos,
+		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
+			conn.onMessage(ctx, message, ingest)
+		},
+		ErrHandler: func(err error) {
+			ingestError(ctx, err)
+		},
+	}
 	conn.subscriptions[topic] = info
 	token := conn.Client.Subscribe(topic, info.Qos, info.Handler)
 	return handleToken(token)
+}
+
+func (conn *Connection) subscribe(topic string, info *SubscriptionInfo) error {
+	conn.subscriptions[topic] = info
+	token := conn.Client.Subscribe(topic, info.Qos, info.Handler)
+	return handleToken(token)
+}
+
+func (conn *Connection) onMessage(ctx api.StreamContext, msg pahoMqtt.Message, ingest api.BytesIngest) {
+	if msg != nil {
+		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
+	}
+	rcvTime := timex.GetNow()
+	ingest(ctx, msg.Payload(), map[string]interface{}{
+		"topic":     msg.Topic(),
+		"qos":       msg.Qos(),
+		"messageId": msg.MessageID(),
+	}, rcvTime)
 }
 
 func (conn *Connection) Close() {
@@ -146,7 +181,7 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 		}
 		props = cf
 	}
-	c, err := validateConfig(props)
+	c, err := ValidateConfig(props)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +215,9 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	}
 	ctx.GetLogger().Infof("new mqtt client created")
 	con.Client = cli
-	con.attach()
+	if len(selId) > 0 {
+		con.Attach()
+	}
 	return con, nil
 }
 
@@ -193,7 +230,7 @@ func handleToken(token pahoMqtt.Token) error {
 	return nil
 }
 
-func validateConfig(props map[string]any) (*ConnectionConfig, error) {
+func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 	c := &ConnectionConfig{PVersion: "3.1.1"}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
@@ -226,4 +263,12 @@ func validateConfig(props map[string]any) (*ConnectionConfig, error) {
 
 func (conn *Connection) GetClientId() string {
 	return conn.selId
+}
+
+func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Connection, error) {
+	cli, err := CreateClient(ctx, "", props)
+	if err != nil {
+		return nil, err
+	}
+	return cli, nil
 }

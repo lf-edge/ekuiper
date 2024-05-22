@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
+	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -33,11 +35,11 @@ type AdConf struct {
 type Sink struct {
 	adconf *AdConf
 	config map[string]interface{}
-	cli    *Connection
+	cli    connection.Connection
 }
 
 func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
-	_, err := validateConfig(ps)
+	_, err := client.ValidateConfig(ps)
 	if err != nil {
 		return err
 	}
@@ -62,7 +64,13 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 
 func (ms *Sink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	cli, err := GetConnection(ctx, ms.adconf.SelId, ms.config)
+	var cli connection.Connection
+	var err error
+	if len(ms.adconf.SelId) > 0 {
+		cli, err = connection.GetNameConnection(ms.adconf.SelId)
+	} else {
+		cli, err = client.CreateAnonymousConnection(ctx, ms.config)
+	}
 	ms.cli = cli
 	return err
 }
@@ -84,13 +92,17 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", tpc)
-	return ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw())
+	return ms.cli.Publish(item.Raw(), ms.config)
 }
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Info("Closing mqtt sink connector")
 	if ms.cli != nil {
-		DetachConnection(ms.cli, ms.adconf.SelId, "")
+		if len(ms.adconf.SelId) < 1 {
+			ms.cli.Close()
+		} else {
+			ms.cli.DetachPub(nil)
+		}
 	}
 	return nil
 }
