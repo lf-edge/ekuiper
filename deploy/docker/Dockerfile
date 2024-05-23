@@ -21,7 +21,7 @@ WORKDIR /go/kuiper
 
 RUN make build_with_edgex
 
-FROM alpine:3.19.1
+FROM alpine:3.20.0
 
 # Set environment vars
 ENV MAINTAINER="emqx.io" \
