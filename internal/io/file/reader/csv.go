@@ -2,6 +2,7 @@ package reader
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -32,10 +33,15 @@ type CsvReader struct {
 }
 
 func (r *CsvReader) Provision(ctx api.StreamContext, props map[string]any) error {
-	c := &csvConf{}
+	c := &csvConf{
+		Delimiter: ",",
+	}
 	e := cast.MapToStruct(props, c)
 	if e != nil {
 		return e
+	}
+	if c.Delimiter == "" {
+		return errors.New("invalid empty delimiter")
 	}
 	r.config = c
 	return nil

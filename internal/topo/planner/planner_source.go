@@ -102,7 +102,13 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		srcConnNode = srcSubtopo
 	}
 	// Make sure it is provisioned. Already done in NewSourceNode
-	needDecode, needBatchDecode := checkByteSource(ss)
+	info := checkByteSource(ss)
+	if info.HasCompress {
+		sp.Decompression = ""
+	}
+	if info.HasInterval {
+		delete(props, "sendInterval")
+	}
 
 	if err != nil {
 		return nil, nil, 0, err
@@ -111,7 +117,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	var ops []node.OperatorNode
 
 	if sp.Decompression != "" {
-		if needBatchDecode {
+		if info.NeedBatchDecode {
 			dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
 			if err != nil {
 				return nil, nil, 0, err
@@ -123,9 +129,9 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 	}
 
-	if needDecode {
+	if info.NeedDecode {
 		// Create the decode node
-		decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
+		decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -157,14 +163,16 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	return srcConnNode, ops, 0, nil
 }
 
-func checkByteSource(ss api.Source) (bool, bool) {
+func checkByteSource(ss api.Source) model.NodeInfo {
 	switch st := ss.(type) {
 	case model.InfoNode:
-		i := st.Info()
-		return i.NeedDecode, i.NeedBatchDecode
+		return st.Info()
 	case api.BytesSource:
-		return true, true
+		return model.NodeInfo{
+			NeedDecode:      true,
+			NeedBatchDecode: true,
+		}
 	default:
-		return false, false
+		return model.NodeInfo{}
 	}
 }
