@@ -114,6 +114,7 @@ func (conn *Connection) Ref() int {
 
 // Do not call this directly. Call connection pool Detach method to release the connection
 func (conn *Connection) DetachSub(props map[string]any) {
+	conn.refCount.Add(-1)
 	topic, err := getTopicFromProps(props)
 	if err != nil {
 		return
@@ -123,6 +124,7 @@ func (conn *Connection) DetachSub(props map[string]any) {
 }
 
 func (conn *Connection) DetachPub(props map[string]any) {
+	conn.refCount.Add(-1)
 }
 
 func (conn *Connection) Subscribe(ctx api.StreamContext, props map[string]any, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
