@@ -73,16 +73,8 @@ func (conn *Connection) Publish(payload any, props map[string]any) error {
 	if err != nil {
 		return err
 	}
-	qos := byte(0)
-	v, ok := props[qosProp]
-	if ok {
-		qos = byte(v.(int))
-	}
-	retained := false
-	v, ok = props[retainedProp]
-	if ok {
-		retained = v.(bool)
-	}
+	qos := getQosFromProps(props)
+	retained := getRetained(props)
 	token := conn.Client.Publish(topic, qos, retained, payload)
 	return handleToken(token)
 }
@@ -134,11 +126,7 @@ func (conn *Connection) DetachPub(props map[string]any) {
 }
 
 func (conn *Connection) Subscribe(ctx api.StreamContext, props map[string]any, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	qos := byte(0)
-	q, ok := props[qosProp]
-	if ok {
-		qos = byte(q.(int))
-	}
+	qos := getQosFromProps(props)
 	topic, err := getTopicFromProps(props)
 	if err != nil {
 		return err
@@ -304,4 +292,34 @@ func getTopicFromProps(props map[string]any) (string, error) {
 		return v.(string), nil
 	}
 	return "", fmt.Errorf("topic or datasource not defined")
+}
+
+func getQosFromProps(props map[string]any) byte {
+	qos := byte(0)
+	v, ok := props[qosProp]
+	if ok {
+		switch x := v.(type) {
+		case int:
+			qos = byte(x)
+		case int64:
+			qos = byte(int(x))
+		case float64:
+			qos = byte(int(x))
+		default:
+			return qos
+		}
+	}
+	return qos
+}
+
+func getRetained(props map[string]any) bool {
+	retained := false
+	v, ok := props[retainedProp]
+	if ok {
+		v2, ok2 := v.(bool)
+		if ok2 {
+			retained = v2
+		}
+	}
+	return retained
 }
