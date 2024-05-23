@@ -15,6 +15,8 @@
 package node
 
 import (
+	"time"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
@@ -25,6 +27,10 @@ import (
 type workerFunc func(ctx api.StreamContext, item any) []any
 
 func runWithOrder(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wf workerFunc) {
+	runWithOrderAndInterval(ctx, node, numWorkers, wf, 0)
+}
+
+func runWithOrderAndInterval(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wf workerFunc, sendInterval time.Duration) {
 	workerChans := make([]chan any, numWorkers)
 	workerOutChans := make([]chan []any, numWorkers)
 	for i := range workerChans {
@@ -38,14 +44,14 @@ func runWithOrder(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, 
 	}
 	// start merger goroutine
 	output := make(chan any)
-	go merge(ctx, node, output, workerOutChans...)
+	go merge(ctx, node, sendInterval, output, workerOutChans...)
 
 	// Distribute input data to workers
 	distribute(ctx, node, numWorkers, workerChans)
 }
 
 // Merge multiple channels into one preserving the order
-func merge(ctx api.StreamContext, node *defaultSinkNode, output chan any, channels ...chan []any) {
+func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Duration, output chan any, channels ...chan []any) {
 	defer close(output)
 	// Start a goroutine for each input channel
 	for {
@@ -63,6 +69,9 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, output chan any, channe
 						node.statManager.IncTotalExceptions(dt.Error())
 					default:
 						node.statManager.IncTotalRecordsOut()
+					}
+					if sendInterval > 0 {
+						time.Sleep(sendInterval)
 					}
 				}
 				node.statManager.IncTotalMessagesProcessed(1)

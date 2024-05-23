@@ -16,6 +16,7 @@ package node
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
@@ -23,14 +24,23 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
+// DecodeOp manages the format decoding (employ schema) and sending frequency (for batch decode, like a json array)
 type DecodeOp struct {
 	*defaultSinkNode
 	converter message.Converter
 	sLayer    *schemaLayer.SchemaLayer
+	// When receiving list, send them one by one, this is the sending interval between each
+	// Typically set by file source
+	sendInterval time.Duration
+}
+
+type dconf struct {
+	SendInterval time.Duration `json:"sendInterval"`
 }
 
 func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
@@ -57,7 +67,7 @@ func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
 	}
 }
 
-func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField) (*DecodeOp, error) {
+func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
 	options.Schema = nil
 	options.IsWildCard = isWildcard
 	options.IsSchemaLess = isSchemaless
@@ -71,10 +81,16 @@ func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, o
 		msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", options.FORMAT, options.SCHEMAID, err)
 		return nil, fmt.Errorf(msg)
 	}
+	dc := &dconf{}
+	e := cast.MapToStruct(props, dc)
+	if e != nil {
+		return nil, e
+	}
 	return &DecodeOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		converter:       converterTool,
 		sLayer:          schemaLayer.NewSchemaLayer(ruleId, StreamName, schema, isWildcard),
+		sendInterval:    dc.SendInterval,
 	}, nil
 }
 
@@ -86,7 +102,7 @@ func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 			o.Close()
 		}()
 		err := infra.SafeRun(func() error {
-			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)
+			runWithOrderAndInterval(ctx, o.defaultSinkNode, o.concurrency, o.Worker, o.sendInterval)
 			return nil
 		})
 		if err != nil {

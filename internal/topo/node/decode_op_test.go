@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestJSON(t *testing.T) {
@@ -38,7 +39,9 @@ func TestJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil)
+			op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{
+				"sendInterval": "10ms",
+			})
 			assert.NoError(t, err)
 			out := make(chan any, 100)
 			err = op.AddOutput(out, "test")
@@ -68,7 +71,7 @@ func TestJSON(t *testing.T) {
 				{errors.New("unsupported decode result: hello")},
 				{errors.New("unsupported data received: invalid")},
 			}
-
+			timex.Add(2 * time.Second)
 			for i, c := range cases {
 				op.input <- c
 				for _, e := range expects[i] {
@@ -89,7 +92,7 @@ func TestJSON(t *testing.T) {
 // Concurrency 10 - BenchmarkThrougput-16           1000000000               0.1553 ns/op
 // This is useful when a node is much slower
 func BenchmarkThrougput(b *testing.B) {
-	op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil)
+	op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil, nil)
 	assert.NoError(b, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
@@ -130,7 +133,7 @@ func TestJSONWithSchema(t *testing.T) {
 				"a": {
 					Type: "bigint",
 				},
-			})
+			}, nil)
 			assert.NoError(t, err)
 			out := make(chan any, 100)
 			err = op.AddOutput(out, "test")
@@ -220,7 +223,13 @@ func TestJSONWithSchema(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	_, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil)
+	_, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil, nil)
 	assert.Error(t, err)
 	assert.Equal(t, "cannot get converter from format cann, schemaId : format type cann not supported", err.Error())
+	_, err = NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "none"})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "1 error(s) decoding:\n\n* error decoding 'sendInterval': time: invalid duration \"none\"")
+	do, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "12s"})
+	assert.NoError(t, err)
+	assert.Equal(t, 12*time.Second, do.sendInterval)
 }

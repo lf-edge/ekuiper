@@ -278,13 +278,13 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 	switch fs.config.ActionAfterRead {
 	case 1:
 		if err := os.Remove(file); err != nil {
-			//ingestError(ctx, err)
+			ingestError(ctx, err)
 		}
 		ctx.GetLogger().Debugf("Remove file %s", file)
 	case 2:
 		targetFile := filepath.Join(fs.config.MoveTo, filepath.Base(file))
 		if err := os.Rename(file, targetFile); err != nil {
-			//ingestError(ctx, err)
+			ingestError(ctx, err)
 		}
 		ctx.GetLogger().Debugf("Move file %s to %s", file, targetFile)
 	}
@@ -347,8 +347,11 @@ func (fs *Source) Info() (i model.NodeInfo) {
 		i.NeedDecode = true
 	} else if fs.reader.IsBytesReader() { // decrypt/decompress in scan and output raw
 		i.NeedDecode = true
+		i.HasCompress = true
+		i.HasInterval = true
 	} else { // decrypt/decompress in scan and output decoded tuple
-		// keep false
+		i.HasCompress = true
+		i.HasInterval = true
 	}
 	return
 }

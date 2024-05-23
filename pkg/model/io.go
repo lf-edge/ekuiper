@@ -38,4 +38,6 @@ type InfoNode interface {
 type NodeInfo struct {
 	NeedDecode      bool
 	NeedBatchDecode bool // like decrypt, decompress as a whole
+	HasCompress     bool
+	HasInterval     bool
 }
