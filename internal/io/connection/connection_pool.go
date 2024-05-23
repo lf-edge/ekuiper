@@ -38,6 +38,24 @@ type Connection interface {
 	Ref() int
 }
 
+func GetAllConnectionsID() []string {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	ids := make([]string, 0)
+	for key := range globalConnectionManager.connectionPool {
+		ids = append(ids, key)
+	}
+	return ids
+}
+
+func PingConnection(id string) error {
+	conn, err := GetNameConnection(id)
+	if err != nil {
+		return err
+	}
+	return conn.Ping()
+}
+
 func GetNameConnection(selId string) (Connection, error) {
 	if selId == "" {
 		return nil, fmt.Errorf("connection id should be defined")

@@ -19,6 +19,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
@@ -49,6 +51,39 @@ func connectionsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("success"))
+	case http.MethodGet:
+		ids := connection.GetAllConnectionsID()
+		w.WriteHeader(http.StatusOK)
+		jsonResponse(ids, w, logger)
+	}
+}
+
+type ConnectionResponse struct {
+	ID  string `json:"id"`
+	Err string `json:"err"`
+}
+
+func connectionHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	id := mux.Vars(r)["id"]
+	switch r.Method {
+	case http.MethodGet:
+		res := &ConnectionResponse{
+			ID: id,
+		}
+		err := connection.PingConnection(id)
+		if err != nil {
+			res.Err = err.Error()
+		}
+		w.WriteHeader(http.StatusOK)
+		jsonResponse(res, w, logger)
+	case http.MethodDelete:
+		if err := connection.DropNameConnection(id); err != nil {
+			handleError(w, err, "drop connection failed", logger)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("success"))
 	}
 }
