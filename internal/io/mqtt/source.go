@@ -34,7 +34,7 @@ type SourceConnector struct {
 	cfg   *Conf
 	props map[string]any
 
-	cli connection.Connection
+	cli *client.Connection
 }
 
 type Conf struct {
@@ -63,7 +63,7 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 }
 
 func (ms *SourceConnector) Ping(props map[string]interface{}) error {
-	cli, err := client.CreateClient(context.Background(), "", props)
+	cli, err := client.CreateAnonymousConnection(context.Background(), props)
 	if err != nil {
 		return err
 	}
@@ -73,10 +73,18 @@ func (ms *SourceConnector) Ping(props map[string]interface{}) error {
 
 func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	var cli connection.Connection
+	var cli *client.Connection
 	var err error
 	if len(ms.cfg.SelId) > 0 {
-		cli, err = connection.GetNameConnection(ms.cfg.SelId)
+		conn, err := connection.GetNameConnection(ms.cfg.SelId)
+		if err != nil {
+			return err
+		}
+		c, ok := conn.(*client.Connection)
+		if !ok {
+			return fmt.Errorf("connection %s should be mqtt connection", ms.cfg.SelId)
+		}
+		cli = c
 	} else {
 		cli, err = client.CreateAnonymousConnection(ctx, ms.props)
 	}
@@ -87,7 +95,15 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
 func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	return ms.cli.Subscribe(ctx, ms.props, ingest, ingestError)
+	return ms.cli.Subscribe(ms.tpc, &client.SubscriptionInfo{
+		Qos: byte(ms.cfg.Qos),
+		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
+			ms.onMessage(ctx, message, ingest)
+		},
+		ErrHandler: func(err error) {
+			ingestError(ctx, err)
+		},
+	})
 }
 
 func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message, ingest api.BytesIngest) {
@@ -105,11 +121,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
-		if len(ms.cfg.SelId) < 1 {
-			ms.cli.Close()
-		} else {
-			ms.cli.DetachSub(ms.props)
-		}
+		ms.cli.DetachSub(ms.props)
 	}
 	return nil
 }

@@ -28,8 +28,6 @@ import (
 )
 
 type Connection interface {
-	Subscribe(ctx api.StreamContext, props map[string]any, ingest api.BytesIngest, ingestError api.ErrorIngest) error
-	Publish(payload any, props map[string]any) error
 	Ping() error
 	Close()
 	Attach()
@@ -105,6 +103,7 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (Connecti
 	var err error
 	switch strings.ToLower(meta.Typ) {
 	case "mqtt":
+		// TODO: Will named connection support read configuration by confKey?
 		conn, err = client.CreateClient(ctx, meta.ID, meta.Props)
 	default:
 		err = fmt.Errorf("unknown connection type")

@@ -25,11 +25,9 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type Connection struct {
@@ -58,23 +56,10 @@ type SubscriptionInfo struct {
 	ErrHandler func(error)
 }
 
-const (
-	dataSourceProp = "datasource"
-	topicProp      = "topic"
-	qosProp        = "qos"
-	retainedProp   = "retained"
-)
-
-func (conn *Connection) Publish(payload any, props map[string]any) error {
+func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
 	if !conn.connected.Load() {
 		return errorx.NewIOErr("mqtt client is not connected")
 	}
-	topic, err := getTopicFromProps(props)
-	if err != nil {
-		return err
-	}
-	qos := getQosFromProps(props)
-	retained := getRetained(props)
 	token := conn.Client.Publish(topic, qos, retained, payload)
 	return handleToken(token)
 }
@@ -83,7 +68,7 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.logger.Infof("The connection to mqtt broker is established")
 	for topic, info := range conn.subscriptions {
-		err := conn.subscribe(topic, info)
+		err := conn.Subscribe(topic, info)
 		if err != nil { // should never happen, if happened, stop the rule
 			panic(fmt.Sprintf("Failed to subscribe topic %s: %v", topic, err))
 		}
@@ -127,42 +112,10 @@ func (conn *Connection) DetachPub(props map[string]any) {
 	conn.refCount.Add(-1)
 }
 
-func (conn *Connection) Subscribe(ctx api.StreamContext, props map[string]any, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	qos := getQosFromProps(props)
-	topic, err := getTopicFromProps(props)
-	if err != nil {
-		return err
-	}
-	info := &SubscriptionInfo{
-		Qos: qos,
-		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
-			conn.onMessage(ctx, message, ingest)
-		},
-		ErrHandler: func(err error) {
-			ingestError(ctx, err)
-		},
-	}
+func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
 	conn.subscriptions[topic] = info
 	token := conn.Client.Subscribe(topic, info.Qos, info.Handler)
 	return handleToken(token)
-}
-
-func (conn *Connection) subscribe(topic string, info *SubscriptionInfo) error {
-	conn.subscriptions[topic] = info
-	token := conn.Client.Subscribe(topic, info.Qos, info.Handler)
-	return handleToken(token)
-}
-
-func (conn *Connection) onMessage(ctx api.StreamContext, msg pahoMqtt.Message, ingest api.BytesIngest) {
-	if msg != nil {
-		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
-	}
-	rcvTime := timex.GetNow()
-	ingest(ctx, msg.Payload(), map[string]interface{}{
-		"topic":     msg.Topic(),
-		"qos":       msg.Qos(),
-		"messageId": msg.MessageID(),
-	}, rcvTime)
 }
 
 func (conn *Connection) Close() {
@@ -179,19 +132,6 @@ func (conn *Connection) Ping() error {
 
 // CreateClient creates a new mqtt client. It is anonymous and does not require a name.
 func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*Connection, error) {
-	if selId != "" {
-		selectCfg := &conf.ConSelector{
-			ConnSelectorStr: selId,
-		}
-		if err := selectCfg.Init(); err != nil {
-			return nil, err
-		}
-		cf, err := selectCfg.ReadCfgFromYaml()
-		if err != nil {
-			return nil, err
-		}
-		props = cf
-	}
 	c, err := ValidateConfig(props)
 	if err != nil {
 		return nil, err
@@ -284,6 +224,11 @@ func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Co
 	return cli, nil
 }
 
+const (
+	dataSourceProp = "datasource"
+	topicProp      = "topic"
+)
+
 func getTopicFromProps(props map[string]any) (string, error) {
 	v, ok := props[topicProp]
 	if ok {
@@ -294,34 +239,4 @@ func getTopicFromProps(props map[string]any) (string, error) {
 		return v.(string), nil
 	}
 	return "", fmt.Errorf("topic or datasource not defined")
-}
-
-func getQosFromProps(props map[string]any) byte {
-	qos := byte(0)
-	v, ok := props[qosProp]
-	if ok {
-		switch x := v.(type) {
-		case int:
-			qos = byte(x)
-		case int64:
-			qos = byte(int(x))
-		case float64:
-			qos = byte(int(x))
-		default:
-			return qos
-		}
-	}
-	return qos
-}
-
-func getRetained(props map[string]any) bool {
-	retained := false
-	v, ok := props[retainedProp]
-	if ok {
-		v2, ok2 := v.(bool)
-		if ok2 {
-			retained = v2
-		}
-	}
-	return retained
 }

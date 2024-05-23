@@ -35,7 +35,7 @@ type AdConf struct {
 type Sink struct {
 	adconf *AdConf
 	config map[string]interface{}
-	cli    connection.Connection
+	cli    *client.Connection
 }
 
 func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
@@ -64,10 +64,18 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 
 func (ms *Sink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	var cli connection.Connection
+	var cli *client.Connection
 	var err error
 	if len(ms.adconf.SelId) > 0 {
-		cli, err = connection.GetNameConnection(ms.adconf.SelId)
+		conn, err := connection.GetNameConnection(ms.adconf.SelId)
+		if err != nil {
+			return err
+		}
+		c, ok := conn.(*client.Connection)
+		if !ok {
+			return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
+		}
+		cli = c
 	} else {
 		cli, err = client.CreateAnonymousConnection(ctx, ms.config)
 	}
@@ -92,7 +100,7 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", tpc)
-	return ms.cli.Publish(item.Raw(), ms.config)
+	return ms.cli.Publish(tpc, ms.adconf.Qos, ms.adconf.Retained, item.Raw())
 }
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
