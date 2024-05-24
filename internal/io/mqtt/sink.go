@@ -77,7 +77,7 @@ func (ms *Sink) Connect(ctx api.StreamContext) error {
 		}
 		cli = c
 	} else {
-		id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
+		id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
 		conn, err := connection.CreateNonStoredConnection(ctx, id, "mqtt", ms.config)
 		if err != nil {
 			return err
@@ -112,7 +112,8 @@ func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Info("Closing mqtt sink connector")
 	if ms.cli != nil {
 		if len(ms.adconf.SelId) < 1 {
-			ms.cli.Close(ctx)
+			id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
+			connection.DropNonStoredConnection(ctx, id)
 		} else {
 			ms.cli.DetachPub(ctx, nil)
 		}

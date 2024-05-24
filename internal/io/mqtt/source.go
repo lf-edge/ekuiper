@@ -126,7 +126,12 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
-		ms.cli.DetachSub(ctx, ms.props)
+		if len(ms.cfg.SelId) < 1 {
+			id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+			connection.DropNonStoredConnection(ctx, id)
+		} else {
+			ms.cli.DetachSub(ctx, ms.props)
+		}
 	}
 	return nil
 }

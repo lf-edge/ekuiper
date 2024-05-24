@@ -134,6 +134,22 @@ func CreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[
 	return conn, nil
 }
 
+func DropNonStoredConnection(ctx api.StreamContext, selId string) error {
+	if selId == "" {
+		return fmt.Errorf("connection id should be defined")
+	}
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
+	meta, ok := globalConnectionManager.connectionPool[selId]
+	if !ok {
+		return nil
+	}
+	conn := meta.conn
+	conn.Close(ctx)
+	delete(globalConnectionManager.connectionPool, selId)
+	return nil
+}
+
 func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (Connection, error) {
 	var conn Connection
 	var err error
