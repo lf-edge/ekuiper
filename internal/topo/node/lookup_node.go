@@ -79,6 +79,9 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	log := ctx.GetLogger()
 	n.prepareExec(ctx, errCh, "op")
 	go func() {
+		defer func() {
+			n.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			ns, err := lookup.Attach(n.name)
 			if err != nil {

@@ -82,6 +82,9 @@ func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, o
 func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")
 	go func() {
+		defer func() {
+			o.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			runWithOrder(ctx, o.defaultSinkNode, o.concurrency, o.Worker)
 			return nil

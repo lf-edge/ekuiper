@@ -24,6 +24,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"sort"
+	"sync"
 	"syscall"
 	"time"
 
@@ -256,13 +257,30 @@ func StartUp(Version string) {
 		conf.Log.Info("eKuiper stopped by Stop request")
 	}
 	exit <- struct{}{}
-	conf.Log.Info("start to stop rest server")
-	ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
+	// wait rule checker exit
+	time.Sleep(10 * time.Millisecond)
+
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(conf.Config.Basic.GracefulShutdownTimeout))
 	defer cancel()
-	if err = srvRest.Shutdown(ctx); err != nil {
-		logger.Errorf("rest server shutdown error: %v", err)
-	}
-	logger.Info("rest server successfully shutdown.")
+	wg := sync.WaitGroup{}
+	// wait all service stop
+	wg.Add(2)
+	go func() {
+		conf.Log.Info("start to stop all rules")
+		if err := waitAllRuleStop(ctx); err != nil {
+			conf.Log.Warnf(err.Error())
+		}
+		wg.Done()
+	}()
+	go func() {
+		conf.Log.Info("start to stop rest server")
+		if err = srvRest.Shutdown(ctx); err != nil {
+			logger.Errorf("rest server shutdown error: %v", err)
+		}
+		logger.Info("rest server successfully shutdown.")
+		wg.Done()
+	}()
+	wg.Wait()
 
 	// close extend services
 	for k, v := range servers {
@@ -443,4 +461,44 @@ func handleScheduleRule(now time.Time, r *def.Rule, state string) scheduleRuleAc
 		}
 	}
 	return scheduleRuleActionDoNothing
+}
+
+func waitAllRuleStop(ctx context.Context) error {
+	rules, _ := ruleProcessor.GetAllRules()
+	for _, r := range rules {
+		stopRuleWhenServerStop(r)
+	}
+	wg := &sync.WaitGroup{}
+	m := &sync.Map{}
+	for _, r := range rules {
+		rs, ok := registry.Load(r)
+		if ok {
+			m.Store(r, struct{}{})
+			wg.Add(1)
+			go func() {
+				defer func() {
+					m.Delete(r)
+					wg.Done()
+				}()
+				rs.Topology.WaitClose()
+			}()
+		}
+	}
+	wgCh := make(chan struct{})
+	go func() {
+		wg.Wait()
+		wgCh <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+		timeoutRules := make([]string, 0)
+		m.Range(func(key, value any) bool {
+			timeoutRules = append(timeoutRules, key.(string))
+			return true
+		})
+		return fmt.Errorf("stop rules timeout, remain::%s", timeoutRules)
+	case <-wgCh:
+		return nil
+	}
 }

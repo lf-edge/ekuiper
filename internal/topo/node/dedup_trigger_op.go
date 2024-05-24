@@ -70,6 +70,9 @@ func (w *DedupTriggerNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	w.prepareExec(ctx, errCh, "op")
 
 	go func() {
+		defer func() {
+			w.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			for {
 				select {

@@ -98,6 +98,9 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 
 	ctx.GetLogger().Infof("Start with state lastWatermarkTs: %d", w.lastWatermarkTs.UnixMilli())
 	go func() {
+		defer func() {
+			w.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			for {
 				select {

@@ -24,6 +24,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/checkpoint"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -39,6 +40,7 @@ type defaultNode struct {
 	qos         def.Qos
 	outputMu    sync.RWMutex
 	outputs     map[string]chan<- any
+	opsWg       *sync.WaitGroup
 }
 
 func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
@@ -169,7 +171,24 @@ func (o *defaultNode) prepareExec(ctx api.StreamContext, errCh chan<- error, opT
 	ctx.GetLogger().Infof("%s started", o.name)
 	o.statManager = metric.NewStatManager(ctx, opType)
 	o.ctx = ctx
+	wg := ctx.Value(context.RuleWaitGroupKey)
+	if wg != nil {
+		o.opsWg = wg.(*sync.WaitGroup)
+	}
+	if o.opsWg != nil {
+		o.opsWg.Add(1)
+	}
 	o.ctrlCh = errCh
+}
+
+func (o *defaultNode) finishExec() {
+	o.Close()
+}
+
+func (o *defaultNode) Close() {
+	if o.opsWg != nil {
+		o.opsWg.Done()
+	}
 }
 
 func (o *defaultSinkNode) preprocess(ctx api.StreamContext, item any) (any, bool) {

@@ -18,7 +18,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -1783,4 +1786,36 @@ func TestAliasSQL(t *testing.T) {
 	for _, opt := range options {
 		DoRuleTest(t, tests, opt, 0)
 	}
+}
+
+func TestRuleWaitGroup(t *testing.T) {
+	streamList := []string{"demo"}
+	HandleStream(false, streamList, t)
+	HandleStream(true, streamList, t)
+	id := "rule991"
+	sql := "select color,size from demo"
+	rule := &def.Rule{
+		Id:  id,
+		Sql: sql,
+		Actions: []map[string]any{
+			{
+				"memory": map[string]any{
+					"topic":      id,
+					"sendSingle": false,
+				},
+			},
+		},
+		Options: &def.RuleOption{
+			BufferLength:       100,
+			SendError:          true,
+			Qos:                def.AtMostOnce,
+			CheckpointInterval: cast.DurationConf(time.Second * 5),
+		},
+	}
+	tp, err := planner.Plan(rule)
+	require.NoError(t, err)
+	tp.Open()
+	time.Sleep(10 * time.Millisecond)
+	tp.Cancel()
+	tp.WaitClose()
 }

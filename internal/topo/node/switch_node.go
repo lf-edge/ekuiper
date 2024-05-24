@@ -72,6 +72,9 @@ func (n *SwitchNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	fv, afv := xsql.NewFunctionValuersForOp(ctx)
 	go func() {
+		defer func() {
+			n.Close()
+		}()
 		err := infra.SafeRun(func() error {
 			for {
 				ctx.GetLogger().Debugf("Switch node %s is looping", n.name)

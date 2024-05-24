@@ -68,7 +68,10 @@ func (b *BatchOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 func (b *BatchOp) runWithTickerAndBatchSize(ctx api.StreamContext) {
 	ticker := timex.GetTicker(b.lingerInterval)
 	go func() {
-		defer ticker.Stop()
+		defer func() {
+			ticker.Stop()
+			b.Close()
+		}()
 		for {
 			select {
 			case <-ctx.Done():
@@ -122,6 +125,9 @@ func (b *BatchOp) send() {
 
 func (b *BatchOp) runWithBatchSize(ctx api.StreamContext) {
 	go func() {
+		defer func() {
+			b.Close()
+		}()
 		for {
 			select {
 			case <-ctx.Done():
@@ -136,7 +142,10 @@ func (b *BatchOp) runWithBatchSize(ctx api.StreamContext) {
 func (b *BatchOp) runWithTicker(ctx api.StreamContext) {
 	ticker := timex.GetTicker(b.lingerInterval)
 	go func() {
-		defer ticker.Stop()
+		defer func() {
+			ticker.Stop()
+			b.Close()
+		}()
 		for {
 			select {
 			case <-ctx.Done():

@@ -62,7 +62,7 @@ type SubscriptionInfo struct {
 }
 
 func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
-	if !conn.connected.Load() {
+	if conn == nil || !conn.connected.Load() {
 		return errorx.NewIOErr("mqtt client is not connected")
 	}
 	token := conn.Client.Publish(topic, qos, retained, payload)
