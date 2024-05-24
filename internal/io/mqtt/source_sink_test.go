@@ -20,12 +20,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestSourceSink(t *testing.T) {
+	connection.InitConnectionManager()
 	sc := GetSource().(api.BytesSource)
 	sk := GetSink().(api.BytesCollector)
 	mc := mockclock.GetMockClock()

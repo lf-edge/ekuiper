@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -33,6 +34,7 @@ func init() {
 }
 
 func TestProvision(t *testing.T) {
+	connection.InitConnectionManager()
 	tests := []struct {
 		name  string
 		props map[string]any
