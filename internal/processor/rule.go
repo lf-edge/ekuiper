@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/meta"
 	"github.com/lf-edge/ekuiper/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
@@ -53,6 +54,11 @@ func NewRuleProcessor() *RuleProcessor {
 
 func (p *RuleProcessor) ExecCreateWithValidation(name, ruleJson string) (*api.Rule, error) {
 	rule, err := p.GetRuleByJson(name, ruleJson)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = planner.Plan(rule)
 	if err != nil {
 		return nil, err
 	}
