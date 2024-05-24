@@ -27,15 +27,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-type RegisterConnection func(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error)
-
-var ConnectionRegister map[string]RegisterConnection
-
-func init() {
-	ConnectionRegister = map[string]RegisterConnection{}
-	ConnectionRegister["mock"] = createMockConnection
-}
-
 var isTest bool
 
 func GetAllConnectionsID() []string {
@@ -145,7 +136,7 @@ func DropNonStoredConnection(ctx api.StreamContext, selId string) error {
 func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.Connection, error) {
 	var conn modules.Connection
 	var err error
-	connRegister, ok := ConnectionRegister[strings.ToLower(meta.Typ)]
+	connRegister, ok := modules.ConnectionRegister[strings.ToLower(meta.Typ)]
 	if !ok {
 		return nil, fmt.Errorf("unknown connection type")
 	}
@@ -257,7 +248,11 @@ func (m *mockConnection) Ref(ctx api.StreamContext) int {
 	return m.ref
 }
 
-func createMockConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
+func CreateMockConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
 	m := &mockConnection{id: id, ref: 0}
 	return m, nil
+}
+
+func init() {
+	modules.ConnectionRegister["mock"] = CreateMockConnection
 }

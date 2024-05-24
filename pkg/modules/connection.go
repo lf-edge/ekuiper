@@ -24,3 +24,11 @@ type Connection interface {
 	DetachPub(ctx api.StreamContext, props map[string]any)
 	Ref(ctx api.StreamContext) int
 }
+
+type RegisterConnection func(ctx api.StreamContext, id string, props map[string]any) (Connection, error)
+
+var ConnectionRegister map[string]RegisterConnection
+
+func init() {
+	ConnectionRegister = map[string]RegisterConnection{}
+}

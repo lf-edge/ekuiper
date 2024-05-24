@@ -48,4 +48,11 @@ func TestConnection(t *testing.T) {
 	conn3, err := GetNameConnection("id1")
 	require.Error(t, err)
 	require.Nil(t, conn3)
+
+	_, err = CreateNamedConnection(ctx, "", "mock", nil)
+	require.Error(t, err)
+	err = DropNameConnection(ctx, "")
+	require.Error(t, err)
+	_, err = CreateNamedConnection(ctx, "12", "unkown", nil)
+	require.Error(t, err)
 }
