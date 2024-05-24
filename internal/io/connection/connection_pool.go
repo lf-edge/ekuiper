@@ -24,9 +24,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-type RegisterConnection func(ctx api.StreamContext, id string, props map[string]any) (Connection, error)
+type RegisterConnection func(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error)
 
 var ConnectionRegister map[string]RegisterConnection
 
@@ -36,15 +37,6 @@ func init() {
 }
 
 var isTest bool
-
-type Connection interface {
-	Ping(ctx api.StreamContext) error
-	Close(ctx api.StreamContext)
-	Attach(ctx api.StreamContext)
-	DetachSub(ctx api.StreamContext, props map[string]any)
-	DetachPub(ctx api.StreamContext, props map[string]any)
-	Ref(ctx api.StreamContext) int
-}
 
 func GetAllConnectionsID() []string {
 	globalConnectionManager.RLock()
@@ -64,7 +56,7 @@ func PingConnection(ctx api.StreamContext, id string) error {
 	return conn.Ping(ctx)
 }
 
-func GetNameConnection(selId string) (Connection, error) {
+func GetNameConnection(selId string) (modules.Connection, error) {
 	if selId == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
@@ -77,7 +69,7 @@ func GetNameConnection(selId string) (Connection, error) {
 	return meta.conn, nil
 }
 
-func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (Connection, error) {
+func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (modules.Connection, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
@@ -110,7 +102,7 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	return conn, nil
 }
 
-func CreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[string]any) (Connection, error) {
+func CreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[string]any) (modules.Connection, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
@@ -150,8 +142,8 @@ func DropNonStoredConnection(ctx api.StreamContext, selId string) error {
 	return nil
 }
 
-func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (Connection, error) {
-	var conn Connection
+func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.Connection, error) {
+	var conn modules.Connection
 	var err error
 	connRegister, ok := ConnectionRegister[strings.ToLower(meta.Typ)]
 	if !ok {
@@ -227,10 +219,10 @@ type ConnectionManager struct {
 }
 
 type ConnectionMeta struct {
-	ID    string         `json:"id"`
-	Typ   string         `json:"typ"`
-	Props map[string]any `json:"props"`
-	conn  Connection     `json:"-"`
+	ID    string             `json:"id"`
+	Typ   string             `json:"typ"`
+	Props map[string]any     `json:"props"`
+	conn  modules.Connection `json:"-"`
 }
 
 type mockConnection struct {
@@ -265,7 +257,7 @@ func (m *mockConnection) Ref(ctx api.StreamContext) int {
 	return m.ref
 }
 
-func createMockConnection(ctx api.StreamContext, id string, props map[string]any) (Connection, error) {
+func createMockConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
 	m := &mockConnection{id: id, ref: 0}
 	return m, nil
 }
