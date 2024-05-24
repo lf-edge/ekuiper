@@ -32,7 +32,10 @@ var ConnectionRegister map[string]RegisterConnection
 
 func init() {
 	ConnectionRegister = map[string]RegisterConnection{}
+	ConnectionRegister["mock"] = createMockConnection
 }
+
+var isTest bool
 
 type Connection interface {
 	Ping(ctx api.StreamContext) error
@@ -89,12 +92,14 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		Typ:   typ,
 		Props: props,
 	}
-	b, err := json.Marshal(meta)
-	if err != nil {
-		return nil, err
-	}
-	if err := globalConnectionManager.store.Set(id, string(b)); err != nil {
-		return nil, err
+	if !isTest {
+		b, err := json.Marshal(meta)
+		if err != nil {
+			return nil, err
+		}
+		if err := globalConnectionManager.store.Set(id, string(b)); err != nil {
+			return nil, err
+		}
 	}
 	conn, err := createNamedConnection(ctx, meta)
 	if err != nil {
@@ -132,12 +137,11 @@ func CreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[
 func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (Connection, error) {
 	var conn Connection
 	var err error
-	switch strings.ToLower(meta.Typ) {
-	case "mqtt":
-		conn, err = ConnectionRegister["mqtt"](ctx, meta.ID, meta.Props)
-	default:
-		err = fmt.Errorf("unknown connection type")
+	connRegister, ok := ConnectionRegister[strings.ToLower(meta.Typ)]
+	if !ok {
+		return nil, fmt.Errorf("unknown connection type")
 	}
+	conn, err = connRegister(ctx, meta.ID, meta.Props)
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +162,11 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if conn.Ref(ctx) > 0 {
 		return fmt.Errorf("connection %s can't be dropped due to reference", selId)
 	}
-	err := globalConnectionManager.store.Delete(selId)
-	if err != nil {
-		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
+	if !isTest {
+		err := globalConnectionManager.store.Delete(selId)
+		if err != nil {
+			return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
+		}
 	}
 	conn.Close(ctx)
 	delete(globalConnectionManager.connectionPool, selId)
@@ -173,20 +179,22 @@ func InitConnectionManager() error {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
 	}
-	globalConnectionManager.store, _ = store.GetKV("connectionMeta")
-	kvs, _ := globalConnectionManager.store.All()
-	for connectionID, raw := range kvs {
-		meta := ConnectionMeta{}
-		err := json.Unmarshal([]byte(raw), &meta)
-		if err != nil {
-			return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
+	if !isTest {
+		globalConnectionManager.store, _ = store.GetKV("connectionMeta")
+		kvs, _ := globalConnectionManager.store.All()
+		for connectionID, raw := range kvs {
+			meta := ConnectionMeta{}
+			err := json.Unmarshal([]byte(raw), &meta)
+			if err != nil {
+				return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
+			}
+			conn, err := createNamedConnection(context.Background(), meta)
+			if err != nil {
+				return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
+			}
+			meta.conn = conn
+			globalConnectionManager.connectionPool[connectionID] = meta
 		}
-		conn, err := createNamedConnection(context.Background(), meta)
-		if err != nil {
-			return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
-		}
-		meta.conn = conn
-		globalConnectionManager.connectionPool[connectionID] = meta
 	}
 	return nil
 }
@@ -202,4 +210,41 @@ type ConnectionMeta struct {
 	Typ   string         `json:"typ"`
 	Props map[string]any `json:"props"`
 	conn  Connection     `json:"-"`
+}
+
+type mockConnection struct {
+	id  string
+	ref int
+}
+
+func (m *mockConnection) Ping(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *mockConnection) Close(ctx api.StreamContext) {
+	return
+}
+
+func (m *mockConnection) Attach(ctx api.StreamContext) {
+	m.ref++
+	return
+}
+
+func (m *mockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
+	m.ref--
+	return
+}
+
+func (m *mockConnection) DetachPub(ctx api.StreamContext, props map[string]any) {
+	m.ref--
+	return
+}
+
+func (m *mockConnection) Ref(ctx api.StreamContext) int {
+	return m.ref
+}
+
+func createMockConnection(ctx api.StreamContext, id string, props map[string]any) (Connection, error) {
+	m := &mockConnection{id: id, ref: 0}
+	return m, nil
 }
