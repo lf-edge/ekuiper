@@ -25,7 +25,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -33,7 +32,7 @@ import (
 )
 
 func init() {
-	connection.ConnectionRegister["mqtt"] = CreateConnection
+	modules.ConnectionRegister["mqtt"] = CreateConnection
 }
 
 type Connection struct {
