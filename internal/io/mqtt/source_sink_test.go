@@ -27,7 +27,7 @@ import (
 )
 
 func TestSourceSink(t *testing.T) {
-	connection.InitConnectionManager()
+	connection.InitConnectionManagerInTest()
 	sc := GetSource().(api.BytesSource)
 	sk := GetSink().(api.BytesCollector)
 	mc := mockclock.GetMockClock()

@@ -26,7 +26,7 @@ import (
 )
 
 func TestSinkConfigure(t *testing.T) {
-	connection.InitConnectionManager()
+	connection.InitConnectionManagerInTest()
 	tests := []struct {
 		name           string
 		input          map[string]interface{}
@@ -137,7 +137,7 @@ func TestSinkConfigure(t *testing.T) {
 }
 
 func TestValidateMQTTSinkConf(t *testing.T) {
-	connection.InitConnectionManager()
+	connection.InitConnectionManagerInTest()
 	testcases := []struct {
 		topic       string
 		expectError bool

@@ -23,9 +23,7 @@ import (
 )
 
 func TestConnection(t *testing.T) {
-	isTest = true
-	err := InitConnectionManager()
-	require.NoError(t, err)
+	InitConnectionManagerInTest()
 	ctx := context.Background()
 	conn, err := CreateNamedConnection(ctx, "id1", "mock", nil)
 	require.NoError(t, err)

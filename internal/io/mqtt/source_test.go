@@ -34,7 +34,7 @@ func init() {
 }
 
 func TestProvision(t *testing.T) {
-	connection.InitConnectionManager()
+	connection.InitConnectionManagerInTest()
 	tests := []struct {
 		name  string
 		props map[string]any

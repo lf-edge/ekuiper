@@ -175,6 +175,11 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 
 var globalConnectionManager *ConnectionManager
 
+func InitConnectionManagerInTest() {
+	isTest = true
+	InitConnectionManager()
+}
+
 func InitConnectionManager() error {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
