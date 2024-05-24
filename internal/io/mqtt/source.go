@@ -62,13 +62,13 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 	return nil
 }
 
-func (ms *SourceConnector) Ping(props map[string]interface{}) error {
+func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interface{}) error {
 	cli, err := client.CreateAnonymousConnection(context.Background(), props)
 	if err != nil {
 		return err
 	}
-	defer cli.Close()
-	return cli.Ping()
+	defer cli.Close(ctx)
+	return cli.Ping(ctx)
 }
 
 func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
@@ -86,7 +86,12 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 		}
 		cli = c
 	} else {
-		cli, err = client.CreateAnonymousConnection(ctx, ms.props)
+		id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+		conn, err := connection.CreateNonStoredConnection(ctx, id, "mqtt", ms.props)
+		if err != nil {
+			return err
+		}
+		cli = conn.(*client.Connection)
 	}
 	ms.cli = cli
 	return err
@@ -121,7 +126,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
-		ms.cli.DetachSub(ms.props)
+		ms.cli.DetachSub(ctx, ms.props)
 	}
 	return nil
 }

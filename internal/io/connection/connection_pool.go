@@ -21,19 +21,26 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
+type RegisterConnection func(ctx api.StreamContext, id string, props map[string]any) (Connection, error)
+
+var ConnectionRegister map[string]RegisterConnection
+
+func init() {
+	ConnectionRegister = map[string]RegisterConnection{}
+}
+
 type Connection interface {
-	Ping() error
-	Close()
-	Attach()
-	DetachSub(props map[string]any)
-	DetachPub(props map[string]any)
-	Ref() int
+	Ping(ctx api.StreamContext) error
+	Close(ctx api.StreamContext)
+	Attach(ctx api.StreamContext)
+	DetachSub(ctx api.StreamContext, props map[string]any)
+	DetachPub(ctx api.StreamContext, props map[string]any)
+	Ref(ctx api.StreamContext) int
 }
 
 func GetAllConnectionsID() []string {
@@ -46,12 +53,12 @@ func GetAllConnectionsID() []string {
 	return ids
 }
 
-func PingConnection(id string) error {
+func PingConnection(ctx api.StreamContext, id string) error {
 	conn, err := GetNameConnection(id)
 	if err != nil {
 		return err
 	}
-	return conn.Ping()
+	return conn.Ping(ctx)
 }
 
 func GetNameConnection(selId string) (Connection, error) {
@@ -67,15 +74,15 @@ func GetNameConnection(selId string) (Connection, error) {
 	return meta.conn, nil
 }
 
-func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) error {
+func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (Connection, error) {
 	if id == "" || typ == "" {
-		return fmt.Errorf("connection id and type should be defined")
+		return nil, fmt.Errorf("connection id and type should be defined")
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
 	_, ok := globalConnectionManager.connectionPool[id]
 	if ok {
-		return fmt.Errorf("connection %v already been created", id)
+		return nil, fmt.Errorf("connection %v already been created", id)
 	}
 	meta := ConnectionMeta{
 		ID:    id,
@@ -84,18 +91,42 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	}
 	b, err := json.Marshal(meta)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := globalConnectionManager.store.Set(id, string(b)); err != nil {
-		return err
+		return nil, err
 	}
 	conn, err := createNamedConnection(ctx, meta)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	meta.conn = conn
 	globalConnectionManager.connectionPool[id] = meta
-	return nil
+	return conn, nil
+}
+
+func CreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[string]any) (Connection, error) {
+	if id == "" || typ == "" {
+		return nil, fmt.Errorf("connection id and type should be defined")
+	}
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
+	_, ok := globalConnectionManager.connectionPool[id]
+	if ok {
+		return nil, fmt.Errorf("connection %v already been created", id)
+	}
+	meta := ConnectionMeta{
+		ID:    id,
+		Typ:   typ,
+		Props: props,
+	}
+	conn, err := createNamedConnection(ctx, meta)
+	if err != nil {
+		return nil, err
+	}
+	meta.conn = conn
+	globalConnectionManager.connectionPool[id] = meta
+	return conn, nil
 }
 
 func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (Connection, error) {
@@ -103,8 +134,7 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (Connecti
 	var err error
 	switch strings.ToLower(meta.Typ) {
 	case "mqtt":
-		// TODO: Will named connection support read configuration by confKey?
-		conn, err = client.CreateClient(ctx, meta.ID, meta.Props)
+		conn, err = ConnectionRegister["mqtt"](ctx, meta.ID, meta.Props)
 	default:
 		err = fmt.Errorf("unknown connection type")
 	}
@@ -114,7 +144,7 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (Connecti
 	return conn, nil
 }
 
-func DropNameConnection(selId string) error {
+func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if selId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
@@ -125,14 +155,14 @@ func DropNameConnection(selId string) error {
 		return nil
 	}
 	conn := meta.conn
-	if conn.Ref() > 0 {
+	if conn.Ref(ctx) > 0 {
 		return fmt.Errorf("connection %s can't be dropped due to reference", selId)
 	}
 	err := globalConnectionManager.store.Delete(selId)
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
-	conn.Close()
+	conn.Close(ctx)
 	delete(globalConnectionManager.connectionPool, selId)
 	return nil
 }

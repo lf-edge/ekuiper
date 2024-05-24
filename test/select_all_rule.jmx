@@ -172,7 +172,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-  &quot;id&quot;: &quot;rule3&quot;,&#xd;
+  &quot;id&quot;: &quot;rule1&quot;,&#xd;
   &quot;sql&quot;: &quot;SELECT * FROM demo&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
@@ -209,7 +209,7 @@
           <hashTree>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="-2022196798">Rule rule3 was created</stringProp>
+                <stringProp name="-2022196798">Rule rule1 was created</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
@@ -226,7 +226,7 @@
             <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/rules/rule3/status</stringProp>
+            <stringProp name="HTTPSampler.path">/rules/rule1/status</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -283,7 +283,7 @@
             <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/rules/rule3/status</stringProp>
+            <stringProp name="HTTPSampler.path">/rules/rule1/status</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -321,7 +321,7 @@
             <stringProp name="HTTPSampler.port">${rest_port}</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/rules/rule3</stringProp>
+            <stringProp name="HTTPSampler.path">/rules/rule1</stringProp>
             <stringProp name="HTTPSampler.method">DELETE</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -334,7 +334,7 @@
           <hashTree>
             <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
               <collectionProp name="Asserion.test_strings">
-                <stringProp name="717250485">Rule rule3 is dropped.</stringProp>
+                <stringProp name="717250485">Rule rule1 is dropped.</stringProp>
               </collectionProp>
               <stringProp name="Assertion.custom_message"></stringProp>
               <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>

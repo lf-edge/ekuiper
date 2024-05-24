@@ -45,7 +45,7 @@ func connectionsHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = connection.CreateNamedConnection(context.Background(), req.ID, req.Typ, req.Props)
+		_, err = connection.CreateNamedConnection(context.Background(), req.ID, req.Typ, req.Props)
 		if err != nil {
 			handleError(w, err, "create connection failed", logger)
 			return
@@ -72,14 +72,14 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 		res := &ConnectionResponse{
 			ID: id,
 		}
-		err := connection.PingConnection(id)
+		err := connection.PingConnection(context.Background(), id)
 		if err != nil {
 			res.Err = err.Error()
 		}
 		w.WriteHeader(http.StatusOK)
 		jsonResponse(res, w, logger)
 	case http.MethodDelete:
-		if err := connection.DropNameConnection(id); err != nil {
+		if err := connection.DropNameConnection(context.Background(), id); err != nil {
 			handleError(w, err, "drop connection failed", logger)
 			return
 		}

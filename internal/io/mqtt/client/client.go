@@ -25,10 +25,15 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
+
+func init() {
+	connection.ConnectionRegister["mqtt"] = CreateConnection
+}
 
 type Connection struct {
 	pahoMqtt.Client
@@ -89,16 +94,16 @@ func (conn *Connection) onReconnecting(_ pahoMqtt.Client, _ *pahoMqtt.ClientOpti
 }
 
 // Do not call this directly. Call connection pool Attach method to get the connection
-func (conn *Connection) Attach() {
+func (conn *Connection) Attach(ctx api.StreamContext) {
 	conn.refCount.Add(1)
 }
 
-func (conn *Connection) Ref() int {
+func (conn *Connection) Ref(ctx api.StreamContext) int {
 	return int(conn.refCount.Load())
 }
 
 // Do not call this directly. Call connection pool Detach method to release the connection
-func (conn *Connection) DetachSub(props map[string]any) {
+func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	conn.refCount.Add(-1)
 	topic, err := getTopicFromProps(props)
 	if err != nil {
@@ -108,7 +113,7 @@ func (conn *Connection) DetachSub(props map[string]any) {
 	conn.Client.Unsubscribe(topic)
 }
 
-func (conn *Connection) DetachPub(props map[string]any) {
+func (conn *Connection) DetachPub(ctx api.StreamContext, props map[string]any) {
 	conn.refCount.Add(-1)
 }
 
@@ -118,16 +123,20 @@ func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
 	return handleToken(token)
 }
 
-func (conn *Connection) Close() {
+func (conn *Connection) Close(ctx api.StreamContext) {
 	conn.Client.Disconnect(1)
 }
 
-func (conn *Connection) Ping() error {
+func (conn *Connection) Ping(ctx api.StreamContext) error {
 	if conn.Client.IsConnected() {
 		return nil
 	} else {
 		return errors.New("mqtt ping failed")
 	}
+}
+
+func CreateConnection(ctx api.StreamContext, selId string, props map[string]any) (connection.Connection, error) {
+	return CreateClient(ctx, selId, props)
 }
 
 // CreateClient creates a new mqtt client. It is anonymous and does not require a name.
@@ -167,7 +176,7 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	ctx.GetLogger().Infof("new mqtt client created")
 	con.Client = cli
 	if len(selId) > 0 {
-		con.Attach()
+		con.Attach(ctx)
 	}
 	return con, nil
 }
@@ -210,10 +219,6 @@ func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 	}
 	c.tls = tlsConfig
 	return c, nil
-}
-
-func (conn *Connection) GetClientId() string {
-	return conn.selId
 }
 
 func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Connection, error) {
