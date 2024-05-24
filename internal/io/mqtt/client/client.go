@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func init() {
@@ -135,7 +136,7 @@ func (conn *Connection) Ping(ctx api.StreamContext) error {
 	}
 }
 
-func CreateConnection(ctx api.StreamContext, selId string, props map[string]any) (connection.Connection, error) {
+func CreateConnection(ctx api.StreamContext, selId string, props map[string]any) (modules.Connection, error) {
 	return CreateClient(ctx, selId, props)
 }
 
