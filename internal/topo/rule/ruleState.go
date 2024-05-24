@@ -472,7 +472,8 @@ func (rs *RuleState) stopScheduleRule() {
 
 func (rs *RuleState) stop() error {
 	if rs.triggered == -1 {
-		return fmt.Errorf("rule %s is already deleted", rs.RuleId)
+		conf.Log.Warnf("rule %s already been deleted", rs.RuleId)
+		return nil
 	}
 	rs.triggered = 0
 	if rs.Topology != nil {
