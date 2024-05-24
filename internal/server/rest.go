@@ -160,6 +160,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/v2/status", getStatusV2RulHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
@@ -633,6 +634,21 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
+}
+
+// get status of a rule
+func getStatusV2RulHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	content, err := getRuleStatusV2(name)
+	if err != nil {
+		handleError(w, err, "get rule status error", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(content, w, logger)
 }
 
 // get status of a rule

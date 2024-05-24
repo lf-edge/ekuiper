@@ -297,6 +297,47 @@ func (s *Topo) GetCoordinator() *checkpoint.Coordinator {
 	return s.coordinator
 }
 
+func (s *Topo) GetMetricsV2() map[string]map[string]any {
+	allMetrics := make(map[string]map[string]any)
+	for _, sn := range s.sources {
+		sourceMetrics := make(map[string]any)
+		switch st := sn.(type) {
+		case node.MergeableTopo:
+			skeys, svalues := st.SubMetrics()
+			for i, key := range skeys {
+				sourceMetrics[key] = svalues[i]
+			}
+		default:
+			for i, v := range sn.GetMetrics() {
+				key := "source_" + sn.GetName() + "_0_" + metric.MetricNames[i]
+				value := v
+				sourceMetrics[key] = value
+			}
+		}
+		allMetrics[sn.GetName()] = sourceMetrics
+	}
+	for _, so := range s.ops {
+		operatorMetrics := make(map[string]any)
+		for i, v := range so.GetMetrics() {
+			key := "op_" + so.GetName() + "_0_" + metric.MetricNames[i]
+			value := v
+			operatorMetrics[key] = value
+		}
+		allMetrics[so.GetName()] = operatorMetrics
+	}
+	for _, sn := range s.sinks {
+		sinkMetrics := make(map[string]any)
+		for i, v := range sn.GetMetrics() {
+			key := "op_" + sn.GetName() + "_0_" + metric.MetricNames[i]
+			value := v
+			sinkMetrics[key] = value
+		}
+		allMetrics[sn.GetName()] = sinkMetrics
+	}
+
+	return allMetrics
+}
+
 func (s *Topo) GetMetrics() (keys []string, values []any) {
 	for _, sn := range s.sources {
 		switch st := sn.(type) {

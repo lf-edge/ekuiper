@@ -76,6 +76,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/v2/status", getStatusV2RulHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
@@ -279,6 +280,14 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/v2/status", bytes.NewBufferString("any"))
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
+	m := make(map[string]any)
+	require.NoError(suite.T(), json.Unmarshal(returnVal, &m))
+	require.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321/explain", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
