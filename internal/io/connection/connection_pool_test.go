@@ -53,6 +53,6 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	err = DropNameConnection(ctx, "")
 	require.Error(t, err)
-	_, err = CreateNamedConnection(ctx, "12", "unkown", nil)
+	_, err = CreateNamedConnection(ctx, "12", "unknown", nil)
 	require.Error(t, err)
 }
