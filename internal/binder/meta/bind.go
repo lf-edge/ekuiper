@@ -21,7 +21,7 @@ import (
 )
 
 // Bind Must run after function and io bound
-func Bind() {
+func Bind() error {
 	if err := meta.ReadSourceMetaDir(func(name string) bool {
 		s, _ := io.Source(name)
 		return s != nil
@@ -29,7 +29,10 @@ func Bind() {
 		s, _ := io.LookupSource(name)
 		return s != nil
 	}); nil != err {
-		conf.Log.Errorf("readSourceMetaDir:%v", err)
+		return err
+	}
+	if err := meta.ReadSourceMetaData(); err != nil {
+		return err
 	}
 	if err := meta.ReadSinkMetaDir(func(name string) bool {
 		s, _ := io.Sink(name)
@@ -37,7 +40,11 @@ func Bind() {
 	}); nil != err {
 		conf.Log.Errorf("readSinkMetaDir:%v", err)
 	}
+	if err := meta.ReadSinkMetaData(); err != nil {
+		return err
+	}
 	if err := meta.ReadUiMsgDir(); nil != err {
 		conf.Log.Errorf("readUiMsgDir:%v", err)
 	}
+	return nil
 }

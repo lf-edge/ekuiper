@@ -57,8 +57,8 @@ basic:
     # 0 indicates unlimited
     maxConnections: 0
   rulePatrolInterval: 10s
-  # cfgStorageType indicates the storage type to store the config, support "file","sqlite" and "fdb"
-  cfgStorageType: file
+  # cfgStorageType indicates the storage type to store the config, support "kv"
+  cfgStorageType: kv
   # enableOpenZiti indicates whether to enable OpenZiti for eKuiper REST service. Currently, it is only supported to work with EdgeX secure mode.
   enableOpenZiti: false
   # AES Key, base64 encoded

@@ -398,7 +398,10 @@ func InitConf() {
 		Config.Source = &SourceConf{}
 	}
 	if Config.Basic.CfgStorageType == "" {
-		Config.Basic.CfgStorageType = "file"
+		Config.Basic.CfgStorageType = "kv"
+	}
+	if Config.Basic.CfgStorageType == "file" {
+		panic(fmt.Errorf("cfgStorageType is no longer support file"))
 	}
 
 	_ = Config.Source.Validate()

@@ -187,6 +187,17 @@ func newUiSink(fi *fileSink) (*uiSink, error) {
 
 var gSinkmetadata = make(map[string]*uiSink) // immutable
 
+func ReadSinkMetaData() error {
+	keys, err := conf.GetYamlConfigAllKeys("sinks")
+	if err != nil {
+		return err
+	}
+	for key := range keys {
+		loadConfigOperatorForSink(key)
+	}
+	return nil
+}
+
 func ReadSinkMetaDir(checker InstallChecker) error {
 	confDir, err := conf.GetConfLoc()
 	if nil != err {
@@ -195,28 +206,6 @@ func ReadSinkMetaDir(checker InstallChecker) error {
 
 	dir := path.Join(confDir, "sinks")
 	files, err := os.ReadDir(dir)
-	if nil != err {
-		return err
-	}
-	for _, file := range files {
-		fname := file.Name()
-		if !strings.HasSuffix(fname, ".json") {
-			continue
-		}
-
-		filePath := path.Join(dir, fname)
-		if err := ReadSinkMetaFile(filePath, checker(strings.TrimSuffix(fname, ".json"))); nil != err {
-			return err
-		}
-	}
-
-	confDir, err = conf.GetDataLoc()
-	if nil != err {
-		return err
-	}
-
-	dir = path.Join(confDir, "sinks")
-	files, err = os.ReadDir(dir)
 	if nil != err {
 		return err
 	}

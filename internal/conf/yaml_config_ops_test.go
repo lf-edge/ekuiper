@@ -295,11 +295,7 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 	InitConf()
 	Config.Basic.CfgStorageType = ""
 	InitConf()
-	// assert default
-	require.Equal(t, Config.Basic.CfgStorageType, cfgFileStorage)
-	defer func() {
-		Config.Basic.CfgStorageType = cfgFileStorage
-	}()
+
 	Config.Basic.CfgStorageType = cfgStoreKVStorage
 	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)

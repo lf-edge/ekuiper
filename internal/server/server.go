@@ -172,7 +172,9 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
-	meta.Bind()
+	if err := meta.Bind(); err != nil {
+		panic(err)
+	}
 	initRuleset()
 
 	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}

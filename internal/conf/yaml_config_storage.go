@@ -24,7 +24,6 @@ import (
 )
 
 const (
-	cfgFileStorage    = "file"
 	cfgStoreKVStorage = "kv"
 )
 
@@ -60,8 +59,28 @@ func (m *kvMemory) GetByPrefix(prefix string) (map[string]map[string]interface{}
 
 var (
 	mockMemoryKVStore *kvMemory
-	sqliteKVStore     *sqlKVStore
+	kvStore           *sqlKVStore
 )
+
+func GetYamlConfigAllKeys(typ string) (map[string]struct{}, error) {
+	s, err := getKVStorage()
+	if err != nil {
+		return nil, err
+	}
+	data, err := s.GetByPrefix(typ)
+	if err != nil {
+		return nil, err
+	}
+	s1 := make(map[string]struct{})
+	for key := range data {
+		names := strings.Split(key, ".")
+		if len(names) != 3 {
+			continue
+		}
+		s1[names[1]] = struct{}{}
+	}
+	return s1, nil
+}
 
 func getKVStorage() (cfgKVStorage, error) {
 	if IsTesting {
@@ -73,14 +92,14 @@ func getKVStorage() (cfgKVStorage, error) {
 	}
 	switch Config.Basic.CfgStorageType {
 	case cfgStoreKVStorage:
-		if sqliteKVStore == nil {
+		if kvStore == nil {
 			sqliteKVStorage, err := NewSqliteKVStore("confKVStorage")
 			if err != nil {
 				return nil, err
 			}
-			sqliteKVStore = sqliteKVStorage
+			kvStore = sqliteKVStorage
 		}
-		return sqliteKVStore, nil
+		return kvStore, nil
 	}
 	return nil, fmt.Errorf("unknown cfg kv storage type: %v", Config.Basic.CfgStorageType)
 }
