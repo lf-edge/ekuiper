@@ -102,7 +102,7 @@ func (l *lookupSource) pull(ctx api.StreamContext) ([]map[string]interface{}, er
 		httpx.WithBody(body, l.config.BodyType, true, l.compressor, l.config.Compression),
 	)
 	if err != nil {
-		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", e, l)
+		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", err, l)
 		return nil, err
 	}
 	ctx.GetLogger().Debugf("httppull source got response %v", resp)
