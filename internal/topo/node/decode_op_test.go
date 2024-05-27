@@ -40,7 +40,7 @@ func TestJSON(t *testing.T) {
 	ctx := mockContext.NewMockContext("test", "Test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{
+			op, err := NewDecodeOp(ctx, false, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{
 				"sendInterval": "10ms",
 			})
 			assert.NoError(t, err)
@@ -94,7 +94,7 @@ func TestJSON(t *testing.T) {
 // This is useful when a node is much slower
 func BenchmarkThrougput(b *testing.B) {
 	ctx := mockContext.NewMockContext("test1", "decode_test")
-	op, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil, nil)
+	op, err := NewDecodeOp(ctx, false, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil, nil)
 	assert.NoError(b, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
@@ -131,16 +131,18 @@ func TestJSONWithSchema(t *testing.T) {
 	ctx := mockContext.NewMockContext("test1", "decode_test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
+			op, err := NewDecodeOp(ctx, false, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bigint",
 				},
-			}, nil)
+			}, map[string]any{
+				"payloadField": "c", "payloadFormat": "json",
+			})
+			// payload field will add to schema automatically
 			assert.NoError(t, err)
 			out := make(chan any, 100)
 			err = op.AddOutput(out, "test")
 			assert.NoError(t, err)
-			ctx := mockContext.NewMockContext("test1", "decode_test")
 			errCh := make(chan error)
 			op.Exec(ctx, errCh)
 
@@ -152,7 +154,7 @@ func TestJSONWithSchema(t *testing.T) {
 				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1)}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}}},
 				{
 					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1)}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
-					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(3)}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(3), "c": "hello"}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				},
 			}
 
@@ -179,7 +181,7 @@ func TestJSONWithSchema(t *testing.T) {
 				{&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1), "b": 2.0}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}}},
 				{
 					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(1), "b": 2.0}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
-					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(3), "b": 4.0}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
+					&xsql.Tuple{Emitter: "test", Message: map[string]interface{}{"a": int64(3), "b": 4.0, "c": "hello"}, Timestamp: time.UnixMilli(111), Metadata: map[string]any{"topic": "demo", "qos": 1}},
 				},
 			}
 
@@ -226,13 +228,143 @@ func TestJSONWithSchema(t *testing.T) {
 
 func TestValidate(t *testing.T) {
 	ctx := mockContext.NewMockContext("test1", "decode_test")
-	_, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil, nil)
+	_, err := NewDecodeOp(ctx, false, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil, nil)
 	assert.Error(t, err)
 	assert.Equal(t, "cannot get converter from format cann, schemaId : format type cann not supported", err.Error())
-	_, err = NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "none"})
+	_, err = NewDecodeOp(ctx, false, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "none"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "1 error(s) decoding:\n\n* error decoding 'sendInterval': time: invalid duration \"none\"")
-	do, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "12s"})
+	do, err := NewDecodeOp(ctx, false, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "12s"})
 	assert.NoError(t, err)
-	assert.Equal(t, 12*time.Second, do.sendInterval)
+	assert.Equal(t, 12*time.Second, do.c.SendInterval)
+	_, err = NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"payloadField": "abc"})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "payloadFormat is missing")
+	_, err = NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"payloadField": "abc", "payloadFormat": "test"})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "cannot get converter from format test, schemaId : format type test not supported")
+}
+
+func TestPayloadDecodeWithSchema(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  any
+		schema map[string]*ast.JsonStreamField
+		result any
+	}{
+		{
+			name: "normal",
+			input: &xsql.Tuple{
+				Emitter:  "test",
+				Message:  map[string]any{"n": "outside", "payload": []byte(`{"a":23,"b":34}`)},
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: &xsql.Tuple{
+				Emitter:  "test",
+				Metadata: map[string]any{"topic": "a"},
+				Message:  map[string]any{"b": 34.0},
+			},
+		},
+		{
+			name: "list with one payload field not found",
+			input: &xsql.Tuple{
+				Emitter:  "test",
+				Message:  map[string]any{"n": "outside", "payload": []byte(`[{"a":23,"b":34},{"a":99},{"a":55,"b":66}]`)},
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{
+				&xsql.Tuple{
+					Emitter:  "test",
+					Metadata: map[string]any{"topic": "a"},
+					Message:  map[string]any{"b": 34.0},
+				},
+				&xsql.Tuple{
+					Emitter:  "test",
+					Metadata: map[string]any{"topic": "a"},
+					Message:  map[string]any{},
+				},
+				&xsql.Tuple{
+					Emitter:  "test",
+					Metadata: map[string]any{"topic": "a"},
+					Message:  map[string]any{"b": 66.0},
+				},
+			},
+		},
+		{
+			name: "no payload field",
+			input: &xsql.Tuple{
+				Emitter:  "test",
+				Message:  map[string]any{"n": "outside"},
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{},
+		},
+		{
+			name: "wrong payload field",
+			input: &xsql.Tuple{
+				Emitter:  "test",
+				Message:  map[string]any{"n": "outside", "payload": 34},
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{
+				errors.New("payload is not bytes: cannot convert int(34) to bytea"),
+			},
+		},
+		{
+			name: "wrong input type",
+			input: &xsql.RawTuple{
+				Emitter:  "test",
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{
+				errors.New("unsupported data received: &{test 0001-01-01 00:00:00 +0000 UTC [] map[topic:a] map[]}"),
+			},
+		},
+	}
+	ctx := mockContext.NewMockContext("test1", "decode_test")
+	op, err := NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
+		"b": {
+			Type: "float",
+		},
+	}, map[string]any{
+		"payloadField": "payload", "payloadFormat": "json",
+	})
+	assert.NoError(t, err)
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	assert.NoError(t, err)
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op.input <- tt.input
+			r := <-out
+			assert.Equal(t, tt.result, r)
+		})
+	}
 }

@@ -38,13 +38,15 @@ func NewSchemaLayer(ruleID, streamName string, schema map[string]*ast.JsonStream
 		streamMap:   make(map[string]string),
 		wildcardMap: make(map[string]struct{}),
 	}
-	s.schemaMap[ruleID] = schema
-	s.streamMap[ruleID] = streamName
-	if isWildcard {
-		s.wildcardMap[ruleID] = struct{}{}
+	if schema != nil || isWildcard {
+		s.schemaMap[ruleID] = schema
+		s.streamMap[ruleID] = streamName
+		if isWildcard {
+			s.wildcardMap[ruleID] = struct{}{}
+		}
+		s.schema = schema
+		s.storeSchema()
 	}
-	s.schema = schema
-	s.storeSchema()
 	return s
 }
 

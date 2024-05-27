@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build rpc || !core
-// +build rpc !core
 
 package processor
 
