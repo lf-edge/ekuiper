@@ -288,10 +288,7 @@ func restartRule(name string) error {
 
 func getRuleStatusV2(name string) (map[string]any, error) {
 	if rs, ok := registry.Load(name); ok {
-		result, err := rs.GetState()
-		if err != nil {
-			return nil, err
-		}
+		result, _ := rs.GetState()
 		metrics := make(map[string]any)
 		if result == "Running" {
 			opMetrics := (*rs.Topology).GetMetricsV2()
