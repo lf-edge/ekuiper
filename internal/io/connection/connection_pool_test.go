@@ -73,4 +73,6 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	err = DropNonStoredConnection(ctx, "")
 	require.Error(t, err)
+	err = DropNonStoredConnection(ctx, "nonexists")
+	require.NoError(t, err)
 }
