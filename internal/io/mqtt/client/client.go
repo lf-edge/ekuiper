@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mqtt
+package client
 
 import (
 	"crypto/tls"
@@ -25,11 +25,15 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
+
+func init() {
+	modules.ConnectionRegister["mqtt"] = CreateConnection
+}
 
 type Connection struct {
 	pahoMqtt.Client
@@ -90,27 +94,27 @@ func (conn *Connection) onReconnecting(_ pahoMqtt.Client, _ *pahoMqtt.ClientOpti
 }
 
 // Do not call this directly. Call connection pool Attach method to get the connection
-func (conn *Connection) attach() {
+func (conn *Connection) Attach(ctx api.StreamContext) {
 	conn.refCount.Add(1)
 }
 
-// Do not call this directly. Call connection pool Detach method to release the connection
-func (conn *Connection) detachSub(topic string) bool {
-	delete(conn.subscriptions, topic)
-	conn.Client.Unsubscribe(topic)
-	if conn.refCount.Add(-1) == 0 {
-		go conn.Close()
-		return true
-	}
-	return false
+func (conn *Connection) Ref(ctx api.StreamContext) int {
+	return int(conn.refCount.Load())
 }
 
-func (conn *Connection) detachPub() bool {
-	if conn.refCount.Add(-1) == 0 {
-		go conn.Close()
-		return true
+// Do not call this directly. Call connection pool Detach method to release the connection
+func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
+	conn.refCount.Add(-1)
+	topic, err := getTopicFromProps(props)
+	if err != nil {
+		return
 	}
-	return false
+	delete(conn.subscriptions, topic)
+	conn.Client.Unsubscribe(topic)
+}
+
+func (conn *Connection) DetachPub(ctx api.StreamContext, props map[string]any) {
+	conn.refCount.Add(-1)
 }
 
 func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
@@ -119,11 +123,11 @@ func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
 	return handleToken(token)
 }
 
-func (conn *Connection) Close() {
+func (conn *Connection) Close(ctx api.StreamContext) {
 	conn.Client.Disconnect(1)
 }
 
-func (conn *Connection) Ping() error {
+func (conn *Connection) Ping(ctx api.StreamContext) error {
 	if conn.Client.IsConnected() {
 		return nil
 	} else {
@@ -131,22 +135,13 @@ func (conn *Connection) Ping() error {
 	}
 }
 
+func CreateConnection(ctx api.StreamContext, selId string, props map[string]any) (modules.Connection, error) {
+	return CreateClient(ctx, selId, props)
+}
+
 // CreateClient creates a new mqtt client. It is anonymous and does not require a name.
 func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*Connection, error) {
-	if selId != "" {
-		selectCfg := &conf.ConSelector{
-			ConnSelectorStr: selId,
-		}
-		if err := selectCfg.Init(); err != nil {
-			return nil, err
-		}
-		cf, err := selectCfg.ReadCfgFromYaml()
-		if err != nil {
-			return nil, err
-		}
-		props = cf
-	}
-	c, err := validateConfig(props)
+	c, err := ValidateConfig(props)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +175,9 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	}
 	ctx.GetLogger().Infof("new mqtt client created")
 	con.Client = cli
-	con.attach()
+	if len(selId) > 0 {
+		con.Attach(ctx)
+	}
 	return con, nil
 }
 
@@ -193,7 +190,7 @@ func handleToken(token pahoMqtt.Token) error {
 	return nil
 }
 
-func validateConfig(props map[string]any) (*ConnectionConfig, error) {
+func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 	c := &ConnectionConfig{PVersion: "3.1.1"}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
@@ -224,6 +221,22 @@ func validateConfig(props map[string]any) (*ConnectionConfig, error) {
 	return c, nil
 }
 
-func (conn *Connection) GetClientId() string {
-	return conn.selId
+func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Connection, error) {
+	cli, err := CreateClient(ctx, "", props)
+	if err != nil {
+		return nil, err
+	}
+	return cli, nil
+}
+
+const (
+	dataSourceProp = "datasource"
+)
+
+func getTopicFromProps(props map[string]any) (string, error) {
+	v, ok := props[dataSourceProp]
+	if ok {
+		return v.(string), nil
+	}
+	return "", fmt.Errorf("topic or datasource not defined")
 }

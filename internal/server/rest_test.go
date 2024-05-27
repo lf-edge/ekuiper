@@ -32,6 +32,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
@@ -91,6 +92,8 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/data/export", configurationExportHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
+	r.HandleFunc("/connections", connectionsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/connection/{id}", connectionHandler).Methods(http.MethodGet, http.MethodDelete)
 	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	r.HandleFunc("/metadata/sinks/{name}/confKeys/{confKey}", sinkConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 	suite.r = r
@@ -801,4 +804,33 @@ func (suite *RestTestSuite) TestCreateDuplicateRule() {
 	var returnVal []byte
 	returnVal, _ = io.ReadAll(w2.Result().Body)
 	require.Equal(suite.T(), `{"error":1000,"message":"rule test12345 already exists"}`+"\n", string(returnVal))
+}
+
+func (suite *RestTestSuite) TestConnection() {
+	connection.InitConnectionManagerInTest()
+	buf1 := bytes.NewBuffer([]byte(`{"id":"id1","typ":"mock","props":{}}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/connections", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	require.Equal(suite.T(), http.StatusCreated, w1.Code)
+
+	req, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/connections", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	returnVal, _ := io.ReadAll(w.Result().Body)
+	require.Equal(suite.T(), `["id1"]`, string(returnVal))
+
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connection/id1", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	returnVal, _ = io.ReadAll(w.Result().Body)
+	require.Equal(suite.T(), `{"id":"id1","err":""}`, string(returnVal))
+
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/connection/id1", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }

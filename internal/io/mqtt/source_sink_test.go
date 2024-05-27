@@ -20,12 +20,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestSourceSink(t *testing.T) {
+	connection.InitConnectionManagerInTest()
 	sc := GetSource().(api.BytesSource)
 	sk := GetSink().(api.BytesCollector)
 	mc := mockclock.GetMockClock()
@@ -57,10 +59,14 @@ func TestSourceSink(t *testing.T) {
 	mock.TestSourceConnector(t, sc, map[string]any{
 		"server":     url,
 		"datasource": "demo",
+		"qos":        0,
+		"topic":      "demo",
 	}, result, func() {
 		err := mock.RunBytesSinkCollect(sk, data, map[string]any{
-			"server": url,
-			"topic":  "demo",
+			"server":   url,
+			"topic":    "demo",
+			"qos":      0,
+			"retained": false,
 		})
 		assert.NoError(t, err)
 	})

@@ -20,6 +20,8 @@ import (
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
+	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -32,7 +34,7 @@ type SourceConnector struct {
 	cfg   *Conf
 	props map[string]any
 
-	cli *Connection
+	cli *client.Connection
 }
 
 type Conf struct {
@@ -50,7 +52,7 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 	if cfg.Topic == "" {
 		return fmt.Errorf("topic is required")
 	}
-	_, err = validateConfig(props)
+	_, err = client.ValidateConfig(props)
 	if err != nil {
 		return err
 	}
@@ -60,18 +62,37 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 	return nil
 }
 
-func (ms *SourceConnector) Ping(props map[string]interface{}) error {
-	cli, err := CreateClient(context.Background(), "", ms.props)
+func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interface{}) error {
+	cli, err := client.CreateAnonymousConnection(context.Background(), props)
 	if err != nil {
 		return err
 	}
-	defer cli.Close()
-	return cli.Ping()
+	defer cli.Close(ctx)
+	return cli.Ping(ctx)
 }
 
 func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	cli, err := GetConnection(ctx, ms.cfg.SelId, ms.props)
+	var cli *client.Connection
+	var err error
+	if len(ms.cfg.SelId) > 0 {
+		conn, err := connection.GetNameConnection(ms.cfg.SelId)
+		if err != nil {
+			return err
+		}
+		c, ok := conn.(*client.Connection)
+		if !ok {
+			return fmt.Errorf("connection %s should be mqtt connection", ms.cfg.SelId)
+		}
+		cli = c
+	} else {
+		id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+		conn, err := connection.CreateNonStoredConnection(ctx, id, "mqtt", ms.props)
+		if err != nil {
+			return err
+		}
+		cli = conn.(*client.Connection)
+	}
 	ms.cli = cli
 	return err
 }
@@ -79,7 +100,7 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
 func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	return ms.cli.Subscribe(ms.tpc, &SubscriptionInfo{
+	return ms.cli.Subscribe(ms.tpc, &client.SubscriptionInfo{
 		Qos: byte(ms.cfg.Qos),
 		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
 			ms.onMessage(ctx, message, ingest)
@@ -105,7 +126,12 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
-		DetachConnection(ms.cli, ms.cfg.SelId, ms.tpc)
+		if len(ms.cfg.SelId) < 1 {
+			id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+			connection.DropNonStoredConnection(ctx, id)
+		} else {
+			ms.cli.DetachSub(ctx, ms.props)
+		}
 	}
 	return nil
 }

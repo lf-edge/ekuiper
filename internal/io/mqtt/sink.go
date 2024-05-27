@@ -19,6 +19,8 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
+	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -33,11 +35,11 @@ type AdConf struct {
 type Sink struct {
 	adconf *AdConf
 	config map[string]interface{}
-	cli    *Connection
+	cli    *client.Connection
 }
 
 func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
-	_, err := validateConfig(ps)
+	_, err := client.ValidateConfig(ps)
 	if err != nil {
 		return err
 	}
@@ -62,7 +64,26 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 
 func (ms *Sink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	cli, err := GetConnection(ctx, ms.adconf.SelId, ms.config)
+	var cli *client.Connection
+	var err error
+	if len(ms.adconf.SelId) > 0 {
+		conn, err := connection.GetNameConnection(ms.adconf.SelId)
+		if err != nil {
+			return err
+		}
+		c, ok := conn.(*client.Connection)
+		if !ok {
+			return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
+		}
+		cli = c
+	} else {
+		id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
+		conn, err := connection.CreateNonStoredConnection(ctx, id, "mqtt", ms.config)
+		if err != nil {
+			return err
+		}
+		cli = conn.(*client.Connection)
+	}
 	ms.cli = cli
 	return err
 }
@@ -90,7 +111,12 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Info("Closing mqtt sink connector")
 	if ms.cli != nil {
-		DetachConnection(ms.cli, ms.adconf.SelId, "")
+		if len(ms.adconf.SelId) < 1 {
+			id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
+			connection.DropNonStoredConnection(ctx, id)
+		} else {
+			ms.cli.DetachPub(ctx, nil)
+		}
 	}
 	return nil
 }
