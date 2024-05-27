@@ -25,3 +25,19 @@ import (
 type StreamWriter interface {
 	CreateWriter(ctx api.StreamContext, currWriter io.Writer, compression string, encryption string) (io.Writer, error)
 }
+
+type StreamReader interface {
+	CreateWriter(ctx api.StreamContext, currWriter io.Writer, compression string, encryption string) (io.Writer, error)
+}
+
+// InfoNode explain the node itself. Mainly used for planner to decide the split of source/sink
+type InfoNode interface {
+	Info() NodeInfo
+}
+
+type NodeInfo struct {
+	NeedDecode      bool
+	NeedBatchDecode bool // like decrypt, decompress as a whole
+	HasCompress     bool
+	HasInterval     bool
+}

@@ -26,6 +26,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/operator"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *def.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
@@ -100,8 +101,14 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		srcConnNode = srcSubtopo
 	}
-
-	_, isBytesSource := ss.(api.BytesSource)
+	// Make sure it is provisioned. Already done in NewSourceNode
+	info := checkByteSource(ss)
+	if info.HasCompress {
+		sp.Decompression = ""
+	}
+	if info.HasInterval {
+		delete(props, "sendInterval")
+	}
 
 	if err != nil {
 		return nil, nil, 0, err
@@ -110,7 +117,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	var ops []node.OperatorNode
 
 	if sp.Decompression != "" {
-		if isBytesSource {
+		if info.NeedBatchDecode {
 			dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
 			if err != nil {
 				return nil, nil, 0, err
@@ -118,13 +125,13 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			index++
 			ops = append(ops, dco)
 		} else {
-			return nil, nil, 0, fmt.Errorf("source %s does not support decompression", t.name)
+			ctx.GetLogger().Warnf("source %s does not support decompression", t.name)
 		}
 	}
 
-	if isBytesSource {
+	if info.NeedDecode {
 		// Create the decode node
-		decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields)
+		decodeNode, err := node.NewDecodeOp(fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -154,4 +161,18 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		return srcSubtopo, nil, len(ops), nil
 	}
 	return srcConnNode, ops, 0, nil
+}
+
+func checkByteSource(ss api.Source) model.NodeInfo {
+	switch st := ss.(type) {
+	case model.InfoNode:
+		return st.Info()
+	case api.BytesSource:
+		return model.NodeInfo{
+			NeedDecode:      true,
+			NeedBatchDecode: true,
+		}
+	default:
+		return model.NodeInfo{}
+	}
 }

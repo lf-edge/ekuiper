@@ -87,6 +87,10 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 		for _, mm := range mess {
 			m.ingestMap(mm, meta, ts)
 		}
+	// expected from file which send out any tuple type
+	case []byte:
+		tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: mess, Timestamp: ts, Metadata: meta}
+		m.Broadcast(tuple)
 	// Source tuples are expected from memory
 	case *xsql.Tuple:
 		m.ingestTuple(mess, ts)

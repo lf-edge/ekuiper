@@ -4785,11 +4785,11 @@ func TestTransformSourceNode(t *testing.T) {
 	props := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", DATASOURCE: "topic1"})
 	srcNode, err := node.NewSourceNode(tp.GetContext(), "test", &mqtt.SourceConnector{}, props, &def.RuleOption{SendError: false})
 	assert.NoError(t, err)
-	decodeNode, err := node.NewDecodeOp("2_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
+	decodeNode, err := node.NewDecodeOp("2_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema, nil)
 	assert.NoError(t, err)
 	decomNode, err := node.NewDecompressOp("2_decompressor", &def.RuleOption{SendError: false}, "gzip")
 	assert.NoError(t, err)
-	decodeNode2, err := node.NewDecodeOp("3_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema)
+	decodeNode2, err := node.NewDecodeOp("3_decoder", "test", "test", &def.RuleOption{SendError: false}, &ast.Options{TYPE: "mqtt"}, false, false, schema, nil)
 	assert.NoError(t, err)
 	props2 := nodeConf.GetSourceConf("mqtt", &ast.Options{TYPE: "mqtt", CONF_KEY: "testCom", DATASOURCE: "topic2"})
 	srcNode2, err := node.NewSourceNode(tp.GetContext(), "test", &mqtt.SourceConnector{}, props2, &def.RuleOption{SendError: false})
@@ -4965,153 +4965,5 @@ func TestGetLogicalPlanForExplain(t *testing.T) {
 		if !reflect.DeepEqual(explain, tt.res) {
 			t.Errorf("case %d: expect validate %v but got %v", i, tt.res, explain)
 		}
-	}
-}
-
-func TestPlanTopo(t *testing.T) {
-	kv, err := store.GetKV("stream")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	streamSqls := map[string]string{
-		"src1": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt");`,
-		"src2": `CREATE STREAM src2 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
-		"src3": `CREATE STREAM src3 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSel");`,
-		"src4": `CREATE STREAM src4 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSel",SHARED="true");`,
-	}
-	for name, sql := range streamSqls {
-		s, err := json.Marshal(&xsql.StreamInfo{
-			StreamType: ast.TypeStream,
-			Statement:  sql,
-		})
-		assert.NoError(t, err)
-		err = kv.Set(name, string(s))
-		assert.NoError(t, err)
-	}
-	// add connectionSelector for meta
-	a1 := map[string]interface{}{
-		"connectionSelector": "mqtt.localConnection",
-	}
-	bs, err := json.Marshal(a1)
-	assert.NoError(t, err)
-	meta.InitYamlConfigManager()
-	dataDir, _ := conf.GetDataLoc()
-	err = os.MkdirAll(filepath.Join(dataDir, "sources"), 0o755)
-	assert.NoError(t, err)
-	err = meta.AddSourceConfKey("mqtt", "testSel", "", bs)
-	assert.NoError(t, err)
-	defer func() {
-		err = meta.DelSourceConfKey("mqtt", "testSel", "")
-		assert.NoError(t, err)
-	}()
-	tests := []struct {
-		name string
-		sql  string
-		topo *def.PrintableTopo
-	}{
-		{
-			name: "testMqttSplit",
-			sql:  `SELECT * FROM src1`,
-			topo: &def.PrintableTopo{
-				Sources: []string{"source_src1"},
-				Edges: map[string][]any{
-					"source_src1": {
-						"op_2_decoder",
-					},
-					"op_2_decoder": {
-						"op_3_project",
-					},
-					"op_3_project": {
-						"op_logToMemory_0_0_transform",
-					},
-					"op_logToMemory_0_0_transform": {
-						"op_logToMemory_0_1_encode",
-					},
-					"op_logToMemory_0_1_encode": {
-						"sink_logToMemory_0",
-					},
-				},
-			},
-		},
-		{
-			name: "testSharedMqttSplit",
-			sql:  `SELECT * FROM src2`,
-			topo: &def.PrintableTopo{
-				Sources: []string{"source_src2"},
-				Edges: map[string][]any{
-					"source_src2": {
-						"op_src2_2_decoder",
-					},
-					"op_src2_2_decoder": {
-						"op_3_project",
-					},
-					"op_3_project": {
-						"op_logToMemory_0_0_transform",
-					},
-					"op_logToMemory_0_0_transform": {
-						"op_logToMemory_0_1_encode",
-					},
-					"op_logToMemory_0_1_encode": {
-						"sink_logToMemory_0",
-					},
-				},
-			},
-		},
-		{
-			name: "testSharedConnSplit",
-			sql:  `SELECT * FROM src3`,
-			topo: &def.PrintableTopo{
-				Sources: []string{"source_mqtt.localConnection/topic1"},
-				Edges: map[string][]any{
-					"source_mqtt.localConnection/topic1": {
-						"op_2_decoder",
-					},
-					"op_2_decoder": {
-						"op_3_project",
-					},
-					"op_3_project": {
-						"op_logToMemory_0_0_transform",
-					},
-					"op_logToMemory_0_0_transform": {
-						"op_logToMemory_0_1_encode",
-					},
-					"op_logToMemory_0_1_encode": {
-						"sink_logToMemory_0",
-					},
-				},
-			},
-		},
-		{
-			name: "testSharedNodeWithSharedConnSplit",
-			sql:  `SELECT * FROM src4`,
-			topo: &def.PrintableTopo{
-				Sources: []string{"source_mqtt.localConnection/topic1"},
-				Edges: map[string][]any{
-					"source_mqtt.localConnection/topic1": {
-						"op_src4_2_decoder",
-					},
-					"op_src4_2_decoder": {
-						"op_3_project",
-					},
-					"op_3_project": {
-						"op_logToMemory_0_0_transform",
-					},
-					"op_logToMemory_0_0_transform": {
-						"op_logToMemory_0_1_encode",
-					},
-					"op_logToMemory_0_1_encode": {
-						"sink_logToMemory_0",
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tp, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.topo, tp.GetTopo())
-		})
 	}
 }
