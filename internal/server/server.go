@@ -43,6 +43,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/internal/server/bump"
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -148,6 +149,14 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
+	if err := bump.InitBumpManager(); err != nil {
+		panic(err)
+	}
+	dataDir, _ := conf.GetDataLoc()
+	if err := bump.BumpToCurrentVersion(dataDir); err != nil {
+		panic(err)
+	}
+
 	keyedstate.InitKeyedStateKV()
 
 	meta2.InitYamlConfigManager()
