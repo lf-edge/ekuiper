@@ -76,7 +76,7 @@ func (suite *RestTestSuite) SetupTest() {
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
-	r.HandleFunc("/rules/{name}/v2/status", getStatusV2RulHandler).Methods(http.MethodGet)
+	r.HandleFunc("/v2/rules/{name}/status", getStatusV2RulHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
