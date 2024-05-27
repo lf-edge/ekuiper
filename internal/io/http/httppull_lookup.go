@@ -97,12 +97,12 @@ func (l *lookupSource) pull(ctx api.StreamContext) ([]map[string]interface{}, er
 	ctx.GetLogger().Debugf("httppull source sending request url: %s, headers: %v, body %s", l.config.Url, headers, l.config.Body)
 
 	body := l.config.Body
-	resp, e := httpx.Send(ctx.GetLogger(), l.client, l.config.Url, l.config.Method,
+	resp, err := httpx.Send(ctx.GetLogger(), l.client, l.config.Url, l.config.Method,
 		httpx.WithHeadersMap(headers),
 		httpx.WithBody(body, l.config.BodyType, true, l.compressor, l.config.Compression),
 	)
-	if e != nil {
-		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", e, l)
+	if err != nil {
+		ctx.GetLogger().Warnf("Found error %s when trying to reach %v ", err, l)
 		return nil, err
 	}
 	ctx.GetLogger().Debugf("httppull source got response %v", resp)
