@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
@@ -38,16 +39,19 @@ func TestBumpVersion(t *testing.T) {
 	}
 	require.NoError(t, InitBumpManager())
 	GlobalBumpManager.Version = 0
-	testBumpVersion1(t)
+	testBumpVersion(t)
 }
 
-func testBumpVersion1(t *testing.T) {
-	dir := os.TempDir()
+func prepareBumpVersion(t *testing.T, dir string) {
 	prepareBumpVersion1Data(t, dir, "sources")
 	prepareBumpVersion1Data(t, dir, "sinks")
 	prepareBumpVersion1Data(t, dir, "connections")
-	err := bumpFrom0To1(dir)
-	require.NoError(t, err)
+}
+
+func testBumpVersion(t *testing.T) {
+	dir := os.TempDir()
+	prepareBumpVersion(t, dir)
+	require.NoError(t, BumpToCurrentVersion(dir))
 	require.Equal(t, 1, GlobalBumpManager.Version)
 	v, err := loadVersionFromStorage()
 	require.NoError(t, err)
@@ -87,4 +91,47 @@ func prepareBumpVersion1Data(t *testing.T, dir, typ string) {
 	require.NoError(t, err)
 	_, err = file.Write(d)
 	require.NoError(t, err)
+}
+
+func TestBumpManager0To1(t *testing.T) {
+	conf.InitConf()
+	data, err := conf.GetDataLoc()
+	if err != nil {
+		t.Error(err)
+	}
+	err = store.SetupDefault(data)
+	if err != nil {
+		t.Error(err)
+	}
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/initManagerError", "return(true)")
+	require.Error(t, InitBumpManager())
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/initManagerError")
+	require.NoError(t, InitBumpManager())
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/loadVersionError", "return(true)")
+	_, err = loadVersionFromStorage()
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/loadVersionError")
+
+	dir := os.TempDir()
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateReadError", "return(1)")
+	require.Error(t, bumpFrom0To1(dir))
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateReadError", "return(2)")
+	require.Error(t, bumpFrom0To1(dir))
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateReadError", "return(3)")
+	require.Error(t, bumpFrom0To1(dir))
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateReadError")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/storeVersionErr", "return(true)")
+	require.Error(t, bumpFrom0To1(dir))
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/storeVersionErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateUnmarshalErr", "return(true)")
+	require.Error(t, bumpFrom0To1(dir))
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateUnmarshalErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateWriteErr", "return(true)")
+	require.Error(t, bumpFrom0To1(dir))
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/bump/migrateWriteErr")
 }

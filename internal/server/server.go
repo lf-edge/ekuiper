@@ -151,7 +151,8 @@ func StartUp(Version string) {
 	if err := bump.InitBumpManager(); err != nil {
 		panic(err)
 	}
-	if err := bump.BumpToCurrentVersion(); err != nil {
+	dataDir, _ := conf.GetDataLoc()
+	if err := bump.BumpToCurrentVersion(dataDir); err != nil {
 		panic(err)
 	}
 

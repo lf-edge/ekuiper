@@ -15,11 +15,14 @@
 package bump
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
@@ -38,6 +41,9 @@ type BumpManager struct {
 
 func InitBumpManager() error {
 	s, err := store.GetKV("$$eKuiperMeta")
+	failpoint.Inject("initManagerError", func() {
+		err = errors.New("initManagerError")
+	})
 	if err != nil {
 		return fmt.Errorf("init bump manager failed, err:%v", err)
 	}
@@ -52,6 +58,9 @@ func InitBumpManager() error {
 func loadVersionFromStorage() (int, error) {
 	var ver int
 	got, err := GlobalBumpManager.store.Get("version", &ver)
+	failpoint.Inject("loadVersionError", func() {
+		err = errors.New("loadVersionError")
+	})
 	if err != nil {
 		return 0, fmt.Errorf("init bump manager failed, err:%v", err)
 	}
@@ -61,15 +70,11 @@ func loadVersionFromStorage() (int, error) {
 	return 0, nil
 }
 
-func BumpToCurrentVersion() error {
+func BumpToCurrentVersion(dataDir string) error {
 	for i := GlobalBumpManager.Version; i <= currentVersion; i++ {
 		switch i {
 		case 1:
-			dir, err := conf.GetDataLoc()
-			if err != nil {
-				return err
-			}
-			if err := bumpFrom0To1(dir); err != nil {
+			if err := bumpFrom0To1(dataDir); err != nil {
 				return err
 			}
 		}
@@ -97,6 +102,20 @@ func bumpFrom0To1(dir string) error {
 func migrateDataIntoStorage(dataDir, confType string) error {
 	dir := path.Join(dataDir, confType)
 	files, err := os.ReadDir(dir)
+	failpoint.Inject("migrateReadError", func(val failpoint.Value) {
+		x := ""
+		switch val.(int) {
+		case 1:
+			x = "sources"
+		case 2:
+			x = "sinks"
+		case 3:
+			x = "connections"
+		}
+		if x == confType {
+			err = errors.New("migrateReadError")
+		}
+	})
 	if err != nil {
 		return err
 	}
@@ -108,11 +127,19 @@ func migrateDataIntoStorage(dataDir, confType string) error {
 		pluginTyp := strings.TrimSuffix(fname, ".yaml")
 		filePath := filepath.Join(dir, fname)
 		confKeys := make(map[string]map[string]interface{})
-		if err := filex.ReadYamlUnmarshal(filePath, &confKeys); err != nil {
+		err = filex.ReadYamlUnmarshal(filePath, &confKeys)
+		failpoint.Inject("migrateUnmarshalErr", func() {
+			err = errors.New("migrateUnmarshalErr")
+		})
+		if err != nil {
 			return err
 		}
 		for confKey, confData := range confKeys {
-			if err := conf.WriteCfgIntoKVStorage(confType, pluginTyp, confKey, confData); err != nil {
+			err = conf.WriteCfgIntoKVStorage(confType, pluginTyp, confKey, confData)
+			failpoint.Inject("migrateWriteErr", func() {
+				err = errors.New("migrateWriteErr")
+			})
+			if err != nil {
 				return err
 			}
 		}
@@ -121,5 +148,9 @@ func migrateDataIntoStorage(dataDir, confType string) error {
 }
 
 func storeGlobalVersion(ver int) error {
-	return GlobalBumpManager.store.Set("version", ver)
+	err := GlobalBumpManager.store.Set("version", ver)
+	failpoint.Inject("storeVersionErr", func() {
+		err = errors.New("storeVersionErr")
+	})
+	return err
 }
