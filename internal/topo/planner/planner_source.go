@@ -131,7 +131,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if info.NeedDecode {
 		// Create the decode node
-		decodeNode, err := node.NewDecodeOp(ctx, fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
+		decodeNode, err := node.NewDecodeOp(ctx, false, fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
