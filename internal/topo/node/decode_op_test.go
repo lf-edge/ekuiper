@@ -37,9 +37,10 @@ func TestJSON(t *testing.T) {
 		{"single", 1},
 		{"multi", 10},
 	}
+	ctx := mockContext.NewMockContext("test", "Test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{
+			op, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{
 				"sendInterval": "10ms",
 			})
 			assert.NoError(t, err)
@@ -92,12 +93,12 @@ func TestJSON(t *testing.T) {
 // Concurrency 10 - BenchmarkThrougput-16           1000000000               0.1553 ns/op
 // This is useful when a node is much slower
 func BenchmarkThrougput(b *testing.B) {
-	op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil, nil)
+	ctx := mockContext.NewMockContext("test1", "decode_test")
+	op, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10, Debug: true}, &ast.Options{FORMAT: "mock"}, false, true, nil, nil)
 	assert.NoError(b, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
 	assert.NoError(b, err)
-	ctx := mockContext.NewMockContext("test1", "decode_test")
 	errCh := make(chan error)
 	op.Exec(ctx, errCh)
 	go func() {
@@ -127,9 +128,10 @@ func TestJSONWithSchema(t *testing.T) {
 			},
 		}},
 	}
+	ctx := mockContext.NewMockContext("test1", "decode_test")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
+			op, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: tt.concurrency}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
 				"a": {
 					Type: "bigint",
 				},
@@ -223,13 +225,14 @@ func TestJSONWithSchema(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	_, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil, nil)
+	ctx := mockContext.NewMockContext("test1", "decode_test")
+	_, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "cann"}, false, true, nil, nil)
 	assert.Error(t, err)
 	assert.Equal(t, "cannot get converter from format cann, schemaId : format type cann not supported", err.Error())
-	_, err = NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "none"})
+	_, err = NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "none"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "1 error(s) decoding:\n\n* error decoding 'sendInterval': time: invalid duration \"none\"")
-	do, err := NewDecodeOp("test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "12s"})
+	do, err := NewDecodeOp(ctx, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, false, true, nil, map[string]any{"sendInterval": "12s"})
 	assert.NoError(t, err)
 	assert.Equal(t, 12*time.Second, do.sendInterval)
 }

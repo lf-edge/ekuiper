@@ -28,7 +28,7 @@ import (
 )
 
 func init() {
-	modules.RegisterConverter("mock", func(_ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter("mock", func(_ api.StreamContext, _ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		return &MockConverter{}, nil
 	})
 }

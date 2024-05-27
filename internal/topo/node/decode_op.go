@@ -67,7 +67,7 @@ func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
 	}
 }
 
-func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
+func NewDecodeOp(ctx api.StreamContext, name, StreamName string, ruleId string, rOpt *def.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
 	options.Schema = nil
 	options.IsWildCard = isWildcard
 	options.IsSchemaLess = isSchemaless
@@ -76,7 +76,7 @@ func NewDecodeOp(name, StreamName string, ruleId string, rOpt *def.RuleOption, o
 		options.StreamName = StreamName
 	}
 	options.RuleID = ruleId
-	converterTool, err := converter.GetOrCreateConverter(options)
+	converterTool, err := converter.GetOrCreateConverter(ctx, options)
 	if err != nil {
 		msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", options.FORMAT, options.SCHEMAID, err)
 		return nil, fmt.Errorf(msg)

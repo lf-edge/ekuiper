@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/binary"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/delimited"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/json"
@@ -28,21 +29,21 @@ import (
 )
 
 func init() {
-	modules.RegisterConverter(message.FormatJson, func(_ string, _ string, _ string, schema map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatJson, func(_ api.StreamContext, _ string, _ string, _ string, schema map[string]*ast.JsonStreamField) (message.Converter, error) {
 		if schema == nil {
 			return json.GetConverter()
 		}
 		return json.NewFastJsonConverter(schema), nil
 	})
-	modules.RegisterConverter(message.FormatBinary, func(_ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatBinary, func(_ api.StreamContext, _ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		return binary.GetConverter()
 	})
-	modules.RegisterConverter(message.FormatDelimited, func(_ string, _ string, delimiter string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatDelimited, func(_ api.StreamContext, _ string, _ string, delimiter string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		return delimited.NewConverter(delimiter)
 	})
 }
 
-func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error) {
+func GetOrCreateConverter(ctx api.StreamContext, options *ast.Options) (c message.Converter, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
@@ -68,7 +69,7 @@ func GetOrCreateConverter(options *ast.Options) (c message.Converter, err error)
 		schema = nil
 	}
 	if c, ok := modules.Converters[t]; ok {
-		return c(schemaFile, schemaName, options.DELIMITER, schema)
+		return c(ctx, schemaFile, schemaName, options.DELIMITER, schema)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }

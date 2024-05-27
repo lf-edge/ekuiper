@@ -17,6 +17,7 @@
 package converter
 
 import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/converter/protobuf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
@@ -26,7 +27,7 @@ import (
 )
 
 func init() {
-	modules.RegisterConverter(message.FormatProtobuf, func(schemaFileName string, schemaMessageName string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatProtobuf, func(_ api.StreamContext, schemaFileName string, schemaMessageName string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
 		ffs, err := schema.GetSchemaFile(def.PROTOBUF, schemaFileName)
 		if err != nil {
 			return nil, err
