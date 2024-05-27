@@ -281,7 +281,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 
-	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule1/v2/status", bytes.NewBufferString("any"))
+	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/v2/rules/rule1/status", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
