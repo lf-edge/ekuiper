@@ -82,12 +82,12 @@ func TestEncodeJSON(t *testing.T) {
 			out: &xsql.RawTuple{Rawdata: []byte(`[{"age":20,"name":"joe"},{"age":21,"name":"tom"}]`), Props: map[string]string{"{{.a}}": "1"}},
 		},
 	}
-	op, err := NewEncodeOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "json"})
+	ctx := mockContext.NewMockContext("test1", "encode_test")
+	op, err := NewEncodeOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "json"})
 	assert.NoError(t, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
 	assert.NoError(t, err)
-	ctx := mockContext.NewMockContext("test1", "transform_test")
 	errCh := make(chan error)
 	op.Exec(ctx, errCh)
 	for _, tt := range tests {
@@ -100,7 +100,8 @@ func TestEncodeJSON(t *testing.T) {
 }
 
 func TestEncodeValidate(t *testing.T) {
-	_, err := NewEncodeOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "cann"})
+	ctx := mockContext.NewMockContext("test1", "encode_test")
+	_, err := NewEncodeOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &SinkConf{Format: "cann"})
 	assert.Error(t, err)
 	assert.Equal(t, "format type cann not supported", err.Error())
 }

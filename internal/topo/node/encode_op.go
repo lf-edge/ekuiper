@@ -35,8 +35,8 @@ type EncodeOp struct {
 	converter message.Converter
 }
 
-func NewEncodeOp(name string, rOpt *def.RuleOption, sc *SinkConf) (*EncodeOp, error) {
-	c, err := converter.GetOrCreateConverter(&ast.Options{FORMAT: sc.Format, SCHEMAID: sc.SchemaId, DELIMITER: sc.Delimiter})
+func NewEncodeOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *SinkConf) (*EncodeOp, error) {
+	c, err := converter.GetOrCreateConverter(ctx, &ast.Options{FORMAT: sc.Format, SCHEMAID: sc.SchemaId, DELIMITER: sc.Delimiter})
 	if err != nil {
 		return nil, err
 	}
