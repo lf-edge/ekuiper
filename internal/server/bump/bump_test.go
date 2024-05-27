@@ -72,7 +72,7 @@ func assertBumpVersion1Data(t *testing.T, typ string) {
 
 func prepareBumpVersion1Data(t *testing.T, dir, typ string) {
 	sourceDir := filepath.Join(dir, typ)
-	require.NoError(t, os.MkdirAll(sourceDir, 0755))
+	require.NoError(t, os.MkdirAll(sourceDir, 0o755))
 	file, err := os.Create(filepath.Join(sourceDir, "mqtt.yaml"))
 	require.NoError(t, err)
 	defer file.Close()
