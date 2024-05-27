@@ -231,15 +231,10 @@ func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Co
 
 const (
 	dataSourceProp = "datasource"
-	topicProp      = "topic"
 )
 
 func getTopicFromProps(props map[string]any) (string, error) {
-	v, ok := props[topicProp]
-	if ok {
-		return v.(string), nil
-	}
-	v, ok = props[dataSourceProp]
+	v, ok := props[dataSourceProp]
 	if ok {
 		return v.(string), nil
 	}
