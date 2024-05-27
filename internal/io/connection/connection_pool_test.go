@@ -71,4 +71,6 @@ func TestConnection(t *testing.T) {
 	require.NotNil(t, conn4)
 	_, err = CreateNonStoredConnection(ctx, "id2", "mock", nil)
 	require.Error(t, err)
+	err = DropNonStoredConnection(ctx, "")
+	require.Error(t, err)
 }
