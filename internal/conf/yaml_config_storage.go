@@ -17,7 +17,6 @@ package conf
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/pingcap/failpoint"
@@ -102,18 +101,14 @@ func getKVStorage() (s cfgKVStorage, err error) {
 		}
 		return mockMemoryKVStore, nil
 	}
-	switch Config.Basic.CfgStorageType {
-	case cfgStoreKVStorage:
-		if kvStore == nil {
-			sqliteKVStorage, err := NewSqliteKVStore("confKVStorage")
-			if err != nil {
-				return nil, err
-			}
-			kvStore = sqliteKVStorage
+	if kvStore == nil {
+		sqliteKVStorage, err := NewSqliteKVStore("confKVStorage")
+		if err != nil {
+			return nil, err
 		}
-		return kvStore, nil
+		kvStore = sqliteKVStorage
 	}
-	return nil, fmt.Errorf("unknown cfg kv storage type: %v", Config.Basic.CfgStorageType)
+	return kvStore, nil
 }
 
 // SaveCfgKeyToKVInTest only used in unit test

@@ -294,10 +294,6 @@ func TestNewConfigOperatorForConnection(t *testing.T) {
 
 func TestConfigKeys_LoadFromKV(t *testing.T) {
 	InitConf()
-	Config.Basic.CfgStorageType = ""
-	InitConf()
-
-	Config.Basic.CfgStorageType = cfgStoreKVStorage
 	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
 	require.NoError(t, mqttCfg.AddConfKey("key1", map[string]interface{}{

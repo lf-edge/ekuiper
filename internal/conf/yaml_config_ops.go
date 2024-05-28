@@ -513,9 +513,5 @@ func NewConfigOperatorFromConnectionStorage(pluginName string) (ConfigOperator, 
 }
 
 func getStorageType() string {
-	st := cfgStoreKVStorage
-	if Config != nil && len(Config.Basic.CfgStorageType) > 0 {
-		st = Config.Basic.CfgStorageType
-	}
-	return st
+	return cfgStoreKVStorage
 }
