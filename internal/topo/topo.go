@@ -400,9 +400,12 @@ func (s *Topo) ResetStreamOffset(name string, input map[string]interface{}) erro
 }
 
 func (s *Topo) WaitClose() {
+	if s == nil {
+		return
+	}
 	// wait all operators close
 	if s.opsWg != nil {
 		s.opsWg.Wait()
+		conf.Log.Infof("rule %s stopped", s.ctx.GetRuleId())
 	}
-	conf.Log.Infof("rule %s stopped", s.ctx.GetRuleId())
 }
