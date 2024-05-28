@@ -25,34 +25,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
-
-type Converter struct{}
-
-var converter = &Converter{}
-
-func GetConverter() (message.Converter, error) {
-	return converter, nil
-}
-
-func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
-	return json.Marshal(d)
-}
-
-func (c *Converter) Decode(ctx api.StreamContext, b []byte) (m any, err error) {
-	defer func() {
-		if err != nil {
-			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
-		}
-	}()
-	var r0 interface{}
-	err = json.Unmarshal(b, &r0)
-	if err != nil {
-		return nil, err
-	}
-	return r0, nil
-}
 
 type FastJsonConverter struct {
 	sync.RWMutex
@@ -66,28 +39,30 @@ func NewFastJsonConverter(schema map[string]*ast.JsonStreamField) *FastJsonConve
 	return f
 }
 
-func (c *FastJsonConverter) ResetSchema(schema map[string]*ast.JsonStreamField) {
-	c.Lock()
-	defer c.Unlock()
-	c.schema = schema
+func (f *FastJsonConverter) ResetSchema(schema map[string]*ast.JsonStreamField) {
+	f.Lock()
+	defer f.Unlock()
+	f.schema = schema
 }
 
-func (c *FastJsonConverter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
+func (f *FastJsonConverter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	return json.Marshal(d)
 }
 
-func (c *FastJsonConverter) Decode(ctx api.StreamContext, b []byte) (m any, err error) {
+func (f *FastJsonConverter) Decode(ctx api.StreamContext, b []byte) (m any, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
 		}
 	}()
-	c.RLock()
-	defer c.RUnlock()
-	if c.schema == nil {
-		return converter.Decode(ctx, b)
+	f.RLock()
+	defer f.RUnlock()
+	if f.schema == nil {
+		var r any
+		err = json.Unmarshal(b, &r)
+		return r, err
 	}
-	return c.decodeWithSchema(b, c.schema)
+	return f.decodeWithSchema(b, f.schema)
 }
 
 func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
