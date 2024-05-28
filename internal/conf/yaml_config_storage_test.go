@@ -17,6 +17,7 @@ package conf
 import (
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
@@ -52,4 +53,42 @@ func TestSQLiteStorage(t *testing.T) {
 			"key2": "value2",
 		},
 	}, v)
+}
+
+func TestGetYamlConfigAllKeys(t *testing.T) {
+	dataDir, err := GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, saveCfgKeyToKV(buildKey("sources", "mqtt", "conf1"), map[string]interface{}{"a": 1}))
+	require.NoError(t, saveCfgKeyToKV(buildKey("sources", "sql", "conf1"), map[string]interface{}{"a": 1}))
+	m, err := GetYamlConfigAllKeys("sources")
+	require.NoError(t, err)
+	require.Equal(t, map[string]struct{}{
+		"mqtt": {}, "sql": {},
+	}, m)
+	require.NoError(t, err)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr", "return(true)")
+	_, err = GetYamlConfigAllKeys("sources")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/getDataErr", "return(true)")
+	_, err = GetYamlConfigAllKeys("sources")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/getDataErr")
+}
+
+func TestGetStorage(t *testing.T) {
+	IsTesting = false
+	defer func() {
+		IsTesting = true
+	}()
+	dataDir, err := GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	kvStore = nil
+	s, err := getKVStorage()
+	require.NoError(t, err)
+	require.NotNil(t, s)
 }

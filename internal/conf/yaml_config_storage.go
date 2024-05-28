@@ -16,8 +16,11 @@ package conf
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
@@ -62,12 +65,16 @@ var (
 	kvStore           *sqlKVStore
 )
 
+// GetYamlConfigAllKeys get all plugin keys about sources/sinks/connections
 func GetYamlConfigAllKeys(typ string) (map[string]struct{}, error) {
 	s, err := getKVStorage()
 	if err != nil {
 		return nil, err
 	}
 	data, err := s.GetByPrefix(typ)
+	failpoint.Inject("getDataErr", func() {
+		err = errors.New("getDataErr")
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +89,12 @@ func GetYamlConfigAllKeys(typ string) (map[string]struct{}, error) {
 	return s1, nil
 }
 
-func getKVStorage() (cfgKVStorage, error) {
+func getKVStorage() (s cfgKVStorage, err error) {
+	defer func() {
+		failpoint.Inject("storageErr", func() {
+			err = errors.New("storageErr")
+		})
+	}()
 	if IsTesting {
 		if mockMemoryKVStore == nil {
 			mockMemoryKVStore = &kvMemory{}
@@ -102,6 +114,11 @@ func getKVStorage() (cfgKVStorage, error) {
 		return kvStore, nil
 	}
 	return nil, fmt.Errorf("unknown cfg kv storage type: %v", Config.Basic.CfgStorageType)
+}
+
+// SaveCfgKeyToKVInTest only used in unit test
+func SaveCfgKeyToKVInTest(key string, cfg map[string]interface{}) error {
+	return saveCfgKeyToKV(key, cfg)
 }
 
 func saveCfgKeyToKV(key string, cfg map[string]interface{}) error {

@@ -23,6 +23,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -347,6 +348,15 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 	mConn.storageType = "mock"
 	err = mConn.SaveCfgToStorage()
 	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr", "return(true)")
+	_, err = NewConfigOperatorFromSourceStorage("mqtt")
+	require.Error(t, err)
+	_, err = NewConfigOperatorFromSinkStorage("mqtt")
+	require.Error(t, err)
+	_, err = NewConfigOperatorFromConnectionStorage("mqtt")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr")
 }
 
 func marshalUn(input, output interface{}) error {
