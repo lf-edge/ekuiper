@@ -16,6 +16,7 @@ package node
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -250,7 +251,7 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 		name   string
 		input  any
 		schema map[string]*ast.JsonStreamField
-		result any
+		result []any
 	}{
 		{
 			name: "normal",
@@ -264,11 +265,11 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 					Type: "float",
 				},
 			},
-			result: &xsql.Tuple{
+			result: []any{&xsql.Tuple{
 				Emitter:  "test",
 				Metadata: map[string]any{"topic": "a"},
 				Message:  map[string]any{"b": 34.0},
-			},
+			}},
 		},
 		{
 			name: "list with one payload field not found",
@@ -347,24 +348,27 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 		},
 	}
 	ctx := mockContext.NewMockContext("test1", "decode_test")
-	op, err := NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, map[string]*ast.JsonStreamField{
-		"b": {
-			Type: "float",
-		},
-	}, map[string]any{
+	op, err := NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, nil, map[string]any{
 		"payloadField": "payload", "payloadFormat": "json",
 	})
+
 	assert.NoError(t, err)
 	out := make(chan any, 100)
 	err = op.AddOutput(out, "test")
 	assert.NoError(t, err)
 	errCh := make(chan error)
 	op.Exec(ctx, errCh)
-	for _, tt := range tests {
+	for i, tt := range tests {
+		if i > 0 {
+			op.DetachSchema(ctx, fmt.Sprintf("stream%d", i))
+		}
+		op.AttachSchema(ctx, fmt.Sprintf("stream%d", i), tt.schema, false)
 		t.Run(tt.name, func(t *testing.T) {
 			op.input <- tt.input
-			r := <-out
-			assert.Equal(t, tt.result, r)
+			for _, exp := range tt.result {
+				r := <-out
+				assert.Equal(t, exp, r)
+			}
 		})
 	}
 }

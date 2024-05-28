@@ -30,9 +30,6 @@ import (
 
 func init() {
 	modules.RegisterConverter(message.FormatJson, func(_ api.StreamContext, _ string, _ string, _ string, schema map[string]*ast.JsonStreamField) (message.Converter, error) {
-		if schema == nil {
-			return json.GetConverter()
-		}
 		return json.NewFastJsonConverter(schema), nil
 	})
 	modules.RegisterConverter(message.FormatBinary, func(_ api.StreamContext, _ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {

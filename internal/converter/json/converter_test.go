@@ -18,69 +18,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
-
-func TestMessageDecode(t *testing.T) {
-	image, err := os.ReadFile(path.Join("../../../docs", "cover.jpg"))
-	if err != nil {
-		t.Errorf("Cannot read image: %v", err)
-	}
-	b64img := base64.StdEncoding.EncodeToString(image)
-	tests := []struct {
-		payload []byte
-		format  string
-		result  map[string]interface{}
-		results []interface{}
-	}{
-		{
-			payload: []byte(fmt.Sprintf(`{"format":"jpg","content":"%s"}`, b64img)),
-			format:  "json",
-			result: map[string]interface{}{
-				"format":  "jpg",
-				"content": b64img,
-			},
-		},
-		{
-			payload: []byte(`[{"a":1},{"a":2}]`),
-			format:  "json",
-			results: []interface{}{
-				map[string]interface{}{
-					"a": float64(1),
-				},
-				map[string]interface{}{
-					"a": float64(2),
-				},
-			},
-		},
-	}
-	conv, _ := GetConverter()
-	ctx := mockContext.NewMockContext("test", "op1")
-	for i, tt := range tests {
-		result, err := conv.Decode(ctx, tt.payload)
-		if err != nil {
-			t.Errorf("%d decode error: %v", i, err)
-		}
-		if len(tt.results) > 0 {
-			if !reflect.DeepEqual(tt.results, result) {
-				t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
-			}
-		} else {
-			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d result mismatch:\n\nexp=%s\n\ngot=%s\n\n", i, tt.result, result)
-			}
-		}
-	}
-}
 
 func TestFastJsonConverterWithSchema(t *testing.T) {
 	origin := "123"
@@ -712,20 +656,4 @@ func TestSchemaless(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tc.expect, v)
 	}
-}
-
-func TestJsonError(t *testing.T) {
-	ctx := mockContext.NewMockContext("test", "op1")
-	_, err := converter.Decode(ctx, nil)
-	require.Error(t, err)
-	errWithCode, ok := err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
-	// fastjson
-	c := NewFastJsonConverter(nil)
-	_, err = c.Decode(ctx, nil)
-	require.Error(t, err)
-	errWithCode, ok = err.(errorx.ErrorWithCode)
-	require.True(t, ok)
-	require.Equal(t, errorx.CovnerterErr, errWithCode.Code())
 }

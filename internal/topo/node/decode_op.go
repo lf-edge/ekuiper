@@ -225,7 +225,7 @@ func (o *DecodeOp) PayloadDecodeWorker(ctx api.StreamContext, item any) []any {
 // Currently, this op is generated implicitly and it is guarantee to not share the data, so we mutate it directly
 func mergeTuple(d *xsql.Tuple, result any) []any {
 	switch r := result.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		d.Message = r
 		return []any{d}
 	case []map[string]interface{}:
