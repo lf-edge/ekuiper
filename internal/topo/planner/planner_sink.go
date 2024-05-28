@@ -152,7 +152,7 @@ func splitSink(tp *topo.Topo, inputs []node.Emitter, s api.Sink, sinkName string
 	newInputs = []node.Emitter{transformOp}
 	// Encode will convert the result to []byte
 	if _, ok := s.(api.BytesCollector); ok {
-		encodeOp, err := node.NewEncodeOp(fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
+		encodeOp, err := node.NewEncodeOp(tp.GetContext(), fmt.Sprintf("%s_%d_encode", sinkName, index), options, sc)
 		if err != nil {
 			return nil, err
 		}

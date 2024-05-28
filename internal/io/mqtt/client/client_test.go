@@ -12,61 +12,44 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mqtt
+package client
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
-	"github.com/lf-edge/ekuiper/v2/internal/testx"
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 // NOTICE!!! Need to run a MQTT broker in localhost:1883 for this test or change the url to your broker
 const url = "tcp://127.0.0.1:1883"
 
-func init() {
-	testx.InitEnv("mqtt_source_connector")
-}
-
-func TestProvision(t *testing.T) {
-	connection.InitConnectionManagerInTest()
+func TestValidate(t *testing.T) {
 	tests := []struct {
 		name  string
 		props map[string]any
 		err   string
 	}{
 		{
-			name: "Valid configuration",
+			name: "No server",
 			props: map[string]any{
-				"server":     url,
-				"datasource": "demo",
+				"server": "",
 			},
+			err: "missing server property",
 		},
 		{
-			name: "Invalid configuration",
+			name: "invalid protocol",
 			props: map[string]any{
-				"server":     make(chan any),
-				"datasource": "demo",
+				"server":          url,
+				"protocolVersion": "5.0",
 			},
-			err: "1 error(s) decoding:\n\n* 'server' expected type 'string'",
+			err: "unsupported protocol version 5.0",
 		},
 	}
-	sc := &SourceConnector{}
-	ctx := mockContext.NewMockContext("testprov", "source")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := sc.Provision(ctx, tt.props)
-			if tt.err != "" {
-				assert.Error(t, err)
-				require.True(t, strings.HasPrefix(err.Error(), tt.err))
-			} else {
-				assert.NoError(t, err)
-			}
+			_, err := ValidateConfig(tt.props)
+			assert.Error(t, err)
+			assert.Equal(t, tt.err, err.Error())
 		})
 	}
 }

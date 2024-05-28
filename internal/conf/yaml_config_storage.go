@@ -194,3 +194,23 @@ func (s *sqlKVStore) GetByPrefix(prefix string) (map[string]map[string]interface
 	}
 	return r, nil
 }
+
+// WriteCfgIntoKVStorage only used for unit test
+func WriteCfgIntoKVStorage(typ string, plugin string, confKey string, confData map[string]interface{}) error {
+	key := buildKey(typ, plugin, confKey)
+	return saveCfgKeyToKV(key, confData)
+}
+
+// GotCfgFromKVStorage only used for unit test
+func GotCfgFromKVStorage(typ string, plugin string, confKey string) (map[string]interface{}, error) {
+	key := buildKey(typ, plugin, confKey)
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return nil, err
+	}
+	d, err := kvStorage.GetByPrefix(key)
+	if err != nil {
+		return nil, err
+	}
+	return d[key], nil
+}

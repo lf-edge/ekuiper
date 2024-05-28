@@ -21,10 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestSinkConfigure(t *testing.T) {
+	connection.InitConnectionManagerInTest()
 	tests := []struct {
 		name           string
 		input          map[string]interface{}
@@ -135,6 +137,7 @@ func TestSinkConfigure(t *testing.T) {
 }
 
 func TestValidateMQTTSinkConf(t *testing.T) {
+	connection.InitConnectionManagerInTest()
 	testcases := []struct {
 		topic       string
 		expectError bool
