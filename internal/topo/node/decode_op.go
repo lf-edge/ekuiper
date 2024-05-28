@@ -131,6 +131,7 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 		sLayer:          schemaLayer.NewSchemaLayer(ruleId, StreamName, schema, isWildcard),
 		c:               dc,
 		forPayload:      forPayload,
+		additionSchema:  additionSchema,
 	}
 
 	return o, nil
@@ -145,7 +146,11 @@ func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 		}()
 		var w workerFunc
 		if o.forPayload {
-			w = o.PayloadDecodeWorker
+			if o.c.PayloadBatchField != "" {
+				w = o.PayloadBatchDecodeWorker
+			} else {
+				w = o.PayloadDecodeWorker
+			}
 		} else {
 			w = o.Worker
 		}
@@ -196,6 +201,21 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 }
 
 // PayloadDecodeWorker each input has one message with the payload field to decode
+//
+//	{
+//		"payloadField":"data","otherField":1
+//	}
+//
+//	{
+//		// parsed fields
+//		"parsedField": 1,
+//		"parsedField2": 2,
+//		// keep the original field if in schema
+//		"payloadField":"data",
+//		"otherField":1
+//	}
+//
+// If parse result is a list, it will also output a list
 func (o *DecodeOp) PayloadDecodeWorker(ctx api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()
@@ -207,7 +227,8 @@ func (o *DecodeOp) PayloadDecodeWorker(ctx api.StreamContext, item any) []any {
 			ctx.GetLogger().Warnf("payload field %s not found, ignore it", o.c.PayloadField)
 			return nil
 		}
-		raw, err := cast.ToByteA(payload, cast.CONVERT_SAMEKIND)
+		delete(d.Message, o.c.PayloadField)
+		raw, err := cast.ToBytes(payload, cast.CONVERT_SAMEKIND)
 		if err != nil {
 			return []any{fmt.Errorf("payload is not bytes: %v", err)}
 		}
@@ -215,7 +236,7 @@ func (o *DecodeOp) PayloadDecodeWorker(ctx api.StreamContext, item any) []any {
 		if err != nil {
 			return []any{err}
 		}
-		return mergeTuple(d, result)
+		return transTuple(d, result)
 	default:
 		return []any{fmt.Errorf("unsupported data received: %v", d)}
 	}
@@ -223,22 +244,26 @@ func (o *DecodeOp) PayloadDecodeWorker(ctx api.StreamContext, item any) []any {
 
 // TODO do not update the tuple directly
 // Currently, this op is generated implicitly and it is guarantee to not share the data, so we mutate it directly
-func mergeTuple(d *xsql.Tuple, result any) []any {
+func transTuple(d *xsql.Tuple, result any) []any {
 	switch r := result.(type) {
 	case map[string]any:
-		d.Message = r
+		tupleAppend(d, r)
 		return []any{d}
-	case []map[string]interface{}:
+	case []map[string]any:
 		rr := make([]any, len(r))
 		for i, v := range r {
-			rr[i] = toTuple(v, d)
+			dd := cloneTuple(d)
+			tupleAppend(dd, v)
+			rr[i] = dd
 		}
 		return rr
 	case []any:
 		rr := make([]any, len(r))
 		for i, v := range r {
 			if vc, ok := v.(map[string]any); ok {
-				rr[i] = toTuple(vc, d)
+				dd := cloneTuple(d)
+				tupleAppend(dd, vc)
+				rr[i] = dd
 			} else {
 				rr[i] = fmt.Errorf("only map[string]any inside a list is supported but got: %v", v)
 			}
@@ -246,6 +271,107 @@ func mergeTuple(d *xsql.Tuple, result any) []any {
 		return rr
 	default:
 		return []any{fmt.Errorf("unsupported decode result: %v", r)}
+	}
+}
+
+// PayloadBatchDecodeWorker deals with payload like
+//
+//	{
+//		"ts": 123456,
+//		"batchField": [
+//			{"payloadField":"data","otherField":1},
+//			{"payloadField":"data2","otherField":2}
+//		]
+//	}
+//
+// It merges all payload result into one
+//
+//	{
+//		"ts": 123456,
+//		// parsed fields are merged
+//		"parsedField": 1,
+//		"parsedField": 2,
+//		// other fields also merged and keep the latest
+//		"otherField": 2
+//	}
+//
+// If parse result is a list, it will also merge them in
+func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []any {
+	o.statManager.ProcessTimeStart()
+	defer o.statManager.ProcessTimeEnd()
+	switch d := item.(type) {
+	case *xsql.Tuple:
+		// extract batch field
+		batch, ok := d.Value(o.c.PayloadBatchField, "")
+		if !ok {
+			ctx.GetLogger().Warnf("payload batch field %s not found, ignore it", o.c.PayloadBatchField)
+			return nil
+		}
+		delete(d.Message, o.c.PayloadBatchField)
+		batchVal, ok := batch.([]any)
+		if !ok {
+			return []any{fmt.Errorf("payload batch field is not array: %v", batch)}
+		}
+		r := cloneTuple(d)
+		for _, val := range batchVal {
+			var vv xsql.Valuer
+			switch vt := val.(type) {
+			case xsql.Valuer:
+				vv = vt
+			case map[string]any:
+				vv = xsql.Message(vt)
+			}
+			payload, ok := vv.Value(o.c.PayloadField, "")
+			if !ok {
+				ctx.GetLogger().Warnf("payload field %s not found, ignore it", o.c.PayloadField)
+				continue
+			}
+			raw, err := cast.ToBytes(payload, cast.CONVERT_SAMEKIND)
+			if err != nil {
+				ctx.GetLogger().Warnf("payload is not bytes: %v", err)
+				continue
+			}
+			result, err := o.converter.Decode(ctx, raw)
+			if err != nil {
+				ctx.GetLogger().Warnf("cannot decode payload: %v", err)
+				continue
+			}
+			delete(val.(map[string]any), o.c.PayloadField)
+			mergeTuple(ctx, r, val)
+			mergeTuple(ctx, r, result)
+		}
+		return []any{r}
+	default:
+		return []any{fmt.Errorf("unsupported data received: %v", d)}
+	}
+}
+
+// TODO do not update the tuple directly
+// Currently, this op is generated implicitly and it is guarantee to not share the data, so we mutate it directly
+func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
+	switch r := result.(type) {
+	case map[string]any:
+		for k, v := range r {
+			d.Message[k] = v
+		}
+	case []map[string]interface{}:
+		for _, m := range r {
+			for k, v := range m {
+				d.Message[k] = v
+			}
+		}
+	case []any:
+		for _, a := range r {
+			if m, ok := a.(map[string]any); ok {
+				for k, v := range m {
+					d.Message[k] = v
+				}
+			} else {
+				ctx.GetLogger().Warnf("decode payload list receive non map %v", a)
+			}
+		}
+	default:
+		ctx.GetLogger().Warnf("unsupported decode result: %v", r)
 	}
 }
 
@@ -258,12 +384,23 @@ func toTupleFromRawTuple(v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
 	}
 }
 
-func toTuple(v map[string]any, d *xsql.Tuple) *xsql.Tuple {
+func cloneTuple(d *xsql.Tuple) *xsql.Tuple {
+	m := make(map[string]any, len(d.Message))
+	for k, v := range d.Message {
+		m[k] = v
+	}
 	return &xsql.Tuple{
-		Message:   v,
+		Message:   m,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
+	}
+}
+
+func tupleAppend(d *xsql.Tuple, mv map[string]any) {
+	m := d.Message
+	for k, v := range mv {
+		m[k] = v
 	}
 }
 
