@@ -329,7 +329,7 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 				},
 			},
 			result: []any{
-				errors.New("payload is not bytes: cannot convert int(34) to bytes"),
+				errors.New("payload is not bytes: cannot convert int(34) to bytea"),
 			},
 		},
 		{

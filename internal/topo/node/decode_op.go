@@ -228,7 +228,7 @@ func (o *DecodeOp) PayloadDecodeWorker(ctx api.StreamContext, item any) []any {
 			return nil
 		}
 		delete(d.Message, o.c.PayloadField)
-		raw, err := cast.ToBytes(payload, cast.CONVERT_SAMEKIND)
+		raw, err := cast.ToByteA(payload, cast.CONVERT_SAMEKIND)
 		if err != nil {
 			return []any{fmt.Errorf("payload is not bytes: %v", err)}
 		}
@@ -326,7 +326,7 @@ func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []a
 				ctx.GetLogger().Warnf("payload field %s not found, ignore it", o.c.PayloadField)
 				continue
 			}
-			raw, err := cast.ToBytes(payload, cast.CONVERT_SAMEKIND)
+			raw, err := cast.ToByteA(payload, cast.CONVERT_SAMEKIND)
 			if err != nil {
 				ctx.GetLogger().Warnf("payload is not bytes: %v", err)
 				continue
