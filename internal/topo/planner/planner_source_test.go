@@ -70,6 +70,8 @@ func TestPlanTopo(t *testing.T) {
 			conf: map[string]any{
 				"fileType":      "csv",
 				"decompression": "gzip",
+				"payloadFormat": "json",
+				"payloadField":  "col1",
 			},
 			p: "file",
 			k: "csv",
@@ -240,9 +242,12 @@ func TestPlanTopo(t *testing.T) {
 				Sources: []string{"source_fs2"},
 				Edges: map[string][]any{
 					"source_fs2": {
-						"op_2_project",
+						"op_2_payload_decoder",
 					},
-					"op_2_project": {
+					"op_2_payload_decoder": {
+						"op_3_project",
+					},
+					"op_3_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
