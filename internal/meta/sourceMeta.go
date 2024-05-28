@@ -108,8 +108,9 @@ func ReadSourceMetaFile(filePath string, isScan bool, isLookup bool) error {
 	gSourcemetaLock.Lock()
 	gSourcemetadata[fileName] = meta
 	gSourcemetaLock.Unlock()
-
-	return err
+	loadConfigOperatorForSource(strings.TrimSuffix(fileName, `.json`))
+	loadConfigOperatorForConnection(strings.TrimSuffix(fileName, `.json`))
+	return nil
 }
 
 func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker) error {
