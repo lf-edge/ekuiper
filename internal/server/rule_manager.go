@@ -286,6 +286,30 @@ func restartRule(name string) error {
 	return reRunRule(name, false)
 }
 
+func getRuleStatusV2(name string) (map[string]any, error) {
+	if rs, ok := registry.Load(name); ok {
+		result, _ := rs.GetState()
+		metrics := make(map[string]any)
+		if result == "Running" {
+			opMetrics := (*rs.Topology).GetMetricsV2()
+			metrics["status"] = "running"
+			lastStart, lastStop, nextStart := rs.GetScheduleTimestamp()
+			metrics["lastStartTimestamp"] = lastStart
+			metrics["lastStopTimestamp"] = lastStop
+			metrics["nextStopTimestamp"] = nextStart
+			for key, m := range opMetrics {
+				metrics[key] = m
+			}
+		} else {
+			metrics["status"] = "stopped"
+			metrics["message"] = result
+		}
+		return metrics, nil
+	} else {
+		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found", name))
+	}
+}
+
 func getRuleStatus(name string) (string, error) {
 	if rs, ok := registry.Load(name); ok {
 		result, err := rs.GetState()
