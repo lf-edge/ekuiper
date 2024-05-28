@@ -888,8 +888,8 @@ func TestToByteA(t *testing.T) {
 		err    string
 	}{
 		{
-			input: "foo",
-			err:   "illegal string foo, must be base64 encoded string",
+			input:  "foo",
+			output: []byte("foo"),
 		}, {
 			input:  []byte("foo"),
 			output: []byte("foo"),

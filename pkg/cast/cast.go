@@ -831,14 +831,18 @@ func ToBytes(input interface{}, sn Strictness) ([]byte, error) {
 }
 
 // ToByteA converts to eKuiper internal byte array
-func ToByteA(input interface{}, _ Strictness) ([]byte, error) {
+func ToByteA(input interface{}, sn Strictness) ([]byte, error) {
 	switch b := input.(type) {
 	case []byte:
 		return b, nil
 	case string:
 		r, err := base64.StdEncoding.DecodeString(b)
 		if err != nil {
-			return nil, fmt.Errorf("illegal string %s, must be base64 encoded string", b)
+			if sn != STRICT {
+				r = []byte(b)
+			} else {
+				return nil, fmt.Errorf("illegal string %s, must be base64 encoded string", b)
+			}
 		}
 		return r, nil
 	}
