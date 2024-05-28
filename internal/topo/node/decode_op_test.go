@@ -257,7 +257,7 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 			name: "normal",
 			input: &xsql.Tuple{
 				Emitter:  "test",
-				Message:  map[string]any{"n": "outside", "payload": []byte(`{"a":23,"b":34}`)},
+				Message:  map[string]any{"payload": []byte(`{"a":23,"b":34}`)},
 				Metadata: map[string]any{"topic": "a"},
 			},
 			schema: map[string]*ast.JsonStreamField{
@@ -282,22 +282,23 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 				"b": {
 					Type: "float",
 				},
+				"n": nil,
 			},
 			result: []any{
 				&xsql.Tuple{
 					Emitter:  "test",
 					Metadata: map[string]any{"topic": "a"},
-					Message:  map[string]any{"b": 34.0},
+					Message:  map[string]any{"b": 34.0, "n": "outside"},
 				},
 				&xsql.Tuple{
 					Emitter:  "test",
 					Metadata: map[string]any{"topic": "a"},
-					Message:  map[string]any{},
+					Message:  map[string]any{"n": "outside"},
 				},
 				&xsql.Tuple{
 					Emitter:  "test",
 					Metadata: map[string]any{"topic": "a"},
-					Message:  map[string]any{"b": 66.0},
+					Message:  map[string]any{"b": 66.0, "n": "outside"},
 				},
 			},
 		},
@@ -347,9 +348,160 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 			},
 		},
 	}
-	ctx := mockContext.NewMockContext("test1", "decode_test")
+	ctx, cancel := mockContext.NewMockContext("test1", "decode_test").WithCancel()
 	op, err := NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, nil, map[string]any{
 		"payloadField": "payload", "payloadFormat": "json",
+	})
+
+	assert.NoError(t, err)
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	assert.NoError(t, err)
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	for i, tt := range tests {
+		if i > 0 {
+			op.DetachSchema(ctx, fmt.Sprintf("stream%d", i))
+		}
+		op.AttachSchema(ctx, fmt.Sprintf("stream%d", i), tt.schema, false)
+		t.Run(tt.name, func(t *testing.T) {
+			op.input <- tt.input
+			for _, exp := range tt.result {
+				r := <-out
+				assert.Equal(t, exp, r)
+			}
+		})
+	}
+	cancel()
+}
+
+func TestPayloadBatchDecodeWithSchema(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  any
+		schema map[string]*ast.JsonStreamField
+		result []any
+	}{
+		{
+			name: "normal",
+			input: &xsql.Tuple{
+				Emitter: "test",
+				Message: map[string]any{
+					"n": "outside", "frames": []any{
+						map[string]any{
+							"payload": []byte(`{"a":23,"b":34}`),
+							"inner":   123,
+						},
+						map[string]any{
+							"payload": []byte(`{"a":33,"b":44}`),
+							"inner":   123,
+						},
+					},
+				},
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b":     nil,
+				"n":     nil,
+				"inner": nil,
+			},
+			result: []any{&xsql.Tuple{
+				Emitter:  "test",
+				Metadata: map[string]any{"topic": "a"},
+				Message:  map[string]any{"b": 44.0, "inner": 123, "n": "outside"},
+			}},
+		},
+		{
+			name: "list with one payload field not found",
+			input: &xsql.Tuple{
+				Emitter: "test",
+				Message: map[string]any{"frames": []any{
+					map[string]any{
+						"payload": []byte(`{"a":23,"b":34}`),
+						"inner":   123,
+					},
+					map[string]any{
+						"payload": []byte(`[{"a":23,"b":54},{"a":99},{"a":55,"b":66}]`),
+						"inner":   456,
+					},
+				}},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+				"inner": nil,
+			},
+			result: []any{
+				&xsql.Tuple{
+					Emitter: "test",
+					Message: map[string]any{"b": 66.0, "inner": 456},
+				},
+			},
+		},
+		{
+			name: "no batch payload field",
+			input: &xsql.Tuple{
+				Emitter:  "test",
+				Message:  map[string]any{"n": "outside"},
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{},
+		},
+		{
+			name: "no payload field",
+			input: &xsql.Tuple{
+				Emitter: "test",
+				Message: map[string]any{
+					"n": "outside", "frames": []any{
+						map[string]any{
+							"payload": []byte(`{"a":23,"b":34}`),
+							"inner":   123,
+						},
+						map[string]any{
+							"inner2": 333,
+						},
+						map[string]any{
+							"payload": 444,
+							"inner":   243,
+						},
+					},
+				},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{&xsql.Tuple{
+				Emitter: "test",
+				Message: map[string]any{"b": 34.0, "inner": 123, "n": "outside"},
+			}},
+		},
+		{
+			name: "wrong input type",
+			input: &xsql.RawTuple{
+				Emitter:  "test",
+				Metadata: map[string]any{"topic": "a"},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{
+				errors.New("unsupported data received: &{test 0001-01-01 00:00:00 +0000 UTC [] map[topic:a] map[]}"),
+			},
+		},
+	}
+	ctx := mockContext.NewMockContext("test1", "decode_test")
+	op, err := NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, nil, map[string]any{
+		"payloadField": "payload", "payloadFormat": "json", "payloadBatchField": "frames",
 	})
 
 	assert.NoError(t, err)
