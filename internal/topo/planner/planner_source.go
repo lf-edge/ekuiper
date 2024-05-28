@@ -74,6 +74,7 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 type SourcePropsForSplit struct {
 	Decompression string `json:"decompression"`
 	SelId         string `json:"connectionSelector"`
+	PayloadFormat string `json:"payloadFormat"`
 }
 
 func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
@@ -137,6 +138,16 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		index++
 		ops = append(ops, decodeNode)
+	}
+
+	if sp.PayloadFormat != "" {
+		// Create the decode node
+		payloadDecodeNode, err := node.NewDecodeOp(ctx, true, fmt.Sprintf("%d_payload_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		index++
+		ops = append(ops, payloadDecodeNode)
 	}
 
 	// Create the preprocessor node if needed
