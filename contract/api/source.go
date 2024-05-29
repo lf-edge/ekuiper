@@ -16,35 +16,45 @@ package api
 
 import "time"
 
-// The source capabilities are split to several functionality
+// The source capabilities are split to several trait
 // Implementations can implement part of them and combine
 
-// Source is the interface that wraps the basic Source method.
-// The lifecycle of a source: Provision -> Connect -> Subscribe -> Close
+// Source is the raw interface that wraps the basic Source method. It cannot be used independently, must implement more traits.
+// The lifecycle of a source: Provision -> Connect -> Subscribe/Pull -> Close
 type Source interface {
 	Nodelet
 	Connector
 }
 
-type ErrorIngest func(ctx StreamContext, err error)
-type BytesIngest func(ctx StreamContext, payload []byte, meta map[string]any, ts time.Time)
+/// Source interfaces to be implemented. With raw source interface and a selected mandatory trait
 
+// BytesSource receives the bytes payload pushed by the external source
 type BytesSource interface {
 	Source
 	Subscribe(ctx StreamContext, ingest BytesIngest, ingestError ErrorIngest) error
 }
 
-// TupleIngest reads in a structural data or its list.
-// It supports map and []map for now
-type TupleIngest func(ctx StreamContext, data any, meta map[string]any, ts time.Time)
-
+// TupleSource receives the non-bytes payload pushed by the external source
 type TupleSource interface {
 	Source
 	Subscribe(ctx StreamContext, ingest TupleIngest, ingestError ErrorIngest) error
 }
 
-type EOFIngest func(ctx StreamContext)
+// PullBytesSource fetch the bytes payload in an interval from the external source. Interval property must be defined
+type PullBytesSource interface {
+	Source
+	Pull(ctx StreamContext, trigger time.Time, ingest BytesIngest, ingestError ErrorIngest)
+}
 
+// PullTupleSource fetch the non-bytes payload in an interval from the external source. Interval property must be defined
+type PullTupleSource interface {
+	Source
+	Pull(ctx StreamContext, trigger time.Time, ingest TupleIngest, ingestError ErrorIngest)
+}
+
+/// Other optional traits
+
+// Bounded means the source can have an end.
 type Bounded interface {
 	SetEofIngest(eof EOFIngest)
 }
@@ -56,6 +66,7 @@ type Rewindable interface {
 	ResetOffset(input map[string]any) error
 }
 
+// LookupSource is a source feature to query the source on demand (TO be modified later)
 type LookupSource interface {
 	// Open creates the connection to the external data source
 	Open(ctx StreamContext) error
@@ -66,3 +77,13 @@ type LookupSource interface {
 	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) (MessageTupleList, error)
 	Closable
 }
+
+/// helper function definition
+
+type ErrorIngest func(ctx StreamContext, err error)
+type BytesIngest func(ctx StreamContext, payload []byte, meta map[string]any, ts time.Time)
+
+// TupleIngest reads in a structural data or its list.
+// It supports map and []map for now
+type TupleIngest func(ctx StreamContext, data any, meta map[string]any, ts time.Time)
+type EOFIngest func(ctx StreamContext)
