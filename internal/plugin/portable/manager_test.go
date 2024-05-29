@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
@@ -53,7 +55,6 @@ func TestManager_Install(t *testing.T) {
 	)
 	defer s.Close()
 	endpoint := s.URL
-
 	data := []struct {
 		n   string
 		u   string
@@ -80,7 +81,8 @@ func TestManager_Install(t *testing.T) {
 			n:   "wrongname",
 			u:   endpoint + "/portables/mirror.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json, found 9 files in total"),
-		}, { // 5
+		},
+		{ // 5
 			n: "mirror2",
 			u: endpoint + "/portables/mirror.zip",
 		},
@@ -121,32 +123,19 @@ func assertManager_Read(t *testing.T) {
 		},
 	}
 	result := manager.List()
-	if len(result) != 3 {
-		t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
-	}
+	require.Len(t, result, 1)
+	require.Equal(t, expPlugins, result)
 
 	_, ok := manager.GetPluginInfo("mirror3")
-	if ok {
-		t.Error("find inexist plugin mirror3")
-	}
+	require.False(t, ok)
 	pi, ok := manager.GetPluginInfo("mirror2")
-	if !ok {
-		t.Error("can't find plugin mirror2")
-	}
-	if !reflect.DeepEqual(expPlugins[0], pi) {
-		t.Errorf("Get plugin mirror2 mismatch:\n exp=%v\n got=%v", expPlugins[0], pi)
-	}
+	require.True(t, ok)
+	require.Equal(t, expPlugins[0], pi)
 	_, ok = manager.GetPluginMeta(plugin.SOURCE, "echoGo")
-	if ok {
-		t.Error("find inexist source symbol echo")
-	}
+	require.False(t, ok)
 	m, ok := manager.GetPluginMeta(plugin.SINK, "fileGo")
-	if !ok {
-		t.Error("can't find sink symbol fileGo")
-	}
-	if !reflect.DeepEqual(&(expPlugins[0].PluginMeta), m) {
-		t.Errorf("Get sink symbol mismatch:\n exp=%v\n got=%v", expPlugins[0].PluginMeta, m)
-	}
+	require.True(t, ok)
+	require.Equal(t, expPlugins[0].PluginMeta, *m)
 }
 
 // This will start channel, so test it in integration tests.
