@@ -102,9 +102,11 @@ func TestManager_Install(t *testing.T) {
 			}
 		}
 	}
+	assertManager_Read(t)
+	assertDelete(t)
 }
 
-func TestManager_Read(t *testing.T) {
+func assertManager_Read(t *testing.T) {
 	expPlugins := []*PluginInfo{
 		{
 			PluginMeta: runtime.PluginMeta{
@@ -172,7 +174,7 @@ func TestManager_Read(t *testing.T) {
 //	}
 //}
 
-func TestDelete(t *testing.T) {
+func assertDelete(t *testing.T) {
 	err := manager.Delete("mirror2")
 	if err != nil {
 		t.Errorf("delete plugin error: %v", err)
