@@ -24,11 +24,18 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 var count atomic.Value
+
+type ic struct {
+	Interval time.Duration `json:"interval"`
+	IgnoreTs bool          `json:"ignoreTs"`
+}
 
 func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected any, sender func()) {
 	// init
@@ -38,9 +45,12 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 		c = 0
 	}
 	count.Store(c.(int) + 1)
+	cc := &ic{}
+	err := cast.MapToStruct(props, cc)
+	assert.NoError(t, err)
 	// provision
 	ctx, cancel := mockContext.NewMockContext(fmt.Sprintf("rule%d", c), "op1").WithCancel()
-	err := r.Provision(ctx, props)
+	err = r.Provision(ctx, props)
 	assert.NoError(t, err)
 	// connect, subscribe and read data
 	err = r.Connect(ctx)
@@ -65,35 +75,79 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 		result []api.MessageTuple
 	)
 	wg.Add(1)
+	ingestBytes := func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
+		if cc.IgnoreTs {
+			result = append(result, model.NewDefaultRawTupleIgnoreTs(payload, meta))
+		} else {
+			result = append(result, model.NewDefaultRawTuple(payload, meta, ts))
+		}
+
+		limit--
+		if limit == 0 {
+			wg.Done()
+		}
+	}
+	ingestTuples := func(ctx api.StreamContext, message any, meta map[string]any, ts time.Time) {
+		switch mt := message.(type) {
+		case []byte:
+			if cc.IgnoreTs {
+				result = append(result, model.NewDefaultRawTupleIgnoreTs(mt, meta))
+			} else {
+				result = append(result, model.NewDefaultRawTuple(mt, meta, ts))
+			}
+		case map[string]any:
+			result = append(result, model.NewDefaultSourceTuple(mt, meta, ts))
+		default:
+			panic("not supported yet")
+		}
+		limit--
+		if limit == 0 {
+			wg.Done()
+		}
+	}
 	go func() {
 		switch ss := r.(type) {
 		case api.BytesSource:
-			err = ss.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
-				result = append(result, model.NewDefaultRawTuple(payload, meta, ts))
-				limit--
-				if limit == 0 {
-					wg.Done()
-				}
-			}, func(ctx api.StreamContext, err error) {
+			err = ss.Subscribe(ctx, ingestBytes, func(ctx api.StreamContext, err error) {
 				panic(err)
 			})
 		case api.TupleSource:
-			err = ss.Subscribe(ctx, func(ctx api.StreamContext, message any, meta map[string]any, ts time.Time) {
-				switch mt := message.(type) {
-				case []byte:
-					result = append(result, model.NewDefaultRawTuple(mt, meta, ts))
-				case map[string]any:
-					result = append(result, model.NewDefaultSourceTuple(mt, meta, ts))
-				default:
-					panic("not supported yet")
-				}
-				limit--
-				if limit == 0 {
-					wg.Done()
-				}
-			}, func(ctx api.StreamContext, err error) {
+			err = ss.Subscribe(ctx, ingestTuples, func(ctx api.StreamContext, err error) {
 				panic(err)
 			})
+		case api.PullBytesSource, api.PullTupleSource:
+			switch ss := r.(type) {
+			case api.PullBytesSource:
+				ss.Pull(ctx, timex.GetNow(), ingestBytes, func(ctx api.StreamContext, err error) {
+					panic(err)
+				})
+			case api.PullTupleSource:
+				ss.Pull(ctx, timex.GetNow(), ingestTuples, func(ctx api.StreamContext, err error) {
+					panic(err)
+				})
+			}
+			ticker := timex.GetTicker(cc.Interval)
+			go func() {
+				defer ticker.Stop()
+				for {
+					select {
+					case tc := <-ticker.C:
+						ctx.GetLogger().Debugf("source pull at %v", tc.UnixMilli())
+						switch ss := r.(type) {
+						case api.PullBytesSource:
+							ss.Pull(ctx, tc, ingestBytes, func(ctx api.StreamContext, err error) {
+								panic(err)
+							})
+						case api.PullTupleSource:
+							ss.Pull(ctx, tc, ingestTuples, func(ctx api.StreamContext, err error) {
+								panic(err)
+							})
+						}
+					case <-ctx.Done():
+						return
+					}
+				}
+			}()
 		default:
 			panic("wrong source type")
 		}
@@ -103,7 +157,7 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 		assert.NoError(t, err)
 	}()
 
-	ticker := time.After(60 * time.Second)
+	ticker := time.After(60000 * time.Second)
 	finished := make(chan struct{})
 	go func() {
 		wg.Wait()

@@ -16,6 +16,7 @@ package planner
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
@@ -71,12 +72,6 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 	return nil, nil, 0, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
 }
 
-type SourcePropsForSplit struct {
-	Decompression string `json:"decompression"`
-	SelId         string `json:"connectionSelector"`
-	PayloadFormat string `json:"payloadFormat"`
-}
-
 func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
@@ -102,35 +97,25 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		srcConnNode = srcSubtopo
 	}
-	// Make sure it is provisioned. Already done in NewSourceNode
-	info := checkByteSource(ss)
-	if info.HasCompress {
-		sp.Decompression = ""
-	}
-	if info.HasInterval {
-		delete(props, "sendInterval")
-	}
-
 	if err != nil {
 		return nil, nil, 0, err
 	}
 	index++
 	var ops []node.OperatorNode
 
-	if sp.Decompression != "" {
-		if info.NeedBatchDecode {
-			dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
-			if err != nil {
-				return nil, nil, 0, err
-			}
-			index++
-			ops = append(ops, dco)
-		} else {
-			ctx.GetLogger().Warnf("source %s does not support decompression", t.name)
+	// Need to check after source has provisioned, so do not put it before provision
+	featureSet := checkFeatures(ss, sp, props)
+
+	if featureSet.needCompression {
+		dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
+		if err != nil {
+			return nil, nil, 0, err
 		}
+		index++
+		ops = append(ops, dco)
 	}
 
-	if info.NeedDecode {
+	if featureSet.needDecode {
 		// Create the decode node
 		decodeNode, err := node.NewDecodeOp(ctx, false, fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
 		if err != nil {
@@ -140,7 +125,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		ops = append(ops, decodeNode)
 	}
 
-	if sp.PayloadFormat != "" {
+	if featureSet.needPayloadDecode {
 		// Create the decode node
 		payloadDecodeNode, err := node.NewDecodeOp(ctx, true, fmt.Sprintf("%d_payload_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
 		if err != nil {
@@ -172,6 +157,35 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		return srcSubtopo, nil, len(ops), nil
 	}
 	return srcConnNode, ops, 0, nil
+}
+
+type SourcePropsForSplit struct {
+	Decompression string        `json:"decompression"`
+	SelId         string        `json:"connectionSelector"`
+	PayloadFormat string        `json:"payloadFormat"`
+	Interval      time.Duration `json:"interval"`
+}
+
+type traits struct {
+	needConnection    bool
+	needCompression   bool
+	needDecode        bool
+	needPayloadDecode bool
+}
+
+// function to return if a sub node is needed
+func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any) traits {
+	info := checkByteSource(ss)
+	// TODO here is a hack for file source send interval. If it is sent in file, do not need to process sendInterval in decode
+	if info.HasInterval {
+		delete(props, "sendInterval")
+	}
+	return traits{
+		needConnection:    sp.SelId != "",
+		needCompression:   sp.Decompression != "" && (!info.HasCompress || info.NeedBatchDecode),
+		needDecode:        info.NeedDecode,
+		needPayloadDecode: sp.PayloadFormat != "",
+	}
 }
 
 func checkByteSource(ss api.Source) model.NodeInfo {

@@ -69,17 +69,17 @@ func TestPlanTopo(t *testing.T) {
 		{
 			conf: map[string]any{
 				"fileType":      "csv",
-				"decompression": "gzip",
 				"payloadFormat": "json",
 				"payloadField":  "col1",
+				"interval":      "20s",
 			},
 			p: "file",
 			k: "csv",
 		},
 		{
 			conf: map[string]any{
-				"fileType":      "lines",
-				"decompression": "gzip",
+				"fileType": "lines",
+				"interval": "20s",
 			},
 			p: "file",
 			k: "lines",
@@ -87,6 +87,7 @@ func TestPlanTopo(t *testing.T) {
 		{
 			conf: map[string]any{
 				"decompression": "gzip",
+				"interval":      "20s",
 			},
 			p: "file",
 			k: "json",
