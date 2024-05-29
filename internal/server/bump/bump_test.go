@@ -15,6 +15,7 @@
 package bump
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -66,12 +67,12 @@ func assertBumpVersion1Data(t *testing.T, typ string) {
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{
 		"p1": 1,
-	}, d)
+	}, d[fmt.Sprintf("%s.mqtt.conf1", typ)])
 	d, err = conf.GotCfgFromKVStorage(typ, "mqtt", "conf2")
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{
 		"p2": 2,
-	}, d)
+	}, d[fmt.Sprintf("%s.mqtt.conf2", typ)])
 }
 
 func prepareBumpVersion1Data(t *testing.T, dir, typ string) {

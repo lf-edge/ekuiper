@@ -15,19 +15,23 @@
 package connection
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-var isTest bool
+func storeConnection(plugin, id string, props map[string]interface{}) error {
+	return conf.WriteCfgIntoKVStorage("connections", plugin, id, props)
+}
+
+func dropConnectionStore(plugin, id string) error {
+	return conf.DropCfgKeyFromStorage("connections", plugin, id)
+}
 
 func GetAllConnectionsID() []string {
 	globalConnectionManager.RLock()
@@ -75,14 +79,8 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		Typ:   typ,
 		Props: props,
 	}
-	if !isTest {
-		b, err := json.Marshal(meta)
-		if err != nil {
-			return nil, err
-		}
-		if err := globalConnectionManager.store.Set(id, string(b)); err != nil {
-			return nil, err
-		}
+	if err := storeConnection(typ, id, props); err != nil {
+		return nil, err
 	}
 	conn, err := createNamedConnection(ctx, meta)
 	if err != nil {
@@ -161,11 +159,9 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if conn.Ref(ctx) > 0 {
 		return fmt.Errorf("connection %s can't be dropped due to reference", selId)
 	}
-	if !isTest {
-		err := globalConnectionManager.store.Delete(selId)
-		if err != nil {
-			return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
-		}
+	err := dropConnectionStore(meta.Typ, selId)
+	if err != nil {
+		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
 	conn.Close(ctx)
 	delete(globalConnectionManager.connectionPool, selId)
@@ -174,38 +170,38 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 
 var globalConnectionManager *ConnectionManager
 
-func InitConnectionManagerInTest() {
-	isTest = true
-	InitConnectionManager()
-}
-
 func InitConnectionManager() error {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
 	}
-	if !isTest {
-		globalConnectionManager.store, _ = store.GetKV("connectionMeta")
-		kvs, _ := globalConnectionManager.store.All()
-		for connectionID, raw := range kvs {
-			meta := ConnectionMeta{}
-			err := json.Unmarshal([]byte(raw), &meta)
-			if err != nil {
-				return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
-			}
-			conn, err := createNamedConnection(context.Background(), meta)
-			if err != nil {
-				return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
-			}
-			meta.conn = conn
-			globalConnectionManager.connectionPool[connectionID] = meta
+	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
+	if err != nil {
+		return err
+	}
+	for key, props := range cfgs {
+		names := strings.Split(key, ".")
+		if len(names) != 3 {
+			continue
 		}
+		typ := names[1]
+		id := names[2]
+		meta := ConnectionMeta{
+			ID:    id,
+			Typ:   typ,
+			Props: props,
+		}
+		conn, err := createNamedConnection(context.Background(), meta)
+		if err != nil {
+			return fmt.Errorf("initialize connection:%v failed, err:%v", id, err)
+		}
+		meta.conn = conn
+		globalConnectionManager.connectionPool[id] = meta
 	}
 	return nil
 }
 
 type ConnectionManager struct {
 	sync.RWMutex
-	store          kv.KeyValue
 	connectionPool map[string]ConnectionMeta
 }
 
