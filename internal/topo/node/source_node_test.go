@@ -118,6 +118,27 @@ func TestNewError(t *testing.T) {
 	})
 	assert.Error(t, err)
 	assert.Equal(t, "datasource name cannot be empty", err.Error())
+	_, err = NewSourceNode(ctx, "mock_connector", sc, map[string]any{"interval": "invalid", "datasource": "demo"}, &def.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.Error(t, err)
+	assert.Equal(t, "1 error(s) decoding:\n\n* error decoding 'interval': time: invalid duration \"invalid\"", err.Error())
+
+	var pc api.PullTupleSource = &MockPullSource{}
+	_, err = NewSourceNode(ctx, "mock_connector", pc, map[string]any{"datasource": "demo"}, &def.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.Error(t, err)
+	assert.Equal(t, "interval should be larger than 1ms for pull source", err.Error())
+
+	_, err = NewSourceNode(ctx, "mock_connector", pc, map[string]any{"datasource": "demo", "interval": "1s"}, &def.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.NoError(t, err)
+	assert.True(t, pc.(*MockPullSource).set)
 }
 
 func TestConnError(t *testing.T) {
@@ -157,6 +178,86 @@ func TestConnError(t *testing.T) {
 	wg.Wait()
 	assert.Error(t, errResult)
 	assert.Equal(t, "data is nil", errResult.Error())
+}
+
+func TestPull(t *testing.T) {
+	mc := mockclock.GetMockClock()
+	expects := []any{
+		&xsql.Tuple{
+			Metadata:  map[string]any{"topic": "demo"},
+			Timestamp: mc.Now(),
+			Emitter:   "mock_connector",
+			Message:   map[string]any{"index": 1},
+		},
+		&xsql.RawTuple{
+			Emitter:   "mock_connector",
+			Metadata:  map[string]any{"topic": "demo"},
+			Timestamp: mc.Now().Add(time.Second),
+			Rawdata:   []byte{2},
+		},
+		&xsql.Tuple{
+			Timestamp: mc.Now().Add(2 * time.Second),
+			Emitter:   "mock_connector",
+			Message:   map[string]any{"index": 3},
+		},
+		&xsql.Tuple{
+			Timestamp: mc.Now().Add(3 * time.Second),
+			Emitter:   "mock_connector",
+			Message:   map[string]any{"index": 4},
+		},
+		&xsql.Tuple{
+			Timestamp: mc.Now().Add(4 * time.Second),
+			Emitter:   "mock_connector",
+			Message:   map[string]any{"index": 5},
+			Metadata:  map[string]any{"topic": "demo"},
+		},
+	}
+	var sc api.PullTupleSource = &MockPullSource{}
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	errCh := make(chan error)
+	scn, err := NewSourceNode(ctx, "mock_connector", sc, map[string]any{"datasource": "demo", "interval": "1s"}, &def.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.NoError(t, err)
+	result := make(chan any, 10)
+	err = scn.AddOutput(result, "testResult")
+	assert.NoError(t, err)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	limit := len(expects)
+	actual := make([]any, 0, limit)
+	go func() {
+		defer wg.Done()
+		ticker := time.After(2000 * time.Second)
+		for {
+			select {
+			case sg := <-errCh:
+				switch et := sg.(type) {
+				case error:
+					assert.Fail(t, et.Error())
+					return
+				default:
+					fmt.Println("ctrlCh", et)
+				}
+			case tuple := <-result:
+				actual = append(actual, tuple)
+				limit--
+				if limit <= 0 {
+					return
+				}
+			case <-ticker:
+				assert.Fail(t, "timeout")
+				return
+			}
+		}
+	}()
+	scn.Open(ctx, errCh)
+	time.Sleep(10 * time.Millisecond)
+	timex.Add(10 * time.Second)
+	wg.Wait()
+	assert.Equal(t, expects, actual)
 }
 
 type MockSourceConnector struct {
@@ -206,4 +307,59 @@ func (m *MockSourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesI
 		fmt.Println("MockSourceConnector closed")
 	}()
 	return nil
+}
+
+type MockPullSource struct {
+	set       bool
+	pullTimes int
+}
+
+func (m *MockPullSource) Provision(ctx api.StreamContext, configs map[string]any) error {
+	return nil
+}
+
+func (m *MockPullSource) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *MockPullSource) Connect(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *MockPullSource) Pull(ctx api.StreamContext, trigger time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
+	m.pullTimes++
+	var mess any
+	switch m.pullTimes % 5 {
+	case 0:
+		mess = map[string]any{
+			"index": m.pullTimes,
+		}
+	case 1:
+		mess = []map[string]any{
+			{
+				"index": m.pullTimes,
+			},
+		}
+	case 2:
+		mess = []byte{byte(m.pullTimes)}
+	case 3:
+		mess = &xsql.Tuple{
+			Message: map[string]any{
+				"index": m.pullTimes,
+			},
+		}
+	case 4:
+		mess = []*xsql.Tuple{
+			{
+				Message: map[string]any{
+					"index": m.pullTimes,
+				},
+			},
+		}
+	}
+	ingest(ctx, mess, map[string]any{"topic": "demo"}, trigger)
+}
+
+func (m *MockPullSource) SetEofIngest(eof api.EOFIngest) {
+	m.set = true
 }

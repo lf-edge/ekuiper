@@ -16,6 +16,8 @@ package model
 
 import (
 	"time"
+
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type DefaultSourceTuple struct {
@@ -31,6 +33,14 @@ func NewDefaultRawTuple(raw []byte, meta map[string]any, ts time.Time) *DefaultS
 		meta: meta,
 		time: ts,
 		raw:  raw,
+	}
+}
+
+func NewDefaultRawTupleIgnoreTs(raw []byte, meta map[string]any) *DefaultSourceTuple {
+	return &DefaultSourceTuple{
+		meta: meta,
+		raw:  raw,
+		time: timex.Maxtime,
 	}
 }
 

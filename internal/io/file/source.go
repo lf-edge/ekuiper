@@ -74,6 +74,10 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	}
 	reader, ok := modules.GetFileStreamReader(ctx, cfg.FileType)
 	if ok {
+		// TODO support later. If decompression is set, we need to read in the whole file
+		if cfg.Decompression != "" {
+			return fmt.Errorf("decompression is not supported for %s file type", cfg.FileType)
+		}
 		err = reader.Provision(ctx, props)
 		if err != nil {
 			return err
@@ -82,6 +86,7 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	} else {
 		ctx.GetLogger().Warnf("file type %s is not stream reader, will send out the whole file", cfg.FileType)
 	}
+
 	if cfg.Path == "" {
 		return errors.New("missing property Path")
 	}
@@ -141,31 +146,11 @@ func (fs *Source) Connect(ctx api.StreamContext) error {
 	return nil
 }
 
-// Subscribe file source may ingest bytes or tuple
+// Pull file source may ingest bytes or tuple
 // For stream source, it ingest one line
 // For batch source, it ingest the whole file, thus it need a reader node to coordinate and read the content into lines/array
-func (fs *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
+func (fs *Source) Pull(ctx api.StreamContext, _ time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	fs.Load(ctx, ingest, ingestError)
-	if fs.config.Interval > 0 {
-		ticker := time.NewTicker(fs.config.Interval)
-		logger := ctx.GetLogger()
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				logger.Debugf("Load file source again at %v", timex.GetNowInMilli())
-				fs.Load(ctx, ingest, ingestError)
-			case <-ctx.Done():
-				return nil
-			}
-		}
-	} else { // If not pulling is set, it is a bounded source
-		if fs.eof != nil {
-			ctx.GetLogger().Debugf("send eof")
-			fs.eof(ctx)
-		}
-	}
-	return nil
 }
 
 func (fs *Source) SetEofIngest(eof api.EOFIngest) {
@@ -362,7 +347,7 @@ func GetSource() api.Source {
 
 var (
 	// ingest possibly []byte and tuple
-	_ api.TupleSource = &Source{}
-	_ api.Bounded     = &Source{}
-	_ model.InfoNode  = &Source{}
+	_ api.PullTupleSource = &Source{}
+	_ api.Bounded         = &Source{}
+	_ model.InfoNode      = &Source{}
 )

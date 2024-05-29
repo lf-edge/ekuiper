@@ -21,8 +21,9 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
-	"github.com/lf-edge/ekuiper/v2/pkg/stat"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 // SourceNode is a node that connects to an external source
@@ -31,7 +32,12 @@ import (
 type SourceNode struct {
 	*defaultNode
 
-	s api.Source
+	s        api.Source
+	interval time.Duration
+}
+
+type c struct {
+	Interval time.Duration `json:"interval"`
 }
 
 // NewSourceNode creates a SourceConnectorNode
@@ -41,12 +47,25 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 		return nil, err
 	}
 	ctx.GetLogger().Infof("provision source %s with props %+v", name, props)
+	cc := &c{}
+	err = cast.MapToStruct(props, cc)
+	if err != nil {
+		return nil, err
+	}
 	m := &SourceNode{
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,
+		interval:    cc.Interval,
 	}
-	if bs, ok := ss.(api.Bounded); ok {
-		bs.SetEofIngest(m.ingestEof)
+	switch st := ss.(type) {
+	case api.Bounded:
+		st.SetEofIngest(m.ingestEof)
+	}
+	switch ss.(type) {
+	case api.PullTupleSource, api.PullBytesSource:
+		if cc.Interval < 1 {
+			return nil, fmt.Errorf("interval should be larger than 1ms for pull source")
+		}
 	}
 	return m, nil
 }
@@ -58,9 +77,6 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 // Open will be invoked by topo. It starts reading data.
 func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 	m.prepareExec(ctx, ctrlCh, "source")
-	if able, ok := m.s.(stat.StatsAble); ok {
-		able.SetupStats(m.statManager)
-	}
 	go m.Run(ctx, ctrlCh)
 }
 
@@ -145,6 +161,8 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 			err = ss.Subscribe(ctx, m.ingestBytes, m.ingestError)
 		case api.TupleSource:
 			err = ss.Subscribe(ctx, m.ingestAnyTuple, m.ingestError)
+		case api.PullBytesSource, api.PullTupleSource:
+			err = m.runPull(ctx)
 		}
 		if err != nil {
 			return err
@@ -155,6 +173,33 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		infra.DrainError(ctx, poe, ctrlCh)
 	}
 	<-ctx.Done()
+}
+
+func (m *SourceNode) runPull(ctx api.StreamContext) error {
+	m.doPull(ctx, timex.GetNow())
+	ticker := timex.GetTicker(m.interval)
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case tc := <-ticker.C:
+				ctx.GetLogger().Debugf("source pull at %v", tc.UnixMilli())
+				m.doPull(ctx, tc)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return nil
+}
+
+func (m *SourceNode) doPull(ctx api.StreamContext, tc time.Time) {
+	switch ss := m.s.(type) {
+	case api.PullBytesSource:
+		ss.Pull(ctx, tc, m.ingestBytes, m.ingestError)
+	case api.PullTupleSource:
+		ss.Pull(ctx, tc, m.ingestAnyTuple, m.ingestError)
+	}
 }
 
 func (m *SourceNode) Close() {

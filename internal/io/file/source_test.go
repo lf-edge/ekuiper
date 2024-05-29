@@ -183,6 +183,16 @@ func TestSourceProvision(t *testing.T) {
 				MoveTo:          filepath.Join(path, "ddd"),
 			},
 		},
+		{
+			name: "no decompression for stream typs",
+			props: map[string]any{
+				"datasource":    name,
+				"path":          path,
+				"fileType":      LINES_TYPE,
+				"decompression": "gzip",
+			},
+			e: "decompression is not supported for lines file type",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -225,7 +235,7 @@ func TestLines(t *testing.T) {
 		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, mc.Now()),
 		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, mc.Now()),
 	}
-	r := GetSource().(api.TupleSource)
+	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":            path,
 		"fileType":        "lines",
@@ -256,7 +266,7 @@ func TestCSVBatch(t *testing.T) {
 		model.NewDefaultSourceTuple(map[string]any{"id": "33", "ts": "1670270500", "humidity": "89"}, meta2, mc.Now()),
 		model.NewDefaultSourceTuple(map[string]any{"id": "44", "ts": "1670270900", "humidity": "76"}, meta2, mc.Now()),
 	}
-	r := GetSource().(api.TupleSource)
+	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":             path,
 		"fileType":         "csv",
@@ -284,7 +294,7 @@ func TestBatch(t *testing.T) {
 	exp := []api.MessageTuple{
 		model.NewDefaultRawTuple([]byte("[{\"id\": 1,\"name\": \"John Doe\",\"height\": 1.82},{\"id\": 2,\"name\": \"Jane Doe\",\"height\": 1.65}]"), meta, mc.Now()),
 	}
-	r := GetSource().(api.TupleSource)
+	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":       path,
 		"fileType":   "json",
@@ -313,7 +323,7 @@ func TestIgnoreLines(t *testing.T) {
 		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, mc.Now()),
 		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, mc.Now()),
 	}
-	r := GetSource().(api.TupleSource)
+	r := GetSource()
 	r.(api.Bounded).SetEofIngest(func(ctx api.StreamContext) {
 		fmt.Printf("eof")
 	})
@@ -343,8 +353,6 @@ func TestIgnoreLines(t *testing.T) {
 }
 
 func TestIntervalAndDir(t *testing.T) {
-	ts0 := timex.GetNow()
-	ts := ts0.Add(2 * time.Second)
 	path, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -355,12 +363,12 @@ func TestIntervalAndDir(t *testing.T) {
 		"file": filepath.Join(path, "test.lines"),
 	}
 	exp := []api.MessageTuple{
-		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, ts),
-		model.NewDefaultRawTuple([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta, ts),
-		model.NewDefaultRawTuple([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta, ts),
-		model.NewDefaultRawTuple([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta, ts),
+		model.NewDefaultRawTupleIgnoreTs([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta),
+		model.NewDefaultRawTupleIgnoreTs([]byte("{\"id\": 3,\"name\": \"John Smith\"}"), meta),
+		model.NewDefaultRawTupleIgnoreTs([]byte("[{\"id\": 4,\"name\": \"John Smith\"},{\"id\": 5,\"name\": \"John Smith\"}]"), meta),
+		model.NewDefaultRawTupleIgnoreTs([]byte("{\"id\": 2,\"name\": \"Jane Doe\"}"), meta),
 	}
-	r := GetSource().(api.TupleSource)
+	r := GetSource()
 	mock.TestSourceConnector(t, r, map[string]any{
 		"path":             path,
 		"fileType":         "lines",
@@ -368,9 +376,12 @@ func TestIntervalAndDir(t *testing.T) {
 		"sendInterval":     "100ms",
 		"parallel":         true,
 		"ignoreStartLines": 1,
+		// only for test
+		"ignoreTs": true,
 	}, exp, func() {
-		fmt.Println("before add")
-		timex.Add(2 * time.Second)
-		fmt.Println("after add")
+		for i := 0; i < 10; i++ {
+			timex.Add(2 * time.Second)
+			time.Sleep(100 * time.Millisecond)
+		}
 	})
 }
