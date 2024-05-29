@@ -19,10 +19,15 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -140,11 +145,27 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.
 	if !ok {
 		return nil, fmt.Errorf("unknown connection type")
 	}
-	conn, err = connRegister(ctx, meta.ID, meta.Props)
-	if err != nil {
-		return nil, err
+	for i := 0; i < conf.Config.Connection.RetryCount+1; i++ {
+		conn, err = connRegister(ctx, meta.ID, meta.Props)
+		failpoint.Inject("createConnectionErr", func() {
+			switch i {
+			case 0:
+				err = errorx.NewIOErr("ioErr")
+			case 1:
+				err = nil
+			}
+		})
+		if err == nil {
+			break
+		}
+		if errorx.IsIOError(err) {
+			time.Sleep(time.Duration(conf.Config.Connection.RetryInterval))
+			continue
+		} else {
+			break
+		}
 	}
-	return conn, nil
+	return conn, err
 }
 
 func DropNameConnection(ctx api.StreamContext, selId string) error {

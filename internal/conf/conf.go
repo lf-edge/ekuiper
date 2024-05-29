@@ -221,6 +221,10 @@ type KuiperConf struct {
 		PythonBin   string            `yaml:"pythonBin"`
 		InitTimeout cast.DurationConf `yaml:"initTimeout"`
 	}
+	Connection struct {
+		RetryInterval cast.DurationConf `yaml:"retryInterval"`
+		RetryCount    int               `yaml:"retryCount"`
+	}
 	AesKey []byte
 }
 
@@ -326,6 +330,13 @@ func InitConf() {
 	}
 	if 0 == len(Config.Basic.RestIp) {
 		Config.Basic.RestIp = "0.0.0.0"
+	}
+
+	if time.Duration(Config.Connection.RetryInterval) < 1 {
+		Config.Connection.RetryInterval = cast.DurationConf(100 * time.Millisecond)
+	}
+	if Config.Connection.RetryCount < 1 {
+		Config.Connection.RetryCount = 5
 	}
 
 	if time.Duration(Config.Basic.RulePatrolInterval) < time.Second {

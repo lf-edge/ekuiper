@@ -171,7 +171,7 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	token := cli.Connect()
 	err = handleToken(token)
 	if err != nil {
-		return nil, fmt.Errorf("found error when connecting for %s: %s", c.Server, err)
+		return nil, errorx.NewIOErr(fmt.Sprintf("found error when connecting for %s: %s", c.Server, err))
 	}
 	ctx.GetLogger().Infof("new mqtt client created")
 	con.Client = cli
