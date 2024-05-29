@@ -159,6 +159,7 @@ func TestSourceAndFunc(t *testing.T) {
 				break
 			}
 		}
+		cancel()
 	}
 }
 

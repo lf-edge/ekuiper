@@ -262,7 +262,6 @@ func (r *mockControlClient) Run() error {
 			return fmt.Errorf("can't send reply: %s", err.Error())
 		}
 	}
-	return nil
 }
 
 func (r *mockControlClient) Close() error {

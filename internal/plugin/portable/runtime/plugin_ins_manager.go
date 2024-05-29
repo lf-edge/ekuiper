@@ -78,7 +78,7 @@ func NewPluginInsForTest(name string, ctrlChan ControlChannel) *PluginIns {
 func (i *PluginIns) sendCmd(jsonArg []byte) error {
 	err := i.ctrlChan.SendCmd(jsonArg)
 	if err != nil && i.process == nil {
-		return fmt.Errorf("plugin %s is not running sucessfully, please make sure it is valid", i.name)
+		return fmt.Errorf("plugin %s is not running successfully, please make sure it is valid", i.name)
 	}
 	return err
 }
