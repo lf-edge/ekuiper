@@ -22,17 +22,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/internal/binder"
-	"github.com/lf-edge/ekuiper/internal/binder/function"
-	"github.com/lf-edge/ekuiper/internal/binder/io"
-	"github.com/lf-edge/ekuiper/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable"
-	"github.com/lf-edge/ekuiper/internal/plugin/portable/runtime"
-	"github.com/lf-edge/ekuiper/internal/processor"
-	"github.com/lf-edge/ekuiper/internal/topo"
-	"github.com/lf-edge/ekuiper/internal/topo/planner"
-	"github.com/lf-edge/ekuiper/internal/topo/topotest"
-	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 func init() {
@@ -133,7 +134,10 @@ func TestSourceAndFunc(t *testing.T) {
 				select {
 				case s := <-ch:
 					log.Printf("get %v", s)
-					mm = append(mm, []map[string]interface{}{s.Message()})
+					tuple, ok := s.(*xsql.Tuple)
+					if ok {
+						mm = append(mm, []map[string]interface{}{tuple.Message})
+					}
 				case <-ctx.Done():
 					log.Printf("ctx done %v\n", ctx.Err())
 					return
@@ -186,7 +190,7 @@ func compareMetrics(tp *topo.Topo, m map[string]interface{}) bool {
 	return true
 }
 
-func CreateRule(name, sql string) (*api.Rule, error) {
+func CreateRule(name, sql string) (*def.Rule, error) {
 	p := processor.NewRuleProcessor()
 	p.ExecDrop(name)
 	return p.ExecCreateWithValidation(name, sql)
