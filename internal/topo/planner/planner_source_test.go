@@ -62,6 +62,7 @@ func TestPlanTopo(t *testing.T) {
 		{
 			conf: map[string]any{
 				"connectionSelector": "mqtt.localConnection",
+				"interval":           "1s",
 			},
 			p: "mqtt",
 			k: "testSel",
@@ -171,12 +172,15 @@ func TestPlanTopo(t *testing.T) {
 				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
 					"source_mqtt.localConnection/topic1": {
-						"op_2_decoder",
+						"op_2_ratelimit",
 					},
-					"op_2_decoder": {
-						"op_3_project",
+					"op_2_ratelimit": {
+						"op_3_decoder",
 					},
-					"op_3_project": {
+					"op_3_decoder": {
+						"op_4_project",
+					},
+					"op_4_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
@@ -195,12 +199,15 @@ func TestPlanTopo(t *testing.T) {
 				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
 					"source_mqtt.localConnection/topic1": {
-						"op_src4_2_decoder",
+						"op_src4_2_ratelimit",
 					},
-					"op_src4_2_decoder": {
-						"op_3_project",
+					"op_src4_2_ratelimit": {
+						"op_src4_3_decoder",
 					},
-					"op_3_project": {
+					"op_src4_3_decoder": {
+						"op_4_project",
+					},
+					"op_4_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {

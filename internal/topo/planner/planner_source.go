@@ -106,6 +106,15 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	// Need to check after source has provisioned, so do not put it before provision
 	featureSet := checkFeatures(ss, sp, props)
 
+	if featureSet.needRatelimit {
+		rlOp, err := node.NewRateLimitOp(fmt.Sprintf("%d_ratelimit", index), options, sp.Interval)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		index++
+		ops = append(ops, rlOp)
+	}
+
 	if featureSet.needCompression {
 		dco, err := node.NewDecompressOp(fmt.Sprintf("%d_decompress", index), options, sp.Decompression)
 		if err != nil {
@@ -171,6 +180,7 @@ type traits struct {
 	needCompression   bool
 	needDecode        bool
 	needPayloadDecode bool
+	needRatelimit     bool
 }
 
 // function to return if a sub node is needed
@@ -180,12 +190,22 @@ func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any)
 	if info.HasInterval {
 		delete(props, "sendInterval")
 	}
-	return traits{
+	r := traits{
 		needConnection:    sp.SelId != "",
 		needCompression:   sp.Decompression != "" && (!info.HasCompress || info.NeedBatchDecode),
 		needDecode:        info.NeedDecode,
 		needPayloadDecode: sp.PayloadFormat != "",
 	}
+	if sp.Interval > 0 {
+		switch ss.(type) {
+		// pull source already pull internally which is also a rate limiter
+		case api.PullTupleSource, api.PullBytesSource:
+			r.needRatelimit = false
+		default:
+			r.needRatelimit = true
+		}
+	}
+	return r
 }
 
 func checkByteSource(ss api.Source) model.NodeInfo {
