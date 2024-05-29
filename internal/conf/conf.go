@@ -192,7 +192,6 @@ type KuiperConf struct {
 		IgnoreCase              bool              `yaml:"ignoreCase"`
 		SQLConf                 *SQLConf          `yaml:"sql"`
 		RulePatrolInterval      cast.DurationConf `yaml:"rulePatrolInterval"`
-		CfgStorageType          string            `yaml:"cfgStorageType"`
 		EnableOpenZiti          bool              `yaml:"enableOpenZiti"`
 		AesKey                  string            `yaml:"aesKey"`
 		GracefulShutdownTimeout cast.DurationConf `yaml:"gracefulShutdownTimeout"`
@@ -397,10 +396,6 @@ func InitConf() {
 	if Config.Source == nil {
 		Config.Source = &SourceConf{}
 	}
-	if Config.Basic.CfgStorageType == "" {
-		Config.Basic.CfgStorageType = "file"
-	}
-
 	_ = Config.Source.Validate()
 	if Config.Sink == nil {
 		Config.Sink = &SinkConf{}

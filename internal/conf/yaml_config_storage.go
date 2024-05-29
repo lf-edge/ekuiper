@@ -16,15 +16,16 @@ package conf
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"strings"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
 const (
-	cfgFileStorage    = "file"
 	cfgStoreKVStorage = "kv"
 )
 
@@ -60,10 +61,39 @@ func (m *kvMemory) GetByPrefix(prefix string) (map[string]map[string]interface{}
 
 var (
 	mockMemoryKVStore *kvMemory
-	sqliteKVStore     *sqlKVStore
+	kvStore           *sqlKVStore
 )
 
-func getKVStorage() (cfgKVStorage, error) {
+// GetYamlConfigAllKeys get all plugin keys about sources/sinks/connections
+func GetYamlConfigAllKeys(typ string) (map[string]struct{}, error) {
+	s, err := getKVStorage()
+	if err != nil {
+		return nil, err
+	}
+	data, err := s.GetByPrefix(typ)
+	failpoint.Inject("getDataErr", func() {
+		err = errors.New("getDataErr")
+	})
+	if err != nil {
+		return nil, err
+	}
+	s1 := make(map[string]struct{})
+	for key := range data {
+		names := strings.Split(key, ".")
+		if len(names) != 3 {
+			continue
+		}
+		s1[names[1]] = struct{}{}
+	}
+	return s1, nil
+}
+
+func getKVStorage() (s cfgKVStorage, err error) {
+	defer func() {
+		failpoint.Inject("storageErr", func() {
+			err = errors.New("storageErr")
+		})
+	}()
 	if IsTesting {
 		if mockMemoryKVStore == nil {
 			mockMemoryKVStore = &kvMemory{}
@@ -71,18 +101,19 @@ func getKVStorage() (cfgKVStorage, error) {
 		}
 		return mockMemoryKVStore, nil
 	}
-	switch Config.Basic.CfgStorageType {
-	case cfgStoreKVStorage:
-		if sqliteKVStore == nil {
-			sqliteKVStorage, err := NewSqliteKVStore("confKVStorage")
-			if err != nil {
-				return nil, err
-			}
-			sqliteKVStore = sqliteKVStorage
+	if kvStore == nil {
+		sqliteKVStorage, err := NewSqliteKVStore("confKVStorage")
+		if err != nil {
+			return nil, err
 		}
-		return sqliteKVStore, nil
+		kvStore = sqliteKVStorage
 	}
-	return nil, fmt.Errorf("unknown cfg kv storage type: %v", Config.Basic.CfgStorageType)
+	return kvStore, nil
+}
+
+// SaveCfgKeyToKVInTest only used in unit test
+func SaveCfgKeyToKVInTest(key string, cfg map[string]interface{}) error {
+	return saveCfgKeyToKV(key, cfg)
 }
 
 func saveCfgKeyToKV(key string, cfg map[string]interface{}) error {

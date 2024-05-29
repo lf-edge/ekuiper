@@ -108,11 +108,9 @@ func ReadSourceMetaFile(filePath string, isScan bool, isLookup bool) error {
 	gSourcemetaLock.Lock()
 	gSourcemetadata[fileName] = meta
 	gSourcemetaLock.Unlock()
-
 	loadConfigOperatorForSource(strings.TrimSuffix(fileName, `.json`))
 	loadConfigOperatorForConnection(strings.TrimSuffix(fileName, `.json`))
-
-	return err
+	return nil
 }
 
 func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker) error {
@@ -150,37 +148,24 @@ func ReadSourceMetaDir(scanChecker InstallChecker, lookupChecker InstallChecker)
 			}
 		}
 	}
+	return nil
+}
 
-	// load data/sources meta data
-	confDir, err = conf.GetDataLoc()
-	if nil != err {
+func ReadSourceMetaData() error {
+	keys, err := conf.GetYamlConfigAllKeys("sources")
+	if err != nil {
 		return err
 	}
-
-	dir = path.Join(confDir, "sources")
-	dirEntries, err = os.ReadDir(dir)
-	if nil != err {
+	for key := range keys {
+		loadConfigOperatorForSource(key)
+	}
+	keys, err = conf.GetYamlConfigAllKeys("connections")
+	if err != nil {
 		return err
 	}
-
-	for _, entry := range dirEntries {
-		fileName := entry.Name()
-		if strings.HasSuffix(fileName, ".json") {
-			name := strings.TrimSuffix(fileName, ".json")
-			isScan := scanChecker(name)
-			isLookup := lookupChecker(name)
-			if isScan || isLookup {
-				filePath := path.Join(dir, fileName)
-				if err = ReadSourceMetaFile(filePath, isScan, isLookup); nil != err {
-					return err
-				}
-				conf.Log.Infof("Loading metadata file for source : %s", fileName)
-			} else {
-				conf.Log.Warnf("Find source metadata file but not installed : %s", fileName)
-			}
-		}
+	for key := range keys {
+		loadConfigOperatorForConnection(key)
 	}
-
 	return nil
 }
 

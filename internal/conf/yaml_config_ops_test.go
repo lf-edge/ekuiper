@@ -23,6 +23,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -293,14 +294,6 @@ func TestNewConfigOperatorForConnection(t *testing.T) {
 
 func TestConfigKeys_LoadFromKV(t *testing.T) {
 	InitConf()
-	Config.Basic.CfgStorageType = ""
-	InitConf()
-	// assert default
-	require.Equal(t, Config.Basic.CfgStorageType, cfgFileStorage)
-	defer func() {
-		Config.Basic.CfgStorageType = cfgFileStorage
-	}()
-	Config.Basic.CfgStorageType = cfgStoreKVStorage
 	mqttCfg, err := NewConfigOperatorFromSourceStorage("mqtt")
 	require.NoError(t, err)
 	require.NoError(t, mqttCfg.AddConfKey("key1", map[string]interface{}{
@@ -351,6 +344,15 @@ func TestConfigKeys_LoadFromKV(t *testing.T) {
 	mConn.storageType = "mock"
 	err = mConn.SaveCfgToStorage()
 	require.Error(t, err, fmt.Errorf("unknown source cfg storage type: %v", "mock"))
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr", "return(true)")
+	_, err = NewConfigOperatorFromSourceStorage("mqtt")
+	require.Error(t, err)
+	_, err = NewConfigOperatorFromSinkStorage("mqtt")
+	require.Error(t, err)
+	_, err = NewConfigOperatorFromConnectionStorage("mqtt")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr")
 }
 
 func marshalUn(input, output interface{}) error {
