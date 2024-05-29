@@ -25,6 +25,7 @@ import (
 )
 
 func TestConnection(t *testing.T) {
+	conf.InitConf()
 	InitConnectionManagerInTest()
 	ctx := context.Background()
 	conn, err := CreateNamedConnection(ctx, "id1", "mock", nil)
