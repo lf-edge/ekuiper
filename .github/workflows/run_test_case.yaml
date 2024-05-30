@@ -40,11 +40,37 @@ jobs:
         pip3 install pynng==0.7.2 && sudo apt-get update && sudo apt-get install libzmq3-dev -y
     - name: Build plugins
       run: |
+        curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.4 > /dev/null
+
+        curl -sSfL -O https://github.com/second-state/wasmedge_rustls_plugin/releases/download/0.1.0/wasmedge_rustls_plugin_ubuntu-22.04.zip
+        unzip wasmedge_rustls_plugin_ubuntu-22.04.zip
+        mv target/release/libwasmedge_rustls.so ~/.wasmedge/plugin/
+
+        mkdir -p plugins/wasm
         set -e -u -x
         mkdir -p data
         mkdir -p log
         mkdir -p plugins/sinks
         sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
+        go build --buildmode=plugin -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
+        cp extensions/sources/random/random.yaml etc/sources/random.yaml
+        go build --buildmode=plugin -o plugins/functions/Echo.so extensions/functions/echo/echo.go
+        go build --buildmode=plugin -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
+        go build --buildmode=plugin -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+        go build --buildmode=plugin -o data/test/helloworld.so internal/converter/protobuf/test/*.go
+        go build --buildmode=plugin -o data/myFormat.so internal/converter/custom/test/*.go
+        cp test/lookup.json data/lookup.json
+        mkdir -p data/custom
+        cp data/myFormat.so data/custom/myFormat.so
+        mkdir -p data/schema
+        cp data/myFormat.so data/schema/myFormat.so
+        mkdir -p plugins/portable/mirror
+        cd sdk/go/example/mirror
+        go build -o ../../../../plugins/portable/mirror/mirror .
+        cp mirror.json ../../../../plugins/portable/mirror
+        cd ../../../../
+        cp -r sdk/python/example/pysam plugins/portable/pysam
+        cp -r sdk/python/ekuiper plugins/portable/pysam/
     - name: Run test case
       run: |
         make failpoint-enable
