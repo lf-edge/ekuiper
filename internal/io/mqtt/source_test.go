@@ -39,7 +39,7 @@ func TestProvision(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, connection.InitConnectionManager())
+	require.NoError(t, connection.InitConnectionManager4Test())
 	tests := []struct {
 		name  string
 		props map[string]any

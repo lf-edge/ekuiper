@@ -170,6 +170,11 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 
 var globalConnectionManager *ConnectionManager
 
+func InitConnectionManager4Test() error {
+	InitMockTest()
+	return InitConnectionManager()
+}
+
 func InitConnectionManager() error {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
@@ -250,5 +255,9 @@ func CreateMockConnection(ctx api.StreamContext, id string, props map[string]any
 }
 
 func init() {
+	modules.ConnectionRegister["mock"] = CreateMockConnection
+}
+
+func InitMockTest() {
 	modules.ConnectionRegister["mock"] = CreateMockConnection
 }

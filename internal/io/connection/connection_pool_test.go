@@ -28,7 +28,7 @@ func TestConnection(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, InitConnectionManager())
+	require.NoError(t, InitConnectionManager4Test())
 	ctx := context.Background()
 	conn, err := CreateNamedConnection(ctx, "id1", "mock", nil)
 	require.NoError(t, err)

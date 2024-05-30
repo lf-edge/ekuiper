@@ -31,7 +31,7 @@ func TestSinkConfigure(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, connection.InitConnectionManager())
+	require.NoError(t, connection.InitConnectionManager4Test())
 	tests := []struct {
 		name           string
 		input          map[string]interface{}
@@ -145,7 +145,7 @@ func TestValidateMQTTSinkConf(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, connection.InitConnectionManager())
+	require.NoError(t, connection.InitConnectionManager4Test())
 	testcases := []struct {
 		topic       string
 		expectError bool

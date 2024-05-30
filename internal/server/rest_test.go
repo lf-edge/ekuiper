@@ -820,7 +820,7 @@ func (suite *RestTestSuite) TestConnection() {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(suite.T(), err)
 	require.NoError(suite.T(), store.SetupDefault(dataDir))
-	require.NoError(suite.T(), connection.InitConnectionManager())
+	require.NoError(suite.T(), connection.InitConnectionManager4Test())
 	buf1 := bytes.NewBuffer([]byte(`{"id":"id1","typ":"mock","props":{}}`))
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/connections", buf1)
 	w1 := httptest.NewRecorder()

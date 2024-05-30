@@ -33,7 +33,7 @@ func TestSourceSink(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, connection.InitConnectionManager())
+	require.NoError(t, connection.InitConnectionManager4Test())
 	sc := GetSource().(api.BytesSource)
 	sk := GetSink().(api.BytesCollector)
 	mc := mockclock.GetMockClock()
