@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/gdexlab/go-render/render"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateAndClose(t *testing.T) {
@@ -123,4 +124,56 @@ func getRegexp(topic string) (*regexp.Regexp, error) {
 	}
 	regstr := strings.Replace(strings.ReplaceAll(topic, "+", "([^/]+)"), "#", ".", 1)
 	return regexp.Compile(regstr)
+}
+
+func TestCreateBeforeDelete(t *testing.T) {
+	Reset()
+	var chans []chan any
+	CreatePub("test")
+	// create first sub
+	c := CreateSub("test", nil, "source1", 100)
+	chans = append(chans, c)
+	// create sub again
+	c2 := CreateSub("test", nil, "source1", 100)
+	chans = append(chans, c2)
+	CloseSourceConsumerChannel("test", "source1")
+	expPub := map[string]*pubConsumers{
+		"test": {
+			count: 1,
+			consumers: map[string]chan any{
+				"source1": chans[1],
+			},
+			consumersReplaced: map[string]int{"source1": 0},
+		},
+	}
+	assert.Equal(t, expPub, pubTopics)
+
+	CloseSourceConsumerChannel("test", "source1")
+	c3 := CreateSub("test", nil, "source1", 100)
+	chans = append(chans, c3)
+	expPub = map[string]*pubConsumers{
+		"test": {
+			count: 1,
+			consumers: map[string]chan any{
+				"source1": c3,
+			},
+			consumersReplaced: map[string]int{"source1": 0},
+		},
+	}
+	assert.Equal(t, expPub, pubTopics)
+
+	c4 := CreateSub("test", nil, "source1", 100)
+	chans = append(chans, c4)
+	CloseSourceConsumerChannel("test", "source1")
+
+	expPub = map[string]*pubConsumers{
+		"test": {
+			count: 1,
+			consumers: map[string]chan any{
+				"source1": c4,
+			},
+			consumersReplaced: map[string]int{"source1": 0},
+		},
+	}
+	assert.Equal(t, expPub, pubTopics)
 }
