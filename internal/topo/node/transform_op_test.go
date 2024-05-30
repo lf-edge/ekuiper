@@ -15,12 +15,12 @@ import (
 )
 
 var commonCases = []any{
-	&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)},                                       // common a,b
-	&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0)},                         // common a,b,c
-	&xsql.Tuple{Emitter: "test", Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Timestamp: time.UnixMilli(0)}, // nested data
+	&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)},                                                // common a,b
+	&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0)},                         // common a,b,sourceConf
+	&xsql.Tuple{Emitter: "test", Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0)}, // nested data
 	// &xsql.Tuple{Emitter: "test", Message: map[string]any{}},                                                     // empty tuple
-	&xsql.WindowTuples{Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
-	&xsql.WindowTuples{Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "c": "hello"}}}},
+	&xsql.WindowTuples{Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}}}},
+	&xsql.WindowTuples{Content: []xsql.Row{&xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}}, &xsql.Tuple{Emitter: "test", Timestamp: time.UnixMilli(0), Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}}}},
 	&xsql.WindowTuples{Content: []xsql.Row{}}, // empty data should be omitted if omitempty is true
 }
 
@@ -46,12 +46,12 @@ func TestTransformRun(t *testing.T) {
 			cases: commonCases,
 			expects: []any{
 				errors.New("fail to TransItem data map[a:1 b:2] for error fail to decode data <nil> for error unsupported type <nil>"),
-				errors.New("fail to TransItem data map[a:3 b:4 c:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
+				errors.New("fail to TransItem data map[a:3 b:4 sourceConf:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
 				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}, Timestamp: time.UnixMilli(0)},
 				errors.New("fail to TransItem data map[a:1 b:2] for error fail to decode data <nil> for error unsupported type <nil>"),
-				errors.New("fail to TransItem data map[a:3 b:4 c:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
+				errors.New("fail to TransItem data map[a:3 b:4 sourceConf:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
 				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6}, Timestamp: time.UnixMilli(0)},
-				errors.New("fail to TransItem data map[a:3 b:4 c:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
+				errors.New("fail to TransItem data map[a:3 b:4 sourceConf:hello] for error fail to decode data <nil> for error unsupported type <nil>"),
 			},
 		},
 		{
@@ -89,10 +89,10 @@ func TestTransformRun(t *testing.T) {
 			cases: commonCases,
 			expects: []any{
 				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0)}}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Timestamp: time.UnixMilli(0)}}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0)}}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0)}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "sourceConf": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0)}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0)}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "sourceConf": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0)}}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, {"a": 3, "b": 4, "sourceConf": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0)}}},
 				&xsql.TransformedTupleList{Maps: []map[string]any{}, Content: []api.MessageTuple{}},
 			},
 		},
@@ -108,9 +108,9 @@ func TestTransformRun(t *testing.T) {
 			expects: []any{
 				nil,
 				nil,
-				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6, "c": "world"}, Timestamp: time.UnixMilli(0)},
+				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6, "sourceConf": "world"}, Timestamp: time.UnixMilli(0)},
 				nil,
-				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6, "c": "world"}, Timestamp: time.UnixMilli(0)},
+				&xsql.Tuple{Message: map[string]any{"a": 5, "b": 6, "sourceConf": "world"}, Timestamp: time.UnixMilli(0)},
 				nil,
 			},
 		},
@@ -146,12 +146,12 @@ func TestTransformRun(t *testing.T) {
 			expects: []any{
 				&xsql.Tuple{Message: map[string]any{"ab": 1.0}, Timestamp: time.UnixMilli(0)},
 				&xsql.Tuple{Message: map[string]any{"ab": 3.0}, Timestamp: time.UnixMilli(0)},
-				errors.New("fail to TransItem data map[data:map[a:5 b:6 c:world]] for error fail to decode data {\"ab\":<no value>,\"bb\":<no value>} for error invalid character '<' looking for beginning of value"),
+				errors.New("fail to TransItem data map[data:map[a:5 b:6 sourceConf:world]] for error fail to decode data {\"ab\":<no value>,\"bb\":<no value>} for error invalid character '<' looking for beginning of value"),
 
 				&xsql.Tuple{Message: map[string]any{"ab": 1.0}, Timestamp: time.UnixMilli(0)},
 				&xsql.Tuple{Message: map[string]any{"ab": 3.0}, Timestamp: time.UnixMilli(0)},
 
-				errors.New("fail to TransItem data map[data:map[a:5 b:6 c:world]] for error fail to decode data {\"ab\":<no value>,\"bb\":<no value>} for error invalid character '<' looking for beginning of value"),
+				errors.New("fail to TransItem data map[data:map[a:5 b:6 sourceConf:world]] for error fail to decode data {\"ab\":<no value>,\"bb\":<no value>} for error invalid character '<' looking for beginning of value"),
 				&xsql.Tuple{Message: map[string]any{"ab": 3.0}, Timestamp: time.UnixMilli(0)},
 			},
 		},
@@ -168,13 +168,13 @@ func TestTransformRun(t *testing.T) {
 			cases:     commonCases,
 			expects: []any{
 				&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_1", "{{.b}}_comma": "2_comma"}},
-				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_3", "{{.b}}_comma": "4_comma"}},
-				&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_<no value>", "{{.b}}_comma": "<no value>_comma"}},
+				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_3", "{{.b}}_comma": "4_comma"}},
+				&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_<no value>", "{{.b}}_comma": "<no value>_comma"}},
 
 				&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_1", "{{.b}}_comma": "2_comma"}},
-				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_3", "{{.b}}_comma": "4_comma"}},
+				&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_3", "{{.b}}_comma": "4_comma"}},
 
-				&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_<no value>", "{{.b}}_comma": "<no value>_comma"}},
+				&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0), Props: map[string]string{"schema_{{.a}}": "schema_<no value>", "{{.b}}_comma": "<no value>_comma"}},
 			},
 		},
 		{
@@ -189,10 +189,10 @@ func TestTransformRun(t *testing.T) {
 			cases:     commonCases,
 			expects: []any{
 				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_1_t"}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_3_t"}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_<no value>_t"}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_1_t"}},
-				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, {"a": 3, "b": 4, "c": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "c": "world"}}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "c": "hello"}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_<no value>_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 3, "b": 4, "sourceConf": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_3_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_<no value>_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"a": 1, "b": 2}, {"a": 3, "b": 4, "sourceConf": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"a": 1, "b": 2}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_1_t"}},
+				&xsql.TransformedTupleList{Maps: []map[string]any{{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, {"a": 3, "b": 4, "sourceConf": "hello"}}, Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]any{"data": map[string]any{"a": 5, "b": 6, "sourceConf": "world"}}, Timestamp: time.UnixMilli(0)}, &xsql.Tuple{Message: map[string]any{"a": 3, "b": 4, "sourceConf": "hello"}, Timestamp: time.UnixMilli(0)}}, Props: map[string]string{"t_{{index . 0 \"a\"}}_t": "t_<no value>_t"}},
 				errors.New("fail to calculate props t_{{index . 0 \"a\"}}_t through data [] with dataTemplate for error template: sink:1:4: executing \"sink\" at <index . 0 \"a\">: error calling index: reflect: slice index out of range"),
 			},
 		},

@@ -21,18 +21,32 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestNewRateLimit(t *testing.T) {
-	_, err := NewRateLimitOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 1*time.Second)
+	ctx := mockContext.NewMockContext("test1", "new_test")
+	_, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"interval": "1s"})
 	assert.NoError(t, err)
-	_, err = NewRateLimitOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 1*time.Nanosecond)
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"interval": "1ns"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "interval should be larger than 1ms")
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"interval": "1s", "mergeField": "id"})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "rate limit merge must define format")
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"interval": "1s", "mergeField": "id", "format": "none"})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "format type none not supported")
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"interval": "1s", "mergeField": "id", "format": "delimited"})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "format delimited does not support partial decode")
 }
 
 func TestRateLimit(t *testing.T) {
@@ -62,17 +76,115 @@ func TestRateLimit(t *testing.T) {
 	mc := mockclock.GetMockClock()
 	for i, tc := range testcases {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
-			op, err := NewRateLimitOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, tc.interval)
+			ctx, cancel := mockContext.NewMockContext("test1", "batch_test").WithCancel()
+			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{
+				"interval": "1s",
+			})
 			assert.NoError(t, err)
 			out := make(chan any, 10)
 			err = op.AddOutput(out, "test")
 			assert.NoError(t, err)
-			ctx, cancel := mockContext.NewMockContext("test1", "batch_test").WithCancel()
+
 			errCh := make(chan error)
 			op.Exec(ctx, errCh)
 			for i := 0; i < tc.sendCount; i++ {
 				op.input <- &xsql.RawTuple{
 					Rawdata: []byte{uint8(i)},
+				}
+				mc.Add(300 * time.Millisecond)
+			}
+			cancel()
+			// make sure op has done all sending
+			for {
+				processed := op.statManager.GetMetrics()[2]
+				if processed == int64(tc.sendCount) {
+					close(out)
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+			r := make([]any, 0, len(tc.expectItems))
+			for ele := range out {
+				r = append(r, ele)
+			}
+			assert.Equal(t, tc.expectItems, r)
+		})
+	}
+}
+
+func TestRateLimitMerge(t *testing.T) {
+	testcases := []struct {
+		name        string
+		sendCount   int
+		interval    time.Duration
+		expectItems []any
+	}{
+		{ // sending gap is 300ms
+			name:      "normal",
+			sendCount: 10,
+			interval:  time.Second,
+			expectItems: []any{
+				&xsql.Tuple{
+					Message: map[string]any{
+						"frames": []any{
+							map[string]any{
+								"data": []byte(`{"id":0, "value":2}`),
+							},
+							map[string]any{
+								"data": []byte(`{"id":1, "value":3}`),
+							},
+						},
+					},
+				},
+				&xsql.Tuple{
+					Message: map[string]any{
+						"frames": []any{
+							map[string]any{
+								"data": []byte(`{"id":0, "value":6}`),
+							},
+							map[string]any{
+								"data": []byte(`{"id":1, "value":5}`),
+							},
+						},
+					},
+				},
+				&xsql.Tuple{
+					Message: map[string]any{
+						"frames": []any{
+							map[string]any{
+								"data": []byte(`{"id":0, "value":8}`),
+							},
+							map[string]any{
+								"data": []byte(`{"id":1, "value":9}`),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (message.Converter, error) {
+		return &message.MockPartialConverter{}, nil
+	})
+	mc := mockclock.GetMockClock()
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, cancel := mockContext.NewMockContext("test1", "batch_test").WithCancel()
+			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{
+				"interval":   "1s",
+				"mergeField": "id",
+				"format":     "mockp",
+			})
+			assert.NoError(t, err)
+			out := make(chan any, 10)
+			err = op.AddOutput(out, "test")
+			assert.NoError(t, err)
+
+			errCh := make(chan error)
+			op.Exec(ctx, errCh)
+			for i := 0; i < tc.sendCount; i++ {
+				op.input <- &xsql.RawTuple{
+					Rawdata: []byte(fmt.Sprintf(`{"id":%d, "value":%d}`, i%2, i)),
 				}
 				mc.Add(300 * time.Millisecond)
 			}

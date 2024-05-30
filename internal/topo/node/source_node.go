@@ -36,7 +36,7 @@ type SourceNode struct {
 	interval time.Duration
 }
 
-type c struct {
+type sourceConf struct {
 	Interval time.Duration `json:"interval"`
 }
 
@@ -47,7 +47,7 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 		return nil, err
 	}
 	ctx.GetLogger().Infof("provision source %s with props %+v", name, props)
-	cc := &c{}
+	cc := &sourceConf{}
 	err = cast.MapToStruct(props, cc)
 	if err != nil {
 		return nil, err
