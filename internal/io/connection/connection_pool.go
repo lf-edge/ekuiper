@@ -148,7 +148,7 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.
 	err = backoff.Retry(func() error {
 		conn, err = connRegister(ctx, meta.ID, meta.Props)
 		failpoint.Inject("createConnectionErr", func() {
-			err = errorx.New("createConnectionErr")
+			err = errorx.NewIOErr("createConnectionErr")
 		})
 		if err == nil {
 			return nil
