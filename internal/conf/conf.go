@@ -328,13 +328,6 @@ func InitConf() {
 		Config.Basic.RestIp = "0.0.0.0"
 	}
 
-	if time.Duration(Config.Connection.RetryInterval) < 1 {
-		Config.Connection.RetryInterval = cast.DurationConf(100 * time.Millisecond)
-	}
-	if Config.Connection.RetryCount < 1 {
-		Config.Connection.RetryCount = 5
-	}
-
 	if time.Duration(Config.Basic.RulePatrolInterval) < time.Second {
 		Log.Warnf("rule patrol interval %v is less than 1 second, set it to 10 seconds", Config.Basic.RulePatrolInterval)
 		Config.Basic.RulePatrolInterval = cast.DurationConf(10 * time.Second)
