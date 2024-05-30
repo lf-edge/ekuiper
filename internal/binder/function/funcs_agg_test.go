@@ -146,10 +146,10 @@ func TestAggExec(t *testing.T) {
 			var1:    nil,
 			vars:    nil,
 		},
-		{ // 5
+		{ // 5 This is the test case for nil values
 			args: []interface{}{
 				[]interface{}{
-					100, 150, nil, 200,
+					100, 150, nil, 200, nil,
 				},
 			},
 			avg:     int64(150),
