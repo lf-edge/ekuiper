@@ -22,12 +22,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestPlanTopo(t *testing.T) {
@@ -36,10 +39,13 @@ func TestPlanTopo(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (message.Converter, error) {
+		return &message.MockPartialConverter{}, nil
+	})
 	streamSqls := map[string]string{
 		"src1":     `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt");`,
 		"src2":     `CREATE STREAM src2 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
-		"src3":     `CREATE STREAM src3 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSel");`,
+		"src3":     `CREATE STREAM src3 () WITH (DATASOURCE="topic1", FORMAT="mockp", TYPE="mqtt", CONF_KEY="testSelMock");`,
 		"src4":     `CREATE STREAM src4 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSel",SHARED="true");`,
 		"filesrc1": `CREATE STREAM fs1 () WITH (FORMAT="json", TYPE="file",CONF_KEY="lines");`,
 		"filesrc2": `CREATE STREAM fs2 () WITH (FORMAT="delimited", TYPE="file",CONF_KEY="csv");`,
@@ -66,6 +72,15 @@ func TestPlanTopo(t *testing.T) {
 			},
 			p: "mqtt",
 			k: "testSel",
+		},
+		{
+			conf: map[string]any{
+				"connectionSelector": "mqtt.localConnection",
+				"interval":           "1s",
+				"mergeField":         "id",
+			},
+			p: "mqtt",
+			k: "testSelMock",
 		},
 		{
 			conf: map[string]any{
@@ -175,9 +190,9 @@ func TestPlanTopo(t *testing.T) {
 						"op_2_ratelimit",
 					},
 					"op_2_ratelimit": {
-						"op_3_decoder",
+						"op_3_payload_decoder",
 					},
-					"op_3_decoder": {
+					"op_3_payload_decoder": {
 						"op_4_project",
 					},
 					"op_4_project": {
