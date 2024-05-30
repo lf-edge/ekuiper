@@ -138,6 +138,8 @@ func DropNonStoredConnection(ctx api.StreamContext, selId string) error {
 	return nil
 }
 
+var mockErr = true
+
 func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.Connection, error) {
 	var conn modules.Connection
 	var err error
@@ -148,7 +150,10 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.
 	err = backoff.Retry(func() error {
 		conn, err = connRegister(ctx, meta.ID, meta.Props)
 		failpoint.Inject("createConnectionErr", func() {
-			err = errorx.NewIOErr("createConnectionErr")
+			if mockErr {
+				err = errorx.NewIOErr("createConnectionErr")
+				mockErr = false
+			}
 		})
 		if err == nil {
 			return nil
