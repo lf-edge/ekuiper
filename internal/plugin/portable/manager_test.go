@@ -26,8 +26,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
@@ -55,6 +53,7 @@ func TestManager_Install(t *testing.T) {
 	)
 	defer s.Close()
 	endpoint := s.URL
+
 	data := []struct {
 		n   string
 		u   string
@@ -65,28 +64,23 @@ func TestManager_Install(t *testing.T) {
 			n:   "",
 			u:   "",
 			err: errors.New("invalid name : should not be empty"),
-		},
-		{ // 1
+		}, { // 1
 			n:   "zipMissJson",
 			u:   endpoint + "/functions/misc.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file zipMissJson.json, found 1 files in total"),
-		},
-		{ // 2
+		}, { // 2
 			n:   "urlerror",
 			u:   endpoint + "/sinks/nozip",
 			err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
-		},
-		{ // 3
+		}, { // 3
 			n:   "wrong",
 			u:   endpoint + "/portables/wrong.zip",
 			err: errors.New("fail to install plugin: missing mirror.exe"),
-		},
-		{ // 4
+		}, { // 4
 			n:   "wrongname",
 			u:   endpoint + "/portables/mirror.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json, found 9 files in total"),
-		},
-		{ // 5
+		}, { // 5
 			n: "mirror2",
 			u: endpoint + "/portables/mirror.zip",
 		},
@@ -108,11 +102,9 @@ func TestManager_Install(t *testing.T) {
 			}
 		}
 	}
-	assertManager_Read(t)
-	assertDelete(t)
 }
 
-func assertManager_Read(t *testing.T) {
+func TestManager_Read(t *testing.T) {
 	expPlugins := []*PluginInfo{
 		{
 			PluginMeta: runtime.PluginMeta{
@@ -127,19 +119,32 @@ func assertManager_Read(t *testing.T) {
 		},
 	}
 	result := manager.List()
-	require.Len(t, result, 1)
-	require.Equal(t, expPlugins, result)
+	if len(result) != 3 {
+		t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
+	}
 
 	_, ok := manager.GetPluginInfo("mirror3")
-	require.False(t, ok)
+	if ok {
+		t.Error("find inexist plugin mirror3")
+	}
 	pi, ok := manager.GetPluginInfo("mirror2")
-	require.True(t, ok)
-	require.Equal(t, expPlugins[0], pi)
+	if !ok {
+		t.Error("can't find plugin mirror2")
+	}
+	if !reflect.DeepEqual(expPlugins[0], pi) {
+		t.Errorf("Get plugin mirror2 mismatch:\n exp=%v\n got=%v", expPlugins[0], pi)
+	}
 	_, ok = manager.GetPluginMeta(plugin.SOURCE, "echoGo")
-	require.False(t, ok)
+	if ok {
+		t.Error("find inexist source symbol echo")
+	}
 	m, ok := manager.GetPluginMeta(plugin.SINK, "fileGo")
-	require.True(t, ok)
-	require.Equal(t, expPlugins[0].PluginMeta, *m)
+	if !ok {
+		t.Error("can't find sink symbol fileGo")
+	}
+	if !reflect.DeepEqual(&(expPlugins[0].PluginMeta), m) {
+		t.Errorf("Get sink symbol mismatch:\n exp=%v\n got=%v", expPlugins[0].PluginMeta, m)
+	}
 }
 
 // This will start channel, so test it in integration tests.
@@ -167,7 +172,7 @@ func assertManager_Read(t *testing.T) {
 //	}
 //}
 
-func assertDelete(t *testing.T) {
+func TestDelete(t *testing.T) {
 	err := manager.Delete("mirror2")
 	if err != nil {
 		t.Errorf("delete plugin error: %v", err)
