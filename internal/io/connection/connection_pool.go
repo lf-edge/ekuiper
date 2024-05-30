@@ -21,10 +21,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -145,26 +145,19 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.
 	if !ok {
 		return nil, fmt.Errorf("unknown connection type")
 	}
-	for i := 0; i < conf.Config.Connection.RetryCount+1; i++ {
+	err = backoff.Retry(func() error {
 		conn, err = connRegister(ctx, meta.ID, meta.Props)
 		failpoint.Inject("createConnectionErr", func() {
-			switch i {
-			case 0:
-				err = errorx.NewIOErr("ioErr")
-			case 1:
-				err = nil
-			}
+			err = errorx.New("createConnectionErr")
 		})
 		if err == nil {
-			break
+			return nil
 		}
 		if errorx.IsIOError(err) {
-			time.Sleep(time.Duration(conf.Config.Connection.RetryInterval))
-			continue
-		} else {
-			break
+			return err
 		}
-	}
+		return backoff.Permanent(err)
+	}, NewExponentialBackOff())
 	return conn, err
 }
 
@@ -277,3 +270,17 @@ func CreateMockConnection(ctx api.StreamContext, id string, props map[string]any
 func init() {
 	modules.ConnectionRegister["mock"] = CreateMockConnection
 }
+
+func NewExponentialBackOff() *backoff.ExponentialBackOff {
+	return backoff.NewExponentialBackOff(
+		backoff.WithInitialInterval(DefaultInitialInterval),
+		backoff.WithMaxInterval(DefaultMaxInterval),
+		backoff.WithMaxElapsedTime(DefaultMaxElapsedTime),
+	)
+}
+
+const (
+	DefaultInitialInterval = 100 * time.Millisecond
+	DefaultMaxInterval     = 1 * time.Second
+	DefaultMaxElapsedTime  = 3 * time.Minute
+)

@@ -7,6 +7,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20240315202255-8943393e84fc
 	github.com/benbjohnson/clock v1.3.5
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/edgexfoundry/go-mod-core-contracts/v3 v3.1.0

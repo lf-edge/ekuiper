@@ -221,10 +221,6 @@ type KuiperConf struct {
 		PythonBin   string            `yaml:"pythonBin"`
 		InitTimeout cast.DurationConf `yaml:"initTimeout"`
 	}
-	Connection struct {
-		RetryInterval cast.DurationConf `yaml:"retryInterval"`
-		RetryCount    int               `yaml:"retryCount"`
-	}
 	AesKey []byte
 }
 
