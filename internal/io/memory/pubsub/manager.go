@@ -26,8 +26,9 @@ import (
 const IdProperty = "topic"
 
 type pubConsumers struct {
-	count     int
-	consumers map[string]chan api.SourceTuple // The consumer channel list [sourceId]chan
+	count             int
+	consumers         map[string]chan api.SourceTuple // The consumer channel list [sourceId]chan
+	consumersReplaced map[string]int
 }
 
 type subChan struct {
@@ -176,13 +177,32 @@ func addPubConsumer(topic string, sourceId string, ch chan api.SourceTuple) {
 	}
 	if _, exists := sinkConsumerChannels.consumers[sourceId]; exists {
 		conf.Log.Warnf("create memory source consumer for %s which is already exists", sourceId)
-	} else {
-		sinkConsumerChannels.consumers[sourceId] = ch
+		// If already exist, it is usually the rule is restarting and the previous handle is not released yet
+		// Just use the latest ch as the handle. Also record the replaced status so that it won't remove all handles during removal of the previous handle
+		if sinkConsumerChannels.consumersReplaced == nil {
+			sinkConsumerChannels.consumersReplaced = map[string]int{
+				sourceId: 1,
+			}
+		} else {
+			if v, ok := sinkConsumerChannels.consumersReplaced[sourceId]; ok {
+				sinkConsumerChannels.consumersReplaced[sourceId] = v + 1
+			} else {
+				sinkConsumerChannels.consumersReplaced[sourceId] = 1
+			}
+		}
 	}
+	sinkConsumerChannels.consumers[sourceId] = ch
 }
 
 func removePubConsumer(topic string, sourceId string, c *pubConsumers) {
 	if _, exists := c.consumers[sourceId]; exists {
+		if c.consumersReplaced != nil {
+			if v, ok := c.consumersReplaced[sourceId]; ok && v > 0 {
+				c.consumersReplaced[sourceId] = v - 1
+				conf.Log.Warnf("remove memory source consumer for %s late than creating new one", sourceId)
+				return
+			}
+		}
 		delete(c.consumers, sourceId)
 	}
 	if len(c.consumers) == 0 && c.count == 0 {
