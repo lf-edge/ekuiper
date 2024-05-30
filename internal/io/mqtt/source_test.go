@@ -21,7 +21,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -34,7 +36,10 @@ func init() {
 }
 
 func TestProvision(t *testing.T) {
-	connection.InitConnectionManagerInTest()
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, connection.InitConnectionManager())
 	tests := []struct {
 		name  string
 		props map[string]any
