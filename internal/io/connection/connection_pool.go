@@ -15,9 +15,12 @@
 package connection
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -28,11 +31,19 @@ import (
 var isTest = false
 
 func storeConnection(plugin, id string, props map[string]interface{}) error {
-	return conf.WriteCfgIntoKVStorage("connections", plugin, id, props)
+	err := conf.WriteCfgIntoKVStorage("connections", plugin, id, props)
+	failpoint.Inject("storeConnectionErr", func() {
+		err = errors.New("storeConnectionErr")
+	})
+	return err
 }
 
 func dropConnectionStore(plugin, id string) error {
-	return conf.DropCfgKeyFromStorage("connections", plugin, id)
+	err := conf.DropCfgKeyFromStorage("connections", plugin, id)
+	failpoint.Inject("dropConnectionStoreErr", func() {
+		err = errors.New("dropConnectionStoreErr")
+	})
+	return err
 }
 
 func GetAllConnectionsID() []string {
@@ -185,6 +196,9 @@ func InitConnectionManager() error {
 		return nil
 	}
 	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
+	failpoint.Inject("GotCfgFromKVStorageErr", func() {
+		err = errors.New("GotCfgFromKVStorageErr")
+	})
 	if err != nil {
 		return err
 	}
