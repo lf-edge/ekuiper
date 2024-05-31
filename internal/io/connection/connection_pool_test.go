@@ -17,6 +17,7 @@ package connection
 import (
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -80,4 +81,22 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	err = DropNonStoredConnection(ctx, "nonexists")
 	require.NoError(t, err)
+}
+
+func TestConnectionErr(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := context.Background()
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr", "return(true)")
+	conn, err := createNamedConnection(ctx, ConnectionMeta{
+		ID:    "1",
+		Typ:   "mock",
+		Props: nil,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr")
 }

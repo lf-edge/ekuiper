@@ -19,12 +19,15 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
@@ -144,6 +147,8 @@ func DropNonStoredConnection(ctx api.StreamContext, selId string) error {
 	return nil
 }
 
+var mockErr = true
+
 func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.Connection, error) {
 	var conn modules.Connection
 	var err error
@@ -151,11 +156,23 @@ func createNamedConnection(ctx api.StreamContext, meta ConnectionMeta) (modules.
 	if !ok {
 		return nil, fmt.Errorf("unknown connection type")
 	}
-	conn, err = connRegister(ctx, meta.ID, meta.Props)
-	if err != nil {
-		return nil, err
-	}
-	return conn, nil
+	err = backoff.Retry(func() error {
+		conn, err = connRegister(ctx, meta.ID, meta.Props)
+		failpoint.Inject("createConnectionErr", func() {
+			if mockErr {
+				err = errorx.NewIOErr("createConnectionErr")
+				mockErr = false
+			}
+		})
+		if err == nil {
+			return nil
+		}
+		if errorx.IsIOError(err) {
+			return err
+		}
+		return backoff.Permanent(err)
+	}, NewExponentialBackOff())
+	return conn, err
 }
 
 func DropNameConnection(ctx api.StreamContext, selId string) error {
@@ -221,6 +238,7 @@ func InitConnectionManager() error {
 		meta.conn = conn
 		globalConnectionManager.connectionPool[id] = meta
 	}
+	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 	return nil
 }
 
@@ -281,3 +299,18 @@ func InitMockTest() {
 	isTest = true
 	modules.ConnectionRegister["mock"] = CreateMockConnection
 }
+
+func NewExponentialBackOff() *backoff.ExponentialBackOff {
+	return backoff.NewExponentialBackOff(
+		backoff.WithInitialInterval(DefaultInitialInterval),
+		backoff.WithMaxInterval(DefaultMaxInterval),
+		backoff.WithMaxElapsedTime(DefaultBackoffMaxElapsedDuration),
+	)
+}
+
+const (
+	DefaultInitialInterval = 100 * time.Millisecond
+	DefaultMaxInterval     = 1 * time.Second
+)
+
+var DefaultBackoffMaxElapsedDuration = 3 * time.Minute
