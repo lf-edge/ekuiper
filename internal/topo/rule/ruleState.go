@@ -122,12 +122,6 @@ func NewRuleState(rule *def.Rule) (rs *RuleState, err error) {
 		Rule:     rule,
 		ActionCh: make(chan ActionSignal),
 	}
-	rs.run()
-	defer func() {
-		if err != nil {
-			rs.Close()
-		}
-	}()
 	err = infra.SafeRun(func() error {
 		if tp, err := planner.Plan(rule); err != nil {
 			return err
@@ -136,6 +130,12 @@ func NewRuleState(rule *def.Rule) (rs *RuleState, err error) {
 		}
 		return nil
 	})
+	rs.run()
+	defer func() {
+		if err != nil {
+			rs.Close()
+		}
+	}()
 	return rs, err
 }
 
