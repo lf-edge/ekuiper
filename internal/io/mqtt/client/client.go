@@ -25,6 +25,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -166,6 +167,9 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	opts.OnConnect = con.onConnect
 	opts.OnConnectionLost = con.onConnectLost
 	opts.OnReconnecting = con.onReconnecting
+	opts.ConnectRetry = true
+	opts.ConnectRetryInterval = connection.DefaultInitialInterval
+	opts.MaxReconnectInterval = connection.DefaultBackoffMaxElapsedDuration
 
 	cli := pahoMqtt.NewClient(opts)
 	token := cli.Connect()

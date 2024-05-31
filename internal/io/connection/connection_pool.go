@@ -220,6 +220,7 @@ func InitConnectionManager() error {
 			globalConnectionManager.connectionPool[connectionID] = meta
 		}
 	}
+	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 	return nil
 }
 
@@ -281,7 +282,7 @@ func NewExponentialBackOff() *backoff.ExponentialBackOff {
 	return backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(DefaultInitialInterval),
 		backoff.WithMaxInterval(DefaultMaxInterval),
-		backoff.WithMaxElapsedTime(time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)),
+		backoff.WithMaxElapsedTime(DefaultBackoffMaxElapsedDuration),
 	)
 }
 
@@ -289,3 +290,5 @@ const (
 	DefaultInitialInterval = 100 * time.Millisecond
 	DefaultMaxInterval     = 1 * time.Second
 )
+
+var DefaultBackoffMaxElapsedDuration = 3 * time.Minute
