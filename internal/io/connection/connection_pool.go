@@ -25,6 +25,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -280,12 +281,11 @@ func NewExponentialBackOff() *backoff.ExponentialBackOff {
 	return backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(DefaultInitialInterval),
 		backoff.WithMaxInterval(DefaultMaxInterval),
-		backoff.WithMaxElapsedTime(DefaultMaxElapsedTime),
+		backoff.WithMaxElapsedTime(time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)),
 	)
 }
 
 const (
 	DefaultInitialInterval = 100 * time.Millisecond
 	DefaultMaxInterval     = 1 * time.Second
-	DefaultMaxElapsedTime  = 3 * time.Minute
 )

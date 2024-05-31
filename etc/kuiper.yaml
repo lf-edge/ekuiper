@@ -64,6 +64,8 @@ basic:
   # AES Key, base64 encoded
   aesKey: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3
   gracefulShutdownTimeout: 3s
+  connection:
+    backoffMaxElapsedDuration: 3m
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:
