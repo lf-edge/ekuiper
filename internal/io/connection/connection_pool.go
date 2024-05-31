@@ -249,49 +249,7 @@ type ConnectionMeta struct {
 	conn  modules.Connection `json:"-"`
 }
 
-type mockConnection struct {
-	id  string
-	ref int
-}
-
-func (m *mockConnection) Ping(ctx api.StreamContext) error {
-	return nil
-}
-
-func (m *mockConnection) Close(ctx api.StreamContext) {
-	return
-}
-
-func (m *mockConnection) Attach(ctx api.StreamContext) {
-	m.ref++
-	return
-}
-
-func (m *mockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
-	m.ref--
-	return
-}
-
-func (m *mockConnection) DetachPub(ctx api.StreamContext, props map[string]any) {
-	m.ref--
-	return
-}
-
-func (m *mockConnection) Ref(ctx api.StreamContext) int {
-	return m.ref
-}
-
-func CreateMockConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
-	m := &mockConnection{id: id, ref: 0}
-	return m, nil
-}
-
 func init() {
-	modules.ConnectionRegister["mock"] = CreateMockConnection
-}
-
-func InitMockTest() {
-	conf.IsTesting = true
 	modules.ConnectionRegister["mock"] = CreateMockConnection
 }
 
