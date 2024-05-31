@@ -99,4 +99,17 @@ func TestConnectionErr(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, conn)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/storeConnectionErr", "return(true)")
+	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/storeConnectionErr")
+
+	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
+	require.NoError(t, err)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/dropConnectionStoreErr", "return(true)")
+	err = DropNameConnection(ctx, "qwe")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/dropConnectionStoreErr")
 }

@@ -213,9 +213,6 @@ func InitConnectionManager() error {
 		return nil
 	}
 	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
-	failpoint.Inject("GotCfgFromKVStorageErr", func() {
-		err = errors.New("GotCfgFromKVStorageErr")
-	})
 	if err != nil {
 		return err
 	}
