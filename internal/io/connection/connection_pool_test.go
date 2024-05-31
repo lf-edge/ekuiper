@@ -21,12 +21,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
 
 func TestConnection(t *testing.T) {
-	conf.InitConf()
-	InitConnectionManagerInTest()
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, InitConnectionManager4Test())
 	ctx := context.Background()
 	conn, err := CreateNamedConnection(ctx, "id1", "mock", nil)
 	require.NoError(t, err)
@@ -81,8 +84,10 @@ func TestConnection(t *testing.T) {
 }
 
 func TestConnectionErr(t *testing.T) {
-	conf.InitConf()
-	InitConnectionManagerInTest()
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, InitConnectionManager4Test())
 	ctx := context.Background()
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr", "return(true)")
@@ -94,4 +99,17 @@ func TestConnectionErr(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, conn)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/storeConnectionErr", "return(true)")
+	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/storeConnectionErr")
+
+	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
+	require.NoError(t, err)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/dropConnectionStoreErr", "return(true)")
+	err = DropNameConnection(ctx, "qwe")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/dropConnectionStoreErr")
 }

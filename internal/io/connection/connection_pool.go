@@ -15,7 +15,7 @@
 package connection
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -26,14 +26,26 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-var isTest bool
+func storeConnection(plugin, id string, props map[string]interface{}) error {
+	err := conf.WriteCfgIntoKVStorage("connections", plugin, id, props)
+	failpoint.Inject("storeConnectionErr", func() {
+		err = errors.New("storeConnectionErr")
+	})
+	return err
+}
+
+func dropConnectionStore(plugin, id string) error {
+	err := conf.DropCfgKeyFromStorage("connections", plugin, id)
+	failpoint.Inject("dropConnectionStoreErr", func() {
+		err = errors.New("dropConnectionStoreErr")
+	})
+	return err
+}
 
 func GetAllConnectionsID() []string {
 	globalConnectionManager.RLock()
@@ -81,14 +93,8 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		Typ:   typ,
 		Props: props,
 	}
-	if !isTest {
-		b, err := json.Marshal(meta)
-		if err != nil {
-			return nil, err
-		}
-		if err := globalConnectionManager.store.Set(id, string(b)); err != nil {
-			return nil, err
-		}
+	if err := storeConnection(typ, id, props); err != nil {
+		return nil, err
 	}
 	conn, err := createNamedConnection(ctx, meta)
 	if err != nil {
@@ -181,11 +187,9 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if conn.Ref(ctx) > 0 {
 		return fmt.Errorf("connection %s can't be dropped due to reference", selId)
 	}
-	if !isTest {
-		err := globalConnectionManager.store.Delete(selId)
-		if err != nil {
-			return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
-		}
+	err := dropConnectionStore(meta.Typ, selId)
+	if err != nil {
+		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
 	conn.Close(ctx)
 	delete(globalConnectionManager.connectionPool, selId)
@@ -194,31 +198,40 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 
 var globalConnectionManager *ConnectionManager
 
-func InitConnectionManagerInTest() {
-	isTest = true
-	InitConnectionManager()
+func InitConnectionManager4Test() error {
+	InitMockTest()
+	return InitConnectionManager()
 }
 
 func InitConnectionManager() error {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
 	}
-	if !isTest {
-		globalConnectionManager.store, _ = store.GetKV("connectionMeta")
-		kvs, _ := globalConnectionManager.store.All()
-		for connectionID, raw := range kvs {
-			meta := ConnectionMeta{}
-			err := json.Unmarshal([]byte(raw), &meta)
-			if err != nil {
-				return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
-			}
-			conn, err := createNamedConnection(context.Background(), meta)
-			if err != nil {
-				return fmt.Errorf("initialize connection:%v failed, err:%v", connectionID, err)
-			}
-			meta.conn = conn
-			globalConnectionManager.connectionPool[connectionID] = meta
+	if conf.IsTesting {
+		return nil
+	}
+	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
+	if err != nil {
+		return err
+	}
+	for key, props := range cfgs {
+		names := strings.Split(key, ".")
+		if len(names) != 3 {
+			continue
 		}
+		typ := names[1]
+		id := names[2]
+		meta := ConnectionMeta{
+			ID:    id,
+			Typ:   typ,
+			Props: props,
+		}
+		conn, err := createNamedConnection(context.Background(), meta)
+		if err != nil {
+			return fmt.Errorf("initialize connection:%v failed, err:%v", id, err)
+		}
+		meta.conn = conn
+		globalConnectionManager.connectionPool[id] = meta
 	}
 	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 	return nil
@@ -226,7 +239,6 @@ func InitConnectionManager() error {
 
 type ConnectionManager struct {
 	sync.RWMutex
-	store          kv.KeyValue
 	connectionPool map[string]ConnectionMeta
 }
 
@@ -235,43 +247,6 @@ type ConnectionMeta struct {
 	Typ   string             `json:"typ"`
 	Props map[string]any     `json:"props"`
 	conn  modules.Connection `json:"-"`
-}
-
-type mockConnection struct {
-	id  string
-	ref int
-}
-
-func (m *mockConnection) Ping(ctx api.StreamContext) error {
-	return nil
-}
-
-func (m *mockConnection) Close(ctx api.StreamContext) {
-	return
-}
-
-func (m *mockConnection) Attach(ctx api.StreamContext) {
-	m.ref++
-	return
-}
-
-func (m *mockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
-	m.ref--
-	return
-}
-
-func (m *mockConnection) DetachPub(ctx api.StreamContext, props map[string]any) {
-	m.ref--
-	return
-}
-
-func (m *mockConnection) Ref(ctx api.StreamContext) int {
-	return m.ref
-}
-
-func CreateMockConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
-	m := &mockConnection{id: id, ref: 0}
-	return m, nil
 }
 
 func init() {
