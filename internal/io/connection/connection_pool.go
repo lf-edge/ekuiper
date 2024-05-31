@@ -31,8 +31,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-var isTest = false
-
 func storeConnection(plugin, id string, props map[string]interface{}) error {
 	err := conf.WriteCfgIntoKVStorage("connections", plugin, id, props)
 	failpoint.Inject("storeConnectionErr", func() {
@@ -209,7 +207,7 @@ func InitConnectionManager() error {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
 	}
-	if isTest {
+	if conf.IsTesting {
 		return nil
 	}
 	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
@@ -293,7 +291,7 @@ func init() {
 }
 
 func InitMockTest() {
-	isTest = true
+	conf.IsTesting = true
 	modules.ConnectionRegister["mock"] = CreateMockConnection
 }
 
