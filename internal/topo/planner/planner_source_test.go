@@ -42,11 +42,15 @@ func TestPlanTopo(t *testing.T) {
 	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (message.Converter, error) {
 		return &message.MockPartialConverter{}, nil
 	})
+	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
+		return &message.MockMerger{}, nil
+	})
 	streamSqls := map[string]string{
 		"src1":     `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt");`,
 		"src2":     `CREATE STREAM src2 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", SHARED="true");`,
 		"src3":     `CREATE STREAM src3 () WITH (DATASOURCE="topic1", FORMAT="mockp", TYPE="mqtt", CONF_KEY="testSelMock");`,
 		"src4":     `CREATE STREAM src4 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSel",SHARED="true");`,
+		"src5":     `CREATE STREAM src3 () WITH (DATASOURCE="topic1", FORMAT="json", TYPE="mqtt", CONF_KEY="testSelMerger");`,
 		"filesrc1": `CREATE STREAM fs1 () WITH (FORMAT="json", TYPE="file",CONF_KEY="lines");`,
 		"filesrc2": `CREATE STREAM fs2 () WITH (FORMAT="delimited", TYPE="file",CONF_KEY="csv");`,
 		"filesrc3": `CREATE STREAM fs3 () WITH (FORMAT="json",TYPE="file",CONF_KEY="json");`,
@@ -81,6 +85,16 @@ func TestPlanTopo(t *testing.T) {
 			},
 			p: "mqtt",
 			k: "testSelMock",
+		},
+		{
+			conf: map[string]any{
+				"connectionSelector": "mqtt.localConnection",
+				"interval":           "1s",
+				"merger":             "mock",
+				"payloadFormat":      "json",
+			},
+			p: "mqtt",
+			k: "testSelMerger",
 		},
 		{
 			conf: map[string]any{
@@ -309,12 +323,144 @@ func TestPlanTopo(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test mqtt merger",
+			sql:  `SELECT * FROM src5`,
+			topo: &def.PrintableTopo{
+				Sources: []string{"source_mqtt.localConnection/topic1"},
+				Edges: map[string][]any{
+					"source_mqtt.localConnection/topic1": {
+						"op_2_ratelimit",
+					},
+					"op_2_ratelimit": {
+						"op_3_payload_decoder",
+					},
+					"op_3_payload_decoder": {
+						"op_4_project",
+					},
+					"op_4_project": {
+						"op_logToMemory_0_0_transform",
+					},
+					"op_logToMemory_0_0_transform": {
+						"op_logToMemory_0_1_encode",
+					},
+					"op_logToMemory_0_1_encode": {
+						"sink_logToMemory_0",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tp, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.topo, tp.GetTopo())
+		})
+	}
+}
+
+func TestPlanError(t *testing.T) {
+	kv, err := store.GetKV("stream")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (message.Converter, error) {
+		return &message.MockPartialConverter{}, nil
+	})
+	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
+		return &message.MockMerger{}, nil
+	})
+	streamSqls := map[string]string{
+		"src1": `CREATE STREAM src1 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", CONF_KEY="invalidMerge");`,
+		"src2": `CREATE STREAM src2 () WITH (DATASOURCE="src1", FORMAT="", TYPE="mqtt", CONF_KEY="invalidMerger");`,
+		"src3": `CREATE STREAM src2 () WITH (DATASOURCE="src1", FORMAT="json", TYPE="mqtt", CONF_KEY="invalidMerger2");`,
+	}
+	for name, sql := range streamSqls {
+		s, err := json.Marshal(&xsql.StreamInfo{
+			StreamType: ast.TypeStream,
+			Statement:  sql,
+		})
+		assert.NoError(t, err)
+		err = kv.Set(name, string(s))
+		assert.NoError(t, err)
+	}
+	confs := []struct {
+		conf map[string]any
+		p    string
+		k    string
+	}{
+		{
+			conf: map[string]any{
+				"interval":   "1s",
+				"mergeField": "id",
+				"merger":     "mock",
+			},
+			p: "mqtt",
+			k: "invalidMerge",
+		},
+		{
+			conf: map[string]any{
+				"interval": "1s",
+				"merger":   "mock",
+			},
+			p: "mqtt",
+			k: "invalidMerger",
+		},
+		{
+			conf: map[string]any{
+				"merger":        "mock",
+				"payloadFormat": "mockp",
+			},
+			p: "mqtt",
+			k: "invalidMerger2",
+		},
+	}
+	meta.InitYamlConfigManager()
+	dataDir, _ := conf.GetDataLoc()
+	err = os.MkdirAll(filepath.Join(dataDir, "sources"), 0o755)
+	assert.NoError(t, err)
+
+	for _, cc := range confs {
+		p, k := cc.p, cc.k
+		bs, err := json.Marshal(cc.conf)
+		assert.NoError(t, err)
+		err = meta.AddSourceConfKey(p, k, "", bs)
+		assert.NoError(t, err)
+		// intended to run at last
+		defer func() {
+			err = meta.DelSourceConfKey(p, k, "")
+			assert.NoError(t, err)
+		}()
+	}
+
+	tests := []struct {
+		name string
+		sql  string
+		e    string
+	}{
+		{
+			name: "mergeField and merger mutual exclusive",
+			sql:  `SELECT * FROM src1`,
+			e:    "mergeField and merger cannot set together",
+		},
+		{
+			name: "merger need decoder",
+			sql:  `SELECT * FROM src2`,
+			e:    "merger must work with both format and payloadFormat",
+		},
+		{
+			name: "merger need rate limit",
+			sql:  `SELECT * FROM src3`,
+			e:    "merger is set but rate limit is not required",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := PlanSQLWithSourcesAndSinks(def.GetDefaultRule(tt.name, tt.sql), nil)
+			assert.Error(t, err)
+			assert.EqualError(t, err, tt.e)
 		})
 	}
 }

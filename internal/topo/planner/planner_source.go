@@ -104,13 +104,13 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	var ops []node.OperatorNode
 
 	// Need to check after source has provisioned, so do not put it before provision
-	featureSet, err := checkFeatures(ss, sp, props)
+	featureSet, err := checkFeatures(ss, sp, props, t.streamStmt.Options)
 	if err != nil {
 		return nil, nil, 0, err
 	}
 
 	if featureSet.needRatelimit {
-		rlOp, err := node.NewRateLimitOp(ctx, fmt.Sprintf("%d_ratelimit", index), options, props)
+		rlOp, err := node.NewRateLimitOp(ctx, fmt.Sprintf("%d_ratelimit", index), options, t.streamStmt.Options, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -135,6 +135,15 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		}
 		index++
 		ops = append(ops, decodeNode)
+	}
+
+	if featureSet.needRatelimitMerge {
+		rlOp, err := node.NewRateLimitOp(ctx, fmt.Sprintf("%d_ratelimit", index), options, t.streamStmt.Options, t.streamFields, props)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		index++
+		ops = append(ops, rlOp)
 	}
 
 	if featureSet.needPayloadDecode {
@@ -176,8 +185,10 @@ type SourcePropsForSplit struct {
 	SelId         string        `json:"connectionSelector"`
 	PayloadFormat string        `json:"payloadFormat"`
 	Interval      time.Duration `json:"interval"`
-	MergeField    string        `json:"mergeField"`
-	Format        string        `json:"format"`
+	// merger and mergerField should only set one
+	MergeField string `json:"mergeField"`
+	Merger     string `json:"merger"`
+	Format     string `json:"format"`
 }
 
 type traits struct {
@@ -185,11 +196,22 @@ type traits struct {
 	needCompression   bool
 	needDecode        bool
 	needPayloadDecode bool
-	needRatelimit     bool
+	// rate limit will plan right after source read
+	needRatelimit bool
+	// rate limit merge will plan after decompress
+	needRatelimitMerge bool
 }
 
 // function to return if a sub node is needed
-func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any) (traits, error) {
+func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any, options *ast.Options) (traits, error) {
+	// validate merger
+	if sp.Merger != "" && sp.MergeField != "" {
+		return traits{}, fmt.Errorf("mergeField and merger cannot set together")
+	}
+	if sp.Merger != "" && (sp.Format == "" || sp.PayloadFormat == "") {
+		return traits{}, fmt.Errorf("merger must work with both format and payloadFormat")
+	}
+
 	info := checkByteSource(ss)
 	// TODO here is a hack for file source send interval. If it is sent in file, do not need to process sendInterval in decode
 	if info.HasInterval {
@@ -217,6 +239,19 @@ func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any)
 		r.needPayloadDecode = true
 		r.needDecode = false
 		props["payloadFormat"] = props["format"]
+		props["payloadSchemaId"] = options.SCHEMAID
+		props["payloadDelimiter"] = options.DELIMITER
+		props["payloadBatchField"] = "frames"
+		props["payloadField"] = "data"
+	}
+	if !r.needRatelimit && sp.Merger != "" {
+		return r, fmt.Errorf("merger is set but rate limit is not required")
+	}
+	// If rate limit merger is set, the first level decode will be done by merger
+	if r.needRatelimit && sp.Merger != "" {
+		r.needRatelimitMerge = true
+		r.needRatelimit = false
+		r.needDecode = false
 		props["payloadBatchField"] = "frames"
 		props["payloadField"] = "data"
 	}

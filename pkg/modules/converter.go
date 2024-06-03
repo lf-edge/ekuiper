@@ -14,7 +14,11 @@
 
 package modules
 
-import "github.com/lf-edge/ekuiper/v2/pkg/message"
+import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
+)
 
 var Converters = map[string]message.ConverterProvider{}
 
@@ -26,4 +30,22 @@ func RegisterConverter(name string, provider message.ConverterProvider) {
 func IsFormatSupported(format string) bool {
 	_, ok := Converters[format]
 	return ok
+}
+
+// Merger is used to merge multiple frames. It is currently called by rate limiter only
+type Merger interface {
+	// Merging is called when read in a new frame
+	Merging(ctx api.StreamContext, b []byte) error
+	// Trigger is called when rate limiter is trigger to send out a message
+	Trigger(ctx api.StreamContext) ([]any, bool)
+}
+
+type MergerProvider func(ctx api.StreamContext, payloadSchema string, logicalSchema map[string]*ast.JsonStreamField) (Merger, error)
+
+// Mergers list, the key is format + payload format such as "jsoncan"
+var Mergers = map[string]MergerProvider{}
+
+// RegisterMerger registers a merger with the format name and payload format name such as "jsoncan"
+func RegisterMerger(name string, provider MergerProvider) {
+	Mergers[name] = provider
 }
