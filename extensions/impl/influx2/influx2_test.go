@@ -15,6 +15,7 @@
 package influx2
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -105,12 +106,35 @@ func TestConfig(t *testing.T) {
 			error: "precision abc is not supported",
 		},
 		{
+			name: "no error",
+			conf: map[string]interface{}{
+				"addr":            "http://192.168.0.3:8086",
+				"org":             "abc",
+				"bucket":          "bucket_one",
+				"precision":       "ns",
+				"useLineProtocol": true,
+			},
+			expected: c{
+				Addr:            "http://192.168.0.3:8086",
+				Org:             "abc",
+				Bucket:          "bucket_one",
+				PrecisionStr:    "ns",
+				Precision:       time.Nanosecond,
+				UseLineProtocol: true,
+				WriteOptions: tspoint.WriteOptions{
+					PrecisionStr: "ns",
+				},
+				BatchSize: 1,
+			},
+		},
+		{
 			name: "measurement missing error",
 			conf: map[string]interface{}{
-				"addr":      "http://192.168.0.3:8086",
-				"org":       "abc",
-				"bucket":    "bucket_one",
-				"precision": "ns",
+				"addr":            "http://192.168.0.3:8086",
+				"org":             "abc",
+				"bucket":          "bucket_one",
+				"precision":       "ns",
+				"useLineProtocol": false,
 			},
 			error: "measurement is required",
 		},
@@ -428,10 +452,11 @@ func TestCollectPointsError(t *testing.T) {
 func TestCollectLines(t *testing.T) {
 	timex.Set(10)
 	tests := []struct {
-		name   string
-		conf   c
-		data   any
-		result []string
+		name    string
+		conf    c
+		data    any
+		result  []string
+		result2 []string
 	}{
 		{
 			name: "normal",
@@ -507,7 +532,8 @@ func TestCollectLines(t *testing.T) {
 				"humidity": 50,
 				"ts":       100,
 			},
-			result: []string{"test5,tag2=50 humidity=50,ts=100 100"},
+			result:  []string{"test5,tag2=50 humidity=50,ts=100 100"},
+			result2: []string{"test5,tag2=50 ts=100,humidity=50 100"},
 		},
 	}
 
@@ -519,7 +545,11 @@ func TestCollectLines(t *testing.T) {
 			ctx := mockContext.NewMockContext(test.name, "op")
 			lines, err := ifsink.transformLines(ctx, test.data)
 			assert.NoError(t, err)
-			assert.Equal(t, test.result, lines)
+			if test.result2 == nil {
+				assert.Equal(t, test.result, lines)
+			} else {
+				assert.True(t, reflect.DeepEqual(test.result, lines) || reflect.DeepEqual(test.result2, lines))
+			}
 		})
 	}
 }
