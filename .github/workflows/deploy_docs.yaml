@@ -81,7 +81,7 @@ jobs:
     - name: generate version config
       run: |
         cd docs-files
-        version_list=$(git tag | xargs echo -n)
+        version_list=$(git tag | grep -E 'v?[0-9]+\.[0-9]+\.[0-9]+$' | xargs echo -n)
         python3 .github/scripts/generate_version.py $version_list > ../frontend/docs/public/api/${DOCS_TYPE}_versions.json
         cat ../frontend/docs/public/api/${DOCS_TYPE}_versions.json
 
