@@ -113,6 +113,7 @@ func openDB(url string, isTesting bool) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	// sql.Open won't check connection, we need ping it later
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		return nil, err
@@ -120,6 +121,10 @@ func openDB(url string, isTesting bool) (*sql.DB, error) {
 	c := conf.Config
 	if c != nil && c.Basic.SQLConf != nil && c.Basic.SQLConf.MaxConnections > 0 {
 		db.SetMaxOpenConns(c.Basic.SQLConf.MaxConnections)
+	}
+	err = db.Ping()
+	if err != nil {
+		return nil, err
 	}
 	return db, nil
 }
