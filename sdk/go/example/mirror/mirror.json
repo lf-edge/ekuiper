@@ -1,0 +1,14 @@
+{
+  "version": "v1.0.0",
+  "language": "go",
+  "executable": "mirror",
+  "sources": [
+    "random"
+  ],
+  "sinks": [
+    "file"
+  ],
+  "functions": [
+    "echo"
+  ]
+}

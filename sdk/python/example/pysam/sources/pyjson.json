@@ -1,0 +1,23 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "description": {
+      "en_US": "The python source will send json data.",
+      "zh_CN": "Python 源发送数据"
+    }
+  },
+  "node": {
+    "category": "source",
+    "icon": "iconPath",
+    "label": {
+      "en_US": "Python JSON Generator",
+      "zh_CN": "Python JSON 生成器"
+    }
+  }
+}
