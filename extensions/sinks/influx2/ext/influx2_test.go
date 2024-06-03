@@ -116,7 +116,7 @@ func TestConfig(t *testing.T) {
 				"precision":       "ns",
 				"useLineProtocol": true,
 			},
-			error: "measurement is required",
+			error: "",
 		},
 		{
 			name: "no err",
@@ -127,7 +127,7 @@ func TestConfig(t *testing.T) {
 				"precision":       "ns",
 				"useLineProtocol": false,
 			},
-			error: "",
+			error: "measurement is required",
 		},
 		{
 			name: "unmarshall error for tls",
