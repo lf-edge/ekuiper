@@ -210,7 +210,7 @@ func InitConnectionManager() error {
 	if conf.IsTesting {
 		return nil
 	}
-	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
+	cfgs, err := conf.GetCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return err
 	}
