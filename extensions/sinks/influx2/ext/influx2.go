@@ -105,7 +105,7 @@ func (m *influxSink2) Configure(props map[string]any) error {
 	default:
 		return fmt.Errorf("precision %s is not supported", m.conf.PrecisionStr)
 	}
-	if len(m.conf.Measurement) == 0 && m.conf.UseLineProtocol {
+	if len(m.conf.Measurement) == 0 && !m.conf.UseLineProtocol {
 		return fmt.Errorf("measurement is required")
 	}
 	err = cast.MapToStruct(props, &m.conf.WriteOptions)
