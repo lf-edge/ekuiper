@@ -184,5 +184,16 @@ func GetSource() api.Source {
 }
 
 func isConnectionError(err error) bool {
-	return strings.Contains(err.Error(), "connection refused")
+	for _, rErr := range reconnectionErr {
+		if strings.Contains(err.Error(), rErr) {
+			return true
+		}
+	}
+	return false
+}
+
+var reconnectionErr []string
+
+func init() {
+	reconnectionErr = []string{"connection refused", "database is closed"}
 }
