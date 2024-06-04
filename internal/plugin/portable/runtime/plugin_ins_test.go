@@ -12,6 +12,7 @@ import (
 )
 
 func TestProcess(t *testing.T) {
+	pm := runtime.GetPluginInsManager4Test()
 	conf.InitConf()
 	dir, _ := os.Getwd()
 	p := filepath.Join(dir, "../../../../", "sdk/python/example/pysam/pysam.py")
@@ -21,8 +22,8 @@ func TestProcess(t *testing.T) {
 		Language:   "python",
 		Executable: p,
 	}
-	_, err := runtime.GetPluginInsManager().GetOrStartProcess(meta, runtime.PortbleConf)
+	_, err := pm.GetOrStartProcess(meta, runtime.PortbleConf)
 	require.NoError(t, err)
-	err = runtime.GetPluginInsManager().KillAll()
+	err = pm.Kill("pysam")
 	require.NoError(t, err)
 }

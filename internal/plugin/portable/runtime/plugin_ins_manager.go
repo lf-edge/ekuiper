@@ -181,6 +181,13 @@ func GetPluginInsManager() *pluginInsManager {
 	return pm
 }
 
+func GetPluginInsManager4Test() *pluginInsManager {
+	testPM := &pluginInsManager{
+		instances: make(map[string]*PluginIns),
+	}
+	return testPM
+}
+
 func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {
 	ins, ok := p.getPluginIns(name)
 	if !ok {
@@ -333,10 +340,10 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 				if ins.ctrlChan != nil {
 					_ = ins.ctrlChan.Close()
 				}
-				p.deletePluginIns(pluginMeta.Name)
 			}
 			ins.process = nil
 			ins.Unlock()
+			p.deletePluginIns(pluginMeta.Name)
 		}
 		return nil
 	})
