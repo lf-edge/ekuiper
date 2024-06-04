@@ -3069,7 +3069,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 															DataSourcePlan{
 																name:         "src1",
 																isWildCard:   true,
-																streamFields: map[string]*ast.JsonStreamField{},
+																streamFields: nil,
 																streamStmt:   streams["src1"],
 																metaFields:   []string{},
 																isSchemaless: true,
@@ -3765,7 +3765,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 						DataSourcePlan{
 							baseLogicalPlan: baseLogicalPlan{},
 							name:            "src1",
-							streamFields:    map[string]*ast.JsonStreamField{},
+							streamFields:    nil,
 							streamStmt:      streams["src1"],
 							metaFields:      []string{"device"},
 							isWildCard:      true,
@@ -3808,7 +3808,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 						DataSourcePlan{
 							baseLogicalPlan: baseLogicalPlan{},
 							name:            "src1",
-							streamFields:    map[string]*ast.JsonStreamField{},
+							streamFields:    nil,
 							streamStmt:      streams["src1"],
 							metaFields:      []string{"device"},
 							isWildCard:      true,
@@ -3877,7 +3877,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 									DataSourcePlan{
 										baseLogicalPlan: baseLogicalPlan{},
 										name:            "src1",
-										streamFields:    map[string]*ast.JsonStreamField{},
+										streamFields:    nil,
 										streamStmt:      streams["src1"],
 										metaFields:      []string{},
 										isWildCard:      true,
@@ -3926,7 +3926,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 									DataSourcePlan{
 										baseLogicalPlan: baseLogicalPlan{},
 										name:            "src1",
-										streamFields:    map[string]*ast.JsonStreamField{},
+										streamFields:    nil,
 										streamStmt:      streams["src1"],
 										metaFields:      []string{},
 										isWildCard:      true,
@@ -4574,7 +4574,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
 																streamStmt:      streams["src1"],
-																streamFields:    map[string]*ast.JsonStreamField{},
+																streamFields:    nil,
 																metaFields:      []string{},
 																isWildCard:      true,
 																isSchemaless:    true,
@@ -4663,7 +4663,7 @@ func Test_createLogicalPlan4Lookup(t *testing.T) {
 																baseLogicalPlan: baseLogicalPlan{},
 																name:            "src1",
 																streamStmt:      streams["src1"],
-																streamFields:    map[string]*ast.JsonStreamField{},
+																streamFields:    nil,
 																metaFields:      []string{},
 																isWildCard:      true,
 																isSchemaless:    true,

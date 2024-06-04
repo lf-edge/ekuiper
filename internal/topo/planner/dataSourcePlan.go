@@ -377,6 +377,9 @@ func (p *DataSourcePlan) getAllFields() {
 	if !p.isWildCard {
 		p.streamFields = p.fields
 	} else {
+		if len(p.fields) > 0 && p.streamFields == nil {
+			p.streamFields = make(map[string]*ast.JsonStreamField, len(p.fields))
+		}
 		for name, fr := range p.fields {
 			p.streamFields[name] = fr
 		}
