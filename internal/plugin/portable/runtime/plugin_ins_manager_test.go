@@ -189,11 +189,11 @@ func createMockClient(pluginName string) (mangos.Socket, error) {
 
 func TestPluginStatus(t *testing.T) {
 	p := NewPluginIns("mock", nil, nil)
-	require.Equal(t, PluginStatusInit, p.GetStatus())
+	require.Equal(t, PluginStatusInit, p.GetStatus().Status)
 	p.Status.StartRunning()
-	require.Equal(t, PluginStatusRunning, p.GetStatus())
+	require.Equal(t, PluginStatusRunning, p.GetStatus().Status)
 	p.Status.StatusErr(errors.New("mock"))
-	require.Equal(t, PluginStatusErr, p.GetStatus())
+	require.Equal(t, PluginStatusErr, p.GetStatus().Status)
 	p.Status.Stop()
-	require.Equal(t, PluginStatusStop, p.GetStatus())
+	require.Equal(t, PluginStatusStop, p.GetStatus().Status)
 }
