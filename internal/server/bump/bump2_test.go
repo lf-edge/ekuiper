@@ -46,6 +46,11 @@ func prepareData(t *testing.T) {
 		"url": "123",
 	})
 	require.NoError(t, err)
+
+	err = conf.WriteCfgIntoKVStorage("sources", "kafka", "a", map[string]interface{}{
+		"saslPassword": "123",
+	})
+	require.NoError(t, err)
 }
 
 func assertData(t *testing.T) {
@@ -58,6 +63,18 @@ func assertData(t *testing.T) {
 	_, ok = prop["url"]
 	require.False(t, ok)
 	v, ok := prop["dburl"]
+	require.True(t, ok)
+	require.Equal(t, "123", v)
+
+	props, err = conf.GetCfgFromKVStorage("sources", "kafka", "a")
+	require.NoError(t, err)
+	require.NotNil(t, props)
+	prop, ok = props["sources.kafka.a"]
+	require.True(t, ok)
+
+	_, ok = prop["saslPassword"]
+	require.False(t, ok)
+	v, ok = prop["password"]
 	require.True(t, ok)
 	require.Equal(t, "123", v)
 

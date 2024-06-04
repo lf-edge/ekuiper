@@ -71,6 +71,9 @@ func rewriteConfiguration(typ string) error {
 		case "influx2":
 			rewrite = true
 			prop = replaceToken(prop)
+		case "kafka":
+			rewrite = true
+			prop = replaceSaslPassword(prop)
 		}
 		if rewrite {
 			err := conf.WriteCfgIntoKVStorage(t, pluginTyp, id, prop)
@@ -110,4 +113,15 @@ func replaceURL(props map[string]interface{}) map[string]interface{} {
 		}
 	}
 	return props
+}
+
+func replaceSaslPassword(prop map[string]interface{}) map[string]interface{} {
+	for key, value := range prop {
+		if key == "saslPassword" {
+			prop["password"] = value
+			delete(prop, "saslPassword")
+			break
+		}
+	}
+	return prop
 }
