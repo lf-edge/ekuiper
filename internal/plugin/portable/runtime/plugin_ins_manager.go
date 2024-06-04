@@ -172,17 +172,25 @@ func GetPluginInsManager() *pluginInsManager {
 	return pm
 }
 
-func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
+func (p *pluginInsManager) GetPluginIns(name string) (*PluginIns, bool) {
 	p.RLock()
 	defer p.RUnlock()
+	return p.getPluginIns(name)
+}
+
+func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
 	ins, ok := p.instances[name]
 	return ins, ok
 }
 
-// deletePluginIns should only run when there is no state aka. commands
-func (p *pluginInsManager) deletePluginIns(name string) {
+func (p *pluginInsManager) DeletePluginIns(name string) {
 	p.Lock()
 	defer p.Unlock()
+	p.deletePluginIns(name)
+}
+
+// deletePluginIns should only run when there is no state aka. commands
+func (p *pluginInsManager) deletePluginIns(name string) {
 	delete(p.instances, name)
 }
 
@@ -199,19 +207,19 @@ func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta) {
 	defer p.Unlock()
 	if ins, ok := p.instances[pluginMeta.Name]; ok {
 		if len(ins.commands) != 0 {
-			go p.getOrStartProcess(pluginMeta, PortbleConf)
+			go p.GetOrStartProcess(pluginMeta, PortbleConf)
 		}
 	}
 }
 
-// getOrStartProcess Control the plugin process lifecycle.
+// GetOrStartProcess Control the plugin process lifecycle.
 // Need to manage the resources: instances map, control socket, plugin process
 // May be called at plugin creation or restart with previous state(ctrlCh, commands)
 // PluginIns is created by plugin manager but started by rule/funcop.
 // During plugin delete/update, if the commands is not empty, keep the ins for next creation and restore
 // 1. During creation, clean up those resources for any errors in defer immediately after the resource is created.
 // 2. During plugin running, when detecting plugin process exit, clean up those resources for the current ins.
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
+func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
 	p.Lock()
 	defer p.Unlock()
 	var (
@@ -294,16 +302,16 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		}
 		// must make sure the plugin ins is not cleaned up yet by checking the process identity
 		// clean up for stop unintentionally
-		if ins, ok := p.getPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
+		if ins, ok := p.GetPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
 			ins.Lock()
 			if len(ins.commands) == 0 {
 				if ins.ctrlChan != nil {
 					_ = ins.ctrlChan.Close()
 				}
-				p.deletePluginIns(pluginMeta.Name)
 			}
 			ins.process = nil
 			ins.Unlock()
+			p.DeletePluginIns(pluginMeta.Name)
 		}
 		return nil
 	})
