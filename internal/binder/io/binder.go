@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	mqttClient "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 )
 
 var ( // init once and read only
@@ -98,4 +99,8 @@ func LookupSource(name string) (api.LookupSource, error) {
 		errs = fmt.Errorf("lookup source type %s not found", name)
 	}
 	return nil, errs
+}
+
+func RegisterConnection() {
+	mqttClient.Register()
 }

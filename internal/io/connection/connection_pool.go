@@ -200,16 +200,21 @@ var globalConnectionManager *ConnectionManager
 
 func InitConnectionManager4Test() error {
 	InitMockTest()
-	return InitConnectionManager()
+	InitConnectionManager()
+	return nil
 }
 
-func InitConnectionManager() error {
+func InitConnectionManager() {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
 	}
 	if conf.IsTesting {
-		return nil
+		return
 	}
+	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
+}
+
+func ReloadConnection() error {
 	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return err
@@ -228,12 +233,12 @@ func InitConnectionManager() error {
 		}
 		conn, err := createNamedConnection(context.Background(), meta)
 		if err != nil {
-			return fmt.Errorf("initialize connection:%v failed, err:%v", id, err)
+			conf.Log.Warnf("initialize connection:%v failed, err:%v", id, err)
+			continue
 		}
 		meta.conn = conn
 		globalConnectionManager.connectionPool[id] = meta
 	}
-	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 	return nil
 }
 

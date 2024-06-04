@@ -32,7 +32,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-func init() {
+func Register() {
 	modules.ConnectionRegister["mqtt"] = CreateConnection
 }
 
