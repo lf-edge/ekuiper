@@ -15,10 +15,12 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/req"
 
@@ -183,4 +185,15 @@ func createMockClient(pluginName string) (mangos.Socket, error) {
 		return nil, fmt.Errorf("can't dial on req socket: %s", err.Error())
 	}
 	return sock, nil
+}
+
+func TestPluginStatus(t *testing.T) {
+	p := NewPluginIns("mock", nil, nil)
+	require.Equal(t, PluginStatusInit, p.GetStatus())
+	p.Status.StartRunning()
+	require.Equal(t, PluginStatusRunning, p.GetStatus())
+	p.Status.StatusErr(errors.New("mock"))
+	require.Equal(t, PluginStatusErr, p.GetStatus())
+	p.Status.Stop()
+	require.Equal(t, PluginStatusStop, p.GetStatus())
 }

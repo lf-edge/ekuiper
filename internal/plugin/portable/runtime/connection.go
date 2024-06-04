@@ -15,10 +15,12 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/pingcap/failpoint"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 	"go.nanomsg.org/mangos/v3/protocol/push"
@@ -245,6 +247,9 @@ func CreateSinkAckChannel(ctx api.StreamContext) (DataInChannel, error) {
 }
 
 func CreateControlChannel(pluginName string) (ControlChannel, error) {
+	failpoint.Inject("CreateControlChannelErr", func() {
+		failpoint.Return(nil, errors.New("CreateControlChannelErr"))
+	})
 	var (
 		sock mangos.Socket
 		err  error

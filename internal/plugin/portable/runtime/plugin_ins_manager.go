@@ -16,12 +16,15 @@ package runtime
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -273,6 +276,9 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	// init or restart all need to run the process
 	conf.Log.Infof("executing plugin")
 	jsonArg, err := json.Marshal(pconf)
+	failpoint.Inject("confErr", func() {
+		err = errors.New("confErr")
+	})
 	if err != nil {
 		ins.Status.StatusErr(err)
 		return nil, fmt.Errorf("invalid conf: %v", pconf)
@@ -290,7 +296,6 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 					cmd = exec.Command("conda", "run", "-n", *pluginMeta.Env, conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
 				default:
 					err = fmt.Errorf("unsupported virtual type: %s", *pluginMeta.VirtualType)
-					ins.Status.StatusErr(err)
 					return err
 				}
 			}
@@ -300,7 +305,6 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			conf.Log.Infof("starting python plugin: %s", cmd)
 		default:
 			err := fmt.Errorf("unsupported language: %s", pluginMeta.Language)
-			ins.Status.StatusErr(err)
 			return err
 		}
 		return nil
@@ -315,6 +319,10 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 
 	conf.Log.Println("plugin starting")
 	err = cmd.Start()
+	failpoint.Inject("cmdStartErr", func() {
+		cmd.Process.Kill()
+		err = errors.New("cmdStartErr")
+	})
 	if err != nil {
 		ins.Status.StatusErr(err)
 		return nil, fmt.Errorf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
