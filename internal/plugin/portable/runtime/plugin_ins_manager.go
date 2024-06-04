@@ -49,6 +49,7 @@ type PluginIns struct {
 	// audit the commands, so that when restarting the plugin, we can replay the commands
 	commands map[Meta][]byte
 	process  *os.Process // created when used by rule and deleted when no rule uses it
+	Status   *PluginStatus
 }
 
 func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *PluginIns {
@@ -57,6 +58,7 @@ func NewPluginIns(name string, ctrlChan ControlChannel, process *os.Process) *Pl
 		ctrlChan: ctrlChan,
 		name:     name,
 		commands: make(map[Meta][]byte),
+		Status:   NewPluginStatus(),
 	}
 }
 
@@ -151,10 +153,17 @@ func (i *PluginIns) Stop() error {
 	var err error
 	i.RLock()
 	defer i.RUnlock()
+	i.Status.Stop()
 	if i.process != nil { // will also trigger process exit clean up
 		err = i.process.Kill()
 	}
 	return err
+}
+
+func (i *PluginIns) GetStatus() *PluginStatus {
+	i.RLock()
+	defer i.RUnlock()
+	return i.Status
 }
 
 // Manager plugin process and control socket
@@ -170,6 +179,14 @@ func GetPluginInsManager() *pluginInsManager {
 		}
 	})
 	return pm
+}
+
+func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {
+	ins, ok := p.getPluginIns(name)
+	if !ok {
+		return nil, false
+	}
+	return ins.GetStatus(), true
 }
 
 func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
@@ -194,14 +211,22 @@ func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 }
 
 // CreateIns Run when plugin is created/updated
-func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta) {
+func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta, isInit bool) {
 	p.Lock()
 	defer p.Unlock()
-	if ins, ok := p.instances[pluginMeta.Name]; ok {
-		if len(ins.commands) != 0 {
-			go p.getOrStartProcess(pluginMeta, PortbleConf)
+	if !isInit {
+		if ins, ok := p.instances[pluginMeta.Name]; ok {
+			if len(ins.commands) != 0 {
+				go p.getOrStartProcess(pluginMeta, PortbleConf)
+			}
 		}
+	} else {
+		go p.getOrStartProcess(pluginMeta, PortbleConf)
 	}
+}
+
+func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
+	return p.getOrStartProcess(pluginMeta, pconf)
 }
 
 // getOrStartProcess Control the plugin process lifecycle.
@@ -233,6 +258,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		conf.Log.Infof("create control channel")
 		ctrlChan, err := CreateControlChannel(pluginMeta.Name)
 		if err != nil {
+			ins.Status.StatusErr(err)
 			return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
 		}
 		ins.ctrlChan = ctrlChan
@@ -241,6 +267,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	conf.Log.Infof("executing plugin")
 	jsonArg, err := json.Marshal(pconf)
 	if err != nil {
+		ins.Status.StatusErr(err)
 		return nil, fmt.Errorf("invalid conf: %v", pconf)
 	}
 	var cmd *exec.Cmd
@@ -249,14 +276,15 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		case "go":
 			conf.Log.Printf("starting go plugin executable %s", pluginMeta.Executable)
 			cmd = exec.Command(pluginMeta.Executable, string(jsonArg))
-
 		case "python":
 			if pluginMeta.VirtualType != nil {
 				switch *pluginMeta.VirtualType {
 				case "conda":
 					cmd = exec.Command("conda", "run", "-n", *pluginMeta.Env, conf.Config.Portable.PythonBin, pluginMeta.Executable, string(jsonArg))
 				default:
-					return fmt.Errorf("unsupported virtual type: %s", *pluginMeta.VirtualType)
+					err = fmt.Errorf("unsupported virtual type: %s", *pluginMeta.VirtualType)
+					ins.Status.StatusErr(err)
+					return err
 				}
 			}
 			if cmd == nil {
@@ -264,11 +292,14 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			}
 			conf.Log.Infof("starting python plugin: %s", cmd)
 		default:
-			return fmt.Errorf("unsupported language: %s", pluginMeta.Language)
+			err := fmt.Errorf("unsupported language: %s", pluginMeta.Language)
+			ins.Status.StatusErr(err)
+			return err
 		}
 		return nil
 	})
 	if err != nil {
+		ins.Status.StatusErr(err)
 		return nil, fmt.Errorf("fail to start plugin %s: %v", pluginMeta.Name, err)
 	}
 	cmd.Stdout = conf.Log.Out
@@ -278,6 +309,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	conf.Log.Println("plugin starting")
 	err = cmd.Start()
 	if err != nil {
+		ins.Status.StatusErr(err)
 		return nil, fmt.Errorf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
 	}
 	process := cmd.Process
@@ -290,6 +322,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	go infra.SafeRun(func() error { // just print out error inside
 		err = cmd.Wait()
 		if err != nil {
+			ins.Status.StatusErr(err)
 			conf.Log.Printf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
 		}
 		// must make sure the plugin ins is not cleaned up yet by checking the process identity
@@ -310,17 +343,20 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	conf.Log.Println("waiting handshake")
 	err = ins.ctrlChan.Handshake()
 	if err != nil {
+		ins.Status.StatusErr(err)
 		return nil, fmt.Errorf("plugin %s control handshake error: %v", pluginMeta.Executable, err)
 	}
 	ins.process = process
 	p.instances[pluginMeta.Name] = ins
 	conf.Log.Println("plugin start running")
+	ins.Status.StartRunning()
 	// restore symbols by sending commands when restarting plugin
 	conf.Log.Info("restore plugin symbols")
 	for m, c := range ins.commands {
 		go func(key Meta, jsonArg []byte) {
 			e := ins.sendCmd(jsonArg)
 			if e != nil {
+				ins.Status.StatusErr(err)
 				conf.Log.Errorf("send command to %v error: %v", key, e)
 			}
 		}(m, c)
@@ -358,4 +394,37 @@ type PluginMeta struct {
 	Executable  string  `json:"executable"`
 	VirtualType *string `json:"virtualEnvType,omitempty"`
 	Env         *string `json:"env,omitempty"`
+}
+
+const (
+	PluginStatusRunning = "running"
+	PluginStatusInit    = "initializing"
+	PluginStatusErr     = "error"
+	PluginStatusStop    = "stop"
+)
+
+type PluginStatus struct {
+	Status string `json:"status"`
+	ErrMsg string `json:"errMsg"`
+}
+
+func NewPluginStatus() *PluginStatus {
+	return &PluginStatus{
+		Status: PluginStatusInit,
+	}
+}
+
+func (s *PluginStatus) StatusErr(err error) {
+	s.Status = PluginStatusErr
+	s.ErrMsg = err.Error()
+}
+
+func (s *PluginStatus) StartRunning() {
+	s.Status = PluginStatusRunning
+	s.ErrMsg = ""
+}
+
+func (s *PluginStatus) Stop() {
+	s.Status = PluginStatusStop
+	s.ErrMsg = ""
 }
