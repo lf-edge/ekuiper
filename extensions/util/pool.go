@@ -65,13 +65,20 @@ func (dp *dbPool) createAndReplace(url string) (*sql.DB, error) {
 	hiddenURL, _ := hidden.HiddenURLPasswd(url)
 	dp.Lock()
 	defer dp.Unlock()
+	oldDB, ok := dp.pool[url]
+	if ok {
+		// ping success, no need to replace
+		if err := oldDB.Ping(); err == nil {
+			return oldDB, nil
+		}
+	}
 	newDb, err := openDB(url, dp.isTesting)
 	if err != nil {
 		conf.Log.Errorf("create new database instance %v failed, err:%v", hiddenURL, err)
 		return nil, err
 	}
 	conf.Log.Infof("create new database instance: %v", hiddenURL)
-	oldDB, ok := dp.pool[url]
+	oldDB, ok = dp.pool[url]
 	if !ok {
 		dp.connections[url] = 1
 	} else {
@@ -113,6 +120,7 @@ func openDB(url string, isTesting bool) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	// sql.Open won't check connection, we need ping it later
 	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		return nil, err
