@@ -32,10 +32,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-func init() {
-	modules.ConnectionRegister["mqtt"] = CreateConnection
-}
-
 type Connection struct {
 	pahoMqtt.Client
 	selId     string
