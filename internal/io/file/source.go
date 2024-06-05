@@ -28,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	_ "github.com/lf-edge/ekuiper/v2/internal/io/file/reader"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -179,8 +180,14 @@ func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestErro
 				}
 				wg.Add(1)
 				go func(file string) {
-					defer wg.Done()
-					fs.parseFile(ctx, file, ingest, ingestError)
+					e := infra.SafeRun(func() error {
+						defer wg.Done()
+						fs.parseFile(ctx, file, ingest, ingestError)
+						return nil
+					})
+					if e != nil {
+						ingestError(ctx, e)
+					}
 				}(filepath.Join(fs.file, entry.Name()))
 			}
 			wg.Wait()
@@ -278,24 +285,38 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 func ignoreLines(ctx api.StreamContext, reader io.Reader, ignoreStartLines int, ignoreEndLines int) io.Reader {
 	r, w := io.Pipe()
 	go func() {
-		defer func() {
-			w.Close()
-			reader.(io.ReadCloser).Close()
-		}()
-		scanner := bufio.NewScanner(reader)
-		scanner.Split(bufio.ScanLines)
+		e := infra.SafeRun(func() error {
+			defer func() {
+				w.Close()
+				reader.(io.ReadCloser).Close()
+			}()
+			scanner := bufio.NewScanner(reader)
+			scanner.Split(bufio.ScanLines)
 
-		ln := 0
-		// This is a queue to store the lines that should be ignored
-		tempLines := make([][]byte, 0, ignoreEndLines)
-		for scanner.Scan() {
-			if ln >= ignoreStartLines {
-				if ignoreEndLines > 0 { // the last n line are left in the tempLines
-					slot := (ln - ignoreStartLines) % ignoreEndLines
-					if len(tempLines) <= slot { // first round
-						tempLines = append(tempLines, scanner.Bytes())
+			ln := 0
+			// This is a queue to store the lines that should be ignored
+			tempLines := make([][]byte, 0, ignoreEndLines)
+			for scanner.Scan() {
+				if ln >= ignoreStartLines {
+					if ignoreEndLines > 0 { // the last n line are left in the tempLines
+						slot := (ln - ignoreStartLines) % ignoreEndLines
+						if len(tempLines) <= slot { // first round
+							tempLines = append(tempLines, scanner.Bytes())
+						} else {
+							_, err := w.Write(tempLines[slot])
+							if err != nil {
+								ctx.GetLogger().Error(err)
+								break
+							}
+							_, err = w.Write([]byte{'\n'})
+							if err != nil {
+								ctx.GetLogger().Error(err)
+								break
+							}
+							tempLines[slot] = scanner.Bytes()
+						}
 					} else {
-						_, err := w.Write(tempLines[slot])
+						_, err := w.Write(scanner.Bytes())
 						if err != nil {
 							ctx.GetLogger().Error(err)
 							break
@@ -305,22 +326,14 @@ func ignoreLines(ctx api.StreamContext, reader io.Reader, ignoreStartLines int, 
 							ctx.GetLogger().Error(err)
 							break
 						}
-						tempLines[slot] = scanner.Bytes()
-					}
-				} else {
-					_, err := w.Write(scanner.Bytes())
-					if err != nil {
-						ctx.GetLogger().Error(err)
-						break
-					}
-					_, err = w.Write([]byte{'\n'})
-					if err != nil {
-						ctx.GetLogger().Error(err)
-						break
 					}
 				}
+				ln++
 			}
-			ln++
+			return nil
+		})
+		if e != nil {
+			ctx.GetLogger().Error(e)
 		}
 	}()
 	return r

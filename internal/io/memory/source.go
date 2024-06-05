@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -63,14 +64,20 @@ func (s *source) Connect(_ api.StreamContext) error {
 }
 
 // Subscribe For memory source, it can receive a source tuple directly. So just pass it through
-func (s *source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, _ api.ErrorIngest) error {
+func (s *source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestErr api.ErrorIngest) error {
 	ch := pubsub.CreateSub(s.c.Topic, s.topicRegex, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.c.BufferLength)
 	ctx.GetLogger().Infof("Subscribe to topic %s", s.c.Topic)
 	go func() {
 		for {
 			select {
 			case v := <-ch:
-				ingest(ctx, v, nil, timex.GetNow())
+				e := infra.SafeRun(func() error {
+					ingest(ctx, v, nil, timex.GetNow())
+					return nil
+				})
+				if e != nil {
+					ingestErr(ctx, e)
+				}
 			case <-ctx.Done():
 				return
 			}
