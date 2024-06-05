@@ -366,8 +366,8 @@
           ]
         },
         {
-          "title": "数据变化",
-          "path": "example/concurrency"
+          "title": "捕捉数据变化",
+          "path": "example/change_data_capture"
         }
       ]
     },
@@ -1124,8 +1124,8 @@
           "path": "example/data_merge/merge_multi_stream"
         },
         {
-          "title": "Data Change in Sngle Stream",
-          "path": "example/concurrency"
+          "title": "Capture Data Change",
+          "path": "example/change_data_capture"
         }
       ]
     },
