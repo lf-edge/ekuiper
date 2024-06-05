@@ -63,12 +63,12 @@ func testBumpVersion(t *testing.T) {
 }
 
 func assertBumpVersion1Data(t *testing.T, typ string) {
-	d, err := conf.GotCfgFromKVStorage(typ, "mqtt", "conf1")
+	d, err := conf.GetCfgFromKVStorage(typ, "mqtt", "conf1")
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{
 		"p1": 1,
 	}, d[fmt.Sprintf("%s.mqtt.conf1", typ)])
-	d, err = conf.GotCfgFromKVStorage(typ, "mqtt", "conf2")
+	d, err = conf.GetCfgFromKVStorage(typ, "mqtt", "conf2")
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{
 		"p2": 2,
