@@ -25,6 +25,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -122,22 +123,28 @@ func (m *fileSink) Connect(ctx api.StreamContext) error {
 	// Check if the files have opened longer than the rolling interval, if so close it and create a new one
 	if m.c.CheckInterval > 0 {
 		t := timex.GetTicker(m.c.CheckInterval)
-		go func() {
+		go func() { // this will never panic
 			defer t.Stop()
 			for {
 				select {
 				case now := <-t.C:
-					m.mux.Lock()
-					for k, v := range m.fws {
-						if now.Sub(v.Start) > m.c.RollingInterval {
-							err := m.roll(ctx, k, v)
-							// TODO how to deal with this error
-							if err != nil {
-								ctx.GetLogger().Errorf("file sink fails to close file %s with error %s.", k, err)
+					e := infra.SafeRun(func() error {
+						m.mux.Lock()
+						defer m.mux.Unlock()
+						for k, v := range m.fws {
+							if now.Sub(v.Start) > m.c.RollingInterval {
+								err := m.roll(ctx, k, v)
+								// TODO how to deal with this error
+								if err != nil {
+									return fmt.Errorf("file sink fails to close file %s with error %s.", k, err)
+								}
 							}
 						}
+						return nil
+					})
+					if e != nil {
+						ctx.GetLogger().Error(e)
 					}
-					m.mux.Unlock()
 				case <-ctx.Done():
 					ctx.GetLogger().Info("file sink done")
 					return

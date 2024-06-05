@@ -67,62 +67,67 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	s.prepareExec(ctx, errCh, "sink")
 	go func() {
-		err := s.sink.Connect(ctx)
+		err := infra.SafeRun(func() error {
+			err := s.sink.Connect(ctx)
+			if err != nil {
+				infra.DrainError(ctx, err, errCh)
+			}
+			defer func() {
+				s.sink.Close(ctx)
+				s.Close()
+			}()
+			s.currentEof = 0
+			for {
+				select {
+				case <-ctx.Done():
+					return nil
+				case d := <-s.input:
+					data, processed := s.ingest(ctx, d)
+					if processed {
+						break
+					}
+
+					s.statManager.IncTotalRecordsIn()
+					s.statManager.ProcessTimeStart()
+					err = s.doCollect(ctx, s.sink, data)
+					if err != nil { // resend handling when enabling cache. Two cases: 1. send to alter queue with resendOUt. 2. retry (blocking) until success or unrecoverable error if resendInterval is set
+						ctx.GetLogger().Error(err)
+						s.statManager.IncTotalExceptions(err.Error())
+						if s.resendOut != nil {
+							s.BroadcastCustomized(data, func(val any) {
+								select {
+								case s.resendOut <- val:
+									// do nothing
+								case <-ctx.Done():
+									// rule stop so stop waiting
+								default:
+									s.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to resend sink", s.name))
+								}
+							})
+						} else if s.resendInterval > 0 {
+							for err != nil && errorx.IsIOError(err) {
+								timex.Sleep(s.resendInterval)
+								err = s.doCollect(ctx, s.sink, data)
+								ctx.GetLogger().Debugf("resending, got err? %v", err)
+								s.statManager.SetBufferLength(int64(len(s.input)))
+							}
+							if err == nil {
+								s.statManager.IncTotalRecordsOut()
+							} else {
+								ctx.GetLogger().Errorf("resend error %v", err)
+							}
+						}
+					} else {
+						s.statManager.IncTotalRecordsOut()
+					}
+					s.statManager.ProcessTimeEnd()
+					s.statManager.IncTotalMessagesProcessed(1)
+					s.statManager.SetBufferLength(int64(len(s.input)))
+				}
+			}
+		})
 		if err != nil {
 			infra.DrainError(ctx, err, errCh)
-		}
-		defer func() {
-			s.sink.Close(ctx)
-			s.Close()
-		}()
-		s.currentEof = 0
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case d := <-s.input:
-				data, processed := s.ingest(ctx, d)
-				if processed {
-					break
-				}
-
-				s.statManager.IncTotalRecordsIn()
-				s.statManager.ProcessTimeStart()
-				err = s.doCollect(ctx, s.sink, data)
-				if err != nil { // resend handling when enabling cache. Two cases: 1. send to alter queue with resendOUt. 2. retry (blocking) until success or unrecoverable error if resendInterval is set
-					ctx.GetLogger().Error(err)
-					s.statManager.IncTotalExceptions(err.Error())
-					if s.resendOut != nil {
-						s.BroadcastCustomized(data, func(val any) {
-							select {
-							case s.resendOut <- val:
-								// do nothing
-							case <-ctx.Done():
-								// rule stop so stop waiting
-							default:
-								s.statManager.IncTotalExceptions(fmt.Sprintf("buffer full, drop message from %s to resend sink", s.name))
-							}
-						})
-					} else if s.resendInterval > 0 {
-						for err != nil && errorx.IsIOError(err) {
-							timex.Sleep(s.resendInterval)
-							err = s.doCollect(ctx, s.sink, data)
-							ctx.GetLogger().Debugf("resending, got err? %v", err)
-							s.statManager.SetBufferLength(int64(len(s.input)))
-						}
-						if err == nil {
-							s.statManager.IncTotalRecordsOut()
-						} else {
-							ctx.GetLogger().Errorf("resend error %v", err)
-						}
-					}
-				} else {
-					s.statManager.IncTotalRecordsOut()
-				}
-				s.statManager.ProcessTimeEnd()
-				s.statManager.IncTotalMessagesProcessed(1)
-				s.statManager.SetBufferLength(int64(len(s.input)))
-			}
 		}
 	}()
 }
