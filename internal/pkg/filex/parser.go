@@ -16,6 +16,7 @@ package filex
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -41,7 +42,12 @@ func WriteYamlMarshal(path string, data interface{}) error {
 	return os.WriteFile(path, y, 0o666)
 }
 
-func ReadYamlUnmarshal(path string, ret interface{}) error {
+func ReadYamlUnmarshal(path string, ret interface{}) (err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("read %s unmarshal yaml failed, err:%v", path, err)
+		}
+	}()
 	sliByte, err := os.ReadFile(path)
 	if nil != err {
 		return err
