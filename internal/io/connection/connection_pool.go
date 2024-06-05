@@ -215,7 +215,7 @@ func InitConnectionManager() {
 }
 
 func ReloadConnection() error {
-	cfgs, err := conf.GotCfgFromKVStorage("connections", "", "")
+	cfgs, err := conf.GetCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return err
 	}
