@@ -160,10 +160,6 @@ func StartUp(Version string) {
 	keyedstate.InitKeyedStateKV()
 
 	meta2.InitYamlConfigManager()
-	if err := connection.InitConnectionManager(); err != nil {
-		panic(err)
-	}
-
 	ruleProcessor = processor.NewRuleProcessor()
 	streamProcessor = processor.NewStreamProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
@@ -185,6 +181,10 @@ func StartUp(Version string) {
 	err = io.Initialize(entries)
 	if err != nil {
 		panic(err)
+	}
+	connection.InitConnectionManager()
+	if err := connection.ReloadConnection(); err != nil {
+		conf.Log.Warn(err)
 	}
 	meta.Bind()
 	initRuleset()
