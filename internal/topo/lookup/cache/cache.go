@@ -19,13 +19,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type item struct {
-	data       api.MessageTupleList
+	data       []map[string]any
 	expiration time.Time
 }
 
@@ -76,8 +75,8 @@ func (c *Cache) deleteExpired() {
 	c.Unlock()
 }
 
-func (c *Cache) Set(key string, value api.MessageTupleList) {
-	if (value == nil || value.Len() == 0) && !c.cacheMissingKey {
+func (c *Cache) Set(key string, value []map[string]any) {
+	if len(value) == 0 && !c.cacheMissingKey {
 		return
 	}
 	c.Lock()
@@ -89,7 +88,7 @@ func (c *Cache) Set(key string, value api.MessageTupleList) {
 	}
 }
 
-func (c *Cache) Get(key string) (api.MessageTupleList, bool) {
+func (c *Cache) Get(key string) ([]map[string]any, bool) {
 	c.RLock()
 	defer c.RUnlock()
 	if v, ok := c.items[key]; ok {

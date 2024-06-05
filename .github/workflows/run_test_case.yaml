@@ -59,6 +59,7 @@ jobs:
         cd ../../../../
         cp -r sdk/python/example/pysam plugins/portable/pysam
         cp -r sdk/python/ekuiper plugins/portable/pysam/
+        cp test/lookup.json data/lookup.json
     - name: Run test case
       run: |
         make failpoint-enable

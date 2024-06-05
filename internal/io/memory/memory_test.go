@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,12 +74,136 @@ func TestSharedInmemoryNode(t *testing.T) {
 		}
 	}()
 	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
-		expected := []*xsql.Tuple{{
+		expected := []pubsub.MemTuple{&xsql.Tuple{
 			Emitter:   "",
 			Timestamp: timex.GetNow(),
 			Metadata:  map[string]any{"topic": id},
 			Message:   rawTuple.Message,
 		}}
+		assert.Equal(t, expected, res)
+		cancel()
+	}, nil)
+	assert.NoError(t, err)
+	<-ctx.Done()
+}
+
+func TestUpdateListInmemoryNode(t *testing.T) {
+	mockclock.ResetClock(100)
+	pubsub.Reset()
+	id := "test_id"
+	sinkProps := map[string]any{
+		"rowkindField": "update",
+		"keyField":     "id",
+	}
+	sinkProps[pubsub.IdProperty] = id
+	src := GetSource()
+	snk := GetSink()
+	contextLogger := conf.Log.WithField("rule", "test")
+	ctx1 := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx, cancel := ctx1.WithCancel()
+	srcProps := make(map[string]interface{})
+	srcProps["option"] = "value"
+	err := snk.Provision(ctx, sinkProps)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = snk.Connect(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	srcProps[pubsub.IdProperty] = id
+	srcProps["datasource"] = id
+	err = src.Provision(ctx, srcProps)
+	if err != nil {
+		t.Error(err)
+	}
+
+	rawTuple := &xsql.Tuple{
+		Message:  map[string]any{"temp": 20, "id": 1, "update": "update"},
+		Metadata: nil,
+	}
+	mockclock.GetMockClock().Add(100)
+	go func() {
+		err = snk.CollectList(ctx, &xsql.TransformedTupleList{Content: []api.MessageTuple{rawTuple}})
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
+		expected := []pubsub.MemTuple{&pubsub.UpdatableTuple{
+			MemTuple: &xsql.Tuple{
+				Emitter:   "",
+				Timestamp: timex.GetNow(),
+				Metadata:  map[string]any{"topic": id},
+				Message:   rawTuple.Message,
+			},
+			Rowkind: "update",
+			Keyval:  1,
+		}}
+		assert.Equal(t, expected, res)
+		cancel()
+	}, nil)
+	assert.NoError(t, err)
+	<-ctx.Done()
+}
+
+func TestUpdateInmemoryNode(t *testing.T) {
+	mockclock.ResetClock(100)
+	pubsub.Reset()
+	id := "test_id"
+	sinkProps := map[string]any{
+		"rowkindField": "update",
+		"keyField":     "id",
+	}
+	sinkProps[pubsub.IdProperty] = id
+	src := GetSource()
+	snk := GetSink()
+	contextLogger := conf.Log.WithField("rule", "test")
+	ctx1 := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
+	ctx, cancel := ctx1.WithCancel()
+	srcProps := make(map[string]interface{})
+	srcProps["option"] = "value"
+	err := snk.Provision(ctx, sinkProps)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	err = snk.Connect(ctx)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	srcProps[pubsub.IdProperty] = id
+	srcProps["datasource"] = id
+	err = src.Provision(ctx, srcProps)
+	if err != nil {
+		t.Error(err)
+	}
+
+	rawTuple := &xsql.Tuple{
+		Message:  map[string]any{"temp": 20, "id": 1, "update": "delete"},
+		Metadata: nil,
+	}
+	mockclock.GetMockClock().Add(100)
+	go func() {
+		err = snk.Collect(ctx, rawTuple)
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+	err = src.Subscribe(ctx, func(ctx api.StreamContext, res any, meta map[string]any, ts time.Time) {
+		expected := &pubsub.UpdatableTuple{
+			MemTuple: &xsql.Tuple{
+				Emitter:   "",
+				Timestamp: timex.GetNow(),
+				Metadata:  map[string]any{"topic": id},
+				Message:   rawTuple.Message,
+			},
+			Rowkind: "delete",
+			Keyval:  1,
+		}
 		assert.Equal(t, expected, res)
 		cancel()
 	}, nil)

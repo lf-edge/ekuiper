@@ -44,7 +44,7 @@ func init() {
 	modules.RegisterSink("file", file.GetSink)
 	// modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
-	// modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
+	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	// modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
 
 	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)

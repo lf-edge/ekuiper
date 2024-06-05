@@ -21,28 +21,21 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type config struct {
-	Topic        string   `json:"topic"`
-	DataTemplate string   `json:"dataTemplate"`
-	RowkindField string   `json:"rowkindField"`
-	KeyField     string   `json:"keyField"`
-	Fields       []string `json:"fields"`
-	DataField    string   `json:"dataField"`
-	ResendTopic  string   `json:"resendDestination"`
+	Topic        string `json:"topic"`
+	RowkindField string `json:"rowkindField"`
+	KeyField     string `json:"keyField"`
 }
 
 type sink struct {
 	topic        string
-	hasTransform bool
 	keyField     string
 	rowkindField string
-	fields       []string
-	dataField    string
-	resendTopic  string
 	meta         map[string]any
 }
 
@@ -56,19 +49,10 @@ func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 		return fmt.Errorf("invalid memory topic %s: wildcard found", cfg.Topic)
 	}
 	s.topic = cfg.Topic
-	if cfg.DataTemplate != "" {
-		s.hasTransform = true
-	}
-	s.dataField = cfg.DataField
-	s.fields = cfg.Fields
 	s.rowkindField = cfg.RowkindField
 	s.keyField = cfg.KeyField
 	if s.rowkindField != "" && s.keyField == "" {
 		return fmt.Errorf("keyField is required when rowkindField is set")
-	}
-	s.resendTopic = cfg.ResendTopic
-	if s.resendTopic == "" {
-		s.resendTopic = s.topic
 	}
 	s.meta = map[string]any{
 		"topic": cfg.Topic,
@@ -91,8 +75,43 @@ func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("publishing to topic %s", topic)
-	pubsub.Produce(ctx, topic, &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()})
+	var (
+		t   pubsub.MemTuple = &xsql.Tuple{Message: data.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
+		err error
+	)
+	if s.rowkindField != "" {
+		t, err = s.wrapUpdatable(t)
+		if err != nil {
+			return err
+		}
+	}
+	pubsub.Produce(ctx, topic, t)
 	return nil
+}
+
+func (s *sink) wrapUpdatable(el pubsub.MemTuple) (pubsub.MemTuple, error) {
+	c, ok := el.Value(s.rowkindField, "")
+	var rowkind string
+	if !ok {
+		rowkind = ast.RowkindUpsert
+	} else {
+		rowkind, ok = c.(string)
+		if !ok {
+			return nil, fmt.Errorf("rowkind field %s is not a string in data %v", s.rowkindField, el)
+		}
+		if rowkind != ast.RowkindInsert && rowkind != ast.RowkindUpdate && rowkind != ast.RowkindDelete && rowkind != ast.RowkindUpsert {
+			return nil, fmt.Errorf("invalid rowkind %s", rowkind)
+		}
+	}
+	key, ok := el.Value(s.keyField, "")
+	if !ok {
+		return nil, fmt.Errorf("key field %s not found in data %v", s.keyField, el)
+	}
+	return &pubsub.UpdatableTuple{
+		MemTuple: el,
+		Rowkind:  rowkind,
+		Keyval:   key,
+	}, nil
 }
 
 func (s *sink) CollectList(ctx api.StreamContext, tuples api.MessageTupleList) error {
@@ -103,19 +122,24 @@ func (s *sink) CollectList(ctx api.StreamContext, tuples api.MessageTupleList) e
 			topic = temp
 		}
 	}
-	result := make([]*xsql.Tuple, tuples.Len())
+	result := make([]pubsub.MemTuple, tuples.Len())
 	tuples.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
-		result[index] = &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
+		t := &xsql.Tuple{Message: tuple.ToMap(), Metadata: s.meta, Timestamp: timex.GetNow()}
+		if s.rowkindField != "" {
+			st, err := s.wrapUpdatable(t)
+			if err != nil {
+				ctx.GetLogger().Errorf("cannot convert %v to updatable %v", t, err)
+			} else {
+				result[index] = st
+				return true
+			}
+		}
+		result[index] = t
 		return true
 	})
 	pubsub.ProduceList(ctx, topic, result)
 	return nil
 }
-
-//func (s *sink) CollectResend(ctx api.StreamContext, data interface{}) error {
-//	ctx.GetLogger().Debugf("resend %+v", data)
-//	return s.collectWithTopic(ctx, data, s.resendTopic)
-//}
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing memory sink")

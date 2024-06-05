@@ -19,10 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestExpiration(t *testing.T) {
@@ -30,10 +27,10 @@ func TestExpiration(t *testing.T) {
 	clock := mockclock.GetMockClock()
 	c := NewCache(20*time.Second, false)
 	defer c.Close()
-	expects := []api.MessageTupleList{
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNow()}}},
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNow()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNow()}}},
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{}},
+	expects := [][]map[string]any{
+		{{"a": 1}},
+		{{"a": 2}, {"a": 3}},
+		{},
 	}
 	// wait for cache to run
 	time.Sleep(10 * time.Millisecond)
@@ -94,10 +91,10 @@ func TestNoExpiration(t *testing.T) {
 	c := NewCache(0, true)
 	defer c.Close()
 
-	expects := []api.MessageTupleList{
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 1}, Timestamp: timex.GetNow()}}},
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{&xsql.Tuple{Message: map[string]interface{}{"a": 2}, Timestamp: timex.GetNow()}, &xsql.Tuple{Message: map[string]interface{}{"a": 3}, Timestamp: timex.GetNow()}}},
-		&xsql.TransformedTupleList{Content: []api.MessageTuple{}},
+	expects := [][]map[string]any{
+		{{"a": 1}},
+		{{"a": 2}, {"a": 3}},
+		{},
 	}
 	c.Set("a", expects[0])
 	clock.Add(10 * time.Second)
