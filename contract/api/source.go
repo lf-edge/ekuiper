@@ -68,14 +68,9 @@ type Rewindable interface {
 
 // LookupSource is a source feature to query the source on demand (TO be modified later)
 type LookupSource interface {
-	// Open creates the connection to the external data source
-	Open(ctx StreamContext) error
-	// Configure Called during initialization. Configure the source with the data source(e.g. topic for mqtt) and the properties
-	// read from the yaml
-	Configure(datasource string, props map[string]interface{}) error
+	Source
 	// Lookup receive lookup values to construct the query and return query results
-	Lookup(ctx StreamContext, fields []string, keys []string, values []interface{}) (MessageTupleList, error)
-	Closable
+	Lookup(ctx StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error)
 }
 
 /// helper function definition

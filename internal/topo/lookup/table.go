@@ -77,12 +77,12 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 		return err
 	}
 	ctx.GetLogger().Debugf("lookup source %s is created", sourceType)
-	err = ns.Configure(options.DATASOURCE, props)
+	err = ns.Provision(ctx, props)
 	if err != nil {
 		return err
 	}
 	ctx.GetLogger().Debugf("lookup source %s is configured", sourceType)
-	err = ns.Open(ctx)
+	err = ns.Connect(ctx)
 	if err != nil {
 		return err
 	}

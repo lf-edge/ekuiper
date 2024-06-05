@@ -175,7 +175,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 		}
 	}
 	var (
-		r  api.MessageTupleList
+		r  []map[string]any
 		e  error
 		ok bool
 	)
@@ -197,7 +197,7 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 	if e != nil {
 		return e
 	} else {
-		if r != nil && r.Len() == 0 {
+		if len(r) == 0 {
 			if n.joinType == ast.LEFT_JOIN {
 				merged := &xsql.JoinTuple{}
 				merged.AddTuple(d)
@@ -208,23 +208,17 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 			}
 		}
 		if r != nil {
-			r.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
+			for _, mm := range r {
 				merged := &xsql.JoinTuple{}
 				merged.AddTuple(d)
-				var meta map[string]any
-				if mi, ok := tuple.(api.MetaInfo); ok {
-					meta = mi.AllMeta()
-				}
 				t := &xsql.Tuple{
 					Emitter:   n.name,
-					Message:   tuple.ToMap(),
-					Metadata:  meta,
+					Message:   mm,
 					Timestamp: timex.GetNow(),
 				}
 				merged.AddTuple(t)
 				tuples.Content = append(tuples.Content, merged)
-				return true
-			})
+			}
 		}
 		return nil
 	}
