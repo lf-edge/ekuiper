@@ -209,6 +209,10 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	defer globalConnectionManager.Unlock()
 	meta, ok := globalConnectionManager.connectionPool[selId]
 	if !ok {
+		_, ok := globalConnectionManager.failConnection[selId]
+		if ok {
+			delete(globalConnectionManager.failConnection, selId)
+		}
 		return nil
 	}
 	conn := meta.conn
@@ -283,10 +287,6 @@ type ConnectionMeta struct {
 	Typ   string             `json:"typ"`
 	Props map[string]any     `json:"props"`
 	conn  modules.Connection `json:"-"`
-}
-
-func init() {
-	modules.ConnectionRegister["mock"] = CreateMockConnection
 }
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {

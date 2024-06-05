@@ -113,3 +113,27 @@ func TestConnectionErr(t *testing.T) {
 	require.Error(t, err)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/dropConnectionStoreErr")
 }
+
+func TestConnectionStatus(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, InitConnectionManager4Test())
+
+	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
+	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
+	require.NoError(t, ReloadConnection())
+	ctx := context.Background()
+	allStatus := GetAllConnectionStatus(ctx)
+	s, ok := allStatus["a1"]
+	require.True(t, ok)
+	require.Equal(t, ConnectionStatus{
+		Status: ConnectionFail,
+		ErrMsg: "mockErr",
+	}, s)
+	s, ok = allStatus["a2"]
+	require.True(t, ok)
+	require.Equal(t, ConnectionStatus{
+		Status: ConnectionRunning,
+	}, s)
+}

@@ -15,6 +15,9 @@
 package connection
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -23,6 +26,7 @@ import (
 func InitMockTest() {
 	conf.IsTesting = true
 	modules.ConnectionRegister["mock"] = CreateMockConnection
+	modules.ConnectionRegister[strings.ToLower("mockErr")] = CreateMockErrConnection
 }
 
 type mockConnection struct {
@@ -60,4 +64,34 @@ func (m *mockConnection) Ref(ctx api.StreamContext) int {
 func CreateMockConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
 	m := &mockConnection{id: id, ref: 0}
 	return m, nil
+}
+
+type mockErrConnection struct{}
+
+func (m mockErrConnection) Ping(ctx api.StreamContext) error {
+	return errors.New("mockErr")
+}
+
+func (m mockErrConnection) Close(ctx api.StreamContext) {
+	return
+}
+
+func (m mockErrConnection) Attach(ctx api.StreamContext) {
+	return
+}
+
+func (m mockErrConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
+	return
+}
+
+func (m mockErrConnection) DetachPub(ctx api.StreamContext, props map[string]any) {
+	return
+}
+
+func (m mockErrConnection) Ref(ctx api.StreamContext) int {
+	return 0
+}
+
+func CreateMockErrConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
+	return nil, errors.New("mockErr")
 }

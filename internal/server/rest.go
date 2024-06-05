@@ -177,6 +177,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/data/import", configurationImportHandler).Methods(http.MethodPost)
 	r.HandleFunc("/data/import/status", configurationStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/connections", connectionsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/connections/status", connectionsStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/connection/{id}", connectionHandler).Methods(http.MethodGet, http.MethodDelete)
 	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	// Register extended routes

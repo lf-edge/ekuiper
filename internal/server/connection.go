@@ -31,6 +31,16 @@ type ConnectionRequest struct {
 	Props map[string]interface{} `json:"props"`
 }
 
+func connectionsStatusHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	switch r.Method {
+	case http.MethodGet:
+		allStatus := connection.GetAllConnectionStatus(context.Background())
+		w.WriteHeader(http.StatusOK)
+		jsonResponse(allStatus, w, logger)
+	}
+}
+
 func connectionsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	switch r.Method {
