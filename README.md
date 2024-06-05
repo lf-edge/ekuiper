@@ -9,7 +9,7 @@
 [![Community](https://img.shields.io/badge/Community-Kuiper-yellow?logo=github)](https://github.com/lf-edge/ekuiper/discussions)
 [![YouTube](https://img.shields.io/badge/Subscribe-EMQ-FF0000?logo=youtube)](https://www.youtube.com/channel/UC5FjR77ErAxvZENEWzQaO5Q)
 
-[English](README.md) | [简体中文](README-CN.md)
+[English](README.md) | [简体中文](README-CN.md) | [日本語](README-JP.md)
 
 ## Overview
 
