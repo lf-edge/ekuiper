@@ -182,7 +182,6 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
-	io.RegisterConnection()
 	connection.InitConnectionManager()
 	if err := connection.ReloadConnection(); err != nil {
 		conf.Log.Warn(err)
