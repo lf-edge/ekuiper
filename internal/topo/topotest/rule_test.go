@@ -769,7 +769,7 @@ func TestSingleSQL(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_memory_0_0_exceptions_total":  int64(2),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
 
@@ -1354,12 +1354,12 @@ func TestSingleSQLError(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"op_3_project_0_exceptions_total":   int64(1),
+				"op_3_project_0_exceptions_total":   int64(0),
 				"op_3_project_0_process_latency_us": int64(0),
 				"op_3_project_0_records_in_total":   int64(2),
 				"op_3_project_0_records_out_total":  int64(2),
 
-				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(3),
 				"sink_memory_0_0_records_out_total": int64(3),
 
@@ -1397,7 +1397,7 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(4),
 
-				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(5),
 				"sink_memory_0_0_records_out_total": int64(5),
 
@@ -1430,7 +1430,7 @@ func TestSingleSQLError(t *testing.T) {
 				"op_2_project_0_records_in_total":   int64(5),
 				"op_2_project_0_records_out_total":  int64(4),
 
-				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(5),
 				"sink_memory_0_0_records_out_total": int64(5),
 

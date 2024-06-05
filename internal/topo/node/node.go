@@ -216,7 +216,6 @@ func (o *defaultSinkNode) commonIngest(ctx api.StreamContext, item any) (any, bo
 	}
 	switch d := item.(type) {
 	case error:
-		o.statManager.IncTotalExceptions(d.Error())
 		if o.sendError {
 			o.Broadcast(d)
 		}

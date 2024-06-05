@@ -64,12 +64,7 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 						continue
 					}
 					node.Broadcast(dd)
-					switch dt := dd.(type) {
-					case error:
-						node.statManager.IncTotalExceptions(dt.Error())
-					default:
-						node.statManager.IncTotalRecordsOut()
-					}
+					node.statManager.IncTotalRecordsOut()
 					if sendInterval > 0 {
 						time.Sleep(sendInterval)
 					}
