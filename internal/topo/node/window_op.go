@@ -325,9 +325,6 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
 			switch d := data.(type) {
-			case error:
-				o.Broadcast(d)
-				o.statManager.IncTotalExceptions(d.Error())
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
 				inputs = append(inputs, d)

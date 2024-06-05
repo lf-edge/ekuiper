@@ -122,9 +122,6 @@ func (o *WindowOperator) execEventWindow(ctx api.StreamContext, inputs []*xsql.T
 				break
 			}
 			switch d := data.(type) {
-			case error:
-				o.Broadcast(d)
-				o.statManager.IncTotalExceptions(d.Error())
 			case *xsql.WatermarkTuple:
 				ctx.GetLogger().Debug("WatermarkTuple", d.GetTimestamp())
 				watermarkTs := d.GetTimestamp()
@@ -225,7 +222,6 @@ func (o *WindowOperator) ingest(ctx api.StreamContext, item any) (any, bool) {
 	}
 	switch d := item.(type) {
 	case error:
-		o.statManager.IncTotalExceptions(d.Error())
 		if o.sendError {
 			o.Broadcast(d)
 		}

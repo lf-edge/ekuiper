@@ -139,7 +139,6 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 	}
 	switch d := item.(type) {
 	case error:
-		s.statManager.IncTotalExceptions(d.Error())
 		if s.sendError {
 			return d, false
 		}
