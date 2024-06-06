@@ -364,6 +364,10 @@
               "path": "example/data_merge/merge_multi_stream"
             }
           ]
+        },
+        {
+          "title": "捕捉数据变化",
+          "path": "example/change_data_capture"
         }
       ]
     },
@@ -1118,6 +1122,10 @@
         {
           "title": "Merge Data in Multiple Streams",
           "path": "example/data_merge/merge_multi_stream"
+        },
+        {
+          "title": "Capture Data Change",
+          "path": "example/change_data_capture"
         }
       ]
     },
