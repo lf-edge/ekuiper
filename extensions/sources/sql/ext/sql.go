@@ -105,6 +105,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				if !reconnectSuccess {
 					continue
 				}
+				needReconnect = false
 			}
 
 			rcvTime := conf.GetNow()
