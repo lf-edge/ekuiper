@@ -41,6 +41,7 @@ require (
 	github.com/ugorji/go/codec v1.2.11
 	github.com/urfave/cli v1.22.14
 	github.com/valyala/fastjson v1.6.4
+	github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04
 	go.nanomsg.org/mangos/v3 v3.4.2
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/text v0.14.0
@@ -286,7 +287,6 @@ require (
 	github.com/xdg/stringprep v1.0.3 // indirect
 	github.com/xo/dburl v0.13.0 // indirect
 	github.com/xwb1989/sqlparser v0.0.0-20180606152119-120387863bf2 // indirect
-	github.com/yisaer/file-rotatelogs v0.0.0-20240516054310-8347494122ad // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
