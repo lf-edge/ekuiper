@@ -149,6 +149,9 @@ func (m *sqlSink) writeToDB(ctx api.StreamContext, sqlStr *string) error {
 	ctx.GetLogger().Debugf(*sqlStr)
 	r, err := m.db.Exec(*sqlStr)
 	if err != nil {
+		if err2 := m.Reconnect(); err2 != nil {
+			ctx.GetLogger().Errorf("rule %v sqlSink reconnect failed, err:%v", ctx.GetRuleId(), err2)
+		}
 		ctx.GetLogger().Errorf("sql sink writeDB failed, err:%v , sql: %v", err, *sqlStr)
 		return errorx.NewIOErr(err.Error())
 	}
@@ -363,6 +366,15 @@ func (m *sqlSink) save(ctx api.StreamContext, table string, data map[string]inte
 		return fmt.Errorf("invalid rowkind %s", rowkind)
 	}
 	return m.writeToDB(ctx, &sqlStr)
+}
+
+func (m *sqlSink) Reconnect() error {
+	db, err2 := util.ReplaceDbForOneNode(util.GlobalPool, m.conf.Url)
+	if err2 != nil {
+		return err2
+	}
+	m.db = db
+	return nil
 }
 
 func GetSink() api.Sink {
