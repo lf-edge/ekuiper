@@ -16,14 +16,17 @@ package sql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"strings"
 	"time"
+
+	"github.com/pingcap/failpoint"
 
 	driver2 "github.com/lf-edge/ekuiper/extensions/sqldatabase/driver"
 	"github.com/lf-edge/ekuiper/extensions/sqldatabase/sqlgen"
 	"github.com/lf-edge/ekuiper/extensions/util"
 	"github.com/lf-edge/ekuiper/internal/conf"
+	"github.com/lf-edge/ekuiper/internal/xsql"
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/hidden"
@@ -93,9 +96,17 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 	logger := ctx.GetLogger()
 	t := time.NewTicker(time.Duration(m.conf.Interval) * time.Millisecond)
 	defer t.Stop()
+	needReconnect := false
 	for {
 		select {
 		case <-t.C:
+			if needReconnect {
+				reconnectSuccess := m.handleReconnect(consumer)
+				if !reconnectSuccess {
+					continue
+				}
+			}
+
 			rcvTime := conf.GetNow()
 			query, err := m.Query.SqlQueryStatement()
 			if err != nil {
@@ -104,17 +115,10 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			logger.Debugf("Query the database with %s", query)
 			rows, err := m.db.Query(query)
 			if err != nil {
-				logger.Errorf("sql source meet error, try to reconnection, err:%v, query:%v", err, query)
-				if !isConnectionError(err) {
-					errCh <- err
-					continue
+				consumer <- &xsql.ErrorSourceTuple{
+					Error: err,
 				}
-				err2 := m.Reconnect()
-				if err2 != nil {
-					errCh <- fmt.Errorf("reconnect failed, reconnect err:%v", err2)
-				} else {
-					logger.Info("sql source reconnect successfully")
-				}
+				needReconnect = true
 				continue
 			}
 
@@ -122,7 +126,7 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 
 			types, err := rows.ColumnTypes()
 			if err != nil {
-				logger.Errorf("row ColumnTypes error %v", query, err)
+				logger.Errorf("query %v row ColumnTypes error %v", query, err)
 				errCh <- err
 				return
 			}
@@ -186,21 +190,26 @@ func (m *sqlsource) Reconnect() error {
 	return nil
 }
 
+func (m *sqlsource) handleReconnect(consumer chan<- api.SourceTuple) bool {
+	err := m.Reconnect()
+	failpoint.Inject("handleReconnectErr", func(value failpoint.Value) {
+		switch value.(int) {
+		case 1:
+			err = errors.New("handleReconnectErr")
+		case 2:
+			err = nil
+		}
+	})
+
+	if err != nil {
+		consumer <- &xsql.ErrorSourceTuple{
+			Error: err,
+		}
+		return false
+	}
+	return true
+}
+
 func GetSource() api.Source {
 	return &sqlsource{}
-}
-
-func isConnectionError(err error) bool {
-	for _, rErr := range reconnectionErr {
-		if strings.Contains(err.Error(), rErr) {
-			return true
-		}
-	}
-	return false
-}
-
-var reconnectionErr []string
-
-func init() {
-	reconnectionErr = []string{"connection refused", "database is closed"}
 }
