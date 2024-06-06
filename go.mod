@@ -25,7 +25,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.8
-	github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba
+	github.com/lf-edge/ekuiper/extensions v0.0.0-20240606005720-bdb167e36fd7
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/montanaflynn/stats v0.7.1
@@ -359,4 +359,4 @@ go 1.22
 
 toolchain go1.22.1
 
-replace github.com/lf-edge/ekuiper/extensions v0.0.0-20231030085318-99dd34783cba => ./extensions
+replace github.com/lf-edge/ekuiper/extensions v0.0.0-20240606005720-bdb167e36fd7 => ./extensions
