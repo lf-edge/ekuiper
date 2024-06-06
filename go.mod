@@ -44,7 +44,7 @@ require (
 	github.com/ugorji/go/codec v1.2.12
 	github.com/urfave/cli v1.22.15
 	github.com/valyala/fastjson v1.6.4
-	github.com/yisaer/file-rotatelogs v0.0.0-20240516054310-8347494122ad
+	github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04
 	go.nanomsg.org/mangos/v3 v3.4.2
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/text v0.15.0
