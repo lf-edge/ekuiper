@@ -47,6 +47,31 @@ func dropConnectionStore(plugin, id string) error {
 	return err
 }
 
+func GetAllConnectionStatus(ctx api.StreamContext) map[string]ConnectionStatus {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	s := make(map[string]ConnectionStatus)
+	for id, err := range globalConnectionManager.failConnection {
+		status := ConnectionStatus{
+			Status: ConnectionFail,
+			ErrMsg: err,
+		}
+		s[id] = status
+	}
+	for id, meta := range globalConnectionManager.connectionPool {
+		status := ConnectionStatus{
+			Status: ConnectionRunning,
+		}
+		err := meta.conn.Ping(ctx)
+		if err != nil {
+			status.Status = ConnectionFail
+			status.ErrMsg = err.Error()
+		}
+		s[id] = status
+	}
+	return s
+}
+
 func GetAllConnectionsID() []string {
 	globalConnectionManager.RLock()
 	defer globalConnectionManager.RUnlock()
@@ -102,6 +127,9 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	}
 	meta.conn = conn
 	globalConnectionManager.connectionPool[id] = meta
+	if _, ok := globalConnectionManager.failConnection[id]; ok {
+		delete(globalConnectionManager.failConnection, id)
+	}
 	return conn, nil
 }
 
@@ -181,6 +209,10 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	defer globalConnectionManager.Unlock()
 	meta, ok := globalConnectionManager.connectionPool[selId]
 	if !ok {
+		_, ok := globalConnectionManager.failConnection[selId]
+		if ok {
+			delete(globalConnectionManager.failConnection, selId)
+		}
 		return nil
 	}
 	conn := meta.conn
@@ -207,6 +239,7 @@ func InitConnectionManager4Test() error {
 func InitConnectionManager() {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]ConnectionMeta),
+		failConnection: make(map[string]string),
 	}
 	if conf.IsTesting {
 		return
@@ -234,6 +267,7 @@ func ReloadConnection() error {
 		conn, err := createNamedConnection(context.Background(), meta)
 		if err != nil {
 			conf.Log.Warnf("initialize connection:%v failed, err:%v", id, err)
+			globalConnectionManager.failConnection[id] = err.Error()
 			continue
 		}
 		meta.conn = conn
@@ -245,6 +279,7 @@ func ReloadConnection() error {
 type ConnectionManager struct {
 	sync.RWMutex
 	connectionPool map[string]ConnectionMeta
+	failConnection map[string]string
 }
 
 type ConnectionMeta struct {
@@ -252,10 +287,6 @@ type ConnectionMeta struct {
 	Typ   string             `json:"typ"`
 	Props map[string]any     `json:"props"`
 	conn  modules.Connection `json:"-"`
-}
-
-func init() {
-	modules.ConnectionRegister["mock"] = CreateMockConnection
 }
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
@@ -272,3 +303,13 @@ const (
 )
 
 var DefaultBackoffMaxElapsedDuration = 3 * time.Minute
+
+const (
+	ConnectionRunning = "running"
+	ConnectionFail    = "fail"
+)
+
+type ConnectionStatus struct {
+	Status string
+	ErrMsg string
+}
