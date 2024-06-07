@@ -162,7 +162,7 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 		}
 	}
 	conf.Log.Infof("Installed portable plugin %s successfully", name)
-	runtime.GetPluginInsManager().CreateIns(&pi.PluginMeta)
+	runtime.GetPluginInsManager().CreateIns(&pi.PluginMeta, isInit)
 	return nil
 }
 

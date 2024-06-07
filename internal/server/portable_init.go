@@ -28,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
@@ -51,6 +52,7 @@ func (p portableComp) register() {
 func (p portableComp) rest(r *mux.Router) {
 	r.HandleFunc("/plugins/portables", portablesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/plugins/portables/{name}", portableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
+	r.HandleFunc("/plugins/portables/{name}/status", portableStatusHandler).Methods(http.MethodGet)
 }
 
 func (p portableComp) exporter() ConfManager {
@@ -79,6 +81,19 @@ func portablesHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		fmt.Fprintf(w, "portable plugin %s is created", sd.GetName())
 	}
+}
+
+func portableStatusHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+	status, ok := runtime.GetPluginInsManager().GetPluginInsStatus(name)
+	if !ok {
+		handleError(w, errorx.NewWithCode(errorx.NOT_FOUND, "not found"), fmt.Sprintf("portable plugin %s not found", name), logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(status, w, logger)
 }
 
 func portableHandler(w http.ResponseWriter, r *http.Request) {
