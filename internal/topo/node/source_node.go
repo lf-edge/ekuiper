@@ -176,7 +176,10 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 }
 
 func (m *SourceNode) runPull(ctx api.StreamContext) error {
-	m.doPull(ctx, timex.GetNow())
+	err := m.doPull(ctx, timex.GetNow())
+	if err != nil {
+		return err
+	}
 	ticker := timex.GetTicker(m.interval)
 	go func() {
 		defer ticker.Stop()
@@ -184,7 +187,10 @@ func (m *SourceNode) runPull(ctx api.StreamContext) error {
 			select {
 			case tc := <-ticker.C:
 				ctx.GetLogger().Debugf("source pull at %v", tc.UnixMilli())
-				m.doPull(ctx, tc)
+				e := m.doPull(ctx, tc)
+				if e != nil {
+					m.ingestError(ctx, e)
+				}
 			case <-ctx.Done():
 				return
 			}
@@ -193,13 +199,16 @@ func (m *SourceNode) runPull(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *SourceNode) doPull(ctx api.StreamContext, tc time.Time) {
-	switch ss := m.s.(type) {
-	case api.PullBytesSource:
-		ss.Pull(ctx, tc, m.ingestBytes, m.ingestError)
-	case api.PullTupleSource:
-		ss.Pull(ctx, tc, m.ingestAnyTuple, m.ingestError)
-	}
+func (m *SourceNode) doPull(ctx api.StreamContext, tc time.Time) error {
+	return infra.SafeRun(func() error {
+		switch ss := m.s.(type) {
+		case api.PullBytesSource:
+			ss.Pull(ctx, tc, m.ingestBytes, m.ingestError)
+		case api.PullTupleSource:
+			ss.Pull(ctx, tc, m.ingestAnyTuple, m.ingestError)
+		}
+		return nil
+	})
 }
 
 func (m *SourceNode) Close() {

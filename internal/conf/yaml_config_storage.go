@@ -219,8 +219,8 @@ func DropCfgKeyFromStorage(typ string, plugin string, confKey string) error {
 	return delCfgKeyInStorage(key)
 }
 
-// GotCfgFromKVStorage ...
-func GotCfgFromKVStorage(typ string, plugin string, confKey string) (map[string]map[string]interface{}, error) {
+// GetCfgFromKVStorage ...
+func GetCfgFromKVStorage(typ string, plugin string, confKey string) (map[string]map[string]interface{}, error) {
 	key := buildKey(typ, plugin, confKey)
 	kvStorage, err := getKVStorage()
 	if err != nil {

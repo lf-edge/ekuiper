@@ -14,7 +14,10 @@
 
 package message
 
-import "github.com/lf-edge/ekuiper/contract/v2/api"
+import (
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+)
 
 type MockPartialConverter struct {
 	i int
@@ -35,3 +38,27 @@ func (m *MockPartialConverter) DecodeField(ctx api.StreamContext, b []byte, f st
 	m.i++
 	return r, nil
 }
+
+type MockMerger struct {
+	count  int
+	frames []map[string]any
+}
+
+func (m *MockMerger) Merging(ctx api.StreamContext, b []byte) error {
+	if m.frames == nil {
+		m.frames = make([]map[string]any, 2)
+	}
+	m.frames[m.count%2] = map[string]any{"data": b}
+	m.count++
+	return nil
+}
+
+func (m *MockMerger) Trigger(ctx api.StreamContext) ([]any, bool) {
+	result := make([]any, len(m.frames))
+	for i, frame := range m.frames {
+		result[i] = frame
+	}
+	return result, true
+}
+
+func (m *MockMerger) ResetSchema(schema map[string]*ast.JsonStreamField) {}

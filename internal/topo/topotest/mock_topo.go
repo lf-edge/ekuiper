@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,14 +55,13 @@ func CommonResultFunc(result []any) [][]map[string]any {
 	maps := make([][]map[string]any, 0, len(result))
 	for _, v := range result {
 		switch rt := v.(type) {
-		case *xsql.Tuple:
-			m, _ := rt.All("")
+		case pubsub.MemTuple:
+			m := rt.ToMap()
 			maps = append(maps, []map[string]any{m})
-		case []*xsql.Tuple:
+		case []pubsub.MemTuple:
 			nm := make([]map[string]any, 0, len(rt))
 			for _, mm := range rt {
-				m, _ := mm.All("")
-				nm = append(nm, m)
+				nm = append(nm, mm.ToMap())
 			}
 			maps = append(maps, nm)
 		default:

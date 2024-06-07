@@ -25,10 +25,14 @@ type Connection interface {
 	Ref(ctx api.StreamContext) int
 }
 
-type RegisterConnection func(ctx api.StreamContext, id string, props map[string]any) (Connection, error)
+type ConnectionProvider func(ctx api.StreamContext, id string, props map[string]any) (Connection, error)
 
-var ConnectionRegister map[string]RegisterConnection
+var ConnectionRegister map[string]ConnectionProvider
 
 func init() {
-	ConnectionRegister = map[string]RegisterConnection{}
+	ConnectionRegister = map[string]ConnectionProvider{}
+}
+
+func RegisterConnection(name string, cp ConnectionProvider) {
+	ConnectionRegister[name] = cp
 }

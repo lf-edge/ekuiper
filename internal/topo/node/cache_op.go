@@ -67,57 +67,62 @@ func (s *CacheOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	s.prepareExec(ctx, errCh, "op")
 	go func() {
-		defer func() {
-			s.Close()
-		}()
-		for {
-			select {
-			case <-ctx.Done():
-				s.cache.Flush(ctx)
-				return
-			case d := <-s.input:
-				data, processed := s.commonIngest(ctx, d)
-				if processed {
-					break
-				}
-				// If already have the cache, append this to cache and send the currItem
-				// Otherwise, send out the new data. If blocked, make it currItem
-				s.statManager.IncTotalRecordsIn()
-				s.statManager.ProcessTimeStart()
-
-				if s.hasCache { // already have cache, add current data to cache and send out the cache
-					err := s.cache.AddCache(ctx, data)
-					ctx.GetLogger().Debugf("add data %v to cache", data)
-					if err != nil {
-						s.statManager.IncTotalExceptions(err.Error())
-						s.Broadcast(err)
-						s.statManager.ProcessTimeEnd()
-						s.statManager.IncTotalMessagesProcessed(1)
+		err := infra.SafeRun(func() error {
+			defer func() {
+				s.Close()
+			}()
+			for {
+				select {
+				case <-ctx.Done():
+					s.cache.Flush(ctx)
+					return nil
+				case d := <-s.input:
+					data, processed := s.commonIngest(ctx, d)
+					if processed {
 						break
 					}
-				} else {
-					s.currItem = data
-				}
-				s.send()
+					// If already have the cache, append this to cache and send the currItem
+					// Otherwise, send out the new data. If blocked, make it currItem
+					s.statManager.IncTotalRecordsIn()
+					s.statManager.ProcessTimeStart()
 
-				s.statManager.ProcessTimeEnd()
-				s.statManager.IncTotalMessagesProcessed(1)
-				l := int64(len(s.input) + s.cache.CacheLength)
-				if s.currItem != nil {
-					l += 1
+					if s.hasCache { // already have cache, add current data to cache and send out the cache
+						err := s.cache.AddCache(ctx, data)
+						ctx.GetLogger().Debugf("add data %v to cache", data)
+						if err != nil {
+							s.statManager.IncTotalExceptions(err.Error())
+							s.Broadcast(err)
+							s.statManager.ProcessTimeEnd()
+							s.statManager.IncTotalMessagesProcessed(1)
+							break
+						}
+					} else {
+						s.currItem = data
+					}
+					s.send()
+
+					s.statManager.ProcessTimeEnd()
+					s.statManager.IncTotalMessagesProcessed(1)
+					l := int64(len(s.input) + s.cache.CacheLength)
+					if s.currItem != nil {
+						l += 1
+					}
+					s.statManager.SetBufferLength(l)
+				case <-s.resendTimerCh:
+					ctx.GetLogger().Debugf("ticker is triggered")
+					s.statManager.ProcessTimeStart()
+					s.send()
+					s.statManager.ProcessTimeEnd()
+					l := int64(len(s.input) + s.cache.CacheLength)
+					if s.currItem != nil {
+						l += 1
+					}
+					s.statManager.SetBufferLength(l)
 				}
-				s.statManager.SetBufferLength(l)
-			case <-s.resendTimerCh:
-				ctx.GetLogger().Debugf("ticker is triggered")
-				s.statManager.ProcessTimeStart()
-				s.send()
-				s.statManager.ProcessTimeEnd()
-				l := int64(len(s.input) + s.cache.CacheLength)
-				if s.currItem != nil {
-					l += 1
-				}
-				s.statManager.SetBufferLength(l)
 			}
+		})
+		if err != nil {
+			infra.DrainError(ctx, err, errCh)
 		}
 	}()
 }

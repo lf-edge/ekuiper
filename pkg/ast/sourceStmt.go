@@ -92,11 +92,14 @@ func (sf *StreamFields) ToJsonSchema() map[string]*JsonStreamField {
 }
 
 func convertSchema(sfs StreamFields) map[string]*JsonStreamField {
-	result := make(map[string]*JsonStreamField, len(sfs))
-	for _, sf := range sfs {
-		result[sf.Name] = convertFieldType(sf.FieldType)
+	if len(sfs) > 0 {
+		result := make(map[string]*JsonStreamField, len(sfs))
+		for _, sf := range sfs {
+			result[sf.Name] = convertFieldType(sf.FieldType)
+		}
+		return result
 	}
-	return result
+	return nil
 }
 
 func convertFieldType(sf FieldType) *JsonStreamField {

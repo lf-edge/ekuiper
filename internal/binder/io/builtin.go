@@ -19,6 +19,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
+	mqttCon "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -43,8 +44,10 @@ func init() {
 	modules.RegisterSink("file", file.GetSink)
 	// modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
 
-	// modules.RegisterLookupSource("memory", func() api.LookupSource { return memory.GetLookupSource() })
+	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	// modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
+
+	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)
 }
 
 type Manager struct{}

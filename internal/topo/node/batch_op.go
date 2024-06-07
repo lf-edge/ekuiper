@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -57,30 +58,35 @@ func (b *BatchOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	b.prepareExec(ctx, errCh, "op")
 	switch {
 	case b.batchSize > 0 && b.lingerInterval > 0:
-		b.runWithTickerAndBatchSize(ctx)
+		b.runWithTickerAndBatchSize(ctx, errCh)
 	case b.batchSize > 0 && b.lingerInterval == 0:
-		b.runWithBatchSize(ctx)
+		b.runWithBatchSize(ctx, errCh)
 	case b.batchSize == 0 && b.lingerInterval > 0:
-		b.runWithTicker(ctx)
+		b.runWithTicker(ctx, errCh)
 	}
 }
 
-func (b *BatchOp) runWithTickerAndBatchSize(ctx api.StreamContext) {
+func (b *BatchOp) runWithTickerAndBatchSize(ctx api.StreamContext, errCh chan<- error) {
 	ticker := timex.GetTicker(b.lingerInterval)
 	go func() {
-		defer func() {
-			ticker.Stop()
-			b.Close()
-		}()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case d := <-b.input:
-				b.ingest(ctx, d, true)
-			case <-ticker.C:
-				b.send()
+		err := infra.SafeRun(func() error {
+			defer func() {
+				ticker.Stop()
+				b.Close()
+			}()
+			for {
+				select {
+				case <-ctx.Done():
+					return nil
+				case d := <-b.input:
+					b.ingest(ctx, d, true)
+				case <-ticker.C:
+					b.send()
+				}
 			}
+		})
+		if err != nil {
+			infra.DrainError(ctx, err, errCh)
 		}
 	}()
 }
@@ -123,38 +129,48 @@ func (b *BatchOp) send() {
 	b.currIndex = 0
 }
 
-func (b *BatchOp) runWithBatchSize(ctx api.StreamContext) {
+func (b *BatchOp) runWithBatchSize(ctx api.StreamContext, errCh chan<- error) {
 	go func() {
-		defer func() {
-			b.Close()
-		}()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case d := <-b.input:
-				b.ingest(ctx, d, true)
+		err := infra.SafeRun(func() error {
+			defer func() {
+				b.Close()
+			}()
+			for {
+				select {
+				case <-ctx.Done():
+					return nil
+				case d := <-b.input:
+					b.ingest(ctx, d, true)
+				}
 			}
+		})
+		if err != nil {
+			infra.DrainError(ctx, err, errCh)
 		}
 	}()
 }
 
-func (b *BatchOp) runWithTicker(ctx api.StreamContext) {
+func (b *BatchOp) runWithTicker(ctx api.StreamContext, errCh chan<- error) {
 	ticker := timex.GetTicker(b.lingerInterval)
 	go func() {
-		defer func() {
-			ticker.Stop()
-			b.Close()
-		}()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case d := <-b.input:
-				b.ingest(ctx, d, false)
-			case <-ticker.C:
-				b.send()
+		err := infra.SafeRun(func() error {
+			defer func() {
+				ticker.Stop()
+				b.Close()
+			}()
+			for {
+				select {
+				case <-ctx.Done():
+					return nil
+				case d := <-b.input:
+					b.ingest(ctx, d, false)
+				case <-ticker.C:
+					b.send()
+				}
 			}
+		})
+		if err != nil {
+			infra.DrainError(ctx, err, errCh)
 		}
 	}()
 }

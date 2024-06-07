@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -430,7 +430,7 @@ func TestWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_memory_0_0_exceptions_total":  int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(6),
 				"sink_memory_0_0_records_out_total": int64(6),
 
@@ -1041,7 +1041,7 @@ func TestEventWindow(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(6),
 				"sink_memory_0_0_records_out_total": int64(6),
 
@@ -1049,7 +1049,7 @@ func TestEventWindow(t *testing.T) {
 				"source_demoErr_0_records_in_total":  int64(6),
 				"source_demoErr_0_records_out_total": int64(6),
 
-				"op_4_window_0_exceptions_total":  int64(1),
+				"op_4_window_0_exceptions_total":  int64(0),
 				"op_4_window_0_records_in_total":  int64(3),
 				"op_4_window_0_records_out_total": int64(5),
 			},
@@ -1319,7 +1319,7 @@ func TestWindowError(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(1),
 				"sink_memory_0_0_records_out_total": int64(1),
 
@@ -1344,7 +1344,7 @@ func TestWindowError(t *testing.T) {
 				}}, {},
 			},
 			M: map[string]interface{}{
-				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(4),
 				"sink_memory_0_0_records_out_total": int64(4),
 
@@ -1383,12 +1383,12 @@ func TestWindowError(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"op_5_project_0_exceptions_total":   int64(3),
+				"op_5_project_0_exceptions_total":   int64(0),
 				"op_5_project_0_process_latency_us": int64(0),
 				"op_5_project_0_records_in_total":   int64(5),
 				"op_5_project_0_records_out_total":  int64(5),
 
-				"sink_memory_0_0_exceptions_total":  int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(8),
 				"sink_memory_0_0_records_out_total": int64(8),
 
@@ -1427,12 +1427,12 @@ func TestWindowError(t *testing.T) {
 				}, {}},
 			},
 			M: map[string]interface{}{
-				"op_6_project_0_exceptions_total":   int64(3),
+				"op_6_project_0_exceptions_total":   int64(0),
 				"op_6_project_0_process_latency_us": int64(0),
 				"op_6_project_0_records_in_total":   int64(2),
 				"op_6_project_0_records_out_total":  int64(2),
 
-				"sink_memory_0_0_exceptions_total":  int64(3),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(5),
 				"sink_memory_0_0_records_out_total": int64(5),
 
@@ -1469,7 +1469,7 @@ func TestWindowError(t *testing.T) {
 				}},
 			},
 			M: map[string]interface{}{
-				"sink_memory_0_0_exceptions_total":  int64(1),
+				"sink_memory_0_0_exceptions_total":  int64(0),
 				"sink_memory_0_0_records_in_total":  int64(3),
 				"sink_memory_0_0_records_out_total": int64(3),
 

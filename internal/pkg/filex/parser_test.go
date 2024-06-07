@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pubsub
+package filex
 
-type UpdatableTuple struct {
-	MemTuple
-	Rowkind string
-	Keyval  interface{}
-}
+import (
+	"testing"
 
-type MemTuple interface {
-	Value(key, table string) (any, bool)
-	ToMap() map[string]any
+	"github.com/stretchr/testify/require"
+)
+
+func TestReadYamlUnmarshalErr(t *testing.T) {
+	err := ReadYamlUnmarshal("1.yaml", map[string]interface{}{})
+	require.Error(t, err)
+	require.Equal(t, "read 1.yaml unmarshal yaml failed, err:open 1.yaml: no such file or directory", err.Error())
 }

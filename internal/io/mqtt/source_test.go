@@ -23,9 +23,11 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
+	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 // NOTICE!!! Need to run a MQTT broker in localhost:1883 for this test or change the url to your broker
@@ -33,6 +35,7 @@ const url = "tcp://127.0.0.1:1883"
 
 func init() {
 	testx.InitEnv("mqtt_source_connector")
+	modules.RegisterConnection("mqtt", client.CreateConnection)
 }
 
 func TestProvision(t *testing.T) {

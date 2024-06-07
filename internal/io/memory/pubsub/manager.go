@@ -20,7 +20,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
 const IdProperty = "topic"
@@ -110,11 +109,11 @@ func RemovePub(topic string) {
 	}
 }
 
-func Produce(ctx api.StreamContext, topic string, data *xsql.Tuple) {
+func Produce(ctx api.StreamContext, topic string, data MemTuple) {
 	doProduce(ctx, topic, data)
 }
 
-func ProduceList(ctx api.StreamContext, topic string, list []*xsql.Tuple) {
+func ProduceList(ctx api.StreamContext, topic string, list []MemTuple) {
 	doProduce(ctx, topic, list)
 }
 

@@ -113,9 +113,6 @@ func (w *WatermarkOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 						break
 					}
 					switch d := data.(type) {
-					case error:
-						w.Broadcast(d)
-						w.statManager.IncTotalExceptions(d.Error())
 					case *xsql.Tuple:
 						w.statManager.IncTotalRecordsIn()
 						// Start the first event processing.
