@@ -192,6 +192,8 @@ func GetPluginInsManager4Test() *pluginInsManager {
 }
 
 func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {
+	p.RLock()
+	defer p.RUnlock()
 	ins, ok := p.getPluginIns(name)
 	if !ok {
 		return nil, false
@@ -199,17 +201,25 @@ func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool)
 	return ins.GetStatus(), true
 }
 
-func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
+func (p *pluginInsManager) GetPluginIns(name string) (*PluginIns, bool) {
 	p.RLock()
 	defer p.RUnlock()
+	return p.getPluginIns(name)
+}
+
+func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
 	ins, ok := p.instances[name]
 	return ins, ok
 }
 
-// deletePluginIns should only run when there is no state aka. commands
-func (p *pluginInsManager) deletePluginIns(name string) {
+func (p *pluginInsManager) DeletePluginIns(name string) {
 	p.Lock()
 	defer p.Unlock()
+	p.deletePluginIns(name)
+}
+
+// deletePluginIns should only run when there is no state aka. commands
+func (p *pluginInsManager) deletePluginIns(name string) {
 	delete(p.instances, name)
 }
 
@@ -227,14 +237,15 @@ func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta, isInit bool) {
 	if !isInit {
 		if ins, ok := p.instances[pluginMeta.Name]; ok {
 			if len(ins.commands) != 0 {
-				go p.getOrStartProcess(pluginMeta, PortbleConf)
+				go p.GetOrStartProcess(pluginMeta, PortbleConf)
 			}
 		}
 	} else {
-		go p.getOrStartProcess(pluginMeta, PortbleConf)
+		go p.GetOrStartProcess(pluginMeta, PortbleConf)
 	}
 }
 
+// GetOrStartProcess Control the plugin process lifecycle.
 func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
 	return p.getOrStartProcess(pluginMeta, pconf)
 }
@@ -342,7 +353,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		}
 		// must make sure the plugin ins is not cleaned up yet by checking the process identity
 		// clean up for stop unintentionally
-		if ins, ok := p.getPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
+		if ins, ok := p.GetPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
 			ins.Lock()
 			if len(ins.commands) == 0 {
 				if ins.ctrlChan != nil {
@@ -351,7 +362,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			}
 			ins.process = nil
 			ins.Unlock()
-			p.deletePluginIns(pluginMeta.Name)
+			p.DeletePluginIns(pluginMeta.Name)
 		}
 		return nil
 	})
