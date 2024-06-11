@@ -320,6 +320,10 @@ func (o *DecodeOp) PayloadBatchDecodeWorker(ctx api.StreamContext, item any) []a
 				vv = vt
 			case map[string]any:
 				vv = xsql.Message(vt)
+			default:
+				return []any{
+					fmt.Errorf("unsupported payload received, must be a slice of maps: %v", batchVal),
+				}
 			}
 			payload, ok := vv.Value(o.c.PayloadField, "")
 			if !ok {
