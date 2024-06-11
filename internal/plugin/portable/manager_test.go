@@ -105,6 +105,8 @@ func TestManager_Install(t *testing.T) {
 			}
 		}
 	}
+
+	testRegisterErr(t, endpoint)
 }
 
 func TestManager_Read(t *testing.T) {
@@ -267,24 +269,16 @@ func TestParsePluginJson(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestRegisterErr(t *testing.T) {
-	s := httptest.NewServer(
-		http.FileServer(http.Dir("../testzips")),
-	)
-	defer s.Close()
-	endpoint := s.URL
-	m, err := InitManager()
-	require.NoError(t, err)
-	require.NotNil(t, m)
+func testRegisterErr(t *testing.T, endpoint string) {
 	p := &plugin.IOPlugin{
 		Name: "mirror2",
 		File: endpoint + "/portables/mirror.zip",
 	}
 
-	m.reg.Set("mirror2", &PluginInfo{})
-	err = m.Register(p)
+	manager.reg.Set("mirror2", &PluginInfo{})
+	err := manager.Register(p)
 	require.Error(t, err)
-	m.reg.Delete("mirror2")
+	manager.reg.Delete("mirror2")
 
 	testcases := []struct {
 		mockErr string
@@ -320,7 +314,7 @@ func TestRegisterErr(t *testing.T) {
 
 	for _, testcase := range testcases {
 		failpoint.Enable(testcase.mockErr, "return(true)")
-		err = m.Register(p)
+		err = manager.Register(p)
 		require.Error(t, err)
 		failpoint.Disable(testcase.mockErr)
 	}
