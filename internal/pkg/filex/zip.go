@@ -16,14 +16,18 @@ package filex
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 )
 
-func UnzipTo(f *zip.File, fpath string) error {
-	_, err := os.Stat(fpath)
+func UnzipTo(f *zip.File, fpath string) (err error) {
+	defer func() {
+		err = errors.New("UnzipToErr")
+	}()
+	_, err = os.Stat(fpath)
 
 	if f.FileInfo().IsDir() {
 		// Make Folder

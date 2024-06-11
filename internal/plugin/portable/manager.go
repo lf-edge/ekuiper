@@ -245,6 +245,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		}
 	}()
 	r, err := zip.OpenReader(src)
+	failpoint.Inject("installOpenReaderErr", func() {
+		err = errors.New("installOpenReaderErr")
+	})
 	if err != nil {
 		return err
 	}
@@ -256,16 +259,25 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		filesNumber++
 		if file.Name == jsonName {
 			jf, err := file.Open()
+			failpoint.Inject("installFileOpenErr", func() {
+				err = errors.New("installFileOpenErr")
+			})
 			if err != nil {
 				err = fmt.Errorf("invalid json file %s: %s", jsonName, err)
 				return err
 			}
 			pi = &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
 			allBytes, err := io.ReadAll(jf)
+			failpoint.Inject("installFileOpenErr", func() {
+				err = errors.New("installReadErr")
+			})
 			if err != nil {
 				return err
 			}
 			err = json.Unmarshal(allBytes, pi)
+			failpoint.Inject("installJsonMarshalErr", func() {
+				err = errors.New("installJsonMarshalErr")
+			})
 			if err != nil {
 				return err
 			}
@@ -290,6 +302,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	d := filepath.Clean(pluginTarget)
 	if _, err := os.Stat(d); os.IsNotExist(err) {
 		err = os.MkdirAll(d, 0o755)
+		failpoint.Inject("installMkdirErr", func() {
+			err = errors.New("installMkdirErr")
+		})
 		if err != nil {
 			return err
 		}

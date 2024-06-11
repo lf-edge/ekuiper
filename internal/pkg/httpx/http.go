@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,6 +26,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -204,7 +207,12 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 	return src, nil
 }
 
-func DownloadFile(filepath string, uri string) error {
+func DownloadFile(filepath string, uri string) (err error) {
+	defer func() {
+		failpoint.Inject("DownloadFileErr", func() {
+			err = errors.New("DownloadFileErr")
+		})
+	}()
 	src, err := ReadFile(uri)
 	if err != nil {
 		return err

@@ -266,3 +266,62 @@ func TestParsePluginJson(t *testing.T) {
 	_, err = m.parsePluginJson("mirror")
 	require.Error(t, err)
 }
+
+func TestRegisterErr(t *testing.T) {
+	s := httptest.NewServer(
+		http.FileServer(http.Dir("../testzips")),
+	)
+	defer s.Close()
+	endpoint := s.URL
+	m, err := InitManager()
+	require.NoError(t, err)
+	require.NotNil(t, m)
+	p := &plugin.IOPlugin{
+		Name: "mirror2",
+		File: endpoint + "/portables/mirror.zip",
+	}
+
+	m.reg.Set("mirror2", &PluginInfo{})
+	err = m.Register(p)
+	require.Error(t, err)
+	m.reg.Delete("mirror2")
+
+	testcases := []struct {
+		mockErr string
+	}{
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/pkg/httpx/DownloadFileErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/plugin/portable/installOpenReaderErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/plugin/portable/installFileOpenErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/plugin/portable/installReadErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/plugin/portable/installJsonMarshalErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/plugin/portable/PluginInfoValidateErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/plugin/portable/PluginInfoValidateErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/plugin/portable/installMkdirErr",
+		},
+		{
+			mockErr: "github.com/lf-edge/ekuiper/v2/internal/pkg/filex/UnzipToErr",
+		},
+	}
+
+	for _, testcase := range testcases {
+		failpoint.Enable(testcase.mockErr, "return(true)")
+		err = m.Register(p)
+		require.Error(t, err)
+		failpoint.Disable(testcase.mockErr)
+	}
+}
