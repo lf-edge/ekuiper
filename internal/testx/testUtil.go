@@ -61,11 +61,9 @@ func InitBroker() (context.CancelFunc, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				server.Close()
-			}
+		select {
+		case <-ctx.Done():
+			server.Close()
 		}
 	}()
 	go func() {
