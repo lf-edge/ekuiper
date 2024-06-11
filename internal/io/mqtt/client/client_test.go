@@ -18,12 +18,20 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
-// NOTICE!!! Need to run a MQTT broker in localhost:1883 for this test or change the url to your broker
 const url = "tcp://127.0.0.1:1883"
 
 func TestValidate(t *testing.T) {
+	cancel, err := testx.InitBroker()
+	require.NoError(t, err)
+	defer func() {
+		cancel()
+	}()
+
 	tests := []struct {
 		name  string
 		props map[string]any

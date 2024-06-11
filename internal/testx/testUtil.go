@@ -15,6 +15,14 @@
 package testx
 
 import (
+	"context"
+	"log"
+	"sync"
+
+	mqtt "github.com/mochi-mqtt/server/v2"
+	"github.com/mochi-mqtt/server/v2/hooks/auth"
+	"github.com/mochi-mqtt/server/v2/listeners"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 )
@@ -38,4 +46,39 @@ func InitEnv(id string) {
 	if err != nil {
 		conf.Log.Fatal(err)
 	}
+}
+
+func InitBroker() (func(), error) {
+	// Create the new MQTT Server.
+	server := mqtt.New(nil)
+	// Allow all connections.
+	_ = server.AddHook(new(auth.AllowHook), nil)
+
+	// Create a TCP listener on a standard port.
+	tcp := listeners.NewTCP(listeners.Config{ID: "t1", Address: ":1883"})
+	err := server.AddListener(tcp)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		select {
+		case <-ctx.Done():
+			server.Close()
+			wg.Done()
+		}
+	}()
+	go func() {
+		err := server.Serve()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	return func() {
+		cancel()
+		// wait server close
+		wg.Wait()
+	}, nil
 }
