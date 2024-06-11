@@ -26,6 +26,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pingcap/failpoint"
+	"github.com/stretchr/testify/require"
+
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
@@ -201,4 +204,65 @@ func checkFileForMirror(pluginDir, etcDir string, exist bool) error {
 		}
 	}
 	return nil
+}
+
+func TestManagerErr(t *testing.T) {
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/GetPluginsLocErr", "return(true)")
+	_, err := InitManager()
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetPluginsLocErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/GetDataLocErr", "return(true)")
+	_, err = InitManager()
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetDataLocErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/syncRegistryErr", "return(true)")
+	_, err = InitManager()
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/syncRegistryErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/plgDBErr", "return(true)")
+	_, err = InitManager()
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/plgDBErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/plgStatusDbErr", "return(true)")
+	_, err = InitManager()
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/plgStatusDbErr")
+
+	m, err := InitManager()
+	require.NoError(t, err)
+	require.NotNil(t, m)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/syncRegistryReadDirErr", "return(true)")
+	err = m.syncRegistry()
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/syncRegistryReadDirErr")
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/parsePluginJsonErr", "return(true)")
+	err = m.parsePlugin("mock")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/parsePluginJsonErr")
+
+	err = m.doRegister("mock", &PluginInfo{}, true)
+	require.Error(t, err)
+}
+
+func TestParsePluginJson(t *testing.T) {
+	m, err := InitManager()
+	require.NoError(t, err)
+	require.NotNil(t, m)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/parsePluginJsonReadJsonUnmarshalErr", "return(true)")
+	_, err = m.parsePluginJson("mock")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/parsePluginJsonReadJsonUnmarshalErr")
+
+	_, err = m.parsePluginJson("mock")
+	require.Error(t, err)
+	m.reg.Set("mirror", &PluginInfo{})
+	_, err = m.parsePluginJson("mirror")
+	require.Error(t, err)
 }

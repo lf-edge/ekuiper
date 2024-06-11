@@ -15,11 +15,14 @@
 package conf
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/pingcap/failpoint"
 )
 
 func init() {
@@ -58,7 +61,12 @@ func GetLogLoc() (string, error) {
 	return GetLoc(logDir)
 }
 
-func GetDataLoc() (string, error) {
+func GetDataLoc() (s string, err error) {
+	defer func() {
+		failpoint.Inject("GetDataLocErr", func() {
+			err = errors.New("GetDataLocErr")
+		})
+	}()
 	if IsTesting {
 		dataDir, err := GetLoc(dataDir)
 		if err != nil {
@@ -80,7 +88,12 @@ func GetDataLoc() (string, error) {
 	return GetLoc(dataDir)
 }
 
-func GetPluginsLoc() (string, error) {
+func GetPluginsLoc() (s string, err error) {
+	defer func() {
+		failpoint.Inject("GetPluginsLocErr", func() {
+			err = errors.New("GetPluginsLocErr")
+		})
+	}()
 	return GetLoc(pluginsDir)
 }
 
