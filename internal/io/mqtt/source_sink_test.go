@@ -24,12 +24,18 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/connection"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
 func TestSourceSink(t *testing.T) {
+	cancel, err := testx.InitBroker()
+	require.NoError(t, err)
+	defer func() {
+		cancel()
+	}()
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
