@@ -268,7 +268,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 			}
 			pi = &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
 			allBytes, err := io.ReadAll(jf)
-			failpoint.Inject("installFileOpenErr", func() {
+			failpoint.Inject("installReadErr", func() {
 				err = errors.New("installReadErr")
 			})
 			if err != nil {

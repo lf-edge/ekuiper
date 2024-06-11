@@ -90,23 +90,21 @@ func TestManager_Install(t *testing.T) {
 	}
 
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
-	for i, tt := range data {
+	for _, tt := range data {
 		p := &plugin.IOPlugin{
 			Name: tt.n,
 			File: tt.u,
 		}
-		err := manager.Register(p)
-		if !reflect.DeepEqual(tt.err, err) {
-			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
-		} else if tt.err == nil {
-			err := checkFileForMirror(manager.pluginDir, manager.pluginConfDir, true)
-			if err != nil {
-				t.Errorf("%d: error : %s\n\n", i, err)
-			}
+		m, err := InitManager()
+		require.NoError(t, err)
+		err = m.Register(p)
+		if err != nil {
+			require.Equal(t, tt.err, err)
+		} else {
+			err := checkFileForMirror(m.pluginDir, m.pluginConfDir, true)
+			require.NoError(t, err)
 		}
 	}
-
-	testRegisterErr(t, endpoint)
 }
 
 func TestManager_Read(t *testing.T) {
@@ -269,7 +267,12 @@ func TestParsePluginJson(t *testing.T) {
 	require.Error(t, err)
 }
 
-func testRegisterErr(t *testing.T, endpoint string) {
+func TestRegisterErr(t *testing.T) {
+	s := httptest.NewServer(
+		http.FileServer(http.Dir("../testzips")),
+	)
+	defer s.Close()
+	endpoint := s.URL
 	p := &plugin.IOPlugin{
 		Name: "mirror2",
 		File: endpoint + "/portables/mirror.zip",
@@ -315,7 +318,7 @@ func testRegisterErr(t *testing.T, endpoint string) {
 	for _, testcase := range testcases {
 		failpoint.Enable(testcase.mockErr, "return(true)")
 		err = manager.Register(p)
-		require.Error(t, err)
+		require.Error(t, err, testcase.mockErr)
 		failpoint.Disable(testcase.mockErr)
 	}
 }
