@@ -17,6 +17,7 @@ package testx
 import (
 	"context"
 	"log"
+	"sync"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
@@ -47,7 +48,7 @@ func InitEnv(id string) {
 	}
 }
 
-func InitBroker() (context.CancelFunc, error) {
+func InitBroker() (func(), error) {
 	// Create the new MQTT Server.
 	server := mqtt.New(nil)
 	// Allow all connections.
@@ -60,10 +61,13 @@ func InitBroker() (context.CancelFunc, error) {
 		return nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
 		select {
 		case <-ctx.Done():
 			server.Close()
+			wg.Done()
 		}
 	}()
 	go func() {
@@ -72,5 +76,9 @@ func InitBroker() (context.CancelFunc, error) {
 			log.Fatal(err)
 		}
 	}()
-	return cancel, nil
+	return func() {
+		cancel()
+		// wait server close
+		wg.Wait()
+	}, nil
 }
