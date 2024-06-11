@@ -279,4 +279,12 @@ func TestConvertFormat(t *testing.T) {
 
 	s, err = convertFormat("\\")
 	require.Error(t, err)
+
+	s, err = convertFormat("yyyy-MM-dd HH:mm:ssSSSSSSSXX")
+	require.NoError(t, err)
+	require.Equal(t, "2006-01-02 15:04:05.0000000-0700", s)
+
+	d, err := time.Parse("2006-01-02 15:04:05.0000000-0700", `2024-06-10 05:54:39.6574979-0700`)
+	require.NoError(t, err)
+	require.Equal(t, int64(1718024079657497900), d.UnixNano())
 }
