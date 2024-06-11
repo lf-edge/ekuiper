@@ -20,11 +20,6 @@ on:
 jobs:
   run_unit_tests:
     runs-on: ubuntu-latest
-    services:
-      emqx:
-        image: emqx/emqx:4.3.10
-        ports:
-          - 1883:1883
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-go@v4

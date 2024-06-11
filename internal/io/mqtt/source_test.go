@@ -30,7 +30,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-// NOTICE!!! Need to run a MQTT broker in localhost:1883 for this test or change the url to your broker
 const url = "tcp://127.0.0.1:1883"
 
 func init() {
@@ -39,6 +38,11 @@ func init() {
 }
 
 func TestProvision(t *testing.T) {
+	cancel, err := testx.InitBroker()
+	require.NoError(t, err)
+	defer func() {
+		cancel()
+	}()
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
