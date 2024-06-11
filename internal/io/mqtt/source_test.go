@@ -30,15 +30,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
-const url = "tcp://127.0.0.1:1883"
-
 func init() {
 	testx.InitEnv("mqtt_source_connector")
 	modules.RegisterConnection("mqtt", client.CreateConnection)
 }
 
 func TestProvision(t *testing.T) {
-	cancel, err := testx.InitBroker()
+	url, cancel, err := testx.InitBroker("TestProvision")
 	require.NoError(t, err)
 	defer func() {
 		cancel()

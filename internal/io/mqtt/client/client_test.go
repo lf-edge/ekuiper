@@ -23,10 +23,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
-const url = "tcp://127.0.0.1:1883"
-
 func TestValidate(t *testing.T) {
-	cancel, err := testx.InitBroker()
+	url, cancel, err := testx.InitBroker("TestValidate")
 	require.NoError(t, err)
 	defer func() {
 		cancel()
