@@ -48,17 +48,17 @@ func InitEnv(id string) {
 	}
 }
 
-func InitBroker() (func(), error) {
+func InitBroker(id string) (string, func(), error) {
 	// Create the new MQTT Server.
 	server := mqtt.New(nil)
 	// Allow all connections.
 	_ = server.AddHook(new(auth.AllowHook), nil)
 
 	// Create a TCP listener on a standard port.
-	tcp := listeners.NewTCP(listeners.Config{ID: "t1", Address: ":1883"})
+	tcp := listeners.NewTCP(listeners.Config{ID: id, Address: ":0"})
 	err := server.AddListener(tcp)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
@@ -76,7 +76,7 @@ func InitBroker() (func(), error) {
 			log.Fatal(err)
 		}
 	}()
-	return func() {
+	return tcp.Address(), func() {
 		cancel()
 		// wait server close
 		wg.Wait()

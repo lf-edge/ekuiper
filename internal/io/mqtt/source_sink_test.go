@@ -31,7 +31,7 @@ import (
 )
 
 func TestSourceSink(t *testing.T) {
-	cancel, err := testx.InitBroker()
+	url, cancel, err := testx.InitBroker("TestSourceSink")
 	require.NoError(t, err)
 	defer func() {
 		cancel()
