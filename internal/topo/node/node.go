@@ -251,7 +251,7 @@ func LookupPing(lookupType string, config map[string]interface{}) error {
 	if pingAble, ok := lookup.(util.PingableConn); ok {
 		return pingAble.Ping(dataSource, config)
 	}
-	return fmt.Errorf("lookup %v doesn't support ping connection", lookup)
+	return fmt.Errorf("lookup %v doesn't support ping connection", lookupType)
 }
 
 func SinkPing(sinkType string, config map[string]interface{}) error {
