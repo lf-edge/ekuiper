@@ -29,6 +29,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
@@ -102,7 +104,16 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 	switch r.Method {
 	case http.MethodDelete:
-		err := portableManager.Delete(name)
+		reference, err := checkPluginBeforeDrop(name)
+		if err != nil {
+			handleError(w, err, fmt.Sprintf("delete portable plugin %s error", name), logger)
+			return
+		}
+		if reference {
+			handleError(w, fmt.Errorf("plugin %s is referenced by the rule", name), "", logger)
+			return
+		}
+		err = portableManager.Delete(name)
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("delete portable plugin %s error", name), logger)
 			return
@@ -158,4 +169,118 @@ func (e portableExporter) Status() map[string]string {
 
 func (e portableExporter) Reset() {
 	portableManager.UninstallAllPlugins()
+}
+
+func checkPluginBeforeDrop(name string) (bool, error) {
+	pi, ok := portableManager.GetPluginInfo(name)
+	if !ok {
+		return false, fmt.Errorf("plugin %s not found", name)
+	}
+	for _, source := range pi.Sources {
+		referenced, err := checkPluginSource(source)
+		if err != nil {
+			return false, err
+		}
+		if referenced {
+			return true, nil
+		}
+	}
+	for _, sink := range pi.Sinks {
+		referenced, err := checkPluginSink(sink)
+		if err != nil {
+			return false, err
+		}
+		if referenced {
+			return true, nil
+		}
+	}
+	for _, f := range pi.Functions {
+		referenced, err := checkPluginFunction(f)
+		if err != nil {
+			return false, err
+		}
+		if referenced {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func checkPluginSource(name string) (bool, error) {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return false, err
+	}
+	for _, rule := range rules {
+		rs, ok := registry.Load(rule)
+		if !ok {
+			continue
+		}
+		stmt := rs.Topology.GetStmt()
+		if stmt == nil {
+			continue
+		}
+		streams := xsql.GetStreams(stmt)
+		for _, stream := range streams {
+			info, err := streamProcessor.GetStreamInfo(stream, ast.TypeStream)
+			if err != nil {
+				return false, err
+			}
+			if info.StreamKind == name {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func checkPluginSink(name string) (bool, error) {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return false, err
+	}
+	for _, rule := range rules {
+		rs, ok := registry.Load(rule)
+		if !ok {
+			continue
+		}
+		typs := rs.Topology.GetActionsType()
+		_, ok = typs[name]
+		if ok {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func checkPluginFunction(name string) (bool, error) {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return false, err
+	}
+	find := false
+	for _, rule := range rules {
+		rs, ok := registry.Load(rule)
+		if !ok {
+			continue
+		}
+		stmt := rs.Topology.GetStmt()
+		if stmt == nil {
+			continue
+		}
+		ast.WalkFunc(stmt, func(node ast.Node) bool {
+			switch x := node.(type) {
+			case *ast.Call:
+				if x.Name == name {
+					find = true
+					return false
+				}
+			}
+			return true
+		})
+		if find {
+			return true, nil
+		}
+	}
+	return false, nil
 }

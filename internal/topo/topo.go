@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -35,11 +36,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type Topo struct {
+	stmt        *ast.SelectStatement
 	sources     []node.DataSourceNode
 	sinks       []node.DataSinkNode
 	ctx         api.StreamContext
@@ -114,6 +117,26 @@ func (s *Topo) AddSrc(src node.DataSourceNode) *Topo {
 		s.topo.Sources = append(s.topo.Sources, fmt.Sprintf("source_%s", src.GetName()))
 	}
 	return s
+}
+
+func (s *Topo) SetStmt(stmt *ast.SelectStatement) {
+	s.stmt = stmt
+}
+
+func (s *Topo) GetStmt() *ast.SelectStatement {
+	if s == nil {
+		return nil
+	}
+	return s.stmt
+}
+
+func (s *Topo) GetActionsType() map[string]struct{} {
+	actions := make(map[string]struct{})
+	for _, n := range s.sinks {
+		typ := strings.Split(n.GetName(), "_")[0]
+		actions[typ] = struct{}{}
+	}
+	return actions
 }
 
 func (s *Topo) AddSink(inputs []node.Emitter, snk node.DataSinkNode) *Topo {

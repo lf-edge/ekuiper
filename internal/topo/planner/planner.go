@@ -74,7 +74,7 @@ func PlanSQLWithSourcesAndSinks(rule *def.Rule, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, err
 	}
-	tp, err := createTopo(rule, lp, mockSourcesProp, streamsFromStmt)
+	tp, err := createTopo(rule, lp, mockSourcesProp, streamsFromStmt, stmt)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func validateStmt(stmt *ast.SelectStatement) error {
 	return vErr
 }
 
-func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, streamsFromStmt []string) (t *topo.Topo, err error) {
+func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[string]any, streamsFromStmt []string, stmt *ast.SelectStatement) (t *topo.Topo, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.ExecutorError, err.Error())
@@ -107,6 +107,7 @@ func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, err
 	}
+	tp.SetStmt(stmt)
 
 	input, _, err := buildOps(lp, tp, rule.Options, mockSourcesProp, streamsFromStmt, 0)
 	if err != nil {

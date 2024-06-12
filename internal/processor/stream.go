@@ -301,6 +301,24 @@ func (p *StreamProcessor) ShowTable(kind string) (res []string, err error) {
 	return result, nil
 }
 
+func (p *StreamProcessor) GetStreamInfo(name string, st ast.StreamType) (info *xsql.StreamInfo, err error) {
+	defer func() {
+		if err != nil {
+			if _, ok := err.(errorx.ErrorWithCode); !ok {
+				err = errorx.NewWithCode(errorx.StreamTableError, err.Error())
+			}
+		}
+	}()
+	vs, err := xsql.GetDataSourceStatement(p.db, name)
+	if err != nil {
+		return nil, err
+	}
+	if vs != nil && vs.StreamType == st {
+		return vs, nil
+	}
+	return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], name))
+}
+
 func (p *StreamProcessor) GetStream(name string, st ast.StreamType) (res string, err error) {
 	defer func() {
 		if err != nil {
@@ -310,11 +328,11 @@ func (p *StreamProcessor) GetStream(name string, st ast.StreamType) (res string,
 		}
 	}()
 	vs, err := xsql.GetDataSourceStatement(p.db, name)
-	if vs != nil && vs.StreamType == st {
-		return vs.Statement, nil
-	}
 	if err != nil {
 		return "", err
+	}
+	if vs != nil && vs.StreamType == st {
+		return vs.Statement, nil
 	}
 	return "", errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s %s is not found", ast.StreamTypeMap[st], name))
 }
