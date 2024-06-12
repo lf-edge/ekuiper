@@ -16,14 +16,22 @@ package filex
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/pingcap/failpoint"
 )
 
-func UnzipTo(f *zip.File, fpath string) error {
-	_, err := os.Stat(fpath)
+func UnzipTo(f *zip.File, fpath string) (err error) {
+	defer func() {
+		failpoint.Inject("UnzipToErr", func() {
+			err = errors.New("UnzipToErr")
+		})
+	}()
+	_, err = os.Stat(fpath)
 
 	if f.FileInfo().IsDir() {
 		// Make Folder

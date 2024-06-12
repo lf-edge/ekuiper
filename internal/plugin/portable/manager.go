@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -27,6 +28,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
@@ -80,10 +83,16 @@ func InitManager() (*Manager, error) {
 		return nil, err
 	}
 	plgDb, err := store.GetKV("portablePlugin")
+	failpoint.Inject("plgDBErr", func() {
+		err = errors.New("plgDBErr")
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error when opening portablePlugin: %v", err)
 	}
 	plgStatusDb, err := store.GetKV("portablePluginStatus")
+	failpoint.Inject("plgStatusDbErr", func() {
+		err = errors.New("plgStatusDbErr")
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error when opening portablePluginStatus: %v", err)
 	}
@@ -93,30 +102,17 @@ func InitManager() (*Manager, error) {
 	return m, nil
 }
 
-func GetManager() *Manager {
-	return manager
-}
+func (m *Manager) syncRegistry() (err error) {
+	defer func() {
+		failpoint.Inject("syncRegistryErr", func() {
+			err = errors.New("syncRegistryErr")
+		})
+	}()
 
-func MockManager(plugins map[string]*PluginInfo) (*Manager, error) {
-	reg := &registry{
-		RWMutex:   sync.RWMutex{},
-		plugins:   make(map[string]*PluginInfo),
-		sources:   make(map[string]string),
-		sinks:     make(map[string]string),
-		functions: make(map[string]string),
-	}
-	for name, pi := range plugins {
-		err := pi.Validate(name)
-		if err != nil {
-			return nil, err
-		}
-		reg.Set(name, pi)
-	}
-	return &Manager{reg: reg}, nil
-}
-
-func (m *Manager) syncRegistry() error {
 	files, err := os.ReadDir(m.pluginDir)
+	failpoint.Inject("syncRegistryReadDirErr", func() {
+		err = errors.New("syncRegistryReadDirErr")
+	})
 	if err != nil {
 		return fmt.Errorf("read path '%s' error: %v", m.pluginDir, err)
 	}
@@ -143,7 +139,8 @@ func (m *Manager) parsePlugin(name string) error {
 
 func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 	exeAbs := filepath.Clean(filepath.Join(m.pluginDir, name, pi.Executable))
-	if _, err := os.Stat(exeAbs); err != nil {
+	_, err := os.Stat(exeAbs)
+	if err != nil {
 		return fmt.Errorf("cannot find executable `%s` when loading portable plugins: %v", exeAbs, err)
 	}
 	pi.Executable = exeAbs
@@ -166,10 +163,18 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 	return nil
 }
 
-func (m *Manager) parsePluginJson(name string) (*PluginInfo, error) {
+func (m *Manager) parsePluginJson(name string) (info *PluginInfo, err error) {
+	defer func() {
+		failpoint.Inject("parsePluginJsonErr", func() {
+			err = errors.New("parsePluginJsonErr")
+		})
+	}()
 	jsonPath := filepath.Join(m.pluginDir, name, name+".json")
 	pi := &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
-	err := filex.ReadJsonUnmarshal(jsonPath, pi)
+	err = filex.ReadJsonUnmarshal(jsonPath, pi)
+	failpoint.Inject("parsePluginJsonReadJsonUnmarshalErr", func() {
+		err = errors.New("parsePluginJsonReadJsonUnmarshalErr")
+	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot read json file `%s` when loading portable plugins: %v", jsonPath, err)
 	}
@@ -240,6 +245,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		}
 	}()
 	r, err := zip.OpenReader(src)
+	failpoint.Inject("installOpenReaderErr", func() {
+		err = errors.New("installOpenReaderErr")
+	})
 	if err != nil {
 		return err
 	}
@@ -251,16 +259,25 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 		filesNumber++
 		if file.Name == jsonName {
 			jf, err := file.Open()
+			failpoint.Inject("installFileOpenErr", func() {
+				err = errors.New("installFileOpenErr")
+			})
 			if err != nil {
 				err = fmt.Errorf("invalid json file %s: %s", jsonName, err)
 				return err
 			}
 			pi = &PluginInfo{PluginMeta: runtime.PluginMeta{Name: name}}
 			allBytes, err := io.ReadAll(jf)
+			failpoint.Inject("installReadErr", func() {
+				err = errors.New("installReadErr")
+			})
 			if err != nil {
 				return err
 			}
 			err = json.Unmarshal(allBytes, pi)
+			failpoint.Inject("installJsonMarshalErr", func() {
+				err = errors.New("installJsonMarshalErr")
+			})
 			if err != nil {
 				return err
 			}
@@ -285,6 +302,9 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 	d := filepath.Clean(pluginTarget)
 	if _, err := os.Stat(d); os.IsNotExist(err) {
 		err = os.MkdirAll(d, 0o755)
+		failpoint.Inject("installMkdirErr", func() {
+			err = errors.New("installMkdirErr")
+		})
 		if err != nil {
 			return err
 		}

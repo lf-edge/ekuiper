@@ -15,7 +15,10 @@
 package portable
 
 import (
+	"errors"
 	"fmt"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 )
@@ -33,7 +36,12 @@ var langMap = map[string]bool{
 }
 
 // Validate TODO validate duplication of source, sink and functions
-func (p *PluginInfo) Validate(expectedName string) error {
+func (p *PluginInfo) Validate(expectedName string) (err error) {
+	defer func() {
+		failpoint.Inject("PluginInfoValidateErr", func() {
+			err = errors.New("PluginInfoValidateErr")
+		})
+	}()
 	if p.Name != expectedName {
 		return fmt.Errorf("invalid plugin, expect name '%s' but got '%s'", expectedName, p.Name)
 	}
