@@ -59,7 +59,7 @@ func (m *Manager) Source(name string) (api.Source, error) {
 	return nil, nil
 }
 
-func (m *Manager) LookupSource(name string) (api.LookupSource, error) {
+func (m *Manager) LookupSource(name string) (api.Source, error) {
 	if s, ok := modules.LookupSources[name]; ok {
 		return s(), nil
 	}

@@ -271,3 +271,24 @@ func checkByteSource(ss api.Source) model.NodeInfo {
 		return model.NodeInfo{}
 	}
 }
+
+func planLookupSource(ctx api.StreamContext, t *LookupPlan, ruleOption *def.RuleOption) (node.Emitter, error) {
+	si, err := io.LookupSource(t.options.TYPE)
+	if err != nil {
+		return nil, err
+	}
+	if si == nil {
+		return nil, fmt.Errorf("lookup source type %s not found", t.options.TYPE)
+	}
+	props := nodeConf.GetSourceConf(t.options.TYPE, t.options)
+	switch si.(type) {
+	case api.LookupSource:
+		return node.NewLookupNode(ctx, t.joinExpr.Name, false, t.fields, t.keys, t.joinExpr.JoinType, t.valvars, t.options, ruleOption, props)
+	case api.LookupBytesSource:
+		if t.options.FORMAT == "" {
+			return nil, fmt.Errorf("lookup source type %s must specify format", t.options.TYPE)
+		}
+		return node.NewLookupNode(ctx, t.joinExpr.Name, true, t.fields, t.keys, t.joinExpr.JoinType, t.valvars, t.options, ruleOption, props)
+	}
+	return nil, fmt.Errorf("lookup source type %s is found but not a valid lookup source", t.options.TYPE)
+}

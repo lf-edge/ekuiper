@@ -24,12 +24,14 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
@@ -463,4 +465,45 @@ func TestPlanError(t *testing.T) {
 			assert.EqualError(t, err, tt.e)
 		})
 	}
+}
+
+func TestPlanLookup(t *testing.T) {
+	ctx := mockContext.NewMockContext("Test", "test")
+	t.Run("undefined source", func(t *testing.T) {
+		_, err := planLookupSource(ctx, &LookupPlan{options: &ast.Options{TYPE: "none"}}, &def.RuleOption{})
+		assert.Error(t, err)
+		assert.EqualError(t, err, "lookup source type none not found")
+	})
+	t.Run("missing format", func(t *testing.T) {
+		modules.RegisterLookupSource("mock", func() api.Source {
+			return &MockLookupBytes{}
+		})
+		_, err := planLookupSource(ctx, &LookupPlan{options: &ast.Options{TYPE: "mock"}}, &def.RuleOption{})
+		assert.Error(t, err)
+		assert.EqualError(t, err, "lookup source type mock must specify format")
+	})
+	t.Run("register wrong source", func(t *testing.T) {
+		modules.RegisterLookupSource("mock", mqtt.GetSource)
+		_, err := planLookupSource(ctx, &LookupPlan{options: &ast.Options{TYPE: "mock"}}, &def.RuleOption{})
+		assert.Error(t, err)
+		assert.EqualError(t, err, "got non lookup source mock")
+	})
+}
+
+type MockLookupBytes struct{}
+
+func (m *MockLookupBytes) Provision(ctx api.StreamContext, configs map[string]any) error {
+	return nil
+}
+
+func (m *MockLookupBytes) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *MockLookupBytes) Connect(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *MockLookupBytes) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([][]byte, error) {
+	return nil, nil
 }

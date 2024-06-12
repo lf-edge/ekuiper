@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -87,6 +87,6 @@ func (s *lookupsource) Close(ctx api.StreamContext) error {
 	return store.Unreg(s.topic, s.key)
 }
 
-func GetLookupSource() api.LookupSource {
+func GetLookupSource() api.Source {
 	return &lookupsource{}
 }

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestBindings(t *testing.T) {
@@ -58,22 +59,24 @@ func TestBindings(t *testing.T) {
 			isSink:         true,
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	for _, tt := range tests {
-		_, err := Source(tt.name)
-		isSource := err == nil
-		if tt.isSource != isSource {
-			t.Errorf("%s is source: expect %v but got %v", tt.name, tt.isSource, isSource)
-		}
-		_, err = LookupSource(tt.name)
-		if tt.isLookupSource != (err == nil) {
-			t.Errorf("%s is lookup source: expect %v but got %v", tt.name, tt.isLookupSource, err == nil)
-		}
-		_, err = Sink(tt.name)
-		isSink := err == nil
-		if tt.isSink != isSink {
-			t.Errorf("%s is sink: expect %v but got %v", tt.name, tt.isSink, isSink)
-		}
+		t.Run(tt.name, func(t *testing.T) {
+			ss, _ := Source(tt.name)
+			isSource := modules.IsStreamSource(ss)
+			if tt.isSource != isSource {
+				t.Errorf("%s is source: expect %v but got %v", tt.name, tt.isSource, isSource)
+			}
+			ss, _ = LookupSource(tt.name)
+			isLookupSource := modules.IsLookupSource(ss)
+			if tt.isLookupSource != isLookupSource {
+				t.Errorf("%s is lookup source: expect %v but got %v", tt.name, tt.isLookupSource, err == nil)
+			}
+			_, err = Sink(tt.name)
+			isSink := err == nil
+			if tt.isSink != isSink {
+				t.Errorf("%s is sink: expect %v but got %v", tt.name, tt.isSink, isSink)
+			}
+		})
 	}
 }
 

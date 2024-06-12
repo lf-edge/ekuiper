@@ -87,7 +87,7 @@ func TestLookupProvision(t *testing.T) {
 func TestUpdateLookup(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	ls := GetLookupSource()
+	ls := GetLookupSource().(api.LookupSource)
 	err := ls.Provision(ctx, map[string]interface{}{"datasource": "test", "key": "ff"})
 	assert.NoError(t, err)
 	err = ls.Connect(ctx)
@@ -131,7 +131,7 @@ func TestUpdateLookup(t *testing.T) {
 func TestLookup(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "test2")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	ls := GetLookupSource()
+	ls := GetLookupSource().(api.LookupSource)
 	err := ls.Provision(ctx, map[string]any{"datasource": "test2", "key": "gg"})
 	assert.NoError(t, err)
 	err = ls.Connect(ctx)

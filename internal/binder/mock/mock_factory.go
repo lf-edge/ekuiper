@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ func (f *MockFactory) Source(name string) (api.Source, error) {
 	}
 }
 
-func (f *MockFactory) LookupSource(name string) (api.LookupSource, error) {
+func (f *MockFactory) LookupSource(name string) (api.Source, error) {
 	return nil, nil
 }
 
@@ -92,6 +92,10 @@ func (m *mockSource) Connect(ctx api.StreamContext) error {
 }
 
 func (m *mockSource) Close(_ api.StreamContext) error {
+	return nil
+}
+
+func (m *mockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
 	return nil
 }
 
