@@ -99,6 +99,8 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	// Maps are expected from user extension
 	case map[string]any:
 		m.ingestMap(mess, meta, ts)
+	case xsql.Message:
+		m.ingestMap(mess, meta, ts)
 	case []map[string]any:
 		for _, mm := range mess {
 			m.ingestMap(mm, meta, ts)

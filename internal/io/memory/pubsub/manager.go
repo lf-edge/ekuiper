@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -115,6 +115,10 @@ func Produce(ctx api.StreamContext, topic string, data MemTuple) {
 
 func ProduceList(ctx api.StreamContext, topic string, list []MemTuple) {
 	doProduce(ctx, topic, list)
+}
+
+func ProduceError(ctx api.StreamContext, topic string, err error) {
+	doProduce(ctx, topic, err)
 }
 
 func doProduce(ctx api.StreamContext, topic string, data any) {

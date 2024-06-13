@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
@@ -96,6 +97,8 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 				result = append(result, model.NewDefaultRawTuple(mt, meta, ts))
 			}
 		case map[string]any:
+			result = append(result, model.NewDefaultSourceTuple(mt, meta, ts))
+		case xsql.Message:
 			result = append(result, model.NewDefaultSourceTuple(mt, meta, ts))
 		default:
 			panic("not supported yet")
