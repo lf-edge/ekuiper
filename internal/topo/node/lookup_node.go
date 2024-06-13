@@ -37,19 +37,28 @@ type LookupConf struct {
 	CacheMissingKey bool          `json:"cacheMissingKey"`
 }
 
+type srcConf struct {
+	PayloadField     string `json:"payloadField"`
+	PayloadFormat    string `json:"payloadFormat"`
+	PayloadSchemaId  string `json:"payloadSchemaId"`
+	PayloadDelimiter string `json:"payloadDelimiter"`
+}
+
 // LookupNode will look up the data from the external source when receiving an event
 type LookupNode struct {
 	*defaultSinkNode
 
 	conf *LookupConf
+	c    *srcConf
 
 	joinType ast.JoinType
 	vals     []ast.Expr
 	fields   []string
 	keys     []string
 	// If lookupByteSource, the decoders are needed
-	isBytesLookup bool
-	formatDecoder message.Converter
+	isBytesLookup  bool
+	formatDecoder  message.Converter
+	payloadDecoder message.Converter
 }
 
 func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, fields []string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *def.RuleOption, props map[string]any) (*LookupNode, error) {
@@ -70,22 +79,55 @@ func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, field
 	}
 	n.defaultSinkNode = newDefaultSinkNode(name, options)
 	if isBytesLookup {
+		sc := &srcConf{}
+		e := cast.MapToStruct(props, sc)
+		if e != nil {
+			return nil, e
+		}
+		if (sc.PayloadFormat == "" && sc.PayloadField != "") || (sc.PayloadFormat != "" && sc.PayloadField == "") {
+			return nil, fmt.Errorf("payloadFormat and payloadField must set together")
+		}
 		sch := make(map[string]*ast.JsonStreamField, len(fields))
 		for _, field := range fields {
 			sch[field] = nil
 		}
+		var fsch map[string]*ast.JsonStreamField
+		if sc.PayloadField != "" {
+			fsch = map[string]*ast.JsonStreamField{
+				sc.PayloadField: nil,
+			}
+		} else {
+			fsch = sch
+		}
+
 		decoder, err := converter.GetOrCreateConverter(ctx, &ast.Options{
 			FORMAT:     srcOptions.FORMAT,
 			SCHEMAID:   srcOptions.SCHEMAID,
 			DELIMITER:  srcOptions.DELIMITER,
 			IsWildCard: false,
-			Schema:     sch,
+			Schema:     fsch,
 		})
 		if err != nil {
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", srcOptions.FORMAT, srcOptions.SCHEMAID, err)
 			return nil, fmt.Errorf(msg)
 		}
 		n.formatDecoder = decoder
+
+		if sc.PayloadField != "" {
+			payloadDecoder, err := converter.GetOrCreateConverter(ctx, &ast.Options{
+				FORMAT:     sc.PayloadFormat,
+				SCHEMAID:   sc.PayloadSchemaId,
+				DELIMITER:  sc.PayloadDelimiter,
+				IsWildCard: false,
+				Schema:     sch,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("cannot get payload converter from payloadFormat %s, schemaId %s: %v", sc.PayloadFormat, sc.PayloadSchemaId, err)
+			}
+			n.payloadDecoder = payloadDecoder
+		}
+
+		n.c = sc
 	}
 	return n, nil
 }
@@ -239,39 +281,6 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 	}
 }
 
-func (n *LookupNode) merge(ctx api.StreamContext, d xsql.Row, r []map[string]interface{}) {
-	n.statManager.ProcessTimeStart()
-	sets := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
-
-	if len(r) == 0 {
-		if n.joinType == ast.LEFT_JOIN {
-			merged := &xsql.JoinTuple{}
-			merged.AddTuple(d)
-			sets.Content = append(sets.Content, merged)
-		} else {
-			ctx.GetLogger().Debugf("Lookup Node %s no result found for tuple %s", n.name, d)
-			return
-		}
-	}
-	for _, v := range r {
-		merged := &xsql.JoinTuple{}
-		merged.AddTuple(d)
-		t := &xsql.Tuple{
-			Emitter:   n.name,
-			Message:   v,
-			Timestamp: timex.GetNow(),
-		}
-		merged.AddTuple(t)
-		sets.Content = append(sets.Content, merged)
-	}
-
-	n.Broadcast(sets)
-	n.statManager.ProcessTimeEnd()
-	n.statManager.IncTotalRecordsOut()
-	n.statManager.IncTotalMessagesProcessed(1)
-	n.statManager.SetBufferLength(int64(len(n.input)))
-}
-
 func (n *LookupNode) doLookup(ctx api.StreamContext, ns api.Source, cvs []any) ([]map[string]any, error) {
 	if n.isBytesLookup {
 		rawRows, err := ns.(api.LookupBytesSource).Lookup(ctx, n.fields, n.keys, cvs)
@@ -303,5 +312,45 @@ func (n *LookupNode) doLookup(ctx api.StreamContext, ns api.Source, cvs []any) (
 // Only called when isBytesLookup is true
 // Must guarantee decoders are set
 func (n *LookupNode) decode(ctx api.StreamContext, row []byte) (any, error) {
-	return n.formatDecoder.Decode(ctx, row)
+	r, e := n.formatDecoder.Decode(ctx, row)
+	if e == nil && n.payloadDecoder != nil {
+		switch rt := r.(type) {
+		case map[string]any:
+			return decodePayload(ctx, n.payloadDecoder, rt, n.c.PayloadField)
+		case []map[string]any:
+			result := make([]map[string]any, 0, len(rt))
+			for _, mm := range rt {
+				rr, e := decodePayload(ctx, n.payloadDecoder, mm, n.c.PayloadField)
+				if e != nil {
+					ctx.GetLogger().Warnf("decode payload of %v got error %v", mm, e)
+				} else {
+					switch rrt := rr.(type) {
+					case map[string]any:
+						result = append(result, rrt)
+					case []map[string]any:
+						result = append(result, rrt...)
+					default:
+						return nil, fmt.Errorf("payload decoder return non map or map slice")
+					}
+				}
+			}
+			return result, nil
+		default:
+			return nil, fmt.Errorf("decoder return non map or map slice")
+		}
+	}
+	return r, e
+}
+
+func decodePayload(ctx api.StreamContext, decoder message.Converter, rt map[string]any, field string) (any, error) {
+	payload, ok := rt[field]
+	if !ok {
+		ctx.GetLogger().Warnf("cannot find payload field %s", field)
+		return nil, nil
+	}
+	raw, err := cast.ToByteA(payload, cast.CONVERT_SAMEKIND)
+	if err != nil {
+		return nil, fmt.Errorf("payload is not bytes: %v", err)
+	}
+	return decoder.Decode(ctx, raw)
 }

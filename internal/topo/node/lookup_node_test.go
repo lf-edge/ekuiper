@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -43,6 +44,24 @@ func TestLookupInit(t *testing.T) {
 		_, err := NewLookupNode(ctx, "test2", true, []string{"la", "lb"}, []string{"test1"}, ast.LEFT_JOIN, []ast.Expr{}, &ast.Options{TYPE: "mock", FORMAT: "json1"}, &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{})
 		assert.Error(t, err)
 		assert.EqualError(t, err, "cannot get converter from format json1, schemaId : format type json1 not supported")
+	})
+
+	t.Run("wrong payload field", func(t *testing.T) {
+		_, err := NewLookupNode(ctx, "test2", true, []string{"la", "lb"}, []string{"test1"}, ast.LEFT_JOIN, []ast.Expr{}, &ast.Options{TYPE: "mock", FORMAT: "json"}, &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"payloadField": 1})
+		assert.Error(t, err)
+		assert.EqualError(t, err, "1 error(s) decoding:\n\n* 'payloadField' expected type 'string', got unconvertible type 'int', value: '1'")
+	})
+
+	t.Run("missing payload format", func(t *testing.T) {
+		_, err := NewLookupNode(ctx, "test2", true, []string{"la", "lb"}, []string{"test1"}, ast.LEFT_JOIN, []ast.Expr{}, &ast.Options{TYPE: "mock", FORMAT: "json"}, &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"payloadField": "a"})
+		assert.Error(t, err)
+		assert.EqualError(t, err, "payloadFormat and payloadField must set together")
+	})
+
+	t.Run("wrong payload format", func(t *testing.T) {
+		_, err := NewLookupNode(ctx, "test2", true, []string{"la", "lb"}, []string{"test1"}, ast.LEFT_JOIN, []ast.Expr{}, &ast.Options{TYPE: "mock", FORMAT: "json"}, &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{"payloadField": "a", "payloadFormat": "json1"})
+		assert.Error(t, err)
+		assert.EqualError(t, err, "cannot get payload converter from payloadFormat json1, schemaId : format type json1 not supported")
 	})
 }
 
@@ -211,7 +230,7 @@ func TestLookup(t *testing.T) {
 			name: "empty",
 			input: &xsql.Tuple{
 				Emitter: "stream1",
-				Message: map[string]any{"a": 0},
+				Message: map[string]any{"a": "empty"},
 			},
 			result: &xsql.JoinTuples{
 				Content: []*xsql.JoinTuple{
@@ -219,7 +238,7 @@ func TestLookup(t *testing.T) {
 						Tuples: []xsql.Row{
 							&xsql.Tuple{
 								Emitter: "stream1",
-								Message: map[string]any{"a": 0},
+								Message: map[string]any{"a": "empty"},
 							},
 						},
 					},
@@ -321,6 +340,198 @@ func TestLookup(t *testing.T) {
 	}
 }
 
+func TestLookupPayload(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  any
+		result any // join tuple or error
+	}{
+		{
+			name: "normal payload",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "payload"},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": "payload"},
+							},
+							&xsql.Tuple{
+								Emitter:   "testP",
+								Message:   map[string]any{"la": 11.0, "lb": 12.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "invalid stream input",
+			input:  "test",
+			result: errors.New("run lookup node error: invalid input type but got string(test)"),
+		},
+		{
+			name: "use cache",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "payload"},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": "payload"},
+							},
+							&xsql.Tuple{
+								Emitter:   "testP",
+								Message:   map[string]any{"la": 11.0, "lb": 12.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "normal payload array",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "payloadA"},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": "payloadA"},
+							},
+							&xsql.Tuple{
+								Emitter:   "testP",
+								Message:   map[string]any{"la": 11.0, "lb": 12.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "payloadEmpty",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "payloadEmpty"},
+			},
+			result: &xsql.JoinTuples{
+				Content: make([]*xsql.JoinTuple, 0),
+			},
+		},
+		{
+			name: "payload not bytes",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "payload not bytes"},
+			},
+			result: &xsql.JoinTuples{
+				Content: make([]*xsql.JoinTuple, 0),
+			},
+		},
+		{
+			name: "array payload array",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "payloadAA"},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": "payloadAA"},
+							},
+							&xsql.Tuple{
+								Emitter:   "testP",
+								Message:   map[string]any{"la": 11.0, "lb": 12.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "array payload array array",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "payloadAAA"},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": "payloadAAA"},
+							},
+							&xsql.Tuple{
+								Emitter:   "testP",
+								Message:   map[string]any{"la": 11.0, "lb": 12.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	modules.RegisterLookupSource("mock", func() api.Source {
+		return &MockLookupBytes{}
+	})
+
+	ctx, cancel := mockContext.NewMockContext("testRule", "test").WithCancel()
+	defer cancel()
+	op, err := NewLookupNode(ctx, "testP", true, []string{"la", "lb"}, []string{"test1"}, ast.INNER_JOIN, []ast.Expr{&ast.FieldRef{
+		StreamName: "",
+		Name:       "a",
+	}}, &ast.Options{TYPE: "mock", FORMAT: "json"}, &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{
+		"payloadField": "payload", "payloadFormat": "json", "lookup": map[string]any{"cache": true, "cacheTtl": "1s"},
+	})
+	assert.NoError(t, err)
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	assert.NoError(t, err)
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	err = <-errCh
+	assert.Error(t, err)
+	assert.EqualError(t, err, "lookup table testP is not found")
+	// run table
+	err = lookup.CreateInstance("testP", "mock", &ast.Options{
+		DATASOURCE: "testP",
+		TYPE:       "mock",
+		KIND:       "lookup",
+		KEY:        "id",
+	})
+	assert.NoError(t, err)
+	op.Exec(ctx, errCh)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op.input <- tt.input
+			r := <-out
+			assert.Equal(t, tt.result, r)
+		})
+	}
+	timex.Add(20 * time.Second)
+}
+
 type MockLookupBytes struct{}
 
 func (m *MockLookupBytes) Provision(ctx api.StreamContext, configs map[string]any) error {
@@ -336,22 +547,48 @@ func (m *MockLookupBytes) Connect(ctx api.StreamContext) error {
 }
 
 func (m *MockLookupBytes) Lookup(ctx api.StreamContext, fields []string, keys []string, values []any) ([][]byte, error) {
-	if values[0] == "wrong" {
+	switch values[0] {
+	case "wrong":
 		return nil, fmt.Errorf("mock lookup error")
-	} else if values[0] == 0 {
+	case "empty":
 		return nil, nil
-	} else if values[0] == "jsonerror" {
+	case "jsonerror":
 		return [][]byte{
 			[]byte("{wrong jso}n"),
 		}, nil
-	} else if values[0] == "array" {
+	case "array":
 		return [][]byte{
 			[]byte(`[{"la":1,"lb":1,"lc":1},{"la":3,"lb":4,"lc":1}]`),
 		}, nil
+	case "payload":
+		return [][]byte{
+			[]byte(`{"la":1,"lb":1,"payload":"{\"la\":11, \"lb\":12, \"lc\":1}"}`),
+		}, nil
+	case "payloadA":
+		return [][]byte{
+			[]byte(`{"la":1,"lb":1,"payload":"[{\"la\":11, \"lb\":12, \"lc\":1}]"}`),
+		}, nil
+	case "payloadAA":
+		return [][]byte{
+			[]byte(`[{"la":1,"lb":1,"payload":"{\"la\":11, \"lb\":12, \"lc\":1}"},{"la":1,"lb":1,"payload":"invalid"}]`),
+		}, nil
+	case "payloadAAA":
+		return [][]byte{
+			[]byte(`[{"la":1,"lb":1,"payload":"[{\"la\":11, \"lb\":12, \"lc\":1}]"}]`),
+		}, nil
+	case "payloadEmpty":
+		return [][]byte{
+			[]byte(`{"la":1,"lb":1,"data":"[{\"la\":11, \"lb\":12, \"lc\":1}]"}`),
+		}, nil
+	case "payloadNotByte":
+		return [][]byte{
+			[]byte(`{"la":1,"lb":1,"payload":34`),
+		}, nil
+	default:
+		return [][]byte{
+			[]byte(`{"la":1,"lb":1,"lc":1}`),
+			[]byte(`{"la":2,"lb":2,"lc":1}`),
+			[]byte(`{"la":3,"lb":4,"lc":1}`),
+		}, nil
 	}
-	return [][]byte{
-		[]byte(`{"la":1,"lb":1,"lc":1}`),
-		[]byte(`{"la":2,"lb":2,"lc":1}`),
-		[]byte(`{"la":3,"lb":4,"lc":1}`),
-	}, nil
 }
