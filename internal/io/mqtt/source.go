@@ -76,7 +76,7 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	var cli *client.Connection
 	var err error
 	if len(ms.cfg.SelId) > 0 {
-		conn, err := connection.GetNameConnection(ms.cfg.SelId)
+		conn, err := connection.AttachConnection(ms.cfg.SelId)
 		if err != nil {
 			return err
 		}
@@ -130,6 +130,7 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 			id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
 			connection.DropNonStoredConnection(ctx, id)
 		} else {
+			connection.DetachConnection(ms.cfg.SelId)
 			ms.cli.DetachSub(ctx, ms.props)
 		}
 	}

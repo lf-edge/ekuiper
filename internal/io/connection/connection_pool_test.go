@@ -35,29 +35,34 @@ func TestConnection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, conn)
 	require.NoError(t, conn.Ping(ctx))
+	require.Equal(t, 0, GetConnectionRef("id1"))
 	_, err = CreateNamedConnection(ctx, "id1", "mock", nil)
 	require.Error(t, err)
-	require.Equal(t, 0, conn.Ref(ctx))
-	conn.Attach(ctx)
-	require.Equal(t, 1, conn.Ref(ctx))
-	conn.Attach(ctx)
-	require.Equal(t, 2, conn.Ref(ctx))
-	conn.DetachPub(ctx, nil)
-	require.Equal(t, 1, conn.Ref(ctx))
+	AttachConnection("id1")
+	require.Equal(t, 1, GetConnectionRef("id1"))
+	AttachConnection("id1")
+	require.Equal(t, 2, GetConnectionRef("id1"))
+	DetachConnection("id1")
+	require.Equal(t, 1, GetConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.Error(t, err)
-	conn2, err := GetNameConnection("id1")
-	require.NoError(t, err)
-	require.NotNil(t, conn2)
-	conn.DetachSub(ctx, nil)
-	require.Equal(t, 0, conn.Ref(ctx))
+	DetachConnection("id1")
+	require.Equal(t, 0, GetConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
-	conn3, err := GetNameConnection("id1")
+	conn3, err := AttachConnection("id1")
 	require.Error(t, err)
 	require.Nil(t, conn3)
+}
+
+func TestConnectionErr(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := context.Background()
 
 	_, err = CreateNamedConnection(ctx, "", "mock", nil)
 	require.Error(t, err)
@@ -65,7 +70,7 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	_, err = CreateNamedConnection(ctx, "12", "unknown", nil)
 	require.Error(t, err)
-	_, err = GetNameConnection("")
+	_, err = AttachConnection("")
 	require.Error(t, err)
 	err = PingConnection(ctx, "")
 	require.Error(t, err)
@@ -81,17 +86,9 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	err = DropNonStoredConnection(ctx, "nonexists")
 	require.NoError(t, err)
-}
-
-func TestConnectionErr(t *testing.T) {
-	dataDir, err := conf.GetDataLoc()
-	require.NoError(t, err)
-	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, InitConnectionManager4Test())
-	ctx := context.Background()
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr", "return(true)")
-	conn, err := createNamedConnection(ctx, ConnectionMeta{
+	conn, err := createNamedConnection(ctx, &ConnectionMeta{
 		ID:    "1",
 		Typ:   "mock",
 		Props: nil,

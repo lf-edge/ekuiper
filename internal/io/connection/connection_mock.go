@@ -61,8 +61,8 @@ func (m *mockConnection) Ref(ctx api.StreamContext) int {
 	return m.ref
 }
 
-func CreateMockConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
-	m := &mockConnection{id: id, ref: 0}
+func CreateMockConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
+	m := &mockConnection{ref: 0}
 	return m, nil
 }
 
@@ -76,22 +76,10 @@ func (m mockErrConnection) Close(ctx api.StreamContext) {
 	return
 }
 
-func (m mockErrConnection) Attach(ctx api.StreamContext) {
-	return
-}
-
 func (m mockErrConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	return
 }
 
-func (m mockErrConnection) DetachPub(ctx api.StreamContext, props map[string]any) {
-	return
-}
-
-func (m mockErrConnection) Ref(ctx api.StreamContext) int {
-	return 0
-}
-
-func CreateMockErrConnection(ctx api.StreamContext, id string, props map[string]any) (modules.Connection, error) {
+func CreateMockErrConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
 	return nil, errors.New("mockErr")
 }

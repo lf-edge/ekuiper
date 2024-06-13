@@ -37,7 +37,6 @@ type Connection struct {
 	selId     string
 	logger    api.Logger
 	connected atomic.Bool
-	refCount  atomic.Int32
 	// key is the topic. Each topic will have only one connector
 	subscriptions map[string]*SubscriptionInfo
 }
@@ -90,28 +89,14 @@ func (conn *Connection) onReconnecting(_ pahoMqtt.Client, _ *pahoMqtt.ClientOpti
 	conn.logger.Infof("Reconnecting to mqtt broker")
 }
 
-// Do not call this directly. Call connection pool Attach method to get the connection
-func (conn *Connection) Attach(ctx api.StreamContext) {
-	conn.refCount.Add(1)
-}
-
-func (conn *Connection) Ref(ctx api.StreamContext) int {
-	return int(conn.refCount.Load())
-}
-
 // Do not call this directly. Call connection pool Detach method to release the connection
 func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
-	conn.refCount.Add(-1)
 	topic, err := getTopicFromProps(props)
 	if err != nil {
 		return
 	}
 	delete(conn.subscriptions, topic)
 	conn.Client.Unsubscribe(topic)
-}
-
-func (conn *Connection) DetachPub(ctx api.StreamContext, props map[string]any) {
-	conn.refCount.Add(-1)
 }
 
 func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
@@ -132,12 +117,12 @@ func (conn *Connection) Ping(ctx api.StreamContext) error {
 	}
 }
 
-func CreateConnection(ctx api.StreamContext, selId string, props map[string]any) (modules.Connection, error) {
-	return CreateClient(ctx, selId, props)
+func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
+	return CreateClient(ctx, props)
 }
 
 // CreateClient creates a new mqtt client. It is anonymous and does not require a name.
-func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*Connection, error) {
+func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, error) {
 	c, err := ValidateConfig(props)
 	if err != nil {
 		return nil, err
@@ -175,9 +160,6 @@ func CreateClient(ctx api.StreamContext, selId string, props map[string]any) (*C
 	}
 	ctx.GetLogger().Infof("new mqtt client created")
 	con.Client = cli
-	if len(selId) > 0 {
-		con.Attach(ctx)
-	}
 	return con, nil
 }
 
@@ -222,7 +204,7 @@ func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 }
 
 func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Connection, error) {
-	cli, err := CreateClient(ctx, "", props)
+	cli, err := CreateClient(ctx, props)
 	if err != nil {
 		return nil, err
 	}

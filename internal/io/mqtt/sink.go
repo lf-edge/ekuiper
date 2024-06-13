@@ -67,7 +67,7 @@ func (ms *Sink) Connect(ctx api.StreamContext) error {
 	var cli *client.Connection
 	var err error
 	if len(ms.adconf.SelId) > 0 {
-		conn, err := connection.GetNameConnection(ms.adconf.SelId)
+		conn, err := connection.AttachConnection(ms.adconf.SelId)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (ms *Sink) Close(ctx api.StreamContext) error {
 			id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
 			connection.DropNonStoredConnection(ctx, id)
 		} else {
-			ms.cli.DetachPub(ctx, nil)
+			connection.DetachConnection(ms.adconf.SelId)
 		}
 	}
 	return nil
