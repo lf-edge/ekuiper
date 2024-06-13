@@ -19,14 +19,15 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup/cache"
-	nodeConf "github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -39,22 +40,19 @@ type LookupConf struct {
 // LookupNode will look up the data from the external source when receiving an event
 type LookupNode struct {
 	*defaultSinkNode
-	sourceType string
-	joinType   ast.JoinType
-	vals       []ast.Expr
 
-	srcOptions *ast.Options
-	conf       *LookupConf
-	fields     []string
-	keys       []string
+	conf *LookupConf
+
+	joinType ast.JoinType
+	vals     []ast.Expr
+	fields   []string
+	keys     []string
+	// If lookupByteSource, the decoders are needed
+	isBytesLookup bool
+	formatDecoder message.Converter
 }
 
-func NewLookupNode(name string, fields []string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *def.RuleOption) (*LookupNode, error) {
-	t := srcOptions.TYPE
-	if t == "" {
-		return nil, fmt.Errorf("source type is not specified")
-	}
-	props := nodeConf.GetSourceConf(t, srcOptions)
+func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, fields []string, keys []string, joinType ast.JoinType, vals []ast.Expr, srcOptions *ast.Options, options *def.RuleOption, props map[string]any) (*LookupNode, error) {
 	lookupConf := &LookupConf{}
 	if lc, ok := props["lookup"].(map[string]interface{}); ok {
 		err := cast.MapToStruct(lc, lookupConf)
@@ -63,15 +61,32 @@ func NewLookupNode(name string, fields []string, keys []string, joinType ast.Joi
 		}
 	}
 	n := &LookupNode{
-		fields:     fields,
-		keys:       keys,
-		srcOptions: srcOptions,
-		conf:       lookupConf,
-		sourceType: t,
-		joinType:   joinType,
-		vals:       vals,
+		fields:        fields,
+		keys:          keys,
+		conf:          lookupConf,
+		joinType:      joinType,
+		vals:          vals,
+		isBytesLookup: isBytesLookup,
 	}
 	n.defaultSinkNode = newDefaultSinkNode(name, options)
+	if isBytesLookup {
+		sch := make(map[string]*ast.JsonStreamField, len(fields))
+		for _, field := range fields {
+			sch[field] = nil
+		}
+		decoder, err := converter.GetOrCreateConverter(ctx, &ast.Options{
+			FORMAT:     srcOptions.FORMAT,
+			SCHEMAID:   srcOptions.SCHEMAID,
+			DELIMITER:  srcOptions.DELIMITER,
+			IsWildCard: false,
+			Schema:     sch,
+		})
+		if err != nil {
+			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", srcOptions.FORMAT, srcOptions.SCHEMAID, err)
+			return nil, fmt.Errorf(msg)
+		}
+		n.formatDecoder = decoder
+	}
 	return n, nil
 }
 
@@ -164,7 +179,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 }
 
 // lookup will lookup the cache firstly, if expires, read the external source
-func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.FunctionValuer, ns api.LookupSource, tuples *xsql.JoinTuples, c *cache.Cache) error {
+func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.FunctionValuer, ns api.Source, tuples *xsql.JoinTuples, c *cache.Cache) error {
 	ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(d, fv)}
 	cvs := make([]interface{}, len(n.vals))
 	hasNil := false
@@ -184,14 +199,14 @@ func (n *LookupNode) lookup(ctx api.StreamContext, d xsql.Row, fv *xsql.Function
 			k := fmt.Sprintf("%v", cvs)
 			r, ok = c.Get(k)
 			if !ok {
-				r, e = ns.Lookup(ctx, n.fields, n.keys, cvs)
+				r, e = n.doLookup(ctx, ns, cvs)
 				if e != nil {
 					return e
 				}
 				c.Set(k, r)
 			}
 		} else {
-			r, e = ns.Lookup(ctx, n.fields, n.keys, cvs)
+			r, e = n.doLookup(ctx, ns, cvs)
 		}
 	}
 	if e != nil {
@@ -255,4 +270,38 @@ func (n *LookupNode) merge(ctx api.StreamContext, d xsql.Row, r []map[string]int
 	n.statManager.IncTotalRecordsOut()
 	n.statManager.IncTotalMessagesProcessed(1)
 	n.statManager.SetBufferLength(int64(len(n.input)))
+}
+
+func (n *LookupNode) doLookup(ctx api.StreamContext, ns api.Source, cvs []any) ([]map[string]any, error) {
+	if n.isBytesLookup {
+		rawRows, err := ns.(api.LookupBytesSource).Lookup(ctx, n.fields, n.keys, cvs)
+		if err != nil {
+			return nil, err
+		}
+		result := make([]map[string]any, 0, len(rawRows))
+		for _, row := range rawRows {
+			r, e := n.decode(ctx, row)
+			if e != nil {
+				ctx.GetLogger().Errorf("decode row %v error: %v", row, e)
+			} else {
+				switch rt := r.(type) {
+				case []map[string]any:
+					result = append(result, rt...)
+				case map[string]any:
+					result = append(result, rt)
+				default:
+					ctx.GetLogger().Errorf("decode row %v got unknow result: %v", row, rt)
+				}
+			}
+		}
+		return result, nil
+	} else {
+		return ns.(api.LookupSource).Lookup(ctx, n.fields, n.keys, cvs)
+	}
+}
+
+// Only called when isBytesLookup is true
+// Must guarantee decoders are set
+func (n *LookupNode) decode(ctx api.StreamContext, row []byte) (any, error) {
+	return n.formatDecoder.Decode(ctx, row)
 }

@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 
 type SourceFactory interface {
 	Source(name string) (api.Source, error)
-	LookupSource(name string) (api.LookupSource, error)
+	LookupSource(name string) (api.Source, error)
 }
 
 type SinkFactory interface {

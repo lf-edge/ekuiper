@@ -20,7 +20,7 @@ import (
 
 type (
 	NewSourceFunc       func() api.Source
-	NewLookupSourceFunc func() api.LookupSource
+	NewLookupSourceFunc func() api.Source
 	NewSinkFunc         func() api.Sink
 )
 
@@ -40,4 +40,40 @@ func RegisterSink(name string, f NewSinkFunc) {
 
 func RegisterLookupSource(name string, f NewLookupSourceFunc) {
 	LookupSources[name] = f
+}
+
+func IsStreamSource(s api.Source) bool {
+	switch s.(type) {
+	case api.TupleSource, api.BytesSource, api.PullTupleSource, api.PullBytesSource:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsPushStreamSource(s api.Source) bool {
+	switch s.(type) {
+	case api.TupleSource, api.BytesSource:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsPullStreamSource(s api.Source) bool {
+	switch s.(type) {
+	case api.PullTupleSource, api.PullBytesSource:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsLookupSource(s api.Source) bool {
+	switch s.(type) {
+	case api.LookupSource, api.LookupBytesSource:
+		return true
+	default:
+		return false
+	}
 }

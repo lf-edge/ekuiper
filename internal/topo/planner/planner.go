@@ -253,7 +253,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *DedupTriggerPlan:
 		op = node.NewDedupTriggerNode(fmt.Sprintf("%d_dedup_trigger", newIndex), options, t.aliasName, t.startField.Name, t.endField.Name, t.nowField.Name, t.expire)
 	case *LookupPlan:
-		op, err = node.NewLookupNode(t.joinExpr.Name, t.fields, t.keys, t.joinExpr.JoinType, t.valvars, t.options, options)
+		op, err = planLookupSource(tp.GetContext(), t, options)
 	case *JoinAlignPlan:
 		op, err = node.NewJoinAlignNode(fmt.Sprintf("%d_join_aligner", newIndex), t.Emitters, options)
 	case *JoinPlan:

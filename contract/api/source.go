@@ -66,11 +66,18 @@ type Rewindable interface {
 	ResetOffset(input map[string]any) error
 }
 
-// LookupSource is a source feature to query the source on demand (TO be modified later)
+// LookupSource is a source feature to query the source on demand
 type LookupSource interface {
 	Source
 	// Lookup receive lookup values to construct the query and return query results
 	Lookup(ctx StreamContext, fields []string, keys []string, values []any) ([]map[string]any, error)
+}
+
+// LookupBytesSource looks up with the bytes payload pushed by the external source
+type LookupBytesSource interface {
+	Source
+	// Lookup receive multiple rows of bytes
+	Lookup(ctx StreamContext, fields []string, keys []string, values []any) ([][]byte, error)
 }
 
 /// helper function definition

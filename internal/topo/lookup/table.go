@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import (
 // It will only stop once the table is dropped.
 
 type info struct {
-	ls    api.LookupSource
+	ls    api.Source
 	count int32
 }
 
@@ -41,7 +41,7 @@ var (
 )
 
 // Attach called by lookup nodes. Add a count to the info
-func Attach(name string) (api.LookupSource, error) {
+func Attach(name string) (api.Source, error) {
 	lock.Lock()
 	defer lock.Unlock()
 	if i, ok := instances[name]; ok {

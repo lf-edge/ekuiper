@@ -52,38 +52,6 @@ type dconf struct {
 	PayloadDelimiter  string        `json:"payloadDelimiter"`
 }
 
-func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
-	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
-		ctx.GetLogger().Infof("attach schema to shared stream")
-		// append payload field to schema
-		if o.additionSchema != "" {
-			newSchema := make(map[string]*ast.JsonStreamField, len(schema)+1)
-			for k, v := range schema {
-				newSchema[k] = v
-			}
-			newSchema[o.additionSchema] = nil
-		}
-		if err := o.sLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
-			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
-		} else {
-			ctx.GetLogger().Infof("attach schema become %+v", o.sLayer.GetSchema())
-			fastDecoder.ResetSchema(o.sLayer.GetSchema())
-		}
-	}
-}
-
-func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
-	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
-		ctx.GetLogger().Infof("detach schema for shared stream rule %v", ruleId)
-		if err := o.sLayer.DetachSchema(ruleId); err != nil {
-			ctx.GetLogger().Infof("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
-		} else {
-			fastDecoder.ResetSchema(o.sLayer.GetSchema())
-			ctx.GetLogger().Infof("detach schema become %+v", o.sLayer.GetSchema())
-		}
-	}
-}
-
 func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string, ruleId string, rOpt *def.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
 	dc := &dconf{}
 	e := cast.MapToStruct(props, dc)
@@ -197,6 +165,38 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 		}
 	default:
 		return []any{fmt.Errorf("unsupported data received: %v", d)}
+	}
+}
+
+func (o *DecodeOp) AttachSchema(ctx api.StreamContext, dataSource string, schema map[string]*ast.JsonStreamField, isWildcard bool) {
+	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		ctx.GetLogger().Infof("attach schema to shared stream")
+		// append payload field to schema
+		if o.additionSchema != "" {
+			newSchema := make(map[string]*ast.JsonStreamField, len(schema)+1)
+			for k, v := range schema {
+				newSchema[k] = v
+			}
+			newSchema[o.additionSchema] = nil
+		}
+		if err := o.sLayer.MergeSchema(ctx.GetRuleId(), dataSource, schema, isWildcard); err != nil {
+			ctx.GetLogger().Warnf("merge schema to shared stream failed, err: %v", err)
+		} else {
+			ctx.GetLogger().Infof("attach schema become %+v", o.sLayer.GetSchema())
+			fastDecoder.ResetSchema(o.sLayer.GetSchema())
+		}
+	}
+}
+
+func (o *DecodeOp) DetachSchema(ctx api.StreamContext, ruleId string) {
+	if fastDecoder, ok := o.converter.(message.SchemaResetAbleConverter); ok {
+		ctx.GetLogger().Infof("detach schema for shared stream rule %v", ruleId)
+		if err := o.sLayer.DetachSchema(ruleId); err != nil {
+			ctx.GetLogger().Infof("detach schema for shared stream rule %v failed, err:%v", ruleId, err)
+		} else {
+			fastDecoder.ResetSchema(o.sLayer.GetSchema())
+			ctx.GetLogger().Infof("detach schema become %+v", o.sLayer.GetSchema())
+		}
 	}
 }
 
