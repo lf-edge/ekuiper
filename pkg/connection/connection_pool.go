@@ -138,15 +138,19 @@ func DetachConnection(id string, props map[string]interface{}) error {
 	defer globalConnectionManager.Unlock()
 	selID := extractSelID(props)
 	if len(selID) < 1 {
-		return detachConnection(id)
+		return detachConnection(id, true)
 	}
-	return detachConnection(selID)
+	return detachConnection(selID, false)
 }
 
-func detachConnection(id string) error {
+func detachConnection(id string, remove bool) error {
 	meta, ok := globalConnectionManager.connectionPool[id]
 	if !ok {
-		return fmt.Errorf("connection %s not existed", id)
+		return nil
+	}
+	if remove {
+		delete(globalConnectionManager.connectionPool, id)
+		return nil
 	}
 	meta.refCount--
 	return nil
