@@ -18,11 +18,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
