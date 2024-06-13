@@ -16,6 +16,7 @@ package server
 
 import (
 	"testing"
+	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,9 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
-func init() {
+func initProcessor() {
+	// sleep to avoid database lock
+	time.Sleep(3 * time.Second)
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		panic(err)
@@ -56,6 +59,7 @@ func getStreamProcessor() *processor.StreamProcessor {
 }
 
 func TestCheckBeforeDrop(t *testing.T) {
+	initProcessor()
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc")
 	dropData()
