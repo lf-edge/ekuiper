@@ -115,7 +115,7 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
 		id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-		connection.DetachConnection(id, ms.props)
+		connection.DetachConnection(ctx, id, ms.props)
 		ms.cli.DetachSub(ctx, ms.props)
 	}
 	return nil

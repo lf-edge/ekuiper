@@ -102,7 +102,7 @@ func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Info("Closing mqtt sink connector")
 	if ms.cli != nil {
 		id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-		connection.DetachConnection(id, ms.config)
+		connection.DetachConnection(ctx, id, ms.config)
 	}
 	return nil
 }

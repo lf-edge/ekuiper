@@ -130,7 +130,7 @@ func attachConnection(id string) (modules.Connection, error) {
 	return meta.conn, nil
 }
 
-func DetachConnection(id string, props map[string]interface{}) error {
+func DetachConnection(ctx api.StreamContext, id string, props map[string]interface{}) error {
 	if id == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
@@ -138,17 +138,19 @@ func DetachConnection(id string, props map[string]interface{}) error {
 	defer globalConnectionManager.Unlock()
 	selID := extractSelID(props)
 	if len(selID) < 1 {
-		return detachConnection(id, true)
+		return detachConnection(ctx, id, true)
 	}
-	return detachConnection(selID, false)
+	return detachConnection(ctx, selID, false)
 }
 
-func detachConnection(id string, remove bool) error {
+func detachConnection(ctx api.StreamContext, id string, remove bool) error {
 	meta, ok := globalConnectionManager.connectionPool[id]
 	if !ok {
 		return nil
 	}
 	if remove {
+		conn := meta.conn
+		conn.Close(ctx)
 		delete(globalConnectionManager.connectionPool, id)
 		return nil
 	}
@@ -208,22 +210,6 @@ func CreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[
 	meta.conn = conn
 	globalConnectionManager.connectionPool[id] = meta
 	return conn, nil
-}
-
-func DropNonStoredConnection(ctx api.StreamContext, selId string) error {
-	if selId == "" {
-		return fmt.Errorf("connection id should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	meta, ok := globalConnectionManager.connectionPool[selId]
-	if !ok {
-		return nil
-	}
-	conn := meta.conn
-	conn.Close(ctx)
-	delete(globalConnectionManager.connectionPool, selId)
-	return nil
 }
 
 var mockErr = true
