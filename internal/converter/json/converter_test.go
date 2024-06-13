@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -656,4 +657,54 @@ func TestSchemaless(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tc.expect, v)
 	}
+}
+
+func TestIssue(t *testing.T) {
+	originSchema := map[string]*ast.JsonStreamField{
+		"results": nil,
+	}
+	f := NewFastJsonConverter(originSchema)
+	data := `{
+    "results": [
+        {
+            "location": {
+                "id": "WTMKQ069CCJ7",
+                "name": "杭州",
+                "country": "CN",
+                "path": "杭州,杭州,浙江,中国",
+                "timezone": "Asia/Shanghai",
+                "timezone_offset": "+08:00"
+            },
+            "now": {
+                "text": "多云",
+                "code": "4",
+                "temperature": "31",
+                "feels_like": "36",
+                "pressure": "997",
+                "humidity": "58",
+                "visibility": "9.7",
+                "wind_direction": "东",
+                "wind_direction_degree": "87",
+                "wind_speed": "14.0",
+                "wind_scale": "3",
+                "clouds": "100",
+                "dew_point": ""
+            },
+            "last_update": "2024-06-13T16:37:50+08:00"
+        }
+    ]
+}`
+	m, err := f.Decode(context.Background(), []byte(data))
+	require.NoError(t, err)
+	expected := make(map[string]interface{})
+	json.Unmarshal([]byte(data), &expected)
+	require.Equal(t, expected, m)
+
+	schmema2 := map[string]*ast.JsonStreamField{
+		"others": nil,
+	}
+	f2 := NewFastJsonConverter(schmema2)
+	m, err = f2.Decode(context.Background(), []byte(data))
+	require.NoError(t, err)
+	require.Len(t, m, 0)
 }
