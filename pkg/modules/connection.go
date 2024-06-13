@@ -18,8 +18,8 @@ import "github.com/lf-edge/ekuiper/contract/v2/api"
 
 type Connection interface {
 	Ping(ctx api.StreamContext) error
-	Close(ctx api.StreamContext)
 	DetachSub(ctx api.StreamContext, props map[string]any)
+	api.Closable
 }
 
 type ConnectionProvider func(ctx api.StreamContext, props map[string]any) (Connection, error)

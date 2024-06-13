@@ -17,26 +17,65 @@ package neuron
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func TestRun(t *testing.T) {
 	exp := []api.MessageTuple{
-		model.NewDefaultSourceTuple(map[string]any{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]any{"tag_name1": 11.22, "tag_name2": "yellow"}, "errors": map[string]any{"tag_name3": 122.0}}, nil, timex.GetNow()),
-		model.NewDefaultSourceTuple(map[string]any{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]any{"tag_name1": 11.22, "tag_name2": "green", "tag_name3": 60.0}, "errors": map[string]any{}}, nil, timex.GetNow()),
-		model.NewDefaultSourceTuple(map[string]any{"group_name": "group1", "timestamp": 1646125996000.0, "node_name": "node1", "values": map[string]any{"tag_name1": 15.4, "tag_name2": "green", "tag_name3": 70.0}, "errors": map[string]any{}}, nil, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte("{\"timestamp\": 1646125996000, \"node_name\": \"node1\", \"group_name\": \"group1\", \"values\": {\"tag_name1\": 11.22, \"tag_name2\": \"yellow\"}, \"errors\": {\"tag_name3\": 122}}"), nil, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte(`{"timestamp": 1646125996000, "node_name": "node1", "group_name": "group1", "values": {"tag_name1": 11.22, "tag_name2": "green","tag_name3":60}, "errors": {}}`), nil, timex.GetNow()),
+		model.NewDefaultRawTuple([]byte(`{"timestamp": 1646125996000, "node_name": "node1", "group_name": "group1", "values": {"tag_name1": 15.4, "tag_name2": "green","tag_name3":70}, "errors": {}}`), nil, timex.GetNow()),
 	}
 	s := GetSource()
 	server, _ := mockNeuron(true, false, DefaultNeuronUrl)
 	defer server.Close()
 	mock.TestSourceConnector(t, s, map[string]any{
 		"datasource": "new",
+		"url":        DefaultNeuronUrl,
 	}, exp, func() {
 		// do nothing
 	})
+
+	ctx := mockContext.NewMockContext("t", "tt")
+	err := s.(*source).Ping(ctx, map[string]any{"url": DefaultNeuronUrl})
+	assert.NoError(t, err)
+}
+
+func TestProvision(t *testing.T) {
+	ctx := mockContext.NewMockContext("t", "tt")
+	s := GetSource()
+	err := s.Provision(ctx, map[string]any{
+		"url": "3434",
+	})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "only tcp and ipc scheme are supported")
+
+	err = s.Provision(ctx, map[string]any{
+		"url": "tcp://127.0.0.1:8000",
+	})
+	assert.NoError(t, err)
+
+	su, ok := s.(model.UniqueSub)
+	assert.True(t, ok)
+	sid := su.SubId(map[string]any{
+		"url": "tcp://127.0.0.1:8000",
+	})
+	assert.Equal(t, "nng:pairtcp://127.0.0.1:8000", sid)
+
+	err = s.Connect(ctx)
+	assert.NoError(t, err)
+
+	err = s.Connect(ctx)
+	assert.Error(t, err)
+	assert.EqualError(t, err, "connection pairtcp://127.0.0.1:8000 already been created")
+
+	err = s.Close(ctx)
+	assert.NoError(t, err)
 }

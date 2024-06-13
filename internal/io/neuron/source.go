@@ -15,53 +15,79 @@
 package neuron
 
 import (
+	"errors"
 	"fmt"
+	"time"
+
+	"go.nanomsg.org/mangos/v3"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-type sc struct {
-	Url          string `json:"url,omitempty"`
-	BufferLength int    `json:"bufferLength,omitempty"`
-}
+const (
+	DefaultNeuronUrl = "ipc:///tmp/neuron-ekuiper.ipc"
+	PROTOCOL         = "pair"
+)
 
 type source struct {
-	c *sc
+	c     *nng.SockConf
+	cli   *nng.Sock
+	props map[string]any
 }
 
 func (s *source) Provision(_ api.StreamContext, props map[string]any) error {
-	cc := &sc{
-		BufferLength: 1024,
-		Url:          DefaultNeuronUrl,
-	}
-	err := cast.MapToStruct(props, cc)
+	props["protocol"] = PROTOCOL
+	sc, err := nng.ValidateConf(props)
 	if err != nil {
 		return err
 	}
-	s.c = cc
+	s.c = sc
+	s.props = props
 	return nil
 }
 
-func (s *source) Connect(ctx api.StreamContext) error {
-	_, err := createOrGetConnection(ctx, s.c.Url)
-	return err
+func (s *source) Ping(ctx api.StreamContext, props map[string]any) error {
+	props["protocol"] = PROTOCOL
+	return ping(ctx, props)
 }
 
-func (s *source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, _ api.ErrorIngest) error {
-	ch := pubsub.CreateSub(TopicPrefix+s.c.Url, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), s.c.BufferLength)
+func (s *source) SubId(props map[string]any) string {
+	var url string
+	u, ok := props["url"]
+	if ok {
+		url = u.(string)
+	}
+	return "nng:" + PROTOCOL + url
+}
+
+func (s *source) Connect(ctx api.StreamContext) error {
+	cli, err := connect(ctx, s.c.Url, s.props)
+	if err != nil {
+		return err
+	}
+	s.cli = cli.(*nng.Sock)
+	return nil
+}
+
+func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestErr api.ErrorIngest) error {
+	ctx.GetLogger().Infof("neuron source receiving loop started")
 	go func() {
-		defer pubsub.CloseSourceConsumerChannel(TopicPrefix+s.c.Url, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()))
 		err := infra.SafeRun(func() error {
 			for {
-				select {
-				case v := <-ch:
-					ingest(ctx, v, nil, timex.GetNow())
-				case <-ctx.Done():
-					return nil
+				// no receiving deadline, will wait until the socket closed
+				if msg, err := s.cli.Recv(); err == nil {
+					ctx.GetLogger().Debugf("nng received message %s", string(msg))
+					ingest(ctx, msg, nil, timex.GetNow())
+				} else if err == mangos.ErrClosed {
+					ctx.GetLogger().Infof("neuron connection closed, retry after 1 second")
+					ingestErr(ctx, errors.New("neuron connection closed"))
+					time.Sleep(1 * time.Second)
+					continue
+				} else {
+					ingestErr(ctx, fmt.Errorf("neuron receiving error %v", err))
 				}
 			}
 		})
@@ -74,7 +100,9 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, _ api.
 
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("closing neuron source")
-	return closeConnection(ctx, s.c.Url)
+	close(ctx, s.cli, s.c.Url, s.props)
+	s.cli = nil
+	return nil
 }
 
 func GetSource() api.Source {

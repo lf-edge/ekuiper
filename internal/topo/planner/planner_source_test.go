@@ -56,6 +56,7 @@ func TestPlanTopo(t *testing.T) {
 		"filesrc1": `CREATE STREAM fs1 () WITH (FORMAT="json", TYPE="file",CONF_KEY="lines");`,
 		"filesrc2": `CREATE STREAM fs2 () WITH (FORMAT="delimited", TYPE="file",CONF_KEY="csv");`,
 		"filesrc3": `CREATE STREAM fs3 () WITH (FORMAT="json",TYPE="file",CONF_KEY="json");`,
+		"neuron1":  `CREATE STREAM neuron1 () WITH (FORMAT="json", TYPE="neuron",CONF_KEY="tcp");`,
 	}
 	for name, sql := range streamSqls {
 		s, err := json.Marshal(&xsql.StreamInfo{
@@ -123,6 +124,13 @@ func TestPlanTopo(t *testing.T) {
 			},
 			p: "file",
 			k: "json",
+		},
+		{
+			conf: map[string]any{
+				"url": "tcp://127.0.0.1:7777",
+			},
+			p: "neuron",
+			k: "tcp",
 		},
 	}
 	meta.InitYamlConfigManager()
@@ -341,6 +349,30 @@ func TestPlanTopo(t *testing.T) {
 						"op_4_project",
 					},
 					"op_4_project": {
+						"op_logToMemory_0_0_transform",
+					},
+					"op_logToMemory_0_0_transform": {
+						"op_logToMemory_0_1_encode",
+					},
+					"op_logToMemory_0_1_encode": {
+						"sink_logToMemory_0",
+					},
+				},
+			},
+		},
+		{
+			name: "testNngConnSplit",
+			sql:  `SELECT * FROM neuron1`,
+			topo: &def.PrintableTopo{
+				Sources: []string{"source_nng:pairtcp://127.0.0.1:7777"},
+				Edges: map[string][]any{
+					"source_nng:pairtcp://127.0.0.1:7777": {
+						"op_2_decoder",
+					},
+					"op_2_decoder": {
+						"op_3_project",
+					},
+					"op_3_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {

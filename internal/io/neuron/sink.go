@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 )
 
 type c struct {
@@ -30,13 +31,14 @@ type c struct {
 	GroupName string   `json:"groupName"`
 	Tags      []string `json:"tags"`
 	// If sent with the raw converted string or let us range over the result map
-	Raw bool   `json:"raw"`
-	Url string `json:"url"`
+	Raw bool `json:"raw"`
 }
 
 type sink struct {
-	c   *c
-	cli *conninfo
+	c     *c
+	cc    *nng.SockConf
+	cli   *nng.Sock
+	props map[string]any
 }
 
 type neuronTemplate struct {
@@ -47,11 +49,16 @@ type neuronTemplate struct {
 }
 
 func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
+	props["protocol"] = PROTOCOL
+	sc, err := nng.ValidateConf(props)
+	if err != nil {
+		return err
+	}
+	s.cc = sc
 	cc := &c{
 		Raw: false,
-		Url: DefaultNeuronUrl,
 	}
-	err := cast.MapToStruct(props, cc)
+	err = cast.MapToStruct(props, cc)
 	if err != nil {
 		return err
 	}
@@ -64,16 +71,21 @@ func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 		}
 	}
 	s.c = cc
+	s.props = props
 	return nil
 }
 
+func (s *sink) Ping(ctx api.StreamContext, props map[string]interface{}) error {
+	props["protocol"] = PROTOCOL
+	return ping(ctx, props)
+}
+
 func (s *sink) Connect(ctx api.StreamContext) error {
-	ctx.GetLogger().Debugf("Opening neuron sink")
-	cli, err := createOrGetConnection(ctx, s.c.Url)
+	cli, err := connect(ctx, s.cc.Url, s.props)
 	if err != nil {
 		return err
 	}
-	s.cli = cli
+	s.cli = cli.(*nng.Sock)
 	return nil
 }
 
@@ -85,7 +97,7 @@ func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
 		if err != nil {
 			return err
 		}
-		return publish(ctx, r, s.cli)
+		return s.cli.Send(ctx, r)
 	} else {
 		return s.SendMapToNeuron(ctx, data)
 	}
@@ -106,9 +118,8 @@ func (s *sink) CollectList(ctx api.StreamContext, data api.MessageTupleList) err
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing neuron sink")
-	if s.cli != nil {
-		return closeConnection(ctx, s.c.Url)
-	}
+	close(ctx, s.cli, s.cc.Url, s.props)
+	s.cli = nil
 	return nil
 }
 
@@ -146,7 +157,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 			for _, k := range keys {
 				t.TagName = k
 				t.Value = el[k]
-				err := doPublish(ctx, t, s.cli)
+				err := doPublish(ctx, s.cli, t)
 				if err != nil {
 					return err
 				}
@@ -155,7 +166,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 			for k, v := range el {
 				t.TagName = k
 				t.Value = v
-				err := doPublish(ctx, t, s.cli)
+				err := doPublish(ctx, s.cli, t)
 				if err != nil {
 					return err
 				}
@@ -174,7 +185,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 				ctx.GetLogger().Errorf("Error get the value of tag %s: %v", t.TagName, err)
 				continue
 			}
-			err := doPublish(ctx, t, s.cli)
+			err := doPublish(ctx, s.cli, t)
 			if err != nil {
 				return err
 			}
@@ -183,16 +194,16 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 	return nil
 }
 
-func doPublish(ctx api.StreamContext, t *neuronTemplate, cli *conninfo) error {
+func doPublish(ctx api.StreamContext, cli *nng.Sock, t *neuronTemplate) error {
 	r, err := json.Marshal(t)
 	if err != nil {
 		return fmt.Errorf("Error marshall the tag payload %v: %v", t, err)
 	}
-	err = publish(ctx, r, cli)
+	err = cli.Send(ctx, r)
 	if err != nil {
 		return errorx.NewIOErr(fmt.Sprintf(`Error publish the tag payload %s: %v`, t.TagName, err))
 	}
-	ctx.GetLogger().Debugf("Publish %s", r)
+	ctx.GetLogger().Debugf("Send %s", r)
 	return nil
 }
 

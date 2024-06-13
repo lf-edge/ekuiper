@@ -59,10 +59,10 @@ func RunTupleSinkCollect(s api.TupleCollector, data []any, props map[string]any)
 	time.Sleep(time.Second)
 	for _, e := range data {
 		switch ee := e.(type) {
-		case api.MessageTuple:
-			err = s.Collect(ctx, ee)
 		case api.MessageTupleList:
 			err = s.CollectList(ctx, ee)
+		case api.MessageTuple:
+			err = s.Collect(ctx, ee)
 		default:
 			err = errors.New("unsupported data type")
 		}
