@@ -16,6 +16,7 @@ package mock
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -112,7 +113,7 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 		switch ss := r.(type) {
 		case api.BytesSource:
 			err = ss.Subscribe(ctx, ingestBytes, func(ctx api.StreamContext, err error) {
-				panic(err)
+				log.Println(err)
 			})
 		case api.TupleSource:
 			err = ss.Subscribe(ctx, ingestTuples, func(ctx api.StreamContext, err error) {

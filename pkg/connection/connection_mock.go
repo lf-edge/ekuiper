@@ -38,8 +38,8 @@ func (m *mockConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *mockConnection) Close(ctx api.StreamContext) {
-	return
+func (m *mockConnection) Close(ctx api.StreamContext) error {
+	return nil
 }
 
 func (m *mockConnection) Attach(ctx api.StreamContext) {

@@ -105,8 +105,9 @@ func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
 	return handleToken(token)
 }
 
-func (conn *Connection) Close(ctx api.StreamContext) {
+func (conn *Connection) Close(ctx api.StreamContext) error {
 	conn.Client.Disconnect(1)
+	return nil
 }
 
 func (conn *Connection) Ping(ctx api.StreamContext) error {

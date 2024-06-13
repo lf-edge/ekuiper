@@ -82,10 +82,17 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 		err         error
 		srcConnNode node.DataSourceNode
 	)
-	if sp.SelId == "" {
+	// Some connection only allow one subscription. The source should implement UniqueSub to provide a subId to avoid multiple connection.
+	us, hasSubId := ss.(model.UniqueSub)
+	if sp.SelId == "" && !hasSubId {
 		srcConnNode, err = node.NewSourceNode(ctx, string(t.name), ss, props, options)
 	} else { // connection selector is set as a one node sub_topo
-		selName := fmt.Sprintf("%s/%s", sp.SelId, t.streamStmt.Options.DATASOURCE)
+		var selName string
+		if sp.SelId != "" {
+			selName = fmt.Sprintf("%s/%s", sp.SelId, t.streamStmt.Options.DATASOURCE)
+		} else {
+			selName = us.SubId(props)
+		}
 		srcSubtopo, existed := topo.GetSubTopo(selName)
 		if !existed {
 			var scn node.DataSourceNode

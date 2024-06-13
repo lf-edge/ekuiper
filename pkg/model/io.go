@@ -41,3 +41,7 @@ type NodeInfo struct {
 	HasCompress     bool
 	HasInterval     bool
 }
+
+type UniqueSub interface {
+	SubId(props map[string]any) string
+}

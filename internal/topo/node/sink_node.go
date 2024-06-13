@@ -197,10 +197,11 @@ func NewTupleSinkNode(ctx api.StreamContext, name string, sink api.TupleCollecto
 // return error that cannot be sent
 func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 	switch d := data.(type) {
-	case api.MessageTuple:
-		err = sink.(api.TupleCollector).Collect(ctx, d)
+	// Some tuple list type also implements tuple. So need to handle list firstly
 	case api.MessageTupleList:
 		err = sink.(api.TupleCollector).CollectList(ctx, d)
+	case api.MessageTuple:
+		err = sink.(api.TupleCollector).Collect(ctx, d)
 	case error:
 		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
 	default:

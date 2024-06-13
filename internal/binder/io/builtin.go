@@ -23,6 +23,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 )
 
 func init() {
@@ -49,6 +50,7 @@ func init() {
 	// modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })
 
 	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)
+	modules.RegisterConnection("nng", nng.CreateConnection)
 }
 
 type Manager struct{}
