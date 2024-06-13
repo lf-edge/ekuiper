@@ -498,6 +498,25 @@ func TestPayloadBatchDecodeWithSchema(t *testing.T) {
 				errors.New("unsupported data received: &{test 0001-01-01 00:00:00 +0000 UTC [] map[topic:a] map[]}"),
 			},
 		},
+		{
+			name: "wrong payload field type",
+			input: &xsql.Tuple{
+				Emitter: "test",
+				Message: map[string]any{
+					"n": "outside", "frames": []any{
+						[]byte(`{"a":23,"b":34}`),
+					},
+				},
+			},
+			schema: map[string]*ast.JsonStreamField{
+				"b": {
+					Type: "float",
+				},
+			},
+			result: []any{
+				errors.New("unsupported payload received, must be a slice of maps: [[123 34 97 34 58 50 51 44 34 98 34 58 51 52 125]]"),
+			},
+		},
 	}
 	ctx := mockContext.NewMockContext("test1", "decode_test")
 	op, err := NewDecodeOp(ctx, true, "test", "streamName", "test1", &def.RuleOption{BufferLength: 10, SendError: true, Concurrency: 10}, &ast.Options{FORMAT: "json", SHARED: true}, false, false, nil, map[string]any{
