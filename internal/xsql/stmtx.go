@@ -64,6 +64,24 @@ type StreamInfo struct {
 	StreamType ast.StreamType `json:"streamType"`
 	StreamKind string         `json:"streamKind"`
 	Statement  string         `json:"statement"`
+	options    *ast.Options   `json:"-"`
+}
+
+func (info *StreamInfo) GetStreamOption() *ast.Options {
+	if info.options != nil {
+		return info.options
+	}
+	parser := NewParser(strings.NewReader(info.Statement))
+	stream, err := Language.Parse(parser)
+	if err != nil {
+		return nil
+	}
+	stmt, ok := stream.(*ast.StreamStmt)
+	if !ok {
+		return nil
+	}
+	info.options = stmt.Options
+	return stmt.Options
 }
 
 func GetDataSourceStatement(m kv.KeyValue, name string) (*StreamInfo, error) {

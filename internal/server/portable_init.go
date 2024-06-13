@@ -226,7 +226,8 @@ func checkPluginSource(name string) (bool, error) {
 			if err != nil {
 				return false, err
 			}
-			if info.StreamKind == name {
+			op := info.GetStreamOption()
+			if op != nil && op.TYPE == name {
 				return true, nil
 			}
 		}

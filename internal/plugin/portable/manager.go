@@ -503,3 +503,8 @@ func (m *Manager) PluginPartialImport(ctx context.Context, plugins map[string]st
 	}
 	return errMap
 }
+
+// RegisterForTest only used for unit test
+func (m *Manager) RegisterForTest(name string, pi *PluginInfo) {
+	m.reg.Set(name, pi)
+}
