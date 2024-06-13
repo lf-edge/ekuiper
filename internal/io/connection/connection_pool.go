@@ -105,27 +105,45 @@ func PingConnection(ctx api.StreamContext, id string) error {
 	return meta.conn.Ping(ctx)
 }
 
-func AttachConnection(id string) (modules.Connection, error) {
+func FetchConnection(ctx api.StreamContext, id, typ string, props map[string]interface{}) (modules.Connection, error) {
 	if id == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
+	selID := extractSelID(props)
+	if len(selID) < 1 {
+		return CreateNonStoredConnection(ctx, id, typ, props)
+	}
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
+	return attachConnection(selID)
+}
+
+func attachConnection(id string) (modules.Connection, error) {
+	if id == "" {
+		return nil, fmt.Errorf("connection id should be defined")
+	}
 	meta, ok := globalConnectionManager.connectionPool[id]
 	if !ok {
 		return nil, fmt.Errorf("connection %s not existed", id)
 	}
 	meta.refCount++
-
 	return meta.conn, nil
 }
 
-func DetachConnection(id string) error {
+func DetachConnection(id string, props map[string]interface{}) error {
 	if id == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
-	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
+	selID := extractSelID(props)
+	if len(selID) < 1 {
+		return detachConnection(id)
+	}
+	return detachConnection(selID)
+}
+
+func detachConnection(id string) error {
 	meta, ok := globalConnectionManager.connectionPool[id]
 	if !ok {
 		return fmt.Errorf("connection %s not existed", id)
@@ -343,4 +361,19 @@ const (
 type ConnectionStatus struct {
 	Status string
 	ErrMsg string
+}
+
+func extractSelID(props map[string]interface{}) string {
+	if len(props) < 1 {
+		return ""
+	}
+	v, ok := props["connectionSelector"]
+	if !ok {
+		return ""
+	}
+	id, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return id
 }

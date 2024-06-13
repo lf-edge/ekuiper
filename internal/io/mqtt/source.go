@@ -75,24 +75,12 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var cli *client.Connection
 	var err error
-	if len(ms.cfg.SelId) > 0 {
-		conn, err := connection.AttachConnection(ms.cfg.SelId)
-		if err != nil {
-			return err
-		}
-		c, ok := conn.(*client.Connection)
-		if !ok {
-			return fmt.Errorf("connection %s should be mqtt connection", ms.cfg.SelId)
-		}
-		cli = c
-	} else {
-		id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-		conn, err := connection.CreateNonStoredConnection(ctx, id, "mqtt", ms.props)
-		if err != nil {
-			return err
-		}
-		cli = conn.(*client.Connection)
+	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+	conn, err := connection.FetchConnection(ctx, id, "mqtt", ms.props)
+	if err != nil {
+		return err
 	}
+	cli = conn.(*client.Connection)
 	ms.cli = cli
 	return err
 }
@@ -126,13 +114,9 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
 	if ms.cli != nil {
-		if len(ms.cfg.SelId) < 1 {
-			id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-			connection.DropNonStoredConnection(ctx, id)
-		} else {
-			connection.DetachConnection(ms.cfg.SelId)
-			ms.cli.DetachSub(ctx, ms.props)
-		}
+		id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+		connection.DetachConnection(id, ms.props)
+		ms.cli.DetachSub(ctx, ms.props)
 	}
 	return nil
 }

@@ -64,27 +64,17 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 
 func (ms *Sink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
-	var cli *client.Connection
 	var err error
-	if len(ms.adconf.SelId) > 0 {
-		conn, err := connection.AttachConnection(ms.adconf.SelId)
-		if err != nil {
-			return err
-		}
-		c, ok := conn.(*client.Connection)
-		if !ok {
-			return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
-		}
-		cli = c
-	} else {
-		id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-		conn, err := connection.CreateNonStoredConnection(ctx, id, "mqtt", ms.config)
-		if err != nil {
-			return err
-		}
-		cli = conn.(*client.Connection)
+	id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
+	conn, err := connection.FetchConnection(ctx, id, "mqtt", ms.config)
+	if err != nil {
+		return err
 	}
-	ms.cli = cli
+	c, ok := conn.(*client.Connection)
+	if !ok {
+		return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
+	}
+	ms.cli = c
 	return err
 }
 
@@ -111,12 +101,8 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 func (ms *Sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Info("Closing mqtt sink connector")
 	if ms.cli != nil {
-		if len(ms.adconf.SelId) < 1 {
-			id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-			connection.DropNonStoredConnection(ctx, id)
-		} else {
-			connection.DetachConnection(ms.adconf.SelId)
-		}
+		id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
+		connection.DetachConnection(id, ms.config)
 	}
 	return nil
 }
