@@ -31,10 +31,13 @@ import (
 // without changing the server(plugin runtime) side
 // TODO think about ending a portable func when needed.
 type PortableFunc struct {
-	symbolName string
-	reg        *PluginMeta // initial plugin meta, only used for initialize the function instance
-	dataCh     DataReqChannel
-	isAgg      int // 0 - not calculate yet, 1 - no, 2 - yes
+	symbolName  string
+	reg         *PluginMeta // initial plugin meta, only used for initialize the function instance
+	dataCh      DataReqChannel
+	isAgg       int // 0 - not calculate yet, 1 - no, 2 - yes
+	onClose     func()
+	onFirstExec func(ctx api.StreamContext)
+	referenced  bool
 }
 
 func NewPortableFunc(symbolName string, reg *PluginMeta) (_ *PortableFunc, e error) {
@@ -70,11 +73,18 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (_ *PortableFunc, e err
 		return nil, err
 	}
 
-	return &PortableFunc{
+	pf := &PortableFunc{
 		symbolName: reg.Name,
 		reg:        reg,
 		dataCh:     dataCh,
-	}, nil
+	}
+	pf.onClose = func() {
+		ins.DeRef(ctx)
+	}
+	pf.onFirstExec = func(execCtx api.StreamContext) {
+		ins.addRef(execCtx)
+	}
+	return pf, nil
 }
 
 func (f *PortableFunc) Validate(args []interface{}) error {
@@ -100,6 +110,10 @@ func (f *PortableFunc) Validate(args []interface{}) error {
 }
 
 func (f *PortableFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+	if !f.referenced && f.onFirstExec != nil {
+		f.referenced = true
+		f.onFirstExec(ctx)
+	}
 	ctx.GetLogger().Debugf("running portable func with args %+v", args)
 	ctxRaw, err := encodeCtx(ctx)
 	if err != nil {
@@ -168,6 +182,9 @@ func (f *PortableFunc) IsAggregate() bool {
 }
 
 func (f *PortableFunc) Close() error {
+	if f.onClose != nil {
+		f.onClose()
+	}
 	return f.dataCh.Close()
 	// Symbol must be closed by instance manager
 	//		ins.StopSymbol(ctx, c)

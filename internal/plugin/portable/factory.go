@@ -42,7 +42,7 @@ func (m *Manager) SourcePluginInfo(name string) (plugin.EXTENSION_TYPE, string, 
 	}
 }
 
-func (m *Manager) LookupSource(_ string) (api.LookupSource, error) {
+func (m *Manager) LookupSource(_ string) (api.Source, error) {
 	// TODO add support
 	return nil, nil
 }
