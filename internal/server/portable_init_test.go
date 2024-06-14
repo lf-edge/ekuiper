@@ -21,6 +21,7 @@ import (
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -32,7 +33,7 @@ import (
 
 func initProcessor() {
 	// sleep to avoid database lock
-	time.Sleep(3 * time.Second)
+	time.Sleep(time.Second)
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
 		panic(err)
@@ -40,8 +41,6 @@ func initProcessor() {
 	store.SetupDefault(dataDir)
 	c := components["portable"]
 	c.register()
-	function.Initialize(entries)
-	io.Initialize(entries)
 }
 
 func getRuleProcessor() *processor.RuleProcessor {
@@ -59,11 +58,13 @@ func getStreamProcessor() *processor.StreamProcessor {
 }
 
 func TestCheckBeforeDrop(t *testing.T) {
-	initProcessor()
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/MockPortableFunc", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/MockPortableFunc")
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc")
+	initProcessor()
+	function.Initialize([]binder.FactoryEntry{{Name: "portable plugin", Factory: portableManager, Weight: 8}})
+	io.Initialize([]binder.FactoryEntry{{Name: "portable plugin", Factory: portableManager, Weight: 8}})
 	dropData()
 	prepareData(t)
 	ref, err := checkPluginSource("pyjson")
