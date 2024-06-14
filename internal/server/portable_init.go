@@ -179,57 +179,6 @@ func checkPluginBeforeDrop(name string) (bool, error) {
 	if !ok {
 		return false, fmt.Errorf("plugin %s not found", name)
 	}
-	for _, source := range pi.Sources {
-		referenced, err := checkPluginSource(source)
-		failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
-			switch value.(int) {
-			case 2, 3:
-				referenced = false
-				err = nil
-			}
-		})
-		if err != nil {
-			return false, err
-		}
-		if referenced {
-			return true, nil
-		}
-	}
-	for _, sink := range pi.Sinks {
-		referenced, err := checkPluginSink(sink)
-		failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
-			switch value.(int) {
-			case 1, 3:
-				referenced = false
-				err = nil
-			}
-		})
-		if err != nil {
-			return false, err
-		}
-		if referenced {
-			return true, nil
-		}
-	}
-	for _, f := range pi.Functions {
-		referenced, err := checkPluginFunction(f)
-		if err != nil {
-			return false, err
-		}
-		if referenced {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func checkPluginSource(name string) (bool, error) {
-	failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
-		switch value.(int) {
-		case 1:
-			failpoint.Return(false, fmt.Errorf("pluginSourceErr"))
-		}
-	})
 	rules, err := ruleProcessor.GetAllRules()
 	failpoint.Inject("mockRules", func() {
 		err = nil
@@ -251,18 +200,24 @@ func checkPluginSource(name string) (bool, error) {
 		if stmt == nil {
 			continue
 		}
-		streams := xsql.GetStreams(stmt)
-		for _, stream := range streams {
-			info, err := streamProcessor.GetStreamInfo(stream, ast.TypeStream)
-			failpoint.Inject("mockRules", func() {
-				err = nil
-				info = mockStreamInfo()
-			})
+		for _, source := range pi.Sources {
+			referenced, err := checkRulePluginSource(rs, source)
 			if err != nil {
 				return false, err
 			}
-			op := info.GetStreamOption()
-			if op != nil && op.TYPE == name {
+			if referenced {
+				return true, nil
+			}
+		}
+		for _, sink := range pi.Sinks {
+			referenced := checkRulePluginSink(rs, sink)
+			if referenced {
+				return true, nil
+			}
+		}
+		for _, f := range pi.Functions {
+			referenced := checkRulePluginFunction(rs, f)
+			if referenced {
 				return true, nil
 			}
 		}
@@ -270,92 +225,54 @@ func checkPluginSource(name string) (bool, error) {
 	return false, nil
 }
 
-func checkPluginSink(name string) (bool, error) {
-	failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
-		switch value.(int) {
-		case 2:
-			failpoint.Return(false, fmt.Errorf("pluginFunctionErr"))
-		}
-	})
-	rules, err := ruleProcessor.GetAllRules()
-	failpoint.Inject("mockRules", func() {
-		err = nil
-		rules = []string{"rule"}
-	})
-	if err != nil {
-		return false, err
-	}
-	for _, r := range rules {
-		rs, ok := registry.Load(r)
+func checkRulePluginSource(rs *rule.RuleState, name string) (bool, error) {
+	streams := xsql.GetStreams(rs.Topology.GetStmt())
+	for _, stream := range streams {
+		info, err := streamProcessor.GetStreamInfo(stream, ast.TypeStream)
 		failpoint.Inject("mockRules", func() {
-			ok = true
-			rs = mockRuleState()
+			err = nil
+			info = mockStreamInfo()
 		})
-		if !ok {
-			continue
+		if err != nil {
+			return false, err
 		}
-		typs := rs.Topology.GetActionsType()
-		_, ok = typs[name]
-		if ok {
+		op := info.GetStreamOption()
+		if op != nil && op.TYPE == name {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func checkPluginFunction(name string) (bool, error) {
-	failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
-		switch value.(int) {
-		case 3:
-			failpoint.Return(false, fmt.Errorf("pluginSinkEr"))
-		}
-	})
-	rules, err := ruleProcessor.GetAllRules()
-	failpoint.Inject("mockRules", func() {
-		err = nil
-		rules = []string{"rule"}
-	})
-	if err != nil {
-		return false, err
-	}
+func checkRulePluginSink(rs *rule.RuleState, name string) bool {
+	typs := rs.Topology.GetActionsType()
+	_, ok := typs[name]
+	return ok
+}
+
+func checkRulePluginFunction(rs *rule.RuleState, name string) bool {
 	find := false
-	for _, r := range rules {
-		rs, ok := registry.Load(r)
-		failpoint.Inject("mockRules", func() {
-			ok = true
-			rs = mockRuleState()
-		})
-		if !ok {
-			continue
-		}
-		stmt := rs.Topology.GetStmt()
-		if stmt == nil {
-			continue
-		}
-		ast.WalkFunc(stmt, func(node ast.Node) bool {
-			switch x := node.(type) {
-			case *ast.Call:
-				if x.Name == name {
-					find = true
-					return false
-				}
-			}
-			return true
-		})
-		if find {
-			return true, nil
-		}
+	stmt := rs.Topology.GetStmt()
+	if stmt == nil {
+		return false
 	}
-	return false, nil
+	ast.WalkFunc(stmt, func(node ast.Node) bool {
+		switch x := node.(type) {
+		case *ast.Call:
+			if x.Name == name {
+				find = true
+				return false
+			}
+		}
+		return true
+	})
+	return find
 }
 
 func mockRuleState() *rule.RuleState {
 	rs := &rule.RuleState{
 		Topology: &topo.Topo{},
 	}
-	rs.Topology.SetStmt(&ast.SelectStatement{
-		Sources: []ast.Source{ast.Table{Name: "pyjson"}},
-	})
 	return rs
 }
 

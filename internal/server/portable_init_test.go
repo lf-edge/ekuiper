@@ -23,7 +23,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/processor"
 )
 
 func initProcessor() {
@@ -38,48 +37,30 @@ func initProcessor() {
 	c.register()
 }
 
-func getRuleProcessor() *processor.RuleProcessor {
-	if ruleProcessor == nil {
-		ruleProcessor = processor.NewRuleProcessor()
-	}
-	return ruleProcessor
-}
-
-func getStreamProcessor() *processor.StreamProcessor {
-	if streamProcessor == nil {
-		streamProcessor = processor.NewStreamProcessor()
-	}
-	return streamProcessor
-}
-
 func TestCheckBeforeDrop(t *testing.T) {
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/mockRules", "return(true)")
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/mockRules", "return(true)")
 	initProcessor()
-	ref, err := checkPluginSource("pyjson")
+	ref, err := checkRulePluginSource(mockRuleState(), "pyjson")
 	require.NoError(t, err)
 	require.True(t, ref)
 
-	ref, err = checkPluginSink("print")
-	require.NoError(t, err)
+	ref = checkRulePluginSink(mockRuleState(), "print")
 	require.True(t, ref)
 
-	ref, err = checkPluginFunction("pyrevert")
-	require.NoError(t, err)
+	ref = checkRulePluginFunction(mockRuleState(), "pyrevert")
 	require.True(t, ref)
 
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/mockRules")
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/mockRules")
-	ref, err = checkPluginSource("pyjson")
+	ref, err = checkRulePluginSource(mockRuleState(), "pyjson")
 	require.NoError(t, err)
 	require.False(t, ref)
 
-	ref, err = checkPluginSink("print")
-	require.NoError(t, err)
+	ref = checkRulePluginSink(mockRuleState(), "print")
 	require.False(t, ref)
 
-	ref, err = checkPluginFunction("pyrevert")
-	require.NoError(t, err)
+	ref = checkRulePluginFunction(mockRuleState(), "pyrevert")
 	require.False(t, ref)
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/mockRules", "return(true)")
