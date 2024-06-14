@@ -15,6 +15,7 @@
 package cast
 
 import (
+	"bytes"
 	"fmt"
 	"time"
 
@@ -299,22 +300,19 @@ func convertFormat(f string) (string, error) {
 				out += "05"
 			}
 
-		case 'S': // S SS SSS
-			j := 1
-			for ; i+j < lenFormat && j <= 3; j++ {
-				if formatRune[i+j] != r {
+		case 'S': // S SS SSS....
+			j := 0
+			for ; i+j < lenFormat; j++ {
+				if formatRune[i+j] != 'S' {
 					break
 				}
 			}
-			i = i + j - 1
-			switch j {
-			case 1: // S
-				out += ".0"
-			case 2: // SS
-				out += ".00"
-			case 3: // SSS
-				out += ".000"
+			b := bytes.NewBufferString(".")
+			for x := 0; x < j; x++ {
+				b.WriteString("0")
 			}
+			out += b.String()
+			i = i + j - 1
 		case 'z': // z
 			out += "MST"
 		case 'Z': // Z
