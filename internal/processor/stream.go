@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -160,6 +160,7 @@ func (p *StreamProcessor) RecoverLookupTable() (err error) {
 
 func (p *StreamProcessor) execSave(stmt *ast.StreamStmt, statement string, replace bool) error {
 	if stmt.StreamType == ast.TypeTable && stmt.Options.KIND == ast.StreamKindLookup {
+		_ = lookup.DropInstance(string(stmt.Name))
 		log.Infof("Creating lookup table %s", stmt.Name)
 		err := lookup.CreateInstance(string(stmt.Name), stmt.Options.TYPE, stmt.Options)
 		if err != nil {

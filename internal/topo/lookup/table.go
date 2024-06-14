@@ -100,7 +100,9 @@ func DropInstance(name string) error {
 			return fmt.Errorf("lookup table %s is still in use, stop all using rules before dropping it", name)
 		}
 		delete(instances, name)
-		return nil
+		contextLogger := conf.Log
+		ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+		return i.ls.Close(ctx)
 	} else {
 		return nil
 	}
