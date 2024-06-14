@@ -91,21 +91,16 @@ func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, field
 		for _, field := range fields {
 			sch[field] = nil
 		}
-		var fsch map[string]*ast.JsonStreamField
 		if sc.PayloadField != "" {
-			fsch = map[string]*ast.JsonStreamField{
-				sc.PayloadField: nil,
-			}
-		} else {
-			fsch = sch
+			sch[sc.PayloadField] = nil
 		}
 
 		decoder, err := converter.GetOrCreateConverter(ctx, &ast.Options{
 			FORMAT:     srcOptions.FORMAT,
 			SCHEMAID:   srcOptions.SCHEMAID,
 			DELIMITER:  srcOptions.DELIMITER,
-			IsWildCard: false,
-			Schema:     fsch,
+			IsWildCard: fields == nil,
+			Schema:     sch,
 		})
 		if err != nil {
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", srcOptions.FORMAT, srcOptions.SCHEMAID, err)
@@ -118,7 +113,7 @@ func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, field
 				FORMAT:     sc.PayloadFormat,
 				SCHEMAID:   sc.PayloadSchemaId,
 				DELIMITER:  sc.PayloadDelimiter,
-				IsWildCard: false,
+				IsWildCard: fields == nil,
 				Schema:     sch,
 			})
 			if err != nil {
