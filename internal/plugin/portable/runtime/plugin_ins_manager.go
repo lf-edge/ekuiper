@@ -43,7 +43,7 @@ var PortbleConf = &PortableConfig{
 
 // PluginIns created at two scenarios
 // 1. At runtime, plugin is created/updated: in order to be able to reload rules that already uses previous ins
-// 2. At system start/restart, when plugin is used by a rule
+// 2. At system start/restart
 // Once created, never deleted until delete plugin command or system shutdown
 type PluginIns struct {
 	sync.RWMutex
@@ -104,11 +104,46 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	err = i.sendCmd(jsonArg)
 	if err == nil {
 		i.Lock()
+		i.addRef(ctx)
 		i.commands[ctrl.Meta] = jsonArg
 		i.Unlock()
 		ctx.GetLogger().Infof("started symbol %s", ctrl.SymbolName)
 	}
 	return err
+}
+
+func (i *PluginIns) addRef(ctx api.StreamContext) {
+	ruleID := ctx.GetRuleId()
+	if len(ruleID) < 1 {
+		return
+	}
+	cnt, ok := i.Status.RefCount[ruleID]
+	if ok {
+		i.Status.RefCount[ruleID] = cnt + 1
+	} else {
+		i.Status.RefCount[ruleID] = 1
+	}
+}
+
+func (i *PluginIns) DeRef(ctx api.StreamContext) {
+	i.Lock()
+	defer i.Unlock()
+	i.deRef(ctx)
+}
+
+func (i *PluginIns) deRef(ctx api.StreamContext) {
+	ruleID := ctx.GetRuleId()
+	if len(ruleID) < 1 {
+		return
+	}
+	cnt, ok := i.Status.RefCount[ruleID]
+	if ok {
+		if cnt > 1 {
+			i.Status.RefCount[ruleID] = cnt - 1
+			return
+		}
+		delete(i.Status.RefCount, ruleID)
+	}
 }
 
 func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
@@ -129,6 +164,7 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 		referred := false
 		i.Lock()
 		delete(i.commands, ctrl.Meta)
+		i.deRef(ctx)
 		i.Unlock()
 		ctx.GetLogger().Infof("stopped symbol %s", ctrl.SymbolName)
 		if !referred {
@@ -430,13 +466,15 @@ const (
 )
 
 type PluginStatus struct {
-	Status string `json:"status"`
-	ErrMsg string `json:"errMsg"`
+	RefCount map[string]int `json:"refCount"`
+	Status   string         `json:"status"`
+	ErrMsg   string         `json:"errMsg"`
 }
 
 func NewPluginStatus() *PluginStatus {
 	return &PluginStatus{
-		Status: PluginStatusInit,
+		RefCount: make(map[string]int),
+		Status:   PluginStatusInit,
 	}
 }
 
@@ -453,4 +491,12 @@ func (s *PluginStatus) StartRunning() {
 func (s *PluginStatus) Stop() {
 	s.Status = PluginStatusStop
 	s.ErrMsg = ""
+}
+
+func (s *PluginStatus) GetRuleRefCount(rule string) int {
+	cnt, ok := s.RefCount[rule]
+	if !ok {
+		return 0
+	}
+	return cnt
 }

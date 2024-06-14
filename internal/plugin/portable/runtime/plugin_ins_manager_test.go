@@ -25,6 +25,7 @@ import (
 	"go.nanomsg.org/mangos/v3/protocol/req"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 )
@@ -108,12 +109,17 @@ func TestPluginInstance(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+		count := ins.Status.GetRuleRefCount("rule1")
+		require.Equal(t, 0, count)
 		err := ins.StartSymbol(sctx, tests[0].c)
 		if err != nil {
 			t.Errorf("start command err %v", err)
 			return
 		}
+		count = ins.Status.GetRuleRefCount("rule1")
+		require.Equal(t, 1, count)
 		for _, tt := range tests {
+			pCnt := ins.Status.GetRuleRefCount("rule1")
 			err := ins.StartSymbol(sctx, tt.c)
 			if err != nil {
 				t.Errorf("start command err %v", err)
@@ -124,6 +130,7 @@ func TestPluginInstance(t *testing.T) {
 				fmt.Printf("stop command err %v\n", err)
 				continue
 			}
+			require.Equal(t, pCnt, ins.Status.GetRuleRefCount("rule1"))
 		}
 	}()
 	// start symbol1 to avoid instance clean
@@ -196,4 +203,18 @@ func TestPluginStatus(t *testing.T) {
 	require.Equal(t, PluginStatusErr, p.GetStatus().Status)
 	p.Status.Stop()
 	require.Equal(t, PluginStatusStop, p.GetStatus().Status)
+}
+
+func TestPluginStatusRef(t *testing.T) {
+	p := NewPluginIns("mock", nil, nil)
+	s, _ := state.CreateStore("rule1", def.AtMostOnce)
+	ctx := context.Background().WithMeta("rule1", "2", s)
+	p.addRef(ctx)
+	require.Equal(t, map[string]int{"rule1": 1}, p.GetStatus().RefCount)
+	p.addRef(ctx)
+	require.Equal(t, map[string]int{"rule1": 2}, p.GetStatus().RefCount)
+	p.DeRef(ctx)
+	require.Equal(t, map[string]int{"rule1": 1}, p.GetStatus().RefCount)
+	p.DeRef(ctx)
+	require.Equal(t, map[string]int{}, p.GetStatus().RefCount)
 }
