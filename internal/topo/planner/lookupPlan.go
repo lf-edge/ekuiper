@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -135,12 +135,14 @@ func (p *LookupPlan) validateAndExtractCondition() bool {
 					return false
 				}
 				kset[lref.Name] = struct{}{}
+				p.keys = append(p.keys, lref.Name)
 				p.valvars = append(p.valvars, rref)
 			} else if string(rref.StreamName) == strName {
 				if _, ok := kset[rref.Name]; ok {
 					return false
 				}
 				kset[rref.Name] = struct{}{}
+				p.keys = append(p.keys, rref.Name)
 				p.valvars = append(p.valvars, lref)
 			} else {
 				continue
@@ -151,6 +153,7 @@ func (p *LookupPlan) validateAndExtractCondition() bool {
 					return false
 				}
 				kset[lref.Name] = struct{}{}
+				p.keys = append(p.keys, lref.Name)
 				p.valvars = append(p.valvars, c.RHS)
 			} else {
 				continue
@@ -161,6 +164,7 @@ func (p *LookupPlan) validateAndExtractCondition() bool {
 					return false
 				}
 				kset[rref.Name] = struct{}{}
+				p.keys = append(p.keys, rref.Name)
 				p.valvars = append(p.valvars, c.LHS)
 			} else {
 				continue
@@ -169,15 +173,7 @@ func (p *LookupPlan) validateAndExtractCondition() bool {
 			continue
 		}
 	}
-	if len(kset) > 0 {
-		p.keys = make([]string, 0, len(kset))
-		for k := range kset {
-			p.keys = append(p.keys, k)
-		}
-		sort.Strings(p.keys)
-		return true
-	}
-	return false
+	return len(kset) > 0
 }
 
 // flatConditions flat the join condition. Only binary condition of EQ and AND are allowed
