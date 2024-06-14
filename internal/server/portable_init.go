@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -178,6 +179,13 @@ func checkPluginBeforeDrop(name string) (bool, error) {
 	}
 	for _, source := range pi.Sources {
 		referenced, err := checkPluginSource(source)
+		failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
+			switch value.(int) {
+			case 2, 3:
+				referenced = false
+				err = nil
+			}
+		})
 		if err != nil {
 			return false, err
 		}
@@ -187,6 +195,13 @@ func checkPluginBeforeDrop(name string) (bool, error) {
 	}
 	for _, sink := range pi.Sinks {
 		referenced, err := checkPluginSink(sink)
+		failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
+			switch value.(int) {
+			case 1, 3:
+				referenced = false
+				err = nil
+			}
+		})
 		if err != nil {
 			return false, err
 		}
@@ -207,6 +222,12 @@ func checkPluginBeforeDrop(name string) (bool, error) {
 }
 
 func checkPluginSource(name string) (bool, error) {
+	failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
+		switch value.(int) {
+		case 1:
+			failpoint.Return(false, fmt.Errorf("pluginSourceErr"))
+		}
+	})
 	rules, err := ruleProcessor.GetAllRules()
 	if err != nil {
 		return false, err
@@ -236,6 +257,12 @@ func checkPluginSource(name string) (bool, error) {
 }
 
 func checkPluginSink(name string) (bool, error) {
+	failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
+		switch value.(int) {
+		case 2:
+			failpoint.Return(false, fmt.Errorf("pluginFunctionErr"))
+		}
+	})
 	rules, err := ruleProcessor.GetAllRules()
 	if err != nil {
 		return false, err
@@ -255,6 +282,12 @@ func checkPluginSink(name string) (bool, error) {
 }
 
 func checkPluginFunction(name string) (bool, error) {
+	failpoint.Inject("checkPluginErr", func(value failpoint.Value) {
+		switch value.(int) {
+		case 3:
+			failpoint.Return(false, fmt.Errorf("pluginSinkEr"))
+		}
+	})
 	rules, err := ruleProcessor.GetAllRules()
 	if err != nil {
 		return false, err

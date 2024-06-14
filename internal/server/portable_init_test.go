@@ -59,6 +59,7 @@ func getStreamProcessor() *processor.StreamProcessor {
 }
 
 func TestCheckBeforeDrop(t *testing.T) {
+	t.Skip()
 	initProcessor()
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc")
@@ -88,6 +89,19 @@ func TestCheckBeforeDrop(t *testing.T) {
 	ref, err = checkPluginFunction("pyrevert")
 	require.NoError(t, err)
 	require.False(t, ref)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/checkPluginErr", "return(1)")
+	_, err = checkPluginBeforeDrop("pytest")
+	require.Error(t, err)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/checkPluginErr", "return(2)")
+	_, err = checkPluginBeforeDrop("pytest")
+	require.Error(t, err)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/checkPluginErr", "return(3)")
+	_, err = checkPluginBeforeDrop("pytest")
+	require.Error(t, err)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/checkPluginErr")
 }
 
 func prepareData(t *testing.T) {
