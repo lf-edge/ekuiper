@@ -18,8 +18,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/pingcap/failpoint"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -40,15 +38,6 @@ type PortableFunc struct {
 }
 
 func NewPortableFunc(symbolName string, reg *PluginMeta) (_ *PortableFunc, e error) {
-	failpoint.Inject("MockPortableFunc", func() {
-		failpoint.Return(&PortableFunc{
-			symbolName: reg.Name,
-			reg:        reg,
-			dataCh:     nil,
-			isAgg:      1,
-		}, nil)
-	})
-
 	// Setup channel and route the data
 	conf.Log.Infof("Start running portable function meta %+v", reg)
 	pm := GetPluginInsManager()
@@ -89,9 +78,6 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (_ *PortableFunc, e err
 }
 
 func (f *PortableFunc) Validate(args []interface{}) error {
-	failpoint.Inject("MockPortableFunc", func() {
-		failpoint.Return(nil)
-	})
 	// TODO function arg encoding
 	jsonArg, err := encode("Validate", args)
 	if err != nil {

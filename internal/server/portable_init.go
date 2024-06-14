@@ -30,6 +30,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
+	"github.com/lf-edge/ekuiper/v2/internal/topo"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -229,11 +231,19 @@ func checkPluginSource(name string) (bool, error) {
 		}
 	})
 	rules, err := ruleProcessor.GetAllRules()
+	failpoint.Inject("mockRules", func() {
+		err = nil
+		rules = []string{"rule"}
+	})
 	if err != nil {
 		return false, err
 	}
-	for _, rule := range rules {
-		rs, ok := registry.Load(rule)
+	for _, r := range rules {
+		rs, ok := registry.Load(r)
+		failpoint.Inject("mockRules", func() {
+			ok = true
+			rs = mockRuleState()
+		})
 		if !ok {
 			continue
 		}
@@ -244,6 +254,10 @@ func checkPluginSource(name string) (bool, error) {
 		streams := xsql.GetStreams(stmt)
 		for _, stream := range streams {
 			info, err := streamProcessor.GetStreamInfo(stream, ast.TypeStream)
+			failpoint.Inject("mockRules", func() {
+				err = nil
+				info = mockStreamInfo()
+			})
 			if err != nil {
 				return false, err
 			}
@@ -264,11 +278,19 @@ func checkPluginSink(name string) (bool, error) {
 		}
 	})
 	rules, err := ruleProcessor.GetAllRules()
+	failpoint.Inject("mockRules", func() {
+		err = nil
+		rules = []string{"rule"}
+	})
 	if err != nil {
 		return false, err
 	}
-	for _, rule := range rules {
-		rs, ok := registry.Load(rule)
+	for _, r := range rules {
+		rs, ok := registry.Load(r)
+		failpoint.Inject("mockRules", func() {
+			ok = true
+			rs = mockRuleState()
+		})
 		if !ok {
 			continue
 		}
@@ -289,12 +311,20 @@ func checkPluginFunction(name string) (bool, error) {
 		}
 	})
 	rules, err := ruleProcessor.GetAllRules()
+	failpoint.Inject("mockRules", func() {
+		err = nil
+		rules = []string{"rule"}
+	})
 	if err != nil {
 		return false, err
 	}
 	find := false
-	for _, rule := range rules {
-		rs, ok := registry.Load(rule)
+	for _, r := range rules {
+		rs, ok := registry.Load(r)
+		failpoint.Inject("mockRules", func() {
+			ok = true
+			rs = mockRuleState()
+		})
 		if !ok {
 			continue
 		}
@@ -317,4 +347,22 @@ func checkPluginFunction(name string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func mockRuleState() *rule.RuleState {
+	rs := &rule.RuleState{
+		Topology: &topo.Topo{},
+	}
+	rs.Topology.SetStmt(&ast.SelectStatement{
+		Sources: []ast.Source{ast.Table{Name: "pyjson"}},
+	})
+	return rs
+}
+
+func mockStreamInfo() *xsql.StreamInfo {
+	return &xsql.StreamInfo{
+		Options: &ast.Options{
+			TYPE: "pyjson",
+		},
+	}
 }

@@ -26,6 +26,7 @@ import (
 	"time"
 
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/pingcap/failpoint"
 	"github.com/sirupsen/logrus"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -124,6 +125,18 @@ func (s *Topo) SetStmt(stmt *ast.SelectStatement) {
 }
 
 func (s *Topo) GetStmt() *ast.SelectStatement {
+	failpoint.Inject("mockRules", func() {
+		failpoint.Return(&ast.SelectStatement{
+			Fields: []ast.Field{
+				{
+					Expr: &ast.Call{
+						Name: "pyrevert",
+					},
+				},
+			},
+			Sources: []ast.Source{&ast.Table{Name: "pyjson"}},
+		})
+	})
 	if s == nil {
 		return nil
 	}
@@ -131,6 +144,9 @@ func (s *Topo) GetStmt() *ast.SelectStatement {
 }
 
 func (s *Topo) GetActionsType() map[string]struct{} {
+	failpoint.Inject("mockRules", func() {
+		failpoint.Return(map[string]struct{}{"print": {}})
+	})
 	actions := make(map[string]struct{})
 	for _, n := range s.sinks {
 		typ := strings.Split(n.GetName(), "_")[0]

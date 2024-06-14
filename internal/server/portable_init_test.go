@@ -21,14 +21,9 @@ import (
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/binder"
-	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
-	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 func initProcessor() {
@@ -58,15 +53,9 @@ func getStreamProcessor() *processor.StreamProcessor {
 }
 
 func TestCheckBeforeDrop(t *testing.T) {
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/MockPortableFunc", "return(true)")
-	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/MockPortableFunc")
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc", "return(true)")
-	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/mockRules", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/mockRules", "return(true)")
 	initProcessor()
-	function.Initialize([]binder.FactoryEntry{{Name: "portable plugin", Factory: portableManager, Weight: 8}})
-	io.Initialize([]binder.FactoryEntry{{Name: "portable plugin", Factory: portableManager, Weight: 8}})
-	dropData()
-	prepareData(t)
 	ref, err := checkPluginSource("pyjson")
 	require.NoError(t, err)
 	require.True(t, ref)
@@ -79,7 +68,8 @@ func TestCheckBeforeDrop(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ref)
 
-	dropData()
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/mockRules")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/mockRules")
 	ref, err = checkPluginSource("pyjson")
 	require.NoError(t, err)
 	require.False(t, ref)
@@ -92,6 +82,8 @@ func TestCheckBeforeDrop(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, ref)
 
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/mockRules", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/mockRules", "return(true)")
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/checkPluginErr", "return(1)")
 	_, err = checkPluginBeforeDrop("pytest")
 	require.Error(t, err)
@@ -104,28 +96,6 @@ func TestCheckBeforeDrop(t *testing.T) {
 	_, err = checkPluginBeforeDrop("pytest")
 	require.Error(t, err)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/checkPluginErr")
-}
-
-func prepareData(t *testing.T) {
-	pi := &portable.PluginInfo{
-		Sources:   []string{"pyjson"},
-		Sinks:     []string{"print"},
-		Functions: []string{"pyrevert"},
-	}
-	portableManager.RegisterForTest("pytest", pi)
-	s := getStreamProcessor()
-	info, err := s.ExecStreamSql(`create stream pyjson () WITH (TYPE="pyjson",FORMAT="JSON")`)
-	require.NoError(t, err)
-	require.NotNil(t, info)
-	_, err = createRule("rule", `{"id":"rule","sql":"SELECT pyrevert(a) from pyjson","triggered":false,"actions":[{"print":{}}]}`)
-	require.NoError(t, err)
-	_, err = getRuleStatus("rule")
-	require.NoError(t, err)
-}
-
-func dropData() {
-	s := getStreamProcessor()
-	deleteRule("rule")
-	getRuleProcessor().ExecDrop("rule")
-	s.DropStream("pyjson", ast.TypeStream)
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/mockRules")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/mockRules")
 }
