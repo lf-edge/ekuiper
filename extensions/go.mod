@@ -21,7 +21,7 @@ require (
 	github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/jmrobles/h2go v0.5.0
-	github.com/lf-edge/ekuiper v1.14.0-beta.2
+	github.com/lf-edge/ekuiper v1.14.0-beta.3
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-adodb v0.0.1
 	github.com/mattn/go-tflite v1.0.1
