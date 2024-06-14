@@ -188,9 +188,12 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 		case fastjson.TypeNull:
 			m[key] = nil
 		case fastjson.TypeObject:
-			valid := f.checkSchema(key, "struct", schema)
+			add, valid := f.checkSchema(key, "struct", schema)
 			if !valid {
 				err = fmt.Errorf("%v has wrong type:%v, expect:%v", key, v.Type().String(), getType(schema[key]))
+				return
+			}
+			if !add {
 				return
 			}
 			childObj, err2 := v.Object()
@@ -211,9 +214,12 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 				m[key] = childMap
 			}
 		case fastjson.TypeArray:
-			valid := f.checkSchema(key, "array", schema)
+			add, valid := f.checkSchema(key, "array", schema)
 			if !valid {
 				err = fmt.Errorf("%v has wrong type:%v, expect:%v", key, v.Type().String(), getType(schema[key]))
+				return
+			}
+			if !add {
 				return
 			}
 			childArray, err2 := v.Array()
@@ -286,12 +292,22 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 	return m, nil
 }
 
-func (f *FastJsonConverter) checkSchema(key, typ string, schema map[string]*ast.JsonStreamField) (valid bool) {
-	v := schema[key]
-	if v == nil {
-		return true
+func (f *FastJsonConverter) checkSchema(key, typ string, schema map[string]*ast.JsonStreamField) (add, valid bool) {
+	// for schemaless, allow to decode the key value
+	if schema == nil {
+		return true, true
 	}
-	return v.Type == typ
+	// for defined schema, skip to decode undefined key
+	v, ok := schema[key]
+	if !ok {
+		return false, true
+	}
+	// for the schema we didn't parse,allow to decode eg: results[0].a.b
+	if v == nil {
+		return true, true
+	}
+	// for the defined schema type, directly to check
+	return v.Type == typ, v.Type == typ
 }
 
 func (f *FastJsonConverter) extractNumberValue(name string, v *fastjson.Value, field *ast.JsonStreamField) (interface{}, error) {
