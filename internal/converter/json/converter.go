@@ -392,6 +392,9 @@ func (f *FastJsonConverter) decodeObject(obj *fastjson.Object, schema map[string
 
 func (f *FastJsonConverter) checkSchema(key, typ string, schema map[string]*ast.JsonStreamField) (add bool, valid bool) {
 	if f.isSchemaLess {
+		if schema == nil {
+			return true, true
+		}
 		_, ok := schema[key]
 		return ok, true
 	}
