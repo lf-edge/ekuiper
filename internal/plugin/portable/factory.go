@@ -17,6 +17,8 @@ package portable
 import (
 	"sync"
 
+	"github.com/pingcap/failpoint"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
@@ -24,6 +26,9 @@ import (
 )
 
 func (m *Manager) Source(name string) (api.Source, error) {
+	failpoint.Inject("MockPortableFunc", func() {
+		failpoint.Return(runtime.NewPortableSource(name, &runtime.PluginMeta{}), nil)
+	})
 	meta, ok := m.GetPluginMeta(plugin.SOURCE, name)
 	if !ok {
 		return nil, nil
@@ -48,6 +53,9 @@ func (m *Manager) LookupSource(_ string) (api.LookupSource, error) {
 }
 
 func (m *Manager) Sink(name string) (api.Sink, error) {
+	failpoint.Inject("MockPortableFunc", func() {
+		failpoint.Return(runtime.NewPortableSink(name, &runtime.PluginMeta{}), nil)
+	})
 	meta, ok := m.GetPluginMeta(plugin.SINK, name)
 	if !ok {
 		return nil, nil
@@ -73,6 +81,10 @@ func (m *Manager) SinkPluginInfo(name string) (plugin.EXTENSION_TYPE, string, st
 var funcInsMap = &sync.Map{}
 
 func (m *Manager) Function(name string) (api.Function, error) {
+	failpoint.Inject("MockPortableFunc", func() {
+		f, _ := runtime.NewPortableFunc(name, &runtime.PluginMeta{})
+		failpoint.Return(f, nil)
+	})
 	ins, ok := funcInsMap.Load(name)
 	if ok {
 		return ins.(api.Function), nil

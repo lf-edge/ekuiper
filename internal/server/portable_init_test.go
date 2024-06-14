@@ -59,8 +59,9 @@ func getStreamProcessor() *processor.StreamProcessor {
 }
 
 func TestCheckBeforeDrop(t *testing.T) {
-	t.Skip()
 	initProcessor()
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/MockPortableFunc", "return(true)")
+	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/MockPortableFunc")
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime/MockPortableFunc")
 	dropData()
