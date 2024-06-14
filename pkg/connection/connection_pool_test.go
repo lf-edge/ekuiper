@@ -35,29 +35,44 @@ func TestConnection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, conn)
 	require.NoError(t, conn.Ping(ctx))
+	require.Equal(t, 0, GetConnectionRef("id1"))
 	_, err = CreateNamedConnection(ctx, "id1", "mock", nil)
 	require.Error(t, err)
-	require.Equal(t, 0, conn.Ref(ctx))
-	conn.Attach(ctx)
-	require.Equal(t, 1, conn.Ref(ctx))
-	conn.Attach(ctx)
-	require.Equal(t, 2, conn.Ref(ctx))
-	conn.DetachPub(ctx, nil)
-	require.Equal(t, 1, conn.Ref(ctx))
+	attachConnection("id1")
+	require.Equal(t, 1, GetConnectionRef("id1"))
+	attachConnection("id1")
+	require.Equal(t, 2, GetConnectionRef("id1"))
+	detachConnection(ctx, "id1", false)
+	require.Equal(t, 1, GetConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.Error(t, err)
-	conn2, err := GetNameConnection("id1")
-	require.NoError(t, err)
-	require.NotNil(t, conn2)
-	conn.DetachSub(ctx, nil)
-	require.Equal(t, 0, conn.Ref(ctx))
+	detachConnection(ctx, "id1", false)
+	require.Equal(t, 0, GetConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
-	conn3, err := GetNameConnection("id1")
+	conn3, err := attachConnection("id1")
 	require.Error(t, err)
 	require.Nil(t, conn3)
+
+	conn, err = CreateNamedConnection(ctx, "id2", "mock", nil)
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+
+	conn, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"})
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+
+	require.Equal(t, 1, GetConnectionRef("id2"))
+}
+
+func TestConnectionErr(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	require.NoError(t, store.SetupDefault(dataDir))
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := context.Background()
 
 	_, err = CreateNamedConnection(ctx, "", "mock", nil)
 	require.Error(t, err)
@@ -65,7 +80,7 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	_, err = CreateNamedConnection(ctx, "12", "unknown", nil)
 	require.Error(t, err)
-	_, err = GetNameConnection("")
+	_, err = attachConnection("")
 	require.Error(t, err)
 	err = PingConnection(ctx, "")
 	require.Error(t, err)
@@ -77,41 +92,33 @@ func TestConnection(t *testing.T) {
 	require.NotNil(t, conn4)
 	_, err = CreateNonStoredConnection(ctx, "id2", "mock", nil)
 	require.Error(t, err)
-	err = DropNonStoredConnection(ctx, "")
+	err = DetachConnection(ctx, "", nil)
 	require.Error(t, err)
-	err = DropNonStoredConnection(ctx, "nonexists")
+	err = DetachConnection(ctx, "nonexists", nil)
 	require.NoError(t, err)
-}
 
-func TestConnectionErr(t *testing.T) {
-	dataDir, err := conf.GetDataLoc()
-	require.NoError(t, err)
-	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, InitConnectionManager4Test())
-	ctx := context.Background()
-
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr", "return(true)")
-	conn, err := createNamedConnection(ctx, ConnectionMeta{
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/pkg/createConnectionErr", "return(true)")
+	conn, err := createNamedConnection(ctx, &ConnectionMeta{
 		ID:    "1",
 		Typ:   "mock",
 		Props: nil,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, conn)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/createConnectionErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/createConnectionErr")
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/storeConnectionErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/storeConnectionErr", "return(true)")
 	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/storeConnectionErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/storeConnectionErr")
 
 	_, err = CreateNamedConnection(ctx, "qwe", "mock", nil)
 	require.NoError(t, err)
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/connection/dropConnectionStoreErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/dropConnectionStoreErr", "return(true)")
 	err = DropNameConnection(ctx, "qwe")
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/connection/dropConnectionStoreErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/dropConnectionStoreErr")
 }
 
 func TestConnectionStatus(t *testing.T) {
