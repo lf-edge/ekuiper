@@ -469,6 +469,26 @@ func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamT
 	}
 }
 
+func checkStreamBeforeDrop(name string) (bool, error) {
+	rules, err := ruleProcessor.GetAllRules()
+	if err != nil {
+		return false, err
+	}
+	for _, r := range rules {
+		rs, ok := registry.Load(r)
+		if !ok {
+			continue
+		}
+		streams := rs.Topology.GetStreams()
+		for _, s := range streams {
+			if name == s {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
 func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {
 	defer r.Body.Close()
 	vars := mux.Vars(r)
@@ -483,6 +503,15 @@ func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamTy
 		}
 		jsonResponse(content, w, logger)
 	case http.MethodDelete:
+		referenced, err := checkStreamBeforeDrop(name)
+		if err != nil {
+			handleError(w, err, fmt.Sprintf("delete %s error", ast.StreamTypeMap[st]), logger)
+			return
+		}
+		if referenced {
+			handleError(w, fmt.Errorf("stream %v has been referenced by other rules", name), "", logger)
+			return
+		}
 		content, err := streamProcessor.DropStream(name, st)
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("delete %s error", ast.StreamTypeMap[st]), logger)

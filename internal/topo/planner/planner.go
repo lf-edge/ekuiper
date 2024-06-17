@@ -107,6 +107,7 @@ func createTopo(rule *def.Rule, lp LogicalPlan, mockSourcesProp map[string]map[s
 	if err != nil {
 		return nil, err
 	}
+	tp.SetStreams(streamsFromStmt)
 
 	input, _, err := buildOps(lp, tp, rule.Options, mockSourcesProp, streamsFromStmt, 0)
 	if err != nil {
