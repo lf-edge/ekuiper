@@ -503,14 +503,18 @@ func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamTy
 		}
 		jsonResponse(content, w, logger)
 	case http.MethodDelete:
-		referenced, err := checkStreamBeforeDrop(name)
-		if err != nil {
-			handleError(w, err, fmt.Sprintf("delete %s error", ast.StreamTypeMap[st]), logger)
-			return
-		}
-		if referenced {
-			handleError(w, fmt.Errorf("stream %v has been referenced by other rules", name), "", logger)
-			return
+		forceRaw := r.URL.Query().Get("force")
+		force, err := strconv.ParseBool(forceRaw)
+		if err != nil || !force {
+			referenced, err := checkStreamBeforeDrop(name)
+			if err != nil {
+				handleError(w, err, fmt.Sprintf("delete %s error", ast.StreamTypeMap[st]), logger)
+				return
+			}
+			if referenced {
+				handleError(w, fmt.Errorf("stream %v has been referenced by other rules", name), "", logger)
+				return
+			}
 		}
 		content, err := streamProcessor.DropStream(name, st)
 		if err != nil {

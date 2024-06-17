@@ -905,7 +905,7 @@ func (suite *RestTestSuite) TestCheckBeforeDropStream() {
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
-	//require.Equal(suite.T(), http.StatusCreated, w2.Code)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
 
 	// drop stream failed
 	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demoUsed", bytes.NewBufferString("any"))
