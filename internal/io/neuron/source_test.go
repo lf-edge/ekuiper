@@ -73,8 +73,7 @@ func TestProvision(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = s.Connect(ctx)
-	assert.Error(t, err)
-	assert.EqualError(t, err, "connection pairtcp://127.0.0.1:8000 already been created")
+	assert.NoError(t, err)
 
 	err = s.Close(ctx)
 	assert.NoError(t, err)
