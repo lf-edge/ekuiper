@@ -26,50 +26,37 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/pkg/api"
+	"github.com/lf-edge/ekuiper/pkg/cast"
 )
 
+type c struct {
+	Path        string `json:"path"`
+	ImageFormat string `json:"imageFormat"`
+	MaxAge      int    `json:"maxAge"`
+	MaxCount    int    `json:"maxCount"`
+}
+
 type imageSink struct {
-	path     string
-	format   string
-	maxAge   int
-	maxCount int
-	cancel   context.CancelFunc
+	c      *c
+	cancel context.CancelFunc
 }
 
 func (m *imageSink) Configure(props map[string]interface{}) error {
-	if i, ok := props["imageFormat"]; ok {
-		if i, ok := i.(string); ok {
-			if "png" != i && "jpeg" != i {
-				return fmt.Errorf("%s image type is not currently supported", i)
-			}
-			m.format = i
-		}
-	} else {
-		return fmt.Errorf("Field not found format.")
+	conf := &c{
+		MaxAge:   72,
+		MaxCount: 1000,
 	}
-
-	if i, ok := props["path"]; ok {
-		if ii, ok := i.(string); ok {
-			m.path = ii
-		} else {
-			return fmt.Errorf("%v image type is not supported", i)
-		}
-	} else {
-		return fmt.Errorf("Field not found path.")
+	err := cast.MapToStruct(props, conf)
+	if err != nil {
+		return err
 	}
-
-	m.maxAge = 72
-	if i, ok := props["maxAge"]; ok {
-		if i, ok := i.(int); ok {
-			m.maxAge = i
-		}
+	if conf.Path == "" {
+		return fmt.Errorf("path is required")
 	}
-	m.maxCount = 1000
-	if i, ok := props["maxCount"]; ok {
-		if i, ok := i.(int); ok {
-			m.maxCount = i
-		}
+	if conf.ImageFormat != "png" && conf.ImageFormat != "jpeg" {
+		return fmt.Errorf("%s image type is not currently supported", conf.ImageFormat)
 	}
+	m.c = conf
 	return nil
 }
 
@@ -77,8 +64,8 @@ func (m *imageSink) Open(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening image sink")
 
-	if _, err := os.Stat(m.path); os.IsNotExist(err) {
-		if err := os.MkdirAll(m.path, os.ModePerm); nil != err {
+	if _, err := os.Stat(m.c.Path); os.IsNotExist(err) {
+		if err := os.MkdirAll(m.c.Path, os.ModePerm); nil != err {
 			return fmt.Errorf("fail to open image sink for %v", err)
 		}
 	}
@@ -102,8 +89,10 @@ func (m *imageSink) Open(ctx api.StreamContext) error {
 }
 
 func (m *imageSink) delFile(logger api.Logger) error {
-	dirEntries, err := os.ReadDir(m.path)
+	logger.Debugf("deleting images")
+	dirEntries, err := os.ReadDir(m.c.Path)
 	if nil != err || 0 == len(dirEntries) {
+		logger.Error("read dir fail")
 		return err
 	}
 
@@ -116,8 +105,8 @@ func (m *imageSink) delFile(logger api.Logger) error {
 		files = append(files, info)
 	}
 
-	pos := m.maxCount
-	delTime := time.Now().Add(time.Duration(0-m.maxAge) * time.Hour)
+	pos := m.c.MaxCount
+	delTime := time.Now().Add(time.Duration(0-m.c.MaxAge) * time.Hour)
 	for i := 0; i < len(files); i++ {
 		for j := i + 1; j < len(files); j++ {
 			if files[i].ModTime().Before(files[j].ModTime()) {
@@ -129,11 +118,12 @@ func (m *imageSink) delFile(logger api.Logger) error {
 			break
 		}
 	}
-
+	logger.Debugf("pos is %d, and file len is %d", pos, len(files))
 	for i := pos; i < len(files); i++ {
 		fname := files[i].Name()
-		if strings.HasSuffix(fname, m.format) {
-			fpath := filepath.Join(m.path, fname)
+		logger.Debugf("try to delete %s", fname)
+		if strings.HasSuffix(fname, m.c.ImageFormat) {
+			fpath := filepath.Join(m.c.Path, fname)
 			os.Remove(fpath)
 		}
 	}
@@ -150,7 +140,7 @@ func (m *imageSink) getSuffix() string {
 
 func (m *imageSink) saveFile(b []byte, fpath string) error {
 	reader := bytes.NewReader(b)
-	switch m.format {
+	switch m.c.ImageFormat {
 	case "png":
 		img, err := png.Decode(reader)
 		if err != nil {
@@ -182,7 +172,7 @@ func (m *imageSink) saveFile(b []byte, fpath string) error {
 			return err
 		}
 	default:
-		return fmt.Errorf("unsupported format %s", m.format)
+		return fmt.Errorf("unsupported format %s", m.c.ImageFormat)
 	}
 	return nil
 }
@@ -194,8 +184,8 @@ func (m *imageSink) saveFiles(images map[string]interface{}) error {
 			return fmt.Errorf("found none bytes data %v for path %s", image, k)
 		}
 		suffix := m.getSuffix()
-		fname := fmt.Sprintf(`%s%s.%s`, k, suffix, m.format)
-		fpath := filepath.Join(m.path, fname)
+		fname := fmt.Sprintf(`%s%s.%s`, k, suffix, m.c.ImageFormat)
+		fpath := filepath.Join(m.c.Path, fname)
 		err := m.saveFile(image, fpath)
 		if err != nil {
 			return err
