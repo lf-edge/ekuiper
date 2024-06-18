@@ -40,6 +40,7 @@ import (
 )
 
 type Topo struct {
+	streams     []string
 	sources     []node.DataSourceNode
 	sinks       []node.DataSinkNode
 	ctx         api.StreamContext
@@ -69,6 +70,20 @@ func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) 
 	}
 	tp.prepareContext() // ensure context is set
 	return tp, nil
+}
+
+func (s *Topo) SetStreams(streams []string) {
+	if s == nil {
+		return
+	}
+	s.streams = streams
+}
+
+func (s *Topo) GetStreams() []string {
+	if s == nil {
+		return nil
+	}
+	return s.streams
 }
 
 func (s *Topo) GetContext() api.StreamContext {
