@@ -21,65 +21,118 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestConfigure(t *testing.T) {
+	tests := []struct {
+		name  string
+		props map[string]any
+		c     *c
+		err   string
+	}{
+		{
+			name: "wrong type",
+			props: map[string]any{
+				"maxAge": "0.11",
+			},
+			err: "1 error(s) decoding:\n\n* 'maxAge' expected type 'int', got unconvertible type 'string', value: '0.11'",
+		},
+		{
+			name: "missing path",
+			props: map[string]any{
+				"imageFormat": "jpeg",
+			},
+			err: "path is required",
+		},
+		{
+			name: "wrong format",
+			props: map[string]any{
+				"path":        "data",
+				"imageFormat": "abc",
+			},
+			err: "abc image type is not currently supported",
+		},
+		{
+			name: "default age",
+			props: map[string]any{
+				"path":        "data",
+				"imageFormat": "png",
+				"maxCount":    1,
+			},
+			c: &c{
+				Path:        "data",
+				ImageFormat: "png",
+				MaxCount:    1,
+				MaxAge:      72,
+			},
+		},
+		{
+			name: "default count",
+			props: map[string]any{
+				"path":        "data",
+				"imageFormat": "png",
+				"maxAge":      0.11,
+			},
+			c: &c{
+				Path:        "data",
+				ImageFormat: "png",
+				MaxCount:    1000,
+				MaxAge:      0,
+			},
+		},
+	}
+	s := &imageSink{}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := s.Configure(test.props)
+			if test.err == "" {
+				assert.NoError(t, err)
+				assert.Equal(t, test.c, s.c)
+			} else {
+				assert.EqualError(t, err, test.err)
+			}
+		})
+	}
+}
+
 func TestSave(t *testing.T) {
 	tests := []struct {
 		name  string
-		sink  *imageSink
+		props map[string]any
 		image string
 		err   string
 	}{
 		{
 			name: "normal",
-			sink: &imageSink{
-				path:     "data",
-				format:   "png",
-				maxAge:   0,
-				maxCount: 0,
+			props: map[string]any{
+				"path":        "data",
+				"imageFormat": "png",
 			},
 			image: "../../../../docs/en_US/wechat.png",
 		},
 		{
 			name: "wrong format",
-			sink: &imageSink{
-				path:     "data",
-				format:   "jpeg",
-				maxAge:   0,
-				maxCount: 0,
+			props: map[string]any{
+				"path":        "data",
+				"imageFormat": "jpeg",
 			},
 			image: "../../../../docs/en_US/wechat.png",
 			err:   "invalid JPEG format: missing SOI marker",
 		},
 		{
 			name: "normal jpeg",
-			sink: &imageSink{
-				path:     "data",
-				format:   "jpeg",
-				maxAge:   0,
-				maxCount: 0,
+			props: map[string]any{
+				"path":        "data",
+				"imageFormat": "jpeg",
 			},
 			image: "ekuiper.jpg",
 		},
 		{
 			name: "wrong png",
-			sink: &imageSink{
-				path:     "data",
-				format:   "png",
-				maxAge:   0,
-				maxCount: 0,
+			props: map[string]any{
+				"path":        "data",
+				"imageFormat": "png",
 			},
 			image: "ekuiper.jpg",
 			err:   "png: invalid format: not a PNG file",
-		},
-		{
-			name: "unsupported format",
-			sink: &imageSink{
-				path:     "data",
-				format:   "abc",
-				maxAge:   0,
-				maxCount: 0,
-			},
-			image: "../../../../docs/cover.jpg",
-			err:   "unsupported format abc",
 		},
 	}
 	for _, tt := range tests {
@@ -88,7 +141,11 @@ func TestSave(t *testing.T) {
 			assert.NoError(t, err)
 			b, err := os.ReadFile(tt.image)
 			assert.NoError(t, err)
-			err = tt.sink.saveFiles(map[string]any{
+			s := &imageSink{}
+			err = s.Configure(tt.props)
+			assert.NoError(t, err)
+
+			err = s.saveFiles(map[string]any{
 				"self": b,
 			})
 			if tt.err == "" {
@@ -102,7 +159,7 @@ func TestSave(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, entries, 0)
 			}
-			//_ = os.RemoveAll("data")
+			_ = os.RemoveAll("data")
 		})
 	}
 }
