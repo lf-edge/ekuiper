@@ -1,0 +1,141 @@
+// Copyright 2024 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bump
+
+import (
+	"time"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/store"
+)
+
+func bumpFrom2TO3() error {
+	return rewriteSQLSourceConfiguration()
+}
+
+func rewriteSQLSourceConfiguration() error {
+	keyProps, err := conf.GetCfgFromKVStorage("sources", "sql", "")
+	if err != nil {
+		return err
+	}
+	for key, props := range keyProps {
+		cfg := &OriginSqlSourceCfg{}
+		if err := cast.MapToStruct(props, cfg); err != nil || cfg == nil {
+			continue
+		}
+		data := rewriteCfg(cfg)
+		conf.WriteCfgIntoKVStorage("sources", "sql", key, data)
+	}
+	return nil
+}
+
+func rewriteCfg(cfg *OriginSqlSourceCfg) map[string]interface{} {
+	m := make(map[string]interface{})
+	m["dburl"] = cfg.Url
+	m["interval"] = time.Duration(cfg.Internal).String()
+	if cfg.InternalSqlQueryCfg != nil {
+		icfg := cfg.InternalSqlQueryCfg
+		im := make(map[string]interface{})
+		im["table"] = icfg.Table
+		im["limit"] = icfg.Limit
+		f := extractIndexField(icfg)
+		if f != nil {
+			icfg.IndexFields = append(icfg.IndexFields, f)
+		}
+		if len(icfg.IndexFields) > 0 {
+			im["indexFields"] = icfg.IndexFields
+		}
+		m["internalSqlQueryCfg"] = im
+	}
+	if cfg.TemplateSqlQueryCfg != nil {
+		tcfg := cfg.TemplateSqlQueryCfg
+		tm := make(map[string]interface{})
+		tm["templateSql"] = tcfg.TemplateSQL
+		f := extractIndexField2(tcfg)
+		if f != nil {
+			tcfg.IndexFields = append(tcfg.IndexFields, f)
+		}
+		if len(tcfg.IndexFields) > 0 {
+			tm["indexFields"] = tcfg.IndexFields
+		}
+		m["templateSqlQueryCfg"] = tm
+	}
+	return m
+}
+
+func extractIndexField(icfg *OriginInternalSqlQueryCfg) *store.IndexField {
+	if len(icfg.IndexFieldName) < 1 {
+		return nil
+	}
+	f := &store.IndexField{
+		IndexFieldName: icfg.IndexFieldName,
+	}
+	if icfg.IndexFieldValue != nil {
+		f.IndexFieldValue = icfg.IndexFieldValue
+	}
+	if len(icfg.IndexFieldDataType) > 0 {
+		f.IndexFieldDataType = icfg.IndexFieldDataType
+	}
+	if len(icfg.IndexFieldDateTimeFormat) > 0 {
+		f.IndexFieldDateTimeFormat = icfg.IndexFieldDateTimeFormat
+	}
+	return f
+}
+
+func extractIndexField2(icfg *OriginTemplateSqlQueryCfg) *store.IndexField {
+	if len(icfg.IndexFieldName) < 1 {
+		return nil
+	}
+	f := &store.IndexField{
+		IndexFieldName: icfg.IndexFieldName,
+	}
+	if icfg.IndexFieldValue != nil {
+		f.IndexFieldValue = icfg.IndexFieldValue
+	}
+	if len(icfg.IndexFieldDataType) > 0 {
+		f.IndexFieldDataType = icfg.IndexFieldDataType
+	}
+	if len(icfg.IndexFieldDateTimeFormat) > 0 {
+		f.IndexFieldDateTimeFormat = icfg.IndexFieldDateTimeFormat
+	}
+	return f
+}
+
+type OriginSqlSourceCfg struct {
+	Url                 string                     `json:"url"`
+	Internal            cast.DurationConf          `json:"internal"`
+	InternalSqlQueryCfg *OriginInternalSqlQueryCfg `json:"internalSqlQueryCfg"`
+	TemplateSqlQueryCfg *OriginTemplateSqlQueryCfg `json:"templateSqlQueryCfg"`
+}
+
+type OriginInternalSqlQueryCfg struct {
+	Table                    string              `json:"table"`
+	Limit                    int                 `json:"limit"`
+	IndexFieldName           string              `json:"indexField"`
+	IndexFieldValue          interface{}         `json:"indexValue"`
+	IndexFieldDataType       string              `json:"indexFieldType"`
+	IndexFieldDateTimeFormat string              `json:"dateTimeFormat"`
+	IndexFields              []*store.IndexField `json:"indexFields"`
+}
+
+type OriginTemplateSqlQueryCfg struct {
+	TemplateSQL              string              `json:"templateSql"`
+	IndexFieldName           string              `json:"indexField"`
+	IndexFieldValue          interface{}         `json:"indexValue"`
+	IndexFieldDataType       string              `json:"indexFieldType"`
+	IndexFieldDateTimeFormat string              `json:"dateTimeFormat"`
+	IndexFields              []*store.IndexField `json:"indexFields"`
+}
