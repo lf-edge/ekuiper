@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -150,23 +150,39 @@ func (m *imageSink) getSuffix() string {
 
 func (m *imageSink) saveFile(b []byte, fpath string) error {
 	reader := bytes.NewReader(b)
-	fp, err := os.Create(fpath)
-	if nil != err {
-		return err
-	}
-	defer fp.Close()
-	if "png" == m.format {
-		if img, err := png.Decode(reader); nil != err {
-			return err
-		} else if err = png.Encode(fp, img); nil != err {
+	switch m.format {
+	case "png":
+		img, err := png.Decode(reader)
+		if err != nil {
 			return err
 		}
-	} else if "jpeg" == m.format {
-		if img, err := jpeg.Decode(reader); nil != err {
-			return err
-		} else if err = jpeg.Encode(fp, img, nil); nil != err {
+		fp, err := os.Create(fpath)
+		if nil != err {
 			return err
 		}
+		defer fp.Close()
+		err = png.Encode(fp, img)
+		if err != nil {
+			os.Remove(fpath)
+			return err
+		}
+	case "jpeg":
+		img, err := jpeg.Decode(reader)
+		if err != nil {
+			return err
+		}
+		fp, err := os.Create(fpath)
+		if nil != err {
+			return err
+		}
+		defer fp.Close()
+		err = jpeg.Encode(fp, img, nil)
+		if err != nil {
+			os.Remove(fpath)
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported format %s", m.format)
 	}
 	return nil
 }
@@ -180,7 +196,10 @@ func (m *imageSink) saveFiles(images map[string]interface{}) error {
 		suffix := m.getSuffix()
 		fname := fmt.Sprintf(`%s%s.%s`, k, suffix, m.format)
 		fpath := filepath.Join(m.path, fname)
-		m.saveFile(image, fpath)
+		err := m.saveFile(image, fpath)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
