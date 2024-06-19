@@ -15,6 +15,7 @@
 package video
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -85,6 +86,18 @@ func TestPull(t *testing.T) {
 		}
 		return b
 	}, func() {
+		// do nothing
+	})
+}
+
+func TestPullError(t *testing.T) {
+	exp := errors.New("read frame failed, err:exit status 1")
+	r := GetSource()
+	mock.TestSourceConnector(t, r, map[string]any{
+		"url":      "https://gcwbcdks.v.kcdnvip.com/gcwbcd/cdrmipanda_1/index.m3u8",
+		"codec":    "ogv",
+		"interval": "15s",
+	}, exp, func() {
 		// do nothing
 	})
 }
