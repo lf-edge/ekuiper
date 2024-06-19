@@ -32,7 +32,7 @@ jobs:
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        pip3 install pynng==0.7.2 && sudo apt-get update && sudo apt-get install libzmq3-dev -y
+        pip3 install pynng==0.7.2 && sudo apt-get update && sudo apt-get install ffmpeg libzmq3-dev -y
     - name: Build plugins
       run: |
         curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -v 0.13.4 > /dev/null
