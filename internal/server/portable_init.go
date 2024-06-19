@@ -102,6 +102,10 @@ func portableHandler(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 	switch r.Method {
 	case http.MethodDelete:
+		referenced := checkBeforeDrop(name)
+		if referenced {
+			handleError(w, fmt.Errorf("plugin %s referenced by other rules", name), "", logger)
+		}
 		err := portableManager.Delete(name)
 		if err != nil {
 			handleError(w, err, fmt.Sprintf("delete portable plugin %s error", name), logger)
@@ -158,4 +162,15 @@ func (e portableExporter) Status() map[string]string {
 
 func (e portableExporter) Reset() {
 	portableManager.UninstallAllPlugins()
+}
+
+func checkBeforeDrop(name string) bool {
+	status, ok := runtime.GetPluginInsManager().GetPluginInsStatus(name)
+	if !ok {
+		return false
+	}
+	if len(status.RefCount) > 0 {
+		return true
+	}
+	return false
 }

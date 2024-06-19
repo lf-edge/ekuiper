@@ -23,6 +23,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/gorilla/mux"
@@ -883,6 +884,49 @@ func (suite *RestTestSuite) TestConnection() {
 	require.Equal(suite.T(), `{"id":"id1","err":""}`, string(returnVal))
 
 	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/connection/id1", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+}
+
+func (suite *RestTestSuite) TestCheckBeforeDropStream() {
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demoUsed() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	buf1 = bytes.NewBuffer([]byte(`{"sql":"CREATE stream demoUnused() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	ruleJson2 := `{"id":"useRule","triggered":false,"sql":"select * from demoUsed","actions":[{"log":{}}]}`
+	buf2 := bytes.NewBuffer([]byte(ruleJson2))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusCreated, w2.Code)
+
+	// drop stream failed
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demoUsed", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	msg := w.Body.String()
+	require.Equal(suite.T(), strings.Trim(msg, "\n"), `{"error":1000,"message":"stream demoUsed has been referenced by other rules"}`)
+	assert.Equal(suite.T(), http.StatusBadRequest, w.Code)
+
+	// drop stream success
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demoUnused", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	// drop Rule then drop stream
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/useRule", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demoUsed", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)

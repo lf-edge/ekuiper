@@ -30,7 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-const currentVersion = 2
+const currentVersion = 3
 
 var GlobalBumpManager *BumpManager
 
@@ -79,6 +79,10 @@ func BumpToCurrentVersion(dataDir string) error {
 			}
 		case 2:
 			if err := bumpFrom1TO2(); err != nil {
+				return err
+			}
+		case 3:
+			if err := bumpFrom2TO3(); err != nil {
 				return err
 			}
 		}

@@ -77,6 +77,7 @@ func NewPluginInsForTest(name string, ctrlChan ControlChannel) *PluginIns {
 		ctrlChan: ctrlChan,
 		name:     name,
 		commands: commands,
+		Status:   NewPluginStatus(),
 	}
 }
 
@@ -110,6 +111,12 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 		ctx.GetLogger().Infof("started symbol %s", ctrl.SymbolName)
 	}
 	return err
+}
+
+func (i *PluginIns) AddRef4Test(ctx api.StreamContext) {
+	i.Lock()
+	defer i.Unlock()
+	i.addRef(ctx)
 }
 
 func (i *PluginIns) addRef(ctx api.StreamContext) {
@@ -225,6 +232,18 @@ func GetPluginInsManager4Test() *pluginInsManager {
 		instances: make(map[string]*PluginIns),
 	}
 	return testPM
+}
+
+func (p *pluginInsManager) AddPlugins4Test(name string, ins *PluginIns) {
+	p.Lock()
+	defer p.Unlock()
+	p.instances[name] = ins
+}
+
+func (p *pluginInsManager) RemovePlugins4Test(name string) {
+	p.Lock()
+	defer p.Unlock()
+	delete(p.instances, name)
 }
 
 func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {
