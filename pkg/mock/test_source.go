@@ -39,7 +39,7 @@ type ic struct {
 	IgnoreTs bool          `json:"ignoreTs"`
 }
 
-func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected any, sender func()) {
+func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any, expected any, compare func(expected, result any) bool, sender func()) {
 	// init
 	c := count.Load()
 	if c == nil {
@@ -171,11 +171,16 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	case <-ctx.Done():
 	case <-finished:
 		cancel()
-		assert.Equal(t, expected, result)
 	case <-ticker:
 		cancel()
 		assert.Fail(t, "timeout")
 		return
 	}
-	assert.Equal(t, expected, result)
+	assert.True(t, compare(expected, result))
+}
+
+func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected any, sender func()) {
+	TestSourceConnectorCompare(t, r, props, expected, func(expected, result any) bool {
+		return assert.Equal(t, expected, result)
+	}, sender)
 }
