@@ -228,3 +228,19 @@ func GetCfgFromKVStorage(typ string, plugin string, confKey string) (map[string]
 	}
 	return kvStorage.GetByPrefix(key)
 }
+
+// ClearKVStorage only used in unit test
+func ClearKVStorage() error {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return err
+	}
+	km, err := kvStorage.GetByPrefix("")
+	if err != nil {
+		return err
+	}
+	for key := range km {
+		kvStorage.Delete(key)
+	}
+	return nil
+}

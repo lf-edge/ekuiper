@@ -15,6 +15,7 @@
 package bump
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -37,7 +38,8 @@ func rewriteSQLSourceConfiguration() error {
 			continue
 		}
 		data := rewriteCfg(cfg)
-		conf.WriteCfgIntoKVStorage("sources", "sql", key, data)
+		_, _, confKey, _ := extractKey(key)
+		conf.WriteCfgIntoKVStorage("sources", "sql", confKey, data)
 	}
 	return nil
 }
@@ -45,7 +47,7 @@ func rewriteSQLSourceConfiguration() error {
 func rewriteCfg(cfg *OriginSqlSourceCfg) map[string]interface{} {
 	m := make(map[string]interface{})
 	m["dburl"] = cfg.Url
-	m["interval"] = time.Duration(cfg.Internal).String()
+	m["interval"] = time.Duration(cfg.Interval).String()
 	if cfg.InternalSqlQueryCfg != nil {
 		icfg := cfg.InternalSqlQueryCfg
 		im := make(map[string]interface{})
@@ -73,7 +75,10 @@ func rewriteCfg(cfg *OriginSqlSourceCfg) map[string]interface{} {
 		}
 		m["templateSqlQueryCfg"] = tm
 	}
-	return m
+	bs, _ := json.Marshal(m)
+	newm := make(map[string]interface{})
+	json.Unmarshal(bs, &newm)
+	return newm
 }
 
 func extractIndexField(icfg *OriginInternalSqlQueryCfg) *store.IndexField {
@@ -116,9 +121,9 @@ func extractIndexField2(icfg *OriginTemplateSqlQueryCfg) *store.IndexField {
 
 type OriginSqlSourceCfg struct {
 	Url                 string                     `json:"url"`
-	Internal            cast.DurationConf          `json:"internal"`
-	InternalSqlQueryCfg *OriginInternalSqlQueryCfg `json:"internalSqlQueryCfg"`
-	TemplateSqlQueryCfg *OriginTemplateSqlQueryCfg `json:"templateSqlQueryCfg"`
+	Interval            cast.DurationConf          `json:"interval"`
+	InternalSqlQueryCfg *OriginInternalSqlQueryCfg `json:"internalSqlQueryCfg,omitempty"`
+	TemplateSqlQueryCfg *OriginTemplateSqlQueryCfg `json:"templateSqlQueryCfg,omitempty"`
 }
 
 type OriginInternalSqlQueryCfg struct {
