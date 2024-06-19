@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/sqlgen"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type SQLSourceConnector struct {
@@ -100,13 +99,12 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *SQLSourceConnector) Pull(ctx api.StreamContext, _ time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
-	s.queryData(ctx, ingest, ingestError)
+func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
+	s.queryData(ctx, recvTime, ingest, ingestError)
 }
 
-func (s *SQLSourceConnector) queryData(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) {
+func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	logger := ctx.GetLogger()
-	rcvTime := timex.GetNow()
 	query, err := s.Query.SqlQueryStatement()
 	failpoint.Inject("StatementErr", func() {
 		err = errors.New("StatementErr")

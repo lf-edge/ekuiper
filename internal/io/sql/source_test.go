@@ -118,7 +118,7 @@ func TestSQLConnectionConnect(t *testing.T) {
 		"a": int64(1),
 		"b": int64(1),
 	}
-	sqlConnector.queryData(ctx, func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		require.Equal(t, expectedData, data)
 	}, func(ctx api.StreamContext, err error) {
 		require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestSQLConnectionConnect(t *testing.T) {
 	for _, tc := range testcases {
 		fp := "github.com/lf-edge/ekuiper/v2/internal/io/sql/" + tc.path
 		failpoint.Enable(fp, "return(true)")
-		sqlConnector.queryData(ctx, func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
+		sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
 			require.Error(t, err)
 		})
 		failpoint.Disable(fp)
