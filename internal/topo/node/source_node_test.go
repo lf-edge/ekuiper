@@ -405,7 +405,6 @@ func (m *MockRewindSource) Subscribe(ctx api.StreamContext, ingest api.TupleInge
 				}, nil, time.Now())
 				m.state++
 			}
-
 		}
 	}()
 	return nil
