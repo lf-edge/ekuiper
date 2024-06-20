@@ -410,7 +410,7 @@ func (m *MockRewindSource) Subscribe(ctx api.StreamContext, ingest api.TupleInge
 	return nil
 }
 
-func TestRewind(t *testing.T) {
+func TestMockRewind(t *testing.T) {
 	notify := make(chan struct{})
 	m := &MockRewindSource{
 		notify: notify,

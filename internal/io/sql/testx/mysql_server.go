@@ -59,6 +59,9 @@ func createTestDatabase() *memory.DbProvider {
 		{Name: "b", Type: types.Int64, Nullable: false, Source: tableName},
 	}), db.GetForeignKeyCollection())
 	db.AddTable(tableName, table)
-	_ = table.Insert(ctx, sql.NewRow(1, 1))
+	err := table.Insert(ctx, sql.NewRow(int64(1), int64(1)))
+	if err != nil {
+		panic(err)
+	}
 	return pro
 }

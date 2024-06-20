@@ -77,7 +77,7 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 	}
 
 	if cfg.TemplateSqlQueryCfg == nil && cfg.InternalSqlQueryCfg == nil {
-		return fmt.Errorf("read properties %v fail with error: %v", props, err)
+		return fmt.Errorf("either one of the internalSqlQueryCfg and templateSqlQueryCfg should be defined", props, err)
 	}
 
 	if cfg.TemplateSqlQueryCfg != nil {
