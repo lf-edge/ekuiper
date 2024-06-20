@@ -47,6 +47,16 @@ func dropConnectionStore(plugin, id string) error {
 	return err
 }
 
+func IsConnectionExists(id string) bool {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	_, ok := globalConnectionManager.connectionPool[id]
+	if !ok {
+		return false
+	}
+	return true
+}
+
 func GetConnectionRef(id string) int {
 	globalConnectionManager.RLock()
 	defer globalConnectionManager.RUnlock()
@@ -111,7 +121,7 @@ func FetchConnection(ctx api.StreamContext, id, typ string, props map[string]int
 	}
 	selID := extractSelID(props)
 	if len(selID) < 1 {
-		return CreateNonStoredConnection(ctx, id, typ, props)
+		return getOrCreateNonStoredConnection(ctx, id, typ, props)
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
@@ -148,13 +158,14 @@ func detachConnection(ctx api.StreamContext, id string, remove bool) error {
 	if !ok {
 		return nil
 	}
-	if remove {
+	meta.refCount--
+	globalConnectionManager.connectionPool[id] = meta
+	if remove && meta.refCount < 1 {
 		conn := meta.conn
 		conn.Close(ctx)
 		delete(globalConnectionManager.connectionPool, id)
 		return nil
 	}
-	meta.refCount--
 	return nil
 }
 
@@ -188,20 +199,23 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	return conn, nil
 }
 
-func CreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[string]any) (modules.Connection, error) {
+func getOrCreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[string]any) (modules.Connection, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	_, ok := globalConnectionManager.connectionPool[id]
+	oldConn, ok := globalConnectionManager.connectionPool[id]
 	if ok {
-		return nil, fmt.Errorf("connection %v already been created", id)
+		oldConn.refCount++
+		globalConnectionManager.connectionPool[id] = oldConn
+		return oldConn.conn, nil
 	}
 	meta := &ConnectionMeta{
-		ID:    id,
-		Typ:   typ,
-		Props: props,
+		ID:       id,
+		Typ:      typ,
+		Props:    props,
+		refCount: 1,
 	}
 	conn, err := createNamedConnection(ctx, meta)
 	if err != nil {
