@@ -17,6 +17,7 @@ package client
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -25,15 +26,37 @@ import (
 )
 
 type SQLConnection struct {
-	url string
-	db  *sql.DB
+	sync.RWMutex
+	url    string
+	db     *sql.DB
+	closed bool
+}
+
+func (s *SQLConnection) Reconnect() error {
+	s.Lock()
+	defer s.Unlock()
+	if err := s.db.Ping(); err == nil {
+		return nil
+	}
+	oldDB := s.db
+	oldDB.Close()
+	db, err := openDB(s.url)
+	if err != nil {
+		return fmt.Errorf("reconnect sql err:%v, supported drivers:%v", err, driver.GetSupportedDrivers())
+	}
+	s.db = db
+	return nil
 }
 
 func (s *SQLConnection) GetDB() *sql.DB {
+	s.RLock()
+	defer s.RUnlock()
 	return s.db
 }
 
 func (s *SQLConnection) Ping(ctx api.StreamContext) error {
+	s.RLock()
+	defer s.RUnlock()
 	return s.db.Ping()
 }
 
@@ -42,8 +65,14 @@ func (s *SQLConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
 }
 
 func (s *SQLConnection) Close(ctx api.StreamContext) error {
+	s.Lock()
+	defer s.Unlock()
+	if s.closed {
+		return nil
+	}
 	conf.Log.Infof("close db with url:%v", s.url)
 	s.db.Close()
+	s.closed = true
 	return nil
 }
 

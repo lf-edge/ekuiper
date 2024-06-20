@@ -166,3 +166,29 @@ func TestSQLConnectionErr(t *testing.T) {
 	require.NoError(t, sqlSource.Provision(ctx, props))
 	require.NoError(t, sqlSource.Connect(ctx))
 }
+
+func TestSQLReconnect(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	ctx := mockContext.NewMockContext("1", "2")
+	props := map[string]interface{}{
+		"interval": "1s",
+		"dburl":    fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+		"templateSqlQueryCfg": map[string]interface{}{
+			"templateSql": "select a,b from t",
+		},
+	}
+	sqlSource := GetSource()
+	require.NoError(t, sqlSource.Provision(ctx, props))
+	require.NoError(t, sqlSource.Connect(ctx))
+	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
+	require.True(t, ok)
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
+	require.True(t, sqlConnector.needReconnect)
+
+	// start server then reconnect
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer s.Close()
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
+	require.False(t, sqlConnector.needReconnect)
+}
