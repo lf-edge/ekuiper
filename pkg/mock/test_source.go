@@ -39,7 +39,7 @@ type ic struct {
 	IgnoreTs bool          `json:"ignoreTs"`
 }
 
-func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected any, sender func()) {
+func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any, expected any, compare func(expected, result any) bool, sender func()) {
 	// init
 	c := count.Load()
 	if c == nil {
@@ -69,14 +69,25 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 		limit = len(et)
 	case []api.RawTuple:
 		limit = len(et)
+	case error:
+		limit = 1
 	default:
 		t.Fatal("invalid expected type")
 	}
 	var (
 		wg     sync.WaitGroup
 		result []api.MessageTuple
+		e      error
 	)
 	wg.Add(1)
+	ingestErr := func(ctx api.StreamContext, err error) {
+		log.Println(err)
+		e = err
+		limit--
+		if limit == 0 {
+			wg.Done()
+		}
+	}
 	ingestBytes := func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
 		if cc.IgnoreTs {
 			result = append(result, model.NewDefaultRawTupleIgnoreTs(payload, meta))
@@ -112,23 +123,15 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	go func() {
 		switch ss := r.(type) {
 		case api.BytesSource:
-			err = ss.Subscribe(ctx, ingestBytes, func(ctx api.StreamContext, err error) {
-				log.Println(err)
-			})
+			err = ss.Subscribe(ctx, ingestBytes, ingestErr)
 		case api.TupleSource:
-			err = ss.Subscribe(ctx, ingestTuples, func(ctx api.StreamContext, err error) {
-				panic(err)
-			})
+			err = ss.Subscribe(ctx, ingestTuples, ingestErr)
 		case api.PullBytesSource, api.PullTupleSource:
 			switch ss := r.(type) {
 			case api.PullBytesSource:
-				ss.Pull(ctx, timex.GetNow(), ingestBytes, func(ctx api.StreamContext, err error) {
-					panic(err)
-				})
+				ss.Pull(ctx, timex.GetNow(), ingestBytes, ingestErr)
 			case api.PullTupleSource:
-				ss.Pull(ctx, timex.GetNow(), ingestTuples, func(ctx api.StreamContext, err error) {
-					panic(err)
-				})
+				ss.Pull(ctx, timex.GetNow(), ingestTuples, ingestErr)
 			}
 			ticker := timex.GetTicker(cc.Interval)
 			go func() {
@@ -139,13 +142,9 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 						ctx.GetLogger().Debugf("source pull at %v", tc.UnixMilli())
 						switch ss := r.(type) {
 						case api.PullBytesSource:
-							ss.Pull(ctx, tc, ingestBytes, func(ctx api.StreamContext, err error) {
-								panic(err)
-							})
+							ss.Pull(ctx, tc, ingestBytes, ingestErr)
 						case api.PullTupleSource:
-							ss.Pull(ctx, tc, ingestTuples, func(ctx api.StreamContext, err error) {
-								panic(err)
-							})
+							ss.Pull(ctx, tc, ingestTuples, ingestErr)
 						}
 					case <-ctx.Done():
 						return
@@ -171,11 +170,20 @@ func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expec
 	case <-ctx.Done():
 	case <-finished:
 		cancel()
-		assert.Equal(t, expected, result)
 	case <-ticker:
 		cancel()
 		assert.Fail(t, "timeout")
 		return
 	}
-	assert.Equal(t, expected, result)
+	if ee, ok := expected.(error); ok {
+		assert.Equal(t, ee, e)
+	} else {
+		assert.True(t, compare(expected, result))
+	}
+}
+
+func TestSourceConnector(t *testing.T, r api.Source, props map[string]any, expected any, sender func()) {
+	TestSourceConnectorCompare(t, r, props, expected, func(expected, result any) bool {
+		return assert.Equal(t, expected, result)
+	}, sender)
 }

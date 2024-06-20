@@ -1,0 +1,8 @@
+default:
+  dburl: mysql://username:password@127.0.0.1:3306/testdb?parseTime=true
+  interval: "10s"
+
+mysql_config:
+  dburl: mysql://username:password@127.0.0.1:3306/testdb?parseTime=true
+  interval: "10s"
+

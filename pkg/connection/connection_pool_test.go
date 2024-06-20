@@ -21,14 +21,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestConnection(t *testing.T) {
-	dataDir, err := conf.GetDataLoc()
-	require.NoError(t, err)
-	require.NoError(t, store.SetupDefault(dataDir))
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := context.Background()
 	conn, err := CreateNamedConnection(ctx, "id1", "mock", nil)
@@ -68,9 +65,7 @@ func TestConnection(t *testing.T) {
 }
 
 func TestConnectionErr(t *testing.T) {
-	dataDir, err := conf.GetDataLoc()
-	require.NoError(t, err)
-	require.NoError(t, store.SetupDefault(dataDir))
+	var err error
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := context.Background()
 
@@ -84,13 +79,7 @@ func TestConnectionErr(t *testing.T) {
 	require.Error(t, err)
 	err = PingConnection(ctx, "")
 	require.Error(t, err)
-	_, err = CreateNonStoredConnection(ctx, "", "mock", nil)
-	require.Error(t, err)
-
-	conn4, err := CreateNonStoredConnection(ctx, "id2", "mock", nil)
-	require.NoError(t, err)
-	require.NotNil(t, conn4)
-	_, err = CreateNonStoredConnection(ctx, "id2", "mock", nil)
+	_, err = getOrCreateNonStoredConnection(ctx, "", "mock", nil)
 	require.Error(t, err)
 	err = DetachConnection(ctx, "", nil)
 	require.Error(t, err)
@@ -122,11 +111,7 @@ func TestConnectionErr(t *testing.T) {
 }
 
 func TestConnectionStatus(t *testing.T) {
-	dataDir, err := conf.GetDataLoc()
-	require.NoError(t, err)
-	require.NoError(t, store.SetupDefault(dataDir))
 	require.NoError(t, InitConnectionManager4Test())
-
 	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
 	require.NoError(t, ReloadConnection())
@@ -143,4 +128,20 @@ func TestConnectionStatus(t *testing.T) {
 	require.Equal(t, ConnectionStatus{
 		Status: ConnectionRunning,
 	}, s)
+}
+
+func TestNonStoredConnection(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("id", "2")
+	_, err := FetchConnection(ctx, "id1", "mock", nil)
+	require.NoError(t, err)
+	require.Equal(t, 1, GetConnectionRef("id1"))
+	_, err = FetchConnection(ctx, "id1", "mock", nil)
+	require.NoError(t, err)
+	require.Equal(t, 2, GetConnectionRef("id1"))
+	require.NoError(t, DetachConnection(ctx, "id1", nil))
+	require.Equal(t, 1, GetConnectionRef("id1"))
+	require.NoError(t, DetachConnection(ctx, "id1", nil))
+	require.Equal(t, 0, GetConnectionRef("id1"))
+	require.False(t, IsConnectionExists("id1"))
 }
