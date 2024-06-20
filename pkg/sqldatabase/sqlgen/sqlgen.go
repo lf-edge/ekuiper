@@ -15,6 +15,7 @@
 package sqlgen
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -77,7 +78,7 @@ func (cfg *sqlConfig) Init(props map[string]interface{}) error {
 	}
 
 	if cfg.TemplateSqlQueryCfg == nil && cfg.InternalSqlQueryCfg == nil {
-		return fmt.Errorf("either one of the internalSqlQueryCfg and templateSqlQueryCfg should be defined", props, err)
+		return errors.New("either one of the internalSqlQueryCfg and templateSqlQueryCfg should be defined")
 	}
 
 	if cfg.TemplateSqlQueryCfg != nil {
