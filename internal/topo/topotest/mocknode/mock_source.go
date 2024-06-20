@@ -29,7 +29,7 @@ type MockSource struct {
 	data   []*xsql.Tuple
 	offset int
 	eof    api.EOFIngest
-	sync.Mutex
+	sync.RWMutex
 }
 
 const TIMELEAP = 200
@@ -74,9 +74,9 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 		case <-next:
 			m.Lock()
 			m.offset = i + 1
+			m.Unlock()
 			ingest(ctx, map[string]any(d.Message), map[string]any{"topic": "mock"}, timex.GetNow())
 			log.Debugf("%d: mock source %s is sending data %d:%v", timex.GetNowInMilli(), ctx.GetOpId(), i, d)
-			m.Unlock()
 		case <-ctx.Done():
 			log.Debugf("mock source open DONE")
 			return nil
@@ -88,8 +88,8 @@ func (m *MockSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, in
 }
 
 func (m *MockSource) GetOffset() (interface{}, error) {
-	m.Lock()
-	defer m.Unlock()
+	m.RLock()
+	defer m.RUnlock()
 	return m.offset, nil
 }
 
