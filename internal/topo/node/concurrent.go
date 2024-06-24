@@ -69,7 +69,6 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 						time.Sleep(sendInterval)
 					}
 				}
-				node.statManager.IncTotalMessagesProcessed(1)
 			case <-ctx.Done():
 				ctx.GetLogger().Infof("merge done")
 				return
@@ -112,6 +111,7 @@ func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, 
 			default:
 				node.statManager.IncTotalRecordsIn()
 				result = wf(ctx, item)
+				node.statManager.IncTotalMessagesProcessed(1)
 			}
 			select {
 			case output <- result:
