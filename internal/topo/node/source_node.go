@@ -61,12 +61,6 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	case api.Bounded:
 		st.SetEofIngest(m.ingestEof)
 	}
-	switch ss.(type) {
-	case api.PullTupleSource, api.PullBytesSource:
-		if cc.Interval < 1 {
-			return nil, fmt.Errorf("interval should be larger than 1ms for pull source")
-		}
-	}
 	return m, nil
 }
 
@@ -109,6 +103,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	case []byte:
 		tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: mess, Timestamp: ts, Metadata: meta}
 		m.Broadcast(tuple)
+		m.statManager.IncTotalRecordsOut()
 	// Source tuples are expected from memory
 	case *xsql.Tuple:
 		m.ingestTuple(mess, ts)
@@ -182,22 +177,24 @@ func (m *SourceNode) runPull(ctx api.StreamContext) error {
 	if err != nil {
 		return err
 	}
-	ticker := timex.GetTicker(m.interval)
-	go func() {
-		defer ticker.Stop()
-		for {
-			select {
-			case tc := <-ticker.C:
-				ctx.GetLogger().Debugf("source pull at %v", tc.UnixMilli())
-				e := m.doPull(ctx, tc)
-				if e != nil {
-					m.ingestError(ctx, e)
+	if m.interval > 0 {
+		ticker := timex.GetTicker(m.interval)
+		go func() {
+			defer ticker.Stop()
+			for {
+				select {
+				case tc := <-ticker.C:
+					ctx.GetLogger().Debugf("source pull at %v", tc.UnixMilli())
+					e := m.doPull(ctx, tc)
+					if e != nil {
+						m.ingestError(ctx, e)
+					}
+				case <-ctx.Done():
+					return
 				}
-			case <-ctx.Done():
-				return
 			}
-		}
-	}()
+		}()
+	}
 	return nil
 }
 

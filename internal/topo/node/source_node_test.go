@@ -126,13 +126,6 @@ func TestNewError(t *testing.T) {
 	assert.Equal(t, "1 error(s) decoding:\n\n* error decoding 'interval': time: invalid duration \"invalid\"", err.Error())
 
 	var pc api.PullTupleSource = &MockPullSource{}
-	_, err = NewSourceNode(ctx, "mock_connector", pc, map[string]any{"datasource": "demo"}, &def.RuleOption{
-		BufferLength: 1024,
-		SendError:    true,
-	})
-	assert.Error(t, err)
-	assert.Equal(t, "interval should be larger than 1ms for pull source", err.Error())
-
 	_, err = NewSourceNode(ctx, "mock_connector", pc, map[string]any{"datasource": "demo", "interval": "1s"}, &def.RuleOption{
 		BufferLength: 1024,
 		SendError:    true,
