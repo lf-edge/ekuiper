@@ -32,10 +32,11 @@ import (
 )
 
 type SQLSourceConnector struct {
-	conf  *SQLConf
-	Query sqlgen.SqlQueryGenerator
-	conn  *client.SQLConnection
-	props map[string]any
+	conf          *SQLConf
+	Query         sqlgen.SqlQueryGenerator
+	conn          *client.SQLConnection
+	props         map[string]any
+	needReconnect bool
 }
 
 type SQLConf struct {
@@ -105,6 +106,14 @@ func (s *SQLSourceConnector) Pull(ctx api.StreamContext, recvTime time.Time, ing
 
 func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
 	logger := ctx.GetLogger()
+	if s.needReconnect {
+		err := s.conn.Reconnect()
+		if err != nil {
+			logger.Errorf("reconnect db error %v", err)
+			ingestError(ctx, err)
+			return
+		}
+	}
 	query, err := s.Query.SqlQueryStatement()
 	failpoint.Inject("StatementErr", func() {
 		err = errors.New("StatementErr")
@@ -120,8 +129,13 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 		err = errors.New("QueryErr")
 	})
 	if err != nil {
+		logger.Errorf("query sql error %v", err)
+		s.needReconnect = true
 		ingestError(ctx, err)
 		return
+	} else if s.needReconnect {
+		logger.Infof("reconnect sql success")
+		s.needReconnect = false
 	}
 	cols, _ := rows.Columns()
 	types, err := rows.ColumnTypes()
