@@ -36,40 +36,31 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 	if isMock {
 		t.streamStmt.Options.TYPE = "simulator"
 	}
-	switch t.streamStmt.StreamType {
-	case ast.TypeStream:
-		strType := t.streamStmt.Options.TYPE
-		if strType == "" {
+	strType := t.streamStmt.Options.TYPE
+	if strType == "" {
+		switch t.streamStmt.StreamType {
+		case ast.TypeStream:
 			strType = "mqtt"
-			t.streamStmt.Options.TYPE = strType
+		case ast.TypeTable:
+			strType = "file"
 		}
-		si, err := io.Source(strType)
-		if err != nil {
-			return nil, nil, 0, err
-		}
-		if si == nil {
-			return nil, nil, 0, fmt.Errorf("source type %s not found", strType)
-		}
-		var pp node.UnOperation
-		if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || t.isBinary)) {
-			pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
-			if err != nil {
-				return nil, nil, 0, err
-			}
-		}
-		return splitSource(ctx, t, si, options, index, ruleId, pp)
-	case ast.TypeTable:
-		si, err := io.Source(t.streamStmt.Options.TYPE)
-		if err != nil {
-			return nil, nil, 0, err
-		}
-		pp, err := operator.NewTableProcessor(isSchemaless, string(t.name), t.streamFields, t.streamStmt.Options)
-		if err != nil {
-			return nil, nil, 0, err
-		}
-		return splitSource(ctx, t, si, options, index, ruleId, pp)
+		t.streamStmt.Options.TYPE = strType
 	}
-	return nil, nil, 0, fmt.Errorf("unknown stream type %d", t.streamStmt.StreamType)
+	si, err := io.Source(strType)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	if si == nil {
+		return nil, nil, 0, fmt.Errorf("source type %s not found", strType)
+	}
+	var pp node.UnOperation
+	if t.iet || (!isSchemaless && (t.streamStmt.Options.STRICT_VALIDATION || t.isBinary)) {
+		pp, err = operator.NewPreprocessor(isSchemaless, t.streamFields, t.allMeta, t.metaFields, t.iet, t.timestampField, t.timestampFormat, t.isBinary, t.streamStmt.Options.STRICT_VALIDATION)
+		if err != nil {
+			return nil, nil, 0, err
+		}
+	}
+	return splitSource(ctx, t, si, options, index, ruleId, pp)
 }
 
 func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {

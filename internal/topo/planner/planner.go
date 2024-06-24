@@ -256,7 +256,7 @@ func buildOps(lp LogicalPlan, tp *topo.Topo, options *def.RuleOption, sources ma
 	case *LookupPlan:
 		op, err = planLookupSource(tp.GetContext(), t, options)
 	case *JoinAlignPlan:
-		op, err = node.NewJoinAlignNode(fmt.Sprintf("%d_join_aligner", newIndex), t.Emitters, options)
+		op, err = node.NewJoinAlignNode(fmt.Sprintf("%d_join_aligner", newIndex), t.Emitters, t.Sizes, options)
 	case *JoinPlan:
 		op = Transform(&operator.JoinOp{Joins: t.joins, From: t.from}, fmt.Sprintf("%d_join", newIndex), options)
 	case *FilterPlan:
@@ -318,6 +318,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 		lookupTableChildren map[string]*ast.Options
 		scanTableChildren   []LogicalPlan
 		scanTableEmitters   []string
+		scanTableSizes      []int
 		streamEmitters      []string
 		w                   *ast.Window
 		ds                  ast.Dimensions
@@ -349,6 +350,18 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			} else {
 				scanTableChildren = append(scanTableChildren, p)
 				scanTableEmitters = append(scanTableEmitters, string(sInfo.stmt.Name))
+				tableSize := sInfo.stmt.Options.RETAIN_SIZE
+				if tableSize == 0 {
+					switch sInfo.stmt.Options.TYPE {
+					// If retainSize is not set, file table will try to read all the content in it
+					case "", "file":
+						// TODO use interface to determine if the table is batch like file
+						tableSize = MaxRetainSize
+					default:
+						tableSize = DefaultRetainSize
+					}
+				}
+				scanTableSizes = append(scanTableSizes, tableSize)
 			}
 		}
 	}
@@ -438,6 +451,7 @@ func createLogicalPlan(stmt *ast.SelectStatement, opt *def.RuleOption, store kv.
 			if len(scanTableChildren) > 0 {
 				p = JoinAlignPlan{
 					Emitters: scanTableEmitters,
+					Sizes:    scanTableSizes,
 				}.Init()
 				p.SetChildren(append(children, scanTableChildren...))
 				children = []LogicalPlan{p}
