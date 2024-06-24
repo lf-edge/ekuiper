@@ -27,6 +27,19 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/store"
 )
 
+func TestRewriteSinkConf(t *testing.T) {
+	conf.IsTesting = true
+	require.NoError(t, conf.WriteCfgIntoKVStorage("sinks", "sql", "conf1", map[string]interface{}{
+		"url": "123",
+	}))
+	require.NoError(t, rewriteSQLSinkConfiguration())
+	d, err := conf.GetCfgFromKVStorage("sinks", "sql", "conf1")
+	require.NoError(t, err)
+	v, ok := d["sinks.sql.conf1"]["dburl"]
+	require.True(t, ok)
+	require.Equal(t, "123", v)
+}
+
 func TestRewriteSQLConf(t *testing.T) {
 	testcases := []struct {
 		oldCfg   *OriginSqlSourceCfg
