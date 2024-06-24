@@ -152,11 +152,15 @@ func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (
 }
 
 func (s *SQLSinkConnector) CollectList(ctx api.StreamContext, items api.MessageTupleList) (err error) {
+	return s.collectList(ctx, items.ToMaps())
+}
+
+func (s *SQLSinkConnector) collectList(ctx api.StreamContext, items []map[string]any) (err error) {
 	var keys []string = nil
 	var values []string = nil
 	var vars string
 	if len(s.config.RowKindField) < 1 {
-		for _, mapData := range items.ToMaps() {
+		for _, mapData := range items {
 			keys, vars, err = s.config.buildInsertSql(ctx, mapData)
 			if err != nil {
 				return err
@@ -169,7 +173,7 @@ func (s *SQLSinkConnector) CollectList(ctx api.StreamContext, items api.MessageT
 		}
 		return nil
 	}
-	for _, el := range items.ToMaps() {
+	for _, el := range items {
 		err := s.save(ctx, s.config.Table, el)
 		if err != nil {
 			ctx.GetLogger().Error(err)
