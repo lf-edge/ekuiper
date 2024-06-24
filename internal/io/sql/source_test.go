@@ -30,6 +30,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/store"
 )
 
 func init() {
@@ -165,4 +166,63 @@ func TestSQLConnectionErr(t *testing.T) {
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
 	require.NoError(t, sqlSource.Connect(ctx))
+}
+
+func TestSQLSourceRewind(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	ctx := mockContext.NewMockContext("1", "2")
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer func() {
+		s.Close()
+	}()
+	props := map[string]interface{}{
+		"interval": "1s",
+		"dburl":    fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+		"internalSqlQueryCfg": map[string]interface{}{
+			"table": "t",
+			"limit": 1,
+			"indexFields": []map[string]interface{}{
+				{
+					"indexField":     "a",
+					"indexValue":     0,
+					"indexFieldType": "bigint",
+				},
+				{
+					"indexField":     "b",
+					"indexValue":     0,
+					"indexFieldType": "bigint",
+				},
+			},
+		},
+	}
+	sqlSource := GetSource()
+	require.NoError(t, sqlSource.Provision(ctx, props))
+	require.NoError(t, sqlSource.Connect(ctx))
+	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
+	require.True(t, ok)
+	expectedData := map[string]any{
+		"a": int64(1),
+		"b": int64(1),
+	}
+	dataChan := make(chan any, 1)
+	sqlConnector.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataChan <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Equal(t, expectedData, <-dataChan)
+	state, err := sqlConnector.GetOffset()
+	require.NoError(t, err)
+	expectState := store.NewIndexFieldWrap([]*store.IndexField{
+		{
+			IndexFieldName:     "a",
+			IndexFieldValue:    int64(1),
+			IndexFieldDataType: "bigint",
+		},
+		{
+			IndexFieldName:     "b",
+			IndexFieldValue:    int64(1),
+			IndexFieldDataType: "bigint",
+		},
+	}...).GetStore()
+	require.Equal(t, expectState, state)
 }
