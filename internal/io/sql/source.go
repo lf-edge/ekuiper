@@ -166,6 +166,23 @@ func (s *SQLSourceConnector) queryData(ctx api.StreamContext, rcvTime time.Time,
 	}
 }
 
+func (s *SQLSourceConnector) GetOffset() (interface{}, error) {
+	return s.Query.GetIndexValue(), nil
+}
+
+func (s *SQLSourceConnector) Rewind(offset interface{}) error {
+	s.Query.SetIndexValue(offset)
+	return nil
+}
+
+func (s *SQLSourceConnector) ResetOffset(input map[string]interface{}) error {
+	wrap := s.Query.GetIndexValueWrap()
+	if wrap != nil {
+		wrap.UpdateByInput(input)
+	}
+	return nil
+}
+
 func scanIntoMap(mapValue map[string]interface{}, values []interface{}, columns []string) {
 	for idx, column := range columns {
 		if reflectValue := reflect.Indirect(reflect.Indirect(reflect.ValueOf(values[idx]))); reflectValue.IsValid() {

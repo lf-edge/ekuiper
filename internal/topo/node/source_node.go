@@ -89,6 +89,7 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)
 	m.statManager.ProcessTimeEnd()
+	m.updateState(ctx)
 }
 
 func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
@@ -122,6 +123,7 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	}
 	m.statManager.IncTotalMessagesProcessed(1)
 	m.statManager.ProcessTimeEnd()
+	m.updateState(ctx)
 }
 
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
@@ -147,6 +149,38 @@ func (m *SourceNode) ingestEof(ctx api.StreamContext) {
 	m.Broadcast(xsql.EOFTuple(0))
 }
 
+const (
+	OffsetKey = "$$offset"
+)
+
+func (m *SourceNode) Rewind(ctx api.StreamContext) error {
+	s := m.s
+	if rw, ok := s.(api.Rewindable); ok {
+		if offset, err := ctx.GetState(OffsetKey); err != nil {
+			return err
+		} else if offset != nil {
+			ctx.GetLogger().Infof("Source rewind from %v", offset)
+			err = rw.Rewind(offset)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (m *SourceNode) updateState(ctx api.StreamContext) error {
+	s := m.s
+	if rw, ok := s.(api.Rewindable); ok {
+		state, err := rw.GetOffset()
+		if err != nil {
+			return err
+		}
+		return ctx.PutState(OffsetKey, state)
+	}
+	return nil
+}
+
 // Run Subscribe could be a long-running function
 func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 	defer func() {
@@ -156,6 +190,9 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 	poe := infra.SafeRun(func() error {
 		err := m.s.Connect(ctx)
 		if err != nil {
+			return err
+		}
+		if err := m.Rewind(ctx); err != nil {
 			return err
 		}
 		switch ss := m.s.(type) {

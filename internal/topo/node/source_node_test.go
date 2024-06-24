@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -362,4 +363,78 @@ func (m *MockPullSource) Pull(ctx api.StreamContext, trigger time.Time, ingest a
 
 func (m *MockPullSource) SetEofIngest(eof api.EOFIngest) {
 	m.set = true
+}
+
+type MockRewindSource struct {
+	notify chan struct{}
+	state  int
+}
+
+func (m *MockRewindSource) GetOffset() (any, error) {
+	return m.state, nil
+}
+
+func (m *MockRewindSource) Rewind(offset any) error {
+	m.state = offset.(int)
+	return nil
+}
+
+func (m *MockRewindSource) ResetOffset(input map[string]any) error {
+	return nil
+}
+
+func (m *MockRewindSource) Provision(ctx api.StreamContext, configs map[string]any) error {
+	return nil
+}
+
+func (m *MockRewindSource) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *MockRewindSource) Connect(ctx api.StreamContext) error {
+	return nil
+}
+
+func (m *MockRewindSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
+	go func() {
+		for {
+			select {
+			case <-m.notify:
+				ingest(ctx, map[string]any{
+					"key": m.state,
+				}, nil, time.Now())
+				m.state++
+			}
+		}
+	}()
+	return nil
+}
+
+func TestMockRewind(t *testing.T) {
+	notify := make(chan struct{})
+	m := &MockRewindSource{
+		notify: notify,
+	}
+	var sc api.TupleSource = m
+	ctx := mockContext.NewMockContext("rule1", "src1")
+	// set rewind value
+	ctx.PutState(OffsetKey, 10)
+	errCh := make(chan error)
+	scn, err := NewSourceNode(ctx, "mock_connector", sc, map[string]any{"datasource": "demo"}, &def.RuleOption{
+		BufferLength: 1024,
+		SendError:    true,
+	})
+	assert.NoError(t, err)
+	result := make(chan any, 10)
+	err = scn.AddOutput(result, "testResult")
+	assert.NoError(t, err)
+	scn.Open(ctx, errCh)
+	notify <- struct{}{}
+	data := <-result
+	require.Equal(t, map[string]interface{}{"key": 10}, map[string]interface{}(data.(*xsql.Tuple).Message))
+	notify <- struct{}{}
+	data = <-result
+	require.Equal(t, map[string]interface{}{"key": 11}, map[string]interface{}(data.(*xsql.Tuple).Message))
+	v, _ := ctx.GetState(OffsetKey)
+	require.Equal(t, 11, v)
 }
