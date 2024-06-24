@@ -587,6 +587,42 @@ func TestWindow(t *testing.T) {
 			},
 		},
 		{
+			Name: `TestWindowRule11`,
+			Sql:  `SELECT color, name, window_start(), window_end() FROM demo INNER JOIN table1 on demo.ts = table1.id where demo.size > 2 and table1.size > 1 GROUP BY tumblingwindow(ss, 1)`,
+			R: [][]map[string]interface{}{
+				{{
+					"color":        "red",
+					"name":         "name1",
+					"window_start": int64(1541152486000),
+					"window_end":   int64(1541152487000),
+				}},
+			},
+			M: map[string]interface{}{
+				"op_2_window_0_exceptions_total":  int64(0),
+				"op_2_window_0_records_in_total":  int64(5),
+				"op_2_window_0_records_out_total": int64(3),
+
+				"op_6_join_aligner_0_records_in_total":  int64(6),
+				"op_6_join_aligner_0_records_out_total": int64(3),
+
+				"op_7_join_0_exceptions_total":  int64(0),
+				"op_7_join_0_records_in_total":  int64(3),
+				"op_7_join_0_records_out_total": int64(1),
+
+				"sink_memory_0_0_exceptions_total":  int64(0),
+				"sink_memory_0_0_records_in_total":  int64(1),
+				"sink_memory_0_0_records_out_total": int64(1),
+
+				"source_demo_0_exceptions_total":  int64(0),
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_table1_0_exceptions_total":  int64(0),
+				"source_table1_0_records_in_total":  int64(1),
+				"source_table1_0_records_out_total": int64(1),
+			},
+		},
+		{
 			Name: `TestWindowRule12`,
 			Sql:  `SELECT collect(size) as allSize FROM demo GROUP BY HOPPINGWINDOW(ss, 2, 1), color ORDER BY color`,
 			R: [][]map[string]interface{}{

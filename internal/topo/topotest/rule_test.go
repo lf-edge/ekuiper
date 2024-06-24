@@ -966,6 +966,44 @@ func TestSingleSQL(t *testing.T) {
 				},
 			},
 		},
+		{ // Need to move test/lookup.json to data/lookup.json
+			Name: `TestSingleSQLRule10`,
+			Sql:  "SELECT * FROM demo INNER JOIN table1 on demo.ts = table1.id",
+			R: [][]map[string]interface{}{
+				{{
+					"id":    int64(1541152486013),
+					"name":  "name1",
+					"color": "red",
+					"size":  3,
+					"ts":    1541152486013,
+				}},
+				{{
+					"id":    int64(1541152487632),
+					"name":  "name2",
+					"color": "blue",
+					"size":  2,
+					"ts":    1541152487632,
+				}},
+				{{
+					"id":    int64(1541152489252),
+					"name":  "name3",
+					"color": "red",
+					"size":  1,
+					"ts":    1541152489252,
+				}},
+			},
+			W: 15,
+			M: map[string]interface{}{
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
+
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_table1_0_records_in_total":  int64(1),
+				"source_table1_0_records_out_total": int64(1),
+			},
+		},
 		{
 			Name: `TestSingleSQLRule11`,
 			Sql:  "SELECT device FROM demo INNER JOIN demoTable on demo.ts = demoTable.ts",
@@ -992,6 +1030,41 @@ func TestSingleSQL(t *testing.T) {
 				"source_demoTable_0_exceptions_total":  int64(0),
 				"source_demoTable_0_records_in_total":  int64(5),
 				"source_demoTable_0_records_out_total": int64(5),
+			},
+		},
+		{
+			Name: `TestSingleSQLRule12`,
+			Sql:  "SELECT demo.ts as demoTs, table1.id as table1Id FROM demo INNER JOIN table1 on demoTs = table1Id",
+			R: [][]map[string]interface{}{
+				{{
+					"table1Id": int64(1541152486013),
+					"demoTs":   1541152486013,
+				}},
+				{{
+					"table1Id": int64(1541152487632),
+					"demoTs":   1541152487632,
+				}},
+				{{
+					"table1Id": int64(1541152489252),
+					"demoTs":   1541152489252,
+				}},
+			},
+			W: 15,
+			M: map[string]interface{}{
+				"op_5_join_aligner_0_records_in_total":  int64(8),
+				"op_5_join_aligner_0_records_out_total": int64(5),
+
+				"op_6_join_0_records_in_total":  int64(5),
+				"op_6_join_0_records_out_total": int64(3),
+
+				"sink_memory_0_0_records_in_total":  int64(3),
+				"sink_memory_0_0_records_out_total": int64(3),
+
+				"source_demo_0_records_in_total":  int64(5),
+				"source_demo_0_records_out_total": int64(5),
+
+				"source_table1_0_records_in_total":  int64(1),
+				"source_table1_0_records_out_total": int64(1),
 			},
 		},
 		{

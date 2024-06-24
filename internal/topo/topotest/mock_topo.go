@@ -124,13 +124,14 @@ func doRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 			limit := len(tt.R)
 			consumer := pubsub.CreateSub(id, nil, id, limit)
 			conf.Log.Debugf("test create memory sub %s", id)
-			ticker := time.After(1000 * time.Second)
+			ticker := time.After(10 * time.Second)
 			sinkResult := make([]any, 0, limit)
 		outerloop:
 			for {
 				select {
-				case <-errCh:
-					conf.Log.Debugf("test %s receive error signal", id)
+				// the done signal is sent when all sources are EOF. The mock source is bounded so this will be triggered.
+				case err := <-errCh:
+					conf.Log.Debugf("test %s receive error signal: %v", id, err)
 					tp.Cancel()
 					break outerloop
 				case tuple := <-consumer:
@@ -379,7 +380,7 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 					name STRING,
 					size BIGINT,
 					id BIGINT
-				) WITH (DATASOURCE="lookup.json", FORMAT="json", CONF_KEY="test");`
+				) WITH (DATASOURCE="lookup.json", FORMAT="json", CONF_KEY="test", STRICT_VALIDATION="true");`
 			case "helloStr":
 				sql = `CREATE STREAM helloStr (name string) WITH (DATASOURCE="helloStr", TYPE="mock", FORMAT="JSON")`
 			case "commands":
