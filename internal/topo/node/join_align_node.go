@@ -27,19 +27,27 @@ import (
 // The input for batch table MUST be *WindowTuples
 type JoinAlignNode struct {
 	*defaultSinkNode
-	// states
+	// table states
 	batch map[string][]*xsql.Tuple
+	size  map[string]int
 }
 
 const BatchKey = "$$batchInputs"
 
-func NewJoinAlignNode(name string, emitters []string, options *def.RuleOption) (*JoinAlignNode, error) {
+func NewJoinAlignNode(name string, emitters []string, sizes []int, options *def.RuleOption) (*JoinAlignNode, error) {
 	batch := make(map[string][]*xsql.Tuple, len(emitters))
-	for _, e := range emitters {
-		batch[e] = nil
+	size := make(map[string]int, len(emitters))
+	for i, e := range emitters {
+		s := sizes[i]
+		if s >= 9999 {
+			s = 100
+		}
+		batch[e] = make([]*xsql.Tuple, 0, s)
+		size[e] = sizes[i]
 	}
 	n := &JoinAlignNode{
 		batch: batch,
+		size:  size,
 	}
 	n.defaultSinkNode = newDefaultSinkNode(name, options)
 	return n, nil
@@ -84,28 +92,21 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					n.statManager.ProcessTimeStart()
 					switch d := data.(type) {
 					case *xsql.Tuple:
-						log.Debugf("JoinAlignNode receive tuple input %s", d)
-						n.alignBatch(ctx, d)
-					case *xsql.WindowTuples:
-						if d.WindowRange != nil { // real window
-							log.Debugf("JoinAlignNode receive window input %s", d)
-							n.alignBatch(ctx, d)
-						} else { // table window
-							log.Debugf("JoinAlignNode receive batch source %s", d)
-							if et, ok := d.Content[0].(xsql.EmittedData); ok {
-								emitter := et.GetEmitter()
-								// Buffer and update batch inputs
-								_, ok := n.batch[emitter]
-								if !ok {
-									e := fmt.Errorf("run JoinAlignNode error: receive batch input from unknown emitter %[1]T(%[1]v)", d)
-									n.Broadcast(e)
-									n.statManager.IncTotalExceptions(e.Error())
-									break
-								}
-								n.batch[emitter] = convertToTupleSlice(d.Content)
-								_ = ctx.PutState(BatchKey, n.batch)
+						log.Debugf("JoinAlignNode receive tuple input %v", d)
+						if b, ok := n.batch[d.Emitter]; ok {
+							s := n.size[d.Emitter]
+							if len(b) >= s {
+								b = b[s-len(b)+1:]
 							}
+							b = append(b, d)
+							n.batch[d.Emitter] = b
+							_ = ctx.PutState(BatchKey, n.batch)
+						} else {
+							n.alignBatch(ctx, d)
 						}
+					case *xsql.WindowTuples:
+						log.Debugf("JoinAlignNode receive window input %v", d)
+						n.alignBatch(ctx, d)
 					default:
 						e := fmt.Errorf("run JoinAlignNode error: invalid input type but got %[1]T(%[1]v)", d)
 						n.Broadcast(e)
@@ -121,14 +122,6 @@ func (n *JoinAlignNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			infra.DrainError(ctx, err, errCh)
 		}
 	}()
-}
-
-func convertToTupleSlice(content []xsql.Row) []*xsql.Tuple {
-	tuples := make([]*xsql.Tuple, len(content))
-	for i, v := range content {
-		tuples[i] = v.(*xsql.Tuple)
-	}
-	return tuples
 }
 
 func (n *JoinAlignNode) alignBatch(_ api.StreamContext, input any) {

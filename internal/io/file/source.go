@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -203,16 +203,10 @@ func (fs *Source) Load(ctx api.StreamContext, ingest api.TupleIngest, ingestErro
 	} else {
 		fs.parseFile(ctx, fs.file, ingest, ingestError)
 	}
-	// TODO deal with table case
-	//if fs.config.IsTable {
-	//	select {
-	//	case consumer <- api.NewDefaultSourceTupleWithTime(nil, nil, rcvTime):
-	//		// do nothing
-	//	case <-ctx.Done():
-	//		return nil
-	//	}
-	//}
-	ctx.GetLogger().Debug("All tuples sent")
+	if fs.config.Interval == 0 && fs.eof != nil {
+		fs.eof(ctx)
+		ctx.GetLogger().Debug("All tuples sent")
+	}
 }
 
 func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.TupleIngest, ingestError api.ErrorIngest) {

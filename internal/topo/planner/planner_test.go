@@ -289,6 +289,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											},
 										},
 										Emitters: []string{"tableInPlanner"},
+										Sizes:    []int{MaxRetainSize},
 									}.Init(),
 								},
 							},
@@ -1259,6 +1260,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											},
 										},
 										Emitters: []string{"tableInPlanner"},
+										Sizes:    []int{MaxRetainSize},
 									}.Init(),
 								},
 							},
@@ -1353,6 +1355,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											},
 										},
 										Emitters: []string{"tableInPlanner"},
+										Sizes:    []int{MaxRetainSize},
 									}.Init(),
 								},
 							},
@@ -1528,6 +1531,7 @@ func Test_createLogicalPlan(t *testing.T) {
 											},
 										},
 										Emitters: []string{"tableInPlanner"},
+										Sizes:    []int{MaxRetainSize},
 									}.Init(),
 								},
 							},
@@ -2742,30 +2746,28 @@ func Test_createLogicalPlan(t *testing.T) {
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 
-	for i, tt := range tests {
-		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
-		if err != nil {
-			t.Errorf("%d. %q: error compile sql: %s\n", i, tt.sql, err)
-			continue
-		}
-		p, err := createLogicalPlan(stmt, &def.RuleOption{
-			IsEventTime:        false,
-			LateTol:            0,
-			Concurrency:        0,
-			BufferLength:       0,
-			SendMetaToSink:     false,
-			Qos:                0,
-			CheckpointInterval: 0,
-			SendError:          true,
-		}, kv)
-		if !reflect.DeepEqual(tt.err, testx.Errstring(err)) {
-			t.Errorf("%d. %v: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.sql, tt.err, err)
-		} else {
-			ok := assert.Equal(t, tt.p, p, "%d plan mismatch %s", i)
-			if !ok {
-				t.Errorf("%d. %q\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, render.AsCode(tt.p), render.AsCode(p))
+	for _, tt := range tests {
+		t.Run(tt.sql, func(t *testing.T) {
+			stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
+			if !assert.NoError(t, err) {
+				return
 			}
-		}
+			p, err := createLogicalPlan(stmt, &def.RuleOption{
+				IsEventTime:        false,
+				LateTol:            0,
+				Concurrency:        0,
+				BufferLength:       0,
+				SendMetaToSink:     false,
+				Qos:                0,
+				CheckpointInterval: 0,
+				SendError:          true,
+			}, kv)
+			if tt.err != "" {
+				assert.EqualError(t, err, tt.err)
+			} else {
+				assert.Equal(t, tt.p, p)
+			}
+		})
 	}
 }
 
@@ -3383,6 +3385,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 											},
 										},
 										Emitters: []string{"tableInPlanner"},
+										Sizes:    []int{MaxRetainSize},
 									}.Init(),
 								},
 							},
@@ -3474,6 +3477,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 											},
 										},
 										Emitters: []string{"tableInPlanner"},
+										Sizes:    []int{MaxRetainSize},
 									}.Init(),
 								},
 							},
@@ -3643,6 +3647,7 @@ func Test_createLogicalPlanSchemaless(t *testing.T) {
 											},
 										},
 										Emitters: []string{"tableInPlanner"},
+										Sizes:    []int{MaxRetainSize},
 									}.Init(),
 								},
 							},
