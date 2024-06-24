@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pingcap/failpoint"
@@ -30,6 +31,7 @@ import (
 	"github.com/lf-edge/ekuiper/pkg/api"
 	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/hidden"
+	"github.com/lf-edge/ekuiper/pkg/store"
 )
 
 type sqlConConfig struct {
@@ -144,6 +146,8 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 				}
 
 				scanIntoMap(data, columns, cols)
+				data = m.refactorTimeData(data)
+				m.Query.GetIndexValue()
 				m.Query.UpdateMaxIndexValue(data)
 				consumer <- api.NewDefaultSourceTupleWithTime(data, nil, rcvTime)
 				rcvTime = conf.GetNow()
@@ -152,6 +156,32 @@ func (m *sqlsource) Open(ctx api.StreamContext, consumer chan<- api.SourceTuple,
 			return
 		}
 	}
+}
+
+func (m *sqlsource) refactorTimeData(data map[string]interface{}) map[string]interface{} {
+	if m.Query.GetIndexValue() == nil {
+		return data
+	}
+	s, ok := m.Query.GetIndexValue().(*store.IndexFieldStore)
+	if !ok {
+		return data
+	}
+	for key, value := range data {
+		valueTime, ok := value.(time.Time)
+		if ok {
+			indexField, ok := s.IndexFieldValueMap[key]
+			if ok {
+				if strings.ToLower(indexField.IndexFieldDataType) == "datetime" && len(indexField.IndexFieldDateTimeFormat) > 0 {
+					ft := cast.FixedLayoutTime{
+						T:      valueTime,
+						Layout: indexField.IndexFieldDateTimeFormat,
+					}
+					data[key] = ft
+				}
+			}
+		}
+	}
+	return data
 }
 
 func (m *sqlsource) GetOffset() (interface{}, error) {

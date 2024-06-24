@@ -120,6 +120,8 @@ func InterfaceToTime(i interface{}, format string) (time.Time, error) {
 		return t, nil
 	case string:
 		return ParseTime(t, format)
+	case FixedLayoutTime:
+		return t.T, nil
 	default:
 		return time.Now(), fmt.Errorf("unsupported type to convert to timestamp %v", t)
 	}

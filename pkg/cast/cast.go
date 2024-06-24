@@ -15,11 +15,14 @@
 package cast
 
 import (
+	"bytes"
 	"encoding/base64"
+	"encoding/gob"
 	"fmt"
 	"reflect"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -1185,4 +1188,26 @@ func ToType(value interface{}, newType interface{}) (interface{}, bool) {
 	} else {
 		return fmt.Errorf("expect string type for type parameter"), false
 	}
+}
+
+func init() {
+	gob.Register(time.Time{})
+	gob.Register(FixedLayoutTime{})
+}
+
+type FixedLayoutTime struct {
+	T      time.Time
+	Layout string
+}
+
+func (ft FixedLayoutTime) MarshalJSON() ([]byte, error) {
+	bs := bytes.NewBufferString(`"`)
+	if len(ft.Layout) < 1 {
+		bs.WriteString(ft.T.String())
+	} else {
+		l, _ := convertFormat(ft.Layout)
+		bs.WriteString(ft.T.Format(l))
+	}
+	bs.WriteString(`"`)
+	return bs.Bytes(), nil
 }
