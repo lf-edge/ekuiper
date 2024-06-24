@@ -35,23 +35,87 @@ func TestSQLSink(t *testing.T) {
 	}()
 	tableName := "t"
 	dburl := fmt.Sprintf("mysql://root:@%v:%v/test", address, port)
-	sqlSink := &SQLSinkConnector{}
-	require.NoError(t, sqlSink.Provision(ctx, map[string]interface{}{
-		"dburl": dburl,
-		"table": tableName,
-	}))
-	require.NoError(t, sqlSink.Connect(ctx))
-	require.NoError(t, sqlSink.collect(ctx, map[string]interface{}{
-		"a": 2,
-		"b": 2,
-	}))
-	rows, err := sqlSink.conn.GetDB().Query("select a,b from t where a = 2 and b = 2")
-	require.NoError(t, err)
-	for rows.Next() {
-		var a int
-		var b int
-		require.NoError(t, rows.Scan(&a, &b))
-		require.Equal(t, 2, a)
-		require.Equal(t, 2, a)
+	testcases := []struct {
+		props map[string]any
+		data  map[string]any
+		a     int
+		b     int
+	}{
+		{
+			props: map[string]interface{}{
+				"dburl": dburl,
+				"table": tableName,
+			},
+			data: map[string]any{
+				"a": 2,
+				"b": 2,
+			},
+			a: 2,
+			b: 2,
+		},
+		{
+			props: map[string]interface{}{
+				"dburl":  dburl,
+				"table":  tableName,
+				"fields": []string{"a", "b"},
+			},
+			data: map[string]any{
+				"a": 3,
+				"b": 3,
+				"c": 3,
+			},
+			a: 3,
+			b: 3,
+		},
+		{
+			props: map[string]interface{}{
+				"dburl":        dburl,
+				"table":        tableName,
+				"fields":       []string{"a", "b"},
+				"rowKindField": "action",
+				"keyField":     "a",
+			},
+			data: map[string]any{
+				"a":      4,
+				"b":      4,
+				"c":      4,
+				"action": "insert",
+			},
+			a: 4,
+			b: 4,
+		},
 	}
+	for _, tc := range testcases {
+		sqlSink := &SQLSinkConnector{}
+		require.NoError(t, sqlSink.Provision(ctx, tc.props))
+		require.NoError(t, sqlSink.Connect(ctx))
+		require.NoError(t, sqlSink.collect(ctx, tc.data))
+		rows, err := sqlSink.conn.GetDB().Query(fmt.Sprintf("select a,b from t where a = %v and b = %v", tc.a, tc.b))
+		require.NoError(t, err)
+		count := 0
+		for rows.Next() {
+			count++
+			var a int
+			var b int
+			require.NoError(t, rows.Scan(&a, &b))
+			require.Equal(t, tc.a, a)
+			require.Equal(t, tc.b, b)
+		}
+		sqlSink.Close(ctx)
+		require.Equal(t, 1, count)
+	}
+}
+
+func TestSQLProvisionErr(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	sqlSink := &SQLSinkConnector{}
+	require.Error(t, sqlSink.Provision(ctx, map[string]interface{}{}))
+	require.Error(t, sqlSink.Provision(ctx, map[string]interface{}{
+		"dburl": "123",
+	}))
+	require.Error(t, sqlSink.Provision(ctx, map[string]interface{}{
+		"dburl":        "123",
+		"table":        "123",
+		"rowKindField": "123",
+	}))
 }

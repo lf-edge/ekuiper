@@ -129,7 +129,7 @@ func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 }
 
 func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple) (err error) {
-	return s.collect(ctx,item.ToMap())
+	return s.collect(ctx, item.ToMap())
 }
 
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
