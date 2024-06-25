@@ -105,7 +105,7 @@ func TestSQLSinkCollect(t *testing.T) {
 		require.Equal(t, 1, count)
 	}
 
-	// insert 4,4  5,5
+	// insert 5,5 6,6
 	sqlSink := &SQLSinkConnector{}
 	require.NoError(t, sqlSink.Provision(ctx, map[string]interface{}{
 		"dburl": dburl,
@@ -134,6 +134,41 @@ func TestSQLSinkCollect(t *testing.T) {
 	}
 	sqlSink.Close(ctx)
 	require.Equal(t, [][]int{{5, 5}, {6, 6}}, got)
+
+	// insert 7,7 8,8
+	sqlSink = &SQLSinkConnector{}
+	require.NoError(t, sqlSink.Provision(ctx, map[string]interface{}{
+		"dburl":        dburl,
+		"table":        tableName,
+		"rowKindField": "action",
+		"keyField":     "a",
+		"fields":       []string{"a", "b"},
+	}))
+	require.NoError(t, sqlSink.Connect(ctx))
+	require.NoError(t, sqlSink.collectList(ctx, []map[string]any{
+		{
+			"a":      7,
+			"b":      7,
+			"action": "insert",
+		},
+		{
+			"a":      8,
+			"b":      8,
+			"action": "insert",
+		},
+	}))
+
+	got = [][]int{}
+	rows, err = sqlSink.conn.GetDB().Query("select a,b from t where a >=7 and b >=7")
+	require.NoError(t, err)
+	for rows.Next() {
+		var a int
+		var b int
+		require.NoError(t, rows.Scan(&a, &b))
+		got = append(got, []int{a, b})
+	}
+	sqlSink.Close(ctx)
+	require.Equal(t, [][]int{{7, 7}, {8, 8}}, got)
 }
 
 func TestSQLProvisionErr(t *testing.T) {
@@ -184,4 +219,15 @@ func TestSQLSinkConfigKV(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []string{"a"}, keys)
 	require.Equal(t, []string{"'value'"}, values)
+}
+
+func TestSQLSinkCollectEmpty(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	sqlSink := &SQLSinkConnector{}
+	require.NoError(t, sqlSink.Provision(ctx, map[string]interface{}{
+		"dburl": "123",
+		"table": "123",
+	}))
+	require.NoError(t, sqlSink.collect(ctx, nil))
+	require.NoError(t, sqlSink.collectList(ctx, nil))
 }
