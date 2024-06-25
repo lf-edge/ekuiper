@@ -221,13 +221,63 @@ func TestSQLSinkConfigKV(t *testing.T) {
 	require.Equal(t, []string{"'value'"}, values)
 }
 
-func TestSQLSinkCollectEmpty(t *testing.T) {
+func TestSQLSinkAction(t *testing.T) {
+	connection.InitConnectionManager4Test()
 	ctx := mockContext.NewMockContext("1", "2")
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer func() {
+		s.Close()
+	}()
+	tableName := "t"
+	dburl := fmt.Sprintf("mysql://root:@%v:%v/test", address, port)
 	sqlSink := &SQLSinkConnector{}
 	require.NoError(t, sqlSink.Provision(ctx, map[string]interface{}{
-		"dburl": "123",
-		"table": "123",
+		"dburl":        dburl,
+		"table":        tableName,
+		"fields":       []string{"a", "b"},
+		"rowKindField": "action",
+		"keyField":     "a",
 	}))
-	require.NoError(t, sqlSink.collect(ctx, nil))
-	require.NoError(t, sqlSink.collectList(ctx, nil))
+	require.NoError(t, sqlSink.Connect(ctx))
+	// update
+	require.NoError(t, sqlSink.collect(ctx, map[string]any{
+		"a":      1,
+		"b":      2,
+		"action": "update",
+	}))
+	got := [][]int{}
+	rows, err := sqlSink.conn.GetDB().Query("select a,b from t where a=1")
+	require.NoError(t, err)
+	for rows.Next() {
+		var a int
+		var b int
+		require.NoError(t, rows.Scan(&a, &b))
+		got = append(got, []int{a, b})
+	}
+	require.Equal(t, [][]int{{1, 2}}, got)
+	// delete
+	require.NoError(t, sqlSink.collect(ctx, map[string]any{
+		"a":      1,
+		"b":      2,
+		"action": "delete",
+	}))
+	got = [][]int{}
+	rows, err = sqlSink.conn.GetDB().Query("select a,b from t where a=1")
+	require.NoError(t, err)
+	for rows.Next() {
+		var a int
+		var b int
+		require.NoError(t, rows.Scan(&a, &b))
+		got = append(got, []int{a, b})
+	}
+	require.Equal(t, [][]int{}, got)
+
+	// invalid
+	require.Error(t, sqlSink.collect(ctx, map[string]any{
+		"a":      1,
+		"b":      2,
+		"action": "mock",
+	}))
+	require.NoError(t, sqlSink.Close(ctx))
 }
