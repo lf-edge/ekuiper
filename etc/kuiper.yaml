@@ -64,6 +64,7 @@ basic:
   gracefulShutdownTimeout: 3s
   connection:
     backoffMaxElapsedDuration: 3m
+  enableResourceProfiling: true
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:

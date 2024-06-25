@@ -15,6 +15,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -86,10 +87,10 @@ func TestHandleScheduleRule(t *testing.T) {
 }
 
 func TestRunScheduleRuleChecker(t *testing.T) {
-	exit := make(chan struct{})
-	go runScheduleRuleCheckerByInterval(3*time.Second, exit)
+	ctx, cancel := context.WithCancel(context.Background())
+	go runScheduleRuleCheckerByInterval(3*time.Second, ctx)
 	time.Sleep(1 * time.Second)
-	exit <- struct{}{}
+	cancel()
 }
 
 func TestHandleScheduleRuleState(t *testing.T) {
