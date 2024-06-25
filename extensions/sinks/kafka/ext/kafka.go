@@ -114,9 +114,10 @@ func (m *kafkaSink) buildKafkaWriter() error {
 	}
 	brokers := strings.Split(m.c.Brokers, ",")
 	w := &kafkago.Writer{
-		Addr:                   kafkago.TCP(brokers...),
-		Topic:                  m.c.Topic,
-		Balancer:               &kafkago.LeastBytes{},
+		Addr:  kafkago.TCP(brokers...),
+		Topic: m.c.Topic,
+		// kafka java-client default balancer
+		Balancer:               &kafkago.Murmur2Balancer{},
 		Async:                  false,
 		AllowAutoTopicCreation: true,
 		MaxAttempts:            m.kc.MaxAttempts,
