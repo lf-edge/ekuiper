@@ -29,7 +29,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -204,12 +203,8 @@ func CompareMetrics(tp *topo.Topo, m map[string]interface{}) (err error) {
 }
 
 func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int, wait int) {
-	// Send data and move time
-	mockClock := mockclock.GetMockClock()
-	// Set the current time
-	mockClock.Add(0)
 	// TODO assume multiple data source send the data in order and has the same length
-	mockClock.Set(datas[0][0].Timestamp.Add(-time.Second))
+	conf.Log.Infof("Send clock init to %d", timex.GetNowInMilli())
 	for i := 0; i < dataLength; i++ {
 		// wait for table to load
 		time.Sleep(100 * time.Millisecond)
@@ -221,8 +216,8 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 				if d[i].Timestamp.Before(n) {
 					n = d[i].Timestamp
 				}
-				mockClock.Set(n)
-				conf.Log.Debugf("Clock set to %d", timex.GetNowInMilli())
+				timex.Set(n.UnixMilli())
+				conf.Log.Infof("Clock set to %d", timex.GetNowInMilli())
 				time.Sleep(1 * time.Millisecond)
 			}
 			select {
@@ -232,13 +227,12 @@ func sendData(dataLength int, datas [][]*xsql.Tuple, tp *topo.Topo, postleap int
 			}
 		}
 	}
-	mockClock.Add(time.Duration(postleap) * time.Millisecond)
-	conf.Log.Debugf("Clock add to %d", timex.GetNowInMilli())
+	timex.Add(time.Duration(postleap) * time.Millisecond)
+	conf.Log.Infof("Clock add to %d", timex.GetNowInMilli())
 }
 
 // create a test rule with memory sink
 func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) ([][]*xsql.Tuple, int, *topo.Topo, <-chan error) {
-	mockclock.ResetClock(1541152486000)
 	// Create stream
 	var (
 		datas      [][]*xsql.Tuple
@@ -262,6 +256,11 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) (
 				datas = append(datas, data)
 			}
 		}
+	}
+	startTs := datas[0][0].Timestamp.UnixMilli() / 1000 * 1000
+	for startTs != timex.GetNowInMilli() {
+		timex.Set(startTs)
+		conf.Log.Infof("Init Clock to %d, and now is %d", startTs, timex.GetNowInMilli())
 	}
 	rule := &def.Rule{
 		Id:  id,
@@ -414,5 +413,124 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 		if err != nil {
 			t.Log(err)
 		}
+	}
+}
+
+type RuleCheckpointTest struct {
+	RuleTest
+	PauseSize int // Stop stream after sending pauseSize source to test checkpoint resume
+	Cc        int // checkpoint count when paused
+	// PauseMetric map[string]interface{} // The metric to check when paused
+}
+
+func DoCheckpointRuleTest(t *testing.T, tests []RuleCheckpointTest, opt *def.RuleOption, w int) {
+	fmt.Printf("The test bucket for option %d size is %d.\n\n", w, len(tests))
+	for i, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			id := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "#", "_"), "/", "_")
+			conf.Log.Debugf("run test %s", id)
+			// Create the rule which sink to memory topic
+			datas, dataLength, tp, _ := createTestRule(t, id, tt.RuleTest, opt)
+			if tp == nil {
+				t.Errorf("topo is not created successfully")
+				return
+			}
+			// Send data with leaps
+			wait := tt.W
+			if wait == 0 {
+				if w > 0 {
+					wait = w
+				} else {
+					wait = 5
+				}
+			}
+			switch opt.Qos {
+			case def.ExactlyOnce:
+				wait *= 10
+			case def.AtLeastOnce:
+				wait *= 3
+			default:
+				// do nothing
+			}
+			var retry int
+			if opt.Qos > def.AtMostOnce {
+				for retry = 3; retry > 0; retry-- {
+					if tp.GetCoordinator() == nil || !tp.GetCoordinator().IsActivated() {
+						conf.Log.Debugf("waiting for coordinator ready %d\n", retry)
+						time.Sleep(10 * time.Millisecond)
+					} else {
+						break
+					}
+				}
+				if retry < 0 {
+					t.Error("coordinator timeout")
+					t.FailNow()
+				}
+			}
+			// Send async
+			go sendData(tt.PauseSize, datas, tp, 100, wait)
+			conf.Log.Debugf("Send first phase data done at %d", timex.GetNowInMilli())
+			// compare checkpoint count
+			time.Sleep(1 * time.Second)
+			for retry = 10; retry > 0; retry-- {
+				actual := tp.GetCoordinator().GetCompleteCount()
+				if tt.Cc == actual {
+					break
+				}
+				conf.Log.Debugf("check checkpointCount error at %d: %d\n", retry, actual)
+				time.Sleep(500 * time.Millisecond)
+			}
+			cc := tp.GetCoordinator().GetCompleteCount()
+			tp.Cancel()
+			if retry == 0 {
+				t.Errorf("%d-%d. checkpoint count\n\nresult mismatch:\n\nexp=%#v\n\ngot=%d\n\n", i, w, tt.Cc, cc)
+				return
+			} else if retry < 3 {
+				conf.Log.Debugf("try %d for checkpoint count\n", 4-retry)
+			}
+			time.Sleep(10 * time.Millisecond)
+			// resume stream
+			conf.Log.Debugf("Resume stream at %d", timex.GetNowInMilli())
+			errCh := tp.Open()
+			conf.Log.Debugf("After open stream at %d", timex.GetNowInMilli())
+			go sendData(dataLength-tt.PauseSize, [][]*xsql.Tuple{datas[0][tt.PauseSize:]}, tp, POSTLEAP, 10)
+			// Receive data
+			limit := len(tt.R)
+			consumer := pubsub.CreateSub(id, nil, id, limit)
+			conf.Log.Debugf("test create memory sub %s", id)
+			ticker := time.After(1000 * time.Second)
+			sinkResult := make([]any, 0, limit)
+		outerloop:
+			for {
+				select {
+				case <-errCh:
+					conf.Log.Debugf("test %s receive error signal", id)
+					tp.Cancel()
+					break outerloop
+				case tuple := <-consumer:
+					sinkResult = append(sinkResult, tuple)
+					conf.Log.Debugf("test %s append result %v", id, tuple)
+				case <-ticker:
+					tp.Cancel()
+					assert.Fail(t, "timeout")
+					break outerloop
+				}
+			}
+		outloop:
+			for {
+				// Receive the last will if any
+				select {
+				case tuple := <-consumer:
+					sinkResult = append(sinkResult, tuple)
+					conf.Log.Debugf("test %s append result %v", id, tuple)
+				default:
+					break outloop
+				}
+			}
+			conf.Log.Debugf("test %s receive %d result", id, len(sinkResult))
+			assert.Equal(t, tt.R, CommonResultFunc(sinkResult))
+			err := CompareMetrics(tp, tt.M)
+			assert.NoError(t, err)
+		})
 	}
 }
