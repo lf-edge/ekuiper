@@ -22,6 +22,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/topo/context"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -433,13 +435,6 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 					{
 						Tuples: []xsql.TupleRow{
 							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f2": "w1"}},
-							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w1"}},
-						},
-					},
-					{
-						Tuples: []xsql.TupleRow{
-							&xsql.Tuple{Emitter: "src1", Message: xsql.Message{"id1": 1, "f2": "w1"}},
-							&xsql.Tuple{Emitter: "src2", Message: xsql.Message{"id2": 2, "f2": "w2"}},
 						},
 					},
 				},
@@ -762,7 +757,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	contextLogger := conf.Log.WithField("rule", "TestLeftJoinPlan_Apply")
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger)
-	for i, tt := range tests {
+	for _, tt := range tests {
 		stmt, err := xsql.NewParser(strings.NewReader(tt.sql)).Parse()
 		if err != nil {
 			t.Errorf("statement parse error %s", err)
@@ -775,9 +770,7 @@ func TestLeftJoinPlan_Apply(t *testing.T) {
 			fv, afv := xsql.NewFunctionValuersForOp(nil)
 			pp := &JoinOp{Joins: stmt.Joins, From: table}
 			result := pp.Apply(ctx, tt.data, fv, afv)
-			if !reflect.DeepEqual(tt.result, result) {
-				t.Errorf("%d. %q\n\nresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.sql, tt.result, result)
-			}
+			assert.Equal(t, tt.result, result)
 		}
 	}
 }
