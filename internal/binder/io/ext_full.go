@@ -16,6 +16,11 @@
 
 package io
 
+import (
+	"github.com/lf-edge/ekuiper/v2/internal/io/sql"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+)
+
 func init() {
 	//modules.RegisterSource("random", func() api.Source { return random.GetSource() })
 	//modules.RegisterSource("video", func() api.Source { return video.GetSource() })
@@ -31,4 +36,6 @@ func init() {
 	// sinks["tdengine"] = func() api.Sink { return tdengine.GetSink() }
 	// sinks["zmq"] = func() api.Sink { return zmqSink.GetSink() }
 	// sources["zmq"] = func() api.Source { return zmq.GetSource() }
+	modules.RegisterSource("sql", sql.GetSource)
+	modules.RegisterSink("sql", sql.GetSink)
 }
