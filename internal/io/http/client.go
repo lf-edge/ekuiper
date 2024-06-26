@@ -32,62 +32,32 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
-	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 // ClientConf is the configuration for http client
 // It is shared by httppull source and rest sink to configure their http client
 type ClientConf struct {
-	config            *RawConf
-	accessConf        *AccessTokenConf
-	refreshConf       *RefreshTokenConf
-	tokenLastUpdateAt time.Time
-
-	tokens map[string]interface{}
-	client *http.Client
-
+	config       *RawConf
+	client       *http.Client
 	compressor   message.Compressor   // compressor used to payload compression when specifies compressAlgorithm
 	decompressor message.Decompressor // decompressor used to payload decompression when specifies compressAlgorithm
 }
 
 type RawConf struct {
-	Url       string      `json:"url"`
-	Method    string      `json:"method"`
-	Body      string      `json:"body"`
-	BodyType  string      `json:"bodyType"`
-	Headers   interface{} `json:"headers"`
-	Timeout   int         `json:"timeout"`
-	DebugResp bool        `json:"debugResp"`
+	Url      string            `json:"url"`
+	Method   string            `json:"method"`
+	Body     string            `json:"body"`
+	BodyType string            `json:"bodyType"`
+	Headers  map[string]string `json:"headers"`
+	Timeout  int               `json:"timeout"`
 	// Could be code or body
-	ResponseType string                            `json:"responseType"`
-	OAuth        map[string]map[string]interface{} `json:"oauth"`
-	// source specific properties
-	ResendUrl string `json:"resendDestination"`
-	// sink specific properties
-	SendSingle bool `json:"sendSingle"`
-	// inferred properties
-	HeadersTemplate string
-	HeadersMap      map[string]string
-	Compression     string `json:"compression"` // Compression specifies the algorithms used to payload compression
+	ResponseType string `json:"responseType"`
+	Compression  string `json:"compression"` // Compression specifies the algorithms used to payload compression
 }
 
 const (
-	DefaultInterval = 10000
-	DefaultTimeout  = 5000
+	DefaultTimeout = 5000
 )
-
-type AccessTokenConf struct {
-	Url            string `json:"url"`
-	Body           string `json:"body"`
-	Expire         string `json:"expire"`
-	ExpireInSecond int
-}
-
-type RefreshTokenConf struct {
-	Url     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
-	Body    string            `json:"body"`
-}
 
 type bodyResp struct {
 	Code int `json:"code"`
@@ -154,64 +124,16 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	if err != nil {
 		return err
 	}
-	if c.Headers != nil {
-		switch h := c.Headers.(type) {
-		case map[string]interface{}:
-			c.HeadersMap = make(map[string]string, len(h))
-			for k, v := range h {
-				c.HeadersMap[k] = v.(string)
-			}
-		case string:
-			c.HeadersTemplate = h
-		default:
-			return fmt.Errorf("headers must be a map or a string")
-		}
-	}
 	tlscfg, err := cert.GenTLSConfig(props, "http")
 	if err != nil {
 		return err
 	}
-	// validate oAuth. In order to adapt to manager, the validation is closed to allow empty value
-	if c.OAuth != nil {
-		// validate access token
-		if ap, ok := c.OAuth["access"]; ok {
-			accessConf := &AccessTokenConf{}
-			if err := cast.MapToStruct(ap, accessConf); err != nil {
-				return fmt.Errorf("fail to parse the access properties of oAuth: %v", err)
-			}
-			if accessConf.Url == "" {
-				conf.Log.Warnf("access token url is not set, so ignored the oauth setting")
-				c.OAuth = nil
-			} else {
-				// expire time will update every time when access token is refreshed if expired is set
-				cc.accessConf = accessConf
-			}
-		} else {
-			return fmt.Errorf("if setting oAuth, `access` property is required")
-		}
-		// validate refresh token, it is optional
-		if rp, ok := c.OAuth["refresh"]; ok {
-			refreshConf := &RefreshTokenConf{}
-			if err := cast.MapToStruct(rp, refreshConf); err != nil {
-				return fmt.Errorf("fail to parse the refresh token properties: %v", err)
-			}
-			if refreshConf.Url == "" {
-				conf.Log.Warnf("refresh token url is not set, so ignored the refresh setting")
-				delete(c.OAuth, "refresh")
-			} else {
-				cc.refreshConf = refreshConf
-			}
-		}
-	}
-
 	tr := newTransport(tlscfg, conf.Log)
-
 	cc.client = &http.Client{
 		Transport: tr,
 		Timeout:   time.Duration(c.Timeout) * time.Millisecond,
 	}
 	cc.config = c
-
 	// that means payload need compression and decompression, so we need initialize compressor and decompressor
 	if c.Compression != "" {
 		cc.compressor, err = compressor.GetCompressor(c.Compression)
@@ -224,111 +146,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 			return fmt.Errorf("init payload decompressor failed, %w", err)
 		}
 	}
-
-	// try to get access token
-	if cc.accessConf != nil {
-		conf.Log.Infof("Try to get access token from %s", cc.accessConf.Url)
-		ctx := mockContext.NewMockContext("none", "httppull_init")
-		cc.tokens = make(map[string]interface{})
-		err := cc.auth(ctx)
-		if err != nil {
-			return fmt.Errorf("fail to authorize by oAuth: %v", err)
-		}
-	}
-
-	if cc.config.ResendUrl == "" {
-		cc.config.ResendUrl = cc.config.Url
-	}
-
 	return nil
-}
-
-// initialize the oAuth access token
-func (cc *ClientConf) auth(ctx api.StreamContext) error {
-	// send authentication request and authentication request no need to compress
-	resp, err := httpx.Send(ctx.GetLogger(), cc.client, "json", http.MethodPost, cc.accessConf.Url, nil, true, httpx.WithBody(cc.accessConf.Body, "json", true, nil, httpx.EmptyCompressorAlgorithm))
-	if err != nil {
-		return fmt.Errorf("fail to get access token: %v", err)
-	}
-	conf.Log.Infof("try to get access token got response %v", resp)
-	tokens, _, e := cc.parseResponse(ctx, resp, true, true)
-	if e != nil {
-		return fmt.Errorf("Cannot parse access token response to json: %v", e)
-	}
-	cc.tokens = tokens[0]
-	ctx.GetLogger().Infof("Got access token %v", cc.tokens)
-	expireIn, err := ctx.ParseTemplate(cc.accessConf.Expire, cc.tokens)
-	if err != nil {
-		return fmt.Errorf("fail to parse the expire time for access token: %v", err)
-	}
-	cc.accessConf.ExpireInSecond, err = cast.ToInt(expireIn, cast.CONVERT_ALL)
-	if err != nil {
-		return fmt.Errorf("fail to covert the expire time %s for access token: %v", expireIn, err)
-	}
-	if cc.refreshConf != nil {
-		err := cc.refresh(ctx)
-		if err != nil {
-			return err
-		}
-	} else {
-		cc.tokenLastUpdateAt = time.Now()
-	}
-	return nil
-}
-
-func (cc *ClientConf) refresh(ctx api.StreamContext) error {
-	if cc.refreshConf != nil {
-		headers := make(map[string]string, len(cc.refreshConf.Headers))
-		var err error
-		for k, v := range cc.refreshConf.Headers {
-			headers[k], err = ctx.ParseTemplate(v, cc.tokens)
-			if err != nil {
-				return fmt.Errorf("fail to parse the header for refresh token request %s: %v", k, err)
-			}
-		}
-		resp, err := httpx.Send(ctx.GetLogger(), cc.client, "json", http.MethodPost, cc.refreshConf.Url, headers, true, httpx.WithBody(cc.accessConf.Body, "json", true, nil, httpx.EmptyCompressorAlgorithm))
-		if err != nil {
-			return fmt.Errorf("fail to get refresh token: %v", err)
-		}
-		nt, _, err := cc.parseResponse(ctx, resp, true, true)
-		if err != nil {
-			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
-		}
-		for k, v := range nt[0] {
-			if v != nil {
-				cc.tokens[k] = v
-			}
-		}
-		cc.tokenLastUpdateAt = time.Now()
-		return nil
-	} else if cc.accessConf != nil {
-		return cc.auth(ctx)
-	} else {
-		return fmt.Errorf("no oAuth config")
-	}
-}
-
-func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data interface{}) (map[string]string, error) {
-	headers := make(map[string]string)
-	var err error
-	if cc.config.HeadersMap != nil {
-		for k, v := range cc.config.HeadersMap {
-			headers[k], err = ctx.ParseTemplate(v, data)
-			if err != nil {
-				return nil, fmt.Errorf("fail to parse the header entry %s: %v", k, err)
-			}
-		}
-	} else if cc.config.HeadersTemplate != "" {
-		tstr, err := ctx.ParseTemplate(cc.config.HeadersTemplate, data)
-		if err != nil {
-			return nil, fmt.Errorf("fail to parse the header template %s: %v", cc.config.HeadersTemplate, err)
-		}
-		err = json.Unmarshal(cast.StringToBytes(tstr), &headers)
-		if err != nil {
-			return nil, fmt.Errorf("parsed header template is not json: %s", tstr)
-		}
-	}
-	return headers, nil
 }
 
 const (

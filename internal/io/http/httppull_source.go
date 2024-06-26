@@ -52,40 +52,14 @@ func (hps *HttpPullSource) Provision(ctx api.StreamContext, configs map[string]a
 	if err := cast.MapToStruct(configs, pc); err != nil {
 		return err
 	}
+	if hps.ClientConf == nil {
+		hps.ClientConf = &ClientConf{}
+	}
 	return hps.InitConf(pc.Path, configs)
 }
 
 func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, error) {
-	// Parse body which may contain dynamic time range and tokens, so merge them
-	var tempProps map[string]any
-	if hps.tokens != nil {
-		tempProps = hps.tokens
-	} else {
-		tempProps = make(map[string]any)
-	}
-	url, err := ctx.ParseTemplate(hps.config.Url, tempProps)
-	if err != nil {
-		return nil, err
-	}
-
-	// check oAuth token expiration
-	if hps.accessConf != nil && hps.accessConf.ExpireInSecond > 0 &&
-		int(time.Now().Sub(hps.tokenLastUpdateAt).Abs().Seconds()) >= hps.accessConf.ExpireInSecond {
-		ctx.GetLogger().Debugf("Refreshing token for HTTP pull")
-		if err := hps.refresh(ctx); err != nil {
-			ctx.GetLogger().Warnf("Refresh HTTP pull token error: %v", err)
-		}
-	}
-	headers, err := hps.parseHeaders(ctx, tempProps)
-	if err != nil {
-		return nil, err
-	}
-	body, err := ctx.ParseTemplate(hps.config.Body, tempProps)
-	if err != nil {
-		return nil, err
-	}
-	ctx.GetLogger().Debugf("httppull source sending request url: %s, headers: %v, body %s", url, headers, hps.config.Body)
-	resp, err := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, url, headers, true, []byte(body))
+	resp, err := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, hps.config.Url, hps.config.Headers, true, []byte(hps.config.Body))
 	if err != nil {
 		return nil, err
 	}

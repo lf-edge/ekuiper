@@ -15,100 +15,97 @@
 package http
 
 import (
-	"fmt"
-	"reflect"
 	"testing"
 
-	mockContext "github.com/lf-edge/ekuiper/pkg/mock/context"
+	"github.com/stretchr/testify/require"
 )
 
-func TestHeaderConf(t *testing.T) {
-	tests := []struct {
-		name    string
-		data    map[string]interface{}
-		props   map[string]interface{}
-		err     error
-		headers map[string]string
-	}{
-		{
-			name: "template",
-			data: map[string]interface{}{
-				"id":          1234,
-				"temperature": 20,
-			},
-			props: map[string]interface{}{
-				"url":     "http://localhost:9090/",
-				"headers": "{\"custom\":\"{{.id}}\",\"sourceCode\":\"1090\",\"serviceCode\":\"1090109107\" }",
-			},
-			headers: map[string]string{
-				"custom":      "1234",
-				"sourceCode":  "1090",
-				"serviceCode": "1090109107",
-			},
-		},
-		{
-			name: "wrong template",
-			data: map[string]interface{}{
-				"id":          1234,
-				"temperature": 20,
-			},
-			props: map[string]interface{}{
-				"url":     "http://localhost:9090/",
-				"headers": "{\"custom\":\"{{{.idd}}\",\"sourceCode\":\"1090\",\"serviceCode\":\"1090109107\" }",
-			},
-			err: fmt.Errorf("fail to parse the header template {\"custom\":\"{{{.idd}}\",\"sourceCode\":\"1090\",\"serviceCode\":\"1090109107\" }: Template Invalid: template: sink:1: unexpected \"{\" in command"),
-		},
-		{
-			name: "wrong parsed template",
-			data: map[string]interface{}{
-				"id":          1234,
-				"temperature": 20,
-			},
-			props: map[string]interface{}{
-				"url":     "http://localhost:9090/",
-				"headers": "{{.id}}",
-			},
-			err: fmt.Errorf("parsed header template is not json: 1234"),
-		},
-		{
-			name: "wrong header entry template",
-			data: map[string]interface{}{
-				"id":          1234,
-				"temperature": 20,
-			},
-			props: map[string]interface{}{
-				"url": "http://localhost:9090/",
-				"headers": map[string]interface{}{
-					"custom": "{{{.id}}",
-				},
-			},
-			err: fmt.Errorf("fail to parse the header entry custom: Template Invalid: template: sink:1: unexpected \"{\" in command"),
-		},
+func TestInitConf(t *testing.T) {
+	m := map[string]interface{}{}
+	c := &ClientConf{}
+	require.NoError(t, c.InitConf("", m))
+	m = map[string]interface{}{
+		"url": "",
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-	ctx := mockContext.NewMockContext("none", "httppull_init")
-	for i, tt := range tests {
-		t.Run(fmt.Sprintf("Test %d: %s", i, tt.name), func(t *testing.T) {
-			r := &ClientConf{}
-			err := r.InitConf("", tt.props, WithCheckInterval(true))
-			if err != nil {
-				t.Errorf("Unexpected error: %v", err)
-				return
-			}
-			headers, err := r.parseHeaders(ctx, tt.data)
-			if err != nil {
-				if tt.err == nil {
-					t.Errorf("Expected error: %v", err)
-				} else {
-					if err.Error() != tt.err.Error() {
-						t.Errorf("Error mismatch\nexp\t%v\ngot\t%v", tt.err, err)
-					}
-				}
-				return
-			}
-			if !reflect.DeepEqual(headers, tt.headers) {
-				t.Errorf("Parsed headers mismatch\nexp\t%+v\ngot\t%+v", tt.headers, headers)
-			}
-		})
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"method": "123",
 	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"timeout": -1,
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"timeout": -1,
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"responseType": "mock",
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"method": "post",
+	}
+	c = &ClientConf{}
+	require.NoError(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"bodyType": "123",
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"url": "scae::",
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"compression": "zlib",
+	}
+	c = &ClientConf{}
+	require.NoError(t, c.InitConf("", m))
+
+	m = map[string]interface{}{
+		"compression": "mock",
+	}
+	c = &ClientConf{}
+	require.Error(t, c.InitConf("", m))
 }
+
+//func TestInitConf2(t *testing.T) {
+//	testcases := []struct {
+//		props  map[string]interface{}
+//		target *RawConf
+//	}{
+//		{
+//			props: map[string]interface{}{
+//				"url":          "www.baidu.com",
+//				"method":       "post",
+//				"body":         "{}",
+//				"bodyType":     "json",
+//				"headers":      `{"a":"b"}`,
+//				"timeout":      5,
+//				"responseType": "code",
+//			},
+//			target: &RawConf{},
+//		},
+//	}
+//	for _, tc := range testcases {
+//		c := &ClientConf{}
+//		require.NoError(t, c.InitConf("", tc.props))
+//		require.Equal(t, tc.target, c)
+//	}
+//}
