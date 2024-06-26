@@ -367,14 +367,15 @@ func ParseConf(logger api.Logger, props map[string]any) (*SinkConf, error) {
 		return nil, fmt.Errorf("read properties %v fail with error: %v", props, err)
 	}
 	if sconf.Concurrency <= 0 {
-		logger.Warnf("invalid type for concurrency property, should be positive integer but found %d", sconf.Concurrency)
-		sconf.Concurrency = 1
+		return nil, fmt.Errorf("invalid type for concurrency property, should be positive integer but found %d", sconf.Concurrency)
+	}
+	if sconf.BufferLength <= 0 {
+		return nil, fmt.Errorf("invalid type for bufferLength property, should be positive integer but found %d", sconf.BufferLength)
 	}
 	if sconf.Format == "" {
 		sconf.Format = "json"
 	} else if sconf.Format != message.FormatJson && sconf.Format != message.FormatProtobuf && sconf.Format != message.FormatBinary && sconf.Format != message.FormatCustom && sconf.Format != message.FormatDelimited {
-		logger.Warnf("invalid type for format property, should be json protobuf or binary but found %s", sconf.Format)
-		sconf.Format = "json"
+		return nil, fmt.Errorf("invalid type for format property, should be json protobuf or binary but found %s", sconf.Format)
 	}
 	err = cast.MapToStruct(props, &sconf.SinkConf)
 	if err != nil {

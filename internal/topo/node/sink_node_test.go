@@ -341,7 +341,8 @@ func TestConfig(t *testing.T) {
 					CleanCacheAtStop:     false,
 				},
 			},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"enableCache":          true,
 				"memoryCacheThreshold": 2,
@@ -364,7 +365,8 @@ func TestConfig(t *testing.T) {
 					CleanCacheAtStop:     false,
 				},
 			},
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"enableCache":          true,
 				"memoryCacheThreshold": 256,
@@ -373,7 +375,8 @@ func TestConfig(t *testing.T) {
 				"resendInterval":       10,
 			},
 			err: errors.New("invalid cache properties: maxDiskCacheTooSmall:maxDiskCache must be greater than bufferPageSize"),
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"enableCache":          true,
 				"memoryCacheThreshold": 7,
@@ -383,7 +386,8 @@ func TestConfig(t *testing.T) {
 				"resendInterval":       10,
 			},
 			err: errors.New("invalid cache properties: memoryCacheThresholdNotMultiple:memoryCacheThreshold must be a multiple of bufferPageSize"),
-		}, {
+		},
+		{
 			config: map[string]interface{}{
 				"enableCache":          true,
 				"memoryCacheThreshold": 9,
@@ -393,6 +397,24 @@ func TestConfig(t *testing.T) {
 				"resendInterval":       10,
 			},
 			err: errors.New("invalid cache properties: maxDiskCacheNotMultiple:maxDiskCache must be a multiple of bufferPageSize"),
+		},
+		{
+			config: map[string]interface{}{
+				"concurrency": -1,
+			},
+			err: fmt.Errorf("invalid type for concurrency property, should be positive integer but found %d", -1),
+		},
+		{
+			config: map[string]interface{}{
+				"bufferLength": -1,
+			},
+			err: fmt.Errorf("invalid type for bufferLength property, should be positive integer but found %d", -1),
+		},
+		{
+			config: map[string]interface{}{
+				"format": "mock",
+			},
+			err: fmt.Errorf("invalid type for format property, should be json protobuf or binary but found %s", "mock"),
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
