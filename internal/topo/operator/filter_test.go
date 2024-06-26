@@ -52,12 +52,7 @@ func TestFilterPlan_Apply(t *testing.T) {
 					"a": int64(6),
 				},
 			},
-			result: &xsql.Tuple{
-				Emitter: "tbl",
-				Message: xsql.Message{
-					"a": int64(6),
-				},
-			},
+			result: nil,
 		},
 		{
 			sql: "SELECT * FROM tbl WHERE abc > def and abc <= ghi",
