@@ -22,7 +22,6 @@ import (
 	mqttCon "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
-	"github.com/lf-edge/ekuiper/v2/internal/io/sql"
 	sqlCon "github.com/lf-edge/ekuiper/v2/internal/io/sql/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
@@ -37,7 +36,6 @@ func init() {
 	modules.RegisterSource("neuron", neuron.GetSource)
 	// modules.RegisterSource("websocket", func() api.Source { return &websocket.WebsocketSource{} })
 	// modules.RegisterSource("simulator", func() api.Source { return &simulator.Source{} })
-	modules.RegisterSource("sql", sql.GetSource)
 
 	modules.RegisterSink("log", sink.NewLogSink)
 	modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)

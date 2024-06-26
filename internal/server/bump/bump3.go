@@ -24,7 +24,27 @@ import (
 )
 
 func bumpFrom2TO3() error {
+	rewriteSQLSinkConfiguration()
 	return rewriteSQLSourceConfiguration()
+}
+
+func rewriteSQLSinkConfiguration() error {
+	keyProps, err := conf.GetCfgFromKVStorage("sinks", "sql", "")
+	if err != nil {
+		return err
+	}
+	for key, props := range keyProps {
+		dbURLRaw, ok := props["url"]
+		if ok {
+			dbURL, ok := dbURLRaw.(string)
+			if ok {
+				props["dburl"] = dbURL
+				_, _, confKey, _ := extractKey(key)
+				conf.WriteCfgIntoKVStorage("sinks", "sql", confKey, props)
+			}
+		}
+	}
+	return nil
 }
 
 func rewriteSQLSourceConfiguration() error {
