@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -483,6 +483,11 @@ func (v *ValuerEval) Eval(expr ast.Expr) interface{} {
 	case *ast.ValueSetExpr:
 		return v.evalValueSet(expr)
 	case *ast.BetweenExpr:
+		lower := v.Eval(expr.Lower)
+		higher := v.Eval(expr.Higher)
+		if lower == nil || higher == nil {
+			return nil
+		}
 		return []interface{}{
 			v.Eval(expr.Lower), v.Eval(expr.Higher),
 		}
@@ -538,6 +543,9 @@ func (v *ValuerEval) evalBinaryExpr(expr *ast.BinaryExpr) interface{} {
 	}
 	switch expr.OP {
 	case ast.BETWEEN, ast.NOTBETWEEN:
+		if lhs == nil || rhs == nil {
+			return false
+		}
 		arr, ok := rhs.([]interface{})
 		if !ok {
 			return fmt.Errorf("between operator expects two arguments, but found %v", rhs)
@@ -656,7 +664,7 @@ func (v *ValuerEval) evalSetsExpr(lhs interface{}, op ast.Token, rhsSet interfac
 			}
 		}
 		if lhs == nil {
-			return nil
+			return false
 		}
 		rhsSetVals := reflect.ValueOf(rhsSet)
 		for i := 0; i < rhsSetVals.Len(); i++ {
@@ -751,22 +759,11 @@ func (v *ValuerEval) subset(result interface{}, expr ast.Expr) interface{} {
 }
 
 // lhs and rhs are non-nil
-func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op ast.Token) interface{} {
+func (v *ValuerEval) simpleDataEval(lhs, rhs interface{}, op ast.Token) any {
 	if lhs == nil || rhs == nil {
+		// for relationship, return false
 		switch op {
-		case ast.EQ, ast.LTE, ast.GTE:
-			if lhs == nil && rhs == nil {
-				return true
-			} else {
-				return false
-			}
-		case ast.NEQ:
-			if lhs == nil && rhs == nil {
-				return false
-			} else {
-				return true
-			}
-		case ast.LT, ast.GT:
+		case ast.AND, ast.OR, ast.BITWISE_AND, ast.BITWISE_OR, ast.BITWISE_XOR, ast.EQ, ast.NEQ, ast.GT, ast.GTE, ast.LT, ast.LTE:
 			return false
 		default:
 			return nil
