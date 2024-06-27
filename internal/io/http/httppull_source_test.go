@@ -29,11 +29,13 @@ import (
 
 type Response struct {
 	Message string `json:"message"`
+	Code    int    `json:"code"`
 }
 
 func handleGet(w http.ResponseWriter, r *http.Request) {
 	resp := Response{
 		Message: "Hello, GET!",
+		Code:    200,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
@@ -42,6 +44,17 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 func handlePost(w http.ResponseWriter, r *http.Request) {
 	resp := Response{
 		Message: "Hello, POST!",
+		Code:    200,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func handleErr(w http.ResponseWriter, r *http.Request) {
+	resp := Response{
+		Message: "Err",
+		Code:    400,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -52,6 +65,7 @@ func createServer() *httptest.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/get", handleGet)
 	router.HandleFunc("/post", handlePost)
+	router.HandleFunc("/err", handleErr)
 	server := httptest.NewServer(router)
 	return server
 }
@@ -72,13 +86,48 @@ func TestHttpPullSource(t *testing.T) {
 	dataCh := make(chan any, 1)
 	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		dataCh <- data
-	}, func(ctx api.StreamContext, err error) {
-
-	})
+	}, func(ctx api.StreamContext, err error) {})
 	require.Equal(t, []map[string]interface{}{
 		{
 			"message": "Hello, GET!",
+			"code":    float64(200),
 		},
 	}, <-dataCh)
+	source.Close(ctx)
+	close(dataCh)
+
+	source = &HttpPullSource{}
+	require.NoError(t, source.Provision(ctx, map[string]any{
+		"url":          server.URL,
+		"datasource":   "/post",
+		"method":       "post",
+		"responseType": "body",
+	}))
+	require.NoError(t, source.Connect(ctx))
+	dataCh = make(chan any, 1)
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataCh <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Equal(t, []map[string]interface{}{
+		{
+			"message": "Hello, POST!",
+			"code":    float64(200),
+		},
+	}, <-dataCh)
+	close(dataCh)
+	source.Close(ctx)
+
+	source = &HttpPullSource{}
+	require.NoError(t, source.Provision(ctx, map[string]any{
+		"url":          server.URL,
+		"datasource":   "/err",
+		"method":       "post",
+		"responseType": "body",
+	}))
+	require.NoError(t, source.Connect(ctx))
+	errCh := make(chan error, 1)
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) { errCh <- err })
+	require.Error(t, <-errCh)
+	close(errCh)
 	source.Close(ctx)
 }

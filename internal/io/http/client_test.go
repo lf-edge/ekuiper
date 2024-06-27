@@ -15,6 +15,7 @@
 package http
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -85,27 +86,51 @@ func TestInitConf(t *testing.T) {
 	require.Error(t, c.InitConf("", m))
 }
 
-//func TestInitConf2(t *testing.T) {
-//	testcases := []struct {
-//		props  map[string]interface{}
-//		target *RawConf
-//	}{
-//		{
-//			props: map[string]interface{}{
-//				"url":          "www.baidu.com",
-//				"method":       "post",
-//				"body":         "{}",
-//				"bodyType":     "json",
-//				"headers":      `{"a":"b"}`,
-//				"timeout":      5,
-//				"responseType": "code",
-//			},
-//			target: &RawConf{},
-//		},
-//	}
-//	for _, tc := range testcases {
-//		c := &ClientConf{}
-//		require.NoError(t, c.InitConf("", tc.props))
-//		require.Equal(t, tc.target, c)
-//	}
-//}
+func TestDecode(t *testing.T) {
+	testcases := []struct {
+		v   interface{}
+		got []map[string]interface{}
+	}{
+		{
+			v: map[string]interface{}{
+				"method": "post",
+			},
+			got: []map[string]interface{}{
+				{
+					"method": "post",
+				},
+			},
+		},
+		{
+			v: []map[string]interface{}{
+				{
+					"method": "post",
+				},
+			},
+			got: []map[string]interface{}{
+				{
+					"method": "post",
+				},
+			},
+		},
+		{
+			v: []interface{}{
+				map[string]interface{}{
+					"method": "post",
+				},
+			},
+			got: []map[string]interface{}{
+				{
+					"method": "post",
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		data, err := json.Marshal(tc.v)
+		require.NoError(t, err)
+		g, err := decode(data)
+		require.NoError(t, err)
+		require.Equal(t, tc.got, g)
+	}
+}

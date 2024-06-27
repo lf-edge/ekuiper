@@ -63,9 +63,15 @@ func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, erro
 	if err != nil {
 		return nil, err
 	}
-	results, _, err := hps.parseResponse(ctx, resp, true, false)
+	results, _, err := hps.parseResponse(ctx, resp)
 	if err != nil {
 		return nil, err
 	}
 	return results, nil
 }
+
+func GetSource() api.Source {
+	return &HttpPullSource{}
+}
+
+var _ api.PullTupleSource = &HttpPullSource{}

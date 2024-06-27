@@ -172,22 +172,9 @@ func (cc *ClientConf) responseBodyDecompress(ctx api.StreamContext, resp *http.R
 }
 
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
-func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, returnBody bool, skipDecompression bool) ([]map[string]interface{}, []byte, error) {
+func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response) ([]map[string]interface{}, []byte, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		c, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, []byte("fail to read body"),
-				fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
-		}
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				conf.Log.Errorf("fail to close the response body: %v", err)
-			}
-		}(resp.Body)
-		return nil, c, fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
-	} else if !returnBody { // For rest sink who only need to know if the request is successful
-		return nil, nil, nil
+		return nil, nil, fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
 	}
 
 	c, err := io.ReadAll(resp.Body)
@@ -195,40 +182,31 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 		return nil, nil, fmt.Errorf("%s: %v", BODY_ERR, err)
 	}
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			conf.Log.Errorf("fail to close the response body: %v", err)
-		}
-	}(resp.Body)
+	defer func() {
+		resp.Body.Close()
+	}()
 
 	switch cc.config.ResponseType {
 	case "code":
-		if returnBody {
-			if cc.config.Compression != "" && !skipDecompression {
-				if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
-					return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
-				}
+		if cc.config.Compression != "" {
+			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
+				return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
 			}
-			m, e := decode(c)
-			if e != nil {
-				return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
-			}
-			return m, c, e
 		}
-		return nil, nil, nil
+		m, e := decode(c)
+		if e != nil {
+			return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
+		}
+		return m, c, e
 	case "body":
-		if cc.config.Compression != "" && !skipDecompression {
+		if cc.config.Compression != "" {
 			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
 				return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
 			}
 		}
 		payloads, err := decode(c)
 		if err != nil {
-			if err != nil {
-				return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
-			}
-			return nil, c, err
+			return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
 		}
 		for _, payload := range payloads {
 			ro := &bodyResp{}
@@ -240,10 +218,7 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 				return nil, c, fmt.Errorf("%s: %d", CODE_ERR, ro.Code)
 			}
 		}
-		if returnBody {
-			return payloads, c, nil
-		}
-		return nil, nil, nil
+		return payloads, c, nil
 	default:
 		return nil, c, fmt.Errorf("%s: unsupported response type %s", BODY_ERR, cc.config.ResponseType)
 	}
