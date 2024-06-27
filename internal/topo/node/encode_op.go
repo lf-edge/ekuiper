@@ -21,7 +21,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
-	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
@@ -36,7 +35,7 @@ type EncodeOp struct {
 }
 
 func NewEncodeOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *SinkConf) (*EncodeOp, error) {
-	c, err := converter.GetOrCreateConverter(ctx, &ast.Options{FORMAT: sc.Format, SCHEMAID: sc.SchemaId, DELIMITER: sc.Delimiter})
+	c, err := converter.GetOrCreateConverter(ctx, sc.Format, sc.SchemaId, nil, map[string]any{"delimiter": sc.Delimiter})
 	if err != nil {
 		return nil, err
 	}

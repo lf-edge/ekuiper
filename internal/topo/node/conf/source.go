@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
+// GetSourceConf unifies all properties set in different locations
 func GetSourceConf(sourceType string, options *ast.Options) map[string]interface{} {
 	confkey := options.CONF_KEY
 
@@ -62,7 +63,13 @@ func GetSourceConf(sourceType string, options *ast.Options) map[string]interface
 	props["format"] = strings.ToLower(f)
 	props["key"] = options.KEY
 	props["datasource"] = options.DATASOURCE
-	conf.Log.Debugf("get conf for %s with conf key %s: %v", sourceType, confkey, printable(props))
+	props["schemaId"] = options.SCHEMAID
+	props["delimiter"] = options.DELIMITER
+	props["retainSize"] = options.RETAIN_SIZE
+	props["strictValidation"] = options.STRICT_VALIDATION
+	props["timestamp"] = options.TIMESTAMP
+	props["timestampFormat"] = options.TIMESTAMP_FORMAT
+	conf.Log.Infof("get conf for %s with conf key %s: %v", sourceType, confkey, printable(props))
 	return props
 }
 

@@ -29,44 +29,30 @@ import (
 )
 
 func init() {
-	modules.RegisterConverter(message.FormatJson, func(_ api.StreamContext, _ string, _ string, _ string, schema map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatJson, func(_ api.StreamContext, _ string, schema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return json.NewFastJsonConverter(schema), nil
 	})
-	modules.RegisterConverter(message.FormatBinary, func(_ api.StreamContext, _ string, _ string, _ string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter(message.FormatBinary, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
 		return binary.GetConverter()
 	})
-	modules.RegisterConverter(message.FormatDelimited, func(_ api.StreamContext, _ string, _ string, delimiter string, _ map[string]*ast.JsonStreamField) (message.Converter, error) {
-		return delimited.NewConverter(delimiter)
+	modules.RegisterConverter(message.FormatDelimited, func(_ api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error) {
+		return delimited.NewConverter(props)
 	})
 }
 
-func GetOrCreateConverter(ctx api.StreamContext, options *ast.Options) (c message.Converter, err error) {
+func GetOrCreateConverter(ctx api.StreamContext, format string, schemaId string, schema map[string]*ast.JsonStreamField, props map[string]any) (c message.Converter, err error) {
 	defer func() {
 		if err != nil {
 			err = errorx.NewWithCode(errorx.CovnerterErr, err.Error())
 		}
 	}()
 
-	t := strings.ToLower(options.FORMAT)
+	t := strings.ToLower(format)
 	if t == "" {
 		t = message.FormatJson
 	}
-
-	schemaFile := ""
-	schemaName := options.SCHEMAID
-	if schemaName != "" {
-		r := strings.Split(schemaName, ".")
-		schemaFile = r[0]
-		if len(r) >= 2 {
-			schemaName = r[1]
-		}
-	}
-	schema := options.Schema
-	if options.IsWildCard {
-		schema = nil
-	}
 	if c, ok := modules.Converters[t]; ok {
-		return c(ctx, schemaFile, schemaName, options.DELIMITER, schema)
+		return c(ctx, schemaId, schema, props)
 	}
 	return nil, fmt.Errorf("format type %s not supported", t)
 }

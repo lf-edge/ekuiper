@@ -35,28 +35,28 @@ import (
 
 func TestNewRateLimit(t *testing.T) {
 	ctx := mockContext.NewMockContext("test1", "new_test")
-	rl, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{"interval": "1s"})
+	rl, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s"})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, rl.mergeStrategy)
-	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{"interval": "1ns"})
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1ns"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "interval should be larger than 1ms")
-	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{"interval": "1s", "mergeField": "id"})
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "mergeField": "id"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "rate limit merge must define format")
-	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{"interval": "1s", "mergeField": "id", "format": "none"})
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "mergeField": "id", "format": "none"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "format type none not supported")
-	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{"interval": "1s", "mergeField": "id", "format": "delimited"})
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "mergeField": "id", "format": "delimited"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "format delimited does not support partial decode")
-	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{"interval": "1s", "merger": "none", "format": "delimited"})
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "merger": "none", "format": "delimited"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "merger none not found")
 	modules.RegisterMerger("none", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
 		return nil, errors.New("mock error")
 	})
-	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{"interval": "1s", "merger": "none", "format": "delimited"})
+	_, err = NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"interval": "1s", "merger": "none", "format": "delimited"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "fail to initiate merge none: mock error")
 }
@@ -92,7 +92,7 @@ func TestRateLimit(t *testing.T) {
 	for i, tc := range testcases {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
 			ctx, cancel := mockContext.NewMockContext("test1", "batch_test").WithCancel()
-			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{
+			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{
 				"interval": "1s",
 			})
 			assert.NoError(t, err)
@@ -186,14 +186,14 @@ func TestRateLimitMerge(t *testing.T) {
 			},
 		},
 	}
-	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter("mockp", func(ctx api.StreamContext, _ string, logicalSchema map[string]*ast.JsonStreamField, _ map[string]any) (message.Converter, error) {
 		return &message.MockPartialConverter{}, nil
 	})
 	mc := mockclock.GetMockClock()
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, cancel := mockContext.NewMockContext("test1", "batch_test").WithCancel()
-			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{
+			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{
 				"interval":   "1s",
 				"mergeField": "id",
 				"format":     "mockp",
@@ -290,7 +290,7 @@ func TestRateLimitCustomMerge(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx, cancel := mockContext.NewMockContext("test1", "batch_test").WithCancel()
-			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, &ast.Options{FORMAT: "json"}, nil, map[string]any{
+			op, err := NewRateLimitOp(ctx, "test", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{
 				"interval":      "1s",
 				"merger":        "mock",
 				"format":        "json",

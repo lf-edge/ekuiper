@@ -41,7 +41,7 @@ func TestPlanTopo(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter("mockp", func(ctx api.StreamContext, _ string, _ map[string]*ast.JsonStreamField, _ map[string]any) (message.Converter, error) {
 		return &message.MockPartialConverter{}, nil
 	})
 	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {
@@ -400,7 +400,7 @@ func TestPlanError(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, SchemaMessageName string, delimiter string, logicalSchema map[string]*ast.JsonStreamField) (message.Converter, error) {
+	modules.RegisterConverter("mockp", func(ctx api.StreamContext, schemaFileName string, logicalSchema map[string]*ast.JsonStreamField, _ map[string]any) (message.Converter, error) {
 		return &message.MockPartialConverter{}, nil
 	})
 	modules.RegisterMerger("mock", func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField) (modules.Merger, error) {

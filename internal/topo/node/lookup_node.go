@@ -95,13 +95,7 @@ func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, field
 			sch[sc.PayloadField] = nil
 		}
 
-		decoder, err := converter.GetOrCreateConverter(ctx, &ast.Options{
-			FORMAT:     srcOptions.FORMAT,
-			SCHEMAID:   srcOptions.SCHEMAID,
-			DELIMITER:  srcOptions.DELIMITER,
-			IsWildCard: fields == nil,
-			Schema:     sch,
-		})
+		decoder, err := converter.GetOrCreateConverter(ctx, srcOptions.FORMAT, srcOptions.SCHEMAID, sch, props)
 		if err != nil {
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", srcOptions.FORMAT, srcOptions.SCHEMAID, err)
 			return nil, fmt.Errorf(msg)
@@ -109,13 +103,8 @@ func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, field
 		n.formatDecoder = decoder
 
 		if sc.PayloadField != "" {
-			payloadDecoder, err := converter.GetOrCreateConverter(ctx, &ast.Options{
-				FORMAT:     sc.PayloadFormat,
-				SCHEMAID:   sc.PayloadSchemaId,
-				DELIMITER:  sc.PayloadDelimiter,
-				IsWildCard: fields == nil,
-				Schema:     sch,
-			})
+			props["delimiter"] = sc.PayloadDelimiter
+			payloadDecoder, err := converter.GetOrCreateConverter(ctx, sc.PayloadFormat, sc.PayloadSchemaId, sch, props)
 			if err != nil {
 				return nil, fmt.Errorf("cannot get payload converter from payloadFormat %s, schemaId %s: %v", sc.PayloadFormat, sc.PayloadSchemaId, err)
 			}

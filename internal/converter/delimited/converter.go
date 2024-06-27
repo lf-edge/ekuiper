@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,24 +22,30 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
 type Converter struct {
-	delimiter string
-	cols      []string
+	Delimiter string   `json:"delimiter"`
+	Cols      []string `json:"cols"`
 }
 
-func NewConverter(delimiter string) (message.Converter, error) {
-	if delimiter == "" {
-		delimiter = ","
+func NewConverter(props map[string]any) (message.Converter, error) {
+	c := &Converter{}
+	err := cast.MapToStruct(props, c)
+	if err != nil {
+		return nil, err
 	}
-	return &Converter{delimiter: delimiter}, nil
+	if c.Delimiter == "" {
+		c.Delimiter = ","
+	}
+	return c, nil
 }
 
 func (c *Converter) SetColumns(cols []string) {
-	c.cols = cols
+	c.Cols = cols
 }
 
 // Encode If no columns defined, the default order is sort by key
@@ -52,18 +58,18 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	switch m := d.(type) {
 	case map[string]interface{}:
 		sb := &bytes.Buffer{}
-		if len(c.cols) == 0 {
+		if len(c.Cols) == 0 {
 			keys := make([]string, 0, len(m))
 			for k := range m {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
-			c.cols = keys
+			c.Cols = keys
 		}
 
-		for i, v := range c.cols {
+		for i, v := range c.Cols {
 			if i > 0 {
-				sb.WriteString(c.delimiter)
+				sb.WriteString(c.Delimiter)
 			}
 			fmt.Fprintf(sb, "%v", m[v])
 		}
@@ -76,16 +82,16 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 // Decode If the cols is not set, the default key name is col1, col2, col3...
 // The return value is always a map
 func (c *Converter) Decode(ctx api.StreamContext, b []byte) (ma any, err error) {
-	tokens := strings.Split(string(b), c.delimiter)
+	tokens := strings.Split(string(b), c.Delimiter)
 	m := make(map[string]interface{})
-	if len(c.cols) == 0 {
+	if len(c.Cols) == 0 {
 		for i, v := range tokens {
 			m["col"+strconv.Itoa(i)] = v
 		}
 	} else {
 		for i, v := range tokens {
-			if i < len(c.cols) {
-				m[c.cols[i]] = v
+			if i < len(c.Cols) {
+				m[c.Cols[i]] = v
 			}
 		}
 	}

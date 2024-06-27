@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ func TestEncode(t *testing.T) {
 	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
 	ctx := mockContext.NewMockContext("test", "op1")
 	for i, tt := range tests {
-		c, err := NewConverter(":")
+		c, err := NewConverter(map[string]any{"delimiter": ":"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -72,11 +72,11 @@ func TestEncode(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	c, err := NewConverter("\t")
+	c, err := NewConverter(map[string]any{"delimiter": "\t"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	ch, err := NewConverter("\t")
+	ch, err := NewConverter(map[string]any{"delimiter": "\t"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +122,7 @@ func TestDecode(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
-	converter, err := NewConverter(",")
+	converter, err := NewConverter(map[string]any{"delimiter": ","})
 	require.NoError(t, err)
 	ctx := mockContext.NewMockContext("test", "op1")
 	_, err = converter.Encode(ctx, nil)
