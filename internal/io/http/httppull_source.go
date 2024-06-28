@@ -59,7 +59,11 @@ func (hps *HttpPullSource) Provision(ctx api.StreamContext, configs map[string]a
 }
 
 func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, error) {
-	resp, err := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, hps.config.Url, hps.config.Headers, true, []byte(hps.config.Body))
+	headers, err := hps.parseHeaders(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, hps.config.Url, headers, true, []byte(hps.config.Body))
 	if err != nil {
 		return nil, err
 	}
