@@ -15,7 +15,9 @@
 package http
 
 import (
+	"crypto/md5"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -64,12 +66,13 @@ type RefreshTokenConf struct {
 }
 
 type RawConf struct {
-	Url      string            `json:"url"`
-	Method   string            `json:"method"`
-	Body     string            `json:"body"`
-	BodyType string            `json:"bodyType"`
-	Headers  map[string]string `json:"headers"`
-	Timeout  int               `json:"timeout"`
+	Url         string            `json:"url"`
+	Method      string            `json:"method"`
+	Body        string            `json:"body"`
+	BodyType    string            `json:"bodyType"`
+	Headers     map[string]string `json:"headers"`
+	Timeout     int               `json:"timeout"`
+	Incremental bool              `json:"incremental"`
 
 	OAuth map[string]map[string]interface{} `json:"oauth"`
 	// Could be code or body
@@ -219,7 +222,7 @@ func (cc *ClientConf) auth(ctx api.StreamContext) error {
 	if err != nil {
 		return err
 	}
-	tokens, _, err := cc.parseResponse(ctx, resp)
+	tokens, _, err := cc.parseResponse(ctx, resp, "")
 	if err != nil {
 		return err
 	}
@@ -271,7 +274,7 @@ func (cc *ClientConf) refresh(ctx api.StreamContext) error {
 		if err != nil {
 			return fmt.Errorf("fail to get refresh token: %v", err)
 		}
-		nt, _, err := cc.parseResponse(ctx, resp)
+		nt, _, err := cc.parseResponse(ctx, resp, "")
 		if err != nil {
 			return fmt.Errorf("Cannot parse refresh token response to json: %v", err)
 		}
@@ -310,55 +313,63 @@ func (cc *ClientConf) responseBodyDecompress(ctx api.StreamContext, resp *http.R
 }
 
 // parse the response status. For rest sink, it will not return the body by default if not need to debug
-func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response) ([]map[string]interface{}, []byte, error) {
+func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, lastMD5 string) ([]map[string]interface{}, string, error) {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, nil, fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
+		return nil, "", fmt.Errorf("%s: %d", CODE_ERR, resp.StatusCode)
 	}
 
 	c, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%s: %v", BODY_ERR, err)
+		return nil, "", fmt.Errorf("%s: %v", BODY_ERR, err)
 	}
 
 	defer func() {
 		resp.Body.Close()
 	}()
 
+	newMD5 := ""
+	if cc.config.Incremental {
+		newMD5 = getMD5Hash(c)
+		if newMD5 == lastMD5 {
+			return nil, newMD5, nil
+		}
+	}
+
 	switch cc.config.ResponseType {
 	case "code":
 		if cc.config.Compression != "" {
 			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
-				return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
+				return nil, "", fmt.Errorf("try to decompress payload failed, %w", err)
 			}
 		}
 		m, e := decode(c)
 		if e != nil {
-			return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
+			return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, e)
 		}
-		return m, c, e
+		return m, newMD5, e
 	case "body":
 		if cc.config.Compression != "" {
 			if c, err = cc.responseBodyDecompress(ctx, resp, c); err != nil {
-				return nil, nil, fmt.Errorf("try to decompress payload failed, %w", err)
+				return nil, "", fmt.Errorf("try to decompress payload failed, %w", err)
 			}
 		}
 		payloads, err := decode(c)
 		if err != nil {
-			return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
+			return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
 		}
 		for _, payload := range payloads {
 			ro := &bodyResp{}
 			err = cast.MapToStruct(payload, ro)
 			if err != nil {
-				return nil, c, fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
+				return nil, "", fmt.Errorf("%s: decode fail for %v", BODY_ERR, err)
 			}
 			if ro.Code < 200 || ro.Code > 299 {
-				return nil, c, fmt.Errorf("%s: %d", CODE_ERR, ro.Code)
+				return nil, "", fmt.Errorf("%s: %d", CODE_ERR, ro.Code)
 			}
 		}
-		return payloads, c, nil
+		return payloads, newMD5, nil
 	default:
-		return nil, c, fmt.Errorf("%s: unsupported response type %s", BODY_ERR, cc.config.ResponseType)
+		return nil, "", fmt.Errorf("%s: unsupported response type %s", BODY_ERR, cc.config.ResponseType)
 	}
 }
 
@@ -389,4 +400,9 @@ func decode(data []byte) ([]map[string]interface{}, error) {
 		return r2, nil
 	}
 	return nil, fmt.Errorf("only map[string]interface{} and []map[string]interface{} is supported")
+}
+
+func getMD5Hash(text []byte) string {
+	hash := md5.Sum(text)
+	return hex.EncodeToString(hash[:])
 }

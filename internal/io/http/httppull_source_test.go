@@ -153,3 +153,34 @@ func TestHttpPullSource(t *testing.T) {
 	close(errCh)
 	source.Close(ctx)
 }
+
+func TestSourceIncremental(t *testing.T) {
+	server := createServer()
+	defer func() {
+		server.Close()
+	}()
+	ctx := mockContext.NewMockContext("1", "2")
+	source := &HttpPullSource{}
+	require.NoError(t, source.Provision(ctx, map[string]any{
+		"url":         server.URL,
+		"datasource":  "/get",
+		"method":      "get",
+		"incremental": true,
+	}))
+	require.NoError(t, source.Connect(ctx))
+	dataCh := make(chan any, 1)
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataCh <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Equal(t, []map[string]interface{}{
+		{
+			"message": "Hello, GET!",
+			"code":    float64(200),
+		},
+	}, <-dataCh)
+
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataCh <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Nil(t, <-dataCh)
+}
