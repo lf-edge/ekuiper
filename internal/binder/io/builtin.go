@@ -17,6 +17,7 @@ package io
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
+	"github.com/lf-edge/ekuiper/v2/internal/io/http"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	mqttCon "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
@@ -28,7 +29,7 @@ import (
 
 func init() {
 	modules.RegisterSource("mqtt", mqtt.GetSource)
-	// modules.RegisterSource("httppull", func() api.Source { return &http.PullSource{} })
+	modules.RegisterSource("httppull", func() api.Source { return &http.HttpPullSource{} })
 	// modules.RegisterSource("httppush", func() api.Source { return &http.PushSource{} })
 	modules.RegisterSource("file", file.GetSource)
 	modules.RegisterSource("memory", func() api.Source { return memory.GetSource() })
