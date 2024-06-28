@@ -47,7 +47,7 @@ type FileStreamReader interface {
 	// Provision Set up the static properties
 	Provision(ctx api.StreamContext, props map[string]any) error
 	// Bind set the file stream. Make sure the previous read has done
-	Bind(ctx api.StreamContext, fileStream io.Reader) error
+	Bind(ctx api.StreamContext, fileStream io.Reader, maxSize int) error
 	// Read the next record. Returns EOF when the input has reached its end.
 	Read(ctx api.StreamContext) (any, error)
 	// IsBytesReader If is bytes reader, Read must return []byte, otherwise return map or []map

@@ -184,7 +184,7 @@ func TestSourceProvision(t *testing.T) {
 			},
 		},
 		{
-			name: "no decompression for stream typs",
+			name: "no decompression for stream types",
 			props: map[string]any{
 				"datasource":    name,
 				"path":          path,

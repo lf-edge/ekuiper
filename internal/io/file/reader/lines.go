@@ -1,3 +1,17 @@
+// Copyright 2024 EMQ Technologies Co., Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package reader
 
 import (
@@ -22,8 +36,14 @@ func (r *LinesReader) Provision(ctx api.StreamContext, props map[string]any) err
 	return nil
 }
 
-func (r *LinesReader) Bind(ctx api.StreamContext, fileStream io.Reader) error {
+func (r *LinesReader) Bind(ctx api.StreamContext, fileStream io.Reader, maxSize int) error {
+	if maxSize <= 0 {
+		ctx.GetLogger().Errorf("maxSize must be > 0, defaul to 1MB")
+		// default to 1MB
+		maxSize = 1 << 20
+	}
 	scanner := bufio.NewScanner(fileStream)
+	scanner.Buffer(nil, maxSize)
 	scanner.Split(bufio.ScanLines)
 	r.scanner = scanner
 	return nil
@@ -34,7 +54,10 @@ func (r *LinesReader) Read(ctx api.StreamContext) (any, error) {
 	if !succ {
 		return nil, io.EOF
 	}
-	return r.scanner.Bytes(), nil
+	b := r.scanner.Bytes()
+	d := make([]byte, len(b))
+	copy(d, b)
+	return d, nil
 }
 
 func (r *LinesReader) IsBytesReader() bool {
