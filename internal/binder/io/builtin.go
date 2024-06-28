@@ -22,7 +22,6 @@ import (
 	mqttCon "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
-	sqlCon "github.com/lf-edge/ekuiper/v2/internal/io/sql/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 )
@@ -52,7 +51,6 @@ func init() {
 
 	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)
 	modules.RegisterConnection("nng", nng.CreateConnection)
-	modules.RegisterConnection("sql", sqlCon.CreateConnection)
 }
 
 type Manager struct{}
