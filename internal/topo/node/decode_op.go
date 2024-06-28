@@ -45,6 +45,8 @@ type dconf struct {
 	// When receiving list, send them one by one, this is the sending interval between each
 	// Typically set by file source
 	SendInterval      time.Duration `json:"sendInterval"`
+	Format            string        `json:"format"`
+	SchemaId          string        `json:"schemaId"`
 	PayloadField      string        `json:"payloadField"`
 	PayloadBatchField string        `json:"payloadBatchField"`
 	PayloadFormat     string        `json:"payloadFormat"`
@@ -52,7 +54,7 @@ type dconf struct {
 	PayloadDelimiter  string        `json:"payloadDelimiter"`
 }
 
-func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string, ruleId string, rOpt *def.RuleOption, options *ast.Options, isWildcard, isSchemaless bool, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
+func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
 	dc := &dconf{}
 	e := cast.MapToStruct(props, dc)
 	if e != nil {
@@ -61,13 +63,19 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 	if forPayload && dc.PayloadFormat == "" {
 		return nil, fmt.Errorf("payloadFormat is missing")
 	}
-	var additionSchema string
+	var (
+		additionSchema string
+		converterTool  message.Converter
+		err            error
+	)
+
 	// It is payload decoder
 	if forPayload {
-		options = &ast.Options{
-			FORMAT:    dc.PayloadFormat,
-			SCHEMAID:  dc.PayloadSchemaId,
-			DELIMITER: dc.PayloadDelimiter,
+		props["delimiter"] = dc.PayloadDelimiter
+		converterTool, err = converter.GetOrCreateConverter(ctx, dc.PayloadFormat, dc.PayloadSchemaId, schema, props)
+		if err != nil {
+			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", dc.PayloadFormat, dc.PayloadSchemaId, err)
+			return nil, fmt.Errorf(msg)
 		}
 	} else {
 		if dc.PayloadBatchField != "" {
@@ -75,28 +83,20 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 		} else if dc.PayloadField != "" {
 			additionSchema = dc.PayloadField
 		}
-	}
-
-	options.Schema = nil
-	options.IsWildCard = isWildcard
-	options.IsSchemaLess = isSchemaless
-	if schema != nil {
-		options.Schema = schema
-		options.StreamName = StreamName
-		if additionSchema != "" {
-			options.Schema[additionSchema] = nil
+		if schema != nil && additionSchema != "" {
+			schema[additionSchema] = nil
+		}
+		converterTool, err = converter.GetOrCreateConverter(ctx, dc.Format, dc.SchemaId, schema, props)
+		if err != nil {
+			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", dc.Format, dc.SchemaId, err)
+			return nil, fmt.Errorf(msg)
 		}
 	}
-	options.RuleID = ruleId
-	converterTool, err := converter.GetOrCreateConverter(ctx, options)
-	if err != nil {
-		msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", options.FORMAT, options.SCHEMAID, err)
-		return nil, fmt.Errorf(msg)
-	}
+
 	o := &DecodeOp{
 		defaultSinkNode: newDefaultSinkNode(name, rOpt),
 		converter:       converterTool,
-		sLayer:          schemaLayer.NewSchemaLayer(ruleId, StreamName, schema, isWildcard),
+		sLayer:          schemaLayer.NewSchemaLayer(ctx.GetRuleId(), StreamName, schema, schema == nil),
 		c:               dc,
 		forPayload:      forPayload,
 		additionSchema:  additionSchema,

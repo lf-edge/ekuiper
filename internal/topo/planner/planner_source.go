@@ -102,13 +102,13 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	var ops []node.OperatorNode
 
 	// Need to check after source has provisioned, so do not put it before provision
-	featureSet, err := checkFeatures(ss, sp, props, t.streamStmt.Options)
+	featureSet, err := checkFeatures(ss, sp, props)
 	if err != nil {
 		return nil, nil, 0, err
 	}
 
 	if featureSet.needRatelimit {
-		rlOp, err := node.NewRateLimitOp(ctx, fmt.Sprintf("%d_ratelimit", index), options, t.streamStmt.Options, t.streamFields, props)
+		rlOp, err := node.NewRateLimitOp(ctx, fmt.Sprintf("%d_ratelimit", index), options, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -127,7 +127,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if featureSet.needDecode {
 		// Create the decode node
-		decodeNode, err := node.NewDecodeOp(ctx, false, fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
+		decodeNode, err := node.NewDecodeOp(ctx, false, fmt.Sprintf("%d_decoder", index), string(t.streamStmt.Name), options, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -136,7 +136,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	}
 
 	if featureSet.needRatelimitMerge {
-		rlOp, err := node.NewRateLimitOp(ctx, fmt.Sprintf("%d_ratelimit", index), options, t.streamStmt.Options, t.streamFields, props)
+		rlOp, err := node.NewRateLimitOp(ctx, fmt.Sprintf("%d_ratelimit", index), options, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -146,7 +146,7 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 
 	if featureSet.needPayloadDecode {
 		// Create the decode node
-		payloadDecodeNode, err := node.NewDecodeOp(ctx, true, fmt.Sprintf("%d_payload_decoder", index), string(t.streamStmt.Name), ruleId, options, t.streamStmt.Options, t.isWildCard, t.isSchemaless, t.streamFields, props)
+		payloadDecodeNode, err := node.NewDecodeOp(ctx, true, fmt.Sprintf("%d_payload_decoder", index), string(t.streamStmt.Name), options, t.streamFields, props)
 		if err != nil {
 			return nil, nil, 0, err
 		}
@@ -201,7 +201,7 @@ type traits struct {
 }
 
 // function to return if a sub node is needed
-func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any, options *ast.Options) (traits, error) {
+func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any) (traits, error) {
 	// validate merger
 	if sp.Merger != "" && sp.MergeField != "" {
 		return traits{}, fmt.Errorf("mergeField and merger cannot set together")
@@ -237,8 +237,8 @@ func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any,
 		r.needPayloadDecode = true
 		r.needDecode = false
 		props["payloadFormat"] = props["format"]
-		props["payloadSchemaId"] = options.SCHEMAID
-		props["payloadDelimiter"] = options.DELIMITER
+		props["payloadSchemaId"] = props["schemaId"]
+		props["payloadDelimiter"] = props["delimiter"]
 		props["payloadBatchField"] = "frames"
 		props["payloadField"] = "data"
 	}

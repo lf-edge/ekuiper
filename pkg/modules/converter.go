@@ -20,10 +20,16 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 )
 
-var Converters = map[string]message.ConverterProvider{}
+var Converters = map[string]ConverterProvider{}
+
+// ConverterProvider
+// - schemaId: the id for the schema
+// - logicalSchema: the default schema
+// - props: extended properties. Implementation can read and handle it.
+type ConverterProvider func(ctx api.StreamContext, schemaId string, logicalSchema map[string]*ast.JsonStreamField, props map[string]any) (message.Converter, error)
 
 // RegisterConverter registers a converter with the given name.
-func RegisterConverter(name string, provider message.ConverterProvider) {
+func RegisterConverter(name string, provider ConverterProvider) {
 	Converters[name] = provider
 }
 

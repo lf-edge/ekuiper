@@ -40,6 +40,7 @@ type limitConf struct {
 	Format          string        `json:"format"`
 	Merger          string        `json:"merger"`
 	PayloadSchemaId string        `json:"payloadSchemaId"`
+	SchemaId        string        `json:"schemaId"`
 }
 
 // RateLimitOp handle messages at a regular rate, ignoring messages that arrive too quickly, only keep the most recent message. (default strategy)
@@ -65,7 +66,7 @@ type RateLimitOp struct {
 	sLayer *schemaLayer.SchemaLayer
 }
 
-func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, options *ast.Options, schema map[string]*ast.JsonStreamField, props map[string]any) (*RateLimitOp, error) {
+func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, props map[string]any) (*RateLimitOp, error) {
 	c := &limitConf{}
 	err := cast.MapToStruct(props, c)
 	if err != nil {
@@ -83,13 +84,7 @@ func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, op
 		if f == "" {
 			return nil, fmt.Errorf("rate limit merge must define format")
 		}
-		cv, err := converter.GetOrCreateConverter(ctx, &ast.Options{
-			FORMAT:       c.Format,
-			SCHEMAID:     options.SCHEMAID,
-			Schema:       nil,
-			IsSchemaLess: true,
-			IsWildCard:   true,
-		})
+		cv, err := converter.GetOrCreateConverter(ctx, c.Format, c.SchemaId, nil, props)
 		if err != nil {
 			return nil, err
 		}
