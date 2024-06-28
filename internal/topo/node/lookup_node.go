@@ -87,12 +87,15 @@ func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, field
 		if (sc.PayloadFormat == "" && sc.PayloadField != "") || (sc.PayloadFormat != "" && sc.PayloadField == "") {
 			return nil, fmt.Errorf("payloadFormat and payloadField must set together")
 		}
-		sch := make(map[string]*ast.JsonStreamField, len(fields))
-		for _, field := range fields {
-			sch[field] = nil
-		}
-		if sc.PayloadField != "" {
-			sch[sc.PayloadField] = nil
+		var sch map[string]*ast.JsonStreamField
+		if len(fields) > 0 {
+			sch = make(map[string]*ast.JsonStreamField, len(fields))
+			for _, field := range fields {
+				sch[field] = nil
+			}
+			if sc.PayloadField != "" {
+				sch[sc.PayloadField] = nil
+			}
 		}
 
 		decoder, err := converter.GetOrCreateConverter(ctx, srcOptions.FORMAT, srcOptions.SCHEMAID, sch, props)
