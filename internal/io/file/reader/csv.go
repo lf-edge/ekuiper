@@ -60,7 +60,7 @@ func (r *CsvReader) Provision(ctx api.StreamContext, props map[string]any) error
 	return nil
 }
 
-func (r *CsvReader) Bind(ctx api.StreamContext, fileStream io.Reader) error {
+func (r *CsvReader) Bind(ctx api.StreamContext, fileStream io.Reader, _ int) error {
 	cr := csv.NewReader(fileStream)
 	cr.Comma = rune(r.config.Delimiter[0])
 	cr.TrimLeadingSpace = true

@@ -214,10 +214,19 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		err error
 		r   io.Reader
 	)
-	r, err = os.Open(file)
+	f, err := os.Open(file)
 	if err != nil {
 		ctx.GetLogger().Debugf("prepare file %s error: %v", file, err)
 		ingestError(ctx, err)
+	}
+	r = f
+	// This is the buffer size, 1MB by default
+	maxSize := 1 << 20
+	info, err := f.Stat()
+	if err != nil {
+		ctx.GetLogger().Debugf("get file info for %s error: %v", file, err)
+	} else {
+		maxSize = int(info.Size())
 	}
 	if fs.config.IgnoreStartLines > 0 || fs.config.IgnoreEndLines > 0 {
 		r = ignoreLines(ctx, r, fs.config.IgnoreStartLines, fs.config.IgnoreEndLines)
@@ -231,7 +240,7 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 	meta := map[string]any{"file": file}
 	// Read line or read all
 	if fs.reader != nil {
-		err = fs.reader.Bind(ctx, r)
+		err = fs.reader.Bind(ctx, r, maxSize)
 		if err != nil {
 			ingestError(ctx, err)
 			return
@@ -239,6 +248,9 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		for {
 			line, err := fs.reader.Read(ctx)
 			if err != nil {
+				if err != io.EOF {
+					ctx.GetLogger().Errorf("read file %s error: %v", file, err)
+				}
 				break
 			}
 			rcvTime := timex.GetNow()
