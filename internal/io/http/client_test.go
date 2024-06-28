@@ -16,9 +16,12 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestInitConf(t *testing.T) {
@@ -133,4 +136,32 @@ func TestDecode(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tc.got, g)
 	}
+}
+
+func TestClientAuth(t *testing.T) {
+	server := createServer()
+	defer func() {
+		server.Close()
+	}()
+
+	c := &ClientConf{}
+	ctx := mockContext.NewMockContext("1", "2")
+	require.NoError(t, c.InitConf("", map[string]interface{}{
+		"oauth": map[string]interface{}{
+			"access": map[string]interface{}{
+				"url":    fmt.Sprintf("%s/auth", server.URL),
+				"expire": "3600",
+				"body":   `{"a":1}`,
+			},
+			"refresh": map[string]interface{}{
+				"url": fmt.Sprintf("%s/refresh", server.URL),
+				"headers": map[string]interface{}{
+					"a": "{{.message}}",
+				},
+				"body": `{"a":1}`,
+			},
+		},
+	}))
+	require.NoError(t, c.auth(ctx))
+	require.NoError(t, c.refresh(ctx))
 }

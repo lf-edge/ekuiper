@@ -61,11 +61,33 @@ func handleErr(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+func handleAuth(w http.ResponseWriter, r *http.Request) {
+	resp := Response{
+		Message: "auth",
+		Code:    200,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
+}
+
+func handleRefresh(w http.ResponseWriter, r *http.Request) {
+	resp := Response{
+		Message: "refresh",
+		Code:    200,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(resp)
+}
+
 func createServer() *httptest.Server {
 	router := http.NewServeMux()
 	router.HandleFunc("/get", handleGet)
 	router.HandleFunc("/post", handlePost)
 	router.HandleFunc("/err", handleErr)
+	router.HandleFunc("/auth", handleAuth)
+	router.HandleFunc("/refresh", handleRefresh)
 	server := httptest.NewServer(router)
 	return server
 }
