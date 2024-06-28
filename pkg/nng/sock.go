@@ -146,7 +146,7 @@ func (s *Sock) Send(ctx api.StreamContext, data []byte) error {
 	if s.Socket != nil && s.connected.Load() {
 		return s.Socket.Send(data)
 	}
-	return errorx.NewIOErr(`neuron connection is not established`)
+	return errorx.NewIOErr(`nng connection is not established`)
 }
 
 var _ modules.Connection = &Sock{}
