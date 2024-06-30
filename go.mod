@@ -4,6 +4,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/PaesslerAG/jsonpath v0.1.1
+	github.com/Rookiecom/cpuprofile v1.0.2
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20240315202255-8943393e84fc
 	github.com/benbjohnson/clock v1.3.5
@@ -87,7 +88,7 @@ require (
 	github.com/go-playground/validator/v10 v10.19.0 // indirect
 	github.com/go-redis/redis/v7 v7.4.1 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
-	github.com/google/pprof v0.0.0-20240319011627-a57c5dfe54fd // indirect
+	github.com/google/pprof v0.0.0-20240528025155-186aa0362fba // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect

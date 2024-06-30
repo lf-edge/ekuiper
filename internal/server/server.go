@@ -28,6 +28,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Rookiecom/cpuprofile"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/automaxprocs/maxprocs"
 
@@ -138,6 +139,11 @@ func StartUp(Version string) {
 	createPaths()
 	conf.InitConf()
 
+	serverCtx, serverCancel := context.WithCancel(context.Background())
+	if conf.Config.Basic.EnableResourceProfiling {
+		startCPUProfiling(serverCtx)
+	}
+
 	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))
 	defer undo()
 
@@ -211,8 +217,7 @@ func StartUp(Version string) {
 			}
 		}
 	}
-	exit := make(chan struct{})
-	go runScheduleRuleChecker(exit)
+	go runScheduleRuleChecker(serverCtx)
 
 	// Start rest service
 	srvRest := createRestServer(conf.Config.Basic.RestIp, conf.Config.Basic.RestPort, conf.Config.Basic.Authentication)
@@ -265,7 +270,7 @@ func StartUp(Version string) {
 		time.Sleep(time.Second)
 		conf.Log.Info("eKuiper stopped by Stop request")
 	}
-	exit <- struct{}{}
+	serverCancel()
 	// wait rule checker exit
 	time.Sleep(10 * time.Millisecond)
 
@@ -366,7 +371,7 @@ func resetAllStreams() error {
 	return nil
 }
 
-func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
+func runScheduleRuleCheckerByInterval(d time.Duration, ctx context.Context) {
 	conf.Log.Infof("start patroling schedule rule state")
 	ticker := time.NewTicker(d)
 	defer func() {
@@ -375,7 +380,7 @@ func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 	}()
 	for {
 		select {
-		case <-exit:
+		case <-ctx.Done():
 			return
 		case <-ticker.C:
 			rs, err := getAllRulesWithState()
@@ -390,8 +395,8 @@ func runScheduleRuleCheckerByInterval(d time.Duration, exit <-chan struct{}) {
 	}
 }
 
-func runScheduleRuleChecker(exit <-chan struct{}) {
-	runScheduleRuleCheckerByInterval(time.Duration(conf.Config.Basic.RulePatrolInterval), exit)
+func runScheduleRuleChecker(ctx context.Context) {
+	runScheduleRuleCheckerByInterval(time.Duration(conf.Config.Basic.RulePatrolInterval), ctx)
 }
 
 type RuleStatusMetricsValue int
@@ -470,6 +475,26 @@ func handleScheduleRule(now time.Time, r *def.Rule, state string) scheduleRuleAc
 		}
 	}
 	return scheduleRuleActionDoNothing
+}
+
+func startCPUProfiling(ctx context.Context) error {
+	if err := cpuprofile.StartProfilerAndAggregater(ctx, time.Duration(1000)*time.Millisecond); err != nil {
+		return err
+	}
+	receiveChan := make(chan *cpuprofile.DataSetAggregate, 1024)
+	cpuprofile.RegisterTag("rule", receiveChan)
+	go func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case data := <-receiveChan:
+				// TODO: support query in future
+				conf.Log.Debugf("cpu profile data: %v", data)
+			}
+		}
+	}(ctx)
+	return nil
 }
 
 func waitAllRuleStop(ctx context.Context) error {
