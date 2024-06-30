@@ -61,6 +61,8 @@ basic:
   cfgStorageType: file
   # enableOpenZiti indicates whether to enable OpenZiti for eKuiper REST service. Currently, it is only supported to work with EdgeX secure mode.
   enableOpenZiti: false
+  # enableResourceProfiling indicates whether to enable resource profiling for eKuiper. If it is enabled, the resource usage of the rule will be recorded.
+  enableResourceProfiling: true
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:

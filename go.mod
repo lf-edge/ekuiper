@@ -82,6 +82,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/Rookiecom/cpuprofile v1.0.2 // indirect
 	github.com/VoltDB/voltdb-client-go v1.0.15 // indirect
 	github.com/alexbrainman/odbc v0.0.0-20230814102256-1421b829acc9 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
@@ -178,7 +179,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/google/flatbuffers v24.3.25+incompatible // indirect
-	github.com/google/pprof v0.0.0-20240528025155-186aa0362fba // indirect
+	github.com/google/pprof v0.0.0-20240625030939-27f56978b8b0 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.4 // indirect
@@ -219,7 +220,9 @@ require (
 	github.com/kataras/go-events v0.0.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
+	github.com/lf-edge/ekuiper/v2 v2.0.0-dev.5 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
