@@ -123,7 +123,7 @@ func (r *RestSink) collect(ctx api.StreamContext, item api.MessageTuple) error {
 			}
 		}
 		if r.config.DebugResp {
-			logger.Infof("Response raw content: %s\n", string(b))
+			logger.Infof("Response raw content: %s\n", b)
 		}
 	}
 	return nil
