@@ -119,3 +119,9 @@ func (r *RestSink) collect(ctx api.StreamContext, data map[string]any) error {
 	}
 	return nil
 }
+
+func GetSink() api.Sink {
+	return &RestSink{}
+}
+
+var _ api.TupleCollector = &RestSink{}

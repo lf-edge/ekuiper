@@ -40,7 +40,7 @@ func init() {
 	modules.RegisterSink("log", sink.NewLogSink)
 	modules.RegisterSink("logToMemory", sink.NewLogSinkToMemory)
 	modules.RegisterSink("mqtt", mqtt.GetSink)
-	// modules.RegisterSink("rest", func() api.Sink { return &http.RestSink{} })
+	modules.RegisterSink("rest", func() api.Sink { return http.GetSink() })
 	modules.RegisterSink("nop", func() api.Sink { return &sink.NopSink{} })
 	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
 	modules.RegisterSink("neuron", neuron.GetSink)

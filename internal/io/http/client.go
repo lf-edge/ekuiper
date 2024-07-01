@@ -69,7 +69,7 @@ type RawConf struct {
 	Body     string            `json:"body"`
 	BodyType string            `json:"bodyType"`
 	Headers  map[string]string `json:"headers"`
-	Timeout  int               `json:"timeout"`
+	Timeout  cast.DurationConf `json:"timeout"`
 
 	OAuth map[string]map[string]interface{} `json:"oauth"`
 	// Could be code or body
@@ -80,7 +80,7 @@ type RawConf struct {
 }
 
 const (
-	DefaultTimeout = 5000
+	DefaultTimeout = 5000 * time.Millisecond
 )
 
 type bodyResp struct {
@@ -104,7 +104,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	c := &RawConf{
 		Url:          "http://localhost",
 		Method:       http.MethodGet,
-		Timeout:      DefaultTimeout,
+		Timeout:      cast.DurationConf(DefaultTimeout),
 		ResponseType: "code",
 	}
 
@@ -124,6 +124,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	if c.Timeout < 0 {
 		return fmt.Errorf("timeout must be greater than or equal to 0")
 	}
+
 	// Set default body type if not set
 	if c.BodyType == "" {
 		switch c.Method {
@@ -188,7 +189,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	tr := newTransport(tlscfg, conf.Log)
 	cc.client = &http.Client{
 		Transport: tr,
-		Timeout:   time.Duration(c.Timeout) * time.Millisecond,
+		Timeout:   time.Duration(c.Timeout),
 	}
 	cc.config = c
 	// that means payload need compression and decompression, so we need initialize compressor and decompressor
