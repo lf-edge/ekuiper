@@ -23,7 +23,6 @@ const (
 	SINK
 	FUNCTION
 	PORTABLE
-	WASM
 )
 
 var PluginTypes = []string{"sources", "sinks", "functions", "portable", "wasm"}
@@ -33,7 +32,6 @@ var PluginTypeMap = map[string]PluginType{
 	"sinks":     SINK,
 	"functions": FUNCTION,
 	"portable":  PORTABLE,
-	"wasm":      WASM,
 }
 
 type Plugin interface {
@@ -84,8 +82,6 @@ func NewPluginByType(t PluginType) Plugin {
 	switch t {
 	case FUNCTION:
 		return &FuncPlugin{}
-	case WASM:
-		return &FuncPlugin{}
 	default:
 		return &IOPlugin{}
 	}
@@ -109,6 +105,5 @@ const (
 	NATIVE_EXTENSION
 	PORTABLE_EXTENSION
 	SERVICE_EXTENSION
-	WASM_EXTENSION
 	JS_EXTENSION
 )
