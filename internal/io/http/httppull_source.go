@@ -24,6 +24,7 @@ import (
 
 type HttpPullSource struct {
 	*ClientConf
+	lastMD5 string
 }
 
 func (hps *HttpPullSource) Pull(ctx api.StreamContext, trigger time.Time, ingest api.TupleIngest, ingestError api.ErrorIngest) {
@@ -67,10 +68,11 @@ func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, erro
 	if err != nil {
 		return nil, err
 	}
-	results, _, err := hps.parseResponse(ctx, resp)
+	results, newMD5, err := hps.parseResponse(ctx, resp, hps.lastMD5)
 	if err != nil {
 		return nil, err
 	}
+	hps.lastMD5 = newMD5
 	return results, nil
 }
 

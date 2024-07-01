@@ -32,6 +32,15 @@ type Response struct {
 	Code    int    `json:"code"`
 }
 
+func handleCodeErr(w http.ResponseWriter, r *http.Request) {
+	resp := Response{
+		Message: "Err",
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	json.NewEncoder(w).Encode(resp)
+}
+
 func handleGet(w http.ResponseWriter, r *http.Request) {
 	resp := Response{
 		Message: "Hello, GET!",
@@ -86,6 +95,7 @@ func createServer() *httptest.Server {
 	router.HandleFunc("/get", handleGet)
 	router.HandleFunc("/post", handlePost)
 	router.HandleFunc("/err", handleErr)
+	router.HandleFunc("/codeErr", handleCodeErr)
 	router.HandleFunc("/auth", handleAuth)
 	router.HandleFunc("/refresh", handleRefresh)
 	server := httptest.NewServer(router)
@@ -152,4 +162,49 @@ func TestHttpPullSource(t *testing.T) {
 	require.Error(t, <-errCh)
 	close(errCh)
 	source.Close(ctx)
+
+	source = &HttpPullSource{}
+	require.NoError(t, source.Provision(ctx, map[string]any{
+		"url":          server.URL,
+		"datasource":   "/codeErr",
+		"method":       "post",
+		"responseType": "code",
+	}))
+	require.NoError(t, source.Connect(ctx))
+	errCh = make(chan error, 1)
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) { errCh <- err })
+	require.Error(t, <-errCh)
+	close(errCh)
+	source.Close(ctx)
+}
+
+func TestSourceIncremental(t *testing.T) {
+	server := createServer()
+	defer func() {
+		server.Close()
+	}()
+	ctx := mockContext.NewMockContext("1", "2")
+	source := &HttpPullSource{}
+	require.NoError(t, source.Provision(ctx, map[string]any{
+		"url":         server.URL,
+		"datasource":  "/get",
+		"method":      "get",
+		"incremental": true,
+	}))
+	require.NoError(t, source.Connect(ctx))
+	dataCh := make(chan any, 1)
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataCh <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Equal(t, []map[string]interface{}{
+		{
+			"message": "Hello, GET!",
+			"code":    float64(200),
+		},
+	}, <-dataCh)
+
+	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+		dataCh <- data
+	}, func(ctx api.StreamContext, err error) {})
+	require.Nil(t, <-dataCh)
 }
