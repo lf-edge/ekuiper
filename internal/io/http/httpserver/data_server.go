@@ -44,10 +44,10 @@ type GlobalServerManager struct {
 
 var manager *GlobalServerManager
 
-func InitGlobalServerManager() {
+func InitGlobalServerManager(ip string, port int, tlsConf *conf.TlsConf) {
 	r := mux.NewRouter()
 	s := &http.Server{
-		Addr: cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort),
+		Addr: cast.JoinHostPortInt(ip, port),
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 60 * 5,
 		ReadTimeout:  time.Second * 60 * 5,
@@ -60,7 +60,7 @@ func InitGlobalServerManager() {
 		router:      r,
 	}
 	go func(m *GlobalServerManager) {
-		if conf.Config.Source.HttpServerTls == nil {
+		if tlsConf == nil {
 			s.ListenAndServe()
 		} else {
 			s.ListenAndServeTLS(conf.Config.Source.HttpServerTls.Certfile, conf.Config.Source.HttpServerTls.Keyfile)

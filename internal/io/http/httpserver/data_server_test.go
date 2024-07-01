@@ -15,19 +15,20 @@
 package httpserver
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
 func TestEndpoints(t *testing.T) {
-	conf.InitConf()
-	InitGlobalServerManager()
+	ip := "127.0.0.1"
+	port := 10082
+	InitGlobalServerManager(ip, port, nil)
 	defer ShutDown()
 	endpoints := []string{
 		"/ee1", "/eb2", "/ec3",
@@ -43,7 +44,7 @@ func TestEndpoints(t *testing.T) {
 	UnregisterEndpoint(endpoints[2])
 	require.Equal(t, map[string]int{}, EndpointRef())
 
-	urlPrefix := "http://localhost:10081"
+	urlPrefix := fmt.Sprintf("http://%v:%v", ip, port)
 	client := &http.Client{}
 	RegisterEndpoint(endpoints[0], "POST")
 	RegisterEndpoint(endpoints[1], "PUT")

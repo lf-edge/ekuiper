@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -31,8 +30,9 @@ import (
 )
 
 func TestHttpPushSource(t *testing.T) {
-	conf.InitConf()
-	httpserver.InitGlobalServerManager()
+	ip := "127.0.0.1"
+	port := 10081
+	httpserver.InitGlobalServerManager(ip, port, nil)
 	defer httpserver.ShutDown()
 	ctx := mockContext.NewMockContext("1", "2")
 	s := &HttpPushSource{}
@@ -45,7 +45,7 @@ func TestHttpPushSource(t *testing.T) {
 	require.NoError(t, s.Subscribe(ctx, func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		recvData <- data
 	}, func(ctx api.StreamContext, err error) {}))
-	require.NoError(t, testx.TestHttp(&http.Client{}, fmt.Sprintf("http://127.0.0.1:%v/post", conf.Config.Source.HttpServerPort), "POST"))
+	require.NoError(t, testx.TestHttp(&http.Client{}, fmt.Sprintf("http://%v:%v/post", ip, port), "POST"))
 	x := <-recvData
 	_, ok := x.(*xsql.Tuple)
 	require.True(t, ok)
