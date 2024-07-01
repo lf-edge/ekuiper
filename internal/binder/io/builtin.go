@@ -30,7 +30,7 @@ import (
 func init() {
 	modules.RegisterSource("mqtt", mqtt.GetSource)
 	modules.RegisterSource("httppull", func() api.Source { return &http.HttpPullSource{} })
-	// modules.RegisterSource("httppush", func() api.Source { return &http.PushSource{} })
+	modules.RegisterSource("httppush", func() api.Source { return &http.HttpPushSource{} })
 	modules.RegisterSource("file", file.GetSource)
 	modules.RegisterSource("memory", func() api.Source { return memory.GetSource() })
 	modules.RegisterSource("neuron", neuron.GetSource)
