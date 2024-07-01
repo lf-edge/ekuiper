@@ -18,9 +18,9 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/sql"
-	"github.com/lf-edge/ekuiper/v2/internal/io/sql/client"
-	"github.com/lf-edge/ekuiper/v2/internal/io/video"
+	"github.com/lf-edge/ekuiper/v2/extension/sql"
+	"github.com/lf-edge/ekuiper/v2/extension/sql/client"
+	"github.com/lf-edge/ekuiper/v2/extension/video"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
