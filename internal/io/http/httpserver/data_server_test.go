@@ -21,33 +21,34 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 )
 
 func TestEndpoints(t *testing.T) {
-	testx.InitEnv("httpserver")
+	conf.InitConf()
+	InitGlobalServerManager()
+	defer ShutDown()
 	endpoints := []string{
 		"/ee1", "/eb2", "/ec3",
 	}
-	RegisterEndpoint(endpoints[0], "POST", "application/json")
-	RegisterEndpoint(endpoints[1], "PUT", "application/json")
-	RegisterEndpoint(endpoints[2], "POST", "application/json")
-	require.NotNil(t, server)
-	require.NotNil(t, router)
-	require.Equal(t, int64(3), refCount)
+	RegisterEndpoint(endpoints[0], "POST")
+	RegisterEndpoint(endpoints[1], "PUT")
+	RegisterEndpoint(endpoints[2], "POST")
+	require.Equal(t, map[string]int{
+		"/ee1": 1, "/eb2": 1, "/ec3": 1,
+	}, EndpointRef())
 	UnregisterEndpoint(endpoints[0])
 	UnregisterEndpoint(endpoints[1])
 	UnregisterEndpoint(endpoints[2])
-	require.Nil(t, server)
-	require.Nil(t, router)
-	require.Equal(t, int64(0), refCount)
+	require.Equal(t, map[string]int{}, EndpointRef())
 
 	urlPrefix := "http://localhost:10081"
 	client := &http.Client{}
-	RegisterEndpoint(endpoints[0], "POST", "application/json")
-	RegisterEndpoint(endpoints[1], "PUT", "application/json")
+	RegisterEndpoint(endpoints[0], "POST")
+	RegisterEndpoint(endpoints[1], "PUT")
 	var err error
-	//// wait for http server start
+	// wait for http server start
 	for i := 0; i < 3; i++ {
 		err = testx.TestHttp(client, urlPrefix+endpoints[1], "PUT")
 		if err == nil {

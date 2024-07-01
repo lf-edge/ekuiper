@@ -96,7 +96,7 @@ func TestHttp(client *http.Client, url string, method string) error {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("status code is not 200 for %s", url)
+		return fmt.Errorf("status code is not 200 for %s, code:%v", url, resp.StatusCode)
 	}
 	return nil
 }

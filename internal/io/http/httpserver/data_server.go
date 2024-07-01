@@ -15,6 +15,7 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,110 +25,26 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
-	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-// manage the global http data server
+type GlobalServerManager struct {
+	sync.RWMutex
+	endpointRef map[string]int
 
-var (
-	refCount int64
-	server   *http.Server
-	router   *mux.Router
-	done     chan struct{}
-	sctx     api.StreamContext
-	lock     sync.RWMutex
-)
-
-const (
-	TopicPrefix = "$$httppush/"
-)
-
-func init() {
-	contextLogger := conf.Log.WithField("httppush_connection", 0)
-	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
-	ruleId := "$$httppush_connection"
-	opId := "$$httppush_connection"
-	store, err := state.CreateStore(ruleId, 0)
-	if err != nil {
-		ctx.GetLogger().Errorf("neuron connection create store error %v", err)
-		panic(err)
-	}
-	sctx = ctx.WithMeta(ruleId, opId, store)
+	server *http.Server
+	router *mux.Router
+	cancel context.CancelFunc
 }
 
-func registerInit() error {
-	lock.Lock()
-	defer lock.Unlock()
-	if server == nil {
-		var err error
-		server, router, err = createDataServer()
-		if err != nil {
-			return err
-		}
-		// wait server ready
-		time.Sleep(500 * time.Millisecond)
-	}
-	refCount++
-	return nil
-}
+var manager *GlobalServerManager
 
-func RegisterEndpoint(endpoint string, method string, _ string) (string, chan struct{}, error) {
-	err := registerInit()
-	if err != nil {
-		return "", nil, err
-	}
-	topic := TopicPrefix + endpoint
-	pubsub.CreatePub(topic)
-	router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
-		sctx.GetLogger().Debugf("receive http request: %s", r.URL.String())
-		defer r.Body.Close()
-		m := make(map[string]interface{})
-		err := json.NewDecoder(r.Body).Decode(&m)
-		if err != nil {
-			handleError(w, err, "Fail to decode data")
-			pubsub.ProduceError(sctx, topic, fmt.Errorf("fail to decode data %s: %v", r.Body, err))
-			return
-		}
-		sctx.GetLogger().Debugf("httppush received message %s", m)
-		pubsub.Produce(sctx, topic, &xsql.Tuple{Message: m, Timestamp: timex.GetNow()})
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	}).Methods(method)
-	return topic, done, nil
-}
-
-func UnregisterEndpoint(endpoint string) {
-	lock.Lock()
-	defer lock.Unlock()
-	pubsub.RemovePub(TopicPrefix + endpoint)
-	refCount--
-	// TODO async close server
-	if refCount == 0 {
-		shutdown()
-	}
-}
-
-func shutdown() {
-	sctx.GetLogger().Infof("shutting down http data server...")
-	if server != nil {
-		if err := server.Shutdown(sctx); err != nil {
-			sctx.GetLogger().Errorf("shutdown: %s", err)
-		}
-		sctx.GetLogger().Infof("http data server exiting")
-	}
-	server = nil
-	router = nil
-}
-
-// createDataServer creates a new http data server. Must run inside lock
-func createDataServer() (*http.Server, *mux.Router, error) {
+func InitGlobalServerManager() {
 	r := mux.NewRouter()
 	s := &http.Server{
 		Addr: cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort),
@@ -137,21 +54,101 @@ func createDataServer() (*http.Server, *mux.Router, error) {
 		IdleTimeout:  time.Second * 60,
 		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin", "Authorization"}), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE", "HEAD"}))(r),
 	}
-	done = make(chan struct{})
-	go func(done chan struct{}) {
-		var err error
+	manager = &GlobalServerManager{
+		endpointRef: map[string]int{},
+		server:      s,
+		router:      r,
+	}
+	go func(m *GlobalServerManager) {
 		if conf.Config.Source.HttpServerTls == nil {
-			err = s.ListenAndServe()
+			s.ListenAndServe()
 		} else {
-			err = s.ListenAndServeTLS(conf.Config.Source.HttpServerTls.Certfile, conf.Config.Source.HttpServerTls.Keyfile)
+			s.ListenAndServeTLS(conf.Config.Source.HttpServerTls.Certfile, conf.Config.Source.HttpServerTls.Keyfile)
 		}
+	}(manager)
+	time.Sleep(500 * time.Millisecond)
+}
+
+func EndpointRef() map[string]int {
+	return manager.EndpointRef()
+}
+
+func ShutDown() {
+	manager.Shutdown()
+	manager = nil
+}
+
+const (
+	TopicPrefix = "$$httppush/"
+)
+
+func RegisterEndpoint(endpoint string, method string) (string, error) {
+	return manager.RegisterEndpoint(endpoint, method)
+}
+
+func UnregisterEndpoint(endpoint string) {
+	manager.UnregisterEndpoint(endpoint)
+}
+
+func (m *GlobalServerManager) EndpointRef() map[string]int {
+	m.RLock()
+	defer m.RUnlock()
+	return m.endpointRef
+}
+
+func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (string, error) {
+	var needcreate bool
+	m.Lock()
+	count, ok := m.endpointRef[endpoint]
+	count++
+	if !ok {
+		needcreate = true
+		m.endpointRef[endpoint] = 1
+	} else {
+		m.endpointRef[endpoint] = count
+	}
+	m.Unlock()
+	topic := TopicPrefix + endpoint
+	if needcreate {
+		pubsub.CreatePub(topic)
+	}
+	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		m := make(map[string]interface{})
+		err := json.NewDecoder(r.Body).Decode(&m)
 		if err != nil {
-			sctx.GetLogger().Errorf("http data server error: %v", err)
-			close(done)
+			handleError(w, err, "Fail to decode data")
+			pubsub.ProduceError(topoContext.Background(), topic, fmt.Errorf("fail to decode data %s: %v", r.Body, err))
+			return
 		}
-	}(done)
-	sctx.GetLogger().Infof("Serving http data server on port http://%s", cast.JoinHostPortInt(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort))
-	return s, r, nil
+		pubsub.Produce(topoContext.Background(), topic, &xsql.Tuple{Message: m, Timestamp: timex.GetNow()})
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	}).Methods(method)
+	return topic, nil
+}
+
+func (m *GlobalServerManager) UnregisterEndpoint(endpoint string) {
+	var needRemove bool
+	m.Lock()
+	c, ok := m.endpointRef[endpoint]
+	if ok {
+		c--
+		if c < 1 {
+			needRemove = true
+			delete(m.endpointRef, endpoint)
+		} else {
+			m.endpointRef[endpoint] = c
+		}
+	}
+	m.Unlock()
+	if needRemove {
+		pubsub.RemovePub(TopicPrefix + endpoint)
+	}
+}
+
+func (m *GlobalServerManager) Shutdown() {
+	m.server.Shutdown(context.Background())
 }
 
 func handleError(w http.ResponseWriter, err error, prefix string) {

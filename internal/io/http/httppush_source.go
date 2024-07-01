@@ -30,7 +30,6 @@ import (
 
 type HttpPushSource struct {
 	conf *PushConf
-	done <-chan struct{}
 	ch   <-chan any
 }
 
@@ -72,12 +71,11 @@ func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 }
 
 func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
-	t, done, err := httpserver.RegisterEndpoint(h.conf.DataSource, h.conf.Method, h.conf.ContentType)
+	t, err := httpserver.RegisterEndpoint(h.conf.DataSource, h.conf.Method)
 	if err != nil {
 		return err
 	}
 	h.ch = pubsub.CreateSub(t, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), h.conf.BufferLength)
-	h.done = done
 	return nil
 }
 
@@ -95,8 +93,6 @@ func (h *HttpPushSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest
 				if e != nil {
 					ingestError(ctx, e)
 				}
-			case <-h.done:
-				return
 			}
 		}
 	}(ctx)

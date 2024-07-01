@@ -15,6 +15,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -30,6 +32,8 @@ import (
 
 func TestHttpPushSource(t *testing.T) {
 	conf.InitConf()
+	httpserver.InitGlobalServerManager()
+	defer httpserver.ShutDown()
 	ctx := mockContext.NewMockContext("1", "2")
 	s := &HttpPushSource{}
 	require.NoError(t, s.Provision(ctx, map[string]any{
@@ -41,7 +45,7 @@ func TestHttpPushSource(t *testing.T) {
 	require.NoError(t, s.Subscribe(ctx, func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		recvData <- data
 	}, func(ctx api.StreamContext, err error) {}))
-	require.NoError(t, testx.TestHttp(&http.Client{}, "http://127.0.0.1:10081/post", "POST"))
+	require.NoError(t, testx.TestHttp(&http.Client{}, fmt.Sprintf("http://127.0.0.1:%v/post", conf.Config.Source.HttpServerPort), "POST"))
 	x := <-recvData
 	_, ok := x.(*xsql.Tuple)
 	require.True(t, ok)
