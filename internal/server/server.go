@@ -161,7 +161,7 @@ func StartUp(Version string) {
 	keyedstate.InitKeyedStateKV()
 
 	meta2.InitYamlConfigManager()
-	httpserver.InitGlobalServerManager(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort)
+	httpserver.InitGlobalServerManager(conf.Config.Source.HttpServerIp, conf.Config.Source.HttpServerPort, conf.Config.Source.HttpServerTls)
 	ruleProcessor = processor.NewRuleProcessor()
 	streamProcessor = processor.NewStreamProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
