@@ -107,7 +107,7 @@ func (r *RestSink) collect(ctx api.StreamContext, item api.MessageTuple) error {
 			method, u, data)
 	} else {
 		logger.Debugf("rest sink got response %v", resp)
-		_, b, err := r.parseResponse(ctx, resp)
+		_, b, err := r.parseResponse(ctx, resp, "")
 		// do not record response body error as it is not an error in the sink action.
 		if err != nil && !strings.HasPrefix(err.Error(), BODY_ERR) {
 			if strings.HasPrefix(err.Error(), BODY_ERR) {
