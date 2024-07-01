@@ -44,13 +44,13 @@ func (r *RestSink) Connect(ctx api.StreamContext) error {
 }
 
 func (r *RestSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {
-	return r.collect(ctx, item.ToMap())
+	return r.collect(ctx, item)
 }
 
 func (r *RestSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
 	var err error
 	items.RangeOfTuples(func(_ int, tuple api.MessageTuple) bool {
-		err = r.collect(ctx, tuple.ToMap())
+		err = r.collect(ctx, tuple)
 		if err != nil {
 			return false
 		}
@@ -59,23 +59,32 @@ func (r *RestSink) CollectList(ctx api.StreamContext, items api.MessageTupleList
 	return err
 }
 
-func (r *RestSink) collect(ctx api.StreamContext, data map[string]any) error {
+func (r *RestSink) collect(ctx api.StreamContext, item api.MessageTuple) error {
 	logger := ctx.GetLogger()
-	headers, err := r.parseHeaders(ctx, data)
-	if err != nil {
-		return err
-	}
-	bodyType, err := ctx.ParseTemplate(r.config.BodyType, data)
-	if err != nil {
-		return err
-	}
-	method, err := ctx.ParseTemplate(r.config.Method, data)
-	if err != nil {
-		return err
-	}
-	u, err := ctx.ParseTemplate(r.config.Url, data)
-	if err != nil {
-		return err
+	headers := r.config.Headers
+	bodyType := r.config.BodyType
+	method := r.config.Method
+	u := r.config.Url
+	data := item.ToMap()
+	if dp, ok := item.(api.HasDynamicProps); ok {
+		for k := range headers {
+			nv, ok := dp.DynamicProps(k)
+			if ok {
+				headers[k] = nv
+			}
+		}
+		nb, ok := dp.DynamicProps("bodyType")
+		if ok {
+			bodyType = nb
+		}
+		nm, ok := dp.DynamicProps("method")
+		if ok {
+			method = nm
+		}
+		nu, ok := dp.DynamicProps("url")
+		if ok {
+			u = nu
+		}
 	}
 	resp, err := httpx.Send(ctx.GetLogger(), r.client, bodyType, method, u, headers, true, data)
 	failpoint.Inject("recoverAbleErr", func() {

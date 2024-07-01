@@ -21,6 +21,7 @@ import (
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -37,8 +38,10 @@ func TestRestSinkCollect(t *testing.T) {
 		"method":    "get",
 		"debugResp": true,
 	}))
-	data := map[string]any{
-		"a": 1,
+	data := &xsql.Tuple{
+		Message: map[string]interface{}{
+			"a": 1,
+		},
 	}
 	require.NoError(t, s.Connect(ctx))
 	require.NoError(t, s.collect(ctx, data))
@@ -51,8 +54,10 @@ func TestRestSinkRecoverErr(t *testing.T) {
 		server.Close()
 	}()
 	ctx := mockContext.NewMockContext("1", "2")
-	data := map[string]any{
-		"a": 1,
+	data := &xsql.Tuple{
+		Message: map[string]interface{}{
+			"a": 1,
+		},
 	}
 	sErr := &RestSink{}
 	require.NoError(t, sErr.Provision(ctx, map[string]any{
