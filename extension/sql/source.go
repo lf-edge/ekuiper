@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build full
-// +build full
-
 package sql
 
 import (
@@ -28,7 +25,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/io/sql/client"
+	"github.com/lf-edge/ekuiper/v2/extension/sql/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/sqlgen"
