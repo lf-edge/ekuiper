@@ -75,6 +75,8 @@ type RawConf struct {
 	// Could be code or body
 	ResponseType string `json:"responseType"`
 	Compression  string `json:"compression"` // Compression specifies the algorithms used to payload compression
+
+	DebugResp bool `json:"debugResp"`
 }
 
 const (
@@ -362,8 +364,8 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response) 
 	}
 }
 
-func (cc *ClientConf) parseHeaders(ctx api.StreamContext) (map[string]string, error) {
-	return parseHeaders(ctx, cc.config.Headers, cc.tokens)
+func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data map[string]interface{}) (map[string]string, error) {
+	return parseHeaders(ctx, cc.config.Headers, data)
 }
 
 func decode(data []byte) ([]map[string]interface{}, error) {
