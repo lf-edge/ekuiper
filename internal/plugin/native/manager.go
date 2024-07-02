@@ -619,7 +619,7 @@ func (rr *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string
 	}
 }
 
-func (rr *Manager) LookupSource(name string) (api.LookupSource, error) {
+func (rr *Manager) LookupSource(name string) (api.Source, error) {
 	nf, err := rr.loadRuntime(plugin2.SOURCE, name, "", ucFirst(name)+"Lookup")
 	if err != nil {
 		return nil, err
@@ -628,9 +628,9 @@ func (rr *Manager) LookupSource(name string) (api.LookupSource, error) {
 		return nil, nil
 	}
 	switch t := nf.(type) {
-	case api.LookupSource:
+	case api.Source:
 		return t, nil
-	case func() api.LookupSource:
+	case func() api.Source:
 		return t(), nil
 	default:
 		return nil, fmt.Errorf("exported symbol %s is not type of api.LookupSource or function that return api.LookupSource", t)

@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
@@ -74,89 +76,106 @@ func TestManager_Register(t *testing.T) {
 			n:   "",
 			u:   "",
 			err: errors.New("invalid name : should not be empty"),
-		}, {
+		},
+		{
 			t:   plugin.SOURCE,
 			n:   "zipMissConf",
 			u:   endpoint + "/sources/zipMissConf.zip",
 			err: errors.New("fail to install plugin: invalid zip file: expectFiles: 2, got filenames:[/home/runner/work/ekuiper/ekuiper/plugins/sources/ZipMissConf.so], zipFiles: [ZipMissConf.so], yamlFileChecked:false, soFileChecked:true"),
-		}, {
+		},
+		{
 			t:   plugin.SINK,
 			n:   "urlerror",
 			u:   endpoint + "/sinks/nozip",
 			err: errors.New("invalid uri " + endpoint + "/sinks/nozip"),
-		}, {
+		},
+		{
 			t:   plugin.SINK,
 			n:   "zipWrongname",
 			u:   endpoint + "/sinks/zipWrongName.zip",
 			err: errors.New("fail to install plugin: invalid zip file: expectFiles: 1, got filenames:[], zipFiles: [Random2.so], yamlFileChecked:false, soFileChecked:false"),
-		}, {
+		},
+		{
 			t:   plugin.FUNCTION,
 			n:   "zipMissSo",
 			u:   endpoint + "/functions/zipMissSo.zip",
 			err: errors.New("fail to install plugin: invalid zip file: expectFiles: 1, got filenames:[], zipFiles: [zipMissSo.yaml], yamlFileChecked:false, soFileChecked:false"),
-		}, {
+		},
+		{
 			t: plugin.SOURCE,
 			n: "random2",
 			u: endpoint + "/sources/random2.zip",
-		}, {
+		},
+		{
 			t: plugin.SOURCE,
 			n: "random3",
 			u: endpoint + "/sources/random3.zip",
 			v: "1.0.0",
-		}, {
+		},
+		{
 			t:       plugin.SINK,
 			n:       "file2",
 			u:       endpoint + "/sinks/file2.zip",
 			lowerSo: true,
-		}, {
+		},
+		{
 			t: plugin.FUNCTION,
 			n: "echo2",
 			u: endpoint + "/functions/echo2.zip",
 			f: []string{"echo2", "echo3"},
-		}, {
+		},
+		{
 			t:   plugin.FUNCTION,
 			n:   "echo2",
 			u:   endpoint + "/functions/echo2.zip",
 			err: errors.New("invalid name echo2: duplicate"),
-		}, {
+		},
+		{
 			t:   plugin.FUNCTION,
 			n:   "misc",
 			u:   endpoint + "/functions/echo2.zip",
 			f:   []string{"misc", "echo3"},
 			err: errors.New("function name echo3 already exists"),
-		}, {
+		},
+		{
 			t: plugin.FUNCTION,
 			n: "comp",
 			u: endpoint + "/functions/comp.zip",
 		},
+		{
+			t:   plugin.SOURCE,
+			n:   "invalidZip",
+			u:   endpoint + "/sources/invalidZip.zip",
+			err: errors.New("fail to install plugin: zip: not a valid zip file"),
+		},
 	}
 
-	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 	for i, tt := range data {
-		var p plugin.Plugin
-		if tt.t == plugin.FUNCTION {
-			p = &plugin.FuncPlugin{
-				IOPlugin: plugin.IOPlugin{
+		t.Run(fmt.Sprintf("%d_%s", i, tt.n), func(t *testing.T) {
+			var p plugin.Plugin
+			if tt.t == plugin.FUNCTION {
+				p = &plugin.FuncPlugin{
+					IOPlugin: plugin.IOPlugin{
+						Name: tt.n,
+						File: tt.u,
+					},
+					Functions: tt.f,
+				}
+			} else {
+				p = &plugin.IOPlugin{
 					Name: tt.n,
 					File: tt.u,
-				},
-				Functions: tt.f,
+				}
 			}
-		} else {
-			p = &plugin.IOPlugin{
-				Name: tt.n,
-				File: tt.u,
+			err := manager.Register(tt.t, p)
+			if tt.err == nil {
+				assert.NoError(t, err)
+				e := checkFile(manager.pluginDir, manager.pluginConfDir, tt.t, tt.n, tt.v, tt.lowerSo)
+				assert.NoError(t, e)
+			} else {
+				assert.EqualError(t, err, tt.err.Error())
 			}
-		}
-		err := manager.Register(tt.t, p)
-		if !reflect.DeepEqual(tt.err, err) {
-			t.Errorf("%d: error mismatch:\n  exp=%s\n  got=%s\n\n", i, tt.err, err)
-		} else if tt.err == nil {
-			err := checkFile(manager.pluginDir, manager.pluginConfDir, tt.t, tt.n, tt.v, tt.lowerSo)
-			if err != nil {
-				t.Errorf("%d: error : %s\n\n", i, err)
-			}
-		}
+		})
 	}
 }
 
@@ -201,6 +220,12 @@ func TestManager_Symbols(t *testing.T) {
 	if p != "echo2" {
 		t.Errorf("wrong plugin %s for echo3 symbol", p)
 	}
+
+	_, ok = manager.GetPluginVersionBySymbol(plugin.FUNCTION, "none")
+	assert.False(t, ok)
+
+	_, ok = manager.GetPluginVersionBySymbol(plugin.SINK, "none")
+	assert.False(t, ok)
 }
 
 func TestManager_Desc(t *testing.T) {
@@ -231,19 +256,24 @@ func TestManager_Desc(t *testing.T) {
 				"version":   "",
 				"functions": []string{"echo2", "echo3"},
 			},
+		}, {
+			t: plugin.FUNCTION,
+			n: "echo20",
+			r: nil,
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(data))
 
-	for i, p := range data {
-		result, ok := manager.GetPluginInfo(p.t, p.n)
-		if !ok {
-			t.Errorf("%d: get error : not found\n\n", i)
-			return
-		}
-		if !reflect.DeepEqual(p.r, result) {
-			t.Errorf("%d: result mismatch:\n  exp=%v\n  got=%v\n\n", i, p.r, result)
-		}
+	for _, d := range data {
+		t.Run(d.n, func(t *testing.T) {
+			result, ok := manager.GetPluginInfo(d.t, d.n)
+			if d.r == nil {
+				assert.Nil(t, result)
+				assert.False(t, ok)
+			} else {
+				assert.True(t, ok)
+				assert.Equal(t, d.r, result)
+			}
+		})
 	}
 }
 
@@ -251,7 +281,7 @@ func TestManager_Delete(t *testing.T) {
 	data := []struct {
 		t   plugin.PluginType
 		n   string
-		err error
+		err string
 	}{
 		{
 			t: plugin.SOURCE,
@@ -268,15 +298,21 @@ func TestManager_Delete(t *testing.T) {
 		}, {
 			t: plugin.FUNCTION,
 			n: "comp",
+		}, {
+			t:   plugin.FUNCTION,
+			n:   "",
+			err: "invalid name : should not be empty",
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(data))
-
-	for i, p := range data {
-		err := manager.Delete(p.t, p.n, false)
-		if err != nil {
-			t.Errorf("%d: delete error : %s\n\n", i, err)
-		}
+	for _, tt := range data {
+		t.Run(tt.n, func(t *testing.T) {
+			err := manager.Delete(tt.t, tt.n, false)
+			if tt.err != "" {
+				assert.EqualError(t, err, tt.err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
 
