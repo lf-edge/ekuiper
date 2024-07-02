@@ -16,13 +16,12 @@ package httpserver
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 type HttpPushConnection struct {
-	ch       chan *xsql.Tuple
+	topic    string
 	cfg      *connectionCfg
 	endpoint string
 	method   string
@@ -38,12 +37,12 @@ func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Conn
 	if err := cast.MapToStruct(props, cfg); err != nil {
 		return nil, err
 	}
-	ch, err := RegisterEndpoint(cfg.Datasource, cfg.Method)
+	topic, err := RegisterEndpoint(cfg.Datasource, cfg.Method)
 	if err != nil {
 		return nil, err
 	}
 	return &HttpPushConnection{
-		ch:       ch,
+		topic:    topic,
 		cfg:      cfg,
 		endpoint: cfg.Datasource,
 		method:   cfg.Method,
@@ -62,6 +61,6 @@ func (h *HttpPushConnection) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (h *HttpPushConnection) GetDataChan() <-chan *xsql.Tuple {
-	return h.ch
+func (h *HttpPushConnection) GetTopic() string {
+	return h.topic
 }

@@ -15,6 +15,7 @@
 package http
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"testing"
@@ -25,7 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -48,14 +48,13 @@ func TestHttpPushSource(t *testing.T) {
 		"datasource": "/post",
 	}))
 	require.NoError(t, s.Connect(ctx))
-	recvData := make(chan any, 10)
-	require.NoError(t, s.Subscribe(ctx, func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
+	recvData := make(chan []byte, 10)
+	require.NoError(t, s.Subscribe(ctx, func(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 		recvData <- data
 	}, func(ctx api.StreamContext, err error) {}))
 	require.NoError(t, testx.TestHttp(&http.Client{}, fmt.Sprintf("http://%v:%v/post", ip, port), "POST"))
 	x := <-recvData
-	_, ok := x.(*xsql.Tuple)
-	require.True(t, ok)
+	require.Equal(t, `7b0a2020202020202020227469746c65223a2022506f7374207469746c65222c0a202020202020202022626f6479223a2022506f7374206465736372697074696f6e222c0a202020202020202022757365724964223a20310a202020207d`, hex.EncodeToString(x))
 	require.NoError(t, s.Close(ctx))
 }
 

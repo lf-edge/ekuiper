@@ -22,7 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -30,9 +30,11 @@ import (
 )
 
 type HttpPushSource struct {
-	ch    <-chan *xsql.Tuple
-	conf  *PushConf
-	props map[string]any
+	topic    string
+	sourceID string
+	ch       <-chan any
+	conf     *PushConf
+	props    map[string]any
 }
 
 type PushConf struct {
@@ -64,6 +66,7 @@ func (h *HttpPushSource) Provision(ctx api.StreamContext, configs map[string]any
 }
 
 func (h *HttpPushSource) Close(ctx api.StreamContext) error {
+	pubsub.CloseSourceConsumerChannel(h.topic, h.sourceID)
 	return connection.DetachConnection(ctx, h.conf.DataSource, h.props)
 }
 
@@ -76,19 +79,26 @@ func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
 	if !ok {
 		return fmt.Errorf("connection isn't httppushConnection")
 	}
-	h.ch = hc.GetDataChan()
+	h.sourceID = fmt.Sprintf("%s_%s_%v", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	h.topic = hc.GetTopic()
+	ch := pubsub.CreateSub(h.topic, nil, h.sourceID, 1024)
+	h.ch = ch
 	return nil
 }
 
-func (h *HttpPushSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
+func (h *HttpPushSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
 	go func(ctx api.StreamContext) {
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case v := <-h.ch:
+				data, ok := v.([]byte)
+				if !ok {
+					continue
+				}
 				e := infra.SafeRun(func() error {
-					ingest(ctx, v, nil, timex.GetNow())
+					ingest(ctx, data, nil, timex.GetNow())
 					return nil
 				})
 				if e != nil {
@@ -100,4 +110,4 @@ func (h *HttpPushSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest
 	return nil
 }
 
-var _ api.TupleSource = &HttpPushSource{}
+var _ api.BytesSource = &HttpPushSource{}

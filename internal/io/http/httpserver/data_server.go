@@ -15,8 +15,7 @@
 package httpserver
 
 import (
-	"context"
-	"encoding/json"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -25,17 +24,16 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type GlobalServerManager struct {
 	sync.RWMutex
-	endpoint map[string]chan *xsql.Tuple
+	endpoint map[string]string
 	server   *http.Server
 	router   *mux.Router
-	cancel   context.CancelFunc
 }
 
 var manager *GlobalServerManager
@@ -51,7 +49,7 @@ func InitGlobalServerManager(ip string, port int, tlsConf *conf.TlsConf) {
 		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin", "Authorization"}), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE", "HEAD"}))(r),
 	}
 	manager = &GlobalServerManager{
-		endpoint: map[string]chan *xsql.Tuple{},
+		endpoint: map[string]string{},
 		server:   s,
 		router:   r,
 	}
@@ -70,7 +68,7 @@ func ShutDown() {
 	manager = nil
 }
 
-func RegisterEndpoint(endpoint string, method string) (chan *xsql.Tuple, error) {
+func RegisterEndpoint(endpoint string, method string) (string, error) {
 	return manager.RegisterEndpoint(endpoint, method)
 }
 
@@ -78,51 +76,47 @@ func UnregisterEndpoint(endpoint string) {
 	manager.UnregisterEndpoint(endpoint)
 }
 
-func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (chan *xsql.Tuple, error) {
-	var ch chan *xsql.Tuple
+const (
+	TopicPrefix = "$$httppush/"
+)
+
+func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (string, error) {
+	var topic string
 	var ok bool
 	m.Lock()
-	ch, ok = m.endpoint[endpoint]
+	topic, ok = m.endpoint[endpoint]
 	if ok {
-		return ch, nil
+		return topic, nil
 	} else {
-		ch = make(chan *xsql.Tuple, 1024)
-		m.endpoint[endpoint] = ch
+		topic = TopicPrefix + endpoint
+		m.endpoint[endpoint] = topic
 	}
 	m.Unlock()
+	pubsub.CreatePub(topic)
 	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
-		ma := make(map[string]interface{})
-		err := json.NewDecoder(r.Body).Decode(&ma)
+		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			handleError(w, err, "Fail to decode data")
 			return
 		}
-		dataCh := m.GetCh(endpoint)
-		dataCh <- &xsql.Tuple{Message: ma, Timestamp: timex.GetNow()}
+		pubsub.ProduceAny(context.Background(), topic, data)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	}).Methods(method)
-	return ch, nil
-}
-
-func (m *GlobalServerManager) GetCh(endpoint string) chan<- *xsql.Tuple {
-	m.RLock()
-	defer m.RUnlock()
-	return m.endpoint[endpoint]
+	return topic, nil
 }
 
 func (m *GlobalServerManager) UnregisterEndpoint(endpoint string) {
-	var ch chan *xsql.Tuple
 	var ok bool
 	m.Lock()
-	ch, ok = m.endpoint[endpoint]
+	_, ok = m.endpoint[endpoint]
 	if !ok {
 		return
 	}
 	delete(m.endpoint, endpoint)
-	close(ch)
 	m.Unlock()
+	pubsub.RemovePub(TopicPrefix + endpoint)
 }
 
 func (m *GlobalServerManager) Shutdown() {
