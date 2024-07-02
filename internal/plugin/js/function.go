@@ -61,7 +61,7 @@ func (f *JSFunc) Validate(_ []interface{}) error {
 	return nil
 }
 
-func (f *JSFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+func (f *JSFunc) Exec(ctx api.FunctionContext, args []any) (interface{}, bool) {
 	ctx.GetLogger().Debugf("running js func with args %+v", args)
 	if len(args) != len(f.args) {
 		f.args = make([]goja.Value, len(args))

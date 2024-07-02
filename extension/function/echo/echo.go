@@ -29,7 +29,7 @@ func (f *echo) Validate(args []any) error {
 	return nil
 }
 
-func (f *echo) Exec(args []any, ctx api.FunctionContext) (any, bool) {
+func (f *echo) Exec(_ api.FunctionContext, args []any) (any, bool) {
 	result := args[0]
 	return result, true
 }

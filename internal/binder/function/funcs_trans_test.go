@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ func TestCompressExec(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		result, _ := f.Exec(tt.args, fctx)
+		result, _ := f.Exec(fctx, tt.args)
 		if !reflect.DeepEqual(result, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 		}
@@ -126,7 +126,7 @@ func TestDecompressExec(t *testing.T) {
 		},
 	}
 	for i, tt := range tests {
-		result, _ := f.Exec(tt.args, fctx)
+		result, _ := f.Exec(fctx, tt.args)
 		if !reflect.DeepEqual(result, tt.result) {
 			t.Errorf("%d result mismatch,\ngot:\t%v \nwant:\t%v", i, result, tt.result)
 		}
