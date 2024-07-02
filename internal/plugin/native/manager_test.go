@@ -186,13 +186,13 @@ func TestManager_List(t *testing.T) {
 	}{
 		{
 			t: plugin.SOURCE,
-			r: []string{"random2", "random3"},
+			r: []string{"random", "random2", "random3"},
 		}, {
 			t: plugin.SINK,
 			r: []string{"file2"},
 		}, {
 			t: plugin.FUNCTION,
-			r: []string{"comp", "echo2"},
+			r: []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2"},
 		},
 	}
 	fmt.Printf("The test bucket size is %d.\n\n", len(data))
@@ -207,7 +207,7 @@ func TestManager_List(t *testing.T) {
 }
 
 func TestManager_Symbols(t *testing.T) {
-	r := []string{"comp", "echo2", "echo3", "misc"}
+	r := []string{"accumulateWordCount", "comp", "countPlusOne", "echo", "echo2", "echo3", "misc"}
 	result := manager.ListSymbols()
 	sort.Strings(result)
 	if !reflect.DeepEqual(r, result) {

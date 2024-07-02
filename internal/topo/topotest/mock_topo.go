@@ -136,6 +136,9 @@ func doRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOptio
 				case tuple := <-consumer:
 					sinkResult = append(sinkResult, tuple)
 					conf.Log.Debugf("test %s append result %v", id, tuple)
+					if dataLength == 0 && len(sinkResult) == limit {
+						break outerloop
+					}
 				case <-ticker:
 					tp.Cancel()
 					assert.Fail(t, "timeout")
@@ -257,10 +260,12 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) (
 			}
 		}
 	}
-	startTs := datas[0][0].Timestamp.UnixMilli() / 1000 * 1000
-	for startTs != timex.GetNowInMilli() {
-		timex.Set(startTs)
-		conf.Log.Infof("Init Clock to %d, and now is %d", startTs, timex.GetNowInMilli())
+	if len(datas) > 0 {
+		startTs := datas[0][0].Timestamp.UnixMilli() / 1000 * 1000
+		for startTs != timex.GetNowInMilli() {
+			timex.Set(startTs)
+			conf.Log.Infof("Init Clock to %d, and now is %d", startTs, timex.GetNowInMilli())
+		}
 	}
 	rule := &def.Rule{
 		Id:  id,
