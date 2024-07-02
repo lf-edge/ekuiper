@@ -99,7 +99,7 @@ func TestScalarFuncHappyPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, _ := ff.Exec(tt.args, fctx)
+			result, _ := ff.Exec(fctx, tt.args)
 			assert.Equal(t, tt.want, result)
 		})
 	}
@@ -155,7 +155,7 @@ func TestAggFuncHappyPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, _ := ff.Exec(tt.args, fctx)
+			result, _ := ff.Exec(fctx, tt.args)
 			assert.Equal(t, tt.want, result)
 		})
 	}
@@ -222,7 +222,7 @@ func TestScalarFuncComplexType(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, _ := ff.Exec(tt.args, fctx)
+			result, _ := ff.Exec(fctx, tt.args)
 			assert.Equal(t, tt.want, result)
 		})
 	}

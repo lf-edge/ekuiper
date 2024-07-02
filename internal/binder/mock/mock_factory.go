@@ -73,7 +73,7 @@ func (m *mockFunc) Validate(_ []interface{}) error {
 	return nil
 }
 
-func (m *mockFunc) Exec(_ []interface{}, _ api.FunctionContext) (interface{}, bool) {
+func (m *mockFunc) Exec(ctx api.FunctionContext, args []any) (interface{}, bool) {
 	return nil, true
 }
 
