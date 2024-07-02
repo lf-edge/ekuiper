@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/driver"
 )
@@ -70,7 +69,7 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 	if s.closed {
 		return nil
 	}
-	conf.Log.Infof("close db with url:%v", s.url)
+	ctx.GetLogger().Infof("close db with url:%v", s.url)
 	s.db.Close()
 	s.closed = true
 	return nil
@@ -89,7 +88,7 @@ func CreateClient(ctx api.StreamContext, props map[string]any) (*SQLConnection, 
 	if !ok || len(dburl) < 1 {
 		return nil, fmt.Errorf("dburl should be defined as string")
 	}
-	conf.Log.Infof("create db with url:%v", dburl)
+	ctx.GetLogger().Infof("create db with url:%v", dburl)
 	db, err := openDB(dburl)
 	if err != nil {
 		return nil, fmt.Errorf("create connection err:%v, supported drivers:%v", err, driver.GetSupportedDrivers())
