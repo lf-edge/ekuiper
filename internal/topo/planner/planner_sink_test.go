@@ -241,7 +241,7 @@ func TestSinkPlan(t *testing.T) {
 						"op_log_0_cache",
 					},
 					"op_log_0_cache": {
-						"sink_log_resend_0",
+						"sink_log_0_resend",
 					},
 				},
 			},
