@@ -60,7 +60,7 @@ func (hps *HttpPullSource) Provision(ctx api.StreamContext, configs map[string]a
 }
 
 func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, error) {
-	headers, err := hps.parseHeaders(ctx)
+	headers, err := hps.parseHeaders(ctx, hps.tokens)
 	if err != nil {
 		return nil, err
 	}

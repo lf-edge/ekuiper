@@ -71,17 +71,19 @@ type RawConf struct {
 	Body        string            `json:"body"`
 	BodyType    string            `json:"bodyType"`
 	Headers     map[string]string `json:"headers"`
-	Timeout     int               `json:"timeout"`
+	Timeout     cast.DurationConf `json:"timeout"`
 	Incremental bool              `json:"incremental"`
 
 	OAuth map[string]map[string]interface{} `json:"oauth"`
 	// Could be code or body
 	ResponseType string `json:"responseType"`
 	Compression  string `json:"compression"` // Compression specifies the algorithms used to payload compression
+
+	DebugResp bool `json:"debugResp"`
 }
 
 const (
-	DefaultTimeout = 5000
+	DefaultTimeout = 5000 * time.Millisecond
 )
 
 type bodyResp struct {
@@ -105,7 +107,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	c := &RawConf{
 		Url:          "http://localhost",
 		Method:       http.MethodGet,
-		Timeout:      DefaultTimeout,
+		Timeout:      cast.DurationConf(DefaultTimeout),
 		ResponseType: "code",
 	}
 
@@ -125,6 +127,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	if c.Timeout < 0 {
 		return fmt.Errorf("timeout must be greater than or equal to 0")
 	}
+
 	// Set default body type if not set
 	if c.BodyType == "" {
 		switch c.Method {
@@ -189,7 +192,7 @@ func (cc *ClientConf) InitConf(device string, props map[string]interface{}) erro
 	tr := newTransport(tlscfg, conf.Log)
 	cc.client = &http.Client{
 		Transport: tr,
-		Timeout:   time.Duration(c.Timeout) * time.Millisecond,
+		Timeout:   time.Duration(c.Timeout),
 	}
 	cc.config = c
 	// that means payload need compression and decompression, so we need initialize compressor and decompressor
@@ -373,8 +376,8 @@ func (cc *ClientConf) parseResponse(ctx api.StreamContext, resp *http.Response, 
 	}
 }
 
-func (cc *ClientConf) parseHeaders(ctx api.StreamContext) (map[string]string, error) {
-	return parseHeaders(ctx, cc.config.Headers, cc.tokens)
+func (cc *ClientConf) parseHeaders(ctx api.StreamContext, data map[string]interface{}) (map[string]string, error) {
+	return parseHeaders(ctx, cc.config.Headers, data)
 }
 
 func decode(data []byte) ([]map[string]interface{}, error) {
