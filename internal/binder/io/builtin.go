@@ -18,6 +18,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http"
+	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
 	mqttCon "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
@@ -52,6 +53,7 @@ func init() {
 
 	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)
 	modules.RegisterConnection("nng", nng.CreateConnection)
+	modules.RegisterConnection("httppush", httpserver.CreateConnection)
 }
 
 type Manager struct{}

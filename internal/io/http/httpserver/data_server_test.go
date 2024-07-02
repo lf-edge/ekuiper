@@ -36,13 +36,13 @@ func TestEndpoints(t *testing.T) {
 	RegisterEndpoint(endpoints[0], "POST")
 	RegisterEndpoint(endpoints[1], "PUT")
 	RegisterEndpoint(endpoints[2], "POST")
-	require.Equal(t, map[string]int{
-		"/ee1": 1, "/eb2": 1, "/ec3": 1,
-	}, EndpointRef())
+	require.Equal(t, map[string]struct{}{
+		"/ee1": {}, "/eb2": {}, "/ec3": {},
+	}, GetEndpoints())
 	UnregisterEndpoint(endpoints[0])
 	UnregisterEndpoint(endpoints[1])
 	UnregisterEndpoint(endpoints[2])
-	require.Equal(t, map[string]int{}, EndpointRef())
+	require.Equal(t, map[string]struct{}{}, GetEndpoints())
 
 	urlPrefix := fmt.Sprintf("http://%v:%v", ip, port)
 	client := &http.Client{}
@@ -58,4 +58,18 @@ func TestEndpoints(t *testing.T) {
 		time.Sleep(time.Millisecond * 500)
 	}
 	require.NoError(t, err)
+}
+
+func GetEndpoints() map[string]struct{} {
+	return manager.GetEndpoints()
+}
+
+func (m *GlobalServerManager) GetEndpoints() map[string]struct{} {
+	ma := make(map[string]struct{})
+	m.Lock()
+	defer m.Unlock()
+	for k := range m.endpoint {
+		ma[k] = struct{}{}
+	}
+	return ma
 }

@@ -26,10 +26,17 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
+func init() {
+	modules.RegisterConnection("httppush", httpserver.CreateConnection)
+}
+
 func TestHttpPushSource(t *testing.T) {
+	connection.InitConnectionManager4Test()
 	ip := "127.0.0.1"
 	port := 10081
 	httpserver.InitGlobalServerManager(ip, port, nil)
@@ -50,4 +57,17 @@ func TestHttpPushSource(t *testing.T) {
 	_, ok := x.(*xsql.Tuple)
 	require.True(t, ok)
 	require.NoError(t, s.Close(ctx))
+}
+
+func TestHttpPushProvisionErr(t *testing.T) {
+	ctx := mockContext.NewMockContext("1", "2")
+	s := &HttpPushSource{}
+	require.Error(t, s.Provision(ctx, map[string]any{
+		"method":     "GET",
+		"datasource": "/post",
+	}))
+	require.Error(t, s.Provision(ctx, map[string]any{
+		"method":     "POST",
+		"datasource": "post",
+	}))
 }

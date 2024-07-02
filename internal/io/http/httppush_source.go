@@ -22,20 +22,21 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
-	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type HttpPushSource struct {
-	conf *PushConf
-	ch   <-chan any
+	ch    <-chan *xsql.Tuple
+	conf  *PushConf
+	props map[string]any
 }
 
 type PushConf struct {
 	Method       string `json:"method"`
-	ContentType  string `json:"contentType"`
 	BufferLength int    `json:"bufferLength"`
 	DataSource   string `json:"datasource"`
 }
@@ -43,7 +44,6 @@ type PushConf struct {
 func (h *HttpPushSource) Provision(ctx api.StreamContext, configs map[string]any) error {
 	cfg := &PushConf{
 		Method:       http.MethodPost,
-		ContentType:  "application/json",
 		BufferLength: 1024,
 	}
 	err := cast.MapToStruct(configs, cfg)
@@ -53,29 +53,30 @@ func (h *HttpPushSource) Provision(ctx api.StreamContext, configs map[string]any
 	if cfg.Method != http.MethodPost && cfg.Method != http.MethodPut {
 		return fmt.Errorf("method %s is not supported, must be POST or PUT", cfg.Method)
 	}
-	if cfg.ContentType != "application/json" {
-		return fmt.Errorf("property `contentType` must be application/json")
-	}
 	if !strings.HasPrefix(cfg.DataSource, "/") {
 		return fmt.Errorf("property `endpoint` must start with /")
 	}
 
 	h.conf = cfg
+	h.props = configs
 	conf.Log.Debugf("Initialized with configurations %#v.", cfg)
 	return nil
 }
 
 func (h *HttpPushSource) Close(ctx api.StreamContext) error {
-	httpserver.UnregisterEndpoint(h.conf.DataSource)
-	return nil
+	return connection.DetachConnection(ctx, h.conf.DataSource, h.props)
 }
 
 func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
-	t, err := httpserver.RegisterEndpoint(h.conf.DataSource, h.conf.Method)
+	c, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props)
 	if err != nil {
 		return err
 	}
-	h.ch = pubsub.CreateSub(t, nil, fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId()), h.conf.BufferLength)
+	hc, ok := c.(*httpserver.HttpPushConnection)
+	if !ok {
+		return fmt.Errorf("connection isn't httppushConnection")
+	}
+	h.ch = hc.GetDataChan()
 	return nil
 }
 
