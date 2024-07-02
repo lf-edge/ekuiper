@@ -25,7 +25,7 @@ const (
 	PORTABLE
 )
 
-var PluginTypes = []string{"sources", "sinks", "functions", "portable", "wasm"}
+var PluginTypes = []string{"sources", "sinks", "functions", "portable"}
 
 var PluginTypeMap = map[string]PluginType{
 	"sources":   SOURCE,
