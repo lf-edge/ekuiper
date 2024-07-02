@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ func (f *funcExecutor) Validate(_ []interface{}) error {
 	return fmt.Errorf("unknow name")
 }
 
-func (f *funcExecutor) Exec(_ []interface{}, _ api.FunctionContext) (interface{}, bool) {
+func (f *funcExecutor) Exec(ctx api.FunctionContext, args []any) (interface{}, bool) {
 	return fmt.Errorf("unknow name"), false
 }
 
