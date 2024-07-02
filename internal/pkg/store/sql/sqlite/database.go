@@ -24,6 +24,7 @@ import (
 	// introduce sqlite
 	_ "modernc.org/sqlite"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/conf/logger"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
 )
@@ -65,6 +66,9 @@ func (d *Database) Connect() error {
 }
 
 func connectionString(dpath string) string {
+	if conf.IsTesting {
+		return fmt.Sprintf("file:%s?cache=shared&sync=2", dpath)
+	}
 	return fmt.Sprintf("file:%s?cache=shared&_journal=WAL&sync=2", dpath)
 }
 
