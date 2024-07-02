@@ -340,6 +340,273 @@ func TestLookup(t *testing.T) {
 	}
 }
 
+func TestLookupInner(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  any
+		result any // join tuple or error
+	}{
+		{
+			name: "normal",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": 2},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 2},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 1.0, "lb": 1.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 2},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 2.0, "lb": 2.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 2},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 3.0, "lb": 4.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "empty",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "empty"},
+			},
+			result: nil,
+		},
+		{
+			name: "lookup error",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "wrong"},
+			},
+			result: errors.New("mock lookup error"),
+		},
+		{
+			name: "decode error",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "jsonerror"},
+			},
+			// decode error, inner join has no result
+			result: nil,
+		},
+		{
+			name: "window",
+			input: &xsql.WindowTuples{
+				Content: []xsql.Row{
+					&xsql.Tuple{
+						Emitter: "stream1",
+						Message: map[string]any{"a": 2},
+					},
+					&xsql.Tuple{
+						Emitter: "stream1",
+						Message: map[string]any{"a": 3},
+					},
+				},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 2},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 1.0, "lb": 1.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 2},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 2.0, "lb": 2.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 2},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 3.0, "lb": 4.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 3},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 1.0, "lb": 1.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 3},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 2.0, "lb": 2.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": 3},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 3.0, "lb": 4.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "window empty",
+			input: &xsql.WindowTuples{
+				Content: []xsql.Row{
+					&xsql.Tuple{
+						Emitter: "stream1",
+						Message: map[string]any{"a": "empty"},
+					},
+				},
+			},
+			result: nil,
+		},
+		{
+			name: "decode to array",
+			input: &xsql.Tuple{
+				Emitter: "stream1",
+				Message: map[string]any{"a": "array"},
+			},
+			result: &xsql.JoinTuples{
+				Content: []*xsql.JoinTuple{
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": "array"},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 1.0, "lb": 1.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+					{
+						Tuples: []xsql.Row{
+							&xsql.Tuple{
+								Emitter: "stream1",
+								Message: map[string]any{"a": "array"},
+							},
+							&xsql.Tuple{
+								Emitter:   "testInner",
+								Message:   map[string]any{"la": 3.0, "lb": 4.0},
+								Timestamp: timex.GetNow(),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	modules.RegisterLookupSource("mock", func() api.Source {
+		return &MockLookupBytes{}
+	})
+
+	ctx, cancel := mockContext.NewMockContext("testLookupInner", "test").WithCancel()
+	defer cancel()
+	op, err := NewLookupNode(ctx, "testInner", true, []string{"la", "lb"}, []string{"test1"}, ast.INNER_JOIN, []ast.Expr{&ast.FieldRef{
+		StreamName: "",
+		Name:       "a",
+	}}, &ast.Options{TYPE: "mock", FORMAT: "json"}, &def.RuleOption{BufferLength: 10, SendError: true}, map[string]any{})
+	assert.NoError(t, err)
+	out := make(chan any, 100)
+	err = op.AddOutput(out, "test")
+	assert.NoError(t, err)
+	errCh := make(chan error)
+	op.Exec(ctx, errCh)
+	err = <-errCh
+	assert.Error(t, err)
+	assert.EqualError(t, err, "lookup table testInner is not found")
+	// run table
+	err = lookup.CreateInstance("testInner", "mock", &ast.Options{
+		DATASOURCE: "testInner",
+		TYPE:       "mock",
+		KIND:       "lookup",
+		KEY:        "id",
+	})
+	assert.NoError(t, err)
+	op.Exec(ctx, errCh)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			op.input <- tt.input
+			if tt.result != nil {
+				r := <-out
+				assert.Equal(t, tt.result, r)
+			}
+		})
+	}
+}
+
 func TestLookupPayload(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -429,9 +696,7 @@ func TestLookupPayload(t *testing.T) {
 				Emitter: "stream1",
 				Message: map[string]any{"a": "payloadEmpty"},
 			},
-			result: &xsql.JoinTuples{
-				Content: make([]*xsql.JoinTuple, 0),
-			},
+			result: nil,
 		},
 		{
 			name: "payload not bytes",
@@ -439,9 +704,7 @@ func TestLookupPayload(t *testing.T) {
 				Emitter: "stream1",
 				Message: map[string]any{"a": "payload not bytes"},
 			},
-			result: &xsql.JoinTuples{
-				Content: make([]*xsql.JoinTuple, 0),
-			},
+			result: nil,
 		},
 		{
 			name: "array payload array",
@@ -525,8 +788,10 @@ func TestLookupPayload(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			op.input <- tt.input
-			r := <-out
-			assert.Equal(t, tt.result, r)
+			if tt.result != nil {
+				r := <-out
+				assert.Equal(t, tt.result, r)
+			}
 		})
 	}
 	timex.Add(20 * time.Second)
