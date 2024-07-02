@@ -109,6 +109,10 @@ func RemovePub(topic string) {
 	}
 }
 
+func ProduceAny(ctx api.StreamContext, topic string, data any) {
+	doProduce(ctx, topic, data)
+}
+
 func Produce(ctx api.StreamContext, topic string, data MemTuple) {
 	doProduce(ctx, topic, data)
 }

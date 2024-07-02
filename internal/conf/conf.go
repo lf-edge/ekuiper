@@ -52,7 +52,7 @@ var (
 	TestId    string
 )
 
-type tlsConf struct {
+type TlsConf struct {
 	Certfile string `yaml:"certfile"`
 	Keyfile  string `yaml:"keyfile"`
 }
@@ -123,7 +123,7 @@ func (sc *SinkConf) Validate() error {
 type SourceConf struct {
 	HttpServerIp   string   `json:"httpServerIp" yaml:"httpServerIp"`
 	HttpServerPort int      `json:"httpServerPort" yaml:"httpServerPort"`
-	HttpServerTls  *tlsConf `json:"httpServerTls" yaml:"httpServerTls"`
+	HttpServerTls  *TlsConf `json:"httpServerTls" yaml:"httpServerTls"`
 }
 
 func (sc *SourceConf) Validate() error {
@@ -184,7 +184,7 @@ type KuiperConf struct {
 		Port                    int               `yaml:"port"`
 		RestIp                  string            `yaml:"restIp"`
 		RestPort                int               `yaml:"restPort"`
-		RestTls                 *tlsConf          `yaml:"restTls"`
+		RestTls                 *TlsConf          `yaml:"restTls"`
 		Prometheus              bool              `yaml:"prometheus"`
 		PrometheusPort          int               `yaml:"prometheusPort"`
 		PluginHosts             string            `yaml:"pluginHosts"`
