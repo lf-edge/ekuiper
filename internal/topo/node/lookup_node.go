@@ -159,12 +159,14 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						if err != nil {
 							n.Broadcast(err)
 							n.statManager.IncTotalExceptions(err.Error())
-						} else {
+						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
-							n.statManager.IncTotalMessagesProcessed(int64(sets.Len()))
+						} else {
+							ctx.GetLogger().Debugf("lookup return nil")
 						}
 						n.statManager.ProcessTimeEnd()
+						n.statManager.IncTotalMessagesProcessed(1)
 						n.statManager.SetBufferLength(int64(len(n.input)))
 					case *xsql.WindowTuples:
 						log.Debugf("Lookup Node receive window input %v", d)
@@ -184,11 +186,14 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 						if err != nil {
 							n.Broadcast(err)
 							n.statManager.IncTotalExceptions(err.Error())
-						} else {
+						} else if sets.Len() > 0 {
 							n.Broadcast(sets)
 							n.statManager.IncTotalRecordsOut()
+						} else {
+							ctx.GetLogger().Debugf("lookup return nil")
 						}
 						n.statManager.ProcessTimeEnd()
+						n.statManager.IncTotalMessagesProcessed(1)
 						n.statManager.SetBufferLength(int64(len(n.input)))
 					default:
 						e := fmt.Errorf("run lookup node error: invalid input type but got %[1]T(%[1]v)", d)
