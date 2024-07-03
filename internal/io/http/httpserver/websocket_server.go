@@ -47,9 +47,9 @@ func UnRegisterWebSocketEndpoint(endpoint string) {
 
 func (m *GlobalServerManager) recvProcess(ctx api.StreamContext, endpoint string, c *websocket.Conn, wg *sync.WaitGroup) {
 	defer func() {
-		wg.Done()
 		m.CloseEndpointConnection(endpoint, c)
 		conf.Log.Infof("websocket endpoint %v stop recvProcess", endpoint)
+		wg.Done()
 	}()
 	conf.Log.Infof("websocket endpoint %v start recvProcess", endpoint)
 	topic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
