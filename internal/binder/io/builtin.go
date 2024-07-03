@@ -54,6 +54,7 @@ func init() {
 	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)
 	modules.RegisterConnection("nng", nng.CreateConnection)
 	modules.RegisterConnection("httppush", httpserver.CreateConnection)
+	modules.RegisterConnection("websocket", httpserver.CreateWebsocketConnection)
 }
 
 type Manager struct{}
