@@ -42,7 +42,11 @@ func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, 
 }
 
 func UnRegisterWebSocketEndpoint(endpoint string) {
-	manager.UnRegisterWebSocketEndpoint(endpoint)
+	wctx := manager.UnRegisterWebSocketEndpoint(endpoint)
+	if wctx != nil {
+		// wait all process exit
+		wctx.wg.Wait()
+	}
 }
 
 func (m *GlobalServerManager) recvProcess(ctx api.StreamContext, endpoint string, c *websocket.Conn, wg *sync.WaitGroup) {
@@ -99,22 +103,20 @@ func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, e
 	return recvTopic, nil
 }
 
-func (m *GlobalServerManager) UnRegisterWebSocketEndpoint(endpoint string) {
+func (m *GlobalServerManager) UnRegisterWebSocketEndpoint(endpoint string) *websocketEndpointContext {
 	conf.Log.Infof("websocket endpoint %v unregister", endpoint)
 	m.Lock()
 	defer m.Unlock()
 	wctx, ok := m.websocketEndpoint[endpoint]
 	if !ok {
-		return
+		return nil
 	}
 	for conn, cancel := range wctx.conns {
 		conn.Close()
 		cancel()
 	}
-	// wait all connection process goroutine exit
-	wctx.wg.Wait()
 	delete(m.websocketEndpoint, endpoint)
-	return
+	return wctx
 }
 
 func (m *GlobalServerManager) CloseEndpointConnection(endpoint string, c *websocket.Conn) {
