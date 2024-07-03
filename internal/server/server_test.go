@@ -122,3 +122,13 @@ func TestHandleScheduleRuleState(t *testing.T) {
 	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
 	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
 }
+
+func TestStartCPUProfiling(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	err := startCPUProfiling(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Second)
+	cancel()
+}
