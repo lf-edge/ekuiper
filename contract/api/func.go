@@ -21,10 +21,10 @@ type FunctionContext interface {
 
 type Function interface {
 	// Validate The argument is a list of xsql.Expr
-	Validate(args []interface{}) error
+	Validate(args []any) error
 	// Exec Execute the function, return the result and if execution is successful.
 	// If execution fails, return the error and false.
-	Exec(args []interface{}, ctx FunctionContext) (interface{}, bool)
+	Exec(ctx FunctionContext, args []any) (interface{}, bool)
 	// IsAggregate If this function is an aggregate function. Each parameter of an aggregate function will be a slice
 	IsAggregate() bool
 }

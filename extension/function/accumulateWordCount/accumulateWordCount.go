@@ -44,7 +44,7 @@ func (f *accumulateWordCountFunc) Validate(args []any) error {
 	return nil
 }
 
-func (f *accumulateWordCountFunc) Exec(args []any, ctx api.FunctionContext) (any, bool) {
+func (f *accumulateWordCountFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	logger := ctx.GetLogger()
 	fmt.Printf("Exec accumulate")
 	col, ok := args[0].(string)

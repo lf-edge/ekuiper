@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ type compressFunc struct {
 	compressor   message.Compressor
 }
 
-func (c *compressFunc) Validate(args []interface{}) error {
+func (c *compressFunc) Validate(args []any) error {
 	var eargs []ast.Expr
 	for _, arg := range args {
 		if t, ok := arg.(ast.Expr); ok {
@@ -42,7 +42,7 @@ func (c *compressFunc) Validate(args []interface{}) error {
 	return ValidateTwoStrArg(nil, eargs)
 }
 
-func (c *compressFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+func (c *compressFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	if args[0] == nil {
 		return nil, true
 	}
@@ -79,7 +79,7 @@ type decompressFunc struct {
 	decompressor message.Decompressor
 }
 
-func (d *decompressFunc) Validate(args []interface{}) error {
+func (d *decompressFunc) Validate(args []any) error {
 	var eargs []ast.Expr
 	for _, arg := range args {
 		if t, ok := arg.(ast.Expr); ok {
@@ -92,7 +92,7 @@ func (d *decompressFunc) Validate(args []interface{}) error {
 	return ValidateTwoStrArg(nil, eargs)
 }
 
-func (d *decompressFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+func (d *decompressFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	if args[0] == nil {
 		return nil, true
 	}

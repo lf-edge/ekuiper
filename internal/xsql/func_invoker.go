@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ func ExecFunc(funcName string, f api.Function, args []interface{}, fctx api.Func
 	if mf, ok := f.(MultiFunc); ok {
 		return mf.ExecWithName(args, fctx, funcName)
 	} else {
-		return f.Exec(args, fctx)
+		return f.Exec(fctx, args)
 	}
 }
 
