@@ -29,7 +29,7 @@ func (f *countPlusOneFunc) Validate(args []any) error {
 	return nil
 }
 
-func (f *countPlusOneFunc) Exec(args []any, ctx api.FunctionContext) (any, bool) {
+func (f *countPlusOneFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 	arg, ok := args[0].([]interface{})
 	if !ok {
 		return fmt.Errorf("arg is not a slice, got %v", args[0]), false
