@@ -15,8 +15,11 @@
 package testx
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"log"
+	"net/http"
 	"sync"
 
 	mqtt "github.com/mochi-mqtt/server/v2"
@@ -82,3 +85,24 @@ func InitBroker(id string) (string, func(), error) {
 		wg.Wait()
 	}, nil
 }
+
+func TestHttp(client *http.Client, url string, method string) error {
+	r, err := http.NewRequest(method, url, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	resp, err := client.Do(r)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("status code is not 200 for %s, code:%v", url, resp.StatusCode)
+	}
+	return nil
+}
+
+var body = []byte(`{
+        "title": "Post title",
+        "body": "Post description",
+        "userId": 1
+    }`)
