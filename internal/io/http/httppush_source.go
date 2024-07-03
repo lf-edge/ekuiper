@@ -93,10 +93,7 @@ func (h *HttpPushSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest
 			case <-ctx.Done():
 				return
 			case v := <-h.ch:
-				data, ok := v.([]byte)
-				if !ok {
-					continue
-				}
+				data := v.([]byte)
 				e := infra.SafeRun(func() error {
 					ingest(ctx, data, nil, timex.GetNow())
 					return nil
