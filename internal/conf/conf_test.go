@@ -60,7 +60,7 @@ func TestSourceConfValidate(t *testing.T) {
 		}, {
 			s: &SourceConf{
 				HttpServerPort: 9090,
-				HttpServerTls: &tlsConf{
+				HttpServerTls: &TlsConf{
 					Certfile: "certfile",
 					Keyfile:  "keyfile",
 				},
@@ -68,7 +68,7 @@ func TestSourceConfValidate(t *testing.T) {
 			e: &SourceConf{
 				HttpServerIp:   "0.0.0.0",
 				HttpServerPort: 9090,
-				HttpServerTls: &tlsConf{
+				HttpServerTls: &TlsConf{
 					Certfile: "certfile",
 					Keyfile:  "keyfile",
 				},
