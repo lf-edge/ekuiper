@@ -81,12 +81,12 @@ func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
 	}
 	h.sourceID = fmt.Sprintf("%s_%s_%v", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	h.topic = hc.GetTopic()
-	ch := pubsub.CreateSub(h.topic, nil, h.sourceID, 1024)
-	h.ch = ch
 	return nil
 }
 
 func (h *HttpPushSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
+	ch := pubsub.CreateSub(h.topic, nil, h.sourceID, 1024)
+	h.ch = ch
 	go func(ctx api.StreamContext) {
 		for {
 			select {
