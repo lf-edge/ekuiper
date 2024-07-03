@@ -36,7 +36,7 @@ func TestWebsocketServerRecvData(t *testing.T) {
 	require.NoError(t, err)
 	subCh := pubsub.CreateSub(recvTopic, nil, "test", 1024)
 	defer pubsub.CloseSourceConsumerChannel(recvTopic, "test")
-	conn, err := createWebsocketClient(ip, port, endpint)
+	conn, err := testx.CreateWebsocketClient(ip, port, endpint)
 	require.NoError(t, err)
 	defer conn.Close()
 	data := []byte("123")
