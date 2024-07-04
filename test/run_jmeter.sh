@@ -132,23 +132,23 @@ echo -e "---------------------------------------------\n"
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/shared_source_rules.jmx -Dfvt="$fvt_dir" -l jmeter_logs/shared_source_rules.jtl -j jmeter_logs/shared_source_rules.log
 echo -e "---------------------------------------------\n"
 
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_condition_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_condition_rule.jtl -j jmeter_logs/graph_condition_rule.log
-#echo -e "---------------------------------------------\n"
-#
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_group_order_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_group_order_rule.jtl -j jmeter_logs/graph_group_order_rule.log
-#echo -e "---------------------------------------------\n"
-#
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_group_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_group_rule.jtl -j jmeter_logs/graph_group_rule.log
-#echo -e "---------------------------------------------\n"
-#
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_join_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_join_rule.jtl -j jmeter_logs/graph_join_rule.log
-#echo -e "---------------------------------------------\n"
-#
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_mix_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_mix_rule.jtl -j jmeter_logs/graph_mix_rule.log
-#echo -e "---------------------------------------------\n"
-#
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_window_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_window_rule.jtl -j jmeter_logs/graph_window_rule.log
-#echo -e "---------------------------------------------\n"
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_condition_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_condition_rule.jtl -j jmeter_logs/graph_condition_rule.log
+echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_group_order_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_group_order_rule.jtl -j jmeter_logs/graph_group_order_rule.log
+echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_group_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_group_rule.jtl -j jmeter_logs/graph_group_rule.log
+echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_join_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_join_rule.jtl -j jmeter_logs/graph_join_rule.log
+echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_mix_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_mix_rule.jtl -j jmeter_logs/graph_mix_rule.log
+echo -e "---------------------------------------------\n"
+
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/graph_window_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/graph_window_rule.jtl -j jmeter_logs/graph_window_rule.log
+echo -e "---------------------------------------------\n"
 
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/lookup_table_memory.jmx -Dfvt="$fvt_dir" -l jmeter_logs/lookup_table_memory.jtl -j jmeter_logs/lookup_table_memory.log
 echo -e "---------------------------------------------\n"
