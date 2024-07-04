@@ -82,8 +82,6 @@ Please check [use of eKuiper management console](./operation/manager-ui/overview
 
 eKuiper binary packages are released on below operating systems with AMD64, ARM and ARM64 support:
 
-- CentOS 7 (EL7)
-- CentOS 8 (EL8)
 - Raspbian 10
 - Debian 9
 - Debian 10
@@ -122,13 +120,6 @@ After installation, all the files are inside the unzipped directory. Please chec
      $ sudo apt install ./kuiper-x.x.x-linux-amd64.deb
      ```
 
-   - RPM package:
-
-     ```shell
-     # for CentOS
-     $ sudo rpm -ivh kuiper-x.x.x-linux-amd64.rpm
-     ```
-
 3. Start eKuiper.
    - quick start
 
@@ -147,12 +138,6 @@ After installation, all the files are inside the unzipped directory. Please chec
 
      ```shell
      sudo apt remove --purge kuiper
-     ```
-
-   - RPM:
-
-     ```shell
-     sudo yum remove kuiper
      ```
 
 When installing by package, the eKuiper folders are not in the same directory. The installation structure is as below:
