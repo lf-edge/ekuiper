@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 
+	"github.com/gorilla/websocket"
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
@@ -106,3 +108,9 @@ var body = []byte(`{
         "body": "Post description",
         "userId": 1
     }`)
+
+func CreateWebsocketClient(ip string, port int, endpoint string) (*websocket.Conn, error) {
+	u := url.URL{Scheme: "ws", Host: fmt.Sprintf("%s:%d", ip, port), Path: endpoint}
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	return conn, err
+}

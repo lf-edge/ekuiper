@@ -24,6 +24,7 @@ import (
 	mqttCon "github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/io/neuron"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
+	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 )
@@ -35,7 +36,7 @@ func init() {
 	modules.RegisterSource("file", file.GetSource)
 	modules.RegisterSource("memory", func() api.Source { return memory.GetSource() })
 	modules.RegisterSource("neuron", neuron.GetSource)
-	// modules.RegisterSource("websocket", func() api.Source { return &websocket.WebsocketSource{} })
+	modules.RegisterSource("websocket", func() api.Source { return websocket.GetSource() })
 	// modules.RegisterSource("simulator", func() api.Source { return &simulator.Source{} })
 
 	modules.RegisterSink("log", sink.NewLogSink)
@@ -54,6 +55,7 @@ func init() {
 	modules.RegisterConnection("mqtt", mqttCon.CreateConnection)
 	modules.RegisterConnection("nng", nng.CreateConnection)
 	modules.RegisterConnection("httppush", httpserver.CreateConnection)
+	modules.RegisterConnection("websocket", httpserver.CreateWebsocketConnection)
 }
 
 type Manager struct{}
