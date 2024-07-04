@@ -33,6 +33,13 @@ type TopNode interface {
 	GetName() string
 }
 
+// CompNode is a composite node. For implicit splitted nodes
+// For example, sink node or source node may be implemented internally as a collection of connected nodes
+type CompNode interface {
+	TopNode
+	Nodes() []TopNode
+}
+
 type MetricNode interface {
 	GetMetrics() []any
 	RemoveMetrics(ruleId string)
