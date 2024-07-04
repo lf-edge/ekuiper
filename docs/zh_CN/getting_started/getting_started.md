@@ -26,7 +26,9 @@ docker run -p 9081:9081 -d --name kuiper -e MQTT_SOURCE__DEFAULT__SERVER="tcp://
 
 eKuiper 可以直接部署在裸机服务器或虚拟机上。
 
-eKuiper 有预先构建的软件包，可供 Linux, 如CentOS、Debian 和 Ubuntu 以及 macOS 的安装包下载下载。你可以[从压缩包安装](../installation.md#通过-zip-包安装)或[从软件包安装](../installation.md#通过软件包安装)。
+eKuiper 有预先构建的软件包，可供 Linux, 如Debian 和 Ubuntu 以及 macOS
+的安装包下载下载。你可以[从压缩包安装](../installation.md#通过-zip-包安装)
+或[从软件包安装](../installation.md#通过软件包安装)。
 
 对于其他平台，你可以[从源代码构建可运行程序](../installation.md#从源码编译)。
 
