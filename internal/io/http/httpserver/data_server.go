@@ -15,6 +15,7 @@
 package httpserver
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"sync"
@@ -22,18 +23,21 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 type GlobalServerManager struct {
 	sync.RWMutex
-	endpoint map[string]string
-	server   *http.Server
-	router   *mux.Router
+	endpoint          map[string]string
+	server            *http.Server
+	router            *mux.Router
+	upgrader          websocket.Upgrader
+	websocketEndpoint map[string]*websocketEndpointContext
 }
 
 var manager *GlobalServerManager
@@ -48,10 +52,21 @@ func InitGlobalServerManager(ip string, port int, tlsConf *conf.TlsConf) {
 		IdleTimeout:  time.Second * 60,
 		Handler:      handlers.CORS(handlers.AllowedHeaders([]string{"Accept", "Accept-Language", "Content-Type", "Content-Language", "Origin", "Authorization"}), handlers.AllowedMethods([]string{"POST", "GET", "PUT", "DELETE", "HEAD"}))(r),
 	}
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  256,
+		WriteBufferSize: 256,
+		WriteBufferPool: &sync.Pool{},
+		// always allowed any origin
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
 	manager = &GlobalServerManager{
-		endpoint: map[string]string{},
-		server:   s,
-		router:   r,
+		websocketEndpoint: map[string]*websocketEndpointContext{},
+		endpoint:          map[string]string{},
+		server:            s,
+		router:            r,
+		upgrader:          upgrader,
 	}
 	go func(m *GlobalServerManager) {
 		if tlsConf == nil {
@@ -100,7 +115,7 @@ func (m *GlobalServerManager) RegisterEndpoint(endpoint string, method string) (
 			handleError(w, err, "Fail to decode data")
 			return
 		}
-		pubsub.ProduceAny(context.Background(), topic, data)
+		pubsub.ProduceAny(topoContext.Background(), topic, data)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("ok"))
 	}).Methods(method)
