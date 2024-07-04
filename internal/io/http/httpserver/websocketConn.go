@@ -22,6 +22,7 @@ import (
 
 type WebsocketConnection struct {
 	RecvTopic string
+	SendTopic string
 	cfg       *connectionCfg
 }
 
@@ -46,12 +47,13 @@ func createWebsocketServerConnection(ctx api.StreamContext, props map[string]any
 	if err := cast.MapToStruct(props, cfg); err != nil {
 		return nil, err
 	}
-	recvTopic, err := RegisterWebSocketEndpoint(ctx, cfg.Datasource)
+	rTopic, sTopic, err := RegisterWebSocketEndpoint(ctx, cfg.Datasource)
 	if err != nil {
 		return nil, err
 	}
 	return &WebsocketConnection{
-		RecvTopic: recvTopic,
+		RecvTopic: rTopic,
+		SendTopic: sTopic,
 		cfg:       cfg,
 	}, nil
 }
