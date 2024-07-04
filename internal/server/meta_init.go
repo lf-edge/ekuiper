@@ -240,7 +240,7 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
-			handleError(w, err, "Invalid body", logger)
+			handleError(w, err1, "Invalid body", logger)
 			return
 		}
 		err = meta.AddSourceConfKey(pluginName, confKey, language, v)
@@ -265,7 +265,7 @@ func sinkConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
-			handleError(w, err, "Invalid body", logger)
+			handleError(w, err1, "Invalid body", logger)
 			return
 		}
 		err = meta.AddSinkConfKey(pluginName, confKey, language, v)
@@ -296,7 +296,7 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 		reqField := make(map[string]interface{})
 		err = json.Unmarshal(v, &reqField)
 		if err != nil {
-			handleError(w, err1, "Invalid body", logger)
+			handleError(w, err, "Invalid body", logger)
 			return
 		}
 		reqField = replacePasswdForConfig("connection", confKey, reqField)
