@@ -16,6 +16,7 @@ package connection
 
 import (
 	"testing"
+	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -114,7 +115,7 @@ func TestConnectionStatus(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
-	require.NoError(t, ReloadConnection())
+	require.NoError(t, ReloadConnection(999*time.Second))
 	ctx := context.Background()
 	allStatus := GetAllConnectionStatus(ctx)
 	s, ok := allStatus["a1"]
@@ -128,6 +129,16 @@ func TestConnectionStatus(t *testing.T) {
 	require.Equal(t, ConnectionStatus{
 		Status: ConnectionRunning,
 	}, s)
+}
+
+func TestReloadConnectionErr(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
+	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout", "return(true)")
+	require.NoError(t, ReloadConnection(time.Microsecond))
+	require.Equal(t, 2, len(globalConnectionManager.failConnection))
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout")
 }
 
 func TestNonStoredConnection(t *testing.T) {
