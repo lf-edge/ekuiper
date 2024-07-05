@@ -46,11 +46,11 @@ func (w *WebsocketSink) Provision(ctx api.StreamContext, configs map[string]any)
 
 func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(w.topic)
-	return connection.DetachConnection(ctx, w.cfg.Endpoint, w.props)
+	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), w.props)
 }
 
 func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
-	conn, err := connection.FetchConnection(ctx, w.cfg.Endpoint, "websocket", w.props)
+	conn, err := connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
 	if err != nil {
 		return err
 	}
@@ -77,3 +77,7 @@ func GetSink() api.Sink {
 }
 
 var _ api.BytesCollector = &WebsocketSink{}
+
+func buildWebsocketEpID(endpoint string) string {
+	return fmt.Sprintf("$$ws/%s", endpoint)
+}
