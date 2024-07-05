@@ -365,7 +365,7 @@ func NewExponentialBackOff() *backoff.ExponentialBackOff {
 }
 
 const (
-	DefaultInitialInterval = 10 * time.Millisecond
+	DefaultInitialInterval = 100 * time.Millisecond
 	DefaultMaxInterval     = 1 * time.Second
 )
 
