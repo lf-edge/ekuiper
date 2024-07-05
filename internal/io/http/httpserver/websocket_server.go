@@ -32,12 +32,20 @@ const (
 	WebsocketTopicPrefix = "$$websocket/"
 )
 
+func recvTopic(endpoint string) string {
+	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
+}
+
+func sendTopic(endpoint string) string {
+	return fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
+}
+
 type websocketEndpointContext struct {
 	wg    *sync.WaitGroup
 	conns map[*websocket.Conn]context.CancelFunc
 }
 
-func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, error) {
+func RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, error) {
 	return manager.RegisterWebSocketEndpoint(ctx, endpoint)
 }
 
@@ -49,14 +57,56 @@ func UnRegisterWebSocketEndpoint(endpoint string) {
 	}
 }
 
-func (m *GlobalServerManager) recvProcess(ctx api.StreamContext, endpoint string, c *websocket.Conn, wg *sync.WaitGroup) {
+func (m *GlobalServerManager) handleProcess(ctx api.StreamContext, endpoint string, instanceID int, c *websocket.Conn, cancel context.CancelFunc, parWg *sync.WaitGroup) {
 	defer func() {
 		m.CloseEndpointConnection(endpoint, c)
-		conf.Log.Infof("websocket endpoint %v stop recvProcess", endpoint)
+		parWg.Done()
+	}()
+	subWg := &sync.WaitGroup{}
+	subWg.Add(2)
+	go m.recvProcess(ctx, endpoint, c, cancel, subWg)
+	go m.sendProcess(ctx, endpoint, instanceID, c, cancel, subWg)
+	subWg.Wait()
+}
+
+func (m *GlobalServerManager) sendProcess(ctx api.StreamContext, endpoint string, instanceID int, c *websocket.Conn, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	conf.Log.Infof("websocket endpoint %v start sendProcess", endpoint)
+	topic := sendTopic(endpoint)
+	sourceID := fmt.Sprintf("ws/send/%v", instanceID)
+	defer func() {
+		pubsub.CloseSourceConsumerChannel(topic, sourceID)
+		cancel()
+		c.Close()
 		wg.Done()
+		conf.Log.Infof("websocket send endpoint %v stop sendProcess", endpoint)
+	}()
+	ch := pubsub.CreateSub(topic, nil, sourceID, 1024)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case d := <-ch:
+			data := d.([]byte)
+			if err := c.WriteMessage(websocket.TextMessage, data); err != nil {
+				if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
+					conf.Log.Infof("websocket endpoint %s connection get closed: %v", endpoint, err)
+					return
+				}
+				conf.Log.Warnf("websocket endpoint %v send data meet error: %v", endpoint, err)
+			}
+		}
+	}
+}
+
+func (m *GlobalServerManager) recvProcess(ctx api.StreamContext, endpoint string, c *websocket.Conn, cancel context.CancelFunc, wg *sync.WaitGroup) {
+	defer func() {
+		cancel()
+		c.Close()
+		wg.Done()
+		conf.Log.Infof("websocket recv endpoint %v stop recvProcess", endpoint)
 	}()
 	conf.Log.Infof("websocket endpoint %v start recvProcess", endpoint)
-	topic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
+	topic := recvTopic(endpoint)
 	for {
 		select {
 		case <-ctx.Done():
@@ -81,12 +131,13 @@ func (m *GlobalServerManager) recvProcess(ctx api.StreamContext, endpoint string
 	}
 }
 
-func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, error) {
+func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, endpoint string) (string, string, error) {
 	conf.Log.Infof("websocket endpoint %v register", endpoint)
 	m.Lock()
 	defer m.Unlock()
-	recvTopic := fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
-	pubsub.CreatePub(recvTopic)
+	rTopic := recvTopic(endpoint)
+	sTopic := sendTopic(endpoint)
+	pubsub.CreatePub(rTopic)
 	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := m.upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -95,16 +146,16 @@ func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, e
 		}
 		subCtx, cancel := ctx.WithCancel()
 		wg := m.AddEndpointConnection(endpoint, c, cancel)
+		go m.handleProcess(subCtx, endpoint, m.FetchInstanceID(), c, cancel, wg)
 		conf.Log.Infof("websocket endpint %v create connection", endpoint)
-		wg.Add(1)
-		go m.recvProcess(subCtx, endpoint, c, wg)
 	})
 	conf.Log.Infof("websocker endpoint %v registered success", endpoint)
-	return recvTopic, nil
+	return rTopic, sTopic, nil
 }
 
 func (m *GlobalServerManager) UnRegisterWebSocketEndpoint(endpoint string) *websocketEndpointContext {
 	conf.Log.Infof("websocket endpoint %v unregister", endpoint)
+	pubsub.RemovePub(recvTopic(endpoint))
 	m.Lock()
 	defer m.Unlock()
 	wctx, ok := m.websocketEndpoint[endpoint]
@@ -140,6 +191,7 @@ func (m *GlobalServerManager) AddEndpointConnection(endpoint string, c *websocke
 		return wctx.wg
 	}
 	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	m.websocketEndpoint[endpoint] = &websocketEndpointContext{
 		wg: wg,
 		conns: map[*websocket.Conn]context.CancelFunc{
@@ -147,6 +199,11 @@ func (m *GlobalServerManager) AddEndpointConnection(endpoint string, c *websocke
 		},
 	}
 	return wg
+}
+
+func (m *GlobalServerManager) FetchInstanceID() int {
+	m.instanceID++
+	return m.instanceID
 }
 
 // getEndpointConnections only for unit test

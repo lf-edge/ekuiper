@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,22 +23,15 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
-	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-type WebsocketSource struct {
-	topic         string
-	cfg           *WebsocketConfig
-	props         map[string]any
-	connectionTyp string
-	sourceID      string
+type WebsocketSink struct {
+	cfg   *WebsocketConfig
+	props map[string]any
+	topic string
 }
 
-type WebsocketConfig struct {
-	Endpoint string `json:"datasource"`
-}
-
-func (w *WebsocketSource) Provision(ctx api.StreamContext, configs map[string]any) error {
+func (w *WebsocketSink) Provision(ctx api.StreamContext, configs map[string]any) error {
 	cfg := &WebsocketConfig{}
 	if err := cast.MapToStruct(configs, cfg); err != nil {
 		return err
@@ -51,12 +44,12 @@ func (w *WebsocketSource) Provision(ctx api.StreamContext, configs map[string]an
 	return nil
 }
 
-func (w *WebsocketSource) Close(ctx api.StreamContext) error {
-	pubsub.CloseSourceConsumerChannel(w.topic, w.sourceID)
+func (w *WebsocketSink) Close(ctx api.StreamContext) error {
+	pubsub.RemovePub(w.topic)
 	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), w.props)
 }
 
-func (w *WebsocketSource) Connect(ctx api.StreamContext) error {
+func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
 	conn, err := connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
 	if err != nil {
 		return err
@@ -65,32 +58,26 @@ func (w *WebsocketSource) Connect(ctx api.StreamContext) error {
 	if !ok {
 		return fmt.Errorf("should use websocket connection")
 	}
-	w.topic = c.RecvTopic
-	w.sourceID = fmt.Sprintf("%s_%s_%d", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	w.topic = c.SendTopic
+	pubsub.CreatePub(w.topic)
 	return nil
 }
 
-func (w *WebsocketSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	ch := pubsub.CreateSub(w.topic, nil, w.sourceID, 1024)
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case d := <-ch:
-				data, ok := d.([]byte)
-				if !ok {
-					continue
-				}
-				ingest(ctx, data, nil, timex.GetNow())
-			}
-		}
-	}()
+func (w *WebsocketSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
+	return w.collect(ctx, item.Raw())
+}
+
+func (w *WebsocketSink) collect(ctx api.StreamContext, data []byte) error {
+	pubsub.ProduceAny(ctx, w.topic, data)
 	return nil
 }
 
-func GetSource() api.Source {
-	return &WebsocketSource{}
+func GetSink() api.Sink {
+	return &WebsocketSink{}
 }
 
-var _ api.BytesSource = &WebsocketSource{}
+var _ api.BytesCollector = &WebsocketSink{}
+
+func buildWebsocketEpID(endpoint string) string {
+	return fmt.Sprintf("$$ws/%s", endpoint)
+}
