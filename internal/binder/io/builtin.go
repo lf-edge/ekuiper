@@ -47,7 +47,7 @@ func init() {
 	modules.RegisterSink("memory", func() api.Sink { return memory.GetSink() })
 	modules.RegisterSink("neuron", neuron.GetSink)
 	modules.RegisterSink("file", file.GetSink)
-	// modules.RegisterSink("websocket", func() api.Sink { return &websocket.WebSocketSink{} })
+	modules.RegisterSink("websocket", func() api.Sink { return websocket.GetSink() })
 
 	modules.RegisterLookupSource("memory", memory.GetLookupSource)
 	// modules.RegisterLookupSource("httppull", func() api.LookupSource { return http.GetLookUpSource() })

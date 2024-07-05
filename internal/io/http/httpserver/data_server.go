@@ -33,6 +33,7 @@ import (
 
 type GlobalServerManager struct {
 	sync.RWMutex
+	instanceID        int
 	endpoint          map[string]string
 	server            *http.Server
 	router            *mux.Router

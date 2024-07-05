@@ -16,6 +16,7 @@ package httpserver
 
 import (
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
@@ -32,14 +33,16 @@ func TestWebsocketServerRecvData(t *testing.T) {
 	defer ShutDown()
 	ctx := mockContext.NewMockContext("1", "2")
 	endpint := "/e1"
-	recvTopic, err := RegisterWebSocketEndpoint(ctx, endpint)
+	rTopic, _, err := RegisterWebSocketEndpoint(ctx, endpint)
 	require.NoError(t, err)
-	subCh := pubsub.CreateSub(recvTopic, nil, "test", 1024)
-	defer pubsub.CloseSourceConsumerChannel(recvTopic, "test")
+	subCh := pubsub.CreateSub(rTopic, nil, "test", 1024)
+	defer pubsub.CloseSourceConsumerChannel(rTopic, "test")
 	conn, err := testx.CreateWebsocketClient(ip, port, endpint)
 	require.NoError(t, err)
 	defer conn.Close()
 	data := []byte("123")
+	// wait goroutine process started
+	time.Sleep(10 * time.Millisecond)
 	require.NoError(t, conn.WriteMessage(websocket.TextMessage, data))
 	recvData := <-subCh
 	require.Equal(t, data, recvData.([]byte))
@@ -53,7 +56,7 @@ func TestWebsocketServerRecvDataCancel(t *testing.T) {
 	defer ShutDown()
 	ctx := mockContext.NewMockContext("1", "2")
 	endpint := "/e1"
-	_, err := RegisterWebSocketEndpoint(ctx, endpint)
+	_, _, err := RegisterWebSocketEndpoint(ctx, endpint)
 	require.NoError(t, err)
 	UnRegisterWebSocketEndpoint(endpint)
 }
@@ -65,13 +68,47 @@ func TestWebsocketServerRecvDataOther(t *testing.T) {
 	defer ShutDown()
 	ctx := mockContext.NewMockContext("1", "2")
 	endpint := "/e1"
-	_, err := RegisterWebSocketEndpoint(ctx, endpint)
+	_, _, err := RegisterWebSocketEndpoint(ctx, endpint)
 	require.NoError(t, err)
 	conn, err := testx.CreateWebsocketClient(ip, port, endpint)
 	require.NoError(t, err)
+	defer conn.Close()
+	// wait goroutine process started
+	time.Sleep(10 * time.Millisecond)
 	require.NoError(t, conn.WriteMessage(websocket.PingMessage, []byte("123")))
 	require.NoError(t, conn.WriteMessage(websocket.CloseMessage, []byte("123")))
 	wctx := manager.getEndpointConnections(endpint)
 	wctx.wg.Wait()
 	require.Equal(t, 0, len(wctx.conns))
+}
+
+func TestWebsocketServerSendData(t *testing.T) {
+	endpoint := "/e1"
+	topic := sendTopic(endpoint)
+	pubsub.CreatePub(topic)
+	ip := "127.0.0.1"
+	port := 10085
+	InitGlobalServerManager(ip, port, nil)
+	defer ShutDown()
+	ctx := mockContext.NewMockContext("1", "2")
+	_, sTopic, err := RegisterWebSocketEndpoint(ctx, endpoint)
+	require.NoError(t, err)
+	require.Equal(t, topic, sTopic)
+	conn, err := testx.CreateWebsocketClient(ip, port, endpoint)
+	require.NoError(t, err)
+	defer conn.Close()
+	// wait goroutine process started
+	time.Sleep(10 * time.Millisecond)
+	assertCh := make(chan struct{})
+	go func() {
+		msgTyp, data, err := conn.ReadMessage()
+		require.NoError(t, err)
+		require.Equal(t, websocket.TextMessage, msgTyp)
+		require.Equal(t, []byte("123"), data)
+		assertCh <- struct{}{}
+	}()
+	time.Sleep(10 * time.Millisecond)
+	pubsub.ProduceAny(ctx, topic, []byte("123"))
+	<-assertCh
+	UnRegisterWebSocketEndpoint(endpoint)
 }
