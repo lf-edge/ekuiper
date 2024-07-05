@@ -174,6 +174,10 @@
           "path": "guide/sources/overview",
           "children": [
             {
+              "title": "降采样",
+              "path": "guide/sources/down_sample"
+            },
+            {
               "title": "内置源",
               "collapsed": true,
               "children": [
@@ -925,6 +929,10 @@
           "title": "Source Connector",
           "path": "guide/sources/overview",
           "children": [
+            {
+              "title": "Down sampling",
+              "path": "guide/sources/down_sample"
+            },
             {
               "title": "Built-in Sources",
               "collapsed": true,
