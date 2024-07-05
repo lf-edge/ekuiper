@@ -39,6 +39,7 @@ type WebsocketConfig struct {
 }
 
 func (w *WebsocketSource) Provision(ctx api.StreamContext, configs map[string]any) error {
+	configs = solveProps(configs)
 	cfg := &WebsocketConfig{}
 	if err := cast.MapToStruct(configs, cfg); err != nil {
 		return err
@@ -87,6 +88,15 @@ func (w *WebsocketSource) Subscribe(ctx api.StreamContext, ingest api.BytesInges
 		}
 	}()
 	return nil
+}
+
+func solveProps(props map[string]any) map[string]any {
+	v1, ok1 := props["path"]
+	_, ok2 := props["datasource"]
+	if ok1 && !ok2 {
+		props["datasource"] = v1
+	}
+	return props
 }
 
 func GetSource() api.Source {

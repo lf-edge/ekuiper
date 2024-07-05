@@ -32,12 +32,20 @@ const (
 	WebsocketTopicPrefix = "$$websocket/"
 )
 
-func recvTopic(endpoint string) string {
-	return fmt.Sprintf("recv/%s/%s", WebsocketTopicPrefix, endpoint)
+func recvTopic(endpoint string, isServer bool) string {
+	if isServer {
+		return fmt.Sprintf("%s/server/recv/%s", WebsocketTopicPrefix, endpoint)
+	} else {
+		return fmt.Sprintf("%s/client/recv/%s", WebsocketTopicPrefix, endpoint)
+	}
 }
 
-func sendTopic(endpoint string) string {
-	return fmt.Sprintf("send/%s/%s", WebsocketTopicPrefix, endpoint)
+func sendTopic(endpoint string, isServer bool) string {
+	if isServer {
+		return fmt.Sprintf("%s/server/send/%s", WebsocketTopicPrefix, endpoint)
+	} else {
+		return fmt.Sprintf("%s/client/send/%s", WebsocketTopicPrefix, endpoint)
+	}
 }
 
 type websocketEndpointContext struct {
@@ -64,21 +72,17 @@ func (m *GlobalServerManager) handleProcess(ctx api.StreamContext, endpoint stri
 	}()
 	subWg := &sync.WaitGroup{}
 	subWg.Add(2)
-	go m.recvProcess(ctx, endpoint, c, cancel, subWg)
-	go m.sendProcess(ctx, endpoint, instanceID, c, cancel, subWg)
+	go recvProcess(ctx, recvTopic(endpoint, true), c, cancel, subWg)
+	go sendProcess(ctx, sendTopic(endpoint, true), fmt.Sprintf("ws/send/%v", instanceID), c, cancel, subWg)
 	subWg.Wait()
 }
 
-func (m *GlobalServerManager) sendProcess(ctx api.StreamContext, endpoint string, instanceID int, c *websocket.Conn, cancel context.CancelFunc, wg *sync.WaitGroup) {
-	conf.Log.Infof("websocket endpoint %v start sendProcess", endpoint)
-	topic := sendTopic(endpoint)
-	sourceID := fmt.Sprintf("ws/send/%v", instanceID)
+func sendProcess(ctx api.StreamContext, topic, sourceID string, c *websocket.Conn, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer func() {
 		pubsub.CloseSourceConsumerChannel(topic, sourceID)
 		cancel()
 		c.Close()
 		wg.Done()
-		conf.Log.Infof("websocket send endpoint %v stop sendProcess", endpoint)
 	}()
 	ch := pubsub.CreateSub(topic, nil, sourceID, 1024)
 	for {
@@ -89,24 +93,19 @@ func (m *GlobalServerManager) sendProcess(ctx api.StreamContext, endpoint string
 			data := d.([]byte)
 			if err := c.WriteMessage(websocket.TextMessage, data); err != nil {
 				if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
-					conf.Log.Infof("websocket endpoint %s connection get closed: %v", endpoint, err)
 					return
 				}
-				conf.Log.Warnf("websocket endpoint %v send data meet error: %v", endpoint, err)
 			}
 		}
 	}
 }
 
-func (m *GlobalServerManager) recvProcess(ctx api.StreamContext, endpoint string, c *websocket.Conn, cancel context.CancelFunc, wg *sync.WaitGroup) {
+func recvProcess(ctx api.StreamContext, topic string, c *websocket.Conn, cancel context.CancelFunc, wg *sync.WaitGroup) {
 	defer func() {
 		cancel()
 		c.Close()
 		wg.Done()
-		conf.Log.Infof("websocket recv endpoint %v stop recvProcess", endpoint)
 	}()
-	conf.Log.Infof("websocket endpoint %v start recvProcess", endpoint)
-	topic := recvTopic(endpoint)
 	for {
 		select {
 		case <-ctx.Done():
@@ -116,17 +115,14 @@ func (m *GlobalServerManager) recvProcess(ctx api.StreamContext, endpoint string
 		msgType, data, err := c.ReadMessage()
 		if err != nil {
 			if websocket.IsCloseError(err) || strings.Contains(err.Error(), "close") {
-				conf.Log.Infof("websocket endpoint %s connection get closed: %v", endpoint, err)
 				return
 			}
-			conf.Log.Errorf("websocket endpoint %s recv error %s", endpoint, err)
 			continue
 		}
 		switch msgType {
 		case websocket.TextMessage:
 			pubsub.ProduceAny(ctx, topic, data)
 		default:
-			conf.Log.Infof("websocker endpoint %v recv other message typ %v", endpoint, msgType)
 		}
 	}
 }
@@ -135,8 +131,8 @@ func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, e
 	conf.Log.Infof("websocket endpoint %v register", endpoint)
 	m.Lock()
 	defer m.Unlock()
-	rTopic := recvTopic(endpoint)
-	sTopic := sendTopic(endpoint)
+	rTopic := recvTopic(endpoint, true)
+	sTopic := sendTopic(endpoint, true)
 	pubsub.CreatePub(rTopic)
 	m.router.HandleFunc(endpoint, func(w http.ResponseWriter, r *http.Request) {
 		c, err := m.upgrader.Upgrade(w, r, nil)
@@ -155,7 +151,7 @@ func (m *GlobalServerManager) RegisterWebSocketEndpoint(ctx api.StreamContext, e
 
 func (m *GlobalServerManager) UnRegisterWebSocketEndpoint(endpoint string) *websocketEndpointContext {
 	conf.Log.Infof("websocket endpoint %v unregister", endpoint)
-	pubsub.RemovePub(recvTopic(endpoint))
+	pubsub.RemovePub(recvTopic(endpoint, true))
 	m.Lock()
 	defer m.Unlock()
 	wctx, ok := m.websocketEndpoint[endpoint]

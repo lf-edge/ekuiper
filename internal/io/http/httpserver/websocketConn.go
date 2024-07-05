@@ -17,13 +17,22 @@ package httpserver
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/cert"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 type WebsocketConnection struct {
 	RecvTopic string
 	SendTopic string
-	cfg       *connectionCfg
+	props     map[string]any
+	cfg       *wscConfig
+	isServer  bool
+	client    *WebsocketClient
+}
+
+type wscConfig struct {
+	Datasource string `json:"datasource"`
+	Addr       string `json:"addr"`
 }
 
 func (w *WebsocketConnection) Ping(ctx api.StreamContext) error {
@@ -31,10 +40,14 @@ func (w *WebsocketConnection) Ping(ctx api.StreamContext) error {
 }
 
 func (w *WebsocketConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
-	UnRegisterWebSocketEndpoint(w.cfg.Datasource)
 }
 
 func (w *WebsocketConnection) Close(ctx api.StreamContext) error {
+	if w.isServer {
+		UnRegisterWebSocketEndpoint(w.cfg.Datasource)
+	} else {
+		w.client.Close(ctx)
+	}
 	return nil
 }
 
@@ -43,17 +56,40 @@ func CreateWebsocketConnection(ctx api.StreamContext, props map[string]any) (mod
 }
 
 func createWebsocketServerConnection(ctx api.StreamContext, props map[string]any) (*WebsocketConnection, error) {
-	cfg := &connectionCfg{}
+	cfg := &wscConfig{}
 	if err := cast.MapToStruct(props, cfg); err != nil {
 		return nil, err
 	}
-	rTopic, sTopic, err := RegisterWebSocketEndpoint(ctx, cfg.Datasource)
-	if err != nil {
-		return nil, err
+	wc := &WebsocketConnection{
+		props:    props,
+		cfg:      cfg,
+		isServer: getWsType(cfg),
 	}
-	return &WebsocketConnection{
-		RecvTopic: rTopic,
-		SendTopic: sTopic,
-		cfg:       cfg,
-	}, nil
+	if wc.isServer {
+		rTopic, sTopic, err := RegisterWebSocketEndpoint(ctx, cfg.Datasource)
+		if err != nil {
+			return nil, err
+		}
+		wc.RecvTopic = rTopic
+		wc.SendTopic = sTopic
+	} else {
+		tlsConfig, err := cert.GenTLSConfig(props, "websocket")
+		if err != nil {
+			return nil, err
+		}
+		c := NewWebsocketClient(cfg.Addr, cfg.Datasource, tlsConfig)
+		if err := c.Connect(); err != nil {
+			return nil, err
+		}
+		wc.client = c
+		wc.RecvTopic, wc.SendTopic = c.Run(ctx)
+	}
+	return wc, nil
+}
+
+func getWsType(cfg *wscConfig) bool {
+	if len(cfg.Addr) < 1 {
+		return true
+	}
+	return false
 }

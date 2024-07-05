@@ -84,7 +84,7 @@ func TestWebsocketServerRecvDataOther(t *testing.T) {
 
 func TestWebsocketServerSendData(t *testing.T) {
 	endpoint := "/e1"
-	topic := sendTopic(endpoint)
+	topic := sendTopic(endpoint, true)
 	pubsub.CreatePub(topic)
 	ip := "127.0.0.1"
 	port := 10085
