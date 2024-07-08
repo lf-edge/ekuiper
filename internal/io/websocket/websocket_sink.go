@@ -32,6 +32,7 @@ type WebsocketSink struct {
 }
 
 func (w *WebsocketSink) Provision(ctx api.StreamContext, configs map[string]any) error {
+	configs = solveProps(configs)
 	cfg := &WebsocketConfig{}
 	if err := cast.MapToStruct(configs, cfg); err != nil {
 		return err
