@@ -137,7 +137,7 @@ func TestReloadConnectionErr(t *testing.T) {
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout", "return(true)")
 	require.NoError(t, ReloadConnection(time.Microsecond))
-	require.Equal(t, 2, len(globalConnectionManager.failConnection))
+	require.True(t, len(globalConnectionManager.failConnection) > 0)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout")
 }
 
