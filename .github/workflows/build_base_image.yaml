@@ -1,5 +1,9 @@
 name: Update docker base image
 
+permissions:
+  contents: write
+  packages: write
+
 ## Update the base image every day
 on:
   workflow_dispatch:
