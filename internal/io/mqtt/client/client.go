@@ -151,7 +151,7 @@ func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, err
 	opts.OnReconnecting = con.onReconnecting
 	opts.ConnectRetry = true
 	opts.ConnectRetryInterval = connection.DefaultInitialInterval
-	opts.MaxReconnectInterval = connection.DefaultBackoffMaxElapsedDuration
+	opts.MaxReconnectInterval = connection.DefaultMaxInterval
 
 	cli := pahoMqtt.NewClient(opts)
 	token := cli.Connect()

@@ -15,6 +15,7 @@
 package connection
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -26,7 +27,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -236,6 +237,11 @@ func createNamedConnection(ctx api.StreamContext, meta *ConnectionMeta) (modules
 		return nil, fmt.Errorf("unknown connection type")
 	}
 	err = backoff.Retry(func() error {
+		select {
+		case <-ctx.Done():
+			return backoff.Permanent(errors.New("timeout"))
+		default:
+		}
 		conn, err = connRegister(ctx, meta.Props)
 		failpoint.Inject("createConnectionErr", func() {
 			if mockErr {
@@ -299,11 +305,19 @@ func InitConnectionManager() {
 	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 }
 
-func ReloadConnection() error {
+func ReloadConnection(timeout time.Duration) error {
 	cfgs, err := conf.GetCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return err
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer func() {
+		cancel()
+	}()
+	failpoint.Inject("reloadTimeout", func() {
+		time.Sleep(100 * time.Millisecond)
+	})
+
 	for key, props := range cfgs {
 		names := strings.Split(key, ".")
 		if len(names) != 3 {
@@ -316,7 +330,7 @@ func ReloadConnection() error {
 			Typ:   typ,
 			Props: props,
 		}
-		conn, err := createNamedConnection(context.Background(), meta)
+		conn, err := createNamedConnection(topoContext.WithContext(ctx), meta)
 		if err != nil {
 			conf.Log.Warnf("initialize connection:%v failed, err:%v", id, err)
 			globalConnectionManager.failConnection[id] = err.Error()
