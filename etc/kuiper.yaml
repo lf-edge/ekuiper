@@ -64,6 +64,8 @@ basic:
   gracefulShutdownTimeout: 3s
   connection:
     backoffMaxElapsedDuration: 3m
+  # enableResourceProfiling indicates whether to enable resource profiling for eKuiper. If it is enabled, the cpu usage of the rule will be recorded.
+  enableResourceProfiling: false
 
 # The default options for all rules. Each rule can override this setting by defining its own option
 rule:

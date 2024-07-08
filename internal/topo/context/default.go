@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"runtime/pprof"
 	"sync"
 	"text/template"
 	"time"
@@ -53,6 +54,18 @@ type DefaultContext struct {
 
 	// ops waitGroup
 	opsWg *sync.WaitGroup
+}
+
+func RuleBackground(ruleName string) *DefaultContext {
+	if !conf.Config.Basic.EnableResourceProfiling {
+		return Background()
+	}
+	ctx := pprof.WithLabels(context.Background(), pprof.Labels("rule", ruleName))
+	pprof.SetGoroutineLabels(ctx)
+	c := &DefaultContext{
+		ctx: ctx,
+	}
+	return c
 }
 
 func Background() *DefaultContext {

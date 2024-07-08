@@ -15,12 +15,16 @@
 package context
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"path"
 	"reflect"
+	"runtime/pprof"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -227,4 +231,12 @@ func TestParseTemplate(t *testing.T) {
 			t.Errorf("%d. %s\n\nstmt mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.j, tt.r, result)
 		}
 	}
+}
+
+func TestRuleBackground(t *testing.T) {
+	conf.InitConf()
+	conf.Config.Basic.EnableResourceProfiling = true
+	c := RuleBackground("test")
+	ctx := pprof.WithLabels(context.Background(), pprof.Labels("rule", "test"))
+	assert.Equal(t, c.ctx, ctx)
 }

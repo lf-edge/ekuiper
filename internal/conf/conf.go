@@ -195,6 +195,7 @@ type KuiperConf struct {
 		EnableOpenZiti          bool              `yaml:"enableOpenZiti"`
 		AesKey                  string            `yaml:"aesKey"`
 		GracefulShutdownTimeout cast.DurationConf `yaml:"gracefulShutdownTimeout"`
+		EnableResourceProfiling bool              `yaml:"enableResourceProfiling"`
 	}
 	Rule   def.RuleOption
 	Sink   *SinkConf

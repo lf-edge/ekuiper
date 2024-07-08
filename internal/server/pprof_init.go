@@ -21,6 +21,10 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+
+	"github.com/Rookiecom/cpuprofile"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func init() {
@@ -33,6 +37,11 @@ type pprofComp struct {
 
 func (p pprofComp) serve() {
 	go func() {
+		if conf.Config.Basic.EnableResourceProfiling {
+			cpuprofile.WebProfile(":6060")
+			return
+		}
+
 		if err := http.ListenAndServe(":6060", nil); err != nil {
 			log.Fatal(err)
 		}
