@@ -18,9 +18,9 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/extension/sql"
-	"github.com/lf-edge/ekuiper/v2/extension/sql/client"
-	"github.com/lf-edge/ekuiper/v2/extension/video"
+	sql2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/video"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
@@ -33,7 +33,7 @@ func init() {
 	//modules.RegisterSink("influx", func() api.Sink { return influx.GetSink() })
 	//modules.RegisterSink("influx2", func() api.Sink { return influx2.GetSink() })
 	//modules.RegisterSink("kafka", func() api.Sink { return kafka.GetSink() })
-	modules.RegisterSource("sql", sql.GetSource)
-	modules.RegisterSink("sql", sql.GetSink)
+	modules.RegisterSource("sql", sql2.GetSource)
+	modules.RegisterSink("sql", sql2.GetSink)
 	modules.RegisterConnection("sql", client.CreateConnection)
 }

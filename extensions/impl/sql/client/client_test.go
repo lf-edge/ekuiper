@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/extension/sql/testx"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
