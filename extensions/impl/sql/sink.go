@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/extension/sql/client"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"

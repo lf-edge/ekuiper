@@ -1,0 +1,17 @@
+default:
+  url: mysql://username:password@127.0.0.1:3306/testdb?parseTime=true
+
+mysql_config:
+  url: mysql://username:password@127.0.0.1:3306/testdb?parseTime=true
+
+postgresql_config:
+  url: postgres://username:password@127.0.0.1:5432/testdb
+
+sqlite_config:
+  url: sqlite:/tmp/test.db
+
+sqlserver_config:
+  url: sqlserver://username:password@127.0.0.1:1433/testdb
+
+oracle_config:
+  url: oracle://username:password@127.0.0.1:1521/testdb
