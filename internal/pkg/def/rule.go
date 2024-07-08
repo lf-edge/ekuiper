@@ -21,27 +21,27 @@ import (
 )
 
 type RuleOption struct {
-	Debug              bool              `json:"debug" yaml:"debug"`
-	LogFilename        string            `json:"logFilename" yaml:"logFilename"`
-	IsEventTime        bool              `json:"isEventTime" yaml:"isEventTime"`
-	LateTol            cast.DurationConf `json:"lateTolerance" yaml:"lateTolerance"`
+	Debug              bool              `json:"debug,omitempty" yaml:"debug,omitempty"`
+	LogFilename        string            `json:"logFilename,omitempty" yaml:"logFilename,omitempty"`
+	IsEventTime        bool              `json:"isEventTime,omitempty" yaml:"isEventTime,omitempty"`
+	LateTol            cast.DurationConf `json:"lateTolerance,omitempty" yaml:"lateTolerance,omitempty"`
 	Concurrency        int               `json:"concurrency" yaml:"concurrency"`
 	BufferLength       int               `json:"bufferLength" yaml:"bufferLength"`
-	SendMetaToSink     bool              `json:"sendMetaToSink" yaml:"sendMetaToSink"`
-	SendError          bool              `json:"sendError" yaml:"sendError"`
-	Qos                Qos               `json:"qos" yaml:"qos"`
-	CheckpointInterval cast.DurationConf `json:"checkpointInterval" yaml:"checkpointInterval"`
-	Restart            *RestartStrategy  `json:"restartStrategy" yaml:"restartStrategy"`
-	Cron               string            `json:"cron" yaml:"cron"`
-	Duration           string            `json:"duration" yaml:"duration"`
-	CronDatetimeRange  []DatetimeRange   `json:"cronDatetimeRange" yaml:"cronDatetimeRange"`
+	SendMetaToSink     bool              `json:"sendMetaToSink,omitempty" yaml:"sendMetaToSink,omitempty"`
+	SendError          bool              `json:"sendError,omitempty" yaml:"sendError,omitempty"`
+	Qos                Qos               `json:"qos,omitempty" yaml:"qos,omitempty"`
+	CheckpointInterval cast.DurationConf `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
+	Restart            *RestartStrategy  `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
+	Cron               string            `json:"cron,omitempty" yaml:"cron,omitempty"`
+	Duration           string            `json:"duration,omitempty" yaml:"duration,omitempty"`
+	CronDatetimeRange  []DatetimeRange   `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
 }
 
 type DatetimeRange struct {
 	Begin          string `json:"begin" yaml:"begin"`
 	End            string `json:"end" yaml:"end"`
-	BeginTimestamp int64  `json:"beginTimestamp"`
-	EndTimestamp   int64  `json:"endTimestamp"`
+	BeginTimestamp int64  `json:"beginTimestamp" yaml:"beginTimestamp"`
+	EndTimestamp   int64  `json:"endTimestamp" yaml:"endTimestamp"`
 }
 
 type RestartStrategy struct {
@@ -53,16 +53,16 @@ type RestartStrategy struct {
 }
 
 type PrintableTopo struct {
-	Sources []string                 `json:"sources"`
-	Edges   map[string][]interface{} `json:"edges"`
+	Sources []string                 `json:"sources" yaml:"sources"`
+	Edges   map[string][]interface{} `json:"edges" yaml:"edges"`
 }
 
 type GraphNode struct {
-	Type     string                 `json:"type"`
-	NodeType string                 `json:"nodeType"`
-	Props    map[string]interface{} `json:"props"`
+	Type     string                 `json:"type" yaml:"type"`
+	NodeType string                 `json:"nodeType" yaml:"nodeType"`
+	Props    map[string]interface{} `json:"props" yaml:"props"`
 	// UI is a placeholder for ui properties
-	UI map[string]interface{} `json:"ui"`
+	UI map[string]interface{} `json:"ui" yaml:"ui"`
 }
 
 // SourceMeta is the metadata of a source node. It describes what existed stream/table to refer to.
@@ -73,20 +73,20 @@ type SourceMeta struct {
 }
 
 type RuleGraph struct {
-	Nodes map[string]*GraphNode `json:"nodes"`
-	Topo  *PrintableTopo        `json:"topo"`
+	Nodes map[string]*GraphNode `json:"nodes" yaml:"nodes"`
+	Topo  *PrintableTopo        `json:"topo" yaml:"topo"`
 }
 
 // Rule the definition of the business logic
 // Sql and Graph are mutually exclusive, at least one of them should be set
 type Rule struct {
-	Triggered bool                     `json:"triggered"`
-	Id        string                   `json:"id,omitempty"`
-	Name      string                   `json:"name,omitempty"` // The display name of a rule
-	Sql       string                   `json:"sql,omitempty"`
-	Graph     *RuleGraph               `json:"graph,omitempty"`
-	Actions   []map[string]interface{} `json:"actions,omitempty"`
-	Options   *RuleOption              `json:"options,omitempty"`
+	Triggered bool                     `json:"triggered,omitempty" yaml:"triggered,omitempty"`
+	Id        string                   `json:"id,omitempty" yaml:"id,omitempty"`
+	Name      string                   `json:"name,omitempty" yaml:"name,omitempty"` // The display name of a rule
+	Sql       string                   `json:"sql,omitempty" yaml:"sql,omitempty"`
+	Graph     *RuleGraph               `json:"graph,omitempty" yaml:"graph,omitempty"`
+	Actions   []map[string]interface{} `json:"actions,omitempty" yaml:"actions,omitempty"`
+	Options   *RuleOption              `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 func (r *Rule) IsLongRunningScheduleRule() bool {
