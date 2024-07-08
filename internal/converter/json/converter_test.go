@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -707,4 +708,62 @@ func TestIssue(t *testing.T) {
 	m, err = f2.Decode(context.Background(), []byte(data))
 	require.NoError(t, err)
 	require.Len(t, m, 0)
+}
+
+func TestDecodeField(t *testing.T) {
+	testcases := []struct {
+		name    string
+		payload []byte
+		result  any
+		err     string
+	}{
+		{
+			name:    "normal",
+			payload: []byte(`{"id":1, "value":"vv"}`),
+			result:  1.0,
+		},
+		{
+			name:    "empty",
+			payload: []byte(`{"a":[true]}`),
+			result:  nil,
+		},
+		{
+			name:    "composite",
+			payload: []byte(`{"id":[true]}`),
+			result:  nil,
+		},
+		{
+			name:    "invalid",
+			payload: []byte(`{"a":1`),
+			err:     "cannot parse JSON: cannot parse object: unexpected end of object; unparsed tail: \"\"",
+		},
+		{
+			name:    "string",
+			payload: []byte(`{"id":"1", "value":"vv"}`),
+			result:  `"1"`,
+		},
+		{
+			name:    "bool",
+			payload: []byte(`{"id":false, "value":"vv"}`),
+			result:  false,
+		},
+		{
+			name:    "not obj",
+			payload: []byte(`[{"id":false, "value":"vv"}]`),
+			result:  nil,
+		},
+	}
+	ctx := mockContext.NewMockContext("test", "op1")
+	f := NewFastJsonConverter(nil)
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			field, err := f.DecodeField(ctx, tc.payload, "id")
+			if tc.err != "" {
+				assert.EqualError(t, err, tc.err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.result, field)
+			}
+		})
+	}
 }

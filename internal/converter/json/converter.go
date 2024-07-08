@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,6 +63,34 @@ func (f *FastJsonConverter) Decode(ctx api.StreamContext, b []byte) (m any, err 
 		return r, err
 	}
 	return f.decodeWithSchema(b, f.schema)
+}
+
+func (f *FastJsonConverter) DecodeField(_ api.StreamContext, b []byte, field string) (any, error) {
+	var p fastjson.Parser
+	v, err := p.ParseBytes(b)
+	if err != nil {
+		return nil, err
+	}
+	switch v.Type() {
+	case fastjson.TypeObject:
+		obj, err := v.Object()
+		if err != nil {
+			return nil, err
+		}
+		vv := obj.Get(field)
+		if vv == nil {
+			return nil, nil
+		}
+		switch vv.Type() {
+		case fastjson.TypeString:
+			return vv.String(), nil
+		case fastjson.TypeNumber:
+			return vv.Float64()
+		case fastjson.TypeTrue, fastjson.TypeFalse:
+			return vv.Bool()
+		}
+	}
+	return nil, nil
 }
 
 func (f *FastJsonConverter) decodeWithSchema(b []byte, schema map[string]*ast.JsonStreamField) (interface{}, error) {
