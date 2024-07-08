@@ -75,6 +75,13 @@ func Background() *DefaultContext {
 	return c
 }
 
+func WithContext(ctx context.Context) *DefaultContext {
+	c := &DefaultContext{
+		ctx: ctx,
+	}
+	return c
+}
+
 func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	parent.ctx = context.WithValue(parent.ctx, key, val)
 	return parent
