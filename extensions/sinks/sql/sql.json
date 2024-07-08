@@ -1,0 +1,76 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/sql.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/sql.html"
+    },
+    "description": {
+      "en_US": "This a sink plugin for Sql based Database, it can be used for saving the analysis data into Sql based database.",
+      "zh_CN": "本插件为 SQL Database 的持久化插件，可以用于将分析数据存入支持 SQL 语法的数据库中"
+    }
+  },
+  "libs": [
+  ],
+  "properties": [
+    {
+      "name": "url",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The url of the database, it is important to note that the password in the URL is url-encoded characters, and you need to re-enter the password when editing. For example, the database address of mysql is mysql://username:password@127.0.0.1:3306/testdb?parseTime=true, if the original password is 123:#?, the password here should be filled in with 123%3A%23%3F",
+        "zh_CN": "数据库服务器的 URL，需要特别注意的是 URL 中的密码为 url 编码后的字符，并且编辑时需要重新输入密码。例如，mysql 的数据库地址为 mysql://username:password@127.0.0.1:3306/testdb?parseTime=true，若原始密码为 123:#?，则这里的 password 应填入 123%3A%23%3F"
+      },
+      "label": {
+        "en_US": "server address",
+        "zh_CN": "数据库地址"
+      }
+    },
+    {
+      "name": "table",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "Table name",
+        "zh_CN": "表名"
+      },
+      "label": {
+        "en_US": "Table name",
+        "zh_CN": "表名"
+      }
+    },
+    {
+      "name": "fields",
+      "default": [],
+      "optional": true,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "Tag fields written to the database",
+        "zh_CN": "写入数据库的标签字段"
+      },
+      "label": {
+        "en_US": "Tag Fields",
+        "zh_CN": "标签字段"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "SQL",
+      "zh": "SQL"
+    }
+  }
+}

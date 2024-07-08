@@ -25,7 +25,7 @@ import (
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/extension/sql/client"
+	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/sqlgen"
@@ -34,7 +34,7 @@ import (
 type SQLSourceConnector struct {
 	conf          *SQLConf
 	Query         sqlgen.SqlQueryGenerator
-	conn          *client.SQLConnection
+	conn          *client2.SQLConnection
 	props         map[string]any
 	needReconnect bool
 }
@@ -61,7 +61,7 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 	}
 	s.conf = cfg
 	s.props = props
-	sqlDriver, err := client.ParseDriver(cfg.DBUrl)
+	sqlDriver, err := client2.ParseDriver(cfg.DBUrl)
 	if err != nil {
 		return fmt.Errorf("dburl.Parse %s fail with error: %v", cfg.DBUrl, err)
 	}
@@ -78,14 +78,14 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 
 func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
-	var cli *client.SQLConnection
+	var cli *client2.SQLConnection
 	var err error
 	id := s.conf.DBUrl
 	conn, err := connection.FetchConnection(ctx, id, "sql", s.props)
 	if err != nil {
 		return err
 	}
-	cli = conn.(*client.SQLConnection)
+	cli = conn.(*client2.SQLConnection)
 	s.conn = cli
 	return err
 }

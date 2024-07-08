@@ -1,4 +1,4 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@ package main
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/extension/random"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql"
 )
 
-func Random() api.Source {
-	return random.GetSource()
+func Sql() api.Sink {
+	return sql.GetSink()
 }
