@@ -32,8 +32,8 @@ type MetaConfiguration struct {
 	SinkConfig       map[string]map[string]any `json:"sinkConfig" yaml:"sinkConfig"`
 	ConnectionConfig map[string]map[string]any `json:"connectionConfig" yaml:"connectionConfig"`
 
-	Streams map[string]*DatasourceExport `json:"streams" json:"streams"`
-	Tables  map[string]*DatasourceExport `json:"tables" json:"tables"`
+	Streams map[string]*DatasourceExport `json:"streams" yaml:"streams"`
+	Tables  map[string]*DatasourceExport `json:"tables" yaml:"tables"`
 	Rules   map[string]*def.Rule         `json:"rules" yaml:"rules"`
 }
 
