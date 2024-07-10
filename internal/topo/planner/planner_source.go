@@ -75,15 +75,27 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 	)
 	// Some connection only allow one subscription. The source should implement UniqueSub to provide a subId to avoid multiple connection.
 	us, hasSubId := ss.(model.UniqueSub)
-	if sp.SelId == "" && !hasSubId {
+	conId := sp.SelId
+	// Some connection only have on
+	cs, hasConId := ss.(model.UniqueConn)
+	if hasConId {
+		conId = cs.ConnId(props)
+	}
+
+	var ops []node.OperatorNode
+	// If having unique connection id AND unique sub id for each connection, need to share the sub node
+	if conId == "" {
 		srcConnNode, err = node.NewSourceNode(ctx, string(t.name), ss, props, options)
-	} else { // connection selector is set as a one node sub_topo
-		var selName string
-		if sp.SelId != "" {
-			selName = fmt.Sprintf("%s/%s", sp.SelId, t.streamStmt.Options.DATASOURCE)
-		} else {
-			selName = us.SubId(props)
+		if err != nil {
+			return nil, nil, 0, err
 		}
+		index++
+	} else { // connection selector is set as a one node sub_topo
+		subId := t.streamStmt.Options.DATASOURCE
+		if hasSubId {
+			subId = us.SubId(props)
+		}
+		selName := fmt.Sprintf("%s/%s", conId, subId)
 		srcSubtopo, existed := topo.GetSubTopo(selName)
 		if !existed {
 			var scn node.DataSourceNode
@@ -94,13 +106,15 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 			}
 		}
 		srcConnNode = srcSubtopo
+		if err != nil {
+			return nil, nil, 0, err
+		}
+		index++
+		// another node to set emitter
+		op := Transform(&operator.EmitterOp{Emitter: string(t.name)}, fmt.Sprintf("%d_emitter", index), options)
+		index++
+		ops = append(ops, op)
 	}
-	if err != nil {
-		return nil, nil, 0, err
-	}
-	index++
-	var ops []node.OperatorNode
-
 	// Need to check after source has provisioned, so do not put it before provision
 	featureSet, err := checkFeatures(ss, sp, props)
 	if err != nil {

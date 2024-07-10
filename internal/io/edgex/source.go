@@ -49,7 +49,6 @@ type SourceConf struct {
 }
 
 type SubConf struct {
-	SelId string `json:"connectionSelector"`
 	Topic string `json:"topic"`
 }
 
@@ -98,7 +97,7 @@ func (es *Source) SubId(props map[string]any) string {
 	if err != nil {
 		return ""
 	}
-	return sc.SelId + "_" + sc.Topic
+	return sc.Topic
 }
 
 func (es *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestErr api.ErrorIngest) error {

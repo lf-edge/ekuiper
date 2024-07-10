@@ -67,7 +67,7 @@ func TestProvision(t *testing.T) {
 	sid := su.SubId(map[string]any{
 		"url": "tcp://127.0.0.1:8000",
 	})
-	assert.Equal(t, "nng:pairtcp://127.0.0.1:8000", sid)
+	assert.Equal(t, "singleton", sid)
 
 	err = s.Connect(ctx)
 	assert.NoError(t, err)
