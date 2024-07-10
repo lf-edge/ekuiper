@@ -39,14 +39,22 @@ func (es *Client) Ping(_ api.StreamContext) error {
 	return fmt.Errorf("client is nil")
 }
 
-func (es *Client) DetachSub(_ api.StreamContext, props map[string]any) {
-	// TODO implement me
-	panic("implement me")
+func (es *Client) DetachSub(ctx api.StreamContext, props map[string]any) {
+	topic, ok := props["topic"]
+	ctx.GetLogger().Infof("detach edgex sub %v", topic)
+	if ok {
+		err := es.client.Unsubscribe(topic.(string))
+		if err != nil {
+			ctx.GetLogger().Error(err)
+		}
+	}
 }
 
 func (es *Client) Close(ctx api.StreamContext) error {
-	// TODO implement me
-	panic("implement me")
+	if es.client != nil {
+		return es.client.Disconnect()
+	}
+	return nil
 }
 
 var _ modules.Connection = &Client{}
@@ -169,7 +177,6 @@ func (es *Client) Subscribe(msg chan types.MessageEnvelope, topic string, err ch
 		conf.Log.Errorf("Failed to subscribe to edgex messagebus with topic %s has error : %s.", topic, err.Error())
 		return err
 	}
-
 	return nil
 }
 

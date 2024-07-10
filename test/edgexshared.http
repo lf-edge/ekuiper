@@ -1,0 +1,14 @@
+###
+POST http://{{host}}/connections
+Content-Type: application/json
+
+{
+  "id": "redisMsgBus",
+  "typ": "edgex",
+  "props": {
+    "protocol": "redis",
+    "server": "127.0.0.1",
+    "port": 6379,
+    "type": "redis"
+  }
+}
