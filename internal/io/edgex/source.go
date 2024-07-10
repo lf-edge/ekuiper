@@ -48,6 +48,11 @@ type SourceConf struct {
 	BufferLen   int         `json:"bufferLength"`
 }
 
+type SubConf struct {
+	SelId string `json:"connectionSelector"`
+	Topic string `json:"topic"`
+}
+
 type messageType string
 
 const (
@@ -74,17 +79,26 @@ func (es *Source) Provision(_ api.StreamContext, props map[string]any) error {
 }
 
 func (es *Source) Connect(ctx api.StreamContext) error {
-	ctx.GetLogger().Infof("Connecting to mqtt server")
+	ctx.GetLogger().Infof("Connecting to edgex server")
 	var cli *client.Client
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	conn, err := connection.FetchConnection(ctx, id, "mqtt", es.config)
+	conn, err := connection.FetchConnection(ctx, id, "edgex", es.config)
 	if err != nil {
 		return err
 	}
 	cli = conn.(*client.Client)
 	es.cli = cli
 	return err
+}
+
+func (es *Source) SubId(props map[string]any) string {
+	sc := &SubConf{}
+	err := cast.MapToStruct(props, sc)
+	if err != nil {
+		return ""
+	}
+	return sc.SelId + "_" + sc.Topic
 }
 
 func (es *Source) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestErr api.ErrorIngest) error {
@@ -307,6 +321,7 @@ func (es *Source) Close(ctx api.StreamContext) error {
 	if es.cli != nil {
 		id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 		err := connection.DetachConnection(ctx, id, es.config)
+		es.cli.DetachSub(ctx, es.config)
 		return err
 	}
 	return nil
