@@ -54,13 +54,17 @@ func (s *source) Ping(ctx api.StreamContext, props map[string]any) error {
 	return ping(ctx, props)
 }
 
-func (s *source) SubId(props map[string]any) string {
+func (s *source) ConnId(props map[string]any) string {
 	var url string
 	u, ok := props["url"]
 	if ok {
 		url = u.(string)
 	}
 	return "nng:" + PROTOCOL + url
+}
+
+func (s *source) SubId(_ map[string]any) string {
+	return "singleton"
 }
 
 func (s *source) Connect(ctx api.StreamContext) error {

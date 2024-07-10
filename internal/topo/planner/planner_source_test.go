@@ -211,15 +211,18 @@ func TestPlanTopo(t *testing.T) {
 				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
 					"source_mqtt.localConnection/topic1": {
-						"op_2_ratelimit",
+						"op_2_emitter",
 					},
-					"op_2_ratelimit": {
-						"op_3_payload_decoder",
+					"op_2_emitter": {
+						"op_3_ratelimit",
 					},
-					"op_3_payload_decoder": {
-						"op_4_project",
+					"op_3_ratelimit": {
+						"op_4_payload_decoder",
 					},
-					"op_4_project": {
+					"op_4_payload_decoder": {
+						"op_5_project",
+					},
+					"op_5_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
@@ -238,15 +241,18 @@ func TestPlanTopo(t *testing.T) {
 				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
 					"source_mqtt.localConnection/topic1": {
-						"op_src4_2_ratelimit",
+						"op_src4_2_emitter",
 					},
-					"op_src4_2_ratelimit": {
-						"op_src4_3_decoder",
+					"op_src4_2_emitter": {
+						"op_src4_3_ratelimit",
 					},
-					"op_src4_3_decoder": {
-						"op_4_project",
+					"op_src4_3_ratelimit": {
+						"op_src4_4_decoder",
 					},
-					"op_4_project": {
+					"op_src4_4_decoder": {
+						"op_5_project",
+					},
+					"op_5_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
@@ -340,15 +346,18 @@ func TestPlanTopo(t *testing.T) {
 				Sources: []string{"source_mqtt.localConnection/topic1"},
 				Edges: map[string][]any{
 					"source_mqtt.localConnection/topic1": {
-						"op_2_ratelimit",
+						"op_2_emitter",
 					},
-					"op_2_ratelimit": {
-						"op_3_payload_decoder",
+					"op_2_emitter": {
+						"op_3_ratelimit",
 					},
-					"op_3_payload_decoder": {
-						"op_4_project",
+					"op_3_ratelimit": {
+						"op_4_payload_decoder",
 					},
-					"op_4_project": {
+					"op_4_payload_decoder": {
+						"op_5_project",
+					},
+					"op_5_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {
@@ -364,15 +373,18 @@ func TestPlanTopo(t *testing.T) {
 			name: "testNngConnSplit",
 			sql:  `SELECT * FROM neuron1`,
 			topo: &def.PrintableTopo{
-				Sources: []string{"source_nng:pairtcp://127.0.0.1:7777"},
+				Sources: []string{"source_nng:pairtcp://127.0.0.1:7777/singleton"},
 				Edges: map[string][]any{
-					"source_nng:pairtcp://127.0.0.1:7777": {
-						"op_2_decoder",
+					"source_nng:pairtcp://127.0.0.1:7777/singleton": {
+						"op_2_emitter",
 					},
-					"op_2_decoder": {
-						"op_3_project",
+					"op_2_emitter": {
+						"op_3_decoder",
 					},
-					"op_3_project": {
+					"op_3_decoder": {
+						"op_4_project",
+					},
+					"op_4_project": {
 						"op_logToMemory_0_0_transform",
 					},
 					"op_logToMemory_0_0_transform": {

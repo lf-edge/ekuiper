@@ -45,3 +45,7 @@ type NodeInfo struct {
 type UniqueSub interface {
 	SubId(props map[string]any) string
 }
+
+type UniqueConn interface {
+	ConnId(props map[string]any) string
+}
