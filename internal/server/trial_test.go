@@ -45,11 +45,6 @@ func (suite *RestTestSuite) TestRuleTest() {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(suite.T(), err)
 	require.NoError(suite.T(), store.SetupDefault(dataDir))
-	p := processor.NewStreamProcessor()
-	p.ExecStmt("DROP STREAM trialDemo")
-	_, err = p.ExecStmt("CREATE STREAM trialDemo () WITH (DATASOURCE=\"trialDemo\", TYPE=\"simulator\", FORMAT=\"json\", KEY=\"ts\")")
-	require.NoError(suite.T(), err)
-	defer p.ExecStmt("DROP STREAM trialDemo")
 
 	rd := &trial.RunDef{
 		Id:  "mock1",
@@ -74,8 +69,18 @@ func (suite *RestTestSuite) TestRuleTest() {
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/ruletest", bytes.NewBuffer(b))
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
-	require.Equal(suite.T(), http.StatusOK, w2.Code)
+	require.NotEqual(suite.T(), http.StatusOK, w2.Code)
 
+	p := processor.NewStreamProcessor()
+	p.ExecStmt("DROP STREAM trialDemo")
+	_, err = p.ExecStmt("CREATE STREAM trialDemo () WITH (DATASOURCE=\"trialDemo\", TYPE=\"simulator\", FORMAT=\"json\", KEY=\"ts\")")
+	require.NoError(suite.T(), err)
+	defer p.ExecStmt("DROP STREAM trialDemo")
+
+	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/ruletest", bytes.NewBuffer(b))
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusOK, w2.Code)
 	u := url.URL{Scheme: "ws", Host: "localhost:10087", Path: "/test/mock1"}
 	c1, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(suite.T(), err)
