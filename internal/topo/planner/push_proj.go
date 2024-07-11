@@ -18,8 +18,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
-type pushProjectionPlan struct {
-}
+type pushProjectionPlan struct{}
 
 // pushProjectionPlan inject Projection Plan between the shared Datasource and its father only if the Plan have windowPlan
 // We use Projection to remove the unused column before windowPlan in order to reduce memory consuming

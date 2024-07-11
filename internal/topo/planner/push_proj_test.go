@@ -32,18 +32,11 @@ func TestPushProjection(t *testing.T) {
 	kv, err := store.GetKV("stream")
 	require.NoError(t, err)
 	require.NoError(t, prepareStream())
-	sql := `select a+b as c from sharedStream group by countwindow(2)`
+	sql := `select a as c from sharedStream group by countwindow(2)`
 	stmt, err := xsql.NewParser(strings.NewReader(sql)).Parse()
 	assert.NoError(t, err)
 	p, err := createLogicalPlan(stmt, &def.RuleOption{
-		IsEventTime:        false,
-		LateTol:            0,
-		Concurrency:        0,
-		BufferLength:       0,
-		SendMetaToSink:     false,
-		Qos:                0,
-		CheckpointInterval: 0,
-		SendError:          true,
+		Qos: 0,
 	}, kv)
 	require.NoError(t, err)
 	explain, err := ExplainFromLogicalPlan(p, "")
@@ -51,8 +44,8 @@ func TestPushProjection(t *testing.T) {
 	expect := `
 {"type":"ProjectPlan","info":"Fields:[ $$alias.c ]","id":0,"children":[1]}
 	{"type":"WindowPlan","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }","id":1,"children":[2]}
-			{"type":"ProjectPlan","info":"Fields:[ sharedStream.a, sharedStream.b ]","id":2,"children":[3]}
-					{"type":"DataSourcePlan","info":"StreamName: sharedStream, StreamFields:[ a, b ]","id":3}`
+			{"type":"ProjectPlan","info":"Fields:[ sharedStream.a ]","id":2,"children":[3]}
+					{"type":"DataSourcePlan","info":"StreamName: sharedStream, StreamFields:[ a ]","id":3}`
 	require.Equal(t, strings.TrimPrefix(expect, "\n"), explain)
 }
 
