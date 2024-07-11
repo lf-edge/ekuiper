@@ -232,7 +232,7 @@ func yamlConfigurationExportHandler(w http.ResponseWriter, r *http.Request) {
 	var yamlBytes []byte
 	var err error
 	var m *MetaConfiguration
-	const name = "ekuiper_export.json"
+	const name = "ekuiper_export.yaml"
 	switch r.Method {
 	case http.MethodGet:
 		m, err = GenMetaConfiguration()
