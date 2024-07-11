@@ -26,6 +26,7 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
@@ -4943,7 +4944,10 @@ func TestGetLogicalPlanForExplain(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ $$alias.index, src1.name ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:index, expr:$$alias.index} ]\",\"id\":1,\"children\":[2]}\n\n         {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: src1, StreamFields:[ name ]\",\"id\":2,\"children\":null}\n\n",
+			res: `
+		{"type":"ProjectPlan","info":"Fields:[ $$alias.index, src1.name ]","id":0,"children":[1]}
+			{"type":"WindowFuncPlan","info":"windowFuncFields:[ {name:index, expr:$$alias.index} ]","id":1,"children":[2]}
+					{"type":"DataSourcePlan","info":"StreamName: src1, StreamFields:[ name ]","id":2}`,
 		},
 		{
 			rule: &def.Rule{
@@ -4957,18 +4961,17 @@ func TestGetLogicalPlanForExplain(t *testing.T) {
 				},
 				Options: defaultOption,
 			},
-			res: "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ src1.name, Call:{ name:row_number } ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:row_number, expr:Call:{ name:row_number }} ]\",\"id\":1,\"children\":[2]}\n\n         {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: src1, StreamFields:[ name ]\",\"id\":2,\"children\":null}\n\n",
+			res: `
+{"type":"ProjectPlan","info":"Fields:[ src1.name, Call:{ name:row_number } ]","id":0,"children":[1]}
+	{"type":"WindowFuncPlan","info":"windowFuncFields:[ {name:row_number, expr:Call:{ name:row_number }} ]","id":1,"children":[2]}
+			{"type":"DataSourcePlan","info":"StreamName: src1, StreamFields:[ name ]","id":2}`,
 		},
 	}
-	fmt.Printf("The test bucket size is %d.\n\n", len(tests))
-
-	for i, tt := range tests {
+	for _, tt := range tests {
 		explain, err := GetExplainInfoFromLogicalPlan(tt.rule)
 		if err != nil {
 			t.Errorf(err.Error())
 		}
-		if !reflect.DeepEqual(explain, tt.res) {
-			t.Errorf("case %d: expect validate %v but got %v", i, tt.res, explain)
-		}
+		require.Equal(t, strings.TrimPrefix(tt.res, "\n"), explain)
 	}
 }

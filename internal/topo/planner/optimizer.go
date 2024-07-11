@@ -17,6 +17,7 @@ package planner
 var optRuleList = []logicalOptRule{
 	&columnPruner{},
 	&predicatePushDown{},
+	&pushProjectionPlan{},
 }
 
 func optimize(p LogicalPlan) (LogicalPlan, error) {

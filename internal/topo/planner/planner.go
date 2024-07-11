@@ -17,6 +17,7 @@ package planner
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -147,6 +148,10 @@ func GetExplainInfoFromLogicalPlan(rule *def.Rule) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return ExplainFromLogicalPlan(lp, rule.Id)
+}
+
+func ExplainFromLogicalPlan(lp LogicalPlan, ruleID string) (string, error) {
 	var setId func(p LogicalPlan, id int64)
 	setId = func(p LogicalPlan, id int64) {
 		p.SetID(id)
@@ -162,15 +167,16 @@ func GetExplainInfoFromLogicalPlan(rule *def.Rule) (string, error) {
 		tmp := ""
 		res := ""
 		for i := 0; i < level; i++ {
-			tmp += "   "
+			tmp += "\t"
 		}
 		p.BuildExplainInfo()
 		if info, ok := p.(RuleRuntimeInfo); ok {
-			info.BuildSchemaInfo(rule.Id)
+			info.BuildSchemaInfo(ruleID)
 		}
 		// Build the explainInfo of the current layer
-		res += tmp + p.Explain() + "\n"
+		res += tmp + strings.TrimSuffix(p.Explain(), "\n")
 		if len(p.Children()) != 0 {
+			res += "\n"
 			for _, v := range p.Children() {
 				res += tmp + getExplainInfo(v, level+1)
 			}
