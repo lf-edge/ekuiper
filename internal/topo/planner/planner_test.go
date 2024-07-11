@@ -26,7 +26,6 @@ import (
 
 	"github.com/gdexlab/go-render/render"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt"
