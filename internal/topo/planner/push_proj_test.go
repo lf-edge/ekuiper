@@ -51,8 +51,8 @@ func TestPushProjection(t *testing.T) {
 	expect := `
 {"type":"ProjectPlan","info":"Fields:[ $$alias.c ]","id":0,"children":[1]}
 	{"type":"WindowPlan","info":"{ length:2, windowType:COUNT_WINDOW, limit: 0 }","id":1,"children":[2]}
-			{"type":"ProjectPlan","info":"Fields:[ src1.a, src1.b ]","id":2,"children":[3]}
-					{"type":"DataSourcePlan","info":"StreamName: src1, StreamFields:[ a, b ]","id":3}`
+			{"type":"ProjectPlan","info":"Fields:[ sharedStream.a, sharedStream.b ]","id":2,"children":[3]}
+					{"type":"DataSourcePlan","info":"StreamName: sharedStream, StreamFields:[ a, b ]","id":3}`
 	require.Equal(t, strings.TrimPrefix(expect, "\n"), explain)
 }
 
@@ -62,7 +62,7 @@ func prepareStream() error {
 		return err
 	}
 	streamSqls := map[string]string{
-		"sharedStream": `CREATE STREAM src1 (
+		"sharedStream": `CREATE STREAM sharedStream (
 					a BIGINT,
 					b BIGINT,
 				) WITH (DATASOURCE="src1", SHARED="true");`,
