@@ -207,9 +207,17 @@ func (suite *RestTestSuite) Test_sourcesManageHandler() {
 }
 
 func (suite *RestTestSuite) TestRecoverRule() {
-	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream recoverTest() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
-	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	// drop stream
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/recoverTest", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	req1, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/recoverTest", bytes.NewBufferString("any"))
 	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream recoverTest() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	// create rule with trigger false
 	ruleJson := `{"id": "recoverTest","triggered": false,"sql": "select * from recoverTest","actions": [{"log": {}}]}`

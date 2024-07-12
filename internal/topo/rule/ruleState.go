@@ -123,14 +123,14 @@ func NewRuleState(rule *def.Rule) (rs *RuleState, err error) {
 		ActionCh: make(chan ActionSignal),
 	}
 	err = infra.SafeRun(func() error {
-		if rs.Rule.Triggered {
-			if tp, err := planner.Plan(rule); err != nil {
-				return err
-			} else {
-				rs.Topology = tp
-			}
+		if tp, err := planner.Plan(rule); err != nil {
+			return err
 		} else {
-			rs.Topology = &topo.Topo{}
+			rs.Topology = tp
+		}
+		if !rs.Rule.Triggered {
+			// manually force stop rule
+			rs.Topology.Cancel()
 		}
 		return nil
 	})
