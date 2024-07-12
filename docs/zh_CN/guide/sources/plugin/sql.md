@@ -84,7 +84,6 @@ template_config:
 | mysql      | mysql://user:test@140.210.204.147/user?parseTime=true |
 | sql server | sqlserver://username:password@140.210.204.147/testdb  |
 | postgres   | postgres://user:pass@localhost/dbname                 |
-| postgres   | postgres://user:pass@localhost/dbname                 |
 | sqlite     | sqlite:/path/to/file.db                               |
 
 ### internalSqlQueryCfg
