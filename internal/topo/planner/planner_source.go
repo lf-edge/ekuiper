@@ -32,7 +32,7 @@ import (
 
 func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesProp map[string]map[string]any, ruleId string, options *def.RuleOption, index int) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	isSchemaless := t.isSchemaless
-	_, isMock := mockSourcesProp[string(t.name)]
+	mockProps, isMock := mockSourcesProp[string(t.name)]
 	if isMock {
 		t.streamStmt.Options.TYPE = "simulator"
 	}
@@ -60,13 +60,18 @@ func transformSourceNode(ctx api.StreamContext, t *DataSourcePlan, mockSourcesPr
 			return nil, nil, 0, err
 		}
 	}
-	return splitSource(ctx, t, si, options, index, ruleId, pp)
+	return splitSource(ctx, t, si, options, mockProps, index, ruleId, pp)
 }
 
-func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
+func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, options *def.RuleOption, mockProps map[string]any, index int, ruleId string, pp node.UnOperation) (node.DataSourceNode, []node.OperatorNode, int, error) {
 	// Get all props
 	props := nodeConf.GetSourceConf(t.streamStmt.Options.TYPE, t.streamStmt.Options)
 	sp := &SourcePropsForSplit{}
+	if len(mockProps) > 0 {
+		for k, v := range mockProps {
+			props[k] = v
+		}
+	}
 	_ = cast.MapToStruct(props, sp)
 	// Create the connector node as source node
 	var (
