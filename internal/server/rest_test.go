@@ -209,6 +209,45 @@ func (suite *RestTestSuite) Test_sourcesManageHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
+func (suite *RestTestSuite) TestRecoverRule() {
+	// drop stream
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/recoverTest", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	req1, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/recoverTest", bytes.NewBufferString("any"))
+	w1 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+
+	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream recoverTest() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
+	req1, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
+	w1 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w1, req1)
+	// create rule with trigger false
+	ruleJson := `{"id": "recoverTest","triggered": false,"sql": "select * from recoverTest","actions": [{"log": {}}]}`
+
+	buf2 := bytes.NewBuffer([]byte(ruleJson))
+	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
+	w2 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+
+	req3, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules", bytes.NewBufferString("any"))
+	w3 := httptest.NewRecorder()
+	suite.r.ServeHTTP(w3, req3)
+
+	b, err := io.ReadAll(w3.Result().Body)
+	require.NoError(suite.T(), err)
+	got := make([]map[string]string, 0)
+	require.NoError(suite.T(), json.Unmarshal(b, &got))
+	find := false
+	for _, s := range got {
+		if s["id"] == "recoverTest" {
+			find = true
+			require.Equal(suite.T(), "Stopped: canceled manually.", s["status"])
+		}
+	}
+	require.True(suite.T(), find)
+}
+
 func (suite *RestTestSuite) Test_rulesManageHandler() {
 	connection.InitConnectionManager4Test()
 	// Start rules
