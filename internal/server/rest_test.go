@@ -340,8 +340,10 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body) //nolint
 	returnStr := string(returnVal)
-	expect = "{\"type\":\"ProjectPlan\",\"info\":\"Fields:[ * ]\",\"id\":0,\"children\":[1]}\n\n   {\"type\":\"DataSourcePlan\",\"info\":\"StreamName: alert\",\"id\":1,\"children\":null}\n\n"
-	assert.Equal(suite.T(), expect, returnStr)
+	expect = `
+{"type":"ProjectPlan","info":"Fields:[ * ]","id":0,"children":[1]}
+	{"type":"DataSourcePlan","info":"StreamName: alert","id":1}`
+	assert.Equal(suite.T(), strings.Trim(expect, "\n"), returnStr)
 
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule32211/explain", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()

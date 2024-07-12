@@ -24,7 +24,7 @@ func TestDataSourcePlanExplainInfo(t *testing.T) {
 					"field3": {},
 				},
 			},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test1, Fields:[ field1, field2, field3 ]\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test1, Fields:[ field1, field2, field3 ]\",\"id\":0}\n",
 			t:   "DataSourcePlan",
 		},
 		{
@@ -53,19 +53,19 @@ func TestDataSourcePlanExplainInfo(t *testing.T) {
 					"s3": {},
 				},
 			},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test3, Fields:[ column1, column2, id ], StreamFields:[ s1, s2, s3 ]\",\"id\":2,\"children\":null}\n",
+			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test3, Fields:[ column1, column2, id ], StreamFields:[ s1, s2, s3 ]\",\"id\":2}\n",
 			t:   "DataSourcePlan",
 		},
 		{
 			p: &DataSourcePlan{
 				name: "test4",
 			},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test4\",\"id\":3,\"children\":null}\n",
+			res: "{\"type\":\"DataSourcePlan\",\"info\":\"StreamName: test4\",\"id\":3}\n",
 			t:   "DataSourcePlan",
 		},
 		{
 			p:   &DataSourcePlan{},
-			res: "{\"type\":\"DataSourcePlan\",\"info\":\"\",\"id\":4,\"children\":null}\n",
+			res: "{\"type\":\"DataSourcePlan\",\"info\":\"\",\"id\":4}\n",
 			t:   "DataSourcePlan",
 		},
 	}
@@ -108,7 +108,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ Call:{ name:lpad, args:[$$default.name, 1] } }\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ Call:{ name:lpad, args:[$$default.name, 1] } }\",\"id\":0}\n",
 			t:   "AggregatePlan",
 		},
 		{
@@ -139,7 +139,7 @@ func TestAggregatePlanExplainInfo(t *testing.T) {
 					ast.Dimension{Expr: &ast.FieldRef{Name: "department", StreamName: ast.DefaultStream}},
 				},
 			},
-			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ $$default.department }\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"AggregatePlan\",\"info\":\"Dimension:{ $$default.department }\",\"id\":0}\n",
 			t:   "AggregatePlan",
 		},
 	}
@@ -190,7 +190,7 @@ func TestAnalyticFuncsPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"AnalyticFuncsPlan\",\"info\":\"Funcs:[ Call:{ name:lag, args:[src1.temp] } ], FieldFuncs:[ Call:{ name:lag, args:[src1.name] }, Call:{ name:latest, args:[Call:{ name:lag, args:[src1.name] }] } ]\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"AnalyticFuncsPlan\",\"info\":\"Funcs:[ Call:{ name:lag, args:[src1.temp] } ], FieldFuncs:[ Call:{ name:lag, args:[src1.name] }, Call:{ name:latest, args:[Call:{ name:lag, args:[src1.name] }] } ]\",\"id\":0}\n",
 			t:   "AnalyticFuncsPlan",
 		},
 		{
@@ -278,7 +278,7 @@ func TestFilterPlanExplainInfo(t *testing.T) {
 					RHS: &ast.StringLiteral{Val: "v1"},
 				},
 			},
-			res: "{\"type\":\"FilterPlan\",\"info\":\"Condition:{ binaryExpr:{ src1.name = v1 } }, \",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"FilterPlan\",\"info\":\"Condition:{ binaryExpr:{ src1.name = v1 } }, \",\"id\":0}\n",
 			t:   "FilterPlan",
 		},
 		{
@@ -336,7 +336,7 @@ func TestHavingPlanExplainInfo(t *testing.T) {
 					RHS: &ast.IntegerLiteral{Val: 2},
 				},
 			},
-			res: "{\"type\":\"HavingPlan\",\"info\":\"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 2 } }, \",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"HavingPlan\",\"info\":\"Condition:{ binaryExpr:{ Call:{ name:count, args:[*] } > 2 } }, \",\"id\":0}\n",
 			t:   "HavingPlan",
 		},
 		{
@@ -413,7 +413,7 @@ func TestJoinAlignPlanExplainInfo(t *testing.T) {
 			p: &JoinAlignPlan{
 				Emitters: []string{"tableInPlanner"},
 			},
-			res: "{\"type\":\"JoinAlignPlan\",\"info\":\"Emitters:[ tableInPlanner ]\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"JoinAlignPlan\",\"info\":\"Emitters:[ tableInPlanner ]\",\"id\":0}\n",
 			t:   "JoinAlignPlan",
 		},
 		{
@@ -478,7 +478,7 @@ func TestJoinPlanExplainInfo(t *testing.T) {
 					},
 				}},
 			},
-			res: "{\"type\":\"JoinPlan\",\"info\":\"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ src1.temp > 20 } OR binaryExpr:{ src2.hum > 60 } } AND binaryExpr:{ src1.id1 = src2.id2 } } } ]\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"JoinPlan\",\"info\":\"Joins:[ { joinType:INNER_JOIN, binaryExpr:{ binaryExpr:{ binaryExpr:{ src1.temp > 20 } OR binaryExpr:{ src2.hum > 60 } } AND binaryExpr:{ src1.id1 = src2.id2 } } } ]\",\"id\":0}\n",
 			t:   "JoinPlan",
 		},
 		{
@@ -557,7 +557,7 @@ func TestLookupPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"LookupPlan\",\"info\":\"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = good.id } }\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"LookupPlan\",\"info\":\"Join:{ joinType:LEFT_JOIN, expr:binaryExpr:{ left.device_id = good.id } }\",\"id\":0}\n",
 			t:   "LookupPlan",
 		},
 		{
@@ -907,7 +907,7 @@ func TestWatermarkPlanExplainInfo(t *testing.T) {
 				Emitters:      []string{"id", "grade"},
 				SendWatermark: false,
 			},
-			res: "{\"type\":\"WatermarkPlan\",\"info\":\"Emitters:[ id, grade ], SendWatermark:false\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"WatermarkPlan\",\"info\":\"Emitters:[ id, grade ], SendWatermark:false\",\"id\":0}\n",
 			t:   "WatermarkPlan",
 		},
 		{
@@ -969,7 +969,7 @@ func TestWindowFuncPlanExplainInfo(t *testing.T) {
 					},
 				},
 			},
-			res: "{\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:AName, expr:}, {name:AName, expr:}, {name:Name}, {name:AName} ]\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"WindowFuncPlan\",\"info\":\"windowFuncFields:[ {name:AName, expr:}, {name:AName, expr:}, {name:Name}, {name:AName} ]\",\"id\":0}\n",
 			t:   "WindowFuncPlan",
 		},
 		{
@@ -1015,7 +1015,7 @@ func TestOrderPlanExplainInfo(t *testing.T) {
 			p: &OrderPlan{
 				SortFields: []ast.SortField{{Uname: "name", Name: "name", Ascending: false, FieldExpr: &ast.FieldRef{Name: "name", StreamName: ast.DefaultStream}}},
 			},
-			res: "{\"type\":\"OrderPlan\",\"info\":\"SortFields:[ sortField:{ name:name, ascending:false, fieldExpr:{ $$default.name } } ]\",\"id\":0,\"children\":null}\n",
+			res: "{\"type\":\"OrderPlan\",\"info\":\"SortFields:[ sortField:{ name:name, ascending:false, fieldExpr:{ $$default.name } } ]\",\"id\":0}\n",
 			t:   "OrderPlan",
 		},
 		{

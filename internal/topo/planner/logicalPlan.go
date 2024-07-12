@@ -58,7 +58,7 @@ type PlanExplainInfo struct {
 	T        PlanType `json:"type"`
 	Info     string   `json:"info"`
 	ID       int64    `json:"id"`
-	Children []int64  `json:"children"`
+	Children []int64  `json:"children,omitempty"`
 }
 
 func (p *baseLogicalPlan) Explain() string {
