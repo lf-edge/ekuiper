@@ -180,10 +180,10 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/connections", connectionsHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/connections/status", connectionsStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/connection/{id}", connectionHandler).Methods(http.MethodGet, http.MethodDelete)
-
 	r.HandleFunc("/ruletest", testRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/v2/data/export", yamlConfigurationExportHandler).Methods(http.MethodGet)
 	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	// Register extended routes
 	for k, v := range components {
@@ -208,9 +208,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 }
 
 type fileContent struct {
-	Name     string `json:"name"`
-	Content  string `json:"content"`
-	FilePath string `json:"file"`
+	Name     string `json:"name" yaml:"name"`
+	Content  string `json:"content,omitempty" yaml:"content,omitempty"`
+	FilePath string `json:"file,omitempty" yaml:"filePath,omitempty"`
 }
 
 func (f *fileContent) InstallScript() string {

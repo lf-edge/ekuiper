@@ -210,6 +210,7 @@ func (suite *RestTestSuite) Test_sourcesManageHandler() {
 }
 
 func (suite *RestTestSuite) Test_rulesManageHandler() {
+	connection.InitConnectionManager4Test()
 	// Start rules
 	if rules, err := ruleProcessor.GetAllRules(); err != nil {
 		logger.Infof("Start rules error: %s", err)
@@ -422,7 +423,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	suite.r.ServeHTTP(w1, req1)
 
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"debug":false,"logFilename":"","isEventTime":false,"lateTolerance":"1s","concurrency":1,"bufferLength":1024,"sendMetaToSink":false,"sendError":true,"qos":0,"checkpointInterval":"5m0s","restartStrategy":{"attempts":0,"delay":"1s","multiplier":2,"maxDelay":"30s","jitter":0.1},"cron":"","duration":"","cronDatetimeRange":null}}`
+	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"lateTolerance":"1s","concurrency":1,"bufferLength":1024,"sendError":true,"checkpointInterval":"5m0s","restartStrategy":{"attempts":0,"delay":"1s","multiplier":2,"maxDelay":"30s","jitter":0.1}}}`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
 	// delete rule
