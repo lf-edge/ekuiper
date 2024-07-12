@@ -86,7 +86,11 @@ The source node is the data source of the rule. It can be a stream or table. **U
   }
 ```
 
-Currently, users can define the source node to refer to table as well. But only lookup table can be connected to Join node, scan table is not supported. The below example defines a source node which reads from a lookup table named `demoTable`. Please make sure the nodeType is the same as the type of the stream/table.
+<<<<<<< HEAD
+Currently, users can define the source node to refer to table as well. Lookup table can be connected to Join node. Starting from version 1.8.0, scan table is also supported to connect to Join node. The below example defines a source node which reads from a lookup table named `demoTable`. Please make sure the nodeType is the same as the type of the stream/table.
+=======
+Currently, users can define the source node to refer to table as well. Lookup table can be connected to Join node. With the latest version, scan table is also supported to connect to Join node. The below example defines a source node which reads from a lookup table named `demoTable`. Please make sure the nodeType is the same as the type of the stream/table.
+>>>>>>> 9ccb76e8... fix(docs): fix guide error about join func
 
 ```json
   {
