@@ -168,7 +168,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, tuple api.RawTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("writing to file path %s", fn)
-	fw, err := m.GetFws(ctx, fn, item)
+	fw, item, err := m.GetFws(ctx, fn, item)
 	if err != nil {
 		return err
 	}
@@ -236,10 +236,10 @@ func (m *fileSink) roll(ctx api.StreamContext, k string, v *fileWriter) error {
 
 // GetFws returns the file writer for the given file name, if the file writer does not exist, it will create one
 // The item is used to get the csv header if needed
-func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item []byte) (*fileWriter, error) {
+func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item []byte) (*fileWriter, []byte, error) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
-	if m.c.FileType == CSV_TYPE && m.c.HasHeader && len(m.c.Fields) == 0 && m.headers == "" {
+	if m.c.FileType == CSV_TYPE && m.c.HasHeader && m.headers == "" {
 		if len(m.c.Fields) > 0 {
 			m.headers = strings.Join(m.c.Fields, m.c.Delimiter)
 		} else {
@@ -280,11 +280,11 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item []byte) (*fileW
 
 		fws, e = m.createFileWriter(ctx, nfn, m.c.FileType, m.headers, m.c.Compression, m.c.Encryption)
 		if e != nil {
-			return nil, e
+			return nil, item, e
 		}
 		m.fws[fn] = fws
 	}
-	return fws, nil
+	return fws, item, nil
 }
 
 func GetSink() api.Sink {
