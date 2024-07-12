@@ -329,8 +329,8 @@ func (m *Manager) deleteFunc(service, name string) error {
 // ** CRUD of the service files **
 
 type ServiceCreationRequest struct {
-	Name string `json:"name"`
-	File string `json:"file"`
+	Name string `json:"name" yaml:"name"`
+	File string `json:"file" yaml:"file"`
 }
 
 func (s *ServiceCreationRequest) InstallScript() string {

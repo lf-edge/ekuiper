@@ -45,9 +45,9 @@ type Plugin interface {
 
 // IOPlugin Unify model. Flat all properties for each kind.
 type IOPlugin struct {
-	Name       string   `json:"name"`
-	File       string   `json:"file"`
-	ShellParas []string `json:"shellParas"`
+	Name       string   `json:"name" yaml:"name"`
+	File       string   `json:"file" yaml:"file"`
+	ShellParas []string `json:"shellParas,omitempty" yaml:"shellParas,omitempty"`
 }
 
 func (p *IOPlugin) GetName() string {
