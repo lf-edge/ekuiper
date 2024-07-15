@@ -53,6 +53,8 @@ type EdgexMsgBusSink struct {
 	config map[string]any
 	topic  string
 
+	id         string
+	cw         *connection.ConnWrapper
 	cli        *client.Client
 	sendParams map[string]any
 }
@@ -105,16 +107,14 @@ func (ems *EdgexMsgBusSink) Provision(ctx api.StreamContext, ps map[string]any) 
 func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to edgex server")
 	var err error
-	id := fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	conn, err := connection.FetchConnection(ctx, id, "edgex", ems.config)
+	ems.id = fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	ems.cw, err = connection.FetchConnection(ctx, ems.id, "edgex", ems.config)
 	if err != nil {
 		return err
 	}
-	c, ok := conn.(*client.Client)
-	if !ok {
-		return fmt.Errorf("connection %s should be edgex connection", id)
+	if conf.Config.Connection.EnableWaitSink {
+		ems.cw.Wait()
 	}
-	ems.cli = c
 	return err
 }
 
@@ -475,6 +475,17 @@ func (ems *EdgexMsgBusSink) CollectList(ctx api.StreamContext, data api.MessageT
 }
 
 func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
+	if ems.cli == nil {
+		conn, err := ems.cw.Internal()
+		if err != nil {
+			return err
+		}
+		c, ok := conn.(*client.Client)
+		if !ok {
+			return fmt.Errorf("connection %s should be edgex connection", ems.cw.ID)
+		}
+		ems.cli = c
+	}
 	evt, err := ems.produceEvents(ctx, item)
 	if err != nil {
 		return fmt.Errorf("Failed to convert to EdgeX event: %s.", err.Error())
@@ -521,12 +532,7 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	if ems.cli != nil {
-		id := fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-		err := connection.DetachConnection(ctx, id, ems.config)
-		return err
-	}
-	return nil
+	return connection.DetachConnection(ctx, ems.id, ems.config)
 }
 
 type eventMeta struct {

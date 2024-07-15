@@ -223,6 +223,7 @@ type KuiperConf struct {
 	}
 	Connection struct {
 		BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
+		EnableWaitSink            bool              `yaml:"enableWaitSink"`
 	}
 	AesKey []byte
 }

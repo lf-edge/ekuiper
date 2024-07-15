@@ -21,10 +21,16 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
+
+func init() {
+	conf.InitConf()
+	conf.Config.Connection.EnableWaitSink = true
+}
 
 func TestSink(t *testing.T) {
 	server, ch := mockNeuron(false, true, DefaultNeuronUrl)

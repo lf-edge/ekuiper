@@ -72,21 +72,20 @@ func GetAllConnectionStatus(ctx api.StreamContext) map[string]ConnectionStatus {
 	globalConnectionManager.RLock()
 	defer globalConnectionManager.RUnlock()
 	s := make(map[string]ConnectionStatus)
-	for id, err := range globalConnectionManager.failConnection {
-		status := ConnectionStatus{
-			Status: ConnectionFail,
-			ErrMsg: err,
-		}
-		s[id] = status
-	}
 	for id, meta := range globalConnectionManager.connectionPool {
 		status := ConnectionStatus{
 			Status: ConnectionRunning,
 		}
-		err := meta.conn.Ping(ctx)
+		conn, err := meta.cw.Wait()
 		if err != nil {
 			status.Status = ConnectionFail
 			status.ErrMsg = err.Error()
+		} else {
+			err = conn.Ping(ctx)
+			if err != nil {
+				status.Status = ConnectionFail
+				status.ErrMsg = err.Error()
+			}
 		}
 		s[id] = status
 	}
@@ -113,23 +112,41 @@ func PingConnection(ctx api.StreamContext, id string) error {
 	if !ok {
 		return fmt.Errorf("connection %s not existed", id)
 	}
-	return meta.conn.Ping(ctx)
+	conn, err := meta.cw.Wait()
+	if err != nil {
+		return err
+	}
+	return conn.Ping(ctx)
 }
 
-func FetchConnection(ctx api.StreamContext, id, typ string, props map[string]interface{}) (modules.Connection, error) {
+func FetchConnection(ctx api.StreamContext, id, typ string, props map[string]interface{}) (*ConnWrapper, error) {
 	if id == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
 	selID := extractSelID(props)
-	if len(selID) < 1 {
-		return getOrCreateNonStoredConnection(ctx, id, typ, props)
-	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
+	if len(selID) < 1 {
+		cw := getConnectionWrapper(id)
+		if cw != nil {
+			conf.Log.Infof("FetchConnection return existed conn %s", id)
+			return cw, nil
+		}
+		meta := &ConnectionMeta{
+			ID:       id,
+			Typ:      typ,
+			Props:    props,
+			refCount: 1,
+		}
+		meta.cw = newConnWrapper(ctx, meta)
+		globalConnectionManager.connectionPool[meta.ID] = meta
+		conf.Log.Infof("FetchConnection return new conn %s", id)
+		return meta.cw, nil
+	}
 	return attachConnection(selID)
 }
 
-func attachConnection(id string) (modules.Connection, error) {
+func attachConnection(id string) (*ConnWrapper, error) {
 	if id == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
@@ -138,7 +155,7 @@ func attachConnection(id string) (modules.Connection, error) {
 		return nil, fmt.Errorf("connection %s not existed", id)
 	}
 	meta.refCount++
-	return meta.conn, nil
+	return meta.cw, nil
 }
 
 func DetachConnection(ctx api.StreamContext, id string, props map[string]interface{}) error {
@@ -161,23 +178,26 @@ func detachConnection(ctx api.StreamContext, id string, remove bool) error {
 	}
 	meta.refCount--
 	globalConnectionManager.connectionPool[id] = meta
+	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", id, meta.refCount)
 	if remove && meta.refCount < 1 {
-		conn := meta.conn
-		conn.Close(ctx)
+		conn, _ := meta.cw.Wait()
+		if conn != nil {
+			conn.Close(ctx)
+		}
 		delete(globalConnectionManager.connectionPool, id)
 		return nil
 	}
 	return nil
 }
 
-func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (modules.Connection, error) {
+func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[string]any) (*ConnWrapper, error) {
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	_, ok := globalConnectionManager.connectionPool[id]
-	if ok {
+	exists := checkConn(id)
+	if exists {
 		return nil, fmt.Errorf("connection %v already been created", id)
 	}
 	meta := &ConnectionMeta{
@@ -185,46 +205,33 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		Typ:   typ,
 		Props: props,
 	}
+	meta.cw = newConnWrapper(ctx, meta)
 	if err := storeConnectionMeta(typ, id, props); err != nil {
 		return nil, err
 	}
-	conn, err := createNamedConnection(ctx, meta)
-	if err != nil {
-		return nil, err
-	}
-	meta.conn = conn
 	globalConnectionManager.connectionPool[id] = meta
-	if _, ok := globalConnectionManager.failConnection[id]; ok {
-		delete(globalConnectionManager.failConnection, id)
-	}
-	return conn, nil
+	return meta.cw, nil
 }
 
-func getOrCreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[string]any) (modules.Connection, error) {
-	if id == "" || typ == "" {
-		return nil, fmt.Errorf("connection id and type should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
+func getConnectionWrapper(id string) *ConnWrapper {
 	oldConn, ok := globalConnectionManager.connectionPool[id]
 	if ok {
 		oldConn.refCount++
 		globalConnectionManager.connectionPool[id] = oldConn
-		return oldConn.conn, nil
+		return oldConn.cw
 	}
-	meta := &ConnectionMeta{
-		ID:       id,
-		Typ:      typ,
-		Props:    props,
-		refCount: 1,
-	}
-	conn, err := createNamedConnection(ctx, meta)
-	if err != nil {
-		return nil, err
-	}
-	meta.conn = conn
-	globalConnectionManager.connectionPool[id] = meta
-	return conn, nil
+	return nil
+}
+
+func CheckConn(id string) bool {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	return checkConn(id)
+}
+
+func checkConn(id string) bool {
+	_, ok := globalConnectionManager.connectionPool[id]
+	return ok
 }
 
 var mockErr = true
@@ -268,10 +275,6 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	defer globalConnectionManager.Unlock()
 	meta, ok := globalConnectionManager.connectionPool[selId]
 	if !ok {
-		_, ok := globalConnectionManager.failConnection[selId]
-		if ok {
-			delete(globalConnectionManager.failConnection, selId)
-		}
 		return nil
 	}
 	if meta.refCount > 0 {
@@ -281,7 +284,10 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
-	meta.conn.Close(ctx)
+	conn, _ := meta.cw.Wait()
+	if conn != nil {
+		conn.Close(ctx)
+	}
 	delete(globalConnectionManager.connectionPool, selId)
 	return nil
 }
@@ -297,7 +303,6 @@ func InitConnectionManager4Test() error {
 func InitConnectionManager() {
 	globalConnectionManager = &ConnectionManager{
 		connectionPool: make(map[string]*ConnectionMeta),
-		failConnection: make(map[string]string),
 	}
 	if conf.IsTesting {
 		return
@@ -305,19 +310,11 @@ func InitConnectionManager() {
 	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 }
 
-func ReloadConnection(timeout time.Duration) error {
+func ReloadConnection() error {
 	cfgs, err := conf.GetCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer func() {
-		cancel()
-	}()
-	failpoint.Inject("reloadTimeout", func() {
-		time.Sleep(100 * time.Millisecond)
-	})
-
 	for key, props := range cfgs {
 		names := strings.Split(key, ".")
 		if len(names) != 3 {
@@ -330,13 +327,7 @@ func ReloadConnection(timeout time.Duration) error {
 			Typ:   typ,
 			Props: props,
 		}
-		conn, err := createNamedConnection(topoContext.WithContext(ctx), meta)
-		if err != nil {
-			conf.Log.Warnf("initialize connection:%v failed, err:%v", id, err)
-			globalConnectionManager.failConnection[id] = err.Error()
-			continue
-		}
-		meta.conn = conn
+		meta.cw = newConnWrapper(topoContext.WithContext(context.Background()), meta)
 		globalConnectionManager.connectionPool[id] = meta
 	}
 	return nil
@@ -345,15 +336,14 @@ func ReloadConnection(timeout time.Duration) error {
 type ConnectionManager struct {
 	sync.RWMutex
 	connectionPool map[string]*ConnectionMeta
-	failConnection map[string]string
 }
 
 type ConnectionMeta struct {
-	ID       string             `json:"id"`
-	Typ      string             `json:"typ"`
-	Props    map[string]any     `json:"props"`
-	conn     modules.Connection `json:"-"`
-	refCount int                `json:"-"`
+	ID       string         `json:"id"`
+	Typ      string         `json:"typ"`
+	Props    map[string]any `json:"props"`
+	refCount int            `json:"-"`
+	cw       *ConnWrapper   `json:"-"`
 }
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
@@ -394,4 +384,50 @@ func extractSelID(props map[string]interface{}) string {
 		return ""
 	}
 	return id
+}
+
+type ConnWrapper struct {
+	ID          string
+	initialized bool
+	conn        modules.Connection
+	err         error
+	cond        *sync.Cond
+}
+
+func (cw *ConnWrapper) Internal() (modules.Connection, error) {
+	cw.cond.L.Lock()
+	defer cw.cond.L.Unlock()
+	if cw.initialized {
+		return cw.conn, cw.err
+	}
+	return nil, fmt.Errorf("connection %s not ready", cw.ID)
+}
+
+func (cw *ConnWrapper) SetConn(conn modules.Connection, err error) {
+	cw.cond.L.Lock()
+	defer cw.cond.L.Unlock()
+	cw.initialized = true
+	cw.conn, cw.err = conn, err
+}
+
+func (cw *ConnWrapper) Wait() (modules.Connection, error) {
+	cw.cond.L.Lock()
+	defer cw.cond.L.Unlock()
+	for !cw.initialized {
+		cw.cond.Wait()
+	}
+	return cw.conn, cw.err
+}
+
+func newConnWrapper(ctx api.StreamContext, meta *ConnectionMeta) *ConnWrapper {
+	cw := &ConnWrapper{
+		ID:   meta.ID,
+		cond: sync.NewCond(&sync.Mutex{}),
+	}
+	go func() {
+		conn, err := createNamedConnection(ctx, meta)
+		cw.SetConn(conn, err)
+		cw.cond.Broadcast()
+	}()
+	return cw
 }

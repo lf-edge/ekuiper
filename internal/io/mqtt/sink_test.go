@@ -27,6 +27,11 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
+func init() {
+	conf.InitConf()
+	conf.Config.Connection.EnableWaitSink = true
+}
+
 func TestSinkConfigure(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)

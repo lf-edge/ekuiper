@@ -32,6 +32,7 @@ import (
 )
 
 type SQLSourceConnector struct {
+	id            string
 	conf          *SQLConf
 	Query         sqlgen.SqlQueryGenerator
 	conn          *client2.SQLConnection
@@ -80,8 +81,12 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var cli *client2.SQLConnection
 	var err error
-	id := s.conf.DBUrl
-	conn, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	s.id = s.conf.DBUrl
+	cw, err := connection.FetchConnection(ctx, s.id, "sql", s.props)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}
@@ -93,10 +98,9 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
 func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
 	if s.conn != nil {
-		id := s.conf.DBUrl
-		connection.DetachConnection(ctx, id, s.props)
 		s.conn.DetachSub(ctx, s.props)
 	}
+	connection.DetachConnection(ctx, s.id, s.props)
 	return nil
 }
 

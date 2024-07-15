@@ -71,7 +71,11 @@ func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 }
 
 func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
-	c, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props)
+	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props)
+	if err != nil {
+		return err
+	}
+	c, err := cw.Wait()
 	if err != nil {
 		return err
 	}

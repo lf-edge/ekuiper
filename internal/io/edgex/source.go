@@ -82,7 +82,11 @@ func (es *Source) Connect(ctx api.StreamContext) error {
 	var cli *client.Client
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	conn, err := connection.FetchConnection(ctx, id, "edgex", es.config)
+	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}
@@ -317,11 +321,10 @@ func convertFloatArray(v string, bitSize int) (any, error) {
 func (es *Source) Close(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Infof("EdgeX Source instance %d Done.", ctx.GetInstanceId())
+	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
+	connection.DetachConnection(ctx, id, es.config)
 	if es.cli != nil {
-		id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-		err := connection.DetachConnection(ctx, id, es.config)
 		es.cli.DetachSub(ctx, es.config)
-		return err
 	}
 	return nil
 }

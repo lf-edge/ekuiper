@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -29,6 +30,7 @@ import (
 
 type SQLSinkConnector struct {
 	config *sqlSinkConfig
+	cw     *connection.ConnWrapper
 	conn   *client.SQLConnection
 	props  map[string]any
 }
@@ -106,15 +108,16 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 
 func (s *SQLSinkConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
-	var cli *client.SQLConnection
 	var err error
 	id := s.config.DBUrl
-	conn, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, id, "sql", s.props)
 	if err != nil {
 		return err
 	}
-	cli = conn.(*client.SQLConnection)
-	s.conn = cli
+	s.cw = cw
+	if conf.Config.Connection.EnableWaitSink {
+		s.cw.Wait()
+	}
 	return err
 }
 
@@ -133,6 +136,13 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 }
 
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
+	if s.conn == nil {
+		conn, err := s.cw.Internal()
+		if err != nil {
+			return err
+		}
+		s.conn = conn.(*client.SQLConnection)
+	}
 	if len(s.config.RowKindField) < 1 {
 		var keys []string = nil
 		var values []string = nil

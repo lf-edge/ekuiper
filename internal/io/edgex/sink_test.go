@@ -34,6 +34,11 @@ var (
 	ctx           = context.WithValue(context.Background(), context.LoggerKey, contextLogger)
 )
 
+func init() {
+	conf.InitConf()
+	conf.Config.Connection.EnableWaitSink = true
+}
+
 func compareEvent(expected, actual *dtos.Event) bool {
 	if (expected.Id == actual.Id || (expected.Id == "" && actual.Id != "")) && expected.ProfileName == actual.ProfileName && expected.DeviceName == actual.DeviceName && (expected.Origin == actual.Origin || (expected.Origin == 0 && actual.Origin > 0)) && reflect.DeepEqual(expected.Tags, actual.Tags) && expected.SourceName == actual.SourceName && len(expected.Readings) == len(actual.Readings) {
 		for _, r := range expected.Readings {
