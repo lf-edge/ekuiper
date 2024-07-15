@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -113,4 +114,29 @@ func TestYamlImport(t *testing.T) {
 	r, err := ruleProcessor.GetRuleById("ruleImport")
 	require.NoError(t, err)
 	require.NotNil(t, r)
+}
+
+func TestYamlImportErr(t *testing.T) {
+	conf.InitConf()
+	conf.IsTesting = true
+	connection.InitConnectionManager4Test()
+	for _, v := range components {
+		v.register()
+	}
+	InitConfManagers()
+
+	file := "./rpc_test_data/yaml_import.yaml"
+	f, err := os.Open(file)
+	require.NoError(t, err)
+	defer f.Close()
+	buffer := new(bytes.Buffer)
+	_, err = io.Copy(buffer, f)
+	require.NoError(t, err)
+	content := buffer.Bytes()
+
+	for v := mockErrStart + 1; v < mockErrEnd; v++ {
+		failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/server/mockImportErr", fmt.Sprintf("return(%v)", v))
+		require.Error(t, importFromByte(content))
+	}
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/server/mockImportErr")
 }
