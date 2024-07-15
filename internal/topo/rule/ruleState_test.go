@@ -427,9 +427,8 @@ func TestScheduleRule(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", DATASOURCE="test", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	// Test rule not triggered
 	r := &def.Rule{
-		Triggered: false,
+		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
 		Actions: []map[string]interface{}{
