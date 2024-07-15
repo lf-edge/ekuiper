@@ -80,7 +80,7 @@ type RuleGraph struct {
 // Rule the definition of the business logic
 // Sql and Graph are mutually exclusive, at least one of them should be set
 type Rule struct {
-	Triggered bool                     `json:"triggered,omitempty" yaml:"triggered,omitempty"`
+	Triggered bool                     `json:"triggered" yaml:"triggered"`
 	Id        string                   `json:"id,omitempty" yaml:"id,omitempty"`
 	Name      string                   `json:"name,omitempty" yaml:"name,omitempty"` // The display name of a rule
 	Sql       string                   `json:"sql,omitempty" yaml:"sql,omitempty"`
