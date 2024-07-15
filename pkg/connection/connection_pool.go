@@ -76,15 +76,16 @@ func GetAllConnectionStatus(ctx api.StreamContext) map[string]ConnectionStatus {
 		status := ConnectionStatus{
 			Status: ConnectionRunning,
 		}
-		conn, err := meta.cw.Internal()
+		conn, err := meta.cw.Wait()
 		if err != nil {
 			status.Status = ConnectionFail
 			status.ErrMsg = err.Error()
-		}
-		err = conn.Ping(ctx)
-		if err != nil {
-			status.Status = ConnectionFail
-			status.ErrMsg = err.Error()
+		} else {
+			err = conn.Ping(ctx)
+			if err != nil {
+				status.Status = ConnectionFail
+				status.ErrMsg = err.Error()
+			}
 		}
 		s[id] = status
 	}
@@ -219,6 +220,12 @@ func getConnectionWrapper(id string) *ConnWrapper {
 	return nil
 }
 
+func CheckConn(id string) bool {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	return checkConn(id)
+}
+
 func checkConn(id string) bool {
 	_, ok := globalConnectionManager.connectionPool[id]
 	return ok
@@ -300,19 +307,11 @@ func InitConnectionManager() {
 	DefaultBackoffMaxElapsedDuration = time.Duration(conf.Config.Connection.BackoffMaxElapsedDuration)
 }
 
-func ReloadConnection(timeout time.Duration) error {
+func ReloadConnection() error {
 	cfgs, err := conf.GetCfgFromKVStorage("connections", "", "")
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer func() {
-		cancel()
-	}()
-	failpoint.Inject("reloadTimeout", func() {
-		time.Sleep(100 * time.Millisecond)
-	})
-
 	for key, props := range cfgs {
 		names := strings.Split(key, ".")
 		if len(names) != 3 {
@@ -325,7 +324,7 @@ func ReloadConnection(timeout time.Duration) error {
 			Typ:   typ,
 			Props: props,
 		}
-		meta.cw = newConnWrapper(topoContext.WithContext(ctx), meta)
+		meta.cw = newConnWrapper(topoContext.WithContext(context.Background()), meta)
 		globalConnectionManager.connectionPool[id] = meta
 	}
 	return nil

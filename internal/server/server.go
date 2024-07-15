@@ -191,8 +191,7 @@ func StartUp(Version string) {
 		panic(err)
 	}
 	connection.InitConnectionManager()
-	// reload with 3s timeout
-	if err := connection.ReloadConnection(3 * time.Second); err != nil {
+	if err := connection.ReloadConnection(); err != nil {
 		conf.Log.Warn(err)
 	}
 	meta.Bind()

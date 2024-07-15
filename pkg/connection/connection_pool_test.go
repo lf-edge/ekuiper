@@ -17,7 +17,6 @@ package connection
 import (
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -32,7 +31,8 @@ import (
 func TestConnection(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := context.Background()
-	conn, err := CreateNamedConnection(ctx, "id1", "mock", nil)
+	cw, err := CreateNamedConnection(ctx, "id1", "mock", nil)
+	conn, err := cw.Wait()
 	require.NoError(t, err)
 	require.NotNil(t, conn)
 	require.NoError(t, conn.Ping(ctx))
@@ -57,13 +57,13 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, conn3)
 
-	conn, err = CreateNamedConnection(ctx, "id2", "mock", nil)
+	cw, err = CreateNamedConnection(ctx, "id2", "mock", nil)
 	require.NoError(t, err)
-	require.NotNil(t, conn)
+	require.NotNil(t, cw)
 
-	conn, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"})
+	cw, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"})
 	require.NoError(t, err)
-	require.NotNil(t, conn)
+	require.NotNil(t, cw)
 
 	require.Equal(t, 1, GetConnectionRef("id2"))
 }
@@ -77,7 +77,9 @@ func TestConnectionErr(t *testing.T) {
 	require.Error(t, err)
 	err = DropNameConnection(ctx, "")
 	require.Error(t, err)
-	_, err = CreateNamedConnection(ctx, "12", "unknown", nil)
+	cw, err := CreateNamedConnection(ctx, "12", "unknown", nil)
+	require.NoError(t, err)
+	_, err = cw.Wait()
 	require.Error(t, err)
 	_, err = attachConnection("")
 	require.Error(t, err)
@@ -116,7 +118,7 @@ func TestConnectionStatus(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
-	require.NoError(t, ReloadConnection(999*time.Second))
+	require.NoError(t, ReloadConnection())
 	ctx := context.Background()
 	allStatus := GetAllConnectionStatus(ctx)
 	s, ok := allStatus["a1"]
@@ -130,16 +132,6 @@ func TestConnectionStatus(t *testing.T) {
 	require.Equal(t, ConnectionStatus{
 		Status: ConnectionRunning,
 	}, s)
-}
-
-func TestReloadConnectionErr(t *testing.T) {
-	require.NoError(t, InitConnectionManager4Test())
-	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
-	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout", "return(true)")
-	require.NoError(t, ReloadConnection(time.Microsecond))
-	require.True(t, len(globalConnectionManager.failConnection) > 0)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout")
 }
 
 func TestNonStoredConnection(t *testing.T) {

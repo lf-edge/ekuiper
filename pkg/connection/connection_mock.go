@@ -18,6 +18,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/cenkalti/backoff/v4"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -81,5 +83,5 @@ func (m mockErrConnection) DetachSub(ctx api.StreamContext, props map[string]any
 }
 
 func CreateMockErrConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	return nil, errors.New("mockErr")
+	return nil, backoff.Permanent(errors.New("mockErr"))
 }
