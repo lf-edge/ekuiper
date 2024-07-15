@@ -306,8 +306,8 @@ func yamlConfImportHandler(w http.ResponseWriter, r *http.Request) {
 
 func importFromByte(content []byte) error {
 	m := &MetaConfiguration{}
-	err := yaml.Unmarshal(content, m)
-	err = mockImportErr(mockImportFromByteErr)
+	err := yaml.Unmarshal(content, m) //nolint:staticcheck
+	err = mockImportErr(err, mockImportFromByteErr)
 	if err != nil {
 		return err
 	}
@@ -326,8 +326,7 @@ const (
 	mockErrEnd
 )
 
-func mockImportErr(errSwitch int) error {
-	var err error
+func mockImportErr(err error, errSwitch int) error {
 	failpoint.Inject("mockImportErr", func(val failpoint.Value) {
 		if errSwitch == val.(int) {
 			err = errors.New("mockImportErr")
@@ -434,8 +433,8 @@ func importRules(m *MetaConfiguration) error {
 		deleteRule(key)
 		ruleProcessor.ExecDrop(key)
 		b, _ := json.Marshal(value)
-		_, err := createRule(key, string(b))
-		err = mockImportErr(mockRulesErr)
+		_, err := createRule(key, string(b)) //nolint:staticcheck
+		err = mockImportErr(err, mockRulesErr)
 		if err != nil {
 			return fmt.Errorf("replace rule %v failed, err:%v", key, err)
 		}
@@ -445,22 +444,22 @@ func importRules(m *MetaConfiguration) error {
 
 func importConfigurations(m *MetaConfiguration) error {
 	for key, value := range m.SourceConfig {
-		err := writeConf(key, value)
-		err = mockImportErr(mockSourcesErr)
+		err := writeConf(key, value) //nolint:staticcheck
+		err = mockImportErr(err, mockSourcesErr)
 		if err != nil {
 			return err
 		}
 	}
 	for key, value := range m.SinkConfig {
-		err := writeConf(key, value)
-		err = mockImportErr(mockSinksErr)
+		err := writeConf(key, value) //nolint:staticcheck
+		err = mockImportErr(err, mockSinksErr)
 		if err != nil {
 			return err
 		}
 	}
 	for key, value := range m.ConnectionConfig {
-		err := writeConf(key, value)
-		err = mockImportErr(mockConnectionsErr)
+		err := writeConf(key, value) //nolint:staticcheck
+		err = mockImportErr(err, mockConnectionsErr)
 		if err != nil {
 			return err
 		}
@@ -471,16 +470,16 @@ func importConfigurations(m *MetaConfiguration) error {
 func importDataSource(m *MetaConfiguration) error {
 	for name, value := range m.Streams {
 		streamProcessor.DropStream(name, ast.TypeStream)
-		_, err := streamProcessor.ExecStreamSql(value.SQL)
-		err = mockImportErr(mockStreamsErr)
+		_, err := streamProcessor.ExecStreamSql(value.SQL) //nolint:staticcheck
+		err = mockImportErr(err, mockStreamsErr)
 		if err != nil {
 			return fmt.Errorf("replace stream %v failed, err:%v", name, err.Error())
 		}
 	}
 	for name, value := range m.Tables {
 		streamProcessor.DropStream(name, ast.TypeTable)
-		_, err := streamProcessor.ExecStreamSql(value.SQL)
-		err = mockImportErr(mockTablesErr)
+		_, err := streamProcessor.ExecStreamSql(value.SQL) //nolint:staticcheck
+		err = mockImportErr(err, mockTablesErr)
 		if err != nil {
 			return fmt.Errorf("replace stream %v failed, err:%v", name, err.Error())
 		}
