@@ -560,6 +560,9 @@ func (rs *RuleState) GetState() (s string, err error) {
 	}()
 	rs.RLock()
 	defer rs.RUnlock()
+	if !rs.Rule.Triggered {
+		return RuleStopped, nil
+	}
 	result := ""
 	if rs.Topology == nil {
 		result = "Stopped: fail to create the topo."
