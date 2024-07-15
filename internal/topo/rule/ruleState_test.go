@@ -340,9 +340,9 @@ func TestRuleState_Start(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON", DATASOURCE="test")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	// Test rule not triggered
+	// Test rule triggered
 	r := &def.Rule{
-		Triggered: false,
+		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
 		Actions: []map[string]interface{}{
