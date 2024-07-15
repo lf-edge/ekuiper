@@ -128,10 +128,6 @@ func NewRuleState(rule *def.Rule) (rs *RuleState, err error) {
 		} else {
 			rs.Topology = tp
 		}
-		if !rs.Rule.Triggered {
-			// manually force stop rule
-			rs.Topology.Cancel()
-		}
 		return nil
 	})
 	rs.run()
