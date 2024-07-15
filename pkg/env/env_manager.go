@@ -41,6 +41,8 @@ func (e *EnvManager) Setup() {
 	e.loadEnv()
 	e.loadConnectionProps()
 	e.storeConnectionProps()
+	// clear useless data
+	e.clear()
 }
 
 func (e *EnvManager) loadEnv() {
@@ -53,7 +55,7 @@ func (e *EnvManager) loadEnv() {
 		}
 		key := ss[0]
 		value := ss[1]
-		if strings.HasPrefix(key, "CONNECTIONS") {
+		if strings.HasPrefix(key, "CONNECTION") {
 			e.env[key] = value
 		}
 	}
@@ -66,9 +68,9 @@ func (e *EnvManager) loadConnectionProps() {
 		if len(ss) != 4 {
 			continue
 		}
-		pluginTyp := ss[1]
-		confName := ss[2]
-		confKey := ss[3]
+		pluginTyp := strings.ToLower(ss[1])
+		confName := strings.ToLower(ss[2])
+		confKey := strings.ToLower(ss[3])
 		v1, ok := e.connectionProps[pluginTyp]
 		if !ok {
 			v1 = make(map[string]map[string]interface{})
@@ -92,4 +94,9 @@ func (e *EnvManager) storeConnectionProps() {
 			}
 		}
 	}
+}
+
+func (e *EnvManager) clear() {
+	e.env = nil
+	e.connectionProps = nil
 }
