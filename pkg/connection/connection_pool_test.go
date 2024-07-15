@@ -177,15 +177,13 @@ func TestConnectionLock(t *testing.T) {
 	require.True(t, CheckConn("ccc1"))
 }
 
-type blockConnection struct {
-}
+type blockConnection struct{}
 
 func (b blockConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
 
-func (b blockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
-}
+func (b blockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {}
 
 func (b blockConnection) Close(ctx api.StreamContext) error {
 	return nil
