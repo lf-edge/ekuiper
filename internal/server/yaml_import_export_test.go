@@ -15,12 +15,16 @@
 package server
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
@@ -66,4 +70,47 @@ func prepare(t *testing.T) {
 	rulejson := `{"trigger":false,"id":"metaConf","sql":"select * from metaConfTest","actions":[{"log":{}}]}`
 	_, err = createRule("metaConf", rulejson)
 	require.NoError(t, err)
+}
+
+func TestYamlImport(t *testing.T) {
+	conf.InitConf()
+	conf.IsTesting = true
+	connection.InitConnectionManager4Test()
+	for _, v := range components {
+		v.register()
+	}
+	InitConfManagers()
+
+	file := "./rpc_test_data/yaml_import.yaml"
+	f, err := os.Open(file)
+	require.NoError(t, err)
+	defer f.Close()
+	buffer := new(bytes.Buffer)
+	_, err = io.Copy(buffer, f)
+	require.NoError(t, err)
+
+	content := buffer.Bytes()
+	require.NoError(t, importFromByte(content))
+
+	got, err := conf.GetCfgFromKVStorage("sources", "mqtt", "demoImport")
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	got, err = conf.GetCfgFromKVStorage("sinks", "mqtt", "demoImport")
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	got, err = conf.GetCfgFromKVStorage("connections", "mqtt", "demoImport")
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+
+	_, err = streamProcessor.GetStream("demoImport", ast.TypeStream)
+	require.NoError(t, err)
+
+	_, err = streamProcessor.GetStream("helloImport", ast.TypeTable)
+	require.NoError(t, err)
+
+	r, err := ruleProcessor.GetRuleById("ruleImport")
+	require.NoError(t, err)
+	require.NotNil(t, r)
 }

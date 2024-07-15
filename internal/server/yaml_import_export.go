@@ -49,7 +49,7 @@ type MetaConfiguration struct {
 	Uploads map[string]*fileContent                    `json:"uploads,omitempty" yaml:"uploads,omitempty"`
 	// rules related
 	Streams map[string]*DatasourceExport `json:"streams" yaml:"streams"`
-	Tables  map[string]*DatasourceExport `json:"tables" yaml:"tables"`
+	Tables  map[string]*DatasourceExport `json:"tables,omitempty" yaml:"tables,omitempty"`
 	Rules   map[string]*def.Rule         `json:"rules" yaml:"rules"`
 }
 
@@ -295,19 +295,22 @@ func yamlConfImportHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		content = buf.Bytes()
 	}
-	m := &MetaConfiguration{}
-	err = yaml.Unmarshal(content, m)
-	if err != nil {
-		handleError(w, err, "Fail to parse request", logger)
-		return
-	}
-	err = importYamlConf(m)
+	err = importFromByte(content)
 	if err != nil {
 		handleError(w, err, "import failed", logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("success"))
+}
+
+func importFromByte(content []byte) error {
+	m := &MetaConfiguration{}
+	err := yaml.Unmarshal(content, m)
+	if err != nil {
+		return err
+	}
+	return importYamlConf(m)
 }
 
 func importYamlConf(m *MetaConfiguration) error {
@@ -406,6 +409,7 @@ func importPortablePlugins(m *MetaConfiguration) error {
 func importRules(m *MetaConfiguration) error {
 	for key, value := range m.Rules {
 		deleteRule(key)
+		ruleProcessor.ExecDrop(key)
 		b, err := json.Marshal(value)
 		if err != nil {
 			return fmt.Errorf("encode rule %v failed, err:%v", key, err)

@@ -45,11 +45,11 @@ type DatetimeRange struct {
 }
 
 type RestartStrategy struct {
-	Attempts     int               `json:"attempts" yaml:"attempts"`
-	Delay        cast.DurationConf `json:"delay" yaml:"delay"`
-	Multiplier   float64           `json:"multiplier" yaml:"multiplier"`
-	MaxDelay     cast.DurationConf `json:"maxDelay" yaml:"maxDelay"`
-	JitterFactor float64           `json:"jitter" yaml:"jitter"`
+	Attempts     int               `json:"attempts,omitempty" yaml:"attempts,omitempty"`
+	Delay        cast.DurationConf `json:"delay,omitempty" yaml:"delay,omitempty"`
+	Multiplier   float64           `json:"multiplier,omitempty" yaml:"multiplier,omitempty"`
+	MaxDelay     cast.DurationConf `json:"maxDelay,omitempty" yaml:"maxDelay,omitempty"`
+	JitterFactor float64           `json:"jitter,omitempty" yaml:"jitter,omitempty"`
 }
 
 type PrintableTopo struct {
