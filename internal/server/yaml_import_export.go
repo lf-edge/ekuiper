@@ -323,6 +323,10 @@ const (
 	mockStreamsErr
 	mockTablesErr
 	mockRulesErr
+	mockUploadErr
+	mockServiceErr
+	mockSchemaErr
+	mockPortablePluginErr
 	mockErrEnd
 )
 
@@ -339,16 +343,25 @@ func importYamlConf(m *MetaConfiguration) error {
 	if err := importConfigurations(m); err != nil {
 		return err
 	}
-	if err := importUploads(m); err != nil {
+	var err error
+	err = importUploads(m) //nolint:staticcheck
+	err = mockImportErr(err, mockUploadErr)
+	if err != nil {
 		return err
 	}
-	if err := importService(m); err != nil {
+	err = importService(m) //nolint:staticcheck
+	err = mockImportErr(err, mockServiceErr)
+	if err != nil {
 		return err
 	}
-	if err := importSchema(m); err != nil {
+	err = importSchema(m) //nolint:staticcheck
+	err = mockImportErr(err, mockSchemaErr)
+	if err != nil {
 		return err
 	}
-	if err := importPortablePlugins(m); err != nil {
+	err = importPortablePlugins(m) //nolint:staticcheck
+	err = mockImportErr(err, mockPortablePluginErr)
+	if err != nil {
 		return err
 	}
 	if err := importDataSource(m); err != nil {
