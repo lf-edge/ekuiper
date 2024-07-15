@@ -37,7 +37,11 @@ func ping(ctx api.StreamContext, props map[string]any) error {
 func connect(ctx api.StreamContext, url string, props map[string]any) (modules.Connection, error) {
 	ctx.GetLogger().Infof("Connecting to neuron")
 	connId := PROTOCOL + url
-	return connection.FetchConnection(ctx, connId, "nng", props)
+	cw, err := connection.FetchConnection(ctx, connId, "nng", props)
+	if err != nil {
+		return nil, err
+	}
+	return cw.Wait()
 }
 
 func close(ctx api.StreamContext, conn modules.Connection, url string, props map[string]any) {

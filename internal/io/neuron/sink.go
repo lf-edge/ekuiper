@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 )
@@ -35,6 +36,7 @@ type c struct {
 }
 
 type sink struct {
+	cw    *connection.ConnWrapper
 	c     *c
 	cc    *nng.SockConf
 	cli   *nng.Sock
@@ -81,15 +83,25 @@ func (s *sink) Ping(ctx api.StreamContext, props map[string]interface{}) error {
 }
 
 func (s *sink) Connect(ctx api.StreamContext) error {
-	cli, err := connect(ctx, s.cc.Url, s.props)
+	ctx.GetLogger().Infof("Connecting to neuron")
+	connId := PROTOCOL + s.cc.Url
+	cw, err := connection.FetchConnection(ctx, connId, "nng", s.props)
 	if err != nil {
 		return err
 	}
-	s.cli = cli.(*nng.Sock)
+	s.cw = cw
 	return nil
 }
 
 func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
+	if s.cli == nil {
+		cli, err := s.cw.Internal()
+		if err != nil {
+			return err
+		}
+		s.cli = cli.(*nng.Sock)
+	}
+
 	ctx.GetLogger().Debugf("receive %+v", data)
 	if s.c.Raw {
 		m := data.ToMap()
