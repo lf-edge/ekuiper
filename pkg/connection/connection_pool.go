@@ -396,6 +396,9 @@ func (cw *ConnWrapper) Internal() (modules.Connection, error) {
 	cw.cond.L.Lock()
 	defer cw.cond.L.Unlock()
 	if cw.conn == nil {
+		if cw.err != nil {
+			return nil, cw.err
+		}
 		return nil, fmt.Errorf("connection %s not ready", cw.ID)
 	}
 	return cw.conn, nil
@@ -424,7 +427,7 @@ func (cw *ConnWrapper) Wait() (modules.Connection, error) {
 func newConnWrapper(ctx api.StreamContext, meta *ConnectionMeta) *ConnWrapper {
 	cw := &ConnWrapper{
 		ID:   meta.ID,
-		cond: sync.NewCond(&sync.RWMutex{}),
+		cond: sync.NewCond(&sync.Mutex{}),
 	}
 	go func() {
 		conn, err := createNamedConnection(ctx, meta)
