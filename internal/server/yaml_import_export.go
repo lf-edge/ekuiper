@@ -17,7 +17,11 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pingcap/failpoint"
@@ -25,9 +29,11 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/service"
+	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -249,4 +255,222 @@ func yamlConfigurationExportHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Add("Content-Disposition", "Attachment")
 	http.ServeContent(w, r, name, time.Now(), bytes.NewReader(yamlBytes))
+}
+
+type importConfiguration struct {
+	configurationInfo
+
+	// TODO: support these later
+	Partial bool `json:"partial" yaml:"partial"`
+	Reboot  bool `json:"reboot" yaml:"reboot"`
+}
+
+func yamlConfImportHandler(w http.ResponseWriter, r *http.Request) {
+	c := &importConfiguration{}
+	err := json.NewDecoder(r.Body).Decode(c)
+	if err != nil {
+		handleError(w, err, "Invalid body: Error decoding json", logger)
+		return
+	}
+	if c.Content != "" && c.FilePath != "" {
+		handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
+		return
+	} else if c.Content == "" && c.FilePath == "" {
+		handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
+		return
+	}
+	content := []byte(c.Content)
+	if c.FilePath != "" {
+		reader, err := httpx.ReadFile(c.FilePath)
+		if err != nil {
+			handleError(w, err, "Fail to read file", logger)
+			return
+		}
+		defer reader.Close()
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, reader)
+		if err != nil {
+			handleError(w, err, "fail to convert file", logger)
+			return
+		}
+		content = buf.Bytes()
+	}
+	m := &MetaConfiguration{}
+	err = yaml.Unmarshal(content, m)
+	if err != nil {
+		handleError(w, err, "Fail to parse request", logger)
+		return
+	}
+	err = importYamlConf(m)
+	if err != nil {
+		handleError(w, err, "import failed", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success"))
+}
+
+func importYamlConf(m *MetaConfiguration) error {
+	if err := importConfigurations(m); err != nil {
+		return err
+	}
+	if err := importUploads(m); err != nil {
+		return err
+	}
+	if err := importService(m); err != nil {
+		return err
+	}
+	if err := importSchema(m); err != nil {
+		return err
+	}
+	if err := importPortablePlugins(m); err != nil {
+		return err
+	}
+	if err := importDataSource(m); err != nil {
+		return err
+	}
+	if err := importRules(m); err != nil {
+		return err
+	}
+	return nil
+}
+
+func importSchema(m *MetaConfiguration) error {
+	sm, ok := managers["schema"]
+	if !ok {
+		return fmt.Errorf("schema manager not exist")
+	}
+	want := make(map[string]string)
+	for k, v := range m.Schema {
+		b, _ := json.Marshal(v)
+		want[k] = string(b)
+	}
+	return importByManager(want, sm, "schema")
+}
+
+func importService(m *MetaConfiguration) error {
+	sm, ok := managers["service"]
+	if !ok {
+		return fmt.Errorf("service manager not exist")
+	}
+	want := make(map[string]string)
+	for k, v := range m.Service {
+		b, _ := json.Marshal(v)
+		want[k] = string(b)
+	}
+	return importByManager(want, sm, "service")
+}
+
+func importUploads(m *MetaConfiguration) error {
+	want := make(map[string]string)
+	for k, v := range m.Uploads {
+		b, _ := json.Marshal(v)
+		want[k] = string(b)
+	}
+	result := uploadsImport(want)
+	if len(result) < 1 {
+		return nil
+	}
+	errs := make([]error, 0)
+	for k, v := range result {
+		errs = append(errs, fmt.Errorf("import upload %s failed, err:%v", k, v))
+	}
+	return errors.Join(errs...)
+}
+
+func importByManager(want map[string]string, m ConfManager, typ string) error {
+	result := m.Import(want)
+	if len(result) < 1 {
+		return nil
+	}
+	errs := make([]error, 0)
+	for k, v := range result {
+		errs = append(errs, fmt.Errorf("import %s %v failed, err:%v", typ, k, v))
+	}
+	return errors.Join(errs...)
+}
+
+func importPortablePlugins(m *MetaConfiguration) error {
+	manager, ok := managers["portable"]
+	if !ok {
+		return fmt.Errorf("portable manager not exist")
+	}
+	importPlugin := make(map[string]string)
+	for key, value := range m.PortablePlugins {
+		b, _ := json.Marshal(value)
+		importPlugin[key] = string(b)
+	}
+	return importByManager(importPlugin, manager, "portable plugin")
+}
+
+func importRules(m *MetaConfiguration) error {
+	for key, value := range m.Rules {
+		deleteRule(key)
+		b, err := json.Marshal(value)
+		if err != nil {
+			return fmt.Errorf("encode rule %v failed, err:%v", key, err)
+		}
+		_, err = createRule(key, string(b))
+		if err != nil {
+			return fmt.Errorf("replace rule %v failed, err:%v", key, err)
+		}
+	}
+	return nil
+}
+
+func importConfigurations(m *MetaConfiguration) error {
+	for key, value := range m.SourceConfig {
+		if err := writeConf(key, value); err != nil {
+			return err
+		}
+	}
+	for key, value := range m.SinkConfig {
+		if err := writeConf(key, value); err != nil {
+			return err
+		}
+	}
+	for key, value := range m.ConnectionConfig {
+		if err := writeConf(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func importDataSource(m *MetaConfiguration) error {
+	for name, value := range m.Streams {
+		streamProcessor.DropStream(name, ast.TypeStream)
+		_, err := streamProcessor.ExecStreamSql(value.SQL)
+		if err != nil {
+			return fmt.Errorf("replace stream %v failed, err:%v", name, err.Error())
+		}
+	}
+	for name, value := range m.Tables {
+		streamProcessor.DropStream(name, ast.TypeTable)
+		_, err := streamProcessor.ExecStreamSql(value.SQL)
+		if err != nil {
+			return fmt.Errorf("replace stream %v failed, err:%v", name, err.Error())
+		}
+	}
+	return nil
+}
+
+func writeConf(key string, value map[string]any) error {
+	typ, plu, name, err := splitConfKey(key)
+	if err != nil {
+		return err
+	}
+	err = conf.WriteCfgIntoKVStorage(typ, plu, name, value)
+	if err != nil {
+		return fmt.Errorf("write conf %s failed, err:%v", key, err.Error())
+	}
+	return nil
+}
+
+func splitConfKey(key string) (string, string, string, error) {
+	ss := strings.Split(key, ".")
+	if len(ss) != 3 {
+		return "", "", "", fmt.Errorf("%s isn't valid conf key", key)
+	}
+	return ss[0], ss[1], ss[2], nil
 }
