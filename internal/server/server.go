@@ -50,6 +50,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/env"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
@@ -190,6 +191,7 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
+	env.Setup()
 	connection.InitConnectionManager()
 	// reload with 3s timeout
 	if err := connection.ReloadConnection(3 * time.Second); err != nil {
