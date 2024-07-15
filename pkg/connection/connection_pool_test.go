@@ -15,15 +15,18 @@
 package connection
 
 import (
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestConnection(t *testing.T) {
@@ -79,8 +82,6 @@ func TestConnectionErr(t *testing.T) {
 	_, err = attachConnection("")
 	require.Error(t, err)
 	err = PingConnection(ctx, "")
-	require.Error(t, err)
-	_, err = getOrCreateNonStoredConnection(ctx, "", "mock", nil)
 	require.Error(t, err)
 	err = DetachConnection(ctx, "", nil)
 	require.Error(t, err)
@@ -155,4 +156,42 @@ func TestNonStoredConnection(t *testing.T) {
 	require.NoError(t, DetachConnection(ctx, "id1", nil))
 	require.Equal(t, 0, GetConnectionRef("id1"))
 	require.False(t, IsConnectionExists("id1"))
+}
+
+var blockCh chan any
+
+func TestConnectionLock(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("id", "2")
+	modules.RegisterConnection("blockconn", CreateBlockConnection)
+	blockCh = make(chan any, 10)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		CreateNamedConnection(ctx, "ccc1", "blockconn", nil)
+		wg.Done()
+	}()
+	require.False(t, CheckConn("ccc1"))
+	blockCh <- struct{}{}
+	wg.Wait()
+	require.True(t, CheckConn("ccc1"))
+}
+
+type blockConnection struct {
+}
+
+func (b blockConnection) Ping(ctx api.StreamContext) error {
+	return nil
+}
+
+func (b blockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
+}
+
+func (b blockConnection) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func CreateBlockConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
+	<-blockCh
+	return &blockConnection{}, nil
 }

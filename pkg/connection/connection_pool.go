@@ -122,7 +122,28 @@ func FetchConnection(ctx api.StreamContext, id, typ string, props map[string]int
 	}
 	selID := extractSelID(props)
 	if len(selID) < 1 {
-		return getOrCreateNonStoredConnection(ctx, id, typ, props)
+		var conn modules.Connection
+		var err error
+		globalConnectionManager.RLock()
+		conn = getConnection(id)
+		globalConnectionManager.RUnlock()
+		if conn != nil {
+			return conn, nil
+		}
+		meta := &ConnectionMeta{
+			ID:       id,
+			Typ:      typ,
+			Props:    props,
+			refCount: 1,
+		}
+		conn, err = createNamedConnection(ctx, meta)
+		if err != nil {
+			return nil, err
+		}
+		meta.conn = conn
+		globalConnectionManager.Lock()
+		defer globalConnectionManager.Unlock()
+		conn = createNonStoredConnection(ctx, meta)
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
@@ -174,10 +195,8 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	if id == "" || typ == "" {
 		return nil, fmt.Errorf("connection id and type should be defined")
 	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
-	_, ok := globalConnectionManager.connectionPool[id]
-	if ok {
+	exists := CheckConn(id)
+	if exists {
 		return nil, fmt.Errorf("connection %v already been created", id)
 	}
 	meta := &ConnectionMeta{
@@ -185,11 +204,18 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		Typ:   typ,
 		Props: props,
 	}
-	if err := storeConnectionMeta(typ, id, props); err != nil {
-		return nil, err
-	}
 	conn, err := createNamedConnection(ctx, meta)
 	if err != nil {
+		return nil, err
+	}
+	globalConnectionManager.Lock()
+	defer globalConnectionManager.Unlock()
+	econn2 := getConnection(id)
+	if econn2 != nil {
+		conn.Close(ctx)
+		return econn2, nil
+	}
+	if err := storeConnectionMeta(typ, id, props); err != nil {
 		return nil, err
 	}
 	meta.conn = conn
@@ -200,31 +226,31 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 	return conn, nil
 }
 
-func getOrCreateNonStoredConnection(ctx api.StreamContext, id, typ string, props map[string]any) (modules.Connection, error) {
-	if id == "" || typ == "" {
-		return nil, fmt.Errorf("connection id and type should be defined")
-	}
-	globalConnectionManager.Lock()
-	defer globalConnectionManager.Unlock()
+func getConnection(id string) modules.Connection {
 	oldConn, ok := globalConnectionManager.connectionPool[id]
 	if ok {
 		oldConn.refCount++
 		globalConnectionManager.connectionPool[id] = oldConn
-		return oldConn.conn, nil
+		return oldConn.conn
 	}
-	meta := &ConnectionMeta{
-		ID:       id,
-		Typ:      typ,
-		Props:    props,
-		refCount: 1,
+	return nil
+}
+
+func CheckConn(id string) bool {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	_, ok := globalConnectionManager.connectionPool[id]
+	return ok
+}
+
+func createNonStoredConnection(ctx api.StreamContext, meta *ConnectionMeta) modules.Connection {
+	conn := getConnection(meta.ID)
+	if conn != nil {
+		meta.conn.Close(ctx)
+		return conn
 	}
-	conn, err := createNamedConnection(ctx, meta)
-	if err != nil {
-		return nil, err
-	}
-	meta.conn = conn
-	globalConnectionManager.connectionPool[id] = meta
-	return conn, nil
+	globalConnectionManager.connectionPool[meta.ID] = meta
+	return meta.conn
 }
 
 var mockErr = true
