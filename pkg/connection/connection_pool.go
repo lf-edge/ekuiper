@@ -144,6 +144,7 @@ func FetchConnection(ctx api.StreamContext, id, typ string, props map[string]int
 		globalConnectionManager.Lock()
 		defer globalConnectionManager.Unlock()
 		conn = createNonStoredConnection(ctx, meta)
+		return conn, nil
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
