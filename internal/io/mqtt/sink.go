@@ -33,6 +33,7 @@ type AdConf struct {
 }
 
 type Sink struct {
+	cw     *connection.ConnWrapper
 	adconf *AdConf
 	config map[string]interface{}
 	cli    *client.Connection
@@ -66,15 +67,7 @@ func (ms *Sink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-	conn, err := connection.FetchConnection(ctx, id, "mqtt", ms.config)
-	if err != nil {
-		return err
-	}
-	c, ok := conn.(*client.Connection)
-	if !ok {
-		return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
-	}
-	ms.cli = c
+	ms.cw, err = connection.FetchConnection(ctx, id, "mqtt", ms.config)
 	return err
 }
 
@@ -86,6 +79,18 @@ func validateMQTTSinkTopic(topic string) error {
 }
 
 func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
+	if ms.cli == nil {
+		conn, err := ms.cw.Internal()
+		if err != nil {
+			return err
+		}
+		c, ok := conn.(*client.Connection)
+		if !ok {
+			return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
+		}
+		ms.cli = c
+	}
+
 	tpc := ms.adconf.Tpc
 	// If tpc supports dynamic props(template), planner will guarantee the result has the parsed dynamic props
 	if dp, ok := item.(api.HasDynamicProps); ok {

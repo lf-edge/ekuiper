@@ -81,7 +81,11 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
 	var cli *client2.SQLConnection
 	var err error
 	id := s.conf.DBUrl
-	conn, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}

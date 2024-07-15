@@ -76,7 +76,11 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	var cli *client.Connection
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	conn, err := connection.FetchConnection(ctx, id, "mqtt", ms.props)
+	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}

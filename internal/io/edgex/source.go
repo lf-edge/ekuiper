@@ -82,7 +82,11 @@ func (es *Source) Connect(ctx api.StreamContext) error {
 	var cli *client.Client
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	conn, err := connection.FetchConnection(ctx, id, "edgex", es.config)
+	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}

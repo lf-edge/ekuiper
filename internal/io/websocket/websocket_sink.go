@@ -26,6 +26,7 @@ import (
 )
 
 type WebsocketSink struct {
+	cw    *connection.ConnWrapper
 	cfg   *WebsocketConfig
 	props map[string]any
 	topic string
@@ -51,17 +52,9 @@ func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 }
 
 func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
-	conn, err := connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
-	if err != nil {
-		return err
-	}
-	c, ok := conn.(*httpserver.WebsocketConnection)
-	if !ok {
-		return fmt.Errorf("should use websocket connection")
-	}
-	w.topic = c.SendTopic
-	pubsub.CreatePub(w.topic)
-	return nil
+	var err error
+	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	return err
 }
 
 func (w *WebsocketSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
@@ -69,6 +62,18 @@ func (w *WebsocketSink) Collect(ctx api.StreamContext, item api.RawTuple) error 
 }
 
 func (w *WebsocketSink) collect(ctx api.StreamContext, data []byte) error {
+	if len(w.topic) < 1 {
+		conn, err := w.cw.Internal()
+		if err != nil {
+			return err
+		}
+		c, ok := conn.(*httpserver.WebsocketConnection)
+		if !ok {
+			return fmt.Errorf("should use websocket connection")
+		}
+		w.topic = c.SendTopic
+		pubsub.CreatePub(w.topic)
+	}
 	pubsub.ProduceAny(ctx, w.topic, data)
 	return nil
 }
