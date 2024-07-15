@@ -39,6 +39,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
+var uid atomic.Uint32
+
+// Topo is the runtime DAG for a rule
+// It only run once. If the rule restarts, another topo is created.
 type Topo struct {
 	streams     []string
 	sources     []node.DataSourceNode
@@ -48,6 +52,7 @@ type Topo struct {
 	drain       chan error
 	ops         []node.OperatorNode
 	name        string
+	runId       int
 	options     *def.RuleOption
 	store       api.Store
 	coordinator *checkpoint.Coordinator
@@ -59,8 +64,10 @@ type Topo struct {
 }
 
 func NewWithNameAndOptions(name string, options *def.RuleOption) (*Topo, error) {
+	id := uid.Add(1)
 	tp := &Topo{
 		name:    name,
+		runId:   int(id),
 		options: options,
 		topo: &def.PrintableTopo{
 			Sources: make([]string, 0),
@@ -115,7 +122,7 @@ func (s *Topo) Cancel() {
 	s.coordinator = nil
 	for _, src := range s.sources {
 		if rt, ok := src.(node.MergeableTopo); ok {
-			rt.Close(s.ctx, s.name)
+			rt.Close(s.ctx, s.name, s.runId)
 		}
 	}
 }
@@ -158,7 +165,7 @@ func (s *Topo) AddOperator(inputs []node.Emitter, operator node.OperatorNode) *T
 	ch, opName := operator.GetInput()
 	for _, input := range inputs {
 		// add rule id to make operator name unique
-		_ = input.AddOutput(ch, fmt.Sprintf("%s_%s", s.name, opName))
+		_ = input.AddOutput(ch, fmt.Sprintf("%s.%d_%s", s.name, s.runId, opName))
 		operator.AddInputCount()
 		switch rt := input.(type) {
 		case node.MergeableTopo:

@@ -23,6 +23,7 @@ import (
 
 type Emitter interface {
 	AddOutput(chan<- interface{}, string) error
+	RemoveOutput(string) error
 }
 
 type Collector interface {
@@ -83,7 +84,7 @@ type MergeableTopo interface {
 	// SubMetrics return the metrics of the sub nodes
 	SubMetrics() ([]string, []any)
 	// Close notifies subtopo to deref
-	Close(ctx api.StreamContext, ruleId string)
+	Close(ctx api.StreamContext, ruleId string, runId int)
 }
 
 type SchemaNode interface {
