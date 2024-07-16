@@ -65,6 +65,10 @@ func (s *SrcSubTopo) AddOutput(output chan<- interface{}, name string) error {
 	return s.tail.AddOutput(output, name)
 }
 
+func (s *SrcSubTopo) RemoveOutput(name string) error {
+	return s.tail.RemoveOutput(name)
+}
+
 func (s *SrcSubTopo) Open(ctx api.StreamContext, parentErrCh chan<- error) {
 	// Update the ref count
 	if _, loaded := s.refRules.LoadOrStore(ctx.GetRuleId(), parentErrCh); !loaded {
@@ -171,7 +175,7 @@ func (s *SrcSubTopo) StoreSchema(ruleID, dataSource string, schema map[string]*a
 	}
 }
 
-func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string) {
+func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string, runId int) {
 	if _, ok := s.refRules.LoadAndDelete(ruleId); ok {
 		s.refCount.Add(-1)
 		if s.refCount.Load() == 0 {
@@ -186,6 +190,7 @@ func (s *SrcSubTopo) Close(ctx api.StreamContext, ruleId string) {
 			}
 		}
 	}
+	_ = s.RemoveOutput(fmt.Sprintf("%s.%d", ruleId, runId))
 }
 
 // RemoveMetrics is called when the rule is deleted
