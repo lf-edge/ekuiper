@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -44,12 +45,12 @@ func TestCompressOp_Exec(t *testing.T) {
 	op.Exec(ctx, errCh)
 
 	cases := []any{
-		[]byte("{\"a\":1,\"b\":2}"),
+		&xsql.RawTuple{Rawdata: []byte("{\"a\":1,\"b\":2}")},
 		errors.New("go through error"),
 		"invalid",
 	}
 	expects := [][]any{
-		{[]byte("mock compress")},
+		{&xsql.RawTuple{Rawdata: []byte("mock compress")}},
 		{errors.New("go through error")},
 		{errors.New("unsupported data received: invalid")},
 	}

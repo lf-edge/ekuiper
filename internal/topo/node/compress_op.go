@@ -60,11 +60,12 @@ func (o *CompressOp) Worker(_ api.StreamContext, item any) []any {
 	o.statManager.ProcessTimeStart()
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
-	case []byte:
-		if r, err := o.tool.Compress(d); err != nil {
+	case api.RawTuple:
+		if r, err := o.tool.Compress(d.Raw()); err != nil {
 			return []any{err}
 		} else {
-			return []any{r}
+			d.Replace(r)
+			return []any{d}
 		}
 	default:
 		return []any{fmt.Errorf("unsupported data received: %v", d)}
