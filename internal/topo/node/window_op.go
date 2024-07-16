@@ -385,12 +385,12 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 							log.Debugf("Sent: %v", tsets)
 							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
-							o.statManager.IncTotalMessagesProcessed(int64(tsets.Len()))
 						}
 						inputs = tl.getRestTuples()
 					}
 				}
 				o.statManager.ProcessTimeEnd()
+				o.statManager.IncTotalMessagesProcessed(1)
 				o.statManager.SetBufferLength(int64(len(o.input)))
 				_ = ctx.PutState(WindowInputsKey, inputs)
 				_ = ctx.PutState(MsgCountKey, o.msgCount)
@@ -622,7 +622,6 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime time.Time, ctx a
 	log.Debugf("Sent: %v", results)
 	o.Broadcast(results)
 	o.statManager.IncTotalRecordsOut()
-	o.statManager.IncTotalMessagesProcessed(int64(results.Len()))
 
 	o.triggerTime = triggerTime
 	log.Debugf("new trigger time %d", o.triggerTime.UnixMilli())
