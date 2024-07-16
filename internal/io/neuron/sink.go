@@ -136,6 +136,10 @@ func (s *sink) CollectList(ctx api.StreamContext, data api.MessageTupleList) err
 
 func (s *sink) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Debugf("closing neuron sink")
+	conn, _ := s.cw.Wait()
+	if conn != nil {
+		conn.DetachSub(ctx, s.props)
+	}
 	close(ctx, s.cli, s.cc.Url, s.props)
 	s.cli = nil
 	return nil

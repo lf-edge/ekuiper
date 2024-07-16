@@ -123,10 +123,11 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext) error {
 
 func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
-	if s.conn != nil {
-		id := s.config.DBUrl
-		connection.DetachConnection(ctx, id, s.props)
-		s.conn.DetachSub(ctx, s.props)
+	id := s.config.DBUrl
+	connection.DetachConnection(ctx, id, s.props)
+	conn, _ := s.cw.Wait()
+	if conn != nil {
+		conn.DetachSub(ctx, s.props)
 	}
 	return nil
 }

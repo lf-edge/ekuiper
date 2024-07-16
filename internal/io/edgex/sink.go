@@ -532,7 +532,12 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	return connection.DetachConnection(ctx, ems.id, ems.config)
+	connection.DetachConnection(ctx, ems.id, ems.config)
+	conn, _ := ems.cw.Wait()
+	if conn != nil {
+		conn.DetachSub(ctx, ems.config)
+	}
+	return nil
 }
 
 type eventMeta struct {
