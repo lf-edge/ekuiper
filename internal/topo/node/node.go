@@ -17,6 +17,7 @@ package node
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -56,10 +57,25 @@ func newDefaultNode(name string, options *def.RuleOption) *defaultNode {
 	}
 }
 
-func (o *defaultNode) AddOutput(output chan<- interface{}, name string) error {
+func (o *defaultNode) AddOutput(output chan<- any, name string) error {
 	o.outputMu.Lock()
 	defer o.outputMu.Unlock()
 	o.outputs[name] = output
+	return nil
+}
+
+func (o *defaultNode) RemoveOutput(name string) error {
+	o.outputMu.Lock()
+	defer o.outputMu.Unlock()
+	namePre := name + "_"
+	for n := range o.outputs {
+		if strings.HasPrefix(n, namePre) {
+			delete(o.outputs, n)
+			if o.ctx != nil {
+				o.ctx.GetLogger().Infof("Remove output %s from %s", n, o.name)
+			}
+		}
+	}
 	return nil
 }
 
@@ -84,11 +100,11 @@ func (o *defaultNode) RemoveMetrics(ruleId string) {
 	}
 }
 
-func (o *defaultNode) Broadcast(val interface{}) {
+func (o *defaultNode) Broadcast(val any) {
 	o.BroadcastCustomized(val, o.doBroadcast)
 }
 
-func (o *defaultNode) BroadcastCustomized(val interface{}, broadcastFunc func(val any)) {
+func (o *defaultNode) BroadcastCustomized(val any, broadcastFunc func(val any)) {
 	if _, ok := val.(error); ok && !o.sendError {
 		return
 	}
@@ -104,7 +120,7 @@ func (o *defaultNode) BroadcastCustomized(val interface{}, broadcastFunc func(va
 	return
 }
 
-func (o *defaultNode) doBroadcast(val interface{}) {
+func (o *defaultNode) doBroadcast(val any) {
 	o.outputMu.RLock()
 	defer o.outputMu.RUnlock()
 	l := len(o.outputs)
@@ -151,7 +167,7 @@ func newDefaultSinkNode(name string, options *def.RuleOption) *defaultSinkNode {
 	}
 }
 
-func (o *defaultSinkNode) GetInput() (chan<- interface{}, string) {
+func (o *defaultSinkNode) GetInput() (chan<- any, string) {
 	return o.input, o.name
 }
 
@@ -236,7 +252,7 @@ func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) {
 	}
 }
 
-func SourcePing(sourceType string, config map[string]interface{}) error {
+func SourcePing(sourceType string, config map[string]any) error {
 	source, err := io.Source(sourceType)
 	if err != nil {
 		return err

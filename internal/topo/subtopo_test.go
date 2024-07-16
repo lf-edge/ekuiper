@@ -108,10 +108,10 @@ func TestSubtopoLC(t *testing.T) {
 	assert.Equal(t, []checkpoint.StreamTask{srcNode}, sources)
 	assert.Equal(t, []checkpoint.NonSourceTask{opNode}, ops)
 	// Stop
-	subTopo.Close(ctx1, "rule1")
+	subTopo.Close(ctx1, "rule1", 1)
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, 1, mlen(&subTopoPool))
-	subTopo2.Close(ctx2, "rule2")
+	subTopo2.Close(ctx2, "rule2", 2)
 	assert.Equal(t, int32(0), subTopo.refCount.Load())
 	assert.Equal(t, 0, mlen(&subTopoPool))
 	assert.Equal(t, 2, len(subTopo.schemaReg))
@@ -138,7 +138,7 @@ func TestSubtopoRunError(t *testing.T) {
 	subTopo.Open(ctx1, make(chan error))
 	assert.Equal(t, int32(1), subTopo.refCount.Load())
 	assert.Equal(t, true, subTopo.opened.Load())
-	subTopo.Close(ctx1, "rule1")
+	subTopo.Close(ctx1, "rule1", 1)
 	assert.Equal(t, int32(0), subTopo.refCount.Load())
 	assert.Equal(t, 0, mlen(&subTopoPool))
 	time.Sleep(10 * time.Millisecond)
@@ -156,14 +156,14 @@ func TestSubtopoRunError(t *testing.T) {
 	select {
 	case err := <-errCh1:
 		assert.Equal(t, assert.AnError, err)
-		subTopo.Close(ctx1, "rule1")
+		subTopo.Close(ctx1, "rule1", 1)
 	case <-time.After(1 * time.Second):
 		assert.Fail(t, "Should receive error")
 	}
 	select {
 	case err := <-errCh2:
 		assert.Equal(t, assert.AnError, err)
-		subTopo2.Close(ctx2, "rule2")
+		subTopo2.Close(ctx2, "rule2", 2)
 	case <-time.After(1 * time.Second):
 		assert.Fail(t, "Should receive error")
 	}
@@ -239,6 +239,11 @@ func (m *mockSrc) AddOutput(c chan<- interface{}, s string) error {
 	return nil
 }
 
+func (m *mockSrc) RemoveOutput(s string) error {
+	m.outputs = m.outputs[1:]
+	return nil
+}
+
 func (m *mockSrc) Open(ctx api.StreamContext, errCh chan<- error) {
 	if m.runCount%3 != 0 {
 		fmt.Printf("sent error for %d \n", m.runCount)
@@ -271,6 +276,13 @@ type mockOp struct {
 	outputs     []chan<- any
 	inputC      int
 	schemaCount int
+}
+
+func (m *mockOp) RemoveOutput(s string) error {
+	if len(m.outputs) > 0 {
+		m.outputs = m.outputs[1:]
+	}
+	return nil
 }
 
 func (m *mockOp) AddOutput(c chan<- interface{}, s string) error {
