@@ -180,8 +180,8 @@ func detachConnection(ctx api.StreamContext, id string, remove bool) error {
 	globalConnectionManager.connectionPool[id] = meta
 	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", id, meta.refCount)
 	if remove && meta.refCount < 1 {
-		conn, _ := meta.cw.Wait()
-		if conn != nil {
+		conn, err := meta.cw.Wait()
+		if conn != nil && err == nil {
 			conn.Close(ctx)
 		}
 		delete(globalConnectionManager.connectionPool, id)
@@ -284,8 +284,8 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	if err != nil {
 		return fmt.Errorf("drop connection %s failed, err:%v", selId, err)
 	}
-	conn, _ := meta.cw.Wait()
-	if conn != nil {
+	conn, err := meta.cw.Wait()
+	if conn != nil && err == nil {
 		conn.Close(ctx)
 	}
 	delete(globalConnectionManager.connectionPool, selId)
