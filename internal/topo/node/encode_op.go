@@ -35,7 +35,7 @@ type EncodeOp struct {
 }
 
 func NewEncodeOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc *SinkConf) (*EncodeOp, error) {
-	c, err := converter.GetOrCreateConverter(ctx, sc.Format, sc.SchemaId, nil, map[string]any{"delimiter": sc.Delimiter})
+	c, err := converter.GetOrCreateConverter(ctx, sc.Format, sc.SchemaId, nil, map[string]any{"delimiter": sc.Delimiter, "hasHeader": sc.HasHeader})
 	if err != nil {
 		return nil, err
 	}

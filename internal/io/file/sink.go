@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
 package file
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -55,6 +56,7 @@ type fileSink struct {
 	mux      sync.Mutex
 	fws      map[string]*fileWriter
 	rollHook modules.RollHook
+	headers  string
 }
 
 func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}) error {
@@ -166,7 +168,7 @@ func (m *fileSink) Collect(ctx api.StreamContext, tuple api.RawTuple) error {
 		}
 	}
 	ctx.GetLogger().Debugf("writing to file path %s", fn)
-	fw, err := m.GetFws(ctx, fn, item)
+	fw, item, err := m.GetFws(ctx, fn, item)
 	if err != nil {
 		return err
 	}
@@ -234,41 +236,31 @@ func (m *fileSink) roll(ctx api.StreamContext, k string, v *fileWriter) error {
 
 // GetFws returns the file writer for the given file name, if the file writer does not exist, it will create one
 // The item is used to get the csv header if needed
-func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*fileWriter, error) {
+func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item []byte) (*fileWriter, []byte, error) {
 	m.mux.Lock()
 	defer m.mux.Unlock()
+	if m.c.FileType == CSV_TYPE && m.c.HasHeader && m.headers == "" {
+		if len(m.c.Fields) > 0 {
+			m.headers = strings.Join(m.c.Fields, m.c.Delimiter)
+		} else {
+			db := []byte(m.c.Delimiter)
+			if bytes.HasPrefix(item, db) {
+				cursor := len(db)
+				nextCursor := cursor + 4
+				hl := binary.BigEndian.Uint32(item[cursor:nextCursor])
+				cursor = nextCursor
+				nextCursor = cursor + int(hl)
+				hb := item[cursor:nextCursor]
+				m.headers = string(hb)
+				ctx.GetLogger().Infof("csv header %s", hb)
+				cursor = nextCursor
+				item = item[nextCursor:]
+			}
+		}
+	}
 	fws, ok := m.fws[fn]
 	if !ok {
 		var e error
-		// extract header for csv
-		var headers string
-		if m.c.FileType == CSV_TYPE && m.c.HasHeader {
-			var header []string
-			if len(m.c.Fields) > 0 {
-				header = m.c.Fields
-			} else {
-				switch v := item.(type) {
-				case map[string]interface{}:
-					header = make([]string, len(v))
-					i := 0
-					for k := range item.(map[string]interface{}) {
-						header[i] = k
-						i++
-					}
-				case []map[string]interface{}:
-					if len(v) > 0 {
-						header = make([]string, len(v[0]))
-						i := 0
-						for k := range v[0] {
-							header[i] = k
-							i++
-						}
-					}
-				}
-				sort.Strings(header)
-			}
-			headers = strings.Join(header, m.c.Delimiter)
-		}
 		nfn := fn
 		if m.c.RollingNamePattern != "" {
 			newFile := ""
@@ -286,13 +278,13 @@ func (m *fileSink) GetFws(ctx api.StreamContext, fn string, item interface{}) (*
 			nfn = filepath.Join(fileDir, newFile)
 		}
 
-		fws, e = m.createFileWriter(ctx, nfn, m.c.FileType, headers, m.c.Compression, m.c.Encryption)
+		fws, e = m.createFileWriter(ctx, nfn, m.c.FileType, m.headers, m.c.Compression, m.c.Encryption)
 		if e != nil {
-			return nil, e
+			return nil, item, e
 		}
 		m.fws[fn] = fws
 	}
-	return fws, nil
+	return fws, item, nil
 }
 
 func GetSink() api.Sink {
