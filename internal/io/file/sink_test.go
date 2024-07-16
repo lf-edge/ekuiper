@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -349,6 +349,69 @@ func TestFileSink_Collect(t *testing.T) {
 					t.Errorf("\nexpected\t %q \nbut got\t\t %q", tt.content, string(contents))
 				}
 			}
+		})
+	}
+}
+
+// Test single message with header defined
+func TestCSVSingMessHeader(t *testing.T) {
+	tests := []struct {
+		name    string
+		fname   string
+		content []byte
+	}{
+		{
+			name:    "csv",
+			fname:   "test_csvh",
+			content: []byte("id:name\n12:test\n11:value2"),
+		},
+	}
+
+	ctx := mockContext.NewMockContext("test1", "test")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a temporary file for testing
+			tmpfile, err := os.CreateTemp("", tt.fname)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(tmpfile.Name())
+			// Create a file sink with the temporary file path
+			sink := &fileSink{}
+			f := message.FormatDelimited
+			err = sink.Provision(ctx, map[string]interface{}{
+				"path":               tmpfile.Name(),
+				"fileType":           CSV_TYPE,
+				"hasHeader":          true,
+				"delimiter":          ":",
+				"format":             f,
+				"rollingNamePattern": "none",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = sink.Connect(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte{0x3a, 0x0, 0x0, 0x0, 0x7, 0x69, 0x64, 0x3a, 0x6e, 0x61, 0x6d, 0x65, 0x31, 0x32, 0x3a, 0x74, 0x65, 0x73, 0x74}}); err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+
+			// Test collecting another map item
+			if err := sink.Collect(ctx, &xsql.RawTuple{Rawdata: []byte("11:value2")}); err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+			if err = sink.Close(ctx); err != nil {
+				t.Errorf("unexpected close error: %s", err)
+			}
+			// Read the contents of the temporary file and check if they match the collected items
+			contents, err := os.ReadFile(tmpfile.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.Equal(t, tt.content, contents)
 		})
 	}
 }

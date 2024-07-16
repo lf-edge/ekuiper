@@ -38,6 +38,7 @@ type SinkConf struct {
 	LingerInterval cast.DurationConf `json:"lingerInterval"`
 	Compression    string            `json:"compression"`
 	Encryption     string            `json:"encryption"`
+	HasHeader      bool              `json:"hasHeader"`
 	conf.SinkConf
 }
 

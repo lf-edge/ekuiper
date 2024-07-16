@@ -16,6 +16,7 @@ package delimited
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"strconv"
@@ -29,7 +30,8 @@ import (
 
 type Converter struct {
 	Delimiter string   `json:"delimiter"`
-	Cols      []string `json:"cols"`
+	Cols      []string `json:"fields"`
+	HasHeader bool     `json:"hasHeader"`
 }
 
 func NewConverter(props map[string]any) (message.Converter, error) {
@@ -56,7 +58,7 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 		}
 	}()
 	switch m := d.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		sb := &bytes.Buffer{}
 		if len(c.Cols) == 0 {
 			keys := make([]string, 0, len(m))
@@ -65,13 +67,47 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 			}
 			sort.Strings(keys)
 			c.Cols = keys
+			if len(c.Cols) > 0 && c.HasHeader {
+				hb := []byte(strings.Join(c.Cols, c.Delimiter))
+				sb.WriteString(c.Delimiter)
+				_ = binary.Write(sb, binary.BigEndian, uint32(len(hb)))
+				sb.Write(hb)
+				ctx.GetLogger().Infof("delimiter header %s", hb)
+			}
 		}
-
 		for i, v := range c.Cols {
 			if i > 0 {
 				sb.WriteString(c.Delimiter)
 			}
 			fmt.Fprintf(sb, "%v", m[v])
+		}
+		return sb.Bytes(), nil
+	case []map[string]any:
+		sb := &bytes.Buffer{}
+		var cols []string
+		for i, mm := range m {
+			if i > 0 {
+				sb.WriteString("\n")
+			}
+			if len(cols) == 0 {
+				keys := make([]string, 0, len(mm))
+				for k := range mm {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys)
+				cols = keys
+				if len(cols) > 0 && c.HasHeader {
+					hb := []byte(strings.Join(cols, c.Delimiter))
+					sb.Write(hb)
+					sb.WriteString("\n")
+				}
+			}
+			for j, v := range cols {
+				if j > 0 {
+					sb.WriteString(c.Delimiter)
+				}
+				fmt.Fprintf(sb, "%v", mm[v])
+			}
 		}
 		return sb.Bytes(), nil
 	default:
