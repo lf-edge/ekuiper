@@ -5,6 +5,14 @@ concurrency:
   cancel-in-progress: true
 
 on:
+  push:
+    tags:
+      - "*"
+    branches:
+      - master
+  pull_request:
+    paths-ignore:
+      - "docs/**"
   release:
     types:
       - published

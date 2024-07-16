@@ -86,7 +86,10 @@ func validateMQTTSinkTopic(topic string) error {
 
 func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 	if ms.cli == nil {
-		conn, err := ms.cw.Wait()
+		if conf.Config.Connection.EnableWaitSink {
+			ms.cw.Wait()
+		}
+		conn, err := ms.cw.Internal()
 		if err != nil {
 			conf.Log.Infof("mqtt sink client not ready, err:%v", err)
 			return err
