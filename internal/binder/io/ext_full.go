@@ -34,6 +34,7 @@ func init() {
 	//modules.RegisterSink("influx2", func() api.Sink { return influx2.GetSink() })
 	//modules.RegisterSink("kafka", func() api.Sink { return kafka.GetSink() })
 	modules.RegisterSource("sql", sql2.GetSource)
+	modules.RegisterLookupSource("sql", sql2.GetLookupSource)
 	modules.RegisterSink("sql", sql2.GetSink)
 	modules.RegisterConnection("sql", client.CreateConnection)
 }
