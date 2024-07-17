@@ -22,6 +22,7 @@ import (
 
 func init() {
 	globalEnvManager = &EnvManager{}
+	SetupEnv()
 }
 
 func SetupEnv() {
