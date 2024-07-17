@@ -12,22 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package conf
 
 import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func init() {
 	globalEnvManager = &EnvManager{}
 }
 
-func Setup() {
+func SetupEnv() {
 	globalEnvManager.Setup()
+}
+
+func SetupConnectionProps() {
+	globalEnvManager.SetupConnectionProps()
+}
+
+func GetEnv() map[string]string {
+	return globalEnvManager.GetEnv()
 }
 
 var globalEnvManager *EnvManager
@@ -39,10 +45,19 @@ type EnvManager struct {
 
 func (e *EnvManager) Setup() {
 	e.loadEnv()
+}
+
+func (e *EnvManager) GetEnv() map[string]string {
+	if len(e.env) < 1 {
+		e.loadEnv()
+	}
+	return e.env
+}
+
+func (e *EnvManager) SetupConnectionProps() {
 	e.loadConnectionProps()
 	e.storeConnectionProps()
-	// clear useless data
-	e.clear()
+	e.connectionProps = nil
 }
 
 func (e *EnvManager) loadEnv() {
@@ -55,15 +70,16 @@ func (e *EnvManager) loadEnv() {
 		}
 		key := ss[0]
 		value := ss[1]
-		if strings.HasPrefix(key, "CONNECTION") {
-			e.env[key] = value
-		}
+		e.env[key] = value
 	}
 }
 
 func (e *EnvManager) loadConnectionProps() {
 	e.connectionProps = make(map[string]map[string]map[string]interface{})
 	for k, v := range e.env {
+		if !strings.HasPrefix(k, "CONNECTION") {
+			continue
+		}
 		ss := strings.Split(k, "__")
 		if len(ss) != 4 {
 			continue
@@ -88,15 +104,10 @@ func (e *EnvManager) loadConnectionProps() {
 func (e *EnvManager) storeConnectionProps() {
 	for pluginTyp, v := range e.connectionProps {
 		for confName, props := range v {
-			err := conf.WriteCfgIntoKVStorage("connections", pluginTyp, confName, props)
+			err := WriteCfgIntoKVStorage("connections", pluginTyp, confName, props)
 			if err != nil {
-				conf.Log.Warn(fmt.Sprintf("load connections.%s.%s failed, err:%v", pluginTyp, confName, err))
+				Log.Warn(fmt.Sprintf("load connections.%s.%s failed, err:%v", pluginTyp, confName, err))
 			}
 		}
 	}
-}
-
-func (e *EnvManager) clear() {
-	e.env = nil
-	e.connectionProps = nil
 }

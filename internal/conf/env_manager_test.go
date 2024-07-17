@@ -12,24 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package conf
 
 import (
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 func TestLoadEnv(t *testing.T) {
-	conf.IsTesting = true
+	IsTesting = true
 	em := &EnvManager{}
 	require.NoError(t, os.Setenv("CONNECTION__MQTT__ENVDEMO__SERVER", "tcp://127.0.0.1:1883"))
 	require.NoError(t, os.Setenv("CONNECTION__MQTT__ENVDEMO__TOPIC", "mock"))
 	em.Setup()
-	g, err := conf.GetCfgFromKVStorage("connections", "mqtt", "envdemo")
+	g, err := GetCfgFromKVStorage("connections", "mqtt", "envdemo")
 	require.NoError(t, err)
 	require.Equal(t, map[string]interface{}{
 		"server": "tcp://127.0.0.1:1883",
