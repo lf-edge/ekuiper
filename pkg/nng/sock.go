@@ -94,6 +94,7 @@ func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Conn
 		mangos.OptionDialAsynch:       true, // will not report error and keep connecting
 		mangos.OptionMaxReconnectTime: 5 * time.Second,
 		mangos.OptionReconnectTime:    100 * time.Millisecond,
+		mangos.OptionMaxRecvSize:      0,
 	}); err != nil {
 		return nil, fmt.Errorf("please make sure nng server side has started and configured, can't dial: %s", err.Error())
 	}
