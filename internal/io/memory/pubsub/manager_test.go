@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -150,7 +150,6 @@ func TestCreateBeforeDelete(t *testing.T) {
 
 	CloseSourceConsumerChannel("test", "source1")
 	c3 := CreateSub("test", nil, "source1", 100)
-	chans = append(chans, c3)
 	expPub = map[string]*pubConsumers{
 		"test": {
 			count: 1,
@@ -163,7 +162,6 @@ func TestCreateBeforeDelete(t *testing.T) {
 	assert.Equal(t, expPub, pubTopics)
 
 	c4 := CreateSub("test", nil, "source1", 100)
-	chans = append(chans, c4)
 	CloseSourceConsumerChannel("test", "source1")
 
 	expPub = map[string]*pubConsumers{

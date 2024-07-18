@@ -25,8 +25,8 @@ import (
 const IdProperty = "topic"
 
 type pubConsumers struct {
-	count     int
-	consumers map[string]chan any // The consumer channel list [sourceId]chan, the value must be message or message list
+	count             int
+	consumers         map[string]chan any // The consumer channel list [sourceId]chan, the value must be message or message list
 	consumersReplaced map[string]int
 }
 

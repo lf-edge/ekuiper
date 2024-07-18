@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -417,7 +418,7 @@ func importUploads(m *MetaConfiguration) error {
 }
 
 func importByManager(want map[string]string, m ConfManager, typ string) error {
-	result := m.Import(want)
+	result := m.Import(context.Background(), want)
 	if len(result) < 1 {
 		return nil
 	}
