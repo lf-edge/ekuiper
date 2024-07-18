@@ -15,8 +15,11 @@
 package sql
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
@@ -38,6 +41,9 @@ type SqlLookupSource struct {
 func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]any) error {
 	cfg := &SQLConf{}
 	err := cast.MapToStruct(configs, cfg)
+	failpoint.Inject("MapToStructErr", func() {
+		err = errors.New("MapToStruct")
+	})
 	if err != nil {
 		return fmt.Errorf("read properties %v fail with error: %v", configs, err)
 	}

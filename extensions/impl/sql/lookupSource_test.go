@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
@@ -43,4 +44,24 @@ func TestSQLLookupSource(t *testing.T) {
 	got, err := ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
+	ls.Close(ctx)
+}
+
+func TestSQLLookupSourceProvisionErr(t *testing.T) {
+	props := map[string]interface{}{}
+	ls := &SqlLookupSource{}
+	ctx := mockContext.NewMockContext("1", "2")
+	require.Error(t, ls.Provision(ctx, props))
+	props = map[string]interface{}{
+		"dburl":      fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+		"datasource": "t",
+	}
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/MapToStructErr", "return(true)")
+	require.Error(t, ls.Provision(ctx, props))
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/MapToStructErr")
+	props = map[string]interface{}{
+		"dburl":      "123",
+		"datasource": "t",
+	}
+	require.Error(t, ls.Provision(ctx, props))
 }
