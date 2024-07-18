@@ -66,7 +66,7 @@ func TestCreate(t *testing.T) {
 	}{
 		{
 			r: &def.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "test",
 				Sql:       "SELECT ts FROM demo",
 				Actions: []map[string]interface{}{
@@ -80,7 +80,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			r: &def.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "test",
 				Sql:       "SELECT FROM demo",
 				Actions: []map[string]interface{}{
@@ -95,7 +95,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			r: &def.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "test",
 				Sql:       "SELECT * FROM demo1",
 				Actions: []map[string]interface{}{
