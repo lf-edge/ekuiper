@@ -83,6 +83,9 @@ func TestSQLLookupReconnect(t *testing.T) {
 	require.Error(t, err)
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
 	require.NoError(t, err)
+	defer func() {
+		s.Close()
+	}()
 	got, err := ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
