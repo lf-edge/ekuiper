@@ -120,15 +120,16 @@ func TestSubtopoLC(t *testing.T) {
 
 // Test when connection fails
 func TestSubtopoRunError(t *testing.T) {
+	name := "testSharedErr"
 	assert.Equal(t, 0, mlen(&subTopoPool))
-	subTopo, existed := GetSubTopo("shared")
+	subTopo, existed := GetSubTopo(name)
 	assert.False(t, existed)
 	srcNode := &mockSrc{name: "src1"}
 	opNode := &mockOp{name: "op1", ch: make(chan any)}
 	subTopo.AddSrc(srcNode)
 	subTopo.AddOperator([]node.Emitter{srcNode}, opNode)
 	// create another subtopo
-	subTopo2, existed := GetSubTopo("shared")
+	subTopo2, existed := GetSubTopo(name)
 	assert.True(t, existed)
 	assert.Equal(t, subTopo, subTopo2)
 	assert.Equal(t, 1, mlen(&subTopoPool))
