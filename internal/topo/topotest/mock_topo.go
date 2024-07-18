@@ -268,8 +268,9 @@ func createTestRule(t *testing.T, id string, tt RuleTest, opt *def.RuleOption) (
 		}
 	}
 	rule := &def.Rule{
-		Id:  id,
-		Sql: tt.Sql,
+		Triggered: true,
+		Id:        id,
+		Sql:       tt.Sql,
 		Actions: []map[string]any{
 			{
 				"memory": map[string]any{
