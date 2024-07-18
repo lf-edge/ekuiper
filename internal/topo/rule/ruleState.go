@@ -122,14 +122,16 @@ func NewRuleState(rule *def.Rule) (rs *RuleState, err error) {
 		Rule:     rule,
 		ActionCh: make(chan ActionSignal),
 	}
-	err = infra.SafeRun(func() error {
-		if tp, err := planner.Plan(rule); err != nil {
-			return err
-		} else {
-			rs.Topology = tp
-		}
-		return nil
-	})
+	if rs.Rule.Triggered {
+		err = infra.SafeRun(func() error {
+			if tp, err := planner.Plan(rule); err != nil {
+				return err
+			} else {
+				rs.Topology = tp
+			}
+			return nil
+		})
+	}
 	rs.run()
 	defer func() {
 		if err != nil {
