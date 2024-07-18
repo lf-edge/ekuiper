@@ -184,6 +184,8 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/ruletest/{name}/start", testRuleStartHandler).Methods(http.MethodPost)
 	r.HandleFunc("/ruletest/{name}", testRuleStopHandler).Methods(http.MethodDelete)
 	r.HandleFunc("/v2/data/export", yamlConfigurationExportHandler).Methods(http.MethodGet)
+	r.HandleFunc("/v2/data/import", yamlConfImportHandler).Methods(http.MethodPost)
+
 	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
 	// Register extended routes
 	for k, v := range components {

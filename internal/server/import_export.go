@@ -382,8 +382,8 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 }
 
 type configurationInfo struct {
-	Content  string `json:"content"`
-	FilePath string `json:"file"`
+	Content  string `json:"content" yaml:"content"`
+	FilePath string `json:"file" yaml:"filePath"`
 }
 
 func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
