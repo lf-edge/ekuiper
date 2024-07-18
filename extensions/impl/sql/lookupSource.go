@@ -97,8 +97,11 @@ func (s *SqlLookupSource) Lookup(ctx api.StreamContext, fields []string, keys []
 	ctx.GetLogger().Debugf("Query is %s", query)
 	rows, err := s.conn.GetDB().Query(query)
 	if err != nil {
+		s.needReconnect = true
 		ctx.GetLogger().Errorf("sql look table failed, err:%v, query: %v", err, query)
 		return nil, err
+	} else {
+		s.needReconnect = false
 	}
 	cols, _ := rows.Columns()
 	types, err := rows.ColumnTypes()
