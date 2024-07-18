@@ -63,7 +63,7 @@ func TestRedisStorageConSelector(t *testing.T) {
 			t.Error(err)
 		}
 	}
-
+	SetupEnv()
 	InitConf()
 
 	if Config.Store.Type != "redis" {

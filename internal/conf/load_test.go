@@ -29,7 +29,7 @@ func TestEnv(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
+	SetupEnv()
 	c := KuiperConf{}
 	err = LoadConfig(&c)
 	if err != nil {
@@ -49,7 +49,7 @@ func TestJsonCamelCase(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
+	SetupEnv()
 	const ConfigName = "sources/httppull.yaml"
 	c := make(map[string]interface{})
 	err = LoadConfigByName(ConfigName, &c)
@@ -74,7 +74,7 @@ func TestNestedFields(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
+	SetupEnv()
 	const ConfigName = "sources/edgex.yaml"
 	c := make(map[string]interface{})
 	err = LoadConfigByName(ConfigName, &c)

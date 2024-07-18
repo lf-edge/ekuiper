@@ -138,6 +138,7 @@ func StartUp(Version string) {
 	version = Version
 	startTimeStamp = time.Now().Unix()
 	createPaths()
+	conf.SetupEnv()
 	conf.InitConf()
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
@@ -190,6 +191,7 @@ func StartUp(Version string) {
 	if err != nil {
 		panic(err)
 	}
+	conf.SetupConnectionProps()
 	connection.InitConnectionManager()
 	// reload with 3s timeout
 	if err := connection.ReloadConnection(3 * time.Second); err != nil {
