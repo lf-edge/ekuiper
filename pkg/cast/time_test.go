@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -290,7 +290,7 @@ func TestConvertFormat(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "2006-01-02T15:04:05.00Z-0700", s)
 
-	s, err = convertFormat("\\")
+	_, err = convertFormat("\\")
 	require.Error(t, err)
 
 	s, err = convertFormat("yyyy-MM-dd HH:mm:ssSSSSSSSXX")
