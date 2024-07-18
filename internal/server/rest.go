@@ -39,6 +39,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/trial"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
@@ -484,10 +485,23 @@ func checkStreamBeforeDrop(name string) (bool, error) {
 		if !ok {
 			continue
 		}
-		streams := rs.Topology.GetStreams()
-		for _, s := range streams {
-			if name == s {
-				return true, nil
+		if rs.Rule.Triggered {
+			streams := rs.Topology.GetStreams()
+			for _, s := range streams {
+				if name == s {
+					return true, nil
+				}
+			}
+		} else {
+			stmt, err := xsql.GetStatementFromSql(rs.Rule.Sql)
+			if err != nil {
+				continue
+			}
+			streams := xsql.GetStreams(stmt)
+			for _, s := range streams {
+				if name == s {
+					return true, nil
+				}
 			}
 		}
 	}
