@@ -40,8 +40,9 @@ type SQLSourceConnector struct {
 }
 
 type SQLConf struct {
-	Interval cast.DurationConf `json:"interval"`
-	DBUrl    string            `json:"dburl"`
+	Interval   cast.DurationConf `json:"interval"`
+	DBUrl      string            `json:"dburl"`
+	Datasource string            `json:"datasource"`
 }
 
 func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
