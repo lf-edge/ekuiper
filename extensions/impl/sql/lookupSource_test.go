@@ -44,6 +44,9 @@ func TestSQLLookupSource(t *testing.T) {
 	got, err := ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
+	got, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"a", "b"}, []any{1, 1})
+	require.NoError(t, err)
+	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
 	ls.Close(ctx)
 }
 
