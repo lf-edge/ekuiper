@@ -117,6 +117,9 @@ func PingConnection(ctx api.StreamContext, id string) error {
 }
 
 func FetchConnection(ctx api.StreamContext, id, typ string, props map[string]interface{}) (modules.Connection, error) {
+	failpoint.Inject("FetchConnectionErr", func() {
+		failpoint.Return(nil, fmt.Errorf("FetchConnectionErr"))
+	})
 	if id == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}

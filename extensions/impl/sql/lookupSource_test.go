@@ -26,6 +26,20 @@ import (
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
+func TestSQLLookupSourceErr(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	ctx := mockContext.NewMockContext("1", "2")
+	props := map[string]interface{}{
+		"dburl":      fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+		"datasource": "t",
+	}
+	ls := &SqlLookupSource{}
+	require.NoError(t, ls.Provision(ctx, props))
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/FetchConnectionErr", "return(true)")
+	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/FetchConnectionErr")
+	require.Error(t, ls.Connect(ctx))
+}
+
 func TestSQLLookupSource(t *testing.T) {
 	connection.InitConnectionManager4Test()
 	ctx := mockContext.NewMockContext("1", "2")
@@ -82,6 +96,8 @@ func TestSQLLookupReconnect(t *testing.T) {
 	require.NoError(t, ls.Provision(ctx, props))
 	require.NoError(t, ls.Connect(ctx))
 	s.Close()
+	_, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
+	require.Error(t, err)
 	_, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.Error(t, err)
 	s, err = testx.SetupEmbeddedMysqlServer(address, port)
