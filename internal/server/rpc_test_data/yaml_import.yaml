@@ -1,0 +1,32 @@
+sourceConfig:
+  sources.mqtt.demoImport:
+    a: 1
+sinkConfig:
+  sinks.mqtt.demoImport:
+    a: 1
+connectionConfig:
+  connections.mqtt.demoImport:
+    a: 1
+streams:
+  demoImport:
+    sql: create stream demoImport () WITH (DATASOURCE="/yisa/data")
+tables:
+  helloImport:
+    sql: create table helloImport () WITH (DATASOURCE="/hello")
+rules:
+  ruleImport:
+    id: ruleImport
+    sql: select a,b from demoImport
+    actions:
+      - log: {}
+    options:
+      lateTolerance: 1s
+      concurrency: 1
+      bufferLength: 1024
+      sendError: true
+      checkpointInterval: 5m0s
+      restartStrategy:
+        delay: 1s
+        multiplier: 2
+        maxDelay: 30s
+        jitter: 0.1
