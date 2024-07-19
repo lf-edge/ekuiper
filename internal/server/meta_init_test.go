@@ -191,7 +191,7 @@ func (suite *MetaTestSuite) TestResourcesHandler() {
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
-func (suite *MetaTestSuite) TestHiddenPassword() {
+func (suite *MetaTestSuite) TestNotHiddenPassword() {
 	req, _ := http.NewRequest(http.MethodPut, "/metadata/connections/test/confKeys/test", bytes.NewBufferString(`{"password": "123456","token":"123456","url": "sqlserver://username:password123456@140.210.204.147/testdb"}`))
 	w := httptest.NewRecorder()
 	DataDir, _ := conf.GetDataLoc()
@@ -205,7 +205,7 @@ func (suite *MetaTestSuite) TestHiddenPassword() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	assert.Equal(suite.T(), bytes.NewBufferString(`{"test":{"password":"******","token":"******","url":"sqlserver://username:******@140.210.204.147/testdb"}}`), w.Body)
+	assert.Equal(suite.T(), bytes.NewBufferString(`{"test":{"password":"123456","token":"123456","url":"sqlserver://username:password123456@140.210.204.147/testdb"}}`), w.Body)
 
 	os.Remove(path.Join(DataDir, "connections", "connection.yaml"))
 	os.Remove(path.Join(DataDir, "connections"))
