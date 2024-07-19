@@ -111,7 +111,9 @@ func WithBody(body any, bodyType string, retErrOnConvertFailed bool, compressor 
 			}
 			req.Body = rc
 			// set content type with body type
-			req.Header.Set("Content-Type", BodyTypeMap[bodyType])
+			if req.Header.Get("Content-Type") == "" {
+				req.Header.Set("Content-Type", BodyTypeMap[bodyType])
+			}
 		case "form":
 			form := url.Values{}
 			im, err := convertToMap(body, retErrOnConvertFailed)
@@ -136,7 +138,9 @@ func WithBody(body any, bodyType string, retErrOnConvertFailed bool, compressor 
 
 			encodedFormBody := form.Encode()
 			req.Body = io.NopCloser(strings.NewReader(encodedFormBody))
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded;param=value")
+			if req.Header.Get("Content-Type") == "" {
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded;param=value")
+			}
 		default:
 			return fmt.Errorf("unsupported body type %s", bodyType)
 		}
