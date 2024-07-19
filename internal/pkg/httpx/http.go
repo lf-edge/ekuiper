@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,7 +63,9 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		if err != nil {
 			return nil, fmt.Errorf("fail to create request: %v", err)
 		}
-		req.Header.Set("Content-Type", BodyTypeMap[bodyType])
+		if req.Header.Get("Content-Type") == "" {
+			req.Header.Set("Content-Type", BodyTypeMap[bodyType])
+		}
 	case "form":
 		form := url.Values{}
 		im, err := convertToMap(v, sendSingle)
@@ -89,7 +91,9 @@ func Send(logger api.Logger, client *http.Client, bodyType string, method string
 		if err != nil {
 			return nil, fmt.Errorf("fail to create request: %v", err)
 		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded;param=value")
+		if req.Header.Get("Content-Type") == "" {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded;param=value")
+		}
 	default:
 		return nil, fmt.Errorf("unsupported body type %s", bodyType)
 	}
