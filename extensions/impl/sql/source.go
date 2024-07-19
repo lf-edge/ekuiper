@@ -42,6 +42,7 @@ type SQLSourceConnector struct {
 type SQLConf struct {
 	Interval cast.DurationConf `json:"interval"`
 	DBUrl    string            `json:"dburl"`
+	URL      string            `json:"url,omitempty"`
 }
 
 func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -56,8 +57,8 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 	if time.Duration(cfg.Interval) < 1 {
 		return fmt.Errorf("interval should be defined")
 	}
-	if len(cfg.DBUrl) < 1 {
-		return fmt.Errorf("dburl should be defined")
+	if err := cfg.resolveDBURL(); err != nil {
+		return err
 	}
 	s.conf = cfg
 	s.props = props
@@ -219,3 +220,14 @@ func GetSource() api.Source {
 }
 
 var _ api.PullTupleSource = &SQLSourceConnector{}
+
+func (sc *SQLConf) resolveDBURL() error {
+	if len(sc.DBUrl) < 1 && len(sc.URL) < 1 {
+		return fmt.Errorf("dburl should be defined")
+	}
+	if len(sc.DBUrl) < 1 {
+		sc.DBUrl = sc.URL
+	}
+	sc.URL = ""
+	return nil
+}

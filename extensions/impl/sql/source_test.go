@@ -252,3 +252,32 @@ func TestSQLReconnect(t *testing.T) {
 	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
 	require.False(t, sqlConnector.needReconnect)
 }
+
+func TestSQLConfURL(t *testing.T) {
+	testcases := []struct {
+		got *SQLConf
+		exp *SQLConf
+	}{
+		{
+			got: &SQLConf{
+				DBUrl: "123",
+				URL:   "321",
+			},
+			exp: &SQLConf{
+				DBUrl: "123",
+			},
+		},
+		{
+			got: &SQLConf{
+				URL: "321",
+			},
+			exp: &SQLConf{
+				DBUrl: "321",
+			},
+		},
+	}
+	for _, tc := range testcases {
+		require.NoError(t, tc.got.resolveDBURL())
+		require.Equal(t, tc.exp, tc.got)
+	}
+}

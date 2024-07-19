@@ -34,7 +34,7 @@ type SQLSinkConnector struct {
 }
 
 type sqlSinkConfig struct {
-	DBUrl        string   `json:"dburl"`
+	*SQLConf
 	Table        string   `json:"table"`
 	Fields       []string `json:"fields"`
 	RowKindField string   `json:"rowKindField"`
@@ -90,8 +90,8 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	if err != nil {
 		return err
 	}
-	if c.DBUrl == "" {
-		return fmt.Errorf("property dburl is required")
+	if err := c.resolveDBURL(); err != nil {
+		return err
 	}
 	if c.Table == "" {
 		return fmt.Errorf("property Table is required")
