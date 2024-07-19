@@ -66,7 +66,7 @@ func TestCreate(t *testing.T) {
 	}{
 		{
 			r: &def.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "test",
 				Sql:       "SELECT ts FROM demo",
 				Actions: []map[string]interface{}{
@@ -80,7 +80,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			r: &def.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "test",
 				Sql:       "SELECT FROM demo",
 				Actions: []map[string]interface{}{
@@ -95,7 +95,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			r: &def.Rule{
-				Triggered: false,
+				Triggered: true,
 				Id:        "test",
 				Sql:       "SELECT * FROM demo1",
 				Actions: []map[string]interface{}{
@@ -340,9 +340,9 @@ func TestRuleState_Start(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON", DATASOURCE="test")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	// Test rule not triggered
+	// Test rule triggered
 	r := &def.Rule{
-		Triggered: false,
+		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
 		Actions: []map[string]interface{}{
@@ -427,9 +427,8 @@ func TestScheduleRule(t *testing.T) {
 	sp := processor.NewStreamProcessor()
 	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", DATASOURCE="test", FORMAT="JSON")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	// Test rule not triggered
 	r := &def.Rule{
-		Triggered: false,
+		Triggered: true,
 		Id:        "test",
 		Sql:       "SELECT ts FROM demo",
 		Actions: []map[string]interface{}{

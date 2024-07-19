@@ -122,18 +122,16 @@ func NewRuleState(rule *def.Rule) (rs *RuleState, err error) {
 		Rule:     rule,
 		ActionCh: make(chan ActionSignal),
 	}
-	err = infra.SafeRun(func() error {
-		if tp, err := planner.Plan(rule); err != nil {
-			return err
-		} else {
-			rs.Topology = tp
-		}
-		if !rs.Rule.Triggered {
-			// manually force stop rule
-			rs.Topology.Cancel()
-		}
-		return nil
-	})
+	if rs.Rule.Triggered {
+		err = infra.SafeRun(func() error {
+			if tp, err := planner.Plan(rule); err != nil {
+				return err
+			} else {
+				rs.Topology = tp
+			}
+			return nil
+		})
+	}
 	rs.run()
 	defer func() {
 		if err != nil {
@@ -560,6 +558,9 @@ func (rs *RuleState) GetState() (s string, err error) {
 	}()
 	rs.RLock()
 	defer rs.RUnlock()
+	if !rs.Rule.Triggered {
+		return rs.getStoppedRuleState(), nil
+	}
 	result := ""
 	if rs.Topology == nil {
 		result = "Stopped: fail to create the topo."
