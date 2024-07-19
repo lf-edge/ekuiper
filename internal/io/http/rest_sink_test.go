@@ -23,6 +23,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -76,6 +77,9 @@ func TestRestSink_Apply(t *testing.T) {
 			config: map[string]interface{}{
 				"method": "post",
 				//"url": "http://localhost/test",  //set dynamically to the test server
+				"headers": map[string]any{
+					"Content-Type": "application/vnd.microsoft.servicebus.json",
+				},
 			},
 			data: []map[string]interface{}{{
 				"ab": "hello1",
@@ -85,7 +89,7 @@ func TestRestSink_Apply(t *testing.T) {
 			result: []request{{
 				Method:      "POST",
 				Body:        `[{"ab":"hello1"},{"ab":"hello2"}]`,
-				ContentType: "application/json",
+				ContentType: "application/vnd.microsoft.servicebus.json",
 			}},
 		}, {
 			config: map[string]interface{}{
@@ -202,28 +206,28 @@ func TestRestSink_Apply(t *testing.T) {
 	tf, _ := transform.GenTransform("", "json", "", "", "", []string{})
 	defer ts.Close()
 	for i, tt := range tests {
-		requests = nil
-		ss, ok := tt.config["sendSingle"]
-		if !ok {
-			ss = false
-		}
-		s := &RestSink{}
-		tt.config["url"] = ts.URL
-		s.Configure(tt.config)
-		s.Open(ctx)
-		vCtx := context.WithValue(ctx, context.TransKey, tf)
-		if ss.(bool) {
-			for _, d := range tt.data {
-				s.Collect(vCtx, d)
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			requests = nil
+			ss, ok := tt.config["sendSingle"]
+			if !ok {
+				ss = false
 			}
-		} else {
-			s.Collect(vCtx, tt.data)
-		}
+			s := &RestSink{}
+			tt.config["url"] = ts.URL
+			s.Configure(tt.config)
+			s.Open(ctx)
+			vCtx := context.WithValue(ctx, context.TransKey, tf)
+			if ss.(bool) {
+				for _, d := range tt.data {
+					s.Collect(vCtx, d)
+				}
+			} else {
+				s.Collect(vCtx, tt.data)
+			}
 
-		s.Close(ctx)
-		if !reflect.DeepEqual(tt.result, requests) {
-			t.Errorf("%d \tresult mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", i, tt.result, requests)
-		}
+			s.Close(ctx)
+			assert.Equal(t, tt.result, requests)
+		})
 	}
 }
 
