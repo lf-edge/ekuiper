@@ -54,6 +54,9 @@ func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
 	var err error
 	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	if err != nil {
+		return err
+	}
 	conn, err := w.cw.Wait()
 	if err != nil {
 		return err

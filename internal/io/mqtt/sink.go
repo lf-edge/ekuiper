@@ -70,6 +70,9 @@ func (ms *Sink) Connect(ctx api.StreamContext) error {
 	var err error
 	ms.id = fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
 	ms.cw, err = connection.FetchConnection(ctx, ms.id, "mqtt", ms.config)
+	if err != nil {
+		return err
+	}
 	conn, err := ms.cw.Wait()
 	if err != nil {
 		conf.Log.Infof("mqtt sink client not ready, err:%v", err)
