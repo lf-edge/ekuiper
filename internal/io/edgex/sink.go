@@ -112,9 +112,15 @@ func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext) error {
 	if err != nil {
 		return err
 	}
-	if conf.Config.Connection.EnableWaitSink {
-		ems.cw.Wait()
+	conn, err := ems.cw.Wait()
+	if err != nil {
+		return err
 	}
+	c, ok := conn.(*client.Client)
+	if !ok {
+		return fmt.Errorf("connection %s should be edgex connection", ems.cw.ID)
+	}
+	ems.cli = c
 	return err
 }
 
@@ -475,17 +481,6 @@ func (ems *EdgexMsgBusSink) CollectList(ctx api.StreamContext, data api.MessageT
 }
 
 func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
-	if ems.cli == nil {
-		conn, err := ems.cw.Internal()
-		if err != nil {
-			return err
-		}
-		c, ok := conn.(*client.Client)
-		if !ok {
-			return fmt.Errorf("connection %s should be edgex connection", ems.cw.ID)
-		}
-		ems.cli = c
-	}
 	evt, err := ems.produceEvents(ctx, item)
 	if err != nil {
 		return fmt.Errorf("Failed to convert to EdgeX event: %s.", err.Error())

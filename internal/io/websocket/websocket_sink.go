@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -55,9 +54,16 @@ func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
 	var err error
 	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
-	if conf.Config.Connection.EnableWaitSink {
-		w.cw.Wait()
+	conn, err := w.cw.Wait()
+	if err != nil {
+		return err
 	}
+	c, ok := conn.(*httpserver.WebsocketConnection)
+	if !ok {
+		return fmt.Errorf("should use websocket connection")
+	}
+	w.topic = c.SendTopic
+	pubsub.CreatePub(w.topic)
 	return err
 }
 
@@ -66,18 +72,6 @@ func (w *WebsocketSink) Collect(ctx api.StreamContext, item api.RawTuple) error 
 }
 
 func (w *WebsocketSink) collect(ctx api.StreamContext, data []byte) error {
-	if len(w.topic) < 1 {
-		conn, err := w.cw.Internal()
-		if err != nil {
-			return err
-		}
-		c, ok := conn.(*httpserver.WebsocketConnection)
-		if !ok {
-			return fmt.Errorf("should use websocket connection")
-		}
-		w.topic = c.SendTopic
-		pubsub.CreatePub(w.topic)
-	}
 	pubsub.ProduceAny(ctx, w.topic, data)
 	return nil
 }

@@ -31,7 +31,6 @@ import (
 
 func init() {
 	conf.InitConf()
-	conf.Config.Connection.EnableWaitSink = true
 	modules.RegisterConnection("websocket", httpserver.CreateWebsocketConnection)
 }
 

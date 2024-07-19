@@ -57,8 +57,6 @@ jobs:
         cp -r sdk/python/ekuiper plugins/portable/pysam/
         cp test/lookup.json data/lookup.json
     - name: Run test case
-      env:
-        KUIPER__CONNECTION__ENABLEWAITSINK: "true"
       run: |
         make failpoint-enable
         go test -trimpath -tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml ./...

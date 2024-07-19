@@ -70,10 +70,17 @@ func (ms *Sink) Connect(ctx api.StreamContext) error {
 	var err error
 	ms.id = fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
 	ms.cw, err = connection.FetchConnection(ctx, ms.id, "mqtt", ms.config)
-	if conf.Config.Connection.EnableWaitSink {
-		ms.cw.Wait()
-		conf.Log.Info("mqtt sink connected")
+	conn, err := ms.cw.Wait()
+	if err != nil {
+		conf.Log.Infof("mqtt sink client not ready, err:%v", err)
+		return err
 	}
+	c, ok := conn.(*client.Connection)
+	if !ok {
+		return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
+	}
+	ms.cli = c
+	conf.Log.Info("mqtt sink client ready")
 	return err
 }
 
@@ -85,23 +92,6 @@ func validateMQTTSinkTopic(topic string) error {
 }
 
 func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
-	if ms.cli == nil {
-		if conf.Config.Connection.EnableWaitSink {
-			ms.cw.Wait()
-		}
-		conn, err := ms.cw.Internal()
-		if err != nil {
-			conf.Log.Infof("mqtt sink client not ready, err:%v", err)
-			return err
-		}
-		c, ok := conn.(*client.Connection)
-		if !ok {
-			return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
-		}
-		ms.cli = c
-		conf.Log.Info("mqtt sink client ready")
-	}
-
 	tpc := ms.adconf.Tpc
 	// If tpc supports dynamic props(template), planner will guarantee the result has the parsed dynamic props
 	if dp, ok := item.(api.HasDynamicProps); ok {

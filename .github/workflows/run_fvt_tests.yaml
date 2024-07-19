@@ -80,8 +80,6 @@ jobs:
         make build_with_edgex_and_script
         echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
     - name: run edgex && kuiper
-      env:
-        KUIPER__CONNECTION__ENABLEWAITSINK: "true"
       run: |
         ./test/setup_env.sh
         ./test/prepare_plugins.sh

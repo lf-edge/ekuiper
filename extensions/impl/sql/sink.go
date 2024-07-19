@@ -21,7 +21,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -115,9 +114,11 @@ func (s *SQLSinkConnector) Connect(ctx api.StreamContext) error {
 		return err
 	}
 	s.cw = cw
-	if conf.Config.Connection.EnableWaitSink {
-		s.cw.Wait()
+	conn, err := s.cw.Wait()
+	if err != nil {
+		return err
 	}
+	s.conn = conn.(*client.SQLConnection)
 	return err
 }
 
@@ -137,13 +138,6 @@ func (s *SQLSinkConnector) Collect(ctx api.StreamContext, item api.MessageTuple)
 }
 
 func (s *SQLSinkConnector) collect(ctx api.StreamContext, item map[string]any) (err error) {
-	if s.conn == nil {
-		conn, err := s.cw.Internal()
-		if err != nil {
-			return err
-		}
-		s.conn = conn.(*client.SQLConnection)
-	}
 	if len(s.config.RowKindField) < 1 {
 		var keys []string = nil
 		var values []string = nil

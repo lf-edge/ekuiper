@@ -400,15 +400,6 @@ type ConnWrapper struct {
 	cond        *sync.Cond
 }
 
-func (cw *ConnWrapper) Internal() (modules.Connection, error) {
-	cw.cond.L.Lock()
-	defer cw.cond.L.Unlock()
-	if cw.initialized {
-		return cw.conn, cw.err
-	}
-	return nil, fmt.Errorf("connection %s not ready", cw.ID)
-}
-
 func (cw *ConnWrapper) SetConn(conn modules.Connection, err error) {
 	cw.cond.L.Lock()
 	defer cw.cond.L.Unlock()

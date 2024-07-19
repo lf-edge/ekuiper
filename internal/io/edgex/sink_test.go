@@ -36,7 +36,6 @@ var (
 
 func init() {
 	conf.InitConf()
-	conf.Config.Connection.EnableWaitSink = true
 }
 
 func compareEvent(expected, actual *dtos.Event) bool {

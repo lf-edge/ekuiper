@@ -29,7 +29,6 @@ import (
 
 func init() {
 	conf.InitConf()
-	conf.Config.Connection.EnableWaitSink = true
 }
 
 func TestSinkConfigure(t *testing.T) {

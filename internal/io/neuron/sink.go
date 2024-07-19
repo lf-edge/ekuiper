@@ -90,24 +90,15 @@ func (s *sink) Connect(ctx api.StreamContext) error {
 		return err
 	}
 	s.cw = cw
-	if conf.Config.Connection.EnableWaitSink {
-		s.cw.Wait()
+	cli, err := s.cw.Wait()
+	if err != nil {
+		return err
 	}
+	s.cli = cli.(*nng.Sock)
 	return nil
 }
 
 func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
-	if s.cli == nil {
-		if conf.Config.Connection.EnableWaitSink {
-			s.cw.Wait()
-		}
-		cli, err := s.cw.Internal()
-		if err != nil {
-			return err
-		}
-		s.cli = cli.(*nng.Sock)
-	}
-
 	ctx.GetLogger().Debugf("receive %+v", data)
 	if s.c.Raw {
 		m := data.ToMap()
