@@ -481,22 +481,33 @@ func handleScheduleRule(now time.Time, r *def.Rule, state string) scheduleRuleAc
 }
 
 func startCPUProfiling(ctx context.Context) error {
-	if err := cpuprofile.StartProfilerAndAggregater(ctx, time.Duration(1000)*time.Millisecond); err != nil {
+	cpuprofile.EnableWindowAggregator(30)
+	if err := cpuprofile.StartCPUProfiler(ctx, time.Duration(1000)*time.Millisecond); err != nil {
 		return err
 	}
-	receiveChan := make(chan *cpuprofile.DataSetAggregate, 1024)
-	cpuprofile.RegisterTag("rule", receiveChan)
 	go func(ctx context.Context) {
+		ticker := time.NewTicker(time.Duration(15) * time.Second)
 		for {
 			select {
 			case <-ctx.Done():
+				ticker.Stop()
 				return
-			case data := <-receiveChan:
-				// TODO: support query in future
-				conf.Log.Debugf("cpu profile data: %v", data)
+			case <-ticker.C:
+				data := cpuprofile.GetWindowData()
+				if data == nil {
+					continue
+				}
+				ruleUsage, ok := data["rule"]
+				if !ok {
+					continue
+				}
+				for labelValue, t := range ruleUsage.Stats {
+					promMetrics.SetRuleCPUUsageGauge(labelValue, t)
+				}
 			}
 		}
 	}(ctx)
+
 	return nil
 }
 
