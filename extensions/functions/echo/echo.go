@@ -39,5 +39,3 @@ func (f *echo) IsAggregate() bool {
 }
 
 var Echo echo
-
-var _ api.Function = &echo{}
