@@ -1,0 +1,5 @@
+default:
+  brokers: "127.0.0.1:9091,127.0.0.1:9092"
+  groupID: ""
+  partition: 0
+  maxBytes: 1000000
