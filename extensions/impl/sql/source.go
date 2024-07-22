@@ -32,6 +32,7 @@ import (
 )
 
 type SQLSourceConnector struct {
+	id            string
 	conf          *SQLConf
 	Query         sqlgen.SqlQueryGenerator
 	conn          *client2.SQLConnection
@@ -42,6 +43,7 @@ type SQLSourceConnector struct {
 type SQLConf struct {
 	Interval cast.DurationConf `json:"interval"`
 	DBUrl    string            `json:"dburl"`
+	URL      string            `json:"url,omitempty"`
 }
 
 func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -56,8 +58,8 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 	if time.Duration(cfg.Interval) < 1 {
 		return fmt.Errorf("interval should be defined")
 	}
-	if len(cfg.DBUrl) < 1 {
-		return fmt.Errorf("dburl should be defined")
+	if err := cfg.resolveDBURL(); err != nil {
+		return err
 	}
 	s.conf = cfg
 	s.props = props
@@ -80,8 +82,12 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var cli *client2.SQLConnection
 	var err error
-	id := s.conf.DBUrl
-	conn, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	s.id = s.conf.DBUrl
+	cw, err := connection.FetchConnection(ctx, s.id, "sql", s.props)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}
@@ -93,10 +99,9 @@ func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
 func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
 	if s.conn != nil {
-		id := s.conf.DBUrl
-		connection.DetachConnection(ctx, id, s.props)
 		s.conn.DetachSub(ctx, s.props)
 	}
+	connection.DetachConnection(ctx, s.id, s.props)
 	return nil
 }
 
@@ -219,3 +224,14 @@ func GetSource() api.Source {
 }
 
 var _ api.PullTupleSource = &SQLSourceConnector{}
+
+func (sc *SQLConf) resolveDBURL() error {
+	if len(sc.DBUrl) < 1 && len(sc.URL) < 1 {
+		return fmt.Errorf("dburl should be defined")
+	}
+	if len(sc.DBUrl) < 1 {
+		sc.DBUrl = sc.URL
+	}
+	sc.URL = ""
+	return nil
+}

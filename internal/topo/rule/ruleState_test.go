@@ -41,7 +41,7 @@ var defaultOption = &def.RuleOption{
 	SendError:          true,
 	Qos:                def.AtMostOnce,
 	CheckpointInterval: cast.DurationConf(5 * time.Minute),
-	Restart: &def.RestartStrategy{
+	RestartStrategy: &def.RestartStrategy{
 		Attempts:     0,
 		Delay:        cast.DurationConf(time.Second),
 		Multiplier:   2,

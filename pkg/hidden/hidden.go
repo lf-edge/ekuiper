@@ -60,3 +60,7 @@ func ReplaceUrl(resource, config map[string]interface{}) map[string]interface{} 
 	}
 	return config
 }
+
+func GetHiddenKeys() map[string]struct{} {
+	return hiddenPasswdKey
+}

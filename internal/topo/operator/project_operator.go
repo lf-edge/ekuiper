@@ -29,7 +29,7 @@ type ProjectOp struct {
 	AliasNames       []string   // list of alias name
 	ExprNames        []string   // list of expr name
 	ExceptNames      []string   // list of except name
-	WindowFuncNames  map[string]struct{}
+	WindowFuncNames  map[string]ast.Field
 	AllWildcard      bool
 	WildcardEmitters map[string]bool
 	AliasFields      ast.Fields

@@ -140,17 +140,17 @@ func (sm *DefaultStatManager) GetMetrics() []any {
 		sm.totalMessagesProcessed,
 		sm.processLatency,
 		sm.bufferLength,
-		0,
+		int64(0),
 		sm.totalExceptions,
 		sm.lastException,
-		0,
+		int64(0),
 	}
 
 	if !sm.lastInvocation.IsZero() {
-		result[5] = sm.lastInvocation.Format("2006-01-02T15:04:05.999999")
+		result[5] = sm.lastInvocation.UnixMilli()
 	}
 	if !sm.lastExceptionTime.IsZero() {
-		result[8] = sm.lastExceptionTime.Format("2006-01-02T15:04:05.999999")
+		result[8] = sm.lastExceptionTime.UnixMilli()
 	}
 	return result
 }

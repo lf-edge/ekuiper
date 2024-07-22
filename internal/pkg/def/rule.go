@@ -31,7 +31,7 @@ type RuleOption struct {
 	SendError          bool              `json:"sendError,omitempty" yaml:"sendError,omitempty"`
 	Qos                Qos               `json:"qos,omitempty" yaml:"qos,omitempty"`
 	CheckpointInterval cast.DurationConf `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
-	Restart            *RestartStrategy  `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
+	RestartStrategy    *RestartStrategy  `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
 	Cron               string            `json:"cron,omitempty" yaml:"cron,omitempty"`
 	Duration           string            `json:"duration,omitempty" yaml:"duration,omitempty"`
 	CronDatetimeRange  []DatetimeRange   `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
@@ -49,7 +49,7 @@ type RestartStrategy struct {
 	Delay        cast.DurationConf `json:"delay,omitempty" yaml:"delay,omitempty"`
 	Multiplier   float64           `json:"multiplier,omitempty" yaml:"multiplier,omitempty"`
 	MaxDelay     cast.DurationConf `json:"maxDelay,omitempty" yaml:"maxDelay,omitempty"`
-	JitterFactor float64           `json:"jitter,omitempty" yaml:"jitter,omitempty"`
+	JitterFactor float64           `json:"jitterFactor,omitempty" yaml:"jitterFactor,omitempty"`
 }
 
 type PrintableTopo struct {
@@ -116,7 +116,7 @@ func GetDefaultRule(name, sql string) *Rule {
 			SendError:          true,
 			Qos:                AtMostOnce,
 			CheckpointInterval: cast.DurationConf(5 * time.Minute),
-			Restart: &RestartStrategy{
+			RestartStrategy: &RestartStrategy{
 				Attempts:     0,
 				Delay:        1000,
 				Multiplier:   2,

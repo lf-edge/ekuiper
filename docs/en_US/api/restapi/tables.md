@@ -38,6 +38,32 @@ This API accepts one parameter kind, the value could be `scan` or `lookup` to qu
 GET http://localhost:9081/tables?kind=lookup
 ```
 
+## show tables detail
+
+The API is used for displaying all detailed definition of tables defined in the server.
+
+```shell
+GET http://localhost:9081/tabledetails
+```
+
+Response Sample:
+
+```json
+[
+  {
+    "name": "test2",
+    "type": "file",
+    "format": "json"
+  }
+]
+```
+
+This API accepts one parameter kind, the value could be `scan` or `lookup` to query each kind of tables. Other values are invalid, it will return all kinds of tables. In below example, we can query all the lookup tables.
+
+```shell
+GET http://localhost:9081/tabledetails?kind=lookup
+```
+
 ## describe a table
 
 The API is used for print the detailed definition of table.

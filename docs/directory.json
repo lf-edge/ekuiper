@@ -368,6 +368,10 @@
               "path": "example/data_merge/merge_multi_stream"
             }
           ]
+        },
+        {
+          "title": "捕捉数据变化",
+          "path": "example/change_data_capture"
         }
       ]
     },
@@ -478,6 +482,10 @@
         {
           "title": "认证配置",
           "path": "api/restapi/authentication"
+        },
+        {
+          "title": "连接管理",
+          "path": "api/restapi/connection"
         },
         {
           "title": "流管理",
@@ -1122,6 +1130,10 @@
         {
           "title": "Merge Data in Multiple Streams",
           "path": "example/data_merge/merge_multi_stream"
+        },
+        {
+          "title": "Capture Data Change",
+          "path": "example/change_data_capture"
         }
       ]
     },
@@ -1227,6 +1239,10 @@
         {
           "title": "Authentication",
           "path": "api/restapi/authentication"
+        },
+        {
+          "title": "Connection Management",
+          "path": "api/restapi/connection"
         },
         {
           "title": "Streams",

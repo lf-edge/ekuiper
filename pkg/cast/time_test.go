@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -283,4 +283,21 @@ func TestConvertDuration(t *testing.T) {
 	t2, err := ConvertDuration("100s")
 	require.NoError(t, err)
 	require.Equal(t, 100*time.Second, t2)
+}
+
+func TestConvertFormat(t *testing.T) {
+	s, err := convertFormat("yyyy-MM-ddTHH:mm:ssSS\\ZXX")
+	require.NoError(t, err)
+	require.Equal(t, "2006-01-02T15:04:05.00Z-0700", s)
+
+	_, err = convertFormat("\\")
+	require.Error(t, err)
+
+	s, err = convertFormat("yyyy-MM-dd HH:mm:ssSSSSSSSXX")
+	require.NoError(t, err)
+	require.Equal(t, "2006-01-02 15:04:05.0000000-0700", s)
+
+	d, err := time.Parse("2006-01-02 15:04:05.0000000-0700", `2024-06-10 05:54:39.6574979-0700`)
+	require.NoError(t, err)
+	require.Equal(t, int64(1718024079657497900), d.UnixNano())
 }

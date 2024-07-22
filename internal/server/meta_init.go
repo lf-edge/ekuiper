@@ -59,6 +59,7 @@ func (m metaComp) rest(r *mux.Router) {
 	r.HandleFunc("/metadata/connections/yaml/{name}", connectionConfHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/connections/{name}/confKeys/{confKey}", connectionConfKeyHandler).Methods(http.MethodDelete, http.MethodPut)
 
+	r.HandleFunc("/metadata/resource", resourceHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/resources", resourcesHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/connection/{name}", sourceConnectionHandler).Methods(http.MethodPost)
 	r.HandleFunc("/metadata/sinks/connection/{name}", sinkConnectionHandler).Methods(http.MethodPost)
@@ -167,6 +168,14 @@ func connectionMetaHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func resourceHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	v := r.URL.Query().Get("sourceType")
+	res := meta.GetSourceResourceConf(v)
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(res, w, logger)
+}
+
 // Get source yaml
 func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
@@ -229,7 +238,7 @@ func sourceConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
-			handleError(w, err, "Invalid body", logger)
+			handleError(w, err1, "Invalid body", logger)
 			return
 		}
 		err = meta.AddSourceConfKey(pluginName, confKey, language, v)
@@ -254,7 +263,7 @@ func sinkConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		v, err1 := io.ReadAll(r.Body)
 		if err1 != nil {
-			handleError(w, err, "Invalid body", logger)
+			handleError(w, err1, "Invalid body", logger)
 			return
 		}
 		err = meta.AddSinkConfKey(pluginName, confKey, language, v)
@@ -285,7 +294,7 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 		reqField := make(map[string]interface{})
 		err = json.Unmarshal(v, &reqField)
 		if err != nil {
-			handleError(w, err1, "Invalid body", logger)
+			handleError(w, err, "Invalid body", logger)
 			return
 		}
 		reqField = replacePasswdForConfig("connection", confKey, reqField)

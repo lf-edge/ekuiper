@@ -17,6 +17,7 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -213,4 +214,27 @@ func (suite *MetaTestSuite) TestNotHiddenPassword() {
 
 func TestMetaTestSuite(t *testing.T) {
 	suite.Run(t, new(MetaTestSuite))
+}
+
+func (suite *MetaTestSuite) TestResourceSourceType() {
+	req, _ := http.NewRequest(http.MethodPut, "/metadata/sources/mqtt/confKeys/demo", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883","sourceType":"stream"}`))
+	w := httptest.NewRecorder()
+	DataDir, _ := conf.GetDataLoc()
+	os.MkdirAll(path.Join(DataDir, "sources"), 0o755)
+	_, err := os.Create(path.Join(DataDir, "sources", "mqtt.yaml"))
+	require.NoError(suite.T(), err)
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+
+	req, _ = http.NewRequest(http.MethodGet, "/metadata/resource?sourceType=stream", bytes.NewBufferString("any"))
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	returnval, _ := io.ReadAll(w.Body)
+	require.Equal(suite.T(), `{"mqtt":{"demo":{"qos":0,"server":"tcp://10.211.55.6:1883","sourceType":"stream"}}}`, string(returnval))
+
+	req, _ = http.NewRequest(http.MethodGet, "/metadata/resource", bytes.NewBufferString("any"))
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	returnval, _ = io.ReadAll(w.Body)
+	require.Equal(suite.T(), `{"mqtt":{"demo":{"qos":0,"server":"tcp://10.211.55.6:1883","sourceType":"stream"}}}`, string(returnval))
 }

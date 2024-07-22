@@ -225,8 +225,13 @@ func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any)
 	if sp.Merger != "" && sp.MergeField != "" {
 		return traits{}, fmt.Errorf("mergeField and merger cannot set together")
 	}
-	if sp.Merger != "" && (sp.Format == "" || sp.PayloadFormat == "") {
-		return traits{}, fmt.Errorf("merger must work with both format and payloadFormat")
+	// Let merger payload format defaults to format
+	if sp.Merger != "" && sp.PayloadFormat == "" {
+		sp.PayloadFormat = sp.Format
+		if sp.PayloadFormat == "" {
+			sp.PayloadFormat = "json"
+		}
+		props["payloadFormat"] = sp.PayloadFormat
 	}
 
 	info := checkByteSource(ss)
@@ -271,6 +276,10 @@ func checkFeatures(ss api.Source, sp *SourcePropsForSplit, props map[string]any)
 		r.needDecode = false
 		props["payloadBatchField"] = "frames"
 		props["payloadField"] = "data"
+		if _, ok := props["payloadSchemaId"]; !ok {
+			props["payloadSchemaId"] = props["schemaId"]
+			props["payloadDelimiter"] = props["delimiter"]
+		}
 	}
 	return r, nil
 }

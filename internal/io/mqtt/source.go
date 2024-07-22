@@ -76,7 +76,11 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 	var cli *client.Connection
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	conn, err := connection.FetchConnection(ctx, id, "mqtt", ms.props)
+	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}
@@ -113,9 +117,9 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
+	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
+	connection.DetachConnection(ctx, id, ms.props)
 	if ms.cli != nil {
-		id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-		connection.DetachConnection(ctx, id, ms.props)
 		ms.cli.DetachSub(ctx, ms.props)
 	}
 	return nil

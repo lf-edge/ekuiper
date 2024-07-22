@@ -94,7 +94,6 @@ func TestPlanTopo(t *testing.T) {
 				"connectionSelector": "mqtt.localConnection",
 				"interval":           "1s",
 				"merger":             "mock",
-				"payloadFormat":      "json",
 			},
 			p: "mqtt",
 			k: "testSelMerger",
@@ -490,11 +489,6 @@ func TestPlanError(t *testing.T) {
 			name: "mergeField and merger mutual exclusive",
 			sql:  `SELECT * FROM src1`,
 			e:    "mergeField and merger cannot set together",
-		},
-		{
-			name: "merger need decoder",
-			sql:  `SELECT * FROM src2`,
-			e:    "merger must work with both format and payloadFormat",
 		},
 		{
 			name: "merger need rate limit",

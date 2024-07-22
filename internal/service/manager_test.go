@@ -26,9 +26,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
 
 var m *Manager
@@ -450,6 +452,12 @@ func TestManage(t *testing.T) {
 		t.Errorf("Create dynamic service failed: %v", err)
 		return
 	}
+	err = m.Create(&ServiceCreationRequest{
+		Name: "@#$2323",
+		File: url.String(),
+	})
+	require.Error(t, err)
+
 	dService, err := m.Get("dynamic")
 	if err != nil {
 		t.Errorf("Get dynamic service error: %v", err)
@@ -501,7 +509,7 @@ func TestManage(t *testing.T) {
 		"dynamic":     `{"name":"dynamic","file":"` + url.String() + `"}`,
 		"wrongPath":   `{"name":"dynamic","file":"wrongpath"}`,
 	}
-	m.ImportServices(importedService)
+	m.ImportServices(context.Background(), importedService)
 
 	allServicesStatus = m.GetAllServicesStatus()
 	if len(allServicesStatus) != 2 {

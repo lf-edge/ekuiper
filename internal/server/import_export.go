@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,8 +36,8 @@ import (
 )
 
 type ConfManager interface {
-	Import(map[string]string) map[string]string
-	PartialImport(map[string]string) map[string]string
+	Import(context.Context, map[string]string) map[string]string
+	PartialImport(context.Context, map[string]string) map[string]string
 	Export() map[string]string
 	Status() map[string]string
 	Reset()
@@ -147,7 +148,7 @@ type ImportConfigurationStatus struct {
 	ConfigResponse Configuration
 }
 
-func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
+func configurationImport(ctx context.Context, data []byte, reboot bool) ImportConfigurationStatus {
 	conf := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
@@ -204,14 +205,14 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 
 	if reboot {
 		if managers["plugin"] != nil {
-			errMap := managers["plugin"].Import(conf.NativePlugins)
+			errMap := managers["plugin"].Import(ctx, conf.NativePlugins)
 			if len(errMap) > 0 {
 				importStatus.ErrorMsg = fmt.Errorf("pluginImport NativePlugins import error %v", errMap).Error()
 				return importStatus
 			}
 		}
 		if managers["schema"] != nil {
-			errMap := managers["schema"].Import(conf.Schema)
+			errMap := managers["schema"].Import(ctx, conf.Schema)
 			if len(errMap) > 0 {
 				importStatus.ErrorMsg = fmt.Errorf("schemaImport Schema import error %v", errMap).Error()
 				return importStatus
@@ -219,13 +220,13 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 		}
 	}
 	if managers["portable"] != nil {
-		configResponse.PortablePlugins = managers["portable"].Import(conf.PortablePlugins)
+		configResponse.PortablePlugins = managers["portable"].Import(ctx, conf.PortablePlugins)
 	}
 	if managers["service"] != nil {
-		configResponse.Service = managers["service"].Import(conf.Service)
+		configResponse.Service = managers["service"].Import(ctx, conf.Service)
 	}
 	if managers["script"] != nil {
-		configResponse.Scripts = managers["script"].Import(conf.Scripts)
+		configResponse.Scripts = managers["script"].Import(ctx, conf.Scripts)
 	}
 
 	yamlCfgSet := meta.YamlConfigurationSet{
@@ -277,7 +278,7 @@ func configurationImport(data []byte, reboot bool) ImportConfigurationStatus {
 	return importStatus
 }
 
-func configurationPartialImport(data []byte) ImportConfigurationStatus {
+func configurationPartialImport(ctx context.Context, data []byte) ImportConfigurationStatus {
 	conf := &Configuration{
 		Streams:          make(map[string]string),
 		Tables:           make(map[string]string),
@@ -341,19 +342,19 @@ func configurationPartialImport(data []byte) ImportConfigurationStatus {
 
 	configResponse.Uploads = uploadsImport(conf.Uploads)
 	if managers["plugin"] != nil {
-		configResponse.NativePlugins = managers["plugin"].PartialImport(conf.NativePlugins)
+		configResponse.NativePlugins = managers["plugin"].PartialImport(ctx, conf.NativePlugins)
 	}
 	if managers["schema"] != nil {
-		configResponse.Schema = managers["schema"].PartialImport(conf.Schema)
+		configResponse.Schema = managers["schema"].PartialImport(ctx, conf.Schema)
 	}
 	if managers["portable"] != nil {
-		configResponse.PortablePlugins = managers["portable"].PartialImport(conf.PortablePlugins)
+		configResponse.PortablePlugins = managers["portable"].PartialImport(ctx, conf.PortablePlugins)
 	}
 	if managers["service"] != nil {
-		configResponse.Service = managers["service"].PartialImport(conf.Service)
+		configResponse.Service = managers["service"].PartialImport(ctx, conf.Service)
 	}
 	if managers["script"] != nil {
-		configResponse.Scripts = managers["script"].PartialImport(conf.Scripts)
+		configResponse.Scripts = managers["script"].PartialImport(ctx, conf.Scripts)
 	}
 
 	configResponse.SourceConfig = confRsp.Sources
@@ -397,54 +398,55 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body: Error decoding json", logger)
 		return
 	}
+	result, err := handleConfigurationImport(context.Background(), rsi, partial, stop)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	jsonResponse(result, w, logger)
+}
+
+func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, partial bool, stop bool) (*ImportConfigurationStatus, error) {
 	if rsi.Content != "" && rsi.FilePath != "" {
-		handleError(w, errors.New("bad request"), "Invalid body: Cannot specify both content and file", logger)
-		return
+		return nil, errors.New("Invalid body: Cannot specify both content and file")
 	} else if rsi.Content == "" && rsi.FilePath == "" {
-		handleError(w, errors.New("bad request"), "Invalid body: must specify content or file", logger)
-		return
+		return nil, errors.New("Invalid body: must specify content or file")
 	}
 	content := []byte(rsi.Content)
 	if rsi.FilePath != "" {
 		reader, err := httpx.ReadFile(rsi.FilePath)
 		if err != nil {
-			handleError(w, err, "Fail to read file", logger)
-			return
+			return nil, err
 		}
 		defer reader.Close()
 		buf := new(bytes.Buffer)
 		_, err = io.Copy(buf, reader)
 		if err != nil {
-			handleError(w, err, "fail to convert file", logger)
-			return
+			return nil, err
 		}
 		content = buf.Bytes()
 	}
 	if !partial {
 		configurationReset()
-		result := configurationImport(content, stop)
+		result := configurationImport(ctx, content, stop)
 		if result.ErrorMsg != "" {
-			w.WriteHeader(http.StatusBadRequest)
-			jsonResponse(result, w, logger)
+			return nil, errors.New(result.ErrorMsg)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			jsonResponse(result, w, logger)
-		}
-
-		if stop {
-			go func() {
-				time.Sleep(1 * time.Second)
-				os.Exit(100)
-			}()
+			if stop {
+				go func() {
+					time.Sleep(1 * time.Second)
+					os.Exit(100)
+				}()
+			}
+			return &result, nil
 		}
 	} else {
-		result := configurationPartialImport(content)
+		result := configurationPartialImport(ctx, content)
 		if result.ErrorMsg != "" {
-			w.WriteHeader(http.StatusBadRequest)
-			jsonResponse(result, w, logger)
+			return nil, errors.New(result.ErrorMsg)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			jsonResponse(result, w, logger)
+			return &result, nil
 		}
 	}
 }

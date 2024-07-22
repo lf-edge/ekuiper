@@ -225,7 +225,7 @@ func (rs *RuleState) runTopo(ctx context.Context) {
 	// Load the changeable states once
 	rs.Lock()
 	tp := rs.Topology
-	option := rs.Rule.Options.Restart
+	option := rs.Rule.Options.RestartStrategy
 	rs.Unlock()
 	if tp == nil {
 		conf.Log.Warnf("rule %s is not initialized or just stopped", rs.RuleId)

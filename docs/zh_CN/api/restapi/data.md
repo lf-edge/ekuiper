@@ -92,6 +92,24 @@ Content-Type: application/json
 }
 ```
 
+示例5: 通过异步 API 导入数据, server 接收到请求后会产生一个任务 ID 后将任务后台执行，并立即返回 response。
+
+```shell
+POST http://{{host}}/async/data/import
+Content-Type: application/json
+
+{
+  "content": "$数据 json 内容"
+}
+```
+
+通过任务 ID 查看后台任务的运行状态
+
+```shell
+GET http://{{host}}/async/task/{{id}}
+Content-Type: application/json
+```
+
 ## 导入数据状态查询
 
 该 API 返回数据导入出错情况，如所有返回为空，则代表导入完全成功。

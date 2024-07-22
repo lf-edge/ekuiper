@@ -71,7 +71,7 @@ func LoadConfigFromPath(p string, c interface{}) error {
 	}
 	// Make all keys to lowercase to match environment variables then revert it back by checking json defs
 	configs := normalize(configMap)
-	err = process(configs, os.Environ(), prefix)
+	err = process(configs, GetEnv(), prefix)
 	if err != nil {
 		return err
 	}
@@ -112,19 +112,15 @@ func getPrefix(p string) string {
 	return strings.ToUpper(strings.TrimSuffix(file, filepath.Ext(file)))
 }
 
-func process(configMap map[string]interface{}, variables []string, prefix string) error {
-	for _, e := range variables {
-		if !strings.HasPrefix(e, prefix) {
+func process(configMap map[string]interface{}, env map[string]string, prefix string) error {
+	for key, value := range env {
+		if !strings.HasPrefix(key, prefix) {
 			continue
 		}
-		pair := strings.SplitN(e, "=", 2)
-		if len(pair) != 2 {
-			return fmt.Errorf("wrong format of variable")
-		}
-		keys := nameToKeys(trimPrefix(pair[0], prefix))
-		handle(configMap, keys, pair[1])
+		keys := nameToKeys(trimPrefix(key, prefix))
+		handle(configMap, keys, value)
 		printableK := strings.Join(keys, ".")
-		printableV := pair[1]
+		printableV := value
 		if strings.Contains(strings.ToLower(printableK), "password") {
 			printableV = "*"
 		}

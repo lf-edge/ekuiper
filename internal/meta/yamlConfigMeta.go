@@ -175,6 +175,36 @@ func GetConfOperator(configOperatorKey string) (conf.ConfigOperator, bool) {
 	return cfgOps, ok
 }
 
+func GetSourceResourceConf(sourceType string) map[string]map[string]map[string]interface{} {
+	ConfigManager.lock.RLock()
+	defer ConfigManager.lock.RUnlock()
+	result := make(map[string]map[string]map[string]interface{})
+	for k, v := range ConfigManager.cfgOperators {
+		if strings.HasPrefix(k, "sources") {
+			typ := k[len("sources."):]
+			for name, c := range v.CopyConfContent() {
+				value, ok := c["sourceType"]
+				if ok {
+					sv, ok := value.(string)
+					if ok && (sv == sourceType || sourceType == "") {
+						appendConfKeyInResult(result, typ, name, c)
+					}
+				}
+			}
+		}
+	}
+	return result
+}
+
+func appendConfKeyInResult(result map[string]map[string]map[string]interface{}, typ, confKey string, confValue map[string]interface{}) {
+	v1, ok := result[typ]
+	if !ok {
+		result[typ] = make(map[string]map[string]interface{})
+		v1 = result[typ]
+	}
+	v1[confKey] = confValue
+}
+
 func GetYamlConf(configOperatorKey, language string) (b []byte, err error) {
 	defer func() {
 		if err != nil {

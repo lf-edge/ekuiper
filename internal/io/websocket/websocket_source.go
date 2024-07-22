@@ -58,7 +58,11 @@ func (w *WebsocketSource) Close(ctx api.StreamContext) error {
 }
 
 func (w *WebsocketSource) Connect(ctx api.StreamContext) error {
-	conn, err := connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	cw, err := connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	if err != nil {
+		return err
+	}
+	conn, err := cw.Wait()
 	if err != nil {
 		return err
 	}

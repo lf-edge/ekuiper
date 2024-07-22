@@ -4,6 +4,15 @@ Prometheus is an open source system monitoring and alerting toolkit hosted at CN
 
 eKuiper's rules are continuously running streaming task. Rules are used to process unbounded streams of data, and under normal circumstances, rules are started and run continuously, producing operational status data. Until the rule is stopped manually or after an unrecoverable error. eKuiper provides a status API to get the running metrics of the rules. At the same time, eKuiper integrates with Prometheus, making it easy to monitor various status metrics through the latter. This tutorial is intended for users who are already familiar with eKuiper and will introduce rule status metrics and how to monitor specific indicators via Prometheus.
 
+## Prometheus Metrics
+
+eKuiper exposes the following metrics to prometheus to reflect the current cluster status:
+
+```text
+kuiper_rule_status: The status showed status of each rule in eKuiper. 1 represents running, 0 represents paused, and -1 represents abnormal exit.
+kuiper_rule_count: How many rules are running and how many rules are suspended in eKuiper.
+```
+
 ## Rule Status Metrics
 
 Once a rule has been created and run successfully using eKuiper, the user can view the rule's operational status metrics via the CLI, REST API or the management console. For example, for an existing rule1, you can get the rule run metrics in JSON format via `curl -X GET "http://127.0.0.1:9081/rules/rule1/status"`.
@@ -11,6 +20,9 @@ Once a rule has been created and run successfully using eKuiper, the user can vi
 ```json
 {
   "status": "running",
+  "lastStartTimestamp": "1712126817659",
+  "lastStopTimestamp": "0",
+  "nextStopTimestamp": "0",
   "source_demo_0_records_in_total": 265,
   "source_demo_0_records_out_total": 265,
   "source_demo_0_process_latency_us": 0,
@@ -38,7 +50,9 @@ Once a rule has been created and run successfully using eKuiper, the user can vi
 }
 ```
 
-The rule status consists of two main parts, one is the status, which is used to indicate whether the rule is running properly or not, its value may be `running`, `stopped manually`, etc. The other part is the metrics for each operator of the rule. The operator of the rule is generated based on the SQL of the rule, which may be different for each rule. In this example, the rule SQL is the simplest `SELECT * FROM demo`, the action is MQTT, and the generated operators are [source_demo, op_project, sink_mqtt]. Each of these operators has the same kind of metrics, which together with the operator names form a single metric. For example, the metric for the number of records_in_total for the operator source_demo_0 is `source_demo_0_records_in_total`.
+The rule status consists of two main parts, one is the status, which is used to indicate whether the rule is running properly or not, its value may be `running`, `stopped manually`, etc. And it contains the unix timestamp in milliseconds of when the rule was started and when it was paused.
+
+The other part is the metrics for each operator of the rule. The operator of the rule is generated based on the SQL of the rule, which may be different for each rule. In this example, the rule SQL is the simplest `SELECT * FROM demo`, the action is MQTT, and the generated operators are [source_demo, op_project, sink_mqtt]. Each of these operators has the same kind of metrics, which together with the operator names form a single metric. For example, the metric for the number of records_in_total for the operator source_demo_0 is `source_demo_0_records_in_total`.
 
 ### Metric Types
 
@@ -132,6 +146,14 @@ eKuiper is predefined in the Grafana panel to help users more clearly and intuit
 ```shell
 https://github.com/lf-edge/ekuiper/blob/master/metrics/metrics.json
 ```
+
+You can view the historical status of the rule through the following panel. 1 means the rule is running, 0 means the rule is suspended normally, and -1 means the rule exited abnormally. The metric is `kuiper_rule_status`.
+
+![rule status](./resources/ruleStatus.png)
+
+You can view how many running rules and paused rules there are inside eKuiper through the following panel. The metric is `kuiper_rule_count`.
+
+![rule count](./resources/ruleCount.png)
 
 ## Summary
 

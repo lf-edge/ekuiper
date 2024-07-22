@@ -22,6 +22,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 )
@@ -35,6 +36,7 @@ type c struct {
 }
 
 type sink struct {
+	cw    *connection.ConnWrapper
 	c     *c
 	cc    *nng.SockConf
 	cli   *nng.Sock

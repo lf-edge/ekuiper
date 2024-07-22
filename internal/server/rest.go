@@ -36,6 +36,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/server/middleware"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/trial"
@@ -152,13 +153,16 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams", streamsHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/streamdetails", streamDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/streams/{name}", streamHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/streams/{name}/schema", streamSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables", tablesHandler).Methods(http.MethodGet, http.MethodPost)
+	r.HandleFunc("/tabledetails", tableDetailsHandler).Methods(http.MethodGet)
 	r.HandleFunc("/tables/{name}", tableHandler).Methods(http.MethodGet, http.MethodDelete, http.MethodPut)
 	r.HandleFunc("/tables/{name}/schema", tableSchemaHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules", rulesHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/rules/{name}", ruleHandler).Methods(http.MethodDelete, http.MethodGet, http.MethodPut)
+	r.HandleFunc("/rules/status/all", getAllRuleStatusHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/status", getStatusRuleHandler).Methods(http.MethodGet)
 	r.HandleFunc("/v2/rules/{name}/status", getStatusV2RulHandler).Methods(http.MethodGet)
 	r.HandleFunc("/rules/{name}/start", startRuleHandler).Methods(http.MethodPost)
@@ -186,6 +190,9 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/v2/data/import", yamlConfImportHandler).Methods(http.MethodPost)
 
 	// r.HandleFunc("/connection/websocket", connectionHandler).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
+	r.HandleFunc("/async/data/import", registerDataImportTask).Methods(http.MethodPost)
+	r.HandleFunc("/async/task/{id}", queryAsyncTaskStatus).Methods(http.MethodGet)
+	r.HandleFunc("/async/task/{id}/cancel", asyncTaskCancelHandler).Methods(http.MethodPost)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
@@ -430,6 +437,31 @@ func pingHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func sourceDetailsManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {
+	defer r.Body.Close()
+	var (
+		content []processor.StreamDetail
+		err     error
+		kind    string
+	)
+	if st == ast.TypeTable {
+		kind = r.URL.Query().Get("kind")
+		if kind == "scan" {
+			kind = ast.StreamKindScan
+		} else if kind == "lookup" {
+			kind = ast.StreamKindLookup
+		} else {
+			kind = ""
+		}
+	}
+	content, err = streamProcessor.ShowStreamOrTableDetails(kind, st)
+	if err != nil {
+		handleError(w, err, fmt.Sprintf("%s command error", cases.Title(language.Und).String(ast.StreamTypeMap[st])), logger)
+		return
+	}
+	jsonResponse(content, w, logger)
+}
+
 func sourcesManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamType) {
 	defer r.Body.Close()
 	switch r.Method {
@@ -546,6 +578,11 @@ func sourceManageHandler(w http.ResponseWriter, r *http.Request, st ast.StreamTy
 }
 
 // list or create streams
+func streamDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	sourceDetailsManageHandler(w, r, ast.TypeStream)
+}
+
+// list or create streams
 func streamsHandler(w http.ResponseWriter, r *http.Request) {
 	sourcesManageHandler(w, r, ast.TypeStream)
 }
@@ -553,6 +590,11 @@ func streamsHandler(w http.ResponseWriter, r *http.Request) {
 // describe or delete a stream
 func streamHandler(w http.ResponseWriter, r *http.Request) {
 	sourceManageHandler(w, r, ast.TypeStream)
+}
+
+// list or create streams
+func tableDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	sourceDetailsManageHandler(w, r, ast.TypeTable)
 }
 
 // list or create tables
@@ -632,6 +674,9 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Delete rule error", logger)
 			return
 		}
+		// wait resource clear
+		time.Sleep(time.Second)
+		conf.Log.Infof("drop rule:%v", name)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(content))
 	case http.MethodPut:
@@ -646,13 +691,18 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		err = updateRule(name, string(body), true)
+		newRuleJson, err := replaceRulePassword(name, string(body))
+		if err != nil {
+			handleError(w, err, "Invalid body", logger)
+			return
+		}
+		err = updateRule(name, newRuleJson, true)
 		if err != nil {
 			handleError(w, err, "Update rule error", logger)
 			return
 		}
 		// Update to db after validation
-		_, err = ruleProcessor.ExecUpdate(name, string(body))
+		_, err = ruleProcessor.ExecUpdate(name, newRuleJson)
 		if err != nil {
 			handleError(w, err, "Update rule error, suggest to delete it and recreate", logger)
 			return
@@ -660,6 +710,18 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
+}
+
+func getAllRuleStatusHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	s, err := getAllRuleStatus()
+	if err != nil {
+		handleError(w, err, "get rules status error", logger)
+		return
+	}
+	w.Header().Set(ContentType, ContentTypeJSON)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(s))
 }
 
 // get status of a rule
@@ -719,6 +781,8 @@ func stopRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "stop rule error", logger)
 		return
 	}
+	// wait resource clear
+	time.Sleep(time.Second)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(result))
 }

@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -33,6 +34,8 @@ type AdConf struct {
 }
 
 type Sink struct {
+	id     string
+	cw     *connection.ConnWrapper
 	adconf *AdConf
 	config map[string]interface{}
 	cli    *client.Connection
@@ -65,9 +68,14 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 func (ms *Sink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var err error
-	id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-	conn, err := connection.FetchConnection(ctx, id, "mqtt", ms.config)
+	ms.id = fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
+	ms.cw, err = connection.FetchConnection(ctx, ms.id, "mqtt", ms.config)
 	if err != nil {
+		return err
+	}
+	conn, err := ms.cw.Wait()
+	if err != nil {
+		conf.Log.Infof("mqtt sink client not ready, err:%v", err)
 		return err
 	}
 	c, ok := conn.(*client.Connection)
@@ -75,6 +83,7 @@ func (ms *Sink) Connect(ctx api.StreamContext) error {
 		return fmt.Errorf("connection %s should be mqtt connection", ms.adconf.SelId)
 	}
 	ms.cli = c
+	conf.Log.Info("mqtt sink client ready")
 	return err
 }
 
@@ -99,11 +108,8 @@ func (ms *Sink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 }
 
 func (ms *Sink) Close(ctx api.StreamContext) error {
-	ctx.GetLogger().Info("Closing mqtt sink connector")
-	if ms.cli != nil {
-		id := fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-		connection.DetachConnection(ctx, id, ms.config)
-	}
+	ctx.GetLogger().Infof("Closing mqtt sink connector, id:%v", ms.id)
+	connection.DetachConnection(ctx, ms.id, ms.config)
 	return nil
 }
 

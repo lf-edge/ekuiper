@@ -26,6 +26,7 @@ import (
 )
 
 type WebsocketSink struct {
+	cw    *connection.ConnWrapper
 	cfg   *WebsocketConfig
 	props map[string]any
 	topic string
@@ -51,7 +52,12 @@ func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 }
 
 func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
-	conn, err := connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	var err error
+	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	if err != nil {
+		return err
+	}
+	conn, err := w.cw.Wait()
 	if err != nil {
 		return err
 	}
@@ -61,7 +67,7 @@ func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
 	}
 	w.topic = c.SendTopic
 	pubsub.CreatePub(w.topic)
-	return nil
+	return err
 }
 
 func (w *WebsocketSink) Collect(ctx api.StreamContext, item api.RawTuple) error {

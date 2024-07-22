@@ -29,12 +29,13 @@ import (
 
 type SQLSinkConnector struct {
 	config *sqlSinkConfig
+	cw     *connection.ConnWrapper
 	conn   *client.SQLConnection
 	props  map[string]any
 }
 
 type sqlSinkConfig struct {
-	DBUrl        string   `json:"dburl"`
+	*SQLConf
 	Table        string   `json:"table"`
 	Fields       []string `json:"fields"`
 	RowKindField string   `json:"rowKindField"`
@@ -90,8 +91,8 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	if err != nil {
 		return err
 	}
-	if c.DBUrl == "" {
-		return fmt.Errorf("property dburl is required")
+	if err := c.resolveDBURL(); err != nil {
+		return err
 	}
 	if c.Table == "" {
 		return fmt.Errorf("property Table is required")
@@ -106,25 +107,25 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 
 func (s *SQLSinkConnector) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
-	var cli *client.SQLConnection
 	var err error
 	id := s.config.DBUrl
-	conn, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, id, "sql", s.props)
 	if err != nil {
 		return err
 	}
-	cli = conn.(*client.SQLConnection)
-	s.conn = cli
+	s.cw = cw
+	conn, err := s.cw.Wait()
+	if err != nil {
+		return err
+	}
+	s.conn = conn.(*client.SQLConnection)
 	return err
 }
 
 func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
-	if s.conn != nil {
-		id := s.config.DBUrl
-		connection.DetachConnection(ctx, id, s.props)
-		s.conn.DetachSub(ctx, s.props)
-	}
+	id := s.config.DBUrl
+	connection.DetachConnection(ctx, id, s.props)
 	return nil
 }
 
