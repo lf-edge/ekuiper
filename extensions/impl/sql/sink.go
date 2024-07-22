@@ -126,10 +126,6 @@ func (s *SQLSinkConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql sink connector url:%v", s.config.DBUrl)
 	id := s.config.DBUrl
 	connection.DetachConnection(ctx, id, s.props)
-	conn, _ := s.cw.Wait()
-	if conn != nil {
-		conn.DetachSub(ctx, s.props)
-	}
 	return nil
 }
 

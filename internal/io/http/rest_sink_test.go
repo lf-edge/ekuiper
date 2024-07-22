@@ -21,15 +21,10 @@ import (
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
-
-func init() {
-	conf.InitConf()
-}
 
 func TestRestSinkCollect(t *testing.T) {
 	server := createServer()
