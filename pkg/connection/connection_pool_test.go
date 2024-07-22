@@ -15,21 +15,25 @@
 package connection
 
 import (
+	"sync"
 	"testing"
-	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestConnection(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := context.Background()
-	conn, err := CreateNamedConnection(ctx, "id1", "mock", nil)
+	cw, err := CreateNamedConnection(ctx, "id1", "mock", nil)
+	require.NoError(t, err)
+	conn, err := cw.Wait()
 	require.NoError(t, err)
 	require.NotNil(t, conn)
 	require.NoError(t, conn.Ping(ctx))
@@ -54,13 +58,13 @@ func TestConnection(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, conn3)
 
-	conn, err = CreateNamedConnection(ctx, "id2", "mock", nil)
+	cw, err = CreateNamedConnection(ctx, "id2", "mock", nil)
 	require.NoError(t, err)
-	require.NotNil(t, conn)
+	require.NotNil(t, cw)
 
-	conn, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"})
+	cw, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"})
 	require.NoError(t, err)
-	require.NotNil(t, conn)
+	require.NotNil(t, cw)
 
 	require.Equal(t, 1, GetConnectionRef("id2"))
 }
@@ -74,13 +78,13 @@ func TestConnectionErr(t *testing.T) {
 	require.Error(t, err)
 	err = DropNameConnection(ctx, "")
 	require.Error(t, err)
-	_, err = CreateNamedConnection(ctx, "12", "unknown", nil)
+	cw, err := CreateNamedConnection(ctx, "12", "unknown", nil)
+	require.NoError(t, err)
+	_, err = cw.Wait()
 	require.Error(t, err)
 	_, err = attachConnection("")
 	require.Error(t, err)
 	err = PingConnection(ctx, "")
-	require.Error(t, err)
-	_, err = getOrCreateNonStoredConnection(ctx, "", "mock", nil)
 	require.Error(t, err)
 	err = DetachConnection(ctx, "", nil)
 	require.Error(t, err)
@@ -115,7 +119,7 @@ func TestConnectionStatus(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
-	require.NoError(t, ReloadConnection(999*time.Second))
+	require.NoError(t, ReloadConnection())
 	ctx := context.Background()
 	allStatus := GetAllConnectionStatus(ctx)
 	s, ok := allStatus["a1"]
@@ -129,16 +133,6 @@ func TestConnectionStatus(t *testing.T) {
 	require.Equal(t, ConnectionStatus{
 		Status: ConnectionRunning,
 	}, s)
-}
-
-func TestReloadConnectionErr(t *testing.T) {
-	require.NoError(t, InitConnectionManager4Test())
-	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
-	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout", "return(true)")
-	require.NoError(t, ReloadConnection(time.Microsecond))
-	require.True(t, len(globalConnectionManager.failConnection) > 0)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/reloadTimeout")
 }
 
 func TestNonStoredConnection(t *testing.T) {
@@ -155,4 +149,40 @@ func TestNonStoredConnection(t *testing.T) {
 	require.NoError(t, DetachConnection(ctx, "id1", nil))
 	require.Equal(t, 0, GetConnectionRef("id1"))
 	require.False(t, IsConnectionExists("id1"))
+}
+
+var blockCh chan any
+
+func TestConnectionLock(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("id", "2")
+	modules.RegisterConnection("blockconn", CreateBlockConnection)
+	blockCh = make(chan any, 10)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		CreateNamedConnection(ctx, "ccc1", "blockconn", nil)
+		wg.Done()
+	}()
+	require.False(t, CheckConn("ccc1"))
+	blockCh <- struct{}{}
+	wg.Wait()
+	require.True(t, CheckConn("ccc1"))
+}
+
+type blockConnection struct{}
+
+func (b blockConnection) Ping(ctx api.StreamContext) error {
+	return nil
+}
+
+func (b blockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {}
+
+func (b blockConnection) Close(ctx api.StreamContext) error {
+	return nil
+}
+
+func CreateBlockConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
+	<-blockCh
+	return &blockConnection{}, nil
 }

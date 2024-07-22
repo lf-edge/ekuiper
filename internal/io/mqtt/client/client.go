@@ -106,6 +106,9 @@ func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
 }
 
 func (conn *Connection) Close(ctx api.StreamContext) error {
+	if conn == nil || conn.Client == nil {
+		return nil
+	}
 	conn.Client.Disconnect(1)
 	return nil
 }
