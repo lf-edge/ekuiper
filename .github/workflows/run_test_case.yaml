@@ -17,7 +17,6 @@ on:
     types:
       - published
 
-
 jobs:
   run_unit_tests:
     runs-on: ubuntu-latest
