@@ -46,6 +46,7 @@ func TestMetaConfiguration(t *testing.T) {
 	require.True(t, len(m.SinkConfig) > 0)
 	require.True(t, len(m.ConnectionConfig) > 0)
 	require.True(t, len(m.PortablePlugins) > 0)
+	require.True(t, len(m.NativePlugins) > 0)
 	require.True(t, len(m.Service) > 0)
 	require.True(t, len(m.Schema) > 0)
 	require.True(t, len(m.Uploads) > 0)
