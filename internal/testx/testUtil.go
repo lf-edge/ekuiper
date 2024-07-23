@@ -114,3 +114,26 @@ func CreateWebsocketClient(ip string, port int, endpoint string) (*websocket.Con
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	return conn, err
 }
+
+type MockTuple struct {
+	Map      map[string]any
+	Template map[string]string
+}
+
+func (m MockTuple) DynamicProps(template string) (string, bool) {
+	r, ok := m.Template[template]
+	return r, ok
+}
+
+func (m MockTuple) AllProps() map[string]string {
+	return m.Template
+}
+
+func (m MockTuple) Value(key, table string) (any, bool) {
+	v, ok := m.Map[key]
+	return v, ok
+}
+
+func (m MockTuple) ToMap() map[string]any {
+	return m.Map
+}

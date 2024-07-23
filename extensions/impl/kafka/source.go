@@ -39,6 +39,7 @@ type KafkaSource struct {
 	offset    int64
 	tlsConfig *tls.Config
 	sc        *kafkaSourceConf
+	saslConf  *saslConf
 }
 
 type kafkaSourceConf struct {
@@ -95,11 +96,13 @@ func (k *KafkaSource) Provision(ctx api.StreamContext, configs map[string]any) e
 	if err := kConf.validate(); err != nil {
 		return err
 	}
+	k.sc = kConf
 	tlsConfig, err := cert.GenTLSConfig(configs, "kafka-source")
 	if err != nil {
 		conf.Log.Errorf("kafka tls conf error: %v", err)
 		return err
 	}
+	k.tlsConfig = tlsConfig
 	saslConf, err := getSaslConf(configs)
 	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
 		err = mockKakfaSourceErr(val.(int), saslConfErr)
@@ -112,32 +115,7 @@ func (k *KafkaSource) Provision(ctx api.StreamContext, configs map[string]any) e
 		conf.Log.Errorf("kafka validate sasl error: %v", err)
 		return err
 	}
-	mechanism, err := saslConf.GetMechanism()
-	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
-		err = mockKakfaSourceErr(val.(int), mechanismErr)
-	})
-	if err != nil {
-		conf.Log.Errorf("kafka sasl mechanism error: %v", err)
-		return err
-	}
-	readerConfig := kConf.GetReaderConfig()
-	conf.Log.Infof("topic: %s, brokers: %v", readerConfig.Topic, readerConfig.Brokers)
-	readerConfig.Dialer = &kafkago.Dialer{
-		Timeout:       10 * time.Second,
-		DualStack:     true,
-		TLS:           tlsConfig,
-		SASLMechanism: mechanism,
-	}
-	reader := kafkago.NewReader(readerConfig)
-	k.reader = reader
-	k.sc = kConf
-	err = k.reader.SetOffset(kafkago.LastOffset)
-	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
-		err = mockKakfaSourceErr(val.(int), offsetErr)
-	})
-	if err != nil {
-		return err
-	}
+	k.saslConf = saslConf
 	conf.Log.Infof("kafka source got configured.")
 	return nil
 }
@@ -147,22 +125,31 @@ func (k *KafkaSource) Close(ctx api.StreamContext) error {
 }
 
 func (k *KafkaSource) Connect(ctx api.StreamContext) error {
-	for _, broker := range strings.Split(k.sc.Brokers, ",") {
-		err := ping(k.tlsConfig, broker)
-		if err != nil {
-			return err
-		}
+	mechanism, err := k.saslConf.GetMechanism()
+	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
+		err = mockKakfaSourceErr(val.(int), mechanismErr)
+	})
+	if err != nil {
+		conf.Log.Errorf("kafka sasl mechanism error: %v", err)
+		return err
 	}
-	return nil
-}
-
-func ping(tlsConfig *tls.Config, address string) error {
-	d := &kafkago.Dialer{TLS: tlsConfig}
-	c, err := d.Dial("tcp", address)
+	readerConfig := k.sc.GetReaderConfig()
+	conf.Log.Infof("topic: %s, brokers: %v", readerConfig.Topic, readerConfig.Brokers)
+	readerConfig.Dialer = &kafkago.Dialer{
+		Timeout:       10 * time.Second,
+		DualStack:     true,
+		TLS:           k.tlsConfig,
+		SASLMechanism: mechanism,
+	}
+	reader := kafkago.NewReader(readerConfig)
+	k.reader = reader
+	err = k.reader.SetOffset(kafkago.LastOffset)
+	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
+		err = mockKakfaSourceErr(val.(int), offsetErr)
+	})
 	if err != nil {
 		return err
 	}
-	defer c.Close()
 	return nil
 }
 
