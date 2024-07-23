@@ -68,7 +68,7 @@ func TestKafkaSource(t *testing.T) {
 		"brokers":    "localhost:9092",
 	}
 	require.NoError(t, ks.Provision(ctx, configs))
-	require.Error(t, ks.Connect(ctx))
+	require.NoError(t, ks.Connect(ctx))
 	require.NoError(t, ks.Close(ctx))
 
 	for i := mockErrStart + 1; i < mockErrEnd; i++ {

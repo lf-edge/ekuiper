@@ -22,6 +22,7 @@ import (
 
 	"github.com/pingcap/failpoint"
 	kafkago "github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -35,6 +36,7 @@ type KafkaSink struct {
 	headersMap     map[string]string
 	headerTemplate string
 	saslConf       *saslConf
+	mechanism      sasl.Mechanism
 }
 
 type kafkaConf struct {
@@ -87,6 +89,14 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	if err != nil {
 		return err
 	}
+	mechanism, err := k.saslConf.GetMechanism()
+	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
+		err = mockKakfaSourceErr(val.(int), mechanismErr)
+	})
+	if err != nil {
+		return err
+	}
+	k.mechanism = mechanism
 	k.tlsConfig = tlsConfig
 	k.kc = c
 	err = k.setHeaders()
@@ -97,13 +107,6 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 }
 
 func (k *KafkaSink) buildKafkaWriter() error {
-	mechanism, err := k.saslConf.GetMechanism()
-	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
-		err = mockKakfaSourceErr(val.(int), mechanismErr)
-	})
-	if err != nil {
-		return err
-	}
 	brokers := strings.Split(k.kc.Brokers, ",")
 	w := &kafkago.Writer{
 		Addr:  kafkago.TCP(brokers...),
@@ -116,7 +119,7 @@ func (k *KafkaSink) buildKafkaWriter() error {
 		RequiredAcks:           kafkago.RequiredAcks(k.kc.RequiredACKs),
 		BatchSize:              1,
 		Transport: &kafkago.Transport{
-			SASL: mechanism,
+			SASL: k.mechanism,
 			TLS:  k.tlsConfig,
 		},
 	}

@@ -78,15 +78,16 @@ func TestKafkaSink(t *testing.T) {
 		"brokers": "localhost:9092",
 	}
 	require.NoError(t, ks.Provision(ctx, configs))
-	require.Error(t, ks.Connect(ctx))
+	require.NoError(t, ks.Connect(ctx))
 	mockT := testx.MockTuple{
 		Map: map[string]any{"1": 1},
 	}
-	_, err := ks.collect(ctx, mockT)
-	require.Error(t, err)
+	msgs, err := ks.collect(ctx, mockT)
+	require.Len(t, msgs, 1)
+	require.NoError(t, err)
 	require.NoError(t, ks.Close(ctx))
 
-	for i := mockErrStart + 1; i < offsetErr; i++ {
+	for i := mockErrStart + 1; i < mockErrEnd; i++ {
 		failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/kafka/kafkaErr", fmt.Sprintf("return(%v)", i))
 		require.Error(t, ks.Provision(ctx, configs), i)
 	}
@@ -100,17 +101,19 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 		"headers": map[string]any{
 			"a": "{{.a}}",
 		},
+		"key": "{{.a}}",
 	}
 	ks := &KafkaSink{}
 	ctx := mockContext.NewMockContext("1", "2")
 	require.NoError(t, ks.Provision(ctx, configs))
+	require.NoError(t, ks.Connect(ctx))
 	item := map[string]any{
 		"a": 1,
 	}
 	d, _ := json.Marshal(item)
 	mockT := testx.MockTuple{
 		Map:      item,
-		Template: map[string]string{"a": "1"},
+		Template: map[string]string{"a": "1", "key": "1"},
 	}
 	msg, err := ks.buildMsg(ctx, mockT, d)
 	require.NoError(t, err)
@@ -118,4 +121,6 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 	b := make([]uint8, 0, 8)
 	b = strconv.AppendInt(b, int64(1), 10)
 	require.Equal(t, b, msg.Headers[0].Value)
+	require.Equal(t, []byte("1"), msg.Key)
+	require.NoError(t, ks.Close(ctx))
 }
