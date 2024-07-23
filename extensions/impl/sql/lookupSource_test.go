@@ -123,4 +123,9 @@ func TestLookupPing(t *testing.T) {
 	}
 	ls := &SqlLookupSource{}
 	require.NoError(t, ls.Ping("", props))
+	props = map[string]interface{}{
+		"dburl":      "",
+		"datasource": "t",
+	}
+	require.Error(t, ls.Ping("", props))
 }
