@@ -16,7 +16,6 @@ package hidden
 
 import (
 	"net/url"
-	"strings"
 )
 
 const (
@@ -30,71 +29,6 @@ func init() {
 		"password": {},
 		"token":    {},
 	}
-}
-
-func IsHiddenNecessary(m string) bool {
-	lm := strings.ToLower(m)
-	if strings.Contains(lm, "url") {
-		return true
-	}
-	for k := range hiddenPasswdKey {
-		if strings.Contains(lm, k) {
-			return true
-		}
-	}
-	return false
-}
-
-func HiddenPassword(kvs map[string]interface{}) map[string]interface{} {
-	for k, v := range kvs {
-		newV := hiddenPassword4Interface(k, v)
-		kvs[k] = newV
-	}
-	return kvs
-}
-
-func hiddenPassword4Interface(k string, v interface{}) interface{} {
-	switch vv := v.(type) {
-	case map[string]interface{}:
-		for kk, vvv := range vv {
-			hiddenValue := hiddenPassword4Interface(kk, vvv)
-			vv[kk] = hiddenValue
-		}
-		return vv
-	case []interface{}:
-		for i, item := range vv {
-			vv[i] = hiddenPassword4Interface("", item)
-		}
-		return vv
-	default:
-		lk := strings.ToLower(k)
-		if _, ok := hiddenPasswdKey[lk]; ok {
-			v = PASSWORD
-		} else if lk == "url" {
-			if _, ok := v.(string); !ok {
-				return v
-			}
-			urlValue, hidden := HiddenURLPasswd(v.(string))
-			if hidden {
-				v = urlValue
-			}
-		}
-	}
-	return v
-}
-
-func HiddenURLPasswd(originURL string) (string, bool) {
-	u, err := url.Parse(originURL)
-	if err != nil || u.User == nil {
-		return originURL, false
-	}
-	password, _ := u.User.Password()
-	if password != "" {
-		u.User = url.UserPassword(u.User.Username(), PASSWORD)
-		n, _ := url.QueryUnescape(u.String())
-		return n, true
-	}
-	return originURL, false
 }
 
 func ReplacePasswd(resource, config map[string]interface{}) map[string]interface{} {

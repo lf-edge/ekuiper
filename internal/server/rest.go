@@ -43,7 +43,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/hidden"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/memory"
@@ -666,24 +665,8 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Describe rule error", logger)
 			return
 		}
-		if hidden.IsHiddenNecessary(rule) {
-			m := make(map[string]interface{})
-			if err := json.Unmarshal([]byte(rule), &m); err != nil {
-				handleError(w, err, "Describe rule error", logger)
-				return
-			}
-			bs, err := json.Marshal(hidden.HiddenPassword(m))
-			if err != nil {
-				handleError(w, err, "Describe rule error", logger)
-				return
-			}
-			w.Header().Add(ContentType, ContentTypeJSON)
-			w.Write(bs)
-			return
-		} else {
-			w.Header().Add(ContentType, ContentTypeJSON)
-			w.Write([]byte(rule))
-		}
+		w.Header().Add(ContentType, ContentTypeJSON)
+		w.Write([]byte(rule))
 	case http.MethodDelete:
 		deleteRule(name)
 		content, err := ruleProcessor.ExecDrop(name)

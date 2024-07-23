@@ -551,7 +551,7 @@ func (suite *RestTestSuite) assertGetRuleHiddenPassword() {
 	require.NotNil(suite.T(), mqttAction)
 	mqttOption, ok := mqttAction.(map[string]interface{})
 	require.True(suite.T(), ok)
-	require.Equal(suite.T(), "******", mqttOption["password"])
+	require.Equal(suite.T(), "123", mqttOption["password"])
 
 	// delete rule
 	req1, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule3442551", bytes.NewBufferString("any"))
