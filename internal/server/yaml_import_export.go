@@ -42,6 +42,7 @@ type MetaConfiguration struct {
 	SinkConfig       map[string]map[string]any `json:"sinkConfig,omitempty" yaml:"sinkConfig,omitempty"`
 	ConnectionConfig map[string]map[string]any `json:"connectionConfig,omitempty" yaml:"connectionConfig,omitempty"`
 	// plugins
+	NativePlugins   map[string]*plugin.IOPlugin `json:"nativePlugins,omitempty" yaml:"nativePlugins,omitempty"`
 	PortablePlugins map[string]*plugin.IOPlugin `json:"portablePlugins,omitempty" yaml:"portablePlugins,omitempty"`
 	// others
 	Service map[string]*service.ServiceCreationRequest `json:"service,omitempty" yaml:"service,omitempty"`
@@ -123,6 +124,30 @@ func addConfiguration(m *MetaConfiguration) error {
 }
 
 func addPlugins(m *MetaConfiguration) error {
+	if managers["plugin"] != nil {
+		want := make(map[string]*plugin.IOPlugin)
+		pm := managers["plugin"].Export()
+		failpoint.Inject("mockYamlExport", func() {
+			e := map[string]*plugin.IOPlugin{
+				"p1": {
+					Name: "p2",
+					File: "path",
+				},
+			}
+			b, _ := json.Marshal(e)
+			pm = map[string]string{
+				"p2": string(b),
+			}
+		})
+		for k, v := range pm {
+			p := &plugin.IOPlugin{}
+			if err := json.Unmarshal([]byte(v), p); err != nil {
+				return err
+			}
+			want[k] = p
+		}
+		m.NativePlugins = want
+	}
 	if managers["portable"] != nil {
 		want := make(map[string]*plugin.IOPlugin)
 		pm := managers["portable"].Export()
@@ -327,6 +352,7 @@ const (
 	mockServiceErr
 	mockSchemaErr
 	mockPortablePluginErr
+	mockNativePluginErr
 	mockErrEnd
 )
 
@@ -356,6 +382,11 @@ func importYamlConf(m *MetaConfiguration) error {
 	}
 	err = importSchema(m) //nolint:staticcheck
 	err = mockImportErr(err, mockSchemaErr)
+	if err != nil {
+		return err
+	}
+	err = importNativePlugins(m) //nolint:staticcheck
+	err = mockImportErr(err, mockNativePluginErr)
 	if err != nil {
 		return err
 	}
@@ -439,6 +470,19 @@ func importPortablePlugins(m *MetaConfiguration) error {
 		importPlugin[key] = string(b)
 	}
 	return importByManager(importPlugin, manager, "portable plugin")
+}
+
+func importNativePlugins(m *MetaConfiguration) error {
+	manager, ok := managers["plugin"]
+	if !ok {
+		return fmt.Errorf("native manager not exist")
+	}
+	importPlugin := make(map[string]string)
+	for key, value := range m.PortablePlugins {
+		b, _ := json.Marshal(value)
+		importPlugin[key] = string(b)
+	}
+	return importByManager(importPlugin, manager, "native plugin")
 }
 
 func importRules(m *MetaConfiguration) error {
