@@ -34,6 +34,7 @@ type KafkaSink struct {
 	tlsConfig      *tls.Config
 	headersMap     map[string]string
 	headerTemplate string
+	saslConf       *saslConf
 }
 
 type kafkaConf struct {
@@ -81,6 +82,7 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	if err := sc.Validate(); err != nil {
 		return err
 	}
+	k.saslConf = sc
 	tlsConfig, err := cert.GenTLSConfig(configs, "kafka-sink")
 	if err != nil {
 		return err
@@ -91,11 +93,11 @@ func (k *KafkaSink) Provision(ctx api.StreamContext, configs map[string]any) err
 	if err != nil {
 		return err
 	}
-	return k.buildKafkaWriter(sc)
+	return nil
 }
 
-func (k *KafkaSink) buildKafkaWriter(sc *saslConf) error {
-	mechanism, err := sc.GetMechanism()
+func (k *KafkaSink) buildKafkaWriter() error {
+	mechanism, err := k.saslConf.GetMechanism()
 	failpoint.Inject("kafkaErr", func(val failpoint.Value) {
 		err = mockKakfaSourceErr(val.(int), mechanismErr)
 	})
@@ -127,49 +129,53 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 }
 
 func (k *KafkaSink) Connect(ctx api.StreamContext) error {
-	for _, broker := range strings.Split(k.kc.Brokers, ",") {
-		err := ping(k.tlsConfig, broker)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return k.buildKafkaWriter()
 }
 
 func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {
-	return k.collect(ctx, item.ToMap())
+	msgs, err := k.collect(ctx, item)
+	if err != nil {
+		return err
+	}
+	return k.writer.WriteMessages(ctx, msgs...)
 }
 
 func (k *KafkaSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
-	for _, data := range items.ToMaps() {
-		err := k.collect(ctx, data)
+	allMsgs := make([]kafkago.Message, 0)
+	items.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
+		msgs, err := k.collect(ctx, tuple)
 		if err != nil {
-			return err
+			return false
 		}
-	}
-	return nil
+		allMsgs = append(allMsgs, msgs...)
+		return true
+	})
+	return k.writer.WriteMessages(ctx, allMsgs...)
 }
 
-func (k *KafkaSink) collect(ctx api.StreamContext, data map[string]any) error {
-	ds, err := json.Marshal(data)
+func (k *KafkaSink) collect(ctx api.StreamContext, item api.MessageTuple) ([]kafkago.Message, error) {
+	ds, err := json.Marshal(item.ToMap())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var messages []kafkago.Message
-	msg, err := k.buildMsg(ctx, data, ds)
+	msg, err := k.buildMsg(ctx, item, ds)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	messages = append(messages, msg)
-	return k.writer.WriteMessages(ctx, messages...)
+	return messages, nil
 }
 
-func (k *KafkaSink) buildMsg(ctx api.StreamContext, item interface{}, decodedBytes []byte) (kafkago.Message, error) {
+func (k *KafkaSink) buildMsg(ctx api.StreamContext, item api.MessageTuple, decodedBytes []byte) (kafkago.Message, error) {
 	msg := kafkago.Message{Value: decodedBytes}
 	if len(k.kc.Key) > 0 {
-		newKey, err := ctx.ParseTemplate(k.kc.Key, item)
-		if err != nil {
-			return kafkago.Message{}, fmt.Errorf("parse kafka key error: %v", err)
+		newKey := k.kc.Key
+		if dp, ok := item.(api.HasDynamicProps); ok {
+			key, ok := dp.DynamicProps("key")
+			if ok {
+				newKey = key
+			}
 		}
 		msg.Key = []byte(newKey)
 	}
@@ -203,13 +209,17 @@ func (k *KafkaSink) setHeaders() error {
 	}
 }
 
-func (k *KafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kafkago.Header, error) {
+func (k *KafkaSink) parseHeaders(ctx api.StreamContext, item api.MessageTuple) ([]kafkago.Header, error) {
 	if len(k.headersMap) > 0 {
 		var kafkaHeaders []kafkago.Header
 		for k, v := range k.headersMap {
-			value, err := ctx.ParseTemplate(v, data)
-			if err != nil {
-				return nil, fmt.Errorf("parse kafka header map failed, err:%v", err)
+			value := v
+			dp, ok := item.(api.HasDynamicProps)
+			if ok {
+				nv, ok := dp.DynamicProps(k)
+				if ok {
+					value = nv
+				}
 			}
 			kafkaHeaders = append(kafkaHeaders, kafkago.Header{
 				Key:   k,
@@ -218,12 +228,16 @@ func (k *KafkaSink) parseHeaders(ctx api.StreamContext, data interface{}) ([]kaf
 		}
 		return kafkaHeaders, nil
 	} else if len(k.headerTemplate) > 0 {
-		headers := make(map[string]string)
-		s, err := ctx.ParseTemplate(k.headerTemplate, data)
-		if err != nil {
-			return nil, fmt.Errorf("parse kafka header template failed, err:%v", err)
+		raw := k.headerTemplate
+		dp, ok := item.(api.HasDynamicProps)
+		if ok {
+			nv, ok := dp.DynamicProps("headers")
+			if ok {
+				raw = nv
+			}
 		}
-		if err := json.Unmarshal([]byte(s), &headers); err != nil {
+		headers := make(map[string]string)
+		if err := json.Unmarshal([]byte(raw), &headers); err != nil {
 			return nil, err
 		}
 		var kafkaHeaders []kafkago.Header

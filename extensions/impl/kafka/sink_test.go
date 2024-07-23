@@ -23,6 +23,7 @@ import (
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -78,7 +79,11 @@ func TestKafkaSink(t *testing.T) {
 	}
 	require.NoError(t, ks.Provision(ctx, configs))
 	require.Error(t, ks.Connect(ctx))
-	require.Error(t, ks.collect(ctx, map[string]any{"1": 1}))
+	mockT := testx.MockTuple{
+		Map: map[string]any{"1": 1},
+	}
+	_, err := ks.collect(ctx, mockT)
+	require.Error(t, err)
 	require.NoError(t, ks.Close(ctx))
 
 	for i := mockErrStart + 1; i < offsetErr; i++ {
@@ -103,7 +108,11 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 		"a": 1,
 	}
 	d, _ := json.Marshal(item)
-	msg, err := ks.buildMsg(ctx, item, d)
+	mockT := testx.MockTuple{
+		Map:      item,
+		Template: map[string]string{"a": "1"},
+	}
+	msg, err := ks.buildMsg(ctx, mockT, d)
 	require.NoError(t, err)
 	require.Equal(t, "a", msg.Headers[0].Key)
 	b := make([]uint8, 0, 8)
