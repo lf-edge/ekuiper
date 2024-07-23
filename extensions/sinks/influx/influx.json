@@ -1,0 +1,237 @@
+{
+  "about": {
+    "trial": true,
+    "author": {
+      "name": "Yongxing Ma",
+      "email": "",
+      "company": "",
+      "website": ""
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/guide/sinks/plugin/influx.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/guide/sinks/plugin/influx.html"
+    },
+    "description": {
+      "en_US": "This a sink plugin for InfluxDB, it can be used for saving the analysis data into InfluxDB.",
+      "zh_CN": "本插件为 InfluxDB 的持久化插件，可以用于将分析数据存入 InfluxDB 中"
+    }
+  },
+  "libs": [
+    "github.com/influxdata/influxdb1-client/v2@master"
+  ],
+  "properties": [
+    {
+      "name": "addr",
+      "default": "http://127.0.0.1:8086",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The addr of the InfluxDB",
+        "zh_CN": "InfluxDB 的地址"
+      },
+      "label": {
+        "en_US": "Addr",
+        "zh_CN": "地址"
+      }
+    },
+    {
+      "name": "database",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The database of the InfluxDB",
+        "zh_CN": "InfluxDB 的数据库名"
+      },
+      "label": {
+        "en_US": "Database name",
+        "zh_CN": "数据库名"
+      }
+    },
+    {
+      "name": "username",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The InfluxDB login username",
+        "zh_CN": "InfluxDB 登陆用户名"
+      },
+      "label": {
+        "en_US": "Username",
+        "zh_CN": "用户名"
+      }
+    },
+    {
+      "name": "password",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The InfluxDB login password",
+        "zh_CN": "InfluxDB 登陆密码"
+      },
+      "label": {
+        "en_US": "Password",
+        "zh_CN": "密码"
+      }
+    },
+    {
+      "name": "certificationPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of certification path. It can be an absolute path, or a relative path.",
+        "zh_CN": "证书路径。可以为绝对路径，也可以为相对路径。如果指定的是相对路径，那么父目录为执行 server 命令的路径。"
+      },
+      "label": {
+        "en_US": "Certification path",
+        "zh_CN": "证书路径"
+      }
+    },
+    {
+      "name": "privateKeyPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of private key path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "私钥路径。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Private key path",
+        "zh_CN": "私钥路径"
+      }
+    },
+    {
+      "name": "rootCaPath",
+      "default": "",
+      "optional": true,
+      "connection_related": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The location of root ca path. It can be an absolute path, or a relative path. ",
+        "zh_CN": "根证书路径，用以验证服务器证书。可以为绝对路径，也可以为相对路径。"
+      },
+      "label": {
+        "en_US": "Root CA path",
+        "zh_CN": "根证书路径"
+      }
+    },
+    {
+      "name": "insecureSkipVerify",
+      "default": false,
+      "optional": true,
+      "connection_related": true,
+      "control": "radio",
+      "type": "bool",
+      "hint": {
+        "en_US": "Control if to skip the certification verification. If it is set to true, then skip certification verification; Otherwise, verify the certification.",
+        "zh_CN": "控制是否跳过证书认证。如果被设置为 true，那么跳过证书认证；否则进行证书验证。"
+      },
+      "label": {
+        "en_US": "Skip Certification verification",
+        "zh_CN": "跳过证书验证"
+      }
+    },
+    {
+      "name": "precision",
+      "default": "ms",
+      "optional": false,
+      "control": "select",
+      "type": "string",
+      "values": [
+        "s",
+        "ms",
+        "us",
+        "ns"
+      ],
+      "hint": {
+        "en_US": "The time precision, can be set to ns, us, ms, s. Default is ms.",
+        "zh_CN": "时间精度，可设置为 ns, us, ms, s。默认为 ms。"
+      },
+      "label": {
+        "en_US": "Precision",
+        "zh_CN": "时间精度"
+      }
+    },
+    {
+      "name": "measurement",
+      "default": "",
+      "optional": false,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "The measurement of the InfluxDb",
+        "zh_CN": "InfluxDb 的 Measurement"
+      },
+      "label": {
+        "en_US": "Measurement",
+        "zh_CN": "Measurement"
+      }
+    },
+    {
+      "name": "tsFieldName",
+      "default": "",
+      "optional": true,
+      "control": "text",
+      "type": "string",
+      "hint": {
+        "en_US": "If set, the written timestamp will use the value of the field. For example, if the data has {\"ts\": 1888888888} and the tsFieldName is set to ts, then the value 1888888888 will be used when written to InfluxDB. Make sure the value is formatted according to the precision. If not set, the current timestamp will be used.",
+        "zh_CN": "若有设置，写入时的时间戳以该字段的值为准。例如，假设数据为 {\"ts\": 1888888888} 且 tsFieldName 属性设置为 ts，则 1888888888 将作为此条数据写入作为的时间戳。此时，需要确保时间戳的值的精度与 precision 的配置相同。 如果该属性未设置，则写入时采用当时的时间戳。"
+      },
+      "label": {
+        "en_US": "Timestamp Field Name",
+        "zh_CN": "时间戳字段名"
+      }
+    },
+    {
+      "name": "fields",
+      "default": [],
+      "optional": true,
+      "control": "list",
+      "type": "list_string",
+      "hint": {
+        "en_US": "Fields to be sent",
+        "zh_CN": "返回的数据字段。"
+      },
+      "label": {
+        "en_US": "Fields",
+        "zh_CN": "Fields"
+      }
+    },
+    {
+      "name": "tags",
+      "default": [],
+      "optional": true,
+      "control": "list",
+      "type": "object",
+      "hint": {
+        "en_US": "The tags to write, the format is like {\"tag1\":\"value1\"}. The value can be dataTemplate format, like {\"tag1\":\"{{.temperature}}\"}",
+        "zh_CN": "标签键值对，其格式为 {\"tag1\":\"value1\"}。其中，值可为数据模板格式，例如 {\"tag1\":\"{{.temperature}}\"}"
+      },
+      "label": {
+        "en_US": "Tags",
+        "zh_CN": "标签"
+      }
+    }
+  ],
+  "node": {
+    "category": "sink",
+    "icon": "iconPath",
+    "label": {
+      "en": "InfluxDB 1",
+      "zh": "InfluxDB 1"
+    }
+  }
+}
