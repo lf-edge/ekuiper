@@ -60,20 +60,28 @@ func (hps *HttpPullSource) Provision(ctx api.StreamContext, configs map[string]a
 }
 
 func (hps *HttpPullSource) doPull(ctx api.StreamContext) ([]map[string]any, error) {
-	headers, err := hps.parseHeaders(ctx, hps.tokens)
+	result, latestMD5, err := doPull(ctx, hps.ClientConf, hps.lastMD5)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), hps.client, hps.config.BodyType, hps.config.Method, hps.config.Url, headers, true, []byte(hps.config.Body))
+	hps.lastMD5 = latestMD5
+	return result, nil
+}
+
+func doPull(ctx api.StreamContext, c *ClientConf, lastMD5 string) ([]map[string]any, string, error) {
+	headers, err := c.parseHeaders(ctx, c.tokens)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	results, newMD5, err := hps.parseResponse(ctx, resp, hps.lastMD5)
+	resp, err := httpx.Send(ctx.GetLogger(), c.client, c.config.BodyType, c.config.Method, c.config.Url, headers, true, []byte(c.config.Body))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	hps.lastMD5 = newMD5
-	return results, nil
+	results, newMD5, err := c.parseResponse(ctx, resp, lastMD5)
+	if err != nil {
+		return nil, "", err
+	}
+	return results, newMD5, nil
 }
 
 func GetSource() api.Source {
