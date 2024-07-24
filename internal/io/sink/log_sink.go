@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/collector"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 // NewLogSink log action, no properties now
@@ -43,12 +44,12 @@ var QR = &QueryResult{LastFetch: time.Now()}
 func NewLogSinkToMemory() api.Sink {
 	QR.Results = make([]string, 0, 10)
 	return collector.Func(func(ctx api.StreamContext, data any) error {
-		result, ok := data.(string)
-		if !ok {
+		r, err := cast.ToString(data, cast.CONVERT_SAMEKIND)
+		if err != nil {
 			return fmt.Errorf("result is not a string but got %v", data)
 		}
 		QR.Mux.Lock()
-		QR.Results = append(QR.Results, result)
+		QR.Results = append(QR.Results, r)
 		QR.Mux.Unlock()
 		return nil
 	})
