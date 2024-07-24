@@ -153,22 +153,19 @@ func (k *KafkaSource) Connect(ctx api.StreamContext) error {
 }
 
 func (k *KafkaSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-			msg, err := k.reader.ReadMessage(ctx)
-			if err != nil {
-				ingestError(ctx, err)
-				continue
-			}
-			ingest(ctx, msg.Value, nil, timex.GetNow())
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
 		}
-	}()
-	return nil
+		msg, err := k.reader.ReadMessage(ctx)
+		if err != nil {
+			ingestError(ctx, err)
+			continue
+		}
+		ingest(ctx, msg.Value, nil, timex.GetNow())
+	}
 }
 
 func (k *KafkaSource) Rewind(offset interface{}) error {
