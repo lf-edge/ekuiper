@@ -1,0 +1,175 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/sqls/functions/custom_functions.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/functions/custom_functions.html"
+    },
+    "description": {
+      "en_US": "",
+      "zh_CN": ""
+    }
+  },
+  "libs": [
+    "github.com/nfnt/resize@master"
+  ],
+  "name": "image",
+  "functions": [
+    {
+      "name": "resize",
+      "example": "resize(image,width, height, isRaw)",
+      "hint": {
+        "en_US": "Creates a scaled image with new dimensions (width, height) .If either width or height is set to 0, it will be set to an aspect ratio preserving value.",
+        "zh_CN": "创建具有新尺寸（宽度，高度）的缩放图像。如果width或height设置为0，则将其设置为长宽比保留值。"
+      },
+      "args": [
+        {
+          "name": "image",
+          "hidden": false,
+          "optional": false,
+          "control": "field",
+          "type": "string",
+          "hint": {
+            "en_US": "Input image",
+            "zh_CN": "输入图像"
+          },
+          "label": {
+            "en_US": "Image",
+            "zh_CN": "图像"
+          }
+        },
+        {
+          "name": "width",
+          "optional": false,
+          "control": "text",
+          "type": "int",
+          "hint": {
+            "en_US": "Input width",
+            "zh_CN": "输入宽度"
+          },
+          "label": {
+            "en_US": "Width",
+            "zh_CN": "宽度"
+          }
+        },
+        {
+          "name": "height",
+          "optional": false,
+          "control": "text",
+          "type": "int",
+          "hint": {
+            "en_US": "Input height",
+            "zh_CN": "输入高度"
+          },
+          "label": {
+            "en_US": "Height",
+            "zh_CN": "高度"
+          }
+        },
+        {
+          "name": "isRaw",
+          "optional": true,
+          "control": "radio",
+          "type": "bool",
+          "hint": {
+            "en_US": "Whether to output raw data, set to true when using by most AI inference",
+            "zh_CN": "输出未编码原始数据，通常 AI 推断需要原始数据"
+          },
+          "label": {
+            "en_US": "Output Raw Data",
+            "zh_CN": "输出原始数据"
+          }
+        }
+      ],
+      "return": {
+        "type": "bytea",
+        "hint": {
+          "en_US": "Resized image",
+          "zh_CN": "缩放后的图像"
+        }
+      },
+      "node": {
+        "category": "function",
+        "icon": "iconPath",
+        "label": {
+          "en_US": "Image Resize",
+          "zh_CN": "图像调整大小"
+        }
+      }
+    },
+    {
+      "name": "thumbnail",
+      "example": "thumbnail(image,maxWidth, maxHeight)",
+      "hint": {
+        "en_US": "Downscales an image preserving its aspect ratio to the maximum dimensions (maxWidth, maxHeight).",
+        "zh_CN": "将保留宽高比的图像缩小到最大尺寸（maxWidth，maxHeight）。"
+      },
+      "args": [
+        {
+          "name": "image",
+          "hidden": false,
+          "optional": false,
+          "control": "field",
+          "type": "string",
+          "hint": {
+            "en_US": "Input image",
+            "zh_CN": "输入图像"
+          },
+          "label": {
+            "en_US": "Image",
+            "zh_CN": "图像"
+          }
+        },
+        {
+          "name": "maxWidth",
+          "optional": false,
+          "control": "text",
+          "type": "int",
+          "hint": {
+            "en_US": "Input maxWidth",
+            "zh_CN": "输入最大宽度"
+          },
+          "label": {
+            "en_US": "Max Width",
+            "zh_CN": "最大宽度"
+          }
+        },
+        {
+          "name": "maxHeight",
+          "optional": false,
+          "control": "text",
+          "type": "int",
+          "hint": {
+            "en_US": "Input maxHeight",
+            "zh_CN": "输入最大高度"
+          },
+          "label": {
+            "en_US": "MaxHeight",
+            "zh_CN": "最大高度"
+          }
+        }
+      ],
+      "return": {
+        "type": "bytea",
+        "hint": {
+          "en_US": "Thumbnail",
+          "zh_CN": "缩略图"
+        }
+      },
+      "node": {
+        "category": "function",
+        "icon": "iconPath",
+        "label": {
+          "en_US": "Thumbnail",
+          "zh_CN": "缩略图"
+        }
+      }
+    }
+  ]
+}

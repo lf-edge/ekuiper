@@ -33,6 +33,7 @@ require (
 	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.3
 	github.com/mattn/go-tflite v1.0.5
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/mmcloughlin/geohash v0.10.0
 	github.com/mochi-mqtt/server/v2 v2.6.4
 	github.com/modern-go/reflect2 v1.0.2
 	github.com/montanaflynn/stats v0.7.1
