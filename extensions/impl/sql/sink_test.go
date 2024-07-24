@@ -284,3 +284,40 @@ func TestSQLSinkAction(t *testing.T) {
 	}))
 	require.NoError(t, sqlSink.Close(ctx))
 }
+
+func TestSQLSinkReconnect(t *testing.T) {
+	connection.InitConnectionManager4Test()
+	ctx := mockContext.NewMockContext("1", "2")
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	tableName := "t"
+	dburl := fmt.Sprintf("mysql://root:@%v:%v/test", address, port)
+	sqlSink := &SQLSinkConnector{}
+	require.NoError(t, sqlSink.Provision(ctx, map[string]interface{}{
+		"dburl":        dburl,
+		"table":        tableName,
+		"fields":       []string{"a", "b"},
+		"rowKindField": "action",
+		"keyField":     "a",
+	}))
+	require.NoError(t, sqlSink.Connect(ctx))
+	s.Close()
+	// update
+	require.Error(t, sqlSink.collect(ctx, map[string]any{
+		"a":      1,
+		"b":      2,
+		"action": "update",
+	}))
+	require.True(t, sqlSink.needReconnect)
+	s, err = testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(t, err)
+	defer func() {
+		s.Close()
+	}()
+	require.NoError(t, sqlSink.collect(ctx, map[string]any{
+		"a":      1,
+		"b":      2,
+		"action": "update",
+	}))
+	require.False(t, sqlSink.needReconnect)
+}
