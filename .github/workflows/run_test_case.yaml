@@ -58,7 +58,7 @@ jobs:
     - name: Run test case
       run: |
         make failpoint-enable
-        go test -trimpath -tags="edgex msgpack script test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml ./...
+        go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml ./...
         make failpoint-disable
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
