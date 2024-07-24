@@ -43,6 +43,7 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/segmentio/kafka-go v0.4.47
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
@@ -119,6 +120,7 @@ require (
 	github.com/oapi-codegen/runtime v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/onsi/gomega v1.13.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pingcap/errors v0.11.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -136,6 +138,9 @@ require (
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/scram v1.1.2 // indirect
+	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
