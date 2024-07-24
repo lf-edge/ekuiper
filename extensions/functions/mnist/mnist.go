@@ -20,9 +20,14 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	ort "github.com/yalue/onnxruntime_go"
+	"sync"
 )
 
 type mnist struct {
+	modelPath   string
+	once        sync.Once
+	inputShape  ort.Shape
+	outputShape ort.Shape
 }
 
 func (f *mnist) Validate(args []interface{}) error {
@@ -36,10 +41,11 @@ func (f *mnist) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, 
 	// This line _may_ be optional; by default the library will try to load
 	// "onnxruntime.dll" on Windows, and "onnxruntime.so" on any other system.
 	// For stability, it is probably a good idea to always set this explicitly.
-	ort.SetSharedLibraryPath("/usr/local/onnx/onnxruntime_arm64.so")
+	f.once.Do(func() {
+		ort.SetSharedLibraryPath("/usr/local/onnx/onnxruntime_arm64.so")
 
-	err := ort.InitializeEnvironment()
-	defer ort.DestroyEnvironment()
+		err := ort.InitializeEnvironment()
+	})
 
 	// For a slight performance boost and convenience when re-using existing
 	// tensors, this library expects the user to create all input and output
@@ -48,17 +54,19 @@ func (f *mnist) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, 
 	// allows input and output tensors to be specified when calling Run()
 	// rather than when initializing a session.
 	inputData := []float32{0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}
-	inputShape := ort.NewShape(2, 5)
+	inputShape := f.inputShape
 	inputTensor, err := ort.NewTensor(inputShape, inputData)
 	defer inputTensor.Destroy()
 	// This hypothetical network maps a 2x5 input -> 2x3x4 output.
-	outputShape := ort.NewShape(2, 3, 4)
+	outputShape := f.outputShape
 	outputTensor, err := ort.NewEmptyTensor[float32](outputShape)
 	defer outputTensor.Destroy()
 
-	session, err := ort.NewAdvancedSession("path/to/network.onnx",
-		[]string{"Input 1 Name"}, []string{"Output 1 Name"},
-		[]ArbitraryTensor{inputTensor}, []ArbitraryTensor{outputTensor}, nil)
+	// The input and output names are required by this network; they can be
+	// found on the MNIST ONNX models page linked in the README.
+	session, e := ort.NewAdvancedSession(f.modelPath,
+		[]string{"Input3"}, []string{"Plus214_Output_0"},
+		[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
 	defer session.Destroy()
 
 	// Calling Run() will run the network, reading the current contents of the
@@ -67,13 +75,15 @@ func (f *mnist) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, 
 
 	// Get a slice view of the output tensor's data.
 	outputData := outputTensor.GetData()
-	return outputData, true
+	return outputData[0], true
 }
 
 func (f *mnist) IsAggregate() bool {
 	return false
 }
 
-var Mnist mnist
-
-var _ api.Function = &mnist{}
+var Mnist = mnist{
+	modelPath:   "mnist/nist_float16.onnx",
+	inputShape:  ort.NewShape(2, 5),
+	outputShape: ort.NewShape(2, 3, 4),
+}
