@@ -28,10 +28,11 @@ import (
 )
 
 type SQLSinkConnector struct {
-	config *sqlSinkConfig
-	cw     *connection.ConnWrapper
-	conn   *client.SQLConnection
-	props  map[string]any
+	config        *sqlSinkConfig
+	cw            *connection.ConnWrapper
+	conn          *client.SQLConnection
+	props         map[string]any
+	needReconnect bool
 }
 
 type sqlSinkConfig struct {
@@ -86,8 +87,13 @@ func (c *sqlSinkConfig) getKeyValues(ctx api.StreamContext, mapData map[string]i
 }
 
 func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]any) error {
-	c := &sqlSinkConfig{}
-	err := cast.MapToStruct(configs, c)
+	sc := &SQLConf{}
+	err := cast.MapToStruct(configs, sc)
+	if err != nil {
+		return err
+	}
+	c := &sqlSinkConfig{SQLConf: sc}
+	err = cast.MapToStruct(configs, c)
 	if err != nil {
 		return err
 	}
@@ -246,10 +252,18 @@ func (s *SQLSinkConnector) save(ctx api.StreamContext, table string, data map[st
 
 func (s *SQLSinkConnector) writeToDB(ctx api.StreamContext, sqlStr string) error {
 	ctx.GetLogger().Debugf(sqlStr)
+	if s.needReconnect {
+		err := s.conn.Reconnect()
+		if err != nil {
+			return errorx.NewIOErr(err.Error())
+		}
+	}
 	r, err := s.conn.GetDB().Exec(sqlStr)
 	if err != nil {
+		s.needReconnect = true
 		return errorx.NewIOErr(err.Error())
 	}
+	s.needReconnect = false
 	d, err := r.RowsAffected()
 	if err != nil {
 		ctx.GetLogger().Errorf("get rows affected error: %s", err.Error())
