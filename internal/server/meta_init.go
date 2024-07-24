@@ -63,6 +63,7 @@ func (m metaComp) rest(r *mux.Router) {
 	r.HandleFunc("/metadata/resources", resourcesHandler).Methods(http.MethodGet)
 	r.HandleFunc("/metadata/sources/connection/{name}", sourceConnectionHandler).Methods(http.MethodPost)
 	r.HandleFunc("/metadata/sinks/connection/{name}", sinkConnectionHandler).Methods(http.MethodPost)
+	r.HandleFunc("/metadata/lookups/connection/{name}", lookupConnectionHandler).Methods(http.MethodPost)
 	for _, endpoint := range metaEndpoints {
 		endpoint(r)
 	}
@@ -361,6 +362,28 @@ func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	config = replacePasswdForConfig("source", sourceNm, config)
 	err = node.SourcePing(sourceNm, config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func lookupConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+
+	sourceNm := vars["name"]
+	config := map[string]interface{}{}
+	v, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(v, &config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	config = replacePasswdForConfig("source", sourceNm, config)
+	err = node.LookupPing(sourceNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return

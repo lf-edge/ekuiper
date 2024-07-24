@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,8 +30,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
+	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
+	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 type MetaTestSuite struct {
@@ -54,6 +60,31 @@ func (suite *MetaTestSuite) SetupTest() {
 	if err := meta.ReadSourceMetaFile(path.Join(confDir, "mqtt_source.json"), true, false); nil != err {
 		fmt.Println(err)
 	}
+}
+
+var (
+	address = "localhost"
+	port    = 33061
+)
+
+func (suite *MetaTestSuite) TestLookupPing() {
+	modules.RegisterConnection("sql", client.CreateConnection)
+	modules.RegisterLookupSource("sql", sql.GetLookupSource)
+	connection.InitConnectionManager4Test()
+	s, err := testx.SetupEmbeddedMysqlServer(address, port)
+	require.NoError(suite.T(), err)
+	defer func() {
+		s.Close()
+	}()
+	props := map[string]interface{}{
+		"dburl":      fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
+		"datasource": "t",
+	}
+	b, _ := json.Marshal(props)
+	req, _ := http.NewRequest(http.MethodPost, "/metadata/lookups/connection/sql", bytes.NewBuffer(b))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *MetaTestSuite) TestSinksMetaHandler() {
