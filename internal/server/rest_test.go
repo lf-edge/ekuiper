@@ -1033,7 +1033,7 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 
-	//create stream
+	// create stream
 	buf := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo221() WITH (DATASOURCE=\"/data1\", TYPE=\"websocket\")"}`))
 	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
 	w = httptest.NewRecorder()
