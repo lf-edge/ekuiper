@@ -17,6 +17,7 @@ package connection
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -120,6 +121,7 @@ func TestConnectionStatus(t *testing.T) {
 	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
 	require.NoError(t, ReloadConnection())
+	time.Sleep(100 * time.Millisecond)
 	ctx := context.Background()
 	allStatus := GetAllConnectionStatus(ctx)
 	s, ok := allStatus["a1"]
