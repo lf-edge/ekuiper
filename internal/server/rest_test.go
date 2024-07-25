@@ -1072,4 +1072,5 @@ func (suite *RestTestSuite) TestWaitStopRule() {
 	suite.r.ServeHTTP(w, req)
 	end = time.Now()
 	require.True(suite.T(), end.Sub(now) >= 300*time.Millisecond)
+	waitAllRuleStop()
 }
