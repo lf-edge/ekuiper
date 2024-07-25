@@ -69,25 +69,39 @@ func GetConnectionRef(id string) int {
 }
 
 func GetAllConnectionStatus(ctx api.StreamContext) map[string]ConnectionStatus {
+	cws := make(map[string]*ConnWrapper)
 	globalConnectionManager.RLock()
-	defer globalConnectionManager.RUnlock()
-	s := make(map[string]ConnectionStatus)
 	for id, meta := range globalConnectionManager.connectionPool {
-		status := ConnectionStatus{
-			Status: ConnectionRunning,
-		}
-		conn, err := meta.cw.Wait()
-		if err != nil {
-			status.Status = ConnectionFail
-			status.ErrMsg = err.Error()
-		} else {
+		cws[id] = meta.cw
+	}
+	globalConnectionManager.RUnlock()
+	s := make(map[string]ConnectionStatus)
+	for id, cw := range cws {
+		if cw.IsInitialized() {
+			conn, err := cw.Wait()
+			if err != nil {
+				s[id] = ConnectionStatus{
+					Status: ConnectionFail,
+					ErrMsg: err.Error(),
+				}
+				continue
+			}
 			err = conn.Ping(ctx)
 			if err != nil {
-				status.Status = ConnectionFail
-				status.ErrMsg = err.Error()
+				s[id] = ConnectionStatus{
+					Status: ConnectionFail,
+					ErrMsg: err.Error(),
+				}
+				continue
+			}
+			s[id] = ConnectionStatus{
+				Status: ConnectionRunning,
+			}
+		} else {
+			s[id] = ConnectionStatus{
+				Status: ConnectionIntializing,
 			}
 		}
-		s[id] = status
 	}
 	return s
 }
@@ -371,13 +385,14 @@ const (
 var DefaultBackoffMaxElapsedDuration = 3 * time.Minute
 
 const (
-	ConnectionRunning = "running"
-	ConnectionFail    = "fail"
+	ConnectionRunning     = "running"
+	ConnectionIntializing = "initializing"
+	ConnectionFail        = "fail"
 )
 
 type ConnectionStatus struct {
-	Status string
-	ErrMsg string
+	Status string `json:"status"`
+	ErrMsg string `json:"errMsg,omitempty"`
 }
 
 func extractSelID(props map[string]interface{}) string {
@@ -417,6 +432,12 @@ func (cw *ConnWrapper) Wait() (modules.Connection, error) {
 		cw.cond.Wait()
 	}
 	return cw.conn, cw.err
+}
+
+func (cw *ConnWrapper) IsInitialized() bool {
+	cw.cond.L.Lock()
+	defer cw.cond.L.Unlock()
+	return cw.initialized
 }
 
 func newConnWrapper(ctx api.StreamContext, meta *ConnectionMeta) *ConnWrapper {
