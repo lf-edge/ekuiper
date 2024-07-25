@@ -482,6 +482,8 @@ func (rs *RuleState) stop() error {
 	rs.triggered = 0
 	if rs.Topology != nil {
 		rs.Topology.Cancel()
+		// wait all operator close
+		rs.Topology.WaitClose()
 		// de-reference old Topology in order to release data memory
 		rs.Topology = rs.Topology.NewTopoWithSucceededCtx()
 	}
@@ -542,6 +544,7 @@ func (rs *RuleState) Close() (err error) {
 	}
 	if rs.triggered == 1 && rs.Topology != nil {
 		rs.Topology.Cancel()
+		rs.Topology.WaitClose()
 	}
 	rs.triggered = -1
 	rs.stopScheduleRule()

@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pingcap/failpoint"
@@ -33,6 +34,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
@@ -1013,4 +1015,61 @@ func (suite *RestTestSuite) TestSinkHiddenPassword() {
 	require.NoError(suite.T(), json.Unmarshal([]byte(ruleJson), r))
 	m := r.Actions[0]["mqtt"].(map[string]interface{})
 	require.Equal(suite.T(), "12345", m["password"])
+}
+
+func (suite *RestTestSuite) TestWaitStopRule() {
+	ip := "127.0.0.1"
+	port := 10085
+	httpserver.InitGlobalServerManager(ip, port, nil)
+	connection.InitConnectionManager4Test()
+
+	// delete create
+	req, _ := http.NewRequest(http.MethodDelete, "http://localhost:8080/streams/demo221", bytes.NewBufferString("any"))
+	w := httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+
+	// delete rule
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule221", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+
+	//create stream
+	buf := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo221() WITH (DATASOURCE=\"/data1\", TYPE=\"websocket\")"}`))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	// create rule
+	ruleJson := `{"id": "rule221","sql": "select a,b from demo221","actions": [{"log": {}}]}`
+	buf = bytes.NewBuffer([]byte(ruleJson))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/mockTimeConsumingClose", "return(true)")
+	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/mockTimeConsumingClose")
+	now := time.Now()
+	// delete rule
+	req, _ = http.NewRequest(http.MethodDelete, "http://localhost:8080/rules/rule221", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	end := time.Now()
+	require.True(suite.T(), end.Sub(now) >= 300*time.Millisecond)
+
+	// create rule
+	buf = bytes.NewBuffer([]byte(ruleJson))
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf)
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusCreated, w.Code)
+
+	now = time.Now()
+	// stop rule
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/rule221/stop", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	end = time.Now()
+	require.True(suite.T(), end.Sub(now) >= 300*time.Millisecond)
 }

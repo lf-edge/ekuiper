@@ -51,9 +51,6 @@ type DefaultContext struct {
 	// cache
 	tpReg sync.Map
 	jpReg sync.Map
-
-	// ops waitGroup
-	opsWg *sync.WaitGroup
 }
 
 func RuleBackground(ruleName string) *DefaultContext {
@@ -84,11 +81,6 @@ func WithContext(ctx context.Context) *DefaultContext {
 
 func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	parent.ctx = context.WithValue(parent.ctx, key, val)
-	return parent
-}
-
-func WithWg(parent *DefaultContext, wg *sync.WaitGroup) *DefaultContext {
-	parent.opsWg = wg
 	return parent
 }
 
@@ -212,7 +204,6 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 		state:      s,
 		tpReg:      sync.Map{},
 		jpReg:      sync.Map{},
-		opsWg:      c.opsWg,
 	}
 }
 
@@ -223,7 +214,6 @@ func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 		opId:       c.opId,
 		ctx:        c.ctx,
 		state:      c.state,
-		opsWg:      c.opsWg,
 	}
 }
 
@@ -235,7 +225,6 @@ func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 		instanceId: c.instanceId,
 		ctx:        ctx,
 		state:      c.state,
-		opsWg:      c.opsWg,
 	}, cancel
 }
 

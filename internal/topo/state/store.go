@@ -21,7 +21,7 @@ import (
 
 const CheckpointListKey = "checkpoints"
 
-func CreateStore(ruleId string, qos def.Qos) (api.Store, error) {
+func CreateStore(ruleId string, qos def.Qos) (s api.Store, err error) {
 	if qos >= def.AtLeastOnce {
 		return getKVStore(ruleId)
 	} else {
