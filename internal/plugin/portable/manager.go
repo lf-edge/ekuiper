@@ -422,6 +422,7 @@ func (m *Manager) Delete(name string) error {
 	if err != nil {
 		return fmt.Errorf("fail to kill portable plugin %s process, please try to kill it manually", name)
 	}
+	pm.DeletePluginIns(name)
 	return nil
 }
 

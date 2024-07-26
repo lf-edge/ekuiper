@@ -22,7 +22,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/pingcap/failpoint"
 
@@ -168,28 +167,11 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 	}
 	err = i.sendCmd(jsonArg)
 	if err == nil {
-		referred := false
 		i.Lock()
 		delete(i.commands, ctrl.Meta)
 		i.deRef(ctx)
 		i.Unlock()
 		ctx.GetLogger().Infof("stopped symbol %s", ctrl.SymbolName)
-		if !referred {
-			go func() {
-				// delay to kill the plugin process
-				time.Sleep(1 * time.Second)
-				i.RLock()
-				defer i.RUnlock()
-				if len(i.commands) == 0 {
-					err := GetPluginInsManager().Kill(i.name)
-					if err != nil {
-						ctx.GetLogger().Errorf("fail to stop plugin %s: %v", i.name, err)
-						return
-					}
-					ctx.GetLogger().Infof("stop plugin %s", i.name)
-				}
-			}()
-		}
 	}
 	return err
 }
@@ -254,6 +236,16 @@ func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool)
 		return nil, false
 	}
 	return ins.GetStatus(), true
+}
+
+func (p *pluginInsManager) GetAllPluginStatus() map[string]*PluginStatus {
+	want := make(map[string]*PluginStatus)
+	p.RLock()
+	defer p.RUnlock()
+	for key, plugin := range p.instances {
+		want[key] = plugin.GetStatus()
+	}
+	return want
 }
 
 func (p *pluginInsManager) GetPluginIns(name string) (*PluginIns, bool) {
@@ -331,16 +323,15 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	}
 	// should only happen for first start, then the ctrl channel will keep running
 	if ins.ctrlChan == nil {
-		conf.Log.Infof("create control channel")
 		ctrlChan, err := CreateControlChannel(pluginMeta.Name)
 		if err != nil {
+			conf.Log.Errorf("plugin %s can't create new control channel: %s", pluginMeta.Name, err.Error())
 			ins.Status.StatusErr(err)
-			return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
+			return nil, fmt.Errorf("plugin %s can't create new control channel: %s", pluginMeta.Name, err.Error())
 		}
 		ins.ctrlChan = ctrlChan
 	}
 	// init or restart all need to run the process
-	conf.Log.Infof("executing plugin")
 	jsonArg, err := json.Marshal(pconf)
 	failpoint.Inject("confErr", func() {
 		err = errors.New("confErr")
@@ -383,7 +374,6 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	cmd.Stderr = conf.Log.Out
 	cmd.Dir = filepath.Dir(pluginMeta.Executable)
 
-	conf.Log.Println("plugin starting")
 	err = cmd.Start()
 	failpoint.Inject("cmdStartErr", func() {
 		cmd.Process.Kill()
@@ -391,12 +381,14 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	})
 	if err != nil {
 		ins.Status.StatusErr(err)
-		return nil, fmt.Errorf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
+		conf.Log.Errorf("plugin %s executable %s stops with error %v", pluginMeta.Name, pluginMeta.Executable, err)
+		return nil, fmt.Errorf("plugin %s executable %s stops with error %v", pluginMeta.Name, pluginMeta.Executable, err)
 	}
 	process := cmd.Process
-	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
+	conf.Log.Printf("plugin %s started pid: %d\n", pluginMeta.Name, process.Pid)
 	defer func() {
 		if e != nil {
+			ins.Status.StatusErr(e)
 			_ = process.Kill()
 		}
 	}()
@@ -417,7 +409,6 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 			}
 			ins.process = nil
 			ins.Unlock()
-			p.DeletePluginIns(pluginMeta.Name)
 		}
 		return nil
 	})
@@ -429,10 +420,10 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	}
 	ins.process = process
 	p.instances[pluginMeta.Name] = ins
-	conf.Log.Println("plugin start running")
-	ins.Status.StartRunning()
+	ins.Status.StartRunning(ins.process.Pid)
+	conf.Log.Infof("plugin %s start running", pluginMeta.Name)
 	// restore symbols by sending commands when restarting plugin
-	conf.Log.Info("restore plugin symbols")
+	conf.Log.Infof("restore plugin %s symbols", pluginMeta.Name)
 	for m, c := range ins.commands {
 		go func(key Meta, jsonArg []byte) {
 			e := ins.sendCmd(jsonArg)
@@ -488,6 +479,7 @@ type PluginStatus struct {
 	RefCount map[string]int `json:"refCount"`
 	Status   string         `json:"status"`
 	ErrMsg   string         `json:"errMsg"`
+	Pid      int            `json:"pid"`
 }
 
 func NewPluginStatus() *PluginStatus {
@@ -502,8 +494,9 @@ func (s *PluginStatus) StatusErr(err error) {
 	s.ErrMsg = err.Error()
 }
 
-func (s *PluginStatus) StartRunning() {
+func (s *PluginStatus) StartRunning(pid int) {
 	s.Status = PluginStatusRunning
+	s.Pid = pid
 	s.ErrMsg = ""
 }
 

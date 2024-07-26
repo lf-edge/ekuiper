@@ -44,6 +44,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store/definition"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin/portable/runtime"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/server/bump"
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
@@ -299,6 +300,8 @@ func StartUp(Version string) {
 		wg.Done()
 	}()
 	wg.Wait()
+	// kill all plugin process
+	runtime.GetPluginInsManager().KillAll()
 
 	// close extend services
 	for k, v := range servers {
