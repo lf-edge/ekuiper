@@ -150,11 +150,11 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		}
 	}
 	log.Infof("Start with window state triggerTime: %d, msgCount: %d", o.triggerTime.UnixMilli(), o.msgCount)
-	if o.isEventTime {
-		go func() {
-			defer func() {
-				o.Close()
-			}()
+	go func() {
+		defer func() {
+			o.Close()
+		}()
+		if o.isEventTime {
 			err := infra.SafeRun(func() error {
 				o.execEventWindow(ctx, inputs, errCh)
 				return nil
@@ -162,9 +162,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 			if err != nil {
 				infra.DrainError(ctx, err, errCh)
 			}
-		}()
-	} else {
-		go func() {
+		} else {
 			err := infra.SafeRun(func() error {
 				o.execProcessingWindow(ctx, inputs, errCh)
 				return nil
@@ -172,8 +170,8 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 			if err != nil {
 				infra.DrainError(ctx, err, errCh)
 			}
-		}()
-	}
+		}
+	}()
 }
 
 func getAlignedWindowEndTime(n time.Time, interval int, timeUnit ast.Token) time.Time {

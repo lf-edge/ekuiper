@@ -15,6 +15,10 @@
 package node
 
 import (
+	"time"
+
+	"github.com/pingcap/failpoint"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -61,6 +65,9 @@ func (o *UnaryOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 	}
 	go func() {
 		defer func() {
+			failpoint.Inject("mockTimeConsumingClose", func() {
+				time.Sleep(300 * time.Millisecond)
+			})
 			o.Close()
 		}()
 		err := infra.SafeRun(func() error {

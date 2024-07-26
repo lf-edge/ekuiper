@@ -233,7 +233,7 @@ func (s *Topo) prepareContext() {
 		}
 		ctx := kctx.WithValue(kctx.RuleBackground(s.name), kctx.LoggerKey, contextLogger)
 		ctx = kctx.WithValue(ctx, kctx.RuleStartKey, timex.GetNowInMilli())
-		ctx = kctx.WithWg(ctx, s.opsWg)
+		ctx = kctx.WithValue(ctx, kctx.RuleWaitGroupKey, s.opsWg)
 		s.ctx, s.cancel = ctx.WithCancel()
 	}
 }
@@ -257,19 +257,19 @@ func (s *Topo) Open() <-chan error {
 		if err := s.enableCheckpoint(s.ctx); err != nil {
 			return err
 		}
+		topoStore := s.store
 		// open stream sink, after log sink is ready.
 		for _, snk := range s.sinks {
-			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), s.store), s.drain)
+			snk.Exec(s.ctx.WithMeta(s.name, snk.GetName(), topoStore), s.drain)
 		}
 
 		for _, op := range s.ops {
-			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), s.store), s.drain)
+			op.Exec(s.ctx.WithMeta(s.name, op.GetName(), topoStore), s.drain)
 		}
 
 		for _, source := range s.sources {
-			source.Open(s.ctx.WithMeta(s.name, source.GetName(), s.store), s.drain)
+			source.Open(s.ctx.WithMeta(s.name, source.GetName(), topoStore), s.drain)
 		}
-
 		// activate checkpoint
 		if s.coordinator != nil {
 			return s.coordinator.Activate()

@@ -34,7 +34,7 @@ import (
 // Run two test rules in parallel. Rerun one of the rules
 func TestTrialRule(t *testing.T) {
 	ip := "127.0.0.1"
-	port := 10087
+	port := 10089
 	httpserver.InitGlobalServerManager(ip, port, nil)
 	connection.InitConnectionManager4Test()
 	conf.IsTesting = true
@@ -43,16 +43,16 @@ func TestTrialRule(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
 	p := processor.NewStreamProcessor()
-	p.ExecStmt("DROP STREAM demo")
+	p.ExecStmt("DROP STREAM demo876")
 	// Test 1 wrong rule
-	mockDef1 := `{"id":"rule1","sql":"select * from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1}],"interval":100,"loop":true}},"sinkProps":{"sendSingle":true}}`
+	mockDef1 := `{"id":"rule876","sql":"select * from demo876","mockSource":{"demo876":{"data":[{"name":"demo876","value":1}],"interval":100,"loop":true}},"sinkProps":{"sendSingle":true}}`
 	_, err = TrialManager.CreateRule(mockDef1)
 	require.Error(t, err)
-	require.Equal(t, "fail to run rule rule1: fail to get stream demo, please check if stream is created", err.Error())
+	require.Equal(t, "fail to run rule rule876: fail to get stream demo876, please check if stream is created", err.Error())
 
-	_, err = p.ExecStmt("CREATE STREAM demo () WITH (DATASOURCE=\"demo\", TYPE=\"simulator\", FORMAT=\"json\", KEY=\"ts\")")
+	_, err = p.ExecStmt("CREATE STREAM demo876 () WITH (DATASOURCE=\"demo876\", TYPE=\"simulator\", FORMAT=\"json\", KEY=\"ts\")")
 	require.NoError(t, err)
-	defer p.ExecStmt("DROP STREAM demo")
+	defer p.ExecStmt("DROP STREAM demo876")
 
 	// Test 2 valid rule with mock
 	testValidTrial(t, mockDef1)
@@ -69,9 +69,9 @@ func testValidTrial(t *testing.T, mockDef1 string) {
 	// Test 2 valid rule with mock
 	id, err := TrialManager.CreateRule(mockDef1)
 	require.NoError(t, err)
-	require.Equal(t, "rule1", id)
+	require.Equal(t, "rule876", id)
 	// Read from ws
-	u := url.URL{Scheme: "ws", Host: "localhost:10087", Path: "/test/rule1"}
+	u := url.URL{Scheme: "ws", Host: "localhost:10089", Path: "/test/rule876"}
 	c1, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	assert.NoError(t, err)
 	recvCh := make(chan []byte, 10)
@@ -93,21 +93,21 @@ func testValidTrial(t *testing.T, mockDef1 string) {
 		}
 	}()
 	time.Sleep(100 * time.Millisecond)
-	require.NoError(t, TrialManager.StartRule("rule1"))
-	require.Equal(t, []byte(`{"name":"demo","value":1}`), <-recvCh)
+	require.NoError(t, TrialManager.StartRule("rule876"))
+	require.Equal(t, []byte(`{"name":"demo876","value":1}`), <-recvCh)
 	c1.Close()
-	TrialManager.StopRule("rule1")
+	TrialManager.StopRule("rule876")
 	closeCh <- struct{}{}
 }
 
 func testRuntimeErrorTrial(t *testing.T) {
 	// Test 3 Runtime error rule
-	mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo","mockSource":{"demo":{"data":[{"name":"demo","value":1}],"interval":100,"loop":true}},"sinkProps":{"sendSingle":true}}`
+	mockDefErr := `{"id":"ruleErr","sql":"select name + value from demo876","mockSource":{"demo876":{"data":[{"name":"demo876","value":1}],"interval":100,"loop":true}},"sinkProps":{"sendSingle":true}}`
 	id, err := TrialManager.CreateRule(mockDefErr)
 	require.NoError(t, err)
 	require.Equal(t, "ruleErr", id)
 	// Read from ws
-	u := url.URL{Scheme: "ws", Host: "localhost:10087", Path: "/test/ruleErr"}
+	u := url.URL{Scheme: "ws", Host: "localhost:10089", Path: "/test/ruleErr"}
 	c2, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	require.NoError(t, err)
 	recvCh := make(chan []byte, 10)
@@ -130,19 +130,19 @@ func testRuntimeErrorTrial(t *testing.T) {
 	}()
 	time.Sleep(10 * time.Millisecond)
 	require.NoError(t, TrialManager.StartRule(id))
-	require.Equal(t, `run Select error: expr: binaryExpr:{ demo.name + demo.value } meet error, err:invalid operation string(demo) + float64(1)`, string(<-recvCh))
+	require.Equal(t, `run Select error: expr: binaryExpr:{ demo876.name + demo876.value } meet error, err:invalid operation string(demo876) + float64(1)`, string(<-recvCh))
 	TrialManager.StopRule(id)
 	closeCh <- struct{}{}
 	c2.Close()
 }
 
 func testRealSourceTrial(t *testing.T) {
-	noMockDef := `{"id":"rule2","sql":"select * from demo","sinkProps":{"sendSingle":true}}`
+	noMockDef := `{"id":"rule8765","sql":"select * from demo876","sinkProps":{"sendSingle":true}}`
 	id, err := TrialManager.CreateRule(noMockDef)
-	assert.Equal(t, "rule2", id)
+	assert.Equal(t, "rule8765", id)
 	assert.NoError(t, err)
 
-	u := url.URL{Scheme: "ws", Host: "localhost:10087", Path: "/test/rule2"}
+	u := url.URL{Scheme: "ws", Host: "localhost:10089", Path: "/test/rule8765"}
 	c3, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	require.NoError(t, err)
 	recvCh := make(chan []byte, 10)

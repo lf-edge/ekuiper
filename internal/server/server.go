@@ -287,9 +287,7 @@ func StartUp(Version string) {
 	wg.Add(2)
 	go func() {
 		conf.Log.Info("start to stop all rules")
-		if err := waitAllRuleStop(ctx); err != nil {
-			conf.Log.Warnf(err.Error())
-		}
+		waitAllRuleStop()
 		wg.Done()
 	}()
 	go func() {
@@ -503,42 +501,9 @@ func startCPUProfiling(ctx context.Context) error {
 	return nil
 }
 
-func waitAllRuleStop(ctx context.Context) error {
+func waitAllRuleStop() {
 	rules, _ := ruleProcessor.GetAllRules()
 	for _, r := range rules {
 		stopRuleWhenServerStop(r)
-	}
-	wg := &sync.WaitGroup{}
-	m := &sync.Map{}
-	for _, r := range rules {
-		rs, ok := registry.Load(r)
-		if ok {
-			m.Store(r, struct{}{})
-			wg.Add(1)
-			go func() {
-				defer func() {
-					m.Delete(r)
-					wg.Done()
-				}()
-				rs.Topology.WaitClose()
-			}()
-		}
-	}
-	wgCh := make(chan struct{})
-	go func() {
-		wg.Wait()
-		wgCh <- struct{}{}
-	}()
-
-	select {
-	case <-ctx.Done():
-		timeoutRules := make([]string, 0)
-		m.Range(func(key, value any) bool {
-			timeoutRules = append(timeoutRules, key.(string))
-			return true
-		})
-		return fmt.Errorf("stop rules timeout, remain::%s", timeoutRules)
-	case <-wgCh:
-		return nil
 	}
 }
