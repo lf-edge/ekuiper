@@ -114,11 +114,10 @@ func (conn *Connection) Close(ctx api.StreamContext) error {
 }
 
 func (conn *Connection) Ping(ctx api.StreamContext) error {
-	if conn.Client.IsConnected() {
+	if conn.connected.Load() {
 		return nil
-	} else {
-		return errors.New("mqtt ping failed")
 	}
+	return errors.New("failed to connect to broker")
 }
 
 func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {

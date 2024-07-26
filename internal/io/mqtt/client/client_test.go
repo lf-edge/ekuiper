@@ -16,11 +16,13 @@ package client
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
 func TestValidate(t *testing.T) {
@@ -58,4 +60,20 @@ func TestValidate(t *testing.T) {
 			assert.Equal(t, tt.err, err.Error())
 		})
 	}
+}
+
+func TestPing(t *testing.T) {
+	url, cancel, err := testx.InitBroker("TestSourceSink")
+	require.NoError(t, err)
+	ctx := mockContext.NewMockContext("1", "2")
+	c, err := CreateClient(ctx, map[string]any{
+		"server":     url,
+		"datasource": "demo",
+	})
+	require.NoError(t, err)
+	// wait connection done
+	time.Sleep(100 * time.Millisecond)
+	require.NoError(t, c.Ping(ctx))
+	cancel()
+	require.Error(t, c.Ping(ctx))
 }
