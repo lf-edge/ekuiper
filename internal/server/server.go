@@ -140,7 +140,8 @@ func StartUp(Version string) {
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
 	if conf.Config.Basic.EnableResourceProfiling {
-		startCPUProfiling(serverCtx)
+		err := StartCPUProfiling(serverCtx, &ekuiperProfile{})
+		conf.Log.Warn(err)
 	}
 
 	undo, _ := maxprocs.Set(maxprocs.Logger(conf.Log.Infof))

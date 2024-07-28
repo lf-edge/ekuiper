@@ -29,6 +29,7 @@ const (
 var (
 	RuleStatusCountGauge *prometheus.GaugeVec
 	RuleStatusGauge      *prometheus.GaugeVec
+	RuleCPUUsageGauge    *prometheus.GaugeVec
 )
 
 func InitServerMetrics() {
@@ -45,12 +46,20 @@ func InitServerMetrics() {
 		Name:      "status",
 		Help:      "gauge of rule status",
 	}, []string{LblRuleIDType})
+
+	RuleCPUUsageGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "kuiper",
+		Subsystem: "rule",
+		Name:      "cpuUsage",
+		Help:      "gauge of rule CPU usage",
+	}, []string{LblRuleIDType})
 }
 
 func RegisterMetrics() {
 	InitServerMetrics()
 	prometheus.MustRegister(RuleStatusCountGauge)
 	prometheus.MustRegister(RuleStatusGauge)
+	prometheus.MustRegister(RuleCPUUsageGauge)
 }
 
 func SetRuleStatusCountGauge(isRunning bool, count int) {
@@ -68,4 +77,8 @@ func SetRuleStatus(ruleID string, value int) {
 
 func RemoveRuleStatus(ruleID string) {
 	RuleStatusGauge.DeleteLabelValues(ruleID)
+}
+
+func SetRuleCPUUsageGauge(ruleID string, value int) {
+	RuleCPUUsageGauge.WithLabelValues(ruleID).Set(float64(value))
 }

@@ -281,8 +281,8 @@ github.com/PaesslerAG/jsonpath v0.1.0/go.mod h1:4BzmtoM/PI8fPO4aQGIusjGxGir2BzcV
 github.com/PaesslerAG/jsonpath v0.1.1 h1:c1/AToHQMVsduPAa4Vh6xp2U0evy4t8SWp8imEsylIk=
 github.com/PaesslerAG/jsonpath v0.1.1/go.mod h1:lVboNxFGal/VwW6d9JzIy56bUsYAP6tH/x80vjnCseY=
 github.com/RaveNoX/go-jsoncommentstrip v1.0.0/go.mod h1:78ihd09MekBnJnxpICcwzCMzGrKSKYe4AqU6PDYYpjk=
-github.com/Rookiecom/cpuprofile v1.0.2 h1:wXGOmpSyCfoi7D0OB79srblNSw5Ccn0fTy4c537yWy4=
-github.com/Rookiecom/cpuprofile v1.0.2/go.mod h1:JEBcjNHceN6/g4ppueDEqWlbtbMGMyLy0YlT8QnKFbE=
+github.com/Rookiecom/cpuprofile v1.0.4 h1:F2eQVuVlHE5XnpNbAk9oBD9vdHbBusaAaAsbu23OGco=
+github.com/Rookiecom/cpuprofile v1.0.4/go.mod h1:JEBcjNHceN6/g4ppueDEqWlbtbMGMyLy0YlT8QnKFbE=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/VividCortex/gohistogram v1.0.0 h1:6+hBz+qvs0JOrrNhhmR7lFxo5sINxBCGXrdtl/UvroE=
