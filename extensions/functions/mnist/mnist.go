@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build tflite
-
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	ort "github.com/yalue/onnxruntime_go"
+	"os"
+	"os/exec"
 	"sync"
 )
 
 type mnist struct {
-	modelPath   string
-	once        sync.Once
-	inputShape  ort.Shape
-	outputShape ort.Shape
+	modelPath         string
+	once              sync.Once
+	inputShape        ort.Shape
+	outputShape       ort.Shape
+	sharedLibraryPath string
 }
 
 func (f *mnist) Validate(args []interface{}) error {
@@ -37,45 +39,36 @@ func (f *mnist) Validate(args []interface{}) error {
 	return nil
 }
 
-func (f *mnist) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+func (f *mnist) Exec(_ api.FunctionContext, args []any) (any, bool) {
 	// This line _may_ be optional; by default the library will try to load
 	// "onnxruntime.dll" on Windows, and "onnxruntime.so" on any other system.
 	// For stability, it is probably a good idea to always set this explicitly.
 	f.once.Do(func() {
-		ort.SetSharedLibraryPath("/usr/local/onnx/onnxruntime_arm64.so")
+		ort.SetSharedLibraryPath(f.sharedLibraryPath)
 
 		err := ort.InitializeEnvironment()
+		if err != nil {
+			println("Failed to initialize environment: %s", err.Error())
+		}
+		checkFileStat(f.sharedLibraryPath)
 	})
+	var networkPath = f.modelPath
+	var returnRes = ""
 
-	// For a slight performance boost and convenience when re-using existing
-	// tensors, this library expects the user to create all input and output
-	// tensors prior to creating the session. If this isn't ideal for your use
-	// case, see the DynamicAdvancedSession type in the documnentation, which
-	// allows input and output tensors to be specified when calling Run()
-	// rather than when initializing a session.
-	inputData := []float32{0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9}
-	inputShape := f.inputShape
-	inputTensor, err := ort.NewTensor(inputShape, inputData)
-	defer inputTensor.Destroy()
-	// This hypothetical network maps a 2x5 input -> 2x3x4 output.
-	outputShape := f.outputShape
-	outputTensor, err := ort.NewEmptyTensor[float32](outputShape)
-	defer outputTensor.Destroy()
-
-	// The input and output names are required by this network; they can be
-	// found on the MNIST ONNX models page linked in the README.
-	session, e := ort.NewAdvancedSession(f.modelPath,
-		[]string{"Input3"}, []string{"Plus214_Output_0"},
-		[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
-	defer session.Destroy()
-
-	// Calling Run() will run the network, reading the current contents of the
-	// input tensors and modifying the contents of the output tensors.
-	err = session.Run()
-
-	// Get a slice view of the output tensor's data.
-	outputData := outputTensor.GetData()
-	return outputData[0], true
+	inputs, outputs, err := ort.GetInputOutputInfo(networkPath)
+	if err != nil {
+		//return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err) + printCurrDIr(), true
+		return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err), true
+	}
+	returnRes += fmt.Sprintf("%d inputs to %s:\n", len(inputs), networkPath)
+	for i, v := range inputs {
+		returnRes += fmt.Sprintf("  Index %d: %s\n", i, &v)
+	}
+	returnRes += fmt.Sprintf("%d outputs from %s:\n", len(outputs), networkPath)
+	for i, v := range outputs {
+		returnRes += fmt.Sprintf("  Index %d: %s\n", i, &v)
+	}
+	return returnRes, true
 }
 
 func (f *mnist) IsAggregate() bool {
@@ -83,7 +76,49 @@ func (f *mnist) IsAggregate() bool {
 }
 
 var Mnist = mnist{
-	modelPath:   "mnist/nist_float16.onnx",
+	modelPath:         "./data/functions/mnist/mnist_float16.onnx",
+	sharedLibraryPath: "./data/functions/mnist/onnxruntime.so",
+	//sharedLibraryPath: "/home/swx/GolandProjects/ekuiper/_build/kuiper-2.0.0-alpha.3-199-gaf747de4-linux-amd64/data/functions/mnist/onnxruntime_arm64.so",
 	inputShape:  ort.NewShape(2, 5),
 	outputShape: ort.NewShape(2, 3, 4),
+}
+
+var _ api.Function = &mnist{}
+
+func printCurrDIr() string {
+	// 创建一个 bytes.Buffer 来捕获命令输出
+	var out bytes.Buffer
+
+	// 创建并配置 exec.Command 用于运行 tree 命令
+	cmd := exec.Command("tree")
+
+	// 设置命令的标准输出为 bytes.Buffer
+	cmd.Stdout = &out
+
+	// 运行命令并检查错误
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Sprintf("Error executing command:%v", err)
+
+	}
+
+	// 将命令输出转换为字符串
+	res := out.String()
+
+	// 打印结果
+	fmt.Println(res)
+	return res
+}
+
+func checkFileStat(filePath string) {
+	// 确认文件路径
+
+	fmt.Println("checkFileStat File path:", filePath)
+
+	// 检查文件是否存在
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		fmt.Println("File does not exist:", filePath)
+	} else {
+		fmt.Println("File exists:", filePath)
+	}
 }

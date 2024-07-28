@@ -1,0 +1,62 @@
+{
+  "about": {
+    "trial": false,
+    "author": {
+      "name": "EMQ",
+      "email": "contact@emqx.io",
+      "company": "EMQ Technologies Co., Ltd",
+      "website": "https://www.emqx.io"
+    },
+    "helpUrl": {
+      "en_US": "https://ekuiper.org/docs/en/latest/sqls/functions/custom_functions.html",
+      "zh_CN": "https://ekuiper.org/docs/zh/latest/sqls/functions/custom_functions.html"
+    },
+    "description": {
+      "en_US": "todo :Example plugin to demonstrate inferring Tensorflow lite model to label an image",
+      "zh_CN": "todo:示例插件，演示如何使用Tensorflow lite模型对图像进行标记推断。"
+    }
+  },
+  "name": "mnist",
+  "functions": [
+    {
+      "name": "mnist",
+      "example": "mnist(col1)",
+      "hint": {
+        "en_US": "todo Label an image by tensorflow lite model.",
+        "zh_CN": "todo采用 tensorflow lite 模型标记图片。"
+      },
+      "args": [
+        {
+          "name": "image",
+          "hidden": false,
+          "optional": false,
+          "control": "field",
+          "type": "string",
+          "hint": {
+            "en_US": "Input image",
+            "zh_CN": "输入图像"
+          },
+          "label": {
+            "en_US": "Image",
+            "zh_CN": "图像"
+          }
+        }
+      ],
+      "return": {
+        "type": "string",
+        "hint": {
+          "en_US": "Image Label",
+          "zh_CN": "图像标注"
+        }
+      },
+      "node": {
+        "category": "function",
+        "icon": "iconPath",
+        "label": {
+          "en_US": "Label Image",
+          "zh_CN": "图像标注"
+        }
+      }
+    }
+  ]
+}

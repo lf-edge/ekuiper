@@ -15,26 +15,26 @@
 # limitations under the License.
 #
 
-dir=/usr/local/onnx
-cur=$(dirname "$0")
-echo "Base path $cur"
-if [ -d "$dir" ]; then
-    echo "SDK path $dir exists."
-else
-    echo "Creating SDK path $dir"
-    mkdir -p $dir
-    echo "Created SDK path $dir"
-    echo "Moving libs"
-    cp -R $cur/lib $dir
-    echo "Moved libs"
-fi
-
-if [ -f "/etc/ld.so.conf.d/onnx.conf" ]; then
-    echo "/etc/ld.so.conf.d/onnx.conf exists"
-else
-    echo "Copy conf file"
-    cp "$cur"/onnx.conf /etc/ld.so.conf.d/
-    echo "Copied conf file"
-fi
-ldconfig
-echo "Done"
+#dir=/usr/local/onnx
+#cur=$(dirname "$0")
+#echo "Base path $cur"
+#if [ -d "$dir" ]; then
+#    echo "SDK path $dir exists."
+#else
+#    echo "Creating SDK path $dir"
+#    mkdir -p $dir
+#    echo "Created SDK path $dir"
+#    echo "Moving libs"
+#    cp -R $cur/lib $dir
+#    echo "Moved libs"
+#fi
+#
+#if [ -f "/etc/ld.so.conf.d/onnx.conf" ]; then
+#    echo "/etc/ld.so.conf.d/onnx.conf exists"
+#else
+#    echo "Copy conf file"
+#    cp "$cur"/onnx.conf /etc/ld.so.conf.d/
+#    echo "Copied conf file"
+#fi
+#ldconfig
+echo "Done mnist12321321333333333333333333333333333333333333333333333332132131231232131241242314231423143214123"
