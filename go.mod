@@ -65,7 +65,8 @@ require (
 	gopkg.in/ini.v1 v1.67.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.29.5
-	github.com/yalue/onnxruntime_go v1.10.0
+	github.com/x448/float16 v0.8.4
+	github.com/yalue/onnxruntime_go v1.9.0
 )
 
 require (
