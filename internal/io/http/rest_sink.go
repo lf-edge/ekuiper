@@ -44,28 +44,19 @@ func (r *RestSink) Connect(ctx api.StreamContext) error {
 }
 
 func (r *RestSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {
-	return r.collect(ctx, item)
+	return r.collect(ctx, item, item.ToMap())
 }
 
 func (r *RestSink) CollectList(ctx api.StreamContext, items api.MessageTupleList) error {
-	var err error
-	items.RangeOfTuples(func(_ int, tuple api.MessageTuple) bool {
-		err = r.collect(ctx, tuple)
-		if err != nil {
-			return false
-		}
-		return true
-	})
-	return err
+	return r.collect(ctx, items, items.ToMaps())
 }
 
-func (r *RestSink) collect(ctx api.StreamContext, item api.MessageTuple) error {
+func (r *RestSink) collect(ctx api.StreamContext, item any, data any) error {
 	logger := ctx.GetLogger()
 	headers := r.config.Headers
 	bodyType := r.config.BodyType
 	method := r.config.Method
 	u := r.config.Url
-	data := item.ToMap()
 	if dp, ok := item.(api.HasDynamicProps); ok {
 		for k := range headers {
 			nv, ok := dp.DynamicProps(k)
@@ -86,7 +77,7 @@ func (r *RestSink) collect(ctx api.StreamContext, item api.MessageTuple) error {
 			u = nu
 		}
 	}
-	resp, err := httpx.Send(ctx.GetLogger(), r.client, bodyType, method, u, headers, true, data)
+	resp, err := httpx.Send(ctx.GetLogger(), r.client, bodyType, method, u, headers, r.config.SendSingle, data)
 	failpoint.Inject("recoverAbleErr", func() {
 		err = errors.New("connection reset by peer")
 	})

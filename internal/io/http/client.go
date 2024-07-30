@@ -74,7 +74,8 @@ type RawConf struct {
 	Timeout     cast.DurationConf `json:"timeout"`
 	Incremental bool              `json:"incremental"`
 
-	OAuth map[string]map[string]interface{} `json:"oauth"`
+	OAuth      map[string]map[string]interface{} `json:"oauth"`
+	SendSingle bool                              `json:"sendSingle"`
 	// Could be code or body
 	ResponseType string `json:"responseType"`
 	Compression  string `json:"compression"` // Compression specifies the algorithms used to payload compression
