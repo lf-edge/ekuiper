@@ -17,6 +17,7 @@ package connection
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
@@ -120,6 +121,7 @@ func TestConnectionStatus(t *testing.T) {
 	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
 	require.NoError(t, ReloadConnection())
+	time.Sleep(100 * time.Millisecond)
 	ctx := context.Background()
 	allStatus := GetAllConnectionStatus(ctx)
 	s, ok := allStatus["a1"]
@@ -129,6 +131,44 @@ func TestConnectionStatus(t *testing.T) {
 		ErrMsg: "mockErr",
 	}, s)
 	s, ok = allStatus["a2"]
+	require.True(t, ok)
+	require.Equal(t, ConnectionStatus{
+		Status: ConnectionRunning,
+	}, s)
+}
+
+func TestGetAllConnectionStatus(t *testing.T) {
+	require.NoError(t, InitConnectionManager4Test())
+	ctx := mockContext.NewMockContext("id", "2")
+	cw1, err := FetchConnection(ctx, "id1", "mock", nil)
+	require.NoError(t, err)
+	cw2, err := FetchConnection(ctx, "id2", "mockErr", nil)
+	require.NoError(t, err)
+	cw3, err := FetchConnection(ctx, "id3", "blockconn", nil)
+	require.NoError(t, err)
+	cw1.Wait()
+	cw2.Wait()
+	allStatus := GetAllConnectionStatus(ctx)
+	s, ok := allStatus["id2"]
+	require.True(t, ok)
+	require.Equal(t, ConnectionStatus{
+		Status: ConnectionFail,
+		ErrMsg: "mockErr",
+	}, s)
+	s, ok = allStatus["id1"]
+	require.True(t, ok)
+	require.Equal(t, ConnectionStatus{
+		Status: ConnectionRunning,
+	}, s)
+	s, ok = allStatus["id3"]
+	require.True(t, ok)
+	require.Equal(t, ConnectionStatus{
+		Status: ConnectionIntializing,
+	}, s)
+	blockCh <- struct{}{}
+	cw3.Wait()
+	allStatus = GetAllConnectionStatus(ctx)
+	s, ok = allStatus["id3"]
 	require.True(t, ok)
 	require.Equal(t, ConnectionStatus{
 		Status: ConnectionRunning,
@@ -151,13 +191,9 @@ func TestNonStoredConnection(t *testing.T) {
 	require.False(t, IsConnectionExists("id1"))
 }
 
-var blockCh chan any
-
 func TestConnectionLock(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("id", "2")
-	modules.RegisterConnection("blockconn", CreateBlockConnection)
-	blockCh = make(chan any, 10)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -170,7 +206,16 @@ func TestConnectionLock(t *testing.T) {
 	require.True(t, CheckConn("ccc1"))
 }
 
-type blockConnection struct{}
+var blockCh chan any
+
+func init() {
+	blockCh = make(chan any, 10)
+	modules.RegisterConnection("blockconn", CreateBlockConnection)
+}
+
+type blockConnection struct {
+	blochCh chan any
+}
 
 func (b blockConnection) Ping(ctx api.StreamContext) error {
 	return nil
