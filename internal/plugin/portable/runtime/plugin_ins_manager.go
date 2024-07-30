@@ -282,10 +282,8 @@ func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta, isInit bool) {
 	p.Lock()
 	defer p.Unlock()
 	if !isInit {
-		if ins, ok := p.instances[pluginMeta.Name]; ok {
-			if len(ins.commands) != 0 {
-				go p.GetOrStartProcess(pluginMeta, PortbleConf)
-			}
+		if _, ok := p.instances[pluginMeta.Name]; ok {
+			go p.GetOrStartProcess(pluginMeta, PortbleConf)
 		}
 	} else {
 		go p.GetOrStartProcess(pluginMeta, PortbleConf)
@@ -402,10 +400,8 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		// clean up for stop unintentionally
 		if ins, ok := p.GetPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
 			ins.Lock()
-			if len(ins.commands) == 0 {
-				if ins.ctrlChan != nil {
-					_ = ins.ctrlChan.Close()
-				}
+			if ins.ctrlChan != nil {
+				_ = ins.ctrlChan.Close()
 			}
 			ins.process = nil
 			ins.Unlock()
