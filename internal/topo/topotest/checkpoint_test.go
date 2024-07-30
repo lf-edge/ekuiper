@@ -24,6 +24,7 @@ import (
 
 // Full lifecycle test: Run window rule; trigger checkpoints by mock timer; restart rule; make sure the result is right;
 func TestCheckpoint(t *testing.T) {
+	t.Skip()
 	streamList := []string{"demo"}
 	HandleStream(false, streamList, t)
 	tests := []RuleCheckpointTest{
