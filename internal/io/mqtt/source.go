@@ -15,6 +15,8 @@
 package mqtt
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
@@ -34,13 +36,16 @@ type SourceConnector struct {
 	cfg   *Conf
 	props map[string]any
 
-	cli *client.Connection
+	cli        *client.Connection
+	eof        api.EOFIngest
+	eofPayload []byte
 }
 
 type Conf struct {
-	Topic string `json:"datasource"`
-	Qos   int    `json:"qos"`
-	SelId string `json:"connectionSelector"`
+	Topic      string `json:"datasource"`
+	Qos        int    `json:"qos"`
+	SelId      string `json:"connectionSelector"`
+	EofMessage string `json:"eofMessage"`
 }
 
 func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -55,6 +60,13 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 	_, err = client.ValidateConfig(props)
 	if err != nil {
 		return err
+	}
+	if cfg.EofMessage != "" {
+		ms.eofPayload, err = base64.StdEncoding.DecodeString(cfg.EofMessage)
+		if err != nil {
+			return err
+		}
+		ctx.GetLogger().Infof("Set eof message to %x", ms.eofPayload)
 	}
 	ms.props = props
 	ms.cfg = cfg
@@ -108,6 +120,10 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	}
 	rcvTime := timex.GetNow()
+	if ms.eof != nil && ms.eofPayload != nil && bytes.Equal(ms.eofPayload, msg.Payload()) {
+		ms.eof(ctx)
+		return
+	}
 	ingest(ctx, msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
@@ -125,8 +141,15 @@ func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	return nil
 }
 
+func (ms *SourceConnector) SetEofIngest(eof api.EOFIngest) {
+	ms.eof = eof
+}
+
 func GetSource() api.Source {
 	return &SourceConnector{}
 }
 
-var _ api.BytesSource = &SourceConnector{}
+var (
+	_ api.BytesSource = &SourceConnector{}
+	_ api.Bounded     = &SourceConnector{}
+)

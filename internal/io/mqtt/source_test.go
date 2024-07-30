@@ -15,19 +15,25 @@
 package mqtt
 
 import (
+	"encoding/base64"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 func init() {
@@ -65,6 +71,15 @@ func TestProvision(t *testing.T) {
 			},
 			err: "1 error(s) decoding:\n\n* 'server' expected type 'string'",
 		},
+		{
+			name: "eof message setting",
+			props: map[string]any{
+				"server":     url,
+				"datasource": "demo",
+				"eofMessage": "äöüß",
+			},
+			err: "illegal base64 data at input byte 0",
+		},
 	}
 	sc := &SourceConnector{}
 	ctx := mockContext.NewMockContext("testprov", "source")
@@ -79,4 +94,76 @@ func TestProvision(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEoF(t *testing.T) {
+	url, cancel, err := testx.InitBroker("TestSourceSink")
+	require.NoError(t, err)
+	defer func() {
+		cancel()
+	}()
+	// Create a batch MQTT stream
+	r := &SourceConnector{}
+	eofStr := base64.StdEncoding.EncodeToString([]byte{0})
+	ctx, cancel := mockContext.NewMockContext("ruleEof", "op1").WithCancel()
+	err = r.Provision(ctx, map[string]any{
+		"server":     url,
+		"datasource": "eofdemo",
+		"eofMessage": eofStr,
+		"qos":        0,
+	})
+	assert.NoError(t, err)
+	err = r.Connect(ctx)
+	assert.NoError(t, err)
+	// Create a channel to receive the result
+	resultCh := make(chan any, 10)
+	// Set eof
+	r.SetEofIngest(func(ctx api.StreamContext) {
+		resultCh <- xsql.EOFTuple(0)
+	})
+	err = r.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
+		resultCh <- payload
+	}, nil)
+	if err != nil {
+		return
+	}
+	// Send the data, add eof message at last
+	data := [][]byte{
+		[]byte("{\"humidity\":50,\"status\":\"green\",\"temperature\":22}"),
+		[]byte("{\"humidity\":82,\"status\":\"wet\",\"temperature\":25}"),
+		[]byte("{\"humidity\":60,\"status\":\"hot\",\"temperature\":33}"),
+		{0},
+		[]byte("won't receive"),
+	}
+	go func() {
+		sk := &Sink{}
+		err := mock.RunBytesSinkCollect(sk, data, map[string]any{
+			"server":   url,
+			"topic":    "eofdemo",
+			"qos":      0,
+			"retained": false,
+		})
+		assert.NoError(t, err)
+	}()
+	// Compare the data
+	var result [][]byte
+	ticker := timex.GetTicker(10 * time.Second)
+	defer ticker.Stop()
+loop:
+	for {
+		select {
+		case received := <-resultCh:
+			switch rt := received.(type) {
+			case xsql.EOFTuple:
+				break loop
+			case []byte:
+				result = append(result, rt)
+			}
+		case <-ticker.C:
+			assert.Fail(t, "time out")
+			break loop
+		}
+	}
+
+	assert.Equal(t, data[:3], result)
 }
