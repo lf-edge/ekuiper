@@ -24,8 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
+	rotatelogs "github.com/yisaer/file-rotatelogs"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
