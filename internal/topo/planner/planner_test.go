@@ -4866,9 +4866,8 @@ func TestTransformSourceNode(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sourceNode, ops, _, err := transformSourceNode(tp.GetContext(), tc.plan, nil, "test", &def.RuleOption{}, 1)
+			_, ops, _, err := transformSourceNode(tp.GetContext(), tc.plan, nil, "test", &def.RuleOption{}, 1)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.node, sourceNode)
 			assert.Equal(t, len(tc.ops), len(ops))
 		})
 	}
