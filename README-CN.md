@@ -164,6 +164,26 @@ eKuiper 可以运行在各类物联网的边缘使用场景中，比如，
 
 请参考[测试指南](./test/benchmark/multiple_rules/readme.md)进行该基准测试。
 
+### Nexmark 测试结果
+
+- Nexmark是一个基准测试套件,用于评估流处理系统和数据流管理系统的性能。它由 VLDB 会议提出,在 2015 年推出,目的是为了帮助研究人员和开发者评估和比较不同的流处理系统。
+- 你可以通过该[kuiper-nexmark-test](https://github.com/Yisaer/kuiper-nexmark-test) 来部署测试。
+- 通过 Nexmark 所描述的模型，我们在 2C/4G 的服务器上部署了一台 eKuiper, 并在另一台服务器中部署了 EQMX。我们将会在 eKuiper 上单独部署 Nexmark 的测试规则。
+- eKuiper 的消息将会通过 EMQX 进行输出。eKuiper 对 Nexmark 提供的 query 并非完美兼容，所以我们对 Nexmark 的 query 做了一些改动，你可以在 [Nexmark-sql](./Nexmark-sql.md) 中查看。
+- 分析结果将通过 MQTT 发送至 eKuiper，所有的数据都被忽略。
+
+| Query    | 每秒发送消息数 | CPU 使用 |
+|----------|---------|--------|
+| query 1  | 11.4k   | 200%   |
+| query 2  | 7k      | 200%   |
+| query 3  | 6k      | 168%   |
+| query 4  | 2k      | 144%   |
+| query 6  | 2.87k   | 178%   |
+| query 7  | 5k      | 167%   |
+| query 8  | 8k      | 194%   |
+| query 9  | 4k      | 186%   |
+| query 10 | 5k      | 167%   |
+
 ## 文档
 
 请到官网查看[最新的文档](https://ekuiper.org/docs/zh/latest) 
