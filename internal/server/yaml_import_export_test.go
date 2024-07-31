@@ -55,7 +55,7 @@ func TestMetaConfiguration(t *testing.T) {
 }
 
 func prepare(t *testing.T) {
-	deleteRule("metaConf")
+	_ = registry.DeleteRule("metaConf")
 	ruleProcessor.ExecDrop("metaConf")
 	streamProcessor.ExecStreamSql(`drop stream metaConfTest`)
 	require.NoError(t, conf.WriteCfgIntoKVStorage("sources", "mqtt", "demo1", map[string]any{
@@ -70,7 +70,7 @@ func prepare(t *testing.T) {
 	_, err := streamProcessor.ExecStreamSql(`create stream metaConfTest() WITH (DATASOURCE="/API/DATA",CONF_KEY="demo1")`)
 	require.NoError(t, err)
 	rulejson := `{"trigger":false,"id":"metaConf","sql":"select * from metaConfTest","actions":[{"log":{}}]}`
-	_, err = createRule("metaConf", rulejson)
+	_, err = registry.CreateRule("metaConf", rulejson)
 	require.NoError(t, err)
 }
 

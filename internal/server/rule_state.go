@@ -79,16 +79,16 @@ func updateRuleOffset(ruleID string, param map[string]interface{}) error {
 		switch val.(int) {
 		case 1:
 			StateErr = nil
-			s = rule.RuleStarted
+			s = rule.Running
 		case 2:
 			StateErr = nil
-			s = rule.RuleStopped
+			s = rule.Stopped
 		}
 	})
 	if StateErr != nil {
 		return StateErr
 	}
-	if s != rule.RuleStarted {
+	if s != rule.Running {
 		return fmt.Errorf("rule %v should be running when modify state", ruleID)
 	}
 
@@ -96,9 +96,9 @@ func updateRuleOffset(ruleID string, param map[string]interface{}) error {
 	if err := cast.MapToStruct(param, req); err != nil {
 		return err
 	}
-	rs, ok := registry.Load(ruleID)
+	rs, ok := registry.load(ruleID)
 	if !ok {
 		return fmt.Errorf("rule %s is not found in registry", ruleID)
 	}
-	return rs.Topology.ResetStreamOffset(req.StreamName, req.Input)
+	return rs.ResetStreamOffset(req.StreamName, req.Input)
 }

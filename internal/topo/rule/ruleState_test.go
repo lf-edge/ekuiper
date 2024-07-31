@@ -15,588 +15,248 @@
 package rule
 
 import (
-	"errors"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
-	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
-var defaultOption = &def.RuleOption{
-	IsEventTime:        false,
-	LateTol:            cast.DurationConf(time.Second),
-	Concurrency:        1,
-	BufferLength:       1024,
-	SendMetaToSink:     false,
-	SendError:          true,
-	Qos:                def.AtMostOnce,
-	CheckpointInterval: cast.DurationConf(5 * time.Minute),
-	RestartStrategy: &def.RestartStrategy{
-		Attempts:     0,
-		Delay:        cast.DurationConf(time.Second),
-		Multiplier:   2,
-		MaxDelay:     cast.DurationConf(30 * time.Second),
-		JitterFactor: 0.1,
-	},
-}
-
 func init() {
-	testx.InitEnv("rule")
+	testx.InitEnv("Rule")
 }
 
-func TestCreate(t *testing.T) {
+func TestAPIs(t *testing.T) {
 	sp := processor.NewStreamProcessor()
-	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
+	assert.NoError(t, err)
+	defer sp.ExecStmt(`DROP STREAM demo`)
+	r := def.GetDefaultRule("testAPI", "select * from demo")
+	// Init state
+	st := NewState(r)
+	assert.Equal(t, r, st.Rule)
+	assert.NotNil(t, st.logger)
+	assert.Equal(t, Stopped, st.currentState)
+	assert.Equal(t, 0, len(st.actionQ))
+	assert.Equal(t, "", st.GetLastWill())
+	err = st.ResetStreamOffset("test", nil)
+	assert.EqualError(t, err, "topo is not initialized, check rule status")
+	assert.Nil(t, st.GetStreams())
+	k, v := st.GetMetrics()
+	assert.Nil(t, k)
+	assert.Nil(t, v)
+	topo := st.GetTopoGraph()
+	assert.Nil(t, topo)
+	sm := st.GetStatusMessage()
+	assert.Equal(t, "{\n  \"status\": \"Stopped\",\n  \"message\": \"\",\n  \"lastStartTimestamp\": \"0\",\n  \"lastStopTimestamp\": \"0\",\n  \"nextStartTimestamp\": \"0\"\n}", sm)
+	// Start the rule
+	e := st.Start()
+	assert.NoError(t, e)
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, Running, st.GetState())
+	err = st.ResetStreamOffset("test", nil)
+	assert.EqualError(t, err, "stream test not found in topo")
+	assert.Equal(t, []string{"demo"}, st.GetStreams())
+	topo = st.GetTopoGraph()
+	expTopo := &def.PrintableTopo{
+		Sources: []string{"source_demo"},
+		Edges: map[string][]any{
+			"source_demo": {
+				"op_2_project",
+			},
+			"op_2_project": {
+				"op_logToMemory_0_0_transform",
+			},
+			"op_logToMemory_0_0_transform": {
+				"op_logToMemory_0_1_encode",
+			},
+			"op_logToMemory_0_1_encode": {
+				"sink_logToMemory_0",
+			},
+		},
+	}
+	assert.Equal(t, expTopo, topo)
+	sm = st.GetStatusMessage()
+	em := "{\n  \"status\": \"Running\",\n  \"message\": \"\",\n  \"lastStartTimestamp\": \"0\",\n  \"lastStopTimestamp\": \"0\",\n  \"nextStartTimestamp\": \"0\",\n  \"source_demo_0_records_in_total\": \"0\",\n  \"source_demo_0_records_out_total\": \"0\",\n  \"source_demo_0_messages_processed_total\": \"0\",\n  \"source_demo_0_process_latency_us\": \"0\",\n  \"source_demo_0_buffer_length\": \"0\",\n  \"source_demo_0_last_invocation\": \"0\",\n  \"source_demo_0_exceptions_total\": \"0\",\n  \"source_demo_0_last_exception\": \"\",\n  \"source_demo_0_last_exception_time\": \"0\",\n  \"op_2_project_0_records_in_total\": \"0\",\n  \"op_2_project_0_records_out_total\": \"0\",\n  \"op_2_project_0_messages_processed_total\": \"0\",\n  \"op_2_project_0_process_latency_us\": \"0\",\n  \"op_2_project_0_buffer_length\": \"0\",\n  \"op_2_project_0_last_invocation\": \"0\",\n  \"op_2_project_0_exceptions_total\": \"0\",\n  \"op_2_project_0_last_exception\": \"\",\n  \"op_2_project_0_last_exception_time\": \"0\",\n  \"op_logToMemory_0_0_transform_0_records_in_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_records_out_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_messages_processed_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_process_latency_us\": \"0\",\n  \"op_logToMemory_0_0_transform_0_buffer_length\": \"0\",\n  \"op_logToMemory_0_0_transform_0_last_invocation\": \"0\",\n  \"op_logToMemory_0_0_transform_0_exceptions_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_last_exception\": \"\",\n  \"op_logToMemory_0_0_transform_0_last_exception_time\": \"0\",\n  \"op_logToMemory_0_1_encode_0_records_in_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_records_out_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_messages_processed_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_process_latency_us\": \"0\",\n  \"op_logToMemory_0_1_encode_0_buffer_length\": \"0\",\n  \"op_logToMemory_0_1_encode_0_last_invocation\": \"0\",\n  \"op_logToMemory_0_1_encode_0_exceptions_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_last_exception\": \"\",\n  \"op_logToMemory_0_1_encode_0_last_exception_time\": \"0\",\n  \"sink_logToMemory_0_0_records_in_total\": \"0\",\n  \"sink_logToMemory_0_0_records_out_total\": \"0\",\n  \"sink_logToMemory_0_0_messages_processed_total\": \"0\",\n  \"sink_logToMemory_0_0_process_latency_us\": \"0\",\n  \"sink_logToMemory_0_0_buffer_length\": \"0\",\n  \"sink_logToMemory_0_0_last_invocation\": \"0\",\n  \"sink_logToMemory_0_0_exceptions_total\": \"0\",\n  \"sink_logToMemory_0_0_last_exception\": \"\",\n  \"sink_logToMemory_0_0_last_exception_time\": \"0\"\n}"
+	assert.Equal(t, em, sm)
+	mm := st.GetStatusMap()
+	assert.True(t, len(mm) > 0)
+	// Check stop metrics
+	st.Stop()
+	assert.Equal(t, expTopo, st.GetTopoGraph())
+	assert.Equal(t, map[string]any{"lastStartTimestamp": int64(0), "lastStopTimestamp": int64(0), "message": "canceled manually", "nextStartTimestamp": int64(0), "op_2_project_0_buffer_length": int64(0), "op_2_project_0_exceptions_total": int64(0), "op_2_project_0_last_exception": "", "op_2_project_0_last_exception_time": int64(0), "op_2_project_0_last_invocation": int64(0), "op_2_project_0_messages_processed_total": int64(0), "op_2_project_0_process_latency_us": int64(0), "op_2_project_0_records_in_total": int64(0), "op_2_project_0_records_out_total": int64(0), "op_logToMemory_0_0_transform_0_buffer_length": int64(0), "op_logToMemory_0_0_transform_0_exceptions_total": int64(0), "op_logToMemory_0_0_transform_0_last_exception": "", "op_logToMemory_0_0_transform_0_last_exception_time": int64(0), "op_logToMemory_0_0_transform_0_last_invocation": int64(0), "op_logToMemory_0_0_transform_0_messages_processed_total": int64(0), "op_logToMemory_0_0_transform_0_process_latency_us": int64(0), "op_logToMemory_0_0_transform_0_records_in_total": int64(0), "op_logToMemory_0_0_transform_0_records_out_total": int64(0), "op_logToMemory_0_1_encode_0_buffer_length": int64(0), "op_logToMemory_0_1_encode_0_exceptions_total": int64(0), "op_logToMemory_0_1_encode_0_last_exception": "", "op_logToMemory_0_1_encode_0_last_exception_time": int64(0), "op_logToMemory_0_1_encode_0_last_invocation": int64(0), "op_logToMemory_0_1_encode_0_messages_processed_total": int64(0), "op_logToMemory_0_1_encode_0_process_latency_us": int64(0), "op_logToMemory_0_1_encode_0_records_in_total": int64(0), "op_logToMemory_0_1_encode_0_records_out_total": int64(0), "sink_logToMemory_0_0_buffer_length": int64(0), "sink_logToMemory_0_0_exceptions_total": int64(0), "sink_logToMemory_0_0_last_exception": "", "sink_logToMemory_0_0_last_exception_time": int64(0), "sink_logToMemory_0_0_last_invocation": int64(0), "sink_logToMemory_0_0_messages_processed_total": int64(0), "sink_logToMemory_0_0_process_latency_us": int64(0), "sink_logToMemory_0_0_records_in_total": int64(0), "sink_logToMemory_0_0_records_out_total": int64(0), "source_demo_0_buffer_length": int64(0), "source_demo_0_exceptions_total": int64(0), "source_demo_0_last_exception": "", "source_demo_0_last_exception_time": int64(0), "source_demo_0_last_invocation": int64(0), "source_demo_0_messages_processed_total": int64(0), "source_demo_0_process_latency_us": int64(0), "source_demo_0_records_in_total": int64(0), "source_demo_0_records_out_total": int64(0), "status": "Stopped"}, st.GetStatusMap())
+	em = "{\n  \"status\": \"Stopped\",\n  \"message\": \"canceled manually\",\n  \"lastStartTimestamp\": \"0\",\n  \"lastStopTimestamp\": \"0\",\n  \"nextStartTimestamp\": \"0\",\n  \"source_demo_0_records_in_total\": \"0\",\n  \"source_demo_0_records_out_total\": \"0\",\n  \"source_demo_0_messages_processed_total\": \"0\",\n  \"source_demo_0_process_latency_us\": \"0\",\n  \"source_demo_0_buffer_length\": \"0\",\n  \"source_demo_0_last_invocation\": \"0\",\n  \"source_demo_0_exceptions_total\": \"0\",\n  \"source_demo_0_last_exception\": \"\",\n  \"source_demo_0_last_exception_time\": \"0\",\n  \"op_2_project_0_records_in_total\": \"0\",\n  \"op_2_project_0_records_out_total\": \"0\",\n  \"op_2_project_0_messages_processed_total\": \"0\",\n  \"op_2_project_0_process_latency_us\": \"0\",\n  \"op_2_project_0_buffer_length\": \"0\",\n  \"op_2_project_0_last_invocation\": \"0\",\n  \"op_2_project_0_exceptions_total\": \"0\",\n  \"op_2_project_0_last_exception\": \"\",\n  \"op_2_project_0_last_exception_time\": \"0\",\n  \"op_logToMemory_0_0_transform_0_records_in_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_records_out_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_messages_processed_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_process_latency_us\": \"0\",\n  \"op_logToMemory_0_0_transform_0_buffer_length\": \"0\",\n  \"op_logToMemory_0_0_transform_0_last_invocation\": \"0\",\n  \"op_logToMemory_0_0_transform_0_exceptions_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_last_exception\": \"\",\n  \"op_logToMemory_0_0_transform_0_last_exception_time\": \"0\",\n  \"op_logToMemory_0_1_encode_0_records_in_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_records_out_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_messages_processed_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_process_latency_us\": \"0\",\n  \"op_logToMemory_0_1_encode_0_buffer_length\": \"0\",\n  \"op_logToMemory_0_1_encode_0_last_invocation\": \"0\",\n  \"op_logToMemory_0_1_encode_0_exceptions_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_last_exception\": \"\",\n  \"op_logToMemory_0_1_encode_0_last_exception_time\": \"0\",\n  \"sink_logToMemory_0_0_records_in_total\": \"0\",\n  \"sink_logToMemory_0_0_records_out_total\": \"0\",\n  \"sink_logToMemory_0_0_messages_processed_total\": \"0\",\n  \"sink_logToMemory_0_0_process_latency_us\": \"0\",\n  \"sink_logToMemory_0_0_buffer_length\": \"0\",\n  \"sink_logToMemory_0_0_last_invocation\": \"0\",\n  \"sink_logToMemory_0_0_exceptions_total\": \"0\",\n  \"sink_logToMemory_0_0_last_exception\": \"\",\n  \"sink_logToMemory_0_0_last_exception_time\": \"0\"\n}"
+	assert.Equal(t, em, st.GetStatusMessage())
+	assert.Equal(t, Stopped, st.currentState)
+	// Update rule
+	st.Rule = def.GetDefaultRule("testAPI", "select abc from demo where a > 3")
+	e = st.Validate()
+	assert.NoError(t, e)
+	e = st.Start()
+	assert.NoError(t, e)
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, Running, st.currentState)
+	err = st.ResetStreamOffset("test", nil)
+	assert.EqualError(t, err, "stream test not found in topo")
+	assert.Equal(t, []string{"demo"}, st.GetStreams())
+	topo = st.GetTopoGraph()
+	expTopo = &def.PrintableTopo{
+		Sources: []string{"source_demo"},
+		Edges: map[string][]any{
+			"source_demo": {
+				"op_2_filter",
+			},
+			"op_2_filter": {
+				"op_3_project",
+			},
+			"op_3_project": {
+				"op_logToMemory_0_0_transform",
+			},
+			"op_logToMemory_0_0_transform": {
+				"op_logToMemory_0_1_encode",
+			},
+			"op_logToMemory_0_1_encode": {
+				"sink_logToMemory_0",
+			},
+		},
+	}
+	assert.Equal(t, expTopo, topo)
+	sm = st.GetStatusMessage()
+	em = "{\n  \"status\": \"Running\",\n  \"message\": \"\",\n  \"lastStartTimestamp\": \"0\",\n  \"lastStopTimestamp\": \"0\",\n  \"nextStartTimestamp\": \"0\",\n  \"source_demo_0_records_in_total\": \"0\",\n  \"source_demo_0_records_out_total\": \"0\",\n  \"source_demo_0_messages_processed_total\": \"0\",\n  \"source_demo_0_process_latency_us\": \"0\",\n  \"source_demo_0_buffer_length\": \"0\",\n  \"source_demo_0_last_invocation\": \"0\",\n  \"source_demo_0_exceptions_total\": \"0\",\n  \"source_demo_0_last_exception\": \"\",\n  \"source_demo_0_last_exception_time\": \"0\",\n  \"op_2_filter_0_records_in_total\": \"0\",\n  \"op_2_filter_0_records_out_total\": \"0\",\n  \"op_2_filter_0_messages_processed_total\": \"0\",\n  \"op_2_filter_0_process_latency_us\": \"0\",\n  \"op_2_filter_0_buffer_length\": \"0\",\n  \"op_2_filter_0_last_invocation\": \"0\",\n  \"op_2_filter_0_exceptions_total\": \"0\",\n  \"op_2_filter_0_last_exception\": \"\",\n  \"op_2_filter_0_last_exception_time\": \"0\",\n  \"op_3_project_0_records_in_total\": \"0\",\n  \"op_3_project_0_records_out_total\": \"0\",\n  \"op_3_project_0_messages_processed_total\": \"0\",\n  \"op_3_project_0_process_latency_us\": \"0\",\n  \"op_3_project_0_buffer_length\": \"0\",\n  \"op_3_project_0_last_invocation\": \"0\",\n  \"op_3_project_0_exceptions_total\": \"0\",\n  \"op_3_project_0_last_exception\": \"\",\n  \"op_3_project_0_last_exception_time\": \"0\",\n  \"op_logToMemory_0_0_transform_0_records_in_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_records_out_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_messages_processed_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_process_latency_us\": \"0\",\n  \"op_logToMemory_0_0_transform_0_buffer_length\": \"0\",\n  \"op_logToMemory_0_0_transform_0_last_invocation\": \"0\",\n  \"op_logToMemory_0_0_transform_0_exceptions_total\": \"0\",\n  \"op_logToMemory_0_0_transform_0_last_exception\": \"\",\n  \"op_logToMemory_0_0_transform_0_last_exception_time\": \"0\",\n  \"op_logToMemory_0_1_encode_0_records_in_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_records_out_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_messages_processed_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_process_latency_us\": \"0\",\n  \"op_logToMemory_0_1_encode_0_buffer_length\": \"0\",\n  \"op_logToMemory_0_1_encode_0_last_invocation\": \"0\",\n  \"op_logToMemory_0_1_encode_0_exceptions_total\": \"0\",\n  \"op_logToMemory_0_1_encode_0_last_exception\": \"\",\n  \"op_logToMemory_0_1_encode_0_last_exception_time\": \"0\",\n  \"sink_logToMemory_0_0_records_in_total\": \"0\",\n  \"sink_logToMemory_0_0_records_out_total\": \"0\",\n  \"sink_logToMemory_0_0_messages_processed_total\": \"0\",\n  \"sink_logToMemory_0_0_process_latency_us\": \"0\",\n  \"sink_logToMemory_0_0_buffer_length\": \"0\",\n  \"sink_logToMemory_0_0_last_invocation\": \"0\",\n  \"sink_logToMemory_0_0_exceptions_total\": \"0\",\n  \"sink_logToMemory_0_0_last_exception\": \"\",\n  \"sink_logToMemory_0_0_last_exception_time\": \"0\"\n}"
+	assert.Equal(t, em, sm)
+	e = st.Delete()
+	assert.NoError(t, e)
+}
+
+func TestStateTransit(t *testing.T) {
+	sp := processor.NewStreamProcessor()
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
 	assert.NoError(t, err)
 	defer sp.ExecStmt(`DROP STREAM demo`)
 	tests := []struct {
-		r    *def.Rule
-		e    error
-		code errorx.ErrorCode
+		name       string
+		r          *def.Rule
+		actions    []ActionSignal
+		async      bool
+		finalState RunState
 	}{
 		{
-			r: &def.Rule{
-				Triggered: false,
-				Id:        "test",
-				Sql:       "SELECT ts FROM demo",
-				Actions: []map[string]interface{}{
-					{
-						"log": map[string]interface{}{},
-					},
-				},
-				Options: defaultOption,
-			},
-			e: nil,
+			name:       "fast start stop",
+			r:          def.GetDefaultRule("testNormal", "select * from demo"),
+			actions:    []ActionSignal{ActionSignalStart, ActionSignalStart, ActionSignalStop, ActionSignalStart, ActionSignalStart, ActionSignalStop},
+			finalState: Stopped,
 		},
 		{
-			r: &def.Rule{
-				Triggered: false,
-				Id:        "test",
-				Sql:       "SELECT FROM demo",
-				Actions: []map[string]interface{}{
-					{
-						"log": map[string]interface{}{},
-					},
-				},
-				Options: defaultOption,
-			},
-			e:    errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
-			code: errorx.ParserError,
+			name:       "async fast start stop",
+			r:          def.GetDefaultRule("testAsync", "select * from demo"),
+			actions:    []ActionSignal{ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart},
+			finalState: Running,
+			async:      true,
 		},
 		{
-			r: &def.Rule{
-				Triggered: false,
-				Id:        "test",
-				Sql:       "SELECT * FROM demo1",
-				Actions: []map[string]interface{}{
-					{
-						"log": map[string]interface{}{},
-					},
-				},
-				Options: defaultOption,
-			},
-			e:    errors.New("fail to get stream demo1, please check if stream is created"),
-			code: errorx.PlanError,
+			name:       "invalid",
+			r:          def.GetDefaultRule("testAsync", "select * from demo2"),
+			actions:    []ActionSignal{ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart},
+			finalState: StoppedByErr,
+			async:      true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.r.Id, func(t *testing.T) {
-			_, err := NewRuleState(tt.r)
-			if err != nil {
-				code, ok := errorx.GetErrorCode(err)
-				if tt.code != 0 {
-					require.True(t, ok)
-					require.Equal(t, tt.code, code)
-					assert.EqualError(t, err, tt.e.Error())
-					return
+	for _, v := range tests {
+		t.Run(v.name, func(t *testing.T) {
+			st := NewState(v.r)
+			defer st.Delete()
+			st.actionQ = []ActionSignal{ActionSignalStart}
+			var wg sync.WaitGroup
+			if v.async {
+				wg.Add(len(v.actions) - 1)
+			}
+			for i, a := range v.actions {
+				if i == len(v.actions)-1 {
+					break
+				}
+				if v.async {
+					go func() {
+						sendAction(st, a)
+						wg.Done()
+					}()
+				} else {
+					sendAction(st, a)
 				}
 			}
-			assert.Equal(t, tt.e, err)
-		})
-	}
-}
-
-func TestUpdate(t *testing.T) {
-	ignoreSignal = true
-	defer func() {
-		ignoreSignal = false
-	}()
-	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
-	defer sp.ExecStmt(`DROP STREAM demo`)
-	tests := []struct {
-		r         *def.Rule
-		e         error
-		triggered int
-		code      errorx.ErrorCode
-	}{
-		{
-			r: &def.Rule{
-				Triggered: false,
-				Id:        "test",
-				Sql:       "SELECT FROM demo",
-				Actions: []map[string]interface{}{
-					{
-						"log": map[string]interface{}{},
-					},
-				},
-				Options: defaultOption,
-			},
-			e:         errors.New("Parse SQL SELECT FROM demo error: found \"FROM\", expected expression.."),
-			code:      errorx.ParserError,
-			triggered: 1,
-		},
-		{
-			r: &def.Rule{
-				Triggered: false,
-				Id:        "test",
-				Sql:       "SELECT * FROM demo1",
-				Actions: []map[string]interface{}{
-					{
-						"log": map[string]interface{}{},
-					},
-				},
-				Options: defaultOption,
-			},
-			e:         errors.New("fail to get stream demo1, please check if stream is created"),
-			code:      errorx.PlanError,
-			triggered: 1,
-		},
-		{
-			r: &def.Rule{
-				Triggered: true,
-				Id:        "test",
-				Sql:       "SELECT * FROM demo",
-				Actions: []map[string]interface{}{
-					{
-						"log": map[string]interface{}{},
-					},
-				},
-				Options: defaultOption,
-			},
-			e:         nil,
-			triggered: 1,
-		},
-		{
-			r: &def.Rule{
-				Triggered: false,
-				Id:        "test",
-				Sql:       "SELECT * FROM demo",
-				Actions: []map[string]interface{}{
-					{
-						"log": map[string]interface{}{},
-					},
-				},
-				Options: defaultOption,
-			},
-			e:         nil,
-			triggered: 0,
-		},
-	}
-	for i, tt := range tests {
-		rs, err := NewRuleState(&def.Rule{
-			Triggered: true,
-			Id:        "test",
-			Sql:       "SELECT ts FROM demo",
-			Actions: []map[string]interface{}{
-				{
-					"log": map[string]interface{}{},
-				},
-			},
-			Options: defaultOption,
-		})
-		require.NoError(t, err)
-		err = rs.Start()
-		require.NoError(t, err)
-		time.Sleep(5 * time.Millisecond)
-		require.Equal(t, 1, rs.triggered, fmt.Sprintf("case %v failed", i))
-		err = rs.UpdateTopo(tt.r)
-		time.Sleep(5 * time.Millisecond)
-		if err != nil {
-			code, ok := errorx.GetErrorCode(err)
-			if tt.code != 0 {
-				require.True(t, ok)
-				require.Equal(t, tt.code, code)
-				require.Equal(t, tt.e.Error(), err.Error(), fmt.Sprintf("case %v failed", i))
-				continue
+			if v.async {
+				wg.Wait()
 			}
-		}
-		require.Equal(t, tt.triggered, rs.triggered, fmt.Sprintf("case %v failed", i))
-		rs.Close()
+			sendAction(st, v.actions[len(v.actions)-1])
+			time.Sleep(100 * time.Millisecond)
+			assert.Equal(t, v.finalState, st.GetState())
+		})
 	}
 }
 
-func TestUpdateScheduleRule(t *testing.T) {
+func TestLongScheduleTransit(t *testing.T) {
 	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
-	defer sp.ExecStmt(`DROP STREAM demo`)
-	scheduleOption1 := *defaultOption
-	scheduleOption1.Cron = "mockCron"
-	scheduleOption1.Duration = "1s"
-	rule1 := &def.Rule{
-		Triggered: true,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: &scheduleOption1,
-	}
-	rs, err := NewRuleState(rule1)
-	require.NoError(t, err)
-	defer rs.Close()
-	err = rs.startScheduleRule()
-	require.NoError(t, err)
-	require.True(t, rs.cronState.isInSchedule)
-	require.Equal(t, "mockCron", rs.cronState.cron)
-	require.Equal(t, "1s", rs.cronState.duration)
-
-	scheduleOption2 := *defaultOption
-	scheduleOption2.Cron = "mockCron2"
-	scheduleOption2.Duration = "2s"
-	rule2 := &def.Rule{
-		Triggered: true,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: &scheduleOption2,
-	}
-	err = rs.UpdateTopo(rule2)
-	require.NoError(t, err)
-	require.Equal(t, "mockCron2", rs.cronState.cron)
-	require.Equal(t, "2s", rs.cronState.duration)
-}
-
-func TestMultipleAccess(t *testing.T) {
-	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (DATASOURCE="users", FORMAT="JSON")`)
-	defer sp.ExecStmt(`DROP STREAM demo`)
-	rs, err := NewRuleState(&def.Rule{
-		Triggered: false,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: defaultOption,
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	defer rs.Close()
-	err = rs.Start()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	var wg sync.WaitGroup
-	wg.Add(10)
-	for i := 0; i < 10; i++ {
-		if i%3 == 0 {
-			go func(i int) {
-				rs.Stop()
-				fmt.Printf("%d:%d\n", i, rs.triggered)
-				wg.Done()
-			}(i)
-		} else {
-			go func(i int) {
-				rs.Start()
-				fmt.Printf("%d:%d\n", i, rs.triggered)
-				wg.Done()
-			}(i)
-		}
-	}
-	wg.Wait()
-	fmt.Printf("before %d:%d\n", 10, rs.triggered)
-	err = rs.Stop()
+	_, err := sp.ExecStmt(`CREATE STREAM demo () WITH (FORMAT="JSON", TYPE="memory", DATASOURCE="test")`)
 	assert.NoError(t, err)
-	fmt.Printf("%d:%d\n", 10, rs.triggered)
-	if rs.triggered != 0 {
-		t.Errorf("triggered mismatch:\n\nexp=%#v\n\ngot=%#v\n\n", 0, rs.triggered)
-	}
-}
-
-// Test rule state message
-func TestRuleState_Start(t *testing.T) {
-	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", FORMAT="JSON", DATASOURCE="test")`)
 	defer sp.ExecStmt(`DROP STREAM demo`)
-	// Test rule not triggered
-	r := &def.Rule{
-		Triggered: false,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: defaultOption,
-	}
-	const ruleStopped = "Stopped: canceled manually."
-	const ruleStarted = "Running"
-	// TODO enable this again
-	//t.Run("test rule loaded but not started", func(t *testing.T) {
-	//	rs, err := NewRuleState(r)
-	//	if err != nil {
-	//		t.Error(err)
-	//		return
-	//	}
-	//	state, err := rs.GetState()
-	//	if err != nil {
-	//		t.Errorf("get rule state error: %v", err)
-	//		return
-	//	}
-	//	if state != ruleStopped {
-	//		t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
-	//		return
-	//	}
-	//})
-	t.Run("test rule started", func(t *testing.T) {
-		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = rs.Start()
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		time.Sleep(100 * time.Millisecond)
-		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != ruleStarted {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
-			return
-		}
-	})
-	t.Run("test rule loaded and stopped", func(t *testing.T) {
-		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = rs.Start()
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		err = rs.Close()
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != ruleStopped {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
-			return
-		}
-	})
-}
-
-// TODO test schedule rule again
-func TestScheduleRule(t *testing.T) {
-	conf.IsTesting = true
-	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", DATASOURCE="test", FORMAT="JSON")`)
-	defer sp.ExecStmt(`DROP STREAM demo`)
-	// Test rule not triggered
-	r := &def.Rule{
-		Triggered: false,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: defaultOption,
-	}
-	r.Options.Cron = "mockCron"
-	r.Options.Duration = "1s"
-	const ruleStarted = "Running"
-	const ruleStopped = "Stopped: waiting for next schedule."
-	func() {
-		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err != nil {
-			t.Error(err)
-			return
-		}
-		time.Sleep(500 * time.Millisecond)
-		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != ruleStarted {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStarted, state)
-			return
-		}
-		if !rs.cronState.isInSchedule {
-			t.Error("cron state should be in schedule")
-			return
-		}
-	}()
-
-	func() {
-		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err != nil {
-			t.Error(err)
-			return
-		}
-		time.Sleep(1500 * time.Millisecond)
-		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != ruleStopped {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", ruleStopped, state)
-			return
-		}
-		if !rs.cronState.isInSchedule {
-			t.Error("cron state should be in schedule")
-			return
-		}
-	}()
-
-	func() {
-		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err == nil {
-			t.Error("rule can't be register in cron twice")
-			return
-		} else {
-			if err.Error() != "rule test is already in schedule" {
-				t.Error("error message wrong")
-				return
-			}
-		}
-	}()
-
-	func() {
-		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.startScheduleRule(); err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.Stop(); err != nil {
-			t.Error(err)
-			return
-		}
-		state, err := rs.GetState()
-		if err != nil {
-			t.Errorf("get rule state error: %v", err)
-			return
-		}
-		if state != "Stopped: canceled manually." {
-			t.Errorf("rule state mismatch: exp=%v, got=%v", "Stopped: canceled manually.", state)
-			return
-		}
-		if rs.cronState.isInSchedule {
-			t.Error("cron state shouldn't be in schedule")
-			return
-		}
-	}()
-
-	func() {
-		rs, err := NewRuleState(r)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.Stop(); err != nil {
-			t.Error(err)
-			return
-		}
-		if err := rs.Close(); err != nil {
-			t.Error(err)
-			return
-		}
-	}()
-}
-
-const layout = "2006-01-02 15:04:05"
-
-func TestRuleStateInternalStop(t *testing.T) {
-	conf.IsTesting = true
-	sp := processor.NewStreamProcessor()
-	sp.ExecStmt(`CREATE STREAM demo () WITH (TYPE="memory", DATASOURCE="test", FORMAT="JSON")`)
-	defer sp.ExecStmt(`DROP STREAM demo`)
-	r := &def.Rule{
-		Triggered: false,
-		Id:        "test",
-		Sql:       "SELECT ts FROM demo",
-		Actions: []map[string]interface{}{
-			{
-				"log": map[string]interface{}{},
-			},
-		},
-		Options: defaultOption,
-	}
-	r.Options.Cron = "123"
-	rs, err := NewRuleState(r)
-	require.NoError(t, err)
-	err = rs.InternalStop()
-	require.Error(t, err)
-
-	r.Options.Cron = ""
-	r.Options.Duration = ""
-	r.Options.CronDatetimeRange = []def.DatetimeRange{
+	// set now for schedule rule
+	now := time.Date(2024, time.August, 8, 15, 38, 0, 0, time.UTC)
+	timex.Set(now.UnixMilli())
+	sr := def.GetDefaultRule("testScheduleNotIn", "select * from demo")
+	sr.Options.CronDatetimeRange = []def.DatetimeRange{
 		{
-			Begin: layout,
-			End:   layout,
+			Begin: "2024-08-08 16:04:01",
+			End:   "2024-08-08 16:30:01",
 		},
 	}
-	rs, err = NewRuleState(r)
-	require.NoError(t, err)
-	err = rs.InternalStop()
-	require.NoError(t, err)
-	require.Equal(t, rs.triggered, 2)
+	st := NewState(sr)
+	defer st.Delete()
+	// Start run, but not in schedule
+	e := st.Start()
+	assert.NoError(t, e)
+	assert.Equal(t, ScheduledStop, st.GetState())
+	// Scheduled stop to start, no change
+	_ = st.Start()
+	assert.Equal(t, ScheduledStop, st.GetState())
+	// Scheduled stop to stop, stop
+	st.Stop()
+	assert.Equal(t, Stopped, st.GetState())
+	// Time move to schedule, should start
+	timex.Add(30 * time.Minute)
+	_ = st.ScheduleStart()
+	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
+	st.actionQ = append(st.actionQ, ActionSignalScheduledStart)
+	_ = st.ScheduleStart()
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, Running, st.GetState())
+	// Time move out of schedule, scheduled stop
+	timex.Add(30 * time.Minute)
+	st.ScheduleStop()
+	// Notice: mock the action queue. The action must be the same as the next otherwise it will loop infinitely
+	st.actionQ = append(st.actionQ, ActionSignalScheduledStop)
+	time.Sleep(100 * time.Millisecond)
+	assert.Equal(t, ScheduledStop, st.GetState())
+	st.ScheduleStop()
+	assert.Equal(t, ScheduledStop, st.GetState())
+}
+
+func sendAction(st *State, a ActionSignal) {
+	switch a {
+	case ActionSignalStart:
+		_ = st.Start()
+	case ActionSignalStop:
+		st.Stop()
+	case ActionSignalScheduledStart:
+		_ = st.ScheduleStart()
+	case ActionSignalScheduledStop:
+		st.ScheduleStop()
+	}
+}
+
+func TestRuleRestart(t *testing.T) {
+	// TODO added later
 }

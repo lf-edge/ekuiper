@@ -97,13 +97,6 @@ func (s *Topo) GetContext() api.StreamContext {
 	return s.ctx
 }
 
-func (s *Topo) NewTopoWithSucceededCtx() *Topo {
-	n := &Topo{}
-	n.ctx = s.ctx
-	n.cancel = s.cancel
-	return n
-}
-
 func (s *Topo) GetName() string {
 	return s.name
 }

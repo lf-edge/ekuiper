@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@ package server
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -37,52 +37,49 @@ func TestHandleScheduleRule(t *testing.T) {
 	require.NoError(t, err)
 	now = now.In(cast.GetConfiguredTimeZone())
 	testcases := []struct {
-		state  string
 		begin  string
 		end    string
 		action scheduleRuleAction
 	}{
 		{
-			state:  "Running",
-			begin:  "2006-01-02 15:04:01",
-			end:    "2006-01-02 15:04:06",
-			action: scheduleRuleActionDoNothing,
-		},
-		{
-			state:  rule.RuleWait,
 			begin:  "2006-01-02 15:04:01",
 			end:    "2006-01-02 15:04:06",
 			action: scheduleRuleActionStart,
 		},
 		{
-			state:  rule.RuleTerminated,
 			begin:  "2006-01-02 15:04:01",
-			end:    "2006-01-02 15:04:04",
-			action: scheduleRuleActionDoNothing,
+			end:    "2006-01-02 15:04:06",
+			action: scheduleRuleActionStart,
 		},
 		{
-			state:  rule.RuleStarted,
+			begin:  "2006-01-02 15:04:01",
+			end:    "2006-01-02 15:04:04",
+			action: scheduleRuleActionStop,
+		},
+		{
 			begin:  "2006-01-02 15:04:01",
 			end:    "2006-01-02 15:04:04",
 			action: scheduleRuleActionStop,
 		},
 	}
 	for i, tc := range testcases {
-		r := &def.Rule{
-			Triggered: true,
-			Options: &def.RuleOption{
-				Cron:     "",
-				Duration: "",
-				CronDatetimeRange: []def.DatetimeRange{
-					{
-						Begin: tc.begin,
-						End:   tc.end,
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			r := &def.Rule{
+				Triggered: true,
+				Options: &def.RuleOption{
+					Cron:     "",
+					Duration: "",
+					CronDatetimeRange: []def.DatetimeRange{
+						{
+							Begin: tc.begin,
+							End:   tc.end,
+						},
 					},
 				},
-			},
-		}
-		scheduleRuleSignal := handleScheduleRule(now, r, tc.state)
-		require.Equal(t, tc.action, scheduleRuleSignal, fmt.Sprintf("case %v", i))
+			}
+			scheduleRuleSignal := handleScheduleRule(now, r)
+			require.Equal(t, tc.action, scheduleRuleSignal, fmt.Sprintf("case %v", i))
+		})
 	}
 }
 
@@ -103,24 +100,24 @@ func TestHandleScheduleRuleState(t *testing.T) {
 	r.Options = &def.RuleOption{}
 	now, err := time.Parse("2006-01-02 15:04:05", "2006-01-02 15:04:05")
 	require.NoError(t, err)
-	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
-	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
+	require.NoError(t, handleScheduleRuleState(now, r))
+	require.NoError(t, handleScheduleRuleState(now, r))
 	r.Options.CronDatetimeRange = []def.DatetimeRange{
 		{
 			Begin: "2006-01-02 15:04:01",
 			End:   "2006-01-02 15:04:06",
 		},
 	}
-	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
-	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
+	require.NoError(t, handleScheduleRuleState(now, r))
+	require.NoError(t, handleScheduleRuleState(now, r))
 	r.Options.CronDatetimeRange = []def.DatetimeRange{
 		{
 			Begin: "2006-01-02 15:04:01",
 			End:   "2006-01-02 15:04:02",
 		},
 	}
-	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleStarted))
-	require.NoError(t, handleScheduleRuleState(now, r, rule.RuleWait))
+	require.NoError(t, handleScheduleRuleState(now, r))
+	require.NoError(t, handleScheduleRuleState(now, r))
 }
 
 func TestStartCPUProfiling(t *testing.T) {

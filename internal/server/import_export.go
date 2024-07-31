@@ -259,7 +259,7 @@ func configurationImport(ctx context.Context, data []byte, reboot bool) ImportCo
 					logger.Error(ee)
 					continue
 				}
-				reply := recoverRule(rul)
+				reply := registry.RecoverRule(rul)
 				if reply != "" {
 					logger.Error(reply)
 				}
@@ -585,20 +585,14 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 		_, err := ruleProcessor.GetRuleJson(k)
 		if err == nil {
 			// the rule already exist, update
-			err = updateRule(k, v, false)
-			if err != nil {
-				ruleSetRsp.Rules[k] = err.Error()
-				continue
-			}
-			// Update to db after validation
-			_, err = ruleProcessor.ExecUpdate(k, v)
+			err = registry.UpdateRule(k, v)
 			if err != nil {
 				ruleSetRsp.Rules[k] = err.Error()
 				continue
 			}
 		} else {
 			// not found, create
-			_, err2 := createRule(k, v)
+			_, err2 := registry.CreateRule(k, v)
 			if err2 != nil {
 				ruleSetRsp.Rules[k] = err2.Error()
 				continue

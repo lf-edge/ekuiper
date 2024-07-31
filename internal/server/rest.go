@@ -513,11 +513,11 @@ func checkStreamBeforeDrop(name string) (bool, error) {
 		return false, err
 	}
 	for _, r := range rules {
-		rs, ok := registry.Load(r)
+		rs, ok := registry.load(r)
 		if !ok {
 			continue
 		}
-		streams := rs.Topology.GetStreams()
+		streams := rs.GetStreams()
 		for _, s := range streams {
 			if name == s {
 				return true, nil
@@ -635,7 +635,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		id, err := createRule("", string(body))
+		id, err := registry.CreateRule("", string(body))
 		if err != nil {
 			handleError(w, err, "", logger)
 			return
@@ -643,7 +643,7 @@ func rulesHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		fmt.Fprintf(w, "Rule %s was created successfully.", id)
 	case http.MethodGet:
-		content, err := getAllRulesWithStatus()
+		content, err := registry.GetAllRulesWithStatus()
 		if err != nil {
 			handleError(w, err, "Show rules error", logger)
 			return
@@ -668,17 +668,15 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add(ContentType, ContentTypeJSON)
 		w.Write([]byte(rule))
 	case http.MethodDelete:
-		deleteRule(name)
-		content, err := ruleProcessor.ExecDrop(name)
+		// delete rule will wait until rule close
+		err := registry.DeleteRule(name)
 		if err != nil {
 			handleError(w, err, "Delete rule error", logger)
 			return
 		}
-		// wait resource clear
-		time.Sleep(time.Second)
 		conf.Log.Infof("drop rule:%v", name)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(content))
+		_, _ = fmt.Fprintf(w, "Rule %s is dropped.", name)
 	case http.MethodPut:
 		_, err := ruleProcessor.GetRuleById(name)
 		if err != nil {
@@ -691,30 +689,19 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		newRuleJson, err := replaceRulePassword(name, string(body))
-		if err != nil {
-			handleError(w, err, "Invalid body", logger)
-			return
-		}
-		err = updateRule(name, newRuleJson, true)
+		err = registry.UpdateRule(name, string(body))
 		if err != nil {
 			handleError(w, err, "Update rule error", logger)
 			return
 		}
-		// Update to db after validation
-		_, err = ruleProcessor.ExecUpdate(name, newRuleJson)
-		if err != nil {
-			handleError(w, err, "Update rule error, suggest to delete it and recreate", logger)
-			return
-		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Rule %s was updated successfully.", name)
+		_, _ = fmt.Fprintf(w, "Rule %s was updated successfully.", name)
 	}
 }
 
 func getAllRuleStatusHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	s, err := getAllRuleStatus()
+	s, err := registry.GetAllRuleStatus()
 	if err != nil {
 		handleError(w, err, "get rules status error", logger)
 		return
@@ -730,7 +717,7 @@ func getStatusV2RulHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	content, err := getRuleStatusV2(name)
+	content, err := registry.GetRuleStatusV2(name)
 	if err != nil {
 		handleError(w, err, "get rule status error", logger)
 		return
@@ -745,7 +732,7 @@ func getStatusRuleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	content, err := getRuleStatus(name)
+	content, err := registry.GetRuleStatus(name)
 	if err != nil {
 		handleError(w, err, "get rule status error", logger)
 		return
@@ -761,13 +748,13 @@ func startRuleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	err := startRule(name)
+	err := registry.StartRule(name)
 	if err != nil {
 		handleError(w, err, "start rule error", logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Rule %s was started", name)
+	_, _ = fmt.Fprintf(w, "Rule %s was started", name)
 }
 
 // stop a rule
@@ -776,15 +763,13 @@ func stopRuleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	result, err := stopRule(name)
+	err := registry.StopRule(name)
 	if err != nil {
 		handleError(w, err, "stop rule error", logger)
 		return
 	}
-	// wait resource clear
-	time.Sleep(time.Second)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(result))
+	_, _ = fmt.Fprintf(w, "Rule %s was stopped.", name)
 }
 
 // restart a rule
@@ -793,7 +778,7 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	err := restartRule(name)
+	err := registry.RestartRule(name)
 	if err != nil {
 		handleError(w, err, "restart rule error", logger)
 		return
@@ -808,7 +793,7 @@ func getTopoRuleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	content, err := getRuleTopo(name)
+	content, err := registry.GetRuleTopo(name)
 	if err != nil {
 		handleError(w, err, "get rule topo error", logger)
 		return
@@ -825,7 +810,7 @@ func validateRuleHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body", logger)
 		return
 	}
-	sources, validate, err := validateRule("", string(body))
+	sources, validate, err := registry.ValidateRule("", string(body))
 	if !validate {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte(err.Error()))
@@ -886,7 +871,7 @@ func importHandler(w http.ResponseWriter, r *http.Request) {
 				logger.Error(ee)
 				continue
 			}
-			reply := recoverRule(rul)
+			reply := registry.RecoverRule(rul)
 			if reply != "" {
 				logger.Error(reply)
 			}
@@ -947,5 +932,5 @@ func testRuleStopHandler(w http.ResponseWriter, r *http.Request) {
 	id := vars["name"]
 	trial.TrialManager.StopRule(id)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Test rule %s was stopped", id)
+	fmt.Fprintf(w, "Test rule %s was stopped.", id)
 }

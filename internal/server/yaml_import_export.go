@@ -488,10 +488,9 @@ func importNativePlugins(m *MetaConfiguration) error {
 
 func importRules(m *MetaConfiguration) error {
 	for key, value := range m.Rules {
-		deleteRule(key)
-		ruleProcessor.ExecDrop(key)
+		_ = registry.DeleteRule(key)
 		b, _ := json.Marshal(value)
-		_, err := createRule(key, string(b)) //nolint:staticcheck
+		_, err := registry.CreateRule(key, string(b)) //nolint:staticcheck
 		err = mockImportErr(err, mockRulesErr)
 		if err != nil {
 			return fmt.Errorf("replace rule %v failed, err:%v", key, err)
