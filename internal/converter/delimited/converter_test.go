@@ -37,10 +37,10 @@ func TestEncode(t *testing.T) {
 		{
 			name: "normal",
 			m: map[string]interface{}{
-				"id":   12,
+				"id":   1670170500.0,
 				"name": "test",
 			},
-			r: []byte(`12:test`),
+			r: []byte(`1670170500:test`),
 		},
 		{
 			name: "embedded",
@@ -130,11 +130,11 @@ func TestEncodeWithHeader(t *testing.T) {
 					"name": "test",
 				},
 				{
-					"id":   14,
+					"id":   1670170500.0,
 					"name": "test2",
 				},
 			},
-			r: []byte("id:name\n12:test\n14:test2"),
+			r: []byte("id:name\n12:test\n1670170500:test2"),
 		},
 	}
 	ctx := mockContext.NewMockContext("test", "op1")
