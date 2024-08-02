@@ -79,7 +79,8 @@ func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 			if i > 0 {
 				sb.WriteString(c.Delimiter)
 			}
-			fmt.Fprintf(sb, "%v", m[v])
+			p, _ := cast.ToString(m[v], cast.CONVERT_ALL)
+			sb.WriteString(p)
 		}
 		return sb.Bytes(), nil
 	case []map[string]any:
