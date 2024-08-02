@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -92,6 +92,8 @@ func ToString(input interface{}, sn Strictness) (string, error) {
 				return s.String(), nil
 			case error:
 				return s.Error(), nil
+			default:
+				return ToStringAlways(input), nil
 			}
 		}
 	}

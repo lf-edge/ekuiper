@@ -33,10 +33,10 @@ func TestEncode(t *testing.T) {
 	}{
 		{
 			m: map[string]interface{}{
-				"id":   12,
+				"id":   1670170500.0,
 				"name": "test",
 			},
-			r: []byte(`12:test`),
+			r: []byte(`1670170500:test`),
 		}, {
 			m: map[string]interface{}{
 				"id":   7,
