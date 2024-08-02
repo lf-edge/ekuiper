@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/pkg/cast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 	"github.com/lf-edge/ekuiper/pkg/message"
 )
@@ -64,7 +65,8 @@ func (c *Converter) Encode(d interface{}) (b []byte, err error) {
 			if i > 0 {
 				sb.WriteString(c.delimiter)
 			}
-			fmt.Fprintf(sb, "%v", m[v])
+			p, _ := cast.ToString(m[v], cast.CONVERT_ALL)
+			sb.WriteString(p)
 		}
 		return sb.Bytes(), nil
 	default:
