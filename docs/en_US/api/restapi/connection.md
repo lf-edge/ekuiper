@@ -1,5 +1,50 @@
 # Manage connection
 
+## Connection management
+
+Source/Sink in rules can be created and managed independently in the form of connections.
+
+### Create connection
+
+To create a connection, provide the connection's id, type, and configuration parameters. Currently, `mqtt`/`nng`/`httppush`/`websocket`/`edgex`/`sql` type connections are supported. Here we take creating an mqtt connection as an example.
+
+```shell
+POST http://localhost:9081/connections
+{
+  "id": "connecton-1"
+  "typ":"mqtt",
+  "props": {
+    server: "tcp://127.0.0.1:1883"
+  }
+}
+```
+
+### Get all connection IDs
+
+```shell
+GET http://localhost:9081/connections
+```
+
+### Get all connection status
+
+```shell
+GET http://localhost:9081/connections/status
+```
+
+### Get a single connection status
+
+```shell
+GET http://localhost:9081/connection/{id}
+```
+
+### Delete a single connection
+
+When deleting a connection, it will check whether there are rules using the connection. If there are rules using the connection, the connection cannot be deleted.
+
+```shell
+DELETE http://localhost:9081/connection/{id}
+```
+
 ## Connectivity check
 
 Check eKuiper connection connectivity via API
@@ -39,51 +84,5 @@ The source-side connection check will check the connectivity of the connection b
 POST http://localhost:9081/metadata/sources/connection/sql
 {
   "url": "mysql://root@127.0.0.1:4000/test",
-}
-```
-
-## Manage websocket connection
-
-Manage websocket endpoint connection in eKuiper through REST API
-
-## create websocket endpoint
-
-```shell
-POST http://localhost:9081/connection/websocket
-```
-
-example：
-
-```json
-{
-  "endpoint": "/xxxx"
-}
-```
-
-## delete websocket endpoint
-
-```shell
-DELETE http://localhost:9081/connection/websocket
-```
-
-example：
-
-```json
-{
-  "endpoint": "/xxxx"
-}
-```
-
-## query websocket endpoint
-
-```shell
-GET http://localhost:9081/connection/websocket
-```
-
-example：
-
-```json
-{
-  "endpoint": "/xxxx"
 }
 ```
