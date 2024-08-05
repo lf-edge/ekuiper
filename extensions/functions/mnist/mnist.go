@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	ort "github.com/yalue/onnxruntime_go"
+	"image"
+	"image/color"
 	"os"
 	"os/exec"
 	"sync"
@@ -30,6 +32,7 @@ type mnist struct {
 	inputShape        ort.Shape
 	outputShape       ort.Shape
 	sharedLibraryPath string
+	initModelError    error
 }
 
 func (f *mnist) Validate(args []interface{}) error {
@@ -39,7 +42,17 @@ func (f *mnist) Validate(args []interface{}) error {
 	return nil
 }
 
+// todo 先解码img，然后推理即可
 func (f *mnist) Exec(_ api.FunctionContext, args []any) (any, bool) {
+	arg0, ok := args[0].([]byte)
+	if !ok {
+		return fmt.Errorf("labelImage function parameter must be a bytea, but got %[1]T(%[1]v)", args[0]), false
+	}
+	originalPic, _, err := image.Decode(bytes.NewReader(arg0))
+	if err != nil {
+		return err, false
+	}
+
 	// This line _may_ be optional; by default the library will try to load
 	// "onnxruntime.dll" on Windows, and "onnxruntime.so" on any other system.
 	// For stability, it is probably a good idea to always set this explicitly.
@@ -48,27 +61,78 @@ func (f *mnist) Exec(_ api.FunctionContext, args []any) (any, bool) {
 
 		err := ort.InitializeEnvironment()
 		if err != nil {
-			println("Failed to initialize environment: %s", err.Error())
+			//println("Failed to initialize environment: %s", err.Error())
+			f.initModelError = fmt.Errorf("failed to initialize environment: %s", err)
+			return
 		}
-		checkFileStat(f.sharedLibraryPath)
-	})
-	var networkPath = f.modelPath
-	var returnRes = ""
+		//checkFileStat(f.sharedLibraryPath)
 
-	inputs, outputs, err := ort.GetInputOutputInfo(networkPath)
-	if err != nil {
-		//return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err) + printCurrDIr(), true
-		return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err), true
+		_, _, err = ort.GetInputOutputInfo(f.modelPath)
+		if err != nil {
+			//return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err) + printCurrDIr(), true
+			f.initModelError = fmt.Errorf("Error getting input and output info for %s: %w", f.modelPath, err)
+			return
+		}
+
+	})
+
+	bounds := originalPic.Bounds().Canon() //todo 函数作用
+	if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
+		// Should never happen with the standard library.
+		return fmt.Errorf("Bounding rect  doesn't start at 0, 0"), false
 	}
-	returnRes += fmt.Sprintf("%d inputs to %s:\n", len(inputs), networkPath)
-	for i, v := range inputs {
-		returnRes += fmt.Sprintf("  Index %d: %s\n", i, &v)
+	inputImage := &ProcessedImage{
+		dx:     float32(bounds.Dx()) / 28.0,
+		dy:     float32(bounds.Dy()) / 28.0,
+		pic:    originalPic,
+		Invert: false,
 	}
-	returnRes += fmt.Sprintf("%d outputs from %s:\n", len(outputs), networkPath)
-	for i, v := range outputs {
-		returnRes += fmt.Sprintf("  Index %d: %s\n", i, &v)
+
+	inputData := inputImage.GetNetworkInput()
+	input, e := ort.NewTensor(f.inputShape, inputData)
+	if e != nil {
+		return fmt.Errorf("error creating input tensor: %w", e), false
 	}
+	defer input.Destroy()
+
+	// Create the output tensor
+	output, e := ort.NewEmptyTensor[float32](f.outputShape)
+	if e != nil {
+		return fmt.Errorf("error creating output tensor: %w", e), false
+	}
+	defer output.Destroy()
+
+	// The input and output names are required by this network; they can be
+	// found on the MNIST ONNX models page linked in the README.
+	session, e := ort.NewAdvancedSession("./mnist.onnx",
+		[]string{"Input3"}, []string{"Plus214_Output_0"},
+		[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
+	if e != nil {
+		return fmt.Errorf("error creating MNIST network session: %w", e), false
+	}
+	defer session.Destroy()
+
+	// Run the network and print the results.
+	e = session.Run()
+	if e != nil {
+		return fmt.Errorf("error running the MNIST network: %w", e), false
+	}
+
+	var returnRes = fmt.Sprintf("Output probabilities:\n")
+	outputData := output.GetData()
+	maxIndex := 0
+	maxProbability := float32(-1.0e9)
+	for i, v := range outputData {
+		returnRes += fmt.Sprintf("  %d: %f\n", i, v)
+		if v > maxProbability {
+			maxProbability = v
+			maxIndex = i
+		}
+	}
+	returnRes += fmt.Sprintf(" probably a %d, with probability %f\n", maxIndex, maxProbability)
+
 	return returnRes, true
+
 }
 
 func (f *mnist) IsAggregate() bool {
@@ -76,11 +140,11 @@ func (f *mnist) IsAggregate() bool {
 }
 
 var Mnist = mnist{
-	modelPath:         "./data/functions/mnist/mnist_float16.onnx",
+	modelPath:         "./data/functions/mnist/mnist.onnx", //todo:待测试
 	sharedLibraryPath: "./data/functions/mnist/onnxruntime.so",
 	//sharedLibraryPath: "/home/swx/GolandProjects/ekuiper/_build/kuiper-2.0.0-alpha.3-199-gaf747de4-linux-amd64/data/functions/mnist/onnxruntime_arm64.so",
-	inputShape:  ort.NewShape(2, 5),
-	outputShape: ort.NewShape(2, 3, 4),
+	inputShape:  ort.NewShape(1, 1, 28, 28),
+	outputShape: ort.NewShape(1, 10),
 }
 
 var _ api.Function = &mnist{}
@@ -121,4 +185,95 @@ func checkFileStat(filePath string) {
 	} else {
 		fmt.Println("File exists:", filePath)
 	}
+}
+
+/// 辅助图片类
+
+// Implements the color interface
+type grayscaleFloat float32
+
+func (f grayscaleFloat) RGBA() (r, g, b, a uint32) {
+	a = 0xffff
+	v := uint32(f * 0xffff)
+	if v > 0xffff {
+		v = 0xffff
+	}
+	r = v
+	g = v
+	b = v
+	return
+}
+
+// Used to satisfy the image interface as well as to help with formatting and
+// resizing an input image into the format expected as a network input.
+type ProcessedImage struct {
+	// The number of "pixels" in the input image corresponding to a single
+	// pixel in the 28x28 output image.
+	dx, dy float32
+
+	// The input image being transformed
+	pic image.Image
+
+	// If true, the grayscale values in the postprocessed image will be
+	// inverted, so that dark colors in the original become light, and vice
+	// versa. Recall that the network expects black backgrounds, so this should
+	// be set to true for images with light backgrounds.
+	Invert bool
+}
+
+func (p *ProcessedImage) ColorModel() color.Model {
+	return color.Gray16Model
+}
+
+func (p *ProcessedImage) Bounds() image.Rectangle {
+	return image.Rect(0, 0, 28, 28)
+}
+
+// Returns an average grayscale value using the pixels in the input image.
+func (p *ProcessedImage) At(x, y int) color.Color {
+	if (x < 0) || (x >= 28) || (y < 0) || (y >= 28) {
+		return color.Black
+	}
+
+	// Compute the window of pixels in the input image we'll be averaging.
+	startX := int(float32(x) * p.dx)
+	endX := int(float32(x+1) * p.dx)
+	if endX == startX {
+		endX = startX + 1
+	}
+	startY := int(float32(y) * p.dy)
+	endY := int(float32(y+1) * p.dy)
+	if endY == startY {
+		endY = startY + 1
+	}
+
+	// Compute the average brightness over the window of pixels
+	var sum float32
+	var nPix int
+	for row := startY; row < endY; row++ {
+		for col := startX; col < endX; col++ {
+			c := p.pic.At(col, row)
+			grayValue := color.Gray16Model.Convert(c).(color.Gray16).Y
+			sum += float32(grayValue) / 0xffff
+			nPix++
+		}
+	}
+
+	brightness := grayscaleFloat(sum / float32(nPix))
+	if p.Invert {
+		brightness = 1.0 - brightness
+	}
+	return brightness
+}
+
+// Returns a slice of data that can be used as the input to the onnx network.
+func (p *ProcessedImage) GetNetworkInput() []float32 {
+	toReturn := make([]float32, 0, 28*28)
+	for row := 0; row < 28; row++ {
+		for col := 0; col < 28; col++ {
+			c := float32(p.At(col, row).(grayscaleFloat))
+			toReturn = append(toReturn, c)
+		}
+	}
+	return toReturn
 }
