@@ -21,12 +21,15 @@ import (
 	ort "github.com/yalue/onnxruntime_go"
 	"image"
 	"image/color"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"os/exec"
 	"sync"
 )
 
-type mnist struct {
+type MnistFunc struct {
 	modelPath         string
 	once              sync.Once
 	inputShape        ort.Shape
@@ -35,15 +38,14 @@ type mnist struct {
 	initModelError    error
 }
 
-func (f *mnist) Validate(args []interface{}) error {
+func (f *MnistFunc) Validate(args []interface{}) error {
 	if len(args) != 1 {
 		return fmt.Errorf("labelImage function only supports 1 parameter but got %d", len(args))
 	}
 	return nil
 }
 
-// todo 先解码img，然后推理即可
-func (f *mnist) Exec(_ api.FunctionContext, args []any) (any, bool) {
+func (f *MnistFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 	arg0, ok := args[0].([]byte)
 	if !ok {
 		return fmt.Errorf("labelImage function parameter must be a bytea, but got %[1]T(%[1]v)", args[0]), false
@@ -56,25 +58,28 @@ func (f *mnist) Exec(_ api.FunctionContext, args []any) (any, bool) {
 	// This line _may_ be optional; by default the library will try to load
 	// "onnxruntime.dll" on Windows, and "onnxruntime.so" on any other system.
 	// For stability, it is probably a good idea to always set this explicitly.
-	f.once.Do(func() {
-		ort.SetSharedLibraryPath(f.sharedLibraryPath)
+	f.once.Do(
+		func() {
+			ort.SetSharedLibraryPath(f.sharedLibraryPath)
+			err := ort.InitializeEnvironment()
+			if err != nil {
+				//println("Failed to initialize environment: %s", err.Error())
+				f.initModelError = fmt.Errorf("failed to initialize environment: %s", err)
+				return
+			}
 
-		err := ort.InitializeEnvironment()
-		if err != nil {
-			//println("Failed to initialize environment: %s", err.Error())
-			f.initModelError = fmt.Errorf("failed to initialize environment: %s", err)
-			return
-		}
-		//checkFileStat(f.sharedLibraryPath)
+			_, _, err = ort.GetInputOutputInfo(f.modelPath)
+			if err != nil {
+				//return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err) + printCurrDIr(), true
+				f.initModelError = fmt.Errorf("error getting input and output info for %s: %w", f.modelPath, err)
+				return
+			}
 
-		_, _, err = ort.GetInputOutputInfo(f.modelPath)
-		if err != nil {
-			//return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err) + printCurrDIr(), true
-			f.initModelError = fmt.Errorf("Error getting input and output info for %s: %w", f.modelPath, err)
-			return
-		}
+		})
 
-	})
+	if f.initModelError != nil {
+		return fmt.Errorf("%v", f.initModelError), false
+	}
 
 	bounds := originalPic.Bounds().Canon() //todo 函数作用
 	if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
@@ -104,7 +109,7 @@ func (f *mnist) Exec(_ api.FunctionContext, args []any) (any, bool) {
 
 	// The input and output names are required by this network; they can be
 	// found on the MNIST ONNX models page linked in the README.
-	session, e := ort.NewAdvancedSession("./mnist.onnx",
+	session, e := ort.NewAdvancedSession(f.modelPath,
 		[]string{"Input3"}, []string{"Plus214_Output_0"},
 		[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
 	if e != nil {
@@ -135,19 +140,18 @@ func (f *mnist) Exec(_ api.FunctionContext, args []any) (any, bool) {
 
 }
 
-func (f *mnist) IsAggregate() bool {
+func (f *MnistFunc) IsAggregate() bool {
 	return false
 }
 
-var Mnist = mnist{
-	modelPath:         "./data/functions/mnist/mnist.onnx", //todo:待测试
+var Mnist = MnistFunc{
+	modelPath:         "./data/functions/mnist/mnist.onnx", //todo:测试后还原这里和文件名
 	sharedLibraryPath: "./data/functions/mnist/onnxruntime.so",
 	//sharedLibraryPath: "/home/swx/GolandProjects/ekuiper/_build/kuiper-2.0.0-alpha.3-199-gaf747de4-linux-amd64/data/functions/mnist/onnxruntime_arm64.so",
 	inputShape:  ort.NewShape(1, 1, 28, 28),
 	outputShape: ort.NewShape(1, 10),
 }
-
-var _ api.Function = &mnist{}
+var _ api.Function = &MnistFunc{}
 
 func printCurrDIr() string {
 	// 创建一个 bytes.Buffer 来捕获命令输出
