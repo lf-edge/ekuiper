@@ -23,7 +23,6 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
@@ -32,7 +31,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/hidden"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
@@ -166,85 +164,11 @@ func recoverRule(r *def.Rule) string {
 	return fmt.Sprintf("Rule %s was started.", r.Id)
 }
 
-// reload password from resources if the config both include password(as fake password) and resourceId
-func replacePasswdForConfig(typ string, name string, config map[string]interface{}) map[string]interface{} {
-	if r, ok := config["resourceId"]; ok {
-		if resourceId, ok := r.(string); ok {
-			return meta.ReplacePasswdForConfig(typ, name, resourceId, config)
-		}
-	}
-	return config
-}
-
-func replaceRulePassword(id, ruleJson string) (string, error) {
-	r := &def.Rule{
-		Triggered: true,
-	}
-	if err := json.Unmarshal([]byte(ruleJson), r); err != nil {
-		return "", err
-	}
-	existsRule, err := ruleProcessor.GetRuleById(id)
-	if err != nil {
-		return "", err
-	}
-
-	var replacePassword bool
-	for i, action := range r.Actions {
-		if i >= len(existsRule.Actions) {
-			break
-		}
-		for k, v := range action {
-			if m, ok := v.(map[string]interface{}); ok {
-				for key := range hidden.GetHiddenKeys() {
-					if v, ok := m[key]; ok && v == hidden.PASSWORD {
-						oldAction := existsRule.Actions[i]
-						oldV, ok := oldAction[k]
-						if ok {
-							if oldM, ok := oldV.(map[string]interface{}); ok {
-								oldPasswordValue, ok := oldM[key]
-								if ok {
-									oldPasswordStr, ok := oldPasswordValue.(string)
-									if ok && oldPasswordStr != hidden.PASSWORD {
-										m[key] = oldPasswordStr
-										action[k] = m
-										r.Actions[i] = action
-										replacePassword = true
-										continue
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	if !replacePassword {
-		return ruleJson, nil
-	}
-	b, err := json.Marshal(r)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
-func updateRule(ruleId, ruleJson string, replacePasswd bool) error {
+func updateRule(ruleId, ruleJson string) error {
 	// Validate the rule json
 	r, err := ruleProcessor.GetRuleByJson(ruleId, ruleJson)
 	if err != nil {
 		return fmt.Errorf("Invalid rule json: %v", err)
-	}
-	if replacePasswd {
-		for i, action := range r.Actions {
-			for k, v := range action {
-				if m, ok := v.(map[string]interface{}); ok {
-					m = replacePasswdForConfig("sink", k, m)
-					action[k] = m
-				}
-			}
-			r.Actions[i] = action
-		}
 	}
 	if rs, ok := registry.Load(r.Id); ok {
 		err := rs.UpdateTopo(r)

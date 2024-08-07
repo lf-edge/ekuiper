@@ -202,16 +202,6 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	got := replacePasswdForConfig("sink", "mqtt", map[string]interface{}{
-		"resourceId": "test",
-		"a":          "123",
-		"password":   "******",
-	})
-	require.Equal(suite.T(), map[string]interface{}{
-		"resourceId": "test",
-		"a":          "123",
-		"password":   "123456",
-	}, got)
 	os.Remove(path.Join(DataDir, "sinks", "mqtt.yaml"))
 	os.Remove(path.Join(DataDir, "sinks"))
 }

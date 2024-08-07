@@ -691,18 +691,14 @@ func ruleHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		newRuleJson, err := replaceRulePassword(name, string(body))
-		if err != nil {
-			handleError(w, err, "Invalid body", logger)
-			return
-		}
-		err = updateRule(name, newRuleJson, true)
+		ruleJson := string(body)
+		err = updateRule(name, ruleJson)
 		if err != nil {
 			handleError(w, err, "Update rule error", logger)
 			return
 		}
 		// Update to db after validation
-		_, err = ruleProcessor.ExecUpdate(name, newRuleJson)
+		_, err = ruleProcessor.ExecUpdate(name, ruleJson)
 		if err != nil {
 			handleError(w, err, "Update rule error, suggest to delete it and recreate", logger)
 			return

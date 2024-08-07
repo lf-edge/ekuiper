@@ -585,7 +585,7 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 		_, err := ruleProcessor.GetRuleJson(k)
 		if err == nil {
 			// the rule already exist, update
-			err = updateRule(k, v, false)
+			err = updateRule(k, v)
 			if err != nil {
 				ruleSetRsp.Rules[k] = err.Error()
 				continue

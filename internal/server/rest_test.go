@@ -35,7 +35,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
-	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
@@ -903,35 +902,6 @@ func (suite *RestTestSuite) TestUpdateRuleOffset() {
 	require.Equal(suite.T(), `success`, returnStr)
 }
 
-func (suite *RestTestSuite) TestCreateRuleReplacePasswd() {
-	meta.InitYamlConfigManager()
-	confKeyJson := `{"insecureSkipVerify":false,"protocolVersion":"3.1.1","qos":1,"server":"tcp://122.9.166.75:1883","token":"123","password":"4444"}`
-	req, _ := http.NewRequest(http.MethodPut, "http://localhost:8080/metadata/sinks/mqtt/confKeys/broker", bytes.NewBufferString(confKeyJson))
-	w := httptest.NewRecorder()
-	suite.r.ServeHTTP(w, req)
-	require.Equal(suite.T(), http.StatusOK, w.Code)
-
-	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demodemo() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
-	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
-	w1 := httptest.NewRecorder()
-	suite.r.ServeHTTP(w1, req1)
-
-	ruleJson2 := `{"id":"test1234","triggered":false,"sql":"select * from demodemo","actions":[{"mqtt":{"password":"******","topic":"123","server":"123","resourceId":"broker"}}]}`
-	buf2 := bytes.NewBuffer([]byte(ruleJson2))
-	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
-	w2 := httptest.NewRecorder()
-	suite.r.ServeHTTP(w2, req2)
-	require.Equal(suite.T(), http.StatusCreated, w2.Code)
-
-	r, err := ruleProcessor.GetRuleById("test1234")
-	require.NoError(suite.T(), err)
-	mqttSinkConfig := r.Actions[0]["mqtt"]
-	require.NotNil(suite.T(), mqttSinkConfig)
-	c, ok := mqttSinkConfig.(map[string]interface{})
-	require.True(suite.T(), ok)
-	require.Equal(suite.T(), "4444", c["password"])
-}
-
 func (suite *RestTestSuite) TestCreateDuplicateRule() {
 	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo123() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
 	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
@@ -1001,20 +971,6 @@ func (suite *RestTestSuite) TestSinkHiddenPassword() {
 	w2 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusCreated, w2.Code)
-
-	ruleJson2 = `{"triggered":false,"id":"rule34","sql":"select * from demo78;","actions":[{"mqtt":{"server":"tcp://broker.emqx.io:1883","topic":"devices/demo_001/messages/events/","qos":0,"clientId":"demo_001","username":"xyz.azure-devices.net/demo_001/?api-version=2018-06-30","password":"******"}}]}`
-	buf2 = bytes.NewBuffer([]byte(ruleJson2))
-	req2, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule34", buf2)
-	w2 = httptest.NewRecorder()
-	suite.r.ServeHTTP(w2, req2)
-	require.Equal(suite.T(), http.StatusOK, w2.Code)
-
-	ruleJson, err := ruleProcessor.GetRuleJson("rule34")
-	require.NoError(suite.T(), err)
-	r := &def.Rule{}
-	require.NoError(suite.T(), json.Unmarshal([]byte(ruleJson), r))
-	m := r.Actions[0]["mqtt"].(map[string]interface{})
-	require.Equal(suite.T(), "12345", m["password"])
 }
 
 func (suite *RestTestSuite) TestWaitStopRule() {
