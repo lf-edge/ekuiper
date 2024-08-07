@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pingcap/failpoint"
+
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -121,6 +123,13 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 }
 
 func (b *BatchOp) send() {
+	if b.buffer.Len() < 1 {
+		return
+	}
+	failpoint.Inject("injectPanic", func() {
+		panic("shouldn't send message when empty")
+	})
+
 	b.Broadcast(b.buffer)
 	// Reset buffer
 	b.buffer = &xsql.WindowTuples{
