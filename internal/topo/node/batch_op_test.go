@@ -20,7 +20,9 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/xsql"
@@ -97,4 +99,12 @@ func TestRun(t *testing.T) {
 			assert.Equal(t, tc.expectItems, len(w.Content))
 		})
 	}
+}
+
+func TestBatchOpSendEmpty(t *testing.T) {
+	op, err := NewBatchOp("test", &api.RuleOption{BufferLength: 10, SendError: true}, 0, 1000)
+	require.NoError(t, err)
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic", "return(true)")
+	op.send()
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic")
 }
