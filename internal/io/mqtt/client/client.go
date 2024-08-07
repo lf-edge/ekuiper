@@ -23,6 +23,7 @@ import (
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -66,6 +67,9 @@ func (conn *Connection) Publish(topic string, qos byte, retained bool, payload a
 }
 
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
+	failpoint.Inject("panic", func() {
+		panic("mqtt client panic")
+	})
 	conn.connected.Store(true)
 	conn.logger.Infof("The connection to mqtt broker is established")
 	for topic, info := range conn.subscriptions {
@@ -125,7 +129,7 @@ func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Conn
 }
 
 // CreateClient creates a new mqtt client. It is anonymous and does not require a name.
-func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, error) {
+func CreateClient(ctx api.StreamContext, props map[string]any) (conn *Connection, err error) {
 	c, err := ValidateConfig(props)
 	if err != nil {
 		return nil, err
@@ -154,6 +158,12 @@ func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, err
 	opts.ConnectRetry = true
 	opts.ConnectRetryInterval = connection.DefaultInitialInterval
 	opts.MaxReconnectInterval = connection.DefaultMaxInterval
+
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("create mqtt client panic, %v", r)
+		}
+	}()
 
 	cli := pahoMqtt.NewClient(opts)
 	token := cli.Connect()

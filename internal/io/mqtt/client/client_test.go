@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -78,4 +79,18 @@ func TestMqttClientPing(t *testing.T) {
 	// wait status done
 	time.Sleep(100 * time.Millisecond)
 	require.Error(t, c.Ping(ctx))
+}
+
+func TestCreateClientPanic(t *testing.T) {
+	url, cancel, err := testx.InitBroker("TestMqttClientPing")
+	require.NoError(t, err)
+	defer cancel()
+	ctx := mockContext.NewMockContext("1", "2")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client/panic", "return(true)")
+	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client/panic")
+	_, err = CreateClient(ctx, map[string]any{
+		"server":     url,
+		"datasource": "demo",
+	})
+	require.Error(t, err)
 }
