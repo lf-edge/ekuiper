@@ -55,33 +55,27 @@ func (f *MnistFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 		return err, false
 	}
 
-	// This line _may_ be optional; by default the library will try to load
-	// "onnxruntime.dll" on Windows, and "onnxruntime.so" on any other system.
-	// For stability, it is probably a good idea to always set this explicitly.
 	f.once.Do(
 		func() {
 			ort.SetSharedLibraryPath(f.sharedLibraryPath)
 			err := ort.InitializeEnvironment()
 			if err != nil {
-				//println("Failed to initialize environment: %s", err.Error())
 				f.initModelError = fmt.Errorf("failed to initialize environment: %s", err)
 				return
 			}
 
 			_, _, err = ort.GetInputOutputInfo(f.modelPath)
 			if err != nil {
-				//return fmt.Sprintf("Error getting input and output info for %s: %w", networkPath, err) + printCurrDIr(), true
 				f.initModelError = fmt.Errorf("error getting input and output info for %s: %w", f.modelPath, err)
 				return
 			}
-
 		})
 
 	if f.initModelError != nil {
 		return fmt.Errorf("%v", f.initModelError), false
 	}
 
-	bounds := originalPic.Bounds().Canon() //todo 函数作用
+	bounds := originalPic.Bounds().Canon()
 	if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
 		// Should never happen with the standard library.
 		return fmt.Errorf("Bounding rect  doesn't start at 0, 0"), false
@@ -137,7 +131,6 @@ func (f *MnistFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 	returnRes += fmt.Sprintf(" probably a %d, with probability %f\n", maxIndex, maxProbability)
 
 	return returnRes, true
-
 }
 
 func (f *MnistFunc) IsAggregate() bool {
@@ -145,11 +138,10 @@ func (f *MnistFunc) IsAggregate() bool {
 }
 
 var Mnist = MnistFunc{
-	modelPath:         "./data/functions/mnist/mnist.onnx", //todo:测试后还原这里和文件名
+	modelPath:         "./data/functions/mnist/mnist.onnx",
 	sharedLibraryPath: "./data/functions/mnist/onnxruntime.so",
-	//sharedLibraryPath: "/home/swx/GolandProjects/ekuiper/_build/kuiper-2.0.0-alpha.3-199-gaf747de4-linux-amd64/data/functions/mnist/onnxruntime_arm64.so",
-	inputShape:  ort.NewShape(1, 1, 28, 28),
-	outputShape: ort.NewShape(1, 10),
+	inputShape:        ort.NewShape(1, 1, 28, 28),
+	outputShape:       ort.NewShape(1, 10),
 }
 var _ api.Function = &MnistFunc{}
 
@@ -208,7 +200,7 @@ func (f grayscaleFloat) RGBA() (r, g, b, a uint32) {
 	return
 }
 
-// Used to satisfy the image interface as well as to help with formatting and
+// ProcessedImage Used to satisfy the image interface as well as to help with formatting and
 // resizing an input image into the format expected as a network input.
 type ProcessedImage struct {
 	// The number of "pixels" in the input image corresponding to a single
@@ -233,7 +225,7 @@ func (p *ProcessedImage) Bounds() image.Rectangle {
 	return image.Rect(0, 0, 28, 28)
 }
 
-// Returns an average grayscale value using the pixels in the input image.
+// At Returns an average grayscale value using the pixels in the input image.
 func (p *ProcessedImage) At(x, y int) color.Color {
 	if (x < 0) || (x >= 28) || (y < 0) || (y >= 28) {
 		return color.Black
@@ -270,7 +262,7 @@ func (p *ProcessedImage) At(x, y int) color.Color {
 	return brightness
 }
 
-// Returns a slice of data that can be used as the input to the onnx network.
+// GetNetworkInput Returns a slice of data that can be used as the input to the onnx network.
 func (p *ProcessedImage) GetNetworkInput() []float32 {
 	toReturn := make([]float32, 0, 28*28)
 	for row := 0; row < 28; row++ {

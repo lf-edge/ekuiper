@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	ort "github.com/yalue/onnxruntime_go"
 	_ "image/gif"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 )
 
 // todo 测试文件仿照tf lite
@@ -67,16 +69,10 @@ func Test_mnist_Exec(t *testing.T) {
 				initModelError:    tt.fields.initModelError,
 			}
 
-			got, got1 := f.Exec(tt.args.in0, tt.args.args)
-			//if !reflect.DeepEqual(got, tt.want) {
-			//	t.Errorf("Exec() got = %v, want %v", got, tt.want)
-			//}
-			//if got1 != tt.want1 {
-			//	t.Errorf("Exec() got1 = %v, want %v", got1, tt.want1)
-			//}
-			fmt.Printf("%v\n", got)
-			fmt.Println("-----------------------------")
-			fmt.Printf("%v ", got1)
+			_, got1 := f.Exec(tt.args.in0, tt.args.args)
+			if !got1 {
+				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
+			}
 		})
 	}
 }
@@ -109,6 +105,31 @@ ok      github.com/lf-edge/ekuiper/v2/extensions/functions/mnist        0.030s
 
 */
 
-/*
+func TestPic(t *testing.T) {
+	const TOPIC = "tfdmnist"
 
- */
+	images := []string{
+		"img.png",
+		// 其他你需要的图像
+	}
+	opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
+	client := mqtt.NewClient(opts)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		panic(token.Error())
+	}
+	for _, image := range images {
+		fmt.Println("Publishing " + image)
+		payload, err := os.ReadFile(image)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
+			fmt.Println(token.Error())
+		} else {
+			fmt.Println("Published " + image)
+		}
+		time.Sleep(1 * time.Second)
+	}
+	client.Disconnect(0)
+}
