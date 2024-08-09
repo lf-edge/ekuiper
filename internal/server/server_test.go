@@ -54,7 +54,6 @@ func TestHandleScheduleRule(t *testing.T) {
 			action: scheduleRuleActionStart,
 		},
 		{
-
 			Options: &def.RuleOption{
 				Cron:     "",
 				Duration: "",
