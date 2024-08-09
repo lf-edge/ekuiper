@@ -171,7 +171,7 @@ func (s *State) GetStatusMessage() string {
 	result.WriteString(`"lastStopTimestamp": "`)
 	result.WriteString(strconv.FormatInt(s.lastStopTimestamp, 10))
 	result.WriteString(`",`)
-	nextStartTimestamp := s.getNextScheduleStartTime()
+	nextStartTimestamp := s.Rule.GetNextScheduleStartTime()
 	result.WriteString(`"nextStartTimestamp": "`)
 	result.WriteString(strconv.FormatInt(nextStartTimestamp, 10))
 	result.WriteString(`",`)
@@ -218,7 +218,7 @@ func (s *State) GetStatusMap() map[string]any {
 	result["message"] = s.lastWill
 	result["lastStartTimestamp"] = s.lastStartTimestamp
 	result["lastStopTimestamp"] = s.lastStopTimestamp
-	nextStartTimestamp := s.getNextScheduleStartTime()
+	nextStartTimestamp := s.Rule.GetNextScheduleStartTime()
 	result["nextStartTimestamp"] = nextStartTimestamp
 	// Compose metrics
 	var (
