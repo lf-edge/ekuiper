@@ -89,18 +89,17 @@ type Rule struct {
 	Options   *RuleOption              `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
-func (r *Rule) IsLongRunningScheduleRule() bool {
-	if r.Options == nil {
-		return false
-	}
-	return len(r.Options.Cron) == 0 && len(r.Options.Duration) == 0 && len(r.Options.CronDatetimeRange) > 0
-}
-
 func (r *Rule) IsScheduleRule() bool {
 	if r.Options == nil {
 		return false
 	}
-	return len(r.Options.Cron) > 0 && len(r.Options.Duration) > 0
+	if len(r.Options.CronDatetimeRange) > 0 {
+		return true
+	}
+	if len(r.Options.Cron) > 0 && len(r.Options.Duration) > 0 {
+		return true
+	}
+	return false
 }
 
 func GetDefaultRule(name, sql string) *Rule {

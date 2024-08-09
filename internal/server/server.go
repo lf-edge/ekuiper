@@ -470,19 +470,41 @@ const (
 
 func handleScheduleRule(now time.Time, r *def.Rule) scheduleRuleAction {
 	options := r.Options
-	if options != nil && options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
-		isInRange, err := schedule.IsInScheduleRanges(now, options.CronDatetimeRange)
-		if err != nil {
-			conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
-			return scheduleRuleActionDoNothing
-		}
-		if isInRange && r.Triggered {
-			return scheduleRuleActionStart
-		} else if !isInRange && r.Triggered {
-			return scheduleRuleActionStop
-		}
+	if options == nil {
+		return scheduleRuleActionDoNothing
 	}
-	return scheduleRuleActionDoNothing
+	isInRange, err := schedule.IsInScheduleRanges(now, options.CronDatetimeRange)
+	if err != nil {
+		conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
+		return scheduleRuleActionDoNothing
+	}
+	if !isInRange {
+		return scheduleRuleActionStop
+	}
+	if options.Cron == "" && options.Duration == "" {
+		return scheduleRuleActionStart
+	}
+	isInCron, err := scheduleCronRule(now, options)
+	if err != nil {
+		conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
+		return scheduleRuleActionDoNothing
+	}
+	if isInCron {
+		return scheduleRuleActionStart
+	}
+	return scheduleRuleActionStop
+}
+
+func scheduleCronRule(now time.Time, options *def.RuleOption) (bool, error) {
+	if len(options.Cron) > 0 && len(options.Duration) > 0 {
+		d, err := time.ParseDuration(options.Duration)
+		if err != nil {
+			return false, err
+		}
+		isin, _, err := schedule.IsInRunningSchedule(options.Cron, now, d)
+		return isin, err
+	}
+	return false, nil
 }
 
 func startCPUProfiling(ctx context.Context) error {

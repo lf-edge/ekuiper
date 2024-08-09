@@ -85,7 +85,6 @@ type State struct {
 	cancelRetry context.CancelFunc
 	// temporary storage for topo graph to make sure even Rule close, the graph is still available
 	topoGraph *def.PrintableTopo
-	cronState cronStateCtx
 	// Metric RunState
 	lastStartTimestamp int64
 	lastStopTimestamp  int64
@@ -250,26 +249,10 @@ func (s *State) Start() error {
 	if done {
 		return nil
 	}
-	if s.Rule.IsLongRunningScheduleRule() {
-		isIn, err := schedule.IsInScheduleRanges(timex.GetNow(), s.Rule.Options.CronDatetimeRange)
-		if err != nil {
-			// s.transit(Stopped, err)
-			return err
-		}
-		// When Rule is created, we need to check its schedule range before start it.
-		// If isIn, should be in running state, do not change it. And let it go to
-		if !isIn {
-			s.transit(ScheduledStop, nil)
-			return nil
-		}
-	} else if s.Rule.IsScheduleRule() {
-		err := s.registerScheduleRule()
-		if err != nil {
-			return err
-		} else {
-			s.transit(ScheduledStop, nil)
-			return nil
-		}
+	// delegate to rule patrol checker
+	if s.Rule.IsScheduleRule() {
+		s.transit(ScheduledStop, nil)
+		return nil
 	}
 	// Start normally or start in schedule period Rule
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
@@ -381,8 +364,6 @@ func (s *State) Stop() {
 	if done {
 		return
 	}
-	// unregister if it is the scheduled Rule
-	s.removeScheduleRule()
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
 	err := s.doStop()
 	if err == nil {
@@ -568,7 +549,6 @@ func (s *State) Delete() (err error) {
 		s.topology.Cancel()
 		s.topology.WaitClose()
 	}
-	s.removeScheduleRule()
 	return nil
 }
 
