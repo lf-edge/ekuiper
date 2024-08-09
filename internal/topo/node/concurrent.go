@@ -92,7 +92,7 @@ func merge(ctx api.StreamContext, exitNotify chan any, node *defaultSinkNode, se
 
 func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, workerChans []chan any, notify chan any) {
 	defer func() {
-		notify.c
+		close(notify)
 	}()
 	var counter int
 	for {
