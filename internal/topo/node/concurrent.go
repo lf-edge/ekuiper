@@ -15,6 +15,8 @@
 package node
 
 import (
+	"context"
+	"sync"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -37,17 +39,29 @@ func runWithOrderAndInterval(ctx api.StreamContext, node *defaultSinkNode, numWo
 		workerChans[i] = make(chan any)
 		workerOutChans[i] = make(chan []any)
 	}
+	workerCtx, cancelWorker := ctx.WithCancel()
+	mergeCtx, cancelMerge := workerCtx.WithCancel()
+
+	workersWg := &sync.WaitGroup{}
 
 	// Start worker goroutines
 	for i := 0; i < numWorkers; i++ {
-		go worker(ctx, node, i, wf, workerChans[i], workerOutChans[i])
+		workersWg.Add(1)
+		go worker(workerCtx, node, i, wf, workerChans[i], workerOutChans[i], workersWg)
 	}
 	// start merger goroutine
 	output := make(chan any)
-	go merge(ctx, node, sendInterval, output, workerOutChans...)
+	go merge(mergeCtx, node, sendInterval, output, workerOutChans...)
 
+	go notifyMergeQuit(workersWg, cancelMerge)
 	// Distribute input data to workers
-	distribute(ctx, node, numWorkers, workerChans)
+	distribute(ctx, node, numWorkers, workerChans, cancelWorker)
+}
+
+// wait all workers exits then notify merge goroutine quit
+func notifyMergeQuit(workersWg *sync.WaitGroup, cancelMerge context.CancelFunc) {
+	workersWg.Wait()
+	cancelMerge()
 }
 
 // Merge multiple channels into one preserving the order
@@ -77,7 +91,10 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 	}
 }
 
-func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, workerChans []chan any) {
+func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, workerChans []chan any, cancelWorker context.CancelFunc) {
+	defer func() {
+		cancelWorker()
+	}()
 	var counter int
 	for {
 		node.statManager.SetBufferLength(int64(len(node.input)))
@@ -96,7 +113,10 @@ func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wo
 	}
 }
 
-func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, inputRaw chan any, output chan []any) {
+func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, inputRaw chan any, output chan []any, wg *sync.WaitGroup) {
+	defer func() {
+		wg.Done()
+	}()
 	for {
 		select {
 		case data := <-inputRaw:
