@@ -132,6 +132,28 @@ func TestHandleScheduleRule(t *testing.T) {
 			},
 			action: scheduleRuleActionStop,
 		},
+		{
+			Options: nil,
+			action:  scheduleRuleActionDoNothing,
+		},
+		{
+			Options: &def.RuleOption{
+				CronDatetimeRange: []def.DatetimeRange{
+					{
+						Begin: "1332##2",
+						End:   "25344@@@",
+					},
+				},
+			},
+			action: scheduleRuleActionDoNothing,
+		},
+		{
+			Options: &def.RuleOption{
+				Cron:     "###",
+				Duration: "###",
+			},
+			action: scheduleRuleActionDoNothing,
+		},
 	}
 	for i, tc := range testcases {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
