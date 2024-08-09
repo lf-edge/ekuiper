@@ -465,13 +465,3 @@ func deleteRuleMetrics(name string) {
 		promMetrics.RemoveRuleStatus(name)
 	}
 }
-
-// reload password from resources if the config both include password(as fake password) and resourceId
-func replacePasswdForConfig(typ string, name string, config map[string]interface{}) map[string]interface{} {
-	if r, ok := config["resourceId"]; ok {
-		if resourceId, ok := r.(string); ok {
-			return meta.ReplacePasswdForConfig(typ, name, resourceId, config)
-		}
-	}
-	return config
-}
