@@ -201,7 +201,7 @@ func StartUp(Version string) {
 	meta.Bind()
 	initRuleset()
 
-	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
+	registry = &RuleRegistry{internal: make(map[string]*rule.State)}
 	// Start lookup tables
 	streamProcessor.RecoverLookupTable()
 	// Start rules
@@ -217,7 +217,7 @@ func StartUp(Version string) {
 				continue
 			}
 			// err = server.StartRule(rule, &reply)
-			reply = recoverRule(rule)
+			reply = registry.RecoverRule(rule)
 			if 0 != len(reply) {
 				logger.Info(reply)
 			}
@@ -343,8 +343,7 @@ func resetAllRules() error {
 		return err
 	}
 	for _, name := range rules {
-		_ = deleteRule(name)
-		_, err := ruleProcessor.ExecDrop(name)
+		err := registry.DeleteRule(name)
 		if err != nil {
 			logger.Warnf("delete rule: %s with error %v", name, err)
 			continue
@@ -422,15 +421,15 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 		for _, r := range rs {
 			id := r.rule.Id
 			switch r.state {
-			case rule.RuleStarted:
+			case rule.Running:
 				runningCount++
 				v = RuleRunning
-			case rule.RuleStopped, rule.RuleTerminated, rule.RuleWait:
-				stopCount++
-				v = RuleStopped
-			default:
+			case rule.StoppedByErr:
 				stopCount++
 				v = RuleStoppedByError
+			default:
+				stopCount++
+				v = RuleStopped
 			}
 			promMetrics.SetRuleStatus(id, int(v))
 		}
@@ -441,20 +440,22 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 
 func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 	for _, r := range rs {
-		if err := handleScheduleRuleState(now, r.rule, r.state); err != nil {
+		if err := handleScheduleRuleState(now, r.rule); err != nil {
 			conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
 		}
 	}
 }
 
-func handleScheduleRuleState(now time.Time, r *def.Rule, state string) error {
-	scheduleActionSignal := handleScheduleRule(now, r, state)
-	conf.Log.Debugf("rule %v origin state: %v, sginal: %v", r.Id, state, scheduleActionSignal)
+func handleScheduleRuleState(now time.Time, r *def.Rule) error {
+	scheduleActionSignal := handleScheduleRule(now, r)
+	conf.Log.Debugf("rule %v, sginal: %v", r.Id, scheduleActionSignal)
 	switch scheduleActionSignal {
 	case scheduleRuleActionStart:
-		return startRuleInternal(r.Id)
+		return registry.scheduledStart(r.Id)
 	case scheduleRuleActionStop:
-		stopRuleInternal(r.Id)
+		return registry.scheduledStop(r.Id)
+	default:
+		// do nothing
 	}
 	return nil
 }
@@ -467,7 +468,7 @@ const (
 	scheduleRuleActionStop
 )
 
-func handleScheduleRule(now time.Time, r *def.Rule, state string) scheduleRuleAction {
+func handleScheduleRule(now time.Time, r *def.Rule) scheduleRuleAction {
 	options := r.Options
 	if options != nil && options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) > 0 {
 		isInRange, err := schedule.IsInScheduleRanges(now, options.CronDatetimeRange)
@@ -475,9 +476,9 @@ func handleScheduleRule(now time.Time, r *def.Rule, state string) scheduleRuleAc
 			conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
 			return scheduleRuleActionDoNothing
 		}
-		if isInRange && state == rule.RuleWait && r.Triggered {
+		if isInRange && r.Triggered {
 			return scheduleRuleActionStart
-		} else if !isInRange && state == rule.RuleStarted && r.Triggered {
+		} else if !isInRange && r.Triggered {
 			return scheduleRuleActionStop
 		}
 	}
@@ -507,6 +508,9 @@ func startCPUProfiling(ctx context.Context) error {
 func waitAllRuleStop() {
 	rules, _ := ruleProcessor.GetAllRules()
 	for _, r := range rules {
-		stopRuleWhenServerStop(r)
+		err := registry.stopAtExit(r)
+		if err != nil {
+			logger.Warnf("stop rule %s failed, err:%v", r, err)
+		}
 	}
 }
