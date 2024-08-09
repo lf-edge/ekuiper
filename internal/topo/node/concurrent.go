@@ -15,7 +15,6 @@
 package node
 
 import (
-	"context"
 	"sync"
 	"time"
 
@@ -39,33 +38,33 @@ func runWithOrderAndInterval(ctx api.StreamContext, node *defaultSinkNode, numWo
 		workerChans[i] = make(chan any)
 		workerOutChans[i] = make(chan []any)
 	}
-	workerCtx, cancelWorker := ctx.WithCancel()
-	mergeCtx, cancelMerge := workerCtx.WithCancel()
+	workerExitNotify := make(chan any)
+	mergeExitNotify := make(chan any)
 
 	workersWg := &sync.WaitGroup{}
 
 	// Start worker goroutines
 	for i := 0; i < numWorkers; i++ {
 		workersWg.Add(1)
-		go worker(workerCtx, node, i, wf, workerChans[i], workerOutChans[i], workersWg)
+		go worker(ctx, node, i, wf, workerChans[i], workerOutChans[i], workersWg, workerExitNotify)
 	}
 	// start merger goroutine
 	output := make(chan any)
-	go merge(mergeCtx, node, sendInterval, output, workerOutChans...)
+	go merge(ctx, mergeExitNotify, node, sendInterval, output, workerOutChans...)
 
-	go notifyMergeQuit(workersWg, cancelMerge)
+	go notifyMergeQuit(workersWg, mergeExitNotify)
 	// Distribute input data to workers
-	distribute(ctx, node, numWorkers, workerChans, cancelWorker)
+	distribute(ctx, node, numWorkers, workerChans, workerExitNotify)
 }
 
 // wait all workers exits then notify merge goroutine quit
-func notifyMergeQuit(workersWg *sync.WaitGroup, cancelMerge context.CancelFunc) {
+func notifyMergeQuit(workersWg *sync.WaitGroup, mergeExitNotify chan any) {
 	workersWg.Wait()
-	cancelMerge()
+	close(mergeExitNotify)
 }
 
 // Merge multiple channels into one preserving the order
-func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Duration, output chan any, channels ...chan []any) {
+func merge(ctx api.StreamContext, exitNotify chan any, node *defaultSinkNode, sendInterval time.Duration, output chan any, channels ...chan []any) {
 	defer close(output)
 	// Start a goroutine for each input channel
 	for {
@@ -83,7 +82,7 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 						time.Sleep(sendInterval)
 					}
 				}
-			case <-ctx.Done():
+			case <-exitNotify:
 				ctx.GetLogger().Infof("merge done")
 				return
 			}
@@ -91,9 +90,9 @@ func merge(ctx api.StreamContext, node *defaultSinkNode, sendInterval time.Durat
 	}
 }
 
-func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, workerChans []chan any, cancelWorker context.CancelFunc) {
+func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, workerChans []chan any, notify chan any) {
 	defer func() {
-		cancelWorker()
+		notify.c
 	}()
 	var counter int
 	for {
@@ -113,7 +112,7 @@ func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wo
 	}
 }
 
-func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, inputRaw chan any, output chan []any, wg *sync.WaitGroup) {
+func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, inputRaw chan any, output chan []any, wg *sync.WaitGroup, exitNotify chan any) {
 	defer func() {
 		wg.Done()
 	}()
@@ -135,11 +134,8 @@ func worker(ctx api.StreamContext, node *defaultSinkNode, i int, wf workerFunc, 
 			}
 			select {
 			case output <- result:
-			case <-ctx.Done():
-				ctx.GetLogger().Debugf("worker %d done", i)
-				return
 			}
-		case <-ctx.Done():
+		case <-exitNotify:
 			ctx.GetLogger().Debugf("worker %d done", i)
 			return
 		}
