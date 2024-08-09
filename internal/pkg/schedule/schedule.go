@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,13 +20,19 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 const layout = "2006-01-02 15:04:05"
 
-func IsInScheduleRanges(now time.Time, timeRanges []def.DatetimeRange) (bool, error) {
+type DatetimeRange struct {
+	Begin          string `json:"begin" yaml:"begin"`
+	End            string `json:"end" yaml:"end"`
+	BeginTimestamp int64  `json:"beginTimestamp" yaml:"beginTimestamp"`
+	EndTimestamp   int64  `json:"endTimestamp" yaml:"endTimestamp"`
+}
+
+func IsInScheduleRanges(now time.Time, timeRanges []DatetimeRange) (bool, error) {
 	if len(timeRanges) < 1 {
 		return true, nil
 	}
@@ -90,7 +96,7 @@ func isInTimeRange(now time.Time, start string, end string) (bool, error) {
 	return false, nil
 }
 
-func IsAfterTimeRanges(now time.Time, ranges []def.DatetimeRange) bool {
+func IsAfterTimeRanges(now time.Time, ranges []DatetimeRange) bool {
 	if len(ranges) < 1 {
 		return false
 	}
@@ -145,7 +151,7 @@ func IsInRunningSchedule(cronExpr string, now time.Time, d time.Duration) (bool,
 	return false, 0, nil
 }
 
-func ValidateRanges(ranges []def.DatetimeRange) error {
+func ValidateRanges(ranges []DatetimeRange) error {
 	if len(ranges) < 1 {
 		return nil
 	}
@@ -157,7 +163,7 @@ func ValidateRanges(ranges []def.DatetimeRange) error {
 	return nil
 }
 
-func validateRange(r def.DatetimeRange) error {
+func validateRange(r DatetimeRange) error {
 	if r.BeginTimestamp > 0 && r.EndTimestamp > 0 {
 		s, err := cast.InterfaceToTime(r.BeginTimestamp, "")
 		if err != nil {

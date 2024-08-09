@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,19 +20,17 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 )
 
 func TestIsInScheduleRanges(t *testing.T) {
 	now, err := time.Parse(layout, "2006-01-02 15:04:01")
 	require.NoError(t, err)
 	testcases := []struct {
-		dateRanges []def.DatetimeRange
+		dateRanges []DatetimeRange
 		isIn       bool
 	}{
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					Begin: "1999-01-02 15:04:00",
 					End:   "3006-01-02 15:04:03",
@@ -41,7 +39,7 @@ func TestIsInScheduleRanges(t *testing.T) {
 			isIn: true,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					Begin: "1999-01-02 15:04:00",
 					End:   "1999-01-02 15:04:03",
@@ -50,7 +48,7 @@ func TestIsInScheduleRanges(t *testing.T) {
 			isIn: false,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					Begin: "2999-01-02 15:04:00",
 					End:   "2999-01-02 15:04:03",
@@ -59,7 +57,7 @@ func TestIsInScheduleRanges(t *testing.T) {
 			isIn: false,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					BeginTimestamp: 1,
 					EndTimestamp:   2797598229000,
@@ -68,7 +66,7 @@ func TestIsInScheduleRanges(t *testing.T) {
 			isIn: true,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					BeginTimestamp: 1,
 					EndTimestamp:   2,
@@ -77,7 +75,7 @@ func TestIsInScheduleRanges(t *testing.T) {
 			isIn: false,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					BeginTimestamp: 2697598229000,
 					EndTimestamp:   2797598229000,
@@ -109,11 +107,11 @@ func TestIsAfterTimeRanges(t *testing.T) {
 	now, err := time.Parse(layout, "2006-01-02 15:04:01")
 	require.NoError(t, err)
 	testcases := []struct {
-		dateRanges []def.DatetimeRange
+		dateRanges []DatetimeRange
 		isAfter    bool
 	}{
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					Begin: "",
 					End:   "1006-01-02 15:04:00",
@@ -122,7 +120,7 @@ func TestIsAfterTimeRanges(t *testing.T) {
 			isAfter: true,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					Begin: "",
 					End:   "3006-01-02 15:04:00",
@@ -131,7 +129,7 @@ func TestIsAfterTimeRanges(t *testing.T) {
 			isAfter: false,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					BeginTimestamp: 1,
 					EndTimestamp:   2,
@@ -140,7 +138,7 @@ func TestIsAfterTimeRanges(t *testing.T) {
 			isAfter: true,
 		},
 		{
-			dateRanges: []def.DatetimeRange{
+			dateRanges: []DatetimeRange{
 				{
 					BeginTimestamp: 2797598229000,
 					EndTimestamp:   2797598329000,
@@ -196,7 +194,7 @@ func TestValidateSchedule(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		rs := []def.DatetimeRange{
+		rs := []DatetimeRange{
 			{
 				Begin: tc.begin,
 				End:   tc.end,
