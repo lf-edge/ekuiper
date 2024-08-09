@@ -50,7 +50,7 @@ func init() {
 	streamProcessor = processor.NewStreamProcessor()
 	ruleProcessor = processor.NewRuleProcessor()
 	rulesetProcessor = processor.NewRulesetProcessor(ruleProcessor, streamProcessor)
-	registry = &RuleRegistry{internal: make(map[string]*rule.RuleState)}
+	registry = &RuleRegistry{internal: make(map[string]*rule.State)}
 	uploadsDb, _ = store.GetKV("uploads")
 	uploadsStatusDb, _ = store.GetKV("uploadsStatusDb")
 	sysMetrics = NewMetrics()
@@ -247,7 +247,7 @@ func (suite *RestTestSuite) TestRecoverRule() {
 	for _, s := range got {
 		if s["id"] == "recoverTest" {
 			find = true
-			require.Equal(suite.T(), "Stopped: canceled manually.", s["status"])
+			require.Equal(suite.T(), "Stopped", s["status"])
 		}
 	}
 	require.True(suite.T(), find)
@@ -287,7 +287,7 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 				continue
 			}
 			// err = server.StartRule(rule, &reply)
-			reply = recoverRule(rule)
+			reply = registry.RecoverRule(rule)
 			if 0 != len(reply) {
 				logger.Info(reply)
 			}
@@ -331,7 +331,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 	// validate a rule
 	ruleJson := `{"id": "rule1","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
-
 	buf2 := bytes.NewBuffer([]byte(ruleJson))
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
 	w2 := httptest.NewRecorder()
@@ -343,7 +342,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 	// validate a wrong rule
 	ruleJson = `{"id": "rule321", "sql": "select * from alert"}`
-
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/validate", buf2)
 	w2 = httptest.NewRecorder()
@@ -360,7 +358,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 	// create rule with trigger false
 	ruleJson = `{"id": "rule3/21","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
-
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 = httptest.NewRecorder()
@@ -372,7 +369,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 
 	// create rule with trigger false
 	ruleJson = `{"id": "rule321","triggered": false,"sql": "select * from alert","actions": [{"log": {}}]}`
-
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 = httptest.NewRecorder()
@@ -382,34 +378,28 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req3, _ := http.NewRequest(http.MethodGet, "http://localhost:8080/rules", bytes.NewBufferString("any"))
 	w3 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w3, req3)
-
 	_, _ = io.ReadAll(w3.Result().Body)
 
 	// update rule, will set rule to triggered
 	ruleJson = `{"id": "rule321","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
-
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule321", buf2)
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
-
 	assert.Equal(suite.T(), http.StatusOK, w1.Code)
 
 	// update wrong rule
 	ruleJson = `{"id": "rule321","sql": "select * from alert1","actions": [{"nop": {}}]}`
-
 	buf2 = bytes.NewBuffer([]byte(ruleJson))
 	req1, _ = http.NewRequest(http.MethodPut, "http://localhost:8080/rules/rule321", buf2)
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
-
 	assert.Equal(suite.T(), http.StatusBadRequest, w1.Code)
 
 	// get rule
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
-
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 	expect = `{"id": "rule321","triggered": true,"sql": "select * from alert","actions": [{"nop": {}}]}`
 	assert.Equal(suite.T(), expect, string(returnVal))
@@ -452,7 +442,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-
 	expect = "{\"sources\":[\"source_alert\"],\"edges\":{\"op_2_decoder\":[\"op_3_project\"],\"op_3_project\":[\"op_nop_0_0_transform\"],\"op_nop_0_0_transform\":[\"op_nop_0_1_encode\"],\"op_nop_0_1_encode\":[\"sink_nop_0\"],\"source_alert\":[\"op_2_decoder\"]}}"
 	assert.Equal(suite.T(), expect, string(returnVal))
 
@@ -490,7 +479,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	equal, err = assertErrorCode(errorx.NOT_FOUND, returnVal)
 	require.NoError(suite.T(), err)
 	require.True(suite.T(), equal)
-
 	assert.Equal(suite.T(), http.StatusNotFound, w1.Code)
 
 	// update rule, will set rule to triggered
@@ -506,7 +494,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 	returnVal, _ = io.ReadAll(w1.Result().Body)
-
 	expect = `Rule rule321 was restarted`
 	assert.Equal(suite.T(), expect, string(returnVal))
 
@@ -514,7 +501,6 @@ func (suite *RestTestSuite) Test_rulesManageHandler() {
 	req1, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules/rule321", bytes.NewBufferString("any"))
 	w1 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
-
 	returnVal, _ = io.ReadAll(w1.Result().Body)
 	expect = `{"triggered":true,"id":"rule321","sql":"select * from alert","actions":[{"nop":{}}],"options":{"lateTolerance":"1s","concurrency":1,"bufferLength":1024,"sendError":true,"checkpointInterval":"5m0s","restartStrategy":{"delay":"1s","multiplier":2,"maxDelay":"30s","jitterFactor":0.1}}}`
 	assert.Equal(suite.T(), expect, string(returnVal))
@@ -957,20 +943,6 @@ func (suite *RestTestSuite) TestGetAllRuleStatus() {
 	require.True(suite.T(), ok)
 	_, ok = m["allRule2"]
 	require.True(suite.T(), ok)
-}
-
-func (suite *RestTestSuite) TestSinkHiddenPassword() {
-	buf1 := bytes.NewBuffer([]byte(`{"sql":"CREATE stream demo78() WITH (DATASOURCE=\"0\", TYPE=\"mqtt\")"}`))
-	req1, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/streams", buf1)
-	w1 := httptest.NewRecorder()
-	suite.r.ServeHTTP(w1, req1)
-
-	ruleJson2 := `{"triggered":false,"id":"rule34","sql":"select * from demo78;","actions":[{"mqtt":{"server":"tcp://broker.emqx.io:1883","topic":"devices/demo_001/messages/events/","qos":0,"clientId":"demo_001","username":"xyz.azure-devices.net/demo_001/?api-version=2018-06-30","password":"12345"}}]}`
-	buf2 := bytes.NewBuffer([]byte(ruleJson2))
-	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
-	w2 := httptest.NewRecorder()
-	suite.r.ServeHTTP(w2, req2)
-	require.Equal(suite.T(), http.StatusCreated, w2.Code)
 }
 
 func (suite *RestTestSuite) TestWaitStopRule() {

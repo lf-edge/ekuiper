@@ -87,6 +87,7 @@ jobs:
 
   build-for-android:
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
 
     steps:
       - uses: actions/checkout@v3

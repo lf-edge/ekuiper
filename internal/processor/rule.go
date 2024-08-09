@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package processor
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -240,24 +241,25 @@ func (p *RuleProcessor) GetAllRulesJson() (map[string]string, error) {
 	return p.db.All()
 }
 
-func (p *RuleProcessor) ExecDrop(name string) (string, error) {
-	result := fmt.Sprintf("Rule %s is dropped.", name)
-	var ruleJson string
+func (p *RuleProcessor) ExecDrop(name string) error {
+	var (
+		ruleJson string
+		allErr   error
+	)
 	if ok, _ := p.db.Get(name, &ruleJson); ok {
 		if err := cleanSinkCache(name); err != nil {
-			result = fmt.Sprintf("%s. Clean sink cache faile: %s.", result, err)
+			allErr = errors.Join(allErr, fmt.Errorf("Clean sink cache failed: %v.", err))
 		}
 		if err := cleanCheckpoint(name); err != nil {
-			result = fmt.Sprintf("%s. Clean checkpoint cache faile: %s.", result, err)
+			allErr = errors.Join(allErr, fmt.Errorf("Clean checkpoint cache failed: %v.", err))
 		}
 
 	}
 	err := p.db.Delete(name)
 	if err != nil {
-		return "", err
-	} else {
-		return result, nil
+		allErr = errors.Join(allErr, fmt.Errorf("Delete rule %s failed: %v.", name, err))
 	}
+	return allErr
 }
 
 func cleanCheckpoint(name string) error {
