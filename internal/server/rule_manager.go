@@ -22,7 +22,6 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/server/promMetrics"
@@ -163,6 +162,7 @@ func (rr *RuleRegistry) UpdateRule(ruleId, ruleJson string) error {
 	if err != nil {
 		return fmt.Errorf("Invalid rule json: %v", err)
 	}
+
 	rs, ok := registry.load(ruleId)
 	if !ok {
 		return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found in registry, please check if it is created", ruleId))
@@ -464,14 +464,4 @@ func deleteRuleMetrics(name string) {
 	if conf.Config != nil && conf.Config.Basic.Prometheus {
 		promMetrics.RemoveRuleStatus(name)
 	}
-}
-
-// reload password from resources if the config both include password(as fake password) and resourceId
-func replacePasswdForConfig(typ string, name string, config map[string]interface{}) map[string]interface{} {
-	if r, ok := config["resourceId"]; ok {
-		if resourceId, ok := r.(string); ok {
-			return meta.ReplacePasswdForConfig(typ, name, resourceId, config)
-		}
-	}
-	return config
 }

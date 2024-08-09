@@ -26,7 +26,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
-	"github.com/lf-edge/ekuiper/v2/pkg/hidden"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
@@ -278,7 +277,6 @@ func AddSourceConfKey(plgName, confKey, language string, content []byte) (err er
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, source, "type_conversion_fail"), plgName, err)
 	}
-	reqField = replacePasswdForConfig("source", plgName, confKey, reqField)
 	var cfgOps conf.ConfigOperator
 	var found bool
 
@@ -344,7 +342,6 @@ func AddSinkConfKey(plgName, confKey, language string, content []byte) (err erro
 	if nil != err {
 		return fmt.Errorf(`%s%s.%v`, getMsg(language, sink, "type_conversion_fail"), plgName, err)
 	}
-	reqField = replacePasswdForConfig("sink", plgName, confKey, reqField)
 	if err := validateConf(plgName, reqField, false); err != nil {
 		return err
 	}
@@ -791,41 +788,4 @@ func LoadConfigurationsPartial(configSets YamlConfigurationSet) YamlConfiguratio
 		}
 	}
 	return configResponse
-}
-
-// ReplacePasswdForConfigByResource reload password from resources if the config both include password(as fake password) and resourceId
-func ReplacePasswdForConfigByResource(typ string, name string, config map[string]interface{}) map[string]interface{} {
-	if r, ok := config["resourceId"]; ok {
-		if resourceId, ok := r.(string); ok {
-			return ReplacePasswdForConfig(typ, name, resourceId, config)
-		}
-	}
-	return config
-}
-
-func ReplacePasswdForConfig(typ, name, resourceID string, config map[string]interface{}) map[string]interface{} {
-	ConfigManager.lock.RLock()
-	defer ConfigManager.lock.RUnlock()
-	return replacePasswdForConfig(typ, name, resourceID, config)
-}
-
-// replacePasswdForConfig reload password from resources if the config both include password(as fake password) and resourceId
-func replacePasswdForConfig(typ, name, resourceID string, config map[string]interface{}) map[string]interface{} {
-	var configOperatorKey string
-	switch typ {
-	case "sink":
-		configOperatorKey = fmt.Sprintf(SinkCfgOperatorKeyTemplate, name)
-	case "source":
-		configOperatorKey = fmt.Sprintf(SourceCfgOperatorKeyTemplate, name)
-	case "connection":
-		configOperatorKey = fmt.Sprintf(ConnectionCfgOperatorKeyTemplate, name)
-	}
-	cfgOp, ok := ConfigManager.cfgOperators[configOperatorKey]
-	if ok {
-		if resource, ok := cfgOp.CopyUpdatableConfContent()[resourceID]; ok {
-			config = hidden.ReplacePasswd(resource, config)
-			config = hidden.ReplaceUrl(resource, config)
-		}
-	}
-	return config
 }
