@@ -1,7 +1,8 @@
 run:
   timeout: 10m
   build-tags:
-    - edgex
+    - full
+  go: '1.22'
 
 linters:
   disable-all: true
@@ -20,5 +21,3 @@ linters-settings:
       - standard
       - default
       - prefix(github.com/lf-edge/ekuiper/v2)
-  staticcheck:
-    go: '1.22'

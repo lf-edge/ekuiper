@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -44,7 +45,7 @@ func TestHandleScheduleRule(t *testing.T) {
 			Options: &def.RuleOption{
 				Cron:     "",
 				Duration: "",
-				CronDatetimeRange: []def.DatetimeRange{
+				CronDatetimeRange: []schedule.DatetimeRange{
 					{
 						Begin: "2006-01-02 15:04:01",
 						End:   "2006-01-02 15:04:06",
@@ -57,7 +58,7 @@ func TestHandleScheduleRule(t *testing.T) {
 			Options: &def.RuleOption{
 				Cron:     "",
 				Duration: "",
-				CronDatetimeRange: []def.DatetimeRange{
+				CronDatetimeRange: []schedule.DatetimeRange{
 					{
 						Begin: "2006-01-02 15:04:01",
 						End:   "2006-01-02 15:04:06",
@@ -70,7 +71,7 @@ func TestHandleScheduleRule(t *testing.T) {
 			Options: &def.RuleOption{
 				Cron:     "",
 				Duration: "",
-				CronDatetimeRange: []def.DatetimeRange{
+				CronDatetimeRange: []schedule.DatetimeRange{
 					{
 						Begin: "2006-01-02 15:04:01",
 						End:   "2006-01-02 15:04:04",
@@ -83,7 +84,7 @@ func TestHandleScheduleRule(t *testing.T) {
 			Options: &def.RuleOption{
 				Cron:     "",
 				Duration: "",
-				CronDatetimeRange: []def.DatetimeRange{
+				CronDatetimeRange: []schedule.DatetimeRange{
 					{
 						Begin: "2006-01-02 15:04:01",
 						End:   "2006-01-02 15:04:04",
@@ -110,7 +111,7 @@ func TestHandleScheduleRule(t *testing.T) {
 			Options: &def.RuleOption{
 				Cron:     "4 15 * * *",
 				Duration: "10s",
-				CronDatetimeRange: []def.DatetimeRange{
+				CronDatetimeRange: []schedule.DatetimeRange{
 					{
 						Begin: "2006-01-02 15:04:01",
 						End:   "2006-01-02 15:04:06",
@@ -123,7 +124,7 @@ func TestHandleScheduleRule(t *testing.T) {
 			Options: &def.RuleOption{
 				Cron:     "4 15 * * *",
 				Duration: "10s",
-				CronDatetimeRange: []def.DatetimeRange{
+				CronDatetimeRange: []schedule.DatetimeRange{
 					{
 						Begin: "2006-01-02 15:04:01",
 						End:   "2006-01-02 15:04:02",
@@ -138,7 +139,7 @@ func TestHandleScheduleRule(t *testing.T) {
 		},
 		{
 			Options: &def.RuleOption{
-				CronDatetimeRange: []def.DatetimeRange{
+				CronDatetimeRange: []schedule.DatetimeRange{
 					{
 						Begin: "1332##2",
 						End:   "25344@@@",
