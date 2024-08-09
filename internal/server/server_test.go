@@ -37,28 +37,100 @@ func TestHandleScheduleRule(t *testing.T) {
 	require.NoError(t, err)
 	now = now.In(cast.GetConfiguredTimeZone())
 	testcases := []struct {
-		begin  string
-		end    string
-		action scheduleRuleAction
+		Options *def.RuleOption
+		action  scheduleRuleAction
 	}{
 		{
-			begin:  "2006-01-02 15:04:01",
-			end:    "2006-01-02 15:04:06",
+			Options: &def.RuleOption{
+				Cron:     "",
+				Duration: "",
+				CronDatetimeRange: []def.DatetimeRange{
+					{
+						Begin: "2006-01-02 15:04:01",
+						End:   "2006-01-02 15:04:06",
+					},
+				},
+			},
 			action: scheduleRuleActionStart,
 		},
 		{
-			begin:  "2006-01-02 15:04:01",
-			end:    "2006-01-02 15:04:06",
+
+			Options: &def.RuleOption{
+				Cron:     "",
+				Duration: "",
+				CronDatetimeRange: []def.DatetimeRange{
+					{
+						Begin: "2006-01-02 15:04:01",
+						End:   "2006-01-02 15:04:06",
+					},
+				},
+			},
 			action: scheduleRuleActionStart,
 		},
 		{
-			begin:  "2006-01-02 15:04:01",
-			end:    "2006-01-02 15:04:04",
+			Options: &def.RuleOption{
+				Cron:     "",
+				Duration: "",
+				CronDatetimeRange: []def.DatetimeRange{
+					{
+						Begin: "2006-01-02 15:04:01",
+						End:   "2006-01-02 15:04:04",
+					},
+				},
+			},
 			action: scheduleRuleActionStop,
 		},
 		{
-			begin:  "2006-01-02 15:04:01",
-			end:    "2006-01-02 15:04:04",
+			Options: &def.RuleOption{
+				Cron:     "",
+				Duration: "",
+				CronDatetimeRange: []def.DatetimeRange{
+					{
+						Begin: "2006-01-02 15:04:01",
+						End:   "2006-01-02 15:04:04",
+					},
+				},
+			},
+			action: scheduleRuleActionStop,
+		},
+		{
+			Options: &def.RuleOption{
+				Cron:     "4 15 * * *",
+				Duration: "10s",
+			},
+			action: scheduleRuleActionStart,
+		},
+		{
+			Options: &def.RuleOption{
+				Cron:     "4 15 * * *",
+				Duration: "1s",
+			},
+			action: scheduleRuleActionStop,
+		},
+		{
+			Options: &def.RuleOption{
+				Cron:     "4 15 * * *",
+				Duration: "10s",
+				CronDatetimeRange: []def.DatetimeRange{
+					{
+						Begin: "2006-01-02 15:04:01",
+						End:   "2006-01-02 15:04:06",
+					},
+				},
+			},
+			action: scheduleRuleActionStart,
+		},
+		{
+			Options: &def.RuleOption{
+				Cron:     "4 15 * * *",
+				Duration: "10s",
+				CronDatetimeRange: []def.DatetimeRange{
+					{
+						Begin: "2006-01-02 15:04:01",
+						End:   "2006-01-02 15:04:02",
+					},
+				},
+			},
 			action: scheduleRuleActionStop,
 		},
 	}
@@ -66,16 +138,7 @@ func TestHandleScheduleRule(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			r := &def.Rule{
 				Triggered: true,
-				Options: &def.RuleOption{
-					Cron:     "",
-					Duration: "",
-					CronDatetimeRange: []def.DatetimeRange{
-						{
-							Begin: tc.begin,
-							End:   tc.end,
-						},
-					},
-				},
+				Options:   tc.Options,
 			}
 			scheduleRuleSignal := handleScheduleRule(now, r)
 			require.Equal(t, tc.action, scheduleRuleSignal, fmt.Sprintf("case %v", i))
@@ -88,36 +151,6 @@ func TestRunScheduleRuleChecker(t *testing.T) {
 	go runScheduleRuleCheckerByInterval(3*time.Second, ctx)
 	time.Sleep(1 * time.Second)
 	cancel()
-}
-
-func TestHandleScheduleRuleState(t *testing.T) {
-	defer func() {
-		cast.SetTimeZone(cast.GetConfiguredTimeZone().String())
-	}()
-	err := cast.SetTimeZone("UTC")
-	require.NoError(t, err)
-	r := &def.Rule{}
-	r.Options = &def.RuleOption{}
-	now, err := time.Parse("2006-01-02 15:04:05", "2006-01-02 15:04:05")
-	require.NoError(t, err)
-	require.NoError(t, handleScheduleRuleState(now, r))
-	require.NoError(t, handleScheduleRuleState(now, r))
-	r.Options.CronDatetimeRange = []def.DatetimeRange{
-		{
-			Begin: "2006-01-02 15:04:01",
-			End:   "2006-01-02 15:04:06",
-		},
-	}
-	require.NoError(t, handleScheduleRuleState(now, r))
-	require.NoError(t, handleScheduleRuleState(now, r))
-	r.Options.CronDatetimeRange = []def.DatetimeRange{
-		{
-			Begin: "2006-01-02 15:04:01",
-			End:   "2006-01-02 15:04:02",
-		},
-	}
-	require.NoError(t, handleScheduleRuleState(now, r))
-	require.NoError(t, handleScheduleRuleState(now, r))
 }
 
 func TestStartCPUProfiling(t *testing.T) {
