@@ -2,9 +2,6 @@ package main
 
 import (
 	"fmt"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	ort "github.com/yalue/onnxruntime_go"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -12,6 +9,10 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	ort "github.com/yalue/onnxruntime_go"
 )
 
 // todo 测试文件仿照tf lite
@@ -60,7 +61,7 @@ func Test_mnist_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &MnistFunc{
+			f := &OnnxFunc{
 				modelPath:         tt.fields.modelPath,
 				once:              tt.fields.once,
 				inputShape:        tt.fields.inputShape,
@@ -69,12 +70,10 @@ func Test_mnist_Exec(t *testing.T) {
 				initModelError:    tt.fields.initModelError,
 			}
 
-			out, got1 := f.Exec(tt.args.in0, tt.args.args)
-			
+			_, got1 := f.Exec(tt.args.in0, tt.args.args)
 			if !got1 {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
-			fmt.Println(out)
 		})
 	}
 }
