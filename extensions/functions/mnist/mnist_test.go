@@ -69,10 +69,12 @@ func Test_mnist_Exec(t *testing.T) {
 				initModelError:    tt.fields.initModelError,
 			}
 
-			_, got1 := f.Exec(tt.args.in0, tt.args.args)
+			out, got1 := f.Exec(tt.args.in0, tt.args.args)
+			
 			if !got1 {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
+			fmt.Println(out)
 		})
 	}
 }

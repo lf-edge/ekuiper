@@ -103,21 +103,24 @@ func (f *MnistFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 
 	// The input and output names are required by this network; they can be
 	// found on the MNIST ONNX models page linked in the README.
-	session, e := ort.NewAdvancedSession(f.modelPath,
-		[]string{"Input3"}, []string{"Plus214_Output_0"},
-		[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
+	// session, e := ort.NewAdvancedSession(f.modelPath,
+	// 	[]string{"Input3"}, []string{"Plus214_Output_0"},
+	// 	[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
+
+	session, e := ort.NewDynamicAdvancedSession(f.modelPath,
+		[]string{"Input3"}, []string{"Plus214_Output_0"}, nil)
 	if e != nil {
 		return fmt.Errorf("error creating MNIST network session: %w", e), false
 	}
 	defer session.Destroy()
 
 	// Run the network and print the results.
-	e = session.Run()
+	e = session.Run([]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output})
 	if e != nil {
 		return fmt.Errorf("error running the MNIST network: %w", e), false
 	}
 
-	var returnRes = fmt.Sprintf("Output probabilities:\n")
+	var returnRes = "Output probabilities:\n"
 	outputData := output.GetData()
 	maxIndex := 0
 	maxProbability := float32(-1.0e9)
