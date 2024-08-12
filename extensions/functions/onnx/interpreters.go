@@ -18,28 +18,22 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"go/build/constraint"
 	"path/filepath"
-	"reflect"
 	"sync"
-	"unsafe"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	// "github.com/lf-edge/ekuiper/v2/pkg/cast"
 
-	"bytes"
 	"fmt"
-	"image"
-	"image/color"
+	_"image"
+	_"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-	"os"
-	"os/exec"
-	"sync"
+	// "os"
+	// "os/exec"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	// "github.com/lf-edge/ekuiper/contract/v2/api"
 	ort "github.com/yalue/onnxruntime_go"
 )
 
@@ -165,40 +159,40 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 // NewEmptyTensor
 //
 //	传入 TensorElementDataType数字类型 和形状
-//	传出，*ort.Tensor[]
-func NewEmptyTensor[T ort.TensorData](tensorElementDataType ort.TensorElementDataType, shape ort.Shape) (*ort.Tensor[T], error) {
+// //	传出，*ort.Tensor[]
+// func NewEmptyTensor[T ort.TensorData](tensorElementDataType ort.TensorElementDataType, shape ort.Shape) (*ort.Tensor[T], error) {
 
-	switch tensorElementDataType {
-	// //same as github.com/yalue/onnxruntime_go@v1.9.0/onnxruntime_go.go
-	// // todo:some not support ，like TensorElementDataTypeFloat8E4M3FN 、TensorElementDataTypeFloat16 看下能否支持
-	case ort.TensorElementDataTypeFloat:
-		t, err := ort.NewEmptyTensor[float32](shape)
-		return t, err
-		//todo :!!!!为何错误，如何改正
-	// case ort.TensorElementDataTypeUint8:
-	// 	fallthrough
-	// case ort.TensorElementDataTypeInt8:
-	// 	fallthrough
-	// case ort.TensorElementDataTypeUint16:
-	// 	fallthrough
-	// case ort.TensorElementDataTypeInt16:
-	// 	fallthrough
-	// case ort.TensorElementDataTypeInt32:
-	// 	fallthrough
-	// case ort.TensorElementDataTypeInt64:
-	// 	fallthrough
-	// case ort.TensorElementDataTypeDouble:
-	// 	fallthrough
-	case ort.TensorElementDataTypeUint32:
-		t, err := ort.NewEmptyTensor[uint32](shape)
-		return t, err
-	case ort.TensorElementDataTypeUint64:
-		t, err := ort.NewEmptyTensor[uint64](shape)
-		return t, err
-	}
-	// return nil, errors.New("not support tensorElementDataType")
+// 	switch tensorElementDataType {
+// 	// //same as github.com/yalue/onnxruntime_go@v1.9.0/onnxruntime_go.go
+// 	// // todo:some not support ，like TensorElementDataTypeFloat8E4M3FN 、TensorElementDataTypeFloat16 看下能否支持
+// 	case ort.TensorElementDataTypeFloat:
+// 		t, err := ort.NewEmptyTensor[float32](shape)
+// 		return t, err
+// 		//todo :!!!!为何错误，如何改正
+// 	// case ort.TensorElementDataTypeUint8:
+// 	// 	fallthrough
+// 	// case ort.TensorElementDataTypeInt8:
+// 	// 	fallthrough
+// 	// case ort.TensorElementDataTypeUint16:
+// 	// 	fallthrough
+// 	// case ort.TensorElementDataTypeInt16:
+// 	// 	fallthrough
+// 	// case ort.TensorElementDataTypeInt32:
+// 	// 	fallthrough
+// 	// case ort.TensorElementDataTypeInt64:
+// 	// 	fallthrough
+// 	// case ort.TensorElementDataTypeDouble:
+// 	// 	fallthrough
+// 	case ort.TensorElementDataTypeUint32:
+// 		t, err := ort.NewEmptyTensor[uint32](shape)
+// 		return t, err
+// 	case ort.TensorElementDataTypeUint64:
+// 		t, err := ort.NewEmptyTensor[uint64](shape)
+// 		return t, err
+// 	}
+// 	// return nil, errors.New("not support tensorElementDataType")
 
-}
+// }
 
 type InterPreter struct {
 	session    *ort.DynamicAdvancedSession
