@@ -27,6 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // SourceConnector is the connector for mqtt source
@@ -124,7 +125,13 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		ms.eof(ctx)
 		return
 	}
-	ingest(ctx, msg.Payload(), map[string]interface{}{
+	var ingestCtx = ctx
+	if ctx.IsRuleTraceEnabled() {
+		spanCtx, span := tracer.GetTracer().Start(context.Background(), "mqtt_source")
+		ingestCtx = context.WithContext(spanCtx)
+		defer span.End()
+	}
+	ingest(ingestCtx, msg.Payload(), map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),

@@ -19,9 +19,11 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type ProjectOp struct {
@@ -59,6 +61,14 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	case error:
 		return input
 	case xsql.Row:
+		if ctx.IsRuleTraceEnabled() {
+			withTracer, ok := input.(xsql.HasTracerCtx)
+			if ok {
+				spanCtx, span := tracer.GetTracer().Start(withTracer.GetTracerCtx(), "proj_op")
+				withTracer.SetTracerCtx(context.WithContext(spanCtx))
+				defer span.End()
+			}
+		}
 		ve := pp.getRowVE(input, nil, fv, afv)
 		if err := pp.project(input, ve); err != nil {
 			return fmt.Errorf("run Select error: %s", err)

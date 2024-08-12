@@ -66,6 +66,11 @@ type Row interface {
 	Clone() Row
 }
 
+type HasTracerCtx interface {
+	GetTracerCtx() api.StreamContext
+	SetTracerCtx(ctx api.StreamContext)
+}
+
 type MetaData interface {
 	MetaData() Metadata
 }
@@ -260,6 +265,7 @@ type Alias struct {
  */
 
 type RawTuple struct {
+	Ctx       api.StreamContext
 	Emitter   string
 	Timestamp time.Time
 	Rawdata   []byte
@@ -296,6 +302,7 @@ var (
 
 // Tuple The input row, produced by the source
 type Tuple struct {
+	Ctx       api.StreamContext
 	Emitter   string
 	Message   Message // the original pointer is immutable & big; may be cloned.
 	Timestamp time.Time
@@ -305,6 +312,14 @@ type Tuple struct {
 	AffiliateRow
 	lock      sync.Mutex             // lock for the cachedMap, because it is possible to access by multiple sinks
 	cachedMap map[string]interface{} // clone of the row and cached for performance
+}
+
+func (t *Tuple) GetTracerCtx() api.StreamContext {
+	return t.Ctx
+}
+
+func (t *Tuple) SetTracerCtx(ctx api.StreamContext) {
+	t.Ctx = ctx
 }
 
 func (t *Tuple) Created() time.Time {

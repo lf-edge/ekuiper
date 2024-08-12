@@ -22,11 +22,13 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // DecodeOp manages the format decoding (employ schema) and sending frequency (for batch decode, like a json array)
@@ -137,10 +139,18 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.RawTuple:
+		var tupleCtx = ctx
+		if ctx.IsRuleTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(d.Ctx, "decode_op")
+			tupleCtx = context.WithContext(spanCtx)
+			defer span.End()
+		}
+		d.Ctx = tupleCtx
 		result, err := o.converter.Decode(ctx, d.Raw())
 		if err != nil {
 			return []any{err}
 		}
+
 		switch r := result.(type) {
 		case map[string]interface{}:
 			return []any{toTupleFromRawTuple(r, d)}
@@ -381,6 +391,7 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 
 func toTupleFromRawTuple(v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
 	return &xsql.Tuple{
+		Ctx:       d.Ctx,
 		Message:   v,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
