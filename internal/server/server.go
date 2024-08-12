@@ -53,7 +53,6 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 var (
@@ -143,7 +142,6 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
-	tracer.InitTracer()
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
 	if conf.Config.Basic.EnableResourceProfiling {

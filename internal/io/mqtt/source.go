@@ -126,7 +126,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		return
 	}
 	ingestCtx := ctx
-	if ctx.IsRuleTraceEnabled() {
+	if ctx.IsTraceEnabled() {
 		spanCtx, span := tracer.GetTracer().Start(context.Background(), "mqtt_source")
 		ingestCtx = context.WithContext(spanCtx)
 		defer span.End()

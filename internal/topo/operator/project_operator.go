@@ -61,7 +61,7 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	case error:
 		return input
 	case xsql.Row:
-		if ctx.IsRuleTraceEnabled() {
+		if ctx.IsTraceEnabled() {
 			withTracer, ok := input.(xsql.HasTracerCtx)
 			if ok {
 				spanCtx, span := tracer.GetTracer().Start(withTracer.GetTracerCtx(), "proj_op")

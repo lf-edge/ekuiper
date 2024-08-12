@@ -290,10 +290,10 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 	return nil
 }
 
-func (c *DefaultContext) SetRuleTracer(enabled bool) {
+func (c *DefaultContext) EnableTracer(enabled bool) {
 	c.enableRuleTracer = enabled
 }
 
-func (c *DefaultContext) IsRuleTraceEnabled() bool {
+func (c *DefaultContext) IsTraceEnabled() bool {
 	return c.enableRuleTracer
 }

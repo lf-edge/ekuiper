@@ -140,12 +140,12 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	switch d := item.(type) {
 	case *xsql.RawTuple:
 		tupleCtx := ctx
-		if ctx.IsRuleTraceEnabled() {
+		if ctx.IsTraceEnabled() {
 			spanCtx, span := tracer.GetTracer().Start(d.Ctx, "decode_op")
 			tupleCtx = context.WithContext(spanCtx)
 			defer span.End()
+			d.Ctx = tupleCtx
 		}
-		d.Ctx = tupleCtx
 		result, err := o.converter.Decode(ctx, d.Raw())
 		if err != nil {
 			return []any{err}
