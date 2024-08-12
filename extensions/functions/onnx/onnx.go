@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -55,13 +56,13 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		return err, false
 	}
 	inputCount := len(interpreter.inputInfo)
-	if len(args)-1 !=  inputCount{
+	if len(args)-1 != inputCount {
 		return fmt.Errorf("onnx function requires %d tensors but got %d", inputCount, len(args)-1), false
 	}
 
 	ctx.GetLogger().Debugf("onnx function %s with %d tensors", modelName, inputCount)
 
-	var inputTensors []ort.ArbitraryTensor;
+	var inputTensors []ort.ArbitraryTensor
 	// Set input tensors
 	for i := 1; i < len(args); i++ {
 		// input := interpreter.GetInputTensor(i - 1)
@@ -79,23 +80,22 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		default:
 			return fmt.Errorf("onnx function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", i), false
 		}
-		modelParaLen  := int64(1)
-		for j := 0; j <len(inputInfo.Dimensions) ; j++ {
+		modelParaLen := int64(1)
+		for j := 0; j < len(inputInfo.Dimensions); j++ {
 			modelParaLen *= inputInfo.Dimensions[j]
 		}
 		ctx.GetLogger().Debugf("receive tensor %v, require %d length", arg, modelParaLen)
 		if modelParaLen != int64(len(arg)) {
 			return fmt.Errorf("tensorflow function input tensor %d must have %d elements but got %d", i-1, modelParaLen, len(arg)), false
 		}
-		
-		
+
 		switch inputInfo.DataType {
 		case ort.TensorElementDataTypeFloat:
 			value, err := cast.ToFloat32Slice(arg, cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return fmt.Errorf("invalid %d parameter, expect float32 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
 			}
-			input ,err :=ort.NewTensor(inputInfo.Dimensions, value)
+			input, err := ort.NewTensor(inputInfo.Dimensions, value)
 			if err != nil {
 				return fmt.Errorf("convert to onnx tensor failed with err %v", err), false
 			}
@@ -105,7 +105,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 			if err != nil {
 				return fmt.Errorf("invalid %d parameter, expect int64 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
 			}
-			input ,err :=ort.NewTensor(inputInfo.Dimensions, value)
+			input, err := ort.NewTensor(inputInfo.Dimensions, value)
 			if err != nil {
 				return fmt.Errorf("convert to onnx tensor failed with err %v", err), false
 			}
@@ -159,125 +159,112 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		}
 	}
 	//todo 优化：避免每一次都创建outputtensor，可以复用
-	var outputTensors []ort.ArbitraryTensor;
-	
 
-	status := interpreter.Invoke()
-	if status != tflite.OK {
-		return fmt.Errorf("invoke failed"), false
+	outputTensors, err := interpreter.GetEmptyOutputTensors()
+	if err != nil {
+		return err, false
 	}
-	outputCount := interpreter.GetOutputTensorCount()
+
+	err = interpreter.session.Run(inputTensors, outputTensors)
+	if err != nil {
+		return fmt.Errorf("run failed,err:%w", err), false
+	}
+
+	outputCount := len(interpreter.outputInfo)
 	results := make([]interface{}, outputCount)
 	for i := 0; i < outputCount; i++ {
-		output := interpreter.GetOutputTensor(i)
+		output := outputTensors[i]
 		//outputSize := output.Dim(output.NumDims() - 1)
 		//b := make([]byte, outputSize)
 		//status = output.CopyToBuffer(&b[0])
 		//if status != tflite.OK {
 		//	return fmt.Errorf("output failed"), false
 		//}
-		//results[i] = b
-		t := output.Type()
-		switch t {
-		case tflite.Float32:
-			results[i] = output.Float32s()
-		case tflite.Int64:
-			results[i] = output.Int64s()
-		case tflite.Int32:
-			results[i] = output.Int32s()
-		case tflite.Int16:
-			results[i] = output.Int16s()
-		case tflite.Int8:
-			results[i] = output.Int8s()
-		case tflite.UInt8:
-			results[i] = output.UInt8s()
-		default:
-			return fmt.Errorf("invalid %d parameter, unsupported type %v in the model", i, t), false
-		}
+		results[i] = output
 	}
 	return results, true
 
-	originalPic, _, err := image.Decode(bytes.NewReader(arg0))
-	if err != nil {
-		return err, false
-	}
+	// originalPic, _, err := image.Decode(bytes.NewReader(arg0))
+	// if err != nil {
+	// 	return err, false
+	// }
 
-	f.once.Do(
-		func() {
-			ort.SetSharedLibraryPath(f.sharedLibraryPath)
-			err := ort.InitializeEnvironment()
-			if err != nil {
-				f.initModelError = fmt.Errorf("failed to initialize environment: %s", err)
-				return
-			}
+	// f.once.Do(
+	// 	func() {
+	// 		ort.SetSharedLibraryPath(f.sharedLibraryPath)
+	// 		err := ort.InitializeEnvironment()
+	// 		if err != nil {
+	// 			f.initModelError = fmt.Errorf("failed to initialize environment: %s", err)
+	// 			return
+	// 		}
 
-			_, _, err = ort.GetInputOutputInfo(f.modelPath)
-			if err != nil {
-				f.initModelError = fmt.Errorf("error getting input and output info for %s: %w", f.modelPath, err)
-				return
-			}
-		})
+	// 		_, _, err = ort.GetInputOutputInfo(f.modelPath)
+	// 		if err != nil {
+	// 			f.initModelError = fmt.Errorf("error getting input and output info for %s: %w", f.modelPath, err)
+	// 			return
+	// 		}
+	// 	})
 
-	if f.initModelError != nil {
-		return fmt.Errorf("%v", f.initModelError), false
-	}
+	// if f.initModelError != nil {
+	// 	return fmt.Errorf("%v", f.initModelError), false
+	// }
 
-	bounds := originalPic.Bounds().Canon()
-	if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
-		// Should never happen with the standard library.
-		return fmt.Errorf("Bounding rect  doesn't start at 0, 0"), false
-	}
-	inputImage := &ProcessedImage{
-		dx:     float32(bounds.Dx()) / 28.0,
-		dy:     float32(bounds.Dy()) / 28.0,
-		pic:    originalPic,
-		Invert: false,
-	}
+	// bounds := originalPic.Bounds().Canon()
+	// if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
+	// 	// Should never happen with the standard library.
+	// 	return fmt.Errorf("Bounding rect  doesn't start at 0, 0"), false
+	// }
+	// inputImage := &ProcessedImage{
+	// 	dx:     float32(bounds.Dx()) / 28.0,
+	// 	dy:     float32(bounds.Dy()) / 28.0,
+	// 	pic:    originalPic,
+	// 	Invert: false,
+	// }
 
-	inputData := inputImage.GetNetworkInput()
-	input, e := ort.NewTensor(f.inputShape, inputData)
-	if e != nil {
-		return fmt.Errorf("error creating input tensor: %w", e), false
-	}
-	defer input.Destroy()
+	// inputData := inputImage.GetNetworkInput()
+	// input, e := ort.NewTensor(f.inputShape, inputData)
+	// if e != nil {
+	// 	return fmt.Errorf("error creating input tensor: %w", e), false
+	// }
+	// defer input.Destroy()
 
-	// Create the output tensor
-	output, e := ort.NewEmptyTensor[float32](f.outputShape)
-	if e != nil {
-		return fmt.Errorf("error creating output tensor: %w", e), false
-	}
-	defer output.Destroy()
+	// // Create the output tensor
+	// output, e := ort.NewEmptyTensor[float32](f.outputShape)
+	// if e != nil {
+	// 	return fmt.Errorf("error creating output tensor: %w", e), false
+	// }
+	// defer output.Destroy()
 
-	// The input and output names are required by this network; they can be
-	// found on the MNIST ONNX models page linked in the README.
-	session, e := ort.NewAdvancedSession(f.modelPath,
-		[]string{"Input3"}, []string{"Plus214_Output_0"},
-		[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
-	if e != nil {
-		return fmt.Errorf("error creating MNIST network session: %w", e), false
-	}
-	defer session.Destroy()
+	// // The input and output names are required by this network; they can be
+	// // found on the MNIST ONNX models page linked in the README.
+	// session, e := ort.NewAdvancedSession(f.modelPath,
+	// 	[]string{"Input3"}, []string{"Plus214_Output_0"},
+	// 	[]ort.ArbitraryTensor{input}, []ort.ArbitraryTensor{output}, nil)
+	// if e != nil {
+	// 	return fmt.Errorf("error creating MNIST network session: %w", e), false
+	// }
+	// defer session.Destroy()
 
-	// Run the network and print the results.
-	e = session.Run()
-	if e != nil {
-		return fmt.Errorf("error running the MNIST network: %w", e), false
-	}
+	// // Run the network and print the results.
+	// e = session.Run()
+	// if e != nil {
+	// 	return fmt.Errorf("error running the MNIST network: %w", e), false
+	// }
 
-	var returnRes = fmt.Sprintf("Output probabilities:\n")
-	outputData := output.GetData()
-	maxIndex := 0
-	maxProbability := float32(-1.0e9)
-	for i, v := range outputData {
-		returnRes += fmt.Sprintf("  %d: %f\n", i, v)
-		if v > maxProbability {
-			maxProbability = v
-			maxIndex = i
-		}
-	}
-	returnRes += fmt.Sprintf(" probably a %d, with probability %f\n", maxIndex, maxProbability)
+	// var returnRes = fmt.Sprintf("Output probabilities:\n")
+	// outputData := output.GetData()
+	// maxIndex := 0
+	// maxProbability := float32(-1.0e9)
+	// for i, v := range outputData {
+	// 	returnRes += fmt.Sprintf("  %d: %f\n", i, v)
+	// 	if v > maxProbability {
+	// 		maxProbability = v
+	// 		maxIndex = i
+	// 	}
+	// }
+	// returnRes += fmt.Sprintf(" probably a %d, with probability %f\n", maxIndex, maxProbability)
 
-	return returnRes, true
+	// return returnRes, true
 }
 
 func (f *OnnxFunc) IsAggregate() bool {

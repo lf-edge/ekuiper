@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sync"
+	"unsafe"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -161,19 +162,18 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 
 // }
 
+// NewEmptyTensor
+//
+//	传入 TensorElementDataType数字类型 和形状
+//	传出，*ort.Tensor[]
+func NewEmptyTensor[T ort.TensorData](tensorElementDataType ort.TensorElementDataType, shape ort.Shape) (*ort.Tensor[T], error) {
 
-// NewEmptyTensor 
-//  传入 TensorElementDataType数字类型 和形状
-//  传出，*ort.Tensor[]
-func NewEmptyTensor[T ort.TensorData](tensorElementDataType ort.TensorElementDataType,shape ort.Shape) (*ort.Tensor[T], error) {
-	// return ort.NewEmptyTensor[float32](shape)
-	
 	switch tensorElementDataType {
 	// //same as github.com/yalue/onnxruntime_go@v1.9.0/onnxruntime_go.go
 	// // todo:some not support ，like TensorElementDataTypeFloat8E4M3FN 、TensorElementDataTypeFloat16 看下能否支持
 	case ort.TensorElementDataTypeFloat:
-		t,err :=ort.NewEmptyTensor[float32](shape)
-		return t,err
+		t, err := ort.NewEmptyTensor[float32](shape)
+		return t, err
 		//todo :!!!!为何错误，如何改正
 	// case ort.TensorElementDataTypeUint8:
 	// 	fallthrough
@@ -190,11 +190,11 @@ func NewEmptyTensor[T ort.TensorData](tensorElementDataType ort.TensorElementDat
 	// case ort.TensorElementDataTypeDouble:
 	// 	fallthrough
 	case ort.TensorElementDataTypeUint32:
-		t,err :=ort.NewEmptyTensor[uint32](shape)
-		return t,err
+		t, err := ort.NewEmptyTensor[uint32](shape)
+		return t, err
 	case ort.TensorElementDataTypeUint64:
-		t,err :=ort.NewEmptyTensor[uint64](shape)
-		return t,err
+		t, err := ort.NewEmptyTensor[uint64](shape)
+		return t, err
 	}
 	// return nil, errors.New("not support tensorElementDataType")
 
@@ -220,12 +220,56 @@ func (ip *InterPreter) GetInputTensorCount() int {
 	return len(ip.inputInfo)
 }
 
-func (ip *InterPreter) GetEmptyOutputTensors() []ort.ArbitraryTensor {
-	var emptyOutputTensors []ort.ArbitraryTensor
-
-	for _, outputInfo := range ip.outputInfo {
-		emptyOutputTensors = append(emptyOutputTensors, NewEmptyTensor())
+func (ip *InterPreter) GetEmptyOutputTensors() ([]ort.ArbitraryTensor, error) {
+	if len(ip.outputInfo) == 0 {
+		return nil, errors.New("output len should bigger than 0~")
 	}
-	return emptyOutputTensors
 
+	for i := 1; i < len(ip.outputInfo); i++ {
+		if ip.outputInfo[i].DataType != ip.outputInfo[i-1].DataType {
+			return nil, errors.New("output tensorElementDataType should be same~")
+		}
+	}
+	var dataType ort.TensorElementDataType = ip.outputInfo[0].DataType
+	var emptyOutputTensors []ort.ArbitraryTensor
+	for _, outputInfo := range ip.outputInfo {
+		emptyOutputTensor, err := newEmptyArbitraryTensorBydataType(dataType, outputInfo.Dimensions)
+		if err != nil { //todo 内存泄漏
+			return nil, err
+		}
+		emptyOutputTensors = append(emptyOutputTensors, emptyOutputTensor)
+	}
+	return emptyOutputTensors, nil
+
+}
+
+func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape ort.Shape) (ort.ArbitraryTensor, error) {
+
+	switch dataType {
+	case ort.TensorElementDataTypeFloat:
+		return ort.NewEmptyTensor[float32](shape)
+	case ort.TensorElementDataTypeUint8:
+		return ort.NewEmptyTensor[uint8](shape)
+	case ort.TensorElementDataTypeInt8:
+		return ort.NewEmptyTensor[int8](shape)
+	case ort.TensorElementDataTypeUint16:
+		return ort.NewEmptyTensor[uint16](shape)
+	case ort.TensorElementDataTypeInt16:
+		return ort.NewEmptyTensor[int16](shape)
+	case ort.TensorElementDataTypeInt32:
+		return ort.NewEmptyTensor[int32](shape)
+	case ort.TensorElementDataTypeInt64:
+		return ort.NewEmptyTensor[int64](shape)
+	case ort.TensorElementDataTypeDouble:
+		return ort.NewEmptyTensor[float64](shape)
+	case ort.TensorElementDataTypeUint32:
+		return ort.NewEmptyTensor[uint32](shape)
+	case ort.TensorElementDataTypeUint64:
+		return ort.NewEmptyTensor[uint64](shape)
+	default:
+		// totalSize := shape.FlattenedSize() //todo 其他数据类型
+		// actualData := unsafe.Slice((*byte)(tensorData), totalSize)
+		// return NewCustomDataTensor(shape, actualData, tensorType)
+		return nil, errors.New("not support tensorElementDataType")
+	}
 }
