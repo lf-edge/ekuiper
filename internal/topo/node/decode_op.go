@@ -139,7 +139,7 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.RawTuple:
-		var tupleCtx = ctx
+		tupleCtx := ctx
 		if ctx.IsRuleTraceEnabled() {
 			spanCtx, span := tracer.GetTracer().Start(d.Ctx, "decode_op")
 			tupleCtx = context.WithContext(spanCtx)
