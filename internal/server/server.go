@@ -143,7 +143,7 @@ func StartUp(Version string) {
 	createPaths()
 	conf.SetupEnv()
 	conf.InitConf()
-	tracer.InitJaeger()
+	tracer.InitTracer()
 
 	serverCtx, serverCancel := context.WithCancel(context.Background())
 	if conf.Config.Basic.EnableResourceProfiling {
