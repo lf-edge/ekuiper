@@ -15,20 +15,24 @@
 package node
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
 	"math"
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type WindowConfig struct {
@@ -63,6 +67,11 @@ type WindowOperator struct {
 	triggerTS        []time.Time
 	triggerCondition ast.Expr
 	stateFuncs       []*ast.Call
+
+	nextLink     trace.Link
+	nextSpanCtx  context.Context
+	nextSpan     trace.Span
+	tupleSpanMap map[*xsql.Tuple]struct{}
 }
 
 const (
@@ -102,6 +111,7 @@ func NewWindowOp(name string, w WindowConfig, options *def.RuleOption) (*WindowO
 	o.triggerTS = make([]time.Time, 0)
 	o.triggerTime = time.Time{}
 	o.isOverlapWindow = isOverlapWindow(w.Type)
+	o.tupleSpanMap = make(map[*xsql.Tuple]struct{})
 	return o, nil
 }
 
@@ -150,6 +160,7 @@ func (o *WindowOperator) Exec(ctx api.StreamContext, errCh chan<- error) {
 		}
 	}
 	log.Infof("Start with window state triggerTime: %d, msgCount: %d", o.triggerTime.UnixMilli(), o.msgCount)
+	o.handleNextWindowTupleSpan(ctx)
 	go func() {
 		defer func() {
 			o.Close()
@@ -327,6 +338,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			switch d := data.(type) {
 			case *xsql.Tuple:
 				log.Debugf("Event window receive tuple %s", d.Message)
+				o.handleTraceIngestTuple(ctx, d)
 				inputs = append(inputs, d)
 				switch o.window.Type {
 				case ast.NOT_WINDOW:
@@ -383,6 +395,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 							windowEnd := triggerTime
 							tsets.WindowRange = xsql.NewWindowRange(windowStart, windowEnd)
 							log.Debugf("Sent: %v", tsets)
+							o.handleTraceEmitTuple(ctx, tsets)
 							o.Broadcast(tsets)
 							o.statManager.IncTotalRecordsOut()
 						}
@@ -546,7 +559,7 @@ func isOverlapWindow(winType ast.WindowType) bool {
 	}
 }
 
-func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tuple, right time.Time) ([]*xsql.Tuple, []xsql.Row) {
+func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tuple, right time.Time) ([]*xsql.Tuple, []*xsql.Tuple, []xsql.Row) {
 	log := ctx.GetLogger()
 	log.Debugf("window %s triggered at %s(%d)", o.name, right, right.UnixMilli())
 	var delta time.Duration
@@ -589,13 +602,15 @@ func (o *WindowOperator) handleInputs(ctx api.StreamContext, inputs []*xsql.Tupl
 		}
 	}
 	if nextleft < 0 {
-		return inputs[:0], content
+		return inputs[:0], inputs, content
 	}
-	return inputs[nextleft:], content
+	return inputs[nextleft:], inputs[:nextleft], content
 }
 
 func (o *WindowOperator) gcInputs(inputs []*xsql.Tuple, triggerTime time.Time, ctx api.StreamContext) []*xsql.Tuple {
-	inputs, _ = o.handleInputs(ctx, inputs, triggerTime)
+	var discard []*xsql.Tuple
+	inputs, discard, _ = o.handleInputs(ctx, inputs, triggerTime)
+	o.handleTraceDiscardTuple(ctx, discard)
 	return inputs
 }
 
@@ -607,10 +622,12 @@ func (o *WindowOperator) scan(inputs []*xsql.Tuple, triggerTime time.Time, ctx a
 		windowEnd   = triggerTime
 	)
 	length := o.window.Length + o.window.Delay
-	inputs, content := o.handleInputs(ctx, inputs, triggerTime)
+	inputs, discarded, content := o.handleInputs(ctx, inputs, triggerTime)
 	results := &xsql.WindowTuples{
 		Content: content,
 	}
+	o.handleTraceEmitTuple(ctx, results)
+	o.handleTraceDiscardTuple(ctx, discarded)
 	switch o.window.Type {
 	case ast.TUMBLING_WINDOW, ast.SESSION_WINDOW:
 		windowStart = o.triggerTime.UnixMilli()
@@ -677,5 +694,58 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 		return v
 	default:
 		return false
+	}
+}
+
+func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.Tuple) {
+	if ctx.IsTraceEnabled() {
+		spanCtx, span := tracer.GetTracer().Start(t.GetTracerCtx(), "window_op_ingest")
+		span.End()
+		t.SetTracerCtx(topoContext.WithContext(spanCtx))
+		o.tupleSpanMap[t] = struct{}{}
+	}
+}
+
+func (o *WindowOperator) handleTraceDiscardTuple(ctx api.StreamContext, tuples []*xsql.Tuple) {
+	if ctx.IsTraceEnabled() {
+		for _, tuple := range tuples {
+			_, ok := o.tupleSpanMap[tuple]
+			if ok {
+				delete(o.tupleSpanMap, tuple)
+			}
+		}
+	}
+}
+
+func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.WindowTuples) {
+	if ctx.IsTraceEnabled() {
+		for _, row := range wt.Content {
+			t, ok := row.(*xsql.Tuple)
+			if ok {
+				_, stored := o.tupleSpanMap[t]
+				if stored {
+					spanCtx, newSpan := tracer.GetTracer().Start(t.GetTracerCtx(), "window_op_emit", trace.WithLinks(o.nextLink))
+					newSpan.End()
+					t.SetTracerCtx(topoContext.WithContext(spanCtx))
+				}
+			}
+		}
+		wt.SetTracerCtx(topoContext.WithContext(o.nextSpanCtx))
+		// discard span if windowTuple is empty
+		if len(wt.Content) > 0 {
+			o.nextSpan.End()
+		}
+		o.handleNextWindowTupleSpan(ctx)
+	}
+}
+
+func (o *WindowOperator) handleNextWindowTupleSpan(ctx api.StreamContext) {
+	if ctx.IsTraceEnabled() {
+		spanCtx, span := tracer.GetTracer().Start(context.Background(), "window_op")
+		o.nextSpanCtx = spanCtx
+		o.nextSpan = span
+		o.nextLink = trace.Link{
+			SpanContext: span.SpanContext(),
+		}
 	}
 }

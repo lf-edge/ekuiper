@@ -65,6 +65,7 @@ type Collection interface {
  */
 
 type WindowTuples struct {
+	Ctx     api.StreamContext
 	Content []Row // immutable
 	*WindowRange
 	contentBySrc map[string][]Row // volatile, temporary cache]
@@ -103,6 +104,14 @@ var _ Collection = &GroupedTuplesSet{}
 /*
  *   Collection implementations
  */
+
+func (w *WindowTuples) GetTracerCtx() api.StreamContext {
+	return w.Ctx
+}
+
+func (w *WindowTuples) SetTracerCtx(ctx api.StreamContext) {
+	w.Ctx = ctx
+}
 
 func (w *WindowTuples) Index(index int) Row {
 	return w.Content[index]
