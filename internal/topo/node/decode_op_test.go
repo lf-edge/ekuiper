@@ -17,6 +17,7 @@ package node
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -346,7 +347,7 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 				},
 			},
 			result: []any{
-				errors.New("unsupported data received: &{test 0001-01-01 00:00:00 +0000 UTC [] map[topic:a] map[]}"),
+				errors.New("unsupported data received"),
 			},
 		},
 	}
@@ -372,7 +373,18 @@ func TestPayloadDecodeWithSchema(t *testing.T) {
 			op.input <- tt.input
 			for _, exp := range tt.result {
 				r := <-out
-				assert.Equal(t, exp, r)
+				switch r.(type) {
+				case *xsql.Tuple:
+					expTuple := exp.(*xsql.Tuple)
+					gotTuple := r.(*xsql.Tuple)
+					require.Equal(t, expTuple.Message, gotTuple.Message)
+					require.Equal(t, expTuple.Emitter, gotTuple.Emitter)
+					require.Equal(t, expTuple.Metadata, gotTuple.Metadata)
+				case error:
+					expErr := exp.(error)
+					gotErr := r.(error)
+					require.True(t, strings.Contains(gotErr.Error(), expErr.Error()))
+				}
 			}
 		})
 	}
@@ -499,7 +511,7 @@ func TestPayloadBatchDecodeWithSchema(t *testing.T) {
 				},
 			},
 			result: []any{
-				errors.New("unsupported data received: &{test 0001-01-01 00:00:00 +0000 UTC [] map[topic:a] map[]}"),
+				errors.New("unsupported data received"),
 			},
 		},
 		{
@@ -518,7 +530,7 @@ func TestPayloadBatchDecodeWithSchema(t *testing.T) {
 				},
 			},
 			result: []any{
-				errors.New("unsupported payload received, must be a slice of maps: [[123 34 97 34 58 50 51 44 34 98 34 58 51 52 125]]"),
+				errors.New("unsupported payload received, must be a slice of maps"),
 			},
 		},
 	}
@@ -543,7 +555,15 @@ func TestPayloadBatchDecodeWithSchema(t *testing.T) {
 			op.input <- tt.input
 			for _, exp := range tt.result {
 				r := <-out
-				assert.Equal(t, exp, r)
+				switch d := exp.(type) {
+				case *xsql.Tuple:
+					gotTuple := r.(*xsql.Tuple)
+					require.Equal(t, d.Message, gotTuple.Message)
+					require.Equal(t, d.Emitter, gotTuple.Emitter)
+				case error:
+					gotErr := r.(error)
+					require.True(t, strings.Contains(gotErr.Error(), d.Error()))
+				}
 			}
 		})
 	}

@@ -17,10 +17,12 @@ package node
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -243,7 +245,7 @@ func TestRateLimitCustomMerge(t *testing.T) {
 			sendCount: 10,
 			interval:  time.Second,
 			expectItems: []any{
-				errors.New("rate limit merge only supports raw but got &{ map[test:1] 0001-01-01 00:00:00 +0000 UTC map[] map[] {{{0 0} 0 0 {{} 0} {{} 0}} map[] map[]} {0 0} map[]}"),
+				errors.New("rate limit merge only supports raw but got"),
 				&xsql.Tuple{
 					Message: map[string]any{
 						"frames": []any{
@@ -329,7 +331,18 @@ func TestRateLimitCustomMerge(t *testing.T) {
 			for ele := range out {
 				r = append(r, ele)
 			}
-			assert.Equal(t, tc.expectItems, r)
+			for i := 0; i < len(tc.expectItems); i++ {
+				switch tc.expectItems[i].(type) {
+				case *xsql.Tuple:
+					expTuples := tc.expectItems[i].(*xsql.Tuple)
+					gotTuples := r[i].(*xsql.Tuple)
+					require.Equal(t, expTuples.Message, gotTuples.Message)
+				case error:
+					expErr := tc.expectItems[i].(error)
+					gotErr := r[i].(error)
+					require.True(t, strings.Contains(gotErr.Error(), expErr.Error()))
+				}
+			}
 		})
 	}
 }

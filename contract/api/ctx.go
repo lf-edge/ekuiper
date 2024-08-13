@@ -49,6 +49,8 @@ type StreamContext interface {
 	WithMeta(ruleId string, opId string, store Store) StreamContext
 	WithInstance(instanceId int) StreamContext
 	WithCancel() (StreamContext, context.CancelFunc)
+	EnableTracer(enabled bool)
+	IsTraceEnabled() bool
 
 	SetError(e error)
 	// IncrCounter State handling

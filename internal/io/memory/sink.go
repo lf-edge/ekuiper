@@ -105,7 +105,7 @@ func (s *sink) wrapUpdatable(el pubsub.MemTuple) (pubsub.MemTuple, error) {
 	}
 	key, ok := el.Value(s.keyField, "")
 	if !ok {
-		return nil, fmt.Errorf("key field %s not found in data %v", s.keyField, el)
+		return nil, fmt.Errorf("key field %s not found in data %v", s.keyField, el.ToMap())
 	}
 	return &pubsub.UpdatableTuple{
 		MemTuple: el,

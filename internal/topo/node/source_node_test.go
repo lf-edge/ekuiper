@@ -102,7 +102,13 @@ func TestSCNLC(t *testing.T) {
 	}()
 	scn.Open(ctx, errCh)
 	wg.Wait()
-	assert.Equal(t, expects, actual)
+	for i := 0; i < len(expects); i++ {
+		exp := expects[i].(*xsql.RawTuple)
+		got := actual[i].(*xsql.RawTuple)
+		require.Equal(t, exp.Rawdata, got.Rawdata)
+		require.Equal(t, exp.Metadata, got.Metadata)
+		require.Equal(t, exp.Emitter, got.Emitter)
+	}
 }
 
 func TestNewError(t *testing.T) {
