@@ -230,7 +230,8 @@ type KuiperConf struct {
 }
 
 type OpenTelemetry struct {
-	Endpoint string `yaml:"endpoint"`
+	EnableCollector bool   `yaml:"enableCollector"`
+	Endpoint        string `yaml:"endpoint"`
 }
 
 func SetLogLevel(level string, debug bool) {

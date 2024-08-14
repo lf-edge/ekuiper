@@ -28,22 +28,23 @@ import (
 )
 
 func InitTracer() error {
-	ctx := context.Background()
-	exporter, err := otlptracehttp.New(ctx,
-		otlptracehttp.WithEndpoint(conf.Config.OpenTelemetry.Endpoint),
-		otlptracehttp.WithInsecure(),
-	)
-	if err != nil {
-		return err
+	var opts []sdktrace.TracerProviderOption
+	opts = append(opts, sdktrace.WithResource(resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("kuiperd-service"),
+	)))
+	if conf.Config.OpenTelemetry.EnableCollector {
+		ctx := context.Background()
+		exporter, err := otlptracehttp.New(ctx,
+			otlptracehttp.WithEndpoint(conf.Config.OpenTelemetry.Endpoint),
+			otlptracehttp.WithInsecure(),
+		)
+		if err != nil {
+			return err
+		}
+		opts = append(opts, sdktrace.WithBatcher(exporter))
 	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("kuiperd-service"),
-		)),
-	)
+	tp := sdktrace.NewTracerProvider(opts...)
 	otel.SetTracerProvider(tp)
 	return nil
 }

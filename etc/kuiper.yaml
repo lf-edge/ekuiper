@@ -142,4 +142,5 @@ portable:
   initTimeout: 5s
 
 openTelemetry:
+  enableCollector: false
   endpoint: localhost:4318
