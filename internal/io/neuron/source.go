@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"

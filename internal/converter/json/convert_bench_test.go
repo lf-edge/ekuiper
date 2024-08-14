@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ func benchmarkByFiles(filePath string, b *testing.B, schema map[string]*ast.Json
 	ctx := mockContext.NewMockContext("test", "test")
 	payload, err := os.ReadFile(filePath)
 	if err != nil {
-		b.Fatalf(err.Error())
+		b.Fatal(err)
 	}
 	f := NewFastJsonConverter(schema)
 	b.ResetTimer()

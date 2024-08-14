@@ -22,9 +22,8 @@ import (
 	"image/jpeg"
 	"image/png"
 
-	"github.com/nfnt/resize"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/nfnt/resize"
 )
 
 type imageResize struct{}
