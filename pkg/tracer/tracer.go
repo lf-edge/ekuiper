@@ -15,21 +15,37 @@
 package tracer
 
 import (
+	"context"
+
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
-func init() {
+func InitTracer() error {
+	ctx := context.Background()
+	exporter, err := otlptracehttp.New(ctx,
+		otlptracehttp.WithEndpoint(conf.Config.OpenTelemetry.Endpoint),
+		otlptracehttp.WithInsecure(),
+	)
+	if err != nil {
+		return err
+	}
+
 	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String("kuiperd-service"),
 		)),
 	)
 	otel.SetTracerProvider(tp)
+	return nil
 }
 
 func GetTracer() trace.Tracer {

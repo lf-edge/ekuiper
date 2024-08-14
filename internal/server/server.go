@@ -53,6 +53,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 var (
@@ -165,6 +166,9 @@ func StartUp(Version string) {
 	dataDir, _ := conf.GetDataLoc()
 	if err := bump.BumpToCurrentVersion(dataDir); err != nil {
 		panic(err)
+	}
+	if err := tracer.InitTracer(); err != nil {
+		conf.Log.Warn(err)
 	}
 
 	keyedstate.InitKeyedStateKV()
