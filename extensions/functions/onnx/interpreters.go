@@ -40,13 +40,14 @@ import (
 var ipManager *interpreterManager
 
 func init() {
-	path, err := conf.GetDataLoc()
-	if err != nil {
-		panic(err)
-	}
+	// path, err := conf.GetDataLoc() /todo
+	// if err != nil {
+	// 	panic(err)
+	// }
 	ipManager = &interpreterManager{
 		registry: make(map[string]*InterPreter),
-		path:     filepath.Join(path, "uploads"),
+		// path:     filepath.Join(path, "uploads"), todo
+		path:     filepath.Join("etc"),
 	}
 }
 
@@ -62,7 +63,8 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 	m.once.Do(
 		func() {
 			log := conf.Log
-			ort.SetSharedLibraryPath("./data/functions/mnist/onnxruntime.so") //todo 修改到共享路径
+			// ort.SetSharedLibraryPath("./data/functions/mnist/onnxruntime.so") //todo 修改到共享路径
+			ort.SetSharedLibraryPath("./etc/onnxruntime.so") //todo 修改到共享路径
 			err := ort.InitializeEnvironment()
 			if err != nil {
 				m.envInitErr = fmt.Errorf("failed to initialize environment: %s", err)
@@ -72,10 +74,7 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 	if m.envInitErr != nil {
 		return nil, m.envInitErr
 	}
-	/*
 
-
-	 */
 	log := conf.Log
 	m.Lock()
 	defer m.Unlock()
@@ -84,7 +83,7 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 		mf := filepath.Join(m.path, name+".onnx")
 		inputsInfo, outputsInfo, err := ort.GetInputOutputInfo(mf)
 		if err != nil {
-			log.Errorf("error getting input and output info for %s: %w", mf, err)
+			log.Errorf("error getting input and output info for %s: %s", mf, err)
 			return nil, fmt.Errorf("error getting input and output info for %s: %w", mf, err)
 		}
 
@@ -108,19 +107,28 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 		session, err := ort.NewDynamicAdvancedSession(mf,
 			inputsNames, outputsNames, nil)
 		if err != nil {
-			log.Errorf("error creating MNIST network session: %w", err)
+			log.Errorf("error creating MNIST network session: %s", err)
 			return nil, fmt.Errorf("error creating MNIST network session: %w", err)
 		}
 
 		inputTensor, err := ort.NewTensor(ort.NewShape(1, 1, 1, 1), make([]float32, 1))
 		if err != nil {
-			log.Errorf("error creating input tensor: %w", err)
+			log.Errorf("error creating input tensor: %s", err)
 			return nil, fmt.Errorf("error creating input tensor: %w", err)
 		}
-		defer inputTensor.Destroy()
 		log.Infof("success allocate tensors for: %s", mf)
+
+		defer func()  {
+			log.Infof("inputTensor.Destroy() start2")
+			inputTensor.Destroy()
+			log.Infof("inputTensor.Destroy() success")
+		} ()
+		
+		
 		m.registry[name] = NewInterPreter(session, inputsInfo, outputsInfo)
 		ip = m.registry[name]
+		fmt.Println("123213213213")
+		log.Infof("inputTensor.Destroy() start1")
 	}
 	return ip, nil
 }

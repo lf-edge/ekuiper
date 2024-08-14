@@ -2,56 +2,70 @@ package main
 
 import (
 	"fmt"
+	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	ort "github.com/yalue/onnxruntime_go"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 )
 
 // todo 测试文件仿照tf lite
 func Test_mnist_Exec(t *testing.T) {
-	type fields struct {
-		modelPath         string
-		once              sync.Once
-		inputShape        ort.Shape
-		outputShape       ort.Shape
-		sharedLibraryPath string
-		initModelError    error
-	}
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
+
 	type args struct {
 		in0  api.FunctionContext
 		args []any
 	}
 	tests := []struct {
 		name   string
-		fields fields
 		args   args
 		want   any
 		want1  bool
 	}{
 		{
 			name: "test1",
-			fields: fields{
-				modelPath:         "etc/mnist.onnx",
-				once:              sync.Once{},
-				inputShape:        ort.NewShape(1, 1, 28, 28),
-				outputShape:       ort.NewShape(1, 10),
-				sharedLibraryPath: "etc/onnxruntime.so",
-				initModelError:    nil,
-			},
 			args: args{
-				in0: nil,
+				in0: fctx,
 				args: func() []any {
+					
+
+					f, _ :=  os.Open("./img.png")
+					originalPic, _, _ :=image.Decode(f)
+					bounds := originalPic.Bounds().Canon()
+					if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
+						// Should never happen with the standard library.
+						t.Errorf("image should be canonically encoded")
+					}
+					inputImage := &ProcessedImage{
+						dx:     float32(bounds.Dx()) / 28.0,
+						dy:     float32(bounds.Dy()) / 28.0,
+						pic:    originalPic,
+						Invert: false,
+					}
+				
+					inputData := inputImage.GetNetworkInput()
+					var anyBits  []any;
+					for _, v := range inputData {
+						anyBits = append(anyBits, v)
+					}
 					args := make([]any, 0)
-					bits, _ := os.ReadFile("./img.png")
-					args = append(args, bits)
+					args = append(args, "mnist")
+					args = append(args,anyBits )
 					return args
 				}(),
 			},
@@ -61,19 +75,13 @@ func Test_mnist_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &OnnxFunc{
-				modelPath:         tt.fields.modelPath,
-				once:              tt.fields.once,
-				inputShape:        tt.fields.inputShape,
-				outputShape:       tt.fields.outputShape,
-				sharedLibraryPath: tt.fields.sharedLibraryPath,
-				initModelError:    tt.fields.initModelError,
-			}
-
-			_, got1 := f.Exec(tt.args.in0, tt.args.args)
+			f := &OnnxFunc{}
+			got0, got1 := f.Exec(tt.args.in0, tt.args.args)
 			if !got1 {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
+			
+			fmt.Printf("%s",got0)
 		})
 	}
 }

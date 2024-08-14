@@ -16,7 +16,7 @@ package main
 
 import (
 	"bytes"
-	"errors"
+
 	"fmt"
 	"image"
 	"image/color"
@@ -25,8 +25,6 @@ import (
 	_ "image/png"
 	"os"
 	"os/exec"
-	"sync"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	ort "github.com/yalue/onnxruntime_go"
@@ -61,6 +59,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	}
 
 	ctx.GetLogger().Debugf("onnx function %s with %d tensors", modelName, inputCount)
+	ctx.GetLogger().Infof("onnx function %s with %d tensors", modelName, inputCount)
 
 	var inputTensors []ort.ArbitraryTensor
 	// Set input tensors
@@ -84,7 +83,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		for j := 0; j < len(inputInfo.Dimensions); j++ {
 			modelParaLen *= inputInfo.Dimensions[j]
 		}
-		ctx.GetLogger().Debugf("receive tensor %v, require %d length", arg, modelParaLen)
+		ctx.GetLogger().Debugf("receive tensor %v, require %d length", arg, modelParaLen) 
 		if modelParaLen != int64(len(arg)) {
 			return fmt.Errorf("tensorflow function input tensor %d must have %d elements but got %d", i-1, modelParaLen, len(arg)), false
 		}
@@ -271,12 +270,7 @@ func (f *OnnxFunc) IsAggregate() bool {
 	return false
 }
 
-var Mnist = OnnxFunc{
-	modelPath:         "./data/functions/mnist/mnist.onnx",
-	sharedLibraryPath: "./data/functions/mnist/onnxruntime.so",
-	inputShape:        ort.NewShape(1, 1, 28, 28),
-	outputShape:       ort.NewShape(1, 10),
-}
+var Mnist = OnnxFunc{}
 var _ api.Function = &OnnxFunc{}
 
 func printCurrDIr() string {
