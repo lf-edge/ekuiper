@@ -15,10 +15,12 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -77,7 +79,7 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 		converterTool, err = converter.GetOrCreateConverter(ctx, dc.PayloadFormat, dc.PayloadSchemaId, schema, props)
 		if err != nil {
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", dc.PayloadFormat, dc.PayloadSchemaId, err)
-			return nil, fmt.Errorf(msg)
+			return nil, errors.New(msg)
 		}
 	} else {
 		if dc.PayloadBatchField != "" {
@@ -91,7 +93,7 @@ func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string
 		converterTool, err = converter.GetOrCreateConverter(ctx, dc.Format, dc.SchemaId, schema, props)
 		if err != nil {
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", dc.Format, dc.SchemaId, err)
-			return nil, fmt.Errorf(msg)
+			return nil, errors.New(msg)
 		}
 	}
 

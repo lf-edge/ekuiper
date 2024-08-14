@@ -17,9 +17,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/mmcloughlin/geohash"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/mmcloughlin/geohash"
 )
 
 type (

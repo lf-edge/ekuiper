@@ -15,10 +15,12 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
@@ -101,7 +103,7 @@ func NewLookupNode(ctx api.StreamContext, name string, isBytesLookup bool, field
 		decoder, err := converter.GetOrCreateConverter(ctx, srcOptions.FORMAT, srcOptions.SCHEMAID, sch, props)
 		if err != nil {
 			msg := fmt.Sprintf("cannot get converter from format %s, schemaId %s: %v", srcOptions.FORMAT, srcOptions.SCHEMAID, err)
-			return nil, fmt.Errorf(msg)
+			return nil, errors.New(msg)
 		}
 		n.formatDecoder = decoder
 
