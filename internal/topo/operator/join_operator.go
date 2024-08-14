@@ -18,8 +18,10 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // JoinOp TODO join expr should only be the equal op between 2 streams like tb1.id = tb2.id
@@ -36,10 +38,20 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	case error:
 		return v
 	case xsql.Row:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "join_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		input = &xsql.WindowTuples{
 			Content: []xsql.Row{v},
 		}
 	case xsql.Collection:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "join_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		input = v
 		log.Debugf("join plan receive %v", data)
 	default:

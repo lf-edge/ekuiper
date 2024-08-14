@@ -18,8 +18,10 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type HavingOp struct {
@@ -34,6 +36,11 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 	case error:
 		return input
 	case xsql.Collection:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "having_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		var groups []int
 		err := input.GroupRange(func(i int, aggRow xsql.CollectionRow) (bool, error) {
 			afv.SetData(aggRow)

@@ -29,6 +29,7 @@ type AggregateData interface {
 }
 
 type SortingData interface {
+	HasTracerCtx
 	Len() int
 	Swap(i, j int)
 	Index(i int) Row
@@ -36,6 +37,7 @@ type SortingData interface {
 
 // Collection A collection of rows as a table. It is used for window, join, group by, etc.
 type Collection interface {
+	HasTracerCtx
 	api.MessageTupleList
 	SortingData
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
@@ -65,6 +67,7 @@ type Collection interface {
  */
 
 type WindowTuples struct {
+	Ctx     api.StreamContext
 	Content []Row // immutable
 	*WindowRange
 	contentBySrc map[string][]Row // volatile, temporary cache]
@@ -74,12 +77,21 @@ type WindowTuples struct {
 	isAgg     bool
 }
 
+func (w *WindowTuples) GetTracerCtx() api.StreamContext {
+	return w.Ctx
+}
+
+func (w *WindowTuples) SetTracerCtx(ctx api.StreamContext) {
+	w.Ctx = ctx
+}
+
 var (
 	_ Collection    = &WindowTuples{}
 	_ CollectionRow = &WindowTuples{}
 )
 
 type JoinTuples struct {
+	Ctx     api.StreamContext
 	Content []*JoinTuple
 	*WindowRange
 
@@ -88,14 +100,31 @@ type JoinTuples struct {
 	isAgg     bool
 }
 
+func (s *JoinTuples) GetTracerCtx() api.StreamContext {
+	return s.Ctx
+}
+
+func (s *JoinTuples) SetTracerCtx(ctx api.StreamContext) {
+	s.Ctx = ctx
+}
+
 var (
 	_ Collection    = &JoinTuples{}
 	_ CollectionRow = &JoinTuples{}
 )
 
 type GroupedTuplesSet struct {
+	Ctx    api.StreamContext
 	Groups []*GroupedTuples
 	*WindowRange
+}
+
+func (s *GroupedTuplesSet) GetTracerCtx() api.StreamContext {
+	return s.Ctx
+}
+
+func (s *GroupedTuplesSet) SetTracerCtx(ctx api.StreamContext) {
+	s.Ctx = ctx
 }
 
 var _ Collection = &GroupedTuplesSet{}

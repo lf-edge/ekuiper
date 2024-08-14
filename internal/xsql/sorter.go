@@ -18,17 +18,27 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
 // MultiSorter implements the Sort interface, sorting the changes within.
 type MultiSorter struct {
+	Ctx api.StreamContext
 	SortingData
 	fields    ast.SortFields
 	valuer    *FunctionValuer
 	aggValuer *AggregateFunctionValuer
 	values    []map[string]interface{}
+}
+
+func (ms *MultiSorter) GetTracerCtx() api.StreamContext {
+	return ms.Ctx
+}
+
+func (ms *MultiSorter) SetTracerCtx(ctx api.StreamContext) {
+	ms.Ctx = ctx
 }
 
 // OrderedBy returns a Sorter that sorts using the less functions, in order.

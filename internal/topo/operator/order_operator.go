@@ -18,8 +18,10 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type OrderOp struct {
@@ -34,8 +36,18 @@ func (p *OrderOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	case error:
 		return input
 	case xsql.Row:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "order_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		return input
 	case xsql.SortingData:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "order_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		if err := sorter.Sort(input); err != nil {
 			return fmt.Errorf("run Order By error: %s", err)
 		}
