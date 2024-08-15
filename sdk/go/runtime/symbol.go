@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package runtime
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/sdk/go/api"
@@ -59,8 +60,8 @@ func broadcast(ctx api.StreamContext, sock connection.DataOutChannel, data inter
 func parseContext(con *Control) (api.StreamContext, error) {
 	if con.Meta.RuleId == "" || con.Meta.OpId == "" {
 		err := fmt.Sprintf("invalid arg %v, ruleId and opId are required", con)
-		context.Log.Errorf(err)
-		return nil, fmt.Errorf(err)
+		context.Log.Error(err)
+		return nil, errors.New(err)
 	}
 	contextLogger := context.LogEntry("rule", con.Meta.RuleId)
 	ctx := context.WithValue(context.Background(), context.LoggerKey, contextLogger).WithMeta(con.Meta.RuleId, con.Meta.OpId)

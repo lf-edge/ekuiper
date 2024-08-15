@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -202,7 +203,7 @@ func (d *AffiliateRow) Pick(cols [][]string) [][]string {
 	if len(cols) > 0 {
 		newAliasMap := make(map[string]interface{})
 		newCalCols := make(map[string]interface{})
-		var newCols [][]string
+		newCols := make([][]string, 0, len(cols))
 		for _, a := range cols {
 			if a[1] == "" || a[1] == string(ast.DefaultStream) {
 				if v, ok := d.AliasMap[a[0]]; ok {

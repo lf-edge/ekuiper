@@ -20,8 +20,8 @@ import (
 
 	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -73,7 +73,7 @@ func GetConnection(ctx api.StreamContext, props map[string]any) (modules.Connect
 
 	if err := client.Connect(); err != nil {
 		conf.Log.Errorf("The connection to edgex messagebus failed.")
-		return nil, fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
+		return nil, fmt.Errorf("Failed to connect to edgex message bus: %v", err)
 	}
 	conf.Log.Infof("The connection to edgex messagebus is established successfully.")
 
@@ -166,7 +166,7 @@ func (es *Client) CfgValidate(props map[string]interface{}) error {
 func (es *Client) Publish(env types.MessageEnvelope, topic string) error {
 	if err := es.client.Publish(env, topic); err != nil {
 		conf.Log.Errorf("Publish to topic %s has error : %s.", topic, err.Error())
-		return fmt.Errorf("Failed to publish to edgex message bus: " + err.Error())
+		return fmt.Errorf("Failed to publish to edgex message bus: %v", err)
 	}
 	return nil
 }

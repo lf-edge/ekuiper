@@ -30,7 +30,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.7
-	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.3
+	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.5
 	github.com/mattn/go-tflite v1.0.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mmcloughlin/geohash v0.10.0
