@@ -247,7 +247,7 @@ func (suite *RestTestSuite) TestRecoverRule() {
 	for _, s := range got {
 		if s["id"] == "recoverTest" {
 			find = true
-			require.Equal(suite.T(), "Stopped", s["status"])
+			require.Equal(suite.T(), "stopped", s["status"])
 		}
 	}
 	require.True(suite.T(), find)

@@ -61,12 +61,12 @@ const (
 )
 
 var StateName = map[RunState]string{
-	Stopped:       "Stopped", // normal stop and schedule terminated are here
-	Starting:      "Starting",
-	Running:       "Running",
-	Stopping:      "Stopping",
-	ScheduledStop: "Stopped: waiting for next schedule.",
-	StoppedByErr:  "Stopped by error",
+	Stopped:       "stopped", // normal stop and schedule terminated are here
+	Starting:      "starting",
+	Running:       "running",
+	Stopping:      "stopping",
+	ScheduledStop: "stopped: waiting for next schedule.",
+	StoppedByErr:  "stopped by error",
 }
 
 // State control the Rule RunState
