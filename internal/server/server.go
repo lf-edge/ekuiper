@@ -448,16 +448,7 @@ func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 
 func handleScheduleRuleState(now time.Time, r ruleWrapper) error {
 	scheduleActionSignal := handleScheduleRule(now, r.rule)
-	switch scheduleActionSignal {
-	case scheduleRuleActionStart:
-		if r.state == rule.Running || r.state == rule.Starting {
-			scheduleActionSignal = scheduleRuleActionDoNothing
-		}
-	case scheduleRuleActionStop:
-		if r.state == rule.Stopped || r.state == rule.ScheduledStop || r.state == rule.StoppedByErr || r.state == rule.Stopping {
-			scheduleActionSignal = scheduleRuleActionDoNothing
-		}
-	}
+	scheduleActionSignal = handleSignal(scheduleActionSignal, r.state)
 	conf.Log.Debugf("rule %v, sginal: %v", r.rule.Id, scheduleActionSignal)
 	switch scheduleActionSignal {
 	case scheduleRuleActionStart:
@@ -468,6 +459,20 @@ func handleScheduleRuleState(now time.Time, r ruleWrapper) error {
 		// do nothing
 	}
 	return nil
+}
+
+func handleSignal(s scheduleRuleAction, state rule.RunState) scheduleRuleAction {
+	switch s {
+	case scheduleRuleActionStart:
+		if state == rule.Running || state == rule.Starting {
+			return scheduleRuleActionDoNothing
+		}
+	case scheduleRuleActionStop:
+		if state == rule.Stopped || state == rule.ScheduledStop || state == rule.StoppedByErr || state == rule.Stopping {
+			return scheduleRuleActionDoNothing
+		}
+	}
+	return s
 }
 
 type scheduleRuleAction int
@@ -493,6 +498,9 @@ func handleScheduleRule(now time.Time, r *def.Rule) scheduleRuleAction {
 	}
 	if !isInRange {
 		return scheduleRuleActionStop
+	}
+	if options.Cron == "" && options.Duration == "" {
+		return scheduleRuleActionStart
 	}
 	isInCron, err := scheduleCronRule(now, options)
 	if err != nil {

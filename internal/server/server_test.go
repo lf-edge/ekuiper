@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -40,6 +41,14 @@ func TestHandleScheduleRule(t *testing.T) {
 		Options *def.RuleOption
 		action  scheduleRuleAction
 	}{
+		{
+			Options: &def.RuleOption{
+				Cron:              "",
+				Duration:          "",
+				CronDatetimeRange: []def.DatetimeRange{},
+			},
+			action: scheduleRuleActionDoNothing,
+		},
 		{
 			Options: &def.RuleOption{
 				Cron:     "",
@@ -182,4 +191,37 @@ func TestStartCPUProfiling(t *testing.T) {
 	}
 	time.Sleep(5 * time.Second)
 	cancel()
+}
+
+func TestHandleSignal(t *testing.T) {
+	testcases := []struct {
+		signal scheduleRuleAction
+		state  rule.RunState
+		exp    scheduleRuleAction
+	}{
+		{
+			signal: scheduleRuleActionStart,
+			state:  rule.Running,
+			exp:    scheduleRuleActionDoNothing,
+		},
+		{
+			signal: scheduleRuleActionStart,
+			state:  rule.Starting,
+			exp:    scheduleRuleActionDoNothing,
+		},
+		{
+			signal: scheduleRuleActionStop,
+			state:  rule.Stopped,
+			exp:    scheduleRuleActionDoNothing,
+		},
+		{
+			signal: scheduleRuleActionStop,
+			state:  rule.ScheduledStop,
+			exp:    scheduleRuleActionDoNothing,
+		},
+	}
+
+	for _, tc := range testcases {
+		require.Equal(t, tc.exp, handleSignal(tc.signal, tc.state))
+	}
 }
