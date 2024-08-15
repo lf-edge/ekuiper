@@ -422,6 +422,7 @@ func (s *Topo) WaitClose() {
 	// wait all operators close
 	if s.opsWg != nil {
 		s.opsWg.Wait()
+		s.opsWg = nil
 		conf.Log.Infof("rule %s stopped", s.ctx.GetRuleId())
 	}
 }
