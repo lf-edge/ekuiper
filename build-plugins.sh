@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2023 EMQ Technologies Co., Ltd.
+# Copyright 2023-2024 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
 PLUGIN_TYPE=$1
 PLUGIN_NAME=$2
-VERSION=$(git describe --tags --always | sed 's/^v//g')
+VERSION=$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')
 OS=$(sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g')
 
 pre(){
