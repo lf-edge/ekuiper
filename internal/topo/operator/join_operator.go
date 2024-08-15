@@ -40,7 +40,7 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 		return v
 	case xsql.Row:
 		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "join_op")
+			spanCtx, span := tracer.GetTracer().Start(v.GetTracerCtx(), "join_op")
 			input.SetTracerCtx(context.WithContext(spanCtx))
 			defer span.End()
 		}
@@ -49,7 +49,7 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 		}
 	case xsql.Collection:
 		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "join_op")
+			spanCtx, span := tracer.GetTracer().Start(v.GetTracerCtx(), "join_op")
 			input.SetTracerCtx(context.WithContext(spanCtx))
 			defer span.End()
 		}

@@ -27,9 +27,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
-var (
-	tracerSet = false
-)
+var tracerSet = false
 
 func InitTracer() error {
 	var opts []sdktrace.TracerProviderOption
