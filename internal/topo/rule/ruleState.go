@@ -166,16 +166,16 @@ func (s *State) GetStatusMessage() string {
 	result.WriteString(s.lastWill)
 	result.WriteString(`",`)
 	// Compose run timing metrics
-	result.WriteString(`"lastStartTimestamp": "`)
+	result.WriteString(`"lastStartTimestamp": `)
 	result.WriteString(strconv.FormatInt(s.lastStartTimestamp, 10))
-	result.WriteString(`",`)
-	result.WriteString(`"lastStopTimestamp": "`)
+	result.WriteString(`,`)
+	result.WriteString(`"lastStopTimestamp": `)
 	result.WriteString(strconv.FormatInt(s.lastStopTimestamp, 10))
-	result.WriteString(`",`)
+	result.WriteString(`,`)
 	nextStartTimestamp := s.getNextScheduleStartTime()
-	result.WriteString(`"nextStartTimestamp": "`)
+	result.WriteString(`"nextStartTimestamp": `)
 	result.WriteString(strconv.FormatInt(nextStartTimestamp, 10))
-	result.WriteString(`",`)
+	result.WriteString(`,`)
 	// Compose metrics
 	var (
 		keys   []string
@@ -189,14 +189,20 @@ func (s *State) GetStatusMessage() string {
 	}
 	if len(keys) > 0 {
 		for i, key := range keys {
-			value := values[i]
 			result.WriteString(`"`)
 			result.WriteString(key)
 			result.WriteString(`":`)
-			result.WriteString(`"`)
+			value := values[i]
 			v, _ := cast.ToString(value, cast.CONVERT_ALL)
-			result.WriteString(v)
-			result.WriteString(`",`)
+			switch value.(type) {
+			case string:
+				result.WriteString(`"`)
+				result.WriteString(v)
+				result.WriteString(`"`)
+			default:
+				result.WriteString(v)
+			}
+			result.WriteString(`,`)
 		}
 	}
 	stStr := result.String()
