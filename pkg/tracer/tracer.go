@@ -27,6 +27,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
+var (
+	tracerSet = false
+)
+
 func InitTracer() error {
 	var opts []sdktrace.TracerProviderOption
 	opts = append(opts, sdktrace.WithResource(resource.NewWithAttributes(
@@ -46,9 +50,25 @@ func InitTracer() error {
 	}
 	tp := sdktrace.NewTracerProvider(opts...)
 	otel.SetTracerProvider(tp)
+	tracerSet = true
 	return nil
 }
 
+// only used in unit test
+func initTracer() {
+	var opts []sdktrace.TracerProviderOption
+	opts = append(opts, sdktrace.WithResource(resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String("kuiperd-service"),
+	)))
+	tp := sdktrace.NewTracerProvider(opts...)
+	otel.SetTracerProvider(tp)
+	tracerSet = true
+}
+
 func GetTracer() trace.Tracer {
+	if !tracerSet {
+		initTracer()
+	}
 	return otel.GetTracerProvider().Tracer("kuiperd-service")
 }
