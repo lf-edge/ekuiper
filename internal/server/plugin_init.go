@@ -19,6 +19,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -257,7 +258,7 @@ func prebuildPluginsHandler(w http.ResponseWriter, _ *http.Request, t plugin.Plu
 			jsonResponse(plugins, w, logger)
 		}
 	} else {
-		handleError(w, fmt.Errorf(emsg), "", logger)
+		handleError(w, errors.New(emsg), "", logger)
 	}
 }
 

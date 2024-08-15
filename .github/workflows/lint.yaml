@@ -67,4 +67,4 @@ jobs:
         with:
           version: latest
           working-directory: sdk/go
-          args: "--out-${NO_FUTURE}format line-number"
+          args: "--out-${NO_FUTURE}format line-number --config=.gosdkci.yaml"

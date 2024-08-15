@@ -1,4 +1,4 @@
-// Copyright 2022 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,12 +25,12 @@ import (
 func LoadStaticConverter(soFile string, messageName string) (message.Converter, error) {
 	sp, err := plugin.Open(soFile)
 	if err != nil {
-		conf.Log.Errorf(fmt.Sprintf("custom schema file %s open error: %v", soFile, err))
+		conf.Log.Errorf("custom schema file %s open error: %v", soFile, err)
 		return nil, fmt.Errorf("cannot open %s: %v", soFile, err)
 	}
 	nf, err := sp.Lookup("Get" + messageName)
 	if err != nil {
-		conf.Log.Warnf(fmt.Sprintf("cannot find schemaId %s, please check if it is exported: Get%v", messageName, err))
+		conf.Log.Warnf("cannot find schemaId %s, please check if it is exported: Get%v", messageName, err)
 		return nil, nil
 	}
 	nff, ok := nf.(func() interface{})

@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"

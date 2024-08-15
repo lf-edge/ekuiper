@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build prometheus || !core
-// +build prometheus !core
 
 package server
 
@@ -49,7 +48,7 @@ func (p *promeComp) rest(r *mux.Router) {
 	if portPrometheus == portRest {
 		r.Handle("/metrics", promhttp.Handler())
 		msg := fmt.Sprintf("Register prometheus metrics to http://localhost:%d/metrics", portPrometheus)
-		logger.Infof(msg)
+		logger.Info(msg)
 		fmt.Println(msg)
 	}
 }
@@ -79,7 +78,7 @@ func (p *promeComp) serve() {
 			}()
 			p.s = srvPrometheus
 			msg := fmt.Sprintf("Serving prometheus metrics on port http://localhost:%d/metrics", portPrometheus)
-			logger.Infof(msg)
+			logger.Info(msg)
 			fmt.Println(msg)
 		}
 	}

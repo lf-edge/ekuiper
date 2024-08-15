@@ -27,9 +27,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
@@ -174,7 +174,7 @@ func ReadFile(uri string) (io.ReadCloser, error) {
 		if strings.Index(u.Path, ":") == 2 {
 			u.Path = u.Path[1:]
 		}
-		conf.Log.Debugf(u.Path)
+		conf.Log.Debug(u.Path)
 		sourceFileStat, err := os.Stat(u.Path)
 		if err != nil {
 			return nil, err
