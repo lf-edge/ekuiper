@@ -440,20 +440,30 @@ func handleAllRuleStatusMetrics(rs []ruleWrapper) {
 
 func handleAllScheduleRuleState(now time.Time, rs []ruleWrapper) {
 	for _, r := range rs {
-		if err := handleScheduleRuleState(now, r.rule); err != nil {
+		if err := handleScheduleRuleState(now, r); err != nil {
 			conf.Log.Errorf("handle schedule rule %v state failed, err:%v", r.rule.Id, err)
 		}
 	}
 }
 
-func handleScheduleRuleState(now time.Time, r *def.Rule) error {
-	scheduleActionSignal := handleScheduleRule(now, r)
-	conf.Log.Debugf("rule %v, sginal: %v", r.Id, scheduleActionSignal)
+func handleScheduleRuleState(now time.Time, r ruleWrapper) error {
+	scheduleActionSignal := handleScheduleRule(now, r.rule)
 	switch scheduleActionSignal {
 	case scheduleRuleActionStart:
-		return registry.scheduledStart(r.Id)
+		if r.state == rule.Running || r.state == rule.Starting {
+			scheduleActionSignal = scheduleRuleActionDoNothing
+		}
 	case scheduleRuleActionStop:
-		return registry.scheduledStop(r.Id)
+		if r.state == rule.Stopped || r.state == rule.ScheduledStop || r.state == rule.StoppedByErr || r.state == rule.Stopping {
+			scheduleActionSignal = scheduleRuleActionDoNothing
+		}
+	}
+	conf.Log.Debugf("rule %v, sginal: %v", r.rule.Id, scheduleActionSignal)
+	switch scheduleActionSignal {
+	case scheduleRuleActionStart:
+		return registry.scheduledStart(r.rule.Id)
+	case scheduleRuleActionStop:
+		return registry.scheduledStop(r.rule.Id)
 	default:
 		// do nothing
 	}
@@ -473,6 +483,9 @@ func handleScheduleRule(now time.Time, r *def.Rule) scheduleRuleAction {
 	if options == nil {
 		return scheduleRuleActionDoNothing
 	}
+	if options.Cron == "" && options.Duration == "" && len(options.CronDatetimeRange) < 1 {
+		return scheduleRuleActionDoNothing
+	}
 	isInRange, err := schedule.IsInScheduleRanges(now, options.CronDatetimeRange)
 	if err != nil {
 		conf.Log.Errorf("check rule %v schedule failed, err:%v", r.Id, err)
@@ -480,9 +493,6 @@ func handleScheduleRule(now time.Time, r *def.Rule) scheduleRuleAction {
 	}
 	if !isInRange {
 		return scheduleRuleActionStop
-	}
-	if options.Cron == "" && options.Duration == "" {
-		return scheduleRuleActionStart
 	}
 	isInCron, err := scheduleCronRule(now, options)
 	if err != nil {
