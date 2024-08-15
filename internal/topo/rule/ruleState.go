@@ -474,11 +474,14 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 			select {
 			case e := <-tp.Open():
 				er = e
-				if er != nil { // Only restart Rule for errors
+				if er != nil && !errorx.IsEOF(er) { // Only restart Rule for errors
 					tp.GetContext().SetError(er)
 					s.logger.Errorf("closing Rule for error: %v", er)
 					tp.Cancel()
 				} else { // exit normally
+					if errorx.IsEOF(er) {
+						s.lastWill = "done"
+					}
 					return nil
 				}
 				// Although it is stopped, it is still retrying, so the status is still RUNNING
