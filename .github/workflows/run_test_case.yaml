@@ -60,10 +60,13 @@ jobs:
         make failpoint-enable
         go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml ./...
         make failpoint-disable
+    - name: Run fvt
+      run: |
+        go test -trimpath -tags="edgex msgpack script parquet" --cover -covermode=atomic -coverpkg=./... -coverprofile=fvt_coverage.xml ./fvt
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
-        files: coverage.xml
+        files: coverage.xml,fvt_coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
         verbose: true
