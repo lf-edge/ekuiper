@@ -39,26 +39,21 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	case error:
 		return v
 	case xsql.Row:
-		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(v.GetTracerCtx(), "join_op")
-			input.SetTracerCtx(context.WithContext(spanCtx))
-			defer span.End()
-		}
 		input = &xsql.WindowTuples{
 			Content: []xsql.Row{v},
 		}
 	case xsql.Collection:
-		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(v.GetTracerCtx(), "join_op")
-			input.SetTracerCtx(context.WithContext(spanCtx))
-			defer span.End()
-		}
 		input = v
 		log.Debugf("join plan receive %v", data)
 	default:
 		return fmt.Errorf("run Join error: join is only supported in window")
 	}
 	result := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
+	if ctx.IsTraceEnabled() {
+		spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "join_op")
+		result.SetTracerCtx(context.WithContext(spanCtx))
+		defer span.End()
+	}
 	for i, join := range jp.Joins {
 		select {
 		case <-ctx.Done():
