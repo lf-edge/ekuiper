@@ -482,6 +482,7 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 					if errorx.IsEOF(er) {
 						s.lastWill = "done"
 					}
+					tp.Cancel()
 					return nil
 				}
 				// Although it is stopped, it is still retrying, so the status is still RUNNING
