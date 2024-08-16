@@ -52,7 +52,7 @@ downloadjar "/opt/jmeter/lib/commons-lang-2.5.jar" https://repo1.maven.org/maven
 downloadjar "/opt/jmeter/lib/commons-logging-1.1.1.jar" https://repo1.maven.org/maven2/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar
 downloadjar "/opt/jmeter/lib/ezmorph-1.0.6.jar" https://repo1.maven.org/maven2/net/sf/ezmorph/ezmorph/1.0.6/ezmorph-1.0.6.jar
 
-ver=`git describe --tags --always | sed 's/^v//g'`
+ver=`git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g'`
 os=`uname -s | tr "[A-Z]" "[a-z]"`
 base_dir=_build/kuiper-"$ver"-"$os"-amd64
 fvt_dir=`pwd`

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package runtime
 import (
 	context2 "context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -133,8 +134,8 @@ func parseFuncContextArgs(args []interface{}) ([]interface{}, api.FunctionContex
 	}
 	if m.RuleId == "" || m.OpId == "" {
 		err := fmt.Sprintf("invalid arg %v, ruleId, opId are required", m)
-		context.Log.Errorf(err)
-		return nil, nil, fmt.Errorf(err)
+		context.Log.Error(err)
+		return nil, nil, errors.New(err)
 	}
 	key := fmt.Sprintf("%s_%s_%d_%d", m.RuleId, m.OpId, m.InstanceId, m.FuncId)
 	if c, ok := exeFuncCtxMap.Load(key); ok {

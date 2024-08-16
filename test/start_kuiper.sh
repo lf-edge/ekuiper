@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2021 EMQ Technologies Co., Ltd.
+# Copyright 2021-2024 EMQ Technologies Co., Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ else
   done
 fi
 
-ver=`git describe --tags --always | sed 's/^v//g'`
+ver=`git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g'`
 os=`uname -s | tr "[A-Z]" "[a-z]"`
 base_dir=_build/kuiper-"$ver"-"$os"-amd64
 

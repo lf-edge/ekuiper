@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
@@ -60,12 +61,12 @@ const (
 )
 
 var StateName = map[RunState]string{
-	Stopped:       "Stopped", // normal stop and schedule terminated are here
-	Starting:      "Starting",
-	Running:       "Running",
-	Stopping:      "Stopping",
-	ScheduledStop: "Stopped: waiting for next schedule.",
-	StoppedByErr:  "Stopped by error",
+	Stopped:       "stopped", // normal stop and schedule terminated are here
+	Starting:      "starting",
+	Running:       "running",
+	Stopping:      "stopping",
+	ScheduledStop: "stopped: waiting for next schedule.",
+	StoppedByErr:  "stopped by error",
 }
 
 // State control the Rule RunState
@@ -165,16 +166,16 @@ func (s *State) GetStatusMessage() string {
 	result.WriteString(s.lastWill)
 	result.WriteString(`",`)
 	// Compose run timing metrics
-	result.WriteString(`"lastStartTimestamp": "`)
+	result.WriteString(`"lastStartTimestamp": `)
 	result.WriteString(strconv.FormatInt(s.lastStartTimestamp, 10))
-	result.WriteString(`",`)
-	result.WriteString(`"lastStopTimestamp": "`)
+	result.WriteString(`,`)
+	result.WriteString(`"lastStopTimestamp": `)
 	result.WriteString(strconv.FormatInt(s.lastStopTimestamp, 10))
-	result.WriteString(`",`)
+	result.WriteString(`,`)
 	nextStartTimestamp := s.getNextScheduleStartTime()
-	result.WriteString(`"nextStartTimestamp": "`)
+	result.WriteString(`"nextStartTimestamp": `)
 	result.WriteString(strconv.FormatInt(nextStartTimestamp, 10))
-	result.WriteString(`",`)
+	result.WriteString(`,`)
 	// Compose metrics
 	var (
 		keys   []string
@@ -188,14 +189,20 @@ func (s *State) GetStatusMessage() string {
 	}
 	if len(keys) > 0 {
 		for i, key := range keys {
-			value := values[i]
 			result.WriteString(`"`)
 			result.WriteString(key)
 			result.WriteString(`":`)
-			result.WriteString(`"`)
+			value := values[i]
 			v, _ := cast.ToString(value, cast.CONVERT_ALL)
-			result.WriteString(v)
-			result.WriteString(`",`)
+			switch value.(type) {
+			case string:
+				result.WriteString(`"`)
+				result.WriteString(v)
+				result.WriteString(`"`)
+			default:
+				result.WriteString(v)
+			}
+			result.WriteString(`,`)
 		}
 	}
 	stStr := result.String()
@@ -467,11 +474,15 @@ func (s *State) runTopo(ctx context.Context, tp *topo.Topo, rs *def.RestartStrat
 			select {
 			case e := <-tp.Open():
 				er = e
-				if er != nil { // Only restart Rule for errors
+				if er != nil && !errorx.IsEOF(er) { // Only restart Rule for errors
 					tp.GetContext().SetError(er)
 					s.logger.Errorf("closing Rule for error: %v", er)
 					tp.Cancel()
 				} else { // exit normally
+					if errorx.IsEOF(er) {
+						s.lastWill = "done"
+					}
+					tp.Cancel()
 					return nil
 				}
 				// Although it is stopped, it is still retrying, so the status is still RUNNING

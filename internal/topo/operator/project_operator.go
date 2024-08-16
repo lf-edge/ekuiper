@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -62,12 +63,9 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		return input
 	case xsql.Row:
 		if ctx.IsTraceEnabled() {
-			withTracer, ok := input.(xsql.HasTracerCtx)
-			if ok {
-				spanCtx, span := tracer.GetTracer().Start(withTracer.GetTracerCtx(), "proj_op")
-				withTracer.SetTracerCtx(context.WithContext(spanCtx))
-				defer span.End()
-			}
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "proj_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
 		}
 		ve := pp.getRowVE(input, nil, fv, afv)
 		if err := pp.project(input, ve); err != nil {

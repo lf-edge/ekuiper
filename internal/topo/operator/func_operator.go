@@ -18,8 +18,11 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type FuncOp struct {
@@ -34,6 +37,11 @@ func (p *FuncOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functio
 	case error:
 		return input
 	case xsql.Row:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "func_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
 		result := ve.Eval(p.CallExpr)
 		if e, ok := result.(error); ok {
@@ -41,6 +49,11 @@ func (p *FuncOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functio
 		}
 		input.Set(p.Name, result)
 	case xsql.Collection:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "func_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		var err error
 		if p.IsAgg {
 			input.SetIsAgg(true)

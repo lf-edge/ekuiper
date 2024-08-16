@@ -21,9 +21,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	_ "github.com/lf-edge/ekuiper/v2/internal/io/file/reader"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	_ "github.com/lf-edge/ekuiper/v2/internal/io/file/reader"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"

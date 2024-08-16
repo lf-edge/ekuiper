@@ -5,7 +5,7 @@ ifneq ($(shell uname -s),Linux)
 	exit
 endif
 # The version-release used for package
-export PKG_VSN := $(shell git describe --tags --always | sed 's/^v//g')
+export PKG_VSN := $(shell git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')
 
 ID := $(shell sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g' | sed 's/"//g' )
 VERSION_ID := $(shell sed -n '/^VERSION_ID=/p' /etc/os-release | sed -r 's/VERSION_ID=(.*)/\1/g' | sed 's/"//g')

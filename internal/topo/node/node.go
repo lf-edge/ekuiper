@@ -15,12 +15,12 @@
 package node
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/util"
@@ -28,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/metric"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
 
@@ -248,7 +249,7 @@ func (o *defaultSinkNode) handleEof(ctx api.StreamContext, d xsql.EOFTuple) {
 	if len(o.outputs) > 0 {
 		o.Broadcast(d)
 	} else {
-		infra.DrainError(ctx, errors.New("done"), o.ctrlCh)
+		infra.DrainError(ctx, errorx.NewEOF(), o.ctrlCh)
 	}
 }
 

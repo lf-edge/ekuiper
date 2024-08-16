@@ -140,3 +140,7 @@ portable:
   pythonBin: python
   # control init timeout. If the init time is longer than this value, the plugin will be terminated.
   initTimeout: 5s
+
+openTelemetry:
+  enableCollector: false
+  endpoint: localhost:4318

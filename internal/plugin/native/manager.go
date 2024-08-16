@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -34,6 +35,7 @@ import (
 	"unicode"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
@@ -419,7 +421,7 @@ func (rr *Manager) Delete(t plugin2.PluginType, name string, stop bool) error {
 	rr.removePluginInstallScript(name, t)
 
 	if len(results) > 0 {
-		return fmt.Errorf(strings.Join(results, "\n"))
+		return errors.New(strings.Join(results, "\n"))
 	} else {
 		rr.store(t, name, DELETED)
 		if stop {
@@ -735,7 +737,7 @@ func (rr *Manager) loadRuntime(t plugin2.PluginType, soName, soFilepath, symbolN
 		} else {
 			mod, err := rr.getSoFilePath(t, soName, false)
 			if err != nil {
-				conf.Log.Debugf(fmt.Sprintf("cannot find the native plugin %s in path: %v", soName, err))
+				conf.Log.Debugf("cannot find the native plugin %s in path: %v", soName, err)
 				return nil, nil
 			}
 			soPath = mod
@@ -743,7 +745,7 @@ func (rr *Manager) loadRuntime(t plugin2.PluginType, soName, soFilepath, symbolN
 		conf.Log.Debugf("Opening plugin %s", soPath)
 		plug, err = plugin.Open(soPath)
 		if err != nil {
-			conf.Log.Errorf(fmt.Sprintf("plugin %s open error: %v", soName, err))
+			conf.Log.Errorf("plugin %s open error: %v", soName, err)
 			return nil, fmt.Errorf("cannot open %s: %v", soPath, err)
 		}
 		rr.Lock()
@@ -757,7 +759,7 @@ func (rr *Manager) loadRuntime(t plugin2.PluginType, soName, soFilepath, symbolN
 	conf.Log.Debugf("Loading symbol %s", symbolName)
 	nf, err := plug.Lookup(symbolName)
 	if err != nil {
-		conf.Log.Warnf(fmt.Sprintf("cannot find symbol %s, please check if it is exported: %v", symbolName, err))
+		conf.Log.Warnf("cannot find symbol %s, please check if it is exported: %v", symbolName, err)
 		return nil, nil
 	}
 	conf.Log.Debugf("Successfully look-up plugin %s", symbolName)

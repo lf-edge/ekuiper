@@ -78,7 +78,7 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install pkg-config libczmq-dev -y
         make build_with_edgex_and_script
-        echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
+        echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
     - name: run edgex && kuiper
       run: |
         ./test/setup_env.sh
@@ -159,7 +159,7 @@ jobs:
       - name: build kuiper
         run: |
           make build_with_edgex
-          echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
+          echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
       - name: run edgex && kuiper
         env:
           KUIPER__STORE__TYPE: redis
@@ -255,7 +255,7 @@ jobs:
         sudo ./get_helm.sh
         helm version
     - name: build kuiper for docker
-      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --always | sed 's/^v//g') -f deploy/docker/Dockerfile .
+      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g') -f deploy/docker/Dockerfile .
     - name: run emqx on chart
       env:
         KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
@@ -274,7 +274,7 @@ jobs:
         KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
       timeout-minutes: 5
       run: |
-        version=$(git describe --tags --always | sed 's/^v//g')
+        version=$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')
         emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
 
         sudo docker save lfedge/ekuiper:$version -o kuier.tar.gz
