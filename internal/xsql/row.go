@@ -275,6 +275,14 @@ type RawTuple struct {
 	Props     map[string]string
 }
 
+func (r *RawTuple) GetTracerCtx() api.StreamContext {
+	return r.Ctx
+}
+
+func (r *RawTuple) SetTracerCtx(ctx api.StreamContext) {
+	r.Ctx = ctx
+}
+
 func (r *RawTuple) Replace(new []byte) {
 	r.Rawdata = new
 }

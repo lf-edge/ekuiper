@@ -19,10 +19,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type AnalyticFuncsOp struct {
@@ -68,9 +67,8 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 	case error:
 		return input
 	case xsql.Row:
-		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "analytic_op")
-			input.SetTracerCtx(context.WithContext(spanCtx))
+		traced, _, span := tracenode.TraceRow(ctx, input, "analytic_op")
+		if traced {
 			defer span.End()
 		}
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
@@ -84,9 +82,8 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 		}
 		data = input
 	case xsql.Collection:
-		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "analytic_op")
-			input.SetTracerCtx(context.WithContext(spanCtx))
+		traced, _, span := tracenode.TraceCollection(ctx, input, "analytic_op")
+		if traced {
 			defer span.End()
 		}
 		input, err = p.evalCollectionFunc(p.FieldFuncs, fv, input)

@@ -23,16 +23,17 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type WindowConfig struct {
@@ -698,10 +699,10 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 }
 
 func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.Tuple) {
-	if ctx.IsTraceEnabled() {
-		spanCtx, span := tracer.GetTracer().Start(t.GetTracerCtx(), "window_op_ingest")
+	traced, _, span := tracenode.TraceRow(ctx, t, "window_op_ingest")
+	if traced {
+		span.SetAttributes(attribute.String("data", tracenode.ToStringRow(t)))
 		span.End()
-		t.SetTracerCtx(topoContext.WithContext(spanCtx))
 		o.tupleSpanMap[t] = struct{}{}
 	}
 }
@@ -724,15 +725,15 @@ func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.Wi
 			if ok {
 				_, stored := o.tupleSpanMap[t]
 				if stored {
-					spanCtx, newSpan := tracer.GetTracer().Start(t.GetTracerCtx(), "window_op_emit", trace.WithLinks(o.nextLink))
-					newSpan.End()
-					t.SetTracerCtx(topoContext.WithContext(spanCtx))
+					_, _, span := tracenode.TraceRow(ctx, t, "window_op_emit", trace.WithLinks(o.nextLink))
+					span.End()
 				}
 			}
 		}
 		wt.SetTracerCtx(topoContext.WithContext(o.nextSpanCtx))
 		// discard span if windowTuple is empty
 		if len(wt.Content) > 0 {
+			o.nextSpan.SetAttributes(attribute.String("data", tracenode.ToStringCollection(wt)))
 			o.nextSpan.End()
 		}
 		o.handleNextWindowTupleSpan(ctx)
@@ -740,8 +741,8 @@ func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.Wi
 }
 
 func (o *WindowOperator) handleNextWindowTupleSpan(ctx api.StreamContext) {
-	if ctx.IsTraceEnabled() {
-		spanCtx, span := tracer.GetTracer().Start(context.Background(), "window_op")
+	traced, spanCtx, span := tracenode.StartTrace(ctx, "window_op")
+	if traced {
 		o.nextSpanCtx = spanCtx
 		o.nextSpan = span
 		o.nextLink = trace.Link{

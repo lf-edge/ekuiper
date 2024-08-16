@@ -19,10 +19,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type AggregateOp struct {
@@ -42,9 +41,8 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 		case error:
 			return input
 		case xsql.Collection:
-			if ctx.IsTraceEnabled() {
-				spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "aggregate_op")
-				input.SetTracerCtx(context.WithContext(spanCtx))
+			traced, _, span := tracenode.TraceCollection(ctx, input, "aggregate")
+			if traced {
 				defer span.End()
 			}
 			wr := input.GetWindowRange()

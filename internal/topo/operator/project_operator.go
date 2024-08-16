@@ -20,11 +20,10 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type ProjectOp struct {
@@ -62,9 +61,8 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	case error:
 		return input
 	case xsql.Row:
-		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "proj_op")
-			input.SetTracerCtx(context.WithContext(spanCtx))
+		traced, _, span := tracenode.TraceRow(ctx, input, "proj_op")
+		if traced {
 			defer span.End()
 		}
 		ve := pp.getRowVE(input, nil, fv, afv)
@@ -81,9 +79,8 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 		}
 	case xsql.Collection:
-		if ctx.IsTraceEnabled() && input.Len() > 0 {
-			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "proj_op")
-			input.SetTracerCtx(context.WithContext(spanCtx))
+		traced, _, span := tracenode.TraceCollection(ctx, input, "proj_op")
+		if traced {
 			defer span.End()
 		}
 		var err error

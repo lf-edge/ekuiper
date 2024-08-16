@@ -24,13 +24,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // DecodeOp manages the format decoding (employ schema) and sending frequency (for batch decode, like a json array)
@@ -141,12 +140,9 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.RawTuple:
-		tupleCtx := ctx
-		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(d.Ctx, "decode_op")
-			tupleCtx = context.WithContext(spanCtx)
+		traced, _, span := tracenode.TraceRowTuple(ctx, d, "decode_op")
+		if traced {
 			defer span.End()
-			d.Ctx = tupleCtx
 		}
 		result, err := o.converter.Decode(ctx, d.Raw())
 		if err != nil {

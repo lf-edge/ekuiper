@@ -19,10 +19,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // JoinOp TODO join expr should only be the equal op between 2 streams like tb1.id = tb2.id
@@ -49,9 +48,8 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 		return fmt.Errorf("run Join error: join is only supported in window")
 	}
 	result := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
-	if ctx.IsTraceEnabled() {
-		spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "join_op")
-		result.SetTracerCtx(context.WithContext(spanCtx))
+	traced, _, span := tracenode.TraceCollection(ctx, input, "join_op")
+	if traced {
 		defer span.End()
 	}
 	for i, join := range jp.Joins {
