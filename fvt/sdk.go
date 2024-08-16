@@ -42,6 +42,19 @@ func (sdk *SDK) Get(command string) (resp *http.Response, err error) {
 	return http.Get(sdk.baseUrl.JoinPath(command).String())
 }
 
+func (sdk *SDK) Post(command string, body string) (resp *http.Response, err error) {
+	return http.Post(sdk.baseUrl.JoinPath(command).String(), ContentTypeJson, bytes.NewBufferString(body))
+}
+
+func (sdk *SDK) Delete(command string) (resp *http.Response, err error) {
+	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath(command).String(), nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	return sdk.httpClient.Do(req)
+}
+
 func (sdk *SDK) CreateStream(streamJson string) (resp *http.Response, err error) {
 	return http.Post(sdk.baseUrl.JoinPath("streams").String(), ContentTypeJson, bytes.NewBufferString(streamJson))
 }
@@ -59,6 +72,10 @@ func (sdk *SDK) CreateRule(ruleJson string) (resp *http.Response, err error) {
 	return http.Post(sdk.baseUrl.JoinPath("rules").String(), ContentTypeJson, bytes.NewBufferString(ruleJson))
 }
 
+func (sdk *SDK) RestartRule(ruleId string) (resp *http.Response, err error) {
+	return http.Post(sdk.baseUrl.JoinPath("rules", ruleId, "restart").String(), ContentTypeJson, nil)
+}
+
 func (sdk *SDK) DeleteRule(name string) (resp *http.Response, err error) {
 	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath("rules", name).String(), nil)
 	if err != nil {
@@ -68,19 +85,29 @@ func (sdk *SDK) DeleteRule(name string) (resp *http.Response, err error) {
 	return sdk.httpClient.Do(req)
 }
 
-func (sdk *SDK) GetRulStatus(name string) (metrics map[string]any, err error) {
+func (sdk *SDK) GetRulStatus(name string) (map[string]any, error) {
 	resp, err := http.Get(sdk.baseUrl.JoinPath("rules", name, "status").String())
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil, err
 	}
+	return GetResponseResultMap(resp)
+}
+
+func GetResponseText(resp *http.Response) (string, error) {
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	return string(b), err
+}
+
+func GetResponseResultMap(resp *http.Response) (result map[string]any, err error) {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = json.Unmarshal(body, &metrics)
+	err = json.Unmarshal(body, &result)
 	if err != nil {
 		fmt.Println(err)
 		return
