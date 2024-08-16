@@ -81,6 +81,11 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 		}
 	case xsql.Collection:
+		if ctx.IsTraceEnabled() && input.Len() > 0 {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "proj_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		var err error
 		if pp.IsAggregate {
 			input.SetIsAgg(true)

@@ -169,6 +169,8 @@ func StartUp(Version string) {
 	}
 	if err := tracer.InitTracer(); err != nil {
 		conf.Log.Warn(err)
+	} else {
+		conf.Log.Infof("tracer init successfully")
 	}
 
 	keyedstate.InitKeyedStateKV()

@@ -78,14 +78,6 @@ type WindowTuples struct {
 	isAgg     bool
 }
 
-func (w *WindowTuples) GetTracerCtx() api.StreamContext {
-	return w.Ctx
-}
-
-func (w *WindowTuples) SetTracerCtx(ctx api.StreamContext) {
-	w.Ctx = ctx
-}
-
 var (
 	_ Collection    = &WindowTuples{}
 	_ CollectionRow = &WindowTuples{}
