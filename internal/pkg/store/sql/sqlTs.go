@@ -77,8 +77,12 @@ func (t *ts) Set(key int64, value interface{}) (bool, error) {
 func (t ts) Get(key int64, value interface{}) (bool, error) {
 	result := false
 	err := t.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT val FROM %s WHERE key=%d;", t.table, key)
-		row := db.QueryRow(query)
+		query := fmt.Sprintf("SELECT val FROM %s WHERE key=?;", t.table)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		row := stmt.QueryRow(key)
 		var tmp []byte
 		switch err := row.Scan(&tmp); err {
 		case sql.ErrNoRows:
@@ -111,16 +115,24 @@ func (t ts) Last(value interface{}) (int64, error) {
 
 func (t ts) Delete(key int64) error {
 	return t.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("DELETE FROM %s WHERE key=%d;", t.table, key)
-		_, err := db.Exec(query)
+		query := fmt.Sprintf("DELETE FROM %s WHERE key=?;", t.table)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(key)
 		return err
 	})
 }
 
 func (t ts) DeleteBefore(key int64) error {
 	return t.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("DELETE FROM %s WHERE key<%d;", t.table, key)
-		_, err := db.Exec(query)
+		query := fmt.Sprintf("DELETE FROM %s WHERE key<?;", t.table)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		_, err = stmt.Exec(key)
 		return err
 	})
 }

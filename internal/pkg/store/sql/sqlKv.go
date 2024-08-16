@@ -89,10 +89,15 @@ func (kv *sqlKvStore) Set(key string, value interface{}) error {
 func (kv *sqlKvStore) Get(key string, value interface{}) (bool, error) {
 	result := false
 	err := kv.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT val FROM '%s' WHERE key='%s';", kv.table, key)
-		row := db.QueryRow(query)
+		query := fmt.Sprintf("SELECT val FROM '%s' WHERE key=?;", kv.table)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			result = false
+			return nil
+		}
+		row := stmt.QueryRow(key)
 		var tmp []byte
-		err := row.Scan(&tmp)
+		err = row.Scan(&tmp)
 		if err != nil {
 			result = false
 			return nil
@@ -110,9 +115,13 @@ func (kv *sqlKvStore) Get(key string, value interface{}) (bool, error) {
 func (kv *sqlKvStore) GetKeyedState(key string) (interface{}, error) {
 	var value interface{}
 	err := kv.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT val FROM '%s' WHERE key='%s';", kv.table, key)
-		row := db.QueryRow(query)
-		err := row.Scan(&value)
+		query := fmt.Sprintf("SELECT val FROM '%s' WHERE key=?;", kv.table)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		row := stmt.QueryRow(key)
+		err = row.Scan(&value)
 		if err != nil {
 			return err
 		}
@@ -137,10 +146,14 @@ func (kv *sqlKvStore) SetKeyedState(key string, value interface{}) error {
 
 func (kv *sqlKvStore) Delete(key string) error {
 	return kv.database.Apply(func(db *sql.DB) error {
-		query := fmt.Sprintf("SELECT key FROM '%s' WHERE key='%s';", kv.table, key)
-		row := db.QueryRow(query)
+		query := fmt.Sprintf("SELECT key FROM '%s' WHERE key=?;", kv.table)
+		stmt, err := db.Prepare(query)
+		if err != nil {
+			return err
+		}
+		row := stmt.QueryRow(key)
 		var tmp []byte
-		err := row.Scan(&tmp)
+		err = row.Scan(&tmp)
 		if nil != err || 0 == len(tmp) {
 			return errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("%s is not found", key))
 		}
