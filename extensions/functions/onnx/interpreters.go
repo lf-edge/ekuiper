@@ -25,8 +25,8 @@ import (
 	// "github.com/lf-edge/ekuiper/v2/pkg/cast"
 
 	"fmt"
-	_"image"
-	_"image/color"
+	_ "image"
+	_ "image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -47,7 +47,7 @@ func init() {
 	ipManager = &interpreterManager{
 		registry: make(map[string]*InterPreter),
 		// path:     filepath.Join(path, "uploads"), todo
-		path:     filepath.Join("etc"),
+		path: filepath.Join("etc"),
 	}
 }
 
@@ -111,23 +111,30 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 			return nil, fmt.Errorf("error creating MNIST network session: %w", err)
 		}
 
-		inputTensor, err := ort.NewTensor(ort.NewShape(1, 1, 1, 1), make([]float32, 1))
+		if len(inputsInfo) == 0 || len(outputsInfo) == 0 {
+			log.Errorf(" input and output length shoulder bigger than 0 ")
+			return nil, fmt.Errorf(" input and output length shoulder bigger than 0 ")
+		}
+		if inputsInfo[0].DataType != outputsInfo[0].DataType {
+			log.Errorf(" input and output dataType should be same ")
+			return nil, fmt.Errorf(" input and output dataType should be same ")
+		}
+
+		testTensor, err := ort.NewTensor(ort.NewShape(1, 1, 1, 1), make([]float32, 1))
 		if err != nil {
 			log.Errorf("error creating input tensor: %s", err)
 			return nil, fmt.Errorf("error creating input tensor: %w", err)
 		}
 		log.Infof("success allocate tensors for: %s", mf)
 
-		defer func()  {
+		defer func() {
 			log.Infof("inputTensor.Destroy() start2")
-			inputTensor.Destroy()
+			testTensor.Destroy()
 			log.Infof("inputTensor.Destroy() success")
-		} ()
-		
-		
+		}()
+
 		m.registry[name] = NewInterPreter(session, inputsInfo, outputsInfo)
 		ip = m.registry[name]
-		fmt.Println("123213213213")
 		log.Infof("inputTensor.Destroy() start1")
 	}
 	return ip, nil
@@ -245,7 +252,7 @@ func (ip *InterPreter) GetEmptyOutputTensors() ([]ort.ArbitraryTensor, error) {
 
 }
 
-func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape ort.Shape) (ort.ArbitraryTensor, error) {
+func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape ort.Shape,notSupportedDataLen int) (ort.ArbitraryTensor, error) {
 
 	switch dataType {
 	case ort.TensorElementDataTypeFloat:
@@ -274,4 +281,8 @@ func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape
 		// return NewCustomDataTensor(shape, actualData, tensorType)
 		return nil, errors.New("not support tensorElementDataType")
 	}
+}
+
+func newEmptyArbitraryTensorBydataTypeFloat32(shape ort.Shape) (*ort.Tensor[float32], error) {
+	return ort.NewEmptyTensor[float32](shape)
 }

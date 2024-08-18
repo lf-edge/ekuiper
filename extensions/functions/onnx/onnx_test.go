@@ -7,6 +7,7 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -26,26 +27,24 @@ func Test_mnist_Exec(t *testing.T) {
 	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
 	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
 
-
 	type args struct {
 		in0  api.FunctionContext
 		args []any
 	}
 	tests := []struct {
-		name   string
-		args   args
-		want   any
-		want1  bool
+		name  string
+		args  args
+		want  any
+		want1 bool
 	}{
 		{
 			name: "test1",
 			args: args{
 				in0: fctx,
 				args: func() []any {
-					
 
-					f, _ :=  os.Open("./img.png")
-					originalPic, _, _ :=image.Decode(f)
+					f, _ := os.Open("./img.png")
+					originalPic, _, _ := image.Decode(f)
 					bounds := originalPic.Bounds().Canon()
 					if (bounds.Min.X != 0) || (bounds.Min.Y != 0) {
 						// Should never happen with the standard library.
@@ -57,31 +56,53 @@ func Test_mnist_Exec(t *testing.T) {
 						pic:    originalPic,
 						Invert: false,
 					}
-				
+
 					inputData := inputImage.GetNetworkInput()
-					var anyBits  []any;
+					var anyBits []any
 					for _, v := range inputData {
 						anyBits = append(anyBits, v)
 					}
 					args := make([]any, 0)
 					args = append(args, "mnist")
-					args = append(args,anyBits )
+					args = append(args, anyBits)
 					return args
 				}(),
 			},
-			want:  nil,
-			want1: false,
+			want:  []interface{}{[]float32{1.3509222, 1.1492438, 2.231948, 0.82689315, -3.473754, 1.2002871, -1.185765, -5.960128, 4.7645416, -2.3451788}},
+			want1: true,
+		},
+		{
+			name: "test2",
+			args: args{
+				in0: fctx,
+				args: func() []any {
+					args := make([]any, 0)
+					args = append(args, "sum_and_difference")
+					args = append(args, []any{0.2, 0.3, 0.6, 0.9})
+					return args
+				}(),
+			},
+			want:  []any{[]float32{1.9999883, 0.60734314}},
+			want1: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := &OnnxFunc{}
+
 			got0, got1 := f.Exec(tt.args.in0, tt.args.args)
-			if !got1 {
+			if got1 != tt.want1 {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
-			
-			fmt.Printf("%s",got0)
+			if !reflect.DeepEqual(got0, tt.want) {
+				t.Errorf("Name = %s,Exec() got = %v, want %v",tt.name, got0, tt.want)
+			}
+			if tt.name == "test2" {
+				test2Ouput := got0.([]any)[0].([]float32)
+				if test2Ouput[0] != 1.9999883 {
+					t.Errorf("Name = %s, Exec() got = %v, want %v", tt.name,test2Ouput[0], 1.9999883)
+				}
+			}
 		})
 	}
 }
@@ -141,4 +162,38 @@ func TestPic(t *testing.T) {
 		time.Sleep(1 * time.Second)
 	}
 	client.Disconnect(0)
+}
+
+
+
+func Test_Any(t *testing.T) {
+
+	tests := []struct {
+		name string
+		got  any
+		want any
+	}{
+		{
+			name: "test1",
+			got:  []any{[]float32{1.9999883, 0.60734314}},
+			want: []any{[]float32{1.9999883, 0.60734314}},
+		},
+		{
+			name: "test2",
+			got: func() []any {
+				result := make([]any, 2)
+				result[0] = []float32{1.9999883}
+				result[1] = []float32{0.60734314}
+				return result
+			}(),
+			want: []any{[]float32{1.9999883, 0.60734314}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if !reflect.DeepEqual(tt.got, tt.want) {
+				t.Errorf("testName = %s  Exec() got = %v, want %v", tt.name, tt.got, tt.want)
+			}
+		})
+	}
 }
