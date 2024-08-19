@@ -224,7 +224,14 @@ type KuiperConf struct {
 	Connection struct {
 		BackoffMaxElapsedDuration cast.DurationConf `yaml:"backoffMaxElapsedDuration"`
 	}
+	OpenTelemetry OpenTelemetry `yaml:"openTelemetry"`
+
 	AesKey []byte
+}
+
+type OpenTelemetry struct {
+	EnableCollector bool   `yaml:"enableCollector"`
+	Endpoint        string `yaml:"endpoint"`
 }
 
 func SetLogLevel(level string, debug bool) {
@@ -412,6 +419,10 @@ func InitConf() {
 
 	if Config.Basic.Syslog != nil {
 		_ = Config.Basic.Syslog.Validate()
+	}
+
+	if Config.OpenTelemetry.Endpoint == "" {
+		Config.OpenTelemetry.Endpoint = "localhost:4318"
 	}
 
 	_ = ValidateRuleOption(&Config.Rule)

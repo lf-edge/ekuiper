@@ -15,7 +15,6 @@
 package node
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -154,7 +153,7 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 	case xsql.EOFTuple:
 		s.currentEof++
 		if s.eoflimit == s.currentEof {
-			infra.DrainError(ctx, errors.New("done"), s.ctrlCh)
+			infra.DrainError(ctx, errorx.NewEOF(), s.ctrlCh)
 		}
 		return nil, true
 	}

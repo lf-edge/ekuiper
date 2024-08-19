@@ -19,7 +19,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type ProjectSetOperator struct {
@@ -34,7 +36,7 @@ type ProjectSetOperator struct {
 // {"a":[1,2],"b":3} => {"a":1,"b":3},{"a":2,"b":3}
 // For Collection, ProjectSetOperator will do the following transform:
 // [{"a":[1,2],"b":3},{"a":[1,2],"b":4}] = > [{"a":"1","b":3},{"a":"2","b":3},{"a":"1","b":4},{"a":"2","b":4}]
-func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (ps *ProjectSetOperator) Apply(ctx api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	if ps.LimitCount == 0 && ps.EnableLimit {
 		return []xsql.Row{}
 	}
@@ -42,6 +44,11 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 	case error:
 		return input
 	case xsql.Row:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "projectset_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		results, err := ps.handleSRFRow(input)
 		if err != nil {
 			return err
@@ -51,6 +58,11 @@ func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xs
 		}
 		return results.rows
 	case xsql.Collection:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "projectset_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		if ps.EnableLimit && ps.LimitCount > 0 && input.Len() > ps.LimitCount {
 			sel := make([]int, 0, ps.LimitCount)
 			for i := 0; i < ps.LimitCount; i++ {

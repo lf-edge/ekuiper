@@ -63,12 +63,9 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 		return input
 	case xsql.Row:
 		if ctx.IsTraceEnabled() {
-			withTracer, ok := input.(xsql.HasTracerCtx)
-			if ok {
-				spanCtx, span := tracer.GetTracer().Start(withTracer.GetTracerCtx(), "proj_op")
-				withTracer.SetTracerCtx(context.WithContext(spanCtx))
-				defer span.End()
-			}
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "proj_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
 		}
 		ve := pp.getRowVE(input, nil, fv, afv)
 		if err := pp.project(input, ve); err != nil {
@@ -84,6 +81,11 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 		}
 	case xsql.Collection:
+		if ctx.IsTraceEnabled() && input.Len() > 0 {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "proj_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		var err error
 		if pp.IsAggregate {
 			input.SetIsAgg(true)

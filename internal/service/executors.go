@@ -132,7 +132,7 @@ func (d *grpcExecutor) InvokeFunction(_ api.FunctionContext, name string, params
 		)
 		go infra.SafeRun(func() error {
 			defer cancel()
-			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+			conn, e = grpc.DialContext(dialCtx, d.addr.Host, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock()) //nolint:staticcheck
 			return e
 		})
 

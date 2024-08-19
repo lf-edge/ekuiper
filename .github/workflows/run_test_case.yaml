@@ -52,26 +52,38 @@ jobs:
         go build -o ../../../../plugins/portable/mirror/mirror .
         cp mirror.json ../../../../plugins/portable/mirror
         cd ../../../../
+        cp -r sdk/python/ekuiper sdk/python/example/pysam/
         cp -r sdk/python/example/pysam plugins/portable/pysam
-        cp -r sdk/python/ekuiper plugins/portable/pysam/
         cp test/lookup.json data/lookup.json
     - name: Run test case
       run: |
         make failpoint-enable
-        go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml ./...
+        go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/fvt")
         make failpoint-disable
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: coverage.xml
-        token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
-        verbose: true
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
         name: stream.log
         path: log/stream.log
+    - name: Clean plugins
+      run: |
+        rm -r plugins/portable/pysam
+        rm -r plugins/portable/mirror
+    - name: Run fvt
+      run: |
+        go test -trimpath -tags="edgex msgpack script parquet" --cover -covermode=atomic -coverpkg=./... -coverprofile=fvt_coverage.xml ./fvt
+    - uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: streamFvt.log
+        path: log/stream.log
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: coverage.xml,fvt_coverage.xml
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
+        verbose: true
 
   run_fvt_tests:
     needs:

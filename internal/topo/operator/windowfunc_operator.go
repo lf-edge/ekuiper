@@ -20,8 +20,10 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type WindowFuncOperator struct {
@@ -78,8 +80,18 @@ func (wf *WindowFuncOperator) Apply(ctx api.StreamContext, data interface{}, fv 
 	}
 	switch input := data.(type) {
 	case xsql.Row:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "windowFunc_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		wh.handleTuple(input)
 	case xsql.Collection:
+		if ctx.IsTraceEnabled() {
+			spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), "windowFunc_op")
+			input.SetTracerCtx(context.WithContext(spanCtx))
+			defer span.End()
+		}
 		if pr != nil {
 			// handle the following case:
 			// 1: row_number() over (partition by a)

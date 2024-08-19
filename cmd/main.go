@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"flag"
+	"os"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/server"
@@ -36,13 +37,13 @@ var (
 )
 
 func init() {
-	flag.StringVar(&loadFileType, "loadFileType", "", "loadFileType indicates the how to load path")
-	flag.StringVar(&etcPath, "etc", "", "etc indicates the path of etc dir")
-	flag.StringVar(&dataPath, "data", "", "data indicates the path of data dir")
-	flag.StringVar(&logPath, "log", "", "log indicates the path of log dir")
-	flag.StringVar(&pluginsPath, "plugins", "", "plugins indicates the path of plugins dir")
-
-	flag.Parse()
+	fs := flag.NewFlagSet("ek", flag.ContinueOnError)
+	fs.StringVar(&loadFileType, "loadFileType", "", "loadFileType indicates the how to load path")
+	fs.StringVar(&etcPath, "etc", "", "etc indicates the path of etc dir")
+	fs.StringVar(&dataPath, "data", "", "data indicates the path of data dir")
+	fs.StringVar(&logPath, "log", "", "log indicates the path of log dir")
+	fs.StringVar(&pluginsPath, "plugins", "", "plugins indicates the path of plugins dir")
+	_ = fs.Parse(os.Args[1:])
 
 	if len(loadFileType) > 0 {
 		conf.PathConfig.LoadFileType = loadFileType

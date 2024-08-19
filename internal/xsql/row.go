@@ -43,6 +43,7 @@ type Event interface {
 }
 
 type ReadonlyRow interface {
+	HasTracerCtx
 	Valuer
 	AliasValuer
 	Wildcarder
@@ -339,21 +340,39 @@ var (
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
+	Ctx    api.StreamContext
 	Tuples []Row // The content is immutable, but the slice may be added or removed
 	AffiliateRow
 	lock      sync.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
 }
 
+func (jt *JoinTuple) GetTracerCtx() api.StreamContext {
+	return jt.Ctx
+}
+
+func (jt *JoinTuple) SetTracerCtx(ctx api.StreamContext) {
+	jt.Ctx = ctx
+}
+
 var _ Row = &JoinTuple{}
 
 // GroupedTuples is a collection of tuples grouped by a key
 type GroupedTuples struct {
+	Ctx     api.StreamContext
 	Content []Row
 	*WindowRange
 	AffiliateRow
 	lock      sync.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
+}
+
+func (s *GroupedTuples) GetTracerCtx() api.StreamContext {
+	return s.Ctx
+}
+
+func (s *GroupedTuples) SetTracerCtx(ctx api.StreamContext) {
+	s.Ctx = ctx
 }
 
 var _ CollectionRow = &GroupedTuples{}
