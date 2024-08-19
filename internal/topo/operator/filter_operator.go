@@ -28,10 +28,6 @@ type FilterOp struct {
 	StateFuncs []*ast.Call
 }
 
-func (p *FilterOp) OpName() string {
-	return "filter_op"
-}
-
 // Apply the filter operator to each message in the stream
 // The input data could be a xsql.Row or a xsql.Collection
 // For xsql.Row, apply the condition to the row and return the row if the condition is true

@@ -110,7 +110,7 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			}
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
-			traced, _, span := tracenode.TraceInput(ctx, data, o.op.OpName())
+			traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
 			result := o.op.Apply(exeCtx, data, fv, afv)
 			switch val := result.(type) {
 			case nil:
@@ -163,7 +163,7 @@ func (o *UnaryOperator) traceUnarySplitRow(ctx, spanCtx api.StreamContext, row x
 	if !ctx.IsTraceEnabled() || row == nil {
 		return
 	}
-	subCtx, span := tracer.GetTracer().Start(spanCtx, fmt.Sprintf("%s_split", o.op.OpName()))
+	subCtx, span := tracer.GetTracer().Start(spanCtx, fmt.Sprintf("%s_split", ctx.GetOpId()))
 	defer span.End()
 	row.SetTracerCtx(topoContext.WithContext(subCtx))
 	tracenode.RecordRowOrCollection(row, span)

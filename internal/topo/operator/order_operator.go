@@ -27,10 +27,6 @@ type OrderOp struct {
 	SortFields ast.SortFields
 }
 
-func (p *OrderOp) OpName() string {
-	return "order_op"
-}
-
 func (p *OrderOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("order plan receive %v", data)

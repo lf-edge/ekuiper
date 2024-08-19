@@ -52,10 +52,6 @@ func (rh *rowNumberFuncHandle) handleCollection(input xsql.Collection) xsql.Coll
 	return input
 }
 
-func (wf *WindowFuncOperator) OpName() string {
-	return "window_func_op"
-}
-
 func (wf *WindowFuncOperator) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	windowFuncField := wf.WindowFuncField
 	name := windowFuncField.Name

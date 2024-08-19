@@ -28,10 +28,6 @@ type AnalyticFuncsOp struct {
 	FieldFuncs []*ast.Call
 }
 
-func (p *AnalyticFuncsOp) OpName() string {
-	return "analytic_op"
-}
-
 func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, input xsql.Row) (xsql.Row, error) {
 	for _, call := range calls {
 		f := call

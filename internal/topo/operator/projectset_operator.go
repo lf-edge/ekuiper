@@ -28,10 +28,6 @@ type ProjectSetOperator struct {
 	LimitCount  int
 }
 
-func (ps *ProjectSetOperator) OpName() string {
-	return "projset_op"
-}
-
 // Apply implement UnOperation
 // ProjectSetOperator will extract the results from the set-returning-function into multi rows by aligning other columns
 // For tuple, ProjectSetOperator will do the following transform:

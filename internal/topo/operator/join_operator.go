@@ -29,10 +29,6 @@ type JoinOp struct {
 	Joins ast.Joins
 }
 
-func (jp *JoinOp) OpName() string {
-	return "join_op"
-}
-
 // Apply JoinOp to join two streams. If running in continuous query, the inner join will always return empty result because there is only one stream data.
 func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()

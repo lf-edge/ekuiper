@@ -27,10 +27,6 @@ type AggregateOp struct {
 	Dimensions ast.Dimensions
 }
 
-func (p *AggregateOp) OpName() string {
-	return "aggregate_op"
-}
-
 // Apply
 /*  input: Collection
  *  output: Collection

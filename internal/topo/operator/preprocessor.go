@@ -57,10 +57,6 @@ func NewPreprocessor(isSchemaless bool, fields map[string]*ast.JsonStreamField, 
 	return p, nil
 }
 
-func (p *Preprocessor) OpName() string {
-	return "preprocess_op"
-}
-
 // Apply the preprocessor to the tuple
 /*	input: *xsql.Tuple
  *	output: *xsql.Tuple

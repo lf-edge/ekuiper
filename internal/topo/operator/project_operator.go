@@ -45,10 +45,6 @@ type ProjectOp struct {
 	alias []interface{}
 }
 
-func (pp *ProjectOp) OpName() string {
-	return "proj_op"
-}
-
 // Apply
 //
 //	input: *xsql.Tuple| xsql.Collection

@@ -28,10 +28,6 @@ type HavingOp struct {
 	StateFuncs []*ast.Call
 }
 
-func (p *HavingOp) OpName() string {
-	return "having_op"
-}
-
 func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("having plan receive %v", data)
