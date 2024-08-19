@@ -189,6 +189,7 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	} else {
+		w.Header().Add(ContentType, ContentTypeJSON)
 		w.Write(ret)
 	}
 }
@@ -205,6 +206,7 @@ func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	} else {
+		w.Header().Add(ContentType, ContentTypeJSON)
 		_, _ = w.Write(ret)
 	}
 }
@@ -221,6 +223,7 @@ func sinkConfHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	} else {
+		w.Header().Add(ContentType, ContentTypeJSON)
 		_, _ = w.Write(ret)
 	}
 }
