@@ -32,6 +32,15 @@ func RecordRowOrCollection(input interface{}, span trace.Span) {
 		if d.Len() > 0 {
 			span.SetAttributes(attribute.String(DataKey, ToStringCollection(d)))
 		}
+	case *xsql.RawTuple:
+		span.SetAttributes(attribute.String(DataKey, string(d.Rawdata)))
+	}
+}
+
+func RecordSpanData(input any, span trace.Span) {
+	switch d := input.(type) {
+	case []byte:
+		span.SetAttributes(attribute.String(DataKey, string(d)))
 	}
 }
 
@@ -65,6 +74,7 @@ func StartTrace(ctx api.StreamContext, opName string) (bool, api.StreamContext, 
 	}
 	spanCtx, span := tracer.GetTracer().Start(context.Background(), opName)
 	ingestCtx := topoContext.WithContext(spanCtx)
+	ingestCtx.IsTraceEnabled()
 	return true, ingestCtx, span
 }
 

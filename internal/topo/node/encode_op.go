@@ -21,6 +21,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -80,11 +81,18 @@ func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 }
 
 func tupleCopy(ctx api.StreamContext, converter message.Converter, st any, message any) []any {
+	traced, spanCtx, span := tracenode.TraceInput(ctx, st, "encode_op")
+	if traced {
+		defer span.End()
+	}
 	raw, err := converter.Encode(ctx, message)
 	if err != nil {
 		return []any{err}
 	} else {
-		r := &xsql.RawTuple{Rawdata: raw}
+		if traced {
+			tracenode.RecordSpanData(raw, span)
+		}
+		r := &xsql.RawTuple{Ctx: spanCtx, Rawdata: raw}
 		if ss, ok := st.(api.MetaInfo); ok {
 			r.Metadata = ss.AllMeta()
 			r.Timestamp = ss.Created()

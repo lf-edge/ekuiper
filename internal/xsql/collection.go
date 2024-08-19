@@ -612,9 +612,18 @@ func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
 }
 
 type TransformedTupleList struct {
+	Ctx     api.StreamContext
 	Content []api.MessageTuple
 	Maps    []map[string]any
 	Props   map[string]string
+}
+
+func (l *TransformedTupleList) GetTracerCtx() api.StreamContext {
+	return l.Ctx
+}
+
+func (l *TransformedTupleList) SetTracerCtx(ctx api.StreamContext) {
+	l.Ctx = ctx
 }
 
 func (l *TransformedTupleList) DynamicProps(template string) (string, bool) {

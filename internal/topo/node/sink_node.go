@@ -22,6 +22,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -86,7 +87,11 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-
+					traced, _, span := tracenode.TraceInput(ctx, data, "sink_op")
+					if traced {
+						tracenode.RecordRowOrCollection(data, span)
+						span.End()
+					}
 					s.statManager.IncTotalRecordsIn()
 					s.statManager.ProcessTimeStart()
 					err = s.doCollect(ctx, s.sink, data)
