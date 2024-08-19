@@ -20,7 +20,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -46,6 +45,10 @@ type ProjectOp struct {
 	alias []interface{}
 }
 
+func (pp *ProjectOp) OpName() string {
+	return "proj_op"
+}
+
 // Apply
 //
 //	input: *xsql.Tuple| xsql.Collection
@@ -61,10 +64,6 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 	case error:
 		return input
 	case xsql.Row:
-		traced, _, span := tracenode.TraceRow(ctx, input, "proj_op")
-		if traced {
-			defer span.End()
-		}
 		ve := pp.getRowVE(input, nil, fv, afv)
 		if err := pp.project(input, ve); err != nil {
 			return fmt.Errorf("run Select error: %s", err)
@@ -79,10 +78,6 @@ func (pp *ProjectOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fun
 			}
 		}
 	case xsql.Collection:
-		traced, _, span := tracenode.TraceCollection(ctx, input, "proj_op")
-		if traced {
-			defer span.End()
-		}
 		var err error
 		if pp.IsAggregate {
 			input.SetIsAgg(true)

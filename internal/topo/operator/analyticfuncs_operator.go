@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -27,6 +26,10 @@ import (
 type AnalyticFuncsOp struct {
 	Funcs      []*ast.Call
 	FieldFuncs []*ast.Call
+}
+
+func (p *AnalyticFuncsOp) OpName() string {
+	return "analytic_op"
 }
 
 func (p *AnalyticFuncsOp) evalTupleFunc(calls []*ast.Call, ve *xsql.ValuerEval, input xsql.Row) (xsql.Row, error) {
@@ -60,17 +63,13 @@ func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.Functio
 	return input, nil
 }
 
-func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) (got interface{}) {
 	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %v", data)
 	var err error
 	switch input := data.(type) {
 	case error:
 		return input
 	case xsql.Row:
-		traced, _, span := tracenode.TraceRow(ctx, input, "analytic_op")
-		if traced {
-			defer span.End()
-		}
 		ve := &xsql.ValuerEval{Valuer: xsql.MultiValuer(input, fv)}
 		input, err = p.evalTupleFunc(p.FieldFuncs, ve, input)
 		if err != nil {
@@ -82,10 +81,6 @@ func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsq
 		}
 		data = input
 	case xsql.Collection:
-		traced, _, span := tracenode.TraceCollection(ctx, input, "analytic_op")
-		if traced {
-			defer span.End()
-		}
 		input, err = p.evalCollectionFunc(p.FieldFuncs, fv, input)
 		if err != nil {
 			return err

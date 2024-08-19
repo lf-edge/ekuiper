@@ -19,13 +19,16 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
 type AggregateOp struct {
 	Dimensions ast.Dimensions
+}
+
+func (p *AggregateOp) OpName() string {
+	return "aggregate_op"
 }
 
 // Apply
@@ -41,10 +44,6 @@ func (p *AggregateOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Fu
 		case error:
 			return input
 		case xsql.Collection:
-			traced, _, span := tracenode.TraceCollection(ctx, input, "aggregate")
-			if traced {
-				defer span.End()
-			}
 			wr := input.GetWindowRange()
 			result := make(map[string]*xsql.GroupedTuples)
 			err := input.Range(func(i int, ir xsql.ReadonlyRow) (bool, error) {

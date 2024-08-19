@@ -28,6 +28,10 @@ type EmitterOp struct {
 	Emitter string
 }
 
+func (p *EmitterOp) OpName() string {
+	return "emit_op"
+}
+
 func (p *EmitterOp) Apply(ctx api.StreamContext, data any, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) any {
 	ctx.GetLogger().Debugf("emitter op receive %v", data)
 	switch input := data.(type) {

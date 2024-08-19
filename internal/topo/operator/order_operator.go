@@ -28,6 +28,10 @@ type OrderOp struct {
 	SortFields ast.SortFields
 }
 
+func (p *OrderOp) OpName() string {
+	return "order_op"
+}
+
 func (p *OrderOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("order plan receive %v", data)
@@ -42,10 +46,6 @@ func (p *OrderOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 		}
 		return input
 	case xsql.SortingData:
-		traced, _, span := tracenode.TraceSortingData(ctx, input, "order_op")
-		if traced {
-			defer span.End()
-		}
 		if err := sorter.Sort(input); err != nil {
 			return fmt.Errorf("run Order By error: %s", err)
 		}

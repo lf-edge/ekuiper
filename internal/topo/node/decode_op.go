@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
@@ -140,10 +141,6 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.RawTuple:
-		traced, _, span := tracenode.TraceRowTuple(ctx, d, "decode_op")
-		if traced {
-			defer span.End()
-		}
 		result, err := o.converter.Decode(ctx, d.Raw())
 		if err != nil {
 			return []any{err}
@@ -151,18 +148,20 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 
 		switch r := result.(type) {
 		case map[string]interface{}:
-			return []any{toTupleFromRawTuple(r, d)}
+			tuple := toTupleFromRawTuple(ctx, r, d)
+			return []any{tuple}
 		case []map[string]interface{}:
 			rr := make([]any, len(r))
 			for i, v := range r {
-				rr[i] = toTupleFromRawTuple(v, d)
+				tuple := toTupleFromRawTuple(ctx, v, d)
+				rr[i] = tuple
 			}
 			return rr
 		case []interface{}:
 			rr := make([]any, len(r))
 			for i, v := range r {
 				if vc, ok := v.(map[string]interface{}); ok {
-					rr[i] = toTupleFromRawTuple(vc, d)
+					rr[i] = toTupleFromRawTuple(ctx, vc, d)
 				} else {
 					rr[i] = fmt.Errorf("only map[string]any inside a list is supported but got: %v", v)
 				}
@@ -387,14 +386,21 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 	}
 }
 
-func toTupleFromRawTuple(v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
-	return &xsql.Tuple{
+func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
+	traced, spanCtx, span := tracenode.TraceRowTuple(ctx, d, "decode_op")
+	t := &xsql.Tuple{
 		Ctx:       d.Ctx,
 		Message:   v,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
 	}
+	if traced {
+		t.Ctx = spanCtx
+		span.SetAttributes(attribute.String(tracenode.DataKey, tracenode.ToStringRow(t)))
+		defer span.End()
+	}
+	return t
 }
 
 func cloneTuple(d *xsql.Tuple) *xsql.Tuple {

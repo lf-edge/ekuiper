@@ -23,6 +23,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -700,6 +701,7 @@ func (o *WindowOperator) isMatchCondition(ctx api.StreamContext, d *xsql.Tuple) 
 func (o *WindowOperator) handleTraceIngestTuple(ctx api.StreamContext, t *xsql.Tuple) {
 	traced, _, span := tracenode.TraceRow(ctx, t, "window_op_ingest")
 	if traced {
+		span.SetAttributes(attribute.String(tracenode.DataKey, tracenode.ToStringRow(t)))
 		span.End()
 		o.tupleSpanMap[t] = struct{}{}
 	}
@@ -731,6 +733,7 @@ func (o *WindowOperator) handleTraceEmitTuple(ctx api.StreamContext, wt *xsql.Wi
 		wt.SetTracerCtx(topoContext.WithContext(o.nextSpanCtx))
 		// discard span if windowTuple is empty
 		if len(wt.Content) > 0 {
+			tracenode.RecordRowOrCollection(wt, o.nextSpan)
 			o.nextSpan.End()
 		}
 		o.handleNextWindowTupleSpan(ctx)

@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -28,6 +27,10 @@ import (
 type JoinOp struct {
 	From  *ast.Table
 	Joins ast.Joins
+}
+
+func (jp *JoinOp) OpName() string {
+	return "join_op"
 }
 
 // Apply JoinOp to join two streams. If running in continuous query, the inner join will always return empty result because there is only one stream data.
@@ -48,10 +51,6 @@ func (jp *JoinOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 		return fmt.Errorf("run Join error: join is only supported in window")
 	}
 	result := &xsql.JoinTuples{Content: make([]*xsql.JoinTuple, 0)}
-	traced, _, span := tracenode.TraceCollection(ctx, input, "join_op")
-	if traced {
-		defer span.End()
-	}
 	for i, join := range jp.Joins {
 		select {
 		case <-ctx.Done():

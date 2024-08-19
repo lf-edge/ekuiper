@@ -20,7 +20,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -53,6 +52,10 @@ func (rh *rowNumberFuncHandle) handleCollection(input xsql.Collection) xsql.Coll
 	return input
 }
 
+func (wf *WindowFuncOperator) OpName() string {
+	return "window_func_op"
+}
+
 func (wf *WindowFuncOperator) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	windowFuncField := wf.WindowFuncField
 	name := windowFuncField.Name
@@ -79,16 +82,8 @@ func (wf *WindowFuncOperator) Apply(ctx api.StreamContext, data interface{}, fv 
 	}
 	switch input := data.(type) {
 	case xsql.Row:
-		traced, _, span := tracenode.TraceRow(ctx, input, "windowFunc_op")
-		if traced {
-			defer span.End()
-		}
 		wh.handleTuple(input)
 	case xsql.Collection:
-		traced, _, span := tracenode.TraceCollection(ctx, input, "windowFunc_op")
-		if traced {
-			defer span.End()
-		}
 		if pr != nil {
 			// handle the following case:
 			// 1: row_number() over (partition by a)

@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -29,6 +28,10 @@ type HavingOp struct {
 	StateFuncs []*ast.Call
 }
 
+func (p *HavingOp) OpName() string {
+	return "having_op"
+}
+
 func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, afv *xsql.AggregateFunctionValuer) interface{} {
 	log := ctx.GetLogger()
 	log.Debugf("having plan receive %v", data)
@@ -36,10 +39,6 @@ func (p *HavingOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Funct
 	case error:
 		return input
 	case xsql.Collection:
-		traced, _, span := tracenode.TraceCollection(ctx, input, "having_op")
-		if traced {
-			defer span.End()
-		}
 		var groups []int
 		err := input.GroupRange(func(i int, aggRow xsql.CollectionRow) (bool, error) {
 			afv.SetData(aggRow)

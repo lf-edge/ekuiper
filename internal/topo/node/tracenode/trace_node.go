@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -12,11 +13,37 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
+const DataKey = "data"
+
 func TraceRowTuple(ctx api.StreamContext, input *xsql.RawTuple, opName string) (bool, api.StreamContext, trace.Span) {
 	if !ctx.IsTraceEnabled() {
 		return false, nil, nil
 	}
 	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName)
+	x := topoContext.WithContext(spanCtx)
+	return true, x, span
+}
+
+func RecordRowOrCollection(input interface{}, span trace.Span) {
+	switch d := input.(type) {
+	case xsql.Row:
+		span.SetAttributes(attribute.String(DataKey, ToStringRow(d)))
+	case xsql.Collection:
+		if d.Len() > 0 {
+			span.SetAttributes(attribute.String(DataKey, ToStringCollection(d)))
+		}
+	}
+}
+
+func TraceInput(ctx api.StreamContext, d interface{}, opName string, opts ...trace.SpanStartOption) (bool, api.StreamContext, trace.Span) {
+	if !ctx.IsTraceEnabled() {
+		return false, nil, nil
+	}
+	input, ok := d.(xsql.HasTracerCtx)
+	if !ok {
+		return false, nil, nil
+	}
+	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName, opts...)
 	x := topoContext.WithContext(spanCtx)
 	input.SetTracerCtx(x)
 	return true, x, span
@@ -27,26 +54,6 @@ func TraceRow(ctx api.StreamContext, input xsql.Row, opName string, opts ...trac
 		return false, nil, nil
 	}
 	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName, opts...)
-	x := topoContext.WithContext(spanCtx)
-	input.SetTracerCtx(x)
-	return true, x, span
-}
-
-func TraceCollection(ctx api.StreamContext, input xsql.Collection, opName string) (bool, api.StreamContext, trace.Span) {
-	if !ctx.IsTraceEnabled() || input.Len() < 1 {
-		return false, nil, nil
-	}
-	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName)
-	x := topoContext.WithContext(spanCtx)
-	input.SetTracerCtx(x)
-	return true, x, span
-}
-
-func TraceSortingData(ctx api.StreamContext, input xsql.SortingData, opName string) (bool, api.StreamContext, trace.Span) {
-	if !ctx.IsTraceEnabled() || input.Len() < 1 {
-		return false, nil, nil
-	}
-	spanCtx, span := tracer.GetTracer().Start(input.GetTracerCtx(), opName)
 	x := topoContext.WithContext(spanCtx)
 	input.SetTracerCtx(x)
 	return true, x, span
