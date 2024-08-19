@@ -52,14 +52,19 @@ jobs:
         go build -o ../../../../plugins/portable/mirror/mirror .
         cp mirror.json ../../../../plugins/portable/mirror
         cd ../../../../
+        cp -r sdk/python/ekuiper sdk/python/example/pysam/
         cp -r sdk/python/example/pysam plugins/portable/pysam
-        cp -r sdk/python/ekuiper plugins/portable/pysam/
         cp test/lookup.json data/lookup.json
     - name: Run test case
       run: |
         make failpoint-enable
         go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/fvt")
         make failpoint-disable
+    - uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: stream.log
+        path: log/stream.log
     - name: Clean plugins
       run: |
         rm -r plugins/portable/pysam
@@ -70,7 +75,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
-        name: stream.log
+        name: streamFvt.log
         path: log/stream.log
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
