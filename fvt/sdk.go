@@ -85,7 +85,7 @@ func (sdk *SDK) DeleteRule(name string) (resp *http.Response, err error) {
 	return sdk.httpClient.Do(req)
 }
 
-func (sdk *SDK) GetRulStatus(name string) (map[string]any, error) {
+func (sdk *SDK) GetRuleStatus(name string) (map[string]any, error) {
 	resp, err := http.Get(sdk.baseUrl.JoinPath("rules", name, "status").String())
 	if err != nil {
 		fmt.Println(err)

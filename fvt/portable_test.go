@@ -78,7 +78,7 @@ func (s *ServerTestSuite) TestLC() {
 		payload, err := io.ReadAll(resp.Body)
 		s.NoError(err)
 		defer resp.Body.Close()
-		s.Require().Equal("[{\"name\":\"mirror\",\"version\":\"v1.0.0\",\"language\":\"go\",\"executable\":\"/home/runner/work/ekuiper/ekuiper/plugins/portable/mirror/mirror\",\"sources\":[\"random\"],\"sinks\":[\"file\"],\"functions\":[\"echo\"]},{\"name\":\"pysam\",\"version\":\"v1.0.0\",\"language\":\"python\",\"executable\":\"/home/runner/work/ekuiper/ekuiper/plugins/portable/pysam/pysam.py\",\"sources\":[\"pyjson\"],\"sinks\":[\"print\"],\"functions\":[\"revert\"]}]", string(payload))
+		s.Require().Equal("[{\"name\":\"pysam\",\"version\":\"v1.0.0\",\"language\":\"python\",\"executable\":\"/home/runner/work/ekuiper/ekuiper/plugins/portable/pysam/pysam.py\",\"sources\":[\"pyjson\"],\"sinks\":[\"print\"],\"functions\":[\"revert\"]}]", string(payload))
 	})
 	s.Run("test rule with plugin", func() {
 		resp, err := client.CreateStream(streamSql)
@@ -92,10 +92,22 @@ func (s *ServerTestSuite) TestLC() {
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 
 		// Check rule status after a while
-		time.Sleep(ConstantInterval)
-		metrics, err := client.GetRulStatus("rulePort1")
+		ticker := time.NewTicker(ConstantInterval)
+		defer ticker.Stop()
+		count := 20
+		for count > 0 {
+			<-ticker.C
+			count--
+			metrics, err := client.GetRuleStatus("rulePort1")
+			s.Require().NoError(err)
+			if metrics["sink_print_0_0_records_out_total"].(float64) > 0 {
+				break
+			}
+		}
+		metrics, err := client.GetRuleStatus("rulePort1")
 		s.Require().NoError(err)
 		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
 		sinkOut, ok := metrics["sink_print_0_0_records_out_total"]
 		s.True(ok)
 		if !ok {
@@ -110,7 +122,7 @@ func (s *ServerTestSuite) TestLC() {
 	//	s.Require().Equal(http.StatusOK, resp.StatusCode)
 	//	// Check rule status after a while
 	//	time.Sleep(ConstantInterval)
-	//	metrics, err := client.GetRulStatus("rulePort1")
+	//	metrics, err := client.GetRuleStatus("rulePort1")
 	//	s.Require().NoError(err)
 	//	s.Equal("running", metrics["status"])
 	//	sinkOut, ok := metrics["sink_print_0_0_records_out_total"]
@@ -132,7 +144,7 @@ func (s *ServerTestSuite) TestLC() {
 		s.Equal(200, resp.StatusCode)
 	})
 	s.Run("delete plugin", func() {
-		resp, err := client.Delete("portable/pysam")
+		resp, err := client.Delete("plugins/portables/pysam")
 		s.NoError(err)
 		s.Equal(http.StatusOK, resp.StatusCode)
 	})

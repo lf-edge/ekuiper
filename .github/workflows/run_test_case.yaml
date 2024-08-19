@@ -60,19 +60,18 @@ jobs:
         make failpoint-enable
         go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/fvt")
         make failpoint-disable
-    - uses: actions/upload-artifact@v3
-      if: failure()
-      with:
-        name: stream.log
-        path: log/stream.log
+    - name: Clean plugins
+      run: |
+        rm -r plugins/portable/pysam
+        rm -r plugins/portable/mirror
     - name: Run fvt
       run: |
         go test -trimpath -tags="edgex msgpack script parquet" --cover -covermode=atomic -coverpkg=./... -coverprofile=fvt_coverage.xml ./fvt
     - uses: actions/upload-artifact@v3
       if: failure()
       with:
-        name: fvtstream.log
-        path: _build/kuiper-$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log
+        name: stream.log
+        path: log/stream.log
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
