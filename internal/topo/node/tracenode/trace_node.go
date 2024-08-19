@@ -69,13 +69,13 @@ func StartTrace(ctx api.StreamContext, opName string) (bool, api.StreamContext, 
 }
 
 func ToStringRow(r xsql.Row) string {
-	d := r.ToMap()
+	d := r.Clone().ToMap()
 	b, _ := json.Marshal(d)
 	return string(b)
 }
 
 func ToStringCollection(r xsql.Collection) string {
-	d := r.ToMaps()
+	d := r.Clone().ToMaps()
 	b, _ := json.Marshal(d)
 	return string(b)
 }

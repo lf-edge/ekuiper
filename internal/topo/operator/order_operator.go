@@ -19,7 +19,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
-	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -40,10 +39,6 @@ func (p *OrderOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.Functi
 	case error:
 		return input
 	case xsql.Row:
-		traced, _, span := tracenode.TraceRow(ctx, input, "order_op")
-		if traced {
-			defer span.End()
-		}
 		return input
 	case xsql.SortingData:
 		if err := sorter.Sort(input); err != nil {
