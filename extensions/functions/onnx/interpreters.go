@@ -30,6 +30,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+
 	// "os"
 	// "os/exec"
 
@@ -252,7 +253,7 @@ func (ip *InterPreter) GetEmptyOutputTensors() ([]ort.ArbitraryTensor, error) {
 
 }
 
-func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape ort.Shape,notSupportedDataLen int) (ort.ArbitraryTensor, error) {
+func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape ort.Shape) (ort.ArbitraryTensor, error) {
 
 	switch dataType {
 	case ort.TensorElementDataTypeFloat:
@@ -275,6 +276,15 @@ func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape
 		return ort.NewEmptyTensor[uint32](shape)
 	case ort.TensorElementDataTypeUint64:
 		return ort.NewEmptyTensor[uint64](shape)
+	case ort.TensorElementDataTypeFloat16:
+		return ort.NewCustomDataTensor(shape, make([]byte, shape.FlattenedSize()*2),
+			ort.TensorElementDataTypeFloat16)
+	case ort.TensorElementDataTypeString:
+		return ort.NewCustomDataTensor(shape, make([]byte, shape.FlattenedSize()),
+			ort.TensorElementDataTypeString)
+	case ort.TensorElementDataTypeBool:
+		return ort.NewCustomDataTensor(shape, make([]byte, shape.FlattenedSize()),
+			ort.TensorElementDataTypeBool)
 	default:
 		// totalSize := shape.FlattenedSize() //todo 其他数据类型
 		// actualData := unsafe.Slice((*byte)(tensorData), totalSize)
