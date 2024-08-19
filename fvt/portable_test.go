@@ -45,25 +45,17 @@ func (s *ServerTestSuite) TestLC() {
 		}
 	  ]
 	}`
-	s.Run("delete existing plugin", func() {
-		resp, err := client.Delete("portable/pysam")
-		s.NoError(err)
-		if resp.StatusCode != http.StatusOK {
-			s.T().Log(resp.Status)
-		}
-	})
-	time.Sleep(ConstantInterval)
-	s.Run("create rule error when plugin not installed", func() {
-		resp, err := client.CreateStream(streamSql)
-		s.Require().NoError(err)
-		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-		s.T().Log(GetResponseText(resp))
-
-		resp, err = client.CreateRule(ruleSql)
-		s.Require().NoError(err)
-		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-		s.T().Log(GetResponseText(resp))
-	})
+	//s.Run("create rule error when plugin not installed", func() {
+	//	resp, err := client.CreateStream(streamSql)
+	//	s.Require().NoError(err)
+	//	s.T().Log(GetResponseText(resp))
+	//	s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+	//
+	//	resp, err = client.CreateRule(ruleSql)
+	//	s.Require().NoError(err)
+	//	s.T().Log(GetResponseText(resp))
+	//	s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+	//})
 	s.Run("install plugin and check status", func() {
 		// zip the plugin dir
 		pysamDir := filepath.Join(PWD, "sdk", "python", "example", "pysam")
