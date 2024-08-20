@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/lf-edge/ekuiper/internal/binder/io"
 	"github.com/lf-edge/ekuiper/internal/conf"
 	"github.com/lf-edge/ekuiper/internal/pkg/filex"
+	"github.com/lf-edge/ekuiper/internal/plugin"
 	"github.com/lf-edge/ekuiper/pkg/ast"
 	"github.com/lf-edge/ekuiper/pkg/errorx"
 )
@@ -41,6 +43,7 @@ type (
 		DataSource interface{}        `json:"dataSource,omitempty"`
 		ConfKeys   map[string][]field `json:"properties"`
 		Node       interface{}        `json:"node"`
+		Type       string             `json:"type,omitempty"`
 		isScan     bool
 		isLookup   bool
 	}
@@ -200,8 +203,10 @@ func GetSourceMeta(sourceName, language string) (ptrSourceProperty *uiSource, er
 		return nil, fmt.Errorf(`%s%s`, getMsg(language, source, "not_found_plugin"), sourceName)
 	}
 
-	ui := new(uiSource)
+	ui := &uiSource{}
 	*ui = *v
+	t, _, _ := io.GetSourcePlugin(sourceName)
+	ui.Type = plugin.ExtensionTypes[t]
 	return ui, nil
 }
 
@@ -215,26 +220,24 @@ func GetSourcesPlugins(kind string) (sources []*pluginfo) {
 		} else if kind == ast.StreamKindScan && !v.isScan {
 			continue
 		}
-		node := new(pluginfo)
-		node.Name = strings.TrimSuffix(fileName, `.json`)
-		if nil == v {
-			continue
+		name := strings.TrimSuffix(fileName, `.json`)
+		t, _, _ := io.GetSourcePlugin(name)
+		n := &pluginfo{
+			Name:  name,
+			About: v.About,
+			Type:  plugin.ExtensionTypes[t],
 		}
-		if nil == v.About {
-			continue
-		}
-		node.About = v.About
 		i := 0
 		for ; i < len(sources); i++ {
-			if node.Name <= sources[i].Name {
-				sources = append(sources, node)
+			if n.Name <= sources[i].Name {
+				sources = append(sources, n)
 				copy(sources[i+1:], sources[i:])
-				sources[i] = node
+				sources[i] = n
 				break
 			}
 		}
 		if len(sources) == i {
-			sources = append(sources, node)
+			sources = append(sources, n)
 		}
 	}
 	return sources
