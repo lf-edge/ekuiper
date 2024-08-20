@@ -451,11 +451,11 @@ func (s *State) doStop() error {
 	}
 	if s.topology != nil {
 		e := s.topology.GetContext().Err()
-		s.topology.Cancel()
-		s.topology.WaitClose()
 		s.topoGraph = s.topology.GetTopo()
 		keys, values := s.topology.GetMetrics()
 		s.stoppedMetrics = []any{keys, values}
+		s.topology.Cancel()
+		s.topology.WaitClose()
 		s.topology = nil
 		return e
 	}

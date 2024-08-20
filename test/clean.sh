@@ -23,25 +23,6 @@ if [ "$pids" = "" ] ; then
 else
   for pid in $pids ; do
     echo "kill kuiper " $pid
-    kill -9 $pid
+    kill -INT $pid
   done
 fi
-
-ver=`git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g'`
-os=`uname -s | tr "[A-Z]" "[a-z]"`
-base_dir=_build/kuiper-"$ver"-"$os"-amd64
-rm -rf $base_dir/data/*
-ls -l $base_dir/bin/kuiperd
-
-mkdir -p cover
-export GOCOVERDIR="../../cover"
-export BUILD_ID=dontKillMe
-export KUIPER__BASIC__PROMETHEUS="true"
-export KUIPER__BASIC__PROMETHEUSPORT=9081
-export KUIPER__BASIC__RESTPORT=9081
-export KUIPER__PORTABLE__INITTIMEOUT=50000
-
-cd $base_dir/
-touch log/kuiper.out
-nohup bin/kuiperd > log/kuiper.out 2>&1 &
-echo "starting kuiper at " $base_dir

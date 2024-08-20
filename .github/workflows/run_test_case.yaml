@@ -21,71 +21,107 @@ jobs:
   run_unit_tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v4
-      with:
-        go-version: '1.22'
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-    - name: Install dependencies
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        pip3 install pynng==0.7.2 && sudo apt-get update && sudo apt-get install ffmpeg libzmq3-dev -y
-    - name: Build plugins
-      run: |
-        set -e -u -x
-        mkdir -p data
-        mkdir -p log
-        mkdir -p plugins/sinks plugins/sources plugins/functions
-        sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
-        
-        go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
-        cp extensions/sources/random/random.yaml etc/sources/random.yaml
-        go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/Echo.so extensions/functions/echo/echo.go
-        go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
-        go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
-        
-        mkdir -p plugins/portable/mirror
-        cd sdk/go/example/mirror
-        go build -o ../../../../plugins/portable/mirror/mirror .
-        cp mirror.json ../../../../plugins/portable/mirror
-        cd ../../../../
-        cp -r sdk/python/ekuiper sdk/python/example/pysam/
-        cp -r sdk/python/example/pysam plugins/portable/pysam
-        cp test/lookup.json data/lookup.json
-    - name: Run test case
-      run: |
-        make failpoint-enable
-        go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/fvt")
-        make failpoint-disable
-    - uses: actions/upload-artifact@v3
-      if: failure()
-      with:
-        name: stream.log
-        path: log/stream.log
-    - name: Clean plugins
-      run: |
-        rm -r plugins/portable/pysam
-        rm -r plugins/portable/mirror
-    - name: Run fvt
-      run: |
-        go test -trimpath -tags="edgex msgpack script parquet" --cover -covermode=atomic -coverpkg=./... -coverprofile=fvt_coverage.xml ./fvt
-    - uses: actions/upload-artifact@v3
-      if: failure()
-      with:
-        name: streamFvt.log
-        path: log/stream.log
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        files: coverage.xml,fvt_coverage.xml
-        token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
-        verbose: true
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          pip3 install pynng==0.7.2 && sudo apt-get update && sudo apt-get install ffmpeg libzmq3-dev -y
+      - name: Build plugins
+        run: |
+          set -e -u -x
+          mkdir -p data
+          mkdir -p log
+          mkdir -p plugins/sinks plugins/sources plugins/functions
+          sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
+
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
+          cp extensions/sources/random/random.yaml etc/sources/random.yaml
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/Echo.so extensions/functions/echo/echo.go
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+
+          mkdir -p plugins/portable/mirror
+          cd sdk/go/example/mirror
+          go build -o ../../../../plugins/portable/mirror/mirror .
+          cp mirror.json ../../../../plugins/portable/mirror
+          cd ../../../../
+          cp -r sdk/python/ekuiper sdk/python/example/pysam/
+          cp -r sdk/python/example/pysam plugins/portable/pysam
+          cp test/lookup.json data/lookup.json
+      - name: Run test case
+        run: |
+          make failpoint-enable
+          go test -trimpath -tags="edgex msgpack script parquet test" --cover -covermode=atomic -coverpkg=./... -coverprofile=coverage.xml $(go list ./... | grep -v "github.com/lf-edge/ekuiper/v2/fvt")
+          make failpoint-disable
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: stream.log
+          path: log/stream.log
+      - name: upload coverage report for ut
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage
+          path: coverage.xml
+      - name: Clean plugins
+        run: |
+          rm -r plugins/portable/pysam
+          rm -r plugins/portable/mirror
+      - name: Run fvt
+        run: |
+          go test -trimpath -tags="edgex msgpack script parquet" --cover -covermode=atomic -coverpkg=./... -coverprofile=fvt_coverage.xml ./fvt
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: streamFvt.log
+          path: log/stream.log
+      - name: upload coverage report for fvt
+        uses: actions/upload-artifact@v2
+        with:
+          name: fvt_coverage
+          path: fvt_coverage.xml
 
   run_fvt_tests:
     needs:
       - run_unit_tests
     uses: ./.github/workflows/run_fvt_tests.yaml
+
+  upload_coverage:
+    needs:
+      - run_fvt_tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download ut coverage reports
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage
+          path: ./
+      - name: Download fvt coverage reports
+        uses: actions/download-artifact@v2
+        with:
+          name: fvt_coverage
+          path: ./
+      - name: Download jmeter coverage reports
+        uses: actions/download-artifact@v2
+        with:
+          name: jmeter_coverage
+          path: ./
+      - name: Download jmeter redis coverage reports
+        uses: actions/download-artifact@v2
+        with:
+          name: jmeter_redis_coverage
+          path: ./
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml,fvt_coverage.xml,jmeter.xml,jmeter_redis.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          verbose: true
