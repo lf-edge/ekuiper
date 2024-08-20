@@ -49,10 +49,6 @@ func NewScriptOp(script string, isAgg bool) (*ScriptOp, error) {
 	return n, nil
 }
 
-func (p *ScriptOp) OpName() string {
-	return "script_op"
-}
-
 func (p *ScriptOp) Apply(ctx api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	ctx.GetLogger().Debugf("ScriptOp receive: %v", data)
 	switch input := data.(type) {

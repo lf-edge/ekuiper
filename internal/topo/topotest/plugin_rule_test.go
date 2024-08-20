@@ -48,7 +48,6 @@ func init() {
 // Test for source, func and agg func extensions. Sink plugin is tested in fvt
 // The .so files must be in the plugins folder
 func TestExtensions(t *testing.T) {
-	t.Skip("flaky test")
 	// Reset
 	streamList := []string{"ext", "ext2"}
 	HandleStream(false, streamList, t)
