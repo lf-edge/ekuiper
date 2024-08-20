@@ -23,6 +23,6 @@ if [ "$pids" = "" ] ; then
 else
   for pid in $pids ; do
     echo "kill kuiper " $pid
-    kill -9 $pid
+    kill -INT $pid
   done
 fi
