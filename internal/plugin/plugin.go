@@ -112,3 +112,7 @@ const (
 	WASM_EXTENSION
 	JS_EXTENSION
 )
+
+var ExtensionTypes = []string{
+	"none", "internal", "native", "portable", "service", "wasm", "js",
+}
