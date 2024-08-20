@@ -52,26 +52,26 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.59.1
           args: "--out-${NO_FUTURE}format line-number"
 
       - name: golangci-lint (extensions)
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.59.1
           working-directory: extensions
           args: "--out-${NO_FUTURE}format line-number"
 
       - name: golangci-lint (tools/kubernetes)
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.59.1
           working-directory: tools/kubernetes
           args: "--out-${NO_FUTURE}format line-number"
 
       - name: golangci-lint (sdk/go)
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.59.1
           working-directory: sdk/go
           args: "--out-${NO_FUTURE}format line-number"
