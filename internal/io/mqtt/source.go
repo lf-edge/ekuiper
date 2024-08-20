@@ -126,7 +126,7 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		return
 	}
 	ingestCtx := ctx
-	traced, spanCtx, span := tracenode.StartTrace(ctx, "mqtt_source")
+	traced, spanCtx, span := tracenode.StartTrace(ctx, ctx.GetOpId())
 	if traced {
 		ingestCtx = spanCtx
 		defer span.End()
