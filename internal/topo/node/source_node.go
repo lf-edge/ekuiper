@@ -79,7 +79,14 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	ctx.GetLogger().Debugf("source connector %s receive data %+v", m.name, data)
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
-	tuple := &xsql.RawTuple{Ctx: ctx, Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
+	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
+	if ctx.IsTraceEnabled() {
+		traceCtx, ok := meta["traceCtx"].(api.StreamContext)
+		if ok {
+			tuple.SetTracerCtx(traceCtx)
+			delete(meta, "traceCtx")
+		}
+	}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)

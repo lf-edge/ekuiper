@@ -125,17 +125,18 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		ms.eof(ctx)
 		return
 	}
-	ingestCtx := ctx
 	traced, spanCtx, span := tracenode.StartTrace(ctx, ctx.GetOpId())
-	if traced {
-		ingestCtx = spanCtx
-		defer span.End()
-	}
-	ingest(ingestCtx, msg.Payload(), map[string]interface{}{
+	meta := map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
-	}, rcvTime)
+	}
+	if traced {
+		meta["traceId"] = span.SpanContext().TraceID()
+		meta["traceCtx"] = spanCtx
+		defer span.End()
+	}
+	ingest(ctx, msg.Payload(), meta, rcvTime)
 }
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
