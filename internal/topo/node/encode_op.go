@@ -81,7 +81,7 @@ func (o *EncodeOp) Worker(ctx api.StreamContext, item any) []any {
 }
 
 func tupleCopy(ctx api.StreamContext, converter message.Converter, st any, message any) []any {
-	traced, spanCtx, span := tracenode.TraceInput(ctx, st, "encode_op")
+	traced, spanCtx, span := tracenode.TraceInput(ctx, st, ctx.GetOpId())
 	if traced {
 		defer span.End()
 	}

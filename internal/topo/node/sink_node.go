@@ -87,7 +87,7 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-					traced, _, span := tracenode.TraceInput(ctx, data, "sink_op")
+					traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
 					if traced {
 						tracenode.RecordRowOrCollection(data, span)
 						span.End()
