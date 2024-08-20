@@ -49,7 +49,7 @@ func init() {
 // The .so files must be in the plugins folder
 func TestExtensions(t *testing.T) {
 	// Reset
-	streamList := []string{"ext", "ext2"}
+	streamList := []string{"ext"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
