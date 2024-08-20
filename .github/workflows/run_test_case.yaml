@@ -41,11 +41,11 @@ jobs:
           mkdir -p plugins/sinks plugins/sources plugins/functions
           sed -i -r "s/debug: .*/debug: true/1" etc/kuiper.yaml
 
-          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./extensions/impl -o plugins/sources/Random@v2.0.0.so extensions/sources/random/random.go
           cp extensions/sources/random/random.yaml etc/sources/random.yaml
-          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/Echo.so extensions/functions/echo/echo.go
-          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
-          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./... -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./extensions/impl -o plugins/functions/Echo.so extensions/functions/echo/echo.go
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./extensions/impl -o plugins/functions/CountPlusOne@v1.0.0.so extensions/functions/countPlusOne/countPlusOne.go
+          go build --buildmode=plugin -trimpath --cover -covermode=atomic -coverpkg=./extensions/impl -o plugins/functions/AccumulateWordCount@v1.0.0.so extensions/functions/accumulateWordCount/accumulateWordCount.go
 
           mkdir -p plugins/portable/mirror
           cd sdk/go/example/mirror
