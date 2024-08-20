@@ -16,13 +16,11 @@ package node
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -154,23 +152,23 @@ func toSinkTuple(ctx, spanCtx api.StreamContext, bs any, props map[string]string
 	if bs == nil {
 		return bs
 	}
-	var span trace.Span
-	var sctx context.Context
+	var tupleCtx api.StreamContext
 	if ctx.IsTraceEnabled() {
-		sctx, span = tracer.GetTracer().Start(spanCtx, "transform_op_split")
+		sctx, span := tracer.GetTracer().Start(spanCtx, "transform_op_split")
+		tupleCtx = topoContext.WithContext(sctx)
 		defer span.End()
 	}
 	switch bt := bs.(type) {
 	case []byte:
-		return &xsql.RawTuple{Ctx: topoContext.WithContext(sctx), Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
+		return &xsql.RawTuple{Ctx: tupleCtx, Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
 	case map[string]any:
-		return &xsql.Tuple{Ctx: topoContext.WithContext(sctx), Message: bt, Timestamp: timex.GetNow(), Props: props}
+		return &xsql.Tuple{Ctx: tupleCtx, Message: bt, Timestamp: timex.GetNow(), Props: props}
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, 0, len(bt))
 		for _, m := range bt {
-			tuples = append(tuples, &xsql.Tuple{Ctx: topoContext.WithContext(sctx), Message: m, Timestamp: timex.GetNow()})
+			tuples = append(tuples, &xsql.Tuple{Ctx: tupleCtx, Message: m, Timestamp: timex.GetNow()})
 		}
-		return &xsql.TransformedTupleList{Ctx: topoContext.WithContext(sctx), Content: tuples, Maps: bt, Props: props}
+		return &xsql.TransformedTupleList{Ctx: tupleCtx, Content: tuples, Maps: bt, Props: props}
 	default:
 		return fmt.Errorf("invalid transform result type %v", bs)
 	}
