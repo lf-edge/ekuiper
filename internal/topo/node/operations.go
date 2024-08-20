@@ -15,14 +15,18 @@
 package node
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // UnOperation interface represents unary operations (i.e. Map, Filter, etc)
@@ -105,20 +109,29 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			}
 			o.statManager.IncTotalRecordsIn()
 			o.statManager.ProcessTimeStart()
+			traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
 			result := o.op.Apply(exeCtx, data, fv, afv)
-
 			switch val := result.(type) {
 			case nil:
+				if traced {
+					span.End()
+				}
 				o.statManager.IncTotalMessagesProcessed(1)
 				continue
 			case error:
 				logger.Errorf("Operation %s error: %s", ctx.GetOpId(), val)
+				if traced {
+					span.End()
+				}
 				o.Broadcast(val)
 				o.statManager.IncTotalMessagesProcessed(1)
 				o.statManager.IncTotalExceptions(val.Error())
 				continue
 			case []xsql.Row:
 				o.statManager.ProcessTimeEnd()
+				if traced {
+					span.End()
+				}
 				for _, v := range val {
 					o.Broadcast(v)
 					o.statManager.IncTotalMessagesProcessed(1)
@@ -127,6 +140,10 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 				o.statManager.SetBufferLength(int64(len(o.input)))
 			default:
 				o.statManager.ProcessTimeEnd()
+				if traced {
+					tracenode.RecordRowOrCollection(val, span)
+					span.End()
+				}
 				o.Broadcast(val)
 				o.statManager.IncTotalMessagesProcessed(1)
 				o.statManager.IncTotalRecordsOut()
@@ -139,4 +156,14 @@ func (o *UnaryOperator) doOp(ctx api.StreamContext, errCh chan<- error) {
 			return
 		}
 	}
+}
+
+func (o *UnaryOperator) traceUnarySplitRow(ctx, spanCtx api.StreamContext, row xsql.Row) {
+	if !ctx.IsTraceEnabled() || row == nil {
+		return
+	}
+	subCtx, span := tracer.GetTracer().Start(spanCtx, fmt.Sprintf("%s_split", ctx.GetOpId()))
+	defer span.End()
+	row.SetTracerCtx(topoContext.WithContext(subCtx))
+	tracenode.RecordRowOrCollection(row, span)
 }

@@ -275,6 +275,14 @@ type RawTuple struct {
 	Props     map[string]string
 }
 
+func (r *RawTuple) GetTracerCtx() api.StreamContext {
+	return r.Ctx
+}
+
+func (r *RawTuple) SetTracerCtx(ctx api.StreamContext) {
+	r.Ctx = ctx
+}
+
 func (r *RawTuple) Replace(new []byte) {
 	r.Rawdata = new
 }
@@ -529,6 +537,8 @@ func (t *Tuple) FuncValue(key string) (interface{}, bool) {
 }
 
 func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
+	// invalidate cache, will calculate again
+	t.cachedMap = nil
 	cols = t.AffiliateRow.Pick(cols)
 	if !allWildcard && wildcardEmitters[t.Emitter] {
 		allWildcard = true
@@ -546,8 +556,6 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 			t.Message = pickedMap
 		} else {
 			t.Message = make(map[string]interface{})
-			// invalidate cache, will calculate again
-			t.cachedMap = nil
 		}
 	} else if len(except) > 0 {
 		pickedMap := make(map[string]interface{})

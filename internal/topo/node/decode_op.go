@@ -20,17 +20,17 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
-	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // DecodeOp manages the format decoding (employ schema) and sending frequency (for batch decode, like a json array)
@@ -141,13 +141,6 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 	defer o.statManager.ProcessTimeEnd()
 	switch d := item.(type) {
 	case *xsql.RawTuple:
-		tupleCtx := ctx
-		if ctx.IsTraceEnabled() {
-			spanCtx, span := tracer.GetTracer().Start(d.Ctx, "decode_op")
-			tupleCtx = context.WithContext(spanCtx)
-			defer span.End()
-			d.Ctx = tupleCtx
-		}
 		result, err := o.converter.Decode(ctx, d.Raw())
 		if err != nil {
 			return []any{err}
@@ -155,18 +148,20 @@ func (o *DecodeOp) Worker(ctx api.StreamContext, item any) []any {
 
 		switch r := result.(type) {
 		case map[string]interface{}:
-			return []any{toTupleFromRawTuple(r, d)}
+			tuple := toTupleFromRawTuple(ctx, r, d)
+			return []any{tuple}
 		case []map[string]interface{}:
 			rr := make([]any, len(r))
 			for i, v := range r {
-				rr[i] = toTupleFromRawTuple(v, d)
+				tuple := toTupleFromRawTuple(ctx, v, d)
+				rr[i] = tuple
 			}
 			return rr
 		case []interface{}:
 			rr := make([]any, len(r))
 			for i, v := range r {
 				if vc, ok := v.(map[string]interface{}); ok {
-					rr[i] = toTupleFromRawTuple(vc, d)
+					rr[i] = toTupleFromRawTuple(ctx, vc, d)
 				} else {
 					rr[i] = fmt.Errorf("only map[string]any inside a list is supported but got: %v", v)
 				}
@@ -391,14 +386,21 @@ func mergeTuple(ctx api.StreamContext, d *xsql.Tuple, result any) {
 	}
 }
 
-func toTupleFromRawTuple(v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
-	return &xsql.Tuple{
+func toTupleFromRawTuple(ctx api.StreamContext, v map[string]any, d *xsql.RawTuple) *xsql.Tuple {
+	traced, spanCtx, span := tracenode.TraceRowTuple(ctx, d, ctx.GetOpId())
+	t := &xsql.Tuple{
 		Ctx:       d.Ctx,
 		Message:   v,
 		Metadata:  d.Metadata,
 		Timestamp: d.Timestamp,
 		Emitter:   d.Emitter,
 	}
+	if traced {
+		t.Ctx = spanCtx
+		span.SetAttributes(attribute.String(tracenode.DataKey, tracenode.ToStringRow(t)))
+		defer span.End()
+	}
+	return t
 }
 
 func cloneTuple(d *xsql.Tuple) *xsql.Tuple {
