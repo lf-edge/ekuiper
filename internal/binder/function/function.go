@@ -19,6 +19,8 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -113,6 +115,15 @@ func (m *Manager) Function(name string) (api.Function, error) {
 	return nil, nil
 }
 
+func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	_, ok := m.ConvName(funcName)
+	if !ok {
+		return plugin.NONE_EXTENSION, "", ""
+	} else {
+		return plugin.INTERNAL, "", ""
+	}
+}
+
 func (m *Manager) HasFunctionSet(name string) bool {
 	return name == "internal"
 }
@@ -131,7 +142,10 @@ func (m *Manager) ConvName(n string) (string, bool) {
 	return name, ok
 }
 
-var m = &Manager{}
+var (
+	m                    = &Manager{}
+	_ binder.FuncFactory = m
+)
 
 func GetManager() *Manager {
 	return m

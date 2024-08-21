@@ -113,7 +113,6 @@ fi
 #/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/portable_end_2_end.jmx -Dfvt="$fvt_dir" -l jmeter_logs/portable_end_2_end.jtl -j jmeter_logs/portable_end_2_end.log
 #echo -e "---------------------------------------------\n"
 
-
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/select_countwindow_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/select_countwindow_rule.jtl -j jmeter_logs/select_countwindow_rule.log
 echo -e "---------------------------------------------\n"
 
@@ -159,8 +158,9 @@ echo -e "---------------------------------------------\n"
 #/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/lookup_table_sql.jmx -Dfvt="$fvt_dir" -l jmeter_logs/lookup_table_sql.jtl -j jmeter_logs/lookup_table_sql.log
 #echo -e "---------------------------------------------\n"
 
-#echo -e "-------------------- management test ------------------------\n"
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/management_test/data_import_export.jmx -Dfvt="$fvt_dir" -l jmeter_logs/data_import_export.jtl -j jmeter_logs/data_import_export.log
+echo -e "-------------------- management test ------------------------\n"
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/management_test/data_import_export.jmx -Dfvt="$fvt_dir" -l jmeter_logs/data_import_export.jtl -j jmeter_logs/data_import_export.log
+
 echo -e "---------------------------------------------\n"
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/management_test/rule_metrics.jmx -Dfvt="$fvt_dir" -l jmeter_logs/rule_metrics.jtl -j jmeter_logs/rule_metrics.log
 echo -e "---------------------------------------------\n"

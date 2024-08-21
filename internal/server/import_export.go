@@ -400,7 +400,8 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := handleConfigurationImport(context.Background(), rsi, partial, stop)
 	if err != nil {
-		handleError(w, err, "", logger)
+		errStr, _ := json.Marshal(result)
+		handleError(w, errors.New(string(errStr)), "", logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -444,7 +445,7 @@ func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, part
 	} else {
 		result := configurationPartialImport(ctx, content)
 		if result.ErrorMsg != "" {
-			return nil, errors.New(result.ErrorMsg)
+			return &result, errors.New(result.ErrorMsg)
 		} else {
 			return &result, nil
 		}

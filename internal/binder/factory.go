@@ -16,15 +16,27 @@ package binder
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 )
 
 type SourceFactory interface {
 	Source(name string) (api.Source, error)
 	LookupSource(name string) (api.Source, error)
+	// SourcePluginInfo use source type name (mqtt/video) to get source plugin installation information
+	// first return value is extension type, only native/portable plugin type have installation information
+	// second return value is the plugin name
+	// third is the plugin installation information
+	SourcePluginInfo(name string) (plugin.EXTENSION_TYPE, string, string)
 }
 
 type SinkFactory interface {
 	Sink(name string) (api.Sink, error)
+	// SinkPluginInfo use sink type name (mqtt/redis) to get sink plugin installation information
+	// first return value is extension type, only native/portable plugin type have installation information
+	// second return value is the plugin name
+	// third is the plugin installation information
+	SinkPluginInfo(name string) (plugin.EXTENSION_TYPE, string, string)
 }
 
 type FuncFactory interface {
@@ -35,6 +47,11 @@ type FuncFactory interface {
 	// ConvName Convert the name of the function usually to lowercase.
 	// This is only be used when parsing the SQL statement.
 	ConvName(funcName string) (string, bool)
+	// FunctionPluginInfo Use function name to get the function plugin install script
+	// first return value is extension type, only native/portable plugin type have installation information
+	// second return value is the plugin name
+	// third is the plugin installation information
+	FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string)
 }
 
 type FactoryEntry struct {

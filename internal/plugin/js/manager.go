@@ -20,11 +20,15 @@ import (
 
 	"github.com/dop251/goja"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-var manager *Manager
+var (
+	manager *Manager
+	_       binder.FuncFactory = manager
+)
 
 func GetManager() *Manager {
 	return manager

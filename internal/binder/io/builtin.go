@@ -17,6 +17,7 @@ package io
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
@@ -27,6 +28,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/io/simulator"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
 	"github.com/lf-edge/ekuiper/v2/internal/io/websocket"
+	plugin2 "github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 )
@@ -69,6 +71,14 @@ func (m *Manager) Source(name string) (api.Source, error) {
 	return nil, nil
 }
 
+func (m *Manager) SourcePluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
+	if _, ok := modules.Sources[name]; ok {
+		return plugin2.INTERNAL, "", ""
+	} else {
+		return plugin2.NONE_EXTENSION, "", ""
+	}
+}
+
 func (m *Manager) LookupSource(name string) (api.Source, error) {
 	if s, ok := modules.LookupSources[name]; ok {
 		return s(), nil
@@ -83,7 +93,19 @@ func (m *Manager) Sink(name string) (api.Sink, error) {
 	return nil, nil
 }
 
-var m = &Manager{}
+func (m *Manager) SinkPluginInfo(name string) (plugin2.EXTENSION_TYPE, string, string) {
+	if _, ok := modules.Sinks[name]; ok {
+		return plugin2.INTERNAL, "", ""
+	} else {
+		return plugin2.NONE_EXTENSION, "", ""
+	}
+}
+
+var (
+	m                      = &Manager{}
+	_ binder.SourceFactory = m
+	_ binder.SinkFactory   = m
+)
 
 func GetManager() *Manager {
 	return m
