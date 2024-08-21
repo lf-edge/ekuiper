@@ -89,12 +89,11 @@ jobs:
           path: fvt_coverage.xml
 
   run_fvt_tests:
-    needs:
-      - run_unit_tests
     uses: ./.github/workflows/run_fvt_tests.yaml
 
   upload_coverage:
     needs:
+      - run_unit_tests
       - run_fvt_tests
     runs-on: ubuntu-latest
     steps:
