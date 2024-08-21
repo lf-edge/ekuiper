@@ -104,6 +104,6 @@ func TestBatchOpSendEmpty(t *testing.T) {
 	op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 0, time.Second)
 	require.NoError(t, err)
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic", "return(true)")
-	op.send()
+	op.send(mockContext.NewMockContext("1", "2"))
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic")
 }
