@@ -21,6 +21,7 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -64,6 +65,17 @@ func Function(name string) (api.Function, error) {
 		}
 	}
 	return nil, errs
+}
+
+func GetFunctionPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+	for _, sf := range funcFactories {
+		t, s1, s2 := sf.FunctionPluginInfo(name)
+		if t == plugin.NONE_EXTENSION {
+			continue
+		}
+		return t, s1, s2
+	}
+	return plugin.NONE_EXTENSION, "", ""
 }
 
 func HasFunctionSet(name string) bool {

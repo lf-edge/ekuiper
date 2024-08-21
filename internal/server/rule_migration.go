@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
+	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	store2 "github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/graph"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
@@ -373,40 +376,40 @@ func (p *RuleMigrationProcessor) exportSelected(de *dependencies, config *Config
 	// get the stream and table
 	config.Streams = p.exportStreams(de.streams)
 	config.Tables = p.exportTables(de.tables)
-	//// get the sources
-	//for _, v := range de.sources {
-	//	t, srcName, srcInfo := io.GetSourcePlugin(v)
-	//	if t == plugin.NATIVE_EXTENSION {
-	//		config.NativePlugins[srcName] = srcInfo
-	//	}
-	//	if t == plugin.PORTABLE_EXTENSION {
-	//		config.PortablePlugins[srcName] = srcInfo
-	//	}
-	//}
-	//// get sinks
-	//for _, v := range de.sinks {
-	//	t, sinkName, sinkInfo := io.GetSinkPlugin(v)
-	//	if t == plugin.NATIVE_EXTENSION {
-	//		config.NativePlugins[sinkName] = sinkInfo
-	//	}
-	//	if t == plugin.PORTABLE_EXTENSION {
-	//		config.PortablePlugins[sinkName] = sinkInfo
-	//	}
-	//}
-	//
-	//// get functions
-	//for _, v := range de.functions {
-	//	t, svcName, svcInfo := function.GetFunctionPlugin(v)
-	//	if t == plugin.NATIVE_EXTENSION {
-	//		config.NativePlugins[svcName] = svcInfo
-	//	}
-	//	if t == plugin.PORTABLE_EXTENSION {
-	//		config.PortablePlugins[svcName] = svcInfo
-	//	}
-	//	if t == plugin.SERVICE_EXTENSION {
-	//		config.Service[svcName] = svcInfo
-	//	}
-	//}
+	// get the sources
+	for _, v := range de.sources {
+		t, srcName, srcInfo := io.GetSourcePlugin(v)
+		if t == plugin.NATIVE_EXTENSION {
+			config.NativePlugins[srcName] = srcInfo
+		}
+		if t == plugin.PORTABLE_EXTENSION {
+			config.PortablePlugins[srcName] = srcInfo
+		}
+	}
+	// get sinks
+	for _, v := range de.sinks {
+		t, sinkName, sinkInfo := io.GetSinkPlugin(v)
+		if t == plugin.NATIVE_EXTENSION {
+			config.NativePlugins[sinkName] = sinkInfo
+		}
+		if t == plugin.PORTABLE_EXTENSION {
+			config.PortablePlugins[sinkName] = sinkInfo
+		}
+	}
+
+	// get functions
+	for _, v := range de.functions {
+		t, svcName, svcInfo := function.GetFunctionPlugin(v)
+		if t == plugin.NATIVE_EXTENSION {
+			config.NativePlugins[svcName] = svcInfo
+		}
+		if t == plugin.PORTABLE_EXTENSION {
+			config.PortablePlugins[svcName] = svcInfo
+		}
+		if t == plugin.SERVICE_EXTENSION {
+			config.Service[svcName] = svcInfo
+		}
+	}
 
 	// get sourceCfg/sinkCfg
 	configKeys := meta.YamlConfigurationKeys{}

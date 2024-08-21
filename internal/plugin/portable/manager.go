@@ -31,6 +31,7 @@ import (
 
 	"github.com/pingcap/failpoint"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
@@ -42,7 +43,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-var manager *Manager
+var (
+	manager *Manager
+	_       binder.SourceFactory = manager
+	_       binder.SinkFactory   = manager
+	_       binder.FuncFactory   = manager
+)
 
 type Manager struct {
 	pluginDir     string
