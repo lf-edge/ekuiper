@@ -46,6 +46,12 @@ func (sdk *SDK) Post(command string, body string) (resp *http.Response, err erro
 	return http.Post(sdk.baseUrl.JoinPath(command).String(), ContentTypeJson, bytes.NewBufferString(body))
 }
 
+func (sdk *SDK) PostWithParam(command string, param string, body string) (resp *http.Response, err error) {
+	u := sdk.baseUrl.JoinPath(command)
+	u.RawQuery = param
+	return http.Post(u.String(), ContentTypeJson, bytes.NewBufferString(body))
+}
+
 func (sdk *SDK) Delete(command string) (resp *http.Response, err error) {
 	req, err := http.NewRequest(http.MethodDelete, sdk.baseUrl.JoinPath(command).String(), nil)
 	if err != nil {

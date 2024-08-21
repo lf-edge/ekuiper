@@ -400,8 +400,11 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := handleConfigurationImport(context.Background(), rsi, partial, stop)
 	if err != nil {
-		errStr, _ := json.Marshal(result)
-		handleError(w, errors.New(string(errStr)), "", logger)
+		if result != nil {
+			errStr, _ := json.Marshal(result.ConfigResponse)
+			err = errors.New(string(errStr))
+		}
+		handleError(w, err, "", logger)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -432,7 +435,7 @@ func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, part
 		configurationReset()
 		result := configurationImport(ctx, content, stop)
 		if result.ErrorMsg != "" {
-			return nil, errors.New(result.ErrorMsg)
+			return &result, errors.New(result.ErrorMsg)
 		} else {
 			if stop {
 				go func() {
