@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -212,10 +212,10 @@ func TestManagerErr(t *testing.T) {
 	require.Error(t, err)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetPluginsLocErr")
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/GetDataLocErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/GetConfLocErr", "return(true)")
 	_, err = InitManager()
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetDataLocErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetConfLocErr")
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/syncRegistryErr", "return(true)")
 	_, err = InitManager()
