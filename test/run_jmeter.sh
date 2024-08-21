@@ -117,14 +117,14 @@ fi
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/select_countwindow_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/select_countwindow_rule.jtl -j jmeter_logs/select_countwindow_rule.log
 echo -e "---------------------------------------------\n"
 
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/http_pull_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/http_pull_rule.jtl -j jmeter_logs/http_pull_rule.log
-#echo -e "---------------------------------------------\n"
-#
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/http_pull_rule.jmx -Dfvt="$fvt_dir" -l jmeter_logs/http_pull_rule.jtl -j jmeter_logs/http_pull_rule.log
+echo -e "---------------------------------------------\n"
+
 #/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/binary_image_process.jmx -Dfvt="$fvt_dir" -l jmeter_logs/binary_image_process.jtl -j jmeter_logs/binary_image_process.log
 #echo -e "---------------------------------------------\n"
 
-#/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/table_static.jmx -Dfvt="$fvt_dir" -l jmeter_logs/table_static.jtl -j jmeter_logs/table_static.log
-#echo -e "---------------------------------------------\n"
+/opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/table_static.jmx -Dfvt="$fvt_dir" -l jmeter_logs/table_static.jtl -j jmeter_logs/table_static.log
+echo -e "---------------------------------------------\n"
 
 /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/table_cont.jmx -Dfvt="$fvt_dir" -l jmeter_logs/table_cont.jtl -j jmeter_logs/table_cont.log
 echo -e "---------------------------------------------\n"
