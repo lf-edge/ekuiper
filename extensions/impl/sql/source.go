@@ -208,7 +208,7 @@ func prepareValues(values []interface{}, columnTypes []*sql.ColumnType, columns 
 	if len(columnTypes) > 0 {
 		for idx, columnType := range columnTypes {
 			if columnType.ScanType() != nil {
-				values[idx] = reflect.New(reflect.PtrTo(columnType.ScanType())).Interface()
+				values[idx] = reflect.New(reflect.PointerTo(columnType.ScanType())).Interface()
 			} else {
 				values[idx] = new(interface{})
 			}
