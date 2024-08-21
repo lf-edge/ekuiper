@@ -20,6 +20,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -119,6 +120,10 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	case []*xsql.Tuple:
 		for _, mm := range mess {
 			m.ingestTuple(mm, ts)
+		}
+	case []pubsub.MemTuple:
+		for _, mm := range mess {
+			m.ingestTuple(mm.(*xsql.Tuple), ts)
 		}
 	default:
 		// should never happen
