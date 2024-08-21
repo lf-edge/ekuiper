@@ -147,6 +147,7 @@ func (c *ConfigKeys) LoadConfContent(cf map[string]map[string]interface{}) {
 			aux[k] = v
 		}
 		c.dataCfg[key] = aux
+		c.saveCfgKey[key] = struct{}{}
 	}
 }
 

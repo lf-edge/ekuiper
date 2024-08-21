@@ -697,6 +697,12 @@ func (suite *RestTestSuite) Test_dataImport() {
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
+
+	issueData := `{"content":"{\"streams\": {\"issueTest\": \"CREATE STREAM issueTest () WITH (DATASOURCE=\\\"users\\\", CONF_KEY=\\\"issueTest_1\\\",TYPE=\\\"none\\\", FORMAT=\\\"JSON\\\")\"},\"sourceConfig\":{\n    \"mqtt\":\"{\\\"issueTest_1\\\":{\\\"insecureSkipVerify\\\":false,\\\"password\\\":\\\"public\\\",\\\"protocolVersion\\\":\\\"3.1.1\\\",\\\"qos\\\":1,\\\"server\\\":\\\"tcp://broker.emqx.io:1883\\\",\\\"username\\\":\\\"admin\\\"},\\\"issueTest_2\\\":{\\\"insecureSkipVerify\\\":false,\\\"password\\\":\\\"public\\\",\\\"protocolVersion\\\":\\\"3.1.1\\\",\\\"qos\\\":1,\\\"server\\\":\\\"tcp://127.0.0.1:1883\\\",\\\"username\\\":\\\"admin\\\"}}\"\n  }}"}`
+	req, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/data/import?partial=1", bytes.NewBuffer([]byte(issueData)))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	assert.Equal(suite.T(), http.StatusOK, w.Code)
 }
 
 func (suite *RestTestSuite) Test_fileUpload() {
