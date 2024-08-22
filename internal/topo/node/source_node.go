@@ -259,7 +259,3 @@ func (m *SourceNode) doPull(ctx api.StreamContext, tc time.Time) error {
 		return nil
 	})
 }
-
-func (m *SourceNode) Close() {
-	m.defaultNode.Close()
-}

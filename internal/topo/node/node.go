@@ -204,7 +204,10 @@ func (o *defaultNode) finishExec() {
 
 func (o *defaultNode) Close() {
 	if o.opsWg != nil {
+		o.ctx.GetLogger().Infof("node %s is closing", o.name)
 		o.opsWg.Done()
+	} else {
+		o.ctx.GetLogger().Infof("node %s is missing close wg", o.name)
 	}
 }
 

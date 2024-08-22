@@ -17,7 +17,6 @@
 package zmq
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
@@ -29,7 +28,6 @@ import (
 type zmqSource struct {
 	subscriber *zmq.Socket
 	sc         *c
-	cancel     context.CancelFunc
 }
 
 func (s *zmqSource) Provision(ctx api.StreamContext, configs map[string]any) error {
@@ -60,14 +58,28 @@ func (s *zmqSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ing
 	if err != nil {
 		return err
 	}
+	dataChan := make(chan [][]byte, 10)
+	go func() {
+		for {
+			msgs, e := s.subscriber.RecvMessageBytes(0)
+			if e != nil {
+				id, e := s.subscriber.GetIdentity()
+				ingestError(ctx, fmt.Errorf("zmq source getting message %s error: %v", id, e))
+			} else {
+				ctx.GetLogger().Debugf("zmq source receive %v", msgs)
+				select {
+				case dataChan <- msgs:
+				case <-ctx.Done():
+					return
+				}
+
+			}
+		}
+	}()
 	for {
-		msgs, err := s.subscriber.RecvMessageBytes(0)
-		if err != nil {
-			id, err := s.subscriber.GetIdentity()
-			ingestError(ctx, fmt.Errorf("zmq source getting message %s error: %v", id, err))
-		} else {
+		select {
+		case msgs := <-dataChan:
 			rcvTime := timex.GetNow()
-			ctx.GetLogger().Debugf("zmq source receive %v", msgs)
 			var m []byte
 			for i, msg := range msgs {
 				if i == 0 && s.sc.Topic != "" {
@@ -75,28 +87,22 @@ func (s *zmqSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ing
 				}
 				m = append(m, msg...)
 			}
-			meta := make(map[string]interface{})
+			meta := make(map[string]any)
 			if s.sc.Topic != "" {
 				meta["topic"] = string(msgs[0])
 			}
 			ingest(ctx, m, meta, rcvTime)
-		}
-		select {
 		case <-ctx.Done():
 			ctx.GetLogger().Infof("zmq source done")
 			if s.subscriber != nil {
 				s.subscriber.Close()
 			}
-		default:
-			// do nothing
+			return nil
 		}
 	}
 }
 
 func (s *zmqSource) Close(_ api.StreamContext) error {
-	if s.cancel != nil {
-		s.cancel()
-	}
 	return nil
 }
 
