@@ -23,3 +23,4 @@ import (
 func Sql() api.Source {
 	return sql.GetSource()
 }
+func SqlLookup() api.Source { return sql.GetLookupSource() }
