@@ -255,19 +255,27 @@ func TestSQLReconnect(t *testing.T) {
 
 func TestSQLConfURL(t *testing.T) {
 	testcases := []struct {
-		got *SQLConf
-		exp *SQLConf
+		props map[string]any
+		got   *SQLConf
+		exp   *SQLConf
 	}{
 		{
+			props: map[string]any{
+				"dburl": "321",
+				"url":   "123",
+			},
 			got: &SQLConf{
-				DBUrl: "123",
-				URL:   "321",
+				DBUrl: "321",
+				URL:   "123",
 			},
 			exp: &SQLConf{
-				DBUrl: "123",
+				DBUrl: "321",
 			},
 		},
 		{
+			props: map[string]any{
+				"url": "321",
+			},
 			got: &SQLConf{
 				URL: "321",
 			},
@@ -277,7 +285,9 @@ func TestSQLConfURL(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		require.NoError(t, tc.got.resolveDBURL())
+		g, err := tc.got.resolveDBURL(tc.props)
+		require.NoError(t, err)
+		require.Equal(t, "321", g["dburl"])
 		require.Equal(t, tc.exp, tc.got)
 	}
 }

@@ -98,7 +98,8 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	if err != nil {
 		return err
 	}
-	if err := c.resolveDBURL(); err != nil {
+	configs, err = sc.resolveDBURL(configs)
+	if err != nil {
 		return err
 	}
 	if c.Table == "" {

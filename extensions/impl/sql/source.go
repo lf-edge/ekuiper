@@ -59,7 +59,8 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 	if time.Duration(cfg.Interval) < 1 {
 		return fmt.Errorf("interval should be defined")
 	}
-	if err := cfg.resolveDBURL(); err != nil {
+	props, err = cfg.resolveDBURL(props)
+	if err != nil {
 		return err
 	}
 	s.conf = cfg
@@ -226,13 +227,14 @@ func GetSource() api.Source {
 
 var _ api.PullTupleSource = &SQLSourceConnector{}
 
-func (sc *SQLConf) resolveDBURL() error {
+func (sc *SQLConf) resolveDBURL(props map[string]any) (map[string]any, error) {
 	if len(sc.DBUrl) < 1 && len(sc.URL) < 1 {
-		return fmt.Errorf("dburl should be defined")
+		return props, fmt.Errorf("dburl should be defined")
 	}
 	if len(sc.DBUrl) < 1 {
+		props["dburl"] = props["url"]
 		sc.DBUrl = sc.URL
 	}
 	sc.URL = ""
-	return nil
+	return props, nil
 }
