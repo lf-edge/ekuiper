@@ -15,6 +15,7 @@
 package runtime
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -34,6 +35,11 @@ type PortableSource struct {
 
 	topic string
 	props map[string]any
+}
+
+type messageWrapper struct {
+	Message map[string]any `json:"message"`
+	Meta    map[string]any `json:"meta"`
 }
 
 func (ps *PortableSource) Provision(ctx api.StreamContext, configs map[string]any) error {
@@ -90,36 +96,42 @@ func (ps *PortableSource) Connect(ctx api.StreamContext) error {
 	return nil
 }
 
-func (ps *PortableSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	go func() {
-		for {
-			var msg []byte
-			// make sure recv has timeout
-			msg, err := ps.dataCh.Recv()
-			switch err {
-			case mangos.ErrClosed:
-				ctx.GetLogger().Info("stop source after close")
-				return
-			case mangos.ErrRecvTimeout:
-				ctx.GetLogger().Debug("source receive timeout, retry")
-				select {
-				case <-ctx.Done():
-					ctx.GetLogger().Info("stop source")
-					return
-				default:
+func (ps *PortableSource) Subscribe(ctx api.StreamContext, ingest api.TupleIngest, ingestError api.ErrorIngest) error {
+	for {
+		var msg []byte
+		// make sure recv has timeout
+		msg, err := ps.dataCh.Recv()
+		switch err {
+		case mangos.ErrClosed:
+			ctx.GetLogger().Info("stop source after close")
+			return nil
+		case mangos.ErrRecvTimeout:
+			ctx.GetLogger().Debug("source receive timeout, retry")
+		case nil:
+			// do nothing
+		default:
+			ingestError(ctx, err)
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			ctx.GetLogger().Info("stop source")
+			return nil
+		default:
+			if msg != nil {
+				rcvTime := timex.GetNow()
+				result := &messageWrapper{}
+				e := json.Unmarshal(msg, result)
+				if e != nil {
+					e = fmt.Errorf("Invalid data format, cannot decode %s to json format with error %s", string(msg), e)
+					ctx.GetLogger().Error(e)
+					ingestError(ctx, e)
 					continue
 				}
-			case nil:
-				// do nothing
-			default:
-				ingestError(ctx, err)
-				return
+				ingest(ctx, result.Message, result.Meta, rcvTime)
 			}
-			rcvTime := timex.GetNow()
-			ingest(ctx, msg, map[string]interface{}{}, rcvTime)
 		}
-	}()
-	return nil
+	}
 }
 
 func NewPortableSource(symbolName string, reg *PluginMeta) *PortableSource {
@@ -142,3 +154,5 @@ func (ps *PortableSource) Close(ctx api.StreamContext) error {
 	}
 	return nil
 }
+
+var _ api.TupleSource = &PortableSource{}
