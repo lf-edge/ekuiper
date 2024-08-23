@@ -15,6 +15,7 @@
 package node
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -207,6 +208,21 @@ func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 		err = sink.(api.TupleCollector).CollectList(ctx, d)
 	case api.MessageTuple:
 		err = sink.(api.TupleCollector).Collect(ctx, d)
+	case *xsql.RawTuple: // may receive raw tuple from data template
+		var message map[string]any
+		err = json.Unmarshal(d.Rawdata, &message)
+		if err != nil {
+			return err
+		}
+		t := &xsql.Tuple{
+			Ctx:       d.Ctx,
+			Metadata:  d.Metadata,
+			Timestamp: d.Timestamp,
+			Emitter:   d.Emitter,
+			Props:     d.Props,
+			Message:   message,
+		}
+		err = sink.(api.TupleCollector).Collect(ctx, t)
 	case error:
 		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
 	default:
