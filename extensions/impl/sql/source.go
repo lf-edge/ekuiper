@@ -28,6 +28,7 @@ import (
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/sqlgen"
 )
 
@@ -45,6 +46,10 @@ type SQLConf struct {
 	DBUrl      string            `json:"dburl"`
 	URL        string            `json:"url,omitempty"`
 	Datasource string            `json:"datasource"`
+}
+
+func init() {
+	modules.RegisterConnection("sql", client2.CreateConnection)
 }
 
 func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
