@@ -178,14 +178,26 @@ func GetSourceResourceConf(sourceType string) map[string]map[string]map[string]i
 	ConfigManager.lock.RLock()
 	defer ConfigManager.lock.RUnlock()
 	result := make(map[string]map[string]map[string]interface{})
+	if sourceType == "" {
+		for k, v := range ConfigManager.cfgOperators {
+			if strings.HasPrefix(k, "sources.") {
+				typ := k[len("sources."):]
+				for name, c := range v.CopyConfContent() {
+					appendConfKeyInResult(result, typ, name, c)
+				}
+			}
+		}
+		return result
+	}
+	// specific sourceType
 	for k, v := range ConfigManager.cfgOperators {
-		if strings.HasPrefix(k, "sources") {
+		if strings.HasPrefix(k, "sources.") {
 			typ := k[len("sources."):]
 			for name, c := range v.CopyConfContent() {
 				value, ok := c["sourceType"]
 				if ok {
 					sv, ok := value.(string)
-					if ok && (sv == sourceType || sourceType == "") {
+					if ok && sv == sourceType {
 						appendConfKeyInResult(result, typ, name, c)
 					}
 				}
