@@ -29,7 +29,7 @@ import (
 )
 
 func init() {
-	//modules.RegisterSource("random", func() api.Source { return random.GetSource() })
+	// modules.RegisterSource("random", func() api.Source { return random.GetSource() })
 	modules.RegisterSource("video", func() api.Source { return video.GetSource() })
 	modules.RegisterSource("kafka", func() api.Source { return kafka.GetSource() })
 	modules.RegisterSink("kafka", func() api.Sink { return kafka.GetSink() })

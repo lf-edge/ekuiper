@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -102,7 +102,13 @@ func testValidTrial(t *testing.T, mockDef1 string) {
 	}()
 	time.Sleep(100 * time.Millisecond)
 	require.NoError(t, TrialManager.StartRule("rule876"))
-	require.Equal(t, []byte(`{"name":"demo876","value":1}`), <-recvCh)
+	timeout := time.After(time.Second)
+	select {
+	case data := <-recvCh:
+		require.Equal(t, []byte(`{"name":"demo876","value":1}`), data)
+	case <-timeout:
+		require.Fail(t, "receive timeout")
+	}
 	c1.Close()
 	TrialManager.StopRule("rule876")
 	closeCh <- struct{}{}
@@ -138,7 +144,13 @@ func testRuntimeErrorTrial(t *testing.T) {
 	}()
 	time.Sleep(10 * time.Millisecond)
 	require.NoError(t, TrialManager.StartRule(id))
-	require.Equal(t, `run Select error: expr: binaryExpr:{ demo877.name + demo877.value } meet error, err:invalid operation string(demo877) + float64(1)`, string(<-recvCh))
+	timeout := time.After(time.Second)
+	select {
+	case data := <-recvCh:
+		require.Equal(t, `run Select error: expr: binaryExpr:{ demo877.name + demo877.value } meet error, err:invalid operation string(demo877) + float64(1)`, string(data))
+	case <-timeout:
+		require.Fail(t, "receive timeout")
+	}
 	TrialManager.StopRule(id)
 	closeCh <- struct{}{}
 	c2.Close()
@@ -173,7 +185,13 @@ func testRealSourceTrial(t *testing.T) {
 	}()
 	time.Sleep(10 * time.Millisecond)
 	require.NoError(t, TrialManager.StartRule(id))
-	require.Equal(t, "{\"humidity\":50,\"temperature\":22.5}", string(<-recvCh))
+	timeout := time.After(time.Second)
+	select {
+	case data := <-recvCh:
+		require.Equal(t, "{\"humidity\":50,\"temperature\":22.5}", string(data))
+	case <-timeout:
+		require.Fail(t, "receive timeout")
+	}
 	TrialManager.StopRule(id)
 	closeCh <- struct{}{}
 	c3.Close()

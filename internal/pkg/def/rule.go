@@ -17,32 +17,29 @@ package def
 import (
 	"time"
 
+	"github.com/robfig/cron/v3"
+
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )
 
 type RuleOption struct {
-	Debug              bool              `json:"debug,omitempty" yaml:"debug,omitempty"`
-	LogFilename        string            `json:"logFilename,omitempty" yaml:"logFilename,omitempty"`
-	IsEventTime        bool              `json:"isEventTime,omitempty" yaml:"isEventTime,omitempty"`
-	LateTol            cast.DurationConf `json:"lateTolerance,omitempty" yaml:"lateTolerance,omitempty"`
-	Concurrency        int               `json:"concurrency" yaml:"concurrency"`
-	BufferLength       int               `json:"bufferLength" yaml:"bufferLength"`
-	SendMetaToSink     bool              `json:"sendMetaToSink,omitempty" yaml:"sendMetaToSink,omitempty"`
-	SendError          bool              `json:"sendError,omitempty" yaml:"sendError,omitempty"`
-	Qos                Qos               `json:"qos,omitempty" yaml:"qos,omitempty"`
-	CheckpointInterval cast.DurationConf `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
-	RestartStrategy    *RestartStrategy  `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
-	Cron               string            `json:"cron,omitempty" yaml:"cron,omitempty"`
-	Duration           string            `json:"duration,omitempty" yaml:"duration,omitempty"`
-	CronDatetimeRange  []DatetimeRange   `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
-	EnableRuleTracer   bool              `json:"enableRuleTracer,omitempty" yaml:"enableRuleTracer,omitempty"`
-}
-
-type DatetimeRange struct {
-	Begin          string `json:"begin" yaml:"begin"`
-	End            string `json:"end" yaml:"end"`
-	BeginTimestamp int64  `json:"beginTimestamp" yaml:"beginTimestamp"`
-	EndTimestamp   int64  `json:"endTimestamp" yaml:"endTimestamp"`
+	Debug              bool                     `json:"debug,omitempty" yaml:"debug,omitempty"`
+	LogFilename        string                   `json:"logFilename,omitempty" yaml:"logFilename,omitempty"`
+	IsEventTime        bool                     `json:"isEventTime,omitempty" yaml:"isEventTime,omitempty"`
+	LateTol            cast.DurationConf        `json:"lateTolerance,omitempty" yaml:"lateTolerance,omitempty"`
+	Concurrency        int                      `json:"concurrency" yaml:"concurrency"`
+	BufferLength       int                      `json:"bufferLength" yaml:"bufferLength"`
+	SendMetaToSink     bool                     `json:"sendMetaToSink,omitempty" yaml:"sendMetaToSink,omitempty"`
+	SendError          bool                     `json:"sendError,omitempty" yaml:"sendError,omitempty"`
+	Qos                Qos                      `json:"qos,omitempty" yaml:"qos,omitempty"`
+	CheckpointInterval cast.DurationConf        `json:"checkpointInterval,omitempty" yaml:"checkpointInterval,omitempty"`
+	RestartStrategy    *RestartStrategy         `json:"restartStrategy,omitempty" yaml:"restartStrategy,omitempty"`
+	Cron               string                   `json:"cron,omitempty" yaml:"cron,omitempty"`
+	Duration           string                   `json:"duration,omitempty" yaml:"duration,omitempty"`
+	CronDatetimeRange  []schedule.DatetimeRange `json:"cronDatetimeRange,omitempty" yaml:"cronDatetimeRange,omitempty"`
+	EnableRuleTracer   bool                     `json:"enableRuleTracer,omitempty" yaml:"enableRuleTracer,omitempty"`
 }
 
 type RestartStrategy struct {
@@ -101,6 +98,19 @@ func (r *Rule) IsScheduleRule() bool {
 		return true
 	}
 	return false
+}
+
+func (r *Rule) GetNextScheduleStartTime() int64 {
+	if r.IsScheduleRule() && len(r.Options.Cron) > 0 {
+		isIn, err := schedule.IsInScheduleRanges(timex.GetNow(), r.Options.CronDatetimeRange)
+		if err == nil && isIn {
+			s, err := cron.ParseStandard(r.Options.Cron)
+			if err == nil {
+				return s.Next(timex.GetNow()).UnixMilli()
+			}
+		}
+	}
+	return 0
 }
 
 func GetDefaultRule(name, sql string) *Rule {

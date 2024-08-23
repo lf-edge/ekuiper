@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/schedule"
 	"github.com/lf-edge/ekuiper/v2/internal/processor"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -208,7 +209,7 @@ func TestLongScheduleTransit(t *testing.T) {
 	now := time.Date(2024, time.August, 8, 15, 38, 0, 0, time.UTC)
 	timex.Set(now.UnixMilli())
 	sr := def.GetDefaultRule("testScheduleNotIn", "select * from demo")
-	sr.Options.CronDatetimeRange = []def.DatetimeRange{
+	sr.Options.CronDatetimeRange = []schedule.DatetimeRange{
 		{
 			Begin: "2024-08-08 16:04:01",
 			End:   "2024-08-08 16:30:01",
