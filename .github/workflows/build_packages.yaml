@@ -39,11 +39,11 @@ jobs:
           - debian
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: docker/setup-qemu-action@v2
-    - uses: docker/setup-buildx-action@v2
+    - uses: docker/setup-qemu-action@v3
+    - uses: docker/setup-buildx-action@v3
     - name: build
       if: matrix.os == 'debian'
       run: |
@@ -57,7 +57,7 @@ jobs:
     - name: create sha file
       run: |
         cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: packages
         path: _packages/
@@ -66,23 +66,23 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/setup-go@v3
+    - uses: actions/setup-go@v5
       with:
         go-version: '1.22.1'
     - name: prepare
       run: |
-          brew install curl zip unzip gnu-sed pkg-config zmq
+        brew install zip unzip gnu-sed zmq
           echo "/usr/local/bin:$PATH" >> ~/.bashrc
     - name: build
       run: |
         make pkg
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: packages
+        name: mac_packages
         path: _packages/
 
   build-docker-images:
@@ -102,17 +102,17 @@ jobs:
               - 1.22.1
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: docker/setup-buildx-action@v2
-    - uses: docker/setup-qemu-action@v2
+    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-qemu-action@v3
       with:
         image: tonistiigi/binfmt:latest
         platforms: all
     - name: Build single platform image
       if: endsWith( matrix.suffix, 'python') == false
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64
@@ -131,7 +131,7 @@ jobs:
             docker logs ekuiper
             exit 1
         fi
-    - uses: docker/metadata-action@v4
+    - uses: docker/metadata-action@v5
       id: meta
       with:
         images: docker.io/lfedge/ekuiper
@@ -151,7 +151,7 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
     - name: Build multi platform image
       if: contains(fromJSON('["release", "workflow_dispatch"]'), github.event_name)
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64,linux/arm/v7
@@ -165,16 +165,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: docker/setup-buildx-action@v2
-    - uses: docker/setup-qemu-action@v2
+    - uses: docker/setup-buildx-action@v3
+    - uses: docker/setup-qemu-action@v3
       with:
         image: tonistiigi/binfmt:latest
         platforms: all
     - name: Build single platform image
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64
@@ -187,7 +187,7 @@ jobs:
         docker run -d --name kuiper-kubernetes-tool docker.io/lfedge/ekuiper-kubernetes-tool
         sleep 5
         if [[ "$(docker logs kuiper-kubernetes-tool)" != *"Kuiper kubernetes tool is started successfully!"*  ]]; then exit 1; fi
-    - uses: docker/metadata-action@v4
+    - uses: docker/metadata-action@v5
       id: meta
       with:
         images: docker.io/lfedge/ekuiper-kubernetes-tool
@@ -205,7 +205,7 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
     - name: Build multi platform image
-      uses: docker/build-push-action@v3
+      uses: docker/build-push-action@v6
       with:
         context: .
         platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/386
@@ -222,10 +222,14 @@ jobs:
     - build-on-mac
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/download-artifact@v1
+    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
       with:
         name: packages
+        path: _packages
+    - uses: actions/download-artifact@v4
+      with:
+        name: mac_packages
         path: _packages
     - name: check packages
       run: |
@@ -260,9 +264,12 @@ jobs:
           -X POST \
           -d "{\"repo\":\"lf-edge/ekuiper\", \"tag\": \"${{ github.ref_name }}\" }" \
           ${{ secrets.EMQX_IO_RELEASE_API }}
-    - uses: geekyeggo/delete-artifact@v2
+    - uses: geekyeggo/delete-artifact@v5
       with:
         name: packages
-    - uses: geekyeggo/delete-artifact@v2
+    - uses: geekyeggo/delete-artifact@v5
+      with:
+        name: mac_packages
+    - uses: geekyeggo/delete-artifact@v5
       with:
         name: plugins
