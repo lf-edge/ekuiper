@@ -230,8 +230,9 @@ type KuiperConf struct {
 }
 
 type OpenTelemetry struct {
-	EnableCollector bool   `yaml:"enableCollector"`
-	Endpoint        string `yaml:"endpoint"`
+	EnableRemoteCollector bool   `yaml:"enableRemoteCollector"`
+	RemoteEndpoint        string `yaml:"remoteEndpoint"`
+	EnableLocalCollector  bool   `yaml:"enableLocalCollector"`
 }
 
 func SetLogLevel(level string, debug bool) {
@@ -421,8 +422,8 @@ func InitConf() {
 		_ = Config.Basic.Syslog.Validate()
 	}
 
-	if Config.OpenTelemetry.Endpoint == "" {
-		Config.OpenTelemetry.Endpoint = "localhost:4318"
+	if Config.OpenTelemetry.RemoteEndpoint == "" {
+		Config.OpenTelemetry.RemoteEndpoint = "localhost:4318"
 	}
 
 	_ = ValidateRuleOption(&Config.Rule)
