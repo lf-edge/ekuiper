@@ -135,7 +135,6 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	b.currIndex++
 	if checkSize && b.currIndex >= b.batchSize {
 		b.send(ctx)
-		b.statManager.IncTotalRecordsOut()
 	}
 	b.statManager.ProcessTimeEnd()
 	b.statManager.IncTotalMessagesProcessed(1)
@@ -150,6 +149,7 @@ func (b *BatchOp) send(ctx api.StreamContext) {
 		panic("shouldn't send message when empty")
 	})
 	b.handleTraceEmitTuple(ctx, b.buffer)
+	b.statManager.IncTotalRecordsOut()
 	b.Broadcast(b.buffer)
 	// Reset buffer
 	b.buffer = &xsql.WindowTuples{
