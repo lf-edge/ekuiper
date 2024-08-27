@@ -15,21 +15,26 @@
 package tracer
 
 import (
+	"time"
+
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 type LocalSpan struct {
-	Name         string
-	TraceID      string
-	SpanID       string
-	ParentSpanID string
-	Attribute    map[string]interface{}
-	Links        []LocalLink
-	ChildSpan    []*LocalSpan
+	Name         string                 `yaml:"name"`
+	TraceID      string                 `yaml:"traceID"`
+	SpanID       string                 `yaml:"spanID"`
+	ParentSpanID string                 `yaml:"parentSpanID,omitempty"`
+	Attribute    map[string]interface{} `yaml:"attribute,omitempty"`
+	Links        []LocalLink            `yaml:"links,omitempty"`
+	StartTime    time.Time              `yaml:"startTime"`
+	EndTime      time.Time              `yaml:"endTime"`
+
+	ChildSpan []*LocalSpan
 }
 
 type LocalLink struct {
-	TraceID string
+	TraceID string `yaml:"traceID"`
 }
 
 func FromReadonlySpan(readonly sdktrace.ReadOnlySpan) *LocalSpan {
@@ -39,6 +44,8 @@ func FromReadonlySpan(readonly sdktrace.ReadOnlySpan) *LocalSpan {
 		SpanID:       readonly.SpanContext().SpanID().String(),
 		ParentSpanID: readonly.Parent().SpanID().String(),
 		ChildSpan:    make([]*LocalSpan, 0),
+		StartTime:    readonly.StartTime(),
+		EndTime:      readonly.EndTime(),
 	}
 	if len(readonly.Attributes()) > 0 {
 		span.Attribute = make(map[string]interface{})

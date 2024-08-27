@@ -67,3 +67,7 @@ func GetTracer() trace.Tracer {
 	}
 	return otel.GetTracerProvider().Tracer("kuiperd-service")
 }
+
+func GetSpanByTraceID(traceID string) (root *LocalSpan) {
+	return GlobalSpanExporter.GetTraceById(traceID)
+}

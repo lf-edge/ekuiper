@@ -43,7 +43,7 @@ func NewSpanExporter(remoteCollector, localCollector bool) (*SpanExporter, error
 		s.remoteSpanExport = exporter
 	}
 	if localCollector {
-		s.LocalSpanStorage = newLocalSpanMemoryStorage()
+		s.LocalSpanStorage = newLocalSpanMemoryStorage(conf.Config.OpenTelemetry.LocalSpanCapacity)
 	}
 	return s, nil
 }
@@ -93,18 +93,33 @@ type LocalSpanStorage interface {
 
 type LocalSpanMemoryStorage struct {
 	sync.RWMutex
+	queue *Queue
 	// traceid -> spanid -> span
 	m map[string]map[string]*LocalSpan
 }
 
-func newLocalSpanMemoryStorage() *LocalSpanMemoryStorage {
-	return &LocalSpanMemoryStorage{m: map[string]map[string]*LocalSpan{}}
+func newLocalSpanMemoryStorage(capacity int) *LocalSpanMemoryStorage {
+	return &LocalSpanMemoryStorage{
+		queue: NewQueue(capacity),
+		m:     map[string]map[string]*LocalSpan{},
+	}
 }
 
 func (l *LocalSpanMemoryStorage) SaveSpan(span sdktrace.ReadOnlySpan) error {
 	l.Lock()
 	defer l.Unlock()
 	localSpan := FromReadonlySpan(span)
+	return l.saveSpan(localSpan)
+}
+
+func (l *LocalSpanMemoryStorage) saveSpan(localSpan *LocalSpan) error {
+	dropped := l.queue.Enqueue(localSpan)
+	if dropped != nil {
+		delete(l.m[dropped.TraceID], dropped.SpanID)
+		if len(l.m[dropped.TraceID]) < 1 {
+			delete(l.m, dropped.TraceID)
+		}
+	}
 	spanMap, ok := l.m[localSpan.TraceID]
 	if !ok {
 		spanMap = make(map[string]*LocalSpan)
@@ -165,4 +180,38 @@ func buildSpanLink(cur *LocalSpan, OtherSpans map[string]*LocalSpan) {
 	for _, span := range cur.ChildSpan {
 		buildSpanLink(span, OtherSpans)
 	}
+}
+
+type Queue struct {
+	items    []*LocalSpan
+	capacity int
+}
+
+func NewQueue(capacity int) *Queue {
+	return &Queue{
+		items:    make([]*LocalSpan, 0),
+		capacity: capacity,
+	}
+}
+
+func (q *Queue) Enqueue(item *LocalSpan) *LocalSpan {
+	var dropped *LocalSpan
+	if len(q.items) >= q.capacity {
+		dropped = q.Dequeue()
+	}
+	q.items = append(q.items, item)
+	return dropped
+}
+
+func (q *Queue) Dequeue() *LocalSpan {
+	if len(q.items) == 0 {
+		return nil
+	}
+	item := q.items[0]
+	q.items = q.items[1:]
+	return item
+}
+
+func (q *Queue) Len() int {
+	return len(q.items)
 }

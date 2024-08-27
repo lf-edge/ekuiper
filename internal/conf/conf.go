@@ -233,6 +233,7 @@ type OpenTelemetry struct {
 	EnableRemoteCollector bool   `yaml:"enableRemoteCollector"`
 	RemoteEndpoint        string `yaml:"remoteEndpoint"`
 	EnableLocalCollector  bool   `yaml:"enableLocalCollector"`
+	LocalSpanCapacity     int    `yaml:"localSpanCapacity"`
 }
 
 func SetLogLevel(level string, debug bool) {
@@ -424,6 +425,10 @@ func InitConf() {
 
 	if Config.OpenTelemetry.RemoteEndpoint == "" {
 		Config.OpenTelemetry.RemoteEndpoint = "localhost:4318"
+	}
+
+	if Config.OpenTelemetry.LocalSpanCapacity < 1 {
+		Config.OpenTelemetry.LocalSpanCapacity = 2048
 	}
 
 	_ = ValidateRuleOption(&Config.Rule)
