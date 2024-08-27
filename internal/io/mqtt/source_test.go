@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -94,6 +95,33 @@ func TestProvision(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSubPanic(t *testing.T) {
+	url, cancel, err := testx.InitBroker("TestSourceSink")
+	require.NoError(t, err)
+	defer func() {
+		cancel()
+	}()
+	ctx := mockContext.NewMockContext("1", "2")
+	src := &SourceConnector{}
+	err = src.Provision(ctx, map[string]any{
+		"server":     url,
+		"datasource": "subErr",
+		"qos":        0,
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, src.Connect(ctx))
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client/subscribeErr", "return(true)")
+	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client/subscribeErr")
+	src.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
+	defer func() {
+		r := recover()
+		require.NotNil(t, r)
+	}()
+	src.cli.OnConnect4Test()
+	src.onMessage(ctx, nil, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {})
 }
 
 func TestEoF(t *testing.T) {

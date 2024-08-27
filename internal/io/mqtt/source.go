@@ -117,6 +117,10 @@ func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesInge
 }
 
 func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message, ingest api.BytesIngest) {
+	if ms.cli.ConnectErr(ctx) != nil {
+		// stop the rule when subscribe connection error
+		panic(fmt.Sprintf("rule %v meet connection err:%v", ctx.GetRuleId(), ms.cli.ConnectErr(ctx)))
+	}
 	if msg != nil {
 		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	}

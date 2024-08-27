@@ -24,6 +24,7 @@ import (
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
@@ -39,6 +40,7 @@ type Connection struct {
 	connected atomic.Bool
 	// key is the topic. Each topic will have only one connector
 	subscriptions map[string]*SubscriptionInfo
+	onConnectErr  error
 }
 
 type ConnectionConfig struct {
@@ -65,13 +67,22 @@ func (conn *Connection) Publish(topic string, qos byte, retained bool, payload a
 	return handleToken(token)
 }
 
+func (conn *Connection) OnConnect4Test() {
+	conn.onConnect(nil)
+}
+
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.logger.Infof("The connection to mqtt broker is established")
 	for topic, info := range conn.subscriptions {
 		err := conn.Subscribe(topic, info)
+		failpoint.Inject("subscribeErr", func() {
+			err = errors.New("subscribeErr")
+		})
 		if err != nil { // should never happen, if happened, stop the rule
-			panic(fmt.Sprintf("Failed to subscribe topic %s: %v", topic, err))
+			conn.onConnectErr = err
+			conn.connected.Store(true)
+			break
 		}
 	}
 }
@@ -118,6 +129,10 @@ func (conn *Connection) Ping(ctx api.StreamContext) error {
 		return nil
 	}
 	return errors.New("failed to connect to broker")
+}
+
+func (conn *Connection) ConnectErr(ctx api.StreamContext) error {
+	return conn.onConnectErr
 }
 
 func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
