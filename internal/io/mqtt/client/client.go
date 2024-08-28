@@ -69,10 +69,7 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.logger.Infof("The connection to mqtt broker is established")
 	for topic, info := range conn.subscriptions {
-		err := conn.Subscribe(topic, info)
-		if err != nil { // should never happen, if happened, stop the rule
-			panic(fmt.Sprintf("Failed to subscribe topic %s: %v", topic, err))
-		}
+		conn.Subscribe(topic, info)
 	}
 }
 
@@ -152,6 +149,7 @@ func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, err
 	opts.OnConnectionLost = con.onConnectLost
 	opts.OnReconnecting = con.onReconnecting
 	opts.ConnectRetry = true
+	opts.ResumeSubs = true
 	opts.ConnectRetryInterval = connection.DefaultInitialInterval
 	opts.MaxReconnectInterval = connection.DefaultMaxInterval
 
