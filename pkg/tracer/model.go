@@ -29,6 +29,7 @@ type LocalSpan struct {
 	Links        []LocalLink            `yaml:"links,omitempty"`
 	StartTime    time.Time              `yaml:"startTime"`
 	EndTime      time.Time              `yaml:"endTime"`
+	ruleID       string                 `yaml:"ruleID"`
 
 	ChildSpan []*LocalSpan
 }
@@ -50,6 +51,9 @@ func FromReadonlySpan(readonly sdktrace.ReadOnlySpan) *LocalSpan {
 	if len(readonly.Attributes()) > 0 {
 		span.Attribute = make(map[string]interface{})
 		for _, attr := range readonly.Attributes() {
+			if string(attr.Key) == "rule" {
+				span.ruleID = attr.Value.AsString()
+			}
 			span.Attribute[string(attr.Key)] = attr.Value.AsInterface()
 		}
 	}

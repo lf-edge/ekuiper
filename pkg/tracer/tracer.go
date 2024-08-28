@@ -71,3 +71,7 @@ func GetTracer() trace.Tracer {
 func GetSpanByTraceID(traceID string) (root *LocalSpan) {
 	return GlobalSpanExporter.GetTraceById(traceID)
 }
+
+func GetTraceIDListByRuleID(ruleID string, limit int) []string {
+	return GlobalSpanExporter.GetTraceByRuleID(ruleID, limit)
+}

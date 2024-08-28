@@ -16,6 +16,7 @@ package server
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -26,6 +27,22 @@ func getTraceByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	root := tracer.GetSpanByTraceID(id)
+	if root == nil {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+	jsonResponse(root, w, logger)
+}
+
+func getTraceIDByRuleID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["ruleID"]
+	l := r.URL.Query().Get("limit")
+	limit, err := strconv.ParseInt(l, 10, 64)
+	if err != nil {
+		limit = 0
+	}
+	root := tracer.GetTraceIDListByRuleID(id, int(limit))
 	if root == nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return

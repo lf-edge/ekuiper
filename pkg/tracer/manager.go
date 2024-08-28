@@ -79,9 +79,17 @@ func (l *SpanExporter) GetTraceById(traceID string) *LocalSpan {
 	return l.LocalSpanStorage.GetTraceById(traceID)
 }
 
+func (l *SpanExporter) GetTraceByRuleID(ruleID string, limit int) []string {
+	if l.LocalSpanStorage == nil {
+		return nil
+	}
+	return l.LocalSpanStorage.GetTraceByRuleID(ruleID, limit)
+}
+
 type LocalSpanStorage interface {
 	SaveSpan(span sdktrace.ReadOnlySpan) error
 	GetTraceById(traceID string) *LocalSpan
+	GetTraceByRuleID(ruleID string, limit int) []string
 }
 
 type LocalSpanMemoryStorage struct {
@@ -89,12 +97,15 @@ type LocalSpanMemoryStorage struct {
 	queue *Queue
 	// traceid -> spanid -> span
 	m map[string]map[string]*LocalSpan
+	// rule -> traceID
+	ruleTraceMap map[string]map[string]struct{}
 }
 
 func newLocalSpanMemoryStorage(capacity int) *LocalSpanMemoryStorage {
 	return &LocalSpanMemoryStorage{
-		queue: NewQueue(capacity),
-		m:     map[string]map[string]*LocalSpan{},
+		queue:        NewQueue(capacity),
+		ruleTraceMap: make(map[string]map[string]struct{}),
+		m:            map[string]map[string]*LocalSpan{},
 	}
 }
 
@@ -115,6 +126,15 @@ func (l *LocalSpanMemoryStorage) saveSpan(localSpan *LocalSpan) error {
 		spanMap = make(map[string]*LocalSpan)
 		l.m[localSpan.TraceID] = spanMap
 	}
+	if len(localSpan.ruleID) > 0 {
+		traceMap, ok := l.ruleTraceMap[localSpan.ruleID]
+		if !ok {
+			traceMap = make(map[string]struct{})
+			l.ruleTraceMap[localSpan.ruleID] = traceMap
+		}
+		traceMap[localSpan.TraceID] = struct{}{}
+	}
+
 	spanMap[localSpan.SpanID] = localSpan
 	return nil
 }
@@ -136,6 +156,25 @@ func (l *LocalSpanMemoryStorage) GetTraceById(traceID string) *LocalSpan {
 	}
 	buildSpanLink(rootSpan, copySpan)
 	return rootSpan
+}
+
+func (l *LocalSpanMemoryStorage) GetTraceByRuleID(ruleID string, limit int) []string {
+	l.RLock()
+	defer l.RUnlock()
+	traceMap := l.ruleTraceMap[ruleID]
+	r := make([]string, 0)
+	if limit < 1 {
+		limit = len(traceMap)
+	}
+	count := 0
+	for traceID := range traceMap {
+		r = append(r, traceID)
+		count++
+		if count >= limit {
+			break
+		}
+	}
+	return r
 }
 
 func findRootSpan(allSpans map[string]*LocalSpan) *LocalSpan {
