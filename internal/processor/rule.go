@@ -129,16 +129,17 @@ func (p *RuleProcessor) GetRuleById(id string) (*def.Rule, error) {
 	if !f {
 		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", id))
 	}
-	return p.GetRuleByJsonValidated(s1)
+	return p.GetRuleByJsonValidated(id, s1)
 }
 
 // GetRuleByJsonValidated called when the json is getting from trusted source like db
-func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*def.Rule, error) {
+func (p *RuleProcessor) GetRuleByJsonValidated(id, ruleJson string) (*def.Rule, error) {
 	opt := conf.Config.Rule
 	// set default rule options
 	rule := &def.Rule{
 		Triggered: true,
 		Options:   clone(opt),
+		Id:        id,
 	}
 	if err := json.Unmarshal(cast.StringToBytes(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
@@ -150,19 +151,16 @@ func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*def.Rule, erro
 }
 
 func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
-	rule, err := p.GetRuleByJsonValidated(ruleJson)
+	rule, err := p.GetRuleByJsonValidated(id, ruleJson)
 	if err != nil {
 		return rule, err
 	}
 	// validation
-	if rule.Id == "" && id == "" {
+	if rule.Id == "" {
 		return nil, fmt.Errorf("Missing rule id.")
 	}
 	if id != "" && rule.Id != "" && id != rule.Id {
 		return nil, fmt.Errorf("RuleId is not consistent with rule id.")
-	}
-	if rule.Id == "" {
-		rule.Id = id
 	}
 	if err := validateRuleID(rule.Id); err != nil {
 		return nil, err

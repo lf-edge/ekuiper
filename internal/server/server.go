@@ -216,7 +216,6 @@ func StartUp(Version string) {
 				logger.Error(err)
 				continue
 			}
-			// err = server.StartRule(rule, &reply)
 			reply = registry.RecoverRule(rule)
 			if 0 != len(reply) {
 				logger.Info(reply)

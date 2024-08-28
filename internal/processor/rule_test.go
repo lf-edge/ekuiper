@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -211,6 +211,27 @@ func TestRuleActionParse_Apply(t *testing.T) {
 			r, err := p.GetRuleByJson(tt.result.Id, tt.ruleStr)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.result, r)
+		})
+	}
+}
+
+func TestRuleValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		ruleStr string
+		err     string
+	}{
+		{
+			name:    "missing id",
+			ruleStr: "{\n  \"sql\": \"SELECT * FROM my_stream\",\n  \"actions\": [\n    {\n      \"log\": {\n      }\n    }\n  ]\n}",
+			err:     "Missing rule id.",
+		},
+	}
+	p := NewRuleProcessor()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, e := p.GetRuleByJson("", tt.ruleStr)
+			require.EqualError(t, e, tt.err)
 		})
 	}
 }
