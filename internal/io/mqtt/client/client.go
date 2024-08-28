@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,7 +41,11 @@ type Connection struct {
 	connected atomic.Bool
 	// key is the topic. Each topic will have only one connector
 	subscriptions map[string]*SubscriptionInfo
-	onConnectErr  error
+
+	onConnectErr struct {
+		sync.RWMutex
+		error
+	}
 }
 
 type ConnectionConfig struct {
@@ -80,11 +85,23 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 			err = errors.New("subscribeErr")
 		})
 		if err != nil { // should never happen, if happened, stop the rule
-			conn.onConnectErr = err
+			conn.setOnConnectErr(err)
 			conn.connected.Store(true)
 			break
 		}
 	}
+}
+
+func (conn *Connection) setOnConnectErr(err error) {
+	conn.onConnectErr.Lock()
+	defer conn.onConnectErr.Unlock()
+	conn.onConnectErr.error = err
+}
+
+func (conn *Connection) GetOnConnectErr() error {
+	conn.onConnectErr.RLock()
+	defer conn.onConnectErr.RUnlock()
+	return conn.onConnectErr.error
 }
 
 func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
@@ -129,10 +146,6 @@ func (conn *Connection) Ping(ctx api.StreamContext) error {
 		return nil
 	}
 	return errors.New("failed to connect to broker")
-}
-
-func (conn *Connection) ConnectErr(ctx api.StreamContext) error {
-	return conn.onConnectErr
 }
 
 func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
