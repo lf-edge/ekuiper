@@ -30,7 +30,7 @@ type SpanExporter struct {
 	LocalSpanStorage LocalSpanStorage
 }
 
-func NewSpanExporter(remoteCollector, localCollector bool) (*SpanExporter, error) {
+func NewSpanExporter(remoteCollector bool) (*SpanExporter, error) {
 	s := &SpanExporter{}
 	if remoteCollector {
 		exporter, err := otlptracehttp.New(context.Background(),
@@ -42,9 +42,7 @@ func NewSpanExporter(remoteCollector, localCollector bool) (*SpanExporter, error
 		}
 		s.remoteSpanExport = exporter
 	}
-	if localCollector {
-		s.LocalSpanStorage = newLocalSpanMemoryStorage(conf.Config.OpenTelemetry.LocalSpanCapacity)
-	}
+	s.LocalSpanStorage = newLocalSpanMemoryStorage(conf.Config.OpenTelemetry.LocalTraceCapacity)
 	return s, nil
 }
 
@@ -58,10 +56,8 @@ func (l *SpanExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnl
 			conf.Log.Warnf("export remote span err: %v", err)
 		}
 	}
-	if l.LocalSpanStorage != nil {
-		for _, span := range spans {
-			l.LocalSpanStorage.SaveSpan(span)
-		}
+	for _, span := range spans {
+		l.LocalSpanStorage.SaveSpan(span)
 	}
 	return nil
 }
@@ -80,9 +76,6 @@ func (l *SpanExporter) Shutdown(ctx context.Context) error {
 }
 
 func (l *SpanExporter) GetTraceById(traceID string) *LocalSpan {
-	if l.LocalSpanStorage == nil {
-		return nil
-	}
 	return l.LocalSpanStorage.GetTraceById(traceID)
 }
 
@@ -113,12 +106,9 @@ func (l *LocalSpanMemoryStorage) SaveSpan(span sdktrace.ReadOnlySpan) error {
 }
 
 func (l *LocalSpanMemoryStorage) saveSpan(localSpan *LocalSpan) error {
-	dropped := l.queue.Enqueue(localSpan)
-	if dropped != nil {
-		delete(l.m[dropped.TraceID], dropped.SpanID)
-		if len(l.m[dropped.TraceID]) < 1 {
-			delete(l.m, dropped.TraceID)
-		}
+	droppedTraceID := l.queue.Enqueue(localSpan)
+	if droppedTraceID != "" {
+		delete(l.m, droppedTraceID)
 	}
 	spanMap, ok := l.m[localSpan.TraceID]
 	if !ok {
@@ -182,34 +172,42 @@ func buildSpanLink(cur *LocalSpan, OtherSpans map[string]*LocalSpan) {
 	}
 }
 
+// Queue is traceID FIFO queue with sized capacity
 type Queue struct {
-	items    []*LocalSpan
+	m        map[string]struct{}
+	items    []string
 	capacity int
 }
 
 func NewQueue(capacity int) *Queue {
 	return &Queue{
-		items:    make([]*LocalSpan, 0),
+		m:        make(map[string]struct{}),
+		items:    make([]string, 0),
 		capacity: capacity,
 	}
 }
 
-func (q *Queue) Enqueue(item *LocalSpan) *LocalSpan {
-	var dropped *LocalSpan
+func (q *Queue) Enqueue(item *LocalSpan) string {
+	_, ok := q.m[item.TraceID]
+	if ok {
+		return ""
+	}
+	var dropped = ""
 	if len(q.items) >= q.capacity {
 		dropped = q.Dequeue()
 	}
-	q.items = append(q.items, item)
+	q.items = append(q.items, item.TraceID)
 	return dropped
 }
 
-func (q *Queue) Dequeue() *LocalSpan {
+func (q *Queue) Dequeue() string {
 	if len(q.items) == 0 {
-		return nil
+		return ""
 	}
-	item := q.items[0]
+	traceID := q.items[0]
 	q.items = q.items[1:]
-	return item
+	delete(q.m, traceID)
+	return traceID
 }
 
 func (q *Queue) Len() int {

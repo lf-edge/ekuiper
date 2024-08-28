@@ -24,39 +24,18 @@ import (
 
 func TestLocalSpan(t *testing.T) {
 	conf.InitConf()
-	s := newLocalSpanMemoryStorage(4)
+	s := newLocalSpanMemoryStorage(1)
 	span0 := &LocalSpan{
 		TraceID: "t0",
 		SpanID:  "s0",
 	}
-	require.NoError(t, s.saveSpan(span0))
-	//   		s1
-	// 		s2   	s3
-	// 	s4
 	span1 := &LocalSpan{
 		TraceID: "t1",
 		SpanID:  "s1",
 	}
-	span2 := &LocalSpan{
-		TraceID:      "t1",
-		SpanID:       "s2",
-		ParentSpanID: "s1",
-	}
-	span3 := &LocalSpan{
-		TraceID:      "t1",
-		SpanID:       "s3",
-		ParentSpanID: "s1",
-	}
-	span4 := &LocalSpan{
-		TraceID:      "t1",
-		SpanID:       "s4",
-		ParentSpanID: "s2",
-	}
+	require.NoError(t, s.saveSpan(span0))
 	require.NoError(t, s.saveSpan(span1))
-	require.NoError(t, s.saveSpan(span2))
-	require.NoError(t, s.saveSpan(span3))
-	require.NoError(t, s.saveSpan(span4))
-	require.Equal(t, 4, s.queue.Len())
+	require.Equal(t, 1, s.queue.Len())
 	// span0 should be dropped
 	require.Nil(t, s.GetTraceById("t0"))
 	// span1 should be root span

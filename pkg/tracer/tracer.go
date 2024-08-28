@@ -35,8 +35,8 @@ func InitTracer() error {
 		semconv.ServiceNameKey.String("kuiperd-service"),
 	)))
 	otelConfig := conf.Config.OpenTelemetry
-	if otelConfig.EnableRemoteCollector || otelConfig.EnableLocalCollector {
-		exporter, err := NewSpanExporter(otelConfig.EnableRemoteCollector, otelConfig.EnableLocalCollector)
+	if otelConfig.EnableRemoteCollector {
+		exporter, err := NewSpanExporter(otelConfig.EnableRemoteCollector)
 		if err != nil {
 			return err
 		}
