@@ -149,8 +149,8 @@ func (b *BatchOp) send(ctx api.StreamContext) {
 		panic("shouldn't send message when empty")
 	})
 	b.handleTraceEmitTuple(ctx, b.buffer)
-	b.statManager.IncTotalRecordsOut()
 	b.Broadcast(b.buffer)
+	b.statManager.IncTotalRecordsOut()
 	// Reset buffer
 	b.buffer = &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0, b.batchSize),
