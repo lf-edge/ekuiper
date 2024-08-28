@@ -117,7 +117,6 @@ func (b *BatchOp) ingest(ctx api.StreamContext, item any, checkSize bool) {
 	b.currIndex++
 	if checkSize && b.currIndex >= b.batchSize {
 		b.send()
-		b.statManager.IncTotalRecordsOut()
 	}
 	b.statManager.ProcessTimeEnd()
 	b.statManager.IncTotalMessagesProcessed(1)
@@ -133,6 +132,7 @@ func (b *BatchOp) send() {
 	})
 
 	b.Broadcast(b.buffer)
+	b.statManager.IncTotalRecordsOut()
 	// Reset buffer
 	b.buffer = &xsql.WindowTuples{
 		Content: make([]xsql.Row, 0, b.batchSize),
