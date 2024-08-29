@@ -144,5 +144,4 @@ portable:
 openTelemetry:
   enableRemoteCollector: false
   remoteEndpoint: localhost:4318
-  enableLocalCollector: true
-  localSpanCapacity: 2048
+  localTraceCapacity: 2048
