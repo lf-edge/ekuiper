@@ -47,10 +47,6 @@ func NewConverter(props map[string]any) (message.Converter, error) {
 	return c, nil
 }
 
-func (c *Converter) SetColumns(cols []string) {
-	c.Cols = cols
-}
-
 // Encode If no columns defined, the default order is sort by key
 func (c *Converter) Encode(ctx api.StreamContext, d any) (b []byte, err error) {
 	defer func() {
