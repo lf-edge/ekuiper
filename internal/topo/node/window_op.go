@@ -408,7 +408,7 @@ func (o *WindowOperator) execProcessingWindow(ctx api.StreamContext, inputs []*x
 			nextTime += o.duration
 			log.Debugf("Successive tick at %v(%d), defined at %d", now, now.UnixMilli(), nextTime)
 			// If the deviation is less than 50ms, then process it. Otherwise, time may change and we'll start a new timer
-			if now.UnixMilli()-nextTime < 50 {
+			if math.Abs(float64(now.UnixMilli()-nextTime)) < 50.0 {
 				inputs = o.tick(ctx, inputs, nextTime, log)
 			} else {
 				log.Infof("Skip the tick at %v(%d) since it's too late", now, now.UnixMilli())
