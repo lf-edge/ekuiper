@@ -155,14 +155,14 @@ func TestStateTransit(t *testing.T) {
 		},
 		{
 			name:       "async fast start stop",
-			r:          def.GetDefaultRule("testAsync", "select * from demo"),
+			r:          def.GetDefaultRule("testAsync1", "select * from demo"),
 			actions:    []ActionSignal{ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart},
 			finalState: Running,
 			async:      true,
 		},
 		{
 			name:       "invalid",
-			r:          def.GetDefaultRule("testAsync", "select * from demo2"),
+			r:          def.GetDefaultRule("testAsync2", "select * from demo2"),
 			actions:    []ActionSignal{ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart, ActionSignalStop, ActionSignalStop, ActionSignalStart},
 			finalState: StoppedByErr,
 			async:      true,
@@ -194,7 +194,7 @@ func TestStateTransit(t *testing.T) {
 				wg.Wait()
 			}
 			sendAction(st, v.actions[len(v.actions)-1])
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 			assert.Equal(t, v.finalState, st.GetState())
 		})
 	}
