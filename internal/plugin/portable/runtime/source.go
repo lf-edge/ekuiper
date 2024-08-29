@@ -50,7 +50,7 @@ func (ps *PortableSource) Provision(ctx api.StreamContext, configs map[string]an
 func (ps *PortableSource) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Start running portable source %s with datasource %s and conf %+v", ps.symbolName, ps.topic, ps.props)
 	pm := GetPluginInsManager()
-	ins, err := pm.GetOrStartProcess(ps.reg, PortbleConf)
+	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf)
 	if err != nil {
 		return err
 	}
