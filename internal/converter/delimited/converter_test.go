@@ -158,11 +158,10 @@ func TestDecode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ch, err := NewConverter(map[string]any{"delimiter": "\t"})
+	ch, err := NewConverter(map[string]any{"delimiter": "\t", "fields": []string{"@", "id", "ts", "value"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	ch.(*Converter).SetColumns([]string{"@", "id", "ts", "value"})
 	tests := []struct {
 		m  map[string]interface{}
 		nm map[string]interface{}
