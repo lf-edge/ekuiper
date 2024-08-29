@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -213,8 +213,8 @@ func TestPluginStatusRef(t *testing.T) {
 	require.Equal(t, map[string]int{"rule1": 1}, p.GetStatus().RefCount)
 	p.addRef(ctx)
 	require.Equal(t, map[string]int{"rule1": 2}, p.GetStatus().RefCount)
-	p.DeRef(ctx)
+	p.deRef(ctx)
 	require.Equal(t, map[string]int{"rule1": 1}, p.GetStatus().RefCount)
-	p.DeRef(ctx)
+	p.deRef(ctx)
 	require.Equal(t, map[string]int{}, p.GetStatus().RefCount)
 }

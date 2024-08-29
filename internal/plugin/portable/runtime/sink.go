@@ -51,7 +51,7 @@ func (ps *PortableSink) Provision(ctx api.StreamContext, configs map[string]any)
 func (ps *PortableSink) Connect(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Start running portable sink %s with conf %+v", ps.symbolName, ps.props)
 	pm := GetPluginInsManager()
-	ins, err := pm.getOrStartProcess(ps.reg, PortbleConf)
+	ins, err := pm.GetOrStartProcess(ps.reg, PortbleConf)
 	if err != nil {
 		return err
 	}

@@ -228,17 +228,17 @@ func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 
 // CreateIns Run when plugin is created/updated
 func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta) (*PluginIns, error) {
-	return p.getOrStartProcess(pluginMeta, PortbleConf)
+	return p.GetOrStartProcess(pluginMeta, PortbleConf)
 }
 
-// getOrStartProcess Control the plugin process lifecycle.
+// GetOrStartProcess Control the plugin process lifecycle.
 // Need to manage the resources: instances map, control socket, plugin process
 // May be called at plugin creation or restart with previous state(ctrlCh, commands)
 // PluginIns is created by plugin manager and started immediately or restart by rule/funcop.
 // The ins is long running. Even for plugin delete/update, the ins will continue. So there is no delete.
 // 1. During creation, clean up those resources for any errors in defer immediately after the resource is created.
 // 2. During plugin running, when detecting plugin process exit, clean up those resources for the current ins.
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
+func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
 	p.Lock()
 	defer p.Unlock()
 	var (
