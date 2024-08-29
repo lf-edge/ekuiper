@@ -112,12 +112,6 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	return err
 }
 
-func (i *PluginIns) AddRef4Test(ctx api.StreamContext) {
-	i.Lock()
-	defer i.Unlock()
-	i.addRef(ctx)
-}
-
 func (i *PluginIns) addRef(ctx api.StreamContext) {
 	ruleID := ctx.GetRuleId()
 	if len(ruleID) < 1 {
@@ -129,12 +123,6 @@ func (i *PluginIns) addRef(ctx api.StreamContext) {
 	} else {
 		i.Status.RefCount[ruleID] = 1
 	}
-}
-
-func (i *PluginIns) DeRef(ctx api.StreamContext) {
-	i.Lock()
-	defer i.Unlock()
-	i.deRef(ctx)
 }
 
 func (i *PluginIns) deRef(ctx api.StreamContext) {
@@ -214,12 +202,6 @@ func GetPluginInsManager4Test() *pluginInsManager {
 		instances: make(map[string]*PluginIns),
 	}
 	return testPM
-}
-
-func (p *pluginInsManager) AddPlugins4Test(name string, ins *PluginIns) {
-	p.Lock()
-	defer p.Unlock()
-	p.instances[name] = ins
 }
 
 func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {
