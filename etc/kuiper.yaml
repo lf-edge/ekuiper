@@ -142,5 +142,6 @@ portable:
   initTimeout: 5s
 
 openTelemetry:
-  enableCollector: false
-  endpoint: localhost:4318
+  enableRemoteCollector: false
+  remoteEndpoint: localhost:4318
+  localTraceCapacity: 2048

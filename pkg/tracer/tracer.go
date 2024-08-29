@@ -15,10 +15,7 @@
 package tracer
 
 import (
-	"context"
-
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
@@ -29,21 +26,21 @@ import (
 
 var tracerSet = false
 
+var GlobalSpanExporter *SpanExporter
+
 func InitTracer() error {
 	var opts []sdktrace.TracerProviderOption
 	opts = append(opts, sdktrace.WithResource(resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String("kuiperd-service"),
 	)))
-	if conf.Config.OpenTelemetry.EnableCollector {
-		ctx := context.Background()
-		exporter, err := otlptracehttp.New(ctx,
-			otlptracehttp.WithEndpoint(conf.Config.OpenTelemetry.Endpoint),
-			otlptracehttp.WithInsecure(),
-		)
+	otelConfig := conf.Config.OpenTelemetry
+	if otelConfig.EnableRemoteCollector {
+		exporter, err := NewSpanExporter(otelConfig.EnableRemoteCollector)
 		if err != nil {
 			return err
 		}
+		GlobalSpanExporter = exporter
 		opts = append(opts, sdktrace.WithBatcher(exporter))
 	}
 	tp := sdktrace.NewTracerProvider(opts...)
@@ -69,4 +66,8 @@ func GetTracer() trace.Tracer {
 		initTracer()
 	}
 	return otel.GetTracerProvider().Tracer("kuiperd-service")
+}
+
+func GetSpanByTraceID(traceID string) (root *LocalSpan) {
+	return GlobalSpanExporter.GetTraceById(traceID)
 }
