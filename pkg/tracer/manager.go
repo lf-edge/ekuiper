@@ -192,7 +192,7 @@ func (q *Queue) Enqueue(item *LocalSpan) string {
 	if ok {
 		return ""
 	}
-	var dropped = ""
+	dropped := ""
 	if len(q.items) >= q.capacity {
 		dropped = q.Dequeue()
 	}
