@@ -37,8 +37,6 @@ type Connection struct {
 	selId     string
 	logger    api.Logger
 	connected atomic.Bool
-	// key is the topic. Each topic will have only one connector
-	subscriptions map[string]*SubscriptionInfo
 }
 
 type ConnectionConfig struct {
@@ -68,20 +66,10 @@ func (conn *Connection) Publish(topic string, qos byte, retained bool, payload a
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
 	conn.logger.Infof("The connection to mqtt broker is established")
-	for topic, info := range conn.subscriptions {
-		err := conn.Subscribe(topic, info)
-		if err != nil { // should never happen, if happened, stop the rule
-			panic(fmt.Sprintf("Failed to subscribe topic %s: %v", topic, err))
-		}
-	}
 }
 
 func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
 	conn.connected.Store(false)
-	e := fmt.Errorf("The connection to mqtt broker is lost due to %v", err)
-	for _, info := range conn.subscriptions {
-		info.ErrHandler(e)
-	}
 	conn.logger.Infof("%v", err)
 }
 
@@ -95,12 +83,10 @@ func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	if err != nil {
 		return
 	}
-	delete(conn.subscriptions, topic)
 	conn.Client.Unsubscribe(topic)
 }
 
 func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
-	conn.subscriptions[topic] = info
 	token := conn.Client.Subscribe(topic, info.Qos, info.Handler)
 	return handleToken(token)
 }
@@ -144,14 +130,14 @@ func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, err
 	opts = opts.SetAutoReconnect(true)
 
 	con := &Connection{
-		logger:        ctx.GetLogger(),
-		selId:         c.ClientId,
-		subscriptions: make(map[string]*SubscriptionInfo),
+		logger: ctx.GetLogger(),
+		selId:  c.ClientId,
 	}
 	opts.OnConnect = con.onConnect
 	opts.OnConnectionLost = con.onConnectLost
 	opts.OnReconnecting = con.onReconnecting
 	opts.ConnectRetry = true
+	opts.ResumeSubs = true
 	opts.ConnectRetryInterval = connection.DefaultInitialInterval
 	opts.MaxReconnectInterval = connection.DefaultMaxInterval
 
