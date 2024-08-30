@@ -62,6 +62,37 @@ class Sink(object):
         pass
 ```
 
+### Sink ack
+
+The default Portable plugin sink operates asynchronously. In versions 2.0 and later (requiring the use of the new pip
+eKuiper version), users can configure whether to wait for an acknowledgment before sending the next piece of data when
+defining a sink with a Portable plugin. For example, suppose the Portable plugin defines a sink of type `print`.
+When `requireAck` is enabled, the user's custom sink plugin **must** return an ack message for each piece of data.
+
+```json
+{
+   "id": "rulePort1",
+   "sql": "SELECT * FROM mqttStream",
+   "actions": [
+      {
+         "print": {
+            "requireAck": true
+         }
+      }
+   ]
+}
+```
+
+Sink implementation must call `ctx.ack_ok()` or `ctx.ack_err(msg)` to return acknowledge. In the following example , the
+collect function inside sink returns ack after handling the data.
+
+```python
+def collect(self, ctx: Context, data: Any):
+        print('receive: ', data)
+        # only add ack when using with requireAck in the rule
+        ctx.ack_ok()
+```
+
 Function interface:
 
 ```python

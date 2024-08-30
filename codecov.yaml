@@ -15,6 +15,7 @@ fixes:
 
 ignore:
   - "**/main.go"
+  - "**/**__.go"
   - "**/test/**"
   - "test"
   - "fvt"

@@ -22,8 +22,13 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
 
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
+
+type sinkConf struct {
+	RequireAck bool `json:"requireAck"`
+}
 
 type PortableSink struct {
 	symbolName string
@@ -31,20 +36,19 @@ type PortableSink struct {
 	props      map[string]interface{}
 	dataCh     DataOutChannel
 	ackCh      DataInChannel
-	// 0 indicates no ack, and 1 indicates need ack
-	requiredACKs int
-	clean        func() error
+	c          *sinkConf
+	clean      func() error
 }
 
 func (ps *PortableSink) Provision(ctx api.StreamContext, configs map[string]any) error {
 	ps.props = configs
-	c, ok := configs["requiredACKs"]
-	if ok {
-		acks, ok := c.(int)
-		if ok {
-			ps.requiredACKs = acks
-		}
+	c := &sinkConf{}
+	err := cast.MapToStruct(configs, c)
+	if err != nil {
+		return err
 	}
+	ps.c = c
+	ctx.GetLogger().Infof("require ack: %v", c.RequireAck)
 	return nil
 }
 
@@ -112,7 +116,7 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item api.RawTuple) error 
 	if e != nil {
 		return errorx.NewIOErr(e.Error())
 	}
-	if ps.requiredACKs > 0 {
+	if ps.c.RequireAck {
 		msg, err := recvAck(ctx, ps.ackCh)
 		if err != nil {
 			return err
@@ -155,13 +159,13 @@ func recvAck(ctx api.StreamContext, dataCh DataInChannel) ([]byte, error) {
 		msg, err = dataCh.Recv()
 		switch err {
 		case mangos.ErrClosed:
-			ctx.GetLogger().Info("stop source after close")
+			ctx.GetLogger().Info("stop sink ack after close")
 			return nil, err
 		case mangos.ErrRecvTimeout:
-			ctx.GetLogger().Debug("source receive timeout, retry")
+			ctx.GetLogger().Debug("sink ack receive timeout, retry")
 			select {
 			case <-ctx.Done():
-				ctx.GetLogger().Info("stop dataInChannel")
+				ctx.GetLogger().Info("stop sink ack")
 			default:
 				continue
 			}

@@ -30,6 +30,8 @@ class PrintSink(Sink):
 
     def collect(self, ctx: Context, data: Any):
         print('receive: ', data)
+        # only add ack when using with requireAck in the rule
+        ctx.ack_ok()
 
     def close(self, ctx: Context):
         print("closing print sink")
