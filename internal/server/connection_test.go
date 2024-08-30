@@ -28,8 +28,7 @@ import (
 
 func (suite *RestTestSuite) TestGetConnectionStatus() {
 	connection.InitConnectionManager4Test()
-	ruleJson :=
-		`
+	ruleJson := `
 {
   "id": "connecton-1",
   "typ":"mqtt",
