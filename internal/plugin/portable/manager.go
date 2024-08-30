@@ -165,8 +165,9 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 		}
 	}
 	conf.Log.Infof("Installed portable plugin %s successfully", name)
-	runtime.GetPluginInsManager().CreateIns(&pi.PluginMeta, isInit)
-	return nil
+	// TODO install async? This may take time at start up
+	_, err = runtime.GetPluginInsManager().CreateIns(&pi.PluginMeta)
+	return err
 }
 
 func (m *Manager) parsePluginJson(name string) (info *PluginInfo, err error) {
@@ -429,7 +430,6 @@ func (m *Manager) Delete(name string) error {
 	if err != nil {
 		return fmt.Errorf("fail to kill portable plugin %s process, please try to kill it manually", name)
 	}
-	pm.DeletePluginIns(name)
 	return nil
 }
 

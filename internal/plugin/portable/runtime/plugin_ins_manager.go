@@ -43,14 +43,14 @@ var PortbleConf = &PortableConfig{
 // PluginIns created at two scenarios
 // 1. At runtime, plugin is created/updated: in order to be able to reload rules that already uses previous ins
 // 2. At system start/restart
-// Once created, never deleted until delete plugin command or system shutdown
+// Once created, never deleted until system shutdown
 type PluginIns struct {
 	sync.RWMutex
 	name     string
 	ctrlChan ControlChannel // the same lifecycle as pluginIns, once created keep listening
 	// audit the commands, so that when restarting the plugin, we can replay the commands
 	commands map[Meta][]byte
-	process  *os.Process // created when used by rule and deleted when no rule uses it
+	process  *os.Process // created when used by rule and deleted when delete the plugin
 	Status   *PluginStatus
 }
 
@@ -112,12 +112,6 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	return err
 }
 
-func (i *PluginIns) AddRef4Test(ctx api.StreamContext) {
-	i.Lock()
-	defer i.Unlock()
-	i.addRef(ctx)
-}
-
 func (i *PluginIns) addRef(ctx api.StreamContext) {
 	ruleID := ctx.GetRuleId()
 	if len(ruleID) < 1 {
@@ -129,12 +123,6 @@ func (i *PluginIns) addRef(ctx api.StreamContext) {
 	} else {
 		i.Status.RefCount[ruleID] = 1
 	}
-}
-
-func (i *PluginIns) DeRef(ctx api.StreamContext) {
-	i.Lock()
-	defer i.Unlock()
-	i.deRef(ctx)
 }
 
 func (i *PluginIns) deRef(ctx api.StreamContext) {
@@ -182,7 +170,7 @@ func (i *PluginIns) Stop() error {
 	i.RLock()
 	defer i.RUnlock()
 	i.Status.Stop()
-	if i.process != nil { // will also trigger process exit clean up
+	if i.process != nil {
 		err = i.process.Kill()
 	}
 	return err
@@ -216,21 +204,7 @@ func GetPluginInsManager4Test() *pluginInsManager {
 	return testPM
 }
 
-func (p *pluginInsManager) AddPlugins4Test(name string, ins *PluginIns) {
-	p.Lock()
-	defer p.Unlock()
-	p.instances[name] = ins
-}
-
-func (p *pluginInsManager) RemovePlugins4Test(name string) {
-	p.Lock()
-	defer p.Unlock()
-	delete(p.instances, name)
-}
-
 func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {
-	p.RLock()
-	defer p.RUnlock()
 	ins, ok := p.getPluginIns(name)
 	if !ok {
 		return nil, false
@@ -238,36 +212,11 @@ func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool)
 	return ins.GetStatus(), true
 }
 
-func (p *pluginInsManager) GetAllPluginStatus() map[string]*PluginStatus {
-	want := make(map[string]*PluginStatus)
-	p.RLock()
-	defer p.RUnlock()
-	for key, plugin := range p.instances {
-		want[key] = plugin.GetStatus()
-	}
-	return want
-}
-
-func (p *pluginInsManager) GetPluginIns(name string) (*PluginIns, bool) {
-	p.RLock()
-	defer p.RUnlock()
-	return p.getPluginIns(name)
-}
-
 func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
+	p.RLock()
+	defer p.RUnlock()
 	ins, ok := p.instances[name]
 	return ins, ok
-}
-
-func (p *pluginInsManager) DeletePluginIns(name string) {
-	p.Lock()
-	defer p.Unlock()
-	p.deletePluginIns(name)
-}
-
-// deletePluginIns should only run when there is no state aka. commands
-func (p *pluginInsManager) deletePluginIns(name string) {
-	delete(p.instances, name)
 }
 
 // AddPluginIns For mock only
@@ -278,31 +227,18 @@ func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 }
 
 // CreateIns Run when plugin is created/updated
-func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta, isInit bool) {
-	p.Lock()
-	defer p.Unlock()
-	if !isInit {
-		if _, ok := p.instances[pluginMeta.Name]; ok {
-			go p.GetOrStartProcess(pluginMeta, PortbleConf)
-		}
-	} else {
-		go p.GetOrStartProcess(pluginMeta, PortbleConf)
-	}
+func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta) (*PluginIns, error) {
+	return p.GetOrStartProcess(pluginMeta, PortbleConf)
 }
 
 // GetOrStartProcess Control the plugin process lifecycle.
-func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
-	return p.getOrStartProcess(pluginMeta, pconf)
-}
-
-// getOrStartProcess Control the plugin process lifecycle.
 // Need to manage the resources: instances map, control socket, plugin process
 // May be called at plugin creation or restart with previous state(ctrlCh, commands)
-// PluginIns is created by plugin manager but started by rule/funcop.
-// During plugin delete/update, if the commands is not empty, keep the ins for next creation and restore
+// PluginIns is created by plugin manager and started immediately or restart by rule/funcop.
+// The ins is long running. Even for plugin delete/update, the ins will continue. So there is no delete.
 // 1. During creation, clean up those resources for any errors in defer immediately after the resource is created.
 // 2. During plugin running, when detecting plugin process exit, clean up those resources for the current ins.
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
+func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
 	p.Lock()
 	defer p.Unlock()
 	var (
@@ -315,21 +251,22 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		ins = NewPluginIns(pluginMeta.Name, nil, nil)
 		p.instances[pluginMeta.Name] = ins
 	}
-	// ins process has not run yet
+	// ins has run
 	if ins.process != nil && ins.ctrlChan != nil {
 		return ins, nil
 	}
 	// should only happen for first start, then the ctrl channel will keep running
 	if ins.ctrlChan == nil {
+		conf.Log.Infof("create control channel")
 		ctrlChan, err := CreateControlChannel(pluginMeta.Name)
 		if err != nil {
-			conf.Log.Errorf("plugin %s can't create new control channel: %s", pluginMeta.Name, err.Error())
 			ins.Status.StatusErr(err)
-			return nil, fmt.Errorf("plugin %s can't create new control channel: %s", pluginMeta.Name, err.Error())
+			return nil, fmt.Errorf("can't create new control channel: %s", err.Error())
 		}
 		ins.ctrlChan = ctrlChan
 	}
 	// init or restart all need to run the process
+	conf.Log.Infof("executing plugin")
 	jsonArg, err := json.Marshal(pconf)
 	failpoint.Inject("confErr", func() {
 		err = errors.New("confErr")
@@ -372,6 +309,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	cmd.Stderr = conf.Log.Out
 	cmd.Dir = filepath.Dir(pluginMeta.Executable)
 
+	conf.Log.Println("plugin starting")
 	err = cmd.Start()
 	failpoint.Inject("cmdStartErr", func() {
 		cmd.Process.Kill()
@@ -379,14 +317,12 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	})
 	if err != nil {
 		ins.Status.StatusErr(err)
-		conf.Log.Errorf("plugin %s executable %s stops with error %v", pluginMeta.Name, pluginMeta.Executable, err)
-		return nil, fmt.Errorf("plugin %s executable %s stops with error %v", pluginMeta.Name, pluginMeta.Executable, err)
+		return nil, fmt.Errorf("plugin executable %s stops with error %v", pluginMeta.Executable, err)
 	}
 	process := cmd.Process
-	conf.Log.Printf("plugin %s started pid: %d\n", pluginMeta.Name, process.Pid)
+	conf.Log.Printf("plugin started pid: %d\n", process.Pid)
 	defer func() {
 		if e != nil {
-			ins.Status.StatusErr(e)
 			_ = process.Kill()
 		}
 	}()
@@ -398,11 +334,8 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		}
 		// must make sure the plugin ins is not cleaned up yet by checking the process identity
 		// clean up for stop unintentionally
-		if ins, ok := p.GetPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
+		if ins, ok := p.getPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
 			ins.Lock()
-			if ins.ctrlChan != nil {
-				_ = ins.ctrlChan.Close()
-			}
 			ins.process = nil
 			ins.Unlock()
 		}
@@ -416,10 +349,10 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 	}
 	ins.process = process
 	p.instances[pluginMeta.Name] = ins
-	ins.Status.StartRunning(ins.process.Pid)
-	conf.Log.Infof("plugin %s start running", pluginMeta.Name)
+	conf.Log.Println("plugin start running")
+	ins.Status.StartRunning()
 	// restore symbols by sending commands when restarting plugin
-	conf.Log.Infof("restore plugin %s symbols", pluginMeta.Name)
+	conf.Log.Info("restore plugin symbols")
 	for m, c := range ins.commands {
 		go func(key Meta, jsonArg []byte) {
 			e := ins.sendCmd(jsonArg)
@@ -475,7 +408,6 @@ type PluginStatus struct {
 	RefCount map[string]int `json:"refCount"`
 	Status   string         `json:"status"`
 	ErrMsg   string         `json:"errMsg"`
-	Pid      int            `json:"pid"`
 }
 
 func NewPluginStatus() *PluginStatus {
@@ -490,9 +422,8 @@ func (s *PluginStatus) StatusErr(err error) {
 	s.ErrMsg = err.Error()
 }
 
-func (s *PluginStatus) StartRunning(pid int) {
+func (s *PluginStatus) StartRunning() {
 	s.Status = PluginStatusRunning
-	s.Pid = pid
 	s.ErrMsg = ""
 }
 

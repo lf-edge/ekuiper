@@ -1,4 +1,4 @@
-// Copyright 2021-2022 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -197,7 +197,7 @@ func createMockClient(pluginName string) (mangos.Socket, error) {
 func TestPluginStatus(t *testing.T) {
 	p := NewPluginIns("mock", nil, nil)
 	require.Equal(t, PluginStatusInit, p.GetStatus().Status)
-	p.Status.StartRunning(13)
+	p.Status.StartRunning()
 	require.Equal(t, PluginStatusRunning, p.GetStatus().Status)
 	p.Status.StatusErr(errors.New("mock"))
 	require.Equal(t, PluginStatusErr, p.GetStatus().Status)
@@ -213,8 +213,8 @@ func TestPluginStatusRef(t *testing.T) {
 	require.Equal(t, map[string]int{"rule1": 1}, p.GetStatus().RefCount)
 	p.addRef(ctx)
 	require.Equal(t, map[string]int{"rule1": 2}, p.GetStatus().RefCount)
-	p.DeRef(ctx)
+	p.deRef(ctx)
 	require.Equal(t, map[string]int{"rule1": 1}, p.GetStatus().RefCount)
-	p.DeRef(ctx)
+	p.deRef(ctx)
 	require.Equal(t, map[string]int{}, p.GetStatus().RefCount)
 }

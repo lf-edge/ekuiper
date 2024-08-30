@@ -84,8 +84,9 @@ func TestManager_Install(t *testing.T) {
 			u:   endpoint + "/portables/mirror.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json, found 9 files in total"),
 		}, { // 5
-			n: "mirror2",
-			u: endpoint + "/portables/mirror.zip",
+			n:   "mirror2",
+			u:   endpoint + "/portables/mirror.zip",
+			err: errors.New("fail to install plugin: plugin executable /home/runner/work/ekuiper/ekuiper/plugins/portable/mirror2/mirror2 stops with error fork/exec /home/runner/work/ekuiper/ekuiper/plugins/portable/mirror2/mirror2: permission denied"),
 		},
 	}
 

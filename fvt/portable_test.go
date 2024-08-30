@@ -151,10 +151,9 @@ func (s *ServerTestSuite) TestLC() {
 		s.Equal(200, resp.StatusCode)
 	})
 	s.Run("delete plugin", func() {
-		_, err := client.Delete("plugins/portables/pysam")
+		resp, err := client.Delete("plugins/portables/pysam")
 		s.NoError(err)
-		// TODO fix the random failure here
-		// s.Equal(http.StatusOK, resp.StatusCode)
+		s.Equal(http.StatusOK, resp.StatusCode)
 	})
 }
 
