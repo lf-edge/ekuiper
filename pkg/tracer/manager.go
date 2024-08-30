@@ -126,11 +126,11 @@ func (l *LocalSpanMemoryStorage) saveSpan(localSpan *LocalSpan) error {
 		spanMap = make(map[string]*LocalSpan)
 		l.m[localSpan.TraceID] = spanMap
 	}
-	if len(localSpan.ruleID) > 0 {
-		traceMap, ok := l.ruleTraceMap[localSpan.ruleID]
+	if len(localSpan.RuleID) > 0 {
+		traceMap, ok := l.ruleTraceMap[localSpan.RuleID]
 		if !ok {
 			traceMap = make(map[string]struct{})
-			l.ruleTraceMap[localSpan.ruleID] = traceMap
+			l.ruleTraceMap[localSpan.RuleID] = traceMap
 		}
 		traceMap[localSpan.TraceID] = struct{}{}
 	}
