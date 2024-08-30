@@ -143,6 +143,7 @@ func (s *State) transit(newState RunState, err error) {
 	default:
 		// do nothing
 	}
+	s.logger.Infof("rule %s transit to state %s", s.Rule.Id, StateName[s.currentState])
 }
 
 func (s *State) GetState() RunState {
@@ -263,6 +264,7 @@ func (s *State) Start() error {
 	}
 	// Start normally or start in schedule period Rule
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
+	s.logger.Infof("start to run rule %s", s.Rule.Id)
 	err := s.doStart()
 	if err != nil {
 		s.transit(StoppedByErr, err)
@@ -281,6 +283,7 @@ func (s *State) ScheduleStart() error {
 		return nil
 	}
 	// doStart trigger the Rule run. If no trigger error, the Rule will run async and control the state by itself
+	s.logger.Infof("schedule to run rule %s", s.Rule.Id)
 	err := s.doStart()
 	if err != nil {
 		s.transit(StoppedByErr, err)
@@ -372,6 +375,7 @@ func (s *State) Stop() {
 		return
 	}
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("stopping rule %s", s.Rule.Id)
 	err := s.doStop()
 	if err == nil {
 		err = errors.New("canceled manually")
@@ -389,6 +393,7 @@ func (s *State) ScheduleStop() {
 		return
 	}
 	// do stop, stopping action and starting action are mutual exclusive. No concurrent problem here
+	s.logger.Infof("schedule to stop rule %s", s.Rule.Id)
 	err := s.doStop()
 	// currentState may be accessed concurrently
 	if schedule.IsAfterTimeRanges(timex.GetNow(), s.Rule.Options.CronDatetimeRange) {

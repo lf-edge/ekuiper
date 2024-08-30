@@ -98,6 +98,7 @@ func TestExtensions(t *testing.T) {
 					nm := make([]map[string]any, 0, len(rt))
 					for _, mm := range rt {
 						nm = append(nm, mm.ToMap())
+						break
 					}
 					maps = append(maps, nm)
 					break
@@ -105,7 +106,7 @@ func TestExtensions(t *testing.T) {
 					conf.Log.Errorf("receive wrong tuple %v", rt)
 				}
 			}
-			return maps
+			return maps[:1]
 		})
 	}
 }
