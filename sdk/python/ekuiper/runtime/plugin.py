@@ -121,7 +121,7 @@ def command_reply(req: bytes) -> bytes:
                 if runtime.is_running():
                     runtime.stop()
             else:
-                logging.warning("symbol ", regkey, " not found")
+                logging.warning("symbol {} not found".format(regkey))
         return b'ok'
     except Exception:
         var = traceback.format_exc()
