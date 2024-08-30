@@ -106,14 +106,27 @@ func GetAllConnectionStatus(ctx api.StreamContext) map[string]ConnectionStatus {
 	return s
 }
 
-func GetAllConnectionsID() []string {
+func GetAllConnectionsMeta() []*ConnectionMeta {
 	globalConnectionManager.RLock()
 	defer globalConnectionManager.RUnlock()
-	ids := make([]string, 0)
-	for key := range globalConnectionManager.connectionPool {
-		ids = append(ids, key)
+	metaList := make([]*ConnectionMeta, 0)
+	for _, meta := range globalConnectionManager.connectionPool {
+		metaList = append(metaList, meta)
 	}
-	return ids
+	return metaList
+}
+
+func GetConnectionDetail(_ api.StreamContext, id string) (*ConnectionMeta, error) {
+	if id == "" {
+		return nil, fmt.Errorf("connection id should be defined")
+	}
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	meta, ok := globalConnectionManager.connectionPool[id]
+	if !ok {
+		return nil, fmt.Errorf("connection %s not existed", id)
+	}
+	return meta, nil
 }
 
 func PingConnection(ctx api.StreamContext, id string) error {
@@ -367,6 +380,10 @@ type ConnectionMeta struct {
 	Props    map[string]any `json:"props"`
 	refCount int            `json:"-"`
 	cw       *ConnWrapper   `json:"-"`
+}
+
+func (meta *ConnectionMeta) GetRefCount() int {
+	return meta.refCount
 }
 
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
