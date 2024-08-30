@@ -62,6 +62,35 @@ class Sink(object):
         pass
 ```
 
+### Sink ack
+
+默认的 Portable 插件 sink 是异步运行的。在 v2.0 及之后的版本中（需要使用新的 pip eKuiper 版本），用户使用 Portable 插件定义的
+sink 时可以配置是否等待 ack 再发送下一条数据。例如，假设 Portable 插件中定义了 `print` 类型的 sink 。当 requireAck
+打开时，用户的自定义 sink 插件针对每条数据都**必须**返回 ack 信息。
+
+```json
+{
+   "id": "rulePort1",
+   "sql": "SELECT * FROM mqttStream",
+   "actions": [
+      {
+         "print": {
+            "requireAck": true
+         }
+      }
+   ]
+}
+```
+
+Sink 插件中调用 `ctx.ack_ok()` 或 `ctx.ack_err(msg)` 返回 ack 信息。以下为示例 collect 函数，调用成功时返回 ack 。
+
+```python
+def collect(self, ctx: Context, data: Any):
+        print('receive: ', data)
+        # only add ack when using with requireAck in the rule
+        ctx.ack_ok()
+```
+
 函数接口:
 
 ```python

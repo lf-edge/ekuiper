@@ -41,7 +41,9 @@ func (s *ServerTestSuite) TestLC() {
 	  "sql": "SELECT * FROM pyjsonStream",
 	  "actions": [
 		{
-		  "print": {}
+		  "print": {
+            "requireAck": true
+          }
 		}
 	  ]
 	}`
