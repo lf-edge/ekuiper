@@ -45,17 +45,17 @@ func (s *ServerTestSuite) TestLC() {
 		}
 	  ]
 	}`
-	//s.Run("create rule error when plugin not installed", func() {
-	//	resp, err := client.CreateStream(streamSql)
-	//	s.Require().NoError(err)
-	//	s.T().Log(GetResponseText(resp))
-	//	s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-	//
-	//	resp, err = client.CreateRule(ruleSql)
-	//	s.Require().NoError(err)
-	//	s.T().Log(GetResponseText(resp))
-	//	s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
-	//})
+	s.Run("create rule error when plugin not installed", func() {
+		resp, err := client.CreateStream(streamSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+
+		resp, err = client.CreateRule(ruleSql)
+		s.Require().NoError(err)
+		s.T().Log(GetResponseText(resp))
+		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+	})
 	s.Run("install plugin and check status", func() {
 		// zip the plugin dir
 		pysamDir := filepath.Join(PWD, "sdk", "python", "example", "pysam")
@@ -84,7 +84,7 @@ func (s *ServerTestSuite) TestLC() {
 		resp, err := client.CreateStream(streamSql)
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
-		s.Require().Equal(http.StatusCreated, resp.StatusCode)
+		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
 
 		resp, err = client.CreateRule(ruleSql)
 		s.Require().NoError(err)
@@ -100,7 +100,7 @@ func (s *ServerTestSuite) TestLC() {
 			count--
 			metrics, err := client.GetRuleStatus("rulePort1")
 			s.Require().NoError(err)
-			if metrics["sink_print_0_0_records_out_total"].(float64) > 0 {
+			if metrics["sink_print_0_0_records_out_total"].(float64) > 5 {
 				break
 			}
 		}
@@ -110,30 +110,37 @@ func (s *ServerTestSuite) TestLC() {
 		s.T().Log(metrics)
 		sinkOut, ok := metrics["sink_print_0_0_records_out_total"]
 		s.True(ok)
-		if !ok {
-			s.T().Log(metrics)
-		}
-		s.True(sinkOut.(float64) > 0)
+		s.T().Log(metrics)
+		s.True(sinkOut.(float64) > 5)
 		s.Equal("", metrics["source_pyjsonStream_0_last_exception"])
 	})
-	//s.Run("test rule restart", func() {
-	//	resp, err := client.RestartRule("rulePort1")
-	//	s.Require().NoError(err)
-	//	s.Require().Equal(http.StatusOK, resp.StatusCode)
-	//	// Check rule status after a while
-	//	time.Sleep(ConstantInterval)
-	//	metrics, err := client.GetRuleStatus("rulePort1")
-	//	s.Require().NoError(err)
-	//	s.Equal("running", metrics["status"])
-	//	sinkOut, ok := metrics["sink_print_0_0_records_out_total"]
-	//	s.True(ok)
-	//	if !ok {
-	//		s.T().Log(metrics)
-	//	}
-	//	s.True(sinkOut.(float64) > 0)
-	//	s.Equal("", metrics["source_pyjsonStream_0_last_exception"])
-	//})
-	//s.Run("test plugin update", func() {})
+	s.Run("test rule restart", func() {
+		resp, err := client.RestartRule("rulePort1")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		// Check rule status after a while
+		ticker := time.NewTicker(ConstantInterval)
+		defer ticker.Stop()
+		count := 20
+		for count > 0 {
+			<-ticker.C
+			count--
+			metrics, err := client.GetRuleStatus("rulePort1")
+			s.Require().NoError(err)
+			if metrics["sink_print_0_0_records_out_total"].(float64) > 5 {
+				break
+			}
+		}
+		metrics, err := client.GetRuleStatus("rulePort1")
+		s.Require().NoError(err)
+		s.Equal("running", metrics["status"])
+		s.T().Log(metrics)
+		sinkOut, ok := metrics["sink_print_0_0_records_out_total"]
+		s.True(ok)
+		s.T().Log(metrics)
+		s.True(sinkOut.(float64) > 5)
+		s.Equal("", metrics["source_pyjsonStream_0_last_exception"])
+	})
 	s.Run("clean up", func() {
 		resp, err := client.DeleteRule("rulePort1")
 		s.NoError(err)

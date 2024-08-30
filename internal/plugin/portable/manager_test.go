@@ -122,7 +122,7 @@ func TestManager_Read(t *testing.T) {
 		},
 	}
 	result := manager.List()
-	if len(result) != 3 {
+	if len(result) != 2 {
 		t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
 	}
 

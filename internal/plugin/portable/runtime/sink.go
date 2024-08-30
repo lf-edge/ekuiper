@@ -88,14 +88,18 @@ func (ps *PortableSink) Connect(ctx api.StreamContext) error {
 	ps.clean = func() error {
 		ctx.GetLogger().Info("clean up sink")
 		err1 := dataCh.Close()
-		err2 := ins.StopSymbol(ctx, c)
+		err2 := ackCh.Close()
+		err3 := ins.StopSymbol(ctx, c)
 		if err1 != nil {
-			err1 = fmt.Errorf("%s:%v", "dataCh", err1)
+			err1 = fmt.Errorf("%s:%v", "close dataCh error", err1)
 		}
 		if err2 != nil {
-			err2 = fmt.Errorf("%s:%v", "symbol", err2)
+			err2 = fmt.Errorf("%s:%v", "close ackCh error", err2)
 		}
-		return errors.Join(err1, err2)
+		if err3 != nil {
+			err3 = fmt.Errorf("%s:%v", "close symbol error", err3)
+		}
+		return errors.Join(err1, err2, err3)
 	}
 	ps.dataCh = dataCh
 	ps.ackCh = ackCh
