@@ -107,7 +107,8 @@ source/sink 运行，并关闭数据通道。
 通过将内容（json、可执行文件和所有支持文件）放在`plugins/portables/${pluginName}`中，并将配置放在`etc`
 下的相应目录中，可以在启动时自动加载可移植插件。
 
-要在运行时管理可移植插件，我们可以使用 [REST](../../api/restapi/plugins.md) 或 [CLI](../../api/cli/plugins.md) 命令。
+要在运行时管理可移植插件，我们可以使用 [REST](../../api/restapi/plugins.md) 或 [CLI](../../api/cli/plugins.md)
+命令。通过[状态 API](../../api/restapi/plugins.md#portable-插件运行状态)，可以查看插件进程的进程 pid 等状态。
 
 ## 限制
 

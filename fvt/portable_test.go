@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -72,7 +73,7 @@ func (s *ServerTestSuite) TestLC() {
 		s.Require().NoError(err)
 		s.Require().Equal(http.StatusCreated, resp.StatusCode)
 	})
-	s.Run("check plugin status", func() {
+	s.Run("check plugin info", func() {
 		// check the plugin status
 		resp, err := client.Get("plugins/portables")
 		s.Require().NoError(err)
@@ -86,7 +87,7 @@ func (s *ServerTestSuite) TestLC() {
 		resp, err := client.CreateStream(streamSql)
 		s.Require().NoError(err)
 		s.T().Log(GetResponseText(resp))
-		s.Require().Equal(http.StatusBadRequest, resp.StatusCode)
+		s.Equal(http.StatusBadRequest, resp.StatusCode)
 
 		resp, err = client.CreateRule(ruleSql)
 		s.Require().NoError(err)
@@ -115,6 +116,17 @@ func (s *ServerTestSuite) TestLC() {
 		s.T().Log(metrics)
 		s.True(sinkOut.(float64) > 5)
 		s.Equal("", metrics["source_pyjsonStream_0_last_exception"])
+	})
+	s.Run("check plugin status", func() {
+		// check the plugin status
+		resp, err := client.Get("plugins/portables/pysam/status")
+		s.Require().NoError(err)
+		s.Require().Equal(http.StatusOK, resp.StatusCode)
+		payload, err := io.ReadAll(resp.Body)
+		s.NoError(err)
+		defer resp.Body.Close()
+		s.T().Log(string(payload))
+		s.Require().True(strings.Contains(string(payload), "{\"refCount\":{\"rulePort1\":2},\"status\":\"running\",\"errMsg\":\"\""))
 	})
 	s.Run("test rule restart", func() {
 		resp, err := client.RestartRule("rulePort1")

@@ -126,7 +126,8 @@ supportive files) inside `plugins/portables/${pluginName}` and the configuration
 under `etc`.
 
 To manage the portable plugins in runtime, we can use the [REST](../../api/restapi/plugins.md)
-or [CLI](../../api/cli/plugins.md) commands.
+or [CLI](../../api/cli/plugins.md) commands. Using [Status API](../../api/restapi/plugins.md#portable-plugin-status), we
+can examine the plugin process pid and other status information.
 
 ## Restrictions
 
