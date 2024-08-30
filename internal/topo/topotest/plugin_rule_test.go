@@ -21,6 +21,8 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/function"
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/plugin/native"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -49,7 +51,7 @@ func init() {
 // The .so files must be in the plugins folder
 func TestExtensions(t *testing.T) {
 	// Reset
-	streamList := []string{"ext"}
+	streamList := []string{"ext", "ext2"}
 	HandleStream(false, streamList, t)
 	tests := []RuleTest{
 		{
@@ -63,6 +65,17 @@ func TestExtensions(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name: "TestExtensionsRule2",
+			Sql:  `SELECT count(echo(count)) as c, echo(count) as e, countPlusOne(count) as p FROM ext2 where count > 49`,
+			R: [][]map[string]interface{}{
+				{
+					{
+						"c": 1, "e": 50, "p": 2,
+					},
+				},
+			},
+		},
 	}
 	HandleStream(true, streamList, t)
 	options := []*def.RuleOption{
@@ -72,7 +85,28 @@ func TestExtensions(t *testing.T) {
 		},
 	}
 	for _, opt := range options {
-		DoRuleTest(t, tests, opt, 0)
+		// customized result func to compare only first result
+		DoRuleTestWithResultFunc(t, tests, opt, 0, func(result []any) [][]map[string]any {
+			maps := make([][]map[string]any, 0, len(result))
+			for _, v := range result {
+				switch rt := v.(type) {
+				case pubsub.MemTuple:
+					m := rt.ToMap()
+					maps = append(maps, []map[string]any{m})
+					break
+				case []pubsub.MemTuple:
+					nm := make([]map[string]any, 0, len(rt))
+					for _, mm := range rt {
+						nm = append(nm, mm.ToMap())
+					}
+					maps = append(maps, nm)
+					break
+				default:
+					conf.Log.Errorf("receive wrong tuple %v", rt)
+				}
+			}
+			return maps
+		})
 	}
 }
 
