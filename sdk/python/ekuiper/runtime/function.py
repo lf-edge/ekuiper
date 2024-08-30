@@ -49,7 +49,7 @@ class FunctionRuntime(SymbolRuntime):
         # noinspection PyBroadException
         try:
             c = json.loads(req)
-            logging.debug("running func with ", c)
+            logging.debug("running func with {}".format(c))
             name = c['func']
             if name == "Validate":
                 err = self.s.validate(c['arg'])

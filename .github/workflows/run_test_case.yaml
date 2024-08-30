@@ -53,7 +53,6 @@ jobs:
           cp mirror.json ../../../../plugins/portable/mirror
           cd ../../../../
           cp -r sdk/python/ekuiper sdk/python/example/pysam/
-          cp -r sdk/python/example/pysam plugins/portable/pysam
           cp test/lookup.json data/lookup.json
       - name: Run test case
         run: |
@@ -72,7 +71,6 @@ jobs:
           path: coverage.xml
       - name: Clean plugins
         run: |
-          rm -r plugins/portable/pysam
           rm -r plugins/portable/mirror
       - name: Run fvt
         run: |
