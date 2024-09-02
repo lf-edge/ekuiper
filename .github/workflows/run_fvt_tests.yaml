@@ -116,6 +116,8 @@ jobs:
       - name: gen codecov
         run: |
           go tool covdata textfmt -i=cover -o=jmeter.xml
+          total_coverage=$(go tool cover -func=jmeter.xml | grep total | awk '{print $3}')
+          echo "Total coverage: $total_coverage"
       - name: upload coverage report for jmeter
         uses: actions/upload-artifact@v4
         with:
@@ -218,6 +220,8 @@ jobs:
       - name: gen codecov
         run: |
           go tool covdata textfmt -i=cover -o=jmeter_redis.xml
+          total_coverage=$(go tool cover -func=jmeter_redis.xml | grep total | awk '{print $3}')
+          echo "Total coverage: $total_coverage"
       - name: upload coverage report for jmeter redis
         uses: actions/upload-artifact@v4
         with:
