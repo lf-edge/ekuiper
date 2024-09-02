@@ -23,15 +23,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 )
 
 func (suite *RestTestSuite) TestGetConnectionStatus() {
+	ip := "127.0.0.1"
+	port := 10091
+	httpserver.InitGlobalServerManager(ip, port, nil)
+	defer httpserver.ShutDown()
 	connection.InitConnectionManager4Test()
 	ruleJson := `
 {
-  "id": "connecton-1",
-  "typ":"mqtt",
+  "id": "conn1",
+  "typ":"httppush",
   "props": {
     "method": "post",
 	"datasource": "/test1"
@@ -53,4 +58,11 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	var m []map[string]interface{}
 	require.NoError(suite.T(), json.Unmarshal(returnVal, &m))
 	require.Len(suite.T(), m, 1)
+
+	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connection/conn1", bytes.NewBufferString("any"))
+	w = httptest.NewRecorder()
+	suite.r.ServeHTTP(w, req)
+	require.Equal(suite.T(), http.StatusOK, w.Code)
+	returnVal, _ = io.ReadAll(w.Result().Body)
+	require.Equal(suite.T(), `{"id":"conn1","typ":"httppush","props":{"datasource":"/test1","method":"post"},"status":"running"}`, string(returnVal))
 }
