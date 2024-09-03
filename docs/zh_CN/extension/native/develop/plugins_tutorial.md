@@ -9,7 +9,7 @@ eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松�
 - 插件不支持 windows 系统
 - 插件编译环境要求跟 eKuiper 编译环境尽量一致，包括但不限于
   - 相同的 GO 版本
-  - 插件与 eKuiper 自身依赖的相同包版本必须完全一致，包括 eKuiper 自身
+  - 插件与 eKuiper 自身依赖的相同包版本必须完全一致
   - 插件与 eKuiper 编译环境的 GOPATH 必须完全一致
 
 这些限制较为苛刻，几乎要求插件和 eKuiper 在同一台机器编译运行，经常导致开发环境编译出的插件无法在生产 eKuiper 上使用。本文详细介绍了一种切实可用的插件开发环境设置和流程，推荐给 eKuiper 插件开发者使用。插件的开发和使用一般有如下流程：
@@ -23,45 +23,43 @@ eKuiper 插件机制基于 Go 语言的插件机制，使用户可以构建松�
 
 ## 插件开发
 
-插件开发一般在开发环境中进行。在开发环境调试运行通过后再部署到生产环境中。由于Go语言插件机制的严格限制，我们在这里提供两种行之有效的构建插件开发环境的办法：在eKuiper工程中创建插件开发环境与在eKuiper工程外创建插件开发环境。eKuiper 插件有三种类型：源，函数和目标，插件开发的详细方法请参看 [LF Edge eKuiper 扩展](../../overview.md) 。本文以目标(sink)为例，介绍插件的开发部署过程。我们将开发一个最基本的 MySql 目标，用于将流输出写入到 MySql 数据库中。涉及到的工作流程大致如下：
+插件开发一般在开发环境中进行。在开发环境调试运行通过后再部署到生产环境中。eKuiper
+插件有三种类型：源，函数和目标，插件开发的详细方法请参看 [LF Edge eKuiper 扩展](../../overview.md) 。本文以目标(sink)
+为例，介绍插件的开发部署过程。我们将开发一个最基本的 MySql 目标，用于将流输出写入到 MySql 数据库中。涉及到的工作流程大致如下：
 
 - 新建名为 samplePlugin 的插件项目
 - 在 sinks 目录下，新建 mysql.go 文件
 - 编辑 mysql.go 文件以实现插件
-  - 实现 [api.Sink](https://github.com/lf-edge/ekuiper/blob/master/pkg/api/stream.go) 接口
+  - 实现 [api.TupleCollector](https://github.com/lf-edge/ekuiper/blob/master/contract/api/sink.go) 接口。若输出数据为标准格式，也可以实现
+    api.BytesCollector 接口。
   - 导出 Symbol：Mysql。它既可以是一个“构造函数”，也可以是结构体本身。当导出构造函数时，使用该插件的规则初始化时会用此函数创建该插件的实例；当导出为结构体时，所有使用该插件的规则将公用该插件同一个单例。如果插件有状态，例如数据库连接，建议使用第一种方法。
 - 编辑 go.mod, 添加 mysql 驱动模块
 - 编译构建 eKuiper 和目标插件
 
-### 在eKuiper中创建插件项目
+### 编写插件
 
-当用户以这种方式创建插件项目时，首先必须下载一份 eKuiper 源码并在项目根目录下执行 `make` 命令。在项目源码 extensions 目录中有一些插件事例。以此种方式开发插件项目的好处是官方现存的所有插件均以此种方式开发，新插件开发者可以快速上手而不用重新建立项目，用户可以直接把代码放到 extensions 目录下，代码结构如下：
+为了便于代码管理，一般应当在 eKuiper 项目之外另建项目开发自定义插件。插件项目建议使用 Go module，项目目录如下图所示：
 
 ```text
-extensions
-  sinks
-    myplugin         
-      mysql.go
-  go.mod       
+samplePlugin
+  sinks           //source code directory of the plugin sink
+    mysql.go
+  go.mod          //file go module
 ```
-
-extensions 目录用 Go module 来管理依赖包，用户只需把他们的插件源码放入合适的目录，然后在 go.mod 中更新依赖即可。
 
 下一步用户需要编辑 mysql.go 文件，实现插件代码。这里有一份 mysql.go 源码可供参考：
 
 ```go
 package main
 
- // 该例子为简化样例，仅建议测试时使用
-
 import (
   "database/sql"
   "fmt"
+
   _ "github.com/go-sql-driver/mysql"
   "github.com/lf-edge/ekuiper/contract/v2/api"
-  "github.com/lf-edge/ekuiper/v2/pkg/cast"
+  "github.com/mitchellh/mapstructure"
 )
-
 
 type mysqlConfig struct {
   Url   string `json:"url"`
@@ -74,11 +72,19 @@ type mysqlSink struct {
   db *sql.DB
 }
 
-func (m *mysqlSink) Configure(props map[string]interface{}) error {
+func (m *mysqlSink) Provision(ctx api.StreamContext, configs map[string]any) error {
   cfg := &mysqlConfig{}
-  err := cast.MapToStruct(props, cfg)
+  config := &mapstructure.DecoderConfig{
+    TagName: "json",
+    Result:  cfg,
+  }
+  decoder, err := mapstructure.NewDecoder(config)
   if err != nil {
-    return fmt.Errorf("read properties %v fail with error: %v", props, err)
+    return err
+  }
+  err = decoder.Decode(configs)
+  if err != nil {
+    return fmt.Errorf("read properties %v fail with error: %v", configs, err)
   }
   if cfg.Url == "" {
     return fmt.Errorf("property Url is required")
@@ -87,41 +93,56 @@ func (m *mysqlSink) Configure(props map[string]interface{}) error {
     return fmt.Errorf("property Table is required")
   }
   m.conf = cfg
+  ctx.GetLogger().Infof("mysql provisioning started with props: %v", cfg)
   return nil
 }
 
-func (m *mysqlSink) Open(ctx api.StreamContext) (err error) {
-  logger := ctx.GetLogger()
-  logger.Debugf("Opening mysql sink %v", m.conf)
+func (m *mysqlSink) Connect(ctx api.StreamContext) error {
+  ctx.GetLogger().Debugf("Opening mysql sink %v", m.conf)
+  var err error
   m.db, err = sql.Open("mysql", m.conf.Url)
-  if err != nil {
-    logger.Error(err)
-  }
-  return
+  return err
 }
 
 // 该函数为数据处理简化函数。
-func (m *mysqlSink) Collect(ctx api.StreamContext, item interface{}) error {
-  logger := ctx.GetLogger()
-  v, _, err := ctx.TransformOutput(item)
-  if err != nil {
-    logger.Error(err)
-    return err
+func (m *mysqlSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {
+  ctx.GetLogger().Debugf("mysql sink receive %s", item)
+  v, ok := item.Value("name", "")
+  if !ok {
+    return fmt.Errorf("receive value does not have name field")
   }
-  
-  //TODO 生产环境中需要处理item unmarshall后的各种类型。
-  // 默认的类型为 []map[string]interface{}
-  // 如果sink的`dataTemplate`属性有设置，则可能为各种其他的类型
-  logger.Debugf("mysql sink receive %s", item)
   //TODO 此处列名写死。生产环境中一般可从item中的键值对获取列名
   sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.conf.Table, v)
-  logger.Debugf(sql)
+  ctx.GetLogger().Debugf(sql)
   insert, err := m.db.Query(sql)
   if err != nil {
     return err
   }
   defer insert.Close()
+  return nil
+}
 
+// 该函数为数据处理简化函数。
+func (m *mysqlSink) CollectList(ctx api.StreamContext, item api.MessageTupleList) error {
+  ctx.GetLogger().Debugf("mysql sink receive %s", item)
+  if item.Len() <= 0 {
+    return fmt.Errorf("receive empty item")
+  }
+  item.RangeOfTuples(func(index int, tuple api.MessageTuple) bool {
+    v, ok := tuple.Value("", "name")
+    if !ok {
+      return false
+    }
+    //TODO 此处列名写死。生产环境中一般可从item中的键值对获取列名
+    sql := fmt.Sprintf("INSERT INTO %s (`name`) VALUES ('%s')", m.conf.Table, v)
+    ctx.GetLogger().Debugf(sql)
+    insert, err := m.db.Query(sql)
+    if err != nil {
+      return false
+    }
+    defer insert.Close()
+    return true
+  })
   return nil
 }
 
@@ -139,18 +160,8 @@ func Mysql() api.Sink {
 
 ```
 
-### 在eKuiper外创建插件项目
-
-为了便于代码管理，一般应当在 eKuiper 项目之外另建项目开发自定义插件。插件项目建议使用 Go module，项目目录如下图所示：
-
-```text
-samplePlugin
-  sinks           //source code directory of the plugin sink
-    mysql.go
-  go.mod          //file go module
-```
-
-这里的 mysql.go 文件可以参考上一节的代码。 插件开发需要扩展 eKuiper 内的接口，因此必须依赖于 eKuiper 项目。最简单的 go.mod 也需要包含对 eKuiper 的依赖。典型的 go.mod 如下：
+插件开发需要扩展 eKuiper 内的接口，因此必须依赖于 eKuiper contract 项目（eKuiper 项目的子项目）。最简单的 go.mod 也需要包含对
+contract 的依赖。典型的 go.mod 如下：
 
 ```go
 module samplePlugin
@@ -158,7 +169,7 @@ module samplePlugin
 go 1.22
 
 require (
-  github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
+github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.5
 )
 ```
 
@@ -170,10 +181,13 @@ module samplePlugin
 go 1.22
 
 require (
-  github.com/lf-edge/ekuiper v0.0.0-20200323140757-60d00241372b
+github.com/lf-edge/ekuiper/contract/v2 v2.0.0
   github.com/go-sql-driver/mysql v1.5.0
 )
  ```
+
+**请注意**：插件项目的 go 版本和依赖的 contract 项目版本必须与 eKuiper
+主项目完全一致。此外，尽量避免插件项目依赖主项目，否则主项目任何小改动都会导致插件失效，需要重新编译。
 
 ### 编译调试插件
 
@@ -181,70 +195,26 @@ require (
 
 #### 本地编译
 
-如果用户选择在 eKuiper 项目中开发插件，那么他可以用以下命令来编译插件：
+用户可以在插件项目用以下命令来编译插件：
 
 ```shell
-   # compile the eKuiper
-   go build -trimpath -o ./_build/$build/bin/kuiperd cmd/kuiperd/main.go
-  
-   # compile the plugin that using the extensions folder within eKuiper project
-   go build -trimpath --buildmode=plugin -o ./_build/$build/plugins/sinks/Mysql@v1.0.0.so extensions/sinks/mysql/mysql.go
-
+   go build -trimpath --buildmode=plugin -o Mysql@v1.0.0.so ./sinks/mysql.go
 ```
 
-如果开发者选择了自己创建插件项目， 那么他需要以下步骤来编译插件：
-
-1. 下载 eKuiper 源代码 `git clone https://github.com/lf-edge/ekuiper.git`
-2. 编译 eKuiper：在 eKuiper 目录下，运行 `make`
-3. 编译环境设置
-    1. 用户可以把 eKuiper 和 插件放在同一目录下，项目目录类似于如下结构：
-
-       ```text
-       workspace
-         ekuiper
-           go.mod
-         samplePlugin
-           go.mod
-       ```
-
-    2. 在1.9.0 里，我们使用了 go workspace 功能重构了子模块的 go mod 构建方式，所以我们可以使用 go workspace 解决依赖问题。进入 workspace 目录里，创建工作区：
-
-       ```shell
-       go work init ./ekuiper ./samplePlugin
-       ```
-
-    3. 经过这些配置，你的插件项目与 eKuiper 项目目录结构应该是这样
-
-      ```text
-        workspace
-          ekuiper
-            go.mod           
-          samplePlugin
-            go.mod
-          go.work
-      ```
-
-4. 在 workspace 目录下，编译插件和 eKuiper
-
-   ```shell
-    # compile the eKuiper
-    go build -trimpath -o ./_build/$build/bin/kuiperd cmd/kuiperd/main.go
-
-    cd $workspacePath
-    # compile the plugin that using self-managed project within eKuiper project
-    go build -trimpath --buildmode=plugin -o ./ekuiper/_build/$build/plugins/sinks/Mysql@v1.0.0.so ./samplePlugin/sinks/mysql.go
-   ```
+在插件项目中将编译出 `Mysql@v1.0.0.so` 用于下一步的调试部署。
 
 **注意**：插件命名有限制，详见[插件总览](../overview.md)。
 
 #### Docker编译
 
-eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为 x.x.x-dev (0.4.0 到 1.7.0 之间版本的开发镜像为 x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提供了 go 开发环境，使得用户可以在编译出在 eKuiper 正式发布版本中完全兼容的插件。由于1.9.0版本之后才使用go workspace功能，所以后面的步骤只适用于1.9.0之后的版本。在 Docker 中编译步骤如下：
+eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为 x.x.x-dev (0.4.0 到 1.7.0 之间版本的开发镜像为
+x.x.x，例如`lfedge/ekuiper:0.4.0`。)；与运行版本相比，开发版提供了 go 开发环境，使得用户可以在编译出在 eKuiper
+正式发布版本中完全兼容的插件。
 
 1. 运行 eKuiper 开发版本 docker。需要把本地插件目录 mount 到 docker 里的目录中，这样才能在 docker 中访问插件项目并编译。笔者的插件项目位于本地 `/var/git` 目录。下面的命令中，我们把本地的 `/var/git`目录映射到 docker 内的 `/go/plugins` 目录中。
 
     ```shell
-    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:1.9.0
+    docker run -d --name kuiper-dev --mount type=bind,source=/var/git,target=/go/plugins lfedge/ekuiper:2.0.0
     ```
 
 2. 在 docker 环境中编译插件，其原理与本地编译一致。编译出的插件置于插件项目的 target 目录中
@@ -255,35 +225,7 @@ eKuiper 提供了开发版本 docker 镜像。从 1.7.1 开始，开发镜像为
        docker exec -it kuiper-dev /bin/sh
       ```
 
-   2. 设置eKuiper工程环境目录：在开发版 docker 环境中，eKuiper工程位于 `/go/kuiper`。
-
-      ```shell
-          # In docker instance
-          export EKUIPER_SOURCE=/go/kuiper
-      ```
-
-   3. 参照本地编译环境设置方法，设置编译环境，目录结构如下
-
-      ```text
-        /go
-          kuiper
-            go.mod
-          samplePlugin
-            sinks         
-              mysql.go   
-            go.mod
-        go.work
-      ```
-
-      可以使用如下命令
-
-      ```shell
-      # In docker instance
-      cp -r /go/plugins/samplePlugin /go/samplePlugin
-      go work init ./kuiper ./samplePlugin
-      ```
-
-   4. 进入 /go 目录，执行下面命令
+   2. 进入插件目录 /go/plugins 目录，执行下面命令
 
       ```shell
       # In docker instance
@@ -301,28 +243,7 @@ alpine版本 的 eKuiper 时，不会出现`Error loading shared library libreso
     docker run --rm -it -v /var/git:/go/plugins -w /go/plugins golang:1.22.1 /bin/sh
     ```
 
-2. 参照本地编译环境设置方法，设置编译环境，目录结构如下
-
-   ```text
-   /go/plugins
-       kuiper
-           go.mod
-       samplePlugin
-           sinks         
-               mysql.go   
-           go.mod
-       go.work
-   ```
-
-   可以使用如下命令
-
-   ``` shell
-   # In docker instance
-   cd /go/plugins
-   go work init ./kuiper ./samplePlugin
-   ```
-
-3. 执行下面命令，便可以得到编译好的插件
+2. 执行下面命令，便可以得到编译好的插件
 
    ``` shell
    # In docker instance
@@ -341,7 +262,7 @@ alpine版本 的 eKuiper 时，不会出现`Error loading shared library libreso
     {
       "log": {},
       "mysql":{
-        "url": "user:password@tcp(localhost:3306)/database",
+        "url": "user:test@tcp(localhost:3306)/database",
         "table": "test"
       }
     }

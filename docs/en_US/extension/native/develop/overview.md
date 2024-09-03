@@ -1,366 +1,160 @@
-eKuiper has implemented the following plugins. At present, some of these plug-ins are examples used to describe the plug-in development process, and some are contributed by community developers. Please read the relevant documents carefully before using the plugins.
+# Native Plugin Development
 
-Developers of eKuiper plugin can specify metadata files during the development process. These metadata files are mainly used in the following aspects:
+Users can utilize the Go language native plugin system to write Source, Sink, and function implementations using Go.
+Regardless of the type of plugin being developed, the following steps are required:
 
-- Plugin compilation: For plugins in the directories `plugins/sinks` and `plugins/sources`, if the developer provides
-  related metadata files, eKuiper will automatically compile the plugins when the version is released, and then
-  automatically upload these plugins to the EMQ plugin download website: www.emqx.io/downloads/kuiper/vx.x.x/plugins,
-  where `x.x.x` is the version number.
+1. Create a plugin project.
+2. Write the plugin's implementation logic according to the type of extension.
+3. Build the plugin so.
+4. Package the plugin so and any dependent files such as metadata/configuration files into a plugin zip package.
 
-  **<u>Note: Due to the limitations of Golang plugins, these automatically compiled plugins can run in the container of
-  the corresponding version released by eKuiper. However, for the directly downloaded binary installation package, or
-  the binary package compiled by the user, these downloaded plugins are not guaranteed to work properly. </u>**
+## Setup the plugin developing environment
 
-- Visualization: from version 0.9.1, eKuiper will release the management console synchronously with the version, which can be used to manage eKuiper nodes, streams, rules, and plugins. Plugin metadata provided by developers can make it more convenient for users to use plugins. Therefore, it is strongly recommended that plugin developers provide corresponding metadata files when submitting plugins. The metadata file is in JSON format. The file name is consistent with that of the plugin and is placed in the root directory of the compressed package together with the plugin.
+It is required to build the plugin with exactly the same version of dependencies
+especially `github.com/lf-edge/ekuiper/contract/v2`. Users can manage the plugin project independently, ensuring that
+the Go language version in `go.mod` and the versions of the dependent modules are consistent with those of the main
+project.
 
-## Sources
+For example, when developing a plugin for the eKuiper v2.0.0 version, you need to first check the `go.mod` file
+corresponding to the eKuiper version. Ensure that the Go version and the contract mod version in the plugin project are
+consistent. For instance, in the following plugin `go.mod`, the contract mod v2.0.0 version and Go 1.23.0 version are
+used.
 
-| Name                                              | Description                                                                 | Remarks                                                   |
-|---------------------------------------------------|-----------------------------------------------------------------------------|-----------------------------------------------------------|
-| [zmq](../../../guide/sources/plugin/zmq.md)       | The plugin listens to Zero Mq messages and sends them to the eKuiper stream | Sample of plugin, not available in production environment |
-| [random](../../../guide/sources/plugin/random.md) | The plugin generates messages according to the specified pattern            | Sample of plugin, not available in production environment |
+```go.mod
+module mycompany.com/myplugin
 
-### source metadata file format
+require github.com/lf-edge/ekuiper/contract/v2 v2.0.0
 
-Most attributes of a source are specified by the user through the corresponding configuration file,
-and the user cannot configure it during the creation of the stream.
-In the metadata file provided by the plugin developer, only the following parts need to be specified.
+go 1.23.0
+```
 
-#### libs
+### Plugin development
 
-This part of the content defines which library dependencies are used by the plugin (the format is `github.com/x/y@version`). During the compilation of the plugin, this information is read and the relevant library dependencies are added to the `go.mod` of the project. The content of this configuration item is a string array.
+The development of plugins is to implement a specific interface according to the plugin type and export the
+implementation with a specific name. There are two types of exported symbol supported:
 
-#### about
+1. Export a constructor function: Kuiper will use the constructor function to create a new instance of the plugin
+   implementation for each load. So each rule will have one instance of the plugin, and each instance will be isolated
+   from others. This is the recommended way.
 
-- trial: indicates whether the plugin is under beta test stage
-
-- author
-
-  This part contains the author information of the plugin. The plugin developer can provide this information as appropriate. The information of this part will be displayed in the plugin information list of the management console.
-
-  - name
-  - email
-  - company
-  - website
-
-- helpUrl
-
-  The help file address of the plug-in. The console will link to the corresponding help file according to the language support.
-
-  - en_US: English document help address
-  - zh_CN: Chinese document help address
-
-- description
-
-  A simple description of the plugin. The console supports multiple languages.
-
-  - en_US: English description
-  - zh_CN: Chinese description
-
-#### properties
-
-The list of attributes supported by the plugin and the configuration related to each attribute.
-
-- name: attribute name; **This field must be provided;**
-- default: default value, which is used to set the default value of the attribute. The type can be numbers, characters, boolean, and so on. This field is optional (can be nested);
-- optional: set whether the attribute must be provided; the field is optional, if not provided, it is `true`, indicating
-  that the user can provide the value of the field;
-- control: control type, which controls the type of control displayed in the interface; **This field must be provided;**
-  - text: text input box
-  - text-area: text editing area
-  - list: list box
-  - radio: radio box
-- Helpurl: if you have more detailed help on this property, you can specify it here; this field is optional;
-  - en_US: English document help address
-  - zh_CN: Chinese document help address
-- Hint: prompt information of the control; this field is optional;
-  - en_US
-  - zh_CN
-- label: The label control targeted by the control; **This field must be provided;**
-  - en_US
-  - zh_CN
-- type: field type; **This field must be provided;**
-
-  - string
-  - float
-  - int
-  - list_object: list, element is structure
-  - list_string: list, elements is string
-- values: If the control type is `list-box` or `radio`, **this field must be provided;**
-- Array: The data type can be number, character, boolean, etc.
-
-#### Sample file
-
-The following is a sample of metadata file.
-
-```json
-{
-    "libs": [""],
-    "about": {
-        "trial": false,
-        "author": {
-            "name": "",
-            "email": "",
-            "company": "",
-            "website": ""
-        },
-        "helpUrl": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "description": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    },
-    "properties": {
-        "default": [{
-            "name": "",
-            "default": "",
-            "optional": false,
-            "control": "",
-            "type": "",
-            "hint": {
-                "en_US": "",
-                "zh_CN": ""
-            },
-            "label": {
-                "en_US": "",
-                "zh_CN": ""
-            }
-        }, {
-            "name": "",
-            "default": [{
-                "name": "",
-                "default": "",
-                "optional": false,
-                "control": "",
-                "type": "",
-                "hint": {
-                    "en_US": "",
-                    "zh_CN": ""
-                },
-                "label": {
-                    "en_US": "",
-                    "zh_CN": ""
-                }
-            }],
-            "optional": false,
-            "control": "",
-            "type": "",
-            "hint": {
-                "en_US": "",
-                "zh_CN": ""
-            },
-            "label": {
-                "en_US": "",
-                "zh_CN": ""
-            }
-        }]
+    ```go
+    func Random() api.Source {
+        return random.GetSource()
     }
+    ```
+
+2. Export an instance: eKuiper will use the instance as singleton for all plugin loads. So all rules will share the same
+   instance. For such implementation, the developer will need to handle the shared states to avoid any potential
+   multi-thread problems. This mode is recommended where there are no shared states and the performance is critical.
+   Especially, a function extension is usually functional without internal state which is suitable for this mode.
+
+    ```go
+      var Random = random.GetSource()
+    ```
+
+Implementing extensions for data sources (source), data sinks (sink), and functions (function) requires different
+interfaces. For more details, please refer to:
+
+- [Source Interface](./source.md)
+- [Sink Interface](./sink.md)
+- [Function Interface](./function.md)
+
+## State storage
+
+eKuiper extension exposes a key value state storage interface through the context parameter, which can be used for all
+types of extensions, including Source/Sink/Function extensions.
+
+States are key-value pairs, where the key is a string, and the value is arbitrary data. Keys are scoped to the current
+extended instance.
+
+Users can access the state storage through the context object. State-related methods include putState, getState,
+incrCounter, getCounter and deleteState.
+
+Below is an example of a function extension to access states. This function will count the number of words passed in and
+save the cumulative number in the state.
+
+```go
+func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
+logger := ctx.GetLogger()
+err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
+if err != nil {
+return err, false
+}
+if c, err := ctx.GetCounter("allwordcount"); err != nil   {
+return err, false
+} else {
+return c, true
+}
 }
 ```
 
-## Sinks/Actions
+## Runtime dependencies
 
-| Name                                                | Description                                                      | Remarks                                                   |
-|-----------------------------------------------------|------------------------------------------------------------------|-----------------------------------------------------------|
-| [zmq](../../../guide/sinks/plugin/zmq.md)           | The plugin sends the analysis results to the topic of Zero Mq    | Sample of plugin, not available in production environment |
-| [Influxdb](../../../guide/sinks/plugin/influx.md)   | The plugin sends the analysis results to InfluxDB                | Provided by [@smart33690](https://github.com/smart33690)  |
-| [TDengine](../../../guide/sinks/plugin/tdengine.md) | The plugin sends the analysis results to TDengine                |                                                           |
+Some plugins may need to access dependencies in the file system. Those files are put under
+<span v-pre>{{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}}</span> directory. When packaging the plugin, put those
+files
+in [etc directory](../../../api/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the
+recommended place.
 
-### sink metadata file format
+In the plugin source code, developers can access the dependencies of file system by getting the eKuiper root path from
+the context:
 
-The metadata file format is JSON and is mainly divided into the following parts:
-
-#### libs
-
-The content of this part defines which library dependencies are used by the plugin (the format is `github.com/x/y@version`). During the compilation of the plugin, this information is read and the relevant library dependencies are added to the `go.mod` of the project. The content of this configuration item is a string array.
-
-#### about
-
-- trial: indicates whether the plugin is under beta test stage
-
-- author
-
-  This part contains the author information of the plugin. The plugin developer can provide this information as appropriate. The information of this part will be displayed in the plugin information list of the management console.
-
-  - name
-    - email
-    - company
-    - website
-
-- helpUrl
-
-  The help file address of the plugin. The console will link to the corresponding help file according to the language support.
-
-  - en_US: English document help address
-  - zh_CN: Chinese document help address
-
-- description
-
-  A simple description of the plugin. The console supports multiple languages.
-
-  - en_US: English description
-  - zh_CN: Chinese description
-
-#### properties
-
-The list of attributes supported by the plugin and the configuration related to each attribute.
-
-- name: attribute name; **This field must be provided;**
-- default: default value, which is used to set the default value of the attribute. The type can be numbers, characters, boolean, and so on. This field is optional (can be nested);
-- optional: set whether the attribute must be provided; the field is optional, if not provided, it is `true`, indicating
-  that the user can provide the value of the field;
-- control: control type, which controls the type of control displayed in the interface; **This field must be provided;**
-  - text: text input box
-  - text-area: text editing area
-  - list: list box
-  - radio: radio box
-- Helpurl: if you have more detailed help on this property, you can specify it here; this field is optional;
-  - en_US: English document help address
-  - zh_CN: Chinese document help address
-- Hint: prompt information of the control; this field is optional;
-  - en_US
-  - zh_CN
-- label: The label control targeted by the control; **This field must be provided;**
-  - en_US
-  - zh_CN
-- type: field type; **This field must be provided;**
-
-  - string
-  - float
-  - int
-  - list_object: list, element is structure
-  - list_string: list, elements is string
-  - list_float: list, elements is float
-  - list_int: list, elements is int
-- values: If the control type is `list-box` or `radio`, **this field must be provided;**
-- Array: The data type can be number, character, boolean, etc.
-
-#### Sample file
-
-The following is a sample of metadata file.
-
-```json
-{
-    "about": {
-        "trial": false,
-        "author": {
-            "name": "",
-            "email": "",
-            "company": "",
-            "website": ""
-        },
-        "helpUrl": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "description": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    },
-    "libs": [""],
-    "properties": [{
-        "name": "",
-        "default": "",
-        "optional": false,
-        "control": "",
-        "type": "",
-        "hint": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "label": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    }]
-}
+```go
+ctx.GetRootPath()
 ```
 
-## Functions
+## Plugin Compilation
 
-| Name                                                               | Description                                                                                                                                | Remarks                                                 |
-|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| [echo](../../../sqls/functions/custom_functions.md)                | Output parameter value as it is                                                                                                            | Plugin sample, not available for production environment |
-| [countPlusOne](../../../sqls/functions/custom_functions.md)        | Output the value of the parameter length plus one                                                                                          | Plugin sample, not available for production environment |
-| [accumulateWordCount](../../../sqls/functions/custom_functions.md) | The function counts how many words there are                                                                                               | Plugin sample, not available for production environment |
-| [resize](../../../sqls/functions/custom_functions.md)              | Create a scaled image with new dimensions (width, height). If width or height is set to 0, it is set to the reserved value of aspect ratio | Plugin sample, not available for production environment |
-| [thumbnail](../../../sqls/functions/custom_functions.md)           | Reduce the image that retains the aspect ratio to the maximum size (maxWidth, maxHeight).                                                  | Plugin sample, not available for production environment |
+After completing the plugin code, users need to use the Go language compilation tool to compile the plugin so file for
+the corresponding environment. **Note** that the plugin must be compiled using the same compilation environment as the
+main project eKuiper.
 
-eKuiper has many built-in functions that can perform calculations on data. (Refer to https://github.com/lf-edge/ekuiper/blob/master/docs/zh_CN/sqls/built-in_functions.md for specific documentation)
+- User-compiled eKuiper main program: The plugin can be compiled in the main program's compilation environment. This
+  scenario is common during plugin development.
+- Precompiled eKuiper binary or default Docker image: These versions of eKuiper are compiled using the alpine docker
+  image. The specific version can be checked by viewing the corresponding version's Dockerfile source code (
+  deploy/docker/Dockerfile). The plugin should be compiled using the same version of the docker image.
+- eKuiper -slim or -slim-python Docker image: These versions of eKuiper are compiled using the debian docker image. The
+  specific version can be checked by viewing the corresponding version's Dockerfile source code (
+  deploy/docker/Dockerfile-slim). The plugin should be compiled using the same version of the docker image.
 
-### functions metadata file format
+After preparing the environment, the following compilation command can be used:
 
-The metadata file format is JSON and is mainly divided into the following parts:
-
-#### about
-
-- trial: indicates whether the plugin is under beta test stage
-
-- author
-
-  This part contains the author information of the plugin. The plugin developer can provide this information as appropriate. The information of this part will be displayed in the plugin information list of the management console.
-
-  - name
-    - email
-    - company
-    - website
-
-- helpUrl
-
-  The help file address of the plugin. The console will link to the corresponding help file according to the language support.
-
-  - en_US: English document help address
-  - zh_CN: Chinese document help address
-
-- description
-
-  A simple description of the plugin. The console supports multiple languages.
-
-  - en_US: English description
-  - zh_CN: Chinese description
-
-#### functions
-
-- name: attribute name; **This field must be provided;**
-- example
-- hint: hint information of the function; this field is optional;
-  - en_US
-  - zh_CN
-
-#### Sample file
-
-The following is a sample of metadata file.
-
-```json
-{
-    "about": {
-        "trial":false,
-        "author": {
-            "name": "",
-            "email": "",
-            "company": "",
-            "website": ""
-        },
-        "helpUrl": {
-            "en_US": "",
-            "zh_CN": ""
-        },
-        "description": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    },
-    "functions": [{
-        "name": "",
-        "example": "",
-        "hint": {
-            "en_US": "",
-            "zh_CN": ""
-        }
-    }]
-}
+```bash
+go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
 ```
+
+### Naming
+
+We recommend plugin name to be camel case. Notice that there are some restrictions for the names:
+
+1. The name of the export symbol of the plugin should be camel case with an **upper case first letter**. It must be the
+   same as the plugin name except the first letter. For example, plugin name _file_ must export an export symbol name
+   _File_ .
+2. The name of _.so_ file must be the same as the export symbol name or the plugin name. For example, _MySource.so_ or
+   _mySink.so_.
+
+### Version
+
+The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The
+version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string
+to the name after _@_. The version can be any string. If the version string starts with "v", the "v" will be ignored in
+the return result. Below are some typical examples.
+
+- _MySource@v1.0.0.so_ : version is 1.0.0
+- _MySource@20200331.so_:  version is 20200331
+
+If multiple versions of plugins with the same name in place, only the latest version(ordered by the version string) will
+be taken effect.
+
+## Plugin Packaging
+
+After the plugin is compiled, the resulting so file, the default configuration file xx.yaml (required for source
+plugins), the plugin description file xx.json, and any other files that the plugin depends on must all be packaged into
+a zip file. There are no special requirements for the zip file name; users can name it themselves. **Note**: All files
+must be at the root directory of the zip, and there should be no additional folders.
+
+## Further Reading
+
+The process of developing and packaging plugins can be cumbersome. You can follow
+the [Plugin Tutorial](./plugins_tutorial.md) step by step to complete the plugin writing and deployment.
