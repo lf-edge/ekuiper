@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -58,7 +59,7 @@ func (suite *RestTestSuite) TestGetConnectionStatus() {
 	var m []map[string]interface{}
 	require.NoError(suite.T(), json.Unmarshal(returnVal, &m))
 	require.Len(suite.T(), m, 1)
-
+	time.Sleep(100 * time.Millisecond)
 	req, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/connection/conn1", bytes.NewBufferString("any"))
 	w = httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)

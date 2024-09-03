@@ -191,27 +191,6 @@ func TestNonStoredConnection(t *testing.T) {
 	require.False(t, IsConnectionExists("id1"))
 }
 
-func TestGetConnectionStatus(t *testing.T) {
-	require.NoError(t, InitConnectionManager4Test())
-	ctx := mockContext.NewMockContext("id", "2")
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		CreateNamedConnection(ctx, "ccc1", "blockconn", nil)
-		wg.Done()
-	}()
-	cw, err := FetchConnection(ctx, "ccc1", "blockconn", nil)
-	require.NoError(t, err)
-	status, err := cw.GetStatus(ctx)
-	require.NoError(t, err)
-	require.Equal(t, "initializing", status)
-	blockCh <- struct{}{}
-	wg.Wait()
-	status, err = cw.GetStatus(ctx)
-	require.NoError(t, err)
-	require.Equal(t, "running", status)
-}
-
 func TestConnectionLock(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("id", "2")
@@ -222,9 +201,17 @@ func TestConnectionLock(t *testing.T) {
 		wg.Done()
 	}()
 	require.False(t, CheckConn("ccc1"))
+	cw, err := FetchConnection(ctx, "ccc1", "blockconn", nil)
+	require.NoError(t, err)
+	status, err := cw.GetStatus(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "initializing", status)
 	blockCh <- struct{}{}
 	wg.Wait()
 	require.True(t, CheckConn("ccc1"))
+	status, err = cw.GetStatus(ctx)
+	require.NoError(t, err)
+	require.Equal(t, "running", status)
 }
 
 var blockCh chan any
