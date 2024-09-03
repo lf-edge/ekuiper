@@ -3,7 +3,6 @@
 eKuiper 支持通过 API 查看规则最近的追踪数据。
 
 ## 根据规则 ID 查看最近的 Trace ID
-
 ```shell 
 GET http://localhost:9081/trace/rule/{ruleID}"
 
@@ -11,7 +10,6 @@ GET http://localhost:9081/trace/rule/{ruleID}"
 ```
 
 ## 根据 Trace ID 查看详细追踪数据
-
 ```shell
 GET http://localhost:9081/trace/{id}
 
