@@ -208,6 +208,7 @@ func TestConnectionLock(t *testing.T) {
 	require.Equal(t, "initializing", status)
 	blockCh <- struct{}{}
 	wg.Wait()
+	time.Sleep(10 * time.Millisecond)
 	require.True(t, CheckConn("ccc1"))
 	status, err = cw.GetStatus(ctx)
 	require.NoError(t, err)
