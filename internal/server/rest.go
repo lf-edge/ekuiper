@@ -16,6 +16,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -46,6 +47,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/memory"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 const (
@@ -133,6 +135,15 @@ func jsonByteResponse(buffer bytes.Buffer, w http.ResponseWriter, logger api.Log
 	}
 }
 
+func traceMiddleware(next http.Handler) http.Handler {
+	t := tracer.GetTracer()
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		_, span := t.Start(context.Background(), req.URL.Path)
+		next.ServeHTTP(w, req)
+		span.End()
+	})
+}
+
 func createRestServer(ip string, port int, needToken bool) *http.Server {
 	dataDir, err := conf.GetDataLoc()
 	if err != nil {
@@ -149,6 +160,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	}
 
 	r := mux.NewRouter()
+	r.Use(traceMiddleware)
 	r.HandleFunc("/", rootHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/stop", stopHandler).Methods(http.MethodGet, http.MethodPost)
 	r.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
