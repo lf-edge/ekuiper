@@ -106,16 +106,15 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func getConnectionRespByMeta(meta *connection.ConnectionMeta) *ConnectionResponse {
-	err := connection.PingConnection(context.Background(), meta.ID)
 	r := &ConnectionResponse{
 		Typ:      meta.Typ,
 		ID:       meta.ID,
 		Props:    meta.Props,
 		RefCount: meta.GetRefCount(),
 	}
-	if err == nil {
-		r.Status = "running"
-	} else {
+	status, err := meta.GetConnectionStatus(context.Background())
+	r.Status = status
+	if err != nil {
 		r.Err = err.Error()
 	}
 	return r

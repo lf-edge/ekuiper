@@ -386,6 +386,10 @@ func (meta *ConnectionMeta) GetRefCount() int {
 	return meta.refCount
 }
 
+func (meta *ConnectionMeta) GetConnectionStatus(ctx api.StreamContext) (string, error) {
+	return meta.cw.GetStatus(ctx)
+}
+
 func NewExponentialBackOff() *backoff.ExponentialBackOff {
 	return backoff.NewExponentialBackOff(
 		backoff.WithInitialInterval(DefaultInitialInterval),
@@ -433,6 +437,22 @@ type ConnWrapper struct {
 	conn        modules.Connection
 	err         error
 	cond        *sync.Cond
+}
+
+func (cw *ConnWrapper) GetStatus(ctx api.StreamContext) (string, error) {
+	cw.cond.L.Lock()
+	defer cw.cond.L.Unlock()
+	if !cw.initialized {
+		return "initializing", nil
+	}
+	if cw.err != nil {
+		return "failed", cw.err
+	}
+	err := cw.conn.Ping(ctx)
+	if err != nil {
+		return "failed", err
+	}
+	return "running", nil
 }
 
 func (cw *ConnWrapper) SetConn(conn modules.Connection, err error) {
