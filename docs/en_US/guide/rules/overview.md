@@ -172,6 +172,7 @@ See the table below for a detailed explanation of each rule behavior:
 | cron               | string: ""           | Specify the periodic trigger strategy of the rule, which is described by [cron expression](https://en.wikipedia.org/wiki/Cron) |
 | duration           | string: ""           | Specifies the running duration of the rule, only valid when cron is specified. The duration should not exceed the time interval between two cron cycles, otherwise it will cause unexpected behavior. |
 | cronDatetimeRange  | lists of struct      | Specify the effective time period of the Scheduled Rule, which is only valid when `cron` is specified. When this `cronDatetimeRange` is specified, the Scheduled Rule will only take effect within the time range specified. Please see [Scheduled Rule](#Scheduled Rule) for detailed configuration items |
+| enableRuleTracer   | bool: false    |  Specify whether the rule enables rule-level data tracing                                                                                             |
 
 For detail about `qos` and `checkpointInterval`, please check [state and fault tolerance](./state_and_fault_tolerance.md).
 
