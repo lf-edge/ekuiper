@@ -15,6 +15,8 @@
 package tracer
 
 import (
+	"sync"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -24,50 +26,80 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
-var tracerSet = false
+var globalTracerManager *GlobalTracerManager
 
-var GlobalSpanExporter *SpanExporter
+func init() {
+	globalTracerManager = &GlobalTracerManager{}
+}
 
-func InitTracer() error {
+type GlobalTracerManager struct {
+	sync.RWMutex
+	Init                 bool
+	ServiceName          string
+	EnableRemoteEndpoint bool
+	RemoteEndpoint       string
+	SpanExporter         *SpanExporter
+}
+
+func (g *GlobalTracerManager) InitIfNot() {
+	g.Lock()
+	defer g.Unlock()
+	if g.Init {
+		return
+	}
 	var opts []sdktrace.TracerProviderOption
 	opts = append(opts, sdktrace.WithResource(resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String("kuiperd-service"),
 	)))
-	otelConfig := conf.Config.OpenTelemetry
-	if otelConfig.EnableRemoteCollector {
-		exporter, err := NewSpanExporter(otelConfig.EnableRemoteCollector)
-		if err != nil {
-			return err
-		}
-		GlobalSpanExporter = exporter
-		opts = append(opts, sdktrace.WithBatcher(exporter))
-	}
 	tp := sdktrace.NewTracerProvider(opts...)
 	otel.SetTracerProvider(tp)
-	tracerSet = true
+	g.Init = true
+}
+
+func (g *GlobalTracerManager) SetTracer(enableRemote bool, serviceName, endpoint string) error {
+	var opts []sdktrace.TracerProviderOption
+	opts = append(opts, sdktrace.WithResource(resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(serviceName),
+	)))
+	g.Lock()
+	defer g.Unlock()
+	g.ServiceName = serviceName
+	g.EnableRemoteEndpoint = enableRemote
+	g.RemoteEndpoint = endpoint
+	exporter, err := NewSpanExporter(enableRemote)
+	if err != nil {
+		return err
+	}
+	opts = append(opts, sdktrace.WithBatcher(exporter))
+	tp := sdktrace.NewTracerProvider(opts...)
+	otel.SetTracerProvider(tp)
+	g.Init = true
 	return nil
 }
 
-// only used in unit test
-func initTracer() {
-	var opts []sdktrace.TracerProviderOption
-	opts = append(opts, sdktrace.WithResource(resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceNameKey.String("kuiperd-service"),
-	)))
-	tp := sdktrace.NewTracerProvider(opts...)
-	otel.SetTracerProvider(tp)
-	tracerSet = true
+func (g *GlobalTracerManager) GetTraceById(traceID string) (root *LocalSpan) {
+	g.RLock()
+	defer g.RUnlock()
+	return g.SpanExporter.GetTraceById(traceID)
 }
 
 func GetTracer() trace.Tracer {
-	if !tracerSet {
-		initTracer()
-	}
+	globalTracerManager.InitIfNot()
 	return otel.GetTracerProvider().Tracer("kuiperd-service")
 }
 
 func GetSpanByTraceID(traceID string) (root *LocalSpan) {
-	return GlobalSpanExporter.GetTraceById(traceID)
+	globalTracerManager.InitIfNot()
+	return globalTracerManager.GetTraceById(traceID)
+}
+
+func SetTracer(enableRemote bool, serviceName, endpoint string) error {
+	return globalTracerManager.SetTracer(enableRemote, serviceName, endpoint)
+}
+
+func InitTracer() error {
+	otelConfig := conf.Config.OpenTelemetry
+	return globalTracerManager.SetTracer(otelConfig.EnableRemoteCollector, otelConfig.ServiceName, otelConfig.RemoteEndpoint)
 }
