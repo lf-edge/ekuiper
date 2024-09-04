@@ -52,14 +52,6 @@ func TestValidate(t *testing.T) {
 			},
 			err: errors.New("unsupported protocol version 5.0"),
 		},
-		{
-			name: "with selector",
-			props: map[string]any{
-				"connectionSelector": "123",
-				"topic":              "123",
-			},
-			err: nil,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

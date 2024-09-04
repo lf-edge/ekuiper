@@ -162,10 +162,6 @@ func handleToken(token pahoMqtt.Token) error {
 }
 
 func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
-	_, ok := props["connectionSelector"].(string)
-	if ok {
-		return nil, nil
-	}
 	c := &ConnectionConfig{PVersion: "3.1.1"}
 	err := cast.MapToStruct(props, c)
 	if err != nil {

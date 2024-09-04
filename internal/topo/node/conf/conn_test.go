@@ -17,6 +17,7 @@ package conf
 import (
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -37,4 +38,9 @@ func TestOverwriteProps(t *testing.T) {
 	for k, v := range oldProps {
 		require.Equal(t, v, newProps[k])
 	}
+
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/conf/overwriteErr", `return(true)`)
+	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/conf/overwriteErr")
+	_, err = OverwriteByConnectionConf("mqtt", oldProps)
+	require.Error(t, err)
 }

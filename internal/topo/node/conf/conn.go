@@ -14,7 +14,13 @@
 
 package conf
 
-import "github.com/lf-edge/ekuiper/v2/internal/conf"
+import (
+	"errors"
+
+	"github.com/pingcap/failpoint"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+)
 
 func OverwriteByConnectionConf(connType string, props map[string]interface{}) (map[string]interface{}, error) {
 	connSelector, ok := props[ConnectionSelector].(string)
@@ -22,6 +28,9 @@ func OverwriteByConnectionConf(connType string, props map[string]interface{}) (m
 		return props, nil
 	}
 	yamlOps, err := conf.NewConfigOperatorFromConnectionStorage(connType)
+	failpoint.Inject("overwriteErr", func() {
+		err = errors.New("overwriteErr")
+	})
 	if err != nil {
 		return nil, err
 	}
