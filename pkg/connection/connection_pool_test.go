@@ -213,6 +213,13 @@ func TestConnectionLock(t *testing.T) {
 	status, err = cw.GetStatus(ctx)
 	require.NoError(t, err)
 	require.Equal(t, "running", status)
+
+	cw, err = FetchConnection(ctx, "mockErr1", "mockErr", nil)
+	require.NoError(t, err)
+	time.Sleep(10 * time.Millisecond)
+	status, err = cw.GetStatus(ctx)
+	require.Error(t, err)
+	require.Equal(t, "failed", status)
 }
 
 var blockCh chan any
