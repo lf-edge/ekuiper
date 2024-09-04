@@ -15,10 +15,10 @@
 package client
 
 import (
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
@@ -35,14 +35,14 @@ func TestValidate(t *testing.T) {
 	tests := []struct {
 		name  string
 		props map[string]any
-		err   string
+		err   error
 	}{
 		{
 			name: "No server",
 			props: map[string]any{
 				"server": "",
 			},
-			err: "missing server property",
+			err: errors.New("missing server property"),
 		},
 		{
 			name: "invalid protocol",
@@ -50,14 +50,13 @@ func TestValidate(t *testing.T) {
 				"server":          url,
 				"protocolVersion": "5.0",
 			},
-			err: "unsupported protocol version 5.0",
+			err: errors.New("unsupported protocol version 5.0"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ValidateConfig(tt.props)
-			assert.Error(t, err)
-			assert.Equal(t, tt.err, err.Error())
+			require.Equal(t, tt.err, err)
 		})
 	}
 }
