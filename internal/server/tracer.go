@@ -15,6 +15,8 @@
 package server
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -32,6 +34,31 @@ func getTraceByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	jsonResponse(root, w, logger)
+}
+
+func tracerHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	req := &SetTracerRequest{}
+	if err := json.Unmarshal(body, req); err != nil {
+		handleError(w, err, "Invalid body", logger)
+		return
+	}
+	if err := tracer.SetTracer(&tracer.TracerConfig{EnableRemoteCollector: req.Action, ServiceName: req.ServiceName, RemoteEndpoint: req.CollectorUrl}); err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("success"))
+}
+
+type SetTracerRequest struct {
+	ServiceName  string `json:"serviceName"`
+	Action       bool   `json:"action"`
+	CollectorUrl string `json:"collector_url"`
 }
 
 func getTraceIDByRuleID(w http.ResponseWriter, r *http.Request) {
