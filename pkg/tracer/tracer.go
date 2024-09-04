@@ -24,6 +24,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+)
+
+const (
+	TraceCfgKey = "$$tracer_cfg"
 )
 
 var globalTracerManager *GlobalTracerManager
@@ -96,10 +101,38 @@ func GetSpanByTraceID(traceID string) (root *LocalSpan) {
 }
 
 func SetTracer(enableRemote bool, serviceName, endpoint string) error {
+	if err := conf.SaveCfgKeyToKV(TraceCfgKey, map[string]interface{}{
+		"enableRemoteCollector": enableRemote,
+		"serviceName":           serviceName,
+		"remoteEndpoint":        endpoint,
+	}); err != nil {
+		return err
+	}
 	return globalTracerManager.SetTracer(enableRemote, serviceName, endpoint)
 }
 
 func InitTracer() error {
-	otelConfig := conf.Config.OpenTelemetry
-	return globalTracerManager.SetTracer(otelConfig.EnableRemoteCollector, otelConfig.ServiceName, otelConfig.RemoteEndpoint)
+	tracerConfig := TracerConfigFromConf()
+	props, err := conf.LoadCfgKeyKV(TraceCfgKey)
+	if err != nil {
+		return err
+	}
+	if err := cast.MapToStruct(props, tracerConfig); err != nil {
+		return err
+	}
+	return globalTracerManager.SetTracer(tracerConfig.EnableRemoteCollector, tracerConfig.ServiceName, tracerConfig.RemoteEndpoint)
+}
+
+type TracerConfig struct {
+	EnableRemoteCollector bool   `json:"enableRemoteCollector"`
+	ServiceName           string `json:"serviceName"`
+	RemoteEndpoint        string `json:"remoteEndpoint"`
+}
+
+func TracerConfigFromConf() *TracerConfig {
+	return &TracerConfig{
+		EnableRemoteCollector: conf.Config.OpenTelemetry.EnableRemoteCollector,
+		ServiceName:           conf.Config.OpenTelemetry.ServiceName,
+		RemoteEndpoint:        conf.Config.OpenTelemetry.RemoteEndpoint,
+	}
 }

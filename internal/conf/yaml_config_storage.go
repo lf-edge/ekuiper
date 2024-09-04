@@ -111,9 +111,21 @@ func getKVStorage() (s cfgKVStorage, err error) {
 	return kvStore, nil
 }
 
-// SaveCfgKeyToKVInTest only used in unit test
-func SaveCfgKeyToKVInTest(key string, cfg map[string]interface{}) error {
+// SaveCfgKeyToKV ...
+func SaveCfgKeyToKV(key string, cfg map[string]interface{}) error {
 	return saveCfgKeyToKV(key, cfg)
+}
+
+func LoadCfgKeyKV(key string) (map[string]interface{}, error) {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return nil, err
+	}
+	mmap, err := kvStorage.GetByPrefix(key)
+	if err != nil {
+		return nil, err
+	}
+	return mmap[key], nil
 }
 
 func saveCfgKeyToKV(key string, cfg map[string]interface{}) error {
