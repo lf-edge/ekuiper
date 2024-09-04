@@ -41,3 +41,22 @@ func TestLocalSpan(t *testing.T) {
 	// span1 should be root span
 	require.Equal(t, span1, s.GetTraceById("t1"))
 }
+
+func TestLocalTraceByRule(t *testing.T) {
+	conf.InitConf()
+	s := newLocalSpanMemoryStorage(2)
+	span0 := &LocalSpan{
+		TraceID: "t0",
+		SpanID:  "s0",
+		RuleID:  "r1",
+	}
+	span1 := &LocalSpan{
+		TraceID: "t1",
+		SpanID:  "s1",
+		RuleID:  "r1",
+	}
+	require.NoError(t, s.saveSpan(span0))
+	require.NoError(t, s.saveSpan(span1))
+	require.Len(t, s.GetTraceByRuleID("r1", 0), 2)
+	require.Len(t, s.GetTraceByRuleID("r1", 1), 1)
+}

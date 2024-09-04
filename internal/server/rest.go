@@ -194,6 +194,7 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/async/task/{id}", queryAsyncTaskStatus).Methods(http.MethodGet)
 	r.HandleFunc("/async/task/{id}/cancel", asyncTaskCancelHandler).Methods(http.MethodPost)
 	r.HandleFunc("/trace/{id}", getTraceByID).Methods(http.MethodGet)
+	r.HandleFunc("/trace/rule/{ruleID}", getTraceIDByRuleID).Methods(http.MethodGet)
 	// Register extended routes
 	for k, v := range components {
 		logger.Infof("register rest endpoint for component %s", k)
