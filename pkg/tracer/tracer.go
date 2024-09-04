@@ -148,3 +148,7 @@ func loadTracerConfig() (*TracerConfig, error) {
 	}
 	return tracerConfig, nil
 }
+
+func GetTraceIDListByRuleID(ruleID string, limit int) []string {
+	return GlobalSpanExporter.GetTraceByRuleID(ruleID, limit)
+}

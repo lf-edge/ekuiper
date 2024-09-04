@@ -13,7 +13,10 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
-const DataKey = "data"
+const (
+	DataKey = "data"
+	RuleKey = "rule"
+)
 
 func TraceRowTuple(ctx api.StreamContext, input *xsql.RawTuple, opName string) (bool, api.StreamContext, trace.Span) {
 	if !ctx.IsTraceEnabled() {
@@ -73,6 +76,7 @@ func StartTrace(ctx api.StreamContext, opName string) (bool, api.StreamContext, 
 		return false, nil, nil
 	}
 	spanCtx, span := tracer.GetTracer().Start(context.Background(), opName)
+	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
 	ingestCtx := topoContext.WithContext(spanCtx)
 	ingestCtx.IsTraceEnabled()
 	return true, ingestCtx, span
