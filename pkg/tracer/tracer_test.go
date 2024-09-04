@@ -14,8 +14,23 @@
 
 package tracer
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+)
 
 func TestSaveLoadTracerConfig(t *testing.T) {
-
+	conf.IsTesting = true
+	conf.InitConf()
+	traceConfig := TracerConfigFromConf()
+	traceConfig.EnableRemoteCollector = true
+	traceConfig.ServiceName = "123"
+	traceConfig.RemoteEndpoint = "123"
+	require.NoError(t, saveTracerConfig(traceConfig))
+	newConfig, err := loadTracerConfig()
+	require.NoError(t, err)
+	require.Equal(t, newConfig, traceConfig)
 }

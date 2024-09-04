@@ -90,6 +90,12 @@ func (g *GlobalTracerManager) GetTraceById(traceID string) (root *LocalSpan) {
 	return g.SpanExporter.GetTraceById(traceID)
 }
 
+func (g *GlobalTracerManager) GetTraceByRuleID(ruleID string, limit int) []string {
+	g.RLock()
+	defer g.RUnlock()
+	return g.SpanExporter.GetTraceByRuleID(ruleID, limit)
+}
+
 func GetTracer() trace.Tracer {
 	globalTracerManager.InitIfNot()
 	return otel.GetTracerProvider().Tracer("kuiperd-service")
@@ -150,5 +156,6 @@ func loadTracerConfig() (*TracerConfig, error) {
 }
 
 func GetTraceIDListByRuleID(ruleID string, limit int) []string {
-	return GlobalSpanExporter.GetTraceByRuleID(ruleID, limit)
+	globalTracerManager.InitIfNot()
+	return globalTracerManager.GetTraceByRuleID(ruleID, limit)
 }
