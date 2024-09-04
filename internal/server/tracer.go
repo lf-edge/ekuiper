@@ -46,7 +46,7 @@ func tracerHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body", logger)
 		return
 	}
-	if err := tracer.SetTracer(req.Action, req.ServiceName, req.CollectorUrl); err != nil {
+	if err := tracer.SetTracer(&tracer.TracerConfig{EnableRemoteCollector: req.Action, ServiceName: req.ServiceName, RemoteEndpoint: req.CollectorUrl}); err != nil {
 		handleError(w, err, "", logger)
 		return
 	}

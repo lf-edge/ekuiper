@@ -100,24 +100,16 @@ func GetSpanByTraceID(traceID string) (root *LocalSpan) {
 	return globalTracerManager.GetTraceById(traceID)
 }
 
-func SetTracer(enableRemote bool, serviceName, endpoint string) error {
-	if err := conf.SaveCfgKeyToKV(TraceCfgKey, map[string]interface{}{
-		"enableRemoteCollector": enableRemote,
-		"serviceName":           serviceName,
-		"remoteEndpoint":        endpoint,
-	}); err != nil {
+func SetTracer(config *TracerConfig) error {
+	if err := saveTracerConfig(config); err != nil {
 		return err
 	}
-	return globalTracerManager.SetTracer(enableRemote, serviceName, endpoint)
+	return globalTracerManager.SetTracer(config.EnableRemoteCollector, config.ServiceName, config.RemoteEndpoint)
 }
 
 func InitTracer() error {
-	tracerConfig := TracerConfigFromConf()
-	props, err := conf.LoadCfgKeyKV(TraceCfgKey)
+	tracerConfig, err := loadTracerConfig()
 	if err != nil {
-		return err
-	}
-	if err := cast.MapToStruct(props, tracerConfig); err != nil {
 		return err
 	}
 	return globalTracerManager.SetTracer(tracerConfig.EnableRemoteCollector, tracerConfig.ServiceName, tracerConfig.RemoteEndpoint)
@@ -135,4 +127,24 @@ func TracerConfigFromConf() *TracerConfig {
 		ServiceName:           conf.Config.OpenTelemetry.ServiceName,
 		RemoteEndpoint:        conf.Config.OpenTelemetry.RemoteEndpoint,
 	}
+}
+
+func saveTracerConfig(config *TracerConfig) error {
+	return conf.SaveCfgKeyToKV(TraceCfgKey, map[string]interface{}{
+		"enableRemoteCollector": config.EnableRemoteCollector,
+		"serviceName":           config.ServiceName,
+		"remoteEndpoint":        config.RemoteEndpoint,
+	})
+}
+
+func loadTracerConfig() (*TracerConfig, error) {
+	tracerConfig := TracerConfigFromConf()
+	props, err := conf.LoadCfgKeyKV(TraceCfgKey)
+	if err != nil {
+		return nil, err
+	}
+	if err := cast.MapToStruct(props, tracerConfig); err != nil {
+		return nil, err
+	}
+	return tracerConfig, nil
 }
