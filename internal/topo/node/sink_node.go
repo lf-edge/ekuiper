@@ -146,7 +146,7 @@ func (s *SinkNode) connectionStatusChange(status string, message string) {
 	if status == api.ConnectionDisconnected {
 		s.statManager.IncTotalExceptions(message)
 	}
-	// TODO add more metrics
+	s.statManager.SetConnectionState(status, message)
 }
 
 func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
