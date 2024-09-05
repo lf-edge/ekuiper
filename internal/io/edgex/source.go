@@ -321,10 +321,10 @@ func convertFloatArray(v string, bitSize int) (any, error) {
 func (es *Source) Close(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Infof("EdgeX Source instance %d Done.", ctx.GetInstanceId())
-	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	connection.DetachConnection(ctx, id, es.config)
 	if es.cli != nil {
 		es.cli.DetachSub(ctx, es.config)
+		_ = es.cli.Disconnect()
+		return connection.DetachConnection(ctx, es.cli.GetId(ctx))
 	}
 	return nil
 }

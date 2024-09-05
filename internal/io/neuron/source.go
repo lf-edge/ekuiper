@@ -104,7 +104,7 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 
 func (s *source) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("closing neuron source")
-	close(ctx, s.cli, s.c.Url, s.props)
+	close(ctx, s.cli)
 	s.cli = nil
 	return nil
 }

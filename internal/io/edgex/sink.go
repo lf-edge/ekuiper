@@ -527,7 +527,10 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	connection.DetachConnection(ctx, ems.id, ems.config)
+	if ems.cli != nil {
+		_ = ems.cli.Disconnect()
+		return connection.DetachConnection(ctx, ems.cli.GetId(ctx))
+	}
 	return nil
 }
 

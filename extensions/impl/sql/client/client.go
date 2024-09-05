@@ -29,10 +29,11 @@ type SQLConnection struct {
 	sync.RWMutex
 	url    string
 	db     *sql.DB
+	id     string
 	closed bool
 }
 
-func (s *SQLConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+func (s *SQLConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	dbUrlRaw, ok := props["dburl"]
 	if !ok {
 		return fmt.Errorf("dburl should be defined")
@@ -44,7 +45,12 @@ func (s *SQLConnection) Provision(ctx api.StreamContext, props map[string]any) e
 	ctx.GetLogger().Infof("create db with url:%v", dburl)
 
 	s.url = dburl
+	s.id = conId
 	return nil
+}
+
+func (s *SQLConnection) GetId(ctx api.StreamContext) string {
+	return s.id
 }
 
 func (s *SQLConnection) Dial(ctx api.StreamContext) error {

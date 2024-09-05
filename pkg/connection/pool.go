@@ -94,22 +94,23 @@ func FetchConnection(ctx api.StreamContext, refId, typ string, props map[string]
 	if refId == "" {
 		return nil, fmt.Errorf("connection ref id should be defined")
 	}
-	selID, _ := extractSelID(props, refId)
+	conId := extractSelID(props, refId)
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	if _, ok := globalConnectionManager.connectionPool[selID]; ok {
-		conf.Log.Infof("FetchConnection return existed conn %s", selID)
+	if _, ok := globalConnectionManager.connectionPool[conId]; ok {
+		conf.Log.Infof("FetchConnection return existed conn %s", conId)
 	} else {
 		meta := &Meta{
-			ID:    selID,
+			ID:    conId,
 			Typ:   typ,
 			Props: props,
+			Named: false,
 		}
 		meta.cw = newConnWrapper(ctx, meta)
 		globalConnectionManager.connectionPool[meta.ID] = meta
-		conf.Log.Infof("FetchConnection return new conn %s", selID)
+		conf.Log.Infof("FetchConnection return new conn %s", conId)
 	}
-	return attachConnection(selID, refId, sc)
+	return attachConnection(conId, refId, sc)
 }
 
 // ReloadNamedConnection is called when server starts. It initializes all stored named connections
@@ -129,6 +130,7 @@ func ReloadNamedConnection() error {
 			ID:    id,
 			Typ:   typ,
 			Props: props,
+			Named: true,
 		}
 		meta.cw = newConnWrapper(topoContext.WithContext(context.Background()), meta)
 		globalConnectionManager.connectionPool[id] = meta
@@ -151,6 +153,7 @@ func CreateNamedConnection(ctx api.StreamContext, id, typ string, props map[stri
 		ID:    id,
 		Typ:   typ,
 		Props: props,
+		Named: true,
 	}
 	meta.cw = newConnWrapper(ctx, meta)
 	if err := storeConnectionMeta(typ, id, props); err != nil {
@@ -268,14 +271,13 @@ func DropNameConnection(ctx api.StreamContext, selId string) error {
 	return nil
 }
 
-func DetachConnection(ctx api.StreamContext, id string, props map[string]interface{}) error {
-	if id == "" {
+func DetachConnection(ctx api.StreamContext, conId string) error {
+	if conId == "" {
 		return fmt.Errorf("connection id should be defined")
 	}
 	globalConnectionManager.Lock()
 	defer globalConnectionManager.Unlock()
-	selID, defined := extractSelID(props, id)
-	return detachConnection(ctx, selID, !defined)
+	return detachConnection(ctx, conId)
 }
 
 func getConnectionRef(id string) int {
@@ -304,35 +306,35 @@ func dropConnectionStore(plugin, id string) error {
 	return err
 }
 
-func attachConnection(id string, refId string, sc api.StatusChangeHandler) (*ConnWrapper, error) {
-	if id == "" {
+func attachConnection(conId string, refId string, sc api.StatusChangeHandler) (*ConnWrapper, error) {
+	if conId == "" {
 		return nil, fmt.Errorf("connection id should be defined")
 	}
-	meta, ok := globalConnectionManager.connectionPool[id]
+	meta, ok := globalConnectionManager.connectionPool[conId]
 	if !ok {
-		return nil, fmt.Errorf("connection %s not existed", id)
+		return nil, fmt.Errorf("connection %s not existed", conId)
 	}
 	meta.ref.Store(refId, sc)
 	meta.refCount.Add(1)
 	return meta.cw, nil
 }
 
-func detachConnection(ctx api.StreamContext, id string, remove bool) error {
-	meta, ok := globalConnectionManager.connectionPool[id]
+func detachConnection(ctx api.StreamContext, conId string) error {
+	meta, ok := globalConnectionManager.connectionPool[conId]
 	if !ok {
 		return nil
 	}
 	refId := extractRefId(ctx)
 	meta.ref.Delete(refId)
 	meta.refCount.Add(-1)
-	globalConnectionManager.connectionPool[id] = meta
-	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", id, refId)
-	if remove && (meta.refCount.Load() == 0) {
+	globalConnectionManager.connectionPool[conId] = meta
+	conf.Log.Infof("detachConnection remove conn:%v,ref:%v", conId, refId)
+	if !meta.Named && meta.refCount.Load() == 0 {
 		conn, err := meta.cw.Wait()
 		if conn != nil && err == nil {
 			conn.Close(ctx)
 		}
-		delete(globalConnectionManager.connectionPool, id)
+		delete(globalConnectionManager.connectionPool, conId)
 		return nil
 	}
 	return nil
@@ -347,7 +349,7 @@ func createConnection(ctx api.StreamContext, meta *Meta) (modules.Connection, er
 	}
 	conn = connRegister(ctx)
 	sc, isStateful := conn.(modules.StatefulDialer)
-	err = conn.Provision(ctx, meta.Props)
+	err = conn.Provision(ctx, meta.ID, meta.Props)
 	if err != nil {
 		return nil, err
 	}
@@ -388,19 +390,19 @@ func createConnection(ctx api.StreamContext, meta *Meta) (modules.Connection, er
 }
 
 // Return the unique connection id and whether it is set explicitly
-func extractSelID(props map[string]interface{}, anomId string) (string, bool) {
+func extractSelID(props map[string]interface{}, anomId string) string {
 	if len(props) < 1 {
-		return anomId, false
+		return anomId
 	}
 	v, ok := props["connectionSelector"]
 	if !ok {
-		return anomId, false
+		return anomId
 	}
 	id, ok := v.(string)
 	if !ok {
-		return anomId, false
+		return anomId
 	}
-	return id, true
+	return id
 }
 
 func extractRefId(ctx api.StreamContext) string {

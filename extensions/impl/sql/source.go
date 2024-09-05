@@ -107,8 +107,8 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
+		return connection.DetachConnection(ctx, s.conn.GetId(ctx))
 	}
-	connection.DetachConnection(ctx, s.id, s.props)
 	return nil
 }
 

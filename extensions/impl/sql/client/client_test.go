@@ -41,7 +41,7 @@ func TestSQLClient(t *testing.T) {
 	}
 	conn := CreateConnection(ctx)
 	require.NoError(t, err)
-	err = conn.Provision(ctx, props)
+	err = conn.Provision(ctx, "test", props)
 	require.NoError(t, err)
 	sconn, ok := conn.(*SQLConnection)
 	require.True(t, ok)
@@ -49,6 +49,5 @@ func TestSQLClient(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, sconn.GetDB())
 	require.NoError(t, conn.Ping(ctx))
-	conn.DetachSub(ctx, props)
 	conn.Close(ctx)
 }

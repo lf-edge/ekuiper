@@ -47,12 +47,12 @@ func TestConnection(t *testing.T) {
 	_, err = attachConnection("id1", "ref2", nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, getConnectionRef("id1"))
-	err = detachConnection(ctx, "id1", false)
+	err = detachConnection(ctx, "id1")
 	require.NoError(t, err)
 	require.Equal(t, 1, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.Error(t, err)
-	err = detachConnection(ctx, "id1", false)
+	err = detachConnection(ctx, "id1")
 	require.NoError(t, err)
 	require.Equal(t, 0, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
@@ -91,9 +91,9 @@ func TestConnectionErr(t *testing.T) {
 	require.Error(t, err)
 	err = PingConnection(ctx, "")
 	require.Error(t, err)
-	err = DetachConnection(ctx, "", nil)
+	err = DetachConnection(ctx, "")
 	require.Error(t, err)
-	err = DetachConnection(ctx, "nonexists", nil)
+	err = DetachConnection(ctx, "nonexists")
 	require.NoError(t, err)
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/pkg/createConnectionErr", "return(true)")
@@ -188,9 +188,9 @@ func TestNonStoredConnection(t *testing.T) {
 	_, err = FetchConnection(ctx, "id1", "mock", nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, 2, getConnectionRef("id1"))
-	require.NoError(t, DetachConnection(ctx, "id1", nil))
+	require.NoError(t, DetachConnection(ctx, "id1"))
 	require.Equal(t, 1, getConnectionRef("id1"))
-	require.NoError(t, DetachConnection(ctx, "id1", nil))
+	require.NoError(t, DetachConnection(ctx, "id1"))
 	require.Equal(t, 0, getConnectionRef("id1"))
 	_, ok := globalConnectionManager.connectionPool["id1"]
 	require.False(t, ok)
@@ -221,24 +221,28 @@ func init() {
 
 type blockConnection struct {
 	blochCh chan any
+	id      string
 }
 
-func (b blockConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+func (b *blockConnection) GetId(ctx api.StreamContext) string {
+	return b.id
+}
+
+func (b *blockConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	b.id = conId
 	return nil
 }
 
-func (b blockConnection) Dial(ctx api.StreamContext) error {
+func (b *blockConnection) Dial(ctx api.StreamContext) error {
 	<-blockCh
 	return nil
 }
 
-func (b blockConnection) Ping(ctx api.StreamContext) error {
+func (b *blockConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
 
-func (b blockConnection) DetachSub(ctx api.StreamContext, props map[string]any) {}
-
-func (b blockConnection) Close(ctx api.StreamContext) error {
+func (b *blockConnection) Close(ctx api.StreamContext) error {
 	return nil
 }
 
