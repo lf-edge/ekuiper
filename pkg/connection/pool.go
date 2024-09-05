@@ -359,7 +359,7 @@ func createConnection(ctx api.StreamContext, meta *Meta) (modules.Connection, er
 	err = backoff.Retry(func() error {
 		select {
 		case <-ctx.Done():
-			return backoff.Permanent(errors.New("connection fail: exit retrying because rule/server stops"))
+			return nil
 		default:
 		}
 		if !isStateful {
