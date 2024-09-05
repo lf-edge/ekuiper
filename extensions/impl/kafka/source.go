@@ -134,7 +134,7 @@ func (k *KafkaSource) Close(ctx api.StreamContext) error {
 	return k.reader.Close()
 }
 
-func (k *KafkaSource) Connect(ctx api.StreamContext) error {
+func (k *KafkaSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	readerConfig := k.sc.GetReaderConfig()
 	conf.Log.Infof("topic: %s, brokers: %v", readerConfig.Topic, readerConfig.Brokers)
 	readerConfig.Dialer = &kafkago.Dialer{

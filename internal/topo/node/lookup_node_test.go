@@ -807,7 +807,7 @@ func (m *MockLookupBytes) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *MockLookupBytes) Connect(ctx api.StreamContext) error {
+func (m *MockLookupBytes) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

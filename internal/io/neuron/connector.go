@@ -26,7 +26,12 @@ import (
 
 func ping(ctx api.StreamContext, props map[string]any) error {
 	props["protocol"] = PROTOCOL
-	cli, err := nng.CreateConnection(ctx, props)
+	cli := nng.CreateConnection(ctx)
+	err := cli.Provision(ctx, props)
+	if err != nil {
+		return err
+	}
+	err = cli.Dial(ctx)
 	if err != nil {
 		return err
 	}
@@ -35,10 +40,10 @@ func ping(ctx api.StreamContext, props map[string]any) error {
 	return cli.Ping(ctx)
 }
 
-func connect(ctx api.StreamContext, url string, props map[string]any) (modules.Connection, error) {
+func connect(ctx api.StreamContext, url string, props map[string]any, sc api.StatusChangeHandler) (modules.Connection, error) {
 	ctx.GetLogger().Infof("Connecting to neuron")
 	connId := PROTOCOL + url
-	cw, err := connection.FetchConnection(ctx, connId, "nng", props)
+	cw, err := connection.FetchConnection(ctx, connId, "nng", props, sc)
 	if err != nil {
 		return nil, err
 	}

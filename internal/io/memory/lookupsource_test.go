@@ -90,7 +90,9 @@ func TestUpdateLookup(t *testing.T) {
 	ls := GetLookupSource().(api.LookupSource)
 	err := ls.Provision(ctx, map[string]interface{}{"datasource": "test", "key": "ff"})
 	assert.NoError(t, err)
-	err = ls.Connect(ctx)
+	err = ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 	// wait for the source to be ready
 	time.Sleep(100 * time.Millisecond)
@@ -134,7 +136,9 @@ func TestLookup(t *testing.T) {
 	ls := GetLookupSource().(api.LookupSource)
 	err := ls.Provision(ctx, map[string]any{"datasource": "test2", "key": "gg"})
 	assert.NoError(t, err)
-	err = ls.Connect(ctx)
+	err = ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 	// wait for the source to be ready
 	time.Sleep(100 * time.Millisecond)

@@ -113,7 +113,9 @@ func TestEoF(t *testing.T) {
 		"qos":        0,
 	})
 	assert.NoError(t, err)
-	err = r.Connect(ctx)
+	err = r.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 	// Create a channel to receive the result
 	resultCh := make(chan any, 10)

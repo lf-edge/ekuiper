@@ -85,12 +85,12 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 	return nil
 }
 
-func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
+func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var cli *client2.SQLConnection
 	var err error
 	s.id = s.conf.DBUrl
-	cw, err := connection.FetchConnection(ctx, s.id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, s.id, "sql", s.props, sc)
 	if err != nil {
 		return err
 	}

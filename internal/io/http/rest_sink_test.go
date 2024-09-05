@@ -210,7 +210,9 @@ func TestRestSink_Apply(t *testing.T) {
 			tt.config["url"] = ts.URL
 			e := s.Provision(ctx, tt.config)
 			assert.NoError(t, e)
-			e = s.Connect(ctx)
+			e = s.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			assert.NoError(t, e)
 			if ss.(bool) {
 				for _, d := range tt.data {
@@ -256,7 +258,9 @@ func TestRestSinkCollect(t *testing.T) {
 			"a": 1,
 		},
 	}
-	require.NoError(t, s.Connect(ctx))
+	require.NoError(t, s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	require.NoError(t, s.collect(ctx, data, data.ToMap()))
 	require.NoError(t, s.Close(ctx))
 }
@@ -277,7 +281,9 @@ func TestRestSinkRecoverErr(t *testing.T) {
 		"url":    fmt.Sprintf("%s/get123", server.URL),
 		"method": "get",
 	}))
-	require.NoError(t, sErr.Connect(ctx))
+	require.NoError(t, sErr.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	err := sErr.collect(ctx, data, data.ToMap())
 	require.Error(t, err)
 	require.False(t, errorx.IsIOError(err))
@@ -288,7 +294,9 @@ func TestRestSinkRecoverErr(t *testing.T) {
 	}))
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/http/recoverAbleErr", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/http/recoverAbleErr")
-	require.NoError(t, s.Connect(ctx))
+	require.NoError(t, s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	err = s.collect(ctx, data, data.ToMap())
 	require.Error(t, err)
 	require.True(t, errorx.IsIOError(err))

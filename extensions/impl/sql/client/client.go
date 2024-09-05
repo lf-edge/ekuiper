@@ -32,6 +32,30 @@ type SQLConnection struct {
 	closed bool
 }
 
+func (s *SQLConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+	dbUrlRaw, ok := props["dburl"]
+	if !ok {
+		return fmt.Errorf("dburl should be defined")
+	}
+	dburl, ok := dbUrlRaw.(string)
+	if !ok || len(dburl) < 1 {
+		return fmt.Errorf("dburl should be defined as string")
+	}
+	ctx.GetLogger().Infof("create db with url:%v", dburl)
+
+	s.url = dburl
+	return nil
+}
+
+func (s *SQLConnection) Dial(ctx api.StreamContext) error {
+	db, err := openDB(s.url)
+	if err != nil {
+		return fmt.Errorf("create connection err:%v, supported drivers:%v", err, driver.GetSupportedDrivers())
+	}
+	s.db = db
+	return nil
+}
+
 func (s *SQLConnection) Reconnect() error {
 	s.Lock()
 	defer s.Unlock()
@@ -76,26 +100,6 @@ func (s *SQLConnection) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	return CreateClient(ctx, props)
-}
-
-func CreateClient(ctx api.StreamContext, props map[string]any) (*SQLConnection, error) {
-	dbUrlRaw, ok := props["dburl"]
-	if !ok {
-		return nil, fmt.Errorf("dburl should be defined")
-	}
-	dburl, ok := dbUrlRaw.(string)
-	if !ok || len(dburl) < 1 {
-		return nil, fmt.Errorf("dburl should be defined as string")
-	}
-	ctx.GetLogger().Infof("create db with url:%v", dburl)
-	db, err := openDB(dburl)
-	if err != nil {
-		return nil, fmt.Errorf("create connection err:%v, supported drivers:%v", err, driver.GetSupportedDrivers())
-	}
-	return &SQLConnection{
-		url: dburl,
-		db:  db,
-	}, nil
+func CreateConnection(ctx api.StreamContext) modules.Connection {
+	return &SQLConnection{}
 }

@@ -32,6 +32,33 @@ type Client struct {
 	client messaging.MessageClient
 }
 
+func GetConnection(_ api.StreamContext) modules.Connection {
+	return &Client{}
+}
+
+func (es *Client) Provision(ctx api.StreamContext, props map[string]any) error {
+	err := es.CfgValidate(props)
+	if err != nil {
+		return err
+	}
+	client, err := messaging.NewMessageClient(es.mbconf)
+	if err != nil {
+		return err
+	}
+	es.client = client
+	return nil
+}
+
+func (es *Client) Dial(ctx api.StreamContext) error {
+	ctx.GetLogger().Debugf("connecting to edgex")
+	if err := es.client.Connect(); err != nil {
+		conf.Log.Errorf("The connection to edgex messagebus failed.")
+		return fmt.Errorf("Failed to connect to edgex message bus: %v", err)
+	}
+	conf.Log.Infof("The connection to edgex messagebus is established successfully.")
+	return nil
+}
+
 func (es *Client) Ping(_ api.StreamContext) error {
 	if es.client != nil {
 		return nil
@@ -55,30 +82,6 @@ func (es *Client) Close(ctx api.StreamContext) error {
 		return es.client.Disconnect()
 	}
 	return nil
-}
-
-var _ modules.Connection = &Client{}
-
-func GetConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	ctx.GetLogger().Infof("connect to edgex")
-	c := &Client{}
-	err := c.CfgValidate(props)
-	if err != nil {
-		return nil, err
-	}
-	client, err := messaging.NewMessageClient(c.mbconf)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := client.Connect(); err != nil {
-		conf.Log.Errorf("The connection to edgex messagebus failed.")
-		return nil, fmt.Errorf("Failed to connect to edgex message bus: %v", err)
-	}
-	conf.Log.Infof("The connection to edgex messagebus is established successfully.")
-
-	c.client = client
-	return c, nil
 }
 
 type EdgexConf struct {

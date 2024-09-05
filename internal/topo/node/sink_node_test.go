@@ -175,7 +175,7 @@ func (m *mockResendSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *mockResendSink) Connect(ctx api.StreamContext) error {
+func (m *mockResendSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

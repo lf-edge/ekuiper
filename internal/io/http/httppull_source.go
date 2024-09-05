@@ -41,7 +41,7 @@ func (hps *HttpPullSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (hps *HttpPullSource) Connect(ctx api.StreamContext) error {
+func (hps *HttpPullSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

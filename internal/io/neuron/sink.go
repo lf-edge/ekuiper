@@ -83,8 +83,8 @@ func (s *sink) Ping(ctx api.StreamContext, props map[string]interface{}) error {
 	return ping(ctx, props)
 }
 
-func (s *sink) Connect(ctx api.StreamContext) error {
-	cli, err := connect(ctx, s.cc.Url, s.props)
+func (s *sink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
+	cli, err := connect(ctx, s.cc.Url, s.props, sc)
 	if err != nil {
 		return err
 	}

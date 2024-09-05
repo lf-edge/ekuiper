@@ -84,7 +84,7 @@ func (m *influxSink) Provision(ctx api.StreamContext, props map[string]any) erro
 	return nil
 }
 
-func (m *influxSink) Connect(ctx api.StreamContext) (err error) {
+func (m *influxSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) (err error) {
 	var insecureSkip bool
 	if m.tlsconf != nil {
 		insecureSkip = m.tlsconf.InsecureSkipVerify

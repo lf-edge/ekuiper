@@ -37,7 +37,9 @@ func TestSQLLookupSourceErr(t *testing.T) {
 	require.NoError(t, ls.Provision(ctx, props))
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/pkg/connection/FetchConnectionErr", "return(true)")
 	defer failpoint.Disable("github.com/lf-edge/ekuiper/v2/pkg/connection/FetchConnectionErr")
-	require.Error(t, ls.Connect(ctx))
+	require.Error(t, ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 }
 
 func TestSQLLookupSource(t *testing.T) {
@@ -54,7 +56,9 @@ func TestSQLLookupSource(t *testing.T) {
 	}
 	ls := &SqlLookupSource{}
 	require.NoError(t, ls.Provision(ctx, props))
-	require.NoError(t, ls.Connect(ctx))
+	require.NoError(t, ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	got, err := ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{{"a": int64(1), "b": int64(1)}}, got)
@@ -94,7 +98,9 @@ func TestSQLLookupReconnect(t *testing.T) {
 	}
 	ls := &SqlLookupSource{}
 	require.NoError(t, ls.Provision(ctx, props))
-	require.NoError(t, ls.Connect(ctx))
+	require.NoError(t, ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	s.Close()
 	_, err = ls.Lookup(ctx, []string{"a", "b"}, []string{"a"}, []any{1})
 	require.Error(t, err)

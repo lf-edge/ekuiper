@@ -121,7 +121,7 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	return nil
 }
 
-func (m *fileSink) Connect(ctx api.StreamContext) error {
+func (m *fileSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	ctx.GetLogger().Debug("Opening file sink")
 	// Check if the files have opened longer than the rolling interval, if so close it and create a new one
 	if m.c.CheckInterval > 0 {

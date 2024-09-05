@@ -47,7 +47,9 @@ func TestHttpPushSource(t *testing.T) {
 		"method":     "POST",
 		"datasource": "/post",
 	}))
-	require.NoError(t, s.Connect(ctx))
+	require.NoError(t, s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	recvData := make(chan []byte, 10)
 	require.NoError(t, s.Subscribe(ctx, func(ctx api.StreamContext, data []byte, meta map[string]any, ts time.Time) {
 		recvData <- data

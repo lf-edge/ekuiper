@@ -133,7 +133,7 @@ func (m *influxSink2) Provision(_ api.StreamContext, props map[string]any) error
 	return nil
 }
 
-func (m *influxSink2) Connect(ctx api.StreamContext) error {
+func (m *influxSink2) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	options := client.DefaultOptions().SetPrecision(m.conf.Precision).SetBatchSize(uint(m.conf.BatchSize))
 	if m.tlsconf != nil {
 		options = options.SetTLSConfig(m.tlsconf)

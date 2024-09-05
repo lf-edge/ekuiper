@@ -37,7 +37,9 @@ func TestSourcePull(t *testing.T) {
 	s1 := &SimulatorSource{}
 	ctx := mockContext.NewMockContext("1", "2")
 	require.NoError(t, s1.Provision(ctx, props1))
-	require.NoError(t, s1.Connect(ctx))
+	require.NoError(t, s1.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	recvData := make(chan any, 10)
 	s1.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		recvData <- data
@@ -58,7 +60,9 @@ func TestSourcePull(t *testing.T) {
 	}
 	s2 := &SimulatorSource{}
 	require.NoError(t, s2.Provision(ctx, props2))
-	require.NoError(t, s2.Connect(ctx))
+	require.NoError(t, s2.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	s2.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		recvData <- data
 	}, func(ctx api.StreamContext, err error) {})

@@ -30,7 +30,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.7
-	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-alpha.5
+	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-beta.1
 	github.com/mattn/go-tflite v1.0.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mmcloughlin/geohash v0.10.0
@@ -57,6 +57,7 @@ require (
 	github.com/yisaer/file-rotatelogs v0.0.0-20240606072000-fe792f3c4e04
 	go.nanomsg.org/mangos/v3 v3.4.2
 	go.opentelemetry.io/otel v1.28.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.28.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.28.0
 	go.opentelemetry.io/otel/sdk v1.28.0
 	go.opentelemetry.io/otel/trace v1.28.0
@@ -155,7 +156,6 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	go.uber.org/goleak v1.3.0 // indirect

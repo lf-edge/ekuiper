@@ -104,7 +104,7 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getConnectionRespByMeta(meta *connection.ConnectionMeta) *ConnectionResponse {
+func getConnectionRespByMeta(meta *connection.Meta) *ConnectionResponse {
 	err := connection.PingConnection(context.Background(), meta.ID)
 	r := &ConnectionResponse{
 		Typ:      meta.Typ,

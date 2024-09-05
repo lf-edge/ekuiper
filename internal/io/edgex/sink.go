@@ -104,11 +104,11 @@ func (ems *EdgexMsgBusSink) Provision(ctx api.StreamContext, ps map[string]any) 
 	return nil
 }
 
-func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext) error {
+func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to edgex server")
 	var err error
 	ems.id = fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	ems.cw, err = connection.FetchConnection(ctx, ems.id, "edgex", ems.config)
+	ems.cw, err = connection.FetchConnection(ctx, ems.id, "edgex", ems.config, sc)
 	if err != nil {
 		return err
 	}

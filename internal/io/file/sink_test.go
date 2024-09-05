@@ -313,7 +313,9 @@ func TestFileSink_Collect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -390,7 +392,9 @@ func TestCSVSingMessHeader(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -522,7 +526,9 @@ func TestFileSinkRolling_Collect(t *testing.T) {
 				t.Fatal(err)
 			}
 			mockclock.ResetClock(10)
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -603,7 +609,9 @@ func TestFileSinkReopen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = sink.Connect(ctx)
+	err = sink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -634,7 +642,9 @@ func TestFileSinkReopen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = sink.Connect(ctx)
+	err = sink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,7 +722,9 @@ func TestFileCompressAndEncrypt(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

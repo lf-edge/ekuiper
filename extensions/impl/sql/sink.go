@@ -113,11 +113,11 @@ func (s *SQLSinkConnector) Provision(ctx api.StreamContext, configs map[string]a
 	return nil
 }
 
-func (s *SQLSinkConnector) Connect(ctx api.StreamContext) error {
+func (s *SQLSinkConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var err error
 	id := s.config.DBUrl
-	cw, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, id, "sql", s.props, sc)
 	if err != nil {
 		return err
 	}
