@@ -31,6 +31,40 @@ type WebsocketConnection struct {
 	client    *WebsocketClient
 }
 
+func (w *WebsocketConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+	cfg := &wscConfig{}
+	if err := cast.MapToStruct(props, cfg); err != nil {
+		return err
+	}
+	w.cfg = cfg
+	w.props = props
+	w.isServer = getWsType(cfg)
+	return nil
+}
+
+func (w *WebsocketConnection) Dial(ctx api.StreamContext) error {
+	if w.isServer {
+		rTopic, sTopic, err := RegisterWebSocketEndpoint(ctx, w.cfg.Datasource)
+		if err != nil {
+			return err
+		}
+		w.RecvTopic = rTopic
+		w.SendTopic = sTopic
+	} else {
+		tlsConfig, err := cert.GenTLSConfig(w.props, "websocket")
+		if err != nil {
+			return err
+		}
+		c := NewWebsocketClient(w.cfg.Addr, w.cfg.Datasource, tlsConfig)
+		if err := c.Connect(); err != nil {
+			return err
+		}
+		w.client = c
+		w.RecvTopic, w.SendTopic = c.Run(ctx)
+	}
+	return nil
+}
+
 type wscConfig struct {
 	Datasource string `json:"datasource"`
 	Addr       string `json:"addr"`
@@ -52,40 +86,8 @@ func (w *WebsocketConnection) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func CreateWebsocketConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	return createWebsocketServerConnection(ctx, props)
-}
-
-func createWebsocketServerConnection(ctx api.StreamContext, props map[string]any) (*WebsocketConnection, error) {
-	cfg := &wscConfig{}
-	if err := cast.MapToStruct(props, cfg); err != nil {
-		return nil, err
-	}
-	wc := &WebsocketConnection{
-		props:    props,
-		cfg:      cfg,
-		isServer: getWsType(cfg),
-	}
-	if wc.isServer {
-		rTopic, sTopic, err := RegisterWebSocketEndpoint(ctx, cfg.Datasource)
-		if err != nil {
-			return nil, err
-		}
-		wc.RecvTopic = rTopic
-		wc.SendTopic = sTopic
-	} else {
-		tlsConfig, err := cert.GenTLSConfig(props, "websocket")
-		if err != nil {
-			return nil, err
-		}
-		c := NewWebsocketClient(cfg.Addr, cfg.Datasource, tlsConfig)
-		if err := c.Connect(); err != nil {
-			return nil, err
-		}
-		wc.client = c
-		wc.RecvTopic, wc.SendTopic = c.Run(ctx)
-	}
-	return wc, nil
+func CreateWebsocketConnection(ctx api.StreamContext) modules.Connection {
+	return &WebsocketConnection{}
 }
 
 func getWsType(cfg *wscConfig) bool {

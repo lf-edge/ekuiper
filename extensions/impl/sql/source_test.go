@@ -112,7 +112,9 @@ func TestSQLConnectionConnect(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
 	expectedData := map[string]any{
@@ -165,7 +167,9 @@ func TestSQLConnectionErr(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 }
 
 func TestSQLSourceRewind(t *testing.T) {
@@ -198,7 +202,9 @@ func TestSQLSourceRewind(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
 	expectedData := map[string]any{
@@ -239,7 +245,9 @@ func TestSQLReconnect(t *testing.T) {
 	}
 	sqlSource := GetSource()
 	require.NoError(t, sqlSource.Provision(ctx, props))
-	require.NoError(t, sqlSource.Connect(ctx))
+	require.NoError(t, sqlSource.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
 	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})

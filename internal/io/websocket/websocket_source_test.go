@@ -49,7 +49,9 @@ func TestWebsocketSource(t *testing.T) {
 		"datasource": "",
 	}))
 	require.NoError(t, ws.Provision(ctx, props))
-	require.NoError(t, ws.Connect(ctx))
+	require.NoError(t, ws.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	recvCh := make(chan []byte, 10)
 	require.NoError(t, ws.Subscribe(ctx, func(ctx api.StreamContext, payload []byte, meta map[string]any, ts time.Time) {
 		recvCh <- payload

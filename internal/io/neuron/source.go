@@ -67,8 +67,8 @@ func (s *source) SubId(_ map[string]any) string {
 	return "singleton"
 }
 
-func (s *source) Connect(ctx api.StreamContext) error {
-	cli, err := connect(ctx, s.c.Url, s.props)
+func (s *source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
+	cli, err := connect(ctx, s.c.Url, s.props, sc)
 	if err != nil {
 		return err
 	}

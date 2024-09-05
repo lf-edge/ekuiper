@@ -134,6 +134,13 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	m.updateState(ctx)
 }
 
+func (m *SourceNode) connectionStatusChange(status string, message string) {
+	if status == api.ConnectionDisconnected {
+		m.ingestError(m.ctx, fmt.Errorf("disconnected: %s", message))
+	}
+	// TODO add more metrics
+}
+
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
 	tuple := &xsql.Tuple{Emitter: m.name, Message: t, Timestamp: ts, Metadata: meta}
 	m.Broadcast(tuple)
@@ -196,7 +203,7 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		m.Close()
 	}()
 	poe := infra.SafeRun(func() error {
-		err := m.s.Connect(ctx)
+		err := m.s.Connect(ctx, m.connectionStatusChange)
 		if err != nil {
 			return err
 		}

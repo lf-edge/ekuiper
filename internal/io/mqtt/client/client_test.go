@@ -65,10 +65,13 @@ func TestMqttClientPing(t *testing.T) {
 	url, cancel, err := testx.InitBroker("TestMqttClientPing")
 	require.NoError(t, err)
 	ctx := mockContext.NewMockContext("1", "2")
-	c, err := CreateClient(ctx, map[string]any{
+	c := CreateConnection(ctx)
+	err = c.Provision(ctx, map[string]any{
 		"server":     url,
 		"datasource": "demo",
 	})
+	require.NoError(t, err)
+	err = c.Dial(ctx)
 	require.NoError(t, err)
 	// wait connection done
 	time.Sleep(100 * time.Millisecond)

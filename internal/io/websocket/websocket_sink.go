@@ -52,9 +52,9 @@ func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), w.props)
 }
 
-func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
+func (w *WebsocketSink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	var err error
-	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props, sc)
 	if err != nil {
 		return err
 	}

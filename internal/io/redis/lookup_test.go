@@ -52,7 +52,9 @@ func TestSingle(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = ls.Connect(ctx)
+	err = ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Error(err)
 		return
@@ -93,7 +95,9 @@ func TestList(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = ls.Connect(ctx)
+	err = ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Error(err)
 		return

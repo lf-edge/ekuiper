@@ -63,7 +63,7 @@ func (s *lookupSource) Provision(ctx api.StreamContext, props map[string]any) er
 	return s.Validate(props)
 }
 
-func (s *lookupSource) Connect(ctx api.StreamContext) error {
+func (s *lookupSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening redis lookup source")
 

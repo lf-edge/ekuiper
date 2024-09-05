@@ -131,7 +131,7 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 	return k.writer.Close()
 }
 
-func (k *KafkaSink) Connect(ctx api.StreamContext) error {
+func (k *KafkaSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return k.buildKafkaWriter()
 }
 

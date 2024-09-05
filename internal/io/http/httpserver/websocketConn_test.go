@@ -1,10 +1,10 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,7 +37,10 @@ func TestWebsocketConn(t *testing.T) {
 	props := map[string]any{
 		"datasource": "/e1",
 	}
-	conn, err := createWebsocketServerConnection(ctx, props)
+	conn := CreateWebsocketConnection(ctx).(*WebsocketConnection)
+	err := conn.Provision(ctx, props)
+	require.NoError(t, err)
+	err = conn.Dial(ctx)
 	require.NoError(t, err)
 	require.NoError(t, conn.Ping(ctx))
 	conn.DetachSub(ctx, props)
@@ -55,7 +58,10 @@ func TestWebsocketClientConn(t *testing.T) {
 		"datasource": "/ws",
 		"addr":       s.URL[len("http://"):],
 	}
-	conn, err := createWebsocketServerConnection(ctx, props)
+	conn := CreateWebsocketConnection(ctx).(*WebsocketConnection)
+	err := conn.Provision(ctx, props)
+	require.NoError(t, err)
+	err = conn.Dial(ctx)
 	require.NoError(t, err)
 	require.NoError(t, conn.Ping(ctx))
 	conn.DetachSub(ctx, props)

@@ -36,6 +36,14 @@ type mockConnection struct {
 	ref int
 }
 
+func (m *mockConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+	return nil
+}
+
+func (m *mockConnection) Dial(ctx api.StreamContext) error {
+	return nil
+}
+
 func (m *mockConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
@@ -63,25 +71,32 @@ func (m *mockConnection) Ref(ctx api.StreamContext) int {
 	return m.ref
 }
 
-func CreateMockConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	m := &mockConnection{ref: 0}
-	return m, nil
+func CreateMockConnection(ctx api.StreamContext) modules.Connection {
+	return &mockConnection{ref: 0}
 }
 
 type mockErrConnection struct{}
+
+func (m mockErrConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+	return backoff.Permanent(errors.New("mockErr"))
+}
+
+func (m mockErrConnection) Dial(ctx api.StreamContext) error {
+	return nil
+}
 
 func (m mockErrConnection) Ping(ctx api.StreamContext) error {
 	return errors.New("mockErr")
 }
 
-func (m mockErrConnection) Close(ctx api.StreamContext) {
-	return
+func (m mockErrConnection) Close(ctx api.StreamContext) error {
+	return nil
 }
 
 func (m mockErrConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	return
 }
 
-func CreateMockErrConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	return nil, backoff.Permanent(errors.New("mockErr"))
+func CreateMockErrConnection(ctx api.StreamContext) modules.Connection {
+	return &mockErrConnection{}
 }

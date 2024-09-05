@@ -58,7 +58,7 @@ func (r *RedisSink) Provision(_ api.StreamContext, props map[string]any) error {
 	return r.Validate(props)
 }
 
-func (r *RedisSink) Connect(ctx api.StreamContext) error {
+func (r *RedisSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening redis sink")
 

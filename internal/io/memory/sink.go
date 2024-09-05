@@ -61,7 +61,7 @@ func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (s *sink) Connect(ctx api.StreamContext) error {
+func (s *sink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
 	pubsub.CreatePub(s.topic)
 	return nil

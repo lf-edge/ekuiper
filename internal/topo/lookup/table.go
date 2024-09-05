@@ -83,7 +83,8 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 		return err
 	}
 	ctx.GetLogger().Debugf("lookup source %s is configured", sourceType)
-	err = ns.Connect(ctx)
+	// TODO lookup table connection status support
+	err = ns.Connect(ctx, nil)
 	if err != nil {
 		return err
 	}

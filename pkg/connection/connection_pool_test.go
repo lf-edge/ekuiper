@@ -38,24 +38,28 @@ func TestConnection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, conn)
 	require.NoError(t, conn.Ping(ctx))
-	require.Equal(t, 0, GetConnectionRef("id1"))
+	require.Equal(t, 0, getConnectionRef("id1"))
 	_, err = CreateNamedConnection(ctx, "id1", "mock", nil)
 	require.Error(t, err)
-	attachConnection("id1")
-	require.Equal(t, 1, GetConnectionRef("id1"))
-	attachConnection("id1")
-	require.Equal(t, 2, GetConnectionRef("id1"))
-	detachConnection(ctx, "id1", false)
-	require.Equal(t, 1, GetConnectionRef("id1"))
+	_, err = attachConnection("id1", "ref1", nil)
+	require.NoError(t, err)
+	require.Equal(t, 1, getConnectionRef("id1"))
+	_, err = attachConnection("id1", "ref2", nil)
+	require.NoError(t, err)
+	require.Equal(t, 2, getConnectionRef("id1"))
+	err = detachConnection(ctx, "id1", false)
+	require.NoError(t, err)
+	require.Equal(t, 1, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.Error(t, err)
-	detachConnection(ctx, "id1", false)
-	require.Equal(t, 0, GetConnectionRef("id1"))
+	err = detachConnection(ctx, "id1", false)
+	require.NoError(t, err)
+	require.Equal(t, 0, getConnectionRef("id1"))
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
 	err = DropNameConnection(ctx, "id1")
 	require.NoError(t, err)
-	conn3, err := attachConnection("id1")
+	conn3, err := attachConnection("id1", "ref3", nil)
 	require.Error(t, err)
 	require.Nil(t, conn3)
 
@@ -63,11 +67,11 @@ func TestConnection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cw)
 
-	cw, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"})
+	cw, err = FetchConnection(ctx, "2222", "mock", map[string]interface{}{"connectionSelector": "id2"}, nil)
 	require.NoError(t, err)
 	require.NotNil(t, cw)
 
-	require.Equal(t, 1, GetConnectionRef("id2"))
+	require.Equal(t, 1, getConnectionRef("id2"))
 }
 
 func TestConnectionErr(t *testing.T) {
@@ -83,7 +87,7 @@ func TestConnectionErr(t *testing.T) {
 	require.NoError(t, err)
 	_, err = cw.Wait()
 	require.Error(t, err)
-	_, err = attachConnection("")
+	_, err = attachConnection("", "ref1", nil)
 	require.Error(t, err)
 	err = PingConnection(ctx, "")
 	require.Error(t, err)
@@ -93,7 +97,7 @@ func TestConnectionErr(t *testing.T) {
 	require.NoError(t, err)
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/pkg/createConnectionErr", "return(true)")
-	conn, err := createNamedConnection(ctx, &ConnectionMeta{
+	conn, err := createNamedConnection(ctx, &Meta{
 		ID:    "1",
 		Typ:   "mock",
 		Props: nil,
@@ -126,69 +130,70 @@ func TestConnectionStatus(t *testing.T) {
 	allStatus := GetAllConnectionStatus(ctx)
 	s, ok := allStatus["a1"]
 	require.True(t, ok)
-	require.Equal(t, ConnectionStatus{
-		Status: ConnectionFail,
+	require.Equal(t, modules.ConnectionStatus{
+		Status: api.ConnectionDisconnected,
 		ErrMsg: "mockErr",
 	}, s)
 	s, ok = allStatus["a2"]
 	require.True(t, ok)
-	require.Equal(t, ConnectionStatus{
-		Status: ConnectionRunning,
+	require.Equal(t, modules.ConnectionStatus{
+		Status: api.ConnectionConnected,
 	}, s)
 }
 
 func TestGetAllConnectionStatus(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("id", "2")
-	cw1, err := FetchConnection(ctx, "id1", "mock", nil)
+	cw1, err := FetchConnection(ctx, "id1", "mock", nil, nil)
 	require.NoError(t, err)
-	cw2, err := FetchConnection(ctx, "id2", "mockErr", nil)
+	cw2, err := FetchConnection(ctx, "id2", "mockErr", nil, nil)
 	require.NoError(t, err)
-	cw3, err := FetchConnection(ctx, "id3", "blockconn", nil)
+	cw3, err := FetchConnection(ctx, "id3", "blockconn", nil, nil)
 	require.NoError(t, err)
 	cw1.Wait()
 	cw2.Wait()
 	allStatus := GetAllConnectionStatus(ctx)
 	s, ok := allStatus["id2"]
 	require.True(t, ok)
-	require.Equal(t, ConnectionStatus{
-		Status: ConnectionFail,
+	require.Equal(t, modules.ConnectionStatus{
+		Status: api.ConnectionDisconnected,
 		ErrMsg: "mockErr",
 	}, s)
 	s, ok = allStatus["id1"]
 	require.True(t, ok)
-	require.Equal(t, ConnectionStatus{
-		Status: ConnectionRunning,
+	require.Equal(t, modules.ConnectionStatus{
+		Status: api.ConnectionConnected,
 	}, s)
 	s, ok = allStatus["id3"]
 	require.True(t, ok)
-	require.Equal(t, ConnectionStatus{
-		Status: ConnectionIntializing,
+	require.Equal(t, modules.ConnectionStatus{
+		Status: api.ConnectionConnecting,
 	}, s)
 	blockCh <- struct{}{}
 	cw3.Wait()
 	allStatus = GetAllConnectionStatus(ctx)
 	s, ok = allStatus["id3"]
 	require.True(t, ok)
-	require.Equal(t, ConnectionStatus{
-		Status: ConnectionRunning,
+	require.Equal(t, modules.ConnectionStatus{
+		Status: api.ConnectionConnected,
 	}, s)
 }
 
 func TestNonStoredConnection(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	ctx := mockContext.NewMockContext("id", "2")
-	_, err := FetchConnection(ctx, "id1", "mock", nil)
+	_, err := FetchConnection(ctx, "id1", "mock", nil, nil)
 	require.NoError(t, err)
-	require.Equal(t, 1, GetConnectionRef("id1"))
-	_, err = FetchConnection(ctx, "id1", "mock", nil)
+	require.Equal(t, 1, getConnectionRef("id1"))
+	_, err = FetchConnection(ctx, "id1", "mock", nil, nil)
 	require.NoError(t, err)
-	require.Equal(t, 2, GetConnectionRef("id1"))
+	require.Equal(t, 2, getConnectionRef("id1"))
 	require.NoError(t, DetachConnection(ctx, "id1", nil))
-	require.Equal(t, 1, GetConnectionRef("id1"))
+	require.Equal(t, 1, getConnectionRef("id1"))
 	require.NoError(t, DetachConnection(ctx, "id1", nil))
-	require.Equal(t, 0, GetConnectionRef("id1"))
-	require.False(t, IsConnectionExists("id1"))
+	require.Equal(t, 0, getConnectionRef("id1"))
+	_, ok := globalConnectionManager.connectionPool["id1"]
+	require.False(t, ok)
 }
 
 func TestConnectionLock(t *testing.T) {
@@ -197,13 +202,14 @@ func TestConnectionLock(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
-		CreateNamedConnection(ctx, "ccc1", "blockconn", nil)
+		_, err := CreateNamedConnection(ctx, "ccc1", "blockconn", nil)
+		require.NoError(t, err)
 		wg.Done()
 	}()
-	require.False(t, CheckConn("ccc1"))
+	require.False(t, checkConn("ccc1"))
 	blockCh <- struct{}{}
 	wg.Wait()
-	require.True(t, CheckConn("ccc1"))
+	require.True(t, checkConn("ccc1"))
 }
 
 var blockCh chan any
@@ -217,6 +223,15 @@ type blockConnection struct {
 	blochCh chan any
 }
 
+func (b blockConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+	return nil
+}
+
+func (b blockConnection) Dial(ctx api.StreamContext) error {
+	<-blockCh
+	return nil
+}
+
 func (b blockConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
@@ -227,7 +242,13 @@ func (b blockConnection) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func CreateBlockConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	<-blockCh
-	return &blockConnection{}, nil
+func CreateBlockConnection(ctx api.StreamContext) modules.Connection {
+	return &blockConnection{}
+}
+
+func checkConn(id string) bool {
+	globalConnectionManager.RLock()
+	defer globalConnectionManager.RUnlock()
+	_, ok := globalConnectionManager.connectionPool[id]
+	return ok
 }

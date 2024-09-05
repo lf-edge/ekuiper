@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build full
-// +build full
 
 package sql
 
@@ -91,7 +90,9 @@ func TestSQLSinkCollect(t *testing.T) {
 	for _, tc := range testcases {
 		sqlSink := &SQLSinkConnector{}
 		require.NoError(t, sqlSink.Provision(ctx, tc.props))
-		require.NoError(t, sqlSink.Connect(ctx))
+		require.NoError(t, sqlSink.Connect(ctx, func(status string, message string) {
+			// do nothing
+		}))
 		require.NoError(t, sqlSink.collect(ctx, tc.data))
 		rows, err := sqlSink.conn.GetDB().Query(fmt.Sprintf("select a,b from t where a = %v and b = %v", tc.a, tc.b))
 		require.NoError(t, err)
@@ -114,7 +115,9 @@ func TestSQLSinkCollect(t *testing.T) {
 		"dburl": dburl,
 		"table": tableName,
 	}))
-	require.NoError(t, sqlSink.Connect(ctx))
+	require.NoError(t, sqlSink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	require.NoError(t, sqlSink.collectList(ctx, []map[string]any{
 		{
 			"a": 5,
@@ -147,7 +150,9 @@ func TestSQLSinkCollect(t *testing.T) {
 		"keyField":     "a",
 		"fields":       []string{"a", "b"},
 	}))
-	require.NoError(t, sqlSink.Connect(ctx))
+	require.NoError(t, sqlSink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	require.NoError(t, sqlSink.collectList(ctx, []map[string]any{
 		{
 			"a":      7,
@@ -242,7 +247,9 @@ func TestSQLSinkAction(t *testing.T) {
 		"rowKindField": "action",
 		"keyField":     "a",
 	}))
-	require.NoError(t, sqlSink.Connect(ctx))
+	require.NoError(t, sqlSink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	// update
 	require.NoError(t, sqlSink.collect(ctx, map[string]any{
 		"a":      1,
@@ -300,7 +307,9 @@ func TestSQLSinkReconnect(t *testing.T) {
 		"rowKindField": "action",
 		"keyField":     "a",
 	}))
-	require.NoError(t, sqlSink.Connect(ctx))
+	require.NoError(t, sqlSink.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	s.Close()
 	// update
 	require.Error(t, sqlSink.collect(ctx, map[string]any{

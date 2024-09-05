@@ -101,7 +101,7 @@ func (m *mockSource) Provision(ctx api.StreamContext, configs map[string]any) er
 	return nil
 }
 
-func (m *mockSource) Connect(ctx api.StreamContext) error {
+func (m *mockSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 
@@ -119,7 +119,7 @@ func (m *mockSink) Provision(ctx api.StreamContext, configs map[string]any) erro
 	return nil
 }
 
-func (m *mockSink) Connect(ctx api.StreamContext) error {
+func (m *mockSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

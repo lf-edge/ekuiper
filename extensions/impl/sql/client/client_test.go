@@ -39,13 +39,16 @@ func TestSQLClient(t *testing.T) {
 	props := map[string]interface{}{
 		"dburl": fmt.Sprintf("mysql://root:@%v:%v/test", address, port),
 	}
-	conn, err := CreateConnection(ctx, props)
+	conn := CreateConnection(ctx)
 	require.NoError(t, err)
+	err = conn.Provision(ctx, props)
+	require.NoError(t, err)
+	sconn, ok := conn.(*SQLConnection)
+	require.True(t, ok)
+	err = conn.Dial(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, sconn.GetDB())
 	require.NoError(t, conn.Ping(ctx))
-
-	c, err := CreateClient(ctx, props)
-	require.NoError(t, err)
-	require.NotNil(t, c.GetDB())
-	c.DetachSub(ctx, props)
-	c.Close(ctx)
+	conn.DetachSub(ctx, props)
+	conn.Close(ctx)
 }

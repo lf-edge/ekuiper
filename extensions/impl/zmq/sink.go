@@ -39,7 +39,7 @@ func (m *zmqSink) Provision(ctx api.StreamContext, configs map[string]any) error
 	return nil
 }
 
-func (m *zmqSink) Connect(ctx api.StreamContext) (err error) {
+func (m *zmqSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) (err error) {
 	m.publisher, err = zmq.NewSocket(zmq.PUB)
 	if err != nil {
 		return fmt.Errorf("zmq sink fails to create socket: %v", err)

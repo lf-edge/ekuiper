@@ -37,6 +37,9 @@ type Connection struct {
 	selId     string
 	logger    api.Logger
 	connected atomic.Bool
+	status    atomic.Value
+	scHandler api.StatusChangeHandler
+	conf      *ConnectionConfig
 }
 
 type ConnectionConfig struct {
@@ -49,46 +52,90 @@ type ConnectionConfig struct {
 	tls      *tls.Config
 }
 
-type SubscriptionInfo struct {
-	Qos        byte
-	Handler    pahoMqtt.MessageHandler
-	ErrHandler func(error)
+func CreateConnection(_ api.StreamContext) modules.Connection {
+	return &Connection{}
 }
 
-func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
-	if conn == nil || !conn.connected.Load() {
-		return errorx.NewIOErr("mqtt client is not connected")
+func (conn *Connection) Provision(ctx api.StreamContext, props map[string]any) error {
+	c, err := ValidateConfig(props)
+	if err != nil {
+		return err
 	}
-	token := conn.Client.Publish(topic, qos, retained, payload)
-	return handleToken(token)
+	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(time.Minute)
+
+	opts = opts.SetTLSConfig(c.tls)
+
+	if c.Uname != "" {
+		opts = opts.SetUsername(c.Uname)
+	}
+	if c.Password != "" {
+		opts = opts.SetPassword(c.Password)
+	}
+	opts = opts.SetClientID(c.ClientId).SetAutoReconnect(true).SetResumeSubs(true).SetMaxReconnectInterval(connection.DefaultMaxInterval)
+
+	conn.status.Store(api.ConnectionConnecting)
+	opts.OnConnect = conn.onConnect
+	opts.OnConnectionLost = conn.onConnectLost
+	opts.OnReconnecting = conn.onReconnecting
+
+	cli := pahoMqtt.NewClient(opts)
+	conn.logger = ctx.GetLogger()
+	conn.selId = c.ClientId
+	conn.Client = cli
+	conn.conf = c
+	return nil
+}
+
+func (conn *Connection) Dial(ctx api.StreamContext) error {
+	token := conn.Client.Connect()
+	err := handleToken(token)
+	if err != nil {
+		return errorx.NewIOErr(fmt.Sprintf("found error when connecting for %s: %s", conn.conf.Server, err))
+	}
+	ctx.GetLogger().Infof("new mqtt client created")
+	return nil
+}
+
+func (conn *Connection) Status() string {
+	return conn.status.Load().(string)
+}
+
+func (conn *Connection) SetStatusChangeHandler(sch api.StatusChangeHandler) {
+	conn.scHandler = sch
 }
 
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
+	conn.status.Store(api.ConnectionConnected)
+	if conn.scHandler != nil {
+		conn.scHandler(api.ConnectionConnected, "")
+	}
 	conn.logger.Infof("The connection to mqtt broker is established")
 }
 
 func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
 	conn.connected.Store(false)
+	conn.status.Store(api.ConnectionDisconnected)
+	if conn.scHandler != nil {
+		conn.scHandler(api.ConnectionDisconnected, err.Error())
+	}
 	conn.logger.Infof("%v", err)
 }
 
 func (conn *Connection) onReconnecting(_ pahoMqtt.Client, _ *pahoMqtt.ClientOptions) {
-	conn.logger.Infof("Reconnecting to mqtt broker")
+	conn.status.Store(api.ConnectionConnecting)
+	if conn.scHandler != nil {
+		conn.scHandler(api.ConnectionConnecting, "")
+	}
+	conn.logger.Debugf("Reconnecting to mqtt broker")
 }
 
-// Do not call this directly. Call connection pool Detach method to release the connection
 func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	topic, err := getTopicFromProps(props)
 	if err != nil {
 		return
 	}
 	conn.Client.Unsubscribe(topic)
-}
-
-func (conn *Connection) Subscribe(topic string, info *SubscriptionInfo) error {
-	token := conn.Client.Subscribe(topic, info.Qos, info.Handler)
-	return handleToken(token)
 }
 
 func (conn *Connection) Close(ctx api.StreamContext) error {
@@ -106,50 +153,20 @@ func (conn *Connection) Ping(ctx api.StreamContext) error {
 	return errors.New("failed to connect to broker")
 }
 
-func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	return CreateClient(ctx, props)
+// MQTT features
+
+func (conn *Connection) Publish(topic string, qos byte, retained bool, payload any) error {
+	// Need to return error immediately so that we can enable cache immediately
+	if conn == nil || !conn.connected.Load() {
+		return errorx.NewIOErr("mqtt client is not connected")
+	}
+	token := conn.Client.Publish(topic, qos, retained, payload)
+	return handleToken(token)
 }
 
-// CreateClient creates a new mqtt client. It is anonymous and does not require a name.
-func CreateClient(ctx api.StreamContext, props map[string]any) (*Connection, error) {
-	c, err := ValidateConfig(props)
-	if err != nil {
-		return nil, err
-	}
-	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(time.Minute)
-
-	opts = opts.SetTLSConfig(c.tls)
-
-	if c.Uname != "" {
-		opts = opts.SetUsername(c.Uname)
-	}
-	if c.Password != "" {
-		opts = opts.SetPassword(c.Password)
-	}
-	opts = opts.SetClientID(c.ClientId)
-	opts = opts.SetAutoReconnect(true)
-
-	con := &Connection{
-		logger: ctx.GetLogger(),
-		selId:  c.ClientId,
-	}
-	opts.OnConnect = con.onConnect
-	opts.OnConnectionLost = con.onConnectLost
-	opts.OnReconnecting = con.onReconnecting
-	opts.ConnectRetry = true
-	opts.ResumeSubs = true
-	opts.ConnectRetryInterval = connection.DefaultInitialInterval
-	opts.MaxReconnectInterval = connection.DefaultMaxInterval
-
-	cli := pahoMqtt.NewClient(opts)
-	token := cli.Connect()
-	err = handleToken(token)
-	if err != nil {
-		return nil, errorx.NewIOErr(fmt.Sprintf("found error when connecting for %s: %s", c.Server, err))
-	}
-	ctx.GetLogger().Infof("new mqtt client created")
-	con.Client = cli
-	return con, nil
+func (conn *Connection) Subscribe(topic string, qos byte, callback pahoMqtt.MessageHandler) error {
+	token := conn.Client.Subscribe(topic, qos, callback)
+	return handleToken(token)
 }
 
 func handleToken(token pahoMqtt.Token) error {
@@ -190,14 +207,6 @@ func ValidateConfig(props map[string]any) (*ConnectionConfig, error) {
 	}
 	c.tls = tlsConfig
 	return c, nil
-}
-
-func CreateAnonymousConnection(ctx api.StreamContext, props map[string]any) (*Connection, error) {
-	cli, err := CreateClient(ctx, props)
-	if err != nil {
-		return nil, err
-	}
-	return cli, nil
 }
 
 const (

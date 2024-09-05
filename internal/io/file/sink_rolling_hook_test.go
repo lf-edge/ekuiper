@@ -196,7 +196,9 @@ func TestCollectRolling(t *testing.T) {
 				t.Fatal(err)
 			}
 			mockclock.ResetClock(10)
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

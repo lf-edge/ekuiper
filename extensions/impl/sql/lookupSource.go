@@ -44,7 +44,7 @@ func (s *SqlLookupSource) Ping(_ string, m map[string]interface{}) error {
 	if err := s.Provision(ctx, m); err != nil {
 		return err
 	}
-	if err := s.Connect(ctx); err != nil {
+	if err := s.Connect(ctx, nil); err != nil {
 		return err
 	}
 	defer func() {
@@ -86,12 +86,12 @@ func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *SqlLookupSource) Connect(ctx api.StreamContext) error {
+func (s *SqlLookupSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var cli *client2.SQLConnection
 	var err error
 	id := s.conf.DBUrl
-	cw, err := connection.FetchConnection(ctx, id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, id, "sql", s.props, sc)
 	if err != nil {
 		return err
 	}

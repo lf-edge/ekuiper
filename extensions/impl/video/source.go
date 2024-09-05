@@ -77,7 +77,7 @@ func (s *Source) Close(_ api.StreamContext) error {
 	return nil
 }
 
-func (s *Source) Connect(_ api.StreamContext) error {
+func (s *Source) Connect(_ api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

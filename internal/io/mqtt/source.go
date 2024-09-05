@@ -23,7 +23,6 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -76,7 +75,8 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 }
 
 func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interface{}) error {
-	cli, err := client.CreateAnonymousConnection(context.Background(), props)
+	cli := &client.Connection{}
+	err := cli.Provision(ctx, props)
 	if err != nil {
 		return err
 	}
@@ -84,15 +84,16 @@ func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interfac
 	return cli.Ping(ctx)
 }
 
-func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
+func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var cli *client.Connection
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props)
+	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props, sch)
 	if err != nil {
 		return err
 	}
+	// wait for connection
 	conn, err := cw.Wait()
 	if err != nil {
 		return err
@@ -104,15 +105,9 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
-func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	return ms.cli.Subscribe(ms.tpc, &client.SubscriptionInfo{
-		Qos: byte(ms.cfg.Qos),
-		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
-			ms.onMessage(ctx, message, ingest)
-		},
-		ErrHandler: func(err error) {
-			ingestError(ctx, err)
-		},
+func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, _ api.ErrorIngest) error {
+	return ms.cli.Subscribe(ms.tpc, byte(ms.cfg.Qos), func(client pahoMqtt.Client, message pahoMqtt.Message) {
+		ms.onMessage(ctx, message, ingest)
 	})
 }
 

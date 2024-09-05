@@ -44,12 +44,10 @@ type Sock struct {
 	connected atomic.Bool
 }
 
-var nngTimeout = 5 * time.Second
-
-func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
+func (s *Sock) Provision(ctx api.StreamContext, props map[string]any) error {
 	c, err := ValidateConf(props)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	var sock mangos.Socket
 	switch c.Protocol {
@@ -60,45 +58,52 @@ func CreateConnection(ctx api.StreamContext, props map[string]any) (modules.Conn
 	case "req":
 		sock, err = req.NewSocket()
 	default:
-		return nil, fmt.Errorf("unsupported nng protocol %s", c.Protocol)
+		return fmt.Errorf("unsupported nng protocol %s", c.Protocol)
 	}
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// options consider to export
 	_ = sock.SetOption(mangos.OptionSendDeadline, nngTimeout)
 	_ = sock.SetOption(mangos.OptionRecvDeadline, nngTimeout)
-	cli := &Sock{
-		url:       c.Url,
-		Socket:    sock,
-		connected: atomic.Bool{},
-	}
+	s.url = c.Url
+	s.Socket = sock
 	sock.SetPipeEventHook(func(ev mangos.PipeEvent, p mangos.Pipe) {
 		switch ev {
 		case mangos.PipeEventAttached:
-			cli.connected.Store(true)
+			s.connected.Store(true)
 			ctx.GetLogger().Infof("nano connection attached")
 		case mangos.PipeEventAttaching:
 			ctx.GetLogger().Infof("nano connection is attaching")
 		case mangos.PipeEventDetached:
-			cli.connected.Store(false)
+			s.connected.Store(false)
 			ctx.GetLogger().Warnf("nano connection detached")
 			// TODO how to let connection send error event?
 		}
 	})
+	return nil
+}
+
+func (s *Sock) Dial(ctx api.StreamContext) error {
 	// sock.SetOption(mangos.OptionWriteQLen, 100)
 	// sock.SetOption(mangos.OptionReadQLen, 100)
 	// sock.SetOption(mangos.OptionBestEffort, false)
-	if err = sock.DialOptions(c.Url, map[string]interface{}{
+	if err := s.Socket.DialOptions(s.url, map[string]interface{}{
 		mangos.OptionDialAsynch:       true, // will not report error and keep connecting
 		mangos.OptionMaxReconnectTime: 5 * time.Second,
 		mangos.OptionReconnectTime:    100 * time.Millisecond,
 		mangos.OptionMaxRecvSize:      0,
 	}); err != nil {
-		return nil, fmt.Errorf("please make sure nng server side has started and configured, can't dial: %s", err.Error())
+		return fmt.Errorf("please make sure nng server side has started and configured, can't dial: %s", err.Error())
 	}
-	return cli, nil
+	return nil
+}
+
+var nngTimeout = 5 * time.Second
+
+func CreateConnection(ctx api.StreamContext) modules.Connection {
+	return &Sock{}
 }
 
 func ValidateConf(props map[string]any) (*SockConf, error) {

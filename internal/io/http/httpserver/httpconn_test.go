@@ -32,7 +32,8 @@ func TestHttpConn(t *testing.T) {
 		"datasource": "/post",
 		"method":     "POST",
 	}
-	c, err := CreateConnection(ctx, props)
+	c := CreateConnection(ctx)
+	err := c.Provision(ctx, props)
 	require.NoError(t, err)
 	require.NoError(t, c.Ping(ctx))
 	c.DetachSub(ctx, props)

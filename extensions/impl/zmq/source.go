@@ -39,7 +39,7 @@ func (s *zmqSource) Provision(ctx api.StreamContext, configs map[string]any) err
 	return nil
 }
 
-func (s *zmqSource) Connect(ctx api.StreamContext) error {
+func (s *zmqSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	var err error
 	s.subscriber, err = zmq.NewSocket(zmq.SUB)
 	if err != nil {

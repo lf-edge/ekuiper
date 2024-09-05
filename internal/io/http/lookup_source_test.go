@@ -34,7 +34,9 @@ func TestLookup(t *testing.T) {
 		"datasource": "/get",
 		"method":     "get",
 	}))
-	require.NoError(t, hls.Connect(ctx))
+	require.NoError(t, hls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	got, err := hls.Lookup(ctx, []string{"code"}, []string{"code"}, []any{float64(200)})
 	require.NoError(t, err)
 	require.Equal(t, []map[string]any{

@@ -59,7 +59,7 @@ func (s *source) Provision(ctx api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (s *source) Connect(_ api.StreamContext) error {
+func (s *source) Connect(_ api.StreamContext, _ api.StatusChangeHandler) error {
 	// do nothing
 	return nil
 }

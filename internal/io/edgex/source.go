@@ -77,12 +77,12 @@ func (es *Source) Provision(_ api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (es *Source) Connect(ctx api.StreamContext) error {
+func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to edgex server")
 	var cli *client.Client
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config)
+	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config, sc)
 	if err != nil {
 		return err
 	}

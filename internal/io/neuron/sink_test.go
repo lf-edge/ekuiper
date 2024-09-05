@@ -236,10 +236,14 @@ func TestSinkProvision(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = s.Connect(ctx)
+	err = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 
-	err = s.Connect(ctx)
+	err = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 
 	err = s.Close(ctx)

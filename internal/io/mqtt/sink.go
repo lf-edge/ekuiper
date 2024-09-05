@@ -66,11 +66,11 @@ func (ms *Sink) Provision(_ api.StreamContext, ps map[string]any) error {
 	return nil
 }
 
-func (ms *Sink) Connect(ctx api.StreamContext) error {
+func (ms *Sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var err error
 	ms.id = fmt.Sprintf("%s-%s-%s-mqtt-sink", ctx.GetRuleId(), ctx.GetOpId(), ms.adconf.Tpc)
-	ms.cw, err = connection.FetchConnection(ctx, ms.id, "mqtt", ms.config)
+	ms.cw, err = connection.FetchConnection(ctx, ms.id, "mqtt", ms.config, sch)
 	if err != nil {
 		return err
 	}

@@ -71,8 +71,8 @@ func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 	return connection.DetachConnection(ctx, h.conf.DataSource, h.props)
 }
 
-func (h *HttpPushSource) Connect(ctx api.StreamContext) error {
-	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props)
+func (h *HttpPushSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
+	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props, sc)
 	if err != nil {
 		return err
 	}

@@ -39,7 +39,7 @@ type lookupsource struct {
 	key        string
 }
 
-func (s *lookupsource) Connect(ctx api.StreamContext) error {
+func (s *lookupsource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("lookup source %s is opened with key %v", s.topic, s.key)
 	var err error
 	s.table, err = store.Reg(s.topic, s.topicRegex, s.key)
