@@ -195,7 +195,7 @@ func StartUp(Version string) {
 	}
 	conf.SetupConnectionProps()
 	connection.InitConnectionManager()
-	if err := connection.ReloadConnection(); err != nil {
+	if err := connection.ReloadNamedConnection(); err != nil {
 		conf.Log.Warn(err)
 	}
 	meta.Bind()
