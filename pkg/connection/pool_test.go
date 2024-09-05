@@ -97,7 +97,7 @@ func TestConnectionErr(t *testing.T) {
 	require.NoError(t, err)
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/pkg/createConnectionErr", "return(true)")
-	conn, err := createNamedConnection(ctx, &Meta{
+	conn, err := createConnection(ctx, &Meta{
 		ID:    "1",
 		Typ:   "mock",
 		Props: nil,
@@ -124,7 +124,7 @@ func TestConnectionStatus(t *testing.T) {
 	require.NoError(t, InitConnectionManager4Test())
 	conf.WriteCfgIntoKVStorage("connections", "mockErr", "a1", map[string]interface{}{})
 	conf.WriteCfgIntoKVStorage("connections", "mock", "a2", map[string]interface{}{})
-	require.NoError(t, ReloadConnection())
+	require.NoError(t, ReloadNamedConnection())
 	time.Sleep(100 * time.Millisecond)
 	ctx := context.Background()
 	allStatus := GetAllConnectionStatus(ctx)
