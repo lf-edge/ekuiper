@@ -26,9 +26,14 @@ type HttpPushConnection struct {
 	cfg      *connectionCfg
 	endpoint string
 	method   string
+	id       string
 }
 
-func (h *HttpPushConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+func (h *HttpPushConnection) GetId(ctx api.StreamContext) string {
+	return h.id
+}
+
+func (h *HttpPushConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	cfg := &connectionCfg{}
 	if err := cast.MapToStruct(props, cfg); err != nil {
 		return err
@@ -36,6 +41,7 @@ func (h *HttpPushConnection) Provision(ctx api.StreamContext, props map[string]a
 	h.cfg = cfg
 	h.endpoint = cfg.Datasource
 	h.method = cfg.Method
+	h.id = conId
 	return nil
 }
 
@@ -61,7 +67,7 @@ func (h *HttpPushConnection) Ping(ctx api.StreamContext) error {
 	return nil
 }
 
-func (h *HttpPushConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
+func (h *HttpPushConnection) DetachSub(ctx api.StreamContext) {
 	UnregisterEndpoint(h.endpoint)
 }
 

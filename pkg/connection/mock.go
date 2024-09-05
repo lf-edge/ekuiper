@@ -36,7 +36,12 @@ type mockConnection struct {
 	ref int
 }
 
-func (m *mockConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+func (m *mockConnection) GetId(ctx api.StreamContext) string {
+	return m.id
+}
+
+func (m *mockConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	m.id = conId
 	return nil
 }
 
@@ -77,7 +82,11 @@ func CreateMockConnection(ctx api.StreamContext) modules.Connection {
 
 type mockErrConnection struct{}
 
-func (m mockErrConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+func (m mockErrConnection) GetId(ctx api.StreamContext) string {
+	return "test"
+}
+
+func (m mockErrConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	return backoff.Permanent(errors.New("mockErr"))
 }
 

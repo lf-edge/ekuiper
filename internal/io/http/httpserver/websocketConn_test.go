@@ -38,12 +38,11 @@ func TestWebsocketConn(t *testing.T) {
 		"datasource": "/e1",
 	}
 	conn := CreateWebsocketConnection(ctx).(*WebsocketConnection)
-	err := conn.Provision(ctx, props)
+	err := conn.Provision(ctx, "test", props)
 	require.NoError(t, err)
 	err = conn.Dial(ctx)
 	require.NoError(t, err)
 	require.NoError(t, conn.Ping(ctx))
-	conn.DetachSub(ctx, props)
 	require.NoError(t, conn.Close(ctx))
 }
 
@@ -59,12 +58,11 @@ func TestWebsocketClientConn(t *testing.T) {
 		"addr":       s.URL[len("http://"):],
 	}
 	conn := CreateWebsocketConnection(ctx).(*WebsocketConnection)
-	err := conn.Provision(ctx, props)
+	err := conn.Provision(ctx, "test", props)
 	require.NoError(t, err)
 	err = conn.Dial(ctx)
 	require.NoError(t, err)
 	require.NoError(t, conn.Ping(ctx))
-	conn.DetachSub(ctx, props)
 	require.NoError(t, conn.Close(ctx))
 }
 

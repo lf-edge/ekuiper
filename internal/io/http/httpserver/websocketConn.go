@@ -25,18 +25,24 @@ import (
 type WebsocketConnection struct {
 	RecvTopic string
 	SendTopic string
+	id        string
 	props     map[string]any
 	cfg       *wscConfig
 	isServer  bool
 	client    *WebsocketClient
 }
 
-func (w *WebsocketConnection) Provision(ctx api.StreamContext, props map[string]any) error {
+func (w *WebsocketConnection) GetId(ctx api.StreamContext) string {
+	return w.id
+}
+
+func (w *WebsocketConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	cfg := &wscConfig{}
 	if err := cast.MapToStruct(props, cfg); err != nil {
 		return err
 	}
 	w.cfg = cfg
+	w.id = conId
 	w.props = props
 	w.isServer = getWsType(cfg)
 	return nil
@@ -72,9 +78,6 @@ type wscConfig struct {
 
 func (w *WebsocketConnection) Ping(ctx api.StreamContext) error {
 	return nil
-}
-
-func (w *WebsocketConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
 }
 
 func (w *WebsocketConnection) Close(ctx api.StreamContext) error {

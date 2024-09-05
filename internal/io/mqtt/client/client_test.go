@@ -66,7 +66,7 @@ func TestMqttClientPing(t *testing.T) {
 	require.NoError(t, err)
 	ctx := mockContext.NewMockContext("1", "2")
 	c := CreateConnection(ctx)
-	err = c.Provision(ctx, map[string]any{
+	err = c.Provision(ctx, "test", map[string]any{
 		"server":     url,
 		"datasource": "demo",
 	})

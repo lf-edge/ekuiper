@@ -30,13 +30,15 @@ import (
 type Client struct {
 	mbconf types.MessageBusConfig
 	client messaging.MessageClient
+	id     string
 }
 
 func GetConnection(_ api.StreamContext) modules.Connection {
 	return &Client{}
 }
 
-func (es *Client) Provision(ctx api.StreamContext, props map[string]any) error {
+func (es *Client) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	es.id = conId
 	err := es.CfgValidate(props)
 	if err != nil {
 		return err
@@ -47,6 +49,10 @@ func (es *Client) Provision(ctx api.StreamContext, props map[string]any) error {
 	}
 	es.client = client
 	return nil
+}
+
+func (es *Client) GetId(ctx api.StreamContext) string {
+	return es.id
 }
 
 func (es *Client) Dial(ctx api.StreamContext) error {

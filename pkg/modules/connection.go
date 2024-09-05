@@ -22,10 +22,10 @@ type ConnectionStatus struct {
 }
 
 type Connection interface {
-	Provision(ctx api.StreamContext, props map[string]any) error
+	Provision(ctx api.StreamContext, conId string, props map[string]any) error
 	Dial(ctx api.StreamContext) error
+	GetId(ctx api.StreamContext) string
 	Ping(ctx api.StreamContext) error
-	DetachSub(ctx api.StreamContext, props map[string]any)
 	api.Closable
 }
 

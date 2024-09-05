@@ -68,7 +68,8 @@ func (h *HttpPushSource) Provision(ctx api.StreamContext, configs map[string]any
 
 func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 	pubsub.CloseSourceConsumerChannel(h.topic, h.sourceID)
-	return connection.DetachConnection(ctx, h.conf.DataSource, h.props)
+	// TODO if supports to be resource, this should change to the unique conn id
+	return connection.DetachConnection(ctx, h.conf.DataSource)
 }
 
 func (h *HttpPushSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {

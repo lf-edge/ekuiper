@@ -78,10 +78,9 @@ func (s *SqlLookupSource) Provision(ctx api.StreamContext, configs map[string]an
 
 func (s *SqlLookupSource) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
-	id := s.conf.DBUrl
-	connection.DetachConnection(ctx, id, s.props)
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
+		return connection.DetachConnection(ctx, s.conn.GetId(ctx))
 	}
 	return nil
 }

@@ -41,10 +41,15 @@ type SockConf struct {
 type Sock struct {
 	mangos.Socket
 	url       string
+	id        string
 	connected atomic.Bool
 }
 
-func (s *Sock) Provision(ctx api.StreamContext, props map[string]any) error {
+func (s *Sock) GetId(ctx api.StreamContext) string {
+	return s.id
+}
+
+func (s *Sock) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	c, err := ValidateConf(props)
 	if err != nil {
 		return err
@@ -68,6 +73,7 @@ func (s *Sock) Provision(ctx api.StreamContext, props map[string]any) error {
 	_ = sock.SetOption(mangos.OptionSendDeadline, nngTimeout)
 	_ = sock.SetOption(mangos.OptionRecvDeadline, nngTimeout)
 	s.url = c.Url
+	s.id = conId
 	s.Socket = sock
 	sock.SetPipeEventHook(func(ev mangos.PipeEvent, p mangos.Pipe) {
 		switch ev {
@@ -141,10 +147,6 @@ func (s *Sock) Ping(_ api.StreamContext) error {
 
 func (s *Sock) Close(_ api.StreamContext) error {
 	return s.Socket.Close()
-}
-
-func (s *Sock) DetachSub(_ api.StreamContext, _ map[string]any) {
-	// do nothing
 }
 
 func (s *Sock) Send(ctx api.StreamContext, data []byte) error {

@@ -35,6 +35,7 @@ import (
 type Connection struct {
 	pahoMqtt.Client
 	selId     string
+	id        string
 	logger    api.Logger
 	connected atomic.Bool
 	status    atomic.Value
@@ -56,7 +57,7 @@ func CreateConnection(_ api.StreamContext) modules.Connection {
 	return &Connection{}
 }
 
-func (conn *Connection) Provision(ctx api.StreamContext, props map[string]any) error {
+func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
 	c, err := ValidateConfig(props)
 	if err != nil {
 		return err
@@ -83,7 +84,12 @@ func (conn *Connection) Provision(ctx api.StreamContext, props map[string]any) e
 	conn.selId = c.ClientId
 	conn.Client = cli
 	conn.conf = c
+	conn.id = conId
 	return nil
+}
+
+func (conn *Connection) GetId(ctx api.StreamContext) string {
+	return conn.id
 }
 
 func (conn *Connection) Dial(ctx api.StreamContext) error {

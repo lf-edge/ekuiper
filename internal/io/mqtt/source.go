@@ -76,7 +76,7 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 
 func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interface{}) error {
 	cli := &client.Connection{}
-	err := cli.Provision(ctx, props)
+	err := cli.Provision(ctx, "test", props)
 	if err != nil {
 		return err
 	}
@@ -136,10 +136,9 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
-	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	connection.DetachConnection(ctx, id, ms.props)
 	if ms.cli != nil {
 		ms.cli.DetachSub(ctx, ms.props)
+		return connection.DetachConnection(ctx, ms.cli.GetId(ctx))
 	}
 	return nil
 }

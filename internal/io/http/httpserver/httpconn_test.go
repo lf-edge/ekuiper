@@ -33,9 +33,8 @@ func TestHttpConn(t *testing.T) {
 		"method":     "POST",
 	}
 	c := CreateConnection(ctx)
-	err := c.Provision(ctx, props)
+	err := c.Provision(ctx, "test", props)
 	require.NoError(t, err)
 	require.NoError(t, c.Ping(ctx))
-	c.DetachSub(ctx, props)
 	require.NoError(t, c.Close(ctx))
 }
