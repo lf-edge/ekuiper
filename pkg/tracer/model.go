@@ -15,6 +15,7 @@
 package tracer
 
 import (
+	"encoding/json"
 	"time"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -36,6 +37,10 @@ type LocalSpan struct {
 
 type LocalLink struct {
 	TraceID string `yaml:"traceID"`
+}
+
+func (span *LocalSpan) ToBytes() ([]byte, error) {
+	return json.Marshal(span)
 }
 
 func FromReadonlySpan(readonly sdktrace.ReadOnlySpan) *LocalSpan {

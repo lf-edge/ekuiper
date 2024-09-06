@@ -34,6 +34,8 @@ var (
 	globalStores   *stores = nil
 	cacheStores    *stores = nil
 	extStateStores *stores = nil
+
+	TraceStores sql.Database
 )
 
 type stores struct {

@@ -37,9 +37,13 @@ func TestLocalSpan(t *testing.T) {
 	require.NoError(t, s.saveSpan(span1))
 	require.Equal(t, 1, s.queue.Len())
 	// span0 should be dropped
-	require.Nil(t, s.GetTraceById("t0"))
+	root, err := s.GetTraceById("t0")
+	require.NoError(t, err)
+	require.Nil(t, root)
 	// span1 should be root span
-	require.Equal(t, span1, s.GetTraceById("t1"))
+	s1, err := s.GetTraceById("t1")
+	require.NoError(t, err)
+	require.Equal(t, span1, s1)
 }
 
 func TestLocalTraceByRule(t *testing.T) {
@@ -57,6 +61,10 @@ func TestLocalTraceByRule(t *testing.T) {
 	}
 	require.NoError(t, s.saveSpan(span0))
 	require.NoError(t, s.saveSpan(span1))
-	require.Len(t, s.GetTraceByRuleID("r1", 0), 2)
-	require.Len(t, s.GetTraceByRuleID("r1", 1), 1)
+	ids, err := s.GetTraceByRuleID("r1", 0)
+	require.NoError(t, err)
+	require.Len(t, ids, 2)
+	ids, err = s.GetTraceByRuleID("r1", 0)
+	require.NoError(t, err)
+	require.Len(t, ids, 2)
 }

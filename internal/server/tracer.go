@@ -28,7 +28,11 @@ import (
 func getTraceByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	root := tracer.GetSpanByTraceID(id)
+	root, err := tracer.GetSpanByTraceID(id)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	if root == nil {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -69,9 +73,13 @@ func getTraceIDByRuleID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		limit = 0
 	}
-	root := tracer.GetTraceIDListByRuleID(id, int(limit))
+	root, err := tracer.GetTraceIDListByRuleID(id, int(limit))
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
 	if root == nil {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		handleError(w, err, "", logger)
 		return
 	}
 	jsonResponse(root, w, logger)
