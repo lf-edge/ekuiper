@@ -4,7 +4,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/PaesslerAG/jsonpath v0.1.1
-	github.com/Rookiecom/cpuprofile v1.0.2
+	github.com/Rookiecom/cpuprofile v1.0.4
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/apple/foundationdb/bindings/go v0.0.0-20240315202255-8943393e84fc
 	github.com/benbjohnson/clock v1.3.5

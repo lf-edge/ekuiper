@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Rookiecom/cpuprofile"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
@@ -175,9 +176,35 @@ func TestRunScheduleRuleChecker(t *testing.T) {
 	cancel()
 }
 
+type testProfile struct{}
+
+func (test *testProfile) StartCPUProfiler(ctx context.Context, t time.Duration) error {
+	return nil
+}
+
+func (test *testProfile) EnableWindowAggregator(window int) {
+	return
+}
+
+func (test *testProfile) GetWindowData() cpuprofile.DataSetAggregateMap {
+	return cpuprofile.DataSetAggregateMap{}
+}
+
 func TestStartCPUProfiling(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
-	err := startCPUProfiling(ctx)
+
+	ekuiperProfiler := &ekuiperProfile{}
+	if err := ekuiperProfiler.StartCPUProfiler(ctx, 1000*time.Millisecond); err != nil {
+		t.Fatal(err)
+	}
+	ekuiperProfiler.EnableWindowAggregator(5)
+	data := ekuiperProfiler.GetWindowData()
+	if data == nil {
+		t.Fatal("cpu profiling data is nil")
+	}
+
+	profiler := &testProfile{}
+	err := StartCPUProfiling(ctx, profiler)
 	if err != nil {
 		t.Fatal(err)
 	}

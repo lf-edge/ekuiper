@@ -229,23 +229,54 @@ func scheduleCronRule(now time.Time, options *def.RuleOption) (bool, error) {
 	return false, nil
 }
 
-func startCPUProfiling(ctx context.Context) error {
-	if err := cpuprofile.StartProfilerAndAggregater(ctx, time.Duration(1000)*time.Millisecond); err != nil {
+type Profiler interface {
+	StartCPUProfiler(context.Context, time.Duration) error
+	EnableWindowAggregator(int)
+	GetWindowData() cpuprofile.DataSetAggregateMap
+}
+
+type ekuiperProfile struct{}
+
+func (e *ekuiperProfile) StartCPUProfiler(ctx context.Context, t time.Duration) error {
+	return cpuprofile.StartCPUProfiler(ctx, t)
+}
+
+func (e *ekuiperProfile) EnableWindowAggregator(window int) {
+	cpuprofile.EnableWindowAggregator(window)
+}
+
+func (e *ekuiperProfile) GetWindowData() cpuprofile.DataSetAggregateMap {
+	return cpuprofile.GetWindowData()
+}
+
+func StartCPUProfiling(ctx context.Context, cpuProfile Profiler) error {
+	cpuProfile.EnableWindowAggregator(30)
+	if err := cpuProfile.StartCPUProfiler(ctx, 1000*time.Millisecond); err != nil {
 		return err
 	}
-	receiveChan := make(chan *cpuprofile.DataSetAggregate, 1024)
-	cpuprofile.RegisterTag("rule", receiveChan)
 	go func(ctx context.Context) {
+		ticker := time.NewTicker(15 * time.Second)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case data := <-receiveChan:
-				// TODO: support query in future
-				conf.Log.Debugf("cpu profile data: %v", data)
+			case <-ticker.C:
+				data := cpuProfile.GetWindowData()
+				if data == nil {
+					continue
+				}
+				ruleUsage, ok := data["rule"]
+				if !ok {
+					continue
+				}
+				for labelValue, t := range ruleUsage.Stats {
+					promMetrics.SetRuleCPUUsageGauge(labelValue, t)
+				}
 			}
 		}
 	}(ctx)
+
 	return nil
 }
 
