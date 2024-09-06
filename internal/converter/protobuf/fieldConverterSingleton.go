@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import (
 	// TODO: replace with `google.golang.org/protobuf/proto` pkg.
 	"github.com/golang/protobuf/proto" //nolint:staticcheck
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/dynamic"
+	"github.com/jhump/protoreflect/desc"    //nolint:staticcheck
+	"github.com/jhump/protoreflect/dynamic" //nolint:staticcheck
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )

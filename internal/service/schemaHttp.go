@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 	"strings"
 
 	dpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"github.com/jhump/protoreflect/desc"
-	"github.com/jhump/protoreflect/dynamic"
+	"github.com/jhump/protoreflect/desc"    //nolint:staticcheck
+	"github.com/jhump/protoreflect/dynamic" //nolint:staticcheck
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
