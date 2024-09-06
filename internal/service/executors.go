@@ -25,9 +25,9 @@ import (
 	"time"
 
 	// TODO: replace with `google.golang.org/protobuf/proto` pkg.
-	"github.com/golang/protobuf/proto" //nolint:staticcheck
-	"github.com/jhump/protoreflect/dynamic"
-	"github.com/jhump/protoreflect/dynamic/grpcdynamic"
+	"github.com/golang/protobuf/proto"                  //nolint:staticcheck
+	"github.com/jhump/protoreflect/dynamic"             //nolint:staticcheck
+	"github.com/jhump/protoreflect/dynamic/grpcdynamic" //nolint:staticcheck
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"google.golang.org/grpc"
