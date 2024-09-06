@@ -1,6 +1,6 @@
-# Data tracking management
+# Data tracing management
 
-eKuiper supports viewing recent tracking data of rules through API.
+eKuiper supports viewing recent tracing data of rules through API.
 
 ## View the latest Trace ID based on the rule ID
 
@@ -10,7 +10,7 @@ GET http://localhost:9081/trace/rule/{ruleID}"
 ["747743cbf1fc6d10f732d17e5626021a"]
 ```
 
-## View detailed tracking data based on Trace ID
+## View detailed tracing data based on Trace ID
 
 ```shell
 GET http://localhost:9081/trace/{id}

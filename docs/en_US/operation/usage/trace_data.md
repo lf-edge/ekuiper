@@ -13,7 +13,7 @@ openTelemetry:
   localTraceCapacity: 2048
 ```
 
-## Enable rule-level tracking
+## Enable rule-level tracing
 
 You can turn on data link tracing for the corresponding rule by setting `enableRuleTracer` in the rule `options` to true. For specific settings, please see [Rules](../../guide/rules/overview.md#rules)
 
@@ -25,6 +25,6 @@ You can get the latest Trace ID corresponding to the rule through the Rest API.
 
 ## View traced data flow changes based on Trace ID
 
-If you configure an Open Telemetry Tracing collector, you can query the storage and query platform behind the Open Telemetry collector through the Trace ID. At the same time, you can also obtain detailed tracking data by accessing the local Rest API.
+If you configure an Open Telemetry Tracing collector, you can query the storage and query platform behind the Open Telemetry collector through the Trace ID. At the same time, you can also obtain detailed tracing data by accessing the local Rest API.
 
-[View detailed tracing data based on Trace ID](../../api/restapi/trace.md#view-detailed-tracking-data-based-on-trace-id)
+[View detailed tracing data based on Trace ID](../../api/restapi/trace.md#view-detailed-tracing-data-based-on-trace-id)
