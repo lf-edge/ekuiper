@@ -66,10 +66,6 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	return m, nil
 }
 
-// TODO manage connection, use connection entity later
-// Connection must be able to retry. There is another metrics to record the connection status.(connected, retry count, connect time, disconnect time)
-// connect and auto reconnect
-
 // Open will be invoked by topo. It starts reading data.
 func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 	m.prepareExec(ctx, ctrlCh, "source")
@@ -135,10 +131,11 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 }
 
 func (m *SourceNode) connectionStatusChange(status string, message string) {
+	// TODO only send out error when status change from connected?
 	if status == api.ConnectionDisconnected {
 		m.ingestError(m.ctx, fmt.Errorf("disconnected: %s", message))
 	}
-	// TODO add more metrics
+	m.statManager.SetConnectionState(status, message)
 }
 
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
