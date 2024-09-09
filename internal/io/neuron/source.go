@@ -117,6 +117,9 @@ func GetSource() api.Source {
 }
 
 func extractTraceMeta(ctx api.StreamContext, data []byte) map[string]interface{} {
+	if !ctx.IsTraceEnabled() {
+		return nil
+	}
 	meta := make(map[string]interface{})
 	var traced bool
 	var tracerCtx api.StreamContext
