@@ -42,10 +42,20 @@ type Sock struct {
 	mangos.Socket
 	url       string
 	id        string
+	scHandler api.StatusChangeHandler
 	connected atomic.Bool
+	status    atomic.Value
 }
 
-func (s *Sock) GetId(ctx api.StreamContext) string {
+func (s *Sock) SetStatusChangeHandler(_ api.StreamContext, handler api.StatusChangeHandler) {
+	s.scHandler = handler
+}
+
+func (s *Sock) Status(_ api.StreamContext) modules.ConnectionStatus {
+	return s.status.Load().(modules.ConnectionStatus)
+}
+
+func (s *Sock) GetId(_ api.StreamContext) string {
 	return s.id
 }
 
@@ -79,13 +89,24 @@ func (s *Sock) Provision(ctx api.StreamContext, conId string, props map[string]a
 		switch ev {
 		case mangos.PipeEventAttached:
 			s.connected.Store(true)
+			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
+			if s.scHandler != nil {
+				s.scHandler(api.ConnectionConnected, "")
+			}
 			ctx.GetLogger().Infof("nano connection attached")
 		case mangos.PipeEventAttaching:
-			ctx.GetLogger().Infof("nano connection is attaching")
+			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
+			if s.scHandler != nil {
+				s.scHandler(api.ConnectionConnecting, "")
+			}
+			ctx.GetLogger().Debugf("nano connection is attaching")
 		case mangos.PipeEventDetached:
 			s.connected.Store(false)
+			s.status.Store(modules.ConnectionStatus{Status: api.ConnectionDisconnected})
+			if s.scHandler != nil {
+				s.scHandler(api.ConnectionDisconnected, "")
+			}
 			ctx.GetLogger().Warnf("nano connection detached")
-			// TODO how to let connection send error event?
 		}
 	})
 	return nil
@@ -108,8 +129,11 @@ func (s *Sock) Dial(ctx api.StreamContext) error {
 
 var nngTimeout = 5 * time.Second
 
-func CreateConnection(ctx api.StreamContext) modules.Connection {
-	return &Sock{}
+func CreateConnection(_ api.StreamContext) modules.Connection {
+	s := &Sock{}
+	s.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
+	s.connected.Store(false)
+	return s
 }
 
 func ValidateConf(props map[string]any) (*SockConf, error) {
@@ -157,4 +181,4 @@ func (s *Sock) Send(ctx api.StreamContext, data []byte) error {
 	return errorx.NewIOErr(`nng connection is not established`)
 }
 
-var _ modules.Connection = &Sock{}
+var _ modules.StatefulDialer = &Sock{}

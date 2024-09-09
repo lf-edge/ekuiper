@@ -16,8 +16,16 @@ package nng
 
 import (
 	"testing"
+	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
+	_ "go.nanomsg.org/mangos/v3/transport/ipc"
+
+	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
 
 func TestValidate(t *testing.T) {
@@ -60,5 +68,75 @@ func TestValidate(t *testing.T) {
 			assert.Error(t, e)
 			assert.EqualError(t, e, tt.err)
 		})
+	}
+}
+
+func TestConStatus(t *testing.T) {
+	var statusHistory []modules.ConnectionStatus
+	scRecorder := func(status string, message string) {
+		statusHistory = append(statusHistory, modules.ConnectionStatus{Status: status, ErrMsg: message})
+	}
+	ctx := mockContext.NewMockContext("testConStatus", "test")
+	c := CreateConnection(ctx).(*Sock)
+	err := c.Provision(ctx, "testconstatus", map[string]any{
+		"url": "ipc:///tmp/testconstatus.ipc",
+	})
+	require.NoError(t, err)
+	c.SetStatusChangeHandler(ctx, scRecorder)
+	err = c.Dial(ctx)
+	require.NoError(t, err)
+	defer c.Close(ctx)
+	st := c.Status(ctx)
+	require.Equal(t, modules.ConnectionStatus{Status: api.ConnectionConnecting}, st)
+	// Connect
+	sock, err := pair.NewSocket()
+	require.NoError(t, err)
+	err = sock.Listen("ipc:///tmp/testconstatus.ipc")
+	require.NoError(t, err)
+	retry := 10
+	for i := 0; i < retry; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if c.connected.Load() {
+			break
+		}
+	}
+	if c.connected.Load() {
+		st = c.Status(ctx)
+		assert.Equal(t, modules.ConnectionStatus{Status: api.ConnectionConnected}, st)
+	} else {
+		require.FailNow(t, "failed to connect")
+	}
+	// Disconnect
+	err = sock.Close()
+	require.NoError(t, err)
+	for i := 0; i < retry; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if !c.connected.Load() {
+			break
+		}
+	}
+	if !c.connected.Load() {
+		st = c.Status(ctx)
+		assert.Equal(t, modules.ConnectionStatus{Status: api.ConnectionDisconnected}, st)
+	} else {
+		require.FailNow(t, "failed to connect")
+	}
+	// ReConnect
+	sock, err = pair.NewSocket()
+	require.NoError(t, err)
+	err = sock.Listen("ipc:///tmp/testconstatus.ipc")
+	require.NoError(t, err)
+	retry = 10
+	for i := 0; i < retry; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if c.connected.Load() {
+			break
+		}
+	}
+	if c.connected.Load() {
+		st = c.Status(ctx)
+		assert.Equal(t, modules.ConnectionStatus{Status: api.ConnectionConnected}, st)
+	} else {
+		require.FailNow(t, "failed to connect")
 	}
 }
