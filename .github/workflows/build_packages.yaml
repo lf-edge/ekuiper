@@ -59,8 +59,13 @@ jobs:
         cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
     - name: Set artifact name
       id: artifact_name
+      env:
+        ARCH: ${{ matrix.arch }}
+        REF: ${{ github.ref_name }}
       run: |
-        artifact_name="kuiper-${{ github.ref_name }}-${{ matrix.os }}-$(echo ${{ matrix.arch }} | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')"
+        arch=$(echo $ARCH | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')
+        ref=$(echo ${REF/\//-})
+        artifact_name="kuiper-${ref}-${{ matrix.os }}-${arch}"
         echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
     - uses: actions/upload-artifact@v4
       with:
@@ -269,12 +274,14 @@ jobs:
         env:
           PLUGIN: ${{ matrix.plugin }}
           ARCH: ${{ matrix.arch }}
+          REF: ${{ github.ref_name }}
         run: |
           plugin_type=$(echo ${PLUGIN%%/*})
           plugin_name=$(echo ${PLUGIN##*/})
           arch=$(echo $ARCH | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')
+          ref=$(echo ${REF/\//-})
 
-          artifact_name="plugin-${{ github.ref_name }}-${{ matrix.os[0] }}-${plugin_type}-${plugin_name}-${arch}"
+          artifact_name="plugin-${ref}-${{ matrix.os[0] }}-${plugin_type}-${plugin_name}-${arch}"
           echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:
