@@ -15,11 +15,14 @@
 package tracer
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 )
 
 func TestLocalSpan(t *testing.T) {
@@ -67,4 +70,30 @@ func TestLocalTraceByRule(t *testing.T) {
 	ids, err = s.GetTraceByRuleID("r1", 0)
 	require.NoError(t, err)
 	require.Len(t, ids, 2)
+}
+
+func TestLocalStorageTraceManager(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	os.Remove(filepath.Join(dataDir, "trace.db"))
+	require.NoError(t, store.SetupDefault(dataDir))
+	spanStorage := newSqlspanStorage()
+	span0 := &LocalSpan{
+		TraceID: "t0",
+		SpanID:  "s0",
+		RuleID:  "r1",
+	}
+	span1 := &LocalSpan{
+		TraceID: "t1",
+		SpanID:  "s1",
+		RuleID:  "r1",
+	}
+	require.NoError(t, spanStorage.saveLocalSpan(span0))
+	require.NoError(t, spanStorage.saveLocalSpan(span1))
+	got, err := spanStorage.loadTraceByRuleID("r1")
+	require.NoError(t, err)
+	require.Equal(t, []string{"t0", "t1"}, got)
+	gotSpan, err := spanStorage.GetTraceById("t1")
+	require.NoError(t, err)
+	require.Equal(t, gotSpan, span1)
 }

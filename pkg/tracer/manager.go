@@ -280,39 +280,39 @@ func newSqlspanStorage() *sqlSpanStorage {
 
 func (s *sqlSpanStorage) SaveSpan(span sdktrace.ReadOnlySpan) error {
 	localSpan := FromReadonlySpan(span)
-	return saveLocalSpan(localSpan)
+	return s.saveLocalSpan(localSpan)
 }
 
 func (s *sqlSpanStorage) GetTraceById(traceID string) (*LocalSpan, error) {
-	return loadTraceByTraceID(traceID)
+	return s.loadTraceByTraceID(traceID)
 }
 
 func (s *sqlSpanStorage) GetTraceByRuleID(ruleID string, limit int) ([]string, error) {
-	return loadTraceByRuleID(ruleID)
+	return s.loadTraceByRuleID(ruleID)
 }
 
-func saveLocalSpan(span *LocalSpan) error {
+func (s *sqlSpanStorage) saveLocalSpan(span *LocalSpan) error {
 	bs, err := span.ToBytes()
 	if err != nil {
 		return err
 	}
 	if store.TraceStores != nil {
 		return store.TraceStores.Apply(func(db *sql.DB) error {
-			stmt, err := db.Prepare("insert into trace(traceID,ruleID,value) values ('?','?','?')")
+			stmt, err := db.Prepare("insert into trace(traceID , ruleID,value) values (?,?,?)")
 			if err != nil {
 				return err
 			}
-			_, err = stmt.Exec(span.TraceID, span.RuleID, bs)
-			return err
+			_, execErr := stmt.Exec(span.TraceID, span.RuleID, bs)
+			return execErr
 		})
 	}
 	return nil
 }
 
-func loadTraceByRuleID(ruleID string) ([]string, error) {
+func (s *sqlSpanStorage) loadTraceByRuleID(ruleID string) ([]string, error) {
 	traceIDList := make([]string, 0)
 	err := store.TraceStores.Apply(func(db *sql.DB) error {
-		stmt, err := db.Prepare("select traceID from trace where ruleID = '?'")
+		stmt, err := db.Prepare("select traceID from trace where ruleID = ?")
 		if err != nil {
 			return err
 		}
@@ -332,10 +332,10 @@ func loadTraceByRuleID(ruleID string) ([]string, error) {
 	return traceIDList, err
 }
 
-func loadTraceByTraceID(traceID string) (*LocalSpan, error) {
+func (s *sqlSpanStorage) loadTraceByTraceID(traceID string) (*LocalSpan, error) {
 	var valueList [][]byte
 	err := store.TraceStores.Apply(func(db *sql.DB) error {
-		stmt, err := db.Prepare("select value from trace where traceID = '?'")
+		stmt, err := db.Prepare("select value from trace where traceID = ?")
 		if err != nil {
 			return err
 		}
