@@ -57,9 +57,14 @@ jobs:
     - name: create sha file
       run: |
         cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
+    - name: Set artifact name
+      id: artifact_name
+      run: |
+        artifact_name="kuiper-${{ github.ref_name }}-${{ matrix.os }}-$(echo ${{ matrix.arch }} | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')"
+        echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
     - uses: actions/upload-artifact@v4
       with:
-        name: packages
+        name: ${{ steps.artifact_name.outputs.artifact_name }}
         path: _packages/
 
   build-on-mac:
@@ -82,7 +87,7 @@ jobs:
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
     - uses: actions/upload-artifact@v4
       with:
-        name: mac_packages
+        name: kuiper-${{ github.ref_name }}-darwin-amd64
         path: _packages/
 
   build-docker-images:
@@ -261,10 +266,16 @@ jobs:
           [ $plugin_name = $(curl ${ip_address}:9081/plugins/${plugin_type}/${plugin_name} | jq '.name'| sed 's/\"//g' ) ] || exit 1
       - name: Set artifact name
         id: artifact_name
+        env:
+          PLUGIN: ${{ matrix.plugin }}
+          ARCH: ${{ matrix.arch }}
         run: |
-          plugin_name="${{ matrix.plugin }}"
-          artifact_name="${plugin_name/\//_}"
-          echo "::set-output name=artifact_name::$artifact_name"
+          plugin_type=$(echo ${PLUGIN%%/*})
+          plugin_name=$(echo ${PLUGIN##*/})
+          arch=$(echo $ARCH | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')
+
+          artifact_name="plugin-${{ github.ref_name }}-${{ matrix.os[0] }}-${plugin_type}-${plugin_name}-${arch}"
+          echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact_name.outputs.artifact_name }}
@@ -338,16 +349,14 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/download-artifact@v4
       with:
-        name: packages
+        pattern: kuiper-*
         path: _packages
+        merge-multiple: true
     - uses: actions/download-artifact@v4
       with:
-        name: mac_packages
-        path: _packages
-    - uses: actions/download-artifact@v4
-      with:
-        name: plugins
+        pattern: plugin-*
         path: _plugins
+        merge-multiple: true
     - name: check packages
       run: |
         cd _packages && for var in $( ls |grep -v sha256); do
@@ -383,10 +392,4 @@ jobs:
           ${{ secrets.EMQX_IO_RELEASE_API }}
     - uses: geekyeggo/delete-artifact@v5
       with:
-        name: packages
-    - uses: geekyeggo/delete-artifact@v5
-      with:
-        name: mac_packages
-    - uses: geekyeggo/delete-artifact@v5
-      with:
-        name: plugins
+        name: "*"
