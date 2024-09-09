@@ -31,7 +31,7 @@ require (
 	github.com/keepeye/logrus-filename v0.0.0-20190711075016-ce01a4391dd1
 	github.com/klauspost/compress v1.17.9
 	github.com/lf-edge/ekuiper/contract/v2 v2.0.0-beta.1
-	github.com/mattn/go-tflite v1.0.5
+	github.com/mattn/go-tflite v1.0.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mmcloughlin/geohash v0.10.0
 	github.com/mochi-mqtt/server/v2 v2.6.5
