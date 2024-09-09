@@ -89,6 +89,13 @@ func (m *influxSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler)
 	if m.tlsconf != nil {
 		insecureSkip = m.tlsconf.InsecureSkipVerify
 	}
+	defer func() {
+		if err != nil {
+			sch(api.ConnectionDisconnected, err.Error())
+		} else {
+			sch(api.ConnectionConnecting, "")
+		}
+	}()
 	m.cli, err = client.NewHTTPClient(client.HTTPConfig{
 		Addr:               m.conf.Addr,
 		Username:           m.conf.Username,

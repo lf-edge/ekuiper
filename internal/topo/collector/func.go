@@ -46,12 +46,14 @@ func (c *FuncCollector) Provision(ctx api.StreamContext, configs map[string]any)
 	return nil
 }
 
-func (c *FuncCollector) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+func (c *FuncCollector) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Info("Opening func collector")
-
 	if c.f == nil {
-		return errors.New("func collector missing function")
+		err := errors.New("func collector missing function")
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
 	}
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

@@ -131,8 +131,14 @@ func (k *KafkaSink) Close(ctx api.StreamContext) error {
 	return k.writer.Close()
 }
 
-func (k *KafkaSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
-	return k.buildKafkaWriter()
+func (k *KafkaSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	err := k.buildKafkaWriter()
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+	} else {
+		sch(api.ConnectionConnecting, "")
+	}
+	return err
 }
 
 func (k *KafkaSink) Collect(ctx api.StreamContext, item api.MessageTuple) error {

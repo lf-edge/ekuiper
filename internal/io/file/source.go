@@ -143,8 +143,8 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (fs *Source) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
-	// do nothing
+func (fs *Source) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

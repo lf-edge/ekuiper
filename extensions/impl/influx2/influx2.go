@@ -133,14 +133,21 @@ func (m *influxSink2) Provision(_ api.StreamContext, props map[string]any) error
 	return nil
 }
 
-func (m *influxSink2) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+func (m *influxSink2) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) (err error) {
 	options := client.DefaultOptions().SetPrecision(m.conf.Precision).SetBatchSize(uint(m.conf.BatchSize))
 	if m.tlsconf != nil {
 		options = options.SetTLSConfig(m.tlsconf)
 	}
+	defer func() {
+		if err != nil {
+			sch(api.ConnectionDisconnected, err.Error())
+		} else {
+			sch(api.ConnectionConnecting, "")
+		}
+	}()
 	m.cli = client.NewClientWithOptions(m.conf.Addr, m.conf.Token, options)
 	// Test connection
-	_, err := m.cli.Ping(ctx)
+	_, err = m.cli.Ping(ctx)
 	return err
 }
 

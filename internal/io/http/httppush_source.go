@@ -72,8 +72,8 @@ func (h *HttpPushSource) Close(ctx api.StreamContext) error {
 	return connection.DetachConnection(ctx, h.conf.DataSource)
 }
 
-func (h *HttpPushSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
-	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props, sc)
+func (h *HttpPushSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	cw, err := connection.FetchConnection(ctx, h.conf.DataSource, "httppush", h.props, sch)
 	if err != nil {
 		return err
 	}
@@ -87,6 +87,7 @@ func (h *HttpPushSource) Connect(ctx api.StreamContext, sc api.StatusChangeHandl
 	}
 	h.sourceID = fmt.Sprintf("%s_%s_%v", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
 	h.topic = hc.GetTopic()
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 
