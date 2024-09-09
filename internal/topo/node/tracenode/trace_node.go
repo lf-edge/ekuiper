@@ -82,6 +82,20 @@ func StartTrace(ctx api.StreamContext, opName string) (bool, api.StreamContext, 
 	return true, ingestCtx, span
 }
 
+func StartTraceByID(ctx api.StreamContext, traceID [16]byte, spanID [8]byte) (bool, api.StreamContext, trace.Span) {
+	if !ctx.IsTraceEnabled() {
+		return false, nil, nil
+	}
+	spanCtx, span := tracer.GetTracer().Start(trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: traceID,
+		SpanID:  spanID,
+	})), ctx.GetOpId())
+	span.SetAttributes(attribute.String(RuleKey, ctx.GetRuleId()))
+	ingestCtx := topoContext.WithContext(spanCtx)
+	ingestCtx.IsTraceEnabled()
+	return true, ingestCtx, span
+}
+
 func ToStringRow(r xsql.Row) string {
 	d := r.Clone().ToMap()
 	b, _ := json.Marshal(d)

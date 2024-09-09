@@ -22,10 +22,12 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 type c struct {
@@ -100,6 +102,7 @@ func (s *sink) Collect(ctx api.StreamContext, data api.MessageTuple) error {
 		if err != nil {
 			return err
 		}
+		r = extractSpanContextIntoData(ctx, data, r)
 		return s.cli.Send(ctx, r)
 	} else {
 		return s.SendMapToNeuron(ctx, data)
@@ -160,7 +163,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 			for _, k := range keys {
 				t.TagName = k
 				t.Value = el[k]
-				err := doPublish(ctx, s.cli, t)
+				err := doPublish(ctx, s.cli, tuple, t)
 				if err != nil {
 					return err
 				}
@@ -169,7 +172,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 			for k, v := range el {
 				t.TagName = k
 				t.Value = v
-				err := doPublish(ctx, s.cli, t)
+				err := doPublish(ctx, s.cli, tuple, t)
 				if err != nil {
 					return err
 				}
@@ -188,7 +191,7 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 				ctx.GetLogger().Errorf("Error get the value of tag %s: %v", t.TagName, err)
 				continue
 			}
-			err := doPublish(ctx, s.cli, t)
+			err := doPublish(ctx, s.cli, tuple, t)
 			if err != nil {
 				return err
 			}
@@ -197,17 +200,33 @@ func (s *sink) SendMapToNeuron(ctx api.StreamContext, tuple api.MessageTuple) er
 	return nil
 }
 
-func doPublish(ctx api.StreamContext, cli *nng.Sock, t *neuronTemplate) error {
+func doPublish(ctx api.StreamContext, cli *nng.Sock, tuple api.MessageTuple, t *neuronTemplate) error {
 	r, err := json.Marshal(t)
 	if err != nil {
 		return fmt.Errorf("Error marshall the tag payload %v: %v", t, err)
 	}
+	r = extractSpanContextIntoData(ctx, tuple, r)
 	err = cli.Send(ctx, r)
 	if err != nil {
 		return errorx.NewIOErr(fmt.Sprintf(`Error publish the tag payload %s: %v`, t.TagName, err))
 	}
 	ctx.GetLogger().Debugf("Send %s", r)
 	return nil
+}
+
+func extractSpanContextIntoData(ctx api.StreamContext, data interface{}, sendBytes []byte) []byte {
+	if tracerCtx, ok := data.(xsql.HasTracerCtx); ok {
+		_, span := tracer.GetTracer().Start(tracerCtx.GetTracerCtx(), ctx.GetOpId())
+		traceID := span.SpanContext().TraceID()
+		spanID := span.SpanContext().SpanID()
+		defer span.End()
+		r := []byte{1}
+		r = append(r, traceID[:]...)
+		r = append(r, spanID[:]...)
+		r = append(r, sendBytes...)
+		return r
+	}
+	return append([]byte{0}, sendBytes...)
 }
 
 func GetSink() api.Sink {

@@ -21,7 +21,9 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
+	"go.opentelemetry.io/otel/trace"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -84,7 +86,8 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 				// no receiving deadline, will wait until the socket closed
 				if msg, err := s.cli.Recv(); err == nil {
 					ctx.GetLogger().Debugf("nng received message %s", string(msg))
-					ingest(ctx, msg, nil, timex.GetNow())
+					meta := extractTraceMeta(ctx, msg)
+					ingest(ctx, msg, meta, timex.GetNow())
 				} else if err == mangos.ErrClosed {
 					ctx.GetLogger().Infof("neuron connection closed, retry after 1 second")
 					ingestErr(ctx, errors.New("neuron connection closed"))
@@ -111,4 +114,24 @@ func (s *source) Close(ctx api.StreamContext) error {
 
 func GetSource() api.Source {
 	return &source{}
+}
+
+func extractTraceMeta(ctx api.StreamContext, data []byte) map[string]interface{} {
+	meta := make(map[string]interface{})
+	var traced bool
+	var tracerCtx api.StreamContext
+	var span trace.Span
+	if data[0] == 1 {
+		traceID := data[1:17]
+		spanID := data[17:25]
+		traced, tracerCtx, span = tracenode.StartTraceByID(ctx, [16]byte(traceID), [8]byte(spanID))
+	} else {
+		traced, tracerCtx, span = tracenode.StartTrace(ctx, ctx.GetOpId())
+	}
+	if traced {
+		meta["traceId"] = span.SpanContext().TraceID()
+		meta["traceCtx"] = tracerCtx
+		defer span.End()
+	}
+	return meta
 }
