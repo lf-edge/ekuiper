@@ -15,10 +15,12 @@
 package tracer
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
@@ -96,4 +98,45 @@ func TestLocalStorageTraceManager(t *testing.T) {
 	gotSpan, err := spanStorage.GetTraceById("t1")
 	require.NoError(t, err)
 	require.Equal(t, gotSpan, span1)
+}
+
+func TestLocalStorageTraceManagerErr(t *testing.T) {
+	dataDir, err := conf.GetDataLoc()
+	require.NoError(t, err)
+	os.Remove(filepath.Join(dataDir, "trace.db"))
+	require.NoError(t, store.SetupDefault(dataDir))
+	spanStorage := newSqlspanStorage()
+	span0 := &LocalSpan{
+		TraceID: "t0",
+		SpanID:  "s0",
+		RuleID:  "r1",
+	}
+	span1 := &LocalSpan{
+		TraceID: "t1",
+		SpanID:  "s1",
+		RuleID:  "r1",
+	}
+	spanStorage.saveLocalSpan(span1)
+	for i := 1; i <= 2; i++ {
+		failpointPath := fmt.Sprintf("github.com/lf-edge/ekuiper/v2/pkg/tracer/injectTraceErr_%v", i)
+		failpoint.Enable(failpointPath, "return(true)")
+		err := spanStorage.saveLocalSpan(span0)
+		require.Error(t, err, failpointPath)
+		failpoint.Disable(failpointPath)
+	}
+	for i := 3; i <= 5; i++ {
+		failpointPath := fmt.Sprintf("github.com/lf-edge/ekuiper/v2/pkg/tracer/injectTraceErr_%v", i)
+		failpoint.Enable(failpointPath, "return(true)")
+		_, err := spanStorage.loadTraceByRuleID("r1")
+		require.Error(t, err)
+		failpoint.Disable(failpointPath)
+	}
+
+	for i := 6; i <= 8; i++ {
+		failpointPath := fmt.Sprintf("github.com/lf-edge/ekuiper/v2/pkg/tracer/injectTraceErr_%v", i)
+		failpoint.Enable(failpointPath, "return(true)")
+		_, err := spanStorage.loadTraceByTraceID("t1")
+		require.Error(t, err, failpointPath)
+		failpoint.Disable(failpointPath)
+	}
 }

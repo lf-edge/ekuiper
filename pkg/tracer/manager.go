@@ -18,9 +18,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/pingcap/failpoint"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -299,11 +301,17 @@ func (s *sqlSpanStorage) saveLocalSpan(span *LocalSpan) error {
 	if store.TraceStores != nil {
 		return store.TraceStores.Apply(func(db *sql.DB) error {
 			stmt, err := db.Prepare("insert into trace(traceID , ruleID,value) values (?,?,?)")
+			failpoint.Inject("injectTraceErr_1", func() {
+				err = errors.New("injectTraceErr_1")
+			})
 			if err != nil {
 				return err
 			}
-			_, execErr := stmt.Exec(span.TraceID, span.RuleID, bs)
-			return execErr
+			_, err = stmt.Exec(span.TraceID, span.RuleID, bs)
+			failpoint.Inject("injectTraceErr_2", func() {
+				err = errors.New("injectTraceErr_2")
+			})
+			return err
 		})
 	}
 	return nil
@@ -313,16 +321,31 @@ func (s *sqlSpanStorage) loadTraceByRuleID(ruleID string) ([]string, error) {
 	traceIDList := make([]string, 0)
 	err := store.TraceStores.Apply(func(db *sql.DB) error {
 		stmt, err := db.Prepare("select traceID from trace where ruleID = ?")
+		failpoint.Inject("injectTraceErr_3", func() {
+			stmt.Close()
+			err = errors.New("injectTraceErr_3")
+		})
 		if err != nil {
 			return err
 		}
 		rows, err := stmt.Query(ruleID)
+		failpoint.Inject("injectTraceErr_4", func() {
+			rows.Close()
+			stmt.Close()
+			err = errors.New("injectTraceErr_4")
+		})
 		if err != nil {
 			return err
 		}
 		var traceID string
 		for rows.Next() {
-			if err := rows.Scan(&traceID); err != nil {
+			err := rows.Scan(&traceID)
+			failpoint.Inject("injectTraceErr_5", func() {
+				rows.Close()
+				stmt.Close()
+				err = errors.New("injectTraceErr_5")
+			})
+			if err != nil {
 				return err
 			}
 			traceIDList = append(traceIDList, traceID)
@@ -336,16 +359,31 @@ func (s *sqlSpanStorage) loadTraceByTraceID(traceID string) (*LocalSpan, error) 
 	var valueList [][]byte
 	err := store.TraceStores.Apply(func(db *sql.DB) error {
 		stmt, err := db.Prepare("select value from trace where traceID = ?")
+		failpoint.Inject("injectTraceErr_6", func() {
+			stmt.Close()
+			err = errors.New("injectTraceErr_6")
+		})
 		if err != nil {
 			return err
 		}
 		rows, err := stmt.Query(traceID)
+		failpoint.Inject("injectTraceErr_7", func() {
+			rows.Close()
+			stmt.Close()
+			err = errors.New("injectTraceErr_7")
+		})
 		if err != nil {
 			return err
 		}
 		var value []byte
 		for rows.Next() {
-			if err := rows.Scan(&value); err != nil {
+			err := rows.Scan(&value)
+			failpoint.Inject("injectTraceErr_8", func() {
+				rows.Close()
+				stmt.Close()
+				err = errors.New("injectTraceErr_8")
+			})
+			if err != nil {
 				return err
 			}
 			valueList = append(valueList, value)
