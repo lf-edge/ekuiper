@@ -72,6 +72,7 @@ func (m *imageSink) Provision(_ api.StreamContext, configs map[string]any) error
 func (m *imageSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	if _, err := os.Stat(m.c.Path); os.IsNotExist(err) {
 		if err := os.MkdirAll(m.c.Path, os.ModePerm); nil != err {
+			sch(api.ConnectionDisconnected, err.Error())
 			return fmt.Errorf("fail to open image sink for %v", err)
 		}
 	}

@@ -134,7 +134,7 @@ func (k *KafkaSource) Close(ctx api.StreamContext) error {
 	return k.reader.Close()
 }
 
-func (k *KafkaSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+func (k *KafkaSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	readerConfig := k.sc.GetReaderConfig()
 	conf.Log.Infof("topic: %s, brokers: %v", readerConfig.Topic, readerConfig.Brokers)
 	readerConfig.Dialer = &kafkago.Dialer{
@@ -148,6 +148,11 @@ func (k *KafkaSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) 
 	err := k.reader.SetOffset(kafkago.LastOffset)
 	if err != nil {
 		return err
+	}
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+	} else {
+		sch(api.ConnectionConnecting, "")
 	}
 	return nil
 }

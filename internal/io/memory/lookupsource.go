@@ -43,7 +43,12 @@ func (s *lookupsource) Connect(ctx api.StreamContext, sch api.StatusChangeHandle
 	ctx.GetLogger().Infof("lookup source %s is opened with key %v", s.topic, s.key)
 	var err error
 	s.table, err = store.Reg(s.topic, s.topicRegex, s.key)
-	return err
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
+	}
+	sch(api.ConnectionConnected, "")
+	return nil
 }
 
 func (s *lookupsource) Provision(ctx api.StreamContext, props map[string]any) error {

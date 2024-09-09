@@ -39,8 +39,15 @@ func (s *zmqSource) Provision(ctx api.StreamContext, configs map[string]any) err
 	return nil
 }
 
-func (s *zmqSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+func (s *zmqSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	var err error
+	defer func() {
+		if err != nil {
+			sch(api.ConnectionDisconnected, err.Error())
+		} else {
+			sch(api.ConnectionConnecting, "")
+		}
+	}()
 	s.subscriber, err = zmq.NewSocket(zmq.SUB)
 	if err != nil {
 		return fmt.Errorf("zmq source fails to create socket: %v", err)

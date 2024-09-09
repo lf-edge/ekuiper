@@ -46,7 +46,8 @@ func (s *SimulatorSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *SimulatorSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+func (s *SimulatorSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

@@ -39,7 +39,8 @@ func (r *RestSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (r *RestSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+func (r *RestSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

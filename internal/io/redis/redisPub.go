@@ -74,7 +74,7 @@ func (r *redisPub) Provision(ctx api.StreamContext, props map[string]any) error 
 	return r.Validate(props)
 }
 
-func (r *redisPub) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
+func (r *redisPub) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("redisSub is opening")
 	r.conn = redis.NewClient(&redis.Options{
 		Addr:     r.conf.Address,
@@ -83,7 +83,12 @@ func (r *redisPub) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) err
 		DB:       r.conf.Db,
 	})
 	_, err := r.conn.Ping(ctx).Result()
-	return err
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
+	}
+	sch(api.ConnectionConnected, "")
+	return nil
 }
 
 func (r *redisPub) Collect(ctx api.StreamContext, item api.RawTuple) error {
