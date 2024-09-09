@@ -90,9 +90,18 @@ jobs:
       run: |
         make pkg
         cd _packages && for var in $(ls); do openssl dgst -sha256 $var | awk '{print $2}' > $var.sha256; done && cd -
+    - name: Set artifact name
+      id: artifact_name
+      env:
+        REF: ${{ github.ref_name }}
+      run: |
+        arch=$(echo $ARCH | sed -r 's|linux/([a-z]*)(/.*)*|\1|g')
+        ref=$(echo ${REF/\//-})
+        artifact_name="kuiper-${ref}-darwin-${arch}"
+        echo "artifact_name=$artifact_name" >> $GITHUB_OUTPUT
     - uses: actions/upload-artifact@v4
       with:
-        name: kuiper-${{ github.ref_name }}-darwin-amd64
+        name: ${{ steps.artifact_name.outputs.artifact_name }}
         path: _packages/
 
   build-docker-images:
