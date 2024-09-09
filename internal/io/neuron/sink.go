@@ -215,7 +215,7 @@ func doPublish(ctx api.StreamContext, cli *nng.Sock, tuple api.MessageTuple, t *
 }
 
 func extractSpanContextIntoData(ctx api.StreamContext, data interface{}, sendBytes []byte) []byte {
-	if tracerCtx, ok := data.(xsql.HasTracerCtx); ok {
+	if tracerCtx, ok := data.(xsql.HasTracerCtx); ok && ctx.IsTraceEnabled() {
 		_, span := tracer.GetTracer().Start(tracerCtx.GetTracerCtx(), ctx.GetOpId())
 		traceID := span.SpanContext().TraceID()
 		spanID := span.SpanContext().SpanID()
@@ -226,7 +226,7 @@ func extractSpanContextIntoData(ctx api.StreamContext, data interface{}, sendByt
 		r = append(r, sendBytes...)
 		return r
 	}
-	return append([]byte{0}, sendBytes...)
+	return sendBytes
 }
 
 func GetSink() api.Sink {
