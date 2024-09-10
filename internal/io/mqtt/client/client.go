@@ -74,7 +74,7 @@ func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map
 	}
 	opts = opts.SetClientID(c.ClientId).SetAutoReconnect(true).SetResumeSubs(true).SetMaxReconnectInterval(connection.DefaultMaxInterval)
 
-	conn.status.Store(api.ConnectionConnecting)
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
 	opts.OnConnect = conn.onConnect
 	opts.OnConnectionLost = conn.onConnectLost
 	opts.OnReconnecting = conn.onReconnecting
@@ -102,17 +102,17 @@ func (conn *Connection) Dial(ctx api.StreamContext) error {
 	return nil
 }
 
-func (conn *Connection) Status() string {
-	return conn.status.Load().(string)
+func (conn *Connection) Status(_ api.StreamContext) modules.ConnectionStatus {
+	return conn.status.Load().(modules.ConnectionStatus)
 }
 
-func (conn *Connection) SetStatusChangeHandler(sch api.StatusChangeHandler) {
+func (conn *Connection) SetStatusChangeHandler(ctx api.StreamContext, sch api.StatusChangeHandler) {
 	conn.scHandler = sch
 }
 
 func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 	conn.connected.Store(true)
-	conn.status.Store(api.ConnectionConnected)
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnected})
 	if conn.scHandler != nil {
 		conn.scHandler(api.ConnectionConnected, "")
 	}
@@ -121,7 +121,7 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 
 func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
 	conn.connected.Store(false)
-	conn.status.Store(api.ConnectionDisconnected)
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionDisconnected, ErrMsg: err.Error()})
 	if conn.scHandler != nil {
 		conn.scHandler(api.ConnectionDisconnected, err.Error())
 	}
@@ -129,7 +129,7 @@ func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
 }
 
 func (conn *Connection) onReconnecting(_ pahoMqtt.Client, _ *pahoMqtt.ClientOptions) {
-	conn.status.Store(api.ConnectionConnecting)
+	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
 	if conn.scHandler != nil {
 		conn.scHandler(api.ConnectionConnecting, "")
 	}
@@ -226,3 +226,5 @@ func getTopicFromProps(props map[string]any) (string, error) {
 	}
 	return "", fmt.Errorf("topic or datasource not defined")
 }
+
+var _ modules.StatefulDialer = &Connection{}
