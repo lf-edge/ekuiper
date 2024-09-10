@@ -220,7 +220,7 @@ func extractSpanContextIntoData(ctx api.StreamContext, data interface{}, sendByt
 		traceID := span.SpanContext().TraceID()
 		spanID := span.SpanContext().SpanID()
 		defer span.End()
-		r := []byte{1}
+		r := NeuronTraceHeader
 		r = append(r, traceID[:]...)
 		r = append(r, spanID[:]...)
 		r = append(r, sendBytes...)

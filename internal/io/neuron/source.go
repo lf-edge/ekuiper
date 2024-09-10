@@ -15,6 +15,7 @@
 package neuron
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -32,6 +33,15 @@ import (
 const (
 	DefaultNeuronUrl = "ipc:///tmp/neuron-ekuiper.ipc"
 	PROTOCOL         = "pair"
+)
+
+var (
+	NeuronTraceHeader           = []byte{0x0A, 0xCE}
+	NeuronTraceIDStartIndex     = len(NeuronTraceHeader)
+	NeuronTraceIDEndIndex       = NeuronTraceIDStartIndex + 16
+	NeuronTraceSpanIDStartIndex = NeuronTraceIDEndIndex
+	NeuronTraceSpanIDEndIndex   = NeuronTraceSpanIDStartIndex + 8
+	NeuronTraceHeaderLen        = 2 + 16 + 8
 )
 
 type source struct {
@@ -124,15 +134,15 @@ func extractTraceMeta(ctx api.StreamContext, data []byte) map[string]interface{}
 	var traced bool
 	var tracerCtx api.StreamContext
 	var span trace.Span
-	if data[0] == 1 {
-		traceID := data[1:17]
-		spanID := data[17:25]
+	if len(data) > NeuronTraceHeaderLen && bytes.Equal(data[:2], NeuronTraceHeader) {
+		traceID := data[NeuronTraceIDStartIndex:NeuronTraceIDEndIndex]
+		spanID := data[NeuronTraceSpanIDStartIndex:NeuronTraceSpanIDEndIndex]
 		traced, tracerCtx, span = tracenode.StartTraceByID(ctx, [16]byte(traceID), [8]byte(spanID))
 	} else {
 		traced, tracerCtx, span = tracenode.StartTrace(ctx, ctx.GetOpId())
 	}
 	if traced {
-		meta["traceId"] = span.SpanContext().TraceID()
+		meta["traceId"] = span.SpanContext().TraceID().String()
 		meta["traceCtx"] = tracerCtx
 		defer span.End()
 	}

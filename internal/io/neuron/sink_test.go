@@ -20,7 +20,11 @@ import (
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -249,3 +253,40 @@ func TestSinkProvision(t *testing.T) {
 	err = s.Close(ctx)
 	assert.NoError(t, err)
 }
+
+func TestExtractSinkTraceData(t *testing.T) {
+	data := &mockData{
+		traceID: "1234567890abcdef",
+		spanID:  "12345678",
+	}
+	rawData := []byte(`{"a":1}`)
+	ctx := mockContext.NewMockContext("1", "2")
+	ctx.EnableTracer(true)
+	got := extractSpanContextIntoData(ctx, data, rawData)
+	require.Equal(t, NeuronTraceHeader, got[:len(NeuronTraceHeader)])
+	require.Equal(t, []byte(data.traceID), got[NeuronTraceIDStartIndex:NeuronTraceIDEndIndex])
+	require.Equal(t, rawData, got[NeuronTraceHeaderLen:])
+}
+
+type mockData struct {
+	traceID string
+	spanID  string
+}
+
+func (m *mockData) GetTracerCtx() api.StreamContext {
+	var traceID [16]byte
+	for i := 0; i < 16; i++ {
+		traceID[i] = m.traceID[i]
+	}
+	var spanID [8]byte
+	for i := 0; i < 8; i++ {
+		spanID[i] = m.spanID[i]
+	}
+	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID: traceID,
+		SpanID:  spanID,
+	}))
+	return topoContext.WithContext(ctx)
+}
+
+func (m *mockData) SetTracerCtx(ctx api.StreamContext) {}

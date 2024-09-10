@@ -15,10 +15,12 @@
 package neuron
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
@@ -81,4 +83,40 @@ func TestProvision(t *testing.T) {
 
 	err = s.Close(ctx)
 	assert.NoError(t, err)
+}
+
+func TestExtractSourceTraceData(t *testing.T) {
+	rawData := `{"a":1}`
+	traceID := "0123456789abcdef"
+	spanID := "12345678"
+	traceData := []byte{}
+	traceData = append(traceData, NeuronTraceHeader...)
+	traceData = append(traceData, []byte(traceID)...)
+	traceData = append(traceData, []byte(spanID)...)
+	traceData = append(traceData, []byte(rawData)...)
+	tests := []struct {
+		data    []byte
+		traceID string
+		spanID  string
+	}{
+		{
+			data:    traceData,
+			traceID: traceID,
+			spanID:  spanID,
+		},
+		{
+			data: []byte(rawData),
+		},
+	}
+	ctx := mockContext.NewMockContext("1", "2")
+	ctx.EnableTracer(true)
+	for _, tc := range tests {
+		meta := extractTraceMeta(ctx, tc.data)
+		if len(tc.traceID) > 0 {
+			require.Equal(t, meta["traceId"], hex.EncodeToString([]byte(tc.traceID)))
+		} else {
+			_, ok := meta["traceId"]
+			require.True(t, ok)
+		}
+	}
 }
