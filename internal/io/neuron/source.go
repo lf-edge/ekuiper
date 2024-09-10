@@ -96,8 +96,8 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 				// no receiving deadline, will wait until the socket closed
 				if msg, err := s.cli.Recv(); err == nil {
 					ctx.GetLogger().Debugf("nng received message %s", string(msg))
-					meta := extractTraceMeta(ctx, msg)
-					ingest(ctx, msg, meta, timex.GetNow())
+					rawData, meta := extractTraceMeta(ctx, msg)
+					ingest(ctx, rawData, meta, timex.GetNow())
 				} else if err == mangos.ErrClosed {
 					ctx.GetLogger().Infof("neuron connection closed, retry after 1 second")
 					ingestErr(ctx, errors.New("neuron connection closed"))
@@ -126,9 +126,14 @@ func GetSource() api.Source {
 	return &source{}
 }
 
-func extractTraceMeta(ctx api.StreamContext, data []byte) map[string]interface{} {
+func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]interface{}) {
+	var rawData = data
+	// extract rawData
+	if len(data) > NeuronTraceHeaderLen && bytes.Equal(data[:2], NeuronTraceHeader) {
+		rawData = data[NeuronTraceHeaderLen:]
+	}
 	if !ctx.IsTraceEnabled() {
-		return nil
+		return rawData, nil
 	}
 	meta := make(map[string]interface{})
 	var traced bool
@@ -146,5 +151,5 @@ func extractTraceMeta(ctx api.StreamContext, data []byte) map[string]interface{}
 		meta["traceCtx"] = tracerCtx
 		defer span.End()
 	}
-	return meta
+	return rawData, meta
 }

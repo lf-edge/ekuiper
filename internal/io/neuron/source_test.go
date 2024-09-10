@@ -111,7 +111,8 @@ func TestExtractSourceTraceData(t *testing.T) {
 	ctx := mockContext.NewMockContext("1", "2")
 	ctx.EnableTracer(true)
 	for _, tc := range tests {
-		meta := extractTraceMeta(ctx, tc.data)
+		gotData, meta := extractTraceMeta(ctx, tc.data)
+		require.Equal(t, []byte(rawData), gotData)
 		if len(tc.traceID) > 0 {
 			require.Equal(t, meta["traceId"], hex.EncodeToString([]byte(tc.traceID)))
 		} else {
