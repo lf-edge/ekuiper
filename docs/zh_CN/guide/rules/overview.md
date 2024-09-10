@@ -283,3 +283,6 @@ cronDatetimeRange 支持结构体数组，你可以声明一组时间段来表�
 ```
 
 可以看到每个算子的 `records_in_total` 与 `records_out_total` 都由 0 变为了 1，代表了该算子接收到了一条记录，并向下一个算子传递了一条记录，最终在 `sink` 端向 sink 写入了 1 条记录。
+
+若开启 Prometheus 配置，这些指标也会收集到 Prometheus
+中。全部的运行指标列表请查看[指标列表](../../operation/usage/monitor_with_prometheus.md#运行指标)。
