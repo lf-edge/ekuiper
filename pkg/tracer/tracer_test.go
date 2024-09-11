@@ -34,3 +34,11 @@ func TestSaveLoadTracerConfig(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newConfig, traceConfig)
 }
+
+func TestSetTracer(t *testing.T) {
+	conf.IsTesting = true
+	conf.InitConf()
+	err := SetTracer(&TracerConfig{})
+	require.NoError(t, err)
+	require.NotNil(t, globalTracerManager.SpanExporter)
+}
