@@ -60,7 +60,9 @@ type Source struct {
 	isDir  bool
 	config *SourceConfig
 	reader modules.FileStreamReader
-	eof    api.EOFIngest
+	// attach to a reader
+	decorator modules.FileStreamDecorator
+	eof       api.EOFIngest
 }
 
 func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -140,6 +142,14 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 		}
 	}
 	fs.config = cfg
+	decorator, ok := modules.GetFileStreamDecorator(ctx, cfg.FileType)
+	if ok {
+		err = decorator.Provision(ctx, props)
+		if err != nil {
+			return err
+		}
+		fs.decorator = decorator
+	}
 	return nil
 }
 
@@ -230,7 +240,7 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 		maxSize = int(info.Size())
 	}
 	if fs.config.IgnoreStartLines > 0 || fs.config.IgnoreEndLines > 0 {
-		r = ignoreLines(ctx, r, fs.config.IgnoreStartLines, fs.config.IgnoreEndLines)
+		r = ignoreLines(ctx, r, fs.decorator, fs.config.IgnoreStartLines, fs.config.IgnoreEndLines)
 	}
 	if closer, ok := r.(io.Closer); ok {
 		defer func() {
@@ -255,6 +265,9 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 				break
 			}
 			rcvTime := timex.GetNow()
+			if fs.decorator != nil {
+				line = fs.decorator.Decorate(ctx, line)
+			}
 			ingest(ctx, line, meta, rcvTime)
 			if fs.config.SendInterval > 0 {
 				time.Sleep(fs.config.SendInterval)
@@ -289,7 +302,7 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 	}
 }
 
-func ignoreLines(ctx api.StreamContext, reader io.Reader, ignoreStartLines int, ignoreEndLines int) io.Reader {
+func ignoreLines(ctx api.StreamContext, reader io.Reader, decorator modules.FileStreamDecorator, ignoreStartLines int, ignoreEndLines int) io.Reader {
 	r, w := io.Pipe()
 	go func() {
 		e := infra.SafeRun(func() error {
@@ -305,6 +318,10 @@ func ignoreLines(ctx api.StreamContext, reader io.Reader, ignoreStartLines int, 
 			tempLines := make([][]byte, 0, ignoreEndLines)
 			for scanner.Scan() {
 				if ln >= ignoreStartLines {
+					if ln == ignoreStartLines && decorator != nil {
+						// Send EOF to decorator
+						decorator.ReadMeta(ctx, nil)
+					}
 					if ignoreEndLines > 0 { // the last n line are left in the tempLines
 						slot := (ln - ignoreStartLines) % ignoreEndLines
 						if len(tempLines) <= slot { // first round
@@ -333,6 +350,10 @@ func ignoreLines(ctx api.StreamContext, reader io.Reader, ignoreStartLines int, 
 							ctx.GetLogger().Error(err)
 							break
 						}
+					}
+				} else {
+					if decorator != nil {
+						decorator.ReadMeta(ctx, scanner.Bytes())
 					}
 				}
 				ln++
