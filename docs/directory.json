@@ -546,6 +546,10 @@
         {
           "title": "规则试运行",
           "path": "api/restapi/ruletest"
+        },
+        {
+          "title": "数据链路追踪",
+          "path": "api/restapi/trace"
         }
       ]
     },
@@ -1307,6 +1311,10 @@
         {
           "title": "Rule Test",
           "path": "api/restapi/ruletest"
+        },
+        {
+          "title": "Trace Data",
+          "path": "api/restapi/trace"
         }
       ]
     },
