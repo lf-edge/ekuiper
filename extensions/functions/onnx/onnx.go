@@ -46,8 +46,14 @@ func (f *OnnxFunc) Validate(args []interface{}) error {
 	return nil
 }
 
-// 这里传入参数的顺序与tflite不同，目前是与之前的mnist保持的一致，后面测试看下是否需要修改
 func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
+	fmt.Printf("onnx function  args start ---------------------\n")
+	for _, v := range args {
+		fmt.Println(v)
+
+	}
+	fmt.Printf("onnx function  args end ---------------------\n")
+
 	modelName, ok := args[0].(string)
 	if !ok {
 		return fmt.Errorf("onnx function first parameter must be a string, but got %[1]T(%[1]v)", args[0]), false
@@ -62,7 +68,6 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	}
 
 	ctx.GetLogger().Debugf("onnx function %s with %d tensors", modelName, inputCount)
-	ctx.GetLogger().Infof("onnx function %s with %d tensors", modelName, inputCount)
 
 	var inputTensors []ort.ArbitraryTensor
 	// Set input tensors
@@ -71,20 +76,16 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		inputInfo := interpreter.inputInfo[i-1]
 		var arg []interface{}
 		switch v := args[i].(type) {
-		case []interface{}: // only supports one dimensional arg. Even dim 0 must be an array of 1 element
+		case []any: // only supports one dimensional arg. Even dim 0 must be an array of 1 element
 			arg = v
+		// case string: //string is also array of bytea
+		// 	bytesV := cast.StringToBytes(v)
+		// 	arg = append(arg, bytesV)
 		default:
-			return fmt.Errorf("onnx function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", i), false
+			return fmt.Errorf("onnx function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", i, v), false
 		}
 
-		modelParaLen := int64(1)
-		for j := 0; j < len(inputInfo.Dimensions); j++ {
-			modelParaLen *= inputInfo.Dimensions[j]
-		}
-		ctx.GetLogger().Debugf("receive tensor %v, require %d length", arg, modelParaLen)
-		if modelParaLen != int64(len(arg)) {
-			return fmt.Errorf("tensorflow function input tensor %d must have %d elements but got %d", i-1, modelParaLen, len(arg)), false
-		}
+
 
 		notSupportedDataLen := -1
 		switch inputInfo.DataType {
@@ -263,6 +264,15 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		default: // support list see ：GetTensorElementDataType() and TensorElementDataType in onnxruntime_go
 			return fmt.Errorf("invalid %d parameter, unsupported type %s in the model", i, inputInfo.DataType), false
 		}
+		
+		modelParaLen := int64(1)
+		for j := 0; j < len(inputInfo.Dimensions); j++ {
+			modelParaLen *= inputInfo.Dimensions[j]
+		}
+		ctx.GetLogger().Debugf("receive tensor %v, require %d length", arg, modelParaLen)
+		if modelParaLen != inputTensors[i].GetShape().FlattenedSize() {
+			return fmt.Errorf("onnx function input tensor %d must have %d elements but got %d", i-1, modelParaLen, len(arg)), false
+		}
 
 	}
 	//todo 优化：避免每一次都创建outputtensor，可以复用
@@ -322,5 +332,5 @@ func (f *OnnxFunc) IsAggregate() bool {
 	return false
 }
 
-var Mnist = OnnxFunc{}
+var Onnx = OnnxFunc{}
 var _ api.Function = &OnnxFunc{}

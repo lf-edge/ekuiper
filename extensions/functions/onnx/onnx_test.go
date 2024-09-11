@@ -69,7 +69,7 @@ func Test_mnist_Exec(t *testing.T) {
 					for _, v := range inputData {
 						anyBits = append(anyBits, v)
 					}
-					args := make([]any, 0)
+					args := make([]any, 0, 2)
 					args = append(args, "mnist")
 					args = append(args, anyBits)
 					return args
@@ -83,7 +83,7 @@ func Test_mnist_Exec(t *testing.T) {
 			args: args{
 				in0: fctx,
 				args: func() []any {
-					args := make([]any, 0)
+					args := make([]any, 0, 2)
 					args = append(args, "sum_and_difference")
 					args = append(args, []any{0.2, 0.3, 0.6, 0.9})
 					return args
@@ -102,12 +102,12 @@ func Test_mnist_Exec(t *testing.T) {
 				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
 			}
 			if !reflect.DeepEqual(got0, tt.want) {
-				t.Errorf("Name = %s,Exec() got = %v, want %v",tt.name, got0, tt.want)
+				t.Errorf("Name = %s,Exec() got = %v, want %v", tt.name, got0, tt.want)
 			}
 			if tt.name == "test2" {
 				test2Ouput := got0.([]any)[0].([]float32)
 				if test2Ouput[0] != 1.9999883 {
-					t.Errorf("Name = %s, Exec() got = %v, want %v", tt.name,test2Ouput[0], 1.9999883)
+					t.Errorf("Name = %s, Exec() got = %v, want %v", tt.name, test2Ouput[0], 1.9999883)
 				}
 			}
 		})
@@ -141,9 +141,9 @@ ok      github.com/lf-edge/ekuiper/v2/extensions/functions/mnist        0.030s
 
 
 */
-
+// topic:
 func TestPic(t *testing.T) {
-	const TOPIC = "tfdmnist"
+	const TOPIC = "onnxPubImg"
 
 	images := []string{
 		"img.png",
@@ -170,50 +170,6 @@ func TestPic(t *testing.T) {
 	}
 	client.Disconnect(0)
 }
-
-
-
-func Test_Any(t *testing.T) {
-
-	tests := []struct {
-		name string
-		got  any
-		want any
-	}{
-		{
-			name: "test1",
-			got:  []any{[]float32{1.9999883, 0.60734314}},
-			want: []any{[]float32{1.9999883, 0.60734314}},
-		},
-		{
-			name: "test2",
-			got: func() []any {
-				result := make([]any, 2)
-				result[0] = []float32{1.9999883}
-				result[1] = []float32{0.60734314}
-				return result
-			}(),
-			want: []any{[]float32{1.9999883, 0.60734314}},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if !reflect.DeepEqual(tt.got, tt.want) {
-				t.Errorf("testName = %s  Exec() got = %v, want %v", tt.name, tt.got, tt.want)
-			}
-		})
-	}
-}
-
-
-
-
-
-
-
-
-
-
 
 // ProcessedImage Used to satisfy the image interface as well as to help with formatting and
 // resizing an input image into the format expected as a network input.
@@ -289,8 +245,6 @@ func (p *ProcessedImage) GetNetworkInput() []float32 {
 	return toReturn
 }
 
-
-
 func printCurrDIr() string {
 	// 创建一个 bytes.Buffer 来捕获命令输出
 	var out bytes.Buffer
@@ -345,3 +299,4 @@ func (f grayscaleFloat) RGBA() (r, g, b, a uint32) {
 	b = v
 	return
 }
+

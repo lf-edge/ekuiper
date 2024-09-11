@@ -41,14 +41,13 @@ import (
 var ipManager *interpreterManager
 
 func init() {
-	// path, err := conf.GetDataLoc() /todo
-	// if err != nil {
-	// 	panic(err)
-	// }
+	path, err := conf.GetDataLoc()
+	if err != nil {
+		panic(err)
+	}
 	ipManager = &interpreterManager{
 		registry: make(map[string]*InterPreter),
-		// path:     filepath.Join(path, "uploads"), todo
-		path: filepath.Join("etc"),
+		path:     filepath.Join(path, "uploads"),
 	}
 }
 
@@ -64,8 +63,8 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 	m.once.Do(
 		func() {
 			log := conf.Log
-			// ort.SetSharedLibraryPath("./data/functions/mnist/onnxruntime.so") //todo 修改到共享路径
-			ort.SetSharedLibraryPath("./etc/onnxruntime.so") //todo 修改到共享路径
+			ort.SetSharedLibraryPath("./data/functions/onnx/onnxruntime.so") //todo 修改到共享路径
+			// ort.SetSharedLibraryPath("./etc/onnxruntime.so") //todo 修改到共享路径  测试时使用
 			err := ort.InitializeEnvironment()
 			if err != nil {
 				m.envInitErr = fmt.Errorf("failed to initialize environment: %s", err)
