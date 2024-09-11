@@ -410,6 +410,10 @@
         {
           "title": "错误码",
           "path": "operation/usage/error_code"
+        },
+        {
+          "title": "数据链路追踪",
+          "path": "operation/usage/trace_data.md"
         }
       ]
     },
@@ -1228,6 +1232,10 @@
               "path": "operation/manager-ui/plugins_in_manager"
             }
           ]
+        },
+        {
+          "title": "数据链路追踪",
+          "path": "operation/usage/trace_data.md"
         }
       ]
     },
