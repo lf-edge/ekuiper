@@ -1234,7 +1234,7 @@
           ]
         },
         {
-          "title": "数据链路追踪",
+          "title": "Tracing Data",
           "path": "operation/usage/trace_data.md"
         }
       ]
