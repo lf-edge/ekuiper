@@ -15,13 +15,16 @@
 package neuron
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
+	"go.opentelemetry.io/otel/trace"
 
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/nng"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -30,6 +33,15 @@ import (
 const (
 	DefaultNeuronUrl = "ipc:///tmp/neuron-ekuiper.ipc"
 	PROTOCOL         = "pair"
+)
+
+var (
+	NeuronTraceHeader           = []byte{0x0A, 0xCE}
+	NeuronTraceIDStartIndex     = len(NeuronTraceHeader)
+	NeuronTraceIDEndIndex       = NeuronTraceIDStartIndex + 16
+	NeuronTraceSpanIDStartIndex = NeuronTraceIDEndIndex
+	NeuronTraceSpanIDEndIndex   = NeuronTraceSpanIDStartIndex + 8
+	NeuronTraceHeaderLen        = 2 + 16 + 8
 )
 
 type source struct {
@@ -84,7 +96,8 @@ func (s *source) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingest
 				// no receiving deadline, will wait until the socket closed
 				if msg, err := s.cli.Recv(); err == nil {
 					ctx.GetLogger().Debugf("nng received message %s", string(msg))
-					ingest(ctx, msg, nil, timex.GetNow())
+					rawData, meta := extractTraceMeta(ctx, msg)
+					ingest(ctx, rawData, meta, timex.GetNow())
 				} else if err == mangos.ErrClosed {
 					ctx.GetLogger().Infof("neuron connection closed, retry after 1 second")
 					ingestErr(ctx, errors.New("neuron connection closed"))
@@ -111,4 +124,32 @@ func (s *source) Close(ctx api.StreamContext) error {
 
 func GetSource() api.Source {
 	return &source{}
+}
+
+func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]interface{}) {
+	rawData := data
+	// extract rawData
+	if len(data) > NeuronTraceHeaderLen && bytes.Equal(data[:2], NeuronTraceHeader) {
+		rawData = data[NeuronTraceHeaderLen:]
+	}
+	if !ctx.IsTraceEnabled() {
+		return rawData, nil
+	}
+	meta := make(map[string]interface{})
+	var traced bool
+	var tracerCtx api.StreamContext
+	var span trace.Span
+	if len(data) > NeuronTraceHeaderLen && bytes.Equal(data[:2], NeuronTraceHeader) {
+		traceID := data[NeuronTraceIDStartIndex:NeuronTraceIDEndIndex]
+		spanID := data[NeuronTraceSpanIDStartIndex:NeuronTraceSpanIDEndIndex]
+		traced, tracerCtx, span = tracenode.StartTraceByID(ctx, [16]byte(traceID), [8]byte(spanID))
+	} else {
+		traced, tracerCtx, span = tracenode.StartTrace(ctx, ctx.GetOpId())
+	}
+	if traced {
+		meta["traceId"] = span.SpanContext().TraceID().String()
+		meta["traceCtx"] = tracerCtx
+		defer span.End()
+	}
+	return rawData, meta
 }
