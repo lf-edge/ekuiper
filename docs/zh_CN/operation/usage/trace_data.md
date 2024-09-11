@@ -8,6 +8,7 @@ eKuiper 的规则是一个持续运行的流式计算任务。规则用于处理
 
 ```yaml
 openTelemetry:
+  serviceName: kuiperd-service
   enableRemoteCollector: false
   remoteEndpoint: localhost:4318
   localTraceCapacity: 2048
