@@ -127,7 +127,7 @@ func GetSource() api.Source {
 }
 
 func extractTraceMeta(ctx api.StreamContext, data []byte) ([]byte, map[string]interface{}) {
-	var rawData = data
+	rawData := data
 	// extract rawData
 	if len(data) > NeuronTraceHeaderLen && bytes.Equal(data[:2], NeuronTraceHeader) {
 		rawData = data[NeuronTraceHeaderLen:]
