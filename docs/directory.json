@@ -413,7 +413,7 @@
         },
         {
           "title": "数据链路追踪",
-          "path": "operation/usage/trace_data.md"
+          "path": "operation/usage/trace_data"
         }
       ]
     },
@@ -1235,7 +1235,7 @@
         },
         {
           "title": "Tracing Data",
-          "path": "operation/usage/trace_data.md"
+          "path": "operation/usage/trace_data"
         }
       ]
     },
