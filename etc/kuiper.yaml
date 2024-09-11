@@ -145,3 +145,4 @@ openTelemetry:
   enableRemoteCollector: false
   remoteEndpoint: localhost:4318
   localTraceCapacity: 2048
+  enableLocalStorage: false

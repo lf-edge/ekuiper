@@ -234,6 +234,7 @@ type OpenTelemetry struct {
 	EnableRemoteCollector bool   `yaml:"enableRemoteCollector"`
 	RemoteEndpoint        string `yaml:"remoteEndpoint"`
 	LocalTraceCapacity    int    `yaml:"localTraceCapacity"`
+	EnableLocalStorage    bool   `yaml:"enableLocalStorage"`
 }
 
 func SetLogLevel(level string, debug bool) {

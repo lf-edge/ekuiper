@@ -15,27 +15,32 @@
 package tracer
 
 import (
+	"encoding/json"
 	"time"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 type LocalSpan struct {
-	Name         string                 `yaml:"name"`
-	TraceID      string                 `yaml:"traceID"`
-	SpanID       string                 `yaml:"spanID"`
-	ParentSpanID string                 `yaml:"parentSpanID,omitempty"`
-	Attribute    map[string]interface{} `yaml:"attribute,omitempty"`
-	Links        []LocalLink            `yaml:"links,omitempty"`
-	StartTime    time.Time              `yaml:"startTime"`
-	EndTime      time.Time              `yaml:"endTime"`
-	RuleID       string                 `yaml:"ruleID"`
+	Name         string                 `json:"name"`
+	TraceID      string                 `json:"traceID"`
+	SpanID       string                 `json:"spanID"`
+	ParentSpanID string                 `json:"parentSpanID,omitempty"`
+	Attribute    map[string]interface{} `json:"attribute,omitempty"`
+	Links        []LocalLink            `json:"links,omitempty"`
+	StartTime    time.Time              `json:"startTime"`
+	EndTime      time.Time              `json:"endTime"`
+	RuleID       string                 `json:"ruleID"`
 
 	ChildSpan []*LocalSpan
 }
 
 type LocalLink struct {
 	TraceID string `yaml:"traceID"`
+}
+
+func (span *LocalSpan) ToBytes() ([]byte, error) {
+	return json.Marshal(span)
 }
 
 func FromReadonlySpan(readonly sdktrace.ReadOnlySpan) *LocalSpan {
