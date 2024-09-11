@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
@@ -120,7 +121,7 @@ func (m *fileSink) Provision(ctx api.StreamContext, props map[string]interface{}
 	return nil
 }
 
-func (m *fileSink) Connect(ctx api.StreamContext) error {
+func (m *fileSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Debug("Opening file sink")
 	// Check if the files have opened longer than the rolling interval, if so close it and create a new one
 	if m.c.CheckInterval > 0 {
@@ -154,6 +155,7 @@ func (m *fileSink) Connect(ctx api.StreamContext) error {
 			}
 		}()
 	}
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

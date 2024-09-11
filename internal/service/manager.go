@@ -26,10 +26,13 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 	"github.com/lf-edge/ekuiper/v2/pkg/validate"
@@ -38,7 +41,8 @@ import (
 var (
 	once      sync.Once
 	mutex     sync.Mutex
-	singleton *Manager // Do not call this directly, use GetServiceManager
+	singleton *Manager           // Do not call this directly, use GetServiceManager
+	_         binder.FuncFactory = singleton
 )
 
 type Manager struct {
@@ -239,6 +243,17 @@ func (m *Manager) Function(name string) (api.Function, error) {
 		return nil, fmt.Errorf("fail to initiate the executor for %s: %v", f.InterfaceName, err)
 	}
 	return &ExternalFunc{exe: e, methodName: f.MethodName}, nil
+}
+
+func (m *Manager) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	funcContainer, ok := m.getFunction(funcName)
+	if ok {
+		installScript := ""
+		m.serviceInstallKV.Get(funcContainer.ServiceName, &installScript)
+		return plugin.SERVICE_EXTENSION, funcContainer.ServiceName, installScript
+	} else {
+		return plugin.NONE_EXTENSION, "", ""
+	}
 }
 
 func (m *Manager) ConvName(funcName string) (string, bool) {

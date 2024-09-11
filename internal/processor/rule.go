@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package processor
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -129,16 +129,17 @@ func (p *RuleProcessor) GetRuleById(id string) (*def.Rule, error) {
 	if !f {
 		return nil, errorx.NewWithCode(errorx.NOT_FOUND, fmt.Sprintf("Rule %s is not found.", id))
 	}
-	return p.GetRuleByJsonValidated(s1)
+	return p.GetRuleByJsonValidated(id, s1)
 }
 
 // GetRuleByJsonValidated called when the json is getting from trusted source like db
-func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*def.Rule, error) {
+func (p *RuleProcessor) GetRuleByJsonValidated(id, ruleJson string) (*def.Rule, error) {
 	opt := conf.Config.Rule
 	// set default rule options
 	rule := &def.Rule{
 		Triggered: true,
 		Options:   clone(opt),
+		Id:        id,
 	}
 	if err := json.Unmarshal(cast.StringToBytes(ruleJson), &rule); err != nil {
 		return nil, fmt.Errorf("Parse rule %s error : %s.", ruleJson, err)
@@ -146,33 +147,20 @@ func (p *RuleProcessor) GetRuleByJsonValidated(ruleJson string) (*def.Rule, erro
 	if rule.Options == nil {
 		rule.Options = &opt
 	}
-	for i, action := range rule.Actions {
-		for k, v := range action {
-			if c, ok := v.(map[string]interface{}); ok {
-				newConfig := meta.ReplacePasswdForConfigByResource("sink", k, c)
-				action[k] = newConfig
-				break
-			}
-		}
-		rule.Actions[i] = action
-	}
 	return rule, nil
 }
 
 func (p *RuleProcessor) GetRuleByJson(id, ruleJson string) (*def.Rule, error) {
-	rule, err := p.GetRuleByJsonValidated(ruleJson)
+	rule, err := p.GetRuleByJsonValidated(id, ruleJson)
 	if err != nil {
 		return rule, err
 	}
 	// validation
-	if rule.Id == "" && id == "" {
+	if rule.Id == "" {
 		return nil, fmt.Errorf("Missing rule id.")
 	}
 	if id != "" && rule.Id != "" && id != rule.Id {
 		return nil, fmt.Errorf("RuleId is not consistent with rule id.")
-	}
-	if rule.Id == "" {
-		rule.Id = id
 	}
 	if err := validateRuleID(rule.Id); err != nil {
 		return nil, err
@@ -251,24 +239,25 @@ func (p *RuleProcessor) GetAllRulesJson() (map[string]string, error) {
 	return p.db.All()
 }
 
-func (p *RuleProcessor) ExecDrop(name string) (string, error) {
-	result := fmt.Sprintf("Rule %s is dropped.", name)
-	var ruleJson string
+func (p *RuleProcessor) ExecDrop(name string) error {
+	var (
+		ruleJson string
+		allErr   error
+	)
 	if ok, _ := p.db.Get(name, &ruleJson); ok {
 		if err := cleanSinkCache(name); err != nil {
-			result = fmt.Sprintf("%s. Clean sink cache faile: %s.", result, err)
+			allErr = errors.Join(allErr, fmt.Errorf("Clean sink cache failed: %v.", err))
 		}
 		if err := cleanCheckpoint(name); err != nil {
-			result = fmt.Sprintf("%s. Clean checkpoint cache faile: %s.", result, err)
+			allErr = errors.Join(allErr, fmt.Errorf("Clean checkpoint cache failed: %v.", err))
 		}
 
 	}
 	err := p.db.Delete(name)
 	if err != nil {
-		return "", err
-	} else {
-		return result, nil
+		allErr = errors.Join(allErr, fmt.Errorf("Delete rule %s failed: %v.", name, err))
 	}
+	return allErr
 }
 
 func cleanCheckpoint(name string) error {

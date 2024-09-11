@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -114,7 +114,9 @@ func TestHttpPullSource(t *testing.T) {
 		"datasource": "/get",
 		"method":     "get",
 	}))
-	require.NoError(t, source.Connect(ctx))
+	require.NoError(t, source.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	dataCh := make(chan any, 1)
 	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		dataCh <- data
@@ -135,7 +137,9 @@ func TestHttpPullSource(t *testing.T) {
 		"method":       "post",
 		"responseType": "body",
 	}))
-	require.NoError(t, source.Connect(ctx))
+	require.NoError(t, source.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	dataCh = make(chan any, 1)
 	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		dataCh <- data
@@ -156,7 +160,9 @@ func TestHttpPullSource(t *testing.T) {
 		"method":       "post",
 		"responseType": "body",
 	}))
-	require.NoError(t, source.Connect(ctx))
+	require.NoError(t, source.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	errCh := make(chan error, 1)
 	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) { errCh <- err })
 	require.Error(t, <-errCh)
@@ -170,7 +176,9 @@ func TestHttpPullSource(t *testing.T) {
 		"method":       "post",
 		"responseType": "code",
 	}))
-	require.NoError(t, source.Connect(ctx))
+	require.NoError(t, source.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	errCh = make(chan error, 1)
 	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) { errCh <- err })
 	require.Error(t, <-errCh)
@@ -191,7 +199,9 @@ func TestSourceIncremental(t *testing.T) {
 		"method":      "get",
 		"incremental": true,
 	}))
-	require.NoError(t, source.Connect(ctx))
+	require.NoError(t, source.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
 	dataCh := make(chan any, 1)
 	source.Pull(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {
 		dataCh <- data

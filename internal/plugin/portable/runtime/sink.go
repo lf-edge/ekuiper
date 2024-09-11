@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,11 +19,16 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
+
+type sinkConf struct {
+	RequireAck bool `json:"requireAck"`
+}
 
 type PortableSink struct {
 	symbolName string
@@ -31,24 +36,23 @@ type PortableSink struct {
 	props      map[string]interface{}
 	dataCh     DataOutChannel
 	ackCh      DataInChannel
-	// 0 indicates no ack, and 1 indicates need ack
-	requiredACKs int
-	clean        func() error
+	c          *sinkConf
+	clean      func() error
 }
 
 func (ps *PortableSink) Provision(ctx api.StreamContext, configs map[string]any) error {
 	ps.props = configs
-	c, ok := configs["requiredACKs"]
-	if ok {
-		acks, ok := c.(int)
-		if ok {
-			ps.requiredACKs = acks
-		}
+	c := &sinkConf{}
+	err := cast.MapToStruct(configs, c)
+	if err != nil {
+		return err
 	}
+	ps.c = c
+	ctx.GetLogger().Infof("require ack: %v", c.RequireAck)
 	return nil
 }
 
-func (ps *PortableSink) Connect(ctx api.StreamContext) error {
+func (ps *PortableSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Start running portable sink %s with conf %+v", ps.symbolName, ps.props)
 	pm := GetPluginInsManager()
 	ins, err := pm.GetOrStartProcess(ps.reg, PortbleConf)
@@ -88,14 +92,18 @@ func (ps *PortableSink) Connect(ctx api.StreamContext) error {
 	ps.clean = func() error {
 		ctx.GetLogger().Info("clean up sink")
 		err1 := dataCh.Close()
-		err2 := ins.StopSymbol(ctx, c)
+		err2 := ackCh.Close()
+		err3 := ins.StopSymbol(ctx, c)
 		if err1 != nil {
-			err1 = fmt.Errorf("%s:%v", "dataCh", err1)
+			err1 = fmt.Errorf("%s:%v", "close dataCh error", err1)
 		}
 		if err2 != nil {
-			err2 = fmt.Errorf("%s:%v", "symbol", err2)
+			err2 = fmt.Errorf("%s:%v", "close ackCh error", err2)
 		}
-		return errors.Join(err1, err2)
+		if err3 != nil {
+			err3 = fmt.Errorf("%s:%v", "close symbol error", err3)
+		}
+		return errors.Join(err1, err2, err3)
 	}
 	ps.dataCh = dataCh
 	ps.ackCh = ackCh
@@ -108,7 +116,7 @@ func (ps *PortableSink) Collect(ctx api.StreamContext, item api.RawTuple) error 
 	if e != nil {
 		return errorx.NewIOErr(e.Error())
 	}
-	if ps.requiredACKs > 0 {
+	if ps.c.RequireAck {
 		msg, err := recvAck(ctx, ps.ackCh)
 		if err != nil {
 			return err
@@ -151,13 +159,13 @@ func recvAck(ctx api.StreamContext, dataCh DataInChannel) ([]byte, error) {
 		msg, err = dataCh.Recv()
 		switch err {
 		case mangos.ErrClosed:
-			ctx.GetLogger().Info("stop source after close")
+			ctx.GetLogger().Info("stop sink ack after close")
 			return nil, err
 		case mangos.ErrRecvTimeout:
-			ctx.GetLogger().Debug("source receive timeout, retry")
+			ctx.GetLogger().Debug("sink ack receive timeout, retry")
 			select {
 			case <-ctx.Done():
-				ctx.GetLogger().Info("stop dataInChannel")
+				ctx.GetLogger().Info("stop sink ack")
 			default:
 				continue
 			}

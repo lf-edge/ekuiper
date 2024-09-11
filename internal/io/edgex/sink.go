@@ -24,8 +24,8 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/edgex/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -104,11 +104,11 @@ func (ems *EdgexMsgBusSink) Provision(ctx api.StreamContext, ps map[string]any) 
 	return nil
 }
 
-func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext) error {
+func (ems *EdgexMsgBusSink) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to edgex server")
 	var err error
 	ems.id = fmt.Sprintf("%s-%s-%d-edgex-sink", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	ems.cw, err = connection.FetchConnection(ctx, ems.id, "edgex", ems.config)
+	ems.cw, err = connection.FetchConnection(ctx, ems.id, "edgex", ems.config, sc)
 	if err != nil {
 		return err
 	}
@@ -527,7 +527,10 @@ func (ems *EdgexMsgBusSink) doCollect(ctx api.StreamContext, item any) error {
 func (ems *EdgexMsgBusSink) Close(ctx api.StreamContext) error {
 	logger := ctx.GetLogger()
 	logger.Infof("Closing edgex sink")
-	connection.DetachConnection(ctx, ems.id, ems.config)
+	if ems.cli != nil {
+		_ = ems.cli.Disconnect()
+		return connection.DetachConnection(ctx, ems.cli.GetId(ctx))
+	}
 	return nil
 }
 

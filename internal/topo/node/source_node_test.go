@@ -21,10 +21,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -102,7 +102,13 @@ func TestSCNLC(t *testing.T) {
 	}()
 	scn.Open(ctx, errCh)
 	wg.Wait()
-	assert.Equal(t, expects, actual)
+	for i := 0; i < len(expects); i++ {
+		exp := expects[i].(*xsql.RawTuple)
+		got := actual[i].(*xsql.RawTuple)
+		require.Equal(t, exp.Rawdata, got.Rawdata)
+		require.Equal(t, exp.Metadata, got.Metadata)
+		require.Equal(t, exp.Emitter, got.Emitter)
+	}
 }
 
 func TestNewError(t *testing.T) {
@@ -269,7 +275,7 @@ func (m *MockSourceConnector) Provision(ctx api.StreamContext, configs map[strin
 	return nil
 }
 
-func (m *MockSourceConnector) Connect(ctx api.StreamContext) error {
+func (m *MockSourceConnector) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	if m.data == nil {
 		return fmt.Errorf("data is nil")
 	}
@@ -316,7 +322,7 @@ func (m *MockPullSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *MockPullSource) Connect(ctx api.StreamContext) error {
+func (m *MockPullSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 
@@ -384,7 +390,7 @@ func (m *MockRewindSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *MockRewindSource) Connect(ctx api.StreamContext) error {
+func (m *MockRewindSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import (
 
 	"github.com/pingcap/failpoint"
 
+	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/filex"
@@ -42,7 +43,12 @@ import (
 	"github.com/lf-edge/ekuiper/v2/pkg/kv"
 )
 
-var manager *Manager
+var (
+	manager *Manager
+	_       binder.SourceFactory = manager
+	_       binder.SinkFactory   = manager
+	_       binder.FuncFactory   = manager
+)
 
 type Manager struct {
 	pluginDir     string
@@ -60,7 +66,7 @@ func InitManager() (*Manager, error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot find plugins folder: %s", err)
 	}
-	dataDir, err := conf.GetDataLoc()
+	etcDir, err := conf.GetConfLoc()
 	if err != nil {
 		return nil, fmt.Errorf("cannot find data folder: %s", err)
 	}
@@ -75,7 +81,7 @@ func InitManager() (*Manager, error) {
 	pluginDir = filepath.Join(pluginDir, "portable")
 	m := &Manager{
 		pluginDir:     pluginDir,
-		pluginConfDir: dataDir,
+		pluginConfDir: etcDir,
 		reg:           reg,
 	}
 	err = m.syncRegistry()
@@ -159,8 +165,9 @@ func (m *Manager) doRegister(name string, pi *PluginInfo, isInit bool) error {
 		}
 	}
 	conf.Log.Infof("Installed portable plugin %s successfully", name)
-	runtime.GetPluginInsManager().CreateIns(&pi.PluginMeta, isInit)
-	return nil
+	// TODO install async? This may take time at start up
+	_, err = runtime.GetPluginInsManager().CreateIns(&pi.PluginMeta)
+	return err
 }
 
 func (m *Manager) parsePluginJson(name string) (info *PluginInfo, err error) {
@@ -281,6 +288,7 @@ func (m *Manager) install(name, src string, shellParas []string) (resultErr erro
 			if err != nil {
 				return err
 			}
+			break
 		}
 	}
 	if pi == nil {

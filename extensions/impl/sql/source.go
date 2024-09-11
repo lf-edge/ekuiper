@@ -22,12 +22,13 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
+	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/sqlgen"
 )
 
@@ -47,6 +48,10 @@ type SQLConf struct {
 	Datasource string            `json:"datasource"`
 }
 
+func init() {
+	modules.RegisterConnection("sql", client2.CreateConnection)
+}
+
 func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
 	cfg := &SQLConf{}
 	err := cast.MapToStruct(props, cfg)
@@ -59,7 +64,8 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 	if time.Duration(cfg.Interval) < 1 {
 		return fmt.Errorf("interval should be defined")
 	}
-	if err := cfg.resolveDBURL(); err != nil {
+	props, err = cfg.resolveDBURL(props)
+	if err != nil {
 		return err
 	}
 	s.conf = cfg
@@ -79,12 +85,12 @@ func (s *SQLSourceConnector) Provision(ctx api.StreamContext, props map[string]a
 	return nil
 }
 
-func (s *SQLSourceConnector) Connect(ctx api.StreamContext) error {
+func (s *SQLSourceConnector) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to sql server")
 	var cli *client2.SQLConnection
 	var err error
 	s.id = s.conf.DBUrl
-	cw, err := connection.FetchConnection(ctx, s.id, "sql", s.props)
+	cw, err := connection.FetchConnection(ctx, s.id, "sql", s.props, sc)
 	if err != nil {
 		return err
 	}
@@ -101,8 +107,8 @@ func (s *SQLSourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing sql source connector url:%v", s.conf.DBUrl)
 	if s.conn != nil {
 		s.conn.DetachSub(ctx, s.props)
+		return connection.DetachConnection(ctx, s.conn.GetId(ctx))
 	}
-	connection.DetachConnection(ctx, s.id, s.props)
 	return nil
 }
 
@@ -208,7 +214,7 @@ func prepareValues(values []interface{}, columnTypes []*sql.ColumnType, columns 
 	if len(columnTypes) > 0 {
 		for idx, columnType := range columnTypes {
 			if columnType.ScanType() != nil {
-				values[idx] = reflect.New(reflect.PtrTo(columnType.ScanType())).Interface()
+				values[idx] = reflect.New(reflect.PointerTo(columnType.ScanType())).Interface()
 			} else {
 				values[idx] = new(interface{})
 			}
@@ -226,13 +232,14 @@ func GetSource() api.Source {
 
 var _ api.PullTupleSource = &SQLSourceConnector{}
 
-func (sc *SQLConf) resolveDBURL() error {
+func (sc *SQLConf) resolveDBURL(props map[string]any) (map[string]any, error) {
 	if len(sc.DBUrl) < 1 && len(sc.URL) < 1 {
-		return fmt.Errorf("dburl should be defined")
+		return props, fmt.Errorf("dburl should be defined")
 	}
 	if len(sc.DBUrl) < 1 {
+		props["dburl"] = props["url"]
 		sc.DBUrl = sc.URL
 	}
 	sc.URL = ""
-	return nil
+	return props, nil
 }

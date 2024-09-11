@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"time"
-
-	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/pingcap/failpoint"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 )
@@ -44,14 +43,14 @@ var PortbleConf = &PortableConfig{
 // PluginIns created at two scenarios
 // 1. At runtime, plugin is created/updated: in order to be able to reload rules that already uses previous ins
 // 2. At system start/restart
-// Once created, never deleted until delete plugin command or system shutdown
+// Once created, never deleted until system shutdown
 type PluginIns struct {
 	sync.RWMutex
 	name     string
 	ctrlChan ControlChannel // the same lifecycle as pluginIns, once created keep listening
 	// audit the commands, so that when restarting the plugin, we can replay the commands
 	commands map[Meta][]byte
-	process  *os.Process // created when used by rule and deleted when no rule uses it
+	process  *os.Process // created when used by rule and deleted when delete the plugin
 	Status   *PluginStatus
 }
 
@@ -113,12 +112,6 @@ func (i *PluginIns) StartSymbol(ctx api.StreamContext, ctrl *Control) error {
 	return err
 }
 
-func (i *PluginIns) AddRef4Test(ctx api.StreamContext) {
-	i.Lock()
-	defer i.Unlock()
-	i.addRef(ctx)
-}
-
 func (i *PluginIns) addRef(ctx api.StreamContext) {
 	ruleID := ctx.GetRuleId()
 	if len(ruleID) < 1 {
@@ -130,12 +123,6 @@ func (i *PluginIns) addRef(ctx api.StreamContext) {
 	} else {
 		i.Status.RefCount[ruleID] = 1
 	}
-}
-
-func (i *PluginIns) DeRef(ctx api.StreamContext) {
-	i.Lock()
-	defer i.Unlock()
-	i.deRef(ctx)
 }
 
 func (i *PluginIns) deRef(ctx api.StreamContext) {
@@ -168,28 +155,11 @@ func (i *PluginIns) StopSymbol(ctx api.StreamContext, ctrl *Control) error {
 	}
 	err = i.sendCmd(jsonArg)
 	if err == nil {
-		referred := false
 		i.Lock()
 		delete(i.commands, ctrl.Meta)
 		i.deRef(ctx)
 		i.Unlock()
 		ctx.GetLogger().Infof("stopped symbol %s", ctrl.SymbolName)
-		if !referred {
-			go func() {
-				// delay to kill the plugin process
-				time.Sleep(1 * time.Second)
-				i.RLock()
-				defer i.RUnlock()
-				if len(i.commands) == 0 {
-					err := GetPluginInsManager().Kill(i.name)
-					if err != nil {
-						ctx.GetLogger().Errorf("fail to stop plugin %s: %v", i.name, err)
-						return
-					}
-					ctx.GetLogger().Infof("stop plugin %s", i.name)
-				}
-			}()
-		}
 	}
 	return err
 }
@@ -200,7 +170,7 @@ func (i *PluginIns) Stop() error {
 	i.RLock()
 	defer i.RUnlock()
 	i.Status.Stop()
-	if i.process != nil { // will also trigger process exit clean up
+	if i.process != nil {
 		err = i.process.Kill()
 	}
 	return err
@@ -234,21 +204,7 @@ func GetPluginInsManager4Test() *pluginInsManager {
 	return testPM
 }
 
-func (p *pluginInsManager) AddPlugins4Test(name string, ins *PluginIns) {
-	p.Lock()
-	defer p.Unlock()
-	p.instances[name] = ins
-}
-
-func (p *pluginInsManager) RemovePlugins4Test(name string) {
-	p.Lock()
-	defer p.Unlock()
-	delete(p.instances, name)
-}
-
 func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool) {
-	p.RLock()
-	defer p.RUnlock()
 	ins, ok := p.getPluginIns(name)
 	if !ok {
 		return nil, false
@@ -256,26 +212,11 @@ func (p *pluginInsManager) GetPluginInsStatus(name string) (*PluginStatus, bool)
 	return ins.GetStatus(), true
 }
 
-func (p *pluginInsManager) GetPluginIns(name string) (*PluginIns, bool) {
+func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
 	p.RLock()
 	defer p.RUnlock()
-	return p.getPluginIns(name)
-}
-
-func (p *pluginInsManager) getPluginIns(name string) (*PluginIns, bool) {
 	ins, ok := p.instances[name]
 	return ins, ok
-}
-
-func (p *pluginInsManager) DeletePluginIns(name string) {
-	p.Lock()
-	defer p.Unlock()
-	p.deletePluginIns(name)
-}
-
-// deletePluginIns should only run when there is no state aka. commands
-func (p *pluginInsManager) deletePluginIns(name string) {
-	delete(p.instances, name)
 }
 
 // AddPluginIns For mock only
@@ -286,33 +227,18 @@ func (p *pluginInsManager) AddPluginIns(name string, ins *PluginIns) {
 }
 
 // CreateIns Run when plugin is created/updated
-func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta, isInit bool) {
-	p.Lock()
-	defer p.Unlock()
-	if !isInit {
-		if ins, ok := p.instances[pluginMeta.Name]; ok {
-			if len(ins.commands) != 0 {
-				go p.GetOrStartProcess(pluginMeta, PortbleConf)
-			}
-		}
-	} else {
-		go p.GetOrStartProcess(pluginMeta, PortbleConf)
-	}
+func (p *pluginInsManager) CreateIns(pluginMeta *PluginMeta) (*PluginIns, error) {
+	return p.GetOrStartProcess(pluginMeta, PortbleConf)
 }
 
 // GetOrStartProcess Control the plugin process lifecycle.
-func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
-	return p.getOrStartProcess(pluginMeta, pconf)
-}
-
-// getOrStartProcess Control the plugin process lifecycle.
 // Need to manage the resources: instances map, control socket, plugin process
 // May be called at plugin creation or restart with previous state(ctrlCh, commands)
-// PluginIns is created by plugin manager but started by rule/funcop.
-// During plugin delete/update, if the commands is not empty, keep the ins for next creation and restore
+// PluginIns is created by plugin manager and started immediately or restart by rule/funcop.
+// The ins is long running. Even for plugin delete/update, the ins will continue. So there is no delete.
 // 1. During creation, clean up those resources for any errors in defer immediately after the resource is created.
 // 2. During plugin running, when detecting plugin process exit, clean up those resources for the current ins.
-func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
+func (p *pluginInsManager) GetOrStartProcess(pluginMeta *PluginMeta, pconf *PortableConfig) (_ *PluginIns, e error) {
 	p.Lock()
 	defer p.Unlock()
 	var (
@@ -325,7 +251,7 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		ins = NewPluginIns(pluginMeta.Name, nil, nil)
 		p.instances[pluginMeta.Name] = ins
 	}
-	// ins process has not run yet
+	// ins has run
 	if ins.process != nil && ins.ctrlChan != nil {
 		return ins, nil
 	}
@@ -408,16 +334,10 @@ func (p *pluginInsManager) getOrStartProcess(pluginMeta *PluginMeta, pconf *Port
 		}
 		// must make sure the plugin ins is not cleaned up yet by checking the process identity
 		// clean up for stop unintentionally
-		if ins, ok := p.GetPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
+		if ins, ok := p.getPluginIns(pluginMeta.Name); ok && ins.process == cmd.Process {
 			ins.Lock()
-			if len(ins.commands) == 0 {
-				if ins.ctrlChan != nil {
-					_ = ins.ctrlChan.Close()
-				}
-			}
 			ins.process = nil
 			ins.Unlock()
-			p.DeletePluginIns(pluginMeta.Name)
 		}
 		return nil
 	})

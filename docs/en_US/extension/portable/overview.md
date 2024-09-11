@@ -2,17 +2,48 @@
 
 As a supplement to the native plugin, portable plugins aims to provide the equal functionality while allow to run in more general environments and created by more languages. Similar to native plugins, portable plugins also support to customize source, sink and function extensions.
 
+## Architecture
+
+Unlike native plugins, Portable plugins operate as independent processes from the main program, with an architecture as
+shown in the figure below. The plugin process communicates with the main process through nanomsg. Each Portable plugin
+can define any number of sources, sinks, and functions. When a plugin is installed or initialized at startup, the main
+program will launch the installed plugin processes and establish a control channel connection. When a rule utilizes a
+source/sink/function from the plugin, the main program will establish the corresponding data channel (various data
+channels in the figure) and notify the plugin process via the control channel to execute the corresponding
+source/sink/function implementation. During runtime, data is transferred between the main program and the plugin through
+the data channel. When the rule stops, the main program notifies the plugin process to stop the corresponding
+source/sink operation and closes the data channel via the control channel.
+
+![portable architecture](../../resources/portable_arch.png)
+
+In versions 2.0 and later, to avoid tricky asynchronous timing issues, the system no longer adopts the lazy loading
+method for plugins; plugins start running immediately after installation or system initialization. Installed plugins
+will create plugin processes, establish control channels, and maintain them throughout the system's lifecycle until the
+main program is closed or the plugin is deleted. The source/sink data channels will be turned on and off in accordance
+with the rules. Functions may be shared by multiple rules, thus once the function data channel is opened, it will not
+actively close and will keep running until the system shuts down.
+
+### Hot Update
+
+Relying on the automatic reconnection capability of the nanomsg channel, Portable plugins support hot updates without
+the need to restart the rules. After the plugin is updated, the rules using the plugin's source/sink/function will
+automatically use the new version. In the internal implementation, when the plugin is updated, the plugin process will
+stop, but the server side of the control channel and data channel, i.e., the main program side, will still be
+maintained. Once the new plugin is installed, the new plugin process will automatically connect to the existing
+channels, thus achieving rule updates without downtime.
+
+## Development
+
 The steps to create plugin is similar to the native plugin.
 
 1. Develop the plugin with SDK.
-    1. Develop each plugin symbol(source, sink and function) by implementing corresponding interfaces
-    2. Develop the main program to serve all the symbols as one plugin
+   1. Develop each plugin symbol(source, sink and function) by implementing corresponding interfaces
+   2. Develop the main program to serve all the symbols as one plugin
 2. Build or package the plugin depending on the programing language.
 3. Register the plugin by eKuiper file/REST/CLI.
 
-We aim to provide SDK for all mainstream language. Currently, [go SDK](go_sdk.md) and [python SDK](python_sdk.md) are supported.
-
-## Development
+We aim to provide SDK for all mainstream language. Currently, [go SDK](go_sdk.md) and [python SDK](python_sdk.md) are
+supported.
 
 Unlike the native plugin, a portable plugin can bundle multiple *symbols*. Each symbol represents an extension of source, sink or function. The implementation of a symbol is to implement the interface of source, sink or function similar to the native plugin. In portable plugin mode, it is to implement the interface with the selected language.
 
@@ -95,7 +126,8 @@ supportive files) inside `plugins/portables/${pluginName}` and the configuration
 under `etc`.
 
 To manage the portable plugins in runtime, we can use the [REST](../../api/restapi/plugins.md)
-or [CLI](../../api/cli/plugins.md) commands.
+or [CLI](../../api/cli/plugins.md) commands. Using [Status API](../../api/restapi/plugins.md#portable-plugin-status), we
+can examine the plugin process pid and other status information.
 
 ## Restrictions
 

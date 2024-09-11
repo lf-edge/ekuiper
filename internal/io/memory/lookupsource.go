@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/store"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -38,11 +39,16 @@ type lookupsource struct {
 	key        string
 }
 
-func (s *lookupsource) Connect(ctx api.StreamContext) error {
+func (s *lookupsource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("lookup source %s is opened with key %v", s.topic, s.key)
 	var err error
 	s.table, err = store.Reg(s.topic, s.topicRegex, s.key)
-	return err
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
+	}
+	sch(api.ConnectionConnected, "")
+	return nil
 }
 
 func (s *lookupsource) Provision(ctx api.StreamContext, props map[string]any) error {

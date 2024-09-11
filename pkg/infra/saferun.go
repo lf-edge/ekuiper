@@ -17,9 +17,11 @@ package infra
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"runtime/debug"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
@@ -52,27 +54,15 @@ func SafeRun(fn func() error) (err error) {
 // It is usually the error outlet of an op/rule.
 func DrainError(ctx api.StreamContext, err error, errCh chan<- error) {
 	if err != nil {
+		_, file, line, _ := runtime.Caller(1) // 1 means the caller of DrainError
 		if ctx != nil {
-			ctx.GetLogger().Errorf("runtime error: %v", err)
+			ctx.GetLogger().Errorf("runtime error from %s/l%d: %v", file, line, err)
 		} else {
-			conf.Log.Errorf("runtime error: %v", err)
+			conf.Log.Errorf("runtime error %s/l%d: %v", file, line, err)
 		}
 	}
 	select {
 	case errCh <- err:
 	default:
-	}
-}
-
-// DrainCtrl a non-block function to send out the signal to the ctrl channel
-// It will retry in blocking mode once the channel is full and make sure it is delivered finally but may lose order
-func DrainCtrl(ctx api.StreamContext, signal any, ctrlCh chan<- any) {
-	select {
-	case ctrlCh <- signal:
-	default:
-		ctx.GetLogger().Warnf("failed to send signal %v to ctrl channel, retry", signal)
-		go func() {
-			ctrlCh <- signal
-		}()
 	}
 }

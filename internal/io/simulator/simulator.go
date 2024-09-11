@@ -1,10 +1,10 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -41,11 +42,12 @@ func (s *SimulatorSource) Provision(ctx api.StreamContext, configs map[string]an
 	return nil
 }
 
-func (s SimulatorSource) Close(ctx api.StreamContext) error {
+func (s *SimulatorSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (s *SimulatorSource) Connect(ctx api.StreamContext) error {
+func (s *SimulatorSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

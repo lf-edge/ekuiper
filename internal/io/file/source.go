@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	_ "github.com/lf-edge/ekuiper/v2/internal/io/file/reader"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -142,8 +143,8 @@ func (fs *Source) Provision(ctx api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (fs *Source) Connect(ctx api.StreamContext) error {
-	// do nothing
+func (fs *Source) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

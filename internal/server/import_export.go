@@ -259,7 +259,7 @@ func configurationImport(ctx context.Context, data []byte, reboot bool) ImportCo
 					logger.Error(ee)
 					continue
 				}
-				reply := recoverRule(rul)
+				reply := registry.RecoverRule(rul)
 				if reply != "" {
 					logger.Error(reply)
 				}
@@ -400,6 +400,10 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := handleConfigurationImport(context.Background(), rsi, partial, stop)
 	if err != nil {
+		if result != nil {
+			errStr, _ := json.Marshal(result.ConfigResponse)
+			err = errors.New(string(errStr))
+		}
 		handleError(w, err, "", logger)
 		return
 	}
@@ -431,7 +435,7 @@ func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, part
 		configurationReset()
 		result := configurationImport(ctx, content, stop)
 		if result.ErrorMsg != "" {
-			return nil, errors.New(result.ErrorMsg)
+			return &result, errors.New(result.ErrorMsg)
 		} else {
 			if stop {
 				go func() {
@@ -444,7 +448,7 @@ func handleConfigurationImport(ctx context.Context, rsi *configurationInfo, part
 	} else {
 		result := configurationPartialImport(ctx, content)
 		if result.ErrorMsg != "" {
-			return nil, errors.New(result.ErrorMsg)
+			return &result, errors.New(result.ErrorMsg)
 		} else {
 			return &result, nil
 		}
@@ -585,20 +589,14 @@ func importRuleSetPartial(all processor.Ruleset) processor.Ruleset {
 		_, err := ruleProcessor.GetRuleJson(k)
 		if err == nil {
 			// the rule already exist, update
-			err = updateRule(k, v, false)
-			if err != nil {
-				ruleSetRsp.Rules[k] = err.Error()
-				continue
-			}
-			// Update to db after validation
-			_, err = ruleProcessor.ExecUpdate(k, v)
+			err = registry.UpdateRule(k, v)
 			if err != nil {
 				ruleSetRsp.Rules[k] = err.Error()
 				continue
 			}
 		} else {
 			// not found, create
-			_, err2 := createRule(k, v)
+			_, err2 := registry.CreateRule(k, v)
 			if err2 != nil {
 				ruleSetRsp.Rules[k] = err2.Error()
 				continue

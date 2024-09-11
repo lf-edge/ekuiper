@@ -109,7 +109,9 @@ func TestFileSinkCompress_Collect(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

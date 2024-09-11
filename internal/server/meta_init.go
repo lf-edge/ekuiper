@@ -189,6 +189,7 @@ func sourceConfHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	} else {
+		w.Header().Add(ContentType, ContentTypeJSON)
 		w.Write(ret)
 	}
 }
@@ -205,6 +206,7 @@ func connectionConfHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	} else {
+		w.Header().Add(ContentType, ContentTypeJSON)
 		_, _ = w.Write(ret)
 	}
 }
@@ -221,6 +223,7 @@ func sinkConfHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	} else {
+		w.Header().Add(ContentType, ContentTypeJSON)
 		_, _ = w.Write(ret)
 	}
 }
@@ -298,7 +301,6 @@ func connectionConfKeyHandler(w http.ResponseWriter, r *http.Request) {
 			handleError(w, err, "Invalid body", logger)
 			return
 		}
-		reqField = replacePasswdForConfig("connection", confKey, reqField)
 		err = meta.AddConnectionConfKey(pluginName, confKey, language, reqField)
 	}
 	if err != nil {
@@ -333,9 +335,6 @@ func getLanguage(r *http.Request) string {
 // TODO add ping back
 func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
-	vars := mux.Vars(r)
-
-	sinkNm := vars["name"]
 	config := map[string]interface{}{}
 	v, _ := io.ReadAll(r.Body)
 	err := json.Unmarshal(v, &config)
@@ -343,8 +342,6 @@ func sinkConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-	config = replacePasswdForConfig("sink", sinkNm, config)
-
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -360,8 +357,28 @@ func sourceConnectionHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "", logger)
 		return
 	}
-	config = replacePasswdForConfig("source", sourceNm, config)
 	err = node.SourcePing(sourceNm, config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func lookupConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+
+	sourceNm := vars["name"]
+	config := map[string]interface{}{}
+	v, _ := io.ReadAll(r.Body)
+	err := json.Unmarshal(v, &config)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	err = node.LookupPing(sourceNm, config)
 	if err != nil {
 		handleError(w, err, "", logger)
 		return

@@ -16,13 +16,25 @@ package modules
 
 import "github.com/lf-edge/ekuiper/contract/v2/api"
 
+type ConnectionStatus struct {
+	Status string `json:"status"`
+	ErrMsg string `json:"errMsg,omitempty"`
+}
+
 type Connection interface {
+	Provision(ctx api.StreamContext, conId string, props map[string]any) error
+	Dial(ctx api.StreamContext) error
+	GetId(ctx api.StreamContext) string
 	Ping(ctx api.StreamContext) error
-	DetachSub(ctx api.StreamContext, props map[string]any)
 	api.Closable
 }
 
-type ConnectionProvider func(ctx api.StreamContext, props map[string]any) (Connection, error)
+type StatefulDialer interface {
+	SetStatusChangeHandler(ctx api.StreamContext, handler api.StatusChangeHandler)
+	Status(ctx api.StreamContext) ConnectionStatus
+}
+
+type ConnectionProvider func(ctx api.StreamContext) Connection
 
 var ConnectionRegister map[string]ConnectionProvider
 

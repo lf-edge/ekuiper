@@ -21,13 +21,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
@@ -134,7 +134,7 @@ func (k *KafkaSource) Close(ctx api.StreamContext) error {
 	return k.reader.Close()
 }
 
-func (k *KafkaSource) Connect(ctx api.StreamContext) error {
+func (k *KafkaSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	readerConfig := k.sc.GetReaderConfig()
 	conf.Log.Infof("topic: %s, brokers: %v", readerConfig.Topic, readerConfig.Brokers)
 	readerConfig.Dialer = &kafkago.Dialer{
@@ -148,6 +148,11 @@ func (k *KafkaSource) Connect(ctx api.StreamContext) error {
 	err := k.reader.SetOffset(kafkago.LastOffset)
 	if err != nil {
 		return err
+	}
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+	} else {
+		sch(api.ConnectionConnecting, "")
 	}
 	return nil
 }

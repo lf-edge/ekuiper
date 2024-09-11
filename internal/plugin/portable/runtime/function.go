@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 )
@@ -31,13 +32,10 @@ import (
 // without changing the server(plugin runtime) side
 // TODO think about ending a portable func when needed.
 type PortableFunc struct {
-	symbolName  string
-	reg         *PluginMeta // initial plugin meta, only used for initialize the function instance
-	dataCh      DataReqChannel
-	isAgg       int // 0 - not calculate yet, 1 - no, 2 - yes
-	onClose     func()
-	onFirstExec func(ctx api.StreamContext)
-	referenced  bool
+	symbolName string
+	reg        *PluginMeta // initial plugin meta, only used for initialize the function instance
+	dataCh     DataReqChannel
+	isAgg      int // 0 - not calculate yet, 1 - no, 2 - yes
 }
 
 func NewPortableFunc(symbolName string, reg *PluginMeta) (_ *PortableFunc, e error) {
@@ -73,18 +71,11 @@ func NewPortableFunc(symbolName string, reg *PluginMeta) (_ *PortableFunc, e err
 		return nil, err
 	}
 
-	pf := &PortableFunc{
+	return &PortableFunc{
 		symbolName: reg.Name,
 		reg:        reg,
 		dataCh:     dataCh,
-	}
-	pf.onClose = func() {
-		ins.DeRef(ctx)
-	}
-	pf.onFirstExec = func(execCtx api.StreamContext) {
-		ins.addRef(execCtx)
-	}
-	return pf, nil
+	}, nil
 }
 
 func (f *PortableFunc) Validate(args []interface{}) error {
@@ -110,10 +101,6 @@ func (f *PortableFunc) Validate(args []interface{}) error {
 }
 
 func (f *PortableFunc) Exec(ctx api.FunctionContext, args []any) (interface{}, bool) {
-	if !f.referenced && f.onFirstExec != nil {
-		f.referenced = true
-		f.onFirstExec(ctx)
-	}
 	ctx.GetLogger().Debugf("running portable func with args %+v", args)
 	ctxRaw, err := encodeCtx(ctx)
 	if err != nil {
@@ -182,9 +169,6 @@ func (f *PortableFunc) IsAggregate() bool {
 }
 
 func (f *PortableFunc) Close() error {
-	if f.onClose != nil {
-		f.onClose()
-	}
 	return f.dataCh.Close()
 	// Symbol must be closed by instance manager
 	//		ins.StopSymbol(ctx, c)

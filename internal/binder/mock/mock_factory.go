@@ -18,6 +18,8 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
 
@@ -35,6 +37,10 @@ func (f *MockFactory) Source(name string) (api.Source, error) {
 	}
 }
 
+func (f *MockFactory) SourcePluginInfo(_ string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.INTERNAL, "", ""
+}
+
 func (f *MockFactory) LookupSource(name string) (api.Source, error) {
 	return nil, nil
 }
@@ -47,12 +53,20 @@ func (f *MockFactory) Sink(name string) (api.Sink, error) {
 	}
 }
 
+func (f *MockFactory) SinkPluginInfo(_ string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.INTERNAL, "", ""
+}
+
 func (f *MockFactory) Function(name string) (api.Function, error) {
 	if strings.HasPrefix(name, "mock") {
 		return &mockFunc{}, nil
 	} else {
 		return nil, errorx.NotFoundErr
 	}
+}
+
+func (f *MockFactory) FunctionPluginInfo(funcName string) (plugin.EXTENSION_TYPE, string, string) {
+	return plugin.NONE_EXTENSION, "", ""
 }
 
 func (f *MockFactory) ConvName(name string) (string, bool) {
@@ -87,7 +101,7 @@ func (m *mockSource) Provision(ctx api.StreamContext, configs map[string]any) er
 	return nil
 }
 
-func (m *mockSource) Connect(ctx api.StreamContext) error {
+func (m *mockSource) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 
@@ -105,7 +119,7 @@ func (m *mockSink) Provision(ctx api.StreamContext, configs map[string]any) erro
 	return nil
 }
 
-func (m *mockSink) Connect(ctx api.StreamContext) error {
+func (m *mockSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

@@ -159,6 +159,27 @@ PUT http://localhost:9081/plugins/functions/{name}
 PUT http://localhost:9081/plugins/portables/{name}
 ```
 
+## Portable Plugin Status
+
+This API can get the Portable plugin running status.
+
+```shell
+GET http://localhost:9081/plugins/portables/{name}
+```
+
+The return message is like:
+
+```json
+{
+   "refCount": {
+      "rulePort1": 2
+   },
+   "status": "running",
+   "errMsg": "",
+   "pid": 90
+}
+```
+
 ## APIs to handle function plugin with multiple functions
 
 Unlike source and sink plugins, function plugin can export multiple functions at once. The exported names must be unique globally across all plugins. There will be a one to many mapping between function and its container plugin. Thus, we provide show udf(user defined function) api to query all user defined functions so that users can check the name duplication. And we provide describe udf api to find out the defined plugin of a function. We also provide the register functions api to register the udf list for an auto loaded plugin.

@@ -63,15 +63,23 @@ func connectionsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte("success"))
 	case http.MethodGet:
-		ids := connection.GetAllConnectionsID()
+		metaList := connection.GetAllConnectionsMeta()
+		resp := make([]*ConnectionResponse, 0)
+		for _, meta := range metaList {
+			resp = append(resp, getConnectionRespByMeta(meta))
+		}
 		w.WriteHeader(http.StatusOK)
-		jsonResponse(ids, w, logger)
+		jsonResponse(resp, w, logger)
 	}
 }
 
 type ConnectionResponse struct {
-	ID  string `json:"id"`
-	Err string `json:"err"`
+	ID       string         `json:"id"`
+	Typ      string         `json:"typ"`
+	Props    map[string]any `json:"props"`
+	Status   string         `json:"status,omitempty"`
+	Err      string         `json:"err,omitempty"`
+	RefCount int            `json:"refCount,omitempty"`
 }
 
 func connectionHandler(w http.ResponseWriter, r *http.Request) {
@@ -79,14 +87,12 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	switch r.Method {
 	case http.MethodGet:
-		res := &ConnectionResponse{
-			ID: id,
-		}
-		err := connection.PingConnection(context.Background(), id)
+		meta, err := connection.GetConnectionDetail(context.Background(), id)
 		if err != nil {
-			res.Err = err.Error()
+			handleError(w, err, "", logger)
+			return
 		}
-		w.WriteHeader(http.StatusOK)
+		res := getConnectionRespByMeta(meta)
 		jsonResponse(res, w, logger)
 	case http.MethodDelete:
 		if err := connection.DropNameConnection(context.Background(), id); err != nil {
@@ -96,4 +102,20 @@ func connectionHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("success"))
 	}
+}
+
+func getConnectionRespByMeta(meta *connection.Meta) *ConnectionResponse {
+	err := connection.PingConnection(context.Background(), meta.ID)
+	r := &ConnectionResponse{
+		Typ:      meta.Typ,
+		ID:       meta.ID,
+		Props:    meta.Props,
+		RefCount: meta.GetRefCount(),
+	}
+	if err == nil {
+		r.Status = "running"
+	} else {
+		r.Err = err.Error()
+	}
+	return r
 }

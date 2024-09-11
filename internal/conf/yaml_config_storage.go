@@ -1,4 +1,4 @@
-// Copyright 2023 EMQ Technologies Co., Ltd.
+// Copyright 2023-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -111,9 +111,21 @@ func getKVStorage() (s cfgKVStorage, err error) {
 	return kvStore, nil
 }
 
-// SaveCfgKeyToKVInTest only used in unit test
-func SaveCfgKeyToKVInTest(key string, cfg map[string]interface{}) error {
+// SaveCfgKeyToKV ...
+func SaveCfgKeyToKV(key string, cfg map[string]interface{}) error {
 	return saveCfgKeyToKV(key, cfg)
+}
+
+func LoadCfgKeyKV(key string) (map[string]interface{}, error) {
+	kvStorage, err := getKVStorage()
+	if err != nil {
+		return nil, err
+	}
+	mmap, err := kvStorage.GetByPrefix(key)
+	if err != nil {
+		return nil, err
+	}
+	return mmap[key], nil
 }
 
 func saveCfgKeyToKV(key string, cfg map[string]interface{}) error {

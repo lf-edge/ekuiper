@@ -25,8 +25,8 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
 	"github.com/fxamacker/cbor/v2"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/io/edgex/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
@@ -77,12 +77,12 @@ func (es *Source) Provision(_ api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (es *Source) Connect(ctx api.StreamContext) error {
+func (es *Source) Connect(ctx api.StreamContext, sc api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to edgex server")
 	var cli *client.Client
 	var err error
 	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config)
+	cw, err := connection.FetchConnection(ctx, id, "edgex", es.config, sc)
 	if err != nil {
 		return err
 	}
@@ -321,10 +321,10 @@ func convertFloatArray(v string, bitSize int) (any, error) {
 func (es *Source) Close(ctx api.StreamContext) error {
 	log := ctx.GetLogger()
 	log.Infof("EdgeX Source instance %d Done.", ctx.GetInstanceId())
-	id := fmt.Sprintf("%s-%s-%d-edgex-source", ctx.GetRuleId(), ctx.GetOpId(), ctx.GetInstanceId())
-	connection.DetachConnection(ctx, id, es.config)
 	if es.cli != nil {
 		es.cli.DetachSub(ctx, es.config)
+		_ = es.cli.Disconnect()
+		return connection.DetachConnection(ctx, es.cli.GetId(ctx))
 	}
 	return nil
 }

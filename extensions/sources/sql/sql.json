@@ -31,7 +31,7 @@
   "properties": {
     "default": [
       {
-        "name": "url",
+        "name": "dburl",
         "default": "",
         "optional": false,
         "control": "text",

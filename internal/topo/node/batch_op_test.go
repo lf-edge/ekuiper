@@ -19,7 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
@@ -96,4 +98,12 @@ func TestRun(t *testing.T) {
 			assert.Equal(t, tc.expectItems, len(w.Content))
 		})
 	}
+}
+
+func TestBatchOpSendEmpty(t *testing.T) {
+	op, err := NewBatchOp("test", &def.RuleOption{BufferLength: 10, SendError: true}, 0, time.Second)
+	require.NoError(t, err)
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic", "return(true)")
+	op.send(mockContext.NewMockContext("1", "2"))
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/topo/node/injectPanic")
 }

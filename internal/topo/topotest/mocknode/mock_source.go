@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -47,7 +48,7 @@ func (m *MockSource) SetEofIngest(eof api.EOFIngest) {
 	m.eof = eof
 }
 
-func (m *MockSource) Connect(_ api.StreamContext) error {
+func (m *MockSource) Connect(_ api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

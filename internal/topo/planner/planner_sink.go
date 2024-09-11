@@ -20,10 +20,12 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
@@ -36,6 +38,10 @@ func buildActions(tp *topo.Topo, rule *def.Rule, inputs []node.Emitter, streamCo
 			props, ok := action.(map[string]any)
 			if !ok {
 				return fmt.Errorf("expect map[string]interface{} type for the action properties, but found %v", action)
+			}
+			props, err := conf.OverwriteByConnectionConf(name, props)
+			if err != nil {
+				return err
 			}
 			sinkName := fmt.Sprintf("%s_%d", name, i)
 			cn, err := SinkToComp(tp, name, sinkName, props, rule, streamCount)

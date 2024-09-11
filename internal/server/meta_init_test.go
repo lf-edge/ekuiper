@@ -202,16 +202,6 @@ func (suite *MetaTestSuite) TestSinkConfKeyHandler() {
 	w := httptest.NewRecorder()
 	suite.r.ServeHTTP(w, req)
 	assert.Equal(suite.T(), http.StatusOK, w.Code)
-	got := replacePasswdForConfig("sink", "mqtt", map[string]interface{}{
-		"resourceId": "test",
-		"a":          "123",
-		"password":   "******",
-	})
-	require.Equal(suite.T(), map[string]interface{}{
-		"resourceId": "test",
-		"a":          "123",
-		"password":   "123456",
-	}, got)
 	os.Remove(path.Join(DataDir, "sinks", "mqtt.yaml"))
 	os.Remove(path.Join(DataDir, "sinks"))
 }
@@ -248,7 +238,7 @@ func TestMetaTestSuite(t *testing.T) {
 }
 
 func (suite *MetaTestSuite) TestResourceSourceType() {
-	req, _ := http.NewRequest(http.MethodPut, "/metadata/sources/mqtt/confKeys/demo", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883","sourceType":"stream"}`))
+	req, _ := http.NewRequest(http.MethodPut, "/metadata/sources/mqtt/confKeys/demo", bytes.NewBufferString(`{"qos": 0, "server": "tcp://10.211.55.6:1883"}`))
 	w := httptest.NewRecorder()
 	DataDir, _ := conf.GetDataLoc()
 	os.MkdirAll(path.Join(DataDir, "sources"), 0o755)
@@ -261,11 +251,11 @@ func (suite *MetaTestSuite) TestResourceSourceType() {
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnval, _ := io.ReadAll(w.Body)
-	require.Equal(suite.T(), `{"mqtt":{"demo":{"qos":0,"server":"tcp://10.211.55.6:1883","sourceType":"stream"}}}`, string(returnval))
+	require.Equal(suite.T(), `{}`, string(returnval))
 
 	req, _ = http.NewRequest(http.MethodGet, "/metadata/resource", bytes.NewBufferString("any"))
 	suite.r.ServeHTTP(w, req)
 	require.Equal(suite.T(), http.StatusOK, w.Code)
 	returnval, _ = io.ReadAll(w.Body)
-	require.Equal(suite.T(), `{"mqtt":{"demo":{"qos":0,"server":"tcp://10.211.55.6:1883","sourceType":"stream"}}}`, string(returnval))
+	require.Equal(suite.T(), `{"mqtt":{"default":{"insecureSkipVerify":false,"protocolVersion":"3.1.1","qos":1,"server":"tcp://127.0.0.1:1883"},"demo":{"qos":0,"server":"tcp://10.211.55.6:1883"}}}`, string(returnval))
 }

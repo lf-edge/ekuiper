@@ -20,10 +20,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/planner"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mocknode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 func TestSharedSourceSchemaless(t *testing.T) {
@@ -529,6 +531,8 @@ func TestSRFSQL(t *testing.T) {
 }
 
 func TestSingleSQL(t *testing.T) {
+	conf.InitConf()
+	tracer.InitTracer()
 	// Reset
 	streamList := []string{"demo", "demoError", "demo1", "table1", "demoTable", "demoArr"}
 	HandleStream(false, streamList, t)
@@ -1240,8 +1244,9 @@ func TestSingleSQL(t *testing.T) {
 	HandleStream(true, streamList, t)
 	options := []*def.RuleOption{
 		{
-			BufferLength: 100,
-			SendError:    true,
+			BufferLength:     100,
+			SendError:        true,
+			EnableRuleTracer: true,
 		},
 		{
 			BufferLength:       100,

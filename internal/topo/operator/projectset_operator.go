@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
@@ -33,7 +34,7 @@ type ProjectSetOperator struct {
 // {"a":[1,2],"b":3} => {"a":1,"b":3},{"a":2,"b":3}
 // For Collection, ProjectSetOperator will do the following transform:
 // [{"a":[1,2],"b":3},{"a":[1,2],"b":4}] = > [{"a":"1","b":3},{"a":"2","b":3},{"a":"1","b":4},{"a":"2","b":4}]
-func (ps *ProjectSetOperator) Apply(_ api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (ps *ProjectSetOperator) Apply(ctx api.StreamContext, data interface{}, _ *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
 	if ps.LimitCount == 0 && ps.EnableLimit {
 		return []xsql.Row{}
 	}

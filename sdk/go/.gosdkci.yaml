@@ -1,0 +1,21 @@
+run:
+  timeout: 10m
+  go: '1.23'
+
+linters:
+  disable-all: true
+  enable:
+    - gci
+    - gofumpt
+    - govet
+    - staticcheck
+    - misspell
+    - unconvert
+    - usestdlibvars
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/lf-edge/ekuiper/sdk/go)

@@ -22,9 +22,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -55,7 +55,9 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 	err = r.Provision(ctx, props)
 	assert.NoError(t, err)
 	// connect, subscribe and read data
-	err = r.Connect(ctx)
+	err = r.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	assert.NoError(t, err)
 	// Send data
 	go func() {

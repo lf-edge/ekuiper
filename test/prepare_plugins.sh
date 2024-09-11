@@ -28,8 +28,115 @@ chmod +x test/plugins/sql/create_table
 
 cd test
 
+rm -rf zmq.* Zmq.so
+
+FILE=../plugins/sources/Zmq.so
+if [ -f "$FILE" ]; then
+    echo "$FILE exists, not requried to build plugin."
+else
+    echo "$FILE does not exist, will build the plugin."
+    go build -trimpath --buildmode=plugin --cover -covermode=atomic -coverpkg=../... -o ../plugins/sources/Zmq.so ../extensions/sources/zmq/zmq.go
+fi
+
+mv ../plugins/sources/Zmq.so .
+cp ../extensions/sources/zmq/zmq.yaml .
+cp ../extensions/sources/zmq/zmq.json .
+zip zmq.zip Zmq.so zmq.yaml zmq.json
+rm -rf zmq.yaml Zmq.so
+
+rm -rf image.* Image.so
+
+FILE=../plugins/functions/Image.so
+if [ -f "$FILE" ]; then
+    echo "$FILE exists, not requried to build plugin."
+else
+    echo "$FILE does not exist, will build the plugin."
+    go build -trimpath --buildmode=plugin --cover -covermode=atomic -coverpkg=../... -o ../plugins/functions/Image.so ../extensions/functions/image/*.go
+fi
+
+mv ../plugins/functions/Image.so .
+cp ../extensions/functions/image/image.json .
+zip image.zip Image.so image.json
+rm -rf Image.so
+
+# build sql plugins
+FILE=../plugins/sinks/Sql.so
+if [ -f "$FILE" ]; then
+    echo "$FILE exists, not required to build plugin."
+else
+    echo "$FILE does not exist, will build the plugin."
+    go build -trimpath --buildmode=plugin --cover -covermode=atomic -coverpkg=../... -o ../plugins/sinks/Sql.so ../extensions/sinks/sql/*.go
+fi
+
+mv ../plugins/sinks/Sql.so .
+cp ../extensions/sources/sql/sql.json .
+zip sql.zip Sql.so sql.json
+rm -rf Sql.so
+
+FILE=../plugins/sources/Sql.so
+if [ -f "$FILE" ]; then
+    echo "$FILE exists, not required to build plugin."
+else
+    echo "$FILE does not exist, will build the plugin."
+    go build -trimpath --buildmode=plugin --cover -covermode=atomic -coverpkg=../... -o ../plugins/sources/Sql.so ../extensions/sources/sql/*.go
+fi
+
+mv ../plugins/sources/Sql.so .
+cp yaml_for_test/sql.yaml .
+cp ../extensions/sources/sql/sql.json .
+zip sqlSrc.zip Sql.so sql.yaml sql.json
+rm -rf Sql.so
+
 rm -rf plugins/service/web/plugins/
 mkdir -p plugins/service/web/plugins/
+mv zmq.zip plugins/service/web/plugins/
+mv image.zip plugins/service/web/plugins/
+mv sql.zip plugins/service/web/plugins/
+mv sqlSrc.zip plugins/service/web/plugins/
+
+# prepare portable plugins
+cd ..
+mkdir test/temp
+
+mkdir test/temp/mirror
+cd sdk/go/example/mirror
+go build -o ../../../../test/temp/mirror/mirror .
+cd ../../../..
+cp sdk/go/example/mirror/mirror.json test/temp/mirror
+cp -r sdk/go/example/mirror/sources test/temp/mirror/
+cd test/temp/mirror
+zip -r ../../plugins/service/web/plugins/mirror.zip *
+cd ../../..
+
+cp -r sdk/python/example/pysam test/temp/pysam
+cp -r sdk/python/ekuiper test/temp/pysam/
+cd test/temp/pysam
+zip -r ../../plugins/service/web/plugins/pysam.zip *
+cd ../..
+
+rm -r temp
+
+# prepare portable plugins
+cd ..
+mkdir test/temp
+
+mkdir test/temp/mirror
+cd sdk/go/example/mirror
+go build -o ../../../../test/temp/mirror/mirror .
+cd ../../../..
+cp sdk/go/example/mirror/mirror.json test/temp/mirror
+cp -r sdk/go/example/mirror/sources test/temp/mirror/
+cd test/temp/mirror
+zip -r ../../plugins/service/web/plugins/mirror.zip *
+cd ../../..
+
+cp -r sdk/python/example/pysam test/temp/pysam
+cp -r sdk/python/ekuiper test/temp/pysam/
+cd test/temp/pysam
+zip -r ../../plugins/service/web/plugins/pysam.zip *
+cd ../..
+
+rm -r temp
 
 pids=`ps aux | grep http_server | grep "./" | awk '{printf $2 " "}'`
 if [ "$pids" = "" ] ; then

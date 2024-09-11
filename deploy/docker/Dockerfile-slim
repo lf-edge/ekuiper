@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG GO_VERSION=1.22.1
+ARG GO_VERSION=1.23.1
 FROM ghcr.io/lf-edge/ekuiper/base:$GO_VERSION-debian AS builder
 
 COPY . /go/kuiper
@@ -36,8 +36,8 @@ RUN apt-get update \
 WORKDIR /kuiper
 
 ENV MAINTAINER="emqx.io"
-ENV KUIPER_HOME /kuiper
-ENV KUIPER__BASIC__CONSOLELOG true
+ENV KUIPER_HOME="/kuiper"
+ENV KUIPER__BASIC__CONSOLELOG=true
 
 VOLUME ["/kuiper/etc", "/kuiper/data", "/kuiper/plugins", "/kuiper/log"]
 EXPOSE 9081 20498

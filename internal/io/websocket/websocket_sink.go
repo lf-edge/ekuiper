@@ -1,10 +1,10 @@
-// Copyright 2024 EMQ Technologies Co., Ltd.
+// Copyright 2024-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -48,12 +49,13 @@ func (w *WebsocketSink) Provision(ctx api.StreamContext, configs map[string]any)
 
 func (w *WebsocketSink) Close(ctx api.StreamContext) error {
 	pubsub.RemovePub(w.topic)
-	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), w.props)
+	return connection.DetachConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint))
 }
 
-func (w *WebsocketSink) Connect(ctx api.StreamContext) error {
+func (w *WebsocketSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	var err error
-	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props)
+	// Connection pool will handle status change
+	w.cw, err = connection.FetchConnection(ctx, buildWebsocketEpID(w.cfg.Endpoint), "websocket", w.props, sch)
 	if err != nil {
 		return err
 	}

@@ -16,6 +16,7 @@ package http
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -38,7 +39,8 @@ func (hls *HttpLookupSource) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (hls *HttpLookupSource) Connect(ctx api.StreamContext) error {
+func (hls *HttpLookupSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

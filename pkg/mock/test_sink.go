@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
@@ -30,7 +31,9 @@ func RunBytesSinkCollect(s api.BytesCollector, data [][]byte, props map[string]a
 	if err != nil {
 		return err
 	}
-	err = s.Connect(ctx)
+	err = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		return err
 	}
@@ -52,7 +55,9 @@ func RunTupleSinkCollect(s api.TupleCollector, data []any, props map[string]any)
 	if err != nil {
 		return err
 	}
-	err = s.Connect(ctx)
+	err = s.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		return err
 	}

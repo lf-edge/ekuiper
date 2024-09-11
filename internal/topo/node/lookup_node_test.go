@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/lookup"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -807,7 +807,7 @@ func (m *MockLookupBytes) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *MockLookupBytes) Connect(ctx api.StreamContext) error {
+func (m *MockLookupBytes) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

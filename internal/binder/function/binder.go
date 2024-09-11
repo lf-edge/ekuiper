@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
+	"github.com/lf-edge/ekuiper/v2/internal/plugin"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -63,6 +65,17 @@ func Function(name string) (api.Function, error) {
 		}
 	}
 	return nil, errs
+}
+
+func GetFunctionPlugin(name string) (plugin.EXTENSION_TYPE, string, string) {
+	for _, sf := range funcFactories {
+		t, s1, s2 := sf.FunctionPluginInfo(name)
+		if t == plugin.NONE_EXTENSION {
+			continue
+		}
+		return t, s1, s2
+	}
+	return plugin.NONE_EXTENSION, "", ""
 }
 
 func HasFunctionSet(name string) bool {

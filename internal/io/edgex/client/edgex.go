@@ -20,8 +20,8 @@ import (
 
 	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -30,6 +30,39 @@ import (
 type Client struct {
 	mbconf types.MessageBusConfig
 	client messaging.MessageClient
+	id     string
+}
+
+func GetConnection(_ api.StreamContext) modules.Connection {
+	return &Client{}
+}
+
+func (es *Client) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	es.id = conId
+	err := es.CfgValidate(props)
+	if err != nil {
+		return err
+	}
+	client, err := messaging.NewMessageClient(es.mbconf)
+	if err != nil {
+		return err
+	}
+	es.client = client
+	return nil
+}
+
+func (es *Client) GetId(ctx api.StreamContext) string {
+	return es.id
+}
+
+func (es *Client) Dial(ctx api.StreamContext) error {
+	ctx.GetLogger().Debugf("connecting to edgex")
+	if err := es.client.Connect(); err != nil {
+		conf.Log.Errorf("The connection to edgex messagebus failed.")
+		return fmt.Errorf("Failed to connect to edgex message bus: %v", err)
+	}
+	conf.Log.Infof("The connection to edgex messagebus is established successfully.")
+	return nil
 }
 
 func (es *Client) Ping(_ api.StreamContext) error {
@@ -55,30 +88,6 @@ func (es *Client) Close(ctx api.StreamContext) error {
 		return es.client.Disconnect()
 	}
 	return nil
-}
-
-var _ modules.Connection = &Client{}
-
-func GetConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	ctx.GetLogger().Infof("connect to edgex")
-	c := &Client{}
-	err := c.CfgValidate(props)
-	if err != nil {
-		return nil, err
-	}
-	client, err := messaging.NewMessageClient(c.mbconf)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := client.Connect(); err != nil {
-		conf.Log.Errorf("The connection to edgex messagebus failed.")
-		return nil, fmt.Errorf("Failed to connect to edgex message bus: " + err.Error())
-	}
-	conf.Log.Infof("The connection to edgex messagebus is established successfully.")
-
-	c.client = client
-	return c, nil
 }
 
 type EdgexConf struct {
@@ -166,7 +175,7 @@ func (es *Client) CfgValidate(props map[string]interface{}) error {
 func (es *Client) Publish(env types.MessageEnvelope, topic string) error {
 	if err := es.client.Publish(env, topic); err != nil {
 		conf.Log.Errorf("Publish to topic %s has error : %s.", topic, err.Error())
-		return fmt.Errorf("Failed to publish to edgex message bus: " + err.Error())
+		return fmt.Errorf("Failed to publish to edgex message bus: %v", err)
 	}
 	return nil
 }

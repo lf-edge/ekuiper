@@ -25,9 +25,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/sirupsen/logrus"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/httpx"
@@ -74,7 +74,8 @@ type RawConf struct {
 	Timeout     cast.DurationConf `json:"timeout"`
 	Incremental bool              `json:"incremental"`
 
-	OAuth map[string]map[string]interface{} `json:"oauth"`
+	OAuth      map[string]map[string]interface{} `json:"oauth"`
+	SendSingle bool                              `json:"sendSingle"`
 	// Could be code or body
 	ResponseType string `json:"responseType"`
 	Compression  string `json:"compression"` // Compression specifies the algorithms used to payload compression

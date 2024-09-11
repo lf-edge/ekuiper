@@ -1,6 +1,7 @@
-# Native Plugin
+# Go Native Plugin
 
-eKuiper allows user to customize the different kinds of extensions by the native golang plugin system.
+The Go language plugin system offers a flexible way to extend functionalities. eKuiper allows user to customize the
+different kinds of extensions by the native golang plugin system.
 
 - The source extension is used for extending different stream sources, such as consuming data from other message
   brokers. eKuiper has built-in source support for [MQTT broker](../../guide/sources/builtin/mqtt.md).
@@ -16,94 +17,45 @@ Please read the following to learn how to implement different extensions.
 - [Sink/Action extension](develop/sink.md)
 - [Function extension](develop/function.md)
 
-## Naming
+## Use Cases and Limitations
 
-We recommend plugin name to be camel case. Notice that there are some restrictions for the names:
+Extending functionalities using native plugins is relatively complex, requiring users to write code and compile it
+themselves, which incurs certain development costs. The scenarios for using native plugins include:
 
-1. The name of the export symbol of the plugin should be camel case with an **upper case first letter**. It must be the
-   same as the plugin name except the first letter. For example, plugin name _file_ must export an export symbol name
-   _File_ .
-2. The name of _.so_ file must be the same as the export symbol name or the plugin name. For example, _MySource.so_ or
-   _mySink.so_.
+- Needing to extend sources or sinks
+- Scenarios with high performance requirements
 
-### Version
+Due to the limitations of the Go language plugins themselves, the plugin and the main program need to use exactly the
+same compilation environment, including but not limited to:
 
-The user can **optionally** add a version string to the name of _.so_ to help identify the version of the plugin. The version can be then retrieved through describe CLI command or REST API. The naming convention is to add a version string to the name after _@_. The version can be any string. If the version string starts with "v", the "v" will be ignored in the return result. Below are some typical examples.
+- Go language version
+- Dependency module versions and even paths
+- Same operating system and CPU architecture
 
-- _MySource@v1.0.0.so_ : version is 1.0.0
-- _MySource@20200331.so_:  version is 20200331
+Starting from version v2.0, plugins no longer need to depend on the eKuiper main project, instead, only depend on the
+plugin interface sub-project github.com/lf-edge/ekuiper/contract/v2. Therefore, as long as the plugin uses the same Go
+language version and contract dependencies as the eKuiper project, it can be used across different eKuiper versions
+without the need to recompile for each version.
 
-If multiple versions of plugins with the same name in place, only the latest version(ordered by the version string) will be taken effect.
+## Development
 
-## Setup the plugin developing environment
+To address the limitations of Go language plugins, users need to follow certain guidelines when developing and deploying
+extensions, ensuring the correct configuration of the development environment. Plugin development involves implementing
+specific interfaces according to the plugin type and exporting implementations with specific names. For more details,
+please refer to [Plugin Development](./develop/overview.md).
 
-It is required to build the plugin with exactly the same version of dependencies. And the plugin must implement interfaces exported by Kuiper, so the Kuiper project must be in the gopath.
+## How Plugins Work
 
-A typical environment for developing plugins is to put the plugin and Kuiper in the same project. To set it up:
+After completing the plugin development, users can package the .so file and corresponding configuration files into a
+zip. Then, they can upload and install the plugin via the API. The installed plugin will save the so file to the file
+system, specifically in the `plugins` directory under the corresponding sources/sinks/functions folders. When eKuiper
+starts, it will read the corresponding directories under plugins, search for so files, and load the plugins of the
+corresponding type based on the folder they are in. If there is an error in the plugin implementation, such as incorrect
+interface implementation or mismatched compilation versions, the plugin loading failure information will be written to
+the log.
 
-1. Clone Kuiper project.
-2. Create the plugin implementation file inside plugins/sources or plugin/sinks or plugin/functions according to what extension type is developing.
-3. Build the file as plugin into the same folder. The build command is typically like:
+**Note**: The plugin .so file cannot be changed after loading. Updated plugins require a restart of eKuiper to take
+effect.
 
-```bash
-go build -trimpath --buildmode=plugin -o plugins/sources/MySource.so plugins/sources/my_source.go
-```
-
-Notice that, the `-trimpath` build flag is required if using the prebuilt eKuiper or eKuiper docker image because the
-kuiperd is also built with the flag to improve build reproducibility.
-
-### Plugin development
-
-The development of plugins is to implement a specific interface according to the plugin type and export the implementation with a specific name. There are two types of exported symbol supported:
-
-1. Export a constructor function: Kuiper will use the constructor function to create a new instance of the plugin
-   implementation for each load. So each rule will have one instance of the plugin, and each instance will be isolated
-   from others. This is the recommended way.
-
-2. Export an instance: eKuiper will use the instance as singleton for all plugin loads. So all rules will share the same
-   instance. For such implementation, the developer will need to handle the shared states to avoid any potential
-   multi-thread problems. This mode is recommended where there are no shared states and the performance is critical.
-   Especially, a function extension is usually functional without internal state which is suitable for this mode.
-
-## State storage
-
-eKuiper extension exposes a key value state storage interface through the context parameter, which can be used for all
-types of extensions, including Source/Sink/Function extensions.
-
-States are key-value pairs, where the key is a string, and the value is arbitrary data. Keys are scoped to the current
-extended instance.
-
-Users can access the state storage through the context object. State-related methods include putState, getState,
-incrCounter, getCounter and deleteState.
-
-Below is an example of a function extension to access states. This function will count the number of words passed in and save the cumulative number in the state.
-
-```go
-func (f *accumulateWordCountFunc) Exec(args []interface{}, ctx api.FunctionContext) (interface{}, bool) {
-    logger := ctx.GetLogger()  
-    err := ctx.IncrCounter("allwordcount", len(strings.Split(args[0], args[1])))
-    if err != nil {
-        return err, false
-    }
-    if c, err := ctx.GetCounter("allwordcount"); err != nil   {
-        return err, false
-    } else {
-        return c, true
-    }
-}
-```
-
-## Runtime dependencies
-
-Some plugins may need to access dependencies in the file system. Those files are put under
-<span v-pre>{{eKuiperPath}}/etc/{{pluginType}}/{{pluginName}}</span> directory. When packaging the plugin, put those
-files
-in [etc directory](../../api/restapi/plugins.md#plugin-file-format). After installation, they will be moved to the
-recommended place.
-
-In the plugin source code, developers can access the dependencies of file system by getting the eKuiper root path from
-the context:
-
-```go
-ctx.GetRootPath()
-```
+Users can manage plugins through the API for querying and management. For more details, please refer
+to [Plugin API](../../api/restapi/plugins.md).

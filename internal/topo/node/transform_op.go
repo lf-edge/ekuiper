@@ -21,11 +21,15 @@ import (
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
+	"github.com/lf-edge/ekuiper/v2/pkg/tracer"
 )
 
 // TransformOp transforms the row/collection to sink tuples
@@ -100,7 +104,12 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 		ctx.GetLogger().Debugf("receive empty collection, dropped")
 		return nil
 	}
+	traced, spanCtx, span := tracenode.TraceInput(ctx, item, "transform_op")
 	outs := itemToMap(item)
+	if traced {
+		tracenode.RecordRowOrCollection(item, span)
+		span.End()
+	}
 	if t.omitIfEmpty && (item == nil || len(outs) == 0) {
 		ctx.GetLogger().Debugf("receive empty result %v in sink, dropped", outs)
 		return nil
@@ -119,7 +128,7 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 			if err != nil {
 				result = append(result, err)
 			} else {
-				result = append(result, toSinkTuple(bs, props))
+				result = append(result, toSinkTuple(ctx, spanCtx, bs, props))
 			}
 		}
 	} else {
@@ -131,7 +140,7 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 			if err != nil {
 				result = append(result, err)
 			} else {
-				result = append(result, toSinkTuple(bs, props))
+				result = append(result, toSinkTuple(ctx, spanCtx, bs, props))
 			}
 		}
 	}
@@ -139,21 +148,27 @@ func (t *TransformOp) Worker(ctx api.StreamContext, item any) []any {
 }
 
 // TODO keep the tuple meta etc.
-func toSinkTuple(bs any, props map[string]string) any {
+func toSinkTuple(ctx, spanCtx api.StreamContext, bs any, props map[string]string) any {
 	if bs == nil {
 		return bs
 	}
+	var tupleCtx api.StreamContext
+	if ctx.IsTraceEnabled() {
+		sctx, span := tracer.GetTracer().Start(spanCtx, "transform_op_split")
+		tupleCtx = topoContext.WithContext(sctx)
+		defer span.End()
+	}
 	switch bt := bs.(type) {
 	case []byte:
-		return &xsql.RawTuple{Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
+		return &xsql.RawTuple{Ctx: tupleCtx, Rawdata: bt, Props: props, Timestamp: timex.GetNow()}
 	case map[string]any:
-		return &xsql.Tuple{Message: bt, Timestamp: timex.GetNow(), Props: props}
+		return &xsql.Tuple{Ctx: tupleCtx, Message: bt, Timestamp: timex.GetNow(), Props: props}
 	case []map[string]any:
 		tuples := make([]api.MessageTuple, 0, len(bt))
 		for _, m := range bt {
-			tuples = append(tuples, &xsql.Tuple{Message: m, Timestamp: timex.GetNow()})
+			tuples = append(tuples, &xsql.Tuple{Ctx: tupleCtx, Message: m, Timestamp: timex.GetNow()})
 		}
-		return &xsql.TransformedTupleList{Content: tuples, Maps: bt, Props: props}
+		return &xsql.TransformedTupleList{Ctx: tupleCtx, Content: tuples, Maps: bt, Props: props}
 	default:
 		return fmt.Errorf("invalid transform result type %v", bs)
 	}

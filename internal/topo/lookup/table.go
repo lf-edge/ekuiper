@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/binder/io"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
@@ -82,7 +83,10 @@ func CreateInstance(name string, sourceType string, options *ast.Options) error 
 		return err
 	}
 	ctx.GetLogger().Debugf("lookup source %s is configured", sourceType)
-	err = ns.Connect(ctx)
+	// TODO lookup table connection status support
+	err = ns.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		return err
 	}

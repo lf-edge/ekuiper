@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 
@@ -90,7 +91,11 @@ func distribute(ctx api.StreamContext, node *defaultSinkNode, numWorkers int, wo
 			ctx.GetLogger().Infof("distribute done")
 			return
 		case item := <-node.input: // Just send out all inputs even they are control tuples
-			workerChans[counter] <- item
+			select {
+			case workerChans[counter] <- item:
+			case <-ctx.Done():
+				return
+			}
 		}
 		counter++
 	}

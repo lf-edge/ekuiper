@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package meta
 import (
 	"fmt"
 	"path"
+	"sort"
 	"testing"
 
 	"github.com/pingcap/failpoint"
@@ -58,9 +59,9 @@ func TestReadMetaData(t *testing.T) {
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
-	require.NoError(t, conf.SaveCfgKeyToKVInTest("sources.mqtt.conf1", map[string]interface{}{"a": 1}))
-	require.NoError(t, conf.SaveCfgKeyToKVInTest("sinks.mqtt.conf1", map[string]interface{}{"a": 1}))
-	require.NoError(t, conf.SaveCfgKeyToKVInTest("connections.mqtt.conf1", map[string]interface{}{"a": 1}))
+	require.NoError(t, conf.SaveCfgKeyToKV("sources.mqtt.conf1", map[string]interface{}{"a": 1}))
+	require.NoError(t, conf.SaveCfgKeyToKV("sinks.mqtt.conf1", map[string]interface{}{"a": 1}))
+	require.NoError(t, conf.SaveCfgKeyToKV("connections.mqtt.conf1", map[string]interface{}{"a": 1}))
 	require.NoError(t, ReadSourceMetaData())
 	require.NoError(t, ReadSinkMetaData())
 
@@ -70,4 +71,49 @@ func TestReadMetaData(t *testing.T) {
 	err = ReadSinkMetaData()
 	require.Error(t, err)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/storageErr")
+}
+
+func TestGetSinkMeta(t *testing.T) {
+	commonAbout := &about{Installed: true}
+	gSinkmetadata = map[string]*uiSink{
+		"mqtt.json": {
+			About: commonAbout,
+		},
+	}
+	expected := &uiSink{
+		About: commonAbout,
+		Type:  "internal",
+	}
+	actual, err := GetSinkMeta("mqtt", "")
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+}
+
+func TestGetSinks(t *testing.T) {
+	commonAbout := &about{Installed: true}
+	gSinkmetadata = map[string]*uiSink{
+		"mqtt.json": {
+			About: commonAbout,
+		},
+		"print.json": {
+			About: commonAbout,
+		},
+	}
+	expected := []*pluginfo{
+		{
+			Name:  "mqtt",
+			About: commonAbout,
+			Type:  "internal",
+		},
+		{
+			Name:  "print",
+			About: commonAbout,
+			Type:  "none",
+		},
+	}
+	sinks := GetSinks()
+	sort.SliceStable(sinks, func(i, j int) bool {
+		return sinks[i].Name < sinks[j].Name
+	})
+	require.Equal(t, expected, sinks)
 }

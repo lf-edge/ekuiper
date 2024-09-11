@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 )
@@ -74,7 +74,7 @@ func (r *redisPub) Provision(ctx api.StreamContext, props map[string]any) error 
 	return r.Validate(props)
 }
 
-func (r *redisPub) Connect(ctx api.StreamContext) error {
+func (r *redisPub) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("redisSub is opening")
 	r.conn = redis.NewClient(&redis.Options{
 		Addr:     r.conf.Address,
@@ -83,7 +83,12 @@ func (r *redisPub) Connect(ctx api.StreamContext) error {
 		DB:       r.conf.Db,
 	})
 	_, err := r.conn.Ping(ctx).Result()
-	return err
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
+	}
+	sch(api.ConnectionConnected, "")
+	return nil
 }
 
 func (r *redisPub) Collect(ctx api.StreamContext, item api.RawTuple) error {

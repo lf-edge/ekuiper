@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,8 +84,9 @@ func TestManager_Install(t *testing.T) {
 			u:   endpoint + "/portables/mirror.zip",
 			err: errors.New("fail to install plugin: missing or invalid json file wrongname.json, found 9 files in total"),
 		}, { // 5
-			n: "mirror2",
-			u: endpoint + "/portables/mirror.zip",
+			n:   "mirror2",
+			u:   endpoint + "/portables/mirror.zip",
+			err: errors.New("fail to install plugin: plugin executable /home/runner/work/ekuiper/ekuiper/plugins/portable/mirror2/mirror2 stops with error fork/exec /home/runner/work/ekuiper/ekuiper/plugins/portable/mirror2/mirror2: permission denied"),
 		},
 	}
 
@@ -122,7 +123,7 @@ func TestManager_Read(t *testing.T) {
 		},
 	}
 	result := manager.List()
-	if len(result) != 3 {
+	if len(result) != 2 {
 		t.Errorf("list result mismatch:\n  exp=%v\n  got=%v\n\n", expPlugins, result)
 	}
 
@@ -212,10 +213,10 @@ func TestManagerErr(t *testing.T) {
 	require.Error(t, err)
 	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetPluginsLocErr")
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/GetDataLocErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/conf/GetConfLocErr", "return(true)")
 	_, err = InitManager()
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetDataLocErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/conf/GetConfLocErr")
 
 	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/plugin/portable/syncRegistryErr", "return(true)")
 	_, err = InitManager()

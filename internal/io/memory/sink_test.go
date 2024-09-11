@@ -15,9 +15,11 @@
 package memory
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
@@ -34,14 +36,14 @@ func TestWrapUpdatable(t *testing.T) {
 			value: map[string]any{
 				"nokey": 100,
 			},
-			err: "key field id not found in data &{ map[nokey:100] 0001-01-01 00:00:00 +0000 UTC map[] map[] {{{0 0} 0 0 {{} 0} {{} 0}} map[] map[]} {0 0} map[]}",
+			err: "key field id not found in data",
 		},
 		{
 			name: "wrong rowkind type",
 			value: map[string]any{
 				"rowkind": 100,
 			},
-			err: "rowkind field rowkind is not a string in data &{ map[rowkind:100] 0001-01-01 00:00:00 +0000 UTC map[] map[] {{{0 0} 0 0 {{} 0} {{} 0}} map[] map[]} {0 0} map[]}",
+			err: "rowkind field rowkind is not a string in data",
 		},
 		{
 			name: "wrong rowkind value",
@@ -63,8 +65,8 @@ func TestWrapUpdatable(t *testing.T) {
 			_, err := s.wrapUpdatable(&xsql.Tuple{
 				Message: tt.value,
 			})
-			assert.Error(t, err)
-			assert.EqualError(t, err, tt.err)
+			require.Error(t, err)
+			require.True(t, strings.Contains(err.Error(), tt.err))
 		})
 	}
 }

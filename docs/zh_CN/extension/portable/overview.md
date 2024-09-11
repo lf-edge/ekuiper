@@ -2,6 +2,27 @@
 
 作为对原生插件的补充，可移植插件旨在提供相同的功能，同时允许在更通用的环境中运行并由更多语言创建。与原生插件类似，可移植插件也支持自定义 源、目标 和功能扩展。
 
+## 架构设计
+
+与原生插件不同，Portable 插件运行时是独立于主程序的进程，其架构入下图所示。插件进程与主进程之间通过 nanomsg 进行通信。每个
+Portable 插件可定义任意数量的 source, sink 和函数。插件安装或启动初始化时，主程序会拉起已安装的插件进程，建立控制通道连接（control
+channel）。当规则使用到插件中的 source/sink/function 时，主程序会建立对应的数据通道（图中的各种 data
+channel）并通过控制通道通知插件进程运行对应的 source/sink/function 实现。运行时的数据通过数据通道在主程序与插件之间传递。当规则停止时，主程序通过控制通道通知插件进程停止对应的
+source/sink 运行，并关闭数据通道。
+
+![portable architecture](../../resources/portable_arch.png)
+
+在 v2.0 及之后的版本中，为了避免难以处理的异步时序问题，系统不再采用插件 lazy load
+的方式，插件安装/系统初始化之后即开始运行。已安装的插件会创建插件进程，建立控制通道且在系统运行期间一直保持，直到主程序关闭或者插件删除。source/sink
+数据通道会跟随规则进行开关。函数可能是多个规则共用，隐藏数据通道打开后不会主动关闭，会一直运行直到系统关闭为止。
+
+### 热更新
+
+依托 nanomsg 通道的自动重连能力，Portable 插件支持不重启规则的热更新。插件更新后，使用插件中的 source/sink/function
+的规则会自动使用新的版本实现。在内部实现中，插件更新时，插件进程会停止，但已创建的控制通道和数据通道服务端，即主程序端仍然保持。新的插件安装完成后，启动新插件进程即可自动连上原有的通道，从而实现规则不停机的插件更新。
+
+## 开发
+
 创建插件的步骤与原生插件类似
 
 1. 使用SDK开发插件。
@@ -10,9 +31,7 @@
 2. 根据编程语言构建或打包插件。
 3. 通过 eKuiper 文件/REST/CLI注册插件
 
-我们的目标是为所有主流语言提供插件. 当前, [go SDK](go_sdk.md) and [python SDK](python_sdk.md) 已经支持.
-
-## 开发
+我们的目标是为所有主流语言提供插件. 当前, [go SDK](go_sdk.md) and [python SDK](python_sdk.md) 已经支持。
 
 与原生插件不同，portable 插件可以捆绑多个 *Symbol*。每个 Symbol 代表源、Sink 或功能的扩展。一个符号的实现就是实现类似于原生插件的 source、sink 或者 function 的接口。在 portable 插件模式下，就是用选择的语言来实现接口。
 然后，用户需要创建一个主程序来定义和服务所有的符号。启动插件时将运行主程序。开发因语言而异，详情请查看 [go SDK](go_sdk.md) 和 [python SDK](python_sdk.md)。
@@ -88,7 +107,8 @@
 通过将内容（json、可执行文件和所有支持文件）放在`plugins/portables/${pluginName}`中，并将配置放在`etc`
 下的相应目录中，可以在启动时自动加载可移植插件。
 
-要在运行时管理可移植插件，我们可以使用 [REST](../../api/restapi/plugins.md) 或 [CLI](../../api/cli/plugins.md) 命令。
+要在运行时管理可移植插件，我们可以使用 [REST](../../api/restapi/plugins.md) 或 [CLI](../../api/cli/plugins.md)
+命令。通过[状态 API](../../api/restapi/plugins.md#portable-插件运行状态)，可以查看插件进程的进程 pid 等状态。
 
 ## 限制
 

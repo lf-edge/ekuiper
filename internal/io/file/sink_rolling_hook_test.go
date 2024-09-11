@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -196,7 +196,9 @@ func TestCollectRolling(t *testing.T) {
 				t.Fatal(err)
 			}
 			mockclock.ResetClock(10)
-			err = sink.Connect(ctx)
+			err = sink.Connect(ctx, func(status string, message string) {
+				// do nothing
+			})
 			if err != nil {
 				t.Fatal(err)
 			}

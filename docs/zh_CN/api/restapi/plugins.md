@@ -156,6 +156,27 @@ PUT http://localhost:9081/plugins/functions/{name}
 PUT http://localhost:9081/plugins/portables/{name}
 ```
 
+## Portable 插件运行状态
+
+该 API 用于获取 Portable 插件进程的运行状态。
+
+```shell
+GET http://localhost:9081/plugins/portables/{name}
+```
+
+返回信息如下
+
+```json
+{
+   "refCount": {
+      "rulePort1": 2
+   },
+   "status": "running",
+   "errMsg": "",
+   "pid": 90
+}
+```
+
 ## 用于导出多函数的函数插件的相关 API
 
 与 source 和 sink 插件不同，函数插件可以在一个插件里导出多个函数。导出的函数名必须全局唯一，不能与其他插件导出的函数同名。插件和函数是一对多的关系。因此，我们提供了 show udf （用户定义的函数） 接口用于查询所有已定义的函数名以便用户避免重复名字。我们也提供了 describe udf 接口，以便查询出定义该函数的插件名称。另外，我们提供了函数注册接口，用于给自动载入的函数注册导出的多个函数。

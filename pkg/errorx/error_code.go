@@ -14,6 +14,8 @@
 
 package errorx
 
+import "errors"
+
 type ErrorCode int
 
 const (
@@ -22,6 +24,7 @@ const (
 	NOT_FOUND     ErrorCode = 1002
 	IOErr         ErrorCode = 1003
 	CovnerterErr  ErrorCode = 1004
+	EOF           ErrorCode = 1005
 
 	// error code for sql
 
@@ -43,9 +46,24 @@ func NewIOErr(msg string) error {
 	}
 }
 
+func NewEOF() error {
+	return &Error{
+		code: EOF,
+		msg:  "done",
+	}
+}
+
 func IsIOError(err error) bool {
 	if withCode, ok := err.(ErrorWithCode); ok {
 		return withCode.Code() == IOErr
+	}
+	return false
+}
+
+func IsEOF(err error) bool {
+	var withCode ErrorWithCode
+	if errors.As(err, &withCode) {
+		return withCode.Code() == EOF
 	}
 	return false
 }

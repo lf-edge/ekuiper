@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
@@ -58,7 +58,7 @@ func (r *RedisSink) Provision(_ api.StreamContext, props map[string]any) error {
 	return r.Validate(props)
 }
 
-func (r *RedisSink) Connect(ctx api.StreamContext) error {
+func (r *RedisSink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	logger := ctx.GetLogger()
 	logger.Debug("Opening redis sink")
 
@@ -69,7 +69,12 @@ func (r *RedisSink) Connect(ctx api.StreamContext) error {
 		DB:       r.c.Db, // use default DB
 	})
 	_, err := r.cli.Ping(ctx).Result()
-	return err
+	if err != nil {
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
+	}
+	sch(api.ConnectionConnected, "")
+	return nil
 }
 
 func (r *RedisSink) Validate(props map[string]any) error {

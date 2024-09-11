@@ -15,13 +15,15 @@
 package mqtt
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 
 	pahoMqtt "github.com/eclipse/paho.mqtt.golang"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/io/mqtt/client"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
@@ -34,13 +36,16 @@ type SourceConnector struct {
 	cfg   *Conf
 	props map[string]any
 
-	cli *client.Connection
+	cli        *client.Connection
+	eof        api.EOFIngest
+	eofPayload []byte
 }
 
 type Conf struct {
-	Topic string `json:"datasource"`
-	Qos   int    `json:"qos"`
-	SelId string `json:"connectionSelector"`
+	Topic      string `json:"datasource"`
+	Qos        int    `json:"qos"`
+	SelId      string `json:"connectionSelector"`
+	EofMessage string `json:"eofMessage"`
 }
 
 func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any) error {
@@ -56,6 +61,13 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 	if err != nil {
 		return err
 	}
+	if cfg.EofMessage != "" {
+		ms.eofPayload, err = base64.StdEncoding.DecodeString(cfg.EofMessage)
+		if err != nil {
+			return err
+		}
+		ctx.GetLogger().Infof("Set eof message to %x", ms.eofPayload)
+	}
 	ms.props = props
 	ms.cfg = cfg
 	ms.tpc = cfg.Topic
@@ -63,7 +75,8 @@ func (ms *SourceConnector) Provision(ctx api.StreamContext, props map[string]any
 }
 
 func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interface{}) error {
-	cli, err := client.CreateAnonymousConnection(context.Background(), props)
+	cli := &client.Connection{}
+	err := cli.Provision(ctx, "test", props)
 	if err != nil {
 		return err
 	}
@@ -71,15 +84,16 @@ func (ms *SourceConnector) Ping(ctx api.StreamContext, props map[string]interfac
 	return cli.Ping(ctx)
 }
 
-func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
+func (ms *SourceConnector) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Infof("Connecting to mqtt server")
 	var cli *client.Connection
 	var err error
 	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props)
+	cw, err := connection.FetchConnection(ctx, id, "mqtt", ms.props, sch)
 	if err != nil {
 		return err
 	}
+	// wait for connection
 	conn, err := cw.Wait()
 	if err != nil {
 		return err
@@ -91,15 +105,9 @@ func (ms *SourceConnector) Connect(ctx api.StreamContext) error {
 
 // Subscribe is a one time only operation for source. It connects to the mqtt broker and subscribe to the topic
 // Run open before subscribe
-func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ingestError api.ErrorIngest) error {
-	return ms.cli.Subscribe(ms.tpc, &client.SubscriptionInfo{
-		Qos: byte(ms.cfg.Qos),
-		Handler: func(client pahoMqtt.Client, message pahoMqtt.Message) {
-			ms.onMessage(ctx, message, ingest)
-		},
-		ErrHandler: func(err error) {
-			ingestError(ctx, err)
-		},
+func (ms *SourceConnector) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, _ api.ErrorIngest) error {
+	return ms.cli.Subscribe(ms.tpc, byte(ms.cfg.Qos), func(client pahoMqtt.Client, message pahoMqtt.Message) {
+		ms.onMessage(ctx, message, ingest)
 	})
 }
 
@@ -108,25 +116,42 @@ func (ms *SourceConnector) onMessage(ctx api.StreamContext, msg pahoMqtt.Message
 		ctx.GetLogger().Debugf("Received message %s from topic %s", string(msg.Payload()), msg.Topic())
 	}
 	rcvTime := timex.GetNow()
-	ingest(ctx, msg.Payload(), map[string]interface{}{
+	if ms.eof != nil && ms.eofPayload != nil && bytes.Equal(ms.eofPayload, msg.Payload()) {
+		ms.eof(ctx)
+		return
+	}
+	traced, spanCtx, span := tracenode.StartTrace(ctx, ctx.GetOpId())
+	meta := map[string]interface{}{
 		"topic":     msg.Topic(),
 		"qos":       msg.Qos(),
 		"messageId": msg.MessageID(),
-	}, rcvTime)
+	}
+	if traced {
+		meta["traceId"] = span.SpanContext().TraceID()
+		meta["traceCtx"] = spanCtx
+		defer span.End()
+	}
+	ingest(ctx, msg.Payload(), meta, rcvTime)
 }
 
 func (ms *SourceConnector) Close(ctx api.StreamContext) error {
 	ctx.GetLogger().Infof("Closing mqtt source connector to topic %s.", ms.tpc)
-	id := fmt.Sprintf("%s-%s-%s-mqtt-source", ctx.GetRuleId(), ctx.GetOpId(), ms.tpc)
-	connection.DetachConnection(ctx, id, ms.props)
 	if ms.cli != nil {
 		ms.cli.DetachSub(ctx, ms.props)
+		return connection.DetachConnection(ctx, ms.cli.GetId(ctx))
 	}
 	return nil
+}
+
+func (ms *SourceConnector) SetEofIngest(eof api.EOFIngest) {
+	ms.eof = eof
 }
 
 func GetSource() api.Source {
 	return &SourceConnector{}
 }
 
-var _ api.BytesSource = &SourceConnector{}
+var (
+	_ api.BytesSource = &SourceConnector{}
+	_ api.Bounded     = &SourceConnector{}
+)

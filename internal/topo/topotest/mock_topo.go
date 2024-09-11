@@ -71,10 +71,10 @@ func CommonResultFunc(result []any) [][]map[string]any {
 }
 
 func DoRuleTest(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int) {
-	doRuleTestWithResultFunc(t, tests, opt, w, CommonResultFunc)
+	DoRuleTestWithResultFunc(t, tests, opt, w, CommonResultFunc)
 }
 
-func doRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int, resultFunc func(result []any) [][]map[string]any) {
+func DoRuleTestWithResultFunc(t *testing.T, tests []RuleTest, opt *def.RuleOption, w int, resultFunc func(result []any) [][]map[string]any) {
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
 			id := strings.ReplaceAll(strings.ReplaceAll(t.Name(), "#", "_"), "/", "_")
@@ -373,8 +373,6 @@ func HandleStream(createOrDrop bool, names []string, t *testing.T) {
 				sql = "CREATE STREAM ext (count bigint) WITH (DATASOURCE=\"ext\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"ext\",STRICT_VALIDATION=\"true\")"
 			case "ext2":
 				sql = "CREATE STREAM ext2 (count bigint) WITH (DATASOURCE=\"ext2\", FORMAT=\"JSON\", TYPE=\"random\", CONF_KEY=\"dedup\")"
-			case "extpy":
-				sql = "CREATE STREAM extpy (name string, value bigint) WITH (FORMAT=\"JSON\", TYPE=\"pyjson\", CONF_KEY=\"ext\")"
 			case "text":
 				sql = "CREATE STREAM text (slogan string, brand string) WITH (DATASOURCE=\"text\", TYPE=\"mock\", FORMAT=\"JSON\")"
 			case "binDemo":

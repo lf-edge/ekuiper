@@ -107,3 +107,7 @@ const (
 	SERVICE_EXTENSION
 	JS_EXTENSION
 )
+
+var ExtensionTypes = []string{
+	"none", "internal", "native", "portable", "service", "wasm", "js",
+}

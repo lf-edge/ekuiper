@@ -6,7 +6,7 @@ default:
   deduplicate: 0
 
 ext:
-  interval: 100
+  interval: 500
 
 dedup:
   interval: 100

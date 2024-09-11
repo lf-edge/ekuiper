@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,12 +46,14 @@ func (c *FuncCollector) Provision(ctx api.StreamContext, configs map[string]any)
 	return nil
 }
 
-func (c *FuncCollector) Connect(ctx api.StreamContext) error {
+func (c *FuncCollector) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Info("Opening func collector")
-
 	if c.f == nil {
-		return errors.New("func collector missing function")
+		err := errors.New("func collector missing function")
+		sch(api.ConnectionDisconnected, err.Error())
+		return err
 	}
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

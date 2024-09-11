@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
@@ -77,7 +77,8 @@ func (s *Source) Close(_ api.StreamContext) error {
 	return nil
 }
 
-func (s *Source) Connect(_ api.StreamContext) error {
+func (s *Source) Connect(_ api.StreamContext, sch api.StatusChangeHandler) error {
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 

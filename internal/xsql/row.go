@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -42,6 +43,7 @@ type Event interface {
 }
 
 type ReadonlyRow interface {
+	HasTracerCtx
 	Valuer
 	AliasValuer
 	Wildcarder
@@ -64,6 +66,11 @@ type RawRow interface {
 type Row interface {
 	RawRow
 	Clone() Row
+}
+
+type HasTracerCtx interface {
+	GetTracerCtx() api.StreamContext
+	SetTracerCtx(ctx api.StreamContext)
 }
 
 type MetaData interface {
@@ -197,7 +204,7 @@ func (d *AffiliateRow) Pick(cols [][]string) [][]string {
 	if len(cols) > 0 {
 		newAliasMap := make(map[string]interface{})
 		newCalCols := make(map[string]interface{})
-		var newCols [][]string
+		newCols := make([][]string, 0, len(cols))
 		for _, a := range cols {
 			if a[1] == "" || a[1] == string(ast.DefaultStream) {
 				if v, ok := d.AliasMap[a[0]]; ok {
@@ -260,11 +267,20 @@ type Alias struct {
  */
 
 type RawTuple struct {
+	Ctx       api.StreamContext
 	Emitter   string
 	Timestamp time.Time
 	Rawdata   []byte
 	Metadata  Metadata // immutable
 	Props     map[string]string
+}
+
+func (r *RawTuple) GetTracerCtx() api.StreamContext {
+	return r.Ctx
+}
+
+func (r *RawTuple) SetTracerCtx(ctx api.StreamContext) {
+	r.Ctx = ctx
 }
 
 func (r *RawTuple) Replace(new []byte) {
@@ -296,6 +312,7 @@ var (
 
 // Tuple The input row, produced by the source
 type Tuple struct {
+	Ctx       api.StreamContext
 	Emitter   string
 	Message   Message // the original pointer is immutable & big; may be cloned.
 	Timestamp time.Time
@@ -305,6 +322,14 @@ type Tuple struct {
 	AffiliateRow
 	lock      sync.Mutex             // lock for the cachedMap, because it is possible to access by multiple sinks
 	cachedMap map[string]interface{} // clone of the row and cached for performance
+}
+
+func (t *Tuple) GetTracerCtx() api.StreamContext {
+	return t.Ctx
+}
+
+func (t *Tuple) SetTracerCtx(ctx api.StreamContext) {
+	t.Ctx = ctx
 }
 
 func (t *Tuple) Created() time.Time {
@@ -323,21 +348,39 @@ var (
 
 // JoinTuple is a row produced by a join operation
 type JoinTuple struct {
+	Ctx    api.StreamContext
 	Tuples []Row // The content is immutable, but the slice may be added or removed
 	AffiliateRow
 	lock      sync.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
 }
 
+func (jt *JoinTuple) GetTracerCtx() api.StreamContext {
+	return jt.Ctx
+}
+
+func (jt *JoinTuple) SetTracerCtx(ctx api.StreamContext) {
+	jt.Ctx = ctx
+}
+
 var _ Row = &JoinTuple{}
 
 // GroupedTuples is a collection of tuples grouped by a key
 type GroupedTuples struct {
+	Ctx     api.StreamContext
 	Content []Row
 	*WindowRange
 	AffiliateRow
 	lock      sync.Mutex
 	cachedMap map[string]interface{} // clone of the row and cached for performance of toMap
+}
+
+func (s *GroupedTuples) GetTracerCtx() api.StreamContext {
+	return s.Ctx
+}
+
+func (s *GroupedTuples) SetTracerCtx(ctx api.StreamContext) {
+	s.Ctx = ctx
 }
 
 var _ CollectionRow = &GroupedTuples{}
@@ -494,6 +537,8 @@ func (t *Tuple) FuncValue(key string) (interface{}, bool) {
 }
 
 func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[string]bool, except []string) {
+	// invalidate cache, will calculate again
+	t.cachedMap = nil
 	cols = t.AffiliateRow.Pick(cols)
 	if !allWildcard && wildcardEmitters[t.Emitter] {
 		allWildcard = true
@@ -511,8 +556,6 @@ func (t *Tuple) Pick(allWildcard bool, cols [][]string, wildcardEmitters map[str
 			t.Message = pickedMap
 		} else {
 			t.Message = make(map[string]interface{})
-			// invalidate cache, will calculate again
-			t.cachedMap = nil
 		}
 	} else if len(except) > 0 {
 		pickedMap := make(map[string]interface{})

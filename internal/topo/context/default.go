@@ -1,4 +1,4 @@
-// Copyright 2022-2023 EMQ Technologies Co., Ltd.
+// Copyright 2022-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/sirupsen/logrus"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -39,11 +39,12 @@ const (
 )
 
 type DefaultContext struct {
-	ruleId     string
-	opId       string
-	instanceId int
-	ctx        context.Context
-	err        error
+	ruleId           string
+	opId             string
+	instanceId       int
+	ctx              context.Context
+	err              error
+	enableRuleTracer bool
 	// Only initialized after withMeta set
 	store    api.Store
 	state    *sync.Map
@@ -51,9 +52,6 @@ type DefaultContext struct {
 	// cache
 	tpReg sync.Map
 	jpReg sync.Map
-
-	// ops waitGroup
-	opsWg *sync.WaitGroup
 }
 
 func RuleBackground(ruleName string) *DefaultContext {
@@ -84,11 +82,6 @@ func WithContext(ctx context.Context) *DefaultContext {
 
 func WithValue(parent *DefaultContext, key, val interface{}) *DefaultContext {
 	parent.ctx = context.WithValue(parent.ctx, key, val)
-	return parent
-}
-
-func WithWg(parent *DefaultContext, wg *sync.WaitGroup) *DefaultContext {
-	parent.opsWg = wg
 	return parent
 }
 
@@ -204,38 +197,38 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 		c.GetLogger().Warnf("Initialize context store error for %s: %s", opId, err)
 	}
 	return &DefaultContext{
-		ruleId:     ruleId,
-		opId:       opId,
-		instanceId: 0,
-		ctx:        c.ctx,
-		store:      store,
-		state:      s,
-		tpReg:      sync.Map{},
-		jpReg:      sync.Map{},
-		opsWg:      c.opsWg,
+		ruleId:           ruleId,
+		opId:             opId,
+		instanceId:       0,
+		ctx:              c.ctx,
+		store:            store,
+		state:            s,
+		tpReg:            sync.Map{},
+		jpReg:            sync.Map{},
+		enableRuleTracer: c.enableRuleTracer,
 	}
 }
 
 func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 	return &DefaultContext{
-		instanceId: instanceId,
-		ruleId:     c.ruleId,
-		opId:       c.opId,
-		ctx:        c.ctx,
-		state:      c.state,
-		opsWg:      c.opsWg,
+		instanceId:       instanceId,
+		ruleId:           c.ruleId,
+		opId:             c.opId,
+		ctx:              c.ctx,
+		state:            c.state,
+		enableRuleTracer: c.enableRuleTracer,
 	}
 }
 
 func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(c.ctx)
 	return &DefaultContext{
-		ruleId:     c.ruleId,
-		opId:       c.opId,
-		instanceId: c.instanceId,
-		ctx:        ctx,
-		state:      c.state,
-		opsWg:      c.opsWg,
+		ruleId:           c.ruleId,
+		opId:             c.opId,
+		instanceId:       c.instanceId,
+		ctx:              ctx,
+		state:            c.state,
+		enableRuleTracer: c.enableRuleTracer,
 	}, cancel
 }
 
@@ -295,4 +288,12 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 	}
 	c.snapshot = nil
 	return nil
+}
+
+func (c *DefaultContext) EnableTracer(enabled bool) {
+	c.enableRuleTracer = enabled
+}
+
+func (c *DefaultContext) IsTraceEnabled() bool {
+	return c.enableRuleTracer
 }

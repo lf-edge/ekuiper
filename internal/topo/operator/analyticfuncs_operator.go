@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
@@ -58,7 +59,7 @@ func (p *AnalyticFuncsOp) evalCollectionFunc(calls []*ast.Call, fv *xsql.Functio
 	return input, nil
 }
 
-func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) interface{} {
+func (p *AnalyticFuncsOp) Apply(ctx api.StreamContext, data interface{}, fv *xsql.FunctionValuer, _ *xsql.AggregateFunctionValuer) (got interface{}) {
 	ctx.GetLogger().Debugf("AnalyticFuncsOp receive: %v", data)
 	var err error
 	switch input := data.(type) {

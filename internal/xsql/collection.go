@@ -16,6 +16,7 @@ package xsql
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 )
 
@@ -29,6 +30,7 @@ type AggregateData interface {
 }
 
 type SortingData interface {
+	HasTracerCtx
 	Len() int
 	Swap(i, j int)
 	Index(i int) Row
@@ -36,6 +38,7 @@ type SortingData interface {
 
 // Collection A collection of rows as a table. It is used for window, join, group by, etc.
 type Collection interface {
+	HasTracerCtx
 	api.MessageTupleList
 	SortingData
 	// GroupRange through each group. For non-grouped collection, the whole data is a single group
@@ -65,6 +68,7 @@ type Collection interface {
  */
 
 type WindowTuples struct {
+	Ctx     api.StreamContext
 	Content []Row // immutable
 	*WindowRange
 	contentBySrc map[string][]Row // volatile, temporary cache]
@@ -80,6 +84,7 @@ var (
 )
 
 type JoinTuples struct {
+	Ctx     api.StreamContext
 	Content []*JoinTuple
 	*WindowRange
 
@@ -88,14 +93,31 @@ type JoinTuples struct {
 	isAgg     bool
 }
 
+func (s *JoinTuples) GetTracerCtx() api.StreamContext {
+	return s.Ctx
+}
+
+func (s *JoinTuples) SetTracerCtx(ctx api.StreamContext) {
+	s.Ctx = ctx
+}
+
 var (
 	_ Collection    = &JoinTuples{}
 	_ CollectionRow = &JoinTuples{}
 )
 
 type GroupedTuplesSet struct {
+	Ctx    api.StreamContext
 	Groups []*GroupedTuples
 	*WindowRange
+}
+
+func (s *GroupedTuplesSet) GetTracerCtx() api.StreamContext {
+	return s.Ctx
+}
+
+func (s *GroupedTuplesSet) SetTracerCtx(ctx api.StreamContext) {
+	s.Ctx = ctx
 }
 
 var _ Collection = &GroupedTuplesSet{}
@@ -103,6 +125,14 @@ var _ Collection = &GroupedTuplesSet{}
 /*
  *   Collection implementations
  */
+
+func (w *WindowTuples) GetTracerCtx() api.StreamContext {
+	return w.Ctx
+}
+
+func (w *WindowTuples) SetTracerCtx(ctx api.StreamContext) {
+	w.Ctx = ctx
+}
 
 func (w *WindowTuples) Index(index int) Row {
 	return w.Content[index]
@@ -582,9 +612,18 @@ func (r *WindowRange) FuncValue(key string) (interface{}, bool) {
 }
 
 type TransformedTupleList struct {
+	Ctx     api.StreamContext
 	Content []api.MessageTuple
 	Maps    []map[string]any
 	Props   map[string]string
+}
+
+func (l *TransformedTupleList) GetTracerCtx() api.StreamContext {
+	return l.Ctx
+}
+
+func (l *TransformedTupleList) SetTracerCtx(ctx api.StreamContext) {
+	l.Ctx = ctx
 }
 
 func (l *TransformedTupleList) DynamicProps(template string) (string, bool) {

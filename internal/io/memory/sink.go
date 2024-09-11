@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
@@ -60,9 +61,10 @@ func (s *sink) Provision(_ api.StreamContext, props map[string]any) error {
 	return nil
 }
 
-func (s *sink) Connect(ctx api.StreamContext) error {
+func (s *sink) Connect(ctx api.StreamContext, sch api.StatusChangeHandler) error {
 	ctx.GetLogger().Debugf("Opening memory sink: %v", s.topic)
 	pubsub.CreatePub(s.topic)
+	sch(api.ConnectionConnected, "")
 	return nil
 }
 
@@ -105,7 +107,7 @@ func (s *sink) wrapUpdatable(el pubsub.MemTuple) (pubsub.MemTuple, error) {
 	}
 	key, ok := el.Value(s.keyField, "")
 	if !ok {
-		return nil, fmt.Errorf("key field %s not found in data %v", s.keyField, el)
+		return nil, fmt.Errorf("key field %s not found in data %v", s.keyField, el.ToMap())
 	}
 	return &pubsub.UpdatableTuple{
 		MemTuple: el,

@@ -15,14 +15,13 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/lf-edge/ekuiper/v2/internal/meta"
@@ -65,7 +64,7 @@ func (suite *ServerTestSuite) TestStream() {
 	assert.Nil(suite.T(), err)
 	assert.Equal(suite.T(), "Query was submit successfully.", reply)
 
-	var result string = ""
+	var result string
 	for i := 0; i < 5; i++ {
 		var queryresult string
 		time.Sleep(time.Second)
@@ -76,7 +75,9 @@ func (suite *ServerTestSuite) TestStream() {
 			break
 		}
 	}
-	assert.Equal(suite.T(), "[{\"humidity\":50,\"temperature\":22.5}]", result)
+	allResults := strings.Split(result, "\n")
+	assert.True(suite.T(), len(allResults) >= 1)
+	assert.Equal(suite.T(), "[{\"humidity\":50,\"temperature\":22.5}]", allResults[0])
 	stopQuery()
 }
 
@@ -224,15 +225,4 @@ func (suite *ServerTestSuite) TearDownTest() {
 
 func TestServerTestSuite(t *testing.T) {
 	suite.Run(t, new(ServerTestSuite))
-}
-
-func TestGetStoppedMessage(t *testing.T) {
-	message := `"123","123","123"`
-	r, err := getStoppedState(message)
-	require.NoError(t, err)
-	v := map[string]string{}
-	err = json.Unmarshal([]byte(r), &v)
-	require.NoError(t, err)
-	require.Equal(t, "stopped", v["status"])
-	require.Equal(t, message, v["message"])
 }

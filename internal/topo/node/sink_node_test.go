@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
@@ -175,7 +175,7 @@ func (m *mockResendSink) Close(ctx api.StreamContext) error {
 	return nil
 }
 
-func (m *mockResendSink) Connect(ctx api.StreamContext) error {
+func (m *mockResendSink) Connect(ctx api.StreamContext, _ api.StatusChangeHandler) error {
 	return nil
 }
 

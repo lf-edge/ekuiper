@@ -410,6 +410,10 @@
         {
           "title": "错误码",
           "path": "operation/usage/error_code"
+        },
+        {
+          "title": "数据链路追踪",
+          "path": "operation/usage/trace_data"
         }
       ]
     },
@@ -542,6 +546,10 @@
         {
           "title": "规则试运行",
           "path": "api/restapi/ruletest"
+        },
+        {
+          "title": "数据链路追踪",
+          "path": "api/restapi/trace"
         }
       ]
     },
@@ -1228,6 +1236,10 @@
               "path": "operation/manager-ui/plugins_in_manager"
             }
           ]
+        },
+        {
+          "title": "Tracing Data",
+          "path": "operation/usage/trace_data"
         }
       ]
     },
@@ -1299,6 +1311,10 @@
         {
           "title": "Rule Test",
           "path": "api/restapi/ruletest"
+        },
+        {
+          "title": "Trace Data",
+          "path": "api/restapi/trace"
         }
       ]
     },

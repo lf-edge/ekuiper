@@ -77,28 +77,6 @@ func TestYamlConfigMeta_Ops(t *testing.T) {
 	}
 }
 
-func TestConfKeyReplace(t *testing.T) {
-	a1 := map[string]interface{}{
-		"url": "mysql://root:abcd@127.0.0.1:3306/test",
-		"key": "value",
-	}
-	bs, err := json.Marshal(a1)
-	require.NoError(t, err)
-	err = AddSinkConfKey("sql", "mysql", "", bs)
-	require.NoError(t, err)
-	a2 := map[string]interface{}{
-		"url": "mysql://root:******@127.0.0.1:3306/test",
-		"key": "value",
-	}
-	replaced := replacePasswdForConfig("sink", "sql", "mysql", a2)
-	require.Equal(t, a1, replaced)
-
-	err = AddSourceConfKey("sql", "mysql", "", bs)
-	require.NoError(t, err)
-	replaced = replacePasswdForConfig("source", "sql", "mysql", a2)
-	require.Equal(t, a1, replaced)
-}
-
 func TestConfKeyErr(t *testing.T) {
 	err := DelSourceConfKey("1", "2", "3")
 	require.Error(t, err)

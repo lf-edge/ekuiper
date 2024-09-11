@@ -19,6 +19,8 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
+	"github.com/lf-edge/ekuiper/v2/internal/io/memory/pubsub"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -64,10 +66,6 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	return m, nil
 }
 
-// TODO manage connection, use connection entity later
-// Connection must be able to retry. There is another metrics to record the connection status.(connected, retry count, connect time, disconnect time)
-// connect and auto reconnect
-
 // Open will be invoked by topo. It starts reading data.
 func (m *SourceNode) Open(ctx api.StreamContext, ctrlCh chan<- error) {
 	m.prepareExec(ctx, ctrlCh, "source")
@@ -79,6 +77,13 @@ func (m *SourceNode) ingestBytes(ctx api.StreamContext, data []byte, meta map[st
 	m.statManager.ProcessTimeStart()
 	m.statManager.IncTotalRecordsIn()
 	tuple := &xsql.RawTuple{Emitter: m.name, Rawdata: data, Timestamp: ts, Metadata: meta}
+	if ctx.IsTraceEnabled() {
+		traceCtx, ok := meta["traceCtx"].(api.StreamContext)
+		if ok {
+			tuple.SetTracerCtx(traceCtx)
+			delete(meta, "traceCtx")
+		}
+	}
 	m.Broadcast(tuple)
 	m.statManager.IncTotalRecordsOut()
 	m.statManager.IncTotalMessagesProcessed(1)
@@ -112,6 +117,10 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 		for _, mm := range mess {
 			m.ingestTuple(mm, ts)
 		}
+	case []pubsub.MemTuple:
+		for _, mm := range mess {
+			m.ingestTuple(mm.(*xsql.Tuple), ts)
+		}
 	default:
 		// should never happen
 		panic(fmt.Sprintf("receive wrong data %v", data))
@@ -119,6 +128,14 @@ func (m *SourceNode) ingestAnyTuple(ctx api.StreamContext, data any, meta map[st
 	m.statManager.IncTotalMessagesProcessed(1)
 	m.statManager.ProcessTimeEnd()
 	m.updateState(ctx)
+}
+
+func (m *SourceNode) connectionStatusChange(status string, message string) {
+	// TODO only send out error when status change from connected?
+	if status == api.ConnectionDisconnected {
+		m.ingestError(m.ctx, fmt.Errorf("disconnected: %s", message))
+	}
+	m.statManager.SetConnectionState(status, message)
 }
 
 func (m *SourceNode) ingestMap(t map[string]any, meta map[string]any, ts time.Time) {
@@ -183,7 +200,7 @@ func (m *SourceNode) Run(ctx api.StreamContext, ctrlCh chan<- error) {
 		m.Close()
 	}()
 	poe := infra.SafeRun(func() error {
-		err := m.s.Connect(ctx)
+		err := m.s.Connect(ctx, m.connectionStatusChange)
 		if err != nil {
 			return err
 		}
@@ -245,8 +262,4 @@ func (m *SourceNode) doPull(ctx api.StreamContext, tc time.Time) error {
 		}
 		return nil
 	})
-}
-
-func (m *SourceNode) Close() {
-	m.defaultNode.Close()
 }

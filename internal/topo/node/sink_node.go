@@ -15,13 +15,15 @@
 package node
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"
@@ -66,9 +68,9 @@ func newSinkNode(ctx api.StreamContext, name string, rOpt def.RuleOption, eoflim
 
 func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 	s.prepareExec(ctx, errCh, "sink")
-	err := s.sink.Connect(ctx)
 	go func() {
 		err := infra.SafeRun(func() error {
+			err := s.sink.Connect(ctx, s.connectionStatusChange)
 			if err != nil {
 				infra.DrainError(ctx, err, errCh)
 			}
@@ -86,7 +88,11 @@ func (s *SinkNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 					if processed {
 						break
 					}
-
+					traced, _, span := tracenode.TraceInput(ctx, data, ctx.GetOpId())
+					if traced {
+						tracenode.RecordRowOrCollection(data, span)
+						span.End()
+					}
 					s.statManager.IncTotalRecordsIn()
 					s.statManager.ProcessTimeStart()
 					err = s.doCollect(ctx, s.sink, data)
@@ -136,6 +142,13 @@ func (s *SinkNode) SetResendOutput(output chan<- any) {
 	s.resendOut = output
 }
 
+func (s *SinkNode) connectionStatusChange(status string, message string) {
+	if status == api.ConnectionDisconnected {
+		s.statManager.IncTotalExceptions(message)
+	}
+	s.statManager.SetConnectionState(status, message)
+}
+
 func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 	ctx.GetLogger().Debugf("%s_%d receive %v", ctx.GetOpId(), ctx.GetInstanceId(), item)
 	item, processed := s.preprocess(ctx, item)
@@ -153,7 +166,7 @@ func (s *SinkNode) ingest(ctx api.StreamContext, item any) (any, bool) {
 	case xsql.EOFTuple:
 		s.currentEof++
 		if s.eoflimit == s.currentEof {
-			infra.DrainError(ctx, errors.New("done"), s.ctrlCh)
+			infra.DrainError(ctx, errorx.NewEOF(), s.ctrlCh)
 		}
 		return nil, true
 	}
@@ -202,6 +215,21 @@ func tupleCollect(ctx api.StreamContext, sink api.Sink, data any) (err error) {
 		err = sink.(api.TupleCollector).CollectList(ctx, d)
 	case api.MessageTuple:
 		err = sink.(api.TupleCollector).Collect(ctx, d)
+	case *xsql.RawTuple: // may receive raw tuple from data template
+		var message map[string]any
+		err = json.Unmarshal(d.Rawdata, &message)
+		if err != nil {
+			return err
+		}
+		t := &xsql.Tuple{
+			Ctx:       d.Ctx,
+			Metadata:  d.Metadata,
+			Timestamp: d.Timestamp,
+			Emitter:   d.Emitter,
+			Props:     d.Props,
+			Message:   message,
+		}
+		err = sink.(api.TupleCollector).Collect(ctx, t)
 	case error:
 		err = sink.(api.TupleCollector).Collect(ctx, model.NewDefaultSourceTuple(xsql.Message{"error": d.Error()}, nil, timex.GetNow()))
 	default:

@@ -19,10 +19,10 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 )
 
@@ -52,7 +52,9 @@ func TestSingle(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = ls.Connect(ctx)
+	err = ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Error(err)
 		return
@@ -93,7 +95,9 @@ func TestList(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = ls.Connect(ctx)
+	err = ls.Connect(ctx, func(status string, message string) {
+		// do nothing
+	})
 	if err != nil {
 		t.Error(err)
 		return

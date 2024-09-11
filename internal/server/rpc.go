@@ -30,6 +30,7 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/sink"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/model"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/rule"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -86,15 +87,17 @@ func (r *rpcComp) close() {
 type Server int
 
 func (t *Server) CreateQuery(sql string, reply *string) error {
-	if _, ok := registry.Load(QueryRuleId); ok {
+	if _, ok := registry.load(QueryRuleId); ok {
 		stopQuery()
 	}
 	tp, err := ruleProcessor.ExecQuery(QueryRuleId, sql)
 	if err != nil {
 		return err
 	} else {
-		rs := &rule.RuleState{RuleId: QueryRuleId, Topology: tp}
-		registry.Store(QueryRuleId, rs)
+		rs := rule.NewState(def.GetDefaultRule(QueryRuleId, sql))
+		rs.WithTopo(tp)
+		registry.register(QueryRuleId, rs)
+		_ = rs.Start()
 		msg := fmt.Sprintf("Query was submit successfully.")
 		logger.Println(msg)
 		*reply = fmt.Sprint(msg)
@@ -103,10 +106,9 @@ func (t *Server) CreateQuery(sql string, reply *string) error {
 }
 
 func stopQuery() {
-	if rs, ok := registry.Load(QueryRuleId); ok {
+	if rs, ok := registry.load(QueryRuleId); ok {
 		logger.Printf("stop the query.")
-		(*rs.Topology).Cancel()
-		registry.Delete(QueryRuleId)
+		_ = rs.Delete()
 	}
 }
 
@@ -114,10 +116,10 @@ func stopQuery() {
  * qid is not currently used.
  */
 func (t *Server) GetQueryResult(_ string, reply *string) error {
-	if rs, ok := registry.Load(QueryRuleId); ok {
-		c := (*rs.Topology).GetContext()
-		if c != nil && c.Err() != nil {
-			return c.Err()
+	if rs, ok := registry.load(QueryRuleId); ok {
+		st := rs.GetState()
+		if st == rule.Stopped || st == rule.StoppedByErr {
+			return fmt.Errorf("query rule is stopped: %s", rs.GetLastWill())
 		}
 	}
 
@@ -146,7 +148,7 @@ func (t *Server) Stream(stream string, reply *string) error {
 }
 
 func (t *Server) CreateRule(rule *model.RPCArgDesc, reply *string) error {
-	id, err := createRule(rule.Name, rule.Json)
+	id, err := registry.CreateRule(rule.Name, rule.Json)
 	if err != nil {
 		return fmt.Errorf("Create rule %s error : %s.", id, err)
 	} else {
@@ -156,7 +158,7 @@ func (t *Server) CreateRule(rule *model.RPCArgDesc, reply *string) error {
 }
 
 func (t *Server) GetStatusRule(name string, reply *string) error {
-	if r, err := getRuleStatus(name); err != nil {
+	if r, err := registry.GetRuleStatus(name); err != nil {
 		return err
 	} else {
 		*reply = r
@@ -165,7 +167,7 @@ func (t *Server) GetStatusRule(name string, reply *string) error {
 }
 
 func (t *Server) GetTopoRule(name string, reply *string) error {
-	if r, err := getRuleTopo(name); err != nil {
+	if r, err := registry.GetRuleTopo(name); err != nil {
 		return err
 	} else {
 		dst := &bytes.Buffer{}
@@ -179,7 +181,7 @@ func (t *Server) GetTopoRule(name string, reply *string) error {
 }
 
 func (t *Server) StartRule(name string, reply *string) error {
-	if err := startRule(name); err != nil {
+	if err := registry.StartRule(name); err != nil {
 		return err
 	} else {
 		*reply = fmt.Sprintf("Rule %s was started", name)
@@ -188,12 +190,16 @@ func (t *Server) StartRule(name string, reply *string) error {
 }
 
 func (t *Server) StopRule(name string, reply *string) error {
-	*reply, _ = stopRule(name)
+	if err := registry.StopRule(name); err != nil {
+		return err
+	} else {
+		*reply = fmt.Sprintf("Rule %s was stopped.", name)
+	}
 	return nil
 }
 
 func (t *Server) RestartRule(name string, reply *string) error {
-	err := restartRule(name)
+	err := registry.RestartRule(name)
 	if err != nil {
 		return err
 	}
@@ -212,7 +218,7 @@ func (t *Server) DescRule(name string, reply *string) error {
 }
 
 func (t *Server) ShowRules(_ int, reply *string) error {
-	r, err := getAllRulesWithStatus()
+	r, err := registry.GetAllRulesWithStatus()
 	if err != nil {
 		return fmt.Errorf("Show rule error : %s.", err)
 	}
@@ -233,22 +239,16 @@ func (t *Server) ShowRules(_ int, reply *string) error {
 }
 
 func (t *Server) DropRule(name string, reply *string) error {
-	deleteRule(name)
-	r, err := ruleProcessor.ExecDrop(name)
+	err := registry.DeleteRule(name)
 	if err != nil {
 		return fmt.Errorf("Drop rule error : %s.", err)
-	} else {
-		err := t.StopRule(name, reply)
-		if err != nil {
-			return err
-		}
 	}
-	*reply = r
+	*reply = fmt.Sprintf("Rule %s is dropped.", name)
 	return nil
 }
 
 func (t *Server) ValidateRule(rule *model.RPCArgDesc, reply *string) error {
-	_, s, err := validateRule(rule.Name, rule.Json)
+	_, s, err := registry.ValidateRule(rule.Name, rule.Json)
 	if s {
 		*reply = "The rule has been successfully validated and is confirmed to be correct."
 	} else {
@@ -280,7 +280,7 @@ func (t *Server) Import(file string, reply *string) error {
 				logger.Error(ee)
 				continue
 			}
-			reply := recoverRule(rul)
+			reply := registry.RecoverRule(rul)
 			if reply != "" {
 				logger.Error(reply)
 			}
@@ -400,7 +400,7 @@ func initQuery() {
 		for {
 			<-ticker.C
 			if registry != nil {
-				if _, ok := registry.Load(QueryRuleId); !ok {
+				if _, ok := registry.load(QueryRuleId); !ok {
 					continue
 				}
 

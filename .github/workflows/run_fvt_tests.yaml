@@ -14,20 +14,20 @@ jobs:
   fvt_tests_with_edgex:
     runs-on: ubuntu-latest
 
-      # Service containers to run with `runner-job`
+    # Service containers to run with `runner-job`
     services:
-        # Label used to access the service container
+      # Label used to access the service container
       redis:
-          # Docker Hub image
+        # Docker Hub image
         image: redis
-          # Set health checks to wait until redis has started
+        # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         ports:
-            # Maps port 6379 on service container to the host
+          # Maps port 6379 on service container to the host
           - 6379:6379
       emqx:
         image: emqx/emqx:4.3.10
@@ -36,79 +36,93 @@ jobs:
           - 18083:18083
 
     steps:
-    - uses: actions/setup-go@v3
-      with:
-        go-version: '1.22'
-    - uses: actions/setup-java@v3
-      with:
-        distribution: zulu
-        java-version: '8' # The JDK version to make available on the path.
-        java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
-        architecture: x64 # (x64 or x86) - defaults to x64
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pynng==0.7.2
-    - name: install jmeter
-      timeout-minutes: 10
-      env:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '8' # The JDK version to make available on the path.
+          java-package: jdk # (jre, jdk, or jdk+fx) - defaults to jdk
+          architecture: x64 # (x64 or x86) - defaults to x64
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pynng==0.7.2
+      - name: install jmeter
+        timeout-minutes: 10
+        env:
           JMETER_VERSION: 5.4.3
-      run: |
-        wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
-        cd /tmp && tar -xvf apache-jmeter.tgz
-        echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
-        echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
-        wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
-        ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
-    - name: install tdengine client
-      timeout-minutes: 10
-      env:
-        TD_VERSION: 2.4.0.18
-      run: |
-        if [ "$(uname -m)" = "x86_64" ]; then
-          wget "https://www.taosdata.com/assets-download/TDengine-client-$TD_VERSION-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
-        fi;
-        if [ "$(uname -m)" = "aarch64" ]; then
-          wget "https://www.taosdata.com/assets-download/TDengine-client-$TD_VERSION-Linux-aarch64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
-        fi;
-        tar -zxvf /tmp/TDengine-client-$TD_VERSION.tar.gz
-        cd TDengine-client-$TD_VERSION && ./install_client.sh
-    - uses: actions/checkout@v3
-    - name: build kuiper
-      run: |
-        sudo apt-get update && sudo apt-get install pkg-config libczmq-dev -y
-        make build_with_edgex_and_script
-        echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
-    - name: run edgex && kuiper
-      run: |
-        ./test/setup_env.sh
-        ./test/prepare_plugins.sh
-    - name: run fvt tests
-      timeout-minutes: 12
-      run: ./test/run_jmeter.sh with_edgex=true
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: kuiper_logs_with_edgex
-        path: ${{ env.KUIPER_LOG_PATH }}
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: jmeter_logs_with_edgex
-        path: ./jmeter_logs
-    - name: check logs
-      run: |
-        sudo apt-get update && sudo apt-get install -y libxml2-utils
-        cd jmeter_logs
-        for file in `ls *.jtl`
-        do
-          if [ ! -z "$(cat $file| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
-            [ "$(xmllint --format --xpath '/testResults/sample/@rc' $file | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
-              echo -e "---------------------------------------------\n"
-              echo "FVT tests error for $file"
-              exit 1
-          fi
-        done
+        run: |
+          wget --no-check-certificate -O /tmp/apache-jmeter.tgz https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-$JMETER_VERSION.tgz
+          cd /tmp && tar -xvf apache-jmeter.tgz
+          echo "jmeter.save.saveservice.output_format=xml" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
+          echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
+          wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
+          ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
+      - name: install tdengine client
+        timeout-minutes: 10
+        env:
+          TD_VERSION: 2.4.0.18
+        run: |
+          if [ "$(uname -m)" = "x86_64" ]; then
+            wget "https://www.taosdata.com/assets-download/TDengine-client-$TD_VERSION-Linux-x64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
+          fi;
+          if [ "$(uname -m)" = "aarch64" ]; then
+            wget "https://www.taosdata.com/assets-download/TDengine-client-$TD_VERSION-Linux-aarch64.tar.gz" -O /tmp/TDengine-client-2.4.0.18.tar.gz;
+          fi;
+          tar -zxvf /tmp/TDengine-client-$TD_VERSION.tar.gz
+          cd TDengine-client-$TD_VERSION && ./install_client.sh
+      - uses: actions/checkout@v4
+      - name: build kuiper
+        run: |
+          sudo apt-get update && sudo apt-get install pkg-config libczmq-dev -y
+          make build_with_cover
+          echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
+      - name: run edgex && kuiper
+        run: |
+          ./test/setup_env.sh
+          ./test/prepare_plugins.sh
+      - name: run fvt tests
+        timeout-minutes: 12
+        run: ./test/run_jmeter.sh with_edgex=true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kuiper_logs_with_edgex
+          path: ${{ env.KUIPER_LOG_PATH }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jmeter_logs_with_edgex
+          path: ./jmeter_logs
+      - name: check logs
+        run: |
+          sudo apt-get update && sudo apt-get install -y libxml2-utils
+          cd jmeter_logs
+          for file in `ls *.jtl`
+          do
+            if [ ! -z "$(cat $file| grep '<failure>' | awk -F '>' '{print $2}' | awk -F '<' '{print $1}' | grep true)" ] ||
+              [ "$(xmllint --format --xpath '/testResults/sample/@rc' $file | sed -r 's/ /\n/g;' | sort -u | grep -E 'rc=\"[45][0-9][0-9]\"|rc=\"\"')" != "" ]; then
+                echo -e "---------------------------------------------\n"
+                echo "FVT tests error for $file"
+                exit 1
+            fi
+          done
+      - name: make clean.sh executable
+        run: chmod +x ./test/clean.sh
+      - name: stop kuiper
+        run: ./test/clean.sh
+      - name: gen codecov
+        run: |
+          go tool covdata textfmt -i=cover -o=jmeter.xml
+          total_coverage=$(go tool cover -func=jmeter.xml | grep total | awk '{print $3}')
+          echo "Total coverage: $total_coverage"
+      - name: upload coverage report for jmeter
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter_coverage
+          path: jmeter.xml
 
   fvt_tests_redis_as_storage:
     runs-on: ubuntu-latest
@@ -135,10 +149,10 @@ jobs:
           - 18083:18083
 
     steps:
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
-      - uses: actions/setup-java@v3
+          go-version: '1.23'
+      - uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: '8' # The JDK version to make available on the path.
@@ -155,11 +169,11 @@ jobs:
           echo "jmeter.save.saveservice.response_data.on_error=true" >> /tmp/apache-jmeter-$JMETER_VERSION/user.properties
           wget -O /tmp/apache-jmeter-$JMETER_VERSION/lib/ext/mqtt-xmeter-1.13-jar-with-dependencies.jar https://github.com/emqx/mqtt-jmeter/raw/master/Download/v1.13.0/mqtt-xmeter-1.13-jar-with-dependencies.jar
           ln -s /tmp/apache-jmeter-$JMETER_VERSION /opt/jmeter
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: build kuiper
         run: |
-          make build_with_edgex
-          echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
+          make build_with_cover
+          echo "KUIPER_LOG_PATH=_build/kuiper-$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')-$(uname -s | tr "[A-Z]" "[a-z]")-amd64/log" >> $GITHUB_ENV
       - name: run edgex && kuiper
         env:
           KUIPER__STORE__TYPE: redis
@@ -176,12 +190,12 @@ jobs:
           fvt_dir=`pwd`
           /opt/jmeter/bin/jmeter.sh -Jjmeter.save.saveservice.output_format=xml -n -t test/redis_kv_storage.jmx -Dfvt="$fvt_dir" -l jmeter_logs/redis_kv_storage.jtl -j jmeter_logs/redis_kv_storage.log
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: kuiper_logs_redis_storage
           path: ${{ env.KUIPER_LOG_PATH }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: jmeter_logs_redis_storage
@@ -199,13 +213,27 @@ jobs:
                 exit 1
             fi
           done
+      - name: make clean.sh executable
+        run: chmod +x ./test/clean.sh
+      - name: stop kuiper
+        run: ./test/clean.sh
+      - name: gen codecov
+        run: |
+          go tool covdata textfmt -i=cover -o=jmeter_redis.xml
+          total_coverage=$(go tool cover -func=jmeter_redis.xml | grep total | awk '{print $3}')
+          echo "Total coverage: $total_coverage"
+      - name: upload coverage report for jmeter redis
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter_redis_coverage
+          path: jmeter_redis.xml
 
   fvt_tests_for_container_in_helm:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-java@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
       with:
         distribution: zulu
         java-version: '8' # The JDK version to make available on the path.
@@ -255,7 +283,7 @@ jobs:
         sudo ./get_helm.sh
         helm version
     - name: build kuiper for docker
-      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --always | sed 's/^v//g') -f deploy/docker/Dockerfile .
+      run: sudo docker build --no-cache -t lfedge/ekuiper:$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g') -f deploy/docker/Dockerfile .
     - name: run emqx on chart
       env:
         KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
@@ -274,7 +302,7 @@ jobs:
         KUBECONFIG: "/etc/rancher/k3s/k3s.yaml"
       timeout-minutes: 5
       run: |
-        version=$(git describe --tags --always | sed 's/^v//g')
+        version=$(git describe --tags --always --match 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//g')
         emqx_address=$(kubectl get svc --namespace default emqx -o jsonpath="{.spec.clusterIP}")
 
         sudo docker save lfedge/ekuiper:$version -o kuier.tar.gz

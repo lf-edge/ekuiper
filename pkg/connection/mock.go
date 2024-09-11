@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	"github.com/cenkalti/backoff/v4"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )
@@ -34,6 +34,19 @@ func InitMockTest() {
 type mockConnection struct {
 	id  string
 	ref int
+}
+
+func (m *mockConnection) GetId(ctx api.StreamContext) string {
+	return m.id
+}
+
+func (m *mockConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	m.id = conId
+	return nil
+}
+
+func (m *mockConnection) Dial(ctx api.StreamContext) error {
+	return nil
 }
 
 func (m *mockConnection) Ping(ctx api.StreamContext) error {
@@ -63,25 +76,36 @@ func (m *mockConnection) Ref(ctx api.StreamContext) int {
 	return m.ref
 }
 
-func CreateMockConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	m := &mockConnection{ref: 0}
-	return m, nil
+func CreateMockConnection(ctx api.StreamContext) modules.Connection {
+	return &mockConnection{ref: 0}
 }
 
 type mockErrConnection struct{}
+
+func (m mockErrConnection) GetId(ctx api.StreamContext) string {
+	return "test"
+}
+
+func (m mockErrConnection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
+	return backoff.Permanent(errors.New("mockErr"))
+}
+
+func (m mockErrConnection) Dial(ctx api.StreamContext) error {
+	return nil
+}
 
 func (m mockErrConnection) Ping(ctx api.StreamContext) error {
 	return errors.New("mockErr")
 }
 
-func (m mockErrConnection) Close(ctx api.StreamContext) {
-	return
+func (m mockErrConnection) Close(ctx api.StreamContext) error {
+	return nil
 }
 
 func (m mockErrConnection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	return
 }
 
-func CreateMockErrConnection(ctx api.StreamContext, props map[string]any) (modules.Connection, error) {
-	return nil, backoff.Permanent(errors.New("mockErr"))
+func CreateMockErrConnection(ctx api.StreamContext) modules.Connection {
+	return &mockErrConnection{}
 }
