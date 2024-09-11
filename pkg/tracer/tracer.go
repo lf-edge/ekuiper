@@ -77,6 +77,7 @@ func (g *GlobalTracerManager) SetTracer(enableRemote bool, serviceName, endpoint
 	if err != nil {
 		return err
 	}
+	g.SpanExporter = exporter
 	opts = append(opts, sdktrace.WithBatcher(exporter))
 	tp := sdktrace.NewTracerProvider(opts...)
 	otel.SetTracerProvider(tp)
