@@ -39,7 +39,7 @@ type SourceNode struct {
 }
 
 type sourceConf struct {
-	Interval time.Duration `json:"interval"`
+	Interval cast.DurationConf `json:"interval"`
 }
 
 // NewSourceNode creates a SourceConnectorNode
@@ -57,7 +57,7 @@ func NewSourceNode(ctx api.StreamContext, name string, ss api.Source, props map[
 	m := &SourceNode{
 		defaultNode: newDefaultNode(name, rOpt),
 		s:           ss,
-		interval:    cc.Interval,
+		interval:    time.Duration(cc.Interval),
 	}
 	switch st := ss.(type) {
 	case api.Bounded:

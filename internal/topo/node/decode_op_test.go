@@ -240,7 +240,7 @@ func TestValidate(t *testing.T) {
 	assert.EqualError(t, err, "1 error(s) decoding:\n\n* error decoding 'sendInterval': time: invalid duration \"none\"")
 	do, err := NewDecodeOp(ctx, false, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"sendInterval": "12s"})
 	assert.NoError(t, err)
-	assert.Equal(t, 12*time.Second, do.c.SendInterval)
+	assert.Equal(t, 12*time.Second, time.Duration(do.c.SendInterval))
 	_, err = NewDecodeOp(ctx, true, "test", "streamName", &def.RuleOption{BufferLength: 10, SendError: true}, nil, map[string]any{"payloadField": "abc"})
 	assert.Error(t, err)
 	assert.EqualError(t, err, "payloadFormat is missing")

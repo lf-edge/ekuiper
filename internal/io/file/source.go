@@ -36,17 +36,17 @@ import (
 )
 
 type SourceConfig struct {
-	FileName         string        `json:"datasource"`
-	FileType         string        `json:"fileType"`
-	Path             string        `json:"path"`
-	Interval         time.Duration `json:"interval"`
-	IsTable          bool          `json:"isTable"`
-	Parallel         bool          `json:"parallel"`
-	SendInterval     time.Duration `json:"sendInterval"`
-	ActionAfterRead  int           `json:"actionAfterRead"`
-	MoveTo           string        `json:"moveTo"`
-	IgnoreStartLines int           `json:"ignoreStartLines"`
-	IgnoreEndLines   int           `json:"ignoreEndLines"`
+	FileName         string            `json:"datasource"`
+	FileType         string            `json:"fileType"`
+	Path             string            `json:"path"`
+	Interval         cast.DurationConf `json:"interval"`
+	IsTable          bool              `json:"isTable"`
+	Parallel         bool              `json:"parallel"`
+	SendInterval     cast.DurationConf `json:"sendInterval"`
+	ActionAfterRead  int               `json:"actionAfterRead"`
+	MoveTo           string            `json:"moveTo"`
+	IgnoreStartLines int               `json:"ignoreStartLines"`
+	IgnoreEndLines   int               `json:"ignoreEndLines"`
 	// Only use for planning
 	Decompression string `json:"decompression"`
 }
@@ -257,7 +257,7 @@ func (fs *Source) parseFile(ctx api.StreamContext, file string, ingest api.Tuple
 			rcvTime := timex.GetNow()
 			ingest(ctx, line, meta, rcvTime)
 			if fs.config.SendInterval > 0 {
-				time.Sleep(fs.config.SendInterval)
+				time.Sleep(time.Duration(fs.config.SendInterval))
 			}
 		}
 		_ = fs.reader.Close(ctx)
