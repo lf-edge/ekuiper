@@ -98,6 +98,8 @@ func (conn *Connection) Dial(ctx api.StreamContext) error {
 	if err != nil {
 		return errorx.NewIOErr(fmt.Sprintf("found error when connecting for %s: %s", conn.conf.Server, err))
 	}
+	// store connected status immediately to avoid publish error due to onConnect is called slower
+	conn.connected.Store(true)
 	ctx.GetLogger().Infof("new mqtt client created")
 	return nil
 }
