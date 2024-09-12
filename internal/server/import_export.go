@@ -54,6 +54,8 @@ func InitConfManagers() {
 	}
 }
 
+const ProcessErr = "process error"
+
 type Configuration struct {
 	Streams          map[string]string `json:"streams"`
 	Tables           map[string]string `json:"tables"`
@@ -271,7 +273,7 @@ func configurationImport(ctx context.Context, data []byte, reboot bool) ImportCo
 	if reflect.DeepEqual(ResponseNil, configResponse) {
 		importStatus.ConfigResponse = ResponseNil
 	} else {
-		importStatus.ErrorMsg = "process error"
+		importStatus.ErrorMsg = ProcessErr
 		importStatus.ConfigResponse = configResponse
 	}
 
@@ -375,7 +377,8 @@ func configurationPartialImport(ctx context.Context, data []byte) ImportConfigur
 	if reflect.DeepEqual(ResponseNil, configResponse) {
 		importStatus.ConfigResponse = ResponseNil
 	} else {
-		importStatus.ErrorMsg = "process error"
+
+		importStatus.ErrorMsg = ProcessErr
 		importStatus.ConfigResponse = configResponse
 	}
 
@@ -400,7 +403,7 @@ func configurationImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := handleConfigurationImport(context.Background(), rsi, partial, stop)
 	if err != nil {
-		if result != nil {
+		if result != nil && err.Error() == ProcessErr {
 			errStr, _ := json.Marshal(result.ConfigResponse)
 			err = errors.New(string(errStr))
 		}
