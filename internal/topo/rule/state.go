@@ -550,6 +550,16 @@ func (s *State) GetTopoGraph() *def.PrintableTopo {
 	}
 }
 
+func (s *State) SetIsTraceEnabled(isEnabled bool) error {
+	s.Lock()
+	defer s.Unlock()
+	if s.topology != nil {
+		s.topology.EnableTracer(isEnabled)
+		return nil
+	}
+	return fmt.Errorf("rule %s set trace failed due to rule didn't started", s.Rule.Name)
+}
+
 func (s *State) Delete() (err error) {
 	defer func() {
 		if err != nil {

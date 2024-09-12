@@ -39,12 +39,12 @@ const (
 )
 
 type DefaultContext struct {
-	ruleId           string
-	opId             string
-	instanceId       int
-	ctx              context.Context
-	err              error
-	enableRuleTracer bool
+	ruleId         string
+	opId           string
+	instanceId     int
+	ctx            context.Context
+	err            error
+	isTraceEnabled *isRuleTraceEnabledWrapper
 	// Only initialized after withMeta set
 	store    api.Store
 	state    *sync.Map
@@ -54,6 +54,32 @@ type DefaultContext struct {
 	jpReg sync.Map
 }
 
+func defaultIsRuleTraceEnabledWrapper() *isRuleTraceEnabledWrapper {
+	return &isRuleTraceEnabledWrapper{
+		isEnabled: false,
+	}
+}
+
+type isRuleTraceEnabledWrapper struct {
+	sync.RWMutex
+	isEnabled bool
+}
+
+func (w *isRuleTraceEnabledWrapper) IsEnabled() bool {
+	if w == nil {
+		return false
+	}
+	w.RLock()
+	defer w.RUnlock()
+	return w.isEnabled
+}
+
+func (w *isRuleTraceEnabledWrapper) SetIsEnabled(isEnabled bool) {
+	w.Lock()
+	defer w.Unlock()
+	w.isEnabled = isEnabled
+}
+
 func RuleBackground(ruleName string) *DefaultContext {
 	if !conf.Config.Basic.EnableResourceProfiling {
 		return Background()
@@ -61,21 +87,24 @@ func RuleBackground(ruleName string) *DefaultContext {
 	ctx := pprof.WithLabels(context.Background(), pprof.Labels("rule", ruleName))
 	pprof.SetGoroutineLabels(ctx)
 	c := &DefaultContext{
-		ctx: ctx,
+		ctx:            ctx,
+		isTraceEnabled: defaultIsRuleTraceEnabledWrapper(),
 	}
 	return c
 }
 
 func Background() *DefaultContext {
 	c := &DefaultContext{
-		ctx: context.Background(),
+		ctx:            context.Background(),
+		isTraceEnabled: defaultIsRuleTraceEnabledWrapper(),
 	}
 	return c
 }
 
 func WithContext(ctx context.Context) *DefaultContext {
 	c := &DefaultContext{
-		ctx: ctx,
+		ctx:            ctx,
+		isTraceEnabled: defaultIsRuleTraceEnabledWrapper(),
 	}
 	return c
 }
@@ -197,38 +226,38 @@ func (c *DefaultContext) WithMeta(ruleId string, opId string, store api.Store) a
 		c.GetLogger().Warnf("Initialize context store error for %s: %s", opId, err)
 	}
 	return &DefaultContext{
-		ruleId:           ruleId,
-		opId:             opId,
-		instanceId:       0,
-		ctx:              c.ctx,
-		store:            store,
-		state:            s,
-		tpReg:            sync.Map{},
-		jpReg:            sync.Map{},
-		enableRuleTracer: c.enableRuleTracer,
+		ruleId:         ruleId,
+		opId:           opId,
+		instanceId:     0,
+		ctx:            c.ctx,
+		store:          store,
+		state:          s,
+		tpReg:          sync.Map{},
+		jpReg:          sync.Map{},
+		isTraceEnabled: c.isTraceEnabled,
 	}
 }
 
 func (c *DefaultContext) WithInstance(instanceId int) api.StreamContext {
 	return &DefaultContext{
-		instanceId:       instanceId,
-		ruleId:           c.ruleId,
-		opId:             c.opId,
-		ctx:              c.ctx,
-		state:            c.state,
-		enableRuleTracer: c.enableRuleTracer,
+		instanceId:     instanceId,
+		ruleId:         c.ruleId,
+		opId:           c.opId,
+		ctx:            c.ctx,
+		state:          c.state,
+		isTraceEnabled: c.isTraceEnabled,
 	}
 }
 
 func (c *DefaultContext) WithCancel() (api.StreamContext, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(c.ctx)
 	return &DefaultContext{
-		ruleId:           c.ruleId,
-		opId:             c.opId,
-		instanceId:       c.instanceId,
-		ctx:              ctx,
-		state:            c.state,
-		enableRuleTracer: c.enableRuleTracer,
+		ruleId:         c.ruleId,
+		opId:           c.opId,
+		instanceId:     c.instanceId,
+		ctx:            ctx,
+		state:          c.state,
+		isTraceEnabled: c.isTraceEnabled,
 	}, cancel
 }
 
@@ -291,9 +320,9 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 }
 
 func (c *DefaultContext) EnableTracer(enabled bool) {
-	c.enableRuleTracer = enabled
+	c.isTraceEnabled.SetIsEnabled(enabled)
 }
 
 func (c *DefaultContext) IsTraceEnabled() bool {
-	return c.enableRuleTracer
+	return c.isTraceEnabled.IsEnabled()
 }
