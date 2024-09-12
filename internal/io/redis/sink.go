@@ -39,14 +39,14 @@ type config struct {
 	// key of field
 	Field string `json:"field,omitempty"`
 	// key define
-	Key          string        `json:"key,omitempty"`
-	KeyType      string        `json:"keyType,omitempty"`
-	DataType     string        `json:"dataType,omitempty"`
-	Expiration   time.Duration `json:"expiration,omitempty"`
-	RowkindField string        `json:"rowkindField"`
-	DataTemplate string        `json:"dataTemplate"`
-	Fields       []string      `json:"fields"`
-	DataField    string        `json:"dataField"`
+	Key          string            `json:"key,omitempty"`
+	KeyType      string            `json:"keyType,omitempty"`
+	DataType     string            `json:"dataType,omitempty"`
+	Expiration   cast.DurationConf `json:"expiration,omitempty"`
+	RowkindField string            `json:"rowkindField"`
+	DataTemplate string            `json:"dataTemplate"`
+	Fields       []string          `json:"fields"`
+	DataField    string            `json:"dataField"`
 }
 
 type RedisSink struct {
@@ -192,7 +192,7 @@ func (r *RedisSink) save(ctx api.StreamContext, data map[string]any) error {
 				}
 				logger.Debugf("push redis list success, key:%s data: %v", key, val)
 			} else {
-				err = r.cli.Set(ctx, key, val, r.c.Expiration*time.Second).Err()
+				err = r.cli.Set(ctx, key, val, time.Duration(r.c.Expiration)).Err()
 				if err != nil {
 					return fmt.Errorf("set %s:%s error, %v", key, val, err)
 				}

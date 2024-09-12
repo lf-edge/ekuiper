@@ -29,6 +29,7 @@ import (
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/message"
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
@@ -57,7 +58,7 @@ func TestProvision(t *testing.T) {
 		{
 			name: "new props",
 			c: &sinkConf{
-				CheckInterval:      500 * time.Millisecond,
+				CheckInterval:      cast.DurationConf(500 * time.Millisecond),
 				Path:               "test",
 				FileType:           CSV_TYPE,
 				Format:             message.FormatDelimited,
@@ -84,14 +85,14 @@ func TestProvision(t *testing.T) {
 		{
 			name: "interval duration",
 			c: &sinkConf{
-				CheckInterval:      5 * time.Minute,
+				CheckInterval:      cast.DurationConf(5 * time.Minute),
 				Path:               "test",
 				FileType:           CSV_TYPE,
 				Format:             message.FormatDelimited,
 				Delimiter:          ",",
 				RollingCount:       1000000,
 				RollingNamePattern: "none",
-				RollingInterval:    10 * time.Second,
+				RollingInterval:    cast.DurationConf(10 * time.Second),
 			},
 			p: map[string]interface{}{
 				"path":               "test",

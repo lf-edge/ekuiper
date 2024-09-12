@@ -35,12 +35,12 @@ import (
 )
 
 type limitConf struct {
-	Interval        time.Duration `json:"interval"`
-	MergeField      string        `json:"mergeField"`
-	Format          string        `json:"format"`
-	Merger          string        `json:"merger"`
-	PayloadSchemaId string        `json:"payloadSchemaId"`
-	SchemaId        string        `json:"schemaId"`
+	Interval        cast.DurationConf `json:"interval"`
+	MergeField      string            `json:"mergeField"`
+	Format          string            `json:"format"`
+	Merger          string            `json:"merger"`
+	PayloadSchemaId string            `json:"payloadSchemaId"`
+	SchemaId        string            `json:"schemaId"`
 }
 
 // RateLimitOp handle messages at a regular rate, ignoring messages that arrive too quickly, only keep the most recent message. (default strategy)
@@ -72,7 +72,7 @@ func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc
 	if err != nil {
 		return nil, err
 	}
-	if c.Interval < 1*time.Millisecond {
+	if time.Duration(c.Interval) < 1*time.Millisecond {
 		return nil, fmt.Errorf("interval should be larger than 1ms")
 	}
 	o := &RateLimitOp{
@@ -117,7 +117,7 @@ func NewRateLimitOp(ctx api.StreamContext, name string, rOpt *def.RuleOption, sc
 // - merge by merger (when format, payloadFormat and merger is set)
 func (o *RateLimitOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 	o.prepareExec(ctx, errCh, "op")
-	ticker := timex.GetTicker(o.c.Interval)
+	ticker := timex.GetTicker(time.Duration(o.c.Interval))
 	ctx.GetLogger().Infof("rate limit run with interval %v", o.c.Interval)
 	go func() {
 		defer func() {

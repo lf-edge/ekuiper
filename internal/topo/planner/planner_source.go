@@ -16,7 +16,6 @@ package planner
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
@@ -199,10 +198,10 @@ func splitSource(ctx api.StreamContext, t *DataSourcePlan, ss api.Source, option
 }
 
 type SourcePropsForSplit struct {
-	Decompression string        `json:"decompression"`
-	SelId         string        `json:"connectionSelector"`
-	PayloadFormat string        `json:"payloadFormat"`
-	Interval      time.Duration `json:"interval"`
+	Decompression string            `json:"decompression"`
+	SelId         string            `json:"connectionSelector"`
+	PayloadFormat string            `json:"payloadFormat"`
+	Interval      cast.DurationConf `json:"interval"`
 	// merger and mergerField should only set one
 	MergeField string `json:"mergeField"`
 	Merger     string `json:"merger"`
