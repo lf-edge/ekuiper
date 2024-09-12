@@ -301,3 +301,6 @@ When we try to send a record to the stream, the status of the rule is obtained a
 ```
 
 It can be seen that `records_in_total` and `records_out_total` of each operator have changed from 0 to 1, which means that the operator has received a record and passed a record to the next operator, and finally sent to the `sink` and the `sink` wrote 1 record.
+
+If Prometheus configuration is enabled, these metrics will also be collected by Prometheus. For a complete list of
+operational metrics, please refer to the [Metrics List](../../operation/usage/monitor_with_prometheus.md#metric-types).
