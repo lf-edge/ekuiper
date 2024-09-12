@@ -8,6 +8,7 @@ You can expose Open Telemetry data to the remote Open Telemetry Collector throug
 
 ```yaml
 openTelemetry:
+  serviceName: kuiperd-service
   enableRemoteCollector: false
   remoteEndpoint: localhost:4318
   localTraceCapacity: 2048
