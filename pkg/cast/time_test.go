@@ -301,3 +301,15 @@ func TestConvertFormat(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1718024079657497900), d.UnixNano())
 }
+
+func TestParseTimeFormats(t *testing.T) {
+	err := SetTimeZone("UTC")
+	require.NoError(t, err)
+	tsstr := "2023-12-16 00:15"
+	tts, err := ParseTimeByFormats(tsstr, []string{"2006-01-02 15:04", "2006-01-02 15-04-05"})
+	require.NoError(t, err)
+
+	timeString := "2023-12-16T00:15:00Z"
+	tt, _ := time.Parse(time.RFC3339, timeString)
+	require.Equal(t, tt, tts)
+}
