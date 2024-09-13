@@ -21,6 +21,7 @@ import (
 	"regexp"
 	"runtime/pprof"
 	"sync"
+	"sync/atomic"
 	"text/template"
 	"time"
 
@@ -44,7 +45,7 @@ type DefaultContext struct {
 	instanceId     int
 	ctx            context.Context
 	err            error
-	isTraceEnabled *isRuleTraceEnabledWrapper
+	isTraceEnabled *atomic.Bool
 	// Only initialized after withMeta set
 	store    api.Store
 	state    *sync.Map
@@ -52,32 +53,6 @@ type DefaultContext struct {
 	// cache
 	tpReg sync.Map
 	jpReg sync.Map
-}
-
-func defaultIsRuleTraceEnabledWrapper() *isRuleTraceEnabledWrapper {
-	return &isRuleTraceEnabledWrapper{
-		isEnabled: false,
-	}
-}
-
-type isRuleTraceEnabledWrapper struct {
-	sync.RWMutex
-	isEnabled bool
-}
-
-func (w *isRuleTraceEnabledWrapper) IsEnabled() bool {
-	if w == nil {
-		return false
-	}
-	w.RLock()
-	defer w.RUnlock()
-	return w.isEnabled
-}
-
-func (w *isRuleTraceEnabledWrapper) SetIsEnabled(isEnabled bool) {
-	w.Lock()
-	defer w.Unlock()
-	w.isEnabled = isEnabled
 }
 
 func RuleBackground(ruleName string) *DefaultContext {
@@ -88,24 +63,27 @@ func RuleBackground(ruleName string) *DefaultContext {
 	pprof.SetGoroutineLabels(ctx)
 	c := &DefaultContext{
 		ctx:            ctx,
-		isTraceEnabled: defaultIsRuleTraceEnabledWrapper(),
+		isTraceEnabled: &atomic.Bool{},
 	}
+	c.isTraceEnabled.Store(false)
 	return c
 }
 
 func Background() *DefaultContext {
 	c := &DefaultContext{
 		ctx:            context.Background(),
-		isTraceEnabled: defaultIsRuleTraceEnabledWrapper(),
+		isTraceEnabled: &atomic.Bool{},
 	}
+	c.isTraceEnabled.Store(false)
 	return c
 }
 
 func WithContext(ctx context.Context) *DefaultContext {
 	c := &DefaultContext{
 		ctx:            ctx,
-		isTraceEnabled: defaultIsRuleTraceEnabledWrapper(),
+		isTraceEnabled: &atomic.Bool{},
 	}
+	c.isTraceEnabled.Store(false)
 	return c
 }
 
@@ -320,9 +298,9 @@ func (c *DefaultContext) SaveState(checkpointId int64) error {
 }
 
 func (c *DefaultContext) EnableTracer(enabled bool) {
-	c.isTraceEnabled.SetIsEnabled(enabled)
+	c.isTraceEnabled.Store(enabled)
 }
 
 func (c *DefaultContext) IsTraceEnabled() bool {
-	return c.isTraceEnabled.IsEnabled()
+	return c.isTraceEnabled.Load()
 }
