@@ -20,11 +20,9 @@ import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	ort "github.com/yalue/onnxruntime_go"
 	"image"
-
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-
 	"sync"
 )
 
