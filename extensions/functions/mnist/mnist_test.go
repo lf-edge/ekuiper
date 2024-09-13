@@ -7,6 +7,7 @@ import (
 	_ "image/png"
 	"os"
 	"reflect"
+	"runtime"
 	"sync"
 	"testing"
 
@@ -48,7 +49,7 @@ func Test_mnist_Exec(t *testing.T) {
 				modelPath:         "etc/mnist.onnx",
 				inputShape:        ort.NewShape(1, 1, 28, 28),
 				outputShape:       ort.NewShape(1, 10),
-				sharedLibraryPath: "lib/onnxruntime.so",
+				sharedLibraryPath: getDefaultSharedLibPath() ,
 				initModelError:    nil,
 			},
 			args: args{
@@ -95,4 +96,29 @@ func Test_mnist_Exec(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getDefaultSharedLibPath() string {
+	// For now, we only include libraries for x86_64 windows, ARM64 darwin, and
+	// x86_64 or ARM64 Linux. In the future, libraries may be added or removed.
+	if runtime.GOOS == "windows" {
+		if runtime.GOARCH == "amd64" {
+			return "lib/onnxruntime.dll"
+		}
+	}
+	if runtime.GOOS == "darwin" {
+		if runtime.GOARCH == "arm64" {
+			return "lib/onnxruntime_arm64.dylib"
+		}
+	}
+	if runtime.GOOS == "linux" {
+		if runtime.GOARCH == "arm64" {
+			return "lib/onnxruntime_arm64.so"
+		}
+		return "lib/onnxruntime.so"
+	}
+	fmt.Printf("Unable to determine a path to the onnxruntime shared library"+
+		" for OS \"%s\" and architecture \"%s\".\n", runtime.GOOS,
+		runtime.GOARCH)
+	return ""
 }
