@@ -114,7 +114,7 @@ func (f *MnistFunc) Exec(_ api.FunctionContext, args []any) (any, bool) {
 		return fmt.Errorf("error running the MNIST network: %w", e), false
 	}
 
-	var returnRes = "Output probabilities:\n"
+	returnRes := "Output probabilities:\n"
 	outputData := output.GetData()
 	maxIndex := 0
 	maxProbability := float32(-1.0e9)
