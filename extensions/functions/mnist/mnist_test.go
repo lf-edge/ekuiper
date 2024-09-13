@@ -47,7 +47,6 @@ func Test_mnist_Exec(t *testing.T) {
 			name: "test1",
 			fields: fields{
 				modelPath:         "etc/mnist.onnx",
-				once:              sync.Once{},
 				inputShape:        ort.NewShape(1, 1, 28, 28),
 				outputShape:       ort.NewShape(1, 10),
 				sharedLibraryPath: "lib/onnxruntime.so",
