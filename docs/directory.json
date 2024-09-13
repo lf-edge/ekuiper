@@ -348,6 +348,10 @@
               ]
             }
           ]
+        },
+        {
+          "title": "连接管理",
+          "path": "guide/connections/overview"
         }
       ]
     },
@@ -1120,6 +1124,10 @@
               ]
             }
           ]
+        },
+        {
+          "title": "Connection Management",
+          "path": "guide/connections/overview"
         }
       ]
     },

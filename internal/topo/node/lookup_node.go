@@ -34,9 +34,9 @@ import (
 )
 
 type LookupConf struct {
-	Cache           bool          `json:"cache"`
-	CacheTTL        time.Duration `json:"cacheTtl"`
-	CacheMissingKey bool          `json:"cacheMissingKey"`
+	Cache           bool              `json:"cache"`
+	CacheTTL        cast.DurationConf `json:"cacheTtl"`
+	CacheMissingKey bool              `json:"cacheMissingKey"`
 }
 
 type srcConf struct {
@@ -137,7 +137,7 @@ func (n *LookupNode) Exec(ctx api.StreamContext, errCh chan<- error) {
 			fv, _ := xsql.NewFunctionValuersForOp(ctx)
 			var c *cache.Cache
 			if n.conf.Cache {
-				c = cache.NewCache(n.conf.CacheTTL, n.conf.CacheMissingKey)
+				c = cache.NewCache(time.Duration(n.conf.CacheTTL), n.conf.CacheMissingKey)
 				defer c.Close()
 			}
 			// Start the lookup source loop

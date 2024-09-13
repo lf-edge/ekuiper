@@ -70,6 +70,14 @@ kuiper_rule_count: eKuiper 中有多少条规则运行，多少条规则暂停�
 - last_exception：最近一次的异常的错误信息。
 - last_exception_time：最近一次异常的发生时间。
 
+在 2.0.0 版本之后，我们为 source/sink 添加了连接相关指标。
+
+- connection_status：连接状态。1 为已连接，0 为连接中，-1 为未连接。
+- connection_last_connected_time：最近一次连接成功时间
+- connection_last_disconnected_time：最近一次断连时间
+- connection_last_disconnected_message：最近一次断连异常的消息
+- connection_last_try_time：最近一次重连时间
+
 这些运行指标中的数值类型指标均可使用 Prometheus 进行监控。下一节我们将描述如何配置 eKuiper 中的 Prometheus 服务。
 
 ## 配置 eKuiper 的 Prometheus 服务

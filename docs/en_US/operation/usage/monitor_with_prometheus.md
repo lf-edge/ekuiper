@@ -70,6 +70,14 @@ After version 1.6.1, we added two more exception-related metrics to facilitate t
 - last_exception: the error message of the last exception.
 - last_exception_time: the time of the last exception.
 
+After version 2.0.0, we added connection-related metrics for source/sink.
+
+- connection_status: Connection status. 1 for connected, 0 for connecting, -1 for disconnected.
+- connection_last_connected_time: The last successful connection time.
+- connection_last_disconnected_time: The last disconnection time.
+- connection_last_disconnected_message: The message of the last disconnection exception.
+- connection_last_try_time: The last reconnection attempt time.
+
 The numeric types of these metrics can all be monitored using Prometheus. In the next section we will describe how to configure the Prometheus service in eKuiper.
 
 ## Configuring the Prometheus Service in eKuiper

@@ -1,4 +1,4 @@
-// Copyright 2021 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 EMQ Technologies Co., Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -138,7 +138,18 @@ func ParseTime(t string, f string) (_ time.Time, err error) {
 		TimeFormats:  now.TimeFormats,
 	}
 	if f != "" {
-		c.TimeFormats = []string{f}
+		c.TimeFormats = append([]string{f}, c.TimeFormats...)
+	}
+	return c.Parse(t)
+}
+
+func ParseTimeByFormats(t string, formats []string) (_ time.Time, err error) {
+	c := &now.Config{
+		TimeLocation: localTimeZone,
+		TimeFormats:  now.TimeFormats,
+	}
+	if len(formats) > 0 {
+		c.TimeFormats = append(formats, c.TimeFormats...)
 	}
 	return c.Parse(t)
 }

@@ -48,14 +48,14 @@ type DecodeOp struct {
 type dconf struct {
 	// When receiving list, send them one by one, this is the sending interval between each
 	// Typically set by file source
-	SendInterval      time.Duration `json:"sendInterval"`
-	Format            string        `json:"format"`
-	SchemaId          string        `json:"schemaId"`
-	PayloadField      string        `json:"payloadField"`
-	PayloadBatchField string        `json:"payloadBatchField"`
-	PayloadFormat     string        `json:"payloadFormat"`
-	PayloadSchemaId   string        `json:"payloadSchemaId"`
-	PayloadDelimiter  string        `json:"payloadDelimiter"`
+	SendInterval      cast.DurationConf `json:"sendInterval"`
+	Format            string            `json:"format"`
+	SchemaId          string            `json:"schemaId"`
+	PayloadField      string            `json:"payloadField"`
+	PayloadBatchField string            `json:"payloadBatchField"`
+	PayloadFormat     string            `json:"payloadFormat"`
+	PayloadSchemaId   string            `json:"payloadSchemaId"`
+	PayloadDelimiter  string            `json:"payloadDelimiter"`
 }
 
 func NewDecodeOp(ctx api.StreamContext, forPayload bool, name, StreamName string, rOpt *def.RuleOption, schema map[string]*ast.JsonStreamField, props map[string]any) (*DecodeOp, error) {
@@ -127,7 +127,7 @@ func (o *DecodeOp) Exec(ctx api.StreamContext, errCh chan<- error) {
 			w = o.Worker
 		}
 		err := infra.SafeRun(func() error {
-			runWithOrderAndInterval(ctx, o.defaultSinkNode, o.concurrency, w, o.c.SendInterval)
+			runWithOrderAndInterval(ctx, o.defaultSinkNode, o.concurrency, w, time.Duration(o.c.SendInterval))
 			return nil
 		})
 		if err != nil {
