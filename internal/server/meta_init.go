@@ -386,25 +386,3 @@ func lookupConnectionHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
-
-func lookupConnectionHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	vars := mux.Vars(r)
-
-	sourceNm := vars["name"]
-	config := map[string]interface{}{}
-	v, _ := io.ReadAll(r.Body)
-	err := json.Unmarshal(v, &config)
-	if err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
-	config = replacePasswdForConfig("source", sourceNm, config)
-	err = node.LookupPing(sourceNm, config)
-	if err != nil {
-		handleError(w, err, "", logger)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
