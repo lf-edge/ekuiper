@@ -26,7 +26,6 @@ func Test_mnist_Exec(t *testing.T) {
 
 	type fields struct {
 		modelPath         string
-		once              sync.Once
 		inputShape        ort.Shape
 		outputShape       ort.Shape
 		sharedLibraryPath string
