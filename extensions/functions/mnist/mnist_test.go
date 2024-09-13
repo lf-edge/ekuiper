@@ -2,6 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	ort "github.com/yalue/onnxruntime_go"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -10,13 +16,6 @@ import (
 	"runtime"
 	"sync"
 	"testing"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-	ort "github.com/yalue/onnxruntime_go"
 )
 
 func Test_mnist_Exec(t *testing.T) {
@@ -49,7 +48,7 @@ func Test_mnist_Exec(t *testing.T) {
 				modelPath:         "etc/mnist.onnx",
 				inputShape:        ort.NewShape(1, 1, 28, 28),
 				outputShape:       ort.NewShape(1, 10),
-				sharedLibraryPath: getDefaultSharedLibPath() ,
+				sharedLibraryPath: getDefaultSharedLibPath(),
 				initModelError:    nil,
 			},
 			args: args{
