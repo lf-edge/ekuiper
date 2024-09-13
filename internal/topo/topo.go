@@ -231,6 +231,10 @@ func (s *Topo) prepareContext() {
 	}
 }
 
+func (s *Topo) EnableTracer(isEnabled bool) {
+	s.ctx.EnableTracer(isEnabled)
+}
+
 func (s *Topo) Open() <-chan error {
 	// if stream has opened, do nothing
 	if s.hasOpened.Load() && !conf.IsTesting {
@@ -242,7 +246,6 @@ func (s *Topo) Open() <-chan error {
 	s.drain = make(chan error, 2)
 	log := s.ctx.GetLogger()
 	log.Info("Opening stream")
-	s.ctx.EnableTracer(s.options.EnableRuleTracer)
 	err := infra.SafeRun(func() error {
 		var err error
 		if s.store, err = state.CreateStore(s.name, s.options.Qos); err != nil {

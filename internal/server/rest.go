@@ -169,6 +169,8 @@ func createRestServer(ip string, port int, needToken bool) *http.Server {
 	r.HandleFunc("/rules/{name}/stop", stopRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/restart", restartRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/topo", getTopoRuleHandler).Methods(http.MethodGet)
+	r.HandleFunc("/rules/{name}/trace/start", enableRuleTraceHandler).Methods(http.MethodPost)
+	r.HandleFunc("/rules/{name}/trace/stop", disableRuleTraceHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/validate", validateRuleHandler).Methods(http.MethodPost)
 	r.HandleFunc("/rules/{name}/reset_state", ruleStateHandler).Methods(http.MethodPut)
 	r.HandleFunc("/rules/{name}/explain", explainRuleHandler).Methods(http.MethodGet)
@@ -788,6 +790,40 @@ func restartRuleHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "Rule %s was restarted", name)
+}
+
+func enableRuleTraceHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	err := setIsRuleTraceEnabledHandler(name, true)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func disableRuleTraceHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	err := setIsRuleTraceEnabledHandler(name, false)
+	if err != nil {
+		handleError(w, err, "", logger)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func setIsRuleTraceEnabledHandler(name string, isEnabled bool) error {
+	rs, ok := registry.load(name)
+	if !ok {
+		return fmt.Errorf("rule %s isn't existed", name)
+	}
+	return rs.SetIsTraceEnabled(isEnabled)
 }
 
 // get topo of a rule
