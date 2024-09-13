@@ -23,8 +23,6 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-	"os"
-	"os/exec"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
