@@ -16,8 +16,11 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +31,7 @@ func (suite *RestTestSuite) TestTraceRule() {
 	w1 := httptest.NewRecorder()
 	suite.r.ServeHTTP(w1, req1)
 
-	ruleJson2 := `{"id":"test54321","triggered":false,"sql":"select * from demo4321","actions":[{"log":{}}]}`
+	ruleJson2 := `{"id":"test54321","triggered":true,"sql":"select * from demo4321","actions":[{"log":{}}]}`
 	buf2 := bytes.NewBuffer([]byte(ruleJson2))
 	req2, _ := http.NewRequest(http.MethodPost, "http://localhost:8080/rules", buf2)
 	w2 := httptest.NewRecorder()
@@ -39,9 +42,25 @@ func (suite *RestTestSuite) TestTraceRule() {
 	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusOK, w2.Code)
+	time.Sleep(10 * time.Millisecond)
 
 	req2, _ = http.NewRequest(http.MethodPost, "http://localhost:8080/rules/test54321/trace/stop", bytes.NewBufferString("any"))
 	w2 = httptest.NewRecorder()
 	suite.r.ServeHTTP(w2, req2)
 	require.Equal(suite.T(), http.StatusOK, w2.Code)
+	time.Sleep(10 * time.Millisecond)
+	req2, _ = http.NewRequest(http.MethodGet, "http://localhost:8080/rules", bytes.NewBufferString("any"))
+	w2 = httptest.NewRecorder()
+	suite.r.ServeHTTP(w2, req2)
+	require.Equal(suite.T(), http.StatusOK, w2.Code)
+	var returnVal []byte
+	returnVal, _ = io.ReadAll(w2.Result().Body)
+	v := make([]map[string]interface{}, 0)
+	require.NoError(suite.T(), json.Unmarshal(returnVal, &v))
+	for _, vv := range v {
+		if vv["id"] == "test54321" {
+			require.Equal(suite.T(), "running", v[0]["status"])
+			require.Equal(suite.T(), false, v[0]["trace"])
+		}
+	}
 }
