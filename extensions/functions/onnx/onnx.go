@@ -17,15 +17,14 @@ package main
 import (
 	_ "bytes"
 	"encoding/binary"
-
 	"fmt"
 	_ "image"
 	_ "image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-	_ "os"
-	_ "os/exec"
+	"os"
+	"os/exec"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
@@ -41,19 +40,12 @@ type OnnxFunc struct {
 // args[1 to n]: tensors
 func (f *OnnxFunc) Validate(args []interface{}) error {
 	if len(args) < 2 {
-		return fmt.Errorf("tensorflow function must have at least 2 parameters but got %d", len(args))
+		return fmt.Errorf("onnx function must have at least 2 parameters but got %d", len(args))
 	}
 	return nil
 }
 
 func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
-	fmt.Printf("onnx function  args start ---------------------\n")
-	for _, v := range args {
-		fmt.Println(v)
-
-	}
-	fmt.Printf("onnx function  args end ---------------------\n")
-
 	modelName, ok := args[0].(string)
 	if !ok {
 		return fmt.Errorf("onnx function first parameter must be a string, but got %[1]T(%[1]v)", args[0]), false
@@ -72,20 +64,14 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	var inputTensors []ort.ArbitraryTensor
 	// Set input tensors
 	for i := 1; i < len(args); i++ {
-		// input := interpreter.GetInputTensor(i - 1)
+
 		inputInfo := interpreter.inputInfo[i-1]
 		var arg []interface{}
 		switch v := args[i].(type) {
 		case []any: // only supports one dimensional arg. Even dim 0 must be an array of 1 element
 			arg = v
-		// case string: //string is also array of bytea
-		// 	bytesV := cast.StringToBytes(v)
-		// 	arg = append(arg, bytesV)
-		default:
 			return fmt.Errorf("onnx function parameter %d must be a bytea or array of bytea, but got %[1]T(%[1]v)", i, v), false
 		}
-
-
 
 		notSupportedDataLen := -1
 		switch inputInfo.DataType {
@@ -159,7 +145,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 			}
 			inputTensors = append(inputTensors, input)
 
-		case ort.TensorElementDataTypeInt32: //todo:这些tflite的类型待测试、和对其onnx支持的类型
+		case ort.TensorElementDataTypeInt32:
 			value, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				return cast.ToInt32(input, sn)
 			}, "int32", cast.CONVERT_SAMEKIND)
@@ -239,7 +225,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return nil, false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeString: //not support ，虽然不支持，但是也不用做特殊转换，因为str可以看成[]byte
+		case ort.TensorElementDataTypeString: //not support ,but dont need transfer becase string can look as []byte
 			v, err := cast.ToBytes(args, cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return fmt.Errorf("invalid %d parameter, expect string but got %[2]T(%[2]v) with err %v", i, args[i], err), false
@@ -250,7 +236,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return nil, false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeBool: //not support ，转换成[]byte
+		case ort.TensorElementDataTypeBool: //not support ，transfer to []byte
 			v, err := cast.ToBytes(args, cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return fmt.Errorf("invalid %d parameter, expect int8 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
@@ -264,7 +250,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		default: // support list see ：GetTensorElementDataType() and TensorElementDataType in onnxruntime_go
 			return fmt.Errorf("invalid %d parameter, unsupported type %s in the model", i, inputInfo.DataType), false
 		}
-		
+
 		modelParaLen := int64(1)
 		for j := 0; j < len(inputInfo.Dimensions); j++ {
 			modelParaLen *= inputInfo.Dimensions[j]
@@ -275,10 +261,9 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		}
 
 	}
-	//todo 优化：避免每一次都创建outputtensor，可以复用
+	//todo :optimize: avoid creating output tensor every time
 
 	outputArbitraryTensors, err := interpreter.GetEmptyOutputTensors()
-	//对输入的类型都做了处理，现在需要对输出的类型也做类似的处理,保证类型可以覆盖到
 	if err != nil {
 		return err, false
 	}
@@ -296,15 +281,15 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		switch outputInfo.DataType {
 		case ort.TensorElementDataTypeDouble:
 			results[i] = outputArbitraryTensor.(*ort.Tensor[float64]).GetData()
-		case ort.TensorElementDataTypeFloat: // onnx的float转换到go为float32
+		case ort.TensorElementDataTypeFloat:
 			results[i] = outputArbitraryTensor.(*ort.Tensor[float32]).GetData()
-		case ort.TensorElementDataTypeFloat16: //not support
+		case ort.TensorElementDataTypeFloat16:
 			results[i] = outputArbitraryTensor.(*ort.CustomDataTensor).GetData()
 		case ort.TensorElementDataTypeInt64:
 			results[i] = outputArbitraryTensor.(*ort.Tensor[int64]).GetData()
-		case ort.TensorElementDataTypeUint64: //todo:这些tflite的类型待测试
+		case ort.TensorElementDataTypeUint64:
 			results[i] = outputArbitraryTensor.(*ort.Tensor[uint64]).GetData()
-		case ort.TensorElementDataTypeInt32: //todo:这些tflite的类型待测试、和对其onnx支持的类型
+		case ort.TensorElementDataTypeInt32:
 			results[i] = outputArbitraryTensor.(*ort.Tensor[int32]).GetData()
 		case ort.TensorElementDataTypeUint32:
 			results[i] = outputArbitraryTensor.(*ort.Tensor[uint32]).GetData()
@@ -316,9 +301,9 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 			results[i] = outputArbitraryTensor.(*ort.Tensor[int8]).GetData()
 		case ort.TensorElementDataTypeUint8:
 			results[i] = outputArbitraryTensor.(*ort.Tensor[uint8]).GetData()
-		case ort.TensorElementDataTypeString: //not support ，虽然不支持，但是也不用做特殊转换，因为str可以看成[]byte
+		case ort.TensorElementDataTypeString:
 			results[i] = outputArbitraryTensor.(*ort.CustomDataTensor).GetData()
-		case ort.TensorElementDataTypeBool: //not support ，转换成[]byte
+		case ort.TensorElementDataTypeBool:
 			results[i] = outputArbitraryTensor.(*ort.CustomDataTensor).GetData()
 		default:
 			return fmt.Errorf("invalid %d parameter, unsupported type %s in the model", i, outputInfo.DataType), false

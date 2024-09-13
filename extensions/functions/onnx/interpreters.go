@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// go:build tflite
+// go:build onnx
 
 package main
 
@@ -23,7 +23,6 @@ import (
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 
-
 	"fmt"
 	_ "image"
 	_ "image/color"
@@ -31,10 +30,6 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	// "os"
-	// "os/exec"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	ort "github.com/yalue/onnxruntime_go"
 )
 
@@ -63,8 +58,7 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 	m.once.Do(
 		func() {
 			log := conf.Log
-			ort.SetSharedLibraryPath("./data/functions/onnx/onnxruntime.so") //todo 修改到共享路径
-			// ort.SetSharedLibraryPath("./etc/onnxruntime.so") //todo 修改到共享路径  测试时使用
+			ort.SetSharedLibraryPath("/usr/local/onnx/lib/onnxruntime.so")
 			err := ort.InitializeEnvironment()
 			if err != nil {
 				m.envInitErr = fmt.Errorf("failed to initialize environment: %s", err)
@@ -86,9 +80,7 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 			log.Errorf("error getting input and output info for %s: %s", mf, err)
 			return nil, fmt.Errorf("error getting input and output info for %s: %w", mf, err)
 		}
-
 		log.Infof("success load model: %s", mf)
-		// defer model.Delete()
 
 		inputsNames := func() []string {
 			inputsNames := make([]string, len(inputsInfo))
@@ -107,8 +99,8 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 		session, err := ort.NewDynamicAdvancedSession(mf,
 			inputsNames, outputsNames, nil)
 		if err != nil {
-			log.Errorf("error creating MNIST network session: %s", err)
-			return nil, fmt.Errorf("error creating MNIST network session: %w", err)
+			log.Errorf("error creating onnx network session: %s", err)
+			return nil, fmt.Errorf("error creating onnx network session: %w", err)
 		}
 
 		if len(inputsInfo) == 0 || len(outputsInfo) == 0 {
@@ -140,75 +132,6 @@ func (m *interpreterManager) GetOrCreate(name string) (*InterPreter, error) {
 	return ip, nil
 }
 
-// // GetTensorDataType 从tensorElement数据类型获取golang数据类型
-// func GetTensorDataType(tensorElementDataType ort.TensorElementDataType) (any, error) {
-
-// 	switch tensorElementDataType {
-// 	//same as github.com/yalue/onnxruntime_go@v1.9.0/onnxruntime_go.go
-// 	// todo:some not support ，like TensorElementDataTypeFloat8E4M3FN 、TensorElementDataTypeFloat16
-// 	case ort.TensorElementDataTypeFloat:
-// 		return float32(1), nil
-// 	case ort.TensorElementDataTypeUint8:
-// 		return uint8(1), nil
-// 	case ort.TensorElementDataTypeInt8:
-// 		return int8(1), nil
-// 	case ort.TensorElementDataTypeUint16:
-// 		return uint16(1), nil
-// 	case ort.TensorElementDataTypeInt16:
-// 		return int16(1), nil
-// 	case ort.TensorElementDataTypeInt32:
-// 		return int32(1), nil
-// 	case ort.TensorElementDataTypeInt64:
-// 		return int64(1), nil
-// 	case ort.TensorElementDataTypeDouble:
-// 		return float64(1), nil
-// 	case ort.TensorElementDataTypeUint32:
-// 		return uint32(1), nil
-// 	case ort.TensorElementDataTypeUint64:
-// 		return uint64(1), nil
-// 	}
-// 	return 0, errors.New("not support tensorElementDataType")
-
-// }
-
-// NewEmptyTensor
-//
-//	传入 TensorElementDataType数字类型 和形状
-// //	传出，*ort.Tensor[]
-// func NewEmptyTensor[T ort.TensorData](tensorElementDataType ort.TensorElementDataType, shape ort.Shape) (*ort.Tensor[T], error) {
-
-// 	switch tensorElementDataType {
-// 	// //same as github.com/yalue/onnxruntime_go@v1.9.0/onnxruntime_go.go
-// 	// // todo:some not support ，like TensorElementDataTypeFloat8E4M3FN 、TensorElementDataTypeFloat16 看下能否支持
-// 	case ort.TensorElementDataTypeFloat:
-// 		t, err := ort.NewEmptyTensor[float32](shape)
-// 		return t, err
-// 		//todo :!!!!为何错误，如何改正
-// 	// case ort.TensorElementDataTypeUint8:
-// 	// 	fallthrough
-// 	// case ort.TensorElementDataTypeInt8:
-// 	// 	fallthrough
-// 	// case ort.TensorElementDataTypeUint16:
-// 	// 	fallthrough
-// 	// case ort.TensorElementDataTypeInt16:
-// 	// 	fallthrough
-// 	// case ort.TensorElementDataTypeInt32:
-// 	// 	fallthrough
-// 	// case ort.TensorElementDataTypeInt64:
-// 	// 	fallthrough
-// 	// case ort.TensorElementDataTypeDouble:
-// 	// 	fallthrough
-// 	case ort.TensorElementDataTypeUint32:
-// 		t, err := ort.NewEmptyTensor[uint32](shape)
-// 		return t, err
-// 	case ort.TensorElementDataTypeUint64:
-// 		t, err := ort.NewEmptyTensor[uint64](shape)
-// 		return t, err
-// 	}
-// 	// return nil, errors.New("not support tensorElementDataType")
-
-// }
-
 type InterPreter struct {
 	session    *ort.DynamicAdvancedSession
 	inputInfo  []ort.InputOutputInfo
@@ -231,19 +154,19 @@ func (ip *InterPreter) GetInputTensorCount() int {
 
 func (ip *InterPreter) GetEmptyOutputTensors() ([]ort.ArbitraryTensor, error) {
 	if len(ip.outputInfo) == 0 {
-		return nil, errors.New("output len should bigger than 0~")
+		return nil, errors.New("output len should bigger than 0 ~")
 	}
 
 	for i := 1; i < len(ip.outputInfo); i++ {
 		if ip.outputInfo[i].DataType != ip.outputInfo[i-1].DataType {
-			return nil, errors.New("output tensorElementDataType should be same~")
+			return nil, errors.New("output tensorElementDataType should be same ~")
 		}
 	}
 	var dataType ort.TensorElementDataType = ip.outputInfo[0].DataType
 	var emptyOutputTensors []ort.ArbitraryTensor
 	for _, outputInfo := range ip.outputInfo {
 		emptyOutputTensor, err := newEmptyArbitraryTensorBydataType(dataType, outputInfo.Dimensions)
-		if err != nil { //todo 内存泄漏
+		if err != nil {
 			return nil, err
 		}
 		emptyOutputTensors = append(emptyOutputTensors, emptyOutputTensor)
@@ -285,13 +208,6 @@ func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape
 		return ort.NewCustomDataTensor(shape, make([]byte, shape.FlattenedSize()),
 			ort.TensorElementDataTypeBool)
 	default:
-		// totalSize := shape.FlattenedSize() //todo 其他数据类型
-		// actualData := unsafe.Slice((*byte)(tensorData), totalSize)
-		// return NewCustomDataTensor(shape, actualData, tensorType)
-		return nil, errors.New("not support tensorElementDataType")
+		return nil, errors.New("not support tensorElementDataType") //todo more dataType
 	}
-}
-
-func newEmptyArbitraryTensorBydataTypeFloat32(shape ort.Shape) (*ort.Tensor[float32], error) {
-	return ort.NewEmptyTensor[float32](shape)
 }

@@ -1,30 +1,20 @@
 package main
 
 import (
-	"fmt"
-	"image"
-	"os/exec"
-
-	"os"
-	"reflect"
-	"testing"
-	"time"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-
-	"bytes"
-
+	"image"
 	_ "image"
 	"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"os"
+	"reflect"
+	"testing"
 )
 
 // todo 测试文件仿照tf lite
@@ -114,63 +104,6 @@ func Test_mnist_Exec(t *testing.T) {
 	}
 }
 
-/*
-➜  mnist git:(torch_dev_swx) ✗ go test -v -cover
-=== RUN   Test_mnist_Exec
-=== RUN   Test_mnist_Exec/test1
-Output probabilities:
-  0: 1.350922
-  1: 1.149244
-  2: 2.231948
-  3: 0.826893
-  4: -3.473754
-  5: 1.200287
-  6: -1.185765
-  7: -5.960128
-  8: 4.764542
-  9: -2.345179
- probably a 8, with probability 4.764542
-
------------------------------
-true --- PASS: Test_mnist_Exec (0.03s)
-    --- PASS: Test_mnist_Exec/test1 (0.03s)
-PASS
-coverage: 58.7% of statements
-ok      github.com/lf-edge/ekuiper/v2/extensions/functions/mnist        0.030s
-
-
-
-*/
-// topic:
-func TestPic(t *testing.T) {
-	const TOPIC = "onnxPubImg"
-
-	images := []string{
-		"img.png",
-		// 其他你需要的图像
-	}
-	opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-	for _, image := range images {
-		fmt.Println("Publishing " + image)
-		payload, err := os.ReadFile(image)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		if token := client.Publish(TOPIC, 0, false, payload); token.Wait() && token.Error() != nil {
-			fmt.Println(token.Error())
-		} else {
-			fmt.Println("Published " + image)
-		}
-		time.Sleep(1 * time.Second)
-	}
-	client.Disconnect(0)
-}
-
 // ProcessedImage Used to satisfy the image interface as well as to help with formatting and
 // resizing an input image into the format expected as a network input.
 type ProcessedImage struct {
@@ -245,46 +178,7 @@ func (p *ProcessedImage) GetNetworkInput() []float32 {
 	return toReturn
 }
 
-func printCurrDIr() string {
-	// 创建一个 bytes.Buffer 来捕获命令输出
-	var out bytes.Buffer
-
-	// 创建并配置 exec.Command 用于运行 tree 命令
-	cmd := exec.Command("tree")
-
-	// 设置命令的标准输出为 bytes.Buffer
-	cmd.Stdout = &out
-
-	// 运行命令并检查错误
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Sprintf("Error executing command:%v", err)
-
-	}
-
-	// 将命令输出转换为字符串
-	res := out.String()
-
-	// 打印结果
-	fmt.Println(res)
-	return res
-}
-
-func checkFileStat(filePath string) {
-	// 确认文件路径
-
-	fmt.Println("checkFileStat File path:", filePath)
-
-	// 检查文件是否存在
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		fmt.Println("File does not exist:", filePath)
-	} else {
-		fmt.Println("File exists:", filePath)
-	}
-}
-
 // 辅助图片类
-
 // Implements the color interface
 type grayscaleFloat float32
 
@@ -299,4 +193,3 @@ func (f grayscaleFloat) RGBA() (r, g, b, a uint32) {
 	b = v
 	return
 }
-

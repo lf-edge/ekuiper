@@ -2,17 +2,28 @@ package main
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	ort "github.com/yalue/onnxruntime_go"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+	"reflect"
 	"sync"
 	"testing"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+	ort "github.com/yalue/onnxruntime_go"
 )
 
 func Test_mnist_Exec(t *testing.T) {
+	contextLogger := conf.Log.WithField("rule", "testExec")
+	ctx := kctx.WithValue(kctx.Background(), kctx.LoggerKey, contextLogger)
+	tempStore, _ := state.CreateStore("mockRule0", def.AtMostOnce)
+	fctx := kctx.NewDefaultFuncContext(ctx.WithMeta("mockRule0", "test", tempStore), 2)
+
 	type fields struct {
 		modelPath         string
 		once              sync.Once
@@ -29,7 +40,7 @@ func Test_mnist_Exec(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   any
+		want0  any
 		want1  bool
 	}{
 		{
@@ -39,11 +50,11 @@ func Test_mnist_Exec(t *testing.T) {
 				once:              sync.Once{},
 				inputShape:        ort.NewShape(1, 1, 28, 28),
 				outputShape:       ort.NewShape(1, 10),
-				sharedLibraryPath: "etc/onnxruntime.so",
+				sharedLibraryPath: "lib/onnxruntime.so",
 				initModelError:    nil,
 			},
 			args: args{
-				in0: nil,
+				in0: fctx,
 				args: func() []any {
 					args := make([]any, 0)
 					bits, _ := os.ReadFile("./img.png")
@@ -51,8 +62,19 @@ func Test_mnist_Exec(t *testing.T) {
 					return args
 				}(),
 			},
-			want:  nil,
-			want1: false,
+			want0: "Output probabilities:\n" +
+				fmt.Sprintf("  %d: %f\n", 0, 1.350922) +
+				fmt.Sprintf("  %d: %f\n", 1, 1.1492438) +
+				fmt.Sprintf("  %d: %f\n", 2, 2.231948) +
+				fmt.Sprintf("  %d: %f\n", 3, 0.82689315) +
+				fmt.Sprintf("  %d: %f\n", 4, -3.473754) +
+				fmt.Sprintf("  %d: %f\n", 5, 1.2002871) +
+				fmt.Sprintf("  %d: %f\n", 6, -1.185765) +
+				fmt.Sprintf("  %d: %f\n", 7, -5.960128) +
+				fmt.Sprintf("  %d: %f\n", 8, 4.7645416) +
+				fmt.Sprintf("  %d: %f\n", 9, -2.3451788) +
+				fmt.Sprintf(" probably a %d, with probability %f\n", 8, 4.764542),
+			want1: true,
 		},
 	}
 	for _, tt := range tests {
@@ -66,12 +88,13 @@ func Test_mnist_Exec(t *testing.T) {
 				initModelError:    tt.fields.initModelError,
 			}
 
-			out, got1 := f.Exec(tt.args.in0, tt.args.args)
-
-			if !got1 {
-				t.Errorf("Exec() error = %v, wantErr %v", got1, tt.want1)
+			got0, got1 := f.Exec(tt.args.in0, tt.args.args)
+			if !reflect.DeepEqual(got0, tt.want0) {
+				t.Errorf("Exec() got0 = %v, want0 = %v", got0, tt.want0)
 			}
-			fmt.Println(out)
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("Exec() got1 = %v, want1 %v", got1, tt.want1)
+			}
 		})
 	}
 }
