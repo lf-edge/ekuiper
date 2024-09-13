@@ -21,7 +21,6 @@ import (
 	"text/template"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"

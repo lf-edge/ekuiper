@@ -18,7 +18,6 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/image"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/influx"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/influx2"

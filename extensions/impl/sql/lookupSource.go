@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	client2 "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"

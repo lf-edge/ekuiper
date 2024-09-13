@@ -18,19 +18,18 @@ package main
 
 import (
 	"errors"
-	"path/filepath"
-	"sync"
-
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-
 	"fmt"
 	_ "image"
 	_ "image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"path/filepath"
+	"sync"
 
 	ort "github.com/yalue/onnxruntime_go"
+
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 
 var ipManager *interpreterManager
@@ -140,7 +139,8 @@ type InterPreter struct {
 
 func NewInterPreter(session *ort.DynamicAdvancedSession,
 	inputInfo []ort.InputOutputInfo,
-	outputInfo []ort.InputOutputInfo) *InterPreter {
+	outputInfo []ort.InputOutputInfo,
+) *InterPreter {
 	return &InterPreter{
 		session:    session,
 		inputInfo:  inputInfo,
@@ -172,11 +172,9 @@ func (ip *InterPreter) GetEmptyOutputTensors() ([]ort.ArbitraryTensor, error) {
 		emptyOutputTensors = append(emptyOutputTensors, emptyOutputTensor)
 	}
 	return emptyOutputTensors, nil
-
 }
 
 func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape ort.Shape) (ort.ArbitraryTensor, error) {
-
 	switch dataType {
 	case ort.TensorElementDataTypeFloat:
 		return ort.NewEmptyTensor[float32](shape)
@@ -208,6 +206,6 @@ func newEmptyArbitraryTensorBydataType(dataType ort.TensorElementDataType, shape
 		return ort.NewCustomDataTensor(shape, make([]byte, shape.FlattenedSize()),
 			ort.TensorElementDataTypeBool)
 	default:
-		return nil, errors.New("not support tensorElementDataType") //todo more dataType
+		return nil, errors.New("not support tensorElementDataType") // todo more dataType
 	}
 }

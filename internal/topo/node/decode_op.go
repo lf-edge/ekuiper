@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"
 	schemaLayer "github.com/lf-edge/ekuiper/v2/internal/converter/schema"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"

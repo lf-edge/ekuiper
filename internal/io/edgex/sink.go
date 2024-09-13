@@ -24,8 +24,8 @@ import (
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos"
 	"github.com/edgexfoundry/go-mod-core-contracts/v3/dtos/requests"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/io/edgex/client"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"

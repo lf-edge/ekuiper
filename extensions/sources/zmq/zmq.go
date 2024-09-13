@@ -18,7 +18,6 @@ package main
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/zmq"
 )
 

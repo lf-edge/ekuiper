@@ -20,10 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/client"
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/sql/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/context"

@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 	"github.com/lf-edge/ekuiper/v2/pkg/sqldatabase/driver"
 )

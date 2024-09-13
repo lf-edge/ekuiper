@@ -21,7 +21,6 @@ import (
 	"strconv"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )

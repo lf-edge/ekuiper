@@ -2,12 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
-	ort "github.com/yalue/onnxruntime_go"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
@@ -16,6 +10,14 @@ import (
 	"runtime"
 	"sync"
 	"testing"
+
+	ort "github.com/yalue/onnxruntime_go"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 )
 
 func Test_mnist_Exec(t *testing.T) {

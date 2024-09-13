@@ -20,9 +20,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )
 

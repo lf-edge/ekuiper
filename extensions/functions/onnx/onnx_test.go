@@ -14,15 +14,9 @@
 
 //go:build onnx
 
-
 package main
 
 import (
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/internal/conf"
-	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
-	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
-	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
 	"image"
 	_ "image"
 	"image/color"
@@ -32,8 +26,13 @@ import (
 	"os"
 	"reflect"
 	"testing"
-)
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/internal/conf"
+	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
+	kctx "github.com/lf-edge/ekuiper/v2/internal/topo/context"
+	"github.com/lf-edge/ekuiper/v2/internal/topo/state"
+)
 
 func Test_mnist_Exec(t *testing.T) {
 	contextLogger := conf.Log.WithField("rule", "testExec")
@@ -56,7 +55,6 @@ func Test_mnist_Exec(t *testing.T) {
 			args: args{
 				in0: fctx,
 				args: func() []any {
-
 					f, _ := os.Open("./img.png")
 					originalPic, _, _ := image.Decode(f)
 					bounds := originalPic.Bounds().Canon()

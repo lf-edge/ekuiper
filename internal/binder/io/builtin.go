@@ -16,7 +16,6 @@ package io
 
 import (
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/internal/binder"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http"

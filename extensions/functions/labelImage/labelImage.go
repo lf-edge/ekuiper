@@ -28,9 +28,10 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/mattn/go-tflite" //nolint:typecheck
 	"github.com/nfnt/resize"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 type labelImage struct {

@@ -26,14 +26,14 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
-	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/x448/float16"
 	ort "github.com/yalue/onnxruntime_go"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
-type OnnxFunc struct {
-}
+type OnnxFunc struct{}
 
 // Validate the arguments.
 // args[0]: string, model name which maps to a path
@@ -95,7 +95,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return fmt.Errorf("convert to onnx tensor failed with err %v", err), false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeFloat16: //not support
+		case ort.TensorElementDataTypeFloat16: // not support
 			notSupportedDataLen = 2
 			value, err := cast.ToTypedSlice(args, func(input any, sn cast.Strictness) (interface{}, error) {
 				f32, err := cast.ToFloat32(input, sn)
@@ -131,7 +131,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return fmt.Errorf("convert to onnx tensor failed with err %v", err), false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeUint64: //todo:这些tflite的类型待测试
+		case ort.TensorElementDataTypeUint64: // todo:这些tflite的类型待测试
 			value, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				return cast.ToUint64(input, sn)
 			}, "uin64", cast.CONVERT_SAMEKIND)
@@ -225,7 +225,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return nil, false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeString: //not support ,but dont need transfer becase string can look as []byte
+		case ort.TensorElementDataTypeString: // not support ,but dont need transfer becase string can look as []byte
 			v, err := cast.ToBytes(args, cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return fmt.Errorf("invalid %d parameter, expect string but got %[2]T(%[2]v) with err %v", i, args[i], err), false
@@ -236,7 +236,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return nil, false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeBool: //not support ，transfer to []byte
+		case ort.TensorElementDataTypeBool: // not support ，transfer to []byte
 			v, err := cast.ToBytes(args, cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return fmt.Errorf("invalid %d parameter, expect int8 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
@@ -261,7 +261,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 		}
 
 	}
-	//todo :optimize: avoid creating output tensor every time
+	// todo :optimize: avoid creating output tensor every time
 
 	outputArbitraryTensors, err := interpreter.GetEmptyOutputTensors()
 	if err != nil {
@@ -276,7 +276,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 	outputCount := len(interpreter.outputInfo)
 	results := make([]any, outputCount)
 	outputInfo := interpreter.outputInfo[0]
-	for i := 0; i < outputCount; i++ { //for output , only transfer go build-in type
+	for i := 0; i < outputCount; i++ { // for output , only transfer go build-in type
 		outputArbitraryTensor := outputArbitraryTensors[i]
 		switch outputInfo.DataType {
 		case ort.TensorElementDataTypeDouble:
@@ -317,5 +317,7 @@ func (f *OnnxFunc) IsAggregate() bool {
 	return false
 }
 
-var Onnx = OnnxFunc{}
-var _ api.Function = &OnnxFunc{}
+var (
+	Onnx              = OnnxFunc{}
+	_    api.Function = &OnnxFunc{}
+)

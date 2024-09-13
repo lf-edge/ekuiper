@@ -24,7 +24,6 @@ import (
 	"time"
 
 	kconf "github.com/lf-edge/ekuiper/tools/kubernetes/conf"
-
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
 
