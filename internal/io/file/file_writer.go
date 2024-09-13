@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
-
 	"github.com/lf-edge/ekuiper/v2/internal/compressor"
 	"github.com/lf-edge/ekuiper/v2/internal/encryptor"
 	"github.com/lf-edge/ekuiper/v2/internal/io/file/writer"

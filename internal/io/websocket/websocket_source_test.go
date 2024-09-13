@@ -19,9 +19,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/io/http/httpserver"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"

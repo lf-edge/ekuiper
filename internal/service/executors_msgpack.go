@@ -23,8 +23,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/ugorji/go/codec"
+
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 )
 
 func init() {

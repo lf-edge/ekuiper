@@ -23,11 +23,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/number"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
