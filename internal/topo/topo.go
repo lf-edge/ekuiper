@@ -235,6 +235,10 @@ func (s *Topo) EnableTracer(isEnabled bool) {
 	s.ctx.EnableTracer(isEnabled)
 }
 
+func (s *Topo) IsTraceEnabled() bool {
+	return s.ctx.IsTraceEnabled()
+}
+
 func (s *Topo) Open() <-chan error {
 	// if stream has opened, do nothing
 	if s.hasOpened.Load() && !conf.IsTesting {
