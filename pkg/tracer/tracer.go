@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build trace || !core
+
 package tracer
 
 import (
@@ -120,20 +122,6 @@ func InitTracer() error {
 		return err
 	}
 	return globalTracerManager.SetTracer(tracerConfig.EnableRemoteCollector, tracerConfig.ServiceName, tracerConfig.RemoteEndpoint)
-}
-
-type TracerConfig struct {
-	EnableRemoteCollector bool   `json:"enableRemoteCollector"`
-	ServiceName           string `json:"serviceName"`
-	RemoteEndpoint        string `json:"remoteEndpoint"`
-}
-
-func TracerConfigFromConf() *TracerConfig {
-	return &TracerConfig{
-		EnableRemoteCollector: conf.Config.OpenTelemetry.EnableRemoteCollector,
-		ServiceName:           conf.Config.OpenTelemetry.ServiceName,
-		RemoteEndpoint:        conf.Config.OpenTelemetry.RemoteEndpoint,
-	}
 }
 
 func saveTracerConfig(config *TracerConfig) error {
