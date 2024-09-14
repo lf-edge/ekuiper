@@ -162,7 +162,7 @@ func TestSourceConnectorCompare(t *testing.T, r api.Source, props map[string]any
 		assert.NoError(t, err)
 	}()
 
-	ticker := time.After(60000 * time.Second)
+	ticker := time.After(60 * time.Second)
 	finished := make(chan struct{})
 	go func() {
 		wg.Wait()
