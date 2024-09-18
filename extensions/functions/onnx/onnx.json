@@ -2,10 +2,9 @@
   "about": {
     "trial": false,
     "author": {
-      "name": "EMQ",
-      "email": "contact@emqx.io",
-      "company": "EMQ Technologies Co., Ltd",
-      "website": "https://www.emqx.io"
+      "name": "思无邪",
+      "email": "cwl90110@163.com",
+      "website": "https://github.com/578223592"
     },
     "helpUrl": {
       "en_US": "https://ekuiper.org/docs/en/latest/sqls/functions/custom_functions.html",

@@ -1,4 +1,4 @@
-// Copyright 2021-2024 EMQ Technologies Co., Ltd.
+// Copyright 2021-2024 思无邪. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return fmt.Errorf("convert to onnx tensor failed with err %v", err), false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeFloat: // onnx的float转换到go为float32
+		case ort.TensorElementDataTypeFloat: // convert onnx's type float to float32 of golang
 			value, err := cast.ToFloat32Slice(arg, cast.CONVERT_SAMEKIND)
 			if err != nil {
 				return fmt.Errorf("invalid %d parameter, expect float32 but got %[2]T(%[2]v) with err %v", i, args[i], err), false
@@ -131,7 +131,7 @@ func (f *OnnxFunc) Exec(ctx api.FunctionContext, args []any) (any, bool) {
 				return fmt.Errorf("convert to onnx tensor failed with err %v", err), false
 			}
 			inputTensors = append(inputTensors, input)
-		case ort.TensorElementDataTypeUint64: // todo:这些tflite的类型待测试
+		case ort.TensorElementDataTypeUint64:
 			value, err := cast.ToTypedSlice(args, func(input interface{}, sn cast.Strictness) (interface{}, error) {
 				return cast.ToUint64(input, sn)
 			}, "uin64", cast.CONVERT_SAMEKIND)

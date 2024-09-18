@@ -18,7 +18,6 @@ package main
 
 import (
 	"image"
-	_ "image"
 	"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
