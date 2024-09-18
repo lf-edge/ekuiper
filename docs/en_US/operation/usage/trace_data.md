@@ -110,7 +110,6 @@ openTelemetry:
 
 ### Configuring eKuiper to Send Data Tracing to the Collector
 
-
 Via REST API [Create Rules](../../api/restapi/rules.md#create-a-rule)
 
 [Enable data tracing](../../api/restapi/trace.md#start-trace-the-data-of-specific-rule) for rules through REST API
