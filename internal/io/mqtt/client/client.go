@@ -41,6 +41,8 @@ type Connection struct {
 	status    atomic.Value
 	scHandler api.StatusChangeHandler
 	conf      *ConnectionConfig
+	// key is the topic. Each topic will have only one connector
+	subscriptions map[string]*subscriptionInfo
 }
 
 type ConnectionConfig struct {
@@ -53,8 +55,15 @@ type ConnectionConfig struct {
 	tls      *tls.Config
 }
 
+type subscriptionInfo struct {
+	Qos     byte
+	Handler pahoMqtt.MessageHandler
+}
+
 func CreateConnection(_ api.StreamContext) modules.Connection {
-	return &Connection{}
+	return &Connection{
+		subscriptions: make(map[string]*subscriptionInfo),
+	}
 }
 
 func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map[string]any) error {
@@ -62,7 +71,7 @@ func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map
 	if err != nil {
 		return err
 	}
-	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(time.Minute)
+	opts := pahoMqtt.NewClientOptions().AddBroker(c.Server).SetProtocolVersion(c.pversion).SetAutoReconnect(true).SetMaxReconnectInterval(connection.DefaultMaxInterval)
 
 	opts = opts.SetTLSConfig(c.tls)
 
@@ -72,7 +81,6 @@ func (conn *Connection) Provision(ctx api.StreamContext, conId string, props map
 	if c.Password != "" {
 		opts = opts.SetPassword(c.Password)
 	}
-	opts = opts.SetClientID(c.ClientId).SetAutoReconnect(true).SetResumeSubs(true).SetMaxReconnectInterval(connection.DefaultMaxInterval)
 
 	conn.status.Store(modules.ConnectionStatus{Status: api.ConnectionConnecting})
 	opts.OnConnect = conn.onConnect
@@ -119,6 +127,12 @@ func (conn *Connection) onConnect(_ pahoMqtt.Client) {
 		conn.scHandler(api.ConnectionConnected, "")
 	}
 	conn.logger.Infof("The connection to mqtt broker is established")
+	for topic, info := range conn.subscriptions {
+		err := conn.Subscribe(topic, info.Qos, info.Handler)
+		if err != nil { // should never happen. If happens because of connection, it will retry later
+			conn.logger.Errorf("Failed to subscribe topic %s: %v", topic, err)
+		}
+	}
 }
 
 func (conn *Connection) onConnectLost(_ pahoMqtt.Client, err error) {
@@ -143,6 +157,7 @@ func (conn *Connection) DetachSub(ctx api.StreamContext, props map[string]any) {
 	if err != nil {
 		return
 	}
+	delete(conn.subscriptions, topic)
 	conn.Client.Unsubscribe(topic)
 }
 
@@ -173,6 +188,10 @@ func (conn *Connection) Publish(topic string, qos byte, retained bool, payload a
 }
 
 func (conn *Connection) Subscribe(topic string, qos byte, callback pahoMqtt.MessageHandler) error {
+	conn.subscriptions[topic] = &subscriptionInfo{
+		Qos:     qos,
+		Handler: callback,
+	}
 	token := conn.Client.Subscribe(topic, qos, callback)
 	return handleToken(token)
 }

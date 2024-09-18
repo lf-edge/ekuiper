@@ -559,6 +559,15 @@ func (s *State) SetIsTraceEnabled(isEnabled bool) error {
 	return fmt.Errorf("rule %s set trace failed due to rule didn't started", s.Rule.Name)
 }
 
+func (s *State) IsTraceEnabled() bool {
+	s.Lock()
+	defer s.Unlock()
+	if s.topology != nil {
+		return s.topology.IsTraceEnabled()
+	}
+	return false
+}
+
 func (s *State) Delete() (err error) {
 	defer func() {
 		if err != nil {

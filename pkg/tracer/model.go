@@ -12,36 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build trace || !core
+
 package tracer
 
 import (
-	"encoding/json"
-	"time"
-
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
-
-type LocalSpan struct {
-	Name         string                 `json:"name"`
-	TraceID      string                 `json:"traceID"`
-	SpanID       string                 `json:"spanID"`
-	ParentSpanID string                 `json:"parentSpanID,omitempty"`
-	Attribute    map[string]interface{} `json:"attribute,omitempty"`
-	Links        []LocalLink            `json:"links,omitempty"`
-	StartTime    time.Time              `json:"startTime"`
-	EndTime      time.Time              `json:"endTime"`
-	RuleID       string                 `json:"ruleID"`
-
-	ChildSpan []*LocalSpan
-}
-
-type LocalLink struct {
-	TraceID string `yaml:"traceID"`
-}
-
-func (span *LocalSpan) ToBytes() ([]byte, error) {
-	return json.Marshal(span)
-}
 
 func FromReadonlySpan(readonly sdktrace.ReadOnlySpan) *LocalSpan {
 	span := &LocalSpan{

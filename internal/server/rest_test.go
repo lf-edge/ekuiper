@@ -243,7 +243,7 @@ func (suite *RestTestSuite) TestRecoverRule() {
 
 	b, err := io.ReadAll(w3.Result().Body)
 	require.NoError(suite.T(), err)
-	got := make([]map[string]string, 0)
+	got := make([]map[string]interface{}, 0)
 	require.NoError(suite.T(), json.Unmarshal(b, &got))
 	find := false
 	for _, s := range got {

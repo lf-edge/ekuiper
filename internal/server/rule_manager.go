@@ -277,10 +277,18 @@ func (rr *RuleRegistry) GetAllRulesWithStatus() ([]map[string]any, error) {
 		} else {
 			str = rule.StateName[s]
 		}
+		trace := false
+		if str == "running" {
+			rs, ok := registry.load(id)
+			if ok {
+				trace = rs.IsTraceEnabled()
+			}
+		}
 		result[i] = map[string]interface{}{
 			"id":     id,
 			"name":   ruleName,
 			"status": str,
+			"trace":  trace,
 		}
 	}
 	return result, nil

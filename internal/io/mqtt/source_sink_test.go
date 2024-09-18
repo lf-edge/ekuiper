@@ -15,27 +15,40 @@
 package mqtt
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
+	mqtt "github.com/mochi-mqtt/server/v2"
+	"github.com/mochi-mqtt/server/v2/hooks/auth"
+	"github.com/mochi-mqtt/server/v2/listeners"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/store"
-	"github.com/lf-edge/ekuiper/v2/internal/testx"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/topotest/mockclock"
 	"github.com/lf-edge/ekuiper/v2/pkg/connection"
 	"github.com/lf-edge/ekuiper/v2/pkg/mock"
 	"github.com/lf-edge/ekuiper/v2/pkg/model"
 )
 
-func TestSourceSink(t *testing.T) {
-	url, cancel, err := testx.InitBroker("TestSourceSink")
+func TestSourceSinkRecon(t *testing.T) {
+	// Create the new MQTT Server.
+	server := mqtt.New(nil)
+	// Allow all connections.
+	_ = server.AddHook(new(auth.AllowHook), nil)
+	// Create a TCP listener on a standard port.
+	tcp := listeners.NewTCP(listeners.Config{ID: "testcon", Address: ":2883"})
+	err := server.AddListener(tcp)
 	require.NoError(t, err)
-	defer func() {
-		cancel()
+	go func() {
+		err = server.Serve()
+		fmt.Println(err)
 	}()
+	url := tcp.Address()
 	dataDir, err := conf.GetDataLoc()
 	require.NoError(t, err)
 	require.NoError(t, store.SetupDefault(dataDir))
@@ -74,7 +87,25 @@ func TestSourceSink(t *testing.T) {
 		"qos":        0,
 		"topic":      "demo",
 	}, result, func() {
-		err := mock.RunBytesSinkCollect(sk, data, map[string]any{
+		err := mock.RunBytesSinkCollect(sk, data[:1], map[string]any{
+			"server":   url,
+			"topic":    "demo",
+			"qos":      0,
+			"retained": false,
+		})
+		assert.NoError(t, err)
+		err = server.Close()
+		tcp.Close(nil)
+		assert.NoError(t, err)
+		go func() {
+			tcp := listeners.NewTCP(listeners.Config{Address: url})
+			err := server.AddListener(tcp)
+			require.NoError(t, err)
+			err = server.Serve()
+			require.NoError(t, err)
+		}()
+		time.Sleep(time.Millisecond * 100)
+		err = mock.RunBytesSinkCollect(sk, data[1:], map[string]any{
 			"server":   url,
 			"topic":    "demo",
 			"qos":      0,
