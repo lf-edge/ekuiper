@@ -16,7 +16,7 @@ openTelemetry:
 
 ## 开启规则级别的追踪
 
-你可以通过设置规则 `options` 中的 `enableRuleTracer` 为 true，为对应规则打开数据链路追踪。具体设置请查看 [规则](../../guide/rules/overview.md#选项)
+你可以通过 REST API 开启[特定规则的数据追踪](../../api/restapi/trace.md#开启特定规则的数据追踪)
 
 ## 获取每条数据的 Trace ID
 
@@ -29,3 +29,89 @@ openTelemetry:
 如果你配置了 Open Telemetry Tracing 收集器，你可以通过 Trace ID 向 Open Telemetry 收集器背后的存储与查询平台进行查询。 同时，你也可以通过访问本地 Rest API 的方式获取详细的追踪数据。
 
 [根据 Trace ID 查看详细追踪数据](../../api/restapi/trace.md#根据-trace-id-查看详细追踪数据)
+
+## 通过 Open Telemetry Collector 和 Jaeger 集成数据追踪
+
+eKuiper 支持将 Trace 数据暴露到 Open Telemetry Collector，Open Telemetry 则支持将 Tracing 的数据暴露到 Jaeger 中进行展示。 我们通过以下例子进行展示:
+
+### 本地启动 Open Telemetry Collector 与 Jaeger
+
+通过 docker-compose 启动 open telemetry collector 和  Jaeger
+
+```shell
+docker-compose up -d
+```
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  otlp:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]
+```
+
+```yaml
+version: '3.8'
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14250:14250"  # gRPC for Jaeger
+      - "14268:14268"  # HTTP for Jaeger
+    networks:
+      - otel-net
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./collector.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4318:4318"  # OTLP HTTP receiver
+    depends_on:
+      - jaeger
+    networks:
+      - otel-net
+
+networks:
+  otel-net:
+    driver: bridge
+```
+
+### 配置 eKuiper 开启将数据追踪发送到 Collector
+
+```yaml
+openTelemetry:
+  serviceName: kuiperd-service
+  enableRemoteCollector: true
+  remoteEndpoint: localhost:4318
+  localTraceCapacity: 2048
+```
+
+### 创建规则并开启规则数据链路追踪
+
+通过 REST API [创建规则](../../api//restapi/rules.md#创建规则)
+
+通过 REST API 为规则[开启数据追踪](../../api//restapi/trace.md#开启特定规则的数据追踪)
+
+## 访问 Jaeger 查看 Trace 数据
+
+访问 localhost:16686 查看 Jaeger 内的 Trace 数据
