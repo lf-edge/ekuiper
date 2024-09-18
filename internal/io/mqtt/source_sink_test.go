@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 	mqtt "github.com/mochi-mqtt/server/v2"
 	"github.com/mochi-mqtt/server/v2/hooks/auth"
 	"github.com/mochi-mqtt/server/v2/listeners"
