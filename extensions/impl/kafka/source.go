@@ -147,9 +147,6 @@ func (k *KafkaSource) Connect(ctx api.StreamContext, sch api.StatusChangeHandler
 	k.reader = reader
 	err := k.reader.SetOffset(kafkago.LastOffset)
 	if err != nil {
-		return err
-	}
-	if err != nil {
 		sch(api.ConnectionDisconnected, err.Error())
 	} else {
 		sch(api.ConnectionConnecting, "")

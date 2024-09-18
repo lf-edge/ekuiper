@@ -231,6 +231,30 @@ func TestSQLSourceRewind(t *testing.T) {
 		},
 	}...).GetStore()
 	require.Equal(t, expectState, state)
+	require.NoError(t, sqlConnector.ResetOffset(map[string]interface{}{
+		"a": int64(2),
+		"b": int64(2),
+	}))
+	expectState2 := store.NewIndexFieldWrap([]*store.IndexField{
+		{
+			IndexFieldName:     "a",
+			IndexFieldValue:    int64(2),
+			IndexFieldDataType: "bigint",
+		},
+		{
+			IndexFieldName:     "b",
+			IndexFieldValue:    int64(2),
+			IndexFieldDataType: "bigint",
+		},
+	}...).GetStore()
+	state2, err := sqlConnector.GetOffset()
+	require.NoError(t, err)
+	require.Equal(t, expectState2, state2)
+
+	require.NoError(t, sqlConnector.Rewind(expectState))
+	gotState, err := sqlConnector.GetOffset()
+	require.NoError(t, err)
+	require.Equal(t, expectState, gotState)
 }
 
 func TestSQLReconnect(t *testing.T) {
