@@ -127,4 +127,23 @@ func TestKafkaSinkBuildMsg(t *testing.T) {
 	require.Equal(t, b, msg.Headers[0].Value)
 	require.Equal(t, []byte("1"), msg.Key)
 	require.NoError(t, ks.Close(ctx))
+
+	configs = map[string]any{
+		"topic":   "t",
+		"brokers": "localhost:9092",
+		"headers": "{\"a\":\"{{.a}}\"}",
+	}
+	ks = &KafkaSink{}
+	require.NoError(t, ks.Provision(ctx, configs))
+	require.NoError(t, ks.Connect(ctx, func(status string, message string) {
+		// do nothing
+	}))
+	mockT = testx.MockTuple{
+		Map:      item,
+		Template: map[string]string{"headers": "{\"a\":\"1\"}"},
+	}
+	msg, err = ks.buildMsg(ctx, mockT, d)
+	require.NoError(t, err)
+	require.Equal(t, "a", msg.Headers[0].Key)
+	require.Equal(t, b, msg.Headers[0].Value)
 }
