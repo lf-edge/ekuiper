@@ -51,7 +51,8 @@ func tracerHandler(w http.ResponseWriter, r *http.Request) {
 		handleError(w, err, "Invalid body", logger)
 		return
 	}
-	if err := tracer.SetTracer(&tracer.TracerConfig{EnableRemoteCollector: req.Action, ServiceName: req.ServiceName, RemoteEndpoint: req.CollectorUrl}); err != nil {
+	enableRemoteCollector := req.Action == "start"
+	if err := tracer.SetTracer(&tracer.TracerConfig{EnableRemoteCollector: enableRemoteCollector, ServiceName: req.ServiceName, RemoteEndpoint: req.CollectorUrl}); err != nil {
 		handleError(w, err, "", logger)
 		return
 	}
@@ -60,8 +61,8 @@ func tracerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type SetTracerRequest struct {
-	ServiceName  string `json:"serviceName"`
-	Action       bool   `json:"action"`
+	ServiceName  string `json:"service_name"`
+	Action       string `json:"action"`
 	CollectorUrl string `json:"collector_url"`
 }
 
