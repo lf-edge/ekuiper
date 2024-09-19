@@ -25,6 +25,7 @@ import (
 type c struct {
 	Topic  string `json:"datasource"`
 	Server string `json:"server"`
+	Topic2 string `json:"topic"`
 }
 
 func validate(_ api.StreamContext, props map[string]any) (*c, error) {

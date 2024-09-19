@@ -312,7 +312,7 @@
           </ConstantTimer>
           <hashTree/>
         </hashTree>
-        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="Sql plugin" enabled="true">
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="Zmq sink" enabled="true">
           <boolProp name="TransactionController.includeTimers">false</boolProp>
           <boolProp name="TransactionController.parent">false</boolProp>
         </TransactionController>
@@ -324,7 +324,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-&quot;sql&quot; : &quot;create stream demo (humidity bigint, temperature bigint) WITH (DATASOURCE=\&quot;events\&quot;, FORMAT=\&quot;JSON\&quot;, TYPE=\&quot;mqtt\&quot;)&quot;&#xd;
+&quot;sql&quot; : &quot;create stream demo () WITH (FORMAT=\&quot;JSON\&quot;, TYPE=\&quot;simulator\&quot;)&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -367,10 +367,10 @@
   &quot;sql&quot;: &quot;SELECT * FROM demo&quot;,&#xd;
   &quot;actions&quot;: [&#xd;
     {&#xd;
-      &quot;sql&quot;: {&#xd;
-        &quot;url&quot;: &quot;mysql://user:test@10.10.20.147/user?parseTime=true&quot;,&#xd;
-        &quot;table&quot;: &quot;test&quot;,&#xd;
-        &quot;fields&quot;: [&quot;id&quot;,&quot;name&quot;,&quot;registerTime&quot;]&#xd;
+      &quot;zmq&quot;:{&#xd;
+        &quot;server&quot;: &quot;tcp://127.0.0.1:5563&quot;,&#xd;
+        &quot;topic&quot;:&quot;test&quot;,&#xd;
+        &quot;sendSingle&quot;: true&#xd;
       }&#xd;
     }&#xd;
   ]&#xd;
@@ -429,11 +429,20 @@
           </HTTPSamplerProxy>
           <hashTree>
             <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
-              <stringProp name="JSON_PATH">$.sink_sql_0_0_records_in_total</stringProp>
+              <stringProp name="JSON_PATH">$.sink_zmq_0_0_records_in_total</stringProp>
               <stringProp name="EXPECTED_VALUE">0</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
               <boolProp name="EXPECT_NULL">false</boolProp>
-              <boolProp name="INVERT">false</boolProp>
+              <boolProp name="INVERT">true</boolProp>
+              <boolProp name="ISREGEX">false</boolProp>
+            </JSONPathAssertion>
+            <hashTree/>
+            <JSONPathAssertion guiclass="JSONPathAssertionGui" testclass="JSONPathAssertion" testname="JSON Assertion" enabled="true">
+              <stringProp name="JSON_PATH">$.sink_zmq_0_0_records_out_total</stringProp>
+              <stringProp name="EXPECTED_VALUE">0</stringProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
+              <boolProp name="EXPECT_NULL">false</boolProp>
+              <boolProp name="INVERT">true</boolProp>
               <boolProp name="ISREGEX">false</boolProp>
             </JSONPathAssertion>
             <hashTree/>
