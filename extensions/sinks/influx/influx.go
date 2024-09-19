@@ -18,6 +18,7 @@ import (
 	_ "github.com/influxdata/influxdb1-client/v2"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/influx"
 )
 

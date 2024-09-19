@@ -22,6 +22,7 @@ import (
 	"github.com/dop251/goja"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 )
 

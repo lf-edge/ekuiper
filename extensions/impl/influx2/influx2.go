@@ -25,6 +25,7 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+
 	"github.com/lf-edge/ekuiper/v2/extensions/impl/tspoint"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"
