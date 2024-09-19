@@ -20,10 +20,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/topo/node/tracenode"
 	"github.com/lf-edge/ekuiper/v2/pkg/infra"

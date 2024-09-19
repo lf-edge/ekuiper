@@ -19,9 +19,8 @@ import (
 	"errors"
 	"fmt"
 
-	"go.nanomsg.org/mangos/v3"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"go.nanomsg.org/mangos/v3"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/timex"
 )

@@ -22,10 +22,9 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"

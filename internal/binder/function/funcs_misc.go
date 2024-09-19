@@ -31,7 +31,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"

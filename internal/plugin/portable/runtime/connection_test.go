@@ -20,12 +20,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 	"go.nanomsg.org/mangos/v3/protocol/push"
 	"go.nanomsg.org/mangos/v3/protocol/req"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/testx"

@@ -20,14 +20,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 	"go.nanomsg.org/mangos/v3/protocol/push"
 	"go.nanomsg.org/mangos/v3/protocol/req"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/errorx"

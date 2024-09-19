@@ -18,9 +18,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/sirupsen/logrus"
 )
 
 const LoggerKey = "$$logger"

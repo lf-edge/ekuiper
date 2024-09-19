@@ -19,9 +19,8 @@ import (
 	"time"
 
 	filename "github.com/keepeye/logrus-filename"
-	"github.com/sirupsen/logrus"
-
 	"github.com/lf-edge/ekuiper/sdk/go/api"
+	"github.com/sirupsen/logrus"
 )
 
 type mockContext struct {

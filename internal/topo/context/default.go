@@ -25,9 +25,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/sirupsen/logrus"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/topo/transform"

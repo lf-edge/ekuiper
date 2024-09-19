@@ -26,10 +26,9 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/x448/float16"
 	ort "github.com/yalue/onnxruntime_go"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 )
