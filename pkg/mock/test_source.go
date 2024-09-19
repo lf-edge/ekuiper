@@ -22,9 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"

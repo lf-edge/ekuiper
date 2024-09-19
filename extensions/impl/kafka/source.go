@@ -21,13 +21,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"

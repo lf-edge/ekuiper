@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/cenkalti/backoff/v4"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"

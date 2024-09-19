@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
@@ -27,8 +28,6 @@ import (
 	"go.nanomsg.org/mangos/v3/protocol/rep"
 	// introduce ipc
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 )

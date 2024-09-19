@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/pingcap/failpoint"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cert"

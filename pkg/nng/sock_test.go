@@ -18,12 +18,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/ipc"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	mockContext "github.com/lf-edge/ekuiper/v2/pkg/mock/context"
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"

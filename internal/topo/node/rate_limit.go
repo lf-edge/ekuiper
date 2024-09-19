@@ -19,9 +19,8 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"golang.org/x/exp/maps"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/converter"

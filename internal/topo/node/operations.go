@@ -18,9 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pingcap/failpoint"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/pingcap/failpoint"
 
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"

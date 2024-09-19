@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/lf-edge/ekuiper/contract/v2/api"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	topoContext "github.com/lf-edge/ekuiper/v2/internal/topo/context"
 	"github.com/lf-edge/ekuiper/v2/internal/xsql"

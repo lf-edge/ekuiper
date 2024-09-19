@@ -23,9 +23,8 @@ import (
 	_ "image/png"
 	"sync"
 
-	ort "github.com/yalue/onnxruntime_go"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	ort "github.com/yalue/onnxruntime_go"
 )
 
 type MnistFunc struct {

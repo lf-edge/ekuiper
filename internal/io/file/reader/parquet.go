@@ -21,9 +21,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/parquet-go/parquet-go"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/parquet-go/parquet-go"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/modules"
 )

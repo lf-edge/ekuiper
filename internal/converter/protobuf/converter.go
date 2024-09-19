@@ -19,7 +19,6 @@ import (
 
 	"github.com/jhump/protoreflect/desc"            //nolint:staticcheck
 	"github.com/jhump/protoreflect/desc/protoparse" //nolint:staticcheck
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	kconf "github.com/lf-edge/ekuiper/v2/internal/conf"

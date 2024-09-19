@@ -17,9 +17,8 @@ package function
 import (
 	"fmt"
 
-	"github.com/montanaflynn/stats"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	"github.com/montanaflynn/stats"
 
 	"github.com/lf-edge/ekuiper/v2/pkg/ast"
 	"github.com/lf-edge/ekuiper/v2/pkg/cast"

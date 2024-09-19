@@ -20,7 +20,6 @@ import (
 
 	"github.com/edgexfoundry/go-mod-messaging/v3/messaging"
 	"github.com/edgexfoundry/go-mod-messaging/v3/pkg/types"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"

@@ -11,9 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	ort "github.com/yalue/onnxruntime_go"
-
 	"github.com/lf-edge/ekuiper/contract/v2/api"
+	ort "github.com/yalue/onnxruntime_go"
 
 	"github.com/lf-edge/ekuiper/v2/internal/conf"
 	"github.com/lf-edge/ekuiper/v2/internal/pkg/def"
