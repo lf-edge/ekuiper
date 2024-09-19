@@ -32,14 +32,6 @@ type ProcessedImage struct {
 	Invert bool
 }
 
-func (p *ProcessedImage) ColorModel() color.Model {
-	return color.Gray16Model
-}
-
-func (p *ProcessedImage) Bounds() image.Rectangle {
-	return image.Rect(0, 0, 28, 28)
-}
-
 // At Returns an average grayscale value using the pixels in the input image.
 func (p *ProcessedImage) At(x, y int) color.Color {
 	if (x < 0) || (x >= 28) || (y < 0) || (y >= 28) {
