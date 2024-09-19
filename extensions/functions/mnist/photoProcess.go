@@ -19,20 +19,16 @@ func (f grayscaleFloat) RGBA() (r, g, b, a uint32) {
 	return v, v, v, 0xffff
 }
 
-// ProcessedImage Used to satisfy the image interface as well as to help with formatting and
-// resizing an input image into the format expected as a network input.
+// ProcessedImage Used to satisfy the image interface as well as to help with formatting and resizing an input image into the format expected as a network input.
 type ProcessedImage struct {
-	// The number of "pixels" in the input image corresponding to a single
-	// pixel in the 28x28 output image.
+	// The number of "pixels" in the input image corresponding to a single pixel in the 28x28 output image.
 	dx, dy float32
 
 	// The input image being transformed
 	pic image.Image
 
-	// If true, the grayscale values in the postprocessed image will be
-	// inverted, so that dark colors in the original become light, and vice
-	// versa. Recall that the network expects black backgrounds, so this should
-	// be set to true for images with light backgrounds.
+	// If true, the grayscale values in the postprocessed image will be inverted, so that dark colors in the original become light, and vice
+	// versa. Recall that the network expects black backgrounds, so this should be set to true for images with light backgrounds.
 	Invert bool
 }
 
