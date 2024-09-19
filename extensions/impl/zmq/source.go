@@ -84,7 +84,6 @@ func (s *zmqSource) Subscribe(ctx api.StreamContext, ingest api.BytesIngest, ing
 			msgs, e := s.subscriber.RecvMessageBytes(0)
 			if e != nil {
 				if zmq.AsErrno(e) == zmq.Errno(syscall.EAGAIN) {
-					fmt.Println("Receive timed out")
 					continue
 				}
 				id, _ := s.subscriber.GetIdentity()

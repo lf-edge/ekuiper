@@ -65,7 +65,7 @@ func (m *zmqSink) Collect(ctx api.StreamContext, item api.RawTuple) error {
 
 func (m *zmqSink) sendToZmq(ctx api.StreamContext, v []byte) error {
 	var err error
-	if m.sc.Topic == "" {
+	if m.sc.Topic2 == "" {
 		_, err = m.publisher.SendBytes(v, 0)
 	} else {
 		msgs := [][]byte{
