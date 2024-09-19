@@ -75,7 +75,7 @@ func (s *SQLConnection) Reconnect() error {
 		return fmt.Errorf("reconnect sql err:%v, supported drivers:%v", err, driver.GetSupportedDrivers())
 	}
 	s.db = db
-	return nil
+	return s.db.Ping()
 }
 
 func (s *SQLConnection) GetDB() *sql.DB {
