@@ -143,15 +143,3 @@ func getDefaultSharedLibPath() string {
 		runtime.GOARCH)
 	return ""
 }
-
-func Test_123(t *testing.T) {
-
-	// 生成一个测试函数
-	ttt := fmt.Errorf("labelImage function parameter must be a bytea, but got %[1]T(%[1]v)", func() []any {
-		args := make([]any, 0)
-		args = append(args, 1, 2, 3)
-		return args
-	}())
-	fmt.Print(ttt)
-
-}
