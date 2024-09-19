@@ -84,15 +84,15 @@ func TestProvisionMockErr(t *testing.T) {
 		"interval": "1s",
 		"dburl":    "mysql://root:@127.0.0.1:4000/test",
 	}
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/sql/MapToStructErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/MapToStructErr", "return(true)")
 	err := GetSource().Provision(ctx, props)
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/sql/MapToStructErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/MapToStructErr")
 
-	failpoint.Enable("github.com/lf-edge/ekuiper/v2/internal/io/sql/GetQueryGeneratorErr", "return(true)")
+	failpoint.Enable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/GetQueryGeneratorErr", "return(true)")
 	err = GetSource().Provision(ctx, props)
 	require.Error(t, err)
-	failpoint.Disable("github.com/lf-edge/ekuiper/v2/internal/io/sql/GetQueryGeneratorErr")
+	failpoint.Disable("github.com/lf-edge/ekuiper/v2/extensions/impl/sql/GetQueryGeneratorErr")
 }
 
 func TestSQLConnectionConnect(t *testing.T) {
@@ -126,7 +126,6 @@ func TestSQLConnectionConnect(t *testing.T) {
 	}, func(ctx api.StreamContext, err error) {
 		require.NoError(t, err)
 	})
-
 	// query data Error
 	testcases := []struct {
 		path string
@@ -145,7 +144,7 @@ func TestSQLConnectionConnect(t *testing.T) {
 		},
 	}
 	for _, tc := range testcases {
-		fp := "github.com/lf-edge/ekuiper/v2/internal/io/sql/" + tc.path
+		fp := "github.com/lf-edge/ekuiper/v2/extensions/impl/sql/" + tc.path
 		failpoint.Enable(fp, "return(true)")
 		sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
 			require.Error(t, err)
@@ -251,6 +250,11 @@ func TestSQLReconnect(t *testing.T) {
 	sqlConnector, ok := sqlSource.(*SQLSourceConnector)
 	require.True(t, ok)
 	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {})
+	require.True(t, sqlConnector.needReconnect)
+
+	sqlConnector.queryData(ctx, time.Now(), func(ctx api.StreamContext, data any, meta map[string]any, ts time.Time) {}, func(ctx api.StreamContext, err error) {
+		require.Error(t, err)
+	})
 	require.True(t, sqlConnector.needReconnect)
 
 	// start server then reconnect
